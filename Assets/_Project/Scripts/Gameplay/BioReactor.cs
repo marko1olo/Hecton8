@@ -219,7 +219,10 @@ namespace Hecton8.Gameplay
                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
                         continue;
 
-                    ItemData item = playerInventory.GetItemAt(x, y);
+                    int itemHashId = playerInventory.GetItemHashAt(x, y);
+                    ItemData item = itemHashId != 0 && playerInventory.ItemCatalog != null
+                        ? playerInventory.ItemCatalog.FindByHash(itemHashId)
+                        : null;
                     if (item == null)
                         continue;
 
@@ -230,7 +233,7 @@ namespace Hecton8.Gameplay
                     if (InsertFuel(item))
                     {
                         // Remove from player inventory
-                        playerInventory.RemoveItem(item, x, y);
+                        playerInventory.RemoveItemAt(x, y);
                         return true;
                     }
                 }
@@ -256,14 +259,14 @@ namespace Hecton8.Gameplay
             if (!IsAcceptedFuel(item))
                 return false;
 
-            if (!playerInventory.ContainsItem(item))
+            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(item.PersistentId)))
                 return false;
 
             if (!InsertFuel(item))
                 return false;
 
             // Remove one unit from player inventory
-            playerInventory.TryRemoveQuantity(item, 1);
+            playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1);
             return true;
         }
 
@@ -288,7 +291,10 @@ namespace Hecton8.Gameplay
                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
                         continue;
 
-                    ItemData item = playerInventory.GetItemAt(x, y);
+                    int itemHashId = playerInventory.GetItemHashAt(x, y);
+                    ItemData item = itemHashId != 0 && playerInventory.ItemCatalog != null
+                        ? playerInventory.ItemCatalog.FindByHash(itemHashId)
+                        : null;
                     if (item != null && IsAcceptedFuel(item))
                     {
                         count += playerInventory.GetStackCount(x, y);

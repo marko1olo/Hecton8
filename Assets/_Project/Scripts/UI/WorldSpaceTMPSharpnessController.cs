@@ -93,11 +93,8 @@ namespace Hecton8.UI
             if (resolvedCamera == null)
                 return;
 
-            RectTransform rectTransform = _target.transform as RectTransform;
-            if (rectTransform == null)
-                return;
-
-            float distance = Vector3.Distance(resolvedCamera.transform.position, rectTransform.position);
+            Vector3 targetPosition = _target.transform.position;
+            float distance = Vector3.Distance(resolvedCamera.transform.position, targetPosition);
             float distanceT = Mathf.InverseLerp(Mathf.Max(0.001f, nearDistance), Mathf.Max(nearDistance + 0.001f, farDistance), distance);
             float faceDilate = Mathf.Lerp(nearFaceDilate, farFaceDilate, distanceT);
             float outlineSoftness = Mathf.Lerp(nearOutlineSoftness, farOutlineSoftness, distanceT);

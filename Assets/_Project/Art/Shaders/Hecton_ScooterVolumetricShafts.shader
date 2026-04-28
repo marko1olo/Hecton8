@@ -469,6 +469,11 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
         }
 
+        float ResolveCaveVoxelFogFade(float signedDistance)
+        {
+            return saturate(signedDistance * 2.0);
+        }
+
         float EvaluateFlashlightVoxelShadowRay(float3 rayOriginWS, float3 rayDirectionWS, float rayLength)
         {
             if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5 || rayLength <= 0.0001)
@@ -656,8 +661,14 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             {
                 float travelDistance = min(rayLength, ((stepIndex + jitter) * stepLength));
                 float3 samplePositionWS = cameraPositionWS + rayDirectionWS * travelDistance;
-                if (_HectonCaveVoxelActive > 0.5 && SampleCaveVoxelSignedDistance(samplePositionWS) <= 0.02)
-                    break;
+                float caveFogFade = 1.0;
+                if (_HectonCaveVoxelActive > 0.5)
+                {
+                    float signedDistance = SampleCaveVoxelSignedDistance(samplePositionWS);
+                    caveFogFade = ResolveCaveVoxelFogFade(signedDistance);
+                    if (caveFogFade <= 0.0001)
+                        break;
+                }
 
                 half3 scattering =
                     EvaluateHeadlightScattering(samplePositionWS, rayDirectionWS) +
@@ -673,9 +684,10 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
                 float siltField = ResolveSiltField(samplePositionWS + wakeTurbulence + brakeTurbulence, rayDirectionWS, surfaceProximity);
                 siltField *= lerp(1.0, 1.0 + wakeDisplacement * 1.35, wakeDisplacement);
                 siltField *= 1.0 + brakeImpulse * 2.4;
-                scattering *= (1.0 + siltField);
+                scattering *= (1.0 + siltField) * caveFogFade;
                 float distanceFade = exp2(-travelDistance * extinction);
                 distanceFade *= exp2(-(siltField + brakeImpulse * 0.75) * 0.035);
+                distanceFade *= caveFogFade;
                 accumulated += scattering * (distanceFade * stepLength);
             }
 

@@ -6,6 +6,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -35,6 +36,10 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
     public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IDamageReceiver, ISubmarineHullBreachReadModel
     {
+        private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
+        private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
+        private static readonly ProfilerMarker _damageConsumeProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Consume");
+
         private const int CompartmentCapacity = 8;
         private const int MaxQueuedImpacts = 16;
         private const byte FullIntegrity = byte.MaxValue;
@@ -210,6 +215,7 @@ namespace Hecton8.Physics
         private int _mappedCompartmentCount;
 
         private float _cellBreachAreaSquareMeters;
+        private float _fatiguePeakNormalized;
         private JobHandle _damageJobHandle;
         private IDamageSignalEmitter _damageEmitter;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) — local component search scratch for interface-only wiring — owner: SubmarineStructuralGrid
@@ -232,6 +238,8 @@ namespace Hecton8.Physics
 
         /// <inheritdoc />
         public int BreachMaskWordCount => _hullBreachMaskFront.IsCreated ? _hullBreachMaskFront.Length : 0;
+
+        internal float FatiguePeakNormalized => _fatiguePeakNormalized;
 
         private void Awake()
         {
@@ -273,17 +281,20 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void FixedTick(float fixedDeltaTime)
         {
-            if (!_nativeStateReady || !_cellIntegrityFront.IsCreated)
-                return;
+            using (_fixedTickProfilerMarker.Auto())
+            {
+                if (!_nativeStateReady || !_cellIntegrityFront.IsCreated)
+                    return;
 
-            ConsumeCompletedDamageJob();
-            RefreshCompartmentMapping();
-            ApplyPressureCycleFatigue();
+                ConsumeCompletedDamageJob();
+                RefreshCompartmentMapping();
+                ApplyPressureCycleFatigue();
 
-            if (_damageJobRunning || _queuedImpactCount <= 0)
-                return;
+                if (_damageJobRunning || _queuedImpactCount <= 0)
+                    return;
 
-            ScheduleDamageJob();
+                ScheduleDamageJob();
+            }
         }
 
         /// <summary>
@@ -453,6 +464,7 @@ namespace Hecton8.Physics
             }
 
             _cellBreachAreaSquareMeters = ResolveCellBreachAreaSquareMeters();
+            _fatiguePeakNormalized = 0f;
             RefreshCompartmentMapping();
             for (int i = 0; i < CompartmentCapacity; i++)
                 _previousCompartmentPressuresKPa[i] = 0f;
@@ -543,6 +555,7 @@ namespace Hecton8.Physics
                     fatigue++;
 
                 _cellFatigue[cellIndex] = fatigue;
+                _fatiguePeakNormalized = math.max(_fatiguePeakNormalized, fatigue / (float)byte.MaxValue);
                 int integrityCap = math.max(0, FullIntegrity - (fatigue * integrityLoss));
                 byte cappedIntegrity = (byte)integrityCap;
                 if (_cellIntegrityFront[cellIndex] > cappedIntegrity)
@@ -558,29 +571,32 @@ namespace Hecton8.Physics
             if (_damageJobRunning || !_scheduledImpacts.IsCreated || _queuedImpactCount <= 0)
                 return;
 
-            _scheduledImpactCount = _queuedImpactCount;
-            for (int i = 0; i < _scheduledImpactCount; i++)
-                _scheduledImpacts[i] = _queuedImpacts[i];
-
-            _queuedImpactCount = 0;
-            _damageJobHandle = new HullDamageDiffusionJob
+            using (_damageScheduleProfilerMarker.Auto())
             {
-                InputIntegrity = _cellIntegrityFront,
-                CellCompartmentIndices = _cellCompartmentIndices,
-                Impacts = _scheduledImpacts,
-                OutputIntegrity = _cellIntegrityBack,
-                OutputBreachMaskWords = _hullBreachMaskBack,
-                OutputCompartmentBreachAreas = _compartmentBreachAreasBack,
-                GridWidth = gridWidth,
-                GridHeight = gridHeight,
-                GridDepth = gridDepth,
-                CellCount = _cellIntegrityFront.Length,
-                ImpactCount = _scheduledImpactCount,
-                GridCenterLocal = localGridCenter,
-                GridSizeLocal = localGridSize,
-                CellBreachAreaSquareMeters = _cellBreachAreaSquareMeters
-            }.Schedule();
-            _damageJobRunning = true;
+                _scheduledImpactCount = _queuedImpactCount;
+                for (int i = 0; i < _scheduledImpactCount; i++)
+                    _scheduledImpacts[i] = _queuedImpacts[i];
+
+                _queuedImpactCount = 0;
+                _damageJobHandle = new HullDamageDiffusionJob
+                {
+                    InputIntegrity = _cellIntegrityFront,
+                    CellCompartmentIndices = _cellCompartmentIndices,
+                    Impacts = _scheduledImpacts,
+                    OutputIntegrity = _cellIntegrityBack,
+                    OutputBreachMaskWords = _hullBreachMaskBack,
+                    OutputCompartmentBreachAreas = _compartmentBreachAreasBack,
+                    GridWidth = gridWidth,
+                    GridHeight = gridHeight,
+                    GridDepth = gridDepth,
+                    CellCount = _cellIntegrityFront.Length,
+                    ImpactCount = _scheduledImpactCount,
+                    GridCenterLocal = localGridCenter,
+                    GridSizeLocal = localGridSize,
+                    CellBreachAreaSquareMeters = _cellBreachAreaSquareMeters
+                }.Schedule();
+                _damageJobRunning = true;
+            }
         }
 
         private void ConsumeCompletedDamageJob()
@@ -588,22 +604,25 @@ namespace Hecton8.Physics
             if (!_damageJobRunning || !_damageJobHandle.IsCompleted)
                 return;
 
-            _damageJobHandle.Complete();
-            _damageJobHandle = default;
-            _damageJobRunning = false;
-            _scheduledImpactCount = 0;
+            using (_damageConsumeProfilerMarker.Auto())
+            {
+                _damageJobHandle.Complete();
+                _damageJobHandle = default;
+                _damageJobRunning = false;
+                _scheduledImpactCount = 0;
 
-            NativeArray<byte> integrityFront = _cellIntegrityFront;
-            _cellIntegrityFront = _cellIntegrityBack;
-            _cellIntegrityBack = integrityFront;
+                NativeArray<byte> integrityFront = _cellIntegrityFront;
+                _cellIntegrityFront = _cellIntegrityBack;
+                _cellIntegrityBack = integrityFront;
 
-            NativeArray<ulong> breachMaskFront = _hullBreachMaskFront;
-            _hullBreachMaskFront = _hullBreachMaskBack;
-            _hullBreachMaskBack = breachMaskFront;
+                NativeArray<ulong> breachMaskFront = _hullBreachMaskFront;
+                _hullBreachMaskFront = _hullBreachMaskBack;
+                _hullBreachMaskBack = breachMaskFront;
 
-            NativeArray<float> breachAreaFront = _compartmentBreachAreasFront;
-            _compartmentBreachAreasFront = _compartmentBreachAreasBack;
-            _compartmentBreachAreasBack = breachAreaFront;
+                NativeArray<float> breachAreaFront = _compartmentBreachAreasFront;
+                _compartmentBreachAreasFront = _compartmentBreachAreasBack;
+                _compartmentBreachAreasBack = breachAreaFront;
+            }
         }
 
         private void TryRegister()

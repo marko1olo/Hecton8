@@ -192,7 +192,7 @@ namespace Hecton8.Dev
             int[] counts = new int[bundle.Length];
             for (int i = 0; i < bundle.Length; i++)
             {
-                counts[i] = bundle[i].item != null ? playerInventory.CountTotal(bundle[i].item) : 0;
+                counts[i] = bundle[i].item != null ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId)) : 0;
             }
 
             return counts;
@@ -210,10 +210,10 @@ namespace Hecton8.Dev
                     continue;
 
                 int required = Mathf.Max(1, entry.amount);
-                int current = playerInventory.CountTotal(entry.item);
+                int current = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(entry.item.PersistentId));
                 int missing = required - current;
                 if (missing > 0)
-                    playerInventory.TryAddItem(entry.item, missing);
+                    playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(entry.item.PersistentId), missing);
             }
         }
 
@@ -230,7 +230,7 @@ namespace Hecton8.Dev
 
                 int expectedDelta = Mathf.Max(1, entry.amount);
                 int before = i < beforeCounts.Length ? beforeCounts[i] : 0;
-                int after = playerInventory.CountTotal(entry.item);
+                int after = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(entry.item.PersistentId));
                 int actualDelta = after - before;
 
                 if (!shouldIncrease)

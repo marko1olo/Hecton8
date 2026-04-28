@@ -60,7 +60,7 @@ namespace Hecton8.Core
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct PlayerInteractionRuntimeState
     {
         public int ActiveToolSlot;
@@ -68,6 +68,9 @@ namespace Hecton8.Core
         public float SwapProgress01;
         public float TransportBoost01;
         public uint Flags;
+        private uint _padding0;
+        private uint _padding1;
+        private uint _padding2;
     }
 
     /// <summary>

@@ -124,6 +124,10 @@ struct SargassumSimulationFrameData
     float4 ThreatVoxelCellSize;
     float4 TransportCapsule0;
     float4 TransportCapsule1;
+    float4 Ecosystem0;
+    float4 Fragmentation0;
+    float4 Fragmentation1;
+    float4 SonarScatter0;
 };
 
 StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
@@ -134,6 +138,7 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _MaxDepthBelowSurface (_SargassumSimulationFrame[0].Simulation0.w)
 #define _CruiseSpeed (_SargassumSimulationFrame[0].Motion0.x)
 #define _MaxSpeed (_SargassumSimulationFrame[0].Motion0.y)
+#define _MaxBoidVelocity (_SargassumSimulationFrame[0].Motion0.y)
 #define _PanicSpeedBoost (_SargassumSimulationFrame[0].Motion0.z)
 #define _PerceptionRadius (_SargassumSimulationFrame[0].Neighbor0.x)
 #define _SeparationRadius (_SargassumSimulationFrame[0].Neighbor0.y)
@@ -229,6 +234,16 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _TransportCapsuleRadius (_SargassumSimulationFrame[0].TransportCapsule0.w)
 #define _TransportCapsuleVelocityWS (_SargassumSimulationFrame[0].TransportCapsule1.xyz)
 #define _TransportCapsuleHalfLength (_SargassumSimulationFrame[0].TransportCapsule1.w)
+#define _FragmentationWeight (_SargassumSimulationFrame[0].Ecosystem0.x)
+#define _SonarScatterStrength (_SargassumSimulationFrame[0].Ecosystem0.y)
+#define _SonarScatterBandWidth (_SargassumSimulationFrame[0].Ecosystem0.z)
+#define _SonarScatterAcceleration (_SargassumSimulationFrame[0].Ecosystem0.w)
+#define _FragmentationCenterAWS (_SargassumSimulationFrame[0].Fragmentation0.xyz)
+#define _FragmentationStrength (_SargassumSimulationFrame[0].Fragmentation0.w)
+#define _FragmentationCenterBWS (_SargassumSimulationFrame[0].Fragmentation1.xyz)
+#define _FragmentationRadiusWS (_SargassumSimulationFrame[0].Fragmentation1.w)
+#define _SonarScatterOriginWS (_SargassumSimulationFrame[0].SonarScatter0.xyz)
+#define _SonarScatterWaveFrontWS (_SargassumSimulationFrame[0].SonarScatter0.w)
 
 #define LATCH_STATS_QUANTIZE 2048.0
 #define WAKE_STATS_QUANTIZE 1024.0
@@ -707,11 +722,22 @@ bool TryResolveTransportCapsuleAvoidance(float3 positionWS, float3 velocityWS, o
     float distanceToAxis = sqrt(max(distanceSq, EPSILON));
     float signedDistance = distanceToAxis - _TransportCapsuleRadius;
     avoidanceNormalWS = distanceSq > EPSILON ? awayFromCapsule * rsqrt(distanceSq) : -capsuleForward;
-    float3 motionVector = dot(velocityWS, velocityWS) > EPSILON ? velocityWS : _TransportCapsuleVelocityWS;
-    vortexRepulsionWS = SafeNormalize(cross(avoidanceNormalWS, motionVector));
-    if (dot(vortexRepulsionWS, vortexRepulsionWS) <= EPSILON)
-        vortexRepulsionWS = SafeNormalize(cross(avoidanceNormalWS, capsuleForward));
     avoidanceGate = 1.0 - saturate(signedDistance / max(influenceRadius - _TransportCapsuleRadius, 0.001));
+    float3 motionVector = dot(velocityWS, velocityWS) > EPSILON ? velocityWS : _TransportCapsuleVelocityWS;
+    float3 swirlDirectionWS = SafeNormalize(cross(avoidanceNormalWS, motionVector));
+    if (dot(swirlDirectionWS, swirlDirectionWS) <= EPSILON)
+        swirlDirectionWS = SafeNormalize(cross(avoidanceNormalWS, capsuleForward));
+
+    float axialOffset = dot(positionWS - _TransportCapsulePositionWS, capsuleForward);
+    float trailingGate = saturate((-axialOffset + _TransportCapsuleRadius) / max(halfLength + influenceRadius, 0.001));
+    float3 velocityDirectionWS = SafeNormalize(velocityWS);
+    float velocityAlignment = dot(velocityDirectionWS, velocityDirectionWS) > EPSILON
+        ? saturate(0.5 + 0.5 * dot(velocityDirectionWS, capsuleForward))
+        : 0.5;
+    float3 wakeCenterWS = _TransportCapsulePositionWS - capsuleForward * (halfLength + _TransportCapsuleRadius * 1.5);
+    float3 wakePullWS = SafeNormalize(wakeCenterWS - positionWS);
+    float wakeBlend = trailingGate * avoidanceGate * velocityAlignment;
+    vortexRepulsionWS = SafeNormalize(swirlDirectionWS + wakePullWS * (0.75 + wakeBlend * 1.5));
     return avoidanceGate > 0.0;
 }
 
@@ -1143,7 +1169,21 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float threatGridPanic = SampleThreatGridAtWorldPosition(positionWS);
     float2 threatGridGradient = ComputeThreatGridGradientAtWorldPosition(positionWS);
     float panicFromMassive = 0.0;
+    float panicFromSonar = 0.0;
     float3 fleeFromMassive = float3(0.0, 0.0, 0.0);
+    float3 sonarScatterDirectionWS = float3(0.0, 0.0, 0.0);
+    if (_SonarScatterStrength > 0.001)
+    {
+        float3 fromSonarOrigin = positionWS - _SonarScatterOriginWS;
+        float sonarDistance = length(fromSonarOrigin);
+        float sonarBandDelta = abs(sonarDistance - _SonarScatterWaveFrontWS);
+        float sonarGate = 1.0 - saturate(sonarBandDelta / max(_SonarScatterBandWidth, 0.001));
+        if (sonarGate > 0.0)
+        {
+            sonarScatterDirectionWS = SafeNormalize(fromSonarOrigin);
+            panicFromSonar = sonarGate * _SonarScatterStrength;
+        }
+    }
     bool consumedByLeviathan = false;
     [loop]
     for (uint threatIndex = 0; threatIndex < _MassiveThreatCount; threatIndex++)
@@ -1182,7 +1222,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    float sourcePanic = saturate(max(panic, max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), threatGridPanic)));
+    float sourcePanic = saturate(max(panic, max(max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), panicFromSonar), threatGridPanic)));
     panic = saturate(sourcePanic + panicContagion);
     stateFlags = panic >= 0.05 ? BuildFleeStateFlags() : BuildAliveStateFlags();
 
@@ -1207,6 +1247,11 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float grazingHoldPeak = 0.0;
     float grazingHoldPhase = 0.0;
     float3 closestAnchorDelta = float3(0.0, 0.0, 0.0);
+
+    if (panicFromSonar > 0.0 && dot(sonarScatterDirectionWS, sonarScatterDirectionWS) > EPSILON)
+    {
+        acceleration += sonarScatterDirectionWS * (_SonarScatterAcceleration * panicFromSonar);
+    }
 
     if (separationCount > 0.0)
     {
@@ -1257,6 +1302,25 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             float vortexForceWeight = transportAvoidanceGate * transportAvoidanceGate * max(_AlignmentWeight, 0.35);
             acceleration += transportSteerForce * transportForceWeight;
             acceleration += vortexSteerForce * vortexForceWeight;
+        }
+    }
+
+    if (_FragmentationStrength > 0.001 && _FragmentationWeight > 0.0)
+    {
+        float3 fragmentationCenterA = ToCameraRelative(_FragmentationCenterAWS);
+        float3 fragmentationCenterB = ToCameraRelative(_FragmentationCenterBWS);
+        float3 splitMidpoint = (fragmentationCenterA + fragmentationCenterB) * 0.5;
+        float3 splitAxis = SafeNormalize(fragmentationCenterA - fragmentationCenterB);
+        if (dot(splitAxis, splitAxis) > EPSILON)
+        {
+            float sideSign = dot(position - splitMidpoint, splitAxis) >= 0.0 ? 1.0 : -1.0;
+            float3 fragmentTarget = sideSign >= 0.0 ? fragmentationCenterA : fragmentationCenterB;
+            float3 toFragmentTarget = fragmentTarget - position;
+            float distanceToFragment = length(toFragmentTarget);
+            float fragmentationGate = 1.0 - saturate(distanceToFragment / max(_FragmentationRadiusWS, 0.001));
+            float splitStrength = _FragmentationStrength * max(fragmentationGate, 0.35);
+            acceleration += SafeNormalize(toFragmentTarget) * (_FragmentationWeight * splitStrength);
+            acceleration += splitAxis * (sideSign * (_FragmentationWeight * 0.55 * splitStrength));
         }
     }
 
@@ -1564,6 +1628,13 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         float clampedSpeed = clamp(speed, targetMinSpeed, max(targetMinSpeed, targetMaxSpeed));
         velocity = velocity * (clampedSpeed / speed);
+    }
+
+    float hardMaxBoidVelocity = max(_MaxBoidVelocity, targetMinSpeed);
+    float hardClampedSpeed = length(velocity);
+    if (hardClampedSpeed > hardMaxBoidVelocity)
+    {
+        velocity *= hardMaxBoidVelocity / max(hardClampedSpeed, EPSILON);
     }
 
     position += velocity * _DeltaTime;

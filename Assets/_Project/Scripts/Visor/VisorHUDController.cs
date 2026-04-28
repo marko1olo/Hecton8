@@ -54,7 +54,7 @@ namespace NASAPunk.Visor
 
         [Header("Runtime Tuning")]
         [SerializeField, Range(0f, 5f)] private float _hudIntensity = 2.5f;
-        [SerializeField] private Color _hudTint = new Color(0.2f, 1f, 0.3f, 1f);
+        [SerializeField] private Color _hudTint = new Color(0.82f, 0.96f, 1f, 0.14f);
         [SerializeField, Range(0f, 2f)] private float _scratchBleed = 0.8f;
         [SerializeField, Range(0f, 0.1f)] private float _distortion = 0.02f;
         [SerializeField] private bool _previewInEditMode = true;
@@ -94,6 +94,11 @@ namespace NASAPunk.Visor
 
         [Header("Environmental Interference")]
         [SerializeField, Range(0f, 0.05f)] private float _interferenceDistortionMax = 0.016f;
+
+        [Header("Structural Fatigue Glitch")]
+        [SerializeField, Range(0f, 0.02f)] private float _structuralFatigueChromaticAberrationMax = 0.007f;
+        [SerializeField, Range(0f, 1f)] private float _structuralFatigueStaticNoiseMax = 0.22f;
+        [SerializeField, Range(0.25f, 12f)] private float _structuralFatigueBlendSharpness = 4.8f;
 
         [Header("Pose Lock")]
         [SerializeField] private bool _syncToReferenceCamera = true;
@@ -150,10 +155,14 @@ namespace NASAPunk.Visor
         private bool _editorPreviewSuspended;
         private HectonSurvivalSystem _survivalSystem;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
+        private SubmarineStructuralGrid _structuralGrid;
         private bool _hasTemperatureSample;
         private float _lastTemperatureSample;
         private bool _hasPressureSample;
         private float _lastPressureSample;
+        private float _structuralFatigueChromaticAberration;
+        private float _structuralFatigueStaticNoise;
 
         private uint _glitchRngState = 1u;
 
@@ -172,6 +181,8 @@ namespace NASAPunk.Visor
         private static readonly int ID_CondensationEdgeExponent = Shader.PropertyToID("_CondensationEdgeExponent");
         private static readonly int ID_CondensationDriftSpeed = Shader.PropertyToID("_CondensationDriftSpeed");
         private static readonly int ID_ScreenFrostStrength = Shader.PropertyToID("_ScreenFrostStrength");
+        private static readonly int ID_ChromaticAberration = Shader.PropertyToID("_ChromaticAberration");
+        private static readonly int ID_StaticNoise = Shader.PropertyToID("_StaticNoise");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -332,6 +343,7 @@ namespace NASAPunk.Visor
             UpdateCondensationState(deltaTime);
             UpdateFrostState(deltaTime);
             UpdateInterferenceState(deltaTime);
+            UpdateStructuralFatigueState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
         }
@@ -440,6 +452,7 @@ namespace NASAPunk.Visor
             }
 
             ResolveSurvivalSystemReference();
+            ResolveStructuralGridReference();
         }
 
         private bool NeedsAutoResolve()
@@ -448,12 +461,14 @@ namespace NASAPunk.Visor
             bool needsReferenceCamera = _syncToReferenceCamera && _referenceCamera == null;
             bool needsHudCamera = _projectionMode != ProjectionMode.Disabled && _hudCamera == null;
             bool needsSurvivalSystem = Application.isPlaying && _survivalSystem == null;
+            bool needsStructuralGrid = Application.isPlaying && _structuralGrid == null;
 
             return _visorRenderer == null
                 || needsHudCamera
                 || needsBaseStackCamera
                 || needsReferenceCamera
-                || needsSurvivalSystem;
+                || needsSurvivalSystem
+                || needsStructuralGrid;
         }
 
         private static float GetAutoResolveNow()
@@ -502,6 +517,8 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_CondensationEdgeExponent, _condensationEdgeExponent);
             _mpb.SetFloat(ID_CondensationDriftSpeed, _condensationDriftSpeed);
             _mpb.SetFloat(ID_ScreenFrostStrength, _screenFrostStrength);
+            _mpb.SetFloat(ID_ChromaticAberration, _structuralFatigueChromaticAberration);
+            _mpb.SetFloat(ID_StaticNoise, _structuralFatigueStaticNoise);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
         }
@@ -574,6 +591,16 @@ namespace NASAPunk.Visor
                 _survivalSystem = resolvedSystem;
 
             RefreshSurvivalSubscription(_survivalSystem);
+        }
+
+        private void ResolveStructuralGridReference()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
+            _submarineRuntimeContext = submarineRuntimeContext;
+            _structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
         }
 
         private void RefreshSurvivalSubscription(HectonSurvivalSystem target)
@@ -751,6 +778,36 @@ namespace NASAPunk.Visor
                 _interferenceDistortionIntensity = nextIntensity;
                 _materialPropertiesDirty = true;
             }
+        }
+
+        private void UpdateStructuralFatigueState(float deltaTime)
+        {
+            float fatigue01 = ResolveStructuralFatigue01();
+            float targetChromaticAberration = fatigue01 * Mathf.Max(0f, _structuralFatigueChromaticAberrationMax);
+            float targetStaticNoise = fatigue01 * Mathf.Max(0f, _structuralFatigueStaticNoiseMax);
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _structuralFatigueBlendSharpness) * deltaTime);
+
+            float nextChromaticAberration = Mathf.Lerp(_structuralFatigueChromaticAberration, targetChromaticAberration, blendT);
+            if (!Mathf.Approximately(nextChromaticAberration, _structuralFatigueChromaticAberration))
+            {
+                _structuralFatigueChromaticAberration = nextChromaticAberration;
+                _materialPropertiesDirty = true;
+            }
+
+            float nextStaticNoise = Mathf.Lerp(_structuralFatigueStaticNoise, targetStaticNoise, blendT);
+            if (!Mathf.Approximately(nextStaticNoise, _structuralFatigueStaticNoise))
+            {
+                _structuralFatigueStaticNoise = nextStaticNoise;
+                _materialPropertiesDirty = true;
+            }
+        }
+
+        private float ResolveStructuralFatigue01()
+        {
+            if (_structuralGrid != null && _structuralGrid.isActiveAndEnabled && _structuralGrid.IsReady)
+                return Mathf.Clamp01(_structuralGrid.FatiguePeakNormalized);
+
+            return 0f;
         }
 
         private void PrepareProjectionTexture()
@@ -1010,9 +1067,7 @@ namespace NASAPunk.Visor
                 RemoveHudCameraFromKnownStacks(stackBaseCamera, baseCameraData);
 
                 _hudCamera.clearFlags = CameraClearFlags.SolidColor;
-                Color color = _hudCamera.backgroundColor;
-                color.a = 0f;
-                _hudCamera.backgroundColor = color;
+                _hudCamera.backgroundColor = Color.clear;
                 _hudCamera.enabled = true;
                 return;
             }

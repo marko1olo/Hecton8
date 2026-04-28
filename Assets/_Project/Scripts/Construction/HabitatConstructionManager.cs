@@ -334,7 +334,8 @@ namespace Hecton8.Construction
                 if (removed <= 0 || _costItemBuffer[i] == null)
                     continue;
 
-                inventory.TryAddItem(_costItemBuffer[i], removed);
+                if (_costItemBuffer[i] != null)
+                    inventory.TryAddItem(Hecton.Localization.LocHash.Compute(_costItemBuffer[i].PersistentId), removed);
                 _costRemovedBuffer[i] = 0;
             }
         }

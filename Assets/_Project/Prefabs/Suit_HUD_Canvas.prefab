@@ -2495,6 +2495,7 @@ MonoBehaviour:
   gaugeIconSize: {x: 16, y: 16}
   gaugeValueOffsetY: 0
   gaugeLabelOffsetY: -34
+  threatChevronShader: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
   _appliedLayoutRevision: 0
 --- !u!114 &3896178095003698194
 MonoBehaviour:

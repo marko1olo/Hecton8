@@ -102,11 +102,14 @@ namespace Hecton8.Visor
         private bool _computeReady;
         private int _kernelIndex = -1;
         private float _fade01;
+        private IHectonOceanKinematics _oceanKinematics;
         private HectonSurvivalSystem _survivalSystem;
         private Transform _playerTransform;
         private Camera _gameplayCamera;
         private RenderTexture _causticsTexture;
         private Vector4 _worldRect;
+        [SerializeField] private float _debugWaveDisplacement;
+        [SerializeField] private Vector2 _debugWaveFlow;
 
         private void Awake()
         {
@@ -156,10 +159,11 @@ namespace Hecton8.Visor
 
             float waterLevel = ResolveWaterLevel();
             float timeValue = Time.unscaledTime;
+            Vector4 waveCoupling = ResolveWaveCoupling(waterLevel);
             causticsCompute.SetTexture(_kernelIndex, _CausticsOutputId, _causticsTexture);
             causticsCompute.SetVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
             causticsCompute.SetVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, 0f));
-            causticsCompute.SetVector(_CausticsSimulationParamsCId, new Vector4(_worldRect.x, _worldRect.y, _worldRect.z, _worldRect.w));
+            causticsCompute.SetVector(_CausticsSimulationParamsCId, waveCoupling);
             causticsCompute.SetVector(_CausticsTexelSizeId, new Vector4(1f / FieldResolution, 1f / FieldResolution, FieldResolution, FieldResolution));
 
             int dispatchCount = (int)math.ceil(FieldResolution / (float)ThreadGroupSize);
@@ -222,6 +226,9 @@ namespace Hecton8.Visor
                     ? GlobalRegistry.Player.PlayerCamera
                     : ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
             }
+
+            if (_oceanKinematics == null || !_oceanKinematics.IsAvailable)
+                _oceanKinematics = HectonOceanRegistry.ActiveProvider;
         }
 
         private void EnsureResources()
@@ -264,6 +271,33 @@ namespace Hecton8.Visor
             }
 
             _computeReady = _kernelIndex >= 0;
+        }
+
+        private Vector4 ResolveWaveCoupling(float waterLevel)
+        {
+            _debugWaveDisplacement = 0f;
+            _debugWaveFlow = Vector2.zero;
+
+            if (_playerTransform == null || _oceanKinematics == null || !_oceanKinematics.IsAvailable)
+                return Vector4.zero;
+
+            float3 samplePosition = _playerTransform.position;
+            samplePosition.y = waterLevel;
+            if (!_oceanKinematics.TrySampleWaveKinematics(
+                    samplePosition,
+                    minSpatialLength: 2f,
+                    out _,
+                    out _,
+                    out float3 surfaceVelocity,
+                    out float3 displacement))
+            {
+                return Vector4.zero;
+            }
+
+            _debugWaveDisplacement = displacement.y;
+            _debugWaveFlow = new Vector2(surfaceVelocity.x, surfaceVelocity.z);
+            float couplingPhase = displacement.y * 0.31f + math.length(surfaceVelocity.xz) * 0.08f;
+            return new Vector4(displacement.y, surfaceVelocity.x, surfaceVelocity.z, couplingPhase);
         }
 
         private void ReleaseResources()

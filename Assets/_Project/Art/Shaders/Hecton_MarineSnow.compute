@@ -15,6 +15,8 @@ struct Particle
 StructuredBuffer<Particle> _MarineSnowParticlesRead;
 RWStructuredBuffer<Particle> _MarineSnowParticlesWrite;
 StructuredBuffer<float2> _MarineSnowFlowField;
+Texture2D<float4> _HectonShallowWaterFieldRT;
+SamplerState sampler_HectonShallowWaterFieldRT;
 
 struct MarineSnowFrameData
 {
@@ -39,6 +41,9 @@ float4 _MarineSnowDriftParams;
 float4 _MarineSnowFlowParams;
 float4 _HectonFlowSynchronyParams;
 float4 _HectonFloatingOriginOffset;
+float4 _HectonShallowWaterFieldWorldRect;
+float4 _HectonShallowWaterFieldTexelSize;
+float _HectonShallowWaterFieldActive;
 
 #define THREAD_GROUP_SIZE 64
 #define PI 3.14159265
@@ -173,6 +178,26 @@ float3 ResolveFlowField(float3 positionWS)
     return float3(flowXZ.x, 0.0, flowXZ.y);
 }
 
+float2 DecodeShallowWaterVelocity(float2 encodedVelocity)
+{
+    return encodedVelocity * 2.0 - 1.0;
+}
+
+float4 EvaluateShallowWaterFieldData(float3 positionWS)
+{
+    if (_HectonShallowWaterFieldActive < 0.5)
+        return 0.0.xxxx;
+
+    float2 uv = float2(
+        (positionWS.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
+        (positionWS.z - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
+
+    if (any(uv < 0.0) || any(uv > 1.0))
+        return 0.0.xxxx;
+
+    return _HectonShallowWaterFieldRT.SampleLevel(sampler_HectonShallowWaterFieldRT, uv, 0.0);
+}
+
 Particle BuildRespawnParticle(uint particleIndex)
 {
     Particle particle = (Particle)0;
@@ -228,9 +253,15 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     particle.Vel.xz += wander;
 
     float3 flowSample = ResolveFlowField(particle.Pos);
-    float3 synchronizedFlow = flowSample * max(_HectonFlowSynchronyParams.x, 1.0) +
+    float4 shallowWaterData = EvaluateShallowWaterFieldData(particle.Pos);
+    float2 shallowWaterVelocity = DecodeShallowWaterVelocity(shallowWaterData.xy);
+    float shallowWaterDisplacement = saturate(shallowWaterData.z);
+    float3 shallowWaterFlow = float3(shallowWaterVelocity.x, 0.0, shallowWaterVelocity.y) *
+        (0.45 + shallowWaterDisplacement * 1.35);
+    float3 synchronizedFlow = (flowSample + shallowWaterFlow) * max(_HectonFlowSynchronyParams.x, 1.0) +
         ResolveFlowSynchronyOffset(particle.Pos, flowSample);
     particle.Vel += (synchronizedFlow - particle.Vel) * (_MarineSnowFlowParams.x + densityScale * _MarineSnowFlowParams.y) * dt;
+    particle.Vel.y += shallowWaterDisplacement * 0.025 * dt;
 
     float3 flowDirN = SafeNormalize(synchronizedFlow);
     if (dot(flowDirN, flowDirN) > EPSILON)

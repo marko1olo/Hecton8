@@ -419,7 +419,7 @@ namespace Hecton8.Gameplay
             }
 
             // Try to add to player inventory
-            if (!playerInventory.TryAddItem(item, 1))
+            if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[StorageCrate] Player inventory full. Cannot take {item.itemName}.");

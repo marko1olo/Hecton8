@@ -295,10 +295,9 @@ namespace Hecton8.Quest
             if (evt == null)
                 return;
 
-            string itemId = evt.Item != null ? evt.Item.PersistentId : string.Empty;
-            uint payloadHash = string.IsNullOrWhiteSpace(itemId)
-                ? 0u
-                : unchecked((uint)LocHash.Compute(itemId));
+            uint payloadHash = evt.ItemHashId != 0
+                ? unchecked((uint)evt.ItemHashId)
+                : 0u;
 
             EvaluateSignal(new QuestSignal(QuestSignalKind.ItemCollected, payloadHash, evt.Quantity));
         }

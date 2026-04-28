@@ -164,6 +164,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float wetness = saturate(_HectonVisorFluidWetness);
                 float hullStress = saturate(_HectonVisorFluidHullStress);
                 float intensity = saturate(_HectonVisorFluidIntensity);
+                float glitchAmount = saturate((hullStress - 0.52) * 2.08);
                 float2 flowDirection = float2(
                     _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength,
                     -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength);
@@ -173,6 +174,19 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
                 float2 refractedUV = saturate(input.screenUV + ComputeRefractionOffset(input.screenUV, combinedMask, wetness, hullStress));
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, refractedUV);
+                if (glitchAmount > 0.001)
+                {
+                    float2 chromaOffset = float2(
+                        (Fbm(input.screenUV * float2(91.0, 47.0) + _Time.y * 3.2) - 0.5) * 0.0035 * glitchAmount,
+                        (ValueNoise(input.screenUV * float2(53.0, 29.0) - _Time.y * 2.4) - 0.5) * 0.0018 * glitchAmount);
+                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV + chromaOffset)).r;
+                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV - chromaOffset)).b;
+                    color.r = red;
+                    color.b = blue;
+
+                    float staticNoise = saturate(ValueNoise(input.screenUV * _ScreenParams.xy * 0.08 + _Time.y * 18.0) - 0.68) * glitchAmount;
+                    color.rgb += staticNoise * half3(0.055, 0.08, 0.1);
+                }
                 half sheen = (half)saturate(combinedMask * (0.08 + wetness * 0.06 + hullStress * 0.05));
                 color.rgb = max(color.rgb, color.rgb + sheen * half3(0.018, 0.025, 0.03));
                 return color;

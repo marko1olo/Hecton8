@@ -21,8 +21,6 @@
         "Crest",
         "WaveHarmonic.Crest",
         "WaveHarmonic.Crest.Shared",
-        "ShapesRuntime",
-        "EasySave3",
         "VolumetricLightBeam"
     ],
     "includePlatforms": [],

@@ -12,9 +12,11 @@ namespace Hecton8.Audio
         private NativeArray<int> _sharedState;
         private int _capacityFrames;
         private int _capacityMask;
+        private int _sourceChannels = 1;
 
         public bool IsCreated => _frames.IsCreated && _sharedState.IsCreated;
         public int CapacityFrames => _capacityFrames;
+        public int SourceChannels => _sourceChannels;
 
         public int BufferedFrames
         {
@@ -48,20 +50,22 @@ namespace Hecton8.Audio
             writableFrames = _capacityFrames - bufferedFrames - 1;
         }
 
-        public void Initialize(int capacityFrames)
+        public void Initialize(int capacityFrames, int sourceChannels = 1)
         {
             int resolvedCapacity = math.max(256, NextPowerOfTwo(capacityFrames));
-            if (IsCreated && _frames.Length == resolvedCapacity)
+            int resolvedChannels = math.clamp(sourceChannels, 1, 2);
+            if (IsCreated && _capacityFrames == resolvedCapacity && _sourceChannels == resolvedChannels)
             {
                 Clear();
                 return;
             }
 
             Dispose();
-            _frames = new NativeArray<float>(resolvedCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacityFrames] - lock-free procedural audio frame ring buffer storage - owner: AudioFrameSpscRingBuffer
+            _frames = new NativeArray<float>(resolvedCapacity * resolvedChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacityFrames*channels] - lock-free procedural audio frame ring buffer storage - owner: AudioFrameSpscRingBuffer
             _sharedState = new NativeArray<int>(NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[6] - shared SPSC read/write state and native bridge guards - owner: AudioFrameSpscRingBuffer
             _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
+            _sourceChannels = resolvedChannels;
             Clear();
         }
 
@@ -77,10 +81,19 @@ namespace Hecton8.Audio
 
         public bool TryWrite(NativeArray<float> source, int frameCount)
         {
+            return TryWriteInterleaved(source, frameCount, 1);
+        }
+
+        public bool TryWriteInterleaved(NativeArray<float> source, int frameCount, int sourceChannels)
+        {
             if (!IsCreated || !source.IsCreated || frameCount <= 0)
                 return false;
 
-            int safeFrameCount = math.min(frameCount, source.Length);
+            int safeChannels = math.clamp(sourceChannels, 1, 2);
+            if (safeChannels != _sourceChannels)
+                return false;
+
+            int safeFrameCount = math.min(frameCount, source.Length / safeChannels);
             if (safeFrameCount <= 0)
                 return false;
 
@@ -92,7 +105,12 @@ namespace Hecton8.Audio
                 return false;
 
             for (int i = 0; i < safeFrameCount; i++)
-                _frames[(writeIndex + i) & _capacityMask] = source[i];
+            {
+                int frameWriteIndex = ((writeIndex + i) & _capacityMask) * _sourceChannels;
+                int frameSourceIndex = i * safeChannels;
+                for (int channelIndex = 0; channelIndex < safeChannels; channelIndex++)
+                    _frames[frameWriteIndex + channelIndex] = source[frameSourceIndex + channelIndex];
+            }
 
             WriteSharedIndex(
                 NativeAudioKernelRingBufferDescriptor.WriteIndexSlot,
@@ -119,13 +137,36 @@ namespace Hecton8.Audio
             int sampleCursor = 0;
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
-                float sample = frameIndex < framesToConsume
-                    ? _frames[(readIndex + frameIndex) & _capacityMask]
-                    : 0f;
-
-                for (int channelIndex = 0; channelIndex < channels; channelIndex++)
+                float sampleLeft = 0f;
+                float sampleRight = 0f;
+                if (frameIndex < framesToConsume)
                 {
-                    float mixedSample = destination[sampleCursor] + sample;
+                    int frameReadIndex = ((readIndex + frameIndex) & _capacityMask) * _sourceChannels;
+                    sampleLeft = _frames[frameReadIndex];
+                    sampleRight = _sourceChannels > 1 ? _frames[frameReadIndex + 1] : sampleLeft;
+                }
+
+                if (channels <= 1)
+                {
+                    float monoSample = (sampleLeft + sampleRight) * 0.5f;
+                    float mixedSample = destination[sampleCursor] + monoSample;
+                    destination[sampleCursor] = math.clamp(mixedSample, -1f, 1f);
+                    sampleCursor++;
+                    continue;
+                }
+
+                float mixedLeft = destination[sampleCursor] + sampleLeft;
+                destination[sampleCursor] = math.clamp(mixedLeft, -1f, 1f);
+                sampleCursor++;
+
+                float mixedRight = destination[sampleCursor] + sampleRight;
+                destination[sampleCursor] = math.clamp(mixedRight, -1f, 1f);
+                sampleCursor++;
+
+                float overflowSample = (sampleLeft + sampleRight) * 0.5f;
+                for (int channelIndex = 2; channelIndex < channels; channelIndex++)
+                {
+                    float mixedSample = destination[sampleCursor] + overflowSample;
                     destination[sampleCursor] = math.clamp(mixedSample, -1f, 1f);
                     sampleCursor++;
                 }
@@ -182,6 +223,7 @@ namespace Hecton8.Audio
             _sharedState = default;
             _capacityFrames = 0;
             _capacityMask = 0;
+            _sourceChannels = 1;
         }
 
         private int ReadSharedIndex(int slot)

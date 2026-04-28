@@ -123,7 +123,7 @@ namespace Hecton8.AI
         public int ShouldAttack;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
     internal struct PackedCognitionOutput
     {
         public float3 DesiredDirection;
@@ -134,6 +134,8 @@ namespace Hecton8.AI
         public uint StateMask;
         public int LegacyState;
         public uint OutputFlags;
+        public uint Reserved0;
+        public uint Reserved1;
     }
 
     [System.Flags]
@@ -245,6 +247,7 @@ namespace Hecton8.AI
         private const int EvaluationJobBatchSize = 32;
         private const int UnclaimedBoidSlot = -1;
         private const byte SolidThreatVoxel = 255;
+        private const byte SignedDistanceSolidThreshold = 128;
         private const float QuantizedByteScale = 255f;
         private const float DdaEpsilon = 0.000001f;
 
@@ -271,6 +274,8 @@ namespace Hecton8.AI
         private static int3 _threatVoxelDimensions;
         private static float3 _threatVoxelOrigin;
         private static float3 _threatVoxelCellSize;
+        private static byte _threatVoxelSolidThreshold = SolidThreatVoxel;
+        private static bool _threatVoxelUsesSignedDistanceEncoding;
         private static JobHandle _scheduledSwarmHandle;
         private static JobHandle _scheduledEvaluationHandle;
         private static bool _evaluationScheduled;
@@ -592,7 +597,9 @@ namespace Hecton8.AI
                 ThreatVoxelGrid = _threatVoxelGrid,
                 ThreatVoxelDimensions = _threatVoxelDimensions,
                 ThreatVoxelOrigin = _threatVoxelOrigin,
-                ThreatVoxelCellSize = _threatVoxelCellSize
+                ThreatVoxelCellSize = _threatVoxelCellSize,
+                ThreatVoxelSolidThreshold = _threatVoxelSolidThreshold,
+                ThreatVoxelUsesSignedDistanceEncoding = _threatVoxelUsesSignedDistanceEncoding ? 1 : 0
             };
 
             _scheduledEvaluationHandle = job.Schedule(_activeSlots.Length, EvaluationJobBatchSize, _scheduledSwarmHandle);
@@ -665,6 +672,8 @@ namespace Hecton8.AI
             _threatVoxelDimensions = int3.zero;
             _threatVoxelOrigin = float3.zero;
             _threatVoxelCellSize = new float3(1f, 1f, 1f);
+            _threatVoxelSolidThreshold = SolidThreatVoxel;
+            _threatVoxelUsesSignedDistanceEncoding = false;
             _scheduledSwarmHandle = default;
             _scheduledEvaluationHandle = default;
             _evaluationScheduled = false;
@@ -765,6 +774,21 @@ namespace Hecton8.AI
                 _threatVoxelDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
                 _threatVoxelOrigin = new float3(gridOrigin.x, gridOrigin.y, gridOrigin.z);
                 _threatVoxelCellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z);
+                _threatVoxelSolidThreshold = SolidThreatVoxel;
+                _threatVoxelUsesSignedDistanceEncoding = false;
+                return;
+            }
+
+            HectonCaveVoxelLightingVolume caveLightingVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            if (caveLightingVolume != null &&
+                caveLightingVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte> signedDistanceVoxels, out Vector3Int sdfDimensions, out Vector3 sdfOrigin, out Vector3 sdfCellSize))
+            {
+                _threatVoxelGrid = signedDistanceVoxels;
+                _threatVoxelDimensions = new int3(sdfDimensions.x, sdfDimensions.y, sdfDimensions.z);
+                _threatVoxelOrigin = new float3(sdfOrigin.x, sdfOrigin.y, sdfOrigin.z);
+                _threatVoxelCellSize = new float3(sdfCellSize.x, sdfCellSize.y, sdfCellSize.z);
+                _threatVoxelSolidThreshold = SignedDistanceSolidThreshold;
+                _threatVoxelUsesSignedDistanceEncoding = true;
                 return;
             }
 
@@ -772,6 +796,8 @@ namespace Hecton8.AI
             _threatVoxelDimensions = int3.zero;
             _threatVoxelOrigin = float3.zero;
             _threatVoxelCellSize = new float3(1f, 1f, 1f);
+            _threatVoxelSolidThreshold = SolidThreatVoxel;
+            _threatVoxelUsesSignedDistanceEncoding = false;
         }
 
         private static bool ContainsActiveSlot(int slot)
@@ -1143,6 +1169,8 @@ namespace Hecton8.AI
             public int3 ThreatVoxelDimensions;
             public float3 ThreatVoxelOrigin;
             public float3 ThreatVoxelCellSize;
+            public byte ThreatVoxelSolidThreshold;
+            public int ThreatVoxelUsesSignedDistanceEncoding;
 
             public void Execute(int index)
             {
@@ -1853,12 +1881,12 @@ namespace Hecton8.AI
                 if (!TryWorldToVoxel(end, out int3 endVoxel))
                     return true;
 
-                if (SampleThreatVoxel(endVoxel) >= SolidThreatVoxel)
+                if (IsThreatVoxelSolid(SampleThreatVoxel(endVoxel)))
                     return false;
 
                 float3 midpoint = math.lerp(start, end, 0.5f);
                 if (TryWorldToVoxel(midpoint, out int3 midpointVoxel) &&
-                    SampleThreatVoxel(midpointVoxel) >= SolidThreatVoxel)
+                    IsThreatVoxelSolid(SampleThreatVoxel(midpointVoxel)))
                 {
                     return false;
                 }
@@ -1903,7 +1931,7 @@ namespace Hecton8.AI
 
                 for (int i = 0; i < maxSteps; i++)
                 {
-                    if (SampleThreatVoxel(currentVoxel) >= SolidThreatVoxel)
+                    if (IsThreatVoxelSolid(SampleThreatVoxel(currentVoxel)))
                         return false;
 
                     if (math.all(currentVoxel == targetVoxel))
@@ -1959,6 +1987,14 @@ namespace Hecton8.AI
                     return 0;
 
                 return ThreatVoxelGrid[flatIndex];
+            }
+
+            private bool IsThreatVoxelSolid(byte sample)
+            {
+                if (ThreatVoxelUsesSignedDistanceEncoding != 0)
+                    return sample < ThreatVoxelSolidThreshold;
+
+                return sample >= ThreatVoxelSolidThreshold;
             }
 
             private static int FlattenThreatVoxelIndex(int3 voxel, int3 dimensions)

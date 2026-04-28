@@ -1,0 +1,1024 @@
+﻿diff --git a/Assets/_Project/Scripts/BaseModule.cs b/Assets/_Project/Scripts/BaseModule.cs
+index fa55feba..a491ca85 100644
+--- a/Assets/_Project/Scripts/BaseModule.cs
++++ b/Assets/_Project/Scripts/BaseModule.cs
+@@ -65,6 +65,7 @@ using Hecton8.Inventory;
+ using Hecton8.Items;
+ using Hecton8.Physics;
+ using Hecton8.Power;
++using Hecton8.SaveSystem;
+ using Hecton8.UI;
+ using Hecton8.World;
+ using UnityEngine;
+@@ -845,13 +846,19 @@ namespace Hecton8.Gameplay
+                         bool addedToInventory = false;
+ 
+                         // ── Попытка добавить в инвентарь ──
+-                        if (playerInventory != null && grid != null && playerInventory.TryAddItem(cost.item, 1))
++                        int itemHashId = cost.item != null
++                            ? Hecton.Localization.LocHash.Compute(cost.item.PersistentId)
++                            : 0;
++                        if (playerInventory != null &&
++                            grid != null &&
++                            itemHashId != 0 &&
++                            playerInventory.TryAddItem(itemHashId, 1))
+                             addedToInventory = true;
+ 
+                         // ── Fallback: спавн в мир ──
+                         if (!addedToInventory)
+                         {
+-                            SpawnWorldItem(cost.item, dropPosition, pool);
++                            SpawnWorldItem(itemHashId, dropPosition, pool, playerInventory);
+ 
+                             // Смещаем позицию для следующего предмета,
+                             // чтобы они не стакались в одной точке
+@@ -895,26 +902,28 @@ namespace Hecton8.Gameplay
+         }
+ 
+         internal void DropItemQuantityToInventoryOrWorld(
+-            ItemData itemData,
++            int itemHashId,
+             int quantity,
+             PlayerInventory playerInventory,
+             ObjectPoolManager pool,
+             ref Vector3 dropPosition)
+         {
+-            if (itemData == null || quantity <= 0)
++            if (itemHashId == 0 || quantity <= 0)
+                 return;
+ 
+             InventoryGrid targetGrid = playerInventory != null ? playerInventory.Grid : null;
+             for (int i = 0; i < quantity; i++)
+             {
+                 bool addedToInventory = false;
+-                if (playerInventory != null && targetGrid != null && playerInventory.TryAddItem(itemData, 1))
++                if (playerInventory != null &&
++                    targetGrid != null &&
++                    playerInventory.TryAddItem(itemHashId, 1))
+                     addedToInventory = true;
+ 
+                 if (addedToInventory)
+                     continue;
+ 
+-                SpawnWorldItem(itemData, dropPosition, pool);
++                SpawnWorldItem(itemHashId, dropPosition, pool, playerInventory);
+                 dropPosition.x += 0.3f;
+             }
+         }
+@@ -928,26 +937,30 @@ namespace Hecton8.Gameplay
+         ///
+         /// Паттерн:
+         ///   1. Если worldItemPrefab назначен → Spawn через ObjectPoolManager.
+-        ///   2. Спавненный HectonItem инициализируется данными ItemData.
++        ///   2. Спавненный HectonItem инициализируется по hashId через ItemCatalog.
+         ///   3. Если worldItemPrefab == null → ресурс потерян (с Warning).
+         ///
+         /// Разделение ответственностей:
+         ///   BaseModule НЕ знает про конкретный визуал предмета.
+         ///   worldItemPrefab — generic контейнер с HectonItem + Rigidbody.
+-        ///   ItemData на HectonItem устанавливается программно.
++        ///   Каталожные данные на HectonItem устанавливаются программно.
+         ///
+         /// Будущее: если нужна визуальная дифференциация (разные модели
+         /// для титана vs стекла), worldItemPrefab может быть заменён
+-        /// на ItemData.worldPrefab per-resource.
++        /// на per-resource world prefab, если появится отдельный визуальный владелец.
+         /// </summary>
+-        private void SpawnWorldItem(ItemData itemData, Vector3 position, ObjectPoolManager pool)
++        private void SpawnWorldItem(int itemHashId, Vector3 position, ObjectPoolManager pool, PlayerInventory playerInventory)
+         {
+-            if (itemData == null)
++            if (itemHashId == 0)
+                 return;
++
++            ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);
++            if (itemCatalog == null)
++                return;
++
+             PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+             if (persistentWorldRegistry != null &&
+-                itemData.worldPrefab != null &&
+-                persistentWorldRegistry.TryRegisterDroppedItem(itemData, 1, position))
++                persistentWorldRegistry.TryRegisterDroppedItem(itemHashId, itemCatalog, 1, position))
+             {
+                 return;
+             }
+@@ -957,7 +970,7 @@ namespace Hecton8.Gameplay
+ #if UNITY_EDITOR
+                 Debug.LogWarning(
+                     $"[BaseModule] worldItemPrefab not assigned on '{gameObject.name}'. " +
+-                    $"Resource '{itemData.itemName}' dropped on the ground but has no world prefab. Lost.",
++                    $"Resource hash '{itemHashId}' dropped on the ground but has no world prefab. Lost.",
+                     this);
+ #endif
+                 return;
+@@ -968,7 +981,7 @@ namespace Hecton8.Gameplay
+ #if UNITY_EDITOR
+                 Debug.LogWarning(
+                     "[BaseModule] ObjectPoolManager not available. " +
+-                    $"Resource '{itemData.itemName}' lost.");
++                    $"Resource hash '{itemHashId}' lost.");
+ #endif
+                 return;
+             }
+@@ -979,20 +992,27 @@ namespace Hecton8.Gameplay
+                 return;
+ 
+             // ── Инициализация HectonItem данными ──
+-            // HectonItem на worldItemPrefab должен иметь сериализованное поле itemData.
+-            // Однако itemData — [SerializeField] private. Для программной установки
+-            // используем рефлексию-бесплатный подход: HectonItem.SetItemData(ItemData, int).
+-            // Если такой метод не существует — предмет будет иметь пустые данные.
++            // HectonItem на worldItemPrefab инициализируется hashId через ItemCatalog.
++            // Базовый модуль не тянет asset-ссылки в логику возврата ресурсов.
+             //
+             // АРХИТЕКТУРНОЕ РЕШЕНИЕ:
+-            // Мы добавляем public метод SetItemData в HectonItem (см. комментарий ниже).
++            // Визуальный/world seam остаётся внутри HectonItem.
+             // Это чище, чем рефлексия, и сохраняет Zero-GC.
+             if (itemGO.TryGetComponent(out HectonItem hectonItem))
+             {
+-                hectonItem.SetItemData(itemData, 1);
++                hectonItem.SetItemByHash(itemCatalog, itemHashId, 1);
+             }
+         }
+ 
++        private static ItemCatalog ResolveItemCatalog(PlayerInventory playerInventory)
++        {
++            if (playerInventory != null && playerInventory.ItemCatalog != null)
++                return playerInventory.ItemCatalog;
++
++            PlayerInventory inventoryInstance = PlayerInventory.Instance;
++            return inventoryInstance != null ? inventoryInstance.ItemCatalog : null;
++        }
++
+         // ══════════════════════════════════════════════════════════
+         //  PRIVATE — CORE STATE LOGIC
+         // ══════════════════════════════════════════════════════════
+@@ -1012,9 +1032,9 @@ namespace Hecton8.Gameplay
+         private void EjectHostedModuleContents(PlayerInventory playerInventory, ObjectPoolManager pool, ref Vector3 dropPosition)
+         {
+             if (TryGetComponent(out MaintenanceStationModule maintenanceStation) &&
+-                maintenanceStation.TryExtractSlottedToolForDeconstruct(out ItemData slottedTool))
++                maintenanceStation.TryExtractSlottedToolHashForDeconstruct(out int slottedToolHashId))
+             {
+-                DropItemQuantityToInventoryOrWorld(slottedTool, 1, playerInventory, pool, ref dropPosition);
++                DropItemQuantityToInventoryOrWorld(slottedToolHashId, 1, playerInventory, pool, ref dropPosition);
+             }
+ 
+             if (TryGetComponent(out DeepDrillModule drillModule))
+@@ -1024,9 +1044,9 @@ namespace Hecton8.Gameplay
+                 sorterModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);
+ 
+             if (TryGetComponent(out LogisticsPipeNode pipeNode) &&
+-                pipeNode.TryExtractInFlightCargoForDeconstruct(out ItemData pipeItem, out int pipeAmount))
++                pipeNode.TryExtractInFlightCargoHashForDeconstruct(out int pipeItemHashId, out int pipeAmount))
+             {
+-                DropItemQuantityToInventoryOrWorld(pipeItem, pipeAmount, playerInventory, pool, ref dropPosition);
++                DropItemQuantityToInventoryOrWorld(pipeItemHashId, pipeAmount, playerInventory, pool, ref dropPosition);
+             }
+         }
+ 
+diff --git a/Assets/_Project/Scripts/Construction/DeepDrillModule.cs b/Assets/_Project/Scripts/Construction/DeepDrillModule.cs
+index 689b29a6..279a1fdc 100644
+--- a/Assets/_Project/Scripts/Construction/DeepDrillModule.cs
++++ b/Assets/_Project/Scripts/Construction/DeepDrillModule.cs
+@@ -243,7 +243,10 @@ namespace Hecton8.Construction
+             if (owner == null || _bufferedItem == null || _bufferedUnits <= 0)
+                 return;
+ 
+-            owner.DropItemQuantityToInventoryOrWorld(_bufferedItem, _bufferedUnits, inventory, pool, ref dropPosition);
++            int itemHashId = Hecton.Localization.LocHash.Compute(_bufferedItem.PersistentId);
++            if (itemHashId != 0)
++                owner.DropItemQuantityToInventoryOrWorld(itemHashId, _bufferedUnits, inventory, pool, ref dropPosition);
++
+             ClearBufferedOutputState();
+         }
+ 
+diff --git a/Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs b/Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs
+index 4f3762b7..583fe62f 100644
+--- a/Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs
++++ b/Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs
+@@ -1,9 +1,11 @@
+ using Hecton8.Core;
+ using Hecton8.Gameplay;
+ using Hecton8.Items;
++using Hecton8.Modding;
+ using Hecton8.Power;
+ using Unity.Mathematics;
+ using Hecton8.SaveSystem;
++using Hecton8.World;
+ using UnityEngine;
+ 
+ namespace Hecton8.Construction
+@@ -49,6 +51,18 @@ namespace Hecton8.Construction
+         [Tooltip("Transit speed in meters per second for staged cargo travelling through the pipe.")]
+         [SerializeField, Range(0.5f, 50f)] private float transitSpeedMetersPerSecond = 8f;
+ 
++        [Tooltip("Logical transport capacity used by the overpressure solver. Sustained blocked deliveries beyond this budget rupture the pipe.")]
++        [SerializeField, Range(1, 8)] private int maxCapacityUnits = 1;
++
++        [Tooltip("Stress added each SlowTick when the payload reaches the destination but the downstream crate still cannot accept it.")]
++        [SerializeField, Range(0.1f, 8f)] private float blockedDeliveryStress = 1f;
++
++        [Tooltip("Stress removed during healthy SlowTicks with no downstream blockage.")]
++        [SerializeField, Range(0f, 4f)] private float stressRecoveryPerTick = 0.25f;
++
++        [Tooltip("Pipe ruptures once accumulated overpressure stress crosses this threshold.")]
++        [SerializeField, Range(0.1f, 16f)] private float ruptureStressThreshold = 3f;
++
+         [Header("── Power ──────────────────────────────────")]
+         [Tooltip("Continuous draw while the pipe is actively moving or staging a cargo packet.")]
+         [SerializeField, Range(0f, 100f)] private float activePowerDraw = 8f;
+@@ -59,8 +73,11 @@ namespace Hecton8.Construction
+         [Header("── Diagnostics ───────────────────────────")]
+         [SerializeField] private bool _debugHasPower = true;
+         [SerializeField] private string _debugInFlightItemId;
++        [SerializeField] private int _debugInFlightItemHashId;
+         [SerializeField] private float _debugTransitRemaining;
+         [SerializeField] private int _debugReservationId;
++        [SerializeField] private float _debugOverpressureStress;
++        [SerializeField] private bool _debugRuptured;
+ 
+         private PowerNode _powerNode;
+         private Transform _cachedTransform;
+@@ -72,7 +89,9 @@ namespace Hecton8.Construction
+         private int _activeReservationId;
+         private int _pipeLinkId;
+         private ItemData _inFlightItem;
++        private int _inFlightItemHashId;
+         private float _transitRemaining;
++        private float _overpressureStress;
+         private float _cachedPathDistanceMeters;
+         private Vector3 _cachedSourcePosition;
+         private Vector3 _cachedDestinationPosition;
+@@ -82,6 +101,8 @@ namespace Hecton8.Construction
+         public float PowerRating => _inFlightItem != null ? -activePowerDraw : 0f;
+         public int PowerPriority => powerPriority;
+         public bool HasPower => _hasPower;
++        internal StorageCrate SourceCrate => sourceCrate;
++        internal StorageCrate DestinationCrate => destinationCrate;
+ 
+         private void Awake()
+         {
+@@ -117,6 +138,16 @@ namespace Hecton8.Construction
+             _hasPower = true;
+             _debugHasPower = true;
+             _exportTimer = 0f;
++            _overpressureStress = 0f;
++            _debugOverpressureStress = 0f;
++            _debugRuptured = false;
++            _inFlightItemHashId = 0;
++            _debugInFlightItemHashId = 0;
++            if (_powerNode != null)
++            {
++                _powerNode.SetRuptured(false);
++                _powerNode.SetShortCircuited(false);
++            }
+             TryRegister();
+             RefreshEndpointCache(true);
+             RefreshCableVisuals(true);
+@@ -128,30 +159,23 @@ namespace Hecton8.Construction
+             _hasPower = true;
+             _debugHasPower = true;
+             _exportTimer = 0f;
++            _overpressureStress = 0f;
++            _debugOverpressureStress = 0f;
++            _debugRuptured = false;
++            _inFlightItemHashId = 0;
++            _debugInFlightItemHashId = 0;
++            if (_powerNode != null)
++            {
++                _powerNode.SetRuptured(false);
++                _powerNode.SetShortCircuited(false);
++            }
+             TryUnregister();
+             ClearCableVisuals();
+         }
+ 
+         public void SlowTick()
+         {
+-            RefreshEndpointCache(false);
+-            RefreshCableVisuals(false);
+-
+-            if (_inFlightItem != null)
+-            {
+-                AdvanceInFlightTransfer();
+-                return;
+-            }
+-
+-            if (!_hasPower || sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
+-                return;
+-
+-            _exportTimer += SlowTickDeltaTime;
+-            if (_exportTimer < exportIntervalSeconds)
+-                return;
+-
+-            _exportTimer = 0f;
+-            TryStageTransfer();
++            LogisticsPipeTransportScheduler.TryRunSlowTick(this);
+         }
+ 
+         public void OnPowerStatusChanged(bool hasPower)
+@@ -195,16 +219,18 @@ namespace Hecton8.Construction
+                 return;
+ 
+             _inFlightItem = item;
++            _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+             _transitRemaining = math.max(0f, ResolveTransitDuration() * (1f - math.saturate(dto.pipeTransitProgress)));
+             _debugInFlightItemId = item.PersistentId;
++            _debugInFlightItemHashId = _inFlightItemHashId;
+             _debugTransitRemaining = _transitRemaining;
+         }
+ 
+-        internal bool TryExtractInFlightCargoForDeconstruct(out ItemData item, out int amount)
++        internal bool TryExtractInFlightCargoHashForDeconstruct(out int itemHashId, out int amount)
+         {
+-            item = _inFlightItem;
+-            amount = item != null ? 1 : 0;
+-            if (item == null)
++            itemHashId = _inFlightItemHashId;
++            amount = itemHashId != 0 ? 1 : 0;
++            if (itemHashId == 0)
+                 return false;
+ 
+             if (_activeReservationId > 0)
+@@ -220,6 +246,7 @@ namespace Hecton8.Construction
+                 return;
+ 
+             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
++            LogisticsPipeTransportScheduler.Register(this);
+             _registered = true;
+         }
+ 
+@@ -229,6 +256,7 @@ namespace Hecton8.Construction
+                 return;
+ 
+             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
++            LogisticsPipeTransportScheduler.Unregister(this);
+             _registered = false;
+         }
+ 
+@@ -249,8 +277,10 @@ namespace Hecton8.Construction
+ 
+             _activeReservationId = reservationId;
+             _inFlightItem = item;
++            _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+             _transitRemaining = ResolveTransitDuration();
+             _debugInFlightItemId = item.PersistentId;
++            _debugInFlightItemHashId = _inFlightItemHashId;
+             _debugTransitRemaining = _transitRemaining;
+             _debugReservationId = reservationId;
+             NotifyGridBalanceChanged();
+@@ -276,11 +306,13 @@ namespace Hecton8.Construction
+             if (destinationCrate == null || !destinationCrate.HasAutomatedCapacity() || !destinationCrate.TryAddAutomatedItem(_inFlightItem))
+             {
+                 _debugTransitRemaining = 0f;
++                AccumulateOverpressureStress();
+                 return;
+             }
+ 
+             if (_activeReservationId > 0)
+                 sourceCrate?.CommitReservation(_activeReservationId);
++            RecoverOverpressureStress(blockageResolved: true);
+             ClearInFlightState();
+             NotifyGridBalanceChanged();
+         }
+@@ -297,12 +329,44 @@ namespace Hecton8.Construction
+         {
+             _activeReservationId = 0;
+             _inFlightItem = null;
++            _inFlightItemHashId = 0;
+             _transitRemaining = 0f;
+             _debugInFlightItemId = string.Empty;
++            _debugInFlightItemHashId = 0;
+             _debugTransitRemaining = 0f;
+             _debugReservationId = 0;
+         }
+ 
++        internal void SchedulerRefresh()
++        {
++            RefreshEndpointCache(false);
++            RefreshCableVisuals(false);
++        }
++
++        internal void ExecuteCoordinatedSlowTick()
++        {
++            if (IsRuptured())
++                return;
++
++            RecoverOverpressureStress(blockageResolved: false);
++
++            if (_inFlightItem != null)
++            {
++                AdvanceInFlightTransfer();
++                return;
++            }
++
++            if (!_hasPower || sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
++                return;
++
++            _exportTimer += SlowTickDeltaTime;
++            if (_exportTimer < exportIntervalSeconds)
++                return;
++
++            _exportTimer = 0f;
++            TryStageTransfer();
++        }
++
+         private float ResolveTransitDuration()
+         {
+             RefreshEndpointCache(false);
+@@ -372,6 +436,68 @@ namespace Hecton8.Construction
+                 grid.MarkDirty();
+         }
+ 
++        private bool IsRuptured()
++        {
++            return _debugRuptured || (_powerNode != null && _powerNode.IsRuptured);
++        }
++
++        private void RecoverOverpressureStress(bool blockageResolved)
++        {
++            if (_overpressureStress <= 0f)
++                return;
++
++            float recovery = blockageResolved
++                ? math.max(stressRecoveryPerTick, blockedDeliveryStress)
++                : math.max(0f, stressRecoveryPerTick);
++            if (recovery <= 0f)
++                return;
++
++            _overpressureStress = math.max(0f, _overpressureStress - recovery);
++            _debugOverpressureStress = _overpressureStress;
++        }
++
++        private void AccumulateOverpressureStress()
++        {
++            float capacityScale = math.max(1, maxCapacityUnits);
++            _overpressureStress += math.max(0.1f, blockedDeliveryStress) / capacityScale;
++            _debugOverpressureStress = _overpressureStress;
++            if (_overpressureStress < math.max(0.1f, ruptureStressThreshold))
++                return;
++
++            TriggerOverpressureRupture();
++        }
++
++        private void TriggerOverpressureRupture()
++        {
++            if (IsRuptured())
++                return;
++
++            _debugRuptured = true;
++
++            if (_powerNode != null)
++            {
++                _powerNode.SetRuptured(true);
++                _powerNode.SetShortCircuited(true);
++            }
++
++            Vector3 rupturePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
++            int leakedItemHashId = _inFlightItemHashId;
++            HectonEventBus.Publish(new LogisticsPipeOverpressureLeakEvent(
++                _pipeLinkId,
++                rupturePosition,
++                _overpressureStress,
++                leakedItemHashId));
++
++            if (AbyssalFluidDecalManager.Instance != null)
++            {
++                float radiusScale = math.saturate(_overpressureStress / math.max(0.1f, ruptureStressThreshold));
++                AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(rupturePosition, radiusScale);
++            }
++
++            RollbackInFlightTransfer();
++            NotifyGridBalanceChanged();
++        }
++
+         private static int GetNextReservationId()
+         {
+             int nextId = s_NextReservationId++;
+diff --git a/Assets/_Project/Scripts/Construction/LogisticsSorterModule.cs b/Assets/_Project/Scripts/Construction/LogisticsSorterModule.cs
+index ed136672..9e52d124 100644
+--- a/Assets/_Project/Scripts/Construction/LogisticsSorterModule.cs
++++ b/Assets/_Project/Scripts/Construction/LogisticsSorterModule.cs
+@@ -223,7 +223,11 @@ namespace Hecton8.Construction
+                 if (item == null || quantity <= 0)
+                     continue;
+ 
+-                owner.DropItemQuantityToInventoryOrWorld(item, quantity, inventory, pool, ref dropPosition);
++                int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
++                if (itemHashId == 0)
++                    continue;
++
++                owner.DropItemQuantityToInventoryOrWorld(itemHashId, quantity, inventory, pool, ref dropPosition);
+             }
+ 
+             ClearBufferedState();
+diff --git a/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs b/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs
+index af6d7102..f660f559 100644
+--- a/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs
++++ b/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs
+@@ -275,7 +275,7 @@ namespace Hecton8.Construction
+                 playerToolManager.Holster();
+             }
+ 
+-            if (!inventory.TryRemoveQuantity(item, 1))
++            if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+                 return false;
+ 
+             _slottedToolItem = item;
+@@ -296,7 +296,7 @@ namespace Hecton8.Construction
+ 
+             CancelActiveRepair();
+ 
+-            if (!inventory.TryAddItem(_slottedToolItem, 1))
++            if (!inventory.TryAddItem(Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId), 1))
+                 return false;
+ 
+             ClearSlotState();
+@@ -338,10 +338,12 @@ namespace Hecton8.Construction
+             return true;
+         }
+ 
+-        internal bool TryExtractSlottedToolForDeconstruct(out ItemData item)
++        internal bool TryExtractSlottedToolHashForDeconstruct(out int itemHashId)
+         {
+-            item = _slottedToolItem;
+-            if (item == null)
++            itemHashId = _slottedToolItem != null
++                ? Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId)
++                : 0;
++            if (itemHashId == 0)
+                 return false;
+ 
+             CancelActiveRepair();
+@@ -403,7 +405,10 @@ namespace Hecton8.Construction
+                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
+                         continue;
+ 
+-                    ItemData item = inventory.GetItemAt(x, y);
++                    int itemHashId = inventory.GetItemHashAt(x, y);
++                    ItemData item = itemHashId != 0 && inventory.ItemCatalog != null
++                        ? inventory.ItemCatalog.FindByHash(itemHashId)
++                        : null;
+                     if (item == null)
+                         continue;
+ 
+diff --git a/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs b/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs
+index 28876c3c..732b7a29 100644
+--- a/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs
++++ b/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs
+@@ -4,6 +4,7 @@ using Hecton8.Core;
+ using Hecton8.Interaction;
+ using Hecton8.Inventory;
+ using Hecton8.Items;
++using Hecton8.Modding;
+ using Hecton8.Physics;
+ using Hecton8.World;
+ using UnityEngine;
+@@ -262,7 +263,14 @@ namespace Hecton8.Gameplay
+             int rejectedQuantity = quantity;
+             if (playerInventory != null)
+             {
+-                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(item, quantity, playerInventory.transform);
++                int itemHashId = LocHash.Compute(item.PersistentId);
++                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(itemHashId, quantity, playerInventory.transform);
++                if (result.AnyAdded)
++                {
++                    InteractionEvents.RaiseItemCollected(item, result.AddedQuantity, playerInventory.transform);
++                    HectonEventBus.Publish(new ItemCollectedEvent(item, itemHashId, result.AddedQuantity, playerInventory.transform));
++                }
++
+                 if (result.IsSuccess)
+                     return;
+ 
+diff --git a/Assets/_Project/Scripts/HectonItem.cs b/Assets/_Project/Scripts/HectonItem.cs
+index b4deecb3..d58708ac 100644
+--- a/Assets/_Project/Scripts/HectonItem.cs
++++ b/Assets/_Project/Scripts/HectonItem.cs
+@@ -18,7 +18,9 @@
+ using Hecton8.Core;
+ using Hecton8.Inventory;
+ using Hecton8.Interaction;
++using Hecton8.Modding;
+ using Hecton8.Physics;
++using Hecton8.SaveSystem;
+ using Hecton8.World;
+ using Hecton.Localization;
+ 
+@@ -221,6 +223,19 @@ namespace Hecton8.Items
+             RebuildInteractTextCache();
+         }
+ 
++        public bool SetItemByHash(ItemCatalog catalog, int itemHashId, int qty)
++        {
++            if (catalog == null || itemHashId == 0)
++                return false;
++
++            ItemData resolvedItem = catalog.FindByHash(itemHashId);
++            if (resolvedItem == null)
++                return false;
++
++            SetItemData(resolvedItem, qty);
++            return true;
++        }
++
+         /// <summary>Текущие данные предмета (read-only).</summary>
+         public ItemData Data => itemData;
+ 
+@@ -273,13 +288,17 @@ namespace Hecton8.Items
+                 return;
+             }
+ 
+-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
++            int itemHashId = LocHash.Compute(itemData.PersistentId);
++            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
+             if (!attempt.AnyAdded)
+             {
+                 DropOverflow(interactor);
+                 return;
+             }
+ 
++            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
++            HectonEventBus.Publish(new ItemCollectedEvent(itemData, itemHashId, attempt.AddedQuantity, interactor));
++
+             quantity = attempt.RejectedQuantity;
+             if (quantity > 0)
+             {
+diff --git a/Assets/_Project/Scripts/Items/PickupItem.cs b/Assets/_Project/Scripts/Items/PickupItem.cs
+index bcc93d58..b53f9966 100644
+--- a/Assets/_Project/Scripts/Items/PickupItem.cs
++++ b/Assets/_Project/Scripts/Items/PickupItem.cs
+@@ -6,6 +6,7 @@
+ using Hecton8.Core;
+ using Hecton8.Inventory;
+ using Hecton8.Items;
++using Hecton8.Modding;
+ using Hecton8.Physics;
+ using Hecton8.Gameplay;
+ 
+@@ -47,6 +48,7 @@ namespace Hecton8.Interaction
+         private HectonPlayerMovement _playerMovement;
+         private string _cachedInteractText;
+         private int _spatialHandle;
++        private int _faunaSpatialHandle;
+         private bool _registeredToSlowTick;
+         private bool _registeredToFixedTick;
+         private Vector3 _lastSpatialPosition;
+@@ -144,6 +146,8 @@ namespace Hecton8.Interaction
+ 
+             Vector3 currentPosition = transform.position;
+             WorldSpatialHashGrid.UpdateGridPosition(_spatialHandle, _lastSpatialPosition, currentPosition);
++            if (_faunaSpatialHandle != 0)
++                FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
+             _lastSpatialPosition = currentPosition;
+         }
+ 
+@@ -190,6 +194,9 @@ namespace Hecton8.Interaction
+                 WorldSpatialHashGrid.Refresh(_spatialHandle);
+                 _lastSpatialPosition = transform.position;
+             }
++
++            if (_faunaSpatialHandle != 0)
++                FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
+         }
+ 
+         internal bool TryGetWorldStatePersistenceIdentity(out long persistenceKey, out long chunkKey)
+@@ -202,20 +209,27 @@ namespace Hecton8.Interaction
+ 
+         private void RegisterSpatialHandle()
+         {
+-            if (_spatialHandle != 0)
+-                return;
++            if (_spatialHandle == 0)
++                _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
+ 
+-            _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
++            if (_faunaSpatialHandle == 0)
++                _faunaSpatialHandle = FaunaSpatialHashRegistry.RegisterPickup(this);
+             _lastSpatialPosition = transform.position;
+         }
+ 
+         private void UnregisterSpatialHandle()
+         {
+-            if (_spatialHandle == 0)
+-                return;
++            if (_spatialHandle != 0)
++            {
++                WorldSpatialHashGrid.Unregister(_spatialHandle);
++                _spatialHandle = 0;
++            }
+ 
+-            WorldSpatialHashGrid.Unregister(_spatialHandle);
+-            _spatialHandle = 0;
++            if (_faunaSpatialHandle != 0)
++            {
++                FaunaSpatialHashRegistry.Unregister(_faunaSpatialHandle);
++                _faunaSpatialHandle = 0;
++            }
+         }
+ 
+         private void TryRegisterSlowTick()
+@@ -283,13 +297,17 @@ namespace Hecton8.Interaction
+                 return;
+             }
+ 
+-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
++            int itemHashId = Hecton.Localization.LocHash.Compute(itemData.PersistentId);
++            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
+             if (!attempt.AnyAdded)
+             {
+                 DropOverflow(interactor);
+                 return;
+             }
+ 
++            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
++            HectonEventBus.Publish(new ItemCollectedEvent(itemData, itemHashId, attempt.AddedQuantity, interactor));
++
+             quantity = attempt.RejectedQuantity;
+             if (quantity > 0)
+             {
+diff --git a/Assets/_Project/Scripts/ModdingAPI/HectonGameEvents.cs b/Assets/_Project/Scripts/ModdingAPI/HectonGameEvents.cs
+index de6bccef..d133fb24 100644
+--- a/Assets/_Project/Scripts/ModdingAPI/HectonGameEvents.cs
++++ b/Assets/_Project/Scripts/ModdingAPI/HectonGameEvents.cs
+@@ -83,8 +83,27 @@ namespace Hecton8.Modding
+         /// <param name="quantity">Successfully added quantity.</param>
+         /// <param name="interactor">Interactor responsible for the pickup flow.</param>
+         public ItemCollectedEvent(ItemData item, int quantity, Transform interactor)
++            : this(
++                item,
++                item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
++                    ? Hecton.Localization.LocHash.Compute(item.PersistentId)
++                    : 0,
++                quantity,
++                interactor)
++        {
++        }
++
++        /// <summary>
++        /// Creates a collected-item payload with an explicit hash identifier.
++        /// </summary>
++        /// <param name="item">Collected item asset when the caller already has a visual/presentation reference.</param>
++        /// <param name="itemHashId">Logic-tier item hash identifier.</param>
++        /// <param name="quantity">Successfully added quantity.</param>
++        /// <param name="interactor">Interactor responsible for the pickup flow.</param>
++        public ItemCollectedEvent(ItemData item, int itemHashId, int quantity, Transform interactor)
+         {
+             Item = item;
++            ItemHashId = itemHashId;
+             Quantity = quantity < 0 ? 0 : quantity;
+             Interactor = interactor;
+         }
+@@ -99,6 +118,11 @@ namespace Hecton8.Modding
+         /// </summary>
+         public int Quantity { get; }
+ 
++        /// <summary>
++        /// Logic-tier hash identifier for the collected item.
++        /// </summary>
++        public int ItemHashId { get; }
++
+         /// <summary>
+         /// Interactor that initiated the pickup flow.
+         /// </summary>
+diff --git a/Assets/_Project/Scripts/Quest/QuestManager.cs b/Assets/_Project/Scripts/Quest/QuestManager.cs
+index b935dc78..b8cf807a 100644
+--- a/Assets/_Project/Scripts/Quest/QuestManager.cs
++++ b/Assets/_Project/Scripts/Quest/QuestManager.cs
+@@ -295,10 +295,9 @@ namespace Hecton8.Quest
+             if (evt == null)
+                 return;
+ 
+-            string itemId = evt.Item != null ? evt.Item.PersistentId : string.Empty;
+-            uint payloadHash = string.IsNullOrWhiteSpace(itemId)
+-                ? 0u
+-                : unchecked((uint)LocHash.Compute(itemId));
++            uint payloadHash = evt.ItemHashId != 0
++                ? unchecked((uint)evt.ItemHashId)
++                : 0u;
+ 
+             EvaluateSignal(new QuestSignal(QuestSignalKind.ItemCollected, payloadHash, evt.Quantity));
+         }
+diff --git a/Assets/_Project/Scripts/SaveManager.cs b/Assets/_Project/Scripts/SaveManager.cs
+index de6edcce..dc90eca9 100644
+--- a/Assets/_Project/Scripts/SaveManager.cs
++++ b/Assets/_Project/Scripts/SaveManager.cs
+@@ -270,6 +270,15 @@ namespace Hecton8.SaveSystem
+                 return;
+             }
+ 
++            if (HectonFloatingOrigin.IsShiftInProgress || HectonFloatingOrigin.IsPhysicsPausedForShift)
++            {
++                const string reason = "Save blocked during floating-origin shift.";
++                LastOperationError = reason;
++                Debug.LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
++                SaveEvents.RaiseSaveFailed(slotName, reason);
++                return;
++            }
++
+             _isBusy = true;
+             SaveEvents.RaiseSaveStarted(slotName);
+ 
+diff --git a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+index 8e9dd941..fa8d2fff 100644
+--- a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
++++ b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+@@ -338,12 +338,12 @@ namespace Hecton8.World
+         private const double DehydrateRadiusSq = DehydrateRadiusMeters * DehydrateRadiusMeters;
+         private const float HydrationRescanDistanceMeters = 16f;
+         private const double HydrationRescanDistanceSq = HydrationRescanDistanceMeters * HydrationRescanDistanceMeters;
+-        private const int MaxHydrationsPerTick = 64;
++        private const int MaxHydrationsPerFrame = 30;
+         private const int MaxDehydrationsPerTick = 8;
+         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
+         private const long PersistentMemoryBudgetBytes = 10485760L;
+         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
+-        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
++        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.0015d));
+ 
+         private static PersistentWorldRegistry _instance;
+         private static int _nextInstanceUidCounter;
+@@ -393,10 +393,12 @@ namespace Hecton8.World
+         private ItemCatalog _resolvedItemCatalog;
+         private bool _tickRegistered;
+         private bool _slowTickRegistered;
++        private bool _hydrationSessionRunning;
+         private bool _playerChunkValid;
+         private bool _hasLastHydrationScanAup;
+         private ushort _hydrationFrameCounter;
+         private int _pendingHydrationReadIndex;
++        private int _hydrationSessionVersion;
+         private int3 _currentPlayerChunk;
+         private AbsoluteUniversePosition _lastHydrationScanAup;
+ 
+@@ -485,12 +487,14 @@ namespace Hecton8.World
+ 
+         private void OnDisable()
+         {
++            CancelHydrationSession(clearQueue: false);
+             TryUnregisterRuntimeLoops();
+             DehydrateAll(syncTransformsBackToRecords: false);
+         }
+ 
+         private void OnDestroy()
+         {
++            CancelHydrationSession(clearQueue: false);
+             TryUnregisterRuntimeLoops();
+             DehydrateAll(syncTransformsBackToRecords: false);
+ 
+@@ -546,7 +550,6 @@ namespace Hecton8.World
+ 
+         public void Tick(float dt)
+         {
+-            ProcessPendingHydrationQueue();
+             DrainDehydrateQueue(MaxDehydrationsPerTick);
+         }
+ 
+@@ -571,6 +574,7 @@ namespace Hecton8.World
+             _hasLastHydrationScanAup = true;
+             _hydrationFrameCounter++;
+             RefreshHydrationWindow(in playerAup);
++            EnsureHydrationSessionScheduled();
+             UpdateDiagnostics();
+         }
+ 
+@@ -616,6 +620,15 @@ namespace Hecton8.World
+             return true;
+         }
+ 
++        internal bool TryRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition)
++        {
++            if (itemHashId == 0 || itemCatalog == null)
++                return false;
++
++            ItemData itemData = itemCatalog.FindByHash(itemHashId);
++            return TryRegisterDroppedItem(itemData, quantity, runtimePosition);
++        }
++
+         private static Vector3 ApplyDeterministicDropScatter(Vector3 runtimePosition, uint instanceUid)
+         {
+             uint state = instanceUid != 0u ? instanceUid : 0xA511E9B3u;
+@@ -684,6 +697,7 @@ namespace Hecton8.World
+ 
+         internal void RestoreFromLoadedRecords(PersistentWorldDeltaRecord[] loadedRecords)
+         {
++            CancelHydrationSession(clearQueue: true);
+             DehydrateAll(syncTransformsBackToRecords: false);
+             _records.Clear();
+             _recordsByChunk.Clear();
+@@ -739,6 +753,18 @@ namespace Hecton8.World
+                 RebaseInstanceUidCounter(maxObservedInstanceSequence);
+             }
+ 
++            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
++            {
++                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
++                _currentPlayerChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
++                _playerChunkValid = true;
++                _lastHydrationScanAup = playerAup;
++                _hasLastHydrationScanAup = true;
++                _hydrationFrameCounter++;
++                RefreshHydrationWindow(in playerAup);
++                EnsureHydrationSessionScheduled();
++            }
++
+             UpdateDiagnostics();
+         }
+ 
+@@ -1346,19 +1372,66 @@ namespace Hecton8.World
+             slotData.StateFlags |= hydrationQueuedMask;
+             _poolSlotData[poolIndex] = slotData;
+             _pendingHydrationRecords.AddNoResize(recordIndex);
++            EnsureHydrationSessionScheduled();
++        }
++
++        private void EnsureHydrationSessionScheduled()
++        {
++            if (_hydrationSessionRunning ||
++                !Application.isPlaying ||
++                !_pendingHydrationRecords.IsCreated)
++            {
++                return;
++            }
++
++            CompactPendingHydrationQueueIfDrained();
++            if (_pendingHydrationReadIndex >= _pendingHydrationRecords.Length)
++                return;
++
++            _hydrationSessionRunning = true;
++            int sessionVersion = ++_hydrationSessionVersion;
++            _ = RunHydrationSessionAsync(sessionVersion);
++        }
++
++        private async Awaitable RunHydrationSessionAsync(int sessionVersion)
++        {
++            try
++            {
++                while (Application.isPlaying &&
++                       ReferenceEquals(_instance, this) &&
++                       _hydrationSessionVersion == sessionVersion)
++                {
++                    if (!TryProcessHydrationBurst())
++                        break;
++
++                    await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
++                }
++            }
++            catch (OperationCanceledException)
++            {
++            }
++            finally
++            {
++                if (_hydrationSessionVersion == sessionVersion)
++                    _hydrationSessionRunning = false;
++
++                CompactPendingHydrationQueueIfDrained();
++                if (!_hydrationSessionRunning)
++                    EnsureHydrationSessionScheduled();
++            }
+         }
+ 
+-        private void ProcessPendingHydrationQueue()
++        private bool TryProcessHydrationBurst()
+         {
+             if (!_pendingHydrationRecords.IsCreated || _pendingHydrationReadIndex >= _pendingHydrationRecords.Length)
+             {
+                 CompactPendingHydrationQueueIfDrained();
+-                return;
++                return false;
+             }
+ 
+             long budgetDeadline = Stopwatch.GetTimestamp() + HydrationFrameBudgetTicks;
+             int processedCount = 0;
+-            while (processedCount < MaxHydrationsPerTick && _pendingHydrationReadIndex < _pendingHydrationRecords.Length)
++            while (processedCount < MaxHydrationsPerFrame && _pendingHydrationReadIndex < _pendingHydrationRecords.Length)
+             {
+                 if (processedCount > 0 && Stopwatch.GetTimestamp() >= budgetDeadline)
+                     break;
+@@ -1386,6 +1459,7 @@ namespace Hecton8.World
+             }
+ 
+             CompactPendingHydrationQueueIfDrained();
++            return _pendingHydrationRecords.IsCreated && _pendingHydrationReadIndex < _pendingHydrationRecords.Length;
+         }
+ 
+         private void CompactPendingHydrationQueueIfDrained()
+@@ -1397,6 +1471,16 @@ namespace Hecton8.World
+             _pendingHydrationReadIndex = 0;
+         }
+ 
++        private void CancelHydrationSession(bool clearQueue)
++        {
++            _hydrationSessionVersion++;
++            _hydrationSessionRunning = false;
++            _pendingHydrationReadIndex = 0;
++
++            if (clearQueue && _pendingHydrationRecords.IsCreated)
++                _pendingHydrationRecords.Clear();
++        }
++
+         private void ClearHydrationQueuedFlag(in PersistentWorldItemRecord record)
+         {
+             if (!TryGetPoolIndex(in record, out int poolIndex))

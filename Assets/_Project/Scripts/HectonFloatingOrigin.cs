@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Physics;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
 using UnityEngine.SceneManagement;
@@ -38,8 +40,11 @@ namespace Hecton8.Core
         private static readonly List<IOriginShiftListener> _originShiftListeners = new List<IOriginShiftListener>(16);
         private const int PrecisionWatchdogIntervalFrames = 300;
         private const int ShiftStabilityWatchdogFrames = 50000;
-        private const float PrecisionWatchdogSafeRadiusMeters = 2048f;
+        private const float PrecisionWatchdogSafeRadiusMeters = 5000f;
         private const float PrecisionWatchdogSafeRadiusSq = PrecisionWatchdogSafeRadiusMeters * PrecisionWatchdogSafeRadiusMeters;
+        private const float MinimumShiftThresholdMeters = 5000f;
+        private const float ShiftDeadzoneReleaseMeters = 4500f;
+        private const float OutwardMotionSpeedEpsilon = 0.05f;
 
         private static HectonFloatingOrigin _instance;
         private static OriginShiftEventData _lastShiftEvent;
@@ -54,11 +59,15 @@ namespace Hecton8.Core
         private bool _sceneEventsSubscribed;
         private bool _isShiftInProgress;
         private bool _physicsPauseActive;
+        private bool _shiftDeadzoneArmed = true;
+        private bool _hasPreviousAnchorPosition;
         private bool _physicsAutoSimulationBeforeShift = true;
         private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
         private float _thresholdSqr;
         private float _anchorResolveTimer;
         private uint _shiftSequence;
+        private Vector3 _previousAnchorPosition;
+        private Rigidbody _anchorRigidbody;
 
         private const float AnchorResolveCooldown = 1f;
 
@@ -289,15 +298,26 @@ namespace Hecton8.Core
             }
 
             Vector3 anchorPosition = _anchor.position;
+            float anchorDistanceSqr = anchorPosition.sqrMagnitude;
+            if (anchorDistanceSqr <= ShiftDeadzoneReleaseMeters * ShiftDeadzoneReleaseMeters)
+                _shiftDeadzoneArmed = true;
+
+            bool isMovingAwayFromCenter = IsAnchorMovingAwayFromCenter(anchorPosition, deltaTime);
             if ((Time.frameCount % PrecisionWatchdogIntervalFrames) == 0 &&
-                anchorPosition.sqrMagnitude >= PrecisionWatchdogSafeRadiusSq)
+                anchorDistanceSqr >= PrecisionWatchdogSafeRadiusSq &&
+                _shiftDeadzoneArmed &&
+                isMovingAwayFromCenter)
             {
+                _shiftDeadzoneArmed = false;
                 ShiftWorld(anchorPosition);
                 return;
             }
 
-            if (anchorPosition.sqrMagnitude > _thresholdSqr)
+            if (anchorDistanceSqr > _thresholdSqr && _shiftDeadzoneArmed && isMovingAwayFromCenter)
+            {
+                _shiftDeadzoneArmed = false;
                 ShiftWorld(anchorPosition);
+            }
         }
 
         private void ShiftWorld(Vector3 shiftOffset)
@@ -343,6 +363,7 @@ namespace Hecton8.Core
                 physicsTransformsSynced = true;
                 PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
                 trackedBodiesFinalized = true;
+                WorldSpatialHashGrid.HandleOriginShift(_lastShiftEvent);
                 BroadcastOriginShift(_lastShiftEvent);
                 OnWorldShift?.Invoke(shiftOffset);
             }
@@ -466,15 +487,43 @@ namespace Hecton8.Core
             _anchorResolveTimer = AnchorResolveCooldown;
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            {
                 _anchor = playerTransform;
+                _anchor.TryGetComponent(out _anchorRigidbody);
+                _previousAnchorPosition = _anchor.position;
+                _hasPreviousAnchorPosition = true;
+            }
         }
 
         private void RefreshThresholdCache()
         {
-            if (_threshold < 1f)
-                _threshold = 1f;
+            if (_threshold < MinimumShiftThresholdMeters)
+                _threshold = MinimumShiftThresholdMeters;
 
             _thresholdSqr = _threshold * _threshold;
+        }
+
+        private bool IsAnchorMovingAwayFromCenter(Vector3 anchorPosition, float deltaTime)
+        {
+            Vector3 anchorVelocity = Vector3.zero;
+            if (_anchorRigidbody != null)
+            {
+                anchorVelocity = _anchorRigidbody.linearVelocity;
+            }
+            else if (_hasPreviousAnchorPosition)
+            {
+                float safeDeltaTime = math.max(deltaTime, 0.0001f);
+                anchorVelocity = (anchorPosition - _previousAnchorPosition) / safeDeltaTime;
+            }
+
+            _previousAnchorPosition = anchorPosition;
+            _hasPreviousAnchorPosition = true;
+            if (anchorPosition.sqrMagnitude <= 0.0001f)
+                return false;
+
+            Vector3 radialDirection = anchorPosition.normalized;
+            float radialVelocity = Vector3.Dot(radialDirection, anchorVelocity);
+            return radialVelocity > OutwardMotionSpeedEpsilon;
         }
 
         private void PublishGlobalOffsets()

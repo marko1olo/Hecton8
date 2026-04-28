@@ -83,8 +83,27 @@ namespace Hecton8.Modding
         /// <param name="quantity">Successfully added quantity.</param>
         /// <param name="interactor">Interactor responsible for the pickup flow.</param>
         public ItemCollectedEvent(ItemData item, int quantity, Transform interactor)
+            : this(
+                item,
+                item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
+                    ? Hecton.Localization.LocHash.Compute(item.PersistentId)
+                    : 0,
+                quantity,
+                interactor)
+        {
+        }
+
+        /// <summary>
+        /// Creates a collected-item payload with an explicit hash identifier.
+        /// </summary>
+        /// <param name="item">Collected item asset when the caller already has a visual/presentation reference.</param>
+        /// <param name="itemHashId">Logic-tier item hash identifier.</param>
+        /// <param name="quantity">Successfully added quantity.</param>
+        /// <param name="interactor">Interactor responsible for the pickup flow.</param>
+        public ItemCollectedEvent(ItemData item, int itemHashId, int quantity, Transform interactor)
         {
             Item = item;
+            ItemHashId = itemHashId;
             Quantity = quantity < 0 ? 0 : quantity;
             Interactor = interactor;
         }
@@ -98,6 +117,11 @@ namespace Hecton8.Modding
         /// Successfully added quantity.
         /// </summary>
         public int Quantity { get; }
+
+        /// <summary>
+        /// Logic-tier hash identifier for the collected item.
+        /// </summary>
+        public int ItemHashId { get; }
 
         /// <summary>
         /// Interactor that initiated the pickup flow.

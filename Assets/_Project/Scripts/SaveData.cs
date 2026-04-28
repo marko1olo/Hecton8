@@ -44,7 +44,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 40; // v40: inventory persistence migrated to packed SOA hashes + coordinates
+        public const int CurrentVersion = 42; // v42: player momentum + quantized external scavenger corpse sites
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -68,6 +68,7 @@ namespace Hecton8.SaveSystem
         public EnvironmentalStrainDTO environmentalStrain;
         public EcosystemStateDTO ecosystemState;
         public VoxelDeltaPersistenceDTO voxelDeltaPersistence;
+        public ExternalScavengerSiteDTO[] externalScavengerSites;
 
         /// <summary>Прочность инструментов (toolID → durability). v2.0 ENTERPRISE</summary>
         public Dictionary<string, float> toolDurabilityMap = new Dictionary<string, float>();
@@ -305,8 +306,13 @@ namespace Hecton8.SaveSystem
         public float rotZ;
         public float rotW;
 
+        public float velX;
+        public float velY;
+        public float velZ;
+
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
         public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);
+        public Vector3 GetVelocity() => new Vector3(velX, velY, velZ);
 
         public void SetPosition(Vector3 pos)
         {
@@ -318,6 +324,13 @@ namespace Hecton8.SaveSystem
             rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
         }
 
+        public void SetVelocity(Vector3 velocity)
+        {
+            velX = velocity.x;
+            velY = velocity.y;
+            velZ = velocity.z;
+        }
+
         public Vector3 GetLastDeathPosition() => new Vector3(lastDeathPosX, lastDeathPosY, lastDeathPosZ);
 
         public void SetLastDeathPosition(Vector3 pos)
@@ -326,6 +339,22 @@ namespace Hecton8.SaveSystem
             lastDeathPosY = pos.y;
             lastDeathPosZ = pos.z;
         }
+    }
+
+    [Serializable]
+    public struct ExternalScavengerSiteDTO
+    {
+        public int chunkX;
+        public int chunkY;
+        public int chunkZ;
+        public sbyte offsetX;
+        public sbyte offsetY;
+        public sbyte offsetZ;
+        public byte quantizedRadius;
+        public float remainingTime;
+        public uint seed;
+
+        public bool IsValid => remainingTime > 0f;
     }
 
     // ══════════════════════════════════════════════════════════════════

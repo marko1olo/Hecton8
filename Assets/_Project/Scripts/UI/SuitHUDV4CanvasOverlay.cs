@@ -5,12 +5,18 @@ using Hecton8.Bootstrap;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Core;
+using Hecton8.World;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using Unity.Mathematics;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using NASAPunk.Visor;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.UI
 {
@@ -62,11 +68,18 @@ namespace Hecton8.UI
         private const float ProjectionNearClipSafetyPaddingMeters = 0.05f;
         private const float ProjectionPosePositionTolerance = 0.0001f;
         private const float ProjectionPoseScaleTolerance = 0.000001f;
+        private const string ThreatChevronShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const string WorldGeometrySortingLayer = "WorldGeometry";
+        private const int MaxThreatChevronCount = 4;
         private const int HudInternalLayerIndex = 17;
+        private const float ThreatChevronPlaneBiasMeters = 0.0004f;
         private static int UiLayerIndex = -1;
         private static bool s_layerCacheInitialized;
         private const int DefaultLayerIndex = 0;
+        private static readonly int _ThreatChevronBaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int _ThreatChevronFlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
+        private static readonly int _ThreatChevronFlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
+        private static readonly int _ThreatChevronFillAlphaId = Shader.PropertyToID("_FillAlpha");
         private static readonly char[] s_atmLabelChars = DefaultAtmLabel.ToCharArray();
         private static readonly char[] s_depthLabelChars = "DEPTH".ToCharArray();
         private static readonly char[] s_temperatureLabelChars = DefaultTemperatureLabel.ToCharArray();
@@ -234,6 +247,35 @@ namespace Hecton8.UI
         [SerializeField] private Vector2 gaugeIconSize = new Vector2(16f, 16f);
         [SerializeField] private float gaugeValueOffsetY = 0f;
         [SerializeField] private float gaugeLabelOffsetY = -34f;
+
+        [Header("Threat AR")]
+        [SerializeField]
+        [Tooltip("Instanced shader used by diegetic threat chevrons on the visor plane.")]
+        private Shader threatChevronShader;
+        [SerializeField]
+        [Tooltip("Base color used by high-threat diegetic warning chevrons.")]
+        private Color threatChevronColor = new Color(1f, 0.18f, 0.2f, 0.88f);
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Minimum threat cell value required before a diegetic warning chevron is emitted.")]
+        private float threatChevronThreshold = 0.62f;
+        [SerializeField, Min(1f)]
+        [Tooltip("Maximum radius in meters around the player scanned for high-threat ecosystem cells.")]
+        private float threatChevronRadiusMeters = 50f;
+        [SerializeField, Min(0f)]
+        [Tooltip("Inset in pixels applied from the visor edge before the warning chevrons clamp.")]
+        private float threatChevronEdgeInsetPixels = 96f;
+        [SerializeField, Min(4f)]
+        [Tooltip("Approximate chevron size in pixels along the visor plane.")]
+        private float threatChevronSizePixels = 26f;
+        [SerializeField, Range(0f, 0.4f)]
+        [Tooltip("Subtle fill alpha used by the threat chevron instanced material.")]
+        private float threatChevronFillAlpha = 0.08f;
+        [SerializeField, Range(0f, 40f)]
+        [Tooltip("Low-amplitude flicker used by threat chevrons to keep them readable without becoming UI noise.")]
+        private float threatChevronFlickerFrequency = 7f;
+        [SerializeField, Range(0f, 0.4f)]
+        [Tooltip("Flicker amplitude used by the threat chevrons.")]
+        private float threatChevronFlickerIntensity = 0.04f;
 
         private const string RootName = "HUD_V4_CanvasRoot";
 
@@ -414,6 +456,15 @@ namespace Hecton8.UI
         // COLD ALLOC: char[96] — cached hull-stress whisper text buffer — owner: SuitHUDV4CanvasOverlay
         private char[] _cachedHullStressWhisperBuffer = new char[96];
         private int _cachedHullStressWhisperLength;
+        private HectonMapMagicVegetationBridge _vegetationBridge;
+        private Mesh _threatChevronMesh;
+        private Material _threatChevronMaterial;
+        private NativeArray<Matrix4x4> _threatChevronMatrices;
+        // COLD ALLOC: Matrix4x4[4] — instanced threat-chevron draw mirror — owner: SuitHUDV4CanvasOverlay
+        private readonly Matrix4x4[] _threatChevronMatrixMirror = new Matrix4x4[MaxThreatChevronCount];
+        // COLD ALLOC: ThreatChevronState[4] — cached top threat-grid chevron slots — owner: SuitHUDV4CanvasOverlay
+        private readonly ThreatChevronState[] _threatChevronStates = new ThreatChevronState[MaxThreatChevronCount];
+        private int _threatChevronVisibleCount;
 
         public Canvas TargetCanvas => ResolveTargetCanvas();
         public Camera ProjectionCamera => projectionCamera;
@@ -462,6 +513,13 @@ namespace Hecton8.UI
             public Color CachedValueColor;
         }
 
+        private struct ThreatChevronState
+        {
+            public Vector3 WorldPosition;
+            public float Threat01;
+            public bool Active;
+        }
+
         private void OnEnable()
         {
             EnsureLayerCache();
@@ -489,6 +547,7 @@ namespace Hecton8.UI
             HectonFloatingOrigin.RegisterListener(this);
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
+            EnsureThreatChevronRuntimeResources();
         }
 
         private void Start()
@@ -519,8 +578,15 @@ namespace Hecton8.UI
             if (_root != null && _rootBaseAnchoredPositionCaptured)
                 _root.anchoredPosition = _rootBaseAnchoredPosition;
             _rootBaseAnchoredPositionCaptured = false;
+            _threatChevronVisibleCount = 0;
+            DisposeThreatChevronRuntimeResources();
 
             SetRootVisible(false);
+        }
+
+        private void OnDestroy()
+        {
+            DisposeThreatChevronRuntimeResources();
         }
 
 #if UNITY_EDITOR
@@ -565,6 +631,7 @@ namespace Hecton8.UI
 
             TryRegisterRuntimeTick();
             ProcessPendingRuntimeCanvasRefresh();
+            RefreshThreatChevronTargets();
         }
 
         /// <inheritdoc />
@@ -599,6 +666,8 @@ namespace Hecton8.UI
 
             if (renderPath == RenderPath.ProjectionSource && targetCanvas != null)
                 UpdateProjectionCanvasPose(targetCanvas.transform as RectTransform, ResolveUiReferenceResolution());
+
+            RenderThreatChevrons();
 
             if (!_rootBaseAnchoredPositionCaptured)
             {
@@ -950,13 +1019,16 @@ namespace Hecton8.UI
 
         private float ResolveProjectionCanvasWorldScale(Camera targetCamera, Vector2 referenceResolution)
         {
-            if (targetCamera == null)
+            if (targetCamera == null || referenceResolution.x <= 0f || referenceResolution.y <= 0f)
                 return DiegeticHudWorldScale;
 
             float safeDistance = ResolveProjectionPlaneDistance();
-            float safeBaseDistance = Mathf.Max(0.0001f, DiegeticHudDistanceMeters);
-            float expectedScale = DiegeticHudWorldScale * (safeDistance / safeBaseDistance);
-            return Mathf.Max(0.000001f, expectedScale);
+            float halfFovRadians = Mathf.Max(0.001f, targetCamera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            float frustumHalfHeight = Mathf.Tan(halfFovRadians) * safeDistance;
+            float frustumHalfWidth = frustumHalfHeight * Mathf.Max(0.0001f, targetCamera.aspect);
+            float scaleX = (frustumHalfWidth * 2f) / referenceResolution.x;
+            float scaleY = (frustumHalfHeight * 2f) / referenceResolution.y;
+            return Mathf.Max(0.000001f, Mathf.Min(scaleX, scaleY));
         }
 
         private void ApplyOverlayCanvasState(Canvas canvas, RectTransform canvasRect)
@@ -1121,6 +1193,339 @@ namespace Hecton8.UI
             root.gameObject.layer = layer;
             for (int childIndex = 0; childIndex < root.childCount; childIndex++)
                 SetLayerRecursively(root.GetChild(childIndex), layer);
+        }
+
+        private void EnsureThreatChevronRuntimeResources()
+        {
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_EDITOR
+            if (threatChevronShader == null)
+                threatChevronShader = AssetDatabase.LoadAssetAtPath<Shader>(ThreatChevronShaderPath);
+#endif
+
+            if (_threatChevronMesh == null)
+                _threatChevronMesh = BuildThreatChevronMesh();
+
+            if (_threatChevronMaterial == null && threatChevronShader != null)
+            {
+                _threatChevronMaterial = new Material(threatChevronShader)
+                {
+                    name = "HUD_ThreatChevron_Runtime"
+                }; // COLD ALLOC: Material[1] — instanced HUD threat-chevron material — owner: SuitHUDV4CanvasOverlay
+            }
+
+            if (!_threatChevronMatrices.IsCreated)
+                _threatChevronMatrices = new NativeArray<Matrix4x4>(MaxThreatChevronCount, Allocator.Persistent);
+        }
+
+        private void DisposeThreatChevronRuntimeResources()
+        {
+            if (_threatChevronMatrices.IsCreated)
+            {
+                _threatChevronMatrices.Dispose();
+                _threatChevronMatrices = default;
+            }
+
+            if (_threatChevronMaterial != null)
+            {
+                Destroy(_threatChevronMaterial);
+                _threatChevronMaterial = null;
+            }
+
+            if (_threatChevronMesh != null)
+            {
+                Destroy(_threatChevronMesh);
+                _threatChevronMesh = null;
+            }
+        }
+
+        private void RefreshThreatChevronTargets()
+        {
+            _threatChevronVisibleCount = 0;
+            Array.Clear(_threatChevronStates, 0, _threatChevronStates.Length);
+
+            if (!Application.isPlaying ||
+                renderPath != RenderPath.ProjectionSource ||
+                projectionCamera == null ||
+                threatChevronRadiusMeters <= 0f)
+            {
+                return;
+            }
+
+            if (_vegetationBridge == null)
+                _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+
+            if (_vegetationBridge == null ||
+                !_vegetationBridge.TryGetEcosystemThreatGridPayload(
+                    out NativeArray<float> threatLevels,
+                    out int gridResolution,
+                    out Vector3 gridCenter,
+                    out float cellSize))
+            {
+                return;
+            }
+
+            Transform cameraTransform = projectionCamera.transform;
+            Vector3 cameraPosition = cameraTransform.position;
+            float radius = Mathf.Max(1f, threatChevronRadiusMeters);
+            float radiusSq = radius * radius;
+            float safeCellSize = Mathf.Max(0.001f, cellSize);
+            int halfResolution = gridResolution >> 1;
+            int radiusCells = Mathf.CeilToInt(radius / safeCellSize);
+            int centerCellX = Mathf.Clamp(Mathf.RoundToInt((cameraPosition.x - gridCenter.x) / safeCellSize) + halfResolution, 0, gridResolution - 1);
+            int centerCellZ = Mathf.Clamp(Mathf.RoundToInt((cameraPosition.z - gridCenter.z) / safeCellSize) + halfResolution, 0, gridResolution - 1);
+            float halfExtent = (gridResolution - 1) * 0.5f * safeCellSize;
+            float originX = gridCenter.x - halfExtent;
+            float originZ = gridCenter.z - halfExtent;
+
+            for (int cellZ = Mathf.Max(0, centerCellZ - radiusCells); cellZ <= Mathf.Min(gridResolution - 1, centerCellZ + radiusCells); cellZ++)
+            {
+                float worldZ = originZ + (cellZ * safeCellSize);
+                for (int cellX = Mathf.Max(0, centerCellX - radiusCells); cellX <= Mathf.Min(gridResolution - 1, centerCellX + radiusCells); cellX++)
+                {
+                    int cellIndex = (cellZ * gridResolution) + cellX;
+                    float threat01 = threatLevels[cellIndex];
+                    if (threat01 < threatChevronThreshold)
+                        continue;
+
+                    Vector3 worldPosition = new Vector3(originX + (cellX * safeCellSize), cameraPosition.y, worldZ);
+                    Vector3 toThreat = worldPosition - cameraPosition;
+                    toThreat.y = 0f;
+                    if (toThreat.sqrMagnitude > radiusSq)
+                        continue;
+
+                    InsertThreatChevronCandidate(worldPosition, threat01);
+                }
+            }
+        }
+
+        private void InsertThreatChevronCandidate(Vector3 worldPosition, float threat01)
+        {
+            int insertIndex = -1;
+            float weakestThreat = threat01;
+            for (int i = 0; i < MaxThreatChevronCount; i++)
+            {
+                if (!_threatChevronStates[i].Active)
+                {
+                    insertIndex = i;
+                    break;
+                }
+
+                if (_threatChevronStates[i].Threat01 < weakestThreat)
+                {
+                    weakestThreat = _threatChevronStates[i].Threat01;
+                    insertIndex = i;
+                }
+            }
+
+            if (insertIndex < 0)
+                return;
+
+            _threatChevronStates[insertIndex] = new ThreatChevronState
+            {
+                WorldPosition = worldPosition,
+                Threat01 = threat01,
+                Active = true
+            };
+        }
+
+        private void RenderThreatChevrons()
+        {
+            if (!Application.isPlaying ||
+                renderPath != RenderPath.ProjectionSource ||
+                projectionCamera == null)
+            {
+                return;
+            }
+
+            EnsureThreatChevronRuntimeResources();
+            if (_threatChevronMaterial == null || _threatChevronMesh == null || !_threatChevronMatrices.IsCreated)
+                return;
+
+            int visibleCount = BuildThreatChevronMatrices();
+            _threatChevronVisibleCount = visibleCount;
+            if (visibleCount <= 0)
+                return;
+
+            _threatChevronMaterial.SetColor(_ThreatChevronBaseColorId, threatChevronColor);
+            _threatChevronMaterial.SetFloat(_ThreatChevronFlickerFrequencyId, Mathf.Max(0f, threatChevronFlickerFrequency));
+            _threatChevronMaterial.SetFloat(_ThreatChevronFlickerIntensityId, Mathf.Clamp01(threatChevronFlickerIntensity));
+            _threatChevronMaterial.SetFloat(_ThreatChevronFillAlphaId, Mathf.Clamp01(threatChevronFillAlpha));
+
+            Graphics.DrawMeshInstanced(
+                _threatChevronMesh,
+                0,
+                _threatChevronMaterial,
+                _threatChevronMatrixMirror,
+                visibleCount,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                HudInternalLayerIndex,
+                projectionCamera,
+                LightProbeUsage.Off,
+                null);
+        }
+
+        private int BuildThreatChevronMatrices()
+        {
+            if (projectionCamera == null)
+                return 0;
+
+            Transform cameraTransform = projectionCamera.transform;
+            float projectionDistance = ResolveProjectionPlaneDistance() + ThreatChevronPlaneBiasMeters;
+            float halfFovRadians = Mathf.Max(0.001f, projectionCamera.fieldOfView * Mathf.Deg2Rad * 0.5f);
+            float frustumHalfHeight = Mathf.Tan(halfFovRadians) * projectionDistance;
+            float frustumHalfWidth = frustumHalfHeight * Mathf.Max(0.0001f, projectionCamera.aspect);
+            float worldPerPixel = (frustumHalfHeight * 2f) / Mathf.Max(1f, projectionCamera.pixelHeight);
+            float insetWorld = Mathf.Max(0f, threatChevronEdgeInsetPixels) * worldPerPixel;
+            float safeHalfWidth = Mathf.Max(worldPerPixel, frustumHalfWidth - insetWorld);
+            float safeHalfHeight = Mathf.Max(worldPerPixel, frustumHalfHeight - insetWorld);
+            float chevronScaleWorld = Mathf.Max(0.0001f, Mathf.Max(4f, threatChevronSizePixels) * worldPerPixel);
+            int visibleCount = 0;
+
+            for (int i = 0; i < MaxThreatChevronCount; i++)
+            {
+                if (!_threatChevronStates[i].Active)
+                    continue;
+
+                if (!TryBuildThreatChevronMatrix(
+                    cameraTransform,
+                    projectionDistance,
+                    safeHalfWidth,
+                    safeHalfHeight,
+                    chevronScaleWorld,
+                    _threatChevronStates[i],
+                    out Matrix4x4 matrix))
+                {
+                    continue;
+                }
+
+                _threatChevronMatrices[visibleCount] = matrix;
+                _threatChevronMatrixMirror[visibleCount] = matrix;
+                visibleCount++;
+            }
+
+            return visibleCount;
+        }
+
+        private bool TryBuildThreatChevronMatrix(
+            Transform cameraTransform,
+            float projectionDistance,
+            float safeHalfWidth,
+            float safeHalfHeight,
+            float chevronScaleWorld,
+            ThreatChevronState threatState,
+            out Matrix4x4 matrix)
+        {
+            matrix = default;
+            Vector3 localThreatPosition = cameraTransform.InverseTransformPoint(threatState.WorldPosition);
+            bool behind = localThreatPosition.z <= 0.001f;
+            if (behind)
+            {
+                localThreatPosition.x = -localThreatPosition.x;
+                localThreatPosition.y = -localThreatPosition.y;
+                localThreatPosition.z = Mathf.Abs(localThreatPosition.z) + 0.001f;
+            }
+
+            if (Mathf.Abs(localThreatPosition.x) <= 0.0001f && Mathf.Abs(localThreatPosition.y) <= 0.0001f)
+                return false;
+
+            float projectionScale = projectionDistance / Mathf.Max(0.001f, localThreatPosition.z);
+            Vector2 projectedPlanePosition = new Vector2(localThreatPosition.x * projectionScale, localThreatPosition.y * projectionScale);
+            Vector2 clampedPlanePosition = ClampToThreatBounds(projectedPlanePosition, safeHalfWidth, safeHalfHeight);
+            Vector2 direction2D = clampedPlanePosition.normalized;
+            if (direction2D.sqrMagnitude <= 0.000001f)
+                return false;
+
+            Vector3 worldPosition =
+                cameraTransform.position +
+                (cameraTransform.forward * projectionDistance) +
+                (cameraTransform.right * clampedPlanePosition.x) +
+                (cameraTransform.up * clampedPlanePosition.y);
+
+            Vector3 threatDirection = (threatState.WorldPosition - cameraTransform.position).normalized;
+            float signedAngleDegrees = Mathf.Atan2(
+                Vector3.Dot(Vector3.Cross(cameraTransform.forward, threatDirection), cameraTransform.up),
+                Vector3.Dot(cameraTransform.forward, threatDirection)) * Mathf.Rad2Deg;
+            float rollDegrees = Mathf.Atan2(direction2D.y, direction2D.x) * Mathf.Rad2Deg;
+            Quaternion worldRotation = cameraTransform.rotation * Quaternion.Euler(0f, 0f, rollDegrees);
+            float behindFade = behind ? 0.35f : 1f;
+            float threatScale = Mathf.Lerp(0.72f, 1.15f, Mathf.Clamp01(threatState.Threat01)) * behindFade;
+            float rotationScaleBias = 1f + (Mathf.Abs(signedAngleDegrees) / 180f) * 0.04f;
+            Vector3 worldScale = new Vector3(
+                chevronScaleWorld * threatScale * rotationScaleBias,
+                chevronScaleWorld * threatScale,
+                chevronScaleWorld * threatScale);
+            matrix = Matrix4x4.TRS(worldPosition, worldRotation, worldScale);
+            return true;
+        }
+
+        private static Vector2 ClampToThreatBounds(Vector2 projectedPlanePosition, float safeHalfWidth, float safeHalfHeight)
+        {
+            if (Mathf.Abs(projectedPlanePosition.x) <= safeHalfWidth &&
+                Mathf.Abs(projectedPlanePosition.y) <= safeHalfHeight)
+            {
+                return projectedPlanePosition;
+            }
+
+            float tx = safeHalfWidth / Mathf.Max(0.0001f, Mathf.Abs(projectedPlanePosition.x));
+            float ty = safeHalfHeight / Mathf.Max(0.0001f, Mathf.Abs(projectedPlanePosition.y));
+            return projectedPlanePosition * Mathf.Min(tx, ty);
+        }
+
+        private static Mesh BuildThreatChevronMesh()
+        {
+            Mesh mesh = new Mesh
+            {
+                name = "HUD_ThreatChevron_Mesh"
+            };
+
+            Vector3[] vertices = new Vector3[8];
+            Vector2[] uvs = new Vector2[8];
+            int[] triangles = new int[12];
+
+            AppendThreatChevronBar(new Vector2(-0.48f, 0.44f), new Vector2(0.36f, 0f), 0.14f, vertices, uvs, 0, triangles, 0);
+            AppendThreatChevronBar(new Vector2(-0.48f, -0.44f), new Vector2(0.36f, 0f), 0.14f, vertices, uvs, 4, triangles, 6);
+
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static void AppendThreatChevronBar(
+            Vector2 start,
+            Vector2 end,
+            float thickness,
+            Vector3[] vertices,
+            Vector2[] uvs,
+            int vertexOffset,
+            int[] triangles,
+            int triangleOffset)
+        {
+            Vector2 direction = (end - start).normalized;
+            Vector2 normal = new Vector2(-direction.y, direction.x) * (thickness * 0.5f);
+
+            vertices[vertexOffset + 0] = start + normal;
+            vertices[vertexOffset + 1] = start - normal;
+            vertices[vertexOffset + 2] = end + normal;
+            vertices[vertexOffset + 3] = end - normal;
+
+            uvs[vertexOffset + 0] = new Vector2(0f, 1f);
+            uvs[vertexOffset + 1] = new Vector2(0f, 0f);
+            uvs[vertexOffset + 2] = new Vector2(1f, 1f);
+            uvs[vertexOffset + 3] = new Vector2(1f, 0f);
+
+            triangles[triangleOffset + 0] = vertexOffset + 0;
+            triangles[triangleOffset + 1] = vertexOffset + 2;
+            triangles[triangleOffset + 2] = vertexOffset + 1;
+            triangles[triangleOffset + 3] = vertexOffset + 2;
+            triangles[triangleOffset + 4] = vertexOffset + 3;
+            triangles[triangleOffset + 5] = vertexOffset + 1;
         }
 
         private void EnsureHierarchy()
@@ -2225,6 +2630,8 @@ namespace Hecton8.UI
             RectTransform rect = CreateRect(name, parent);
             Image image = rect.gameObject.AddComponent<Image>();
             image.color = color;
+            image.material = null;
+            image.maskable = false;
             return image;
         }
 
@@ -2244,6 +2651,8 @@ namespace Hecton8.UI
             label.textWrappingMode = TextWrappingModes.NoWrap;
             label.characterSpacing = size >= 36f ? 4f : 1.5f;
             label.color = Alpha(Color.white, alpha);
+            label.fontSharedMaterial = label.font != null ? label.font.material : null;
+            label.maskable = false;
             ApplyHudCharArray(label, s_emptyHudChars, 0);
             TMP_TextRegistry.EnsureRegistered(label);
             return label;

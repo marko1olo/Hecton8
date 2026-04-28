@@ -60,6 +60,9 @@ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 norma
     if (depthFade <= 0.0)
         return 0.0;
 
+    if (HectonCoreLitIsInsideCaveSolid(positionWS, 0.02))
+        return 0.0;
+
     float upFacing = saturate(normalWS.y * 1.25);
     float caustics = SAMPLE_TEXTURE2D_LOD(_HectonProjectedCausticsTex, sampler_HectonProjectedCausticsTex, uv, 0).r;
     return caustics * depthFade * upFacing * _HectonProjectedCausticsParams.x;

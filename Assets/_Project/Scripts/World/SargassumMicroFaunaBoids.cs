@@ -1242,6 +1242,7 @@ namespace Hecton8.World
         private float _leviathanModeBlend;
         private Vector3 _fragmentationCenterAWS;
         private Vector3 _fragmentationCenterBWS;
+        private float _fragmentationStartTime = float.NegativeInfinity;
         private float _fragmentationExpireTime = float.NegativeInfinity;
         private Vector3 _sonarScatterOriginWS;
         private float _sonarScatterWaveFrontWS;
@@ -1355,6 +1356,7 @@ namespace Hecton8.World
             _leviathanShockwaveCooldownTimer = 0f;
             _leviathanModeBlend = 0f;
             _fragmentationExpireTime = float.NegativeInfinity;
+            _fragmentationStartTime = float.NegativeInfinity;
             _sonarScatterExpireTime = float.NegativeInfinity;
             _sonarScatterWaveFrontWS = 0f;
             _sonarScatterStrength01 = 0f;
@@ -1561,7 +1563,6 @@ namespace Hecton8.World
                 playerTransform ??= playerContext.PlayerTransform;
                 _playerRigidbody ??= playerContext.PlayerRigidbody;
                 _playerMovement ??= playerContext.PlayerMovement;
-                _playerTransportCoordinator ??= playerContext.PlayerTransportCoordinator;
                 _playerFlashlight ??= playerContext.Flashlight;
             }
 
@@ -1570,6 +1571,9 @@ namespace Hecton8.World
 
             if (_playerMovement == null && playerTransform != null)
                 playerTransform.TryGetComponent(out _playerMovement);
+
+            if (_playerTransportCoordinator == null && playerTransform != null)
+                playerTransform.TryGetComponent(out _playerTransportCoordinator);
 
             if (_playerHealth == null && playerTransform != null)
                 playerTransform.TryGetComponent(out _playerHealth);
@@ -2825,6 +2829,14 @@ namespace Hecton8.World
                 transportCapsuleHalfLength = Mathf.Max(transportCapsuleRadius, playerSpeed * 0.35f);
             }
 
+            float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            UpdateFragmentationState(playerPosition, playerVelocity, playerForward, playerSpeed, absoluteSimulationTime);
+            UpdateSonarScatterState(simulationDt, absoluteSimulationTime);
+            float fragmentation01 = ResolveFragmentationStrength01(absoluteSimulationTime);
+            float sonarScatterStrength01 = absoluteSimulationTime < _sonarScatterExpireTime
+                ? Mathf.Clamp01(_sonarScatterStrength01)
+                : 0f;
+
             SimulationFrameConstants frameConstants = default;
             frameConstants.Simulation0 = new float4(simulationDt, waterLevel, minDepthBelowSurface, maxDepthBelowSurface);
             frameConstants.Motion0 = new float4(cruiseSpeed, maxSpeed, panicSpeedBoost, 0f);
@@ -2928,6 +2940,26 @@ namespace Hecton8.World
                 playerVelocity.y,
                 playerVelocity.z,
                 transportCapsuleHalfLength);
+            frameConstants.Ecosystem0 = new float4(
+                fragmentationWeight,
+                sonarScatterStrength01,
+                activeSonarWaveBandWidth,
+                activeSonarScatterImpulse + activeSonarScatterWeight);
+            frameConstants.Fragmentation0 = new float4(
+                _fragmentationCenterAWS.x,
+                _fragmentationCenterAWS.y,
+                _fragmentationCenterAWS.z,
+                fragmentation01);
+            frameConstants.Fragmentation1 = new float4(
+                _fragmentationCenterBWS.x,
+                _fragmentationCenterBWS.y,
+                _fragmentationCenterBWS.z,
+                Mathf.Max(1f, Vector3.Distance(_fragmentationCenterAWS, _fragmentationCenterBWS) * 0.5f));
+            frameConstants.SonarScatter0 = new float4(
+                _sonarScatterOriginWS.x,
+                _sonarScatterOriginWS.y,
+                _sonarScatterOriginWS.z,
+                _sonarScatterWaveFrontWS);
 
             try
             {
@@ -2980,6 +3012,8 @@ namespace Hecton8.World
             _debugPlayerPanicRadiusScale = panicPlayerRadiusScale;
             _debugParasiteAggression01 = parasiteAggression01;
             _debugMassiveThreatCount = _activeMassiveThreatCount;
+            _debugFragmentation01 = fragmentation01;
+            _debugSonarScatter01 = sonarScatterStrength01;
             return true;
         }
 
@@ -3039,6 +3073,91 @@ namespace Hecton8.World
                 float ruptureScale = Mathf.Clamp01(signal.RadiusWS / Mathf.Max(1f, deepBaitBallRadius * 2f));
                 AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(signal.PositionWS, ruptureScale);
             }
+
+            Vector3 displacementDirection = _leviathanHeadVelocityWS.sqrMagnitude > 0.0001f
+                ? _leviathanHeadVelocityWS
+                : (signal.PositionWS - _fieldCenter);
+            TriggerFragmentation(signal.PositionWS, displacementDirection, signal.ExtremePanicRadiusWS, absoluteSimulationTime);
+        }
+
+        private void UpdateFragmentationState(
+            Vector3 playerPosition,
+            Vector3 playerVelocity,
+            Vector3 playerForward,
+            float playerSpeed,
+            float absoluteSimulationTime)
+        {
+            if (_playerTransportCoordinator != null &&
+                _playerTransportCoordinator.IsTransportActive() &&
+                playerSpeed >= panicPlayerSpeedThreshold)
+            {
+                Vector3 dashDirection = playerVelocity.sqrMagnitude > 0.0001f ? playerVelocity : playerForward;
+                TriggerFragmentation(playerPosition, dashDirection, Mathf.Max(panicPlayerRadius, boidBodyRadius * 6f), absoluteSimulationTime);
+            }
+
+            if (_leviathanHeadValid &&
+                _leviathanHeadVelocityWS.magnitude >= leviathanShockwaveSpeedThreshold)
+            {
+                TriggerFragmentation(
+                    _leviathanHeadPositionWS,
+                    _leviathanHeadVelocityWS,
+                    Mathf.Max(_leviathanHeadRadiusWS * 2.5f, leviathanShockwaveRadius * 0.45f),
+                    absoluteSimulationTime);
+            }
+
+            if (absoluteSimulationTime >= _fragmentationExpireTime)
+            {
+                _fragmentationStartTime = float.NegativeInfinity;
+                _fragmentationExpireTime = float.NegativeInfinity;
+                _debugFragmentation01 = 0f;
+            }
+        }
+
+        private void UpdateSonarScatterState(float simulationDt, float absoluteSimulationTime)
+        {
+            if (_sonarScatterStrength01 <= 0f || absoluteSimulationTime >= _sonarScatterExpireTime)
+            {
+                _sonarScatterStrength01 = 0f;
+                _sonarScatterWaveFrontWS = 0f;
+                _debugSonarScatter01 = 0f;
+                return;
+            }
+
+            _sonarScatterWaveFrontWS += Mathf.Max(0f, simulationDt) * Mathf.Max(0.1f, activeSonarWaveSpeed);
+        }
+
+        private float ResolveFragmentationStrength01(float absoluteSimulationTime)
+        {
+            if (absoluteSimulationTime >= _fragmentationExpireTime ||
+                !float.IsFinite(_fragmentationExpireTime) ||
+                !float.IsFinite(_fragmentationStartTime))
+                return 0f;
+
+            float duration = Mathf.Max(0.1f, _fragmentationExpireTime - _fragmentationStartTime);
+            float timeRemaining = Mathf.Max(0f, _fragmentationExpireTime - absoluteSimulationTime);
+            return Mathf.Clamp01(timeRemaining / Mathf.Max(0.1f, duration));
+        }
+
+        private void TriggerFragmentation(Vector3 originWS, Vector3 dashVectorWS, float baseRadiusWS, float absoluteSimulationTime)
+        {
+            Vector3 dashDirection = dashVectorWS.sqrMagnitude > 0.0001f ? dashVectorWS.normalized : Vector3.forward;
+            Vector3 splitAxis = Vector3.Cross(Vector3.up, dashDirection);
+            if (splitAxis.sqrMagnitude <= 0.0001f)
+                splitAxis = Vector3.Cross(Vector3.right, dashDirection);
+            if (splitAxis.sqrMagnitude <= 0.0001f)
+                splitAxis = Vector3.forward;
+            else
+                splitAxis.Normalize();
+
+            float offsetDistance = Mathf.Max(1f, baseRadiusWS * Mathf.Max(0.5f, fragmentationOffsetScale));
+            _fragmentationCenterAWS = originWS + splitAxis * offsetDistance;
+            _fragmentationCenterBWS = originWS - splitAxis * offsetDistance;
+            float safeMinDuration = Mathf.Max(5f, fragmentationMinDurationSeconds);
+            float safeMaxDuration = Mathf.Max(safeMinDuration, fragmentationMaxDurationSeconds);
+            float duration01 = Mathf.Clamp01(dashVectorWS.magnitude / Mathf.Max(0.1f, panicPlayerSpeedThreshold));
+            _fragmentationStartTime = absoluteSimulationTime;
+            _fragmentationExpireTime = absoluteSimulationTime + Mathf.Lerp(safeMinDuration, safeMaxDuration, duration01);
+            _debugFragmentation01 = 1f;
         }
 
         private void HandleFlashlightToggled(bool isOn)
@@ -3049,6 +3168,28 @@ namespace Hecton8.World
 
             _headlightPanicTimer = deepHeadlightPanicDuration;
             _debugHeadlightPanic01 = 1f;
+        }
+
+        private void HandleSonarPingSent(float intensity)
+        {
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            if (clampedIntensity <= 0f)
+            {
+                _sonarScatterStrength01 = 0f;
+                _debugSonarScatter01 = 0f;
+                return;
+            }
+
+            Vector3 originWS = playerTransform != null ? playerTransform.position : _fieldCenter;
+            float maxFieldExtent = Mathf.Max(_fieldExtents.x, Mathf.Max(_fieldExtents.y, _fieldExtents.z));
+            float safeWaveSpeed = Mathf.Max(0.1f, activeSonarWaveSpeed);
+            float travelDistance = (maxFieldExtent * 2f) + Mathf.Max(0.25f, activeSonarWaveBandWidth);
+
+            _sonarScatterOriginWS = originWS;
+            _sonarScatterWaveFrontWS = 0f;
+            _sonarScatterStrength01 = clampedIntensity;
+            _sonarScatterExpireTime = GetAbsoluteSimulationTime() + (travelDistance / safeWaveSpeed);
+            _debugSonarScatter01 = clampedIntensity;
         }
 
         private float ResolveHeadlightPanic01()

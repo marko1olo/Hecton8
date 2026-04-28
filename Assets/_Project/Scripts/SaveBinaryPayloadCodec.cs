@@ -88,6 +88,7 @@ namespace Hecton8.SaveSystem
                 && WriteResourceScarcity(ref writer, data.resourceScarcity)
                 && writer.WriteStruct(data.environmentalStrain)
                 && WriteEcosystemState(ref writer, data.ecosystemState)
+                && WriteExternalScavengerSites(ref writer, data.externalScavengerSites)
                 && WriteStringFloatDictionary(ref writer, data.toolDurabilityMap)
                 && WriteStringBoolDictionary(ref writer, data.toolBrokenMap)
                 && WriteIntHashSet(ref writer, data.discoveredBiomeIds)
@@ -150,6 +151,7 @@ namespace Hecton8.SaveSystem
                 || !ReadResourceScarcity(ref reader, out data.resourceScarcity)
                 || !reader.ReadStruct(out data.environmentalStrain)
                 || !ReadEcosystemState(ref reader, out data.ecosystemState)
+                || !ReadExternalScavengerSites(ref reader, data.version, out data.externalScavengerSites)
                 || !ReadStringFloatDictionary(ref reader, out data.toolDurabilityMap)
                 || !ReadStringBoolDictionary(ref reader, out data.toolBrokenMap)
                 || !ReadIntHashSet(ref reader, out data.discoveredBiomeIds)
@@ -243,7 +245,10 @@ namespace Hecton8.SaveSystem
                 && writer.WriteFloat(value.rotX)
                 && writer.WriteFloat(value.rotY)
                 && writer.WriteFloat(value.rotZ)
-                && writer.WriteFloat(value.rotW);
+                && writer.WriteFloat(value.rotW)
+                && writer.WriteFloat(value.velX)
+                && writer.WriteFloat(value.velY)
+                && writer.WriteFloat(value.velZ);
         }
 
         private static bool ReadPlayerStats(ref BufferReader reader, int version, out PlayerStatsDTO value)
@@ -286,7 +291,23 @@ namespace Hecton8.SaveSystem
                 && reader.ReadFloat(out value.rotX)
                 && reader.ReadFloat(out value.rotY)
                 && reader.ReadFloat(out value.rotZ)
-                && reader.ReadFloat(out value.rotW);
+                && reader.ReadFloat(out value.rotW)
+                && ReadPlayerVelocity(ref reader, version, ref value);
+        }
+
+        private static bool ReadPlayerVelocity(ref BufferReader reader, int version, ref PlayerStatsDTO value)
+        {
+            if (version < 41)
+            {
+                value.velX = 0f;
+                value.velY = 0f;
+                value.velZ = 0f;
+                return true;
+            }
+
+            return reader.ReadFloat(out value.velX)
+                && reader.ReadFloat(out value.velY)
+                && reader.ReadFloat(out value.velZ);
         }
 
         private static bool ReadTotalPlayTime(ref BufferReader reader, int version, out double value)

@@ -556,7 +556,9 @@ namespace Hecton8.UI
                 if (cost == null || cost.item == null)
                     continue;
 
-                int owned = inventory != null ? inventory.CountTotal(cost.item) : 0;
+                int owned = inventory != null && cost.item != null
+                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                    : 0;
                 if (_sb.Length > 8)
                     _sb.Append("  |  ");
 

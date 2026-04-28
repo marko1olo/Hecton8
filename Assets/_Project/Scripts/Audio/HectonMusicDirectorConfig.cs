@@ -50,6 +50,10 @@ namespace Hecton8.Audio
         [Tooltip("Optional dedicated mixer group for stingers.")]
         [SerializeField] private AudioMixerGroup _stingerMixerGroup;
 
+        [Header("Runtime Ownership")]
+        [Tooltip("Authored runtime director prefab containing HectonMusicDirector, MusicVoicePool, and pre-authored AudioSource children.")]
+        [SerializeField] private HectonMusicDirector _runtimeDirectorPrefab;
+
         /// <summary>
         /// Profile used in the main menu scene.
         /// </summary>
@@ -109,5 +113,10 @@ namespace Hecton8.Audio
         /// Optional dedicated mixer group for stingers.
         /// </summary>
         public AudioMixerGroup StingerMixerGroup => _stingerMixerGroup;
+
+        /// <summary>
+        /// Authored runtime director prefab used instead of constructing voices at runtime.
+        /// </summary>
+        public HectonMusicDirector RuntimeDirectorPrefab => _runtimeDirectorPrefab;
     }
 }

@@ -149,7 +149,7 @@ namespace Hecton8.Meta
             if (item == null)
                 return;
 
-            _inventory.TryAddItem(item, quantity);
+            _inventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity);
         }
     }
 }

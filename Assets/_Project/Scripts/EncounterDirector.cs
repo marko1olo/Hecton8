@@ -71,6 +71,7 @@ namespace Hecton8.Systems.AI
         public float PlayerHealthNormalized;
         public float PlayerOxygenNormalized;
         public float PlayerInternalStress;
+        public float AcousticThreatLevel;
         public float PlayerDepth;
         public float AvgFrameTimeMs;
         public float SurfaceWorldY;
@@ -105,6 +106,7 @@ namespace Hecton8.Systems.AI
         private const float SpawnClusterRadiusSq = 15f * 15f;
         private const float DespawnKeepDistanceSq = 25f * 25f;
         private const float FrustumRejectPadding = 3f;
+        private const float SafeIdleStressDecayPerTick = 0.06f;
 
         private NativeArray<EncounterDirectorState> _frontState;
         private NativeArray<EncounterDirectorState> _backState;
@@ -352,6 +354,7 @@ namespace Hecton8.Systems.AI
                 PlayerHealthNormalized = math.clamp(frameContext.PlayerHealthNormalized, 0f, 1f),
                 PlayerOxygenNormalized = math.clamp(frameContext.PlayerOxygenNormalized, 0f, 1f),
                 PlayerInternalStress = math.clamp(frameContext.PlayerInternalStress, 0f, 1f),
+                AcousticThreatLevel = math.clamp(frameContext.AcousticThreatLevel, 0f, 1f),
                 AvgFrameTimeMs = math.max(0f, frameContext.AvgFrameTimeMs),
                 SurfaceWorldY = frameContext.SurfaceWorldY,
                 Output = _jobOutput
@@ -579,10 +582,12 @@ namespace Hecton8.Systems.AI
         private const float RelaxMaxSeconds = 60f;
         private const float MaxTokenBudget = 100f;
         private const float FrustumRejectPadding = 3f;
+        private const float CriticalHealthSpawnSuppressionThreshold = 0.05f;
         private const float SpawnClusterRadiusSq = 15f * 15f;
         private const float MinSpawnRadius = 50f;
         private const float MaxSpawnRadius = 150f;
         private const float DespawnKeepDistanceSq = 25f * 25f;
+        private const float SafeIdleStressDecayPerTick = 0.06f;
 
         public EncounterDirectorState CurrentState;
         public NativeArray<EncounterDirectorState> WriteState;
@@ -596,6 +601,7 @@ namespace Hecton8.Systems.AI
         public float PlayerHealthNormalized;
         public float PlayerOxygenNormalized;
         public float PlayerInternalStress;
+        public float AcousticThreatLevel;
         public float AvgFrameTimeMs;
         public float SurfaceWorldY;
         public NativeArray<EncounterJobOutput> Output;
@@ -662,13 +668,24 @@ namespace Hecton8.Systems.AI
             float velocityStress = math.saturate(PlayerVelocity.w / 12f) * 0.15f;
             float healthStress = 1f - PlayerHealthNormalized;
             float oxygenStress = 1f - PlayerOxygenNormalized;
+            float acousticStress = math.saturate(AcousticThreatLevel);
             float rawStress = 0.35f * healthStress +
                               0.25f * oxygenStress +
                               0.25f * proximityStress +
                               0.10f * depthStress +
                               0.05f * velocityStress;
+            rawStress = math.saturate(math.max(rawStress, acousticStress));
+            float safeIdleRecovery = math.saturate(math.min(
+                math.min(PlayerHealthNormalized, PlayerOxygenNormalized),
+                math.min(
+                    1f - proximityStress,
+                    math.min(
+                        1f - math.saturate(PlayerVelocity.w / 1.25f),
+                        1f - math.max(acousticStress, PlayerInternalStress)))));
+            rawStress *= math.lerp(1f, 0.25f, safeIdleRecovery);
             float alpha = 1f - math.exp(-1f / StressTau);
             state.StressLevel += alpha * (math.saturate(rawStress) - state.StressLevel);
+            state.StressLevel = math.max(0f, state.StressLevel - safeIdleRecovery * SafeIdleStressDecayPerTick);
             state.StressLevel = math.clamp(state.StressLevel, 0f, 1f);
 
             state.PacingPhaseTimer += 1f;
@@ -715,17 +732,20 @@ namespace Hecton8.Systems.AI
 
             state.BudgetFlags = (int)budgetFlags;
 
+            bool criticalHealthSuppressed = PlayerHealthNormalized <= CriticalHealthSpawnSuppressionThreshold;
+            float pressureLevel = math.saturate(math.max(state.StressLevel, math.max(PlayerInternalStress, acousticStress)));
             if (((EncounterBudgetFlags)state.BudgetFlags & EncounterBudgetFlags.RegenBlocked) != 0)
             {
                 state.TokenRegenRate = 0f;
             }
-            else if ((EncounterPhase)state.ActivePhase == EncounterPhase.Relax)
-            {
-                state.TokenRegenRate = 8f;
-            }
             else
             {
-                state.TokenRegenRate = 0f;
+                float baseRegen = math.lerp(10f, 1.25f, pressureLevel);
+                float cadenceScale = math.lerp(0.35f, 1.15f, 1f - state.IntensityLevel);
+                float relaxBonus = (EncounterPhase)state.ActivePhase == EncounterPhase.Relax ? 1.15f : 1f;
+                float criticalHealthScale = criticalHealthSuppressed ? 0.45f : 1f;
+                float safeIdleRegenBonus = math.lerp(1f, 1.35f, safeIdleRecovery);
+                state.TokenRegenRate = baseRegen * cadenceScale * relaxBonus * criticalHealthScale * safeIdleRegenBonus;
             }
 
             state.TokenBudget = math.clamp(state.TokenBudget + state.TokenRegenRate, 0f, MaxTokenBudget);
@@ -758,12 +778,19 @@ namespace Hecton8.Systems.AI
                 }
             }
 
+            bool spawnCadenceOpen = !criticalHealthSuppressed || ((((int)state.PacingPhaseTimer) & 0x3) == 0);
             if ((EncounterPhase)state.ActivePhase != EncounterPhase.Relax &&
                 ((EncounterBudgetFlags)state.BudgetFlags & (EncounterBudgetFlags.LoadSheddingActive | EncounterBudgetFlags.SpawnSuspended)) == 0 &&
-                activeEnemyCount < 32)
+                activeEnemyCount < 32 &&
+                spawnCadenceOpen)
             {
                 EncounterThreatClass threatClass = ResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget);
-                if (TryResolveSpawnCandidate(playerPosition, playerForward, out float3 spawnPosition))
+                if (criticalHealthSuppressed && threatClass > EncounterThreatClass.Swarm)
+                    threatClass = EncounterThreatClass.Swarm;
+
+                float spawnCost = ResolveTokenCost(threatClass);
+                if (state.TokenBudget >= spawnCost &&
+                    TryResolveSpawnCandidate(playerPosition, playerForward, out float3 spawnPosition))
                 {
                     uint spawnSequence = state.SpawnSequence + 1u;
                     output.SpawnRequestCount = 1;
@@ -775,7 +802,7 @@ namespace Hecton8.Systems.AI
                         state.ActivePhase,
                         activeEnemyCount);
                     state.SpawnSequence = spawnSequence;
-                    state.TokenBudget = math.clamp(state.TokenBudget - ResolveTokenCost(threatClass), 0f, MaxTokenBudget);
+                    state.TokenBudget = math.clamp(state.TokenBudget - spawnCost, 0f, MaxTokenBudget);
                     activeEnemyCount++;
                 }
             }

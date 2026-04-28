@@ -205,8 +205,8 @@ namespace Hecton8.Dev
 
                 try
                 {
-                    if (!playerInventory.ContainsItem(prefabTool.ToolData))
-                        playerInventory.TryAddItem(prefabTool.ToolData, 1);
+                    if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId)))
+                        playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId), 1);
 
                     LogVerbose($"ASSIGN {toolName}");
                     toolManager.SetAssignedToolPrefab(0, prefab, holsterIfCurrentInvalid: false);

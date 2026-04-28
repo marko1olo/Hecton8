@@ -45,6 +45,8 @@ namespace Hecton8.World
         private const int DefaultCaptureLayerMask = 1;
         private static int TerrainLayer = int.MinValue;
         private static int TerrainLayerWithTrailingSpace = int.MinValue;
+        private static int VoxelCaveLayer = int.MinValue;
+        private static int VoxelCaveLayerWithTrailingSpace = int.MinValue;
 
         [Header("-- References ----------------")]
         [Tooltip("Explicit Crest ocean owner. Auto-resolved from the prefab root when left empty.")]
@@ -105,6 +107,12 @@ namespace Hecton8.World
 
             if (TerrainLayerWithTrailingSpace == int.MinValue)
                 TerrainLayerWithTrailingSpace = LayerMask.NameToLayer("Terrain ");
+
+            if (VoxelCaveLayer == int.MinValue)
+                VoxelCaveLayer = LayerMask.NameToLayer("VoxelCave");
+
+            if (VoxelCaveLayerWithTrailingSpace == int.MinValue)
+                VoxelCaveLayerWithTrailingSpace = LayerMask.NameToLayer("VoxelCave ");
         }
 
         private void OnEnable()
@@ -606,18 +614,26 @@ namespace Hecton8.World
 
         private static int ResolveCaptureLayerMask()
         {
-            int resolvedMask = LayerMask.GetMask("Default", "Terrain", "Terrain ");
+            int resolvedMask = LayerMask.GetMask("Default", "Terrain", "Terrain ", "VoxelCave", "VoxelCave ");
             if (resolvedMask != 0)
                 return resolvedMask;
 
+            int fallbackMask = DefaultCaptureLayerMask;
             int terrainLayer = TerrainLayer;
             if (terrainLayer < 0)
                 terrainLayer = TerrainLayerWithTrailingSpace;
 
             if (terrainLayer >= 0)
-                return DefaultCaptureLayerMask | (1 << terrainLayer);
+                fallbackMask |= 1 << terrainLayer;
 
-            return DefaultCaptureLayerMask;
+            int voxelCaveLayer = VoxelCaveLayer;
+            if (voxelCaveLayer < 0)
+                voxelCaveLayer = VoxelCaveLayerWithTrailingSpace;
+
+            if (voxelCaveLayer >= 0)
+                fallbackMask |= 1 << voxelCaveLayer;
+
+            return fallbackMask;
         }
 
         private static bool IsFinite(float value)

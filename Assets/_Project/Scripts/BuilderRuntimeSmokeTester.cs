@@ -345,7 +345,7 @@ namespace Hecton8.Dev
             for (int i = 0; i < buildable.buildCost.Count; i++)
             {
                 InventoryCost cost = buildable.buildCost[i];
-                counts[i] = cost.item != null ? playerInventory.CountTotal(cost.item) : 0;
+                counts[i] = cost.item != null ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)) : 0;
             }
 
             return counts;
@@ -363,7 +363,7 @@ namespace Hecton8.Dev
                     continue;
 
                 int before = countsBefore[i];
-                int after = playerInventory.CountTotal(cost.item);
+                int after = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId));
                 int expectedUpperBound = before - Mathf.Max(cost.amount, 0);
                 if (after > before)
                 {

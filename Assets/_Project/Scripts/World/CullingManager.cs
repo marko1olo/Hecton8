@@ -100,12 +100,13 @@ namespace Hecton8.World
         //  CACHED LAYER MASKS
         // ══════════════════════════════════════════════════════════
 
-        private static int _debrisLayer = -1;
-        private static int _particlesLayer = -1;
-        private static int _propsLayer = -1;
-        private static int _floraLayer = -1;
-        private static int _terrainLayer = -1;
-        private static bool _layerCacheInitialized;
+        private const int DebrisLayerIndex = 14;
+        private const int MissingLayerIndex = -1;
+        private static readonly int _debrisLayer = DebrisLayerIndex;
+        private static readonly int _particlesLayer = MissingLayerIndex;
+        private static readonly int _propsLayer = MissingLayerIndex;
+        private static readonly int _floraLayer = MissingLayerIndex;
+        private static readonly int _terrainLayer = MissingLayerIndex;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -177,19 +178,6 @@ namespace Hecton8.World
         /// </summary>
         public int OcclusionCulledObjectCount => 0;
 
-        private static void EnsureLayerCache()
-        {
-            if (_layerCacheInitialized)
-                return;
-
-            _debrisLayer = LayerMask.NameToLayer("Debris");
-            _particlesLayer = LayerMask.NameToLayer("Particles");
-            _propsLayer = LayerMask.NameToLayer("Props");
-            _floraLayer = LayerMask.NameToLayer("Flora");
-            _terrainLayer = LayerMask.NameToLayer("Terrain");
-            _layerCacheInitialized = true;
-        }
-
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -202,7 +190,6 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            EnsureLayerCache();
             // Singleton setup
             if (_instance != null && _instance != this)
             {

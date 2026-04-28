@@ -15,6 +15,7 @@ namespace Hecton8.Inventory
     using Hecton8.SaveSystem;
     using Unity.Burst;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
@@ -197,7 +198,7 @@ namespace Hecton8.Inventory
                 _instance = null;
         }
 
-        public void RemoveItem(ItemData item, int x, int y)
+        public void RemoveItemAt(int x, int y)
         {
             if (_grid == null || !_stackCounts.IsCreated)
                 return;
@@ -219,13 +220,7 @@ namespace Hecton8.Inventory
             NotifyInventoryChanged();
         }
 
-        public ItemData RemoveOneItem(int anchorX, int anchorY)
-        {
-            int itemHashId = RemoveOneItemHash(anchorX, anchorY);
-            return ResolveItemByHash(itemHashId);
-        }
-
-        public int RemoveOneItemHash(int anchorX, int anchorY)
+        public int RemoveOneItem(int anchorX, int anchorY)
         {
             if (_grid == null || !_stackCounts.IsCreated)
                 return 0;
@@ -268,20 +263,22 @@ namespace Hecton8.Inventory
             if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
                 return false;
 
-            ItemData item = ResolveItemByHash(descriptor.HashId);
-            if (item == null || !item.isConsumable)
+            if (!TryGetRuntimeDescriptor(descriptor.HashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
+                !runtimeDescriptor.IsConsumable)
+            {
                 return false;
+            }
 
             if (survival != null)
             {
-                if (item.oxygenRestore > 0f)
-                    survival.RefillOxygen(item.oxygenRestore);
+                if (runtimeDescriptor.OxygenRestore > 0f)
+                    survival.RefillOxygen(runtimeDescriptor.OxygenRestore);
 
-                if (item.energyRestore > 0f)
-                    survival.RechargeEnergy(item.energyRestore);
+                if (runtimeDescriptor.EnergyRestore > 0f)
+                    survival.RechargeEnergy(runtimeDescriptor.EnergyRestore);
 
-                if (item.integrityRestore > 0f)
-                    survival.Repair(item.integrityRestore);
+                if (runtimeDescriptor.IntegrityRestore > 0f)
+                    survival.Repair(runtimeDescriptor.IntegrityRestore);
             }
 
             RemoveOneItem(anchorX, anchorY);
@@ -297,29 +294,14 @@ namespace Hecton8.Inventory
             return (uint)index < (uint)_stackCounts.Length ? _stackCounts[index] : 0;
         }
 
-        public ItemData GetItemAt(int x, int y)
-        {
-            return ResolveItemByHash(GetItemHashAt(x, y));
-        }
-
         public int GetItemHashAt(int x, int y)
         {
             return _grid == null ? 0 : _grid.GetCellHashId(x, y);
         }
 
-        public int CountTotal(ItemData item)
-        {
-            return CountTotal(ComputeItemHash(item));
-        }
-
         public int CountTotal(int itemHashId)
         {
             return CountQuantityByHash(itemHashId, false);
-        }
-
-        public int CountAvailableTotal(ItemData item)
-        {
-            return CountAvailableTotal(ComputeItemHash(item));
         }
 
         public int CountAvailableTotal(int itemHashId)
@@ -356,7 +338,7 @@ namespace Hecton8.Inventory
 
             int anchorX = anchorIndex % _grid.Columns;
             int anchorY = anchorIndex / _grid.Columns;
-            return RemoveOneItem(anchorX, anchorY) != null;
+            return RemoveOneItem(anchorX, anchorY) != 0;
         }
 
         public void AddWeight(float amount)
@@ -366,47 +348,15 @@ namespace Hecton8.Inventory
                 survival.SetWeight(TotalWeight);
         }
 
-        public bool ContainsItem(ItemData item)
-        {
-            return ContainsItem(ComputeItemHash(item));
-        }
-
         public bool ContainsItem(int itemHashId)
         {
             return CountAnchorsByHash(itemHashId) > 0;
         }
 
-        public bool TryAddItem(ItemData item, int quantity = 1)
-        {
-            int itemHashId = ComputeItemHash(item);
-            if (!CanAcceptQuantity(itemHashId, quantity))
-            {
-                if (item != null && quantity > 0)
-                    InventoryEvents.NotifyInventoryFull(item);
-
-                return false;
-            }
-
-            return TryAddItemInternal(itemHashId, quantity, item, out _);
-        }
-
         public bool TryAddItem(int itemHashId, int quantity = 1)
         {
-            if (!CanAcceptQuantity(itemHashId, quantity))
-            {
-                ItemData item = ResolveItemByHash(itemHashId);
-                if (item != null && quantity > 0)
-                    InventoryEvents.NotifyInventoryFull(item);
-
-                return false;
-            }
-
-            return TryAddItemInternal(itemHashId, quantity, null, out _);
-        }
-
-        public bool TryReserveQuantityForCraft(ItemData item, int quantity, CraftReservation[] reservations, ref int reservationCount)
-        {
-            return TryReserveQuantityForCraft(ComputeItemHash(item), quantity, reservations, ref reservationCount);
+            return CanAcceptQuantity(itemHashId, quantity) &&
+                   TryAddItemInternal(itemHashId, quantity, out _);
         }
 
         public bool TryReserveQuantityForCraft(int itemHashId, int quantity, CraftReservation[] reservations, ref int reservationCount)
@@ -532,33 +482,13 @@ namespace Hecton8.Inventory
             return false;
         }
 
-        public ScavengeAttemptResult ScavengeAttempt(ItemData item, int quantity, Transform interactor)
-        {
-            return ScavengeAttempt(ComputeItemHash(item), quantity, interactor);
-        }
-
         public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor)
         {
             if (itemHashId == 0 || quantity <= 0)
                 return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
 
-            ItemData item = ResolveItemByHash(itemHashId);
-            if (item == null)
-                return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
-
-            TryAddItemInternal(itemHashId, quantity, item, out int addedQuantity);
-            if (addedQuantity > 0)
-            {
-                InteractionEvents.RaiseItemCollected(item, addedQuantity, interactor);
-                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
-            }
-
+            TryAddItemInternal(itemHashId, quantity, out int addedQuantity);
             return new ScavengeAttemptResult(quantity, addedQuantity);
-        }
-
-        public bool TryRemoveQuantity(ItemData item, int quantity)
-        {
-            return TryRemoveQuantity(ComputeItemHash(item), quantity);
         }
 
         public bool TryRemoveQuantity(int itemHashId, int quantity)
@@ -606,11 +536,6 @@ namespace Hecton8.Inventory
 
             NotifyInventoryChanged();
             return true;
-        }
-
-        public int CountAnchors(ItemData item)
-        {
-            return CountAnchorsByHash(ComputeItemHash(item));
         }
 
         public void PopulateSaveData(SaveData data)
@@ -802,31 +727,7 @@ namespace Hecton8.Inventory
             return _anchorStateFlags.IsCreated ? _anchorStateFlags.AsReadOnly() : default;
         }
 
-        private void HandleItemCollected(ItemData item, int quantity, Transform interactor)
-        {
-            int itemHashId = ComputeItemHash(item);
-            if (itemHashId == 0)
-                return;
-
-            if (!CanAcceptQuantity(itemHashId, quantity))
-            {
-                if (item != null)
-                    InventoryEvents.NotifyInventoryFull(item);
-                return;
-            }
-
-            bool allAdded = TryAddItemInternal(itemHashId, quantity, item, out int addedQuantity);
-            if (addedQuantity > 0)
-                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
-
-            if (!allAdded)
-            {
-                if (item != null)
-                    InventoryEvents.NotifyInventoryFull(item);
-            }
-        }
-
-        private bool TryAddItemInternal(int itemHashId, int quantity, ItemData notificationItem, out int addedQuantity)
+        private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
         {
             addedQuantity = 0;
             if (_grid == null || itemHashId == 0 || quantity <= 0 || !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
@@ -851,8 +752,6 @@ namespace Hecton8.Inventory
                 else
                 {
                     allAdded = false;
-                    if (notificationItem != null)
-                        InventoryEvents.NotifyInventoryFull(notificationItem);
                     break;
                 }
             }
@@ -901,8 +800,7 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            for (int i = 0; i < _stackCounts.Length; i++)
-                _scavengeSimStackCounts[i] = _stackCounts[i];
+            CopyNativeArray(_stackCounts, _scavengeSimStackCounts);
 
             _grid.CopyOccupiedMask(_simulationOccupiedCells);
 
@@ -1052,44 +950,22 @@ namespace Hecton8.Inventory
                 | hashId;
         }
 
-        private bool TryBuildDescriptor(ItemData item, out InventoryGrid.InventoryItemDescriptor descriptor)
-        {
-            descriptor = default;
-            if (item == null)
-                return false;
-
-            int itemHashId = ComputeItemHash(item);
-            if (itemHashId == 0)
-                return false;
-
-            byte width = (byte)math.clamp(item.width, 1, byte.MaxValue);
-            byte height = (byte)math.clamp(item.height, 1, byte.MaxValue);
-            ushort maxStack = (ushort)math.clamp(item.maxStack, 1, ushort.MaxValue);
-            descriptor = new InventoryGrid.InventoryItemDescriptor(
-                itemHashId,
-                width,
-                height,
-                maxStack,
-                item.weight,
-                (byte)item.category,
-                0,
-                item.stackable && maxStack > 1);
-            return descriptor.IsValid;
-        }
-
         private bool TryBuildDescriptor(int itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor)
         {
             descriptor = default;
-            return itemCatalog != null
-                && itemHashId != 0
-                && TryBuildDescriptor(itemCatalog.FindByHash(itemHashId), out descriptor);
-        }
+            if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+                return false;
 
-        private ItemData ResolveItemByHash(int itemHashId)
-        {
-            return itemCatalog != null && itemHashId != 0
-                ? itemCatalog.FindByHash(itemHashId)
-                : null;
+            descriptor = new InventoryGrid.InventoryItemDescriptor(
+                runtimeDescriptor.HashId,
+                runtimeDescriptor.Width,
+                runtimeDescriptor.Height,
+                runtimeDescriptor.MaxStack,
+                runtimeDescriptor.Weight,
+                runtimeDescriptor.CategoryId,
+                0,
+                runtimeDescriptor.Stackable);
+            return descriptor.IsValid;
         }
 
         private static InventorySortEntry BuildInventorySortEntry(in ItemPlacement placement, int originalIndex)
@@ -1116,9 +992,12 @@ namespace Hecton8.Inventory
             InventoryChanged?.Invoke();
         }
 
-        private static int ComputeItemHash(ItemData item)
+        private bool TryGetRuntimeDescriptor(int itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)
         {
-            return item == null ? 0 : LocHash.Compute(item.PersistentId);
+            runtimeDescriptor = default;
+            return itemCatalog != null &&
+                   itemHashId != 0 &&
+                   itemCatalog.TryGetRuntimeDescriptor(itemHashId, out runtimeDescriptor);
         }
 
         private void ClearCraftReservationState()
@@ -1162,13 +1041,27 @@ namespace Hecton8.Inventory
             return Mathf.Max(1, (int)_stackCounts[reservation.AnchorIndex]) >= reservation.Quantity;
         }
 
-        private static void ClearNativeArray(NativeArray<ushort> array)
+        private static unsafe void ClearNativeArray(NativeArray<ushort> array)
         {
             if (!array.IsCreated)
                 return;
 
-            for (int i = 0; i < array.Length; i++)
-                array[i] = 0;
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+            UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<ushort>());
+        }
+
+        private static unsafe void CopyNativeArray(NativeArray<ushort> source, NativeArray<ushort> destination)
+        {
+            if (!source.IsCreated || !destination.IsCreated)
+                return;
+
+            int copyLength = math.min(source.Length, destination.Length);
+            if (copyLength <= 0)
+                return;
+
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
+            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, copyLength * UnsafeUtility.SizeOf<ushort>());
         }
     }
 }

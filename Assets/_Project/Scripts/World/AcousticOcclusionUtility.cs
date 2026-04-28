@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -75,6 +76,7 @@ namespace Hecton8.World
         private const int MaxQueuedRequests = 48;
         private const int MaxQueuedEnclosureRequests = 8;
         private const int EnclosureProbeCount = 6;
+        private const int EnclosureProbeSliceCount = 2;
         private const float OcclusionReuseDistanceMeters = 0.5f;
         private const float OcclusionReuseDistanceSqr = OcclusionReuseDistanceMeters * OcclusionReuseDistanceMeters;
         private const float EnclosureReuseDistanceMeters = 2f;
@@ -85,20 +87,22 @@ namespace Hecton8.World
         private const float MinimumRt60Seconds = 0.12f;
         private const float MaximumRt60Seconds = 10f;
 
-        private static readonly int PlayerLayer = LayerMask.NameToLayer("Player");
-        private static readonly int TriggerZoneLayer = LayerMask.NameToLayer("TriggerZone");
-        private static readonly int TransparentFxLayer = LayerMask.NameToLayer("TransparentFX");
-        private static readonly int FirstPersonToolsLayer = LayerMask.NameToLayer("FirstPersonTools");
-        private static readonly int VoxelCaveLayer = LayerMask.NameToLayer("VoxelCave");
-        private static readonly int BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
-        private static readonly int VehicleLayer = LayerMask.NameToLayer("Vehicle");
-        private static readonly int WaterLayer = LayerMask.NameToLayer("Water");
+        private static readonly int PlayerLayer;
+        private static readonly int TriggerZoneLayer;
+        private static readonly int TransparentFxLayer;
+        private static readonly int FirstPersonToolsLayer;
+        private static readonly int VoxelCaveLayer;
+        private static readonly int BaseModuleLayer;
+        private static readonly int VehicleLayer;
+        private static readonly int WaterLayer;
 
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct QueryKey
         {
             public Vector3 SourcePosition;
-            public Vector3 ListenerPosition;
             public int LayerMask;
+            public Vector3 ListenerPosition;
+            private int _padding0;
             public ulong IgnoreOriginRootEntityId;
             public ulong IgnoreTargetRootEntityId;
             public ulong IgnoreOriginBodyEntityId;
@@ -117,13 +121,16 @@ namespace Hecton8.World
             public bool Valid;
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         private struct EnclosureKey
         {
             public Vector3 OriginPosition;
             public float ProbeDistance;
-            public int LayerMask;
             public ulong IgnoreRootEntityId;
             public ulong IgnoreBodyEntityId;
+            public int LayerMask;
+            private int _padding0;
+            private long _padding1;
         }
 
         private struct EnclosureFrameEntry
@@ -138,6 +145,13 @@ namespace Hecton8.World
             public bool Valid;
         }
 
+        private struct ActiveEnclosureQuery
+        {
+            public EnclosureKey Key;
+            public bool Valid;
+            public int CompletedAxisMask;
+        }
+
         private static int _runtimeOwnerCount;
         private static bool _queryBatchScheduled;
         private static bool _enclosureBatchScheduled;
@@ -150,6 +164,8 @@ namespace Hecton8.World
         private static int _nextEnclosureCacheWriteIndex;
         private static JobHandle _pendingQueryHandle;
         private static JobHandle _pendingEnclosureHandle;
+        private static int _scheduledEnclosureRayCount;
+        private static ActiveEnclosureQuery _activeEnclosureQuery;
         // COLD ALLOC: QueryFrameEntry[48] - queued cross-frame acoustic occlusion requests - owner: AcousticOcclusionUtility
         private static readonly QueryFrameEntry[] _queuedEntries = new QueryFrameEntry[MaxQueuedRequests];
         // COLD ALLOC: QueryFrameEntry[48] - scheduled acoustic occlusion request snapshot - owner: AcousticOcclusionUtility
@@ -162,6 +178,14 @@ namespace Hecton8.World
         private static readonly EnclosureFrameEntry[] _scheduledEnclosureEntries = new EnclosureFrameEntry[MaxQueuedEnclosureRequests];
         // COLD ALLOC: CachedEnclosureEntry[8] - last resolved enclosure cache - owner: AcousticOcclusionUtility
         private static readonly CachedEnclosureEntry[] _cachedEnclosureEntries = new CachedEnclosureEntry[MaxQueuedEnclosureRequests];
+        // COLD ALLOC: float[6] - staged enclosure distances accumulated across 3 frames - owner: AcousticOcclusionUtility
+        private static readonly float[] _activeEnclosureDistances = new float[EnclosureProbeCount];
+        // COLD ALLOC: float[6] - staged enclosure absorption coefficients accumulated across 3 frames - owner: AcousticOcclusionUtility
+        private static readonly float[] _activeEnclosureAbsorptions = new float[EnclosureProbeCount];
+        // COLD ALLOC: bool[6] - staged enclosure hit flags accumulated across 3 frames - owner: AcousticOcclusionUtility
+        private static readonly bool[] _activeEnclosureHits = new bool[EnclosureProbeCount];
+        // COLD ALLOC: int[2] - scheduled enclosure axis indices for the active frame slice - owner: AcousticOcclusionUtility
+        private static readonly int[] _scheduledEnclosureAxisIndices = new int[EnclosureProbeSliceCount];
         // COLD ALLOC: NativeList<RaycastCommand>[48] - deferred acoustic occlusion batch command buffer - owner: AcousticOcclusionUtility
         private static NativeList<RaycastCommand> _queryCommands;
         // COLD ALLOC: NativeArray<RaycastHit>[384] - deferred acoustic occlusion batch result buffer - owner: AcousticOcclusionUtility
@@ -170,6 +194,18 @@ namespace Hecton8.World
         private static NativeList<RaycastCommand> _enclosureCommands;
         // COLD ALLOC: NativeArray<RaycastHit>[48] - deferred enclosure probe result buffer - owner: AcousticOcclusionUtility
         private static NativeArray<RaycastHit> _enclosureResults;
+
+        static AcousticOcclusionUtility()
+        {
+            PlayerLayer = LayerMask.NameToLayer("Player");
+            TriggerZoneLayer = LayerMask.NameToLayer("TriggerZone");
+            TransparentFxLayer = LayerMask.NameToLayer("TransparentFX");
+            FirstPersonToolsLayer = LayerMask.NameToLayer("FirstPersonTools");
+            VoxelCaveLayer = LayerMask.NameToLayer("VoxelCave");
+            BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
+            VehicleLayer = LayerMask.NameToLayer("Vehicle");
+            WaterLayer = LayerMask.NameToLayer("Water");
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeState()
@@ -204,6 +240,8 @@ namespace Hecton8.World
             _nextEnclosureCacheWriteIndex = 0;
             _pendingQueryHandle = default;
             _pendingEnclosureHandle = default;
+            _scheduledEnclosureRayCount = 0;
+            ResetActiveEnclosureQuery();
             _queryCommands = default;
             _queryResults = default;
             _enclosureCommands = default;
@@ -240,6 +278,7 @@ namespace Hecton8.World
             _queuedEnclosureCount = 0;
             _scheduledEnclosureCount = 0;
             _nextEnclosureCacheWriteIndex = 0;
+            ResetActiveEnclosureQuery();
 
             if (_queryCommands.IsCreated)
             {
@@ -295,6 +334,21 @@ namespace Hecton8.World
             mask &= ~LayerBit(TransparentFxLayer);
             mask &= ~LayerBit(FirstPersonToolsLayer);
             return mask;
+        }
+
+        private static void ResetActiveEnclosureQuery()
+        {
+            _activeEnclosureQuery = default;
+            _scheduledEnclosureRayCount = 0;
+            for (int axisIndex = 0; axisIndex < EnclosureProbeCount; axisIndex++)
+            {
+                _activeEnclosureDistances[axisIndex] = 0f;
+                _activeEnclosureAbsorptions[axisIndex] = WaterAbsorption01;
+                _activeEnclosureHits[axisIndex] = false;
+            }
+
+            for (int scheduledIndex = 0; scheduledIndex < EnclosureProbeSliceCount; scheduledIndex++)
+                _scheduledEnclosureAxisIndices[scheduledIndex] = -1;
         }
 
         public static void PrimeOcclusionPath(
@@ -366,6 +420,9 @@ namespace Hecton8.World
             };
 
             if (TryFindCachedEnclosureResult(queryKey, out _))
+                return;
+
+            if (_activeEnclosureQuery.Valid && EnclosureKeysMatch(_activeEnclosureQuery.Key, queryKey))
                 return;
 
             for (int i = 0; i < _queuedEnclosureCount; i++)
@@ -472,12 +529,12 @@ namespace Hecton8.World
                 _queryResults = new NativeArray<RaycastHit>(MaxQueuedRequests * MaxOcclusionHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             if (!_enclosureCommands.IsCreated)
-                _enclosureCommands = new NativeList<RaycastCommand>(MaxQueuedEnclosureRequests * EnclosureProbeCount, Allocator.Persistent);
+                _enclosureCommands = new NativeList<RaycastCommand>(EnclosureProbeSliceCount, Allocator.Persistent);
 
             if (!_enclosureResults.IsCreated)
             {
                 _enclosureResults = new NativeArray<RaycastHit>(
-                    MaxQueuedEnclosureRequests * EnclosureProbeCount,
+                    EnclosureProbeSliceCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
             }
@@ -498,7 +555,7 @@ namespace Hecton8.World
             if (!_queryBatchScheduled && _queuedCount > 0)
                 ScheduleQueuedBatch();
 
-            if (!_enclosureBatchScheduled && _queuedEnclosureCount > 0)
+            if (!_enclosureBatchScheduled && (_activeEnclosureQuery.Valid || _queuedEnclosureCount > 0))
                 ScheduleQueuedEnclosureBatch();
 
             _queuedFrame = currentFrame;
@@ -535,19 +592,34 @@ namespace Hecton8.World
                 return;
 
             _pendingEnclosureHandle.Complete();
-            for (int queryIndex = 0; queryIndex < _scheduledEnclosureCount; queryIndex++)
+            if (_activeEnclosureQuery.Valid)
             {
-                EnclosureKey queryKey = _scheduledEnclosureEntries[queryIndex].Key;
-                AcousticEnclosureResult result = ResolveEnclosureResult(
-                    queryIndex * EnclosureProbeCount,
-                    queryKey.ProbeDistance,
-                    queryKey.IgnoreRootEntityId,
-                    queryKey.IgnoreBodyEntityId);
-                StoreCachedEnclosureResult(queryKey, result);
+                for (int scheduledIndex = 0; scheduledIndex < _scheduledEnclosureRayCount; scheduledIndex++)
+                {
+                    int axisIndex = _scheduledEnclosureAxisIndices[scheduledIndex];
+                    if ((uint)axisIndex >= EnclosureProbeCount)
+                        continue;
+
+                    ConsumeActiveEnclosureRayResult(
+                        axisIndex,
+                        _activeEnclosureQuery.Key.ProbeDistance,
+                        _activeEnclosureQuery.Key.IgnoreRootEntityId,
+                        _activeEnclosureQuery.Key.IgnoreBodyEntityId,
+                        _enclosureResults[scheduledIndex]);
+                    _activeEnclosureQuery.CompletedAxisMask |= 1 << axisIndex;
+                    _scheduledEnclosureAxisIndices[scheduledIndex] = -1;
+                }
+
+                if (_activeEnclosureQuery.CompletedAxisMask == ((1 << EnclosureProbeCount) - 1))
+                {
+                    StoreCachedEnclosureResult(_activeEnclosureQuery.Key, ResolveActiveEnclosureResult());
+                    ResetActiveEnclosureQuery();
+                }
             }
 
             _enclosureBatchScheduled = false;
             _scheduledEnclosureCount = 0;
+            _scheduledEnclosureRayCount = 0;
             _pendingEnclosureHandle = default;
         }
 
@@ -594,32 +666,49 @@ namespace Hecton8.World
 
         private static void ScheduleQueuedEnclosureBatch()
         {
-            if (_queuedEnclosureCount <= 0)
+            if (_activeEnclosureQuery.Valid == false)
+            {
+                if (_queuedEnclosureCount <= 0)
+                    return;
+
+                _activeEnclosureQuery.Key = _queuedEnclosureEntries[0].Key;
+                _activeEnclosureQuery.Valid = true;
+                _activeEnclosureQuery.CompletedAxisMask = 0;
+                for (int axisIndex = 0; axisIndex < EnclosureProbeCount; axisIndex++)
+                {
+                    _activeEnclosureDistances[axisIndex] = _activeEnclosureQuery.Key.ProbeDistance;
+                    _activeEnclosureAbsorptions[axisIndex] = WaterAbsorption01;
+                    _activeEnclosureHits[axisIndex] = false;
+                }
+            }
+
+            if (!_activeEnclosureQuery.Valid)
                 return;
 
             _enclosureCommands.Clear();
             _scheduledEnclosureCount = 0;
-            for (int queryIndex = 0; queryIndex < _queuedEnclosureCount; queryIndex++)
+            _scheduledEnclosureRayCount = 0;
+            QueryParameters parameters = new QueryParameters(_activeEnclosureQuery.Key.LayerMask, false, QueryTriggerInteraction.Ignore);
+            for (int axisIndex = 0; axisIndex < EnclosureProbeCount && _scheduledEnclosureRayCount < EnclosureProbeSliceCount; axisIndex++)
             {
-                EnclosureKey queryKey = _queuedEnclosureEntries[queryIndex].Key;
-                QueryParameters parameters = new QueryParameters(queryKey.LayerMask, false, QueryTriggerInteraction.Ignore);
-                for (int axisIndex = 0; axisIndex < EnclosureProbeCount; axisIndex++)
-                {
-                    _enclosureCommands.Add(new RaycastCommand(
-                        queryKey.OriginPosition,
-                        ResolveEnclosureProbeDirection(axisIndex),
-                        parameters,
-                        queryKey.ProbeDistance));
-                }
+                if ((_activeEnclosureQuery.CompletedAxisMask & (1 << axisIndex)) != 0)
+                    continue;
 
-                _scheduledEnclosureEntries[_scheduledEnclosureCount].Key = queryKey;
-                _scheduledEnclosureCount++;
+                _enclosureCommands.Add(new RaycastCommand(
+                    _activeEnclosureQuery.Key.OriginPosition,
+                    ResolveEnclosureProbeDirection(axisIndex),
+                    parameters,
+                    _activeEnclosureQuery.Key.ProbeDistance));
+                _scheduledEnclosureAxisIndices[_scheduledEnclosureRayCount] = axisIndex;
+                _scheduledEnclosureRayCount++;
             }
 
-            if (_scheduledEnclosureCount <= 0)
+            if (_scheduledEnclosureRayCount <= 0)
                 return;
 
-            int resultLength = math.min(_scheduledEnclosureCount * EnclosureProbeCount, _enclosureResults.Length);
+            _scheduledEnclosureEntries[0].Key = _activeEnclosureQuery.Key;
+            _scheduledEnclosureCount = 1;
+            int resultLength = math.min(_scheduledEnclosureRayCount, _enclosureResults.Length);
             for (int i = 0; i < resultLength; i++)
                 _enclosureResults[i] = default;
 
@@ -673,19 +762,51 @@ namespace Hecton8.World
                 occludingHitCount);
         }
 
-        private static AcousticEnclosureResult ResolveEnclosureResult(
-            int resultStartIndex,
-            float probeDistance,
+        private static void ConsumeActiveEnclosureRayResult(
+            int axisIndex,
+            float fallbackDistance,
             ulong ignoreRootEntityId,
-            ulong ignoreBodyEntityId)
+            ulong ignoreBodyEntityId,
+            RaycastHit hit)
         {
-            float clampedProbeDistance = math.max(1f, probeDistance);
-            float distanceUp = ResolveEnclosureDistance(resultStartIndex, 0, clampedProbeDistance, ignoreRootEntityId, ignoreBodyEntityId, out float absorptionUp, out bool hitUp);
-            float distanceDown = ResolveEnclosureDistance(resultStartIndex, 1, clampedProbeDistance, ignoreRootEntityId, ignoreBodyEntityId, out float absorptionDown, out bool hitDown);
-            float distanceLeft = ResolveEnclosureDistance(resultStartIndex, 2, clampedProbeDistance, ignoreRootEntityId, ignoreBodyEntityId, out float absorptionLeft, out bool hitLeft);
-            float distanceRight = ResolveEnclosureDistance(resultStartIndex, 3, clampedProbeDistance, ignoreRootEntityId, ignoreBodyEntityId, out float absorptionRight, out bool hitRight);
-            float distanceForward = ResolveEnclosureDistance(resultStartIndex, 4, clampedProbeDistance, ignoreRootEntityId, ignoreBodyEntityId, out float absorptionForward, out bool hitForward);
-            float distanceBack = ResolveEnclosureDistance(resultStartIndex, 5, clampedProbeDistance, ignoreRootEntityId, ignoreBodyEntityId, out float absorptionBack, out bool hitBack);
+            if ((uint)axisIndex >= EnclosureProbeCount)
+                return;
+
+            Collider collider = hit.collider;
+            if (collider == null || ShouldIgnoreCollider(collider, ignoreRootEntityId, 0ul, ignoreBodyEntityId, 0ul))
+            {
+                _activeEnclosureDistances[axisIndex] = fallbackDistance;
+                _activeEnclosureAbsorptions[axisIndex] = WaterAbsorption01;
+                _activeEnclosureHits[axisIndex] = false;
+                return;
+            }
+
+            _activeEnclosureDistances[axisIndex] = math.clamp(hit.distance, MinimumProbeDistanceMeters, fallbackDistance);
+            _activeEnclosureAbsorptions[axisIndex] = ResolveAbsorption01(collider);
+            _activeEnclosureHits[axisIndex] = true;
+        }
+
+        private static AcousticEnclosureResult ResolveActiveEnclosureResult()
+        {
+            float clampedProbeDistance = math.max(1f, _activeEnclosureQuery.Key.ProbeDistance);
+            float distanceUp = _activeEnclosureDistances[0];
+            float distanceDown = _activeEnclosureDistances[1];
+            float distanceLeft = _activeEnclosureDistances[2];
+            float distanceRight = _activeEnclosureDistances[3];
+            float distanceForward = _activeEnclosureDistances[4];
+            float distanceBack = _activeEnclosureDistances[5];
+            float absorptionUp = _activeEnclosureAbsorptions[0];
+            float absorptionDown = _activeEnclosureAbsorptions[1];
+            float absorptionLeft = _activeEnclosureAbsorptions[2];
+            float absorptionRight = _activeEnclosureAbsorptions[3];
+            float absorptionForward = _activeEnclosureAbsorptions[4];
+            float absorptionBack = _activeEnclosureAbsorptions[5];
+            bool hitUp = _activeEnclosureHits[0];
+            bool hitDown = _activeEnclosureHits[1];
+            bool hitLeft = _activeEnclosureHits[2];
+            bool hitRight = _activeEnclosureHits[3];
+            bool hitForward = _activeEnclosureHits[4];
+            bool hitBack = _activeEnclosureHits[5];
 
             float spanVertical = math.max(MinimumProbeDistanceMeters, distanceUp + distanceDown);
             float spanHorizontal = math.max(MinimumProbeDistanceMeters, distanceLeft + distanceRight);
@@ -875,37 +996,6 @@ namespace Hecton8.World
             ulong transformEntityId = EntityId.ToULong(colliderTransform.GetEntityId());
             return (ignoreOriginRootEntityId != 0ul && transformEntityId == ignoreOriginRootEntityId) ||
                    (ignoreTargetRootEntityId != 0ul && transformEntityId == ignoreTargetRootEntityId);
-        }
-
-        private static float ResolveEnclosureDistance(
-            int resultStartIndex,
-            int axisIndex,
-            float fallbackDistance,
-            ulong ignoreRootEntityId,
-            ulong ignoreBodyEntityId,
-            out float absorption01,
-            out bool hitSurface)
-        {
-            int resultIndex = resultStartIndex + axisIndex;
-            if ((uint)resultIndex >= (uint)_enclosureResults.Length)
-            {
-                absorption01 = WaterAbsorption01;
-                hitSurface = false;
-                return fallbackDistance;
-            }
-
-            RaycastHit hit = _enclosureResults[resultIndex];
-            Collider collider = hit.collider;
-            if (collider == null || ShouldIgnoreCollider(collider, ignoreRootEntityId, 0ul, ignoreBodyEntityId, 0ul))
-            {
-                absorption01 = WaterAbsorption01;
-                hitSurface = false;
-                return fallbackDistance;
-            }
-
-            absorption01 = ResolveAbsorption01(collider);
-            hitSurface = true;
-            return math.clamp(hit.distance, MinimumProbeDistanceMeters, fallbackDistance);
         }
 
         private static AcousticEnclosureResult BuildOpenWaterResult(float probeDistance)

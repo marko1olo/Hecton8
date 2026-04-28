@@ -1,0 +1,4000 @@
+diff --git a/Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs b/Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs
+index e17d5119..55fc34fd 100644
+--- a/Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs
++++ b/Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs
+@@ -192,7 +192,7 @@ namespace Hecton8.Dev
+             int[] counts = new int[bundle.Length];
+             for (int i = 0; i < bundle.Length; i++)
+             {
+-                counts[i] = bundle[i].item != null ? playerInventory.CountTotal(bundle[i].item) : 0;
++                counts[i] = bundle[i].item != null ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId)) : 0;
+             }
+ 
+             return counts;
+@@ -210,10 +210,10 @@ namespace Hecton8.Dev
+                     continue;
+ 
+                 int required = Mathf.Max(1, entry.amount);
+-                int current = playerInventory.CountTotal(entry.item);
++                int current = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(entry.item.PersistentId));
+                 int missing = required - current;
+                 if (missing > 0)
+-                    playerInventory.TryAddItem(entry.item, missing);
++                    playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(entry.item.PersistentId), missing);
+             }
+         }
+ 
+@@ -230,7 +230,7 @@ namespace Hecton8.Dev
+ 
+                 int expectedDelta = Mathf.Max(1, entry.amount);
+                 int before = i < beforeCounts.Length ? beforeCounts[i] : 0;
+-                int after = playerInventory.CountTotal(entry.item);
++                int after = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(entry.item.PersistentId));
+                 int actualDelta = after - before;
+ 
+                 if (!shouldIncrease)
+diff --git a/Assets/_Project/Scripts/BaseModule.cs b/Assets/_Project/Scripts/BaseModule.cs
+index fa55feba..6c40e7e8 100644
+--- a/Assets/_Project/Scripts/BaseModule.cs
++++ b/Assets/_Project/Scripts/BaseModule.cs
+@@ -845,7 +845,10 @@ namespace Hecton8.Gameplay
+                         bool addedToInventory = false;
+ 
+                         // -- ??????? ???????? ? ????????? --
+-                        if (playerInventory != null && grid != null && playerInventory.TryAddItem(cost.item, 1))
++                        if (playerInventory != null &&
++                            grid != null &&
++                            cost.item != null &&
++                            playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(cost.item.PersistentId), 1))
+                             addedToInventory = true;
+ 
+                         // -- Fallback: ????? ? ??? --
+@@ -908,7 +911,10 @@ namespace Hecton8.Gameplay
+             for (int i = 0; i < quantity; i++)
+             {
+                 bool addedToInventory = false;
+-                if (playerInventory != null && targetGrid != null && playerInventory.TryAddItem(itemData, 1))
++                if (playerInventory != null &&
++                    targetGrid != null &&
++                    itemData != null &&
++                    playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(itemData.PersistentId), 1))
+                     addedToInventory = true;
+ 
+                 if (addedToInventory)
+diff --git a/Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs b/Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs
+index 376eba52..2f23bcee 100644
+--- a/Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs
++++ b/Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs
+@@ -345,7 +345,7 @@ namespace Hecton8.Dev
+             for (int i = 0; i < buildable.buildCost.Count; i++)
+             {
+                 InventoryCost cost = buildable.buildCost[i];
+-                counts[i] = cost.item != null ? playerInventory.CountTotal(cost.item) : 0;
++                counts[i] = cost.item != null ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)) : 0;
+             }
+ 
+             return counts;
+@@ -363,7 +363,7 @@ namespace Hecton8.Dev
+                     continue;
+ 
+                 int before = countsBefore[i];
+-                int after = playerInventory.CountTotal(cost.item);
++                int after = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId));
+                 int expectedUpperBound = before - Mathf.Max(cost.amount, 0);
+                 if (after > before)
+                 {
+diff --git a/Assets/_Project/Scripts/Construction/BotanyPlanterModule.cs b/Assets/_Project/Scripts/Construction/BotanyPlanterModule.cs
+index ed8e96dd..cf816f02 100644
+--- a/Assets/_Project/Scripts/Construction/BotanyPlanterModule.cs
++++ b/Assets/_Project/Scripts/Construction/BotanyPlanterModule.cs
+@@ -110,7 +110,7 @@ namespace Hecton8.Construction
+                 if (!TryPlantItem(item))
+                     break;
+ 
+-                if (!inventory.TryRemoveQuantity(item, 1))
++                if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+                 {
+                     RemoveLastPlantedItem(item);
+                     break;
+diff --git a/Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs b/Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs
+index 4bf13ef2..fb9344c8 100644
+--- a/Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs
++++ b/Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs
+@@ -334,7 +334,8 @@ namespace Hecton8.Construction
+                 if (removed <= 0 || _costItemBuffer[i] == null)
+                     continue;
+ 
+-                inventory.TryAddItem(_costItemBuffer[i], removed);
++                if (_costItemBuffer[i] != null)
++                    inventory.TryAddItem(Hecton.Localization.LocHash.Compute(_costItemBuffer[i].PersistentId), removed);
+                 _costRemovedBuffer[i] = 0;
+             }
+         }
+diff --git a/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs b/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs
+index af6d7102..91383d6d 100644
+--- a/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs
++++ b/Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs
+@@ -275,7 +275,7 @@ namespace Hecton8.Construction
+                 playerToolManager.Holster();
+             }
+ 
+-            if (!inventory.TryRemoveQuantity(item, 1))
++            if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+                 return false;
+ 
+             _slottedToolItem = item;
+@@ -296,7 +296,7 @@ namespace Hecton8.Construction
+ 
+             CancelActiveRepair();
+ 
+-            if (!inventory.TryAddItem(_slottedToolItem, 1))
++            if (!inventory.TryAddItem(Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId), 1))
+                 return false;
+ 
+             ClearSlotState();
+@@ -403,7 +403,10 @@ namespace Hecton8.Construction
+                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
+                         continue;
+ 
+-                    ItemData item = inventory.GetItemAt(x, y);
++                    int itemHashId = inventory.GetItemHashAt(x, y);
++                    ItemData item = itemHashId != 0 && inventory.ItemCatalog != null
++                        ? inventory.ItemCatalog.FindByHash(itemHashId)
++                        : null;
+                     if (item == null)
+                         continue;
+ 
+diff --git a/Assets/_Project/Scripts/Dev/MantaAcousticRuntimeVerifier.cs b/Assets/_Project/Scripts/Dev/MantaAcousticRuntimeVerifier.cs
+index 6cb46c5c..7b9d8d9c 100644
+--- a/Assets/_Project/Scripts/Dev/MantaAcousticRuntimeVerifier.cs
++++ b/Assets/_Project/Scripts/Dev/MantaAcousticRuntimeVerifier.cs
+@@ -155,8 +155,8 @@ namespace Hecton8.Dev
+ 
+             _debugEquippedManta = manta.IsEquipped;
+ 
+-            if (!playerInventory.ContainsItem(batteryItem))
+-                playerInventory.TryAddItem(batteryItem, 1);
++            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(batteryItem.PersistentId)))
++                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(batteryItem.PersistentId), 1);
+ 
+             manta.InsertBattery(batteryItem, 1f);
+             playerRigidbody.linearVelocity = Vector3.zero;
+@@ -280,8 +280,8 @@ namespace Hecton8.Dev
+                 return;
+             }
+ 
+-            if (!playerInventory.ContainsItem(prefabScooter.ToolData))
+-                playerInventory.TryAddItem(prefabScooter.ToolData, 1);
++            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(prefabScooter.ToolData.PersistentId)))
++                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(prefabScooter.ToolData.PersistentId), 1);
+ 
+             toolManager.Holster();
+             toolManager.SetAssignedToolPrefab(0, scooterPrefab, holsterIfCurrentInvalid: false);
+diff --git a/Assets/_Project/Scripts/Dev/PhysicalInteractionRuntimeVerifier.cs b/Assets/_Project/Scripts/Dev/PhysicalInteractionRuntimeVerifier.cs
+index 55efbc35..3b71bd63 100644
+--- a/Assets/_Project/Scripts/Dev/PhysicalInteractionRuntimeVerifier.cs
++++ b/Assets/_Project/Scripts/Dev/PhysicalInteractionRuntimeVerifier.cs
+@@ -221,7 +221,7 @@ namespace Hecton8.Dev
+                 return false;
+             }
+ 
+-            _debugPickupInventoryBefore = playerInventory.CountTotal(pickupProbeItem);
++            _debugPickupInventoryBefore = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(pickupProbeItem.PersistentId));
+ 
+             bool consumed = interactionHandler.TryHandleInteraction(pickupItem, interactionHandler.transform);
+             if (!consumed)
+@@ -231,7 +231,7 @@ namespace Hecton8.Dev
+             }
+ 
+             SimulateHandlerSteps(pickupSimulationSteps);
+-            _debugPickupInventoryAfter = playerInventory.CountTotal(pickupProbeItem);
++            _debugPickupInventoryAfter = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(pickupProbeItem.PersistentId));
+ 
+             bool probeGone = !pickupProbe.activeSelf;
+             bool inventoryIncreased = _debugPickupInventoryAfter > _debugPickupInventoryBefore;
+diff --git a/Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs b/Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs
+index ff9c433b..3a1ed6aa 100644
+--- a/Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs
++++ b/Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs
+@@ -199,7 +199,7 @@ namespace Hecton8.Economy
+                 if (!TryBufferItem(item))
+                     break;
+ 
+-                if (!inventory.TryRemoveQuantity(item, 1))
++                if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+                 {
+                     RemoveLastBufferedItem(item);
+                     break;
+diff --git a/Assets/_Project/Scripts/Economy/ScrapManager.cs b/Assets/_Project/Scripts/Economy/ScrapManager.cs
+index 55ea9d2d..3494fe80 100644
+--- a/Assets/_Project/Scripts/Economy/ScrapManager.cs
++++ b/Assets/_Project/Scripts/Economy/ScrapManager.cs
+@@ -73,14 +73,14 @@ namespace Hecton8.Economy
+             if (!TryResolveRecycleYield(sourceItem, out ResourceStack[] resolvedYield))
+                 return false;
+ 
+-            if (!inventory.TryRemoveQuantity(sourceItem, 1))
++            if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(sourceItem.PersistentId), 1))
+                 return false;
+ 
+             int grantedStackCount = 0;
+             if (!GrantYield(inventory, resolvedYield, ref grantedStackCount))
+             {
+                 RollbackYield(inventory, resolvedYield, grantedStackCount);
+-                inventory.TryAddItem(sourceItem, 1);
++                inventory.TryAddItem(Hecton.Localization.LocHash.Compute(sourceItem.PersistentId), 1);
+                 return false;
+             }
+ 
+@@ -195,7 +195,7 @@ namespace Hecton8.Economy
+ 
+                 for (int amountIndex = 0; amountIndex < stack.Amount; amountIndex++)
+                 {
+-                    if (!inventory.TryAddItem(stack.Item, 1))
++                    if (!inventory.TryAddItem(Hecton.Localization.LocHash.Compute(stack.Item.PersistentId), 1))
+                         return false;
+ 
+                     grantedStackCount++;
+@@ -218,7 +218,7 @@ namespace Hecton8.Economy
+                     continue;
+ 
+                 int rollbackAmount = Mathf.Min(stack.Amount, remaining);
+-                inventory.TryRemoveQuantity(stack.Item, rollbackAmount);
++                inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(stack.Item.PersistentId), rollbackAmount);
+                 remaining -= rollbackAmount;
+             }
+         }
+diff --git a/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs b/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs
+index a63d1386..0e39d221 100644
+--- a/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs
++++ b/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs
+@@ -64,7 +64,7 @@ namespace Hecton8.Debugging
+             UnlockRecipe(recipe);
+             SeedIngredients(recipe);
+ 
+-            int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(recipe.resultItem) : 0;
++            int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
+ 
+             fabricator.Interact(transform);
+             yield return null;
+@@ -81,7 +81,7 @@ namespace Hecton8.Debugging
+             float waitTime = Mathf.Max(0.1f, recipe.craftTime + completionPadding);
+             yield return new WaitForSeconds(waitTime);
+ 
+-            int afterCount = recipe.resultItem != null ? _inventory.CountTotal(recipe.resultItem) : 0;
++            int afterCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
+             bool crafted = afterCount > beforeCount;
+ 
+             if (!crafted)
+@@ -167,11 +167,11 @@ namespace Hecton8.Debugging
+                 if (cost == null || cost.item == null || cost.amount <= 0)
+                     continue;
+ 
+-                int missing = Mathf.Max(0, cost.amount - _inventory.CountTotal(cost.item));
++                int missing = Mathf.Max(0, cost.amount - _inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)));
+                 if (missing <= 0)
+                     continue;
+ 
+-                _inventory.TryAddItem(cost.item, missing);
++                _inventory.TryAddItem(Hecton.Localization.LocHash.Compute(cost.item.PersistentId), missing);
+             }
+         }
+     }
+diff --git a/Assets/_Project/Scripts/Fabricator.cs b/Assets/_Project/Scripts/Fabricator.cs
+index d3d072aa..68b46d58 100644
+--- a/Assets/_Project/Scripts/Fabricator.cs
++++ b/Assets/_Project/Scripts/Fabricator.cs
+@@ -526,9 +526,10 @@ namespace Hecton8.Crafting
+ 
+             if (result != null && _playerInventory != null)
+             {
++                int resultHashId = ComputeItemHash(result);
+                 for (int i = 0; i < recipe.resultQuantity; i++)
+                 {
+-                    if (!_playerInventory.TryAddItem(result, 1))
++                    if (resultHashId == 0 || !_playerInventory.TryAddItem(resultHashId, 1))
+                     {
+                         Debug.LogWarning(
+                             $"[Fabricator] ????????? ?????! " +
+@@ -618,7 +619,7 @@ namespace Hecton8.Crafting
+             if (inventory == null || item == null)
+                 return 0;
+ 
+-            return inventory.CountAvailableTotal(item);
++            return inventory.CountAvailableTotal(ComputeItemHash(item));
+         }
+ 
+         private static int ComputeItemHash(ItemData item)
+@@ -696,7 +697,7 @@ namespace Hecton8.Crafting
+                 if (localTake > 0)
+                 {
+                     if (!_playerInventory.TryReserveQuantityForCraft(
+-                            cost.item,
++                            ComputeItemHash(cost.item),
+                             localTake,
+                             _localCraftReservations,
+                             ref _localCraftReservationCount))
+diff --git a/Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs b/Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs
+index 76698ed9..05c0506a 100644
+--- a/Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs
++++ b/Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs
+@@ -171,11 +171,11 @@ namespace Hecton8.Gameplay
+                 yield break;
+             }
+ 
+-            if (!playerInventory.ContainsItem(salvagePrefabTool.ToolData))
+-                playerInventory.TryAddItem(salvagePrefabTool.ToolData, 1);
++            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(salvagePrefabTool.ToolData.PersistentId)))
++                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(salvagePrefabTool.ToolData.PersistentId), 1);
+ 
+             _debugLastStep = "CreateSalvageProbe";
+-            int beforeCount = playerInventory.CountTotal(salvageProbeItem);
++            int beforeCount = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(salvageProbeItem.PersistentId));
+             GameObject probe = CreateSalvageProbe();
+             if (probe == null)
+             {
+@@ -219,7 +219,7 @@ namespace Hecton8.Gameplay
+                 yield return new WaitForSecondsRealtime(settleDelay);
+ 
+                 _debugLastStep = "VerifySalvage";
+-                int afterCount = playerInventory.CountTotal(salvageProbeItem);
++                int afterCount = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(salvageProbeItem.PersistentId));
+                 bool recovered = afterCount > beforeCount && !probe.activeSelf;
+                 if (!recovered)
+                 {
+@@ -258,8 +258,8 @@ namespace Hecton8.Gameplay
+                 yield break;
+             }
+ 
+-            if (!playerInventory.ContainsItem(cutterPrefabTool.ToolData))
+-                playerInventory.TryAddItem(cutterPrefabTool.ToolData, 1);
++            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(cutterPrefabTool.ToolData.PersistentId)))
++                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(cutterPrefabTool.ToolData.PersistentId), 1);
+ 
+             if (playerBuilder.ActiveBuildable == null || playerBuilder.ActiveBuildable.finalPrefab == null)
+             {
+diff --git a/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs b/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+index 775ea18f..946970b8 100644
+--- a/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
++++ b/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+@@ -291,7 +291,10 @@ namespace Hecton8.Gameplay
+                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
+                         continue;
+ 
+-                    ItemData item = playerInventory.GetItemAt(x, y);
++                    int itemHashId = playerInventory.GetItemHashAt(x, y);
++                    ItemData item = itemHashId != 0 && playerInventory.ItemCatalog != null
++                        ? playerInventory.ItemCatalog.FindByHash(itemHashId)
++                        : null;
+                     if (item == null)
+                         continue;
+ 
+@@ -301,7 +304,7 @@ namespace Hecton8.Gameplay
+                     // Insert battery
+                     if (InsertBattery(emptySlot, item, 0f))
+                     {
+-                        playerInventory.RemoveItem(item, x, y);
++                        playerInventory.RemoveItemAt(x, y);
+                         return true;
+                     }
+                 }
+@@ -325,7 +328,7 @@ namespace Hecton8.Gameplay
+             if (battery == null)
+                 return false;
+ 
+-            if (!playerInventory.TryAddItem(battery, 1))
++            if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(battery.PersistentId), 1))
+             {
+                 // Inventory full, re-insert battery
+                 InsertBattery(slotIndex, battery, slots[slotIndex].currentCharge);
+diff --git a/Assets/_Project/Scripts/Gameplay/BioReactor.cs b/Assets/_Project/Scripts/Gameplay/BioReactor.cs
+index 5c070f00..cbb141c2 100644
+--- a/Assets/_Project/Scripts/Gameplay/BioReactor.cs
++++ b/Assets/_Project/Scripts/Gameplay/BioReactor.cs
+@@ -219,7 +219,10 @@ namespace Hecton8.Gameplay
+                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
+                         continue;
+ 
+-                    ItemData item = playerInventory.GetItemAt(x, y);
++                    int itemHashId = playerInventory.GetItemHashAt(x, y);
++                    ItemData item = itemHashId != 0 && playerInventory.ItemCatalog != null
++                        ? playerInventory.ItemCatalog.FindByHash(itemHashId)
++                        : null;
+                     if (item == null)
+                         continue;
+ 
+@@ -230,7 +233,7 @@ namespace Hecton8.Gameplay
+                     if (InsertFuel(item))
+                     {
+                         // Remove from player inventory
+-                        playerInventory.RemoveItem(item, x, y);
++                        playerInventory.RemoveItemAt(x, y);
+                         return true;
+                     }
+                 }
+@@ -256,14 +259,14 @@ namespace Hecton8.Gameplay
+             if (!IsAcceptedFuel(item))
+                 return false;
+ 
+-            if (!playerInventory.ContainsItem(item))
++            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(item.PersistentId)))
+                 return false;
+ 
+             if (!InsertFuel(item))
+                 return false;
+ 
+             // Remove one unit from player inventory
+-            playerInventory.TryRemoveQuantity(item, 1);
++            playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1);
+             return true;
+         }
+ 
+@@ -288,7 +291,10 @@ namespace Hecton8.Gameplay
+                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
+                         continue;
+ 
+-                    ItemData item = playerInventory.GetItemAt(x, y);
++                    int itemHashId = playerInventory.GetItemHashAt(x, y);
++                    ItemData item = itemHashId != 0 && playerInventory.ItemCatalog != null
++                        ? playerInventory.ItemCatalog.FindByHash(itemHashId)
++                        : null;
+                     if (item != null && IsAcceptedFuel(item))
+                     {
+                         count += playerInventory.GetStackCount(x, y);
+diff --git a/Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs b/Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs
+index 30246725..30cd0615 100644
+--- a/Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs
++++ b/Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs
+@@ -719,7 +719,10 @@ namespace Hecton8.Gameplay
+             {
+                 for (int x = 0; x < columns; x++)
+                 {
+-                    ItemData item = inventory.GetItemAt(x, y);
++                    int itemHashId = inventory.GetItemHashAt(x, y);
++                    ItemData item = itemHashId != 0 && inventory.ItemCatalog != null
++                        ? inventory.ItemCatalog.FindByHash(itemHashId)
++                        : null;
+                     if (item == null)
+                         continue;
+ 
+diff --git a/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs b/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs
+index 28876c3c..1f503b99 100644
+--- a/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs
++++ b/Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs
+@@ -4,6 +4,7 @@ using Hecton8.Core;
+ using Hecton8.Interaction;
+ using Hecton8.Inventory;
+ using Hecton8.Items;
++using Hecton8.Modding;
+ using Hecton8.Physics;
+ using Hecton8.World;
+ using UnityEngine;
+@@ -262,7 +263,14 @@ namespace Hecton8.Gameplay
+             int rejectedQuantity = quantity;
+             if (playerInventory != null)
+             {
+-                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(item, quantity, playerInventory.transform);
++                int itemHashId = LocHash.Compute(item.PersistentId);
++                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(itemHashId, quantity, playerInventory.transform);
++                if (result.AnyAdded)
++                {
++                    InteractionEvents.RaiseItemCollected(item, result.AddedQuantity, playerInventory.transform);
++                    HectonEventBus.Publish(new ItemCollectedEvent(item, result.AddedQuantity, playerInventory.transform));
++                }
++
+                 if (result.IsSuccess)
+                     return;
+ 
+diff --git a/Assets/_Project/Scripts/Gameplay/MissionManager.cs b/Assets/_Project/Scripts/Gameplay/MissionManager.cs
+index 41dac0fb..f22fa64a 100644
+--- a/Assets/_Project/Scripts/Gameplay/MissionManager.cs
++++ b/Assets/_Project/Scripts/Gameplay/MissionManager.cs
+@@ -561,7 +561,7 @@ namespace Hecton8.Gameplay
+             }
+ 
+             int quantity = Mathf.Max(1, reward.count);
+-            bool granted = _playerInventory.TryAddItem(item, quantity);
++            bool granted = _playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity);
+             string itemName = item.itemName != null ? item.itemName.ToUpperInvariant() : item.name.ToUpperInvariant();
+ 
+             if (granted)
+diff --git a/Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs b/Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs
+index 69546ef5..d0ce43eb 100644
+--- a/Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs
++++ b/Assets/_Project/Scripts/Gameplay/PDAExchangeSystem.cs
+@@ -247,7 +247,7 @@ namespace Hecton8.Gameplay
+                 }
+ 
+                 int amount = Mathf.Max(1, costs[i].amount);
+-                if (playerInventory.CountTotal(costs[i].item) < amount)
++                if (playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(costs[i].item.PersistentId)) < amount)
+                 {
+                     status = $"NEED {costs[i].item.itemName.ToUpperInvariant()} X{amount}";
+                     return false;
+@@ -426,10 +426,10 @@ namespace Hecton8.Gameplay
+                 if (bundle[i].item == null)
+                     return false;
+ 
+-                if (!playerInventory.TryRemoveQuantity(bundle[i].item, Mathf.Max(1, bundle[i].amount)))
++                if (!playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount)))
+                 {
+                     for (int j = 0; j < i; j++)
+-                        playerInventory.TryAddItem(bundle[j].item, Mathf.Max(1, bundle[j].amount));
++                        playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[j].item.PersistentId), Mathf.Max(1, bundle[j].amount));
+                     return false;
+                 }
+             }
+@@ -447,10 +447,10 @@ namespace Hecton8.Gameplay
+                 if (bundle[i].item == null)
+                     return false;
+ 
+-                if (!playerInventory.TryAddItem(bundle[i].item, Mathf.Max(1, bundle[i].amount)))
++                if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount)))
+                 {
+                     for (int j = 0; j < i; j++)
+-                        playerInventory.TryRemoveQuantity(bundle[j].item, Mathf.Max(1, bundle[j].amount));
++                        playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(bundle[j].item.PersistentId), Mathf.Max(1, bundle[j].amount));
+                     return false;
+                 }
+             }
+@@ -466,7 +466,7 @@ namespace Hecton8.Gameplay
+             for (int i = 0; i < bundle.Length; i++)
+             {
+                 if (bundle[i].item != null)
+-                    playerInventory.TryAddItem(bundle[i].item, Mathf.Max(1, bundle[i].amount));
++                    playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount));
+             }
+         }
+ 
+diff --git a/Assets/_Project/Scripts/Gameplay/StorageCrate.cs b/Assets/_Project/Scripts/Gameplay/StorageCrate.cs
+index 332fb101..2dd63ff5 100644
+--- a/Assets/_Project/Scripts/Gameplay/StorageCrate.cs
++++ b/Assets/_Project/Scripts/Gameplay/StorageCrate.cs
+@@ -419,7 +419,7 @@ namespace Hecton8.Gameplay
+             }
+ 
+             // Try to add to player inventory
+-            if (!playerInventory.TryAddItem(item, 1))
++            if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+             {
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                 Debug.Log($"[StorageCrate] Player inventory full. Cannot take {item.itemName}.");
+diff --git a/Assets/_Project/Scripts/HectonFabricatorUI.cs b/Assets/_Project/Scripts/HectonFabricatorUI.cs
+index 85ffcd07..cd81aa01 100644
+--- a/Assets/_Project/Scripts/HectonFabricatorUI.cs
++++ b/Assets/_Project/Scripts/HectonFabricatorUI.cs
+@@ -1,431 +1,159 @@
+-// ============================================================================
+-// HECTON-8 — HectonFabricatorUI.cs
+-// NASA-Punk Fabricator UI ?? ???? ?????????? Shapes (Immediate Mode).
+-//
+-// ???????????????:
+-//   1. ???????? ?? CraftingEvents: Open/Close/Progress/Complete.
+-//   2. ????????? ?? ???????? (W/S, ???????).
+-//   3. ?????? ?????? (Space/Enter).
+-//   4. ?????? / ???????? (Escape).
+-//   5. ????????? ? Immediate Mode ????? Shapes DrawShapes.
+-//   6. ?????????? ???????? ????? ????? IsMenuOpen.
+-//
+-// ???????????:
+-//   • ImmediateModeShapeDrawer — ??????? ????? Shapes ??? URP-???????.
+-//   • ITickable — ????????? ????? ????? GameTickManager.
+-//   • Event-Driven: UI ??????????? ?????? ??? ???????? (????????,
+-//     ????? ??????, ???????? ??????).
+-//   • Immediate Mode: ?????? ???? ???????????????? ?????????
+-//     ????? Shapes API (??? persistent UI objects).
+-//
+-// ZERO GC:
+-//   • Pre-cached string arrays: _percentStrings[101], _numStrings[100].
+-//   • Ingredient status strings ????????????? ?????? ??? ????? ??????
+-//     (W/S press), ?? ?????? ????.
+-//   • Draw.Color/Thickness — value types, zero GC.
+-//   • Scr() helper — struct math (Vector3), zero GC.
+-//   • ??????? foreach, LINQ, string concatenation ? DrawShapes.
+-//
+-// ?????????? ????? (NASA-Punk):
+-//   • ?????? ????? (1-2px), ????????? ?????.
+-//   • ???????? ???????: Cyan primary, Amber accent, Red warning.
+-//   • ???????????? bracket-? ?????? ?????????? ????????.
+-//   • Corner decorations ?? ??????? (L-shaped marks).
+-//   • ???????????????? progress bar ? ??????????.
+-//   • Scan-line ?????? ?? ???? ??????.
+-//
+-// ???????????:
+-//   • Shapes (Freya Holmér) — NuGet/Asset Store.
+-//   • TextMeshPro — ??? ??????? (TMP_FontAsset).
+-//   • GameTickManager — ITickable registration.
+-//   • CraftingEvents — ??????????? ??????? ??????.
+-//   • PlayerInventory — ??????? ????????????.
+-//
+-// ?????????????? ??????? ???? (?????????? ? ???????):
+-//
+-//   namespace Hecton8.Crafting {
+-//     public static class CraftingEvents {
+-//       public static event Action<IFabricator> OnFabricatorOpened;
+-//       public static event Action OnFabricatorClosed;
+-//       public static event Action<float> OnCraftProgressUpdated; // [0..1]
+-//       public static event Action<RecipeData> OnCraftCompleted;
+-//     }
+-//     public interface IFabricator {
+-//       List<RecipeData> AvailableRecipes { get; }
+-//       bool IsCrafting { get; }
+-//       void StartCraft(RecipeData recipe);
+-//       void CancelCraft();
+-//     }
+-//     [CreateAssetMenu] public class RecipeData : ScriptableObject {
+-//       public string recipeName;
+-//       public Sprite icon;
+-//       public float craftTime;
+-//       public List<RecipeIngredient> ingredients;
+-//       public ItemData result;
+-//     }
+-//     [Serializable] public struct RecipeIngredient {
+-//       public ItemData item;
+-//       public int amount;
+-//     }
+-//   }
+-// ============================================================================
+-
+-using System;
+ using System.Collections.Generic;
+-using System.Text;
+ using Hecton8.Bootstrap;
++using Hecton8.Building;
+ using Hecton8.Core;
+ using Hecton8.Crafting;
++using Hecton8.Input;
+ using Hecton8.Inventory;
+ using Hecton8.Items;
+-using Hecton8.Building;
+-using Shapes;
+-using TMPro;
++using Unity.Collections;
+ using UnityEngine;
+ using UnityEngine.Rendering;
+-using Hecton.Localization;
+-using Hecton8.Input;
++#if UNITY_EDITOR
++using UnityEditor;
++#endif
+ 
+ namespace Hecton8.UI
+ {
+     [DisallowMultipleComponent]
+-    public sealed class HectonFabricatorUI : ImmediateModeShapeDrawer, ITickable, IUpdatable
++    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable
+     {
+-        // ----------------------------------------------------------
+-        //  STATIC — PRE-CACHED STRINGS (allocated once at class load)
+-        // ----------------------------------------------------------
+-
+-        /// <summary>Pre-cached percentage strings "0%" ? "100%". Zero GC at runtime.</summary>
+-        private static readonly string[] PercentStrings;
+-
+-        /// <summary>Pre-cached integer strings "0" ? "99". Zero GC at runtime.</summary>
+-        private static readonly string[] NumStrings;
+-
+-        /// <summary>Localized labels — string, zero GC.</summary>
+-        private string LabelFabricator  = "FABRICATOR";
+-        private string LabelRecipes     = "RECIPES";
+-        private string LabelDetails     = "BLUEPRINT";
+-        private string LabelIngredients = "REQUIRED MATERIALS";
+-        private string LabelCraftTime   = "FABRICATION TIME";
+-        private string LabelResult      = "OUTPUT";
+-        private string LabelCrafting    = "FABRICATING...";
+-        private string LabelHintNav     = "<button:navigate> Navigate";
+-        private string LabelHintCraft   = "<button:submit> Fabricate";
+-        private string LabelHintClose   = "<button:cancel> Close";
+-        private string LabelNoRecipes   = "NO BLUEPRINTS AVAILABLE";
+-        private string LabelBlueprintLocked = "SCAN DATA REQUIRED";
+-        private string LabelInsufficient = "INSUFFICIENT";
+-        private string LabelReady       = "READY";
+-        private string LabelPowerOffline = "POWER OFFLINE";
+-        private string LabelPowerRequired = "POWER REQUIRED";
+-        private const string LabelSeconds     = "s";
+-        private const string LabelSlash       = "/";
+-        private const string LabelDot         = "\u2022"; // bullet •
+-
+-        static HectonFabricatorUI()
+-        {
+-            // -- Percentage strings --
+-            PercentStrings = new string[101];
+-            for (int i = 0; i <= 100; i++)
+-                PercentStrings[i] = i + "%";
+-
+-            // -- Number strings --
+-            NumStrings = new string[100];
+-            for (int i = 0; i < 100; i++)
+-                NumStrings[i] = i.ToString();
+-        }
++        private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
++        private const int MaxVisibleHologramInstances = 16;
++        private const float HologramBaseDistanceMeters = 1f;
++        private const float HologramSpinDegreesPerSecond = 36f;
+ 
+-        // ----------------------------------------------------------
+-        //  COLOR PALETTE — NASA-Punk
+-        // ----------------------------------------------------------
+-
+-        private static readonly Color ColorPrimary     = new Color(0.00f, 0.83f, 1.00f, 1.00f); // Cyan
+-        private static readonly Color ColorPrimaryDim   = new Color(0.00f, 0.50f, 0.65f, 0.70f);
+-        private static readonly Color ColorAccent      = new Color(1.00f, 0.72f, 0.00f, 1.00f); // Amber
+-        private static readonly Color ColorWarning     = new Color(1.00f, 0.20f, 0.20f, 1.00f); // Red
+-        private static readonly Color ColorSuccess     = new Color(0.20f, 1.00f, 0.40f, 1.00f); // Green
+-        private static readonly Color ColorText        = new Color(0.75f, 0.78f, 0.82f, 1.00f); // Light grey
+-        private static readonly Color ColorTextBright  = new Color(1.00f, 1.00f, 1.00f, 1.00f); // White
+-        private static readonly Color ColorTextDim     = new Color(0.35f, 0.40f, 0.50f, 1.00f);
+-        private static readonly Color ColorBg          = new Color(0.03f, 0.05f, 0.10f, 0.88f); // Dark blue
+-        private static readonly Color ColorBgPanel     = new Color(0.05f, 0.08f, 0.14f, 0.75f);
+-        private static readonly Color ColorScanline    = new Color(0.10f, 0.15f, 0.25f, 0.12f);
+-        private static readonly Color ColorProgress    = new Color(0.00f, 0.83f, 1.00f, 0.80f);
+-        private static readonly Color ColorProgressBg  = new Color(0.10f, 0.12f, 0.18f, 0.90f);
+-
+-        // ----------------------------------------------------------
+-        //  INSPECTOR
+-        // ----------------------------------------------------------
+-
+-        [Header("-- Camera ------------------------------------")]
+-        [Tooltip("HUD Camera ??? ????????? ??????????. " +
+-                 "???? null — ?????? ? current player hierarchy.")]
+-        [SerializeField] private Camera hudCamera;
+-
+-        [Header("-- Font --------------------------------------")]
+-        [Tooltip("TMP_FontAsset ??? ?????? (???????????? ?????????????).")]
+-        [SerializeField] private TMP_FontAsset font;
++        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
++        private static readonly int ColorId = Shader.PropertyToID("_Color");
+ 
+-        [Header("-- References --------------------------------")]
+-        [Tooltip("????????? ?????? ??? ???????? ????????????.")]
++        [Header("References")]
++        [SerializeField] private Camera hudCamera;
+         [SerializeField] private PlayerInventory playerInventory;
++        [SerializeField] private Shader hologramShader;
+ 
+-        [Header("-- Layout ------------------------------------")]
+-        [Tooltip("?????? ?????? ??? ?????????? (? ????????).")]
+-        [SerializeField] private float fontSizeHeader = 22f;
+-        [Tooltip("?????? ?????? ??? ????????? ??????.")]
+-        [SerializeField] private float fontSizeBody = 14f;
+-        [Tooltip("?????? ?????? ??? ????????? ??????????.")]
+-        [SerializeField] private float fontSizeHint = 11f;
+-        [Tooltip("?????????? ????? ?????????? ?????? (???????).")]
+-        [SerializeField] private float listItemSpacing = 28f;
+-
+-        [Header("-- Animation ---------------------------------")]
+-        [Tooltip("???????? ????????? bracket-?? (???/???).")]
+-        [SerializeField] private float bracketPulseSpeed = 4f;
+-        [Tooltip("????????? ????????? bracket-?? (???????).")]
+-        [SerializeField] private float bracketPulseAmplitude = 3f;
+-        [Tooltip("???????? ??????????? ????? (???????/???).")]
+-        [SerializeField] private float scanlineSpeed = 60f;
+-
+-        [Header("-- Diagnostics -------------------------------")]
+-        [SerializeField] private bool _debugIsOpen;
+-        [SerializeField] private int  _debugSelectedIndex;
++        [Header("Runtime Compatibility")]
++        [SerializeField] private bool useCullingMasks;
+ 
+-        // ----------------------------------------------------------
+-        //  STATIC — GLOBAL UI STATE
+-        // ----------------------------------------------------------
++        [Header("Hologram Layout")]
++        [SerializeField, Min(0.1f)] private float hologramHeight = 1.35f;
++        [SerializeField, Min(0.01f)] private float hologramCellSize = 0.085f;
++        [SerializeField, Min(0.01f)] private float hologramSpacing = 0.11f;
++        [SerializeField, Min(0f)] private float hologramBobAmplitude = 0.035f;
++        [SerializeField, Min(0f)] private float hologramBobFrequency = 1.4f;
++        [SerializeField, Min(0f)] private float hologramYawBias = 14f;
++        [SerializeField] private Color hologramColor = new Color(0.08f, 0.88f, 1f, 0.42f);
+ 
+-        /// <summary>
+-        /// ??????????? ????: ??????? ?? ????????????? ????.
+-        /// ??? ??????? ????? (PlayerToolManager, PlayerMovement, etc.)
+-        /// ?????? ????????? ???? ???? ????? ?????????? ???????? ?????.
+-        /// </summary>
+-        public static bool IsMenuOpen { get; private set; }
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            IsMenuOpen = false;
+-        }
++        [Header("Diagnostics")]
++        [SerializeField] private bool _debugIsOpen;
++        [SerializeField] private bool _debugIsCrafting;
++        [SerializeField] private int _debugSelectedIndex;
++        [SerializeField] private int _debugVisibleInstanceCount;
+ 
+-        // ----------------------------------------------------------
+-        //  CACHED STATE
+-        // ----------------------------------------------------------
++        // COLD ALLOC: List<RecipeData>[32] — filtered fabricator recipe cache — owner: HectonFabricatorUI
++        private readonly List<RecipeData> _filteredRecipes = new List<RecipeData>(32);
++        // COLD ALLOC: Matrix4x4[16] — instanced hologram draw buffer mirror — owner: HectonFabricatorUI
++        private readonly Matrix4x4[] _hologramMatrixBuffer = new Matrix4x4[MaxVisibleHologramInstances];
+ 
+-        /// <summary>??????? ?????????? (?????????? ??? ????????).</summary>
++        private NativeArray<Matrix4x4> _hologramMatrices;
++        private Material _runtimeHologramMaterial;
++        private Mesh _runtimeHologramMesh;
+         private Fabricator _currentFabricator;
+-
+-        /// <summary>?????? ?????? ???????? ??????? ?? ??????? ?? ??????.</summary>
+         private IReadOnlyList<RecipeData> _allRecipes;
+-
+-        /// <summary>?????? ???????? ???????? ???????????.</summary>
+         private IReadOnlyList<RecipeData> _recipes;
+-
+-        private readonly List<RecipeData> _filteredRecipes = new List<RecipeData>(32);
+         private FabricationGroup _selectedGroup = FabricationGroup.Unspecified;
+-
+-        /// <summary>?????? ?????????? ???????.</summary>
+         private int _selectedIndex;
+-
+-        /// <summary>???? ???????.</summary>
+         private bool _isOpen;
+-
+-        /// <summary>???? ?? ?????.</summary>
+         private bool _isCrafting;
+-
+-        /// <summary>???????? ?????? [0..1].</summary>
+         private float _craftProgress;
+-
+-        // -- Screen-space transform (re-computed each DrawShapes) --
+-        private Vector3 _scrOrigin; // bottom-left world pos
+-        private Vector3 _scrRight;  // world units per pixel X
+-        private Vector3 _scrUp;     // world units per pixel Y
+-        private float   _worldPerPx; // average world-units per pixel
+-
+-        // -- Screen dimensions (cached per frame) --
+-        private float _sw; // screen width in pixels
+-        private float _sh; // screen height in pixels
+-
+-        // -- Ingredient cache (rebuilt on selection change) --
+-        private string[] _ingredientNameCache;
+-        private string[] _ingredientStatusCache; // "2/3"
+-        private bool[]   _ingredientSufficient;
+-        private Texture[] _ingredientIconTextureCache;
+-        private Color[] _ingredientIconColorCache;
+-        private bool[] _ingredientHasTextureCache;
+-        private bool[] _ingredientHasFallbackIconCache;
+-        private int      _ingredientCacheCount;
+-        private string   _craftTimeCache;        // "5.0s"
+-        private string   _resultNameCache;       // "Hull Panel"
+-        private Texture _resultIconTextureCache;
+-        private Color _resultIconColorCache;
+-        private bool _resultHasTextureCache;
+-        private bool _resultHasFallbackIconCache;
+-        private bool     _canCraftCurrent;       // all ingredients sufficient
+-
+-        // -- StringBuilder for non-per-frame string building --
+-        private StringBuilder _sb;
+-
+-        // -- Input debounce --
+-        private bool _navUpPressed;
+-        private bool _navDownPressed;
+-        private bool _confirmPressed;
+         private bool _tickRegistered;
+ 
+-        // ----------------------------------------------------------
+-        //  LIFECYCLE
+-        // ----------------------------------------------------------
++        public static bool IsMenuOpen { get; private set; }
+ 
+-        private void Awake()
++        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
++        private static void ResetStaticState()
+         {
+-            _sb = new StringBuilder(64);
+-
+-            // Pre-allocate ingredient cache arrays
+-            _ingredientNameCache   = new string[16];
+-            _ingredientStatusCache = new string[16];
+-            _ingredientSufficient  = new bool[16];
+-            _ingredientIconTextureCache = new Texture[16];
+-            _ingredientIconColorCache = new Color[16];
+-            _ingredientHasTextureCache = new bool[16];
+-            _ingredientHasFallbackIconCache = new bool[16];
+-
+-            if (font == null)
+-            {
+-                font = TMP_Settings.defaultFontAsset;
+-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+-                if (font == null)
+-                {
+-                    Debug.LogWarning(
+-                        "[HectonFabricatorUI] No TMP font assigned and TMP_Settings.defaultFontAsset is null. " +
+-                        "Immediate-mode UI text may render with a fallback font.",
+-                        this);
+-                }
+-#endif
+-            }
++            IsMenuOpen = false;
++        }
+ 
++        private void Awake()
++        {
+             if (playerInventory == null &&
+                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                 playerTransform != null)
+             {
+-                if (hudCamera == null)
+-                    hudCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+-
+                 playerInventory = playerTransform.GetComponent<PlayerInventory>();
+-                if (playerInventory == null)
+-                    playerInventory = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.Inventory != null) ? Hecton8.Core.GlobalRegistry.Player.Inventory : playerTransform.GetComponent<PlayerInventory>());
++                if (hudCamera == null)
++                    hudCamera = Hecton8.Core.GlobalRegistry.Player != null
++                        ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
++                        : null;
+             }
++
++            EnsureHologramBuffers();
++            EnsureHologramResources();
+         }
+ 
+-        public override void OnEnable()
++        private void OnEnable()
+         {
+-            base.OnEnable();
+-
+-            // -- Subscribe to InputManager events --
+-            if (InputManager.Instance != null)
+-            {
+-                InputManager.Instance.OnNavigate += HandleNavigateInput;
+-                InputManager.Instance.OnSubmit   += HandleSubmitInput;
+-                InputManager.Instance.OnCancel   += HandleCancelInput;
+-                InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+-            }
+-
+-            if (RebindingManager.TryGetInstance(out RebindingManager rebindingManager))
++            InputManager inputManager = InputManager.Instance;
++            if (inputManager != null)
+             {
+-                rebindingManager.OnRebindCompleted += HandleRebindCompleted;
+-                rebindingManager.OnRebindCanceled += HandleRebindCanceled;
+-                rebindingManager.OnOverridesLoaded += HandleRebindOverridesChanged;
+-                rebindingManager.OnOverridesCleared += HandleRebindOverridesChanged;
++                inputManager.OnNavigate += HandleNavigateInput;
++                inputManager.OnSubmit += HandleSubmitInput;
++                inputManager.OnCancel += HandleCancelInput;
+             }
+ 
+-            // -- Subscribe to explicit UI texts --
+-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+-            if (LocalizationManager.Instance != null)
+-                HandleLanguageChanged(LocalizationManager.Instance.CurrentLanguage);
+-
+-            // -- Subscribe to crafting events --
+-            CraftingEvents.OnFabricatorOpened    += HandleFabricatorOpened;
+-            CraftingEvents.OnFabricatorClosed    += HandleFabricatorClosed;
++            CraftingEvents.OnFabricatorOpened += HandleFabricatorOpened;
++            CraftingEvents.OnFabricatorClosed += HandleFabricatorClosed;
++            CraftingEvents.OnCraftStarted += HandleCraftStarted;
+             CraftingEvents.OnCraftProgressUpdated += HandleCraftProgress;
+-            CraftingEvents.OnCraftCompleted       += HandleCraftCompleted;
++            CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
++            CraftingEvents.OnCraftCancelled += HandleCraftCancelled;
+         }
+ 
+-        private void HandleLanguageChanged(GameLanguage lang)
++        private void OnDisable()
+         {
+-            var loc = LocalizationManager.Instance;
+-            if (loc == null) return;
+-            
+-            LabelFabricator = loc.Get(LocalizationKeys.UI_FABRICATOR);
+-            LabelRecipes = loc.Get(LocalizationKeys.UI_RECIPES);
+-            LabelDetails = loc.Get(LocalizationKeys.UI_BLUEPRINT);
+-            LabelIngredients = loc.Get(LocalizationKeys.UI_REQUIRED_MATERIALS);
+-            LabelCraftTime = loc.Get(LocalizationKeys.UI_FABRICATION_TIME);
+-            LabelResult = loc.Get(LocalizationKeys.UI_OUTPUT);
+-            LabelCrafting = loc.Get(LocalizationKeys.UI_FABRICATING);
+-            LabelHintNav = loc.GetExpanded(LocalizationKeys.UI_HINT_NAVIGATE);
+-            LabelHintCraft = loc.GetExpanded(LocalizationKeys.UI_HINT_FABRICATE);
+-            LabelHintClose = loc.GetExpanded(LocalizationKeys.UI_HINT_CLOSE);
+-            LabelNoRecipes = loc.Get(LocalizationKeys.UI_NO_BLUEPRINTS);
+-            LabelBlueprintLocked = loc.GetOrFallback(lang, LocalizationKeys.UI_BLUEPRINT_LOCKED, "SCAN DATA REQUIRED");
+-            LabelInsufficient = loc.Get(LocalizationKeys.UI_INSUFFICIENT);
+-            LabelReady = loc.Get(LocalizationKeys.UI_READY);
+-            LabelPowerOffline = loc.GetOrFallback(lang, LocalizationKeys.UI_POWER_OFFLINE, "POWER OFFLINE");
+-            LabelPowerRequired = loc.GetOrFallback(lang, LocalizationKeys.UI_POWER_REQUIRED, "POWER REQUIRED");
+-            
+-            // Rebuild string caches if they are currently displaying something that might have altered.
+-            if (_recipes != null && _recipes.Count > 0 && _isOpen)
+-                RebuildIngredientCache();
+-
+-            // Update input hints as language might change key names
+-            UpdateInputHints();
+-        }
++            InputManager inputManager = InputManager.Instance;
++            if (inputManager != null)
++            {
++                inputManager.OnNavigate -= HandleNavigateInput;
++                inputManager.OnSubmit -= HandleSubmitInput;
++                inputManager.OnCancel -= HandleCancelInput;
++            }
++
++            CraftingEvents.OnFabricatorOpened -= HandleFabricatorOpened;
++            CraftingEvents.OnFabricatorClosed -= HandleFabricatorClosed;
++            CraftingEvents.OnCraftStarted -= HandleCraftStarted;
++            CraftingEvents.OnCraftProgressUpdated -= HandleCraftProgress;
++            CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
++            CraftingEvents.OnCraftCancelled -= HandleCraftCancelled;
+ 
+-        public override void OnDisable()
+-        {
+-            base.OnDisable();
+             UnregisterTick();
+ 
+-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
++            if (_isOpen)
++                CloseMenu();
++        }
+ 
+-            // -- Unsubscribe from InputManager events --
+-            if (InputManager.Instance != null)
++        private void OnDestroy()
++        {
++            if (_hologramMatrices.IsCreated)
+             {
+-                InputManager.Instance.OnNavigate -= HandleNavigateInput;
+-                InputManager.Instance.OnSubmit   -= HandleSubmitInput;
+-                InputManager.Instance.OnCancel   -= HandleCancelInput;
+-                InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
++                _hologramMatrices.Dispose();
++                _hologramMatrices = default;
+             }
+ 
+-            if (RebindingManager.TryGetInstance(out RebindingManager rebindingManager))
++            if (_runtimeHologramMaterial != null)
+             {
+-                rebindingManager.OnRebindCompleted -= HandleRebindCompleted;
+-                rebindingManager.OnRebindCanceled -= HandleRebindCanceled;
+-                rebindingManager.OnOverridesLoaded -= HandleRebindOverridesChanged;
+-                rebindingManager.OnOverridesCleared -= HandleRebindOverridesChanged;
++                Destroy(_runtimeHologramMaterial);
++                _runtimeHologramMaterial = null;
+             }
+ 
+-            CraftingEvents.OnFabricatorOpened    -= HandleFabricatorOpened;
+-            CraftingEvents.OnFabricatorClosed    -= HandleFabricatorClosed;
+-            CraftingEvents.OnCraftProgressUpdated -= HandleCraftProgress;
+-            CraftingEvents.OnCraftCompleted       -= HandleCraftCompleted;
+-
+-            // -- Safety: close menu if component disabled --
+-            if (_isOpen)
+-                CloseMenu();
++            if (_runtimeHologramMesh != null)
++            {
++                Destroy(_runtimeHologramMesh);
++                _runtimeHologramMesh = null;
++            }
+         }
+ 
+-        // ----------------------------------------------------------
+-        //  ITickable — INPUT HANDLING
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ????????? ?????????????? ?????.
+-        /// ?????????? ?????? ???? ????? GameTickManager.
+-        ///
+-        /// Input ?????????????? ?????? ????? ???? ???????.
+-        /// ???????????? debounce: ???????? ??? GetKeyDown,
+-        /// ????? ??? GetKeyUp.
+-        /// </summary>
+         public void Tick(float deltaTime)
+         {
+             if (_isOpen && _currentFabricator == null)
+@@ -434,19 +162,79 @@ namespace Hecton8.UI
+                 return;
+             }
+ 
+-            // Input is now handled via HandleNavigateInput, etc. callbacks.
++            RenderActiveRecipeHologram(deltaTime);
++            UpdateDiagnostics();
++        }
++
++        private void HandleFabricatorOpened(Fabricator fabricator)
++        {
++            if (fabricator == null || fabricator.AvailableRecipes == null)
++                return;
++
++            _currentFabricator = fabricator;
++            _allRecipes = fabricator.AvailableRecipes;
++            _selectedGroup = FabricationGroup.Unspecified;
++            _selectedIndex = 0;
++            _craftProgress = 0f;
++            _isCrafting = fabricator.IsCrafting;
++            _isOpen = true;
++            IsMenuOpen = true;
++
++            RebuildVisibleRecipes();
++            RegisterTick();
+ 
++            InputManager inputManager = InputManager.Instance;
++            if (inputManager != null)
++                inputManager.SwitchToUIInput();
++
++            Cursor.lockState = CursorLockMode.None;
++            Cursor.visible = false;
+             UpdateDiagnostics();
+         }
+ 
+-        // ----------------------------------------------------------
+-        //  EVENT HANDLERS
+-        // ----------------------------------------------------------
++        private void HandleFabricatorClosed()
++        {
++            CloseMenu();
++        }
++
++        private void HandleCraftStarted(RecipeData recipe)
++        {
++            if (_currentFabricator == null || recipe == null)
++                return;
++
++            _isCrafting = true;
++            _craftProgress = 0f;
++
++            if (_recipes != null)
++            {
++                for (int i = 0; i < _recipes.Count; i++)
++                {
++                    if (ReferenceEquals(_recipes[i], recipe))
++                    {
++                        _selectedIndex = i;
++                        break;
++                    }
++                }
++            }
++        }
++
++        private void HandleCraftProgress(float progress)
++        {
++            _craftProgress = Mathf.Clamp01(progress);
++        }
++
++        private void HandleCraftCompleted(ItemData resultItem)
++        {
++            _isCrafting = false;
++            _craftProgress = 0f;
++        }
++
++        private void HandleCraftCancelled()
++        {
++            _isCrafting = false;
++            _craftProgress = 0f;
++        }
+ 
+-        /// <summary>
+-        /// ?????????? ??? ???????? ??????????? (????? ????????????????).
+-        /// ?????????????? UI: ????????? ???????, ???????? ??????.
+-        /// </summary>
+         private void HandleNavigateInput(Vector2 direction)
+         {
+             if (!_isOpen || _isCrafting || _recipes == null || _recipes.Count == 0)
+@@ -461,25 +249,17 @@ namespace Hecton8.UI
+             if (Mathf.Abs(direction.y) < 0.5f)
+                 return;
+ 
+-            int nextIndex = _selectedIndex + (direction.y > 0f ? -1 : 1);
+-            SetSelectedIndex(nextIndex);
++            SetSelectedIndex(_selectedIndex + (direction.y > 0f ? -1 : 1));
+         }
+ 
+         private void HandleSubmitInput()
+         {
+-            if (!_isOpen || _isCrafting || _recipes == null || _recipes.Count == 0)
++            if (!_isOpen || _isCrafting || _currentFabricator == null || _recipes == null || _recipes.Count == 0)
+                 return;
+ 
+             if (_selectedIndex < 0 || _selectedIndex >= _recipes.Count)
+                 return;
+ 
+-            if (!_canCraftCurrent || _currentFabricator == null)
+-                return;
+-
+-            // Power check - cannot craft without power
+-            if (!_currentFabricator.HasPower)
+-                return;
+-
+             RecipeData recipe = _recipes[_selectedIndex];
+             if (recipe == null)
+                 return;
+@@ -498,147 +278,33 @@ namespace Hecton8.UI
+                     _currentFabricator.CancelCraft();
+                 else
+                     CloseMenu();
+-                return;
+-            }
+-
+-            CloseMenu();
+-        }
+-
+-        private void UpdateInputHints()
+-        {
+-            LocalizationManager localization = LocalizationManager.Instance;
+-            if (localization == null)
+-                return;
+-
+-            LabelHintNav = localization.GetExpandedOrFallback(localization.CurrentLanguage, LocalizationKeys.UI_HINT_NAVIGATE, "<button:navigate> NAVIGATE");
+-            LabelHintCraft = localization.GetExpandedOrFallback(localization.CurrentLanguage, LocalizationKeys.UI_HINT_FABRICATE, "<button:submit> FABRICATE");
+-            LabelHintClose = localization.GetExpandedOrFallback(localization.CurrentLanguage, LocalizationKeys.UI_HINT_CLOSE, "<button:cancel> CLOSE");
+-        }
+-
+-        private void HandleInputDisplayStyleChanged(InputDisplayStyle displayStyle)
+-        {
+-            if (!_isOpen)
+-                return;
+-
+-            UpdateInputHints();
+-        }
+-
+-        private void HandleRebindCompleted(string actionName, string actionMap, int bindingIndex, string display)
+-        {
+-            if (!_isOpen) return;
+-            if (!string.Equals(actionMap, "UI", StringComparison.OrdinalIgnoreCase)) return;
+-            UpdateInputHints();
+-        }
+-
+-        private void HandleRebindCanceled(string actionName, string actionMap, int bindingIndex)
+-        {
+-            if (!_isOpen) return;
+-            if (!string.Equals(actionMap, "UI", StringComparison.OrdinalIgnoreCase)) return;
+-            UpdateInputHints();
+-        }
+-
+-        private void HandleRebindOverridesChanged()
+-        {
+-            if (!_isOpen) return;
+-            UpdateInputHints();
+-        }
+-
+-        private void SetSelectedIndex(int nextIndex)
+-        {
+-            if (_recipes == null || _recipes.Count == 0)
+-                return;
+-
+-            int clamped = Mathf.Clamp(nextIndex, 0, _recipes.Count - 1);
+-            if (_selectedIndex == clamped)
+-                return;
+-
+-            _selectedIndex = clamped;
+-            RebuildIngredientCache();
+-        }
+ 
+-        private void HandleFabricatorOpened(Fabricator fabricator)
+-        {
+-            if (fabricator == null || fabricator.AvailableRecipes == null)
+                 return;
+-
+-            _currentFabricator = fabricator;
+-            _allRecipes        = fabricator.AvailableRecipes;
+-            _selectedGroup     = FabricationGroup.Unspecified;
+-            _selectedIndex     = 0;
+-            _isCrafting        = false;
+-            _craftProgress     = 0f;
+-            UnregisterTick();
+-
+-            _isOpen    = true;
+-            IsMenuOpen = true;
+-            RegisterTick();
+-
+-            // -- Switch to UI input map --
+-            if (InputManager.Instance != null)
+-            {
+-                InputManager.Instance.SwitchToUIInput();
+-                UpdateInputHints();
+             }
+ 
+-            // -- Unlock cursor for menu --
+-            Cursor.lockState = CursorLockMode.None;
+-            Cursor.visible   = false; // NASA-Punk: no cursor, only keyboard
+-
+-            // -- Build initial cache --
+-            RebuildVisibleRecipes();
+-            if (_recipes != null && _recipes.Count > 0)
+-                RebuildIngredientCache();
+-
+-            UpdateDiagnostics();
+-        }
+-
+-        /// <summary>
+-        /// ?????????? ??? ???????? ??????????? (????? ?????? ??? ????? ESC).
+-        /// </summary>
+-        private void HandleFabricatorClosed()
+-        {
+             CloseMenu();
+         }
+ 
+-        /// <summary>
+-        /// ?????????? ????????? ?????? [0..1].
+-        /// </summary>
+-        private void HandleCraftProgress(float progress)
+-        {
+-            _craftProgress = Mathf.Clamp01(progress);
+-        }
+-
+-        /// <summary>
+-        /// ????? ????????. ?????????? ?????????.
+-        /// </summary>
+-        private void HandleCraftCompleted(ItemData recipe)
+-        {
+-            _isCrafting    = false;
+-            _craftProgress = 0f;
+-
+-            // ????????????? ??????????? (??????? ?????????)
+-            RebuildIngredientCache();
+-        }
+-
+-        /// <summary>
+-        /// ????????? ???? ? ??????????????? ??????? ??????????.
+-        /// </summary>
+         private void CloseMenu()
+         {
+-            _isOpen            = false;
+-            IsMenuOpen         = false;
++            _isOpen = false;
++            IsMenuOpen = false;
++            _isCrafting = false;
++            _craftProgress = 0f;
+             _currentFabricator = null;
+-            _allRecipes        = null;
+-            _recipes           = null;
++            _allRecipes = null;
++            _recipes = null;
+             _filteredRecipes.Clear();
+-            _isCrafting        = false;
+-            _craftProgress     = 0f;
++            _debugVisibleInstanceCount = 0;
++
+             UnregisterTick();
+ 
+-            // -- Restore cursor for gameplay --
+-            Cursor.lockState = CursorLockMode.Locked;
+-            Cursor.visible   = false;
++            InputManager inputManager = InputManager.Instance;
++            if (inputManager != null)
++                inputManager.SwitchToPlayerInput();
+ 
++            Cursor.lockState = CursorLockMode.Locked;
++            Cursor.visible = false;
+             UpdateDiagnostics();
+         }
+ 
+@@ -660,750 +326,13 @@ namespace Hecton8.UI
+             _tickRegistered = false;
+         }
+ 
+-        // ----------------------------------------------------------
+-        //  SHAPES DRAWING — MAIN ENTRY POINT
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ?????????? Shapes ??? ?????? ?????? ?????? ????.
+-        /// ????????? ?? HUD ??????. ?????? ?????? ????? ???? ???????.
+-        ///
+-        /// ??? ????????? — Immediate Mode ????? Shapes API.
+-        /// ??????? GameObjects, Canvas, RectTransform.
+-        /// </summary>
+-        public override void DrawShapes(Camera cam)
+-        {
+-            // -- Filter: only HUD camera --
+-            if (cam != hudCamera) return;
+-            if (!_isOpen) return;
+-
+-            using (Draw.Command(cam))
+-            {
+-                // -- Setup --
+-                Draw.ZTest    = CompareFunction.Always;
+-                Draw.BlendMode = ShapesBlendMode.Transparent;
+-
+-                if (font != null)
+-                    Draw.Font = font;
+-
+-                SetupScreenSpace(cam);
+-
+-                // -- Draw layers (back to front) --
+-                DrawBackground();
+-                DrawScanlines();
+-                DrawPanelFrame();
+-                DrawHeader();
+-                DrawGroupTabs();
+-                DrawRecipeList();
+-                DrawRecipeDetails();
+-
+-                if (_isCrafting)
+-                    DrawProgressBar();
+-
+-                DrawControlHints();
+-            }
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  SCREEN SPACE SETUP
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ????????? ????????????? pixel ? world space.
+-        /// ?????????? ???? ??? per frame ? DrawShapes.
+-        ///
+-        /// 3 ?????? ScreenToWorldPoint — ???????? ?????????.
+-        /// ??? ??????????? Scr() ?????????? ?????? struct math.
+-        /// </summary>
+-        private void SetupScreenSpace(Camera cam)
+-        {
+-            _sw = cam.pixelWidth;
+-            _sh = cam.pixelHeight;
+-
+-            float z = cam.nearClipPlane + 0.01f;
+-
+-            Vector3 bl = cam.ScreenToWorldPoint(new Vector3(0f, 0f, z));
+-            Vector3 br = cam.ScreenToWorldPoint(new Vector3(_sw, 0f, z));
+-            Vector3 tl = cam.ScreenToWorldPoint(new Vector3(0f, _sh, z));
+-
+-            _scrOrigin  = bl;
+-            _scrRight   = (br - bl) / _sw;
+-            _scrUp      = (tl - bl) / _sh;
+-            _worldPerPx = (_scrRight.magnitude + _scrUp.magnitude) * 0.5f;
+-        }
+-
+-        /// <summary>Pixel coordinates ? World position. Zero GC.</summary>
+-        private Vector3 Scr(float px, float py)
+-        {
+-            return _scrOrigin + _scrRight * px + _scrUp * py;
+-        }
+-
+-        /// <summary>Font size in pixels ? world units. Zero GC.</summary>
+-        private float FontW(float pxSize) => pxSize * _worldPerPx;
+-
+-        /// <summary>Size in pixels ? world units (X axis).</summary>
+-        private float PxW(float px) => _scrRight.magnitude * px;
+-
+-        /// <summary>Size in pixels ? world units (Y axis).</summary>
+-        private float PxH(float px) => _scrUp.magnitude * px;
+-
+-        // ----------------------------------------------------------
+-        //  LAYOUT HELPERS
+-        // ----------------------------------------------------------
+-
+-        // All layout values as fractions of screen size.
+-        // Computed fresh each frame from _sw/_sh (resolution-independent).
+-
+-        private float PanelX => _sw * 0.15f;
+-        private float PanelY => _sw > 0 ? _sh * 0.10f : 0;
+-        private float PanelW => _sw * 0.70f;
+-        private float PanelH => _sh * 0.80f;
+-        private float PanelR => PanelX + PanelW;
+-        private float PanelT => PanelY + PanelH;
+-
+-        private float ListX     => PanelX + _sw * 0.02f;
+-        private float ListW     => PanelW * 0.35f;
+-        private float DetailX   => PanelX + PanelW * 0.40f;
+-        private float DetailW   => PanelW * 0.55f;
+-        private float ContentY  => PanelY + _sh * 0.08f;
+-        private float ContentT  => PanelT - _sh * 0.08f;
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — BACKGROUND
+-        // ----------------------------------------------------------
+-
+-        private void DrawBackground()
+-        {
+-            // -- Semi-transparent dark panel --
+-            Draw.Color = ColorBg;
+-            Draw.Rectangle(
+-                Scr(PanelX + PanelW * 0.5f, PanelY + PanelH * 0.5f),
+-                PxW(PanelW), PxH(PanelH));
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — SCANLINES (NASA-Punk atmosphere)
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ?????? ?????????????? scan-lines ?????? ????.
+-        /// ??????? ????????? CRT/visor ???????.
+-        /// Scan-lines ???????? ???????? ?????.
+-        /// </summary>
+-        private void DrawScanlines()
+-        {
+-            Draw.Color = ColorScanline;
+-
+-            float spacing  = 4f;          // ?????? 4 ???????
+-            float offset   = (Time.unscaledTime * scanlineSpeed) % spacing;
+-            float thickness = 1f * _worldPerPx;
+-
+-            float y = PanelY + offset;
+-            float endY = PanelT;
+-
+-            while (y < endY)
+-            {
+-                Draw.Line(Scr(PanelX, y), Scr(PanelR, y), thickness);
+-                y += spacing;
+-            }
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — PANEL FRAME (angular corners)
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ?????? ????????? L-shaped marks ?? ????? ??????.
+-        /// NASA-Punk: ?????? ??????????? ????? — ?????? ???????.
+-        /// </summary>
+-        private void DrawPanelFrame()
+-        {
+-            Draw.Color = ColorPrimary;
+-            float t  = 1.5f * _worldPerPx; // line thickness
+-            float cl = 25f; // corner leg length (px)
+-
+-            // -- Top-Left --
+-            Draw.Line(Scr(PanelX, PanelT), Scr(PanelX + cl, PanelT), t);
+-            Draw.Line(Scr(PanelX, PanelT), Scr(PanelX, PanelT - cl), t);
+-
+-            // -- Top-Right --
+-            Draw.Line(Scr(PanelR, PanelT), Scr(PanelR - cl, PanelT), t);
+-            Draw.Line(Scr(PanelR, PanelT), Scr(PanelR, PanelT - cl), t);
+-
+-            // -- Bottom-Left --
+-            Draw.Line(Scr(PanelX, PanelY), Scr(PanelX + cl, PanelY), t);
+-            Draw.Line(Scr(PanelX, PanelY), Scr(PanelX, PanelY + cl), t);
+-
+-            // -- Bottom-Right --
+-            Draw.Line(Scr(PanelR, PanelY), Scr(PanelR - cl, PanelY), t);
+-            Draw.Line(Scr(PanelR, PanelY), Scr(PanelR, PanelY + cl), t);
+-
+-            // -- Vertical divider (list | details) --
+-            float divX = PanelX + PanelW * 0.38f;
+-            Draw.Color = ColorPrimaryDim;
+-            Draw.Line(Scr(divX, ContentY), Scr(divX, ContentT), 1f * _worldPerPx);
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — HEADER
+-        // ----------------------------------------------------------
+-
+-        private void DrawHeader()
+-        {
+-            float headerY = PanelT - _sh * 0.04f;
+-            float centerX = PanelX + PanelW * 0.5f;
+-
+-            // -- Title --
+-            Draw.Color     = ColorPrimary;
+-            Draw.FontSize  = FontW(fontSizeHeader);
+-            Draw.TextAlign = TextAlign.Center;
+-            Draw.Text(Scr(centerX, headerY), LabelFabricator);
+-
+-            // -- Underline --
+-            float lineY = headerY - fontSizeHeader * 0.8f;
+-            float lineHalfW = PanelW * 0.35f;
+-            Draw.Color = ColorPrimary;
+-            Draw.Line(
+-                Scr(centerX - lineHalfW, lineY),
+-                Scr(centerX + lineHalfW, lineY),
+-                1f * _worldPerPx);
+-
+-            // -- Decorative dots at line ends --
+-            Draw.Disc(Scr(centerX - lineHalfW, lineY), 2f * _worldPerPx);
+-            Draw.Disc(Scr(centerX + lineHalfW, lineY), 2f * _worldPerPx);
+-
+-            // -- Section labels --
+-            Draw.FontSize  = FontW(fontSizeBody * 0.9f);
+-            Draw.TextAlign = TextAlign.Left;
+-
+-            float sectionY = ContentT + fontSizeBody;
+-
+-            Draw.Color = ColorTextDim;
+-            Draw.Text(Scr(ListX, sectionY), LabelRecipes + " / " + GetCurrentGroupLabel());
+-
+-            Draw.Text(Scr(DetailX, sectionY), LabelDetails);
+-        }
+-
+-        private void DrawGroupTabs()
+-        {
+-            float startX = ListX;
+-            float y = ContentT + 4f;
+-            float spacing = 78f;
+-            FabricationGroup[] groups =
+-            {
+-                FabricationGroup.Unspecified,
+-                FabricationGroup.Materials,
+-                FabricationGroup.Components,
+-                FabricationGroup.Tools,
+-                FabricationGroup.Suit,
+-                FabricationGroup.Construction,
+-                FabricationGroup.Power
+-            };
+-
+-            for (int i = 0; i < groups.Length; i++)
+-            {
+-                FabricationGroup group = groups[i];
+-                bool isActive = group == _selectedGroup;
+-                string label = GetGroupLabel(group);
+-                float x = startX + i * spacing;
+-
+-                Draw.Color = isActive ? ColorAccent : ColorPrimaryDim;
+-                Draw.FontSize = FontW(isActive ? fontSizeHint * 1.05f : fontSizeHint);
+-                Draw.TextAlign = TextAlign.Left;
+-                Draw.Text(Scr(x, y), label);
+-            }
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — RECIPE LIST
+-        // ----------------------------------------------------------
+-
+-        private void DrawRecipeList()
++        private void SetSelectedIndex(int nextIndex)
+         {
+             if (_recipes == null || _recipes.Count == 0)
+-            {
+-                string emptyLabel = LabelNoRecipes;
+-                if (_currentFabricator != null &&
+-                    _currentFabricator.TotalRecipeCount > 0 &&
+-                    _currentFabricator.LockedRecipeCount > 0)
+-                {
+-                    emptyLabel = LabelBlueprintLocked;
+-                }
+-
+-                Draw.Color     = ColorTextDim;
+-                Draw.FontSize  = FontW(fontSizeBody);
+-                Draw.TextAlign = TextAlign.Left;
+-                Draw.Text(Scr(ListX + 10f, ContentT - 40f), emptyLabel);
+                 return;
+-            }
+-
+-            float startY = ContentT - 10f;
+-            int count = _recipes.Count;
+-
+-            for (int i = 0; i < count; i++)
+-            {
+-                float itemY = startY - i * listItemSpacing;
+-
+-                // Skip if below panel bottom
+-                if (itemY < ContentY) break;
+-
+-                RecipeData recipe = _recipes[i];
+-                if (recipe == null) continue;
+-
+-                bool isSelected = (i == _selectedIndex);
+-
+-                // -- Text --
+-                Draw.Color     = isSelected ? ColorTextBright : ColorText;
+-                Draw.FontSize  = FontW(isSelected ? fontSizeBody * 1.05f : fontSizeBody);
+-                Draw.TextAlign = TextAlign.Left;
+-
+-                float textX = ListX + 20f;
+-                Draw.Text(Scr(textX, itemY), recipe.DisplayNameOrFallback);
+-
+-                // -- Selection brackets (animated) --
+-                if (isSelected)
+-                {
+-                    DrawSelectionBrackets(ListX + 5f, itemY, ListX + ListW - 10f);
+-                }
+-
+-                // -- Index dot --
+-                if (!isSelected)
+-                {
+-                    Draw.Color = ColorPrimaryDim;
+-                    Draw.Disc(Scr(ListX + 10f, itemY + fontSizeBody * 0.35f),
+-                              2f * _worldPerPx);
+-                }
+-            }
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — SELECTION BRACKETS (animated NASA-Punk)
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ?????? ???????????? angular brackets ?????? ?????????? ????????.
+-        /// 
+-        ///   ?----    Recipe Name    ----?
+-        ///
+-        /// Brackets ?????????? ?? X, ???????? ?????? "???????????".
+-        /// </summary>
+-        private void DrawSelectionBrackets(float leftX, float centerY, float rightX)
+-        {
+-            float pulse = Mathf.Sin(Time.unscaledTime * bracketPulseSpeed) * bracketPulseAmplitude;
+-            float t = 1.5f * _worldPerPx;
+-
+-            float halfH  = fontSizeBody * 0.55f;
+-            float arrowW = 6f + pulse;
+-            float arrowH = halfH * 0.7f;
+-
+-            Draw.Color = ColorAccent;
+-
+-            // -- Left bracket ? --
+-            float lx = leftX - pulse;
+-            Draw.Line(Scr(lx, centerY + arrowH), Scr(lx + arrowW, centerY + fontSizeBody * 0.35f), t);
+-            Draw.Line(Scr(lx, centerY - arrowH + fontSizeBody * 0.7f), Scr(lx + arrowW, centerY + fontSizeBody * 0.35f), t);
+-
+-            // Left horizontal dash
+-            Draw.Line(Scr(lx + arrowW + 2f, centerY + fontSizeBody * 0.35f),
+-                      Scr(lx + arrowW + 12f, centerY + fontSizeBody * 0.35f), t);
+-
+-            // -- Right bracket ? --
+-            float rx = rightX + pulse;
+-            Draw.Line(Scr(rx, centerY + arrowH), Scr(rx - arrowW, centerY + fontSizeBody * 0.35f), t);
+-            Draw.Line(Scr(rx, centerY - arrowH + fontSizeBody * 0.7f), Scr(rx - arrowW, centerY + fontSizeBody * 0.35f), t);
+-
+-            // Right horizontal dash
+-            Draw.Line(Scr(rx - arrowW - 2f, centerY + fontSizeBody * 0.35f),
+-                      Scr(rx - arrowW - 12f, centerY + fontSizeBody * 0.35f), t);
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — RECIPE DETAILS
+-        // ----------------------------------------------------------
+-
+-        private void DrawRecipeDetails()
+-        {
+-            if (_recipes == null || _recipes.Count == 0) return;
+-            if (_selectedIndex < 0 || _selectedIndex >= _recipes.Count) return;
+-
+-            RecipeData recipe = _recipes[_selectedIndex];
+-            if (recipe == null) return;
+-
+-            float x = DetailX;
+-            float y = ContentT - 10f;
+-            float lineH = fontSizeBody * 1.6f; // line height
+-
+-            // ------------------------------
+-            //  RESULT
+-            // ------------------------------
+-
+-            // Section label
+-            Draw.Color     = ColorAccent;
+-            Draw.FontSize  = FontW(fontSizeBody * 0.85f);
+-            Draw.TextAlign = TextAlign.Left;
+-            Draw.Text(Scr(x, y), LabelResult);
+-
+-            y -= lineH * 0.7f;
+-
+-            // Result name
+-            Draw.Color    = ColorTextBright;
+-            Draw.FontSize = FontW(fontSizeBody * 1.1f);
+-            DrawResultIcon(x + 10f, y + 6f);
+-            Draw.Text(Scr(x + 30f, y), _resultNameCache ?? "--");
+-
+-            y -= lineH * 0.5f;
+-
+-            // -- Separator line --
+-            Draw.Color = ColorPrimaryDim;
+-            Draw.Line(Scr(x, y), Scr(x + DetailW - 20f, y), 1f * _worldPerPx);
+-
+-            y -= lineH * 0.7f;
+-
+-            // ------------------------------
+-            //  INGREDIENTS
+-            // ------------------------------
+-
+-            Draw.Color     = ColorAccent;
+-            Draw.FontSize  = FontW(fontSizeBody * 0.85f);
+-            Draw.Text(Scr(x, y), LabelIngredients);
+-
+-            y -= lineH * 0.6f;
+-
+-            // Ingredient list
+-            for (int i = 0; i < _ingredientCacheCount; i++)
+-            {
+-                if (y < ContentY + 60f) break; // safety
+-
+-                bool hasMats = _ingredientSufficient[i];
+-
+-                // Bullet
+-                DrawIngredientIcon(i, x + 8f, y + fontSizeBody * 0.2f, hasMats);
+-
+-                // Ingredient name
+-                Draw.Color    = ColorText;
+-                Draw.FontSize = FontW(fontSizeBody);
+-                Draw.Text(Scr(x + 28f, y), _ingredientNameCache[i] ?? "--");
+-
+-                // Status (right-aligned amount)
+-                Draw.Color     = hasMats ? ColorSuccess : ColorWarning;
+-                Draw.TextAlign = TextAlign.Right;
+-                Draw.Text(Scr(x + DetailW - 30f, y), _ingredientStatusCache[i] ?? "--");
+-                Draw.TextAlign = TextAlign.Left;
+-
+-                y -= lineH * 0.65f;
+-            }
+-
+-            y -= lineH * 0.3f;
+-
+-            // -- Separator --
+-            Draw.Color = ColorPrimaryDim;
+-            Draw.Line(Scr(x, y), Scr(x + DetailW - 20f, y), 1f * _worldPerPx);
+-
+-            y -= lineH * 0.7f;
+-
+-            // ------------------------------
+-            //  CRAFT TIME
+-            // ------------------------------
+-
+-            Draw.Color     = ColorAccent;
+-            Draw.FontSize  = FontW(fontSizeBody * 0.85f);
+-            Draw.TextAlign = TextAlign.Left;
+-            Draw.Text(Scr(x, y), LabelCraftTime);
+-
+-            Draw.Color = ColorText;
+-            Draw.Text(Scr(x + 160f, y), _craftTimeCache ?? "--");
+-
+-            y -= lineH;
+-
+-            // ------------------------------
+-            //  CRAFT STATUS
+-            // ------------------------------
+-
+-            if (!_isCrafting)
+-            {
+-                // Check power status first
+-                bool hasPower = _currentFabricator != null && _currentFabricator.HasPower;
+-                
+-                if (!hasPower)
+-                {
+-                    // Power offline - show warning
+-                    Draw.Color = ColorWarning;
+-                    Draw.FontSize = FontW(fontSizeBody);
+-                    Draw.Text(Scr(x, y), LabelPowerOffline);
+-                }
+-                else
+-                {
+-                    Draw.Color    = _canCraftCurrent ? ColorSuccess : ColorWarning;
+-                    Draw.FontSize = FontW(fontSizeBody);
+-                    Draw.Text(Scr(x, y), _canCraftCurrent ? LabelReady : LabelInsufficient);
+-                }
+-            }
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — PROGRESS BAR
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ?????? ??????????? ????????-??? ??????.
+-        /// ???????????????? ????? (NASA-Punk).
+-        /// </summary>
+-        private void DrawProgressBar()
+-        {
+-            float barX = PanelX + PanelW * 0.15f;
+-            float barW = PanelW * 0.70f;
+-            float barY = PanelY + _sh * 0.05f;
+-            float barH = 24f;
+-
+-            float centerX = barX + barW * 0.5f;
+-            float centerY = barY + barH * 0.5f;
+-
+-            // -- Background --
+-            Draw.Color = ColorProgressBg;
+-            Draw.Rectangle(Scr(centerX, centerY), PxW(barW), PxH(barH));
+-
+-            // -- Fill --
+-            float fillW = barW * _craftProgress;
+-            if (fillW > 1f)
+-            {
+-                Draw.Color = ColorProgress;
+-                Draw.Rectangle(
+-                    Scr(barX + fillW * 0.5f, centerY),
+-                    PxW(fillW), PxH(barH - 4f));
+-            }
+-
+-            // -- Border --
+-            Draw.Color = ColorPrimary;
+-            float t = 1.5f * _worldPerPx;
+-
+-            // Top & bottom lines
+-            Draw.Line(Scr(barX, barY + barH), Scr(barX + barW, barY + barH), t);
+-            Draw.Line(Scr(barX, barY), Scr(barX + barW, barY), t);
+-
+-            // Left & right caps
+-            Draw.Line(Scr(barX, barY), Scr(barX, barY + barH), t);
+-            Draw.Line(Scr(barX + barW, barY), Scr(barX + barW, barY + barH), t);
+-
+-            // -- Segments (vertical tick marks every 10%) --
+-            Draw.Color = ColorPrimaryDim;
+-            float segT = 0.5f * _worldPerPx;
+-            for (int pct = 10; pct < 100; pct += 10)
+-            {
+-                float segX = barX + barW * (pct / 100f);
+-                Draw.Line(Scr(segX, barY + 2f), Scr(segX, barY + barH - 2f), segT);
+-            }
+ 
+-            // -- Percentage text --
+-            int percentInt = Mathf.Clamp(Mathf.FloorToInt(_craftProgress * 100f), 0, 100);
+-
+-            Draw.Color     = ColorTextBright;
+-            Draw.FontSize  = FontW(fontSizeBody * 1.2f);
+-            Draw.TextAlign = TextAlign.Center;
+-            Draw.Text(Scr(centerX, centerY + barH + 12f), PercentStrings[percentInt]);
+-
+-            // -- Label --
+-            Draw.Color    = ColorAccent;
+-            Draw.FontSize = FontW(fontSizeBody * 0.9f);
+-            float pulse = (Mathf.Sin(Time.unscaledTime * 3f) * 0.5f + 0.5f) * 0.3f + 0.7f;
+-            Draw.Color = new Color(ColorAccent.r, ColorAccent.g, ColorAccent.b, pulse);
+-            Draw.Text(Scr(centerX, centerY + barH + 32f), LabelCrafting);
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  DRAWING — CONTROL HINTS
+-        // ----------------------------------------------------------
+-
+-        private void DrawControlHints()
+-        {
+-            float y = PanelY + 15f;
+-            float centerX = PanelX + PanelW * 0.5f;
+-
+-            Draw.Color     = ColorTextDim;
+-            Draw.FontSize  = FontW(fontSizeHint);
+-            Draw.TextAlign = TextAlign.Center;
+-
+-            // -- Power status indicator --
+-            bool hasPower = _currentFabricator != null && _currentFabricator.HasPower;
+-            if (!hasPower)
+-            {
+-                Draw.Color = ColorWarning;
+-                Draw.Text(Scr(centerX, y), LabelPowerRequired);
+-                y += fontSizeHint * 1.5f;
+-            }
+-
+-            // -- Hint line --
+-            // Concatenation avoided: draw each hint separately with spacing
+-            float hintSpacing = PanelW * 0.25f;
+-
+-            Draw.Color = ColorTextDim;
+-            Draw.Text(Scr(centerX - hintSpacing, y), LabelHintNav);
+-            
+-            // Only show craft hint if has power and can craft
+-            if (hasPower && _canCraftCurrent)
+-                Draw.Text(Scr(centerX, y), LabelHintCraft);
+-            
+-            Draw.Text(Scr(centerX + hintSpacing, y), LabelHintClose);
+-
+-            // -- Separator above hints --
+-            Draw.Color = ColorPrimaryDim;
+-            Draw.Line(
+-                Scr(PanelX + 20f, y + fontSizeHint + 5f),
+-                Scr(PanelR - 20f, y + fontSizeHint + 5f),
+-                0.5f * _worldPerPx);
+-        }
+-
+-        private void DrawResultIcon(float x, float y)
+-        {
+-            if (_resultHasTextureCache && _resultIconTextureCache != null)
+-            {
+-                Draw.Texture(_resultIconTextureCache, new Rect(x, y - 8f, 14f, 14f), Color.white);
+-                return;
+-            }
+-
+-            if (_resultHasFallbackIconCache)
+-            {
+-                Draw.Color = _resultIconColorCache;
+-                Draw.Disc(Scr(x + 6f, y), 4f * _worldPerPx);
+-            }
+-        }
+-
+-        private void DrawIngredientIcon(int index, float x, float y, bool hasMaterials)
+-        {
+-            if (index < 0 || index >= _ingredientCacheCount)
+-                return;
+-
+-            if (_ingredientHasTextureCache[index] && _ingredientIconTextureCache[index] != null)
+-            {
+-                Color tint = hasMaterials ? Color.white : new Color(1f, 0.55f, 0.55f, 0.9f);
+-                Draw.Texture(_ingredientIconTextureCache[index], new Rect(x, y - 6f, 12f, 12f), tint);
+-                return;
+-            }
+-
+-            Draw.Color = _ingredientHasFallbackIconCache[index]
+-                ? _ingredientIconColorCache[index]
+-                : (hasMaterials ? ColorSuccess : ColorWarning);
+-            Draw.Disc(Scr(x + 4f, y + 2f), 3.5f * _worldPerPx);
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  CACHE REBUILDING — on selection change
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ????????????? ???????????? ?????? ??? ?????????? ???????.
+-        ///
+-        /// ?????????? ?????? ??? ????? ?????? (W/S press),
+-        /// ?? ?????? ????.
+-        ///
+-        /// GC: StringBuilder.ToString() ?????????? string.
+-        /// ??? ????????? — ?????????? ??? ??????? ??????, ?? per-frame.
+-        /// ?????????? ????????? = ?????????? ???????????? (~3-5).
+-        /// </summary>
+-        private void RebuildIngredientCache()
+-        {
+-            if (_recipes == null || _selectedIndex < 0 || _selectedIndex >= _recipes.Count)
+-            {
+-                _ingredientCacheCount = 0;
+-                _canCraftCurrent      = false;
+-                _craftTimeCache       = "--";
+-                _resultNameCache      = "--";
+-                _resultIconTextureCache = null;
+-                _resultIconColorCache = Color.white;
+-                _resultHasTextureCache = false;
+-                _resultHasFallbackIconCache = false;
+-                return;
+-            }
+-
+-            RecipeData recipe = _recipes[_selectedIndex];
+-            if (recipe == null)
+-            {
+-                _ingredientCacheCount = 0;
+-                _canCraftCurrent      = false;
+-                _resultIconTextureCache = null;
+-                _resultHasTextureCache = false;
+-                _resultHasFallbackIconCache = false;
+-                return;
+-            }
+-
+-            // -- Result name --
+-            _resultNameCache = recipe.DisplayNameOrFallback;
+-            _resultIconTextureCache = ResolveItemTexture(recipe.resultItem);
+-            _resultHasTextureCache = _resultIconTextureCache != null;
+-            _resultHasFallbackIconCache = LocalizedInlineIconResolver.TryResolveItemAccent(recipe.resultItem, out _resultIconColorCache);
+-
+-            // -- Craft time --
+-            _sb.Clear();
+-            AppendFloat(_sb, recipe.craftTime, 1);
+-            _sb.Append(LabelSeconds);
+-            _craftTimeCache = _sb.ToString(); // one allocation
+-
+-            // -- Ingredients --
+-            List<InventoryCost> ingredients = recipe.ingredients;
+-            int count = (ingredients != null) ? ingredients.Count : 0;
+-
+-            // Ensure arrays are large enough
+-            if (_ingredientNameCache.Length < count)
+-            {
+-                _ingredientNameCache   = new string[count];
+-                _ingredientStatusCache = new string[count];
+-                _ingredientSufficient  = new bool[count];
+-                _ingredientIconTextureCache = new Texture[count];
+-                _ingredientIconColorCache = new Color[count];
+-                _ingredientHasTextureCache = new bool[count];
+-                _ingredientHasFallbackIconCache = new bool[count];
+-            }
+-
+-            _ingredientCacheCount = count;
+-            _canCraftCurrent = true;
+-
+-            for (int i = 0; i < count; i++)
+-            {
+-                InventoryCost ing = ingredients[i];
+-
+-                // Name (from ItemData — already cached)
+-                _ingredientNameCache[i] = (ing.item != null) ? ing.item.itemName : "--";
+-                _ingredientIconTextureCache[i] = ResolveItemTexture(ing.item);
+-                _ingredientHasTextureCache[i] = _ingredientIconTextureCache[i] != null;
+-                _ingredientHasFallbackIconCache[i] = LocalizedInlineIconResolver.TryResolveItemAccent(ing.item, out _ingredientIconColorCache[i]);
+-
+-                // Count in inventory
+-                int have     = CountItemInInventory(ing.item);
+-                int required = ing.amount;
+-
+-                // Status string "2/3"
+-                _sb.Clear();
+-                AppendInt(_sb, have);
+-                _sb.Append(LabelSlash);
+-                AppendInt(_sb, required);
+-                _ingredientStatusCache[i] = _sb.ToString(); // one allocation per ingredient
+-
+-                // Sufficient check
+-                bool sufficient = have >= required;
+-                _ingredientSufficient[i] = sufficient;
+-
+-                if (!sufficient)
+-                    _canCraftCurrent = false;
+-            }
+-        }
+-
+-        // ----------------------------------------------------------
+-        //  INVENTORY HELPERS
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// ???????????? ?????????? ??????????? ItemData ? ?????????.
+-        ///
+-        /// ????????? InventoryGrid — O(cols × rows).
+-        /// ?????????? ?????? ??? ????? ?????? (?? per-frame).
+-        ///
+-        /// ZERO GC: ReferenceEquals, for-????, no LINQ.
+-        /// </summary>
+-        private static Texture ResolveItemTexture(ItemData item)
+-        {
+-            if (item == null || item.icon == null)
+-                return null;
+-
+-            return item.icon.texture;
++            _selectedIndex = Mathf.Clamp(nextIndex, 0, _recipes.Count - 1);
++            UpdateDiagnostics();
+         }
+ 
+         private void CycleGroup(int direction)
+@@ -1439,7 +368,6 @@ namespace Hecton8.UI
+                 _selectedGroup = candidate;
+                 _selectedIndex = 0;
+                 RebuildVisibleRecipes();
+-                RebuildIngredientCache();
+                 return;
+             }
+         }
+@@ -1465,7 +393,6 @@ namespace Hecton8.UI
+         private void RebuildVisibleRecipes()
+         {
+             _filteredRecipes.Clear();
+-
+             if (_allRecipes == null)
+             {
+                 _recipes = null;
+@@ -1488,123 +415,193 @@ namespace Hecton8.UI
+             }
+ 
+             _recipes = _filteredRecipes;
+-            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, Mathf.Max(0, _filteredRecipes.Count - 1));
++            if (_recipes.Count == 0)
++                _selectedIndex = 0;
++            else
++                _selectedIndex = Mathf.Clamp(_selectedIndex, 0, _recipes.Count - 1);
+         }
+ 
+-        private string GetCurrentGroupLabel()
++        private RecipeData ResolveDisplayRecipe()
+         {
+-            return GetGroupLabel(_selectedGroup);
++            if (_currentFabricator == null)
++                return null;
++
++            if (_currentFabricator.IsCrafting && _currentFabricator.ActiveRecipe != null)
++                return _currentFabricator.ActiveRecipe;
++
++            if (!_isOpen || _recipes == null || _recipes.Count == 0)
++                return null;
++
++            return _selectedIndex >= 0 && _selectedIndex < _recipes.Count
++                ? _recipes[_selectedIndex]
++                : null;
+         }
+ 
+-        private string GetGroupLabel(FabricationGroup group)
++        private void RenderActiveRecipeHologram(float deltaTime)
+         {
+-            LocalizationManager localization = LocalizationManager.Instance;
+-            switch (group)
++            if ((_currentFabricator == null || !_isOpen) && !_isCrafting)
++            {
++                _debugVisibleInstanceCount = 0;
++                return;
++            }
++
++            RecipeData recipe = ResolveDisplayRecipe();
++            if (recipe == null || recipe.ingredients == null || recipe.ingredients.Count == 0)
++            {
++                _debugVisibleInstanceCount = 0;
++                return;
++            }
++
++            EnsureHologramBuffers();
++            EnsureHologramResources();
++
++            if (!_hologramMatrices.IsCreated || _runtimeHologramMaterial == null || _runtimeHologramMesh == null)
+             {
+-                case FabricationGroup.Materials:
+-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_MATERIALS, "MATERIALS") : "MATERIALS";
+-                case FabricationGroup.Components:
+-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_COMPONENTS, "COMPONENTS") : "COMPONENTS";
+-                case FabricationGroup.Tools:
+-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_TOOLS, "TOOLS") : "TOOLS";
+-                case FabricationGroup.Suit:
+-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_SUIT, "SUIT") : "SUIT";
+-                case FabricationGroup.Construction:
+-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_CONSTRUCTION, "CONSTRUCTION") : "CONSTRUCTION";
+-                case FabricationGroup.Power:
+-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_POWER, "POWER") : "POWER";
+-                default:
+-                    return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.FAB_GROUP_ALL, "ALL") : "ALL";
++                _debugVisibleInstanceCount = 0;
++                return;
++            }
++
++            int visibleCount = BuildHologramMatrices(recipe, deltaTime);
++            _debugVisibleInstanceCount = visibleCount;
++            if (visibleCount <= 0)
++                return;
++
++            Graphics.DrawMeshInstanced(
++                _runtimeHologramMesh,
++                0,
++                _runtimeHologramMaterial,
++                _hologramMatrixBuffer,
++                visibleCount,
++                null,
++                ShadowCastingMode.Off,
++                false,
++                0,
++                null,
++                LightProbeUsage.Off,
++                null);
++        }
++
++        private int BuildHologramMatrices(RecipeData recipe, float deltaTime)
++        {
++            int instanceCount = 0;
++            Transform anchor = _currentFabricator != null ? _currentFabricator.transform : null;
++            if (anchor == null || recipe.ingredients == null)
++                return 0;
++
++            Vector3 anchorPosition = anchor.position + anchor.up * hologramHeight;
++            Quaternion anchorRotation = Quaternion.LookRotation(anchor.forward, Vector3.up);
++            float bobOffset = Mathf.Sin(Time.unscaledTime * hologramBobFrequency) * hologramBobAmplitude;
++            int ingredientCount = recipe.ingredients.Count;
++
++            for (int ingredientIndex = 0; ingredientIndex < ingredientCount && instanceCount < MaxVisibleHologramInstances; ingredientIndex++)
++            {
++                InventoryCost ingredient = recipe.ingredients[ingredientIndex];
++                if (ingredient == null || ingredient.item == null || ingredient.amount <= 0)
++                    continue;
++
++                int unitCount = Mathf.Clamp(ingredient.amount, 1, MaxVisibleHologramInstances - instanceCount);
++                for (int unitIndex = 0; unitIndex < unitCount && instanceCount < MaxVisibleHologramInstances; unitIndex++)
++                {
++                    int gridColumn = instanceCount % 4;
++                    int gridRow = instanceCount / 4;
++                    float lateral = (gridColumn - 1.5f) * hologramSpacing;
++                    float vertical = gridRow * hologramSpacing * 0.72f;
++                    Vector3 localOffset = new Vector3(lateral, vertical + bobOffset, 0.24f + gridRow * 0.02f);
++                    Vector3 worldPosition = anchorPosition +
++                                            anchorRotation * localOffset +
++                                            anchor.right * Mathf.Sin((Time.unscaledTime + instanceCount) * 0.37f) * 0.01f;
++                    Quaternion worldRotation = Quaternion.AngleAxis(
++                        hologramYawBias + Time.unscaledTime * HologramSpinDegreesPerSecond + ingredientIndex * 11f + unitIndex * 7f,
++                        Vector3.up);
++                    Vector3 scale = Vector3.one * hologramCellSize;
++
++                    Matrix4x4 matrix = Matrix4x4.TRS(worldPosition, worldRotation, scale);
++                    _hologramMatrices[instanceCount] = matrix;
++                    _hologramMatrixBuffer[instanceCount] = matrix;
++                    instanceCount++;
++                }
+             }
++
++            return instanceCount;
+         }
+ 
+-        private int CountItemInInventory(ItemData item)
++        private void EnsureHologramBuffers()
+         {
+-            if (item == null) return 0;
+-            if (_currentFabricator != null)
+-                return _currentFabricator.CountAccessibleItem(item, playerInventory);
++            if (_hologramMatrices.IsCreated)
++                return;
+ 
+-            return playerInventory != null ? playerInventory.CountTotal(item) : 0;
++            _hologramMatrices = new NativeArray<Matrix4x4>(MaxVisibleHologramInstances, Allocator.Persistent);
+         }
+ 
+-        // ----------------------------------------------------------
+-        //  STRING HELPERS — zero per-frame GC
+-        // ----------------------------------------------------------
+-
+-        /// <summary>
+-        /// Appends an integer to StringBuilder using pre-cached strings.
+-        /// For values 0-99: zero GC (uses NumStrings cache).
+-        /// For values =100: StringBuilder.Append(int) — minimal GC.
+-        /// </summary>
+-        private static void AppendInt(StringBuilder sb, int value)
++        private void EnsureHologramResources()
+         {
+-            if (value >= 0 && value < NumStrings.Length)
+-                sb.Append(NumStrings[value]);
+-            else
+-                sb.Append(value);
++            if (_runtimeHologramMesh == null)
++                _runtimeHologramMesh = CreateCubeMesh();
++
++            if (_runtimeHologramMaterial == null)
++            {
++#if UNITY_EDITOR
++                if (hologramShader == null)
++                    hologramShader = AssetDatabase.LoadAssetAtPath<Shader>(HologramShaderPath);
++#endif
++                if (hologramShader != null)
++                {
++                    _runtimeHologramMaterial = new Material(hologramShader)
++                    {
++                        enableInstancing = true,
++                        hideFlags = HideFlags.DontSave
++                    };
++
++                    if (_runtimeHologramMaterial.HasProperty(BaseColorId))
++                        _runtimeHologramMaterial.SetColor(BaseColorId, hologramColor);
++                    else if (_runtimeHologramMaterial.HasProperty(ColorId))
++                        _runtimeHologramMaterial.SetColor(ColorId, hologramColor);
++                }
++            }
+         }
+ 
+-        /// <summary>
+-        /// Appends a float with specified decimal places.
+-        /// Uses integer math to avoid float?string GC.
+-        /// </summary>
+-        private static void AppendFloat(StringBuilder sb, float value, int decimals)
++        private static Mesh CreateCubeMesh()
+         {
+-            if (value < 0f)
++            Mesh mesh = new Mesh
+             {
+-                sb.Append('-');
+-                value = -value;
+-            }
++                name = "FabricatorHologramCube"
++            };
+ 
+-            int intPart = (int)value;
+-            AppendInt(sb, intPart);
++            Vector3[] vertices =
++            {
++                new Vector3(-0.5f, -0.5f, -0.5f),
++                new Vector3( 0.5f, -0.5f, -0.5f),
++                new Vector3( 0.5f,  0.5f, -0.5f),
++                new Vector3(-0.5f,  0.5f, -0.5f),
++                new Vector3(-0.5f, -0.5f,  0.5f),
++                new Vector3( 0.5f, -0.5f,  0.5f),
++                new Vector3( 0.5f,  0.5f,  0.5f),
++                new Vector3(-0.5f,  0.5f,  0.5f)
++            };
+ 
+-            if (decimals > 0)
++            int[] triangles =
+             {
+-                sb.Append('.');
++                0, 2, 1, 0, 3, 2,
++                1, 2, 6, 1, 6, 5,
++                5, 6, 7, 5, 7, 4,
++                4, 7, 3, 4, 3, 0,
++                3, 7, 6, 3, 6, 2,
++                4, 0, 1, 4, 1, 5
++            };
+ 
+-                float frac = value - intPart;
+-                for (int d = 0; d < decimals; d++)
+-                {
+-                    frac *= 10f;
+-                    int digit = (int)frac;
+-                    if (digit > 9) digit = 9;
+-                    sb.Append((char)('0' + digit));
+-                    frac -= digit;
+-                }
+-            }
++            mesh.vertices = vertices;
++            mesh.triangles = triangles;
++            mesh.RecalculateNormals();
++            mesh.RecalculateBounds();
++            mesh.UploadMeshData(false);
++            return mesh;
+         }
+ 
+-        // ----------------------------------------------------------
+-        //  DIAGNOSTICS
+-        // ----------------------------------------------------------
+-
+-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+         private void UpdateDiagnostics()
+         {
+-            _debugIsOpen        = _isOpen;
++            _debugIsOpen = _isOpen;
++            _debugIsCrafting = _isCrafting;
+             _debugSelectedIndex = _selectedIndex;
+         }
+-
+-        // ----------------------------------------------------------
+-        //  EDITOR
+-        // ----------------------------------------------------------
+-
+-#if UNITY_EDITOR
+-        private void OnValidate()
+-        {
+-#if UNITY_EDITOR
+-            if (UnityEditor.EditorApplication.isCompiling ||
+-                UnityEditor.EditorApplication.isUpdating ||
+-                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+-                return;
+-#endif
+-            if (fontSizeHeader     < 8f)  fontSizeHeader     = 8f;
+-            if (fontSizeBody       < 6f)  fontSizeBody       = 6f;
+-            if (fontSizeHint       < 6f)  fontSizeHint       = 6f;
+-            if (listItemSpacing    < 16f) listItemSpacing    = 16f;
+-            if (bracketPulseSpeed  < 0f)  bracketPulseSpeed  = 0f;
+-        }
+-#endif
+     }
+ }
+diff --git a/Assets/_Project/Scripts/HectonInventoryUI.cs b/Assets/_Project/Scripts/HectonInventoryUI.cs
+index f1be593f..70ad7d1c 100644
+--- a/Assets/_Project/Scripts/HectonInventoryUI.cs
++++ b/Assets/_Project/Scripts/HectonInventoryUI.cs
+@@ -1,725 +1,10 @@
+-// ============================================================================
+-// HECTON-8 — HectonInventoryUI.cs
+-// NASA-Punk Grid Inventory — Shapes Immediate-Mode ???????????? (URP).
+-//
+-// ----------------------------------------------------------------------------
+-// RENDERING PIPELINE:
+-//   ??????? ????? — ImmediateModeShapeDrawer (Shapes).
+-//   ???????????? ????? ????????? — DrawShapes(Camera cam).
+-//   OnPostRender() ?????? — URP ?? ???????? ??? ?? ??-main ???????.
+-//
+-// TICK SYSTEM:
+-//   ITickable ? GameTickManager.  Update() ???????????.
+-//   Tick(float dt) — ???????? ?????, ?????? ??????.
+-//
+-// ??????????:
+-//   ?????: (0,0) = ??????-?????, Y ?????.
+-//   ?????: [col=0, row=0] = ???????-?????, row ????.
+-//   ???????: screenY = gridTopY - row × cellSize
+-//
+-// ZERO-GC ????????:
+-//   • BitArray64 (ulong bitmask) ?????? bool[,] + Array.Clear.
+-//   • StringBuilder ????????????????; ToString() — ?????? ??? ????? ??????.
+-//   • ????????? ???????? ???????? — ??????????? ??????, ??? ?????????.
+-//   • RebuildCachedStrings — ?????????? ?????? ??? ???????? ?????????.
+-//
+-// ?????: NASA-Punk
+-//   ?????? ?????, ??????? ??????, ????????????? ???????.
+-//   ??????? ?????? ?? ????????? > 1×1 (DrawItemAccents ??????).
+-//   Glow-?????? ?? ?????????? ???????? (selectedCol / selectedRow).
+-// ============================================================================
+-
+-using System;
+-using System.Text;
+-using Hecton8.Input;
+ using Hecton8.Core;
+-using Hecton8.Inventory;
+-using Hecton8.Items;
+-using Shapes;
+-using TMPro;
+ using UnityEngine;
+ 
+ [DisallowMultipleComponent]
+-public sealed class HectonInventoryUI : ImmediateModeShapeDrawer, ITickable, IUpdatable
++public sealed class HectonInventoryUI : MonoBehaviour, ITickable, IUpdatable
+ {
+-    // ------------------------------------------------------------------
+-    //  INSPECTOR — REFERENCES
+-    // ------------------------------------------------------------------
+-
+-    [Header("-- References --------------------------------")]
+-    [SerializeField] private PlayerInventory inventory;
+-    [SerializeField] private Camera          hudCamera;
+-    [SerializeField] private TMP_FontAsset   font;
+-
+-    // ------------------------------------------------------------------
+-    //  INSPECTOR — GRID LAYOUT
+-    // ------------------------------------------------------------------
+-
+-    [Header("-- Grid Layout -------------------------------")]
+-    [SerializeField] private float cellSize     = 60f;
+-    [SerializeField] private float cellGap      = 2f;
+-    [SerializeField] private float panelPadding = 24f;
+-
+-    [Tooltip("?????????????? ???????? ????? ?? ?????? ?????? (????????????? = ?????)")]
+-    [SerializeField] private float gridOffsetX  = -40f;
+-
+-    // ------------------------------------------------------------------
+-    //  INSPECTOR — COLORS
+-    // ------------------------------------------------------------------
+-
+-    [Header("-- Colors ------------------------------------")]
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color overlayColor    = new Color(0f,    0f,    0f,    0.55f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color panelBgColor    = new Color(0f,    0.03f, 0.06f, 0.92f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color frameColor      = new Color(0f,    0.6f,  0.8f,  0.6f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color cellBgColor     = new Color(0f,    0.06f, 0.10f, 0.6f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color cellBorderColor = new Color(0f,    0.4f,  0.6f,  0.2f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color itemFillColor   = new Color(0f,    0.5f,  0.7f,  0.30f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color itemBorderColor = new Color(0f,    0.85f, 1f,    0.7f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color textColor       = new Color(0f,    0.898f,1f,    1f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color dimTextColor    = new Color(0f,    0.7f,  0.9f,  0.5f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color headerColor     = new Color(0f,    0.898f,1f,    0.9f);
+-    [ColorUsage(true, true)]
+-    [SerializeField] private Color glowColor       = new Color(0f,    0.9f,  1f,    0.35f);
+-
+-    // ------------------------------------------------------------------
+-    //  INSPECTOR — TYPOGRAPHY
+-    // ------------------------------------------------------------------
+-
+-    [Header("-- Typography --------------------------------")]
+-    [SerializeField] private float fontSize       = 11f;
+-    [SerializeField] private float fontSizeTiny   = 7f;
+-    [SerializeField] private float headerFontSize = 18f;
+-    [SerializeField] private float lineThickness  = 1.5f;
+-    [SerializeField] private float thinLine       = 1.0f;
+-
+-    // ------------------------------------------------------------------
+-    //  INSPECTOR — GLOW
+-    // ------------------------------------------------------------------
+-
+-    [Header("-- Glow Effect -------------------------------")]
+-    [SerializeField] private float glowThickness  = 3.0f;
+-    [SerializeField] private float glowExpand     = 4.0f;
+-
+-    // ------------------------------------------------------------------
+-    //  STATIC — INDEX LABELS (hex-style, zero-GC)
+-    // ------------------------------------------------------------------
+-
+-    private static readonly string[] IndexLabels =
+-    {
+-        "0", "1", "2", "3", "4", "5", "6", "7",
+-        "8", "9", "A", "B", "C", "D", "E", "F"
+-    };
+-
+-    // ------------------------------------------------------------------
+-    //  CONSTANTS
+-    // ------------------------------------------------------------------
+-
+-    /// <summary>???????????? ?????? ????? ??? BitMask. 8×8 = 64 ???? ? ulong.</summary>
+-    private const int MaxGridCells = 64;
+-
+-    // ------------------------------------------------------------------
+-    //  RUNTIME STATE
+-    // ------------------------------------------------------------------
+-
+-    private bool _isOpen;
+-
+-    /// <summary>?????? ????????? ?????? ?????.</summary>
+-    public bool IsOpen => _isOpen;
+-
+-    // -- Selection state (keyboard / mouse) --
+-    private int _selectedCol = -1;
+-    private int _selectedRow = -1;
+-
+-    // -- String Cache (rebuilt only on data change) --
+-    private readonly StringBuilder _sb = new StringBuilder(64);
+-    private string _weightStr   = "MASS: 0.0 kg";
+-    private string _capacityStr = "48 / 48 FREE";
+-    private float  _cachedWeight = -1f;
+-    private int    _cachedFree   = -1;
+-
+-    // -- Layout Cache (computed per-frame) --
+-    private float _gridOriginX;
+-    private float _gridTopY;
+-
+-    // -- Inventory content hash ??? ???????? ??????? ????? --
+-    private int _contentHash;
+-    private bool _tickRegistered;
+-
+-    // ------------------------------------------------------------------
+-    //  LIFECYCLE — ImmediateModeShapeDrawer
+-    // ------------------------------------------------------------------
+-
+-public override void OnEnable()
+-    {
+-        base.OnEnable();
+-        if (InputManager.Instance != null)
+-        {
+-            InputManager.Instance.OnInventory += HandleInventoryToggle;
+-            InputManager.Instance.OnNavigate  += HandleNavigate;
+-            InputManager.Instance.OnCancel    += HandleCancel;
+-        }
+-    }
+-
+-public override void OnDisable()
+-    {
+-        if (InputManager.Instance != null)
+-        {
+-            InputManager.Instance.OnInventory -= HandleInventoryToggle;
+-            InputManager.Instance.OnNavigate  -= HandleNavigate;
+-            InputManager.Instance.OnCancel    -= HandleCancel;
+-        }
+-
+-        UnregisterTick();
+-        _isOpen = false;
+-        base.OnDisable();
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  ITickable — ???????????? ????? ?????? (??? Update)
+-    // ------------------------------------------------------------------
+-
+-    /// <summary>
+-    /// ?????????? GameTickManager ?????? ????.
+-    /// ?????? ???????? ????? — ??????????? ????????.
+-    /// </summary>
+-public void Tick(float deltaTime)
+-    {
+-        if (_isOpen && (inventory == null || inventory.Grid == null))
+-        {
+-            SetOpenState(false);
+-            return;
+-        }
+-
+-        // Input is fully event-driven via InputManager
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  SHAPES — DrawShapes (ImmediateModeShapeDrawer override)
+-    //  ???????? OnPostRender(). ????????? ???????? ? URP.
+-    // ------------------------------------------------------------------
+-
+-    public override void DrawShapes(Camera cam)
+-    {
+-        // -- ????: ?????? ?????? ?? ????? HUD-?????? --
+-        if (!_isOpen)                                    return;
+-        if (hudCamera != null && cam != hudCamera)       return;
+-        if (inventory == null || inventory.Grid == null)  return;
+-
+-        DrawInventoryScreen(cam);
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  SELECTION INPUT
+-    // ------------------------------------------------------------------
+-
+-private void HandleInventoryToggle()
+-    {
+-        SetOpenState(!_isOpen);
+-    }
+-
+-    private void HandleCancel()
+-    {
+-        if (!_isOpen) return;
+-
+-        if (_selectedCol >= 0)
+-        {
+-            _selectedCol = -1;
+-            _selectedRow = -1;
+-        }
+-        else
+-        {
+-            SetOpenState(false);
+-        }
+-    }
+-
+-    private void SetOpenState(bool open)
+-    {
+-        if (open && (inventory == null || inventory.Grid == null))
+-        {
+-            _isOpen = false;
+-            _selectedCol = -1;
+-            _selectedRow = -1;
+-            UnregisterTick();
+-            InputManager.Instance?.SwitchToPlayerInput();
+-            return;
+-        }
+-
+-        _isOpen = open;
+-
+-        if (_isOpen)
+-        {
+-            RegisterTick();
+-            InputManager.Instance?.SwitchToUIInput();
+-        }
+-        else
+-        {
+-            _selectedCol = -1;
+-            _selectedRow = -1;
+-            UnregisterTick();
+-            InputManager.Instance?.SwitchToPlayerInput();
+-        }
+-    }
+-
+-    private void RegisterTick()
+-    {
+-        if (_tickRegistered)
+-            return;
+-
+-        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+-        _tickRegistered = true;
+-    }
+-
+-    private void UnregisterTick()
+-    {
+-        if (!_tickRegistered)
+-            return;
+-
+-        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+-
+-        _tickRegistered = false;
+-    }
+-
+-    private void HandleNavigate(Vector2 dir)
+-    {
+-        if (!_isOpen) return;
+-        if (inventory == null || inventory.Grid == null) return;
+-
+-        InventoryGrid grid = inventory.Grid;
+-        int cols = grid.Columns;
+-        int rows = grid.Rows;
+-
+-        if (_selectedCol < 0 || _selectedRow < 0)
+-        {
+-            if (dir.sqrMagnitude > 0.1f)
+-            {
+-                _selectedCol = 0;
+-                _selectedRow = 0;
+-            }
+-            return;
+-        }
+-
+-        if (dir.x >  0.5f) _selectedCol = Mathf.Min(cols - 1, _selectedCol + 1);
+-        if (dir.x < -0.5f) _selectedCol = Mathf.Max(0, _selectedCol - 1);
+-        if (dir.y >  0.5f) _selectedRow = Mathf.Max(0, _selectedRow - 1);
+-        if (dir.y < -0.5f) _selectedRow = Mathf.Min(rows - 1, _selectedRow + 1);
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  MAIN DRAW ROUTINE
+-    // ------------------------------------------------------------------
+-
+-    private void DrawInventoryScreen(Camera cam)
+-    {
+-        InventoryGrid grid = inventory.Grid;
+-        int cols = grid.Columns;
+-        int rows = grid.Rows;
+-
+-        float w = cam.pixelWidth;
+-        float h = cam.pixelHeight;
+-
+-        // -- ??????? ?????? ????? --
+-        RebuildCachedStrings(grid);
+-
+-        // -- ?????????? layout --
+-        float gridW = cols * cellSize;
+-        float gridH = rows * cellSize;
+-
+-        _gridOriginX = (w - gridW) * 0.5f + gridOffsetX;
+-        _gridTopY    = (h + gridH) * 0.5f + 15f;
+-
+-        float headerSpace = 48f;
+-        float footerSpace = 40f;
+-
+-        float panelL  = _gridOriginX - panelPadding;
+-        float panelR  = _gridOriginX + gridW + panelPadding;
+-        float panelT  = _gridTopY + headerSpace;
+-        float panelB  = _gridTopY - gridH - footerSpace;
+-        float panelW  = panelR - panelL;
+-        float panelH  = panelT - panelB;
+-        float panelCX = (panelL + panelR) * 0.5f;
+-        float panelCY = (panelT + panelB) * 0.5f;
+-
+-        using (Draw.Command(cam))
+-        {
+-            Draw.ResetAllDrawStates();
+-            Draw.BlendMode   = ShapesBlendMode.Transparent;
+-            Draw.Matrix      = Matrix4x4.Ortho(0, w, 0, h, -1, 1);
+-            Draw.Font        = font;
+-            Draw.LineEndCaps = LineEndCap.None;
+-
+-            // -- Overlay --
+-            Draw.Rectangle(new Vector3(w * 0.5f, h * 0.5f, 0), w, h, overlayColor);
+-
+-            // -- Panel background + frame --
+-            Draw.Rectangle(new Vector3(panelCX, panelCY, 0), panelW, panelH, panelBgColor);
+-            Draw.RectangleBorder(new Vector3(panelCX, panelCY, 0),
+-                                 panelW, panelH, lineThickness, frameColor);
+-
+-            // -- ??????????? ???????? --
+-            DrawCornerBrackets(panelL, panelR, panelT, panelB);
+-            DrawHeader(panelCX, panelL, panelR);
+-            DrawAxisLabels(cols, rows);
+-            DrawGridCells(cols, rows);
+-            DrawItems(grid, cols, rows);
+-            DrawFooter(panelL, panelR, gridH);
+-        }
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  DRAW — CORNER L-BRACKETS (??????)
+-    // ------------------------------------------------------------------
+-
+-    private void DrawCornerBrackets(float l, float r, float t, float b)
+-    {
+-        float arm = 22f;
+-        Draw.Thickness = lineThickness;
+-
+-        // Top-Left
+-        Draw.Line(new Vector3(l, t, 0), new Vector3(l + arm, t, 0), frameColor);
+-        Draw.Line(new Vector3(l, t, 0), new Vector3(l, t - arm, 0), frameColor);
+-
+-        // Top-Right
+-        Draw.Line(new Vector3(r - arm, t, 0), new Vector3(r, t, 0), frameColor);
+-        Draw.Line(new Vector3(r, t, 0),       new Vector3(r, t - arm, 0), frameColor);
+-
+-        // Bottom-Left
+-        Draw.Line(new Vector3(l, b + arm, 0), new Vector3(l, b, 0), frameColor);
+-        Draw.Line(new Vector3(l, b, 0),       new Vector3(l + arm, b, 0), frameColor);
+-
+-        // Bottom-Right
+-        Draw.Line(new Vector3(r, b + arm, 0), new Vector3(r, b, 0), frameColor);
+-        Draw.Line(new Vector3(r - arm, b, 0), new Vector3(r, b, 0), frameColor);
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  DRAW — HEADER ("CARGO BAY")
+-    // ------------------------------------------------------------------
+-
+-    private void DrawHeader(float cx, float panelL, float panelR)
+-    {
+-        float headerY = _gridTopY + 22f;
+-
+-        DrawTextCentered("CARGO BAY", new Vector3(cx, headerY, 0),
+-                         headerFontSize, headerColor);
+-
+-        // -- ????????? ????? --
+-        float flankLen = 55f;
+-        float flankGap = 75f;
+-        float flankY   = headerY + headerFontSize * 0.35f;
+-        Color flankCol = frameColor * 0.5f;
+-
+-        Draw.Line(new Vector3(cx - flankGap - flankLen, flankY, 0),
+-                  new Vector3(cx - flankGap, flankY, 0), thinLine, flankCol);
+-        Draw.Line(new Vector3(cx + flankGap, flankY, 0),
+-                  new Vector3(cx + flankGap + flankLen, flankY, 0), thinLine, flankCol);
+-
+-        // -- ????????? ????? --
+-        DrawText("SYS://INV",
+-                 new Vector3(panelR - 80f, headerY + headerFontSize * 0.6f, 0),
+-                 fontSizeTiny, dimTextColor * 0.4f);
+-
+-        // -- ??????????? ??? ?????????? --
+-        float sepY = _gridTopY + 6f;
+-        Draw.Line(new Vector3(panelL + 12f, sepY, 0),
+-                  new Vector3(panelR - 12f, sepY, 0), thinLine * 0.5f, frameColor * 0.3f);
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  DRAW — AXIS LABELS (hex ??????? ?? ????)
+-    // ------------------------------------------------------------------
+-
+-    private void DrawAxisLabels(int cols, int rows)
+-    {
+-        Color labelCol = dimTextColor * 0.45f;
+-
+-        int maxCol = Mathf.Min(cols, IndexLabels.Length);
+-        for (int col = 0; col < maxCol; col++)
+-        {
+-            float cx = _gridOriginX + col * cellSize + cellSize * 0.5f;
+-            float cy = _gridTopY + 2f;
+-            DrawTextCentered(IndexLabels[col], new Vector3(cx, cy, 0), fontSizeTiny, labelCol);
+-        }
+-
+-        int maxRow = Mathf.Min(rows, IndexLabels.Length);
+-        for (int row = 0; row < maxRow; row++)
+-        {
+-            float cx = _gridOriginX - 10f;
+-            float cy = _gridTopY - row * cellSize - cellSize * 0.5f;
+-            DrawTextCentered(IndexLabels[row], new Vector3(cx, cy, 0), fontSizeTiny, labelCol);
+-        }
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  DRAW — GRID CELLS (??? + ?????? ?????)
+-    // ------------------------------------------------------------------
+-
+-    private void DrawGridCells(int cols, int rows)
+-    {
+-        float vs       = cellSize - cellGap;
+-        float halfThin = thinLine * 0.5f;
+-
+-        for (int row = 0; row < rows; row++)
+-        {
+-            for (int col = 0; col < cols; col++)
+-            {
+-                float cx = _gridOriginX + col * cellSize + cellSize * 0.5f;
+-                float cy = _gridTopY    - row * cellSize - cellSize * 0.5f;
+-                Vector3 center = new Vector3(cx, cy, 0);
+-
+-                Draw.Rectangle(center, vs, vs, cellBgColor);
+-                Draw.RectangleBorder(center, vs, vs, halfThin, cellBorderColor);
+-            }
+-        }
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  DRAW — ITEMS
+-    //
+-    //  ???????????: ?????? bool[,] + Array.Clear ?????????? ulong
+-    //  BitMask (?? 64 ????? = 8×8 ?????). ??? ?????? ?????? ?????????
+-    //  ???; ???? ?????????? — ??????? ??? ?????????. ???????? «???????»
+-    //  ??????: ??????? (col, row) ?????? ???? ???????-????? ??? ???????
+-    //  ????????. ??? ?????????, ??? Array.Clear.
+-    //
+-    //  ???? ????? > 64 ????? — ??????? ?? _drawnFallback bool[].
+-    // ------------------------------------------------------------------
+-
+-    // ???????-?????? ??? ????? > 64 ????? (???????????? ??????, ???? ???)
+-    private bool[] _drawnFallback;
+-    private int    _drawnFallbackSize;
+-
+-    private void DrawItems(InventoryGrid grid, int cols, int rows)
++    public void Tick(float deltaTime)
+     {
+-        int totalCells = cols * rows;
+-        bool useBitmask = totalCells <= MaxGridCells;
+-
+-        // -- BitMask path (zero-alloc, zero-clear) --
+-        ulong drawnMask = 0UL;
+-
+-        // -- Fallback path --
+-        if (!useBitmask)
+-        {
+-            EnsureFallbackArray(totalCells);
+-            Array.Clear(_drawnFallback, 0, totalCells);
+-        }
+-
+-        for (int row = 0; row < rows; row++)
+-        {
+-            for (int col = 0; col < cols; col++)
+-            {
+-                int flatIndex = row * cols + col;
+-
+-                // -- ????????: ??? ??????????? --
+-                if (useBitmask)
+-                {
+-                    if ((drawnMask & (1UL << flatIndex)) != 0) continue;
+-                }
+-                else
+-                {
+-                    if (_drawnFallback[flatIndex]) continue;
+-                }
+-
+-                ItemData item = inventory.GetItemAt(col, row);
+-                if (item == null) continue;
+-
+-                int iw = item.width;
+-                int ih = item.height;
+-
+-                // -- ???????? «???????» ?????? --
+-                // ??????? (col, row) ???????? ???????, ?????? ???? ???
+-                // ???????-????? ???? ????????. ?????????: ?????? (col-1, row)
+-                // ? (col, row-1) ?? ???????? ??? ?? ???????.
+-                if (grid.GetCellAnchorIndex(col, row) != flatIndex) continue;
+-
+-                // -- ???????? ??? ?????? ???????? ??? ???????????? --
+-                int endX = Mathf.Min(col + iw, cols);
+-                int endY = Mathf.Min(row + ih, rows);
+-
+-                for (int iy = row; iy < endY; iy++)
+-                {
+-                    for (int ix = col; ix < endX; ix++)
+-                    {
+-                        int fi = iy * cols + ix;
+-                        if (useBitmask)
+-                            drawnMask |= (1UL << fi);
+-                        else
+-                            _drawnFallback[fi] = true;
+-                    }
+-                }
+-
+-                // -- ????????? ???????? --
+-                float itemW  = iw * cellSize - cellGap;
+-                float itemH  = ih * cellSize - cellGap;
+-                float itemCX = _gridOriginX + col * cellSize + iw * cellSize * 0.5f;
+-                float itemCY = _gridTopY    - row * cellSize - ih * cellSize * 0.5f;
+-                Vector3 center = new Vector3(itemCX, itemCY, 0);
+-
+-                // -- ????????: ?????? ?? ???? ???????? --
+-                bool isSelected = (_selectedCol >= col && _selectedCol < endX &&
+-                                   _selectedRow >= row && _selectedRow < endY);
+-
+-                // -- ??????? --
+-                Draw.Rectangle(center, itemW, itemH, itemFillColor);
+-
+-                // -- Glow ??? ?????????? ???????? --
+-                if (isSelected)
+-                {
+-                    float gw = itemW + glowExpand * 2f;
+-                    float gh = itemH + glowExpand * 2f;
+-
+-                    // ????????? ????? ????? ??? NASA-Punk feel
+-                    float pulse = 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 4f);
+-                    Color gc    = glowColor;
+-                    gc.a *= pulse;
+-
+-                    Draw.RectangleBorder(center, gw, gh, glowThickness, gc);
+-                }
+-
+-                // -- ????? ???????? --
+-                Draw.RectangleBorder(center, itemW, itemH, lineThickness, itemBorderColor);
+-
+-                // -- ??????? ?????? (?????? ??? ????????? > 1×1) --
+-                if (iw > 1 || ih > 1)
+-                    DrawItemCornerBrackets(itemCX, itemCY, itemW, itemH);
+-
+-                // -- ???????? ???????? --
+-                DrawTextCentered(item.itemName, center, fontSize, textColor);
+-            }
+-        }
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  DRAW — ITEM CORNER BRACKETS (NASA-Punk, ?????? DrawItemAccents)
+-    //
+-    //  ??????? ?????? ? ????? HUD-???????: ?????? L-????????
+-    //  ???????? ?? ????? ????????. ???????? ?????? ???
+-    //  ?????????????? ????????? (> 1×1).
+-    // ------------------------------------------------------------------
+-
+-    private void DrawItemCornerBrackets(float cx, float cy, float w, float h)
+-    {
+-        float hw   = w * 0.5f - 3f;
+-        float hh   = h * 0.5f - 3f;
+-        float arm  = Mathf.Min(10f, hw * 0.35f, hh * 0.35f);
+-        float t    = thinLine;
+-        Color c    = itemBorderColor * 0.55f;
+-
+-        // Top-Left +
+-        Draw.Line(new Vector3(cx - hw, cy + hh, 0),
+-                  new Vector3(cx - hw + arm, cy + hh, 0), t, c);
+-        Draw.Line(new Vector3(cx - hw, cy + hh, 0),
+-                  new Vector3(cx - hw, cy + hh - arm, 0), t, c);
+-
+-        // Top-Right +
+-        Draw.Line(new Vector3(cx + hw - arm, cy + hh, 0),
+-                  new Vector3(cx + hw, cy + hh, 0), t, c);
+-        Draw.Line(new Vector3(cx + hw, cy + hh, 0),
+-                  new Vector3(cx + hw, cy + hh - arm, 0), t, c);
+-
+-        // Bottom-Left +
+-        Draw.Line(new Vector3(cx - hw, cy - hh + arm, 0),
+-                  new Vector3(cx - hw, cy - hh, 0), t, c);
+-        Draw.Line(new Vector3(cx - hw, cy - hh, 0),
+-                  new Vector3(cx - hw + arm, cy - hh, 0), t, c);
+-
+-        // Bottom-Right +
+-        Draw.Line(new Vector3(cx + hw, cy - hh + arm, 0),
+-                  new Vector3(cx + hw, cy - hh, 0), t, c);
+-        Draw.Line(new Vector3(cx + hw - arm, cy - hh, 0),
+-                  new Vector3(cx + hw, cy - hh, 0), t, c);
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  DRAW — FOOTER (????? + ????????? ??????)
+-    // ------------------------------------------------------------------
+-
+-    private void DrawFooter(float panelL, float panelR, float gridH)
+-    {
+-        float sepY    = _gridTopY - gridH - 8f;
+-        float footerY = sepY - 18f;
+-
+-        Draw.Line(new Vector3(panelL + 12f, sepY, 0),
+-                  new Vector3(panelR - 12f, sepY, 0), thinLine * 0.5f, frameColor * 0.3f);
+-
+-        DrawText(_weightStr,   new Vector3(panelL + 18f,   footerY, 0), fontSize, dimTextColor);
+-        DrawText(_capacityStr, new Vector3(panelR - 140f, footerY, 0), fontSize, dimTextColor);
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  TEXT HELPERS (Zero-GC — ?????? ?? ?????????)
+-    // ------------------------------------------------------------------
+-
+-    private void DrawText(string text, Vector3 pos, float size, Color color)
+-    {
+-        if (string.IsNullOrEmpty(text)) return;
+-        Draw.Text(pos, Quaternion.identity, text, TextAlign.Left, size, font, color);
+-    }
+-
+-    private void DrawTextCentered(string text, Vector3 pos, float size, Color color)
+-    {
+-        if (string.IsNullOrEmpty(text)) return;
+-        Draw.Text(pos, Quaternion.identity, text, TextAlign.Center, size, font, color);
+-    }
+-
+-    // ------------------------------------------------------------------
+-    //  CACHE MANAGEMENT — ZERO GC
+-    //
+-    //  RebuildCachedStrings ?????????? ?????? ????, ?? ToString()
+-    //  ??????????? ?????? ??? ???????? ????????? ??????.
+-    //  ?????????????: ??? ??????????? ??? ??????????? ????????????.
+-    // ------------------------------------------------------------------
+-
+-    private void EnsureFallbackArray(int totalCells)
+-    {
+-        if (_drawnFallback != null && _drawnFallbackSize >= totalCells) return;
+-
+-        _drawnFallback     = new bool[totalCells];
+-        _drawnFallbackSize = totalCells;
+-    }
+-
+-    private void RebuildCachedStrings(InventoryGrid grid)
+-    {
+-        // -- ????? --
+-        float currentWeight = inventory.TotalWeight;
+-        if (!Mathf.Approximately(_cachedWeight, currentWeight))
+-        {
+-            _cachedWeight = currentWeight;
+-
+-            int intPart = (int)currentWeight;
+-            int decPart = (int)((currentWeight - intPart) * 10f);
+-            if (decPart < 0) decPart = -decPart;
+-
+-            _sb.Clear();
+-            _sb.Append("MASS: ");
+-            _sb.Append(intPart);
+-            _sb.Append('.');
+-            _sb.Append(decPart);
+-            _sb.Append(" kg");
+-            _weightStr = _sb.ToString();
+-        }
+-
+-        // -- ????????? ?????? --
+-        int currentFree = grid.FreeCells;
+-        if (_cachedFree != currentFree)
+-        {
+-            _cachedFree = currentFree;
+-
+-            _sb.Clear();
+-            _sb.Append(currentFree);
+-            _sb.Append(" / ");
+-            _sb.Append(grid.TotalCells);
+-            _sb.Append(" FREE");
+-            _capacityStr = _sb.ToString();
+-        }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/HectonItem.cs b/Assets/_Project/Scripts/HectonItem.cs
+index b4deecb3..7eed97a8 100644
+--- a/Assets/_Project/Scripts/HectonItem.cs
++++ b/Assets/_Project/Scripts/HectonItem.cs
+@@ -18,6 +18,7 @@
+ using Hecton8.Core;
+ using Hecton8.Inventory;
+ using Hecton8.Interaction;
++using Hecton8.Modding;
+ using Hecton8.Physics;
+ using Hecton8.World;
+ using Hecton.Localization;
+@@ -273,13 +274,17 @@ namespace Hecton8.Items
+                 return;
+             }
+ 
+-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
++            int itemHashId = LocHash.Compute(itemData.PersistentId);
++            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
+             if (!attempt.AnyAdded)
+             {
+                 DropOverflow(interactor);
+                 return;
+             }
+ 
++            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
++            HectonEventBus.Publish(new ItemCollectedEvent(itemData, attempt.AddedQuantity, interactor));
++
+             quantity = attempt.RejectedQuantity;
+             if (quantity > 0)
+             {
+diff --git a/Assets/_Project/Scripts/ItemCatalog.cs b/Assets/_Project/Scripts/ItemCatalog.cs
+index ee77d78d..b48df5a4 100644
+--- a/Assets/_Project/Scripts/ItemCatalog.cs
++++ b/Assets/_Project/Scripts/ItemCatalog.cs
+@@ -21,6 +21,58 @@ namespace Hecton8.SaveSystem
+         order    = 100)]
+     public sealed class ItemCatalog : ScriptableObject
+     {
++        public readonly struct ItemRuntimeDescriptor
++        {
++            public readonly int HashId;
++            public readonly byte Width;
++            public readonly byte Height;
++            public readonly ushort MaxStack;
++            public readonly float Weight;
++            public readonly byte CategoryId;
++            public readonly bool Stackable;
++            public readonly bool IsConsumable;
++            public readonly float OxygenRestore;
++            public readonly float EnergyRestore;
++            public readonly float IntegrityRestore;
++            public readonly float HungerRestore;
++            public readonly float ThirstRestore;
++            public readonly float UseDuration;
++
++            public ItemRuntimeDescriptor(
++                int hashId,
++                byte width,
++                byte height,
++                ushort maxStack,
++                float weight,
++                byte categoryId,
++                bool stackable,
++                bool isConsumable,
++                float oxygenRestore,
++                float energyRestore,
++                float integrityRestore,
++                float hungerRestore,
++                float thirstRestore,
++                float useDuration)
++            {
++                HashId = hashId;
++                Width = width;
++                Height = height;
++                MaxStack = maxStack;
++                Weight = weight;
++                CategoryId = categoryId;
++                Stackable = stackable;
++                IsConsumable = isConsumable;
++                OxygenRestore = oxygenRestore;
++                EnergyRestore = energyRestore;
++                IntegrityRestore = integrityRestore;
++                HungerRestore = hungerRestore;
++                ThirstRestore = thirstRestore;
++                UseDuration = useDuration;
++            }
++
++            public bool IsValid => HashId != 0 && Width > 0 && Height > 0;
++        }
++
+         [Header("All item assets in the project")]
+         [SerializeField] private List<ItemData> allItems = new List<ItemData>();
+ 
+@@ -30,6 +82,7 @@ namespace Hecton8.SaveSystem
+         /// </summary>
+         private Dictionary<string, ItemData> _lookup;
+         private Dictionary<int, ItemData> _hashLookup;
++        private Dictionary<int, ItemRuntimeDescriptor> _runtimeDescriptorLookup;
+         private bool _hasLookupAmbiguity;
+         private string _lookupAmbiguitySummary;
+         private List<ItemData> _runtimeItems;
+@@ -79,6 +132,20 @@ namespace Hecton8.SaveSystem
+             return result;
+         }
+ 
++        public bool TryGetRuntimeDescriptor(int hashId, out ItemRuntimeDescriptor descriptor)
++        {
++            descriptor = default;
++            if (hashId == 0)
++                return false;
++
++            if (_runtimeDescriptorLookup == null)
++                RebuildLookup();
++
++            return _runtimeDescriptorLookup != null &&
++                   _runtimeDescriptorLookup.TryGetValue(hashId, out descriptor) &&
++                   descriptor.IsValid;
++        }
++
+         /// <summary>
+         /// Registers a runtime-only item overlay without mutating the authored ScriptableObject asset list.
+         /// This is intended for mod content injection and validates stable-ID collisions before extending the live lookup.
+@@ -173,6 +240,7 @@ namespace Hecton8.SaveSystem
+             int itemCount = allItems != null ? allItems.Count : 0;
+             _lookup = new Dictionary<string, ItemData>(itemCount * 2);
+             _hashLookup = new Dictionary<int, ItemData>(itemCount * 2);
++            _runtimeDescriptorLookup = new Dictionary<int, ItemRuntimeDescriptor>(itemCount * 2);
+             _hasLookupAmbiguity = false;
+             _lookupAmbiguitySummary = string.Empty;
+ 
+@@ -312,6 +380,29 @@ namespace Hecton8.SaveSystem
+             }
+ 
+             _hashLookup.Add(hashId, item);
++            _runtimeDescriptorLookup.Add(hashId, BuildRuntimeDescriptor(hashId, item));
++        }
++
++        private static ItemRuntimeDescriptor BuildRuntimeDescriptor(int hashId, ItemData item)
++        {
++            if (hashId == 0 || item == null)
++                return default;
++
++            return new ItemRuntimeDescriptor(
++                hashId,
++                (byte)Mathf.Clamp(item.width, 1, byte.MaxValue),
++                (byte)Mathf.Clamp(item.height, 1, byte.MaxValue),
++                (ushort)Mathf.Clamp(item.maxStack, 1, ushort.MaxValue),
++                item.weight,
++                (byte)item.category,
++                item.stackable && item.maxStack > 1,
++                item.isConsumable,
++                item.oxygenRestore,
++                item.energyRestore,
++                item.integrityRestore,
++                item.hungerRestore,
++                item.thirstRestore,
++                item.UseDuration);
+         }
+ 
+         private void RecordHashAmbiguity(int hashId, ItemData existing, ItemData duplicate)
+diff --git a/Assets/_Project/Scripts/Items/PickupItem.cs b/Assets/_Project/Scripts/Items/PickupItem.cs
+index bcc93d58..bdbefc12 100644
+--- a/Assets/_Project/Scripts/Items/PickupItem.cs
++++ b/Assets/_Project/Scripts/Items/PickupItem.cs
+@@ -6,6 +6,7 @@
+ using Hecton8.Core;
+ using Hecton8.Inventory;
+ using Hecton8.Items;
++using Hecton8.Modding;
+ using Hecton8.Physics;
+ using Hecton8.Gameplay;
+ 
+@@ -283,13 +284,17 @@ namespace Hecton8.Interaction
+                 return;
+             }
+ 
+-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
++            int itemHashId = Hecton.Localization.LocHash.Compute(itemData.PersistentId);
++            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
+             if (!attempt.AnyAdded)
+             {
+                 DropOverflow(interactor);
+                 return;
+             }
+ 
++            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
++            HectonEventBus.Publish(new ItemCollectedEvent(itemData, attempt.AddedQuantity, interactor));
++
+             quantity = attempt.RejectedQuantity;
+             if (quantity > 0)
+             {
+diff --git a/Assets/_Project/Scripts/Meta/MetaBuffInjector.cs b/Assets/_Project/Scripts/Meta/MetaBuffInjector.cs
+index f4c0efeb..07da4b82 100644
+--- a/Assets/_Project/Scripts/Meta/MetaBuffInjector.cs
++++ b/Assets/_Project/Scripts/Meta/MetaBuffInjector.cs
+@@ -149,7 +149,7 @@ namespace Hecton8.Meta
+             if (item == null)
+                 return;
+ 
+-            _inventory.TryAddItem(item, quantity);
++            _inventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity);
+         }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/PDAInventoryTab.cs b/Assets/_Project/Scripts/PDAInventoryTab.cs
+index fab8ce88..0e2325ff 100644
+--- a/Assets/_Project/Scripts/PDAInventoryTab.cs
++++ b/Assets/_Project/Scripts/PDAInventoryTab.cs
+@@ -209,6 +209,7 @@ namespace Hecton8.UI
+         private int _selectedX = -1;
+         private int _selectedY = -1;
+         private ItemData _selectedItem;
++        private int _selectedItemHashId;
+         private int _hoverX = -1;
+         private int _hoverY = -1;
+         private InventoryViewFilter _currentFilter = InventoryViewFilter.All;
+@@ -1269,7 +1270,7 @@ namespace Hecton8.UI
+                 return;
+             }
+ 
+-            if (!ReferenceEquals(playerInventory.GetItemAt(_selectedX, _selectedY), _selectedItem))
++            if (playerInventory.GetItemHashAt(_selectedX, _selectedY) != _selectedItemHashId)
+                 ClearSelectionSilently();
+         }
+ 
+@@ -1670,7 +1671,8 @@ namespace Hecton8.UI
+                 return;
+             }
+ 
+-            ItemData dropped = playerInventory.RemoveOneItem(_selectedX, _selectedY);
++            int droppedHashId = playerInventory.RemoveOneItem(_selectedX, _selectedY);
++            ItemData dropped = ResolveInventoryItem(droppedHashId);
+             if (dropped == null) return;
+ 
+             Vector3 spawnPos = dropOrigin.position
+@@ -1684,7 +1686,7 @@ namespace Hecton8.UI
+                 dropCommitted = persistentWorldRegistry.TryRegisterDroppedItem(dropped, 1, spawnPos);
+                 if (!dropCommitted)
+                 {
+-                    playerInventory.TryAddItem(dropped, 1);
++                    playerInventory.TryAddItem(droppedHashId, 1);
+                     NotifyWarning("DROP BLOCKED - PERSISTENT REGISTRY REJECTED ITEM");
+                     return;
+                 }
+@@ -1706,8 +1708,8 @@ namespace Hecton8.UI
+             HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, dropOrigin));
+ 
+             // ????????? ??????? ?? ??????? ?? ???? ???????
+-            ItemData remaining = playerInventory.GetItemAt(_selectedX, _selectedY);
+-            if (!ReferenceEquals(remaining, _selectedItem))
++            int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
++            if (remainingHashId != _selectedItemHashId)
+             {
+                 ClearSelection();
+             }
+@@ -1732,9 +1734,10 @@ namespace Hecton8.UI
+             _hoverX = gx;
+             _hoverY = gy;
+ 
+-            ItemData cell = playerInventory != null
+-                ? playerInventory.GetItemAt(gx, gy)
+-                : null;
++            int cellHashId = playerInventory != null
++                ? playerInventory.GetItemHashAt(gx, gy)
++                : 0;
++            ItemData cell = ResolveInventoryItem(cellHashId);
+ 
+             if (cell != null)
+             {
+@@ -1763,21 +1766,23 @@ namespace Hecton8.UI
+                 return;
+             }
+ 
+-            ItemData cell = playerInventory != null
+-                ? playerInventory.GetItemAt(gx, gy)
+-                : null;
++            int cellHashId = playerInventory != null
++                ? playerInventory.GetItemHashAt(gx, gy)
++                : 0;
++            ItemData cell = ResolveInventoryItem(cellHashId);
+ 
+             if (cell != null)
+             {
+                 FindAnchor(cell, gx, gy, out int ax, out int ay);
+ 
+                 // ???? ?????? ??? ????? ??????
+-                if (!ReferenceEquals(cell, _selectedItem) || ax != _selectedX || ay != _selectedY)
++                if (cellHashId != _selectedItemHashId || ax != _selectedX || ay != _selectedY)
+                     PlayUISound(selectSound);
+ 
+                 _selectedX = ax;
+                 _selectedY = ay;
+                 _selectedItem = cell;
++                _selectedItemHashId = cellHashId;
+                 PositionHighlight(_selectRect, ax, ay, cell.width, cell.height);
+                 _selectImage.enabled = true;
+             }
+@@ -1807,8 +1812,8 @@ namespace Hecton8.UI
+             if (!consumed) return;
+ 
+             // ????????? ??????? ?? ???????
+-            ItemData remaining = playerInventory.GetItemAt(_selectedX, _selectedY);
+-            if (!ReferenceEquals(remaining, _selectedItem))
++            int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
++            if (remainingHashId != _selectedItemHashId)
+                 ClearSelection();
+             else
+                 RefreshDetails();
+@@ -1903,6 +1908,7 @@ namespace Hecton8.UI
+             _selectedX = -1;
+             _selectedY = -1;
+             _selectedItem = null;
++            _selectedItemHashId = 0;
+             if (_selectRect != null)
+                 _selectImage.enabled = false;
+             RefreshDetails();
+@@ -1913,6 +1919,7 @@ namespace Hecton8.UI
+             _selectedX = -1;
+             _selectedY = -1;
+             _selectedItem = null;
++            _selectedItemHashId = 0;
+             if (_selectRect != null)
+                 _selectImage.enabled = false;
+             RefreshDetails();
+@@ -1939,6 +1946,13 @@ namespace Hecton8.UI
+             ay = anchorIndex / grid.Columns;
+         }
+ 
++        private ItemData ResolveInventoryItem(int itemHashId)
++        {
++            return itemHashId != 0 && playerInventory != null && playerInventory.ItemCatalog != null
++                ? playerInventory.ItemCatalog.FindByHash(itemHashId)
++                : null;
++        }
++
+         // ----------------------------------------------------------
+         //  UI FACTORY HELPERS
+         // ----------------------------------------------------------
+diff --git a/Assets/_Project/Scripts/PlayerBuilder.cs b/Assets/_Project/Scripts/PlayerBuilder.cs
+index 6f43dade..f31e6334 100644
+--- a/Assets/_Project/Scripts/PlayerBuilder.cs
++++ b/Assets/_Project/Scripts/PlayerBuilder.cs
+@@ -383,7 +383,9 @@ namespace Hecton8.Building
+                 if (cost == null || cost.item == null || cost.amount <= 0)
+                     continue;
+ 
+-                int available = inventory != null ? inventory.CountTotal(cost.item) : 0;
++                int available = inventory != null && cost.item != null
++                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
++                    : 0;
+                 if (sb.Length > 0)
+                     sb.Append(" | ");
+ 
+@@ -1440,7 +1442,9 @@ namespace Hecton8.Building
+                 if (cost == null || cost.item == null || cost.amount <= 0)
+                     continue;
+ 
+-                int available = inventory != null ? inventory.CountTotal(cost.item) : 0;
++                int available = inventory != null && cost.item != null
++                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
++                    : 0;
+                 if (sb.Length > 0)
+                     sb.Append(" | ");
+ 
+diff --git a/Assets/_Project/Scripts/PlayerInventory.cs b/Assets/_Project/Scripts/PlayerInventory.cs
+index 834d4e0e..4df8226d 100644
+--- a/Assets/_Project/Scripts/PlayerInventory.cs
++++ b/Assets/_Project/Scripts/PlayerInventory.cs
+@@ -197,7 +197,7 @@ namespace Hecton8.Inventory
+                 _instance = null;
+         }
+ 
+-        public void RemoveItem(ItemData item, int x, int y)
++        public void RemoveItemAt(int x, int y)
+         {
+             if (_grid == null || !_stackCounts.IsCreated)
+                 return;
+@@ -219,13 +219,7 @@ namespace Hecton8.Inventory
+             NotifyInventoryChanged();
+         }
+ 
+-        public ItemData RemoveOneItem(int anchorX, int anchorY)
+-        {
+-            int itemHashId = RemoveOneItemHash(anchorX, anchorY);
+-            return ResolveItemByHash(itemHashId);
+-        }
+-
+-        public int RemoveOneItemHash(int anchorX, int anchorY)
++        public int RemoveOneItem(int anchorX, int anchorY)
+         {
+             if (_grid == null || !_stackCounts.IsCreated)
+                 return 0;
+@@ -268,20 +262,22 @@ namespace Hecton8.Inventory
+             if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                 return false;
+ 
+-            ItemData item = ResolveItemByHash(descriptor.HashId);
+-            if (item == null || !item.isConsumable)
++            if (!TryGetRuntimeDescriptor(descriptor.HashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
++                !runtimeDescriptor.IsConsumable)
++            {
+                 return false;
++            }
+ 
+             if (survival != null)
+             {
+-                if (item.oxygenRestore > 0f)
+-                    survival.RefillOxygen(item.oxygenRestore);
++                if (runtimeDescriptor.OxygenRestore > 0f)
++                    survival.RefillOxygen(runtimeDescriptor.OxygenRestore);
+ 
+-                if (item.energyRestore > 0f)
+-                    survival.RechargeEnergy(item.energyRestore);
++                if (runtimeDescriptor.EnergyRestore > 0f)
++                    survival.RechargeEnergy(runtimeDescriptor.EnergyRestore);
+ 
+-                if (item.integrityRestore > 0f)
+-                    survival.Repair(item.integrityRestore);
++                if (runtimeDescriptor.IntegrityRestore > 0f)
++                    survival.Repair(runtimeDescriptor.IntegrityRestore);
+             }
+ 
+             RemoveOneItem(anchorX, anchorY);
+@@ -297,31 +293,16 @@ namespace Hecton8.Inventory
+             return (uint)index < (uint)_stackCounts.Length ? _stackCounts[index] : 0;
+         }
+ 
+-        public ItemData GetItemAt(int x, int y)
+-        {
+-            return ResolveItemByHash(GetItemHashAt(x, y));
+-        }
+-
+         public int GetItemHashAt(int x, int y)
+         {
+             return _grid == null ? 0 : _grid.GetCellHashId(x, y);
+         }
+ 
+-        public int CountTotal(ItemData item)
+-        {
+-            return CountTotal(ComputeItemHash(item));
+-        }
+-
+         public int CountTotal(int itemHashId)
+         {
+             return CountQuantityByHash(itemHashId, false);
+         }
+ 
+-        public int CountAvailableTotal(ItemData item)
+-        {
+-            return CountAvailableTotal(ComputeItemHash(item));
+-        }
+-
+         public int CountAvailableTotal(int itemHashId)
+         {
+             return CountQuantityByHash(itemHashId, true);
+@@ -356,7 +337,7 @@ namespace Hecton8.Inventory
+ 
+             int anchorX = anchorIndex % _grid.Columns;
+             int anchorY = anchorIndex / _grid.Columns;
+-            return RemoveOneItem(anchorX, anchorY) != null;
++            return RemoveOneItem(anchorX, anchorY) != 0;
+         }
+ 
+         public void AddWeight(float amount)
+@@ -366,47 +347,15 @@ namespace Hecton8.Inventory
+                 survival.SetWeight(TotalWeight);
+         }
+ 
+-        public bool ContainsItem(ItemData item)
+-        {
+-            return ContainsItem(ComputeItemHash(item));
+-        }
+-
+         public bool ContainsItem(int itemHashId)
+         {
+             return CountAnchorsByHash(itemHashId) > 0;
+         }
+ 
+-        public bool TryAddItem(ItemData item, int quantity = 1)
+-        {
+-            int itemHashId = ComputeItemHash(item);
+-            if (!CanAcceptQuantity(itemHashId, quantity))
+-            {
+-                if (item != null && quantity > 0)
+-                    InventoryEvents.NotifyInventoryFull(item);
+-
+-                return false;
+-            }
+-
+-            return TryAddItemInternal(itemHashId, quantity, item, out _);
+-        }
+-
+         public bool TryAddItem(int itemHashId, int quantity = 1)
+         {
+-            if (!CanAcceptQuantity(itemHashId, quantity))
+-            {
+-                ItemData item = ResolveItemByHash(itemHashId);
+-                if (item != null && quantity > 0)
+-                    InventoryEvents.NotifyInventoryFull(item);
+-
+-                return false;
+-            }
+-
+-            return TryAddItemInternal(itemHashId, quantity, null, out _);
+-        }
+-
+-        public bool TryReserveQuantityForCraft(ItemData item, int quantity, CraftReservation[] reservations, ref int reservationCount)
+-        {
+-            return TryReserveQuantityForCraft(ComputeItemHash(item), quantity, reservations, ref reservationCount);
++            return CanAcceptQuantity(itemHashId, quantity) &&
++                   TryAddItemInternal(itemHashId, quantity, out _);
+         }
+ 
+         public bool TryReserveQuantityForCraft(int itemHashId, int quantity, CraftReservation[] reservations, ref int reservationCount)
+@@ -532,35 +481,15 @@ namespace Hecton8.Inventory
+             return false;
+         }
+ 
+-        public ScavengeAttemptResult ScavengeAttempt(ItemData item, int quantity, Transform interactor)
+-        {
+-            return ScavengeAttempt(ComputeItemHash(item), quantity, interactor);
+-        }
+-
+         public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor)
+         {
+             if (itemHashId == 0 || quantity <= 0)
+                 return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
+ 
+-            ItemData item = ResolveItemByHash(itemHashId);
+-            if (item == null)
+-                return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
+-
+-            TryAddItemInternal(itemHashId, quantity, item, out int addedQuantity);
+-            if (addedQuantity > 0)
+-            {
+-                InteractionEvents.RaiseItemCollected(item, addedQuantity, interactor);
+-                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
+-            }
+-
++            TryAddItemInternal(itemHashId, quantity, out int addedQuantity);
+             return new ScavengeAttemptResult(quantity, addedQuantity);
+         }
+ 
+-        public bool TryRemoveQuantity(ItemData item, int quantity)
+-        {
+-            return TryRemoveQuantity(ComputeItemHash(item), quantity);
+-        }
+-
+         public bool TryRemoveQuantity(int itemHashId, int quantity)
+         {
+             if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || quantity <= 0)
+@@ -608,11 +537,6 @@ namespace Hecton8.Inventory
+             return true;
+         }
+ 
+-        public int CountAnchors(ItemData item)
+-        {
+-            return CountAnchorsByHash(ComputeItemHash(item));
+-        }
+-
+         public void PopulateSaveData(SaveData data)
+         {
+             if (data == null)
+@@ -802,31 +726,7 @@ namespace Hecton8.Inventory
+             return _anchorStateFlags.IsCreated ? _anchorStateFlags.AsReadOnly() : default;
+         }
+ 
+-        private void HandleItemCollected(ItemData item, int quantity, Transform interactor)
+-        {
+-            int itemHashId = ComputeItemHash(item);
+-            if (itemHashId == 0)
+-                return;
+-
+-            if (!CanAcceptQuantity(itemHashId, quantity))
+-            {
+-                if (item != null)
+-                    InventoryEvents.NotifyInventoryFull(item);
+-                return;
+-            }
+-
+-            bool allAdded = TryAddItemInternal(itemHashId, quantity, item, out int addedQuantity);
+-            if (addedQuantity > 0)
+-                HectonEventBus.Publish(new ItemCollectedEvent(item, addedQuantity, interactor));
+-
+-            if (!allAdded)
+-            {
+-                if (item != null)
+-                    InventoryEvents.NotifyInventoryFull(item);
+-            }
+-        }
+-
+-        private bool TryAddItemInternal(int itemHashId, int quantity, ItemData notificationItem, out int addedQuantity)
++        private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
+         {
+             addedQuantity = 0;
+             if (_grid == null || itemHashId == 0 || quantity <= 0 || !TryBuildDescriptor(itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor))
+@@ -851,8 +751,6 @@ namespace Hecton8.Inventory
+                 else
+                 {
+                     allAdded = false;
+-                    if (notificationItem != null)
+-                        InventoryEvents.NotifyInventoryFull(notificationItem);
+                     break;
+                 }
+             }
+@@ -1052,46 +950,24 @@ namespace Hecton8.Inventory
+                 | hashId;
+         }
+ 
+-        private bool TryBuildDescriptor(ItemData item, out InventoryGrid.InventoryItemDescriptor descriptor)
++        private bool TryBuildDescriptor(int itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor)
+         {
+             descriptor = default;
+-            if (item == null)
+-                return false;
+-
+-            int itemHashId = ComputeItemHash(item);
+-            if (itemHashId == 0)
++            if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+                 return false;
+ 
+-            byte width = (byte)math.clamp(item.width, 1, byte.MaxValue);
+-            byte height = (byte)math.clamp(item.height, 1, byte.MaxValue);
+-            ushort maxStack = (ushort)math.clamp(item.maxStack, 1, ushort.MaxValue);
+             descriptor = new InventoryGrid.InventoryItemDescriptor(
+-                itemHashId,
+-                width,
+-                height,
+-                maxStack,
+-                item.weight,
+-                (byte)item.category,
++                runtimeDescriptor.HashId,
++                runtimeDescriptor.Width,
++                runtimeDescriptor.Height,
++                runtimeDescriptor.MaxStack,
++                runtimeDescriptor.Weight,
++                runtimeDescriptor.CategoryId,
+                 0,
+-                item.stackable && maxStack > 1);
++                runtimeDescriptor.Stackable);
+             return descriptor.IsValid;
+         }
+ 
+-        private bool TryBuildDescriptor(int itemHashId, out InventoryGrid.InventoryItemDescriptor descriptor)
+-        {
+-            descriptor = default;
+-            return itemCatalog != null
+-                && itemHashId != 0
+-                && TryBuildDescriptor(itemCatalog.FindByHash(itemHashId), out descriptor);
+-        }
+-
+-        private ItemData ResolveItemByHash(int itemHashId)
+-        {
+-            return itemCatalog != null && itemHashId != 0
+-                ? itemCatalog.FindByHash(itemHashId)
+-                : null;
+-        }
+-
+         private static InventorySortEntry BuildInventorySortEntry(in ItemPlacement placement, int originalIndex)
+         {
+             if (placement.itemHashId == 0)
+@@ -1116,9 +992,12 @@ namespace Hecton8.Inventory
+             InventoryChanged?.Invoke();
+         }
+ 
+-        private static int ComputeItemHash(ItemData item)
++        private bool TryGetRuntimeDescriptor(int itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)
+         {
+-            return item == null ? 0 : LocHash.Compute(item.PersistentId);
++            runtimeDescriptor = default;
++            return itemCatalog != null &&
++                   itemHashId != 0 &&
++                   itemCatalog.TryGetRuntimeDescriptor(itemHashId, out runtimeDescriptor);
+         }
+ 
+         private void ClearCraftReservationState()
+diff --git a/Assets/_Project/Scripts/PlayerToolManager.cs b/Assets/_Project/Scripts/PlayerToolManager.cs
+index a9a355ed..94bafdd2 100644
+--- a/Assets/_Project/Scripts/PlayerToolManager.cs
++++ b/Assets/_Project/Scripts/PlayerToolManager.cs
+@@ -1087,10 +1087,10 @@ namespace Hecton8.Gameplay
+             {
+                 for (int x = 0; x < cols; x++)
+                 {
+-                    ItemData cell = playerInventory.GetItemAt(x, y);
++                    int cellHashId = playerInventory.GetItemHashAt(x, y);
+ 
+                     // ?????????? ?? ?????? — ScriptableObjects ?????????
+-                    if (ReferenceEquals(cell, targetData))
++                    if (cellHashId == Hecton.Localization.LocHash.Compute(targetData.PersistentId))
+                         return true;
+                 }
+             }
+diff --git a/Assets/_Project/Scripts/ToolLoadoutProvisioner.cs b/Assets/_Project/Scripts/ToolLoadoutProvisioner.cs
+index 5b36ee3b..cd59be81 100644
+--- a/Assets/_Project/Scripts/ToolLoadoutProvisioner.cs
++++ b/Assets/_Project/Scripts/ToolLoadoutProvisioner.cs
+@@ -97,10 +97,10 @@ namespace Hecton8.Dev
+                 if (item == null)
+                     continue;
+ 
+-                if (playerInventory.ContainsItem(item))
++                if (playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(item.PersistentId)))
+                     continue;
+ 
+-                playerInventory.TryAddItem(item, 1);
++                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), 1);
+             }
+         }
+ 
+@@ -119,7 +119,7 @@ namespace Hecton8.Dev
+                 if (item == null || amount <= 0)
+                     continue;
+ 
+-                playerInventory.TryAddItem(item, amount);
++                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), amount);
+             }
+         }
+ 
+diff --git a/Assets/_Project/Scripts/ToolRuntimeSmokeTester.cs b/Assets/_Project/Scripts/ToolRuntimeSmokeTester.cs
+index de8c4a10..f2a6844d 100644
+--- a/Assets/_Project/Scripts/ToolRuntimeSmokeTester.cs
++++ b/Assets/_Project/Scripts/ToolRuntimeSmokeTester.cs
+@@ -205,8 +205,8 @@ namespace Hecton8.Dev
+ 
+                 try
+                 {
+-                    if (!playerInventory.ContainsItem(prefabTool.ToolData))
+-                        playerInventory.TryAddItem(prefabTool.ToolData, 1);
++                    if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId)))
++                        playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId), 1);
+ 
+                     LogVerbose($"ASSIGN {toolName}");
+                     toolManager.SetAssignedToolPrefab(0, prefab, holsterIfCurrentInvalid: false);
+diff --git a/Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs b/Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs
+index 2d5eb7ba..65384a36 100644
+--- a/Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs
++++ b/Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs
+@@ -556,7 +556,9 @@ namespace Hecton8.UI
+                 if (cost == null || cost.item == null)
+                     continue;
+ 
+-                int owned = inventory != null ? inventory.CountTotal(cost.item) : 0;
++                int owned = inventory != null && cost.item != null
++                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
++                    : 0;
+                 if (_sb.Length > 8)
+                     _sb.Append("  |  ");
+ 
+diff --git a/Assets/_Project/Scripts/UI/PDAConstructionTab.cs b/Assets/_Project/Scripts/UI/PDAConstructionTab.cs
+index 7a5d25df..810f916a 100644
+--- a/Assets/_Project/Scripts/UI/PDAConstructionTab.cs
++++ b/Assets/_Project/Scripts/UI/PDAConstructionTab.cs
+@@ -947,7 +947,8 @@ namespace Hecton8.UI
+                 InventoryCost cost = data.buildCost[i];
+                 if (cost == null || cost.item == null)
+                     continue;
+-                if (playerInventory.CountTotal(cost.item) < cost.amount)
++                if (cost.item == null ||
++                    playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)) < cost.amount)
+                     return false;
+             }
+ 
+@@ -1298,7 +1299,9 @@ namespace Hecton8.UI
+                 if (cost == null || cost.item == null)
+                     continue;
+ 
+-                int owned = playerInventory != null ? playerInventory.CountTotal(cost.item) : 0;
++                int owned = playerInventory != null && cost.item != null
++                    ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
++                    : 0;
+                 sb.Append(CachedToUpperInvariant(cost.item.itemName))
+                     .Append(' ')
+                     .Append(owned)
+diff --git a/Assets/_Project/Scripts/UI/PDALoadoutTab.cs b/Assets/_Project/Scripts/UI/PDALoadoutTab.cs
+index 22436081..f213078d 100644
+--- a/Assets/_Project/Scripts/UI/PDALoadoutTab.cs
++++ b/Assets/_Project/Scripts/UI/PDALoadoutTab.cs
+@@ -711,7 +711,10 @@ namespace Hecton8.UI
+                 // ?????????? ???????????? StringBuilder ??? ?????? ?????? ????? (zero-GC)
+                 _slotBodyBuilder.Clear();
+                 _slotBodyBuilder.Append("CLASS    ").Append(category).Append('\n');
+-                _slotBodyBuilder.Append("IN CARGO  ").Append(item != null && playerInventory != null ? playerInventory.CountTotal(item) : 0).Append('\n');
++                _slotBodyBuilder.Append("IN CARGO  ").Append(
++                    item != null && playerInventory != null
++                        ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(item.PersistentId))
++                        : 0).Append('\n');
+                 _slotBodyBuilder.Append("MASS     ").Append(weight.ToString("0.0")).Append(" kg\n");
+                 _slotBodyBuilder.Append("DURAB.   ").Append(normalized.ToString("0%")).Append('\n');
+                 _slotBodyBuilder.Append("ENERGY   ").Append((meta != null ? Mathf.Max(0f, meta.energyConsumptionRate) : 0f).ToString("0.0")).Append("/s");
+@@ -1218,7 +1221,7 @@ namespace Hecton8.UI
+             {
+                 GameObject prefab = preset.slotPrefabs[i];
+                 PlayerTool tool = ResolvePrefabTool(prefab);
+-                if (tool?.ToolData != null && playerInventory.ContainsItem(tool.ToolData))
++                if (tool?.ToolData != null && playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(tool.ToolData.PersistentId)))
+                     count++;
+             }
+ 
+diff --git a/Assets/_Project/Scripts/World/EmergencyServiceRelay.cs b/Assets/_Project/Scripts/World/EmergencyServiceRelay.cs
+index aa1459ee..c7cd7035 100644
+--- a/Assets/_Project/Scripts/World/EmergencyServiceRelay.cs
++++ b/Assets/_Project/Scripts/World/EmergencyServiceRelay.cs
+@@ -355,7 +355,7 @@ namespace Hecton8.World
+                 if (item == null || quantity <= 0)
+                     continue;
+ 
+-                if (inventory.TryAddItem(item, quantity))
++                if (item != null && inventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity))
+                 {
+                     grantedAny = true;
+                     continue;
+
+diff --git a/Assets/Docs/INVENTORY_AUDIT/PLAYER_INVENTORY_ITEMDATA_AUDIT.txt b/Assets/Docs/INVENTORY_AUDIT/PLAYER_INVENTORY_ITEMDATA_AUDIT.txt
+new file mode 100644
+index 00000000..06ac719b
+--- /dev/null
++++ b/Assets/Docs/INVENTORY_AUDIT/PLAYER_INVENTORY_ITEMDATA_AUDIT.txt
+@@ -0,0 +1,26 @@
++PlayerInventory.cs ItemData seam audit:
++PASS 200 RemoveItem(ItemData item, int x, int y) -> RemoveItemAt(int x, int y)
++PASS 222 RemoveOneItem(int anchorX, int anchorY) returns ItemData -> RemoveOneItem(int anchorX, int anchorY) returns hashId
++PASS 271 ConsumeOneItem resolves ItemData for consumable payload fields -> uses ItemCatalog.ItemRuntimeDescriptor
++PASS 300 GetItemAt(int x, int y) returns ItemData -> GetItemHashAt(int x, int y)
++PASS 310 CountTotal(ItemData item) -> CountTotal(int itemHashId)
++PASS 320 CountAvailableTotal(ItemData item) -> CountAvailableTotal(int itemHashId)
++PASS 369 ContainsItem(ItemData item) -> ContainsItem(int itemHashId)
++PASS 379 TryAddItem(ItemData item, int quantity = 1) -> TryAddItem(int itemHashId, int quantity = 1)
++PASS 397 TryAddItem(int) resolves ItemData for notification seam -> notification seam removed from PlayerInventory
++PASS 407 TryReserveQuantityForCraft(ItemData item, ...) -> TryReserveQuantityForCraft(int itemHashId, ...)
++PASS 535 ScavengeAttempt(ItemData item, ...) -> ScavengeAttempt(int itemHashId, ...)
++PASS 545 ScavengeAttempt(int) resolves ItemData for event seam -> event seam moved to caller edge
++PASS 559 TryRemoveQuantity(ItemData item, int quantity) -> TryRemoveQuantity(int itemHashId, int quantity)
++PASS 611 CountAnchors(ItemData item) -> CountAnchorsByHash(int itemHashId) only
++PASS 805 HandleItemCollected(ItemData item, ...) -> deleted
++PASS 829 TryAddItemInternal(..., ItemData notificationItem, ...) -> TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
++PASS 1055 TryBuildDescriptor(ItemData item, ...) -> TryBuildDescriptor(int itemHashId, ...)
++PASS 1088 ResolveItemByHash(int itemHashId) returns ItemData -> deleted from PlayerInventory
++PASS 1119 ComputeItemHash(ItemData item) -> deleted from PlayerInventory
++
++InventoryGrid.cs ItemData seams:
++PASS none; file remains numeric/native only.
++
++Residual note:
++ItemData still exists in ItemCatalog and presentation/UI callers. Gameplay inventory ownership no longer stores, accepts, or returns ItemData.
+

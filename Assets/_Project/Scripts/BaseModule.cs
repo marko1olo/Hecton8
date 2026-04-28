@@ -65,6 +65,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Power;
+using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
 using UnityEngine;
@@ -845,13 +846,19 @@ namespace Hecton8.Gameplay
                         bool addedToInventory = false;
 
                         // ── Попытка добавить в инвентарь ──
-                        if (playerInventory != null && grid != null && playerInventory.TryAddItem(cost.item, 1))
+                        int itemHashId = cost.item != null
+                            ? Hecton.Localization.LocHash.Compute(cost.item.PersistentId)
+                            : 0;
+                        if (playerInventory != null &&
+                            grid != null &&
+                            itemHashId != 0 &&
+                            playerInventory.TryAddItem(itemHashId, 1))
                             addedToInventory = true;
 
                         // ── Fallback: спавн в мир ──
                         if (!addedToInventory)
                         {
-                            SpawnWorldItem(cost.item, dropPosition, pool);
+                            SpawnWorldItem(itemHashId, dropPosition, pool, playerInventory);
 
                             // Смещаем позицию для следующего предмета,
                             // чтобы они не стакались в одной точке
@@ -895,26 +902,28 @@ namespace Hecton8.Gameplay
         }
 
         internal void DropItemQuantityToInventoryOrWorld(
-            ItemData itemData,
+            int itemHashId,
             int quantity,
             PlayerInventory playerInventory,
             ObjectPoolManager pool,
             ref Vector3 dropPosition)
         {
-            if (itemData == null || quantity <= 0)
+            if (itemHashId == 0 || quantity <= 0)
                 return;
 
             InventoryGrid targetGrid = playerInventory != null ? playerInventory.Grid : null;
             for (int i = 0; i < quantity; i++)
             {
                 bool addedToInventory = false;
-                if (playerInventory != null && targetGrid != null && playerInventory.TryAddItem(itemData, 1))
+                if (playerInventory != null &&
+                    targetGrid != null &&
+                    playerInventory.TryAddItem(itemHashId, 1))
                     addedToInventory = true;
 
                 if (addedToInventory)
                     continue;
 
-                SpawnWorldItem(itemData, dropPosition, pool);
+                SpawnWorldItem(itemHashId, dropPosition, pool, playerInventory);
                 dropPosition.x += 0.3f;
             }
         }
@@ -928,26 +937,30 @@ namespace Hecton8.Gameplay
         ///
         /// Паттерн:
         ///   1. Если worldItemPrefab назначен → Spawn через ObjectPoolManager.
-        ///   2. Спавненный HectonItem инициализируется данными ItemData.
+        ///   2. Спавненный HectonItem инициализируется по hashId через ItemCatalog.
         ///   3. Если worldItemPrefab == null → ресурс потерян (с Warning).
         ///
         /// Разделение ответственностей:
         ///   BaseModule НЕ знает про конкретный визуал предмета.
         ///   worldItemPrefab — generic контейнер с HectonItem + Rigidbody.
-        ///   ItemData на HectonItem устанавливается программно.
+        ///   Каталожные данные на HectonItem устанавливаются программно.
         ///
         /// Будущее: если нужна визуальная дифференциация (разные модели
         /// для титана vs стекла), worldItemPrefab может быть заменён
-        /// на ItemData.worldPrefab per-resource.
+        /// на per-resource world prefab, если появится отдельный визуальный владелец.
         /// </summary>
-        private void SpawnWorldItem(ItemData itemData, Vector3 position, ObjectPoolManager pool)
+        private void SpawnWorldItem(int itemHashId, Vector3 position, ObjectPoolManager pool, PlayerInventory playerInventory)
         {
-            if (itemData == null)
+            if (itemHashId == 0)
                 return;
+
+            ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);
+            if (itemCatalog == null)
+                return;
+
             PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
             if (persistentWorldRegistry != null &&
-                itemData.worldPrefab != null &&
-                persistentWorldRegistry.TryRegisterDroppedItem(itemData, 1, position))
+                persistentWorldRegistry.TryRegisterDroppedItem(itemHashId, itemCatalog, 1, position))
             {
                 return;
             }
@@ -957,7 +970,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
                 Debug.LogWarning(
                     $"[BaseModule] worldItemPrefab not assigned on '{gameObject.name}'. " +
-                    $"Resource '{itemData.itemName}' dropped on the ground but has no world prefab. Lost.",
+                    $"Resource hash '{itemHashId}' dropped on the ground but has no world prefab. Lost.",
                     this);
 #endif
                 return;
@@ -968,7 +981,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
                 Debug.LogWarning(
                     "[BaseModule] ObjectPoolManager not available. " +
-                    $"Resource '{itemData.itemName}' lost.");
+                    $"Resource hash '{itemHashId}' lost.");
 #endif
                 return;
             }
@@ -979,18 +992,25 @@ namespace Hecton8.Gameplay
                 return;
 
             // ── Инициализация HectonItem данными ──
-            // HectonItem на worldItemPrefab должен иметь сериализованное поле itemData.
-            // Однако itemData — [SerializeField] private. Для программной установки
-            // используем рефлексию-бесплатный подход: HectonItem.SetItemData(ItemData, int).
-            // Если такой метод не существует — предмет будет иметь пустые данные.
+            // HectonItem на worldItemPrefab инициализируется hashId через ItemCatalog.
+            // Базовый модуль не тянет asset-ссылки в логику возврата ресурсов.
             //
             // АРХИТЕКТУРНОЕ РЕШЕНИЕ:
-            // Мы добавляем public метод SetItemData в HectonItem (см. комментарий ниже).
+            // Визуальный/world seam остаётся внутри HectonItem.
             // Это чище, чем рефлексия, и сохраняет Zero-GC.
             if (itemGO.TryGetComponent(out HectonItem hectonItem))
             {
-                hectonItem.SetItemData(itemData, 1);
+                hectonItem.SetItemByHash(itemCatalog, itemHashId, 1);
             }
+        }
+
+        private static ItemCatalog ResolveItemCatalog(PlayerInventory playerInventory)
+        {
+            if (playerInventory != null && playerInventory.ItemCatalog != null)
+                return playerInventory.ItemCatalog;
+
+            PlayerInventory inventoryInstance = PlayerInventory.Instance;
+            return inventoryInstance != null ? inventoryInstance.ItemCatalog : null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1012,9 +1032,9 @@ namespace Hecton8.Gameplay
         private void EjectHostedModuleContents(PlayerInventory playerInventory, ObjectPoolManager pool, ref Vector3 dropPosition)
         {
             if (TryGetComponent(out MaintenanceStationModule maintenanceStation) &&
-                maintenanceStation.TryExtractSlottedToolForDeconstruct(out ItemData slottedTool))
+                maintenanceStation.TryExtractSlottedToolHashForDeconstruct(out int slottedToolHashId))
             {
-                DropItemQuantityToInventoryOrWorld(slottedTool, 1, playerInventory, pool, ref dropPosition);
+                DropItemQuantityToInventoryOrWorld(slottedToolHashId, 1, playerInventory, pool, ref dropPosition);
             }
 
             if (TryGetComponent(out DeepDrillModule drillModule))
@@ -1024,9 +1044,9 @@ namespace Hecton8.Gameplay
                 sorterModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);
 
             if (TryGetComponent(out LogisticsPipeNode pipeNode) &&
-                pipeNode.TryExtractInFlightCargoForDeconstruct(out ItemData pipeItem, out int pipeAmount))
+                pipeNode.TryExtractInFlightCargoHashForDeconstruct(out int pipeItemHashId, out int pipeAmount))
             {
-                DropItemQuantityToInventoryOrWorld(pipeItem, pipeAmount, playerInventory, pool, ref dropPosition);
+                DropItemQuantityToInventoryOrWorld(pipeItemHashId, pipeAmount, playerInventory, pool, ref dropPosition);
             }
         }
 

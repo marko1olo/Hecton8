@@ -275,7 +275,7 @@ namespace Hecton8.Construction
                 playerToolManager.Holster();
             }
 
-            if (!inventory.TryRemoveQuantity(item, 1))
+            if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
                 return false;
 
             _slottedToolItem = item;
@@ -296,7 +296,7 @@ namespace Hecton8.Construction
 
             CancelActiveRepair();
 
-            if (!inventory.TryAddItem(_slottedToolItem, 1))
+            if (!inventory.TryAddItem(Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId), 1))
                 return false;
 
             ClearSlotState();
@@ -338,10 +338,12 @@ namespace Hecton8.Construction
             return true;
         }
 
-        internal bool TryExtractSlottedToolForDeconstruct(out ItemData item)
+        internal bool TryExtractSlottedToolHashForDeconstruct(out int itemHashId)
         {
-            item = _slottedToolItem;
-            if (item == null)
+            itemHashId = _slottedToolItem != null
+                ? Hecton.Localization.LocHash.Compute(_slottedToolItem.PersistentId)
+                : 0;
+            if (itemHashId == 0)
                 return false;
 
             CancelActiveRepair();
@@ -403,7 +405,10 @@ namespace Hecton8.Construction
                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
                         continue;
 
-                    ItemData item = inventory.GetItemAt(x, y);
+                    int itemHashId = inventory.GetItemHashAt(x, y);
+                    ItemData item = itemHashId != 0 && inventory.ItemCatalog != null
+                        ? inventory.ItemCatalog.FindByHash(itemHashId)
+                        : null;
                     if (item == null)
                         continue;
 

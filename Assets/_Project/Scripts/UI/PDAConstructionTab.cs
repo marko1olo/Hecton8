@@ -947,7 +947,8 @@ namespace Hecton8.UI
                 InventoryCost cost = data.buildCost[i];
                 if (cost == null || cost.item == null)
                     continue;
-                if (playerInventory.CountTotal(cost.item) < cost.amount)
+                if (cost.item == null ||
+                    playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)) < cost.amount)
                     return false;
             }
 
@@ -1298,7 +1299,9 @@ namespace Hecton8.UI
                 if (cost == null || cost.item == null)
                     continue;
 
-                int owned = playerInventory != null ? playerInventory.CountTotal(cost.item) : 0;
+                int owned = playerInventory != null && cost.item != null
+                    ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                    : 0;
                 sb.Append(CachedToUpperInvariant(cost.item.itemName))
                     .Append(' ')
                     .Append(owned)

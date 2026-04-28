@@ -18,7 +18,7 @@ namespace Hecton8.World
     /// <summary>
     /// Per-instance metadata payload consumed by the indirect vegetation shader.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = Stride)]
     public struct HectonVegetationInstanceData
     {
         /// <summary>Exact GPU stride in bytes.</summary>

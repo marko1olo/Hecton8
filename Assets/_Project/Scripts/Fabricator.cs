@@ -526,9 +526,10 @@ namespace Hecton8.Crafting
 
             if (result != null && _playerInventory != null)
             {
+                int resultHashId = ComputeItemHash(result);
                 for (int i = 0; i < recipe.resultQuantity; i++)
                 {
-                    if (!_playerInventory.TryAddItem(result, 1))
+                    if (resultHashId == 0 || !_playerInventory.TryAddItem(resultHashId, 1))
                     {
                         Debug.LogWarning(
                             $"[Fabricator] Инвентарь полон! " +
@@ -618,7 +619,7 @@ namespace Hecton8.Crafting
             if (inventory == null || item == null)
                 return 0;
 
-            return inventory.CountAvailableTotal(item);
+            return inventory.CountAvailableTotal(ComputeItemHash(item));
         }
 
         private static int ComputeItemHash(ItemData item)
@@ -696,7 +697,7 @@ namespace Hecton8.Crafting
                 if (localTake > 0)
                 {
                     if (!_playerInventory.TryReserveQuantityForCraft(
-                            cost.item,
+                            ComputeItemHash(cost.item),
                             localTake,
                             _localCraftReservations,
                             ref _localCraftReservationCount))

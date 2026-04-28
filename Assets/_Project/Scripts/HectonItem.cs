@@ -18,7 +18,9 @@
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
+using Hecton8.Modding;
 using Hecton8.Physics;
+using Hecton8.SaveSystem;
 using Hecton8.World;
 using Hecton.Localization;
 
@@ -221,6 +223,19 @@ namespace Hecton8.Items
             RebuildInteractTextCache();
         }
 
+        public bool SetItemByHash(ItemCatalog catalog, int itemHashId, int qty)
+        {
+            if (catalog == null || itemHashId == 0)
+                return false;
+
+            ItemData resolvedItem = catalog.FindByHash(itemHashId);
+            if (resolvedItem == null)
+                return false;
+
+            SetItemData(resolvedItem, qty);
+            return true;
+        }
+
         /// <summary>Текущие данные предмета (read-only).</summary>
         public ItemData Data => itemData;
 
@@ -273,12 +288,16 @@ namespace Hecton8.Items
                 return;
             }
 
-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
+            int itemHashId = LocHash.Compute(itemData.PersistentId);
+            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
             if (!attempt.AnyAdded)
             {
                 DropOverflow(interactor);
                 return;
             }
+
+            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
+            HectonEventBus.Publish(new ItemCollectedEvent(itemData, itemHashId, attempt.AddedQuantity, interactor));
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)

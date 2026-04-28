@@ -2,6 +2,7 @@ using System;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Visor;
 using Hecton8.World;
 using UnityEngine;
 
@@ -55,6 +56,7 @@ namespace Hecton8.Systems.AI
         private readonly FrameTiming[] _frameTimingScratch = new FrameTiming[1];
         // COLD ALLOC: float[8] — rolling frame-time history for shed hysteresis — owner: HectonDirectorAI
         private readonly float[] _frameTimeHistory = new float[8];
+        private const float SonarStressDecayPerSecond = 0.18f;
 
         private HectonPlayerMovement _playerMovement;
         private bool _dispatcherRegistered;
@@ -63,11 +65,16 @@ namespace Hecton8.Systems.AI
         private int _frameTimeHistoryIndex;
         private Vector3 _previousPlayerPosition;
         private bool _hasPreviousPlayerPosition;
+        private float _recentSonarStress;
 
         /// <summary>
         /// Current normalized director tension score in the legacy 0..100 presentation range.
         /// </summary>
         public float TensionScore => _encounterDirector.StressLevel * 100f;
+
+        internal int CurrentPhaseIndex => (int)_encounterDirector.CurrentPhase;
+        internal float CurrentStress01 => _encounterDirector.StressLevel;
+        internal float CurrentIntensity01 => _encounterDirector.IntensityLevel;
 
         /// <summary>
         /// True while the director is in the Relax phase.
@@ -110,6 +117,8 @@ namespace Hecton8.Systems.AI
 
             _encounterDirector.Reset();
             _hasPreviousPlayerPosition = false;
+            _recentSonarStress = 0f;
+            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             PublishPredatorPressure(true);
         }
 
@@ -123,6 +132,9 @@ namespace Hecton8.Systems.AI
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                 _dispatcherRegistered = false;
             }
+
+            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            _recentSonarStress = 0f;
         }
 
         private void OnDestroy()
@@ -155,7 +167,13 @@ namespace Hecton8.Systems.AI
             float surfaceWorldY = ResolveSurfaceWorldY(playerPosition);
             float healthNormalized = survivalSystem != null ? Mathf.Clamp01(survivalSystem.IntegrityNormalized) : 1f;
             float oxygenNormalized = survivalSystem != null ? Mathf.Clamp01(survivalSystem.OxygenNormalized) : 1f;
-            float internalStress = ResolveInternalStress(healthNormalized, oxygenNormalized);
+            float sonarStress = UpdateSonarStress(deltaTime);
+            float internalStress = ResolveInternalStress(healthNormalized, oxygenNormalized, sonarStress);
+            float acousticThreatLevel = 0f;
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge != null)
+                acousticThreatLevel = Mathf.Clamp01(vegetationBridge.GetThreatLevel(playerPosition));
+            acousticThreatLevel = Mathf.Max(acousticThreatLevel, sonarStress);
 
             if (playerCamera != null)
                 GeometryUtility.CalculateFrustumPlanes(playerCamera, _frustumPlaneScratch);
@@ -173,6 +191,7 @@ namespace Hecton8.Systems.AI
                 PlayerHealthNormalized = healthNormalized,
                 PlayerOxygenNormalized = oxygenNormalized,
                 PlayerInternalStress = internalStress,
+                AcousticThreatLevel = acousticThreatLevel,
                 PlayerDepth = ResolvePlayerDepth(playerPosition, surfaceWorldY),
                 AvgFrameTimeMs = averageFrameTimeMs,
                 SurfaceWorldY = surfaceWorldY
@@ -375,16 +394,34 @@ namespace Hecton8.Systems.AI
             return Mathf.Max(0f, surfaceWorldY - playerPosition.y);
         }
 
-        private float ResolveInternalStress(float healthNormalized, float oxygenNormalized)
+        private float ResolveInternalStress(float healthNormalized, float oxygenNormalized, float sonarStress)
         {
             if (survivalSystem == null)
-                return Mathf.Max(1f - healthNormalized, 1f - oxygenNormalized);
+                return Mathf.Clamp01(Mathf.Max(Mathf.Max(1f - healthNormalized, 1f - oxygenNormalized), sonarStress));
 
             float pressureStress = Mathf.Clamp01(survivalSystem.PressureExposureSeverity01);
             float thermalStress = Mathf.Clamp01(survivalSystem.ThermalStressSeverity01);
             float healthStress = 1f - healthNormalized;
             float oxygenStress = 1f - oxygenNormalized;
-            return Mathf.Clamp01(Mathf.Max(Mathf.Max(pressureStress, thermalStress), Mathf.Max(healthStress, oxygenStress)));
+            return Mathf.Clamp01(Mathf.Max(Mathf.Max(pressureStress, thermalStress), Mathf.Max(Mathf.Max(healthStress, oxygenStress), sonarStress)));
+        }
+
+        private float UpdateSonarStress(float deltaTime)
+        {
+            if (_recentSonarStress <= 0f)
+                return 0f;
+
+            _recentSonarStress = Mathf.MoveTowards(_recentSonarStress, 0f, SonarStressDecayPerSecond * deltaTime);
+            return _recentSonarStress;
+        }
+
+        private void HandleSonarPingSent(float intensity)
+        {
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            _recentSonarStress = Mathf.Max(_recentSonarStress, clampedIntensity);
         }
 
         private void PublishPredatorPressure(bool enabled)

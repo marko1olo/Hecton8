@@ -401,12 +401,14 @@ namespace Hecton8.Power
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 PowerNode node = _topologyNodes[nodeIndex];
+                byte statusBits = ResolveNodeStatusBits(node);
                 _logisticsGraph.AddNode(
                     unchecked((uint)node.GetInstanceID()),
                     ResolveNodeCapacity(node),
                     1f,
                     ResolveNodePriorityTier(node),
-                    ResolveNodeFlags(node));
+                    ResolveNodeFlags(node, statusBits),
+                    statusBits);
             }
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
@@ -519,11 +521,13 @@ namespace Hecton8.Power
             return math.max(1f, totalCapacity);
         }
 
-        private static LogisticsNodeFlags ResolveNodeFlags(PowerNode node)
+        private static LogisticsNodeFlags ResolveNodeFlags(PowerNode node, byte statusBits)
         {
             LogisticsNodeFlags flags = LogisticsNodeFlags.Active | LogisticsNodeFlags.Dirty;
             if (node.IsRuptured)
                 flags |= LogisticsNodeFlags.Ruptured;
+            if ((statusBits & (byte)LogisticsModuleStatusBits.Overheating) != 0)
+                flags |= LogisticsNodeFlags.Overloaded;
 
             List<IPowerComponent> components = node.Components;
             if (components == null)
@@ -545,6 +549,49 @@ namespace Hecton8.Power
             }
 
             return flags;
+        }
+
+        private static byte ResolveNodeStatusBits(PowerNode node)
+        {
+            LogisticsModuleStatusBits statusBits = LogisticsModuleStatusBits.None;
+            if (node == null)
+                return (byte)statusBits;
+
+            if (node.HasPower)
+                statusBits |= LogisticsModuleStatusBits.Powered;
+            if (node.IsShortCircuited)
+                statusBits |= LogisticsModuleStatusBits.Overheating;
+            if (node.IsRuptured)
+                statusBits |= LogisticsModuleStatusBits.Damaged;
+
+            List<IPowerComponent> components = node.Components;
+            if (components == null)
+                return (byte)statusBits;
+
+            int componentCount = components.Count;
+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+            {
+                IPowerComponent component = components[componentIndex];
+                if (component == null)
+                    continue;
+
+                if (component.HasPower)
+                    statusBits |= LogisticsModuleStatusBits.Powered;
+
+                if (component is not BaseModule baseModule)
+                    continue;
+
+                if (baseModule.IsFlooded)
+                    statusBits |= LogisticsModuleStatusBits.Flooded;
+
+                if (baseModule.CurrentIntegrity + 0.001f < baseModule.MaxRecoverableIntegrity ||
+                    baseModule.HasCascadeFailure)
+                {
+                    statusBits |= LogisticsModuleStatusBits.Damaged;
+                }
+            }
+
+            return (byte)statusBits;
         }
 
         private static byte ResolveNodePriorityTier(PowerNode node)

@@ -11,7 +11,7 @@ Shader "NASAPunk/SuitVisor"
         [Header(HUD)]
         _HUD_RenderTexture ("HUD Render Texture", 2D) = "black" {}
         _HUD_Intensity ("HUD Brightness", Range(0, 5)) = 3.0
-        _HUD_Color ("HUD Tint", Color) = (0.2, 1.0, 0.3, 1.0)
+        _HUD_Color ("HUD Tint", Color) = (0.82, 0.96, 1.0, 0.14)
         _HUD_ScratchBleed ("HUD Scratch Light Bleed", Range(0, 2)) = 0.8
         _HUD_CurveStrength ("HUD Curvature", Range(0, 1)) = 0.45
         _HUD_Scale ("HUD Scale", Range(0.4, 1.2)) = 0.68
@@ -48,6 +48,8 @@ Shader "NASAPunk/SuitVisor"
         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
         _DistortionFalloff ("Distortion Edge Falloff", Range(0.5, 5)) = 2.0
         _LensEdgeRefraction ("Lens Edge Refraction", Range(0, 0.08)) = 0.028
+        _ChromaticAberration ("Structural Chromatic Aberration", Range(0, 0.02)) = 0
+        _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
 
         [Header(Fresnel)]
         _FresnelColor ("Fresnel Rim Color", Color) = (0.4, 0.6, 0.8, 1.0)
@@ -129,6 +131,8 @@ Shader "NASAPunk/SuitVisor"
                 float  _DistortionStrength;
                 float  _DistortionFalloff;
                 float  _LensEdgeRefraction;
+                float  _ChromaticAberration;
+                float  _StaticNoise;
 
                 float4 _FresnelColor;
                 float  _FresnelPower;
@@ -446,7 +450,14 @@ Shader "NASAPunk/SuitVisor"
                 }
 
                 float2 refractedUV = screenUV + distortionOffset;
+                float staticNoise = (Hash21(floor(screenUV * _ScaledScreenParams.xy * 0.35 + _Time.y * 32.0)) - 0.5) * 2.0;
+                float2 chromaOffset = radialScreenOffset * _ChromaticAberration;
                 float3 sceneColor = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
+                if (_ChromaticAberration > 0.0001)
+                {
+                    sceneColor.r = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV + chromaOffset).r;
+                    sceneColor.b = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV - chromaOffset).b;
+                }
 
                 float sonarSceneDepth;
                 float sonarDepthValid;
@@ -513,7 +524,8 @@ Shader "NASAPunk/SuitVisor"
                 float2 insideRT = step(0.0, hudDistortedUV) * step(hudDistortedUV, 1.0);
                 float rtMask = insideRT.x * insideRT.y;
                 float hudAlpha = hudSample.a * hudEdgeFade * rtMask;
-                float3 hudColor = hudSample.rgb * _HUD_Color.rgb * _HUD_Intensity;
+                float hudTintStrength = saturate(_HUD_Color.a);
+                float3 hudColor = lerp(hudSample.rgb, hudSample.rgb * _HUD_Color.rgb, hudTintStrength) * _HUD_Intensity;
 
                 float wetImperfectionBoost = 1.0 + runoffMask * 0.9;
                 float boostedFingerprint = saturate(fingerprint * wetImperfectionBoost);
@@ -554,6 +566,7 @@ Shader "NASAPunk/SuitVisor"
                     frostMask * 0.65);
                 finalColor += runoffSheen;
                 finalColor += sonarOverlayColor * sonarOverlayMask;
+                finalColor += staticNoise * (_StaticNoise * 0.045);
 
                 float finalAlpha = _GlassAlpha
                     + hudAlpha * 0.9

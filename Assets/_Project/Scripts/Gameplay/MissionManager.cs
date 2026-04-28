@@ -561,7 +561,7 @@ namespace Hecton8.Gameplay
             }
 
             int quantity = Mathf.Max(1, reward.count);
-            bool granted = _playerInventory.TryAddItem(item, quantity);
+            bool granted = _playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity);
             string itemName = item.itemName != null ? item.itemName.ToUpperInvariant() : item.name.ToUpperInvariant();
 
             if (granted)

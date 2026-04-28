@@ -97,10 +97,10 @@ namespace Hecton8.Dev
                 if (item == null)
                     continue;
 
-                if (playerInventory.ContainsItem(item))
+                if (playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(item.PersistentId)))
                     continue;
 
-                playerInventory.TryAddItem(item, 1);
+                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), 1);
             }
         }
 
@@ -119,7 +119,7 @@ namespace Hecton8.Dev
                 if (item == null || amount <= 0)
                     continue;
 
-                playerInventory.TryAddItem(item, amount);
+                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), amount);
             }
         }
 

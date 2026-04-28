@@ -199,7 +199,7 @@ namespace Hecton8.Economy
                 if (!TryBufferItem(item))
                     break;
 
-                if (!inventory.TryRemoveQuantity(item, 1))
+                if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
                 {
                     RemoveLastBufferedItem(item);
                     break;

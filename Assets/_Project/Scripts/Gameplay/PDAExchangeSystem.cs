@@ -247,7 +247,7 @@ namespace Hecton8.Gameplay
                 }
 
                 int amount = Mathf.Max(1, costs[i].amount);
-                if (playerInventory.CountTotal(costs[i].item) < amount)
+                if (playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(costs[i].item.PersistentId)) < amount)
                 {
                     status = $"NEED {costs[i].item.itemName.ToUpperInvariant()} X{amount}";
                     return false;
@@ -426,10 +426,10 @@ namespace Hecton8.Gameplay
                 if (bundle[i].item == null)
                     return false;
 
-                if (!playerInventory.TryRemoveQuantity(bundle[i].item, Mathf.Max(1, bundle[i].amount)))
+                if (!playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount)))
                 {
                     for (int j = 0; j < i; j++)
-                        playerInventory.TryAddItem(bundle[j].item, Mathf.Max(1, bundle[j].amount));
+                        playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[j].item.PersistentId), Mathf.Max(1, bundle[j].amount));
                     return false;
                 }
             }
@@ -447,10 +447,10 @@ namespace Hecton8.Gameplay
                 if (bundle[i].item == null)
                     return false;
 
-                if (!playerInventory.TryAddItem(bundle[i].item, Mathf.Max(1, bundle[i].amount)))
+                if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount)))
                 {
                     for (int j = 0; j < i; j++)
-                        playerInventory.TryRemoveQuantity(bundle[j].item, Mathf.Max(1, bundle[j].amount));
+                        playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(bundle[j].item.PersistentId), Mathf.Max(1, bundle[j].amount));
                     return false;
                 }
             }
@@ -466,7 +466,7 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < bundle.Length; i++)
             {
                 if (bundle[i].item != null)
-                    playerInventory.TryAddItem(bundle[i].item, Mathf.Max(1, bundle[i].amount));
+                    playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount));
             }
         }
 

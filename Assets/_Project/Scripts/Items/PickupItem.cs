@@ -6,6 +6,7 @@
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.Gameplay;
 
@@ -47,6 +48,7 @@ namespace Hecton8.Interaction
         private HectonPlayerMovement _playerMovement;
         private string _cachedInteractText;
         private int _spatialHandle;
+        private int _faunaSpatialHandle;
         private bool _registeredToSlowTick;
         private bool _registeredToFixedTick;
         private Vector3 _lastSpatialPosition;
@@ -144,6 +146,8 @@ namespace Hecton8.Interaction
 
             Vector3 currentPosition = transform.position;
             WorldSpatialHashGrid.UpdateGridPosition(_spatialHandle, _lastSpatialPosition, currentPosition);
+            if (_faunaSpatialHandle != 0)
+                FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
             _lastSpatialPosition = currentPosition;
         }
 
@@ -190,6 +194,9 @@ namespace Hecton8.Interaction
                 WorldSpatialHashGrid.Refresh(_spatialHandle);
                 _lastSpatialPosition = transform.position;
             }
+
+            if (_faunaSpatialHandle != 0)
+                FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
         }
 
         internal bool TryGetWorldStatePersistenceIdentity(out long persistenceKey, out long chunkKey)
@@ -202,20 +209,27 @@ namespace Hecton8.Interaction
 
         private void RegisterSpatialHandle()
         {
-            if (_spatialHandle != 0)
-                return;
+            if (_spatialHandle == 0)
+                _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
 
-            _spatialHandle = WorldSpatialHashGrid.RegisterPickup(this);
+            if (_faunaSpatialHandle == 0)
+                _faunaSpatialHandle = FaunaSpatialHashRegistry.RegisterPickup(this);
             _lastSpatialPosition = transform.position;
         }
 
         private void UnregisterSpatialHandle()
         {
-            if (_spatialHandle == 0)
-                return;
+            if (_spatialHandle != 0)
+            {
+                WorldSpatialHashGrid.Unregister(_spatialHandle);
+                _spatialHandle = 0;
+            }
 
-            WorldSpatialHashGrid.Unregister(_spatialHandle);
-            _spatialHandle = 0;
+            if (_faunaSpatialHandle != 0)
+            {
+                FaunaSpatialHashRegistry.Unregister(_faunaSpatialHandle);
+                _faunaSpatialHandle = 0;
+            }
         }
 
         private void TryRegisterSlowTick()
@@ -283,12 +297,16 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemData, quantity, interactor);
+            int itemHashId = Hecton.Localization.LocHash.Compute(itemData.PersistentId);
+            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
             if (!attempt.AnyAdded)
             {
                 DropOverflow(interactor);
                 return;
             }
+
+            InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
+            HectonEventBus.Publish(new ItemCollectedEvent(itemData, itemHashId, attempt.AddedQuantity, interactor));
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)

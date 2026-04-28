@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Bootstrap;
+using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
@@ -26,8 +27,8 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9500)] // Runs after GameTickManager singleton bootstrap and before most gameplay systems.
     public sealed class CrashTelemetryBuffer : MonoBehaviour, ITickable, IUpdatable, IFixedTickable
     {
-        private const int RingCapacity = 300;
-        private const int ExportSnapshotEntries = 50;
+        private const int RingCapacity = 3600;
+        private const int ExportSnapshotEntries = RingCapacity;
         private const int ExportCooldownFrames = 30;
         private const int DebugLogEntrySizeBytes = 64;
         private const int CrashExportHeaderSizeBytes = 16;
@@ -48,7 +49,7 @@ namespace Hecton8.Core
         private const string ExportFileExtension = ".hbin";
         private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fff";
         private const string LiveTelemetryFileName = "runtime_telemetry.bin";
-        private const long PersistentMemoryBudgetBytes = 65536L;
+        private const long PersistentMemoryBudgetBytes = 786432L;
         private const string MemoryBudgetOwnerName = "CrashTelemetryBuffer";
         private static readonly string[] _FrameTimeCandidates =
         {
@@ -94,6 +95,7 @@ namespace Hecton8.Core
             UnityException = 2u,
             UnityError = 3u,
             ApplicationQuit = 4u,
+            AppDomainUnhandledException = 5u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -117,9 +119,10 @@ namespace Hecton8.Core
             public uint ActiveChunkCount;
             public uint ErrorFlags;
             public uint ExportReason;
-            public uint Reserved0;
-            public uint Reserved1;
-            public uint Reserved2;
+            public uint AupShiftSequence;
+            public uint AiStatePacked;
+            public uint SubsystemHeatPacked;
+            public uint LastOriginShiftFrame;
         }
 
         [StructLayout(LayoutKind.Sequential, Size = LiveTelemetryRecordSizeBytes)]
@@ -139,6 +142,7 @@ namespace Hecton8.Core
         private NativeArray<DebugLogEntry> _exportSnapshot;
         private NativeArray<byte> _liveTelemetryScratch;
         private Transform _playerTransform;
+        private HectonSurvivalSystem _survivalSystem;
         private float _playerResolveCooldown;
         private float _lastFixedDeltaTime;
         private long _writeCursor;
@@ -344,6 +348,7 @@ namespace Hecton8.Core
                 uint systemMask = SampleSystemMask();
                 uint activeChunkCount = SampleActiveChunkCount();
                 uint errorFlags = BuildErrorFlags(dt, reservedMemoryMb, playerAup, hasPlayer);
+                OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
                 uint threadedFaultFlags = unchecked((uint)Interlocked.Exchange(ref _threadedFaultFlags, 0));
                 uint runtimeFaultFlags = unchecked((uint)Interlocked.Exchange(ref _runtimeFaultFlags, 0));
                 if (threadedFaultFlags != 0u)
@@ -365,6 +370,10 @@ namespace Hecton8.Core
                 entry.ActiveChunkCount = activeChunkCount;
                 entry.ErrorFlags = errorFlags;
                 entry.ExportReason = (uint)ExportReason.None;
+                entry.AupShiftSequence = shiftEvent.Sequence;
+                entry.AiStatePacked = PackAiState();
+                entry.SubsystemHeatPacked = PackSubsystemHeat();
+                entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
                 _ringBuffer[writeIndex] = entry;
                 TryWriteLiveTelemetry(frameIndex, dt, reservedMemoryMb, activeChunkCount);
 
@@ -450,12 +459,14 @@ namespace Hecton8.Core
 
         private void Subscribe()
         {
+            AppDomain.CurrentDomain.UnhandledException += HandleUnhandledException;
             Application.logMessageReceived += HandleLogMessageReceived;
             Application.logMessageReceivedThreaded += HandleLogMessageReceivedThreaded;
         }
 
         private void Unsubscribe()
         {
+            AppDomain.CurrentDomain.UnhandledException -= HandleUnhandledException;
             Application.logMessageReceived -= HandleLogMessageReceived;
             Application.logMessageReceivedThreaded -= HandleLogMessageReceivedThreaded;
         }
@@ -501,7 +512,11 @@ namespace Hecton8.Core
 
             _playerResolveCooldown = PlayerResolveCooldownSeconds;
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            {
                 _playerTransform = playerTransform;
+                if (_survivalSystem == null && _playerTransform != null)
+                    _playerTransform.TryGetComponent(out _survivalSystem);
+            }
         }
 
         private static uint SampleSystemMask()
@@ -630,6 +645,14 @@ namespace Hecton8.Core
             }
         }
 
+        private void HandleUnhandledException(object sender, UnhandledExceptionEventArgs eventArgs)
+        {
+            uint exportFlags = (uint)ErrorBits.ExceptionLogged;
+            _stickyErrorFlags |= exportFlags;
+            OrThreadedFaultFlags(unchecked((int)exportFlags));
+            TryExportSnapshotFromUnhandledException(exportFlags);
+        }
+
         private void OrThreadedFaultFlags(int flags)
         {
             int snapshot;
@@ -652,6 +675,41 @@ namespace Hecton8.Core
                 combined = snapshot | flags;
             }
             while (Interlocked.CompareExchange(ref _runtimeFaultFlags, combined, snapshot) != snapshot);
+        }
+
+        private static uint PackAiState()
+        {
+            HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;
+            if (director == null)
+                return 0u;
+
+            uint phase = unchecked((uint)math.max(0, director.CurrentPhaseIndex)) & 0xFFu;
+            uint stress = QuantizeUnitToByte(director.CurrentStress01);
+            uint intensity = QuantizeUnitToByte(director.CurrentIntensity01);
+            uint predatorPressure = director.IsPredatorPressureEnabled ? 1u : 0u;
+            return phase |
+                   (stress << 8) |
+                   (intensity << 16) |
+                   (predatorPressure << 24);
+        }
+
+        private uint PackSubsystemHeat()
+        {
+            if (_survivalSystem == null && _playerTransform != null)
+                _playerTransform.TryGetComponent(out _survivalSystem);
+
+            float heatSeverity = _survivalSystem != null ? _survivalSystem.HeatStressSeverity01 : 0f;
+            float environmentTemperature = _survivalSystem != null ? _survivalSystem.EnvironmentTemperature : 0f;
+            float internalTemperature = _survivalSystem != null ? _survivalSystem.InternalTemperature : 0f;
+
+            uint heat = QuantizeUnitToByte(heatSeverity);
+            uint environment = QuantizeSignedTemperatureToByte(environmentTemperature);
+            uint internalValue = QuantizeSignedTemperatureToByte(internalTemperature);
+            uint thermalRuntimePresent = AbyssalThermalManager.Instance != null ? 1u : 0u;
+            return heat |
+                   (environment << 8) |
+                   (internalValue << 16) |
+                   (thermalRuntimePresent << 24);
         }
 
         private ProfilerRecorder StartRecorder(string[] candidates)
@@ -816,7 +874,7 @@ namespace Hecton8.Core
 
                     _lastExportFrame = currentFrame;
                     _pendingExportBytes = BuildExportScratch(snapshotCount);
-                    PreparePendingExportMetadata(exportReason, exportFlags, snapshotCount);
+                    PreparePendingExportMetadata(unchecked((uint)math.max(0, currentFrame)));
 
                     if (writeSynchronously)
                     {
@@ -832,6 +890,33 @@ namespace Hecton8.Core
             {
                 if (!exportQueued)
                     Volatile.Write(ref _exportState, ExportStateIdle);
+            }
+        }
+
+        private void TryExportSnapshotFromUnhandledException(uint exportFlags)
+        {
+            if (!_ringBuffer.IsCreated)
+                return;
+
+            if (Interlocked.CompareExchange(ref _exportState, ExportStateQueued, ExportStateIdle) != ExportStateIdle)
+                return;
+
+            try
+            {
+                int snapshotCount = SnapshotRecentEntries(ExportReason.AppDomainUnhandledException);
+                if (snapshotCount <= 0)
+                    return;
+
+                _pendingExportBytes = BuildExportScratch(snapshotCount);
+                uint triggerFrame = _writeCursor <= 0L
+                    ? 0u
+                    : unchecked((uint)math.min(_writeCursor, uint.MaxValue));
+                PreparePendingExportMetadata(triggerFrame);
+                WritePreparedExportToDisk();
+            }
+            catch (Exception)
+            {
+                Volatile.Write(ref _exportState, ExportStateIdle);
             }
         }
 
@@ -878,9 +963,8 @@ namespace Hecton8.Core
             }
         }
 
-        private void PreparePendingExportMetadata(ExportReason exportReason, uint exportFlags, int snapshotCount)
+        private void PreparePendingExportMetadata(uint triggerFrame)
         {
-            uint triggerFrame = unchecked((uint)Time.frameCount);
             string timestampUtc = DateTime.UtcNow.ToString(ExportTimestampFormat);
             string fileStem = ExportFilePrefix + timestampUtc + "_f" + triggerFrame;
             _pendingExportPath = Path.Combine(Application.persistentDataPath, fileStem + ExportFileExtension);
@@ -956,6 +1040,17 @@ namespace Hecton8.Core
 
             return string.Equals(value, candidate, StringComparison.OrdinalIgnoreCase) ||
                    value.IndexOf(candidate, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static uint QuantizeUnitToByte(float value)
+        {
+            return unchecked((uint)math.clamp(math.round(math.saturate(value) * 255f), 0f, 255f));
+        }
+
+        private static uint QuantizeSignedTemperatureToByte(float temperatureCelsius)
+        {
+            float normalized = math.saturate((temperatureCelsius + 50f) / 150f);
+            return QuantizeUnitToByte(normalized);
         }
     }
 }

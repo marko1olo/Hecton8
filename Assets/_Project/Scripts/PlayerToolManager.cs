@@ -1087,10 +1087,10 @@ namespace Hecton8.Gameplay
             {
                 for (int x = 0; x < cols; x++)
                 {
-                    ItemData cell = playerInventory.GetItemAt(x, y);
+                    int cellHashId = playerInventory.GetItemHashAt(x, y);
 
                     // Сравниваем по ссылке — ScriptableObjects уникальны
-                    if (ReferenceEquals(cell, targetData))
+                    if (cellHashId == Hecton.Localization.LocHash.Compute(targetData.PersistentId))
                         return true;
                 }
             }

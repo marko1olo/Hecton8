@@ -221,7 +221,7 @@ namespace Hecton8.Dev
                 return false;
             }
 
-            _debugPickupInventoryBefore = playerInventory.CountTotal(pickupProbeItem);
+            _debugPickupInventoryBefore = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(pickupProbeItem.PersistentId));
 
             bool consumed = interactionHandler.TryHandleInteraction(pickupItem, interactionHandler.transform);
             if (!consumed)
@@ -231,7 +231,7 @@ namespace Hecton8.Dev
             }
 
             SimulateHandlerSteps(pickupSimulationSteps);
-            _debugPickupInventoryAfter = playerInventory.CountTotal(pickupProbeItem);
+            _debugPickupInventoryAfter = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(pickupProbeItem.PersistentId));
 
             bool probeGone = !pickupProbe.activeSelf;
             bool inventoryIncreased = _debugPickupInventoryAfter > _debugPickupInventoryBefore;

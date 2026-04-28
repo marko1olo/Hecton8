@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.World;
 using UnityEngine;
@@ -262,7 +263,14 @@ namespace Hecton8.Gameplay
             int rejectedQuantity = quantity;
             if (playerInventory != null)
             {
-                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(item, quantity, playerInventory.transform);
+                int itemHashId = LocHash.Compute(item.PersistentId);
+                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(itemHashId, quantity, playerInventory.transform);
+                if (result.AnyAdded)
+                {
+                    InteractionEvents.RaiseItemCollected(item, result.AddedQuantity, playerInventory.transform);
+                    HectonEventBus.Publish(new ItemCollectedEvent(item, itemHashId, result.AddedQuantity, playerInventory.transform));
+                }
+
                 if (result.IsSuccess)
                     return;
 

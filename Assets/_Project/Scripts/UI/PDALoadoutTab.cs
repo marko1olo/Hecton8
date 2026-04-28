@@ -711,7 +711,10 @@ namespace Hecton8.UI
                 // Используем кэшированный StringBuilder для сборки текста слота (zero-GC)
                 _slotBodyBuilder.Clear();
                 _slotBodyBuilder.Append("CLASS    ").Append(category).Append('\n');
-                _slotBodyBuilder.Append("IN CARGO  ").Append(item != null && playerInventory != null ? playerInventory.CountTotal(item) : 0).Append('\n');
+                _slotBodyBuilder.Append("IN CARGO  ").Append(
+                    item != null && playerInventory != null
+                        ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(item.PersistentId))
+                        : 0).Append('\n');
                 _slotBodyBuilder.Append("MASS     ").Append(weight.ToString("0.0")).Append(" kg\n");
                 _slotBodyBuilder.Append("DURAB.   ").Append(normalized.ToString("0%")).Append('\n');
                 _slotBodyBuilder.Append("ENERGY   ").Append((meta != null ? Mathf.Max(0f, meta.energyConsumptionRate) : 0f).ToString("0.0")).Append("/s");
@@ -1218,7 +1221,7 @@ namespace Hecton8.UI
             {
                 GameObject prefab = preset.slotPrefabs[i];
                 PlayerTool tool = ResolvePrefabTool(prefab);
-                if (tool?.ToolData != null && playerInventory.ContainsItem(tool.ToolData))
+                if (tool?.ToolData != null && playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(tool.ToolData.PersistentId)))
                     count++;
             }
 

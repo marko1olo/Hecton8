@@ -64,7 +64,7 @@ namespace Hecton8.Debugging
             UnlockRecipe(recipe);
             SeedIngredients(recipe);
 
-            int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(recipe.resultItem) : 0;
+            int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
 
             fabricator.Interact(transform);
             yield return null;
@@ -81,7 +81,7 @@ namespace Hecton8.Debugging
             float waitTime = Mathf.Max(0.1f, recipe.craftTime + completionPadding);
             yield return new WaitForSeconds(waitTime);
 
-            int afterCount = recipe.resultItem != null ? _inventory.CountTotal(recipe.resultItem) : 0;
+            int afterCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
             bool crafted = afterCount > beforeCount;
 
             if (!crafted)
@@ -167,11 +167,11 @@ namespace Hecton8.Debugging
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int missing = Mathf.Max(0, cost.amount - _inventory.CountTotal(cost.item));
+                int missing = Mathf.Max(0, cost.amount - _inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)));
                 if (missing <= 0)
                     continue;
 
-                _inventory.TryAddItem(cost.item, missing);
+                _inventory.TryAddItem(Hecton.Localization.LocHash.Compute(cost.item.PersistentId), missing);
             }
         }
     }

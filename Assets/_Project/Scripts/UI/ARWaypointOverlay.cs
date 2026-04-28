@@ -478,7 +478,7 @@ namespace Hecton8.UI
                 }
 
                 Vector3 direction = delta / distance;
-                int hitCount = Physics.RaycastNonAlloc(
+                int hitCount = UnityEngine.Physics.RaycastNonAlloc(
                     origin,
                     direction,
                     _occlusionHits,

@@ -7,12 +7,16 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.SaveSystem;
 using Hecton8.Tools;
+using Hecton.Localization;
 using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Collections;
 
 namespace Hecton8.UI
 {
@@ -80,6 +84,12 @@ namespace Hecton8.UI
         private bool _registeredToTickManager;
         private bool _slotVisualsDirty;
         private bool _statusDirty;
+        private IPlayerInventoryService _inventoryService;
+        private PlayerInventory _playerInventory;
+        private ItemCatalog _itemCatalog;
+        private readonly int[] _slotItemHashCache = new int[SlotCount];
+        private readonly bool[] _slotItemHashResolved = new bool[SlotCount];
+        private int _lastInventoryVersion = -1;
         private ToolDurabilitySystem _subscribedDurabilitySystem;
         private readonly StringBuilder _statusBuilder = new StringBuilder(160);
         [SerializeField] private float fieldAdviceRange = 18f;
@@ -107,7 +117,14 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            AutoResolve();
             RefreshDurabilitySubscription();
+
+            if (_playerInventory != null && _lastInventoryVersion != _playerInventory.InventoryVersion)
+            {
+                _lastInventoryVersion = _playerInventory.InventoryVersion;
+                _slotVisualsDirty = true;
+            }
 
             // Dim when PDA is open
             if (_canvasGroup != null)
@@ -144,6 +161,24 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            if (!ReferenceEquals(_inventoryService, inventoryService))
+            {
+                _inventoryService = inventoryService;
+                _playerInventory = null;
+                _itemCatalog = null;
+                _lastInventoryVersion = -1;
+                InvalidateSlotBindingCache();
+            }
+
+            if (_inventoryService != null)
+            {
+                _playerInventory = _inventoryService.Inventory;
+                _itemCatalog = _playerInventory != null ? _playerInventory.ItemCatalog : null;
+                if (toolManager == null)
+                    toolManager = _inventoryService.ToolManager;
+            }
+
             if (toolManager == null)
             {
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
@@ -215,6 +250,7 @@ namespace Hecton8.UI
             _slotVisualsDirty = true;
             _statusDirty = true;
             _nextStatusRefreshAt = 0f;
+            InvalidateSlotBindingCache();
         }
 
         private void OnSlotChanged(int _)
@@ -226,6 +262,7 @@ namespace Hecton8.UI
 
         private void OnAssignmentsChanged()
         {
+            InvalidateSlotBindingCache();
             _slotVisualsDirty = true;
             _statusDirty = true;
             Refresh(forceStatus: true);
@@ -442,11 +479,15 @@ namespace Hecton8.UI
                 _slotKeys[slotIndex].color = desiredKeyColor;
 
             GameObject prefab = toolManager.GetAssignedToolPrefab(slotIndex);
-            if (prefab != null && prefab.TryGetComponent(out PlayerTool tool) &&
-                tool.ToolData != null && tool.ToolData.icon != null)
+            int itemHashId = ResolveSlotItemHash(slotIndex, prefab);
+            Sprite desiredSprite = ResolveSlotIconSprite(prefab);
+            bool hasRuntimeDescriptor = TryResolveRuntimeDescriptor(itemHashId, out _);
+            bool available = itemHashId != 0 && IsInventoryHashAvailable(itemHashId);
+            if (!available)
+                available = toolManager.IsToolAvailableInSlot(slotIndex);
+
+            if (prefab != null && desiredSprite != null && hasRuntimeDescriptor)
             {
-                bool available = toolManager.IsToolAvailableInSlot(slotIndex);
-                Sprite desiredSprite = tool.ToolData.icon;
                 if (!ReferenceEquals(_slotIconSprites[slotIndex], desiredSprite))
                 {
                     _slotIcons[slotIndex].sprite = desiredSprite;
@@ -514,6 +555,78 @@ namespace Hecton8.UI
             {
                 _durBars[slotIndex].color = DurHidden;
             }
+        }
+
+        private void InvalidateSlotBindingCache()
+        {
+            for (int i = 0; i < SlotCount; i++)
+            {
+                _slotItemHashCache[i] = 0;
+                _slotItemHashResolved[i] = false;
+            }
+        }
+
+        private int ResolveSlotItemHash(int slotIndex, GameObject prefab)
+        {
+            if ((uint)slotIndex >= (uint)SlotCount)
+                return 0;
+
+            if (_slotItemHashResolved[slotIndex])
+                return _slotItemHashCache[slotIndex];
+
+            int itemHashId = 0;
+            if (prefab != null &&
+                prefab.TryGetComponent(out PlayerTool tool) &&
+                tool.ToolData != null)
+            {
+                string persistentId = tool.ToolData.PersistentId;
+                if (!string.IsNullOrWhiteSpace(persistentId))
+                    itemHashId = LocHash.Compute(persistentId);
+            }
+
+            _slotItemHashCache[slotIndex] = itemHashId;
+            _slotItemHashResolved[slotIndex] = true;
+            return itemHashId;
+        }
+
+        private Sprite ResolveSlotIconSprite(GameObject prefab)
+        {
+            if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.ToolData == null)
+                return null;
+
+            return tool.ToolData.icon;
+        }
+
+        private bool TryResolveRuntimeDescriptor(int itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)
+        {
+            runtimeDescriptor = default;
+            return itemHashId != 0 &&
+                   _itemCatalog != null &&
+                   _itemCatalog.TryGetRuntimeDescriptor(itemHashId, out runtimeDescriptor);
+        }
+
+        private bool IsInventoryHashAvailable(int itemHashId)
+        {
+            if (itemHashId == 0 || _playerInventory == null)
+                return false;
+
+            InventoryGrid grid = _playerInventory.Grid;
+            if (grid == null)
+                return false;
+
+            NativeArray<int>.ReadOnly anchorHashIds = grid.AnchorHashIds;
+            NativeArray<ushort>.ReadOnly stackCounts = _playerInventory.GetStackCountsReadOnly();
+            if (!anchorHashIds.IsCreated || !stackCounts.IsCreated)
+                return false;
+
+            int anchorCount = Mathf.Min(anchorHashIds.Length, stackCounts.Length);
+            for (int anchorIndex = 0; anchorIndex < anchorCount; anchorIndex++)
+            {
+                if (anchorHashIds[anchorIndex] == itemHashId && stackCounts[anchorIndex] > 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private void RefreshStatusText()

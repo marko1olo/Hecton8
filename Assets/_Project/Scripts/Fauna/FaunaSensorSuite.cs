@@ -4,6 +4,8 @@ using Unity.Jobs;
 using UnityEngine.Serialization;
 using Hecton8.Gameplay;
 using Hecton8.World;
+using Unity.Collections;
+using Unity.Mathematics;
 
 namespace Hecton8.AI
 {
@@ -17,6 +19,8 @@ namespace Hecton8.AI
         private const float ToolNoiseRadiusMultiplier = 1.35f;
         private const float PlayerAwarenessMemorySeconds = 0.75f;
         private const float PlayerNoiseFreshSeconds = 0.5f;
+        private const byte CaveSignedDistanceSolidThreshold = 128;
+        private const float CaveVoxelDdaEpsilon = 0.000001f;
 
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
@@ -172,7 +176,9 @@ namespace Hecton8.AI
 
         private void UpdateMajorSenses()
         {
-            bool visualContact = distSqrToPlayer < aggroDistance * aggroDistance;
+            bool visualContact = _playerTransform != null &&
+                                 distSqrToPlayer < aggroDistance * aggroDistance &&
+                                 HasPlayerLineOfSightThroughCaveSdf(_cachedSelfPosition, _playerTransform.position);
             bool reportedContact = HasFreshReportedPlayerNoise();
             hasVisualPlayerContact = visualContact;
             hasNoisePlayerContact = reportedContact;
@@ -261,7 +267,7 @@ namespace Hecton8.AI
             if (territoryMask == 0 || _profile == null)
                 return;
 
-            if (WorldSpatialHashGrid.TryGetNearestBioform(
+            if (FaunaSpatialHashRegistry.TryGetNearestBioform(
                     _cachedSelfPosition,
                     _profile.territoryThreatRadius,
                     _profile.predatorMask,
@@ -342,7 +348,7 @@ namespace Hecton8.AI
             if (searchMask == 0)
                 return;
 
-            if (WorldSpatialHashGrid.TryGetNearestBioform(
+            if (FaunaSpatialHashRegistry.TryGetNearestBioform(
                     _cachedSelfPosition,
                     aggroDistance,
                     searchMask,
@@ -366,7 +372,7 @@ namespace Hecton8.AI
             if (layerMaskValue == 0)
                 return null;
 
-            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+            int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
                 _cachedSelfPosition,
                 distractorDetectRadius,
                 SpatialTargetKind.Pickup | SpatialTargetKind.Signal,
@@ -405,7 +411,7 @@ namespace Hecton8.AI
             if (_profile.baseAggro < 0.45f)
                 return null;
 
-            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+            int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
                 _cachedSelfPosition,
                 distractorDetectRadius,
                 SpatialTargetKind.Signal,
@@ -478,5 +484,115 @@ namespace Hecton8.AI
         }
 
         public Transform GetPlayerTransform() => _playerTransform;
+
+        private static bool HasPlayerLineOfSightThroughCaveSdf(Vector3 startPosition, Vector3 endPosition)
+        {
+            HectonCaveVoxelLightingVolume caveVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            if (caveVolume == null ||
+                !caveVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte> signedDistanceVoxels, out Vector3Int gridDimensions, out Vector3 gridOrigin, out Vector3 voxelCellSize))
+            {
+                return true;
+            }
+
+            int3 dimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
+            float3 origin = gridOrigin;
+            float3 cellSize = voxelCellSize;
+            float3 start = startPosition;
+            float3 end = endPosition;
+
+            if (!TryWorldToCaveVoxel(end, origin, cellSize, dimensions, out int3 endVoxel))
+                return true;
+
+            if (IsCaveVoxelSolid(SampleCaveVoxel(signedDistanceVoxels, endVoxel, dimensions)))
+                return false;
+
+            bool hasStartVoxel = TryWorldToCaveVoxel(start, origin, cellSize, dimensions, out int3 startVoxel);
+            float3 rayStart = hasStartVoxel ? start : end;
+            float3 rayEnd = hasStartVoxel ? end : start;
+            int3 currentVoxel = hasStartVoxel ? startVoxel : endVoxel;
+            float3 delta = rayEnd - rayStart;
+            float distanceSq = math.lengthsq(delta);
+            if (distanceSq <= CaveVoxelDdaEpsilon)
+                return true;
+
+            float3 rayDirection = delta * math.rsqrt(distanceSq);
+            bool3 positiveMask = rayDirection >= 0f;
+            bool3 activeAxisMask = math.abs(rayDirection) > CaveVoxelDdaEpsilon;
+            int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
+            float3 cellMin = origin + (new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z) * cellSize);
+            float3 voxelBoundary = cellMin + math.select(float3.zero, cellSize, positiveMask);
+            float3 safeAbsDirection = math.max(math.abs(rayDirection), new float3(CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon));
+            float3 rayDirectionInverse = 1f / safeAbsDirection;
+            float3 tMax = math.abs((voxelBoundary - rayStart) * rayDirectionInverse);
+            float3 tDelta = cellSize * rayDirectionInverse;
+            float3 sentinel = new float3(1000000f, 1000000f, 1000000f);
+            tMax = math.select(sentinel, tMax, activeAxisMask);
+            tDelta = math.select(sentinel, tDelta, activeAxisMask);
+            int maxSteps = math.min(dimensions.x + dimensions.y + dimensions.z, 4096);
+
+            for (int i = 0; i < maxSteps; i++)
+            {
+                if (IsCaveVoxelSolid(SampleCaveVoxel(signedDistanceVoxels, currentVoxel, dimensions)))
+                    return false;
+
+                if (hasStartVoxel && math.all(currentVoxel == endVoxel))
+                    return true;
+
+                bool3 axisMask = (tMax <= tMax.yzx) & (tMax <= tMax.zxy);
+                tMax += math.select(float3.zero, tDelta, axisMask);
+                currentVoxel += math.select(int3.zero, step, axisMask);
+                if (!IsCaveVoxelInside(currentVoxel, dimensions))
+                    return true;
+            }
+
+            return true;
+        }
+
+        private static bool TryWorldToCaveVoxel(float3 worldPosition, float3 gridOrigin, float3 voxelCellSize, int3 dimensions, out int3 voxel)
+        {
+            float3 local = worldPosition - gridOrigin;
+            if (local.x < 0f || local.y < 0f || local.z < 0f)
+            {
+                voxel = int3.zero;
+                return false;
+            }
+
+            int3 candidate = new int3(
+                (int)math.floor(local.x / math.max(voxelCellSize.x, CaveVoxelDdaEpsilon)),
+                (int)math.floor(local.y / math.max(voxelCellSize.y, CaveVoxelDdaEpsilon)),
+                (int)math.floor(local.z / math.max(voxelCellSize.z, CaveVoxelDdaEpsilon)));
+            if (!IsCaveVoxelInside(candidate, dimensions))
+            {
+                voxel = int3.zero;
+                return false;
+            }
+
+            voxel = candidate;
+            return true;
+        }
+
+        private static bool IsCaveVoxelInside(int3 voxel, int3 dimensions)
+        {
+            return voxel.x >= 0 &&
+                   voxel.y >= 0 &&
+                   voxel.z >= 0 &&
+                   voxel.x < dimensions.x &&
+                   voxel.y < dimensions.y &&
+                   voxel.z < dimensions.z;
+        }
+
+        private static byte SampleCaveVoxel(NativeArray<byte> signedDistanceVoxels, int3 voxel, int3 dimensions)
+        {
+            int flatIndex = voxel.x + (voxel.y * dimensions.x) + (voxel.z * dimensions.x * dimensions.y);
+            if (flatIndex < 0 || flatIndex >= signedDistanceVoxels.Length)
+                return 255;
+
+            return signedDistanceVoxels[flatIndex];
+        }
+
+        private static bool IsCaveVoxelSolid(byte encodedSignedDistance)
+        {
+            return encodedSignedDistance < CaveSignedDistanceSolidThreshold;
+        }
     }
 }

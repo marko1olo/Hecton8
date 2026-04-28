@@ -719,7 +719,10 @@ namespace Hecton8.Gameplay
             {
                 for (int x = 0; x < columns; x++)
                 {
-                    ItemData item = inventory.GetItemAt(x, y);
+                    int itemHashId = inventory.GetItemHashAt(x, y);
+                    ItemData item = itemHashId != 0 && inventory.ItemCatalog != null
+                        ? inventory.ItemCatalog.FindByHash(itemHashId)
+                        : null;
                     if (item == null)
                         continue;
 

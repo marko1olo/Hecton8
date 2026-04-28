@@ -171,11 +171,11 @@ namespace Hecton8.Gameplay
                 yield break;
             }
 
-            if (!playerInventory.ContainsItem(salvagePrefabTool.ToolData))
-                playerInventory.TryAddItem(salvagePrefabTool.ToolData, 1);
+            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(salvagePrefabTool.ToolData.PersistentId)))
+                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(salvagePrefabTool.ToolData.PersistentId), 1);
 
             _debugLastStep = "CreateSalvageProbe";
-            int beforeCount = playerInventory.CountTotal(salvageProbeItem);
+            int beforeCount = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(salvageProbeItem.PersistentId));
             GameObject probe = CreateSalvageProbe();
             if (probe == null)
             {
@@ -219,7 +219,7 @@ namespace Hecton8.Gameplay
                 yield return new WaitForSecondsRealtime(settleDelay);
 
                 _debugLastStep = "VerifySalvage";
-                int afterCount = playerInventory.CountTotal(salvageProbeItem);
+                int afterCount = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(salvageProbeItem.PersistentId));
                 bool recovered = afterCount > beforeCount && !probe.activeSelf;
                 if (!recovered)
                 {
@@ -258,8 +258,8 @@ namespace Hecton8.Gameplay
                 yield break;
             }
 
-            if (!playerInventory.ContainsItem(cutterPrefabTool.ToolData))
-                playerInventory.TryAddItem(cutterPrefabTool.ToolData, 1);
+            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(cutterPrefabTool.ToolData.PersistentId)))
+                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(cutterPrefabTool.ToolData.PersistentId), 1);
 
             if (playerBuilder.ActiveBuildable == null || playerBuilder.ActiveBuildable.finalPrefab == null)
             {

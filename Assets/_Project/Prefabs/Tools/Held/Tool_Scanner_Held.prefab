@@ -66,6 +66,8 @@ MonoBehaviour:
   cooldownFeedbackInterval: 0.75
   resultFeedbackInterval: 0.5
   modeFeedbackInterval: 0.4
+  scannerMarkerShader: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
+  scannerPulseShader: {fileID: 4800000, guid: 83fe0f4ef4dc4260ae2b77e1e1e218b2, type: 3}
 --- !u!114 &4225272727249172183
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Optimization;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -66,8 +67,8 @@ namespace Hecton8.Environment
         [SerializeField] private Material marineSnowMaterial;
 
         [Header("â”€â”€ Population â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [Tooltip("Maximum compute-simulated marine-snow particles. MX350 budget = 32768.")]
-        [SerializeField, Range(512, 32768)] private int maxParticles = 32768;
+        [Tooltip("Maximum compute-simulated plankton particles. Runtime buffer sizing supports up to 100000 particles; tune lower on MX350 scenes that cannot afford the overdraw.")]
+        [SerializeField, Range(512, 100000)] private int maxParticles = 100000;
         [Tooltip("Empty safety radius around the camera to avoid particles clipping through the visor.")]
         [SerializeField, Range(0.1f, 4f)] private float innerRadius = 0.8f;
         [Tooltip("Outer shell radius. Particles respawn to the ring when they drift beyond this distance.")]
@@ -126,6 +127,7 @@ namespace Hecton8.Environment
         private float _flowFieldCellSize;
         private float _flowFieldUploadTimer;
         private float _simulationTime;
+        private int _activeParticleCount;
         private bool _registeredTick;
         private bool _buffersReady;
         private bool _staticBindingsDirty = true;
@@ -136,6 +138,10 @@ namespace Hecton8.Environment
         private float _lastSubmergeImpulse;
         private Vector3 _flowFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
+        [SerializeField] private int _debugActiveParticleCount;
+        [SerializeField] private float _debugAdaptiveRenderScale = 1f;
+        [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
+        [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
 
         /// <summary>
         /// True when the compute path has all required resources and can replace the fallback particle system.
@@ -236,6 +242,7 @@ namespace Hecton8.Environment
             if (!_buffersReady)
                 return;
 
+            _activeParticleCount = ResolveActiveParticleCount();
             RefreshFlowFieldUpload(dt);
             ApplyStaticBindingsIfNeeded();
             UpdateFrameConstants(math.max(0f, dt));
@@ -456,7 +463,7 @@ namespace Hecton8.Environment
                     math.min(verticalSpan.x, verticalSpan.y),
                     math.max(verticalSpan.x, verticalSpan.y)),
                 MetaParams = new Vector4(
-                    maxParticles,
+                    _activeParticleCount,
                     _flowFieldResolution,
                     Time.frameCount & 1023,
                     activeFlag)
@@ -484,7 +491,7 @@ namespace Hecton8.Environment
             if (_flowFieldBuffer != null)
                 marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, _flowFieldBuffer);
 
-            int groupCount = (math.max(64, maxParticles) + ThreadGroupSize - 1) / ThreadGroupSize;
+            int groupCount = (_activeParticleCount + ThreadGroupSize - 1) / ThreadGroupSize;
             marineSnowCompute.Dispatch(_kernelIndex, groupCount, 1, 1);
 
             marineSnowMaterial.SetBuffer(ShaderIds.ParticlesRenderId, writeBuffer);
@@ -510,7 +517,7 @@ namespace Hecton8.Environment
                 camera = _targetCameraComponent,
                 lightProbeUsage = LightProbeUsage.Off
             };
-            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, math.max(64, maxParticles));
+            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, _activeParticleCount);
         }
 
         private void ReleaseBuffers()
@@ -544,6 +551,39 @@ namespace Hecton8.Environment
             value *= 0x31848BABu;
             value ^= value >> 14;
             return (value & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private int ResolveActiveParticleCount()
+        {
+            int capacity = math.max(64, maxParticles);
+            float budgetScale = 1f;
+
+            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            float renderScale = scaler != null ? math.saturate(scaler.CurrentRenderScale) : 1f;
+            budgetScale *= math.clamp(renderScale, 0.45f, 1f);
+            _debugAdaptiveRenderScale = renderScale;
+
+            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
+            VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
+                ? vramMonitor.PressureState
+                : VRAMMonitor.VRAMPressureState.Stable;
+
+            switch (pressureState)
+            {
+                case VRAMMonitor.VRAMPressureState.Critical:
+                    budgetScale *= 0.45f;
+                    break;
+                case VRAMMonitor.VRAMPressureState.Warning:
+                    budgetScale *= 0.7f;
+                    break;
+            }
+
+            _debugAdaptiveVramPressureState = pressureState;
+            _debugAdaptiveBudgetScale = budgetScale;
+
+            int resolvedCount = math.clamp((int)math.round(capacity * budgetScale), 64, capacity);
+            _debugActiveParticleCount = resolvedCount;
+            return resolvedCount;
         }
     }
 }

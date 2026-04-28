@@ -383,7 +383,9 @@ namespace Hecton8.Building
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int available = inventory != null ? inventory.CountTotal(cost.item) : 0;
+                int available = inventory != null && cost.item != null
+                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                    : 0;
                 if (sb.Length > 0)
                     sb.Append(" | ");
 
@@ -1440,7 +1442,9 @@ namespace Hecton8.Building
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int available = inventory != null ? inventory.CountTotal(cost.item) : 0;
+                int available = inventory != null && cost.item != null
+                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                    : 0;
                 if (sb.Length > 0)
                     sb.Append(" | ");
 

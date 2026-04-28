@@ -388,6 +388,7 @@ namespace Hecton8.Physics
             [ReadOnly] public NativeArray<float> MaxVolumes;
             [ReadOnly] public NativeArray<int2> BulkheadPairs;
             [ReadOnly] public NativeArray<byte> BulkheadSealed;
+            [ReadOnly] public NativeArray<float> BulkheadDoorAreas;
 
             public NativeArray<float> TransferDeltas;
 
@@ -395,6 +396,7 @@ namespace Hecton8.Physics
             public float FixedDeltaTime;
             public float BulkheadFlowCoefficient;
             public float MaxTransferPerTick;
+            public float DischargeCoefficient;
 
             public void Execute(int index)
             {
@@ -422,8 +424,21 @@ namespace Hecton8.Physics
 
                 float transferCoefficient = math.max(0f, BulkheadFlowCoefficient);
                 float perTickTransferCap = math.max(0.01f, MaxTransferPerTick);
-                float headDifference = fillA - fillB;
-                float deltaVolume = math.clamp(headDifference * transferCoefficient * FixedDeltaTime, -perTickTransferCap, perTickTransferCap);
+                float doorAreaSquareMeters = math.max(Epsilon, BulkheadDoorAreas[index]);
+                float characteristicHeightA = math.max(0.1f, math.cbrt(maxVolumeA));
+                float characteristicHeightB = math.max(0.1f, math.cbrt(maxVolumeB));
+                float headHeightA = fillA * characteristicHeightA;
+                float headHeightB = fillB * characteristicHeightB;
+                float headDifferenceMeters = headHeightA - headHeightB;
+                float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * GravityMetersPerSecondSquared * math.abs(headDifferenceMeters)));
+                float signedDeltaVolume =
+                    math.sign(headDifferenceMeters) *
+                    doorAreaSquareMeters *
+                    math.max(0f, DischargeCoefficient) *
+                    velocityMetersPerSecond *
+                    transferCoefficient *
+                    FixedDeltaTime;
+                float deltaVolume = math.clamp(signedDeltaVolume, -perTickTransferCap, perTickTransferCap);
 
                 if (deltaVolume > 0f)
                 {
@@ -700,7 +715,7 @@ namespace Hecton8.Physics
         public void SetExternalDepthMeters(float depthMeters)
         {
             sampleDepthFromAtmosphere = false;
-            manualExternalDepthMeters = Mathf.Max(0f, depthMeters);
+            manualExternalDepthMeters = math.max(0f, depthMeters);
             _externalDepthMeters = manualExternalDepthMeters;
             RefreshDebugState();
         }
@@ -715,7 +730,7 @@ namespace Hecton8.Physics
 
             CompletePendingFluidTransferForAuthoritativeWrite();
             CompletePendingFloodMassPropertiesForAuthoritativeWrite();
-            float sanitizedArea = Mathf.Max(0f, breachAreaSquareMeters);
+            float sanitizedArea = math.max(0f, breachAreaSquareMeters);
             _compartmentBreachAreas[compartmentIndex] = sanitizedArea;
 
             uint flags = _compartmentFlags[compartmentIndex];
@@ -928,8 +943,8 @@ namespace Hecton8.Physics
 
             if (_rigidbody != null && !_baselineDampingCached)
             {
-                _baseLinearDamping = Mathf.Max(0f, _rigidbody.linearDamping);
-                _baseAngularDamping = Mathf.Max(0f, _rigidbody.angularDamping);
+                _baseLinearDamping = math.max(0f, _rigidbody.linearDamping);
+                _baseAngularDamping = math.max(0f, _rigidbody.angularDamping);
                 _lastAppliedLinearDamping = _baseLinearDamping;
                 _lastAppliedAngularDamping = _baseAngularDamping;
                 _baselineDampingCached = true;
@@ -997,15 +1012,15 @@ namespace Hecton8.Physics
             if (!_compartmentFloodVolumes.IsCreated)
                 return;
 
-            _configuredCompartmentCount = Mathf.Clamp(compartments != null ? compartments.Length : 0, 0, CompartmentCapacity);
+            _configuredCompartmentCount = math.clamp(compartments != null ? compartments.Length : 0, 0, CompartmentCapacity);
             for (int i = 0; i < CompartmentCapacity; i++)
             {
                 if (i < _configuredCompartmentCount)
                 {
                     CompartmentDefinition definition = compartments[i];
-                    float maxVolume = Mathf.Max(0f, definition.maxFloodVolumeCubicMeters);
+                    float maxVolume = math.max(0f, definition.maxFloodVolumeCubicMeters);
                     float fillVolume = math.saturate(definition.initialFillNormalized) * maxVolume;
-                    float breachArea = Mathf.Max(0f, definition.breachAreaSquareMeters);
+                    float breachArea = math.max(0f, definition.breachAreaSquareMeters);
 
                     _compartmentMaxVolumes[i] = maxVolume;
                     _compartmentFloodVolumes[i] = fillVolume;
@@ -1037,15 +1052,15 @@ namespace Hecton8.Physics
 
             if (bulkheads != null && bulkheads.Length > 0)
             {
-                _configuredBulkheadCount = Mathf.Clamp(bulkheads.Length, 0, BulkheadCapacity);
+                _configuredBulkheadCount = math.clamp(bulkheads.Length, 0, BulkheadCapacity);
                 for (int i = 0; i < _configuredBulkheadCount; i++)
                 {
                     BulkheadDefinition bulkhead = bulkheads[i];
                     _bulkheadPairs[i] = new int2(
-                        Mathf.Clamp(bulkhead.compartmentA, 0, CompartmentCapacity - 1),
-                        Mathf.Clamp(bulkhead.compartmentB, 0, CompartmentCapacity - 1));
+                        math.clamp(bulkhead.compartmentA, 0, CompartmentCapacity - 1),
+                        math.clamp(bulkhead.compartmentB, 0, CompartmentCapacity - 1));
                     _bulkheadSealed[i] = bulkhead.isSealed ? (byte)1 : (byte)0;
-                    _bulkheadDoorAreas[i] = Mathf.Max(Epsilon, bulkhead.doorAreaSquareMeters > Epsilon ? bulkhead.doorAreaSquareMeters : DefaultBulkheadDoorAreaSquareMeters);
+                    _bulkheadDoorAreas[i] = math.max(Epsilon, bulkhead.doorAreaSquareMeters > Epsilon ? bulkhead.doorAreaSquareMeters : DefaultBulkheadDoorAreaSquareMeters);
                 }
             }
             else
@@ -1318,11 +1333,13 @@ namespace Hecton8.Physics
                 MaxVolumes = _compartmentMaxVolumes,
                 BulkheadPairs = _bulkheadPairs,
                 BulkheadSealed = _bulkheadSealed,
+                BulkheadDoorAreas = _bulkheadDoorAreas,
                 TransferDeltas = _bulkheadTransferDeltas,
                 CompartmentCount = _configuredCompartmentCount,
                 FixedDeltaTime = fixedDeltaTime,
                 BulkheadFlowCoefficient = bulkheadFlowCoefficient,
-                MaxTransferPerTick = maxTransferPerTick
+                MaxTransferPerTick = maxTransferPerTick,
+                DischargeCoefficient = dischargeCoefficient
             };
 
             ApplyBulkheadTransferJob applyJob = new ApplyBulkheadTransferJob
@@ -1453,6 +1470,7 @@ namespace Hecton8.Physics
         {
             float transferCoefficient = math.max(0f, bulkheadFlowCoefficient);
             float perTickTransferCap = math.max(0.01f, maxTransferPerTick);
+            float safeDischargeCoefficient = math.max(0f, dischargeCoefficient);
             for (int i = 0; i < _configuredBulkheadCount; i++)
             {
                 if (_bulkheadSealed[i] != 0)
@@ -1476,8 +1494,21 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                float headDifference = fillA - fillB;
-                float deltaVolume = math.clamp(headDifference * transferCoefficient * fixedDeltaTime, -perTickTransferCap, perTickTransferCap);
+                float doorAreaSquareMeters = math.max(Epsilon, _bulkheadDoorAreas[i]);
+                float characteristicHeightA = math.max(0.1f, math.cbrt(maxVolumeA));
+                float characteristicHeightB = math.max(0.1f, math.cbrt(maxVolumeB));
+                float headHeightA = fillA * characteristicHeightA;
+                float headHeightB = fillB * characteristicHeightB;
+                float headDifferenceMeters = headHeightA - headHeightB;
+                float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * GravityMetersPerSecondSquared * math.abs(headDifferenceMeters)));
+                float signedDeltaVolume =
+                    math.sign(headDifferenceMeters) *
+                    doorAreaSquareMeters *
+                    safeDischargeCoefficient *
+                    velocityMetersPerSecond *
+                    transferCoefficient *
+                    fixedDeltaTime;
+                float deltaVolume = math.clamp(signedDeltaVolume, -perTickTransferCap, perTickTransferCap);
 
                 if (deltaVolume > 0f)
                 {
@@ -1812,7 +1843,7 @@ namespace Hecton8.Physics
             _ringHead = (_ringHead + 1) & RingBufferMask;
 
             float delaySeconds = ResolveSloshDelaySeconds(internalFloodRatio);
-            float safeFixedStep = Mathf.Max(_currentFixedDeltaTime, DefaultFixedStepSeconds);
+            float safeFixedStep = math.max(_currentFixedDeltaTime, DefaultFixedStepSeconds);
             int delayFrames = 1;
             if (!TryResolveSafeQuotient(delaySeconds, safeFixedStep, out float delayFrameFloat))
             {
@@ -1820,8 +1851,8 @@ namespace Hecton8.Physics
             }
             else
             {
-                delayFrames = Mathf.Clamp(
-                    Mathf.RoundToInt(delayFrameFloat),
+                delayFrames = math.clamp(
+                    (int)math.round(delayFrameFloat),
                     1,
                     RingBufferLength - 1);
             }
@@ -2389,9 +2420,9 @@ namespace Hecton8.Physics
             if (!IsFiniteVector(extentsLocal))
                 extentsLocal = Vector3.one;
 
-            extentsLocal.x = Mathf.Max(0.25f, Mathf.Abs(extentsLocal.x) * 0.75f);
-            extentsLocal.y = Mathf.Max(0.25f, Mathf.Abs(extentsLocal.y) * 0.75f);
-            extentsLocal.z = Mathf.Max(0.25f, Mathf.Abs(extentsLocal.z) * 0.75f);
+            extentsLocal.x = math.max(0.25f, math.abs(extentsLocal.x) * 0.75f);
+            extentsLocal.y = math.max(0.25f, math.abs(extentsLocal.y) * 0.75f);
+            extentsLocal.z = math.max(0.25f, math.abs(extentsLocal.z) * 0.75f);
 
             int sampleIndex = 0;
             for (int ySign = -1; ySign <= 1; ySign += 2)
@@ -2631,9 +2662,9 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3 SanitizeTensor(Vector3 tensor)
         {
-            tensor.x = float.IsFinite(tensor.x) ? Mathf.Max(0.001f, tensor.x) : 0.001f;
-            tensor.y = float.IsFinite(tensor.y) ? Mathf.Max(0.001f, tensor.y) : 0.001f;
-            tensor.z = float.IsFinite(tensor.z) ? Mathf.Max(0.001f, tensor.z) : 0.001f;
+            tensor.x = float.IsFinite(tensor.x) ? math.max(0.001f, tensor.x) : 0.001f;
+            tensor.y = float.IsFinite(tensor.y) ? math.max(0.001f, tensor.y) : 0.001f;
+            tensor.z = float.IsFinite(tensor.z) ? math.max(0.001f, tensor.z) : 0.001f;
             return tensor;
         }
 
@@ -2672,10 +2703,10 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            exteriorDisplacementVolumeCubicMeters = Mathf.Max(0f, exteriorDisplacementVolumeCubicMeters);
-            exteriorBuoyancyForceClampScale = Mathf.Clamp(exteriorBuoyancyForceClampScale, 1f, 2f);
-            exteriorBuoyancyTorqueClampScale = Mathf.Clamp(exteriorBuoyancyTorqueClampScale, 1f, 3f);
-            addedMassAngularDampingScale = Mathf.Clamp01(addedMassAngularDampingScale);
+            exteriorDisplacementVolumeCubicMeters = math.max(0f, exteriorDisplacementVolumeCubicMeters);
+            exteriorBuoyancyForceClampScale = math.clamp(exteriorBuoyancyForceClampScale, 1f, 2f);
+            exteriorBuoyancyTorqueClampScale = math.clamp(exteriorBuoyancyTorqueClampScale, 1f, 3f);
+            addedMassAngularDampingScale = math.saturate(addedMassAngularDampingScale);
 
             if (!UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode &&
                 !UnityEditor.EditorApplication.isCompiling &&

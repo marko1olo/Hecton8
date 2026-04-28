@@ -68,10 +68,29 @@ namespace Hecton8.Audio
         private const float HullSubBassMinimumHertz = 25f;
         private const float HullSubBassMaximumHertz = 40f;
         private const float HullSubBassMaximumGain = 0.22f;
+        private const float AbyssalHullDistortionStartDepthMeters = 2200f;
+        private const float AbyssalHullDistortionFullDepthMeters = 6200f;
+        private const float AbyssalHullDistortionMaximumBlend = 0.24f;
+        private const float AbyssalHullDistortionMaximumDrive = 2.35f;
+        private const float HullLfeThreatMinimum01 = 0.12f;
+        private const float HullLfeThreatRadiusMeters = 135f;
+        private const float HullLfeThreatHoldSeconds = 1.35f;
+        private const float HullLfeThreatStrength = 1.1f;
+        private const float StructuralFatigueRingMinimumHertz = 3400f;
+        private const float StructuralFatigueRingMaximumHertz = 7600f;
+        private const float StructuralFatigueRingMaximumGain = 0.05f;
+        private const float StructuralFatigueRingModulationHertz = 0.83f;
+        private const float MasterSafetyLimiterThreshold = 0.78f;
+        private const float MasterSafetyLimiterDrive = 1.95f;
         private const float ThrusterBandPassQ = 0.82f;
         private const float ThrusterBladePassFrequencyMinHertz = 22f;
         private const float ThrusterBladePassFrequencyMaxHertz = 116f;
         private const float ThrusterCombDamp = 0.22f;
+        private const int BinauralOutputChannels = 2;
+        private const int BinauralDelayCapacity = 128;
+        private const int BinauralDelayMask = BinauralDelayCapacity - 1;
+        private const int BinauralMaximumDelaySamples = 96;
+        private const float BinauralShadowMinimumGain = 0.58f;
         private const int MaxSafeFrameCapacity = 16384;
         private const int MaxFilterChannels = 8;
         private const int MaxDynamicSonarReflectorCount = 24;
@@ -229,10 +248,16 @@ namespace Hecton8.Audio
         private NativeArray<float> _thrusterScratch;
         // COLD ALLOC: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _mixScratch;
+        // COLD ALLOC: NativeArray<float>[frameCapacity*2] - stereo binaural output scratch - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _stereoMixScratch;
         // COLD ALLOC: NativeArray<float>[131072] - sonar Hermite echo delay ring - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoDelay;
         // COLD ALLOC: NativeArray<float>[4096] - thruster comb filter delay ring - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _thrusterCombDelay;
+        // COLD ALLOC: NativeArray<float>[128] - binaural ITD mono delay ring - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _binauralDelayRing;
+        // COLD ALLOC: NativeArray<float>[2] - binaural shadow low-pass history per ear - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<float> _binauralShadowHistory;
         // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x1 - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _lowPassInputHistory1;
         // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x2 - owner: PlayerCriticalProceduralAudioRenderer
@@ -293,6 +318,7 @@ namespace Hecton8.Audio
         private float _audioThrusterHeavyCarryValue;
         private float _audioThrusterDiveValue;
         private float _audioAbyssalLowPassMix;
+        private float _audioStructuralFatigueValue;
         private float _smoothedReverbDecayTime;
         private float _smoothedReverbWetMix;
         private float _smoothedReverbOpenness = 1f;
@@ -325,11 +351,13 @@ namespace Hecton8.Audio
         private bool _nativeOutputRegistered;
         private bool _nativeOutputBridgeFailureLogged;
         private int _managedFilterFallbackEnabled;
+        private int _binauralDelayWriteIndex;
         private ulong _playerBodyEntityId;
 
         private volatile float _targetHullStressValue;
         private volatile float _targetStructuralHullStressValue;
         private volatile float _targetStructuralHullStressVelocityValue;
+        private volatile float _targetStructuralFatigueValue;
         private volatile float _targetHullPressureDepthValue;
         private volatile float _targetThrusterBlendValue;
         private volatile float _targetThrusterLoadValue;
@@ -339,6 +367,12 @@ namespace Hecton8.Audio
         private volatile float _targetThrusterHeavyCarryValue;
         private volatile float _targetThrusterDiveValue;
         private volatile float _targetAbyssalLowPassMix;
+        private volatile float _targetBinauralAzimuthRadians;
+        private volatile float _targetBinauralItdSeconds;
+        private volatile float _targetBinauralShadowAmount01;
+        private volatile float _targetBinauralShadowCutoffHertz;
+        private volatile float _targetBinauralEnergy01;
+        private volatile int _targetBinauralValid;
 
         // COLD ALLOC: ImpactAudioEvent[64] - main-thread physics impact bridge for the audio worker SPSC path - owner: PlayerCriticalProceduralAudioRenderer
         private readonly ImpactAudioEvent[] _impactEventQueue = new ImpactAudioEvent[ImpactEventQueueCapacity];
@@ -397,6 +431,8 @@ namespace Hecton8.Audio
             public float GrainBandPassA1;
             public float GrainBandPassA2;
             public double SubBassPhase;
+            public double FatigueRingCarrierPhase;
+            public double FatigueRingModulationPhase;
         }
 
         private struct SonarSynthesisState
@@ -516,6 +552,8 @@ namespace Hecton8.Audio
             if (!_buffersInitialized || sampleRingBuffer == null || !sampleRingBuffer.IsCreated)
                 return;
 
+            // Stereo ITD/ILD is rendered into interleaved left/right frames on the worker thread.
+            // The managed filter path only transfers that channel ordering into Unity's output buffer.
             sampleRingBuffer.MixInterleavedInto(data, channels);
         }
 
@@ -584,6 +622,7 @@ namespace Hecton8.Audio
                 _targetHullStressValue = 0f;
                 _targetStructuralHullStressValue = 0f;
                 _targetStructuralHullStressVelocityValue = 0f;
+                _targetStructuralFatigueValue = 0f;
                 _targetHullPressureDepthValue = 0f;
                 _targetThrusterBlendValue = 0f;
                 _targetThrusterLoadValue = 0f;
@@ -593,6 +632,12 @@ namespace Hecton8.Audio
                 _targetThrusterHeavyCarryValue = 0f;
                 _targetThrusterDiveValue = 0f;
                 _targetAbyssalLowPassMix = 0f;
+                _targetBinauralAzimuthRadians = 0f;
+                _targetBinauralItdSeconds = 0f;
+                _targetBinauralShadowAmount01 = 0f;
+                _targetBinauralShadowCutoffHertz = 22000f;
+                _targetBinauralEnergy01 = 0f;
+                _targetBinauralValid = 0;
                 _lastSpeed = 0f;
                 _impactStressImpulseTickValue = 0f;
                 _hullPressureDepthTickValue = 0f;
@@ -619,11 +664,14 @@ namespace Hecton8.Audio
                 structuralStressVelocityTarget,
                 structuralBlendT);
             _targetStructuralHullStressVelocityValue = _structuralHullStressVelocityTickValue;
+            _targetStructuralFatigueValue = ResolveStructuralFatigue01();
             _hullPressureDepthTickValue = ResolveHullPressureDepth01(playerMovement.CurrentDepth);
             _targetHullPressureDepthValue = _hullPressureDepthTickValue;
             _targetAbyssalLowPassMix = ResolveAbyssalLowPassTarget(playerMovement.CurrentDepth);
 
             UpdateThrusterTargets(deltaTime);
+            UpdateBinauralTargets();
+            UpdateAcousticThreatPulse();
         }
 
         /// <summary>
@@ -729,6 +777,7 @@ namespace Hecton8.Audio
             float hullTarget = math.saturate(math.max(_targetHullStressValue, impactStressTarget));
             float structuralHullTarget = math.saturate(_targetStructuralHullStressValue);
             float structuralHullVelocityTarget = math.saturate(_targetStructuralHullStressVelocityValue);
+            float structuralFatigueTarget = math.saturate(_targetStructuralFatigueValue);
             float hullDepthTarget = math.saturate(_targetHullPressureDepthValue);
             float thrusterBlendTarget = math.saturate(_targetThrusterBlendValue);
             float thrusterLoadTarget = math.saturate(_targetThrusterLoadValue);
@@ -745,6 +794,7 @@ namespace Hecton8.Audio
                 hullTarget,
                 structuralHullTarget,
                 structuralHullVelocityTarget,
+                structuralFatigueTarget,
                 hullDepthTarget,
                 impactMetallicTarget);
             RenderSonarBlock(frameCount, blockStartFrame, invSampleRate);
@@ -760,8 +810,9 @@ namespace Hecton8.Audio
                 thrusterHeavyCarryTarget,
                 thrusterDiveTarget);
             MixAndFilterBlock(frameCount);
+            ApplyBinauralSpatializationBlock(frameCount);
 
-            if (_sampleRingBuffer.TryWrite(_mixScratch, frameCount))
+            if (_sampleRingBuffer.TryWriteInterleaved(_stereoMixScratch, frameCount, BinauralOutputChannels))
                 Interlocked.Add(ref _producedSampleCount, frameCount);
         }
 
@@ -1238,8 +1289,11 @@ namespace Hecton8.Audio
             _sonarScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - sonar DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
             _thrusterScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - thruster DSP scratch - owner: PlayerCriticalProceduralAudioRenderer
             _mixScratch = new NativeArray<float>(_frameCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity] - mixed procedural audio worklet scratch - owner: PlayerCriticalProceduralAudioRenderer
+            _stereoMixScratch = new NativeArray<float>(_frameCapacity * BinauralOutputChannels, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[frameCapacity*2] - stereo binaural output scratch - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoDelay = new NativeArray<float>(SonarEchoDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[131072] - sonar Hermite echo delay ring - owner: PlayerCriticalProceduralAudioRenderer
             _thrusterCombDelay = new NativeArray<float>(ThrusterCombDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[4096] - thruster comb filter delay ring - owner: PlayerCriticalProceduralAudioRenderer
+            _binauralDelayRing = new NativeArray<float>(BinauralDelayCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[128] - binaural ITD mono delay ring - owner: PlayerCriticalProceduralAudioRenderer
+            _binauralShadowHistory = new NativeArray<float>(BinauralOutputChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[2] - binaural shadow low-pass history per ear - owner: PlayerCriticalProceduralAudioRenderer
             _lowPassInputHistory1 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x1 - owner: PlayerCriticalProceduralAudioRenderer
             _lowPassInputHistory2 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state x2 - owner: PlayerCriticalProceduralAudioRenderer
             _lowPassOutputHistory1 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state y1 - owner: PlayerCriticalProceduralAudioRenderer
@@ -1247,10 +1301,11 @@ namespace Hecton8.Audio
             _metallicGrainBank = new NativeArray<float>(MetallicGrainBankCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[8192] - pre-baked metallic screech grain bank for hull granular synthesis - owner: PlayerCriticalProceduralAudioRenderer
             GenerateMetallicGrainBank(_metallicGrainBank);
             _sampleRingBuffer ??= new AudioFrameSpscRingBuffer();
-            _sampleRingBuffer.Initialize(math.max(frameCapacity * 16, ringBufferCapacityFrames));
+            _sampleRingBuffer.Initialize(math.max(frameCapacity * 16, ringBufferCapacityFrames), BinauralOutputChannels);
             _producedSampleCount = 0L;
             _workerActiveSonarState = default;
             _workerConsumedSonarSequence = 0;
+            _binauralDelayWriteIndex = 0;
             ResetSonarPhaseState(0);
             _buffersInitialized = true;
         }
@@ -1268,10 +1323,16 @@ namespace Hecton8.Audio
                 _thrusterScratch.Dispose();
             if (_mixScratch.IsCreated)
                 _mixScratch.Dispose();
+            if (_stereoMixScratch.IsCreated)
+                _stereoMixScratch.Dispose();
             if (_sonarEchoDelay.IsCreated)
                 _sonarEchoDelay.Dispose();
             if (_thrusterCombDelay.IsCreated)
                 _thrusterCombDelay.Dispose();
+            if (_binauralDelayRing.IsCreated)
+                _binauralDelayRing.Dispose();
+            if (_binauralShadowHistory.IsCreated)
+                _binauralShadowHistory.Dispose();
             if (_lowPassInputHistory1.IsCreated)
                 _lowPassInputHistory1.Dispose();
             if (_lowPassInputHistory2.IsCreated)
@@ -1287,8 +1348,11 @@ namespace Hecton8.Audio
             _sonarScratch = default;
             _thrusterScratch = default;
             _mixScratch = default;
+            _stereoMixScratch = default;
             _sonarEchoDelay = default;
             _thrusterCombDelay = default;
+            _binauralDelayRing = default;
+            _binauralShadowHistory = default;
             _lowPassInputHistory1 = default;
             _lowPassInputHistory2 = default;
             _lowPassOutputHistory1 = default;
@@ -1298,6 +1362,7 @@ namespace Hecton8.Audio
             _buffersInitialized = false;
             _frameCapacity = 0;
             _producedSampleCount = 0L;
+            _binauralDelayWriteIndex = 0;
         }
 
         private void RefreshNativeOutputBridge()
@@ -1361,7 +1426,10 @@ namespace Hecton8.Audio
             ClearScratchBuffer(_lowPassOutputHistory1, _lowPassOutputHistory1.Length);
             ClearScratchBuffer(_lowPassOutputHistory2, _lowPassOutputHistory2.Length);
             ClearScratchBuffer(_metallicGrainBank, _metallicGrainBank.Length);
+            ClearScratchBuffer(_binauralDelayRing, _binauralDelayRing.Length);
+            ClearScratchBuffer(_binauralShadowHistory, _binauralShadowHistory.Length);
             _audioAbyssalLowPassMix = 0f;
+            _audioStructuralFatigueValue = 0f;
             _pendingSonarSequence = 0;
             _pendingSonarStateReadIndex = 0;
             _pendingSonarStateA = default;
@@ -1500,6 +1568,30 @@ namespace Hecton8.Audio
                 reflector.RootTransform);
         }
 
+        private void UpdateAcousticThreatPulse()
+        {
+            if (_boundPlayerTransform == null)
+                return;
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null)
+                return;
+
+            float lfeThreat01 = math.saturate(math.max(
+                _targetStructuralHullStressValue * _targetHullPressureDepthValue,
+                _impactStressImpulseTickValue * 0.65f));
+            if (lfeThreat01 < HullLfeThreatMinimum01)
+                return;
+
+            float radius = math.lerp(36f, HullLfeThreatRadiusMeters, lfeThreat01);
+            float strength = math.lerp(0.25f, HullLfeThreatStrength, lfeThreat01);
+            vegetationBridge.ApplyExternalThreatPulse(
+                _boundPlayerTransform.position,
+                radius,
+                strength,
+                HullLfeThreatHoldSeconds);
+        }
+
         private bool TryResolveNearestSonarReflector(Vector3 playerPosition, out SonarReflectorDescriptor reflector)
         {
             reflector = default;
@@ -1614,10 +1706,23 @@ namespace Hecton8.Audio
                     mixed = math.lerp(mixed, filtered, mix);
                 }
 
-                _mixScratch[frameIndex] = mixed;
+                _mixScratch[frameIndex] = ApplyMasterSafetyLimiter(mixed);
             }
 
             _audioAbyssalLowPassMix = endMix;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private static float ApplyMasterSafetyLimiter(float sample)
+        {
+            float magnitude = math.abs(sample);
+            if (magnitude <= MasterSafetyLimiterThreshold)
+                return sample;
+
+            float sign = math.select(-1f, 1f, sample >= 0f);
+            float excess = magnitude - MasterSafetyLimiterThreshold;
+            float compressed = MasterSafetyLimiterThreshold + (excess / (1f + excess * MasterSafetyLimiterDrive));
+            return sign * math.min(1f, compressed);
         }
 
         private void ComputeLowPassCoefficients(
@@ -1692,6 +1797,40 @@ namespace Hecton8.Audio
                 return structuralSeverity;
 
             return math.saturate(math.max(playerMovement.CurrentHullStress01, structuralSeverity));
+        }
+
+        private float ResolveStructuralFatigue01()
+        {
+            if (_structuralHullReadModel == null)
+                _structuralHullReadModel = GlobalRegistry.SubmarineHullBreach;
+
+            if (_structuralHullReadModel is SubmarineStructuralGrid structuralGrid)
+                return math.saturate(structuralGrid.FatiguePeakNormalized);
+
+            return 0f;
+        }
+
+        private void UpdateBinauralTargets()
+        {
+            SpatialAudioManager audioManager = SpatialAudioManager.Instance;
+            if (audioManager == null ||
+                !audioManager.TryGetDominantBinauralEmitter(out SpatialAudioManager.BinauralEmitterTelemetry telemetry))
+            {
+                _targetBinauralAzimuthRadians = 0f;
+                _targetBinauralItdSeconds = 0f;
+                _targetBinauralShadowAmount01 = 0f;
+                _targetBinauralShadowCutoffHertz = _sampleRate * 0.45f;
+                _targetBinauralEnergy01 = 0f;
+                _targetBinauralValid = 0;
+                return;
+            }
+
+            _targetBinauralAzimuthRadians = telemetry.AzimuthRadians;
+            _targetBinauralItdSeconds = telemetry.ItdSeconds;
+            _targetBinauralShadowAmount01 = telemetry.ShadowAmount01;
+            _targetBinauralShadowCutoffHertz = telemetry.ShadowCutoffHertz;
+            _targetBinauralEnergy01 = math.saturate(telemetry.Energy);
+            _targetBinauralValid = telemetry.Valid;
         }
 
         private float ResolveTransportBoost01()
@@ -1854,6 +1993,7 @@ namespace Hecton8.Audio
             float hullTarget,
             float structuralHullTarget,
             float structuralHullVelocityTarget,
+            float structuralFatigueTarget,
             float depthParamTarget,
             float impactMetallicTarget)
         {
@@ -1861,6 +2001,7 @@ namespace Hecton8.Audio
             float stressStart = _audioHullStressValue;
             float structuralStressStart = _audioStructuralHullStressValue;
             float structuralStressVelocityStart = _audioStructuralHullStressVelocityValue;
+            float structuralFatigueStart = _audioStructuralFatigueValue;
             float depthParamStart = _audioHullPressureDepthValue;
             float impactMetallicImpulse = math.saturate(impactMetallicTarget);
 
@@ -1870,6 +2011,7 @@ namespace Hecton8.Audio
                 float stress = math.lerp(stressStart, hullTarget, frameT);
                 float structuralStress = math.lerp(structuralStressStart, structuralHullTarget, frameT);
                 float structuralStressVelocity = math.lerp(structuralStressVelocityStart, structuralHullVelocityTarget, frameT);
+                float structuralFatigue = math.lerp(structuralFatigueStart, structuralFatigueTarget, frameT);
                 float depthParam = math.lerp(depthParamStart, depthParamTarget, frameT);
                 float metallicImpulse = math.max(impactMetallicImpulse, structuralStress);
                 float metallicDrive = math.lerp(1f, 2.15f, metallicImpulse);
@@ -1916,9 +2058,11 @@ namespace Hecton8.Audio
                     ref state,
                     _metallicGrainBank,
                     sampleIndex);
+                float fatigueRing = RenderStructuralFatigueRingSample(ref state, sampleIndex, structuralFatigue, structuralStress, invSampleRate);
                 float subBass = RenderHullSubBassSample(ref state, structuralStress, depthParam, invSampleRate);
                 float rivetBurst = BuildRivetBurst(sampleIndex, math.max(stress, metallicImpulse), rivetAmount);
-                float combined = pressureBed + metal + pressureCreak + granularMetal + rivetBurst + subBass;
+                float combined = pressureBed + metal + pressureCreak + granularMetal + fatigueRing + rivetBurst + subBass;
+                combined = ApplyDepthHullDistortion(combined, depthParam, structuralStress);
                 _hullScratch[frameIndex] = stress <= HullNoiseFloor
                     ? 0f
                     : math.tanh(combined * math.lerp(1.7f, 2.8f, metallicImpulse)) * hullMasterGain;
@@ -1929,6 +2073,7 @@ namespace Hecton8.Audio
             _audioHullStressValue = hullTarget;
             _audioStructuralHullStressValue = structuralHullTarget;
             _audioStructuralHullStressVelocityValue = structuralHullVelocityTarget;
+            _audioStructuralFatigueValue = structuralFatigueTarget;
             _audioHullPressureDepthValue = depthParamTarget;
         }
 
@@ -1940,6 +2085,76 @@ namespace Hecton8.Audio
             int safeCount = math.min(frameCount, buffer.Length);
             for (int i = 0; i < safeCount; i++)
                 buffer[i] = 0f;
+        }
+
+        private void ApplyBinauralSpatializationBlock(int frameCount)
+        {
+            if (!_stereoMixScratch.IsCreated || !_binauralDelayRing.IsCreated || !_binauralShadowHistory.IsCreated)
+                return;
+
+            bool hasDirectionalTarget = _targetBinauralValid != 0;
+            float azimuth = hasDirectionalTarget ? _targetBinauralAzimuthRadians : 0f;
+            float itdSeconds = hasDirectionalTarget ? _targetBinauralItdSeconds : 0f;
+            float shadowAmount = hasDirectionalTarget ? math.saturate(_targetBinauralShadowAmount01) : 0f;
+            float shadowCutoffHertz = hasDirectionalTarget
+                ? math.clamp(_targetBinauralShadowCutoffHertz, 400f, _sampleRate * 0.45f)
+                : _sampleRate * 0.45f;
+            float spatialEnergy = hasDirectionalTarget ? math.saturate(_targetBinauralEnergy01) : 0f;
+            float binauralMix = hasDirectionalTarget ? math.lerp(0.18f, 0.85f, spatialEnergy) : 0f;
+            float contraGain = math.lerp(1f, BinauralShadowMinimumGain, shadowAmount * binauralMix);
+            int delaySamples = hasDirectionalTarget
+                ? math.clamp((int)math.round(itdSeconds * math.max(_sampleRate, 1)), 0, BinauralMaximumDelaySamples)
+                : 0;
+            int delayLeftSamples = azimuth > 0f ? delaySamples : 0;
+            int delayRightSamples = azimuth < 0f ? delaySamples : 0;
+            float shadowAlpha = math.exp(
+                (-TwoPi * math.max(400f, shadowCutoffHertz)) /
+                math.max(_sampleRate, 1f));
+
+            for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
+            {
+                float mono = _mixScratch[frameIndex];
+                _binauralDelayRing[_binauralDelayWriteIndex] = mono;
+
+                float delayedLeft = delayLeftSamples > 0
+                    ? _binauralDelayRing[(_binauralDelayWriteIndex - delayLeftSamples) & BinauralDelayMask]
+                    : mono;
+                float delayedRight = delayRightSamples > 0
+                    ? _binauralDelayRing[(_binauralDelayWriteIndex - delayRightSamples) & BinauralDelayMask]
+                    : mono;
+
+                _binauralDelayWriteIndex = (_binauralDelayWriteIndex + 1) & BinauralDelayMask;
+
+                float leftSpatial = delayedLeft;
+                float rightSpatial = delayedRight;
+                if (hasDirectionalTarget)
+                {
+                    if (azimuth > 0f)
+                    {
+                        leftSpatial = ApplyBinauralShadowEar(delayedLeft * contraGain, 0, shadowAlpha);
+                        rightSpatial = delayedRight;
+                    }
+                    else if (azimuth < 0f)
+                    {
+                        leftSpatial = delayedLeft;
+                        rightSpatial = ApplyBinauralShadowEar(delayedRight * contraGain, 1, shadowAlpha);
+                    }
+                }
+
+                float left = math.lerp(mono, leftSpatial, binauralMix);
+                float right = math.lerp(mono, rightSpatial, binauralMix);
+                int stereoIndex = frameIndex * BinauralOutputChannels;
+                _stereoMixScratch[stereoIndex] = math.clamp(left, -1f, 1f);
+                _stereoMixScratch[stereoIndex + 1] = math.clamp(right, -1f, 1f);
+            }
+        }
+
+        private float ApplyBinauralShadowEar(float sample, int earIndex, float alpha)
+        {
+            float previous = _binauralShadowHistory[earIndex] + BiquadDenormalBias;
+            float filtered = sample + alpha * (previous - sample);
+            _binauralShadowHistory[earIndex] = filtered;
+            return filtered;
         }
 
         private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate)
@@ -2364,6 +2579,50 @@ namespace Hecton8.Audio
             float triangle = (float)(2.0 * math.abs((float)(2.0 * (trianglePhase - math.floor(trianglePhase + 0.5)))) - 1.0);
             float amplitude = HullSubBassMaximumGain * math.saturate(depthParam * 0.85f + structuralStress * 0.15f);
             return (sine * 0.76f + triangle * 0.24f) * amplitude;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private static float RenderStructuralFatigueRingSample(
+            ref HullSynthesisState state,
+            uint sampleIndex,
+            float structuralFatigue,
+            float structuralStress,
+            double invSampleRate)
+        {
+            if (structuralFatigue <= HullNoiseFloor)
+                return 0f;
+
+            float fatigue = math.saturate(structuralFatigue);
+            float frequency =
+                math.lerp(StructuralFatigueRingMinimumHertz, StructuralFatigueRingMaximumHertz, fatigue) *
+                math.lerp(0.94f, 1.08f, 0.5f + 0.5f * HeldNoise(sampleIndex, 5, 0x3E91F4A1u));
+            float amplitude =
+                StructuralFatigueRingMaximumGain *
+                fatigue *
+                math.lerp(0.35f, 1f, structuralStress);
+            float modulation =
+                0.55f +
+                0.45f * AdvanceSine(ref state.FatigueRingModulationPhase, StructuralFatigueRingModulationHertz, invSampleRate);
+            AdvancePhase(ref state.FatigueRingCarrierPhase, frequency, invSampleRate);
+            float ring = math.sin((float)(TwoPi * state.FatigueRingCarrierPhase));
+            float harmonic = math.sin((float)(TwoPi * state.FatigueRingCarrierPhase * 1.97d)) * 0.38f;
+            return (ring + harmonic) * amplitude * modulation;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private static float ApplyDepthHullDistortion(float sample, float depthParam, float structuralStress)
+        {
+            float depthMeters = depthParam * PressureCreakDepthReferenceMeters;
+            float depthBlend = math.saturate(
+                (depthMeters - AbyssalHullDistortionStartDepthMeters) /
+                math.max(1f, AbyssalHullDistortionFullDepthMeters - AbyssalHullDistortionStartDepthMeters));
+            if (depthBlend <= HullNoiseFloor)
+                return sample;
+
+            float distortionBlend = depthBlend * math.lerp(0.55f, 1f, math.saturate(structuralStress)) * AbyssalHullDistortionMaximumBlend;
+            float drive = math.lerp(1f, AbyssalHullDistortionMaximumDrive, depthBlend);
+            float distorted = math.tanh(sample * drive);
+            return math.lerp(sample, distorted, distortionBlend);
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]

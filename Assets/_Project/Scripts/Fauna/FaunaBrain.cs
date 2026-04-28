@@ -71,7 +71,9 @@ namespace Hecton8.AI
         private bool _isDead;
         private bool _dispatcherRegistered;
         private int _spatialHandle;
+        private int _faunaSpatialHandle;
         private CreatureUtilityBrain _utilityBrain;
+        private ProceduralLeviathanSpineIK _proceduralLeviathanSpineIk;
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
@@ -94,7 +96,7 @@ namespace Hecton8.AI
         private Transform _currentCullingPlayerTransform;
         
         // --- Buffers ---
-        private static readonly Collider[] _panicBuffer = new Collider[10];
+        private static readonly SpatialQueryHit[] _panicBuffer = new SpatialQueryHit[10];
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -163,6 +165,7 @@ namespace Hecton8.AI
             _rb = GetComponent<Rigidbody>();
             _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             TryGetComponent(out _animator);
+            TryGetComponent(out _proceduralLeviathanSpineIk);
             ResolveFoveatedBindings();
             _tickStaggerShift = UnityEngine.Random.Range(0, 10);
 
@@ -172,6 +175,7 @@ namespace Hecton8.AI
             _utilityBrain.Initialize(transform.position, _speciesProfile, _archetype);
             ResetStateCache();
             _cognitionTimeSeconds = 0f;
+            EnsureLeviathanPresentationOwner();
         }
 
         private void OnEnable()
@@ -295,7 +299,9 @@ namespace Hecton8.AI
                 }
             }
 
-            if (_animator != null && _steeringEngine.maxSpeed > 0f)
+            if (_animator != null &&
+                _steeringEngine.maxSpeed > 0f &&
+                (_proceduralLeviathanSpineIk == null || !_proceduralLeviathanSpineIk.isActiveAndEnabled))
             {
                 float movementIntensity = _rb.linearVelocity.magnitude / _steeringEngine.maxSpeed;
                 _animator.SetFloat(_HashSwimSpeed, movementIntensity);
@@ -406,6 +412,8 @@ namespace Hecton8.AI
         {
             if (_spatialHandle != 0)
                 WorldSpatialHashGrid.Refresh(_spatialHandle);
+            if (_faunaSpatialHandle != 0)
+                FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
 
             if (_isDead || _lodDisabled) return;
             Vector3 playerTargetPosition = default;
@@ -470,19 +478,48 @@ namespace Hecton8.AI
 
         private void RegisterSpatialHandle()
         {
-            if (_spatialHandle != 0 || !isActiveAndEnabled)
+            if (!isActiveAndEnabled)
                 return;
 
-            _spatialHandle = WorldSpatialHashGrid.RegisterBioform(this);
+            if (_spatialHandle == 0)
+                _spatialHandle = WorldSpatialHashGrid.RegisterBioform(this);
+
+            if (_faunaSpatialHandle == 0)
+                _faunaSpatialHandle = FaunaSpatialHashRegistry.RegisterBioform(this);
         }
 
         private void UnregisterSpatialHandle()
         {
-            if (_spatialHandle == 0)
+            if (_spatialHandle != 0)
+            {
+                WorldSpatialHashGrid.Unregister(_spatialHandle);
+                _spatialHandle = 0;
+            }
+
+            if (_faunaSpatialHandle != 0)
+            {
+                FaunaSpatialHashRegistry.Unregister(_faunaSpatialHandle);
+                _faunaSpatialHandle = 0;
+            }
+        }
+
+        private void EnsureLeviathanPresentationOwner()
+        {
+            if (!ShouldUseProceduralLeviathanPresentation())
                 return;
 
-            WorldSpatialHashGrid.Unregister(_spatialHandle);
-            _spatialHandle = 0;
+            if (_proceduralLeviathanSpineIk == null)
+                _proceduralLeviathanSpineIk = gameObject.AddComponent<ProceduralLeviathanSpineIK>();
+
+            _proceduralLeviathanSpineIk.BindFromFauna(this, _rb, _animator);
+        }
+
+        private bool ShouldUseProceduralLeviathanPresentation()
+        {
+            if (_speciesProfile != null && _speciesProfile.isLeviathan)
+                return true;
+
+            return _archetype != null && _archetype.roleType == CreatureRoleType.Leviathan;
         }
 
         private void ApplyAmbientCurrentDrift(float fdt)
@@ -540,13 +577,20 @@ namespace Hecton8.AI
                 
                 // [REQ] SHOAL SCATTERING (Panic Pulse)
                 // Trigger panic in all nearby prey within 10m
-                int count = UnityEngine.Physics.OverlapSphereNonAlloc(target.position, 10f, _panicBuffer, _sensorSuite.preyMask);
+                int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(target.position, 10f, SpatialTargetKind.Bioform, _panicBuffer);
                 for (int i = 0; i < count; i++)
                 {
-                    if (_panicBuffer[i].TryGetComponent<FaunaBrain>(out var neighborBrain))
+                    SpatialQueryHit panicHit = _panicBuffer[i];
+                    Transform neighborTransform = panicHit.Transform;
+                    if (neighborTransform == null ||
+                        neighborTransform == target ||
+                        !neighborTransform.CompareTag("Prey") ||
+                        !(panicHit.Owner is FaunaBrain neighborBrain))
                     {
-                        neighborBrain.TriggerPanicPulse(transform.position);
+                        continue;
                     }
+
+                    neighborBrain.TriggerPanicPulse(transform.position);
                 }
 
                 // Despawn/Pool the prey
@@ -589,8 +633,7 @@ namespace Hecton8.AI
                     // Check if player is using MantaScooter
                     // Scooter is typically a child of the player or held tool
                     // We check for components on the player or children
-                    var scooter = target.GetComponent<MantaScooter>();
-                    if (scooter != null)
+                    if (target.TryGetComponent<MantaScooter>(out _))
                     {
                         // In Subnautica, damage to scooter/seaglide is often handled via player health 
                         // or tool durability. Since scooter has no health, we apply physical force + noise.

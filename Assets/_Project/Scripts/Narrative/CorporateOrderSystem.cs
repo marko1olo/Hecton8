@@ -154,8 +154,9 @@ namespace Hecton8.Narrative
 
             // Populate key buffer — avoids Dictionary enumerator GC alloc
             _pendingKeyBuffer.Clear();
-            foreach (var kvp in _pendingTimers)
-                _pendingKeyBuffer.Add(kvp.Key);
+            Dictionary<string, float>.Enumerator pendingTimerEnumerator = _pendingTimers.GetEnumerator();
+            while (pendingTimerEnumerator.MoveNext())
+                _pendingKeyBuffer.Add(pendingTimerEnumerator.Current.Key);
 
             for (int i = 0; i < _pendingKeyBuffer.Count; i++)
             {

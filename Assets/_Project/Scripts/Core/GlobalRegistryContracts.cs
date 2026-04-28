@@ -360,6 +360,17 @@ namespace Hecton8.Core
         bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true);
 
         /// <summary>
+        /// Queues a force packet for deferred main-thread application at a specific world-space position.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="force">World-space force vector.</param>
+        /// <param name="worldPosition">World-space application point.</param>
+        /// <param name="mode">Force application mode.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true);
+
+        /// <summary>
         /// Queues a torque packet for deferred main-thread application.
         /// </summary>
         /// <param name="body">Target rigidbody.</param>

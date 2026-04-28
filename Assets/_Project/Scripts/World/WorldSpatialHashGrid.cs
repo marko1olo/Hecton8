@@ -1,9 +1,15 @@
 using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -53,15 +59,11 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Global runtime spatial registry for zero-GC mathematical queries over resources, fauna, and authored field signals.
+    /// Compatibility facade over the native AUP-aware broadphase.
+    /// Existing callers keep the old API while all candidate enumeration routes through HectonSpatialHash.
     /// </summary>
     internal static class WorldSpatialHashGrid
     {
-        private const float CellSize = 20f;
-        private const int CoordinateBits = 21;
-        private const int CoordinateBias = 1 << 20;
-        private const long CoordinateMask = (1L << CoordinateBits) - 1L;
-
         private sealed class Entry
         {
             public Transform Transform;
@@ -70,21 +72,63 @@ namespace Hecton8.World
             public FieldTargetRole SignalRole;
             public int SpeciesId;
             public int Layer;
-            public long CellKey;
         }
 
-        // COLD ALLOC: Dictionary<int, Entry>(256) — runtime spatial entry registry — owner: WorldSpatialHashGrid
-        private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(256);
-        // COLD ALLOC: Dictionary<long, List<int>>(128) — runtime spatial cell buckets — owner: WorldSpatialHashGrid
-        private static readonly Dictionary<long, List<int>> _cells = new Dictionary<long, List<int>>(128);
-        private static int _nextHandle = 1;
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct ValidateAupIntegrityJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> AbsolutePositions;
+            [ReadOnly] public NativeArray<float3> RuntimePositions;
+            public float3 CurrentTotalOffset;
+            [WriteOnly] public NativeArray<byte> InvalidMask;
+
+            public void Execute(int index)
+            {
+                float3 reconstructedAbsolute = RuntimePositions[index] + CurrentTotalOffset;
+                float3 delta = reconstructedAbsolute - AbsolutePositions[index];
+                InvalidMask[index] = math.lengthsq(delta) <= 0.01f ? (byte)0 : (byte)1;
+            }
+        }
+
+        private const double CellSizeMeters = 20d;
+        private const int DefaultEntryCapacity = 256;
+        private const int DefaultQueryCapacity = 256;
+        private const int ValidationCadenceFrames = 300;
+
+        private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Query");
+        private static readonly ProfilerMarker _maintenanceProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Maintenance");
+        private static readonly ProfilerMarker _validationProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Validation");
+
+        // COLD ALLOC: Dictionary<int,Entry>(256) — runtime metadata registry layered over the native AUP spatial hash — owner: WorldSpatialHashGrid
+        private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(DefaultEntryCapacity);
+
+        private static HectonSpatialHash _nativeHash;
+        private static NativeList<int> _queryHandles;
+        private static NativeArray<float3> _validationAbsolutePositions;
+        private static NativeArray<float3> _validationRuntimePositions;
+        private static NativeArray<byte> _validationInvalidMask;
+        private static JobHandle _validationHandle;
+        private static bool _validationScheduled;
+        private static int _validationCount;
+        private static int _lastValidationFrame = -ValidationCadenceFrames;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _entries.Clear();
-            _cells.Clear();
-            _nextHandle = 1;
+            DisposeValidationBuffers();
+            if (_queryHandles.IsCreated)
+            {
+                _queryHandles.Dispose();
+                _queryHandles = default;
+            }
+
+            _nativeHash?.Dispose();
+            _nativeHash = null;
+            _validationHandle = default;
+            _validationScheduled = false;
+            _validationCount = 0;
+            _lastValidationFrame = -ValidationCadenceFrames;
         }
 
         public static int RegisterResource(ResourceNode node)
@@ -162,15 +206,7 @@ namespace Hecton8.World
                 return;
             }
 
-            long previousCellKey = GetCellKey(oldPosition);
-            long nextCellKey = GetCellKey(newPosition);
-            if (previousCellKey == nextCellKey || entry.CellKey == nextCellKey)
-                return;
-
-            RemoveFromCell(handle, entry.CellKey);
-            AddToCell(handle, nextCellKey);
-            entry.CellKey = nextCellKey;
-            entry.Layer = entry.Transform.gameObject.layer;
+            UpdateNativeEntry(handle, entry);
         }
 
         public static void Refresh(int handle)
@@ -184,21 +220,16 @@ namespace Hecton8.World
                 return;
             }
 
-            long nextCellKey = GetCellKey(entry.Transform.position);
-            if (nextCellKey == entry.CellKey)
-                return;
-
-            RemoveFromCell(handle, entry.CellKey);
-            AddToCell(handle, nextCellKey);
-            entry.CellKey = nextCellKey;
+            UpdateNativeEntry(handle, entry);
         }
 
         public static void Unregister(int handle)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+            if (handle <= 0)
                 return;
 
-            RemoveFromCell(handle, entry.CellKey);
+            EnsureInitialized();
+            _nativeHash.Unregister(handle);
             _entries.Remove(handle);
         }
 
@@ -211,72 +242,25 @@ namespace Hecton8.World
             bool requirePreyTag,
             out SpatialQueryHit hit)
         {
-            SpatialQueryHit bestHit = default;
-            bool found = false;
-            float bestDistanceSqr = radius * radius;
-            int minCellX = ToCell(origin.x - radius);
-            int maxCellX = ToCell(origin.x + radius);
-            int minCellY = ToCell(origin.y - radius);
-            int maxCellY = ToCell(origin.y + radius);
-            int minCellZ = ToCell(origin.z - radius);
-            int maxCellZ = ToCell(origin.z + radius);
-
-            for (int x = minCellX; x <= maxCellX; x++)
-            {
-                for (int y = minCellY; y <= maxCellY; y++)
+            hit = default;
+            return TryGetNearestMatch(
+                origin,
+                radius,
+                SpatialTargetKind.Bioform,
+                layerMask,
+                ignoreTransform,
+                entry =>
                 {
-                    for (int z = minCellZ; z <= maxCellZ; z++)
-                    {
-                        long cellKey = PackCell(x, y, z);
-                        if (!_cells.TryGetValue(cellKey, out List<int> bucket))
-                            continue;
+                    if (excludedSpeciesId >= 0 && entry.SpeciesId == excludedSpeciesId)
+                        return false;
 
-                        int bucketCount = bucket.Count;
-                        for (int i = 0; i < bucketCount; i++)
-                        {
-                            int handle = bucket[i];
-                            if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
-                                continue;
+                    if (!requirePreyTag)
+                        return true;
 
-                            if ((entry.Kind & SpatialTargetKind.Bioform) == 0)
-                                continue;
-
-                            Transform candidateTransform = entry.Transform;
-                            if (candidateTransform == null || candidateTransform == ignoreTransform)
-                                continue;
-
-                            if (!MatchesLayer(entry.Layer, layerMask))
-                                continue;
-
-                            if (excludedSpeciesId >= 0 && entry.SpeciesId == excludedSpeciesId)
-                                continue;
-
-                            if (requirePreyTag && !candidateTransform.CompareTag("Prey"))
-                                continue;
-
-                            Vector3 position = candidateTransform.position;
-                            float distanceSqr = (position - origin).sqrMagnitude;
-                            if (distanceSqr > bestDistanceSqr)
-                                continue;
-
-                            bestDistanceSqr = distanceSqr;
-                            bestHit = new SpatialQueryHit(
-                                candidateTransform,
-                                entry.Owner,
-                                position,
-                                distanceSqr,
-                                entry.Kind,
-                                entry.SignalRole,
-                                entry.SpeciesId,
-                                entry.Layer);
-                            found = true;
-                        }
-                    }
-                }
-            }
-
-            hit = bestHit;
-            return found;
+                    Transform candidateTransform = entry.Transform;
+                    return candidateTransform != null && candidateTransform.CompareTag("Prey");
+                },
+                out hit);
         }
 
         public static bool TryGetNearestAggressiveBioform(
@@ -286,70 +270,21 @@ namespace Hecton8.World
             Transform ignoreTransform,
             out SpatialQueryHit hit)
         {
-            SpatialQueryHit bestHit = default;
-            bool found = false;
-            float bestDistanceSqr = radius * radius;
-            int minCellX = ToCell(origin.x - radius);
-            int maxCellX = ToCell(origin.x + radius);
-            int minCellY = ToCell(origin.y - radius);
-            int maxCellY = ToCell(origin.y + radius);
-            int minCellZ = ToCell(origin.z - radius);
-            int maxCellZ = ToCell(origin.z + radius);
-
-            for (int x = minCellX; x <= maxCellX; x++)
-            {
-                for (int y = minCellY; y <= maxCellY; y++)
+            hit = default;
+            return TryGetNearestMatch(
+                origin,
+                radius,
+                SpatialTargetKind.Bioform,
+                layerMask,
+                ignoreTransform,
+                entry =>
                 {
-                    for (int z = minCellZ; z <= maxCellZ; z++)
-                    {
-                        long cellKey = PackCell(x, y, z);
-                        if (!_cells.TryGetValue(cellKey, out List<int> bucket))
-                            continue;
+                    if (!(entry.Owner is FaunaBrain brain))
+                        return false;
 
-                        int bucketCount = bucket.Count;
-                        for (int i = 0; i < bucketCount; i++)
-                        {
-                            int handle = bucket[i];
-                            if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
-                                continue;
-
-                            if ((entry.Kind & SpatialTargetKind.Bioform) == 0)
-                                continue;
-
-                            Transform candidateTransform = entry.Transform;
-                            if (candidateTransform == null || candidateTransform == ignoreTransform)
-                                continue;
-
-                            if (!MatchesLayer(entry.Layer, layerMask))
-                                continue;
-
-                            FaunaBrain brain = entry.Owner as FaunaBrain;
-                            if (brain == null || !brain.isAggressive)
-                                continue;
-
-                            Vector3 position = candidateTransform.position;
-                            float distanceSqr = (position - origin).sqrMagnitude;
-                            if (distanceSqr > bestDistanceSqr)
-                                continue;
-
-                            bestDistanceSqr = distanceSqr;
-                            bestHit = new SpatialQueryHit(
-                                candidateTransform,
-                                entry.Owner,
-                                position,
-                                distanceSqr,
-                                entry.Kind,
-                                entry.SignalRole,
-                                entry.SpeciesId,
-                                entry.Layer);
-                            found = true;
-                        }
-                    }
-                }
-            }
-
-            hit = bestHit;
-            return found;
+                    return brain.isAggressive;
+                },
+                out hit);
         }
 
         public static void BuildSonarSnapshot(Vector3 origin, float radius, out SpatialSonarSnapshot snapshot)
@@ -366,83 +301,60 @@ namespace Hecton8.World
             float nearestSignalDistanceSqr = float.MaxValue;
             FieldTargetRole nearestSignalRole = FieldTargetRole.Generic;
             float radiusSqr = radius * radius;
-            int minCellX = ToCell(origin.x - radius);
-            int maxCellX = ToCell(origin.x + radius);
-            int minCellY = ToCell(origin.y - radius);
-            int maxCellY = ToCell(origin.y + radius);
-            int minCellZ = ToCell(origin.z - radius);
-            int maxCellZ = ToCell(origin.z + radius);
 
-            for (int x = minCellX; x <= maxCellX; x++)
+            int handleCount = CollectCandidateHandles(origin, radius, SpatialTargetKind.Resource | SpatialTargetKind.Bioform | SpatialTargetKind.Signal | SpatialTargetKind.Module);
+            for (int i = 0; i < handleCount; i++)
             {
-                for (int y = minCellY; y <= maxCellY; y++)
+                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                    continue;
+
+                Transform candidateTransform = entry.Transform;
+                if (candidateTransform == null)
+                    continue;
+
+                Vector3 position = candidateTransform.position;
+                float distanceSqr = (position - origin).sqrMagnitude;
+                if (distanceSqr > radiusSqr)
+                    continue;
+
+                SpatialTargetKind kind = entry.Kind;
+                if ((kind & SpatialTargetKind.Resource) != 0)
                 {
-                    for (int z = minCellZ; z <= maxCellZ; z++)
+                    resourceCount++;
+                    if (distanceSqr < nearestResourceDistanceSqr)
                     {
-                        long cellKey = PackCell(x, y, z);
-                        if (!_cells.TryGetValue(cellKey, out List<int> bucket))
-                            continue;
-
-                        int bucketCount = bucket.Count;
-                        for (int i = 0; i < bucketCount; i++)
-                        {
-                            int handle = bucket[i];
-                            if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
-                                continue;
-
-                            SpatialTargetKind kind = entry.Kind;
-                            if ((kind & (SpatialTargetKind.Resource | SpatialTargetKind.Bioform | SpatialTargetKind.Signal)) == 0)
-                                continue;
-
-                            Transform candidateTransform = entry.Transform;
-                            if (candidateTransform == null)
-                                continue;
-
-                            Vector3 position = candidateTransform.position;
-                            float distanceSqr = (position - origin).sqrMagnitude;
-                            if (distanceSqr > radiusSqr)
-                                continue;
-
-                            if ((kind & SpatialTargetKind.Resource) != 0)
-                            {
-                                resourceCount++;
-                                if (distanceSqr < nearestResourceDistanceSqr)
-                                {
-                                    nearestResourceDistanceSqr = distanceSqr;
-                                    hasNearestResource = true;
-                                }
-
-                                continue;
-                            }
-
-                            if ((kind & SpatialTargetKind.Bioform) != 0)
-                            {
-                                bioformCount++;
-                                if (distanceSqr < nearestBioformDistanceSqr)
-                                {
-                                    nearestBioformDistanceSqr = distanceSqr;
-                                    hasNearestBioform = true;
-                                }
-
-                                continue;
-                            }
-
-                            bool isSpectrumSignal =
-                                (kind & SpatialTargetKind.Signal) != 0 ||
-                                ((kind & SpatialTargetKind.Module) != 0 && IsSpectrumSignalRole(entry.SignalRole));
-
-                            if (!isSpectrumSignal)
-                                continue;
-
-                            signalCount++;
-                            if (distanceSqr < nearestSignalDistanceSqr)
-                            {
-                                nearestSignalDistanceSqr = distanceSqr;
-                                nearestSignalRole = entry.SignalRole;
-                                hasNearestSignal = true;
-                            }
-                        }
+                        nearestResourceDistanceSqr = distanceSqr;
+                        hasNearestResource = true;
                     }
+
+                    continue;
+                }
+
+                if ((kind & SpatialTargetKind.Bioform) != 0)
+                {
+                    bioformCount++;
+                    if (distanceSqr < nearestBioformDistanceSqr)
+                    {
+                        nearestBioformDistanceSqr = distanceSqr;
+                        hasNearestBioform = true;
+                    }
+
+                    continue;
+                }
+
+                bool isSpectrumSignal =
+                    (kind & SpatialTargetKind.Signal) != 0 ||
+                    ((kind & SpatialTargetKind.Module) != 0 && IsSpectrumSignalRole(entry.SignalRole));
+
+                if (!isSpectrumSignal)
+                    continue;
+
+                signalCount++;
+                if (distanceSqr < nearestSignalDistanceSqr)
+                {
+                    nearestSignalDistanceSqr = distanceSqr;
+                    nearestSignalRole = entry.SignalRole;
+                    hasNearestSignal = true;
                 }
             }
 
@@ -470,62 +382,74 @@ namespace Hecton8.World
 
             int count = 0;
             float radiusSqr = radius * radius;
-            int minCellX = ToCell(origin.x - radius);
-            int maxCellX = ToCell(origin.x + radius);
-            int minCellY = ToCell(origin.y - radius);
-            int maxCellY = ToCell(origin.y + radius);
-            int minCellZ = ToCell(origin.z - radius);
-            int maxCellZ = ToCell(origin.z + radius);
-
-            for (int x = minCellX; x <= maxCellX; x++)
+            int handleCount = CollectCandidateHandles(origin, radius, kindMask);
+            for (int i = 0; i < handleCount; i++)
             {
-                for (int y = minCellY; y <= maxCellY; y++)
-                {
-                    for (int z = minCellZ; z <= maxCellZ; z++)
-                    {
-                        long cellKey = PackCell(x, y, z);
-                        if (!_cells.TryGetValue(cellKey, out List<int> bucket))
-                            continue;
+                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                    continue;
 
-                        int bucketCount = bucket.Count;
-                        for (int i = 0; i < bucketCount; i++)
-                        {
-                            int handle = bucket[i];
-                            if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
-                                continue;
+                Transform candidateTransform = entry.Transform;
+                if (candidateTransform == null)
+                    continue;
 
-                            SpatialTargetKind kind = entry.Kind;
-                            if ((kind & kindMask) == 0)
-                                continue;
+                Vector3 position = candidateTransform.position;
+                float distanceSqr = (position - origin).sqrMagnitude;
+                if (distanceSqr > radiusSqr)
+                    continue;
 
-                            Transform candidateTransform = entry.Transform;
-                            if (candidateTransform == null)
-                                continue;
+                results[count] = new SpatialQueryHit(
+                    candidateTransform,
+                    entry.Owner,
+                    position,
+                    distanceSqr,
+                    entry.Kind,
+                    entry.SignalRole,
+                    entry.SpeciesId,
+                    entry.Layer);
+                count++;
 
-                            Vector3 position = candidateTransform.position;
-                            float distanceSqr = (position - origin).sqrMagnitude;
-                            if (distanceSqr > radiusSqr)
-                                continue;
-
-                            results[count] = new SpatialQueryHit(
-                                candidateTransform,
-                                entry.Owner,
-                                position,
-                                distanceSqr,
-                                kind,
-                                entry.SignalRole,
-                                entry.SpeciesId,
-                                entry.Layer);
-                            count++;
-
-                            if (count >= results.Length)
-                                return count;
-                        }
-                    }
-                }
+                if (count >= results.Length)
+                    break;
             }
 
             return count;
+        }
+
+        internal static void LateFrameMaintenance(int frameCount)
+        {
+            EnsureInitialized();
+            using (_maintenanceProfilerMarker.Auto())
+            {
+                if (_validationScheduled && _validationHandle.IsCompleted)
+                    ConsumeCompletedValidation();
+
+                if (!_validationScheduled && frameCount - _lastValidationFrame >= ValidationCadenceFrames)
+                    ScheduleValidation(frameCount);
+            }
+        }
+
+        internal static void HandleOriginShift(in OriginShiftEventData shiftData)
+        {
+            EnsureInitialized();
+            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<int, Entry> pair = enumerator.Current;
+                Entry entry = pair.Value;
+                if (entry == null || entry.Transform == null)
+                    continue;
+
+                UpdateNativeEntry(pair.Key, entry);
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_nativeHash == null)
+                _nativeHash = new HectonSpatialHash(DefaultEntryCapacity, DefaultEntryCapacity * 4, CellSizeMeters);
+
+            if (!_queryHandles.IsCreated)
+                _queryHandles = new NativeList<int>(DefaultQueryCapacity, Allocator.Persistent);
         }
 
         private static int Register(
@@ -538,23 +462,33 @@ namespace Hecton8.World
             if (owner == null || targetTransform == null)
                 return 0;
 
-            int handle = _nextHandle++;
-            long cellKey = GetCellKey(targetTransform.position);
-
-            Entry entry = new Entry
+            EnsureInitialized();
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
+            int handle = _nativeHash.Register(positionAup, float3.zero, (int)kind, 0);
+            _entries[handle] = new Entry
             {
                 Transform = targetTransform,
                 Owner = owner,
                 Kind = kind,
                 SignalRole = signalRole,
                 SpeciesId = speciesId,
-                Layer = targetTransform.gameObject.layer,
-                CellKey = cellKey
+                Layer = targetTransform.gameObject.layer
             };
-
-            _entries.Add(handle, entry);
-            AddToCell(handle, cellKey);
             return handle;
+        }
+
+        private static void UpdateNativeEntry(int handle, Entry entry)
+        {
+            Transform targetTransform = entry.Transform;
+            if (targetTransform == null)
+            {
+                Unregister(handle);
+                return;
+            }
+
+            entry.Layer = targetTransform.gameObject.layer;
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
+            _nativeHash.UpdateEntry(handle, positionAup, float3.zero, (int)entry.Kind, 0);
         }
 
         private static int FindHandle(Transform targetTransform)
@@ -573,36 +507,171 @@ namespace Hecton8.World
             return 0;
         }
 
-        private static void AddToCell(int handle, long cellKey)
+        private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask)
         {
-            if (!_cells.TryGetValue(cellKey, out List<int> bucket))
+            EnsureInitialized();
+            using (_queryProfilerMarker.Auto())
             {
-                bucket = new List<int>(8); // COLD ALLOC: List<int>(8) — per-cell spatial bucket — owner: WorldSpatialHashGrid
-                _cells.Add(cellKey, bucket);
+                AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+                return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, _queryHandles);
             }
-
-            bucket.Add(handle);
         }
 
-        private static void RemoveFromCell(int handle, long cellKey)
+        private static bool TryGetNearestMatch(
+            Vector3 origin,
+            float radius,
+            SpatialTargetKind kindMask,
+            int layerMask,
+            Transform ignoreTransform,
+            System.Predicate<Entry> predicate,
+            out SpatialQueryHit hit)
         {
-            if (!_cells.TryGetValue(cellKey, out List<int> bucket))
-                return;
-
-            int count = bucket.Count;
-            for (int i = 0; i < count; i++)
+            hit = default;
+            bool found = false;
+            float bestDistanceSqr = radius * radius;
+            int handleCount = CollectCandidateHandles(origin, radius, kindMask);
+            for (int i = 0; i < handleCount; i++)
             {
-                if (bucket[i] != handle)
+                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
                     continue;
 
-                int lastIndex = count - 1;
-                bucket[i] = bucket[lastIndex];
-                bucket.RemoveAt(lastIndex);
-                break;
+                Transform candidateTransform = entry.Transform;
+                if (candidateTransform == null || candidateTransform == ignoreTransform)
+                    continue;
+
+                if (!MatchesLayer(entry.Layer, layerMask))
+                    continue;
+
+                if (predicate != null && !predicate(entry))
+                    continue;
+
+                Vector3 position = candidateTransform.position;
+                float distanceSqr = (position - origin).sqrMagnitude;
+                if (distanceSqr > bestDistanceSqr)
+                    continue;
+
+                bestDistanceSqr = distanceSqr;
+                hit = new SpatialQueryHit(
+                    candidateTransform,
+                    entry.Owner,
+                    position,
+                    distanceSqr,
+                    entry.Kind,
+                    entry.SignalRole,
+                    entry.SpeciesId,
+                    entry.Layer);
+                found = true;
             }
 
-            if (bucket.Count == 0)
-                _cells.Remove(cellKey);
+            return found;
+        }
+
+        private static void ScheduleValidation(int frameCount)
+        {
+            EnsureInitialized();
+            int count = _entries.Count;
+            if (count <= 0)
+            {
+                _lastValidationFrame = frameCount;
+                return;
+            }
+
+            EnsureValidationCapacity(count);
+            int writeIndex = 0;
+            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                Entry entry = enumerator.Current.Value;
+                if (entry == null || entry.Transform == null)
+                    continue;
+
+                Vector3 runtimePosition = entry.Transform.position;
+                Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+                _validationRuntimePositions[writeIndex] = runtimePosition;
+                _validationAbsolutePositions[writeIndex] = absolutePosition;
+                writeIndex++;
+            }
+
+            if (writeIndex <= 0)
+            {
+                _lastValidationFrame = frameCount;
+                return;
+            }
+
+            using (_validationProfilerMarker.Auto())
+            {
+                _validationCount = writeIndex;
+                _validationHandle = new ValidateAupIntegrityJob
+                {
+                    AbsolutePositions = _validationAbsolutePositions,
+                    RuntimePositions = _validationRuntimePositions,
+                    CurrentTotalOffset = HectonFloatingOrigin.CurrentTotalOffset,
+                    InvalidMask = _validationInvalidMask
+                }.Schedule(writeIndex, 64);
+                _validationScheduled = true;
+                _lastValidationFrame = frameCount;
+            }
+        }
+
+        private static void ConsumeCompletedValidation()
+        {
+            _validationHandle.Complete();
+            _validationHandle = default;
+            _validationScheduled = false;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            for (int i = 0; i < _validationCount; i++)
+            {
+                if (_validationInvalidMask[i] == 0)
+                    continue;
+
+                UnityEngine.Debug.LogError("[WorldSpatialHashGrid] AUP integrity validation failed. Runtime/AUP spatial coherence diverged.");
+                break;
+            }
+#endif
+
+            _validationCount = 0;
+        }
+
+        private static void EnsureValidationCapacity(int requiredCapacity)
+        {
+            int safeCapacity = math.max(1, requiredCapacity);
+            if (_validationAbsolutePositions.IsCreated && _validationAbsolutePositions.Length >= safeCapacity)
+                return;
+
+            DisposeValidationBuffers();
+            _validationAbsolutePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _validationRuntimePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _validationInvalidMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private static void DisposeValidationBuffers()
+        {
+            if (_validationScheduled)
+            {
+                _validationHandle.Complete();
+                _validationScheduled = false;
+            }
+
+            if (_validationAbsolutePositions.IsCreated)
+            {
+                _validationAbsolutePositions.Dispose();
+                _validationAbsolutePositions = default;
+            }
+
+            if (_validationRuntimePositions.IsCreated)
+            {
+                _validationRuntimePositions.Dispose();
+                _validationRuntimePositions = default;
+            }
+
+            if (_validationInvalidMask.IsCreated)
+            {
+                _validationInvalidMask.Dispose();
+                _validationInvalidMask = default;
+            }
+
+            _validationCount = 0;
         }
 
         private static bool MatchesLayer(int layer, int layerMask)
@@ -642,24 +711,6 @@ namespace Hecton8.World
                 0,
                 Hecton8.UI.HudNumericStringCache.MaxIntegerValue);
             return roundedDistance;
-        }
-
-        private static int ToCell(float value)
-        {
-            return Mathf.FloorToInt(value / CellSize);
-        }
-
-        private static long GetCellKey(Vector3 position)
-        {
-            return PackCell(ToCell(position.x), ToCell(position.y), ToCell(position.z));
-        }
-
-        private static long PackCell(int x, int y, int z)
-        {
-            long px = ((long)(x + CoordinateBias) & CoordinateMask) << (CoordinateBits * 2);
-            long py = ((long)(y + CoordinateBias) & CoordinateMask) << CoordinateBits;
-            long pz = (long)(z + CoordinateBias) & CoordinateMask;
-            return px | py | pz;
         }
     }
 }

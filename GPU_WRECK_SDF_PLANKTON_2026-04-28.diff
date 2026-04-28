@@ -1,0 +1,880 @@
+diff --git a/Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute b/Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute
+index 8ac3cf1d..b334ff39 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute
++++ b/Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute
+@@ -15,6 +15,8 @@ struct Particle
+ StructuredBuffer<Particle> _MarineSnowParticlesRead;
+ RWStructuredBuffer<Particle> _MarineSnowParticlesWrite;
+ StructuredBuffer<float2> _MarineSnowFlowField;
++Texture2D<float4> _HectonShallowWaterFieldRT;
++SamplerState sampler_HectonShallowWaterFieldRT;
+ 
+ struct MarineSnowFrameData
+ {
+@@ -39,6 +41,9 @@ float4 _MarineSnowDriftParams;
+ float4 _MarineSnowFlowParams;
+ float4 _HectonFlowSynchronyParams;
+ float4 _HectonFloatingOriginOffset;
++float4 _HectonShallowWaterFieldWorldRect;
++float4 _HectonShallowWaterFieldTexelSize;
++float _HectonShallowWaterFieldActive;
+ 
+ #define THREAD_GROUP_SIZE 64
+ #define PI 3.14159265
+@@ -173,6 +178,26 @@ float3 ResolveFlowField(float3 positionWS)
+     return float3(flowXZ.x, 0.0, flowXZ.y);
+ }
+ 
++float2 DecodeShallowWaterVelocity(float2 encodedVelocity)
++{
++    return encodedVelocity * 2.0 - 1.0;
++}
++
++float4 EvaluateShallowWaterFieldData(float3 positionWS)
++{
++    if (_HectonShallowWaterFieldActive < 0.5)
++        return 0.0.xxxx;
++
++    float2 uv = float2(
++        (positionWS.x - _HectonShallowWaterFieldWorldRect.x) * _HectonShallowWaterFieldWorldRect.z,
++        (positionWS.z - _HectonShallowWaterFieldWorldRect.y) * _HectonShallowWaterFieldWorldRect.w);
++
++    if (any(uv < 0.0) || any(uv > 1.0))
++        return 0.0.xxxx;
++
++    return _HectonShallowWaterFieldRT.SampleLevel(sampler_HectonShallowWaterFieldRT, uv, 0.0);
++}
++
+ Particle BuildRespawnParticle(uint particleIndex)
+ {
+     Particle particle = (Particle)0;
+@@ -228,9 +253,15 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
+     particle.Vel.xz += wander;
+ 
+     float3 flowSample = ResolveFlowField(particle.Pos);
+-    float3 synchronizedFlow = flowSample * max(_HectonFlowSynchronyParams.x, 1.0) +
++    float4 shallowWaterData = EvaluateShallowWaterFieldData(particle.Pos);
++    float2 shallowWaterVelocity = DecodeShallowWaterVelocity(shallowWaterData.xy);
++    float shallowWaterDisplacement = saturate(shallowWaterData.z);
++    float3 shallowWaterFlow = float3(shallowWaterVelocity.x, 0.0, shallowWaterVelocity.y) *
++        (0.45 + shallowWaterDisplacement * 1.35);
++    float3 synchronizedFlow = (flowSample + shallowWaterFlow) * max(_HectonFlowSynchronyParams.x, 1.0) +
+         ResolveFlowSynchronyOffset(particle.Pos, flowSample);
+     particle.Vel += (synchronizedFlow - particle.Vel) * (_MarineSnowFlowParams.x + densityScale * _MarineSnowFlowParams.y) * dt;
++    particle.Vel.y += shallowWaterDisplacement * 0.025 * dt;
+ 
+     float3 flowDirN = SafeNormalize(synchronizedFlow);
+     if (dot(flowDirN, flowDirN) > EPSILON)
+diff --git a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
+index 9abddd6e..06d5bc95 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
+@@ -656,7 +656,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
+             {
+                 float travelDistance = min(rayLength, ((stepIndex + jitter) * stepLength));
+                 float3 samplePositionWS = cameraPositionWS + rayDirectionWS * travelDistance;
+-                if (_HectonCaveVoxelActive > 0.5 && SampleCaveVoxelSignedDistance(samplePositionWS) <= 0.02)
++                if (_HectonCaveVoxelActive > 0.5 && SampleCaveVoxelSignedDistance(samplePositionWS) < 0.0)
+                     break;
+ 
+                 half3 scattering =
+diff --git a/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs b/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+index bdcca1c9..dda7be3a 100644
+--- a/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
++++ b/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+@@ -66,8 +66,8 @@ namespace Hecton8.Environment
+         [SerializeField] private Material marineSnowMaterial;
+ 
+         [Header("── Population ─────────────────")]
+-        [Tooltip("Maximum compute-simulated marine-snow particles. MX350 budget = 32768.")]
+-        [SerializeField, Range(512, 32768)] private int maxParticles = 32768;
++        [Tooltip("Maximum compute-simulated plankton particles. Runtime buffer sizing supports up to 100000 particles; tune lower on MX350 scenes that cannot afford the overdraw.")]
++        [SerializeField, Range(512, 100000)] private int maxParticles = 100000;
+         [Tooltip("Empty safety radius around the camera to avoid particles clipping through the visor.")]
+         [SerializeField, Range(0.1f, 4f)] private float innerRadius = 0.8f;
+         [Tooltip("Outer shell radius. Particles respawn to the ring when they drift beyond this distance.")]
+diff --git a/Assets/_Project/Scripts/World/HectonCaveVoxelLightingVolume.cs b/Assets/_Project/Scripts/World/HectonCaveVoxelLightingVolume.cs
+index 53e34338..43c724f6 100644
+--- a/Assets/_Project/Scripts/World/HectonCaveVoxelLightingVolume.cs
++++ b/Assets/_Project/Scripts/World/HectonCaveVoxelLightingVolume.cs
+@@ -12,6 +12,7 @@ namespace Hecton8.World
+     public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable
+     {
+         private const int MaxOverlapHits = 8;
++        internal static HectonCaveVoxelLightingVolume ActiveRuntimeInstance { get; private set; }
+ 
+         private static readonly int _CaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
+         private static readonly int _CaveVoxelWorldToLocalId = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
+@@ -113,6 +114,7 @@ namespace Hecton8.World
+ 
+         private void Awake()
+         {
++            ActiveRuntimeInstance = this;
+             ResolveFollowTarget();
+             EnsureResources();
+             PublishInactiveGlobals();
+@@ -120,18 +122,25 @@ namespace Hecton8.World
+ 
+         private void OnEnable()
+         {
++            ActiveRuntimeInstance = this;
+             ResolveFollowTarget();
+             TryRegister();
+         }
+ 
+         private void OnDisable()
+         {
++            if (ReferenceEquals(ActiveRuntimeInstance, this))
++                ActiveRuntimeInstance = null;
++
+             TryUnregister();
+             PublishInactiveGlobals();
+         }
+ 
+         private void OnDestroy()
+         {
++            if (ReferenceEquals(ActiveRuntimeInstance, this))
++                ActiveRuntimeInstance = null;
++
+             TryUnregister();
+             PublishInactiveGlobals();
+             ReleaseResources();
+@@ -188,6 +197,30 @@ namespace Hecton8.World
+             _debugPublishedSdfRange = _publishedSdfRange;
+         }
+ 
++        internal bool TryGetPublishedSignedDistanceVoxelPayload(
++            out NativeArray<byte> signedDistanceVoxels,
++            out Vector3Int gridDimensions,
++            out Vector3 gridOrigin,
++            out Vector3 voxelCellSize)
++        {
++            signedDistanceVoxels = _sdfVolume;
++            int resolution = _resolutionRuntime;
++            gridDimensions = new Vector3Int(resolution, resolution, resolution);
++            gridOrigin = _publishedCenterWs - _publishedHalfExtents;
++            voxelCellSize = resolution > 0
++                ? new Vector3(
++                    (_publishedHalfExtents.x * 2f) / resolution,
++                    (_publishedHalfExtents.y * 2f) / resolution,
++                    (_publishedHalfExtents.z * 2f) / resolution)
++                : Vector3.one;
++            return _hasValidPublishedVolume &&
++                   signedDistanceVoxels.IsCreated &&
++                   resolution > 0 &&
++                   voxelCellSize.x > 0f &&
++                   voxelCellSize.y > 0f &&
++                   voxelCellSize.z > 0f;
++        }
++
+         private void TryRegister()
+         {
+             if (_registered)
+@@ -361,7 +394,7 @@ namespace Hecton8.World
+ 
+         private bool IsCellOccupied(Vector3 worldCenter)
+         {
+-            int hitCount = Physics.OverlapBoxNonAlloc(
++            int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(
+                 worldCenter,
+                 _scanCellHalfExtents,
+                 _overlapHits,
+diff --git a/Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs b/Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs
+index c154b6dd..00550648 100644
+--- a/Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs
++++ b/Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs
+@@ -574,6 +574,10 @@ namespace Hecton8.World
+         [Tooltip("Authoring definitions for up to 16 WFC modules. Element 0 is reserved as the contradiction-safe universal connector.")]
+         private ProceduralWreckModuleDefinition[] moduleDefinitions = Array.Empty<ProceduralWreckModuleDefinition>();
+ 
++        [SerializeField]
++        [Tooltip("Optional BRG render owner that receives the module matrix payload after WFC collapse. When assigned, merged render meshes are skipped.")]
++        private WreckMaterialRegistry wreckMaterialRegistry;
++
+         [Header("Damage Decals")]
+         [SerializeField]
+         [Tooltip("True when the generator should emit a single merged damage decal mesh derived from baked source normals.")]
+@@ -904,17 +908,13 @@ namespace Hecton8.World
+             XorShift32State rng = new XorShift32State(seed);
+             CollapseGrid(cellCount, moduleCount, ref rng);
+             BuildPlacements(cellCount, seed);
+-
+-            Mesh combinedMesh = BuildMergedMesh(_allPlacements);
+-            Mesh essentialMesh = BuildMergedMeshForTier((byte)WreckLodTier.Essential);
+-            Mesh detailMesh = BuildMergedMeshForTier((byte)WreckLodTier.Detail);
+-            Mesh clutterMesh = BuildMergedMeshForTier((byte)WreckLodTier.Clutter);
+             BuildDamageDecalStamps(seed);
+             Mesh damageDecalMesh = BuildDamageDecalMesh();
+             Mesh proxyMesh = BuildProxyMesh();
+ 
+             Bounds localBounds = CalculateLocalBounds(_allPlacements);
+             Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
++            PublishWreckRenderPayload(runtimeOrigin, worldBounds);
+ 
+             WreckNavigationHandle navigationHandle = null;
+             NavMeshData navMeshData = null;
+@@ -926,7 +926,7 @@ namespace Hecton8.World
+             _debugLastPlacementCount = _allPlacements.Length;
+             _debugLastCellCount = cellCount;
+             _debugLastDamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0;
+-            _debugLastCombinedBoundsValid = combinedMesh != null && IsFiniteBounds(combinedMesh.bounds);
++            _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
+             _debugLastDamageDecalBoundsValid = damageDecalMesh == null || IsFiniteBounds(damageDecalMesh.bounds);
+             _debugLastWorldBoundsValid = IsFiniteBounds(worldBounds);
+             _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
+@@ -934,10 +934,10 @@ namespace Hecton8.World
+ 
+             return new WreckageData
+             {
+-                CombinedMesh = combinedMesh,
+-                EssentialMesh = essentialMesh,
+-                DetailMesh = detailMesh,
+-                ClutterMesh = clutterMesh,
++                CombinedMesh = null,
++                EssentialMesh = null,
++                DetailMesh = null,
++                ClutterMesh = null,
+                 DamageDecalMesh = damageDecalMesh,
+                 DamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0,
+                 ProxyMesh = proxyMesh,
+@@ -965,18 +965,6 @@ namespace Hecton8.World
+             await SolveGridAsync(cellCount, initialMask, moduleCount, seed);
+             await YieldAfterGenerationStageAsync();
+ 
+-            Mesh combinedMesh = await BuildMergedMeshAsync(_allPlacements);
+-            await YieldAfterGenerationStageAsync();
+-
+-            Mesh essentialMesh = await BuildMergedMeshForTierAsync((byte)WreckLodTier.Essential);
+-            await YieldAfterGenerationStageAsync();
+-
+-            Mesh detailMesh = await BuildMergedMeshForTierAsync((byte)WreckLodTier.Detail);
+-            await YieldAfterGenerationStageAsync();
+-
+-            Mesh clutterMesh = await BuildMergedMeshForTierAsync((byte)WreckLodTier.Clutter);
+-            await YieldAfterGenerationStageAsync();
+-
+             BuildDamageDecalStamps(seed);
+             Mesh damageDecalMesh = BuildDamageDecalMesh();
+             await YieldAfterGenerationStageAsync();
+@@ -984,6 +972,7 @@ namespace Hecton8.World
+             Mesh proxyMesh = await BuildProxyMeshAsync();
+             Bounds localBounds = CalculateLocalBounds(_allPlacements);
+             Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
++            PublishWreckRenderPayload(runtimeOrigin, worldBounds);
+ 
+             WreckNavigationHandle navigationHandle = null;
+             NavMeshData navMeshData = null;
+@@ -995,7 +984,7 @@ namespace Hecton8.World
+             _debugLastPlacementCount = _allPlacements.Length;
+             _debugLastCellCount = cellCount;
+             _debugLastDamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0;
+-            _debugLastCombinedBoundsValid = combinedMesh != null && IsFiniteBounds(combinedMesh.bounds);
++            _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
+             _debugLastDamageDecalBoundsValid = damageDecalMesh == null || IsFiniteBounds(damageDecalMesh.bounds);
+             _debugLastWorldBoundsValid = IsFiniteBounds(worldBounds);
+             _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
+@@ -1003,10 +992,10 @@ namespace Hecton8.World
+ 
+             return new WreckageData
+             {
+-                CombinedMesh = combinedMesh,
+-                EssentialMesh = essentialMesh,
+-                DetailMesh = detailMesh,
+-                ClutterMesh = clutterMesh,
++                CombinedMesh = null,
++                EssentialMesh = null,
++                DetailMesh = null,
++                ClutterMesh = null,
+                 DamageDecalMesh = damageDecalMesh,
+                 DamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0,
+                 ProxyMesh = proxyMesh,
+@@ -1020,6 +1009,40 @@ namespace Hecton8.World
+             };
+         }
+ 
++        private void PublishWreckRenderPayload(Vector3 runtimeOrigin, Bounds worldBounds)
++        {
++            if (wreckMaterialRegistry == null || !_allPlacements.IsCreated || _allPlacements.Length <= 0)
++                return;
++
++            int placementCount = _allPlacements.Length;
++            NativeArray<Matrix4x4> worldMatrices = new NativeArray<Matrix4x4>(placementCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
++            NativeArray<byte> moduleIds = new NativeArray<byte>(placementCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
++
++            try
++            {
++                for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
++                {
++                    WreckModulePlacement placement = _allPlacements[placementIndex];
++                    float4x4 localMatrix = float4x4.TRS(placement.Position + (float3)runtimeOrigin, placement.Rotation, new float3(1f));
++                    worldMatrices[placementIndex] = new Matrix4x4(
++                        new Vector4(localMatrix.c0.x, localMatrix.c0.y, localMatrix.c0.z, localMatrix.c0.w),
++                        new Vector4(localMatrix.c1.x, localMatrix.c1.y, localMatrix.c1.z, localMatrix.c1.w),
++                        new Vector4(localMatrix.c2.x, localMatrix.c2.y, localMatrix.c2.z, localMatrix.c2.w),
++                        new Vector4(localMatrix.c3.x, localMatrix.c3.y, localMatrix.c3.z, localMatrix.c3.w));
++                    moduleIds[placementIndex] = placement.ModuleId;
++                }
++
++                wreckMaterialRegistry.Publish(moduleDefinitions, worldMatrices, moduleIds, placementCount, worldBounds);
++            }
++            finally
++            {
++                if (moduleIds.IsCreated)
++                    moduleIds.Dispose();
++                if (worldMatrices.IsCreated)
++                    worldMatrices.Dispose();
++            }
++        }
++
+         private async Awaitable SolveGridAsync(int cellCount, ushort initialMask, int moduleCount, uint seed)
+         {
+             ExceptionDispatchInfo capturedException = null;
+
+
+diff --git a/Assets/_Project/Scripts/World/WreckMaterialRegistry.cs b/Assets/_Project/Scripts/World/WreckMaterialRegistry.cs
+new file mode 100644
+index 00000000..1d3f55af
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/WreckMaterialRegistry.cs
+@@ -0,0 +1,541 @@
++using Hecton8.Core;
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEngine;
++using UnityEngine.Rendering;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Owns the render contracts for procedural wreck modules and publishes them through BRG direct draws.
++    /// </summary>
++    [DisallowMultipleComponent]
++    public sealed class WreckMaterialRegistry : MonoBehaviour, IOriginShiftListener
++    {
++        private const int MaxModuleContracts = 16;
++        private static readonly int _WreckMatricesId = Shader.PropertyToID("_HectonWreckMatrices");
++
++        [System.Serializable]
++        private struct ModuleRenderContract
++        {
++            [Tooltip("Optional mesh override. When empty, the generator structural mesh for the same module slot is used.")]
++            public Mesh MeshOverride;
++
++            [Tooltip("Optional material override. When empty, the tier fallback material is used.")]
++            public Material MaterialOverride;
++
++            [Tooltip("Submesh index used by the BRG draw.")]
++            public int SubMeshIndex;
++
++            [Tooltip("Shadow mode used by the BRG draw.")]
++            public ShadowCastingMode ShadowCastingMode;
++
++            [Tooltip("Receive-shadows flag used by the BRG draw.")]
++            public bool ReceiveShadows;
++        }
++
++        private sealed class ModuleBatch
++        {
++            private readonly WreckMaterialRegistry _owner;
++            private readonly int _moduleIndex;
++            private BatchRendererGroup _batchRendererGroup;
++            private NativeArray<MetadataValue> _batchMetadata;
++            private GraphicsBuffer _batchHandleBuffer;
++            private BatchID _batchId;
++            private BatchMeshID _batchMeshId;
++            private BatchMaterialID _batchMaterialId;
++            private Mesh _registeredMesh;
++            private Material _registeredMaterial;
++            private Material _runtimeMaterial;
++            private Material _materialSource;
++            private GraphicsBuffer _matrixBuffer;
++            private NativeList<Matrix4x4> _matrices;
++            private Bounds _drawBounds;
++            private Mesh _mesh;
++            private int _subMeshIndex;
++            private int _layer;
++            private ShadowCastingMode _shadowCastingMode;
++            private bool _receiveShadows;
++            private bool _ownsRuntimeMaterial;
++
++            public ModuleBatch(WreckMaterialRegistry owner, int moduleIndex)
++            {
++                _owner = owner;
++                _moduleIndex = moduleIndex;
++            }
++
++            public bool HasContent => _matrices.IsCreated && _matrices.Length > 0;
++
++            public void EnsureCapacity(int minimumCapacity)
++            {
++                int nextCapacity = math.max(1, minimumCapacity);
++                if (!_matrices.IsCreated)
++                {
++                    _matrices = new NativeList<Matrix4x4>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxPlacements] - BRG wreck module matrix staging - owner: WreckMaterialRegistry
++                    return;
++                }
++
++                if (_matrices.Capacity < nextCapacity)
++                    _matrices.Capacity = nextCapacity;
++            }
++
++            public void Reset()
++            {
++                if (_matrices.IsCreated)
++                    _matrices.Clear();
++            }
++
++            public void Configure(
++                Mesh mesh,
++                Material material,
++                int subMeshIndex,
++                ShadowCastingMode shadowCastingMode,
++                bool receiveShadows,
++                int layer)
++            {
++                _mesh = mesh;
++                _materialSource = material;
++                _subMeshIndex = math.max(0, subMeshIndex);
++                _shadowCastingMode = shadowCastingMode;
++                _receiveShadows = receiveShadows;
++                _layer = layer;
++            }
++
++            public void AddMatrix(Matrix4x4 matrix)
++            {
++                if (_matrices.IsCreated)
++                    _matrices.Add(matrix);
++            }
++
++            public void Publish(Bounds drawBounds)
++            {
++                _drawBounds = drawBounds;
++                if (_mesh == null || _materialSource == null || !_matrices.IsCreated || _matrices.Length <= 0)
++                    return;
++
++                EnsureResources();
++                EnsureRuntimeMaterial();
++                EnsureMatrixBufferCapacity(_matrices.Length);
++                if (_batchRendererGroup == null || _runtimeMaterial == null || _matrixBuffer == null)
++                    return;
++
++                GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _matrices.AsArray(), _matrices.Length);
++                _runtimeMaterial.SetBuffer(_WreckMatricesId, _matrixBuffer);
++                _batchRendererGroup.SetBatchBuffer(_batchId, _matrixBuffer.bufferHandle);
++                SyncBatchRegistration();
++                _batchRendererGroup.SetGlobalBounds(_drawBounds);
++            }
++
++            public void ApplyOriginShift(Vector3 runtimeOffset)
++            {
++                if (_matrices.IsCreated)
++                {
++                    int count = _matrices.Length;
++                    for (int i = 0; i < count; i++)
++                    {
++                        Matrix4x4 matrix = _matrices[i];
++                        matrix.m03 += runtimeOffset.x;
++                        matrix.m13 += runtimeOffset.y;
++                        matrix.m23 += runtimeOffset.z;
++                        _matrices[i] = matrix;
++                    }
++
++                    if (_matrixBuffer != null && count > 0)
++                        GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _matrices.AsArray(), count);
++                }
++
++                _drawBounds.center += runtimeOffset;
++                if (_batchRendererGroup != null)
++                    _batchRendererGroup.SetGlobalBounds(_drawBounds);
++            }
++
++            public void Dispose()
++            {
++                if (_batchRendererGroup != null)
++                {
++                    if (!_batchMeshId.Equals(default))
++                        _batchRendererGroup.UnregisterMesh(_batchMeshId);
++                    if (!_batchMaterialId.Equals(default))
++                        _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
++                    _batchRendererGroup.Dispose();
++                    _batchRendererGroup = null;
++                }
++
++                if (_batchMetadata.IsCreated)
++                    _batchMetadata.Dispose();
++
++                if (_batchHandleBuffer != null)
++                {
++                    _batchHandleBuffer.Release();
++                    _batchHandleBuffer = null;
++                }
++
++                if (_matrixBuffer != null)
++                {
++                    _matrixBuffer.Release();
++                    _matrixBuffer = null;
++                }
++
++                if (_ownsRuntimeMaterial && _runtimeMaterial != null)
++                {
++                    if (Application.isPlaying)
++                        Object.Destroy(_runtimeMaterial);
++                    else
++                        Object.DestroyImmediate(_runtimeMaterial);
++                }
++
++                _runtimeMaterial = null;
++                _materialSource = null;
++                _registeredMaterial = null;
++                _registeredMesh = null;
++                _batchMeshId = default;
++                _batchMaterialId = default;
++                _batchId = default;
++                if (_matrices.IsCreated)
++                    _matrices.Dispose();
++            }
++
++            private void EnsureResources()
++            {
++                if (_batchRendererGroup != null)
++                    return;
++
++                _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
++                {
++                    cullingCallback = OnPerformCulling,
++                    userContext = System.IntPtr.Zero
++                });
++                _batchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for wreck module renderer - owner: WreckMaterialRegistry
++                _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for wreck module renderer - owner: WreckMaterialRegistry
++                _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
++            }
++
++            private void EnsureRuntimeMaterial()
++            {
++                if (_runtimeMaterial != null && _registeredMaterial == _materialSource)
++                    return;
++
++                if (_ownsRuntimeMaterial && _runtimeMaterial != null)
++                {
++                    if (Application.isPlaying)
++                        Object.Destroy(_runtimeMaterial);
++                    else
++                        Object.DestroyImmediate(_runtimeMaterial);
++                }
++
++                _runtimeMaterial = null;
++                _ownsRuntimeMaterial = false;
++                _registeredMaterial = null;
++                _batchMaterialId = default;
++
++                if (_materialSource == null)
++                    return;
++
++                _runtimeMaterial = new Material(_materialSource)
++                {
++                    hideFlags = HideFlags.HideAndDontSave,
++                    name = $"__WreckModule_{_moduleIndex}_BRG",
++                    enableInstancing = true
++                }; // COLD ALLOC: Material[1] - BRG-local wreck module material clone - owner: WreckMaterialRegistry
++                _ownsRuntimeMaterial = true;
++            }
++
++            private void EnsureMatrixBufferCapacity(int instanceCount)
++            {
++                int required = Mathf.NextPowerOfTwo(math.max(1, instanceCount));
++                if (_matrixBuffer != null && _matrixBuffer.count >= required)
++                    return;
++
++                if (_matrixBuffer != null)
++                    _matrixBuffer.Release();
++
++                _matrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - wreck module matrix upload buffer - owner: WreckMaterialRegistry
++            }
++
++            private void SyncBatchRegistration()
++            {
++                if (_batchRendererGroup == null || _mesh == null || _runtimeMaterial == null)
++                    return;
++
++                if (_registeredMesh != _mesh)
++                {
++                    if (!_batchMeshId.Equals(default))
++                        _batchRendererGroup.UnregisterMesh(_batchMeshId);
++
++                    _batchMeshId = _batchRendererGroup.RegisterMesh(_mesh);
++                    _registeredMesh = _mesh;
++                }
++
++                if (_registeredMaterial != _runtimeMaterial)
++                {
++                    if (!_batchMaterialId.Equals(default))
++                        _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
++
++                    _batchMaterialId = _batchRendererGroup.RegisterMaterial(_runtimeMaterial);
++                    _registeredMaterial = _runtimeMaterial;
++                }
++            }
++
++            private JobHandle OnPerformCulling(
++                BatchRendererGroup rendererGroup,
++                BatchCullingContext cullingContext,
++                BatchCullingOutput cullingOutput,
++                System.IntPtr userContext)
++            {
++                int instanceCount = _matrices.IsCreated ? _matrices.Length : 0;
++                if (instanceCount <= 0 ||
++                    _batchId.Equals(default) ||
++                    _batchMeshId.Equals(default) ||
++                    _batchMaterialId.Equals(default))
++                {
++                    HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
++                        cullingOutput,
++                        HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
++                    return default;
++                }
++
++                if (!HectonBatchRendererGroupUtility.IsBoundsVisible(cullingContext.cullingPlanes, _drawBounds))
++                {
++                    HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
++                        cullingOutput,
++                        HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
++                    return default;
++                }
++
++                NativeArray<byte> visibilityMask = new NativeArray<byte>(instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                int planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
++                NativeArray<float4> cullingPlanes = default;
++                if (planeCount > 0)
++                {
++                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
++                    {
++                        Plane plane = cullingContext.cullingPlanes[planeIndex];
++                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
++                    }
++                }
++
++                unsafe
++                {
++                    BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(instanceCount, 1, 1);
++                    JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
++                    {
++                        Matrices = _matrices.AsArray(),
++                        CullingPlanes = cullingPlanes,
++                        VisibilityMask = visibilityMask,
++                        InstanceCount = instanceCount,
++                        PlaneCount = planeCount,
++                        EnableCpuCulling = true,
++                        GlobalOffset = float3.zero,
++                        RadiusScale = 1.7321f,
++                        MinRadius = 0.5f
++                    }.Schedule(instanceCount, 64);
++
++                    JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
++                    {
++                        VisibilityMask = visibilityMask,
++                        InstanceCount = instanceCount,
++                        BatchId = _batchId,
++                        MeshId = _batchMeshId,
++                        MaterialId = _batchMaterialId,
++                        Layer = _layer,
++                        SubMeshIndex = _subMeshIndex,
++                        ShadowCastingMode = _shadowCastingMode,
++                        ReceiveShadows = _receiveShadows,
++                        MotionMode = MotionVectorGenerationMode.Object,
++                        VisibleInstances = output.visibleInstances,
++                        DrawCommands = output.drawCommands,
++                        DrawRanges = output.drawRanges,
++                        OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
++                    }.Schedule(visibilityHandle);
++
++                    JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
++                    if (cullingPlanes.IsCreated)
++                        disposeHandle = cullingPlanes.Dispose(disposeHandle);
++
++                    return disposeHandle;
++                }
++            }
++        }
++
++        [Header("Tier Fallback Materials")]
++        [SerializeField]
++        [Tooltip("Fallback material used for Essential-tier wreck modules when no module override is configured.")]
++        private Material essentialTierMaterial;
++
++        [SerializeField]
++        [Tooltip("Fallback material used for Detail-tier wreck modules when no module override is configured.")]
++        private Material detailTierMaterial;
++
++        [SerializeField]
++        [Tooltip("Fallback material used for Clutter-tier wreck modules when no module override is configured.")]
++        private Material clutterTierMaterial;
++
++        [Header("Module Contracts")]
++        [SerializeField]
++        [Tooltip("Optional per-slot module render overrides. Slot index must match the generator module-definition index.")]
++        private ModuleRenderContract[] moduleContracts = new ModuleRenderContract[MaxModuleContracts];
++
++        private ModuleBatch[] _moduleBatches;
++
++        private void Awake()
++        {
++            EnsureBatches();
++        }
++
++        private void OnEnable()
++        {
++            EnsureBatches();
++            HectonFloatingOrigin.RegisterListener(this);
++        }
++
++        private void OnDisable()
++        {
++            HectonFloatingOrigin.UnregisterListener(this);
++            DisposeBatches();
++        }
++
++        private void OnDestroy()
++        {
++            HectonFloatingOrigin.UnregisterListener(this);
++            DisposeBatches();
++        }
++
++        public void OnOriginShift(in OriginShiftEventData shiftData)
++        {
++            if (!_HasUsableShift(shiftData.ShiftOffset))
++                return;
++
++            Vector3 runtimeOffset = -shiftData.ShiftOffset;
++            EnsureBatches();
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i]?.ApplyOriginShift(runtimeOffset);
++        }
++
++        /// <summary>
++        /// Publishes one wreck instance stream into the BRG-owned module batches.
++        /// </summary>
++        public void Publish(
++            ProceduralWreckModuleDefinition[] moduleDefinitions,
++            NativeArray<Matrix4x4> worldMatrices,
++            NativeArray<byte> moduleIds,
++            int instanceCount,
++            Bounds worldBounds)
++        {
++            EnsureBatches();
++            ResetAllBatches();
++
++            int moduleDefinitionCount = math.min(
++                math.min(moduleDefinitions != null ? moduleDefinitions.Length : 0, MaxModuleContracts),
++                _moduleBatches.Length);
++
++            for (int moduleIndex = 0; moduleIndex < moduleDefinitionCount; moduleIndex++)
++            {
++                ProceduralWreckModuleDefinition definition = moduleDefinitions[moduleIndex];
++                if (!definition.EmitsGeometry)
++                    continue;
++
++                Mesh mesh = moduleContracts != null &&
++                            moduleIndex < moduleContracts.Length &&
++                            moduleContracts[moduleIndex].MeshOverride != null
++                    ? moduleContracts[moduleIndex].MeshOverride
++                    : definition.StructuralMesh;
++                Material material = ResolveMaterialForModule(moduleIndex, definition.DrawCallPriority);
++                if (mesh == null || material == null)
++                    continue;
++
++                ModuleRenderContract contract = moduleContracts != null && moduleIndex < moduleContracts.Length
++                    ? moduleContracts[moduleIndex]
++                    : default;
++
++                ModuleBatch batch = _moduleBatches[moduleIndex];
++                batch.EnsureCapacity(math.max(1, instanceCount));
++                batch.Configure(
++                    mesh,
++                    material,
++                    contract.SubMeshIndex,
++                    contract.ShadowCastingMode,
++                    contract.ReceiveShadows,
++                    gameObject.layer);
++            }
++
++            int safeCount = math.min(instanceCount, math.min(worldMatrices.Length, moduleIds.Length));
++            for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
++            {
++                int moduleIndex = moduleIds[instanceIndex];
++                if (moduleIndex < 0 || moduleIndex >= moduleDefinitionCount)
++                    continue;
++
++                ModuleBatch batch = _moduleBatches[moduleIndex];
++                if (batch == null)
++                    continue;
++
++                batch.AddMatrix(worldMatrices[instanceIndex]);
++            }
++
++            for (int moduleIndex = 0; moduleIndex < moduleDefinitionCount; moduleIndex++)
++            {
++                ModuleBatch batch = _moduleBatches[moduleIndex];
++                if (batch == null || !batch.HasContent)
++                    continue;
++
++                batch.Publish(worldBounds);
++            }
++        }
++
++        private void EnsureBatches()
++        {
++            if (_moduleBatches != null && _moduleBatches.Length == MaxModuleContracts)
++                return;
++
++            _moduleBatches = new ModuleBatch[MaxModuleContracts]; // COLD ALLOC: ModuleBatch[16] - procedural wreck BRG owners by module slot - owner: WreckMaterialRegistry
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i] = new ModuleBatch(this, i);
++        }
++
++        private void ResetAllBatches()
++        {
++            if (_moduleBatches == null)
++                return;
++
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i]?.Reset();
++        }
++
++        private void DisposeBatches()
++        {
++            if (_moduleBatches == null)
++                return;
++
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i]?.Dispose();
++
++            _moduleBatches = null;
++        }
++
++        private Material ResolveMaterialForModule(int moduleIndex, WreckLodTier tier)
++        {
++            if (moduleContracts != null &&
++                moduleIndex >= 0 &&
++                moduleIndex < moduleContracts.Length &&
++                moduleContracts[moduleIndex].MaterialOverride != null)
++            {
++                return moduleContracts[moduleIndex].MaterialOverride;
++            }
++
++            return tier switch
++            {
++                WreckLodTier.Essential => essentialTierMaterial,
++                WreckLodTier.Detail => detailTierMaterial,
++                _ => clutterTierMaterial
++            };
++        }
++
++        private static bool _HasUsableShift(Vector3 shiftOffset)
++        {
++            return shiftOffset.sqrMagnitude > 0.0001f;
++        }
++    }
++}

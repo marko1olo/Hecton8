@@ -18,23 +18,26 @@ namespace Hecton8.Core
     public sealed class ConnectionSplineBatchRenderer : MonoBehaviour
     {
         private const int SamplesPerLink = 8;
-        private const int RadialSegments = 8;
+        private const int NearPipeRadialSegments = 8;
+        private const int FarPipeRadialSegments = 4;
+        private const int RelayRadialSegments = 8;
         private const int DefaultBatchCapacity = 100;
         private const string PrimaryShaderName = "Universal Render Pipeline/Lit";
         private const string FallbackShaderName = "Standard";
+        private const float PipeLodDistanceMeters = 40f;
+        private const float PipeLodDistanceMetersSq = PipeLodDistanceMeters * PipeLodDistanceMeters;
 
         private const float PipeRadiusMeters = 0.06f;
         private const float RelayRadiusMeters = 0.028f;
 
-        private const int VerticesPerLink = SamplesPerLink * RadialSegments;
-        private const int IndicesPerLink = (SamplesPerLink - 1) * RadialSegments * 6;
         private const float TwoPi = math.PI * 2f;
 
         private enum BatchKind : byte
         {
-            Pipes = 0,
-            RelayPowered = 1,
-            RelayUnpowered = 2
+            PipesNear = 0,
+            PipesFar = 1,
+            RelayPowered = 2,
+            RelayUnpowered = 3
         }
 
         private struct LinkRegistration
@@ -106,6 +109,8 @@ namespace Hecton8.Core
             [ReadOnly] public NativeArray<float3> SampleBinormals;
             public NativeArray<TubeVertex> Vertices;
             public float Radius;
+            public int RadialSegments;
+            public int VerticesPerLink;
 
             public void Execute(int index)
             {
@@ -135,12 +140,14 @@ namespace Hecton8.Core
         private struct BuildTubeIndicesJob : IJobParallelFor
         {
             public NativeArray<int> Indices;
+            public int RadialSegments;
+            public int VerticesPerLink;
+            public int QuadsPerLink;
 
             public void Execute(int quadIndex)
             {
-                int quadsPerLink = (SamplesPerLink - 1) * RadialSegments;
-                int linkIndex = quadIndex / quadsPerLink;
-                int quadInLink = quadIndex - (linkIndex * quadsPerLink);
+                int linkIndex = quadIndex / QuadsPerLink;
+                int quadInLink = quadIndex - (linkIndex * QuadsPerLink);
                 int ringIndex = quadInLink / RadialSegments;
                 int radialIndex = quadInLink - (ringIndex * RadialSegments);
 
@@ -193,17 +200,27 @@ namespace Hecton8.Core
             public int GeneratedTriangleCount;
             public Color Color;
             public float Radius;
+            public BatchKind Kind;
+            public int RadialSegments;
+            public int VerticesPerLink;
+            public int IndicesPerLink;
+            public int QuadsPerLink;
         }
 
         private static ConnectionSplineBatchRenderer _instance;
 
         // COLD ALLOC: BatchState[3] — persistent shared tube-render batches for pipes and relay cables — owner: ConnectionSplineBatchRenderer
-        private readonly BatchState[] _batches = new BatchState[3];
+        private readonly BatchState[] _batches = new BatchState[4];
 
         public static void SubmitPipeLink(long linkId, Vector3 start, Vector3 end, Color color)
         {
             ConnectionSplineBatchRenderer instance = ResolveInstance();
-            instance.UpsertLink(instance._batches[(int)BatchKind.Pipes], linkId, start, end, color);
+            BatchState activeBatch = instance.ResolvePipeBatch(start, end);
+            BatchState inactiveBatch = activeBatch.Kind == BatchKind.PipesNear
+                ? instance._batches[(int)BatchKind.PipesFar]
+                : instance._batches[(int)BatchKind.PipesNear];
+            instance.RemoveLink(inactiveBatch, linkId);
+            instance.UpsertLink(activeBatch, linkId, start, end, color);
         }
 
         public static void RemovePipeLink(long linkId)
@@ -211,7 +228,8 @@ namespace Hecton8.Core
             if (_instance == null)
                 return;
 
-            _instance.RemoveLink(_instance._batches[(int)BatchKind.Pipes], linkId);
+            _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesNear], linkId);
+            _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesFar], linkId);
         }
 
         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
@@ -258,9 +276,10 @@ namespace Hecton8.Core
             }
 
             _instance = this;
-            InitializeBatch((int)BatchKind.Pipes, new Color(0.30f, 0.82f, 0.95f, 0.88f), PipeRadiusMeters);
-            InitializeBatch((int)BatchKind.RelayPowered, new Color(0.25f, 0.95f, 1f, 0.95f), RelayRadiusMeters);
-            InitializeBatch((int)BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters);
+            InitializeBatch((int)BatchKind.PipesNear, BatchKind.PipesNear, new Color(0.30f, 0.82f, 0.95f, 0.88f), PipeRadiusMeters, NearPipeRadialSegments);
+            InitializeBatch((int)BatchKind.PipesFar, BatchKind.PipesFar, new Color(0.30f, 0.82f, 0.95f, 0.88f), PipeRadiusMeters, FarPipeRadialSegments);
+            InitializeBatch((int)BatchKind.RelayPowered, BatchKind.RelayPowered, new Color(0.25f, 0.95f, 1f, 0.95f), RelayRadiusMeters, RelayRadialSegments);
+            InitializeBatch((int)BatchKind.RelayUnpowered, BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters, RelayRadialSegments);
         }
 
         private void LateUpdate()
@@ -278,12 +297,18 @@ namespace Hecton8.Core
                 _instance = null;
         }
 
-        private void InitializeBatch(int index, Color color, float radius)
+        private void InitializeBatch(int index, BatchKind kind, Color color, float radius, int radialSegments)
         {
+            int safeRadialSegments = math.max(3, radialSegments);
             BatchState batch = new BatchState
             {
+                Kind = kind,
                 Color = color,
-                Radius = radius
+                Radius = radius,
+                RadialSegments = safeRadialSegments,
+                VerticesPerLink = SamplesPerLink * safeRadialSegments,
+                IndicesPerLink = (SamplesPerLink - 1) * safeRadialSegments * 6,
+                QuadsPerLink = (SamplesPerLink - 1) * safeRadialSegments
             };
 
             GameObject child = new GameObject(((BatchKind)index).ToString())
@@ -308,6 +333,19 @@ namespace Hecton8.Core
 
             EnsureBatchCapacity(batch, DefaultBatchCapacity);
             _batches[index] = batch;
+        }
+
+        private BatchState ResolvePipeBatch(Vector3 start, Vector3 end)
+        {
+            Transform playerTransform = BootstrapState.CurrentPlayerTransform;
+            if (playerTransform == null)
+                return _batches[(int)BatchKind.PipesNear];
+
+            float3 midpoint = ((float3)start + (float3)end) * 0.5f;
+            float distanceSq = math.lengthsq(midpoint - (float3)playerTransform.position);
+            return distanceSq > PipeLodDistanceMetersSq
+                ? _batches[(int)BatchKind.PipesFar]
+                : _batches[(int)BatchKind.PipesNear];
         }
 
         private static Material CreateRuntimeMaterial(Color color)
@@ -423,8 +461,8 @@ namespace Hecton8.Core
                 writeIndex++;
             }
 
-            int vertexCount = linkCount * VerticesPerLink;
-            int quadCount = linkCount * (SamplesPerLink - 1) * RadialSegments;
+            int vertexCount = linkCount * batch.VerticesPerLink;
+            int quadCount = linkCount * batch.QuadsPerLink;
             int indexCount = quadCount * 6;
             batch.GeneratedVertexCount = vertexCount;
             batch.GeneratedTriangleCount = indexCount / 3;
@@ -444,12 +482,17 @@ namespace Hecton8.Core
                 SampleNormals = batch.SampleNormals,
                 SampleBinormals = batch.SampleBinormals,
                 Vertices = batch.VertexBack,
-                Radius = batch.Radius
+                Radius = batch.Radius,
+                RadialSegments = batch.RadialSegments,
+                VerticesPerLink = batch.VerticesPerLink
             };
 
             BuildTubeIndicesJob indexJob = new BuildTubeIndicesJob
             {
-                Indices = batch.Indices
+                Indices = batch.Indices,
+                RadialSegments = batch.RadialSegments,
+                VerticesPerLink = batch.VerticesPerLink,
+                QuadsPerLink = batch.QuadsPerLink
             };
 
             batch.FrameBuildHandle = frameJob.Schedule(linkCount, 1);
@@ -514,9 +557,9 @@ namespace Hecton8.Core
             EnsureArrayCapacity(ref batch.SampleCenters, safeLinkCapacity * SamplesPerLink);
             EnsureArrayCapacity(ref batch.SampleNormals, safeLinkCapacity * SamplesPerLink);
             EnsureArrayCapacity(ref batch.SampleBinormals, safeLinkCapacity * SamplesPerLink);
-            EnsureArrayCapacity(ref batch.VertexFront, safeLinkCapacity * VerticesPerLink);
-            EnsureArrayCapacity(ref batch.VertexBack, safeLinkCapacity * VerticesPerLink);
-            EnsureArrayCapacity(ref batch.Indices, safeLinkCapacity * IndicesPerLink);
+            EnsureArrayCapacity(ref batch.VertexFront, safeLinkCapacity * batch.VerticesPerLink);
+            EnsureArrayCapacity(ref batch.VertexBack, safeLinkCapacity * batch.VerticesPerLink);
+            EnsureArrayCapacity(ref batch.Indices, safeLinkCapacity * batch.IndicesPerLink);
         }
 
         private static void EnsureArrayCapacity(ref NativeArray<float3> array, int requiredLength)

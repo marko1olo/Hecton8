@@ -58,7 +58,21 @@ namespace Hecton8.Power
         Overloaded = 1 << 6,
         Ruptured = 1 << 7,
         EmergencyReserved = 1 << 8,
-        HasPotential = 1 << 9
+        HasPotential = 1 << 9,
+        Powered = 1 << 10,
+        Overheating = 1 << 11,
+        Flooded = 1 << 12,
+        Damaged = 1 << 13
+    }
+
+    [Flags]
+    public enum LogisticsModuleStatusBits : byte
+    {
+        None = 0,
+        Powered = 1 << 0,
+        Overheating = 1 << 1,
+        Flooded = 1 << 2,
+        Damaged = 1 << 3
     }
 
     /// <summary>
@@ -170,6 +184,16 @@ namespace Hecton8.Power
 
                 if (node.Potential > PublishEpsilon)
                     stateBits |= LogisticsNodeStateBits.HasPotential;
+
+                LogisticsModuleStatusBits moduleStatus = (LogisticsModuleStatusBits)node.Reserved;
+                if ((moduleStatus & LogisticsModuleStatusBits.Powered) != 0)
+                    stateBits |= LogisticsNodeStateBits.Powered;
+                if ((moduleStatus & LogisticsModuleStatusBits.Overheating) != 0)
+                    stateBits |= LogisticsNodeStateBits.Overheating;
+                if ((moduleStatus & LogisticsModuleStatusBits.Flooded) != 0)
+                    stateBits |= LogisticsNodeStateBits.Flooded;
+                if ((moduleStatus & LogisticsModuleStatusBits.Damaged) != 0)
+                    stateBits |= LogisticsNodeStateBits.Damaged;
 
                 ushort bitmask = (ushort)stateBits;
                 PublishedNodeStates[index] = bitmask;
@@ -315,8 +339,6 @@ namespace Hecton8.Power
                 BuildComponentDistributionState();
                 AllocateServedDemand(ref summary);
                 BuildNodeInjection();
-                RelaxNodePotentials();
-                AccumulateNodeLoadsFromPotentials();
                 summary.UnservedDemand = math.max(0f, summary.TotalConsumption - summary.ServedDemand);
                 summary.HasDeficit = summary.UnservedDemand > Epsilon;
                 return summary;
@@ -525,104 +547,6 @@ namespace Hecton8.Power
                     float residual = ComponentResidualInjection[componentIndex];
                     if (math.abs(residual) > Epsilon)
                         NodeNetInjection[anchorNodeIndex] -= residual;
-                }
-            }
-
-            private void RelaxNodePotentials()
-            {
-                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
-                {
-                    NodePotentialFront[nodeIndex] = NodeNetInjection[nodeIndex];
-                    NodePotentialBack[nodeIndex] = NodeNetInjection[nodeIndex];
-                }
-
-                for (int iteration = 0; iteration < MaxJacobiIterations; iteration++)
-                {
-                    float maxDelta = 0f;
-
-                    for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
-                    {
-                        int componentIndex = ComponentIds[nodeIndex];
-                        if (componentIndex < 0 || ComponentAnchorNode[componentIndex] == nodeIndex)
-                        {
-                            NodePotentialBack[nodeIndex] = 0f;
-                            continue;
-                        }
-
-                        float conductanceSum = 0f;
-                        float weightedPotential = 0f;
-
-                        int edgeStart = EdgeOffsets[nodeIndex];
-                        int edgeEnd = EdgeOffsets[nodeIndex + 1];
-                        for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-                        {
-                            int neighborNodeIndex = EdgeDestinations[edgeIndex];
-                            if (!IsValidNodeIndex(neighborNodeIndex) || ComponentIds[neighborNodeIndex] != componentIndex)
-                                continue;
-
-                            float conductance = 1f / ResolveCombinedResistance(nodeIndex, neighborNodeIndex, edgeIndex);
-                            conductanceSum += conductance;
-                            weightedPotential += conductance * NodePotentialFront[neighborNodeIndex];
-                        }
-
-                        if (conductanceSum <= Epsilon)
-                        {
-                            NodePotentialBack[nodeIndex] = 0f;
-                            continue;
-                        }
-
-                        float relaxedPotential = (weightedPotential + NodeNetInjection[nodeIndex]) / conductanceSum;
-                        if (!math.isfinite(relaxedPotential))
-                            relaxedPotential = 0f;
-
-                        NodePotentialBack[nodeIndex] = relaxedPotential;
-                        float delta = math.abs(relaxedPotential - NodePotentialFront[nodeIndex]);
-                        if (delta > maxDelta)
-                            maxDelta = delta;
-                    }
-
-                    NativeArray<float> swap = NodePotentialFront;
-                    NodePotentialFront = NodePotentialBack;
-                    NodePotentialBack = swap;
-
-                    if (maxDelta < JacobiConvergenceDelta)
-                        break;
-                }
-
-                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
-                {
-                    LogisticsNode node = Nodes[nodeIndex];
-                    node.Potential = NodePotentialFront[nodeIndex];
-                    Nodes[nodeIndex] = node;
-                }
-            }
-
-            private void AccumulateNodeLoadsFromPotentials()
-            {
-                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
-                {
-                    LogisticsNode node = Nodes[nodeIndex];
-                    float branchLoad = 0f;
-
-                    int edgeStart = EdgeOffsets[nodeIndex];
-                    int edgeEnd = EdgeOffsets[nodeIndex + 1];
-                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-                    {
-                        int destinationNodeIndex = EdgeDestinations[edgeIndex];
-                        if (!IsValidNodeIndex(destinationNodeIndex))
-                            continue;
-
-                        float resistance = ResolveCombinedResistance(nodeIndex, destinationNodeIndex, edgeIndex);
-                        float flowRate = math.abs((NodePotentialFront[nodeIndex] - NodePotentialFront[destinationNodeIndex]) / resistance);
-                        if (flowRate > Epsilon)
-                            branchLoad += flowRate;
-                    }
-
-                    node.CurrentLoad = math.max(branchLoad, NodeServedDemand[nodeIndex] + math.max(0f, NodeNetInjection[nodeIndex]));
-                    if (node.CurrentLoad > node.Capacity * 1.15f)
-                        node.Flags |= LogisticsNodeFlags.Overloaded;
-
-                    Nodes[nodeIndex] = node;
                 }
             }
 
@@ -860,9 +784,168 @@ namespace Hecton8.Power
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast)]
+        private struct InitializePotentialBuffersJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> NodeNetInjection;
+            public NativeArray<float> NodePotentialFront;
+            public NativeArray<float> NodePotentialBack;
+
+            public void Execute(int index)
+            {
+                float seed = NodeNetInjection[index];
+                NodePotentialFront[index] = seed;
+                NodePotentialBack[index] = seed;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast)]
+        private struct RelaxNodePotentialsJob : IJobParallelFor
+        {
+            private const float MinResistanceValue = 0.0001f;
+            private const float EpsilonValue = 0.001f;
+            private const float RuptureResistanceMultiplierValue = 2f;
+
+            public LogisticsNetworkType NetworkType;
+            public int NodeCount;
+
+            [ReadOnly] public NativeArray<LogisticsNode> Nodes;
+            [ReadOnly] public NativeArray<int> EdgeOffsets;
+            [ReadOnly] public NativeArray<int> EdgeDestinations;
+            [ReadOnly] public NativeArray<float> EdgeResistance;
+            [ReadOnly] public NativeArray<int> ComponentIds;
+            [ReadOnly] public NativeArray<int> ComponentAnchorNode;
+            [ReadOnly] public NativeArray<float> NodeNetInjection;
+            [ReadOnly] public NativeArray<float> NodePotentialFront;
+
+            public NativeArray<float> NodePotentialBack;
+
+            public void Execute(int nodeIndex)
+            {
+                int componentIndex = ComponentIds[nodeIndex];
+                if (componentIndex < 0 || componentIndex >= NodeCount || ComponentAnchorNode[componentIndex] == nodeIndex)
+                {
+                    NodePotentialBack[nodeIndex] = 0f;
+                    return;
+                }
+
+                float conductanceSum = 0f;
+                float weightedPotential = 0f;
+
+                int edgeStart = EdgeOffsets[nodeIndex];
+                int edgeEnd = EdgeOffsets[nodeIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int neighborNodeIndex = EdgeDestinations[edgeIndex];
+                    if (neighborNodeIndex < 0 ||
+                        neighborNodeIndex >= NodeCount ||
+                        ComponentIds[neighborNodeIndex] != componentIndex)
+                    {
+                        continue;
+                    }
+
+                    float conductance = 1f / ResolveCombinedResistance(nodeIndex, neighborNodeIndex, edgeIndex);
+                    conductanceSum += conductance;
+                    weightedPotential += conductance * NodePotentialFront[neighborNodeIndex];
+                }
+
+                if (conductanceSum <= EpsilonValue)
+                {
+                    NodePotentialBack[nodeIndex] = 0f;
+                    return;
+                }
+
+                float relaxedPotential = (weightedPotential + NodeNetInjection[nodeIndex]) / conductanceSum;
+                NodePotentialBack[nodeIndex] = math.isfinite(relaxedPotential) ? relaxedPotential : 0f;
+            }
+
+            private float ResolveCombinedResistance(int sourceNodeIndex, int destinationNodeIndex, int edgeIndex)
+            {
+                LogisticsNode sourceNode = Nodes[sourceNodeIndex];
+                LogisticsNode destinationNode = Nodes[destinationNodeIndex];
+                float combinedResistance = math.max(
+                    MinResistanceValue,
+                    EdgeResistance[edgeIndex] + sourceNode.Resistance + destinationNode.Resistance);
+
+                if (NetworkType != LogisticsNetworkType.PowerDc &&
+                    (((sourceNode.Flags | destinationNode.Flags) & LogisticsNodeFlags.Ruptured) != 0))
+                {
+                    combinedResistance *= RuptureResistanceMultiplierValue;
+                }
+
+                return combinedResistance;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast)]
+        private struct ApplyPotentialsAndLoadsJob : IJobParallelFor
+        {
+            private const float MinResistanceValue = 0.0001f;
+            private const float EpsilonValue = 0.001f;
+            private const float RuptureResistanceMultiplierValue = 2f;
+
+            public LogisticsNetworkType NetworkType;
+            public int NodeCount;
+
+            public NativeArray<LogisticsNode> Nodes;
+
+            [ReadOnly] public NativeArray<int> EdgeOffsets;
+            [ReadOnly] public NativeArray<int> EdgeDestinations;
+            [ReadOnly] public NativeArray<float> EdgeResistance;
+            [ReadOnly] public NativeArray<float> NodeServedDemand;
+            [ReadOnly] public NativeArray<float> NodeNetInjection;
+            [ReadOnly] public NativeArray<float> FinalPotentials;
+
+            public void Execute(int nodeIndex)
+            {
+                LogisticsNode node = Nodes[nodeIndex];
+                float branchLoad = 0f;
+                float nodePotential = FinalPotentials[nodeIndex];
+
+                int edgeStart = EdgeOffsets[nodeIndex];
+                int edgeEnd = EdgeOffsets[nodeIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int destinationNodeIndex = EdgeDestinations[edgeIndex];
+                    if (destinationNodeIndex < 0 || destinationNodeIndex >= NodeCount)
+                        continue;
+
+                    float resistance = ResolveCombinedResistance(nodeIndex, destinationNodeIndex, edgeIndex);
+                    float flowRate = math.abs((nodePotential - FinalPotentials[destinationNodeIndex]) / resistance);
+                    if (flowRate > EpsilonValue)
+                        branchLoad += flowRate;
+                }
+
+                node.Potential = nodePotential;
+                node.CurrentLoad = math.max(branchLoad, NodeServedDemand[nodeIndex] + math.max(0f, NodeNetInjection[nodeIndex]));
+                if (node.CurrentLoad > node.Capacity * 1.15f)
+                    node.Flags |= LogisticsNodeFlags.Overloaded;
+
+                Nodes[nodeIndex] = node;
+            }
+
+            private float ResolveCombinedResistance(int sourceNodeIndex, int destinationNodeIndex, int edgeIndex)
+            {
+                LogisticsNode sourceNode = Nodes[sourceNodeIndex];
+                LogisticsNode destinationNode = Nodes[destinationNodeIndex];
+                float combinedResistance = math.max(
+                    MinResistanceValue,
+                    EdgeResistance[edgeIndex] + sourceNode.Resistance + destinationNode.Resistance);
+
+                if (NetworkType != LogisticsNetworkType.PowerDc &&
+                    (((sourceNode.Flags | destinationNode.Flags) & LogisticsNodeFlags.Ruptured) != 0))
+                {
+                    combinedResistance *= RuptureResistanceMultiplierValue;
+                }
+
+                return combinedResistance;
+            }
+        }
+
         private const int MinPriority = 0;
         private const int MaxPriority = 100;
         private const int MaxJacobiIterations = 8;
+        private const int ParallelNodeBatchSize = 64;
         private const float MinResistance = 0.0001f;
         private const float Epsilon = 0.001f;
         private const float JacobiConvergenceDelta = 0.01f;
@@ -1091,7 +1174,7 @@ namespace Hecton8.Power
             _bfsQueue.Clear();
         }
 
-        public int AddNode(uint nodeId, float capacity, float resistance, byte priorityTier, LogisticsNodeFlags flags)
+        public int AddNode(uint nodeId, float capacity, float resistance, byte priorityTier, LogisticsNodeFlags flags, byte reservedState)
         {
             if (_nodeCount >= _nodeBuffer.Length)
                 EnsureNodeCapacity(_nodeCount + 1);
@@ -1106,7 +1189,7 @@ namespace Hecton8.Power
                 Priority = priorityTier,
                 Flags = flags | LogisticsNodeFlags.Active,
                 NetworkId = 0,
-                Reserved = 0
+                Reserved = reservedState
             };
 
             return _nodeCount++;
@@ -1364,7 +1447,7 @@ namespace Hecton8.Power
                 PublishedNodeStateMap = _publishedNodeStateMap.AsParallelWriter()
             };
 
-            _publishNodeStatesJobHandle = job.Schedule(_nodeCount, 32, dependency);
+            _publishNodeStatesJobHandle = job.Schedule(_nodeCount, ParallelNodeBatchSize, dependency);
             _publishNodeStatesPending = true;
         }
 
@@ -1424,7 +1507,56 @@ namespace Hecton8.Power
                 DistributionSummaryBuffer = _scheduledDistributionSummary
             };
 
-            _evaluateGraphJobHandle = job.Schedule();
+            JobHandle evaluationHandle = job.Schedule();
+
+            InitializePotentialBuffersJob initializePotentialsJob = new InitializePotentialBuffersJob
+            {
+                NodeNetInjection = _nodeNetInjection,
+                NodePotentialFront = _nodePotentialFront,
+                NodePotentialBack = _nodePotentialBack
+            };
+
+            evaluationHandle = initializePotentialsJob.Schedule(_nodeCount, ParallelNodeBatchSize, evaluationHandle);
+
+            NativeArray<float> relaxFront = _nodePotentialFront;
+            NativeArray<float> relaxBack = _nodePotentialBack;
+            for (int iteration = 0; iteration < MaxJacobiIterations; iteration++)
+            {
+                RelaxNodePotentialsJob relaxPotentialsJob = new RelaxNodePotentialsJob
+                {
+                    NetworkType = _networkType,
+                    NodeCount = _nodeCount,
+                    Nodes = _nodeBuffer,
+                    EdgeOffsets = _edgeOffsets,
+                    EdgeDestinations = _edgeDestinations,
+                    EdgeResistance = _edgeResistance,
+                    ComponentIds = _componentIds,
+                    ComponentAnchorNode = _componentAnchorNode,
+                    NodeNetInjection = _nodeNetInjection,
+                    NodePotentialFront = relaxFront,
+                    NodePotentialBack = relaxBack
+                };
+
+                evaluationHandle = relaxPotentialsJob.Schedule(_nodeCount, ParallelNodeBatchSize, evaluationHandle);
+                NativeArray<float> swap = relaxFront;
+                relaxFront = relaxBack;
+                relaxBack = swap;
+            }
+
+            ApplyPotentialsAndLoadsJob applyPotentialsAndLoadsJob = new ApplyPotentialsAndLoadsJob
+            {
+                NetworkType = _networkType,
+                NodeCount = _nodeCount,
+                Nodes = _nodeBuffer,
+                EdgeOffsets = _edgeOffsets,
+                EdgeDestinations = _edgeDestinations,
+                EdgeResistance = _edgeResistance,
+                NodeServedDemand = _nodeServedDemand,
+                NodeNetInjection = _nodeNetInjection,
+                FinalPotentials = relaxFront
+            };
+
+            _evaluateGraphJobHandle = applyPotentialsAndLoadsJob.Schedule(_nodeCount, ParallelNodeBatchSize, evaluationHandle);
             _evaluateGraphPending = true;
             return _evaluateGraphJobHandle;
         }

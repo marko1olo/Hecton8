@@ -1,7 +1,11 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -31,7 +35,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Deferred main-thread force application payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct ForcePacket
     {
         /// <summary>World-space force vector.</summary>
@@ -40,7 +44,7 @@ namespace Hecton8.Physics
         /// <summary>World-space torque vector.</summary>
         public Vector3 Torque;
 
-        /// <summary>Local point offset placeholder for future AddForceAtPosition routing.</summary>
+        /// <summary>World-space offset from the rigidbody center of mass used by deferred AddForceAtPosition routing.</summary>
         public Vector3 PointOffset;
 
         /// <summary>Force application mode.</summary>
@@ -48,6 +52,10 @@ namespace Hecton8.Physics
 
         /// <summary>Bitfield flags describing packet contents.</summary>
         public byte Flags;
+
+        private byte _padding0;
+        private byte _padding1;
+        private byte _padding2;
 
         /// <summary>Dense rigidbody slot index owned by <see cref="PhysicsApplySystem"/>.</summary>
         public int RigidbodyIndex;
@@ -141,6 +149,43 @@ namespace Hecton8.Physics
         HasForce = 1 << 0,
         HasTorque = 1 << 1,
         WakeBody = 1 << 2,
+        ApplyAtPosition = 1 << 3,
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast)]
+    internal struct ValidateForcePacketsJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<ForcePacket> Packets;
+        public NativeArray<byte> ValidityMask;
+        public int MaxTrackedBodies;
+
+        public void Execute(int index)
+        {
+            ForcePacket packet = Packets[index];
+            if (packet.RigidbodyIndex < 0 || packet.RigidbodyIndex >= MaxTrackedBodies)
+            {
+                ValidityMask[index] = 0;
+                return;
+            }
+
+            int mode = (int)packet.Mode;
+            if (mode < (int)ForceMode.Force || mode > (int)ForceMode.VelocityChange)
+            {
+                ValidityMask[index] = 0;
+                return;
+            }
+
+            ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
+            bool validForce = (flags & ForcePacketFlags.HasForce) == 0 || IsFinite(packet.Force);
+            bool validTorque = (flags & ForcePacketFlags.HasTorque) == 0 || IsFinite(packet.Torque);
+            bool validPointOffset = IsFinite(packet.PointOffset);
+            ValidityMask[index] = validForce && validTorque && validPointOffset ? (byte)1 : (byte)0;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
     }
 
     /// <summary>
@@ -153,6 +198,12 @@ namespace Hecton8.Physics
         private const int MaxTrackedBodies = 64;
         private const int MaxQueuedPackets = 512;
         private const float MinMagnitudeSq = 0.000001f;
+        private const string NonFiniteForceLog = "[PhysicsApplySystem] Non-finite force packet detected. Zeroing vector.";
+        private const string NonFiniteTorqueLog = "[PhysicsApplySystem] Non-finite torque packet detected. Zeroing vector.";
+        private const string NonFinitePointOffsetLog = "[PhysicsApplySystem] Non-finite point-offset packet detected. Zeroing offset.";
+        private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FixedTick");
+        private static readonly ProfilerMarker _packetValidationProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.ValidatePackets");
+        private static readonly ProfilerMarker _flushFrontBufferProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FlushFrontBuffer");
 
         private static PhysicsApplySystem _instance;
 
@@ -162,11 +213,15 @@ namespace Hecton8.Physics
         private ForcePacket[] _backPackets = new ForcePacket[MaxQueuedPackets];
         // COLD ALLOC: Rigidbody[64] — active rigidbody slot map for deferred packet application — owner: PhysicsApplySystem
         private readonly Rigidbody[] _bodySlots = new Rigidbody[MaxTrackedBodies];
+        private NativeArray<ForcePacket> _validationPackets;
+        private NativeArray<byte> _validationMask;
 
         private int _frontCount;
         private int _backCount;
         private bool _isInitialized;
         private bool _fixedTickRegistered;
+        private bool _packetValidationScheduled;
+        private JobHandle _packetValidationHandle;
 
         /// <summary>
         /// True once the service is registered into <see cref="GlobalRegistry"/>.
@@ -232,8 +287,13 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
-            if (!IsFiniteNonZero(force) || body == null || body.isKinematic)
+            if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
+                sanitizedForce.sqrMagnitude <= MinMagnitudeSq ||
+                body == null ||
+                body.isKinematic)
+            {
                 return false;
+            }
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
@@ -247,7 +307,7 @@ namespace Hecton8.Physics
 
             _backPackets[_backCount++] = new ForcePacket
             {
-                Force = force,
+                Force = sanitizedForce,
                 Torque = Vector3.zero,
                 PointOffset = Vector3.zero,
                 Mode = mode,
@@ -258,10 +318,56 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
+        public bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
+        {
+            if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
+                sanitizedForce.sqrMagnitude <= MinMagnitudeSq ||
+                body == null ||
+                body.isKinematic)
+            {
+                return false;
+            }
+
+            float3 worldPosition3 = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            if (!math.all(math.isfinite(worldPosition3)))
+                return false;
+
+            GlobalPhysicsStateManager.RegisterTrackedBody(body);
+            int rigidbodyIndex = ResolveBodyIndex(body);
+            if (rigidbodyIndex < 0 || _backCount >= _backPackets.Length)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[PhysicsApplySystem] Point-force packet queue saturated.");
+#endif
+                return false;
+            }
+
+            Vector3 pointOffset = worldPosition - body.worldCenterOfMass;
+            if (!IsFiniteNonZero(pointOffset))
+                pointOffset = Vector3.zero;
+
+            _backPackets[_backCount++] = new ForcePacket
+            {
+                Force = sanitizedForce,
+                Torque = Vector3.zero,
+                PointOffset = pointOffset,
+                Mode = mode,
+                Flags = (byte)(ForcePacketFlags.HasForce | ForcePacketFlags.ApplyAtPosition | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                RigidbodyIndex = rigidbodyIndex
+            };
+            return true;
+        }
+
+        /// <inheritdoc />
         public bool QueueTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true)
         {
-            if (!IsFiniteNonZero(torque) || body == null || body.isKinematic)
+            if (!TrySanitizeVector(torque, NonFiniteTorqueLog, out Vector3 sanitizedTorque) ||
+                sanitizedTorque.sqrMagnitude <= MinMagnitudeSq ||
+                body == null ||
+                body.isKinematic)
+            {
                 return false;
+            }
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
@@ -276,7 +382,7 @@ namespace Hecton8.Physics
             _backPackets[_backCount++] = new ForcePacket
             {
                 Force = Vector3.zero,
-                Torque = torque,
+                Torque = sanitizedTorque,
                 PointOffset = Vector3.zero,
                 Mode = mode,
                 Flags = (byte)(ForcePacketFlags.HasTorque | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
@@ -304,6 +410,7 @@ namespace Hecton8.Physics
             }
 
             _instance = this;
+            EnsureValidationBuffers();
 
             if (Application.isPlaying)
             {
@@ -347,39 +454,74 @@ namespace Hecton8.Physics
                 _isInitialized = false;
             }
 
+            DisposeValidationBuffers();
+
             if (_instance == this)
                 _instance = null;
         }
 
         public void FixedTick(float fixedDeltaTime)
         {
-            PhysicsFrame.Tick();
-            SwapBuffers();
-            FlushFrontBuffer();
+            using (_fixedTickProfilerMarker.Auto())
+            {
+                PhysicsFrame.Tick();
+                SwapBuffers();
+                ScheduleFrontPacketValidation();
+                CompleteFrontPacketValidation();
+                FlushFrontBuffer();
+            }
         }
 
         private void FlushFrontBuffer()
         {
-            for (int i = 0; i < _frontCount; i++)
+            using (_flushFrontBufferProfilerMarker.Auto())
             {
-                ForcePacket packet = _frontPackets[i];
-                Rigidbody body = ResolveBody(packet.RigidbodyIndex);
-                if (body == null || body.isKinematic)
-                    continue;
+                for (int i = 0; i < _frontCount; i++)
+                {
+                    if (_validationMask.IsCreated && _validationMask[i] == 0)
+                        continue;
 
-                ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
-                if ((flags & ForcePacketFlags.WakeBody) != 0 && body.IsSleeping())
-                    body.WakeUp();
+                    ForcePacket packet = _frontPackets[i];
+                    Rigidbody body = ResolveBody(packet.RigidbodyIndex);
+                    if (body == null || body.isKinematic)
+                        continue;
 
-                if ((flags & ForcePacketFlags.HasForce) != 0)
-                    body.AddForce(packet.Force, packet.Mode);
+                    ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
+                    if ((flags & ForcePacketFlags.WakeBody) != 0 && body.IsSleeping())
+                        body.WakeUp();
 
-                if ((flags & ForcePacketFlags.HasTorque) != 0)
-                    body.AddTorque(packet.Torque, packet.Mode);
+                    if ((flags & ForcePacketFlags.HasForce) != 0)
+                    {
+                        if (!TrySanitizeVector(packet.Force, NonFiniteForceLog, out Vector3 sanitizedForce))
+                            sanitizedForce = Vector3.zero;
+
+                        if ((flags & ForcePacketFlags.ApplyAtPosition) != 0)
+                        {
+                            if (!TrySanitizeVector(packet.PointOffset, NonFinitePointOffsetLog, out Vector3 sanitizedOffset))
+                                sanitizedOffset = Vector3.zero;
+
+                            if (sanitizedForce.sqrMagnitude > MinMagnitudeSq)
+                                body.AddForceAtPosition(sanitizedForce, body.worldCenterOfMass + sanitizedOffset, packet.Mode);
+                        }
+                        else if (sanitizedForce.sqrMagnitude > MinMagnitudeSq)
+                        {
+                            body.AddForce(sanitizedForce, packet.Mode);
+                        }
+                    }
+
+                    if ((flags & ForcePacketFlags.HasTorque) != 0)
+                    {
+                        if (TrySanitizeVector(packet.Torque, NonFiniteTorqueLog, out Vector3 sanitizedTorque) &&
+                            sanitizedTorque.sqrMagnitude > MinMagnitudeSq)
+                        {
+                            body.AddTorque(sanitizedTorque, packet.Mode);
+                        }
+                    }
+                }
+
+                System.Array.Clear(_frontPackets, 0, _frontCount);
+                _frontCount = 0;
             }
-
-            System.Array.Clear(_frontPackets, 0, _frontCount);
-            _frontCount = 0;
         }
 
         private void SwapBuffers()
@@ -389,6 +531,54 @@ namespace Hecton8.Physics
             _backPackets = swap;
             _frontCount = _backCount;
             _backCount = 0;
+        }
+
+        private void EnsureValidationBuffers()
+        {
+            if (!_validationPackets.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ForcePacket>[512] â€” Burst packet validation staging buffer â€” owner: PhysicsApplySystem
+                _validationPackets = new NativeArray<ForcePacket>(MaxQueuedPackets, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_validationMask.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<byte>[512] â€” Burst packet validation mask â€” owner: PhysicsApplySystem
+                _validationMask = new NativeArray<byte>(MaxQueuedPackets, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+        }
+
+        private void ScheduleFrontPacketValidation()
+        {
+            if (_frontCount <= 0)
+                return;
+
+            EnsureValidationBuffers();
+            for (int i = 0; i < _frontCount; i++)
+                _validationPackets[i] = _frontPackets[i];
+
+            ValidateForcePacketsJob validateJob = new ValidateForcePacketsJob
+            {
+                Packets = _validationPackets,
+                ValidityMask = _validationMask,
+                MaxTrackedBodies = _bodySlots.Length
+            };
+
+            _packetValidationHandle = validateJob.Schedule(_frontCount, 32);
+            _packetValidationScheduled = true;
+        }
+
+        private void CompleteFrontPacketValidation()
+        {
+            if (!_packetValidationScheduled)
+                return;
+
+            using (_packetValidationProfilerMarker.Auto())
+            {
+                _packetValidationHandle.Complete();
+                _packetValidationHandle = default;
+                _packetValidationScheduled = false;
+            }
         }
 
         private int ResolveBodyIndex(Rigidbody body)
@@ -425,6 +615,41 @@ namespace Hecton8.Physics
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinMagnitudeSq;
         }
+
+        private static bool TrySanitizeVector(Vector3 value, string errorMessage, out Vector3 sanitized)
+        {
+            float3 value3 = new float3(value.x, value.y, value.z);
+            if (math.any(math.isnan(value3)) || !math.all(math.isfinite(value3)))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(errorMessage);
+#endif
+                sanitized = Vector3.zero;
+                return false;
+            }
+
+            sanitized = value;
+            return true;
+        }
+
+        private void DisposeValidationBuffers()
+        {
+            JobHandle dependency = _packetValidationScheduled ? _packetValidationHandle : default;
+            if (_validationPackets.IsCreated)
+            {
+                dependency = _validationPackets.Dispose(dependency);
+                _validationPackets = default;
+            }
+
+            if (_validationMask.IsCreated)
+            {
+                dependency = _validationMask.Dispose(dependency);
+                _validationMask = default;
+            }
+
+            _packetValidationHandle = dependency;
+            _packetValidationScheduled = false;
+        }
     }
 
     /// <summary>
@@ -448,6 +673,24 @@ namespace Hecton8.Physics
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
             return system.QueueForce(body, force, mode, wake);
+        }
+
+        /// <summary>
+        /// Routes a force-at-position request either into the player motor owner or the deferred packet system.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="force">World-space force vector.</param>
+        /// <param name="worldPosition">World-space application point.</param>
+        /// <param name="mode">Force application mode.</param>
+        /// <param name="wake">True to wake sleeping bodies before application.</param>
+        /// <returns>True when the request was accepted.</returns>
+        public static bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
+        {
+            if (TryRouteToPlayerMotorAtPosition(body, force, worldPosition))
+                return true;
+
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system.QueueForceAtPosition(body, force, worldPosition, mode, wake);
         }
 
         /// <summary>
@@ -490,6 +733,18 @@ namespace Hecton8.Physics
             }
 
             return false;
+        }
+
+        private static bool TryRouteToPlayerMotorAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition)
+        {
+            if (body == null || !body.TryGetComponent(out HectonPlayerMotor playerMotor))
+                return false;
+
+            if (!IsFiniteNonZero(force))
+                return false;
+
+            playerMotor.ApplyForceAtPositionSplit(force, worldPosition, 1.25f, 45f);
+            return true;
         }
     }
 }

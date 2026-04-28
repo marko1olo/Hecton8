@@ -57,8 +57,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             Tags { "LightMode" = "UniversalForward" }
 
             Cull [_Cull]
-            ZWrite Off
-            ZTest Equal
+            ZWrite On
+            ZTest LEqual
             AlphaToMask On
 
             HLSLPROGRAM
@@ -339,6 +339,12 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float hash = frac(52.9829189 * frac(dot(pixel + framePhase, float2(0.06711056, 0.00583715))));
                 float temporalBlend = saturate(1.0 - abs(lodAlpha * 2.0 - 1.0));
                 return lerp(hash, bayer, temporalBlend);
+            }
+
+            float InterleavedGradientNoise(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
             float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
@@ -973,6 +979,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                half cutMask = ResolveVegetationCutMask(input.instanceType, input.positionWS);
+                clip(0.08h - cutMask);
+
+                half porousCoverageMask = input.instanceType > 1.5h ? ResolveSargassumPorousCoverage(input.positionWS, input.heightMask) : 1.0h;
+                if (input.instanceType > 1.5h)
+                    clip(porousCoverageMask - 0.16h);
+
+                half coverage = saturate(_Opacity) * porousCoverageMask;
+                clip(coverage - InterleavedGradientNoise(input.positionCS.xy));
+
                 half3 normalWS = normalize(input.normalWS);
                 half3 viewDirectionWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));
                 Light mainLight = GetMainLight();
@@ -1046,7 +1062,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half3 finalColor = diffuse + transmission + tipColor * rim * (0.08h * rimLightingVisibility);
                 finalColor += anisotropicSss * mainLight.color * sunVisibility;
                 finalColor += edgeBloom * mainLight.color * (1.45h * sunVisibility);
-                half porousCoverageMask = input.instanceType > 1.5h ? ResolveSargassumPorousCoverage(input.positionWS, input.heightMask) : 1.0h;
 
                 #ifdef _ADDITIONAL_LIGHTS
                 uint addLightCount = GetAdditionalLightsCount();

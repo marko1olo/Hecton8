@@ -29,10 +29,9 @@ namespace Hecton8.Gameplay
         private const string LeftHandAttachmentName = "Swim_LeftHandAttachment";
         private const string RightHandAttachmentName = "Swim_RightHandAttachment";
         private const string ViewmodelRootName = "Swim_ViewmodelRoot";
-        private const string FirstPersonToolsLayerName = "FirstPersonTools";
         private const int MaxHierarchyTraversalDepth = 64;
         private const int MaxHierarchyTraversalNodes = 512;
-        private static int s_firstPersonToolsLayer = int.MinValue;
+        private const int FirstPersonToolsLayerIndex = 18;
 
         [Header("── References ─────────────────────────")]
         [Tooltip("Primary swim presentation owner publishing guide pose truth.")]
@@ -258,7 +257,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _firstPersonToolsLayer = ResolveFirstPersonToolsLayer();
+            _firstPersonToolsLayer = FirstPersonToolsLayerIndex;
             AutoResolveReferences();
             CacheBaseScales();
             RefreshAttachmentDebugState();
@@ -272,7 +271,7 @@ namespace Hecton8.Gameplay
         private void Start()
         {
             if (_firstPersonToolsLayer < 0)
-                _firstPersonToolsLayer = ResolveFirstPersonToolsLayer();
+                _firstPersonToolsLayer = FirstPersonToolsLayerIndex;
 
             AutoResolveReferences();
             CacheBaseScales();
@@ -300,7 +299,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _firstPersonToolsLayer = ResolveFirstPersonToolsLayer();
+            _firstPersonToolsLayer = FirstPersonToolsLayerIndex;
             AutoResolveReferences();
             CacheBaseScales();
             RefreshAttachmentDebugState();
@@ -589,15 +588,6 @@ namespace Hecton8.Gameplay
                 return;
 
             ApplyLayerRecursive(root, _firstPersonToolsLayer);
-        }
-
-        private static int ResolveFirstPersonToolsLayer()
-        {
-            if (s_firstPersonToolsLayer != int.MinValue)
-                return s_firstPersonToolsLayer;
-
-            s_firstPersonToolsLayer = LayerMask.NameToLayer(FirstPersonToolsLayerName);
-            return s_firstPersonToolsLayer;
         }
 
         private static void ApplyLayerRecursive(Transform root, int layer)

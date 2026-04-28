@@ -66,6 +66,8 @@ namespace Hecton8.World
             public float HarvestCrashRate;
             public float PreyMigrationRate;
             public float PredatorMigrationRate;
+            public float DiagonalMigrationWeight;
+            public float BorderBleedEqualizationRate;
             public float PreyOverflowThreshold;
             public float PredatorOverflowThreshold;
             public float DepletedSectorBias;
@@ -125,26 +127,40 @@ namespace Hecton8.World
             {
                 int2 sectorCoord = FrontStates[index].SectorCoord;
                 float gradient = 0f;
+                float totalWeight = 0f;
                 int lowerNeighborCount = 0;
-                gradient += SampleNeighborDelta(sectorCoord + new int2(1, 0), sectorPopulation, samplePrey, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, 0), sectorPopulation, samplePrey, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(0, 1), sectorPopulation, samplePrey, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(0, -1), sectorPopulation, samplePrey, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(1, 0), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, 0), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(0, 1), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(0, -1), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(1, 1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(1, -1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, 1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
+                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, -1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
 
                 float safeOverflowThreshold = math.max(1f, overflowThreshold);
                 float depletion01 = math.saturate(1f - (sectorPopulation / safeOverflowThreshold));
-                gradient *= 1f + (depletion01 * DepletedSectorBias);
+                float equalization = totalWeight > 0f
+                    ? (gradient / totalWeight) * math.max(0f, BorderBleedEqualizationRate)
+                    : 0f;
+                equalization *= 1f + (depletion01 * DepletedSectorBias);
 
                 float overflow = math.max(0f, sectorPopulation - safeOverflowThreshold);
                 if (overflow > 0f && lowerNeighborCount > 0)
                 {
-                    gradient -= overflow * OverflowRedistributionRate * (lowerNeighborCount * 0.25f);
+                    equalization -= overflow * OverflowRedistributionRate * (lowerNeighborCount * 0.125f);
                 }
 
-                return gradient;
+                return equalization;
             }
 
-            private float SampleNeighborDelta(int2 neighborCoord, float sectorPopulation, bool samplePrey, ref int lowerNeighborCount)
+            private float SampleNeighborDelta(
+                int2 neighborCoord,
+                float sectorPopulation,
+                bool samplePrey,
+                float weight,
+                ref float totalWeight,
+                ref int lowerNeighborCount)
             {
                 if (!SectorIndexByKey.TryGetValue(PackSectorKey(neighborCoord), out int neighborIndex))
                     return 0f;
@@ -154,7 +170,8 @@ namespace Hecton8.World
                 if (neighborPopulation < sectorPopulation)
                     lowerNeighborCount++;
 
-                return neighborPopulation - sectorPopulation;
+                totalWeight += weight;
+                return (neighborPopulation - sectorPopulation) * weight;
             }
 
             private static long PackSectorKey(int2 sectorCoord)
@@ -206,6 +223,10 @@ namespace Hecton8.World
         [SerializeField, Min(0f)] private float preyMigrationRate = 0.00085f;
         [Tooltip("Sector-to-sector predator migration rate along local population gradients.")]
         [SerializeField, Min(0f)] private float predatorMigrationRate = 0.00018f;
+        [Tooltip("Relative weight applied to diagonal 1 km sector bleed so cross-border diffusion is not restricted to four cardinal neighbors.")]
+        [SerializeField, Min(0f)] private float diagonalMigrationWeight = 0.7071f;
+        [Tooltip("Additional equalization scalar applied to the weighted neighbor differential before migration rates are integrated.")]
+        [SerializeField, Min(0f)] private float borderBleedEqualizationRate = 1f;
         [Tooltip("Prey population above this threshold is treated as overflow and bleeds toward depleted adjacent sectors.")]
         [SerializeField, Min(1f)] private float preyOverflowThreshold = 384f;
         [Tooltip("Predator population above this threshold is treated as overflow and bleeds toward depleted adjacent sectors.")]
@@ -445,6 +466,8 @@ namespace Hecton8.World
             initialPredatorPopulationMax = math.max(initialPredatorPopulationMin, initialPredatorPopulationMax);
             maxPreyPopulation = math.max(initialPreyPopulationMax, maxPreyPopulation);
             maxPredatorPopulation = math.max(initialPredatorPopulationMax, maxPredatorPopulation);
+            diagonalMigrationWeight = math.max(0f, diagonalMigrationWeight);
+            borderBleedEqualizationRate = math.max(0f, borderBleedEqualizationRate);
             preyOverflowThreshold = math.clamp(preyOverflowThreshold, 1f, maxPreyPopulation);
             predatorOverflowThreshold = math.clamp(predatorOverflowThreshold, 1f, maxPredatorPopulation);
             baselineFitness = math.clamp(baselineFitness, 0f, 1f);
@@ -628,6 +651,8 @@ namespace Hecton8.World
                 HarvestCrashRate = harvestCrashRate,
                 PreyMigrationRate = preyMigrationRate,
                 PredatorMigrationRate = predatorMigrationRate,
+                DiagonalMigrationWeight = diagonalMigrationWeight,
+                BorderBleedEqualizationRate = borderBleedEqualizationRate,
                 PreyOverflowThreshold = preyOverflowThreshold,
                 PredatorOverflowThreshold = predatorOverflowThreshold,
                 DepletedSectorBias = depletedSectorBias,

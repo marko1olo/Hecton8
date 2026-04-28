@@ -28,6 +28,9 @@ namespace Hecton8.SaveSystem
         /// <summary>Ошибка загрузки. Params: слот, сообщение ошибки.</summary>
         public static event Action<string, string> OnLoadFailed;
 
+        /// <summary>Критическое расхождение checksum в активном сохранении. Param: слот.</summary>
+        public static event Action<string> OnEmergencyBackupRestoreRequested;
+
         // ── Raise Methods ──
 
         public static void RaiseSaveStarted(string slot)
@@ -58,6 +61,11 @@ namespace Hecton8.SaveSystem
         public static void RaiseLoadFailed(string slot, string error)
         {
             var h = OnLoadFailed; h?.Invoke(slot, error);
+        }
+
+        public static void RaiseEmergencyBackupRestoreRequested(string slot)
+        {
+            var h = OnEmergencyBackupRestoreRequested; h?.Invoke(slot);
         }
     }
 }

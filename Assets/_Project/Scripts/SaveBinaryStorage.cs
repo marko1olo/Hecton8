@@ -408,8 +408,12 @@ namespace Hecton8.SaveSystem
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
             NativeArray<byte> compressedBuffer,
+            out ulong payloadHash64,
+            out int rawPayloadLength,
             out string error)
         {
+            payloadHash64 = 0UL;
+            rawPayloadLength = 0;
             error = string.Empty;
             NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
             NativeList<int3> persistentWorldChunkTable = default;
@@ -479,7 +483,7 @@ namespace Hecton8.SaveSystem
                 if (!SaveBinaryPayloadCodec.TryWrite(data, AddByteOffset(rawPtr, payloadCursor), rawBuffer.Length - payloadCursor, out int saveDataByteLength, out error))
                     return false;
 
-                int rawPayloadLength = payloadCursor + saveDataByteLength + packedQuestSectionLength + persistentWorldSectionLength + ecosystemSectionLength + voxelDeltaByteLength;
+                rawPayloadLength = payloadCursor + saveDataByteLength + packedQuestSectionLength + persistentWorldSectionLength + ecosystemSectionLength + voxelDeltaByteLength;
                 if (rawPayloadLength > rawBuffer.Length)
                 {
                     error = $"Save payload ({rawPayloadLength} bytes) exceeded the {rawBuffer.Length} byte raw buffer ceiling.";
@@ -548,6 +552,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 ulong payloadHash = Hash64(rawPtr, rawPayloadLength);
+                payloadHash64 = payloadHash;
 
                 SaveFileHeader header = new SaveFileHeader
                 {
@@ -664,6 +669,8 @@ namespace Hecton8.SaveSystem
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
             out NativeArray<byte> voxelDeltaSnapshot,
             out SaveMetadata metadata,
+            out ulong payloadHash64,
+            out int rawPayloadLength,
             out int detectedVersion,
             out string error)
         {
@@ -673,13 +680,17 @@ namespace Hecton8.SaveSystem
             ecosystemSectorStates = null;
             voxelDeltaSnapshot = default;
             metadata = null;
+            payloadHash64 = 0UL;
+            rawPayloadLength = 0;
             detectedVersion = 0;
 
-            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out int rawPayloadLength, out string readError))
+            if (!TryReadPayload(absolutePath, rawBuffer, out SaveFileHeader header, out PayloadPrefix prefix, out byte* rawPtr, out rawPayloadLength, out string readError))
             {
                 error = readError;
                 return false;
             }
+
+            payloadHash64 = header.HashPayload64;
 
             int cursor = PayloadPrefixSizeBytes;
             if (!TryReadUtf16String(rawPtr, rawPayloadLength, ref cursor, prefix.SceneNameByteLength, out string sceneName, out error))

@@ -56,7 +56,7 @@ namespace Hecton8.Visor
                 internal uint threadGroupSizeY;
                 internal TextureHandle depth;
                 internal TextureHandle result;
-                internal TextureHandle blueNoiseTexture;
+                internal Texture blueNoiseTexture;
                 internal Vector4 inputSize;
                 internal Vector4 outputSize;
                 internal Matrix4x4 inverseViewProjection;
@@ -148,14 +148,7 @@ namespace Hecton8.Visor
                     passData.threadGroupSizeY = _threadGroupSizeY;
                     passData.depth = depthTexture;
                     passData.result = aoTexture;
-                    TextureHandle blueNoiseTexture = default;
-                    if (_blueNoiseTextureHandle != null)
-                    {
-                        blueNoiseTexture = renderGraph.ImportTexture(_blueNoiseTextureHandle);
-                        builder.UseTexture(blueNoiseTexture, AccessFlags.Read);
-                    }
-
-                    passData.blueNoiseTexture = blueNoiseTexture;
+                    passData.blueNoiseTexture = _settings.blueNoiseTexture;
                     passData.inputSize = new Vector4(depthDesc.width, depthDesc.height, 1f / Mathf.Max(1, depthDesc.width), 1f / Mathf.Max(1, depthDesc.height));
                     passData.outputSize = new Vector4(aoWidth, aoHeight, 1f / Mathf.Max(1, aoWidth), 1f / Mathf.Max(1, aoHeight));
                     passData.inverseViewProjection = inverseViewProjection;
@@ -169,9 +162,6 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(aoTexture, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
-                    builder.SetGlobalTextureAfterPass(aoTexture, ShaderConstants.GlobalTextureId);
-                    if (blueNoiseTexture.IsValid())
-                        builder.SetGlobalTextureAfterPass(blueNoiseTexture, ShaderConstants.BlueNoiseId);
 
                     builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
                     {
@@ -192,6 +182,7 @@ namespace Hecton8.Visor
                         cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.HasBlueNoiseId, data.hasBlueNoise);
                         cmd.SetComputeIntParam(data.computeShader, ShaderConstants.SampleCountId, data.sampleCount);
                         cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
+                        cmd.SetGlobalTexture(ShaderConstants.GlobalTextureId, data.result);
                         cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
                     });
                 }

@@ -41,6 +41,7 @@ namespace Hecton8.Gameplay
     {
         private static readonly List<FieldTargetDescriptor> _ActiveDescriptors = new List<FieldTargetDescriptor>(64);
         private int _spatialHandle;
+        private int _faunaSpatialHandle;
 
         [SerializeField] private FieldTargetRole role = FieldTargetRole.Generic;
         [SerializeField] [TextArea(2, 4)] private string operatorNote = string.Empty;
@@ -95,19 +96,29 @@ namespace Hecton8.Gameplay
 
         private void RegisterSpatialHandle()
         {
-            if (_spatialHandle != 0 || !isActiveAndEnabled)
+            if (!isActiveAndEnabled)
                 return;
 
-            _spatialHandle = WorldSpatialHashGrid.RegisterSignal(this);
+            if (_spatialHandle == 0)
+                _spatialHandle = WorldSpatialHashGrid.RegisterSignal(this);
+
+            if (_faunaSpatialHandle == 0)
+                _faunaSpatialHandle = FaunaSpatialHashRegistry.RegisterSignal(this);
         }
 
         private void UnregisterSpatialHandle()
         {
-            if (_spatialHandle == 0)
-                return;
+            if (_spatialHandle != 0)
+            {
+                WorldSpatialHashGrid.Unregister(_spatialHandle);
+                _spatialHandle = 0;
+            }
 
-            WorldSpatialHashGrid.Unregister(_spatialHandle);
-            _spatialHandle = 0;
+            if (_faunaSpatialHandle != 0)
+            {
+                FaunaSpatialHashRegistry.Unregister(_faunaSpatialHandle);
+                _faunaSpatialHandle = 0;
+            }
         }
 
         private void RefreshSpatialHandle()

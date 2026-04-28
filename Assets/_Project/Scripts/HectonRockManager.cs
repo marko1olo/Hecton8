@@ -276,15 +276,18 @@ namespace Hecton8.World
             int totalPositionCount = 0;
 
             // ── Pass 1: Aggregate per-layer and push to GPUI ──
-            foreach (var layerKvp in _chunkData)
+            Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>.Enumerator layerEnumerator = _chunkData.GetEnumerator();
+            while (layerEnumerator.MoveNext())
             {
+                KeyValuePair<int, Dictionary<Vector2Int, Matrix4x4[]>> layerKvp = layerEnumerator.Current;
                 int layerId = layerKvp.Key;
                 Dictionary<Vector2Int, Matrix4x4[]> chunkDict = layerKvp.Value;
 
                 int layerTotal = 0;
-                foreach (var chunkKvp in chunkDict)
+                Dictionary<Vector2Int, Matrix4x4[]>.Enumerator chunkCountEnumerator = chunkDict.GetEnumerator();
+                while (chunkCountEnumerator.MoveNext())
                 {
-                    layerTotal += chunkKvp.Value.Length;
+                    layerTotal += chunkCountEnumerator.Current.Value.Length;
                 }
 
                 if (layerTotal == 0)
@@ -312,8 +315,10 @@ namespace Hecton8.World
 
                 // Copy all chunks into flat array
                 int writeIndex = 0;
-                foreach (var chunkKvp in chunkDict)
+                Dictionary<Vector2Int, Matrix4x4[]>.Enumerator chunkCopyEnumerator = chunkDict.GetEnumerator();
+                while (chunkCopyEnumerator.MoveNext())
                 {
+                    KeyValuePair<Vector2Int, Matrix4x4[]> chunkKvp = chunkCopyEnumerator.Current;
                     Matrix4x4[] chunkMatrices = chunkKvp.Value;
                     int chunkLen = chunkMatrices.Length;
                     Array.Copy(chunkMatrices, 0, layerBuffer, writeIndex, chunkLen);
@@ -367,10 +372,13 @@ namespace Hecton8.World
                 }
 
                 int posWriteIndex = 0;
-                foreach (var layerKvp in _chunkData)
+                layerEnumerator = _chunkData.GetEnumerator();
+                while (layerEnumerator.MoveNext())
                 {
-                    foreach (var chunkKvp in layerKvp.Value)
+                    Dictionary<Vector2Int, Matrix4x4[]>.Enumerator chunkPositionEnumerator = layerEnumerator.Current.Value.GetEnumerator();
+                    while (chunkPositionEnumerator.MoveNext())
                     {
+                        KeyValuePair<Vector2Int, Matrix4x4[]> chunkKvp = chunkPositionEnumerator.Current;
                         Matrix4x4[] matrices = chunkKvp.Value;
                         int len = matrices.Length;
                         for (int i = 0; i < len; i++)

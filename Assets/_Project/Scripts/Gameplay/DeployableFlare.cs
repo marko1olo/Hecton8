@@ -131,6 +131,7 @@ namespace Hecton8.Gameplay
         private float _currentIntensity;
         private bool _isRegistered;
         private int _spatialHandle;
+        private int _faunaSpatialHandle;
         private Vector3 _lastSpatialPosition;
 
         // ══════════════════════════════════════════════════════════
@@ -466,20 +467,28 @@ namespace Hecton8.Gameplay
 
         private void RegisterSpatialHandle()
         {
-            if (_spatialHandle != 0)
-                return;
+            if (_spatialHandle == 0)
+                _spatialHandle = WorldSpatialHashGrid.RegisterSignal(this);
 
-            _spatialHandle = WorldSpatialHashGrid.RegisterSignal(this);
+            if (_faunaSpatialHandle == 0)
+                _faunaSpatialHandle = FaunaSpatialHashRegistry.RegisterSignal(this);
+
             _lastSpatialPosition = _transform.position;
         }
 
         private void UnregisterSpatialHandle()
         {
-            if (_spatialHandle == 0)
-                return;
+            if (_spatialHandle != 0)
+            {
+                WorldSpatialHashGrid.Unregister(_spatialHandle);
+                _spatialHandle = 0;
+            }
 
-            WorldSpatialHashGrid.Unregister(_spatialHandle);
-            _spatialHandle = 0;
+            if (_faunaSpatialHandle != 0)
+            {
+                FaunaSpatialHashRegistry.Unregister(_faunaSpatialHandle);
+                _faunaSpatialHandle = 0;
+            }
         }
 
         private void RefreshSpatialHandle()
@@ -489,6 +498,8 @@ namespace Hecton8.Gameplay
 
             Vector3 currentPosition = _transform.position;
             WorldSpatialHashGrid.UpdateGridPosition(_spatialHandle, _lastSpatialPosition, currentPosition);
+            if (_faunaSpatialHandle != 0)
+                FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
             _lastSpatialPosition = currentPosition;
         }
 

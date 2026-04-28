@@ -12,6 +12,7 @@ namespace Hecton8.World
     public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable
     {
         private const int MaxOverlapHits = 8;
+        internal static HectonCaveVoxelLightingVolume ActiveRuntimeInstance { get; private set; }
 
         private static readonly int _CaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
         private static readonly int _CaveVoxelWorldToLocalId = Shader.PropertyToID("_HectonCaveVoxelWorldToLocal");
@@ -113,6 +114,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             ResolveFollowTarget();
             EnsureResources();
             PublishInactiveGlobals();
@@ -120,18 +122,25 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             ResolveFollowTarget();
             TryRegister();
         }
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregister();
             PublishInactiveGlobals();
         }
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregister();
             PublishInactiveGlobals();
             ReleaseResources();
@@ -186,6 +195,30 @@ namespace Hecton8.World
             _debugSliceCursor = _scanSliceCursor;
             _debugPublishedCenterWs = _publishedCenterWs;
             _debugPublishedSdfRange = _publishedSdfRange;
+        }
+
+        internal bool TryGetPublishedSignedDistanceVoxelPayload(
+            out NativeArray<byte> signedDistanceVoxels,
+            out Vector3Int gridDimensions,
+            out Vector3 gridOrigin,
+            out Vector3 voxelCellSize)
+        {
+            signedDistanceVoxels = _sdfVolume;
+            int resolution = _resolutionRuntime;
+            gridDimensions = new Vector3Int(resolution, resolution, resolution);
+            gridOrigin = _publishedCenterWs - _publishedHalfExtents;
+            voxelCellSize = resolution > 0
+                ? new Vector3(
+                    (_publishedHalfExtents.x * 2f) / resolution,
+                    (_publishedHalfExtents.y * 2f) / resolution,
+                    (_publishedHalfExtents.z * 2f) / resolution)
+                : Vector3.one;
+            return _hasValidPublishedVolume &&
+                   signedDistanceVoxels.IsCreated &&
+                   resolution > 0 &&
+                   voxelCellSize.x > 0f &&
+                   voxelCellSize.y > 0f &&
+                   voxelCellSize.z > 0f;
         }
 
         private void TryRegister()
@@ -361,7 +394,7 @@ namespace Hecton8.World
 
         private bool IsCellOccupied(Vector3 worldCenter)
         {
-            int hitCount = Physics.OverlapBoxNonAlloc(
+            int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(
                 worldCenter,
                 _scanCellHalfExtents,
                 _overlapHits,

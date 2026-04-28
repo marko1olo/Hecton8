@@ -269,6 +269,7 @@ namespace Hecton8.Gameplay
         private float _decompressionRisk01;
         private float _rapidAscentMetersPerSecond;
         private int _bloodScentSpatialHandle;
+        private int _bloodScentFaunaSpatialHandle;
         private NativeArray<uint> _survivalDatabaseStableHashes;
         private NativeArray<float> _survivalDatabaseMassKilograms;
         private NativeArray<float> _survivalDatabaseVolumeLiters;
@@ -1524,6 +1525,7 @@ namespace Hecton8.Gameplay
             dto.SetLastDeathPosition(_lastDeathRecord.Position);
             dto.SetPosition(transform.position);
             dto.SetRotation(transform.rotation);
+            dto.SetVelocity(_playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero);
         }
 
         public void LoadFromSaveData(SaveData data)
@@ -1571,6 +1573,12 @@ namespace Hecton8.Gameplay
 
             Vector3 pos = dto.GetPosition();
             if (!float.IsNaN(pos.x)) transform.SetPositionAndRotation(pos, dto.GetRotation());
+
+            if (_playerRigidbody != null)
+            {
+                _playerRigidbody.linearVelocity = dto.GetVelocity();
+                _playerRigidbody.angularVelocity = Vector3.zero;
+            }
 
             ApplyInjuryMovementPenalty();
             ForceAllDirty();
@@ -2455,15 +2463,22 @@ namespace Hecton8.Gameplay
                 return;
 
             _bloodScentSpatialHandle = WorldSpatialHashGrid.RegisterSignal(this, transform, FieldTargetRole.HazardProbe);
+            _bloodScentFaunaSpatialHandle = FaunaSpatialHashRegistry.RegisterSignal(this, transform, FieldTargetRole.HazardProbe);
         }
 
         private void UnregisterBloodScentSignal()
         {
-            if (_bloodScentSpatialHandle == 0)
-                return;
+            if (_bloodScentSpatialHandle != 0)
+            {
+                WorldSpatialHashGrid.Unregister(_bloodScentSpatialHandle);
+                _bloodScentSpatialHandle = 0;
+            }
 
-            WorldSpatialHashGrid.Unregister(_bloodScentSpatialHandle);
-            _bloodScentSpatialHandle = 0;
+            if (_bloodScentFaunaSpatialHandle != 0)
+            {
+                FaunaSpatialHashRegistry.Unregister(_bloodScentFaunaSpatialHandle);
+                _bloodScentFaunaSpatialHandle = 0;
+            }
         }
 
         private void RefreshBloodScentSignal()
@@ -2472,6 +2487,8 @@ namespace Hecton8.Gameplay
                 return;
 
             WorldSpatialHashGrid.Refresh(_bloodScentSpatialHandle);
+            if (_bloodScentFaunaSpatialHandle != 0)
+                FaunaSpatialHashRegistry.Refresh(_bloodScentFaunaSpatialHandle);
         }
 
         private void TryApplyDamageTrauma(float damageAmount)

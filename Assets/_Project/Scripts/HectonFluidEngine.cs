@@ -43,6 +43,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -59,6 +60,8 @@ namespace Hecton8.Physics
         private const string GpuBuoyancyComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_GpuBuoyancy.compute";
 #endif
         private const int GpuReadbackRingSize = 3;
+        private const string NonFiniteBuoyancyForceLog = "[HectonFluidEngine] Non-finite buoyancy force output detected. Zeroing packet.";
+        private const string NonFiniteBuoyancyTorqueLog = "[HectonFluidEngine] Non-finite buoyancy torque output detected. Zeroing packet.";
 
         [StructLayout(LayoutKind.Sequential)]
         private struct GpuBuoyancyObjectData
@@ -80,6 +83,10 @@ namespace Hecton8.Physics
         private static readonly int _GpuBuoyancyWave1BId = Shader.PropertyToID("_GpuBuoyancyWave1B");
         private static readonly int _GpuBuoyancyWave2AId = Shader.PropertyToID("_GpuBuoyancyWave2A");
         private static readonly int _GpuBuoyancyWave2BId = Shader.PropertyToID("_GpuBuoyancyWave2B");
+        private static readonly ProfilerMarker _gatherDataProfilerMarker = new ProfilerMarker("H8.Fluid.GatherData");
+        private static readonly ProfilerMarker _jobScheduleProfilerMarker = new ProfilerMarker("H8.Fluid.ScheduleBuoyancyJob");
+        private static readonly ProfilerMarker _scheduledApplyProfilerMarker = new ProfilerMarker("H8.Fluid.ApplyScheduledForces");
+        private static readonly ProfilerMarker _gpuReadbackProfilerMarker = new ProfilerMarker("H8.Fluid.ConsumeGpuReadback");
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -539,6 +546,8 @@ namespace Hecton8.Physics
             }
 
             // ── 3. Schedule Job ──
+            using (_jobScheduleProfilerMarker.Auto())
+            {
             for (int i = 0; i < count; i++)
                 _scheduledBodies[i] = _bodies[i];
 
@@ -597,6 +606,7 @@ namespace Hecton8.Physics
             };
 
             _scheduledBuoyancyHandle = job.Schedule(count, jobBatchSize, waveHandle);
+            }
 
             // ── 4. Complete ──
 
@@ -624,6 +634,8 @@ namespace Hecton8.Physics
         /// </summary>
         private void GatherData()
         {
+            using (_gatherDataProfilerMarker.Auto())
+            {
             for (int i = _objects.Count - 1; i >= 0; i--)
             {
                 BuoyancyObject obj = _objects[i];
@@ -732,6 +744,7 @@ namespace Hecton8.Physics
                     simplifiedSubmersion = simplifiedSubmersion
                 };
             }
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -744,6 +757,8 @@ namespace Hecton8.Physics
         /// </summary>
         private void ApplyScheduledForces()
         {
+            using (_scheduledApplyProfilerMarker.Auto())
+            {
             for (int i = 0; i < _scheduledForceCount; i++)
             {
                 Rigidbody rb = _scheduledBodies[i];
@@ -753,21 +768,24 @@ namespace Hecton8.Physics
                 float3 torque = _resultTorques[i];
 
                 // Пропускаем нулевые силы (объект над водой или в сухой зоне)
-                if (math.lengthsq(force) > 0.0001f)
+                if (TrySanitizePhysicsVector(force, NonFiniteBuoyancyForceLog, out Vector3 sanitizedForce) &&
+                    sanitizedForce.sqrMagnitude > 0.0001f)
                 {
                     PhysicsForceRouter.QueueForce(
                         rb,
-                        new Vector3(force.x, force.y, force.z),
+                        sanitizedForce,
                         ForceMode.Force);
                 }
 
-                if (math.lengthsq(torque) > 0.0001f)
+                if (TrySanitizePhysicsVector(torque, NonFiniteBuoyancyTorqueLog, out Vector3 sanitizedTorque) &&
+                    sanitizedTorque.sqrMagnitude > 0.0001f)
                 {
                     PhysicsForceRouter.QueueTorque(
                         rb,
-                        new Vector3(torque.x, torque.y, torque.z),
+                        sanitizedTorque,
                         ForceMode.Force);
                 }
+            }
             }
         }
 
@@ -867,6 +885,21 @@ namespace Hecton8.Physics
             array = default;
         }
 
+        private static bool TrySanitizePhysicsVector(float3 value, string errorMessage, out Vector3 sanitized)
+        {
+            if (math.any(math.isnan(value)) || !math.all(math.isfinite(value)))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(errorMessage);
+#endif
+                sanitized = Vector3.zero;
+                return false;
+            }
+
+            sanitized = new Vector3(value.x, value.y, value.z);
+            return true;
+        }
+
         private void ReleaseIdleNativeBuffersIfNeeded()
         {
             if (_objects.Count > 0 || _nativeCapacity <= 0)
@@ -921,6 +954,8 @@ namespace Hecton8.Physics
 
         private void ConsumeGpuBuoyancyReadbacks()
         {
+            using (_gpuReadbackProfilerMarker.Auto())
+            {
             if (_gpuReadbackRequests == null || _gpuReadbackActive == null || !_gpuBuoyancyReadback.IsCreated)
                 return;
 
@@ -948,6 +983,7 @@ namespace Hecton8.Physics
                 }
 
                 _hasGpuBuoyancyData = readCount > 0;
+            }
             }
         }
 

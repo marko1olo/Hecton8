@@ -355,7 +355,7 @@ namespace Hecton8.World
                 if (item == null || quantity <= 0)
                     continue;
 
-                if (inventory.TryAddItem(item, quantity))
+                if (item != null && inventory.TryAddItem(Hecton.Localization.LocHash.Compute(item.PersistentId), quantity))
                 {
                     grantedAny = true;
                     continue;

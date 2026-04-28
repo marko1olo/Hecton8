@@ -338,12 +338,12 @@ namespace Hecton8.World
         private const double DehydrateRadiusSq = DehydrateRadiusMeters * DehydrateRadiusMeters;
         private const float HydrationRescanDistanceMeters = 16f;
         private const double HydrationRescanDistanceSq = HydrationRescanDistanceMeters * HydrationRescanDistanceMeters;
-        private const int MaxHydrationsPerTick = 64;
+        private const int MaxHydrationsPerFrame = 30;
         private const int MaxDehydrationsPerTick = 8;
         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
         private const long PersistentMemoryBudgetBytes = 10485760L;
         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
-        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
+        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.0015d));
 
         private static PersistentWorldRegistry _instance;
         private static int _nextInstanceUidCounter;
@@ -393,10 +393,12 @@ namespace Hecton8.World
         private ItemCatalog _resolvedItemCatalog;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
+        private bool _hydrationSessionRunning;
         private bool _playerChunkValid;
         private bool _hasLastHydrationScanAup;
         private ushort _hydrationFrameCounter;
         private int _pendingHydrationReadIndex;
+        private int _hydrationSessionVersion;
         private int3 _currentPlayerChunk;
         private AbsoluteUniversePosition _lastHydrationScanAup;
 
@@ -485,12 +487,14 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            CancelHydrationSession(clearQueue: false);
             TryUnregisterRuntimeLoops();
             DehydrateAll(syncTransformsBackToRecords: false);
         }
 
         private void OnDestroy()
         {
+            CancelHydrationSession(clearQueue: false);
             TryUnregisterRuntimeLoops();
             DehydrateAll(syncTransformsBackToRecords: false);
 
@@ -546,7 +550,6 @@ namespace Hecton8.World
 
         public void Tick(float dt)
         {
-            ProcessPendingHydrationQueue();
             DrainDehydrateQueue(MaxDehydrationsPerTick);
         }
 
@@ -571,6 +574,7 @@ namespace Hecton8.World
             _hasLastHydrationScanAup = true;
             _hydrationFrameCounter++;
             RefreshHydrationWindow(in playerAup);
+            EnsureHydrationSessionScheduled();
             UpdateDiagnostics();
         }
 
@@ -614,6 +618,15 @@ namespace Hecton8.World
 
             UpdateDiagnostics();
             return true;
+        }
+
+        internal bool TryRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition)
+        {
+            if (itemHashId == 0 || itemCatalog == null)
+                return false;
+
+            ItemData itemData = itemCatalog.FindByHash(itemHashId);
+            return TryRegisterDroppedItem(itemData, quantity, runtimePosition);
         }
 
         private static Vector3 ApplyDeterministicDropScatter(Vector3 runtimePosition, uint instanceUid)
@@ -684,6 +697,7 @@ namespace Hecton8.World
 
         internal void RestoreFromLoadedRecords(PersistentWorldDeltaRecord[] loadedRecords)
         {
+            CancelHydrationSession(clearQueue: true);
             DehydrateAll(syncTransformsBackToRecords: false);
             _records.Clear();
             _recordsByChunk.Clear();
@@ -737,6 +751,18 @@ namespace Hecton8.World
 
                 RebuildDeltaChunkLookup();
                 RebaseInstanceUidCounter(maxObservedInstanceSequence);
+            }
+
+            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
+            {
+                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+                _currentPlayerChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
+                _playerChunkValid = true;
+                _lastHydrationScanAup = playerAup;
+                _hasLastHydrationScanAup = true;
+                _hydrationFrameCounter++;
+                RefreshHydrationWindow(in playerAup);
+                EnsureHydrationSessionScheduled();
             }
 
             UpdateDiagnostics();
@@ -1346,19 +1372,66 @@ namespace Hecton8.World
             slotData.StateFlags |= hydrationQueuedMask;
             _poolSlotData[poolIndex] = slotData;
             _pendingHydrationRecords.AddNoResize(recordIndex);
+            EnsureHydrationSessionScheduled();
         }
 
-        private void ProcessPendingHydrationQueue()
+        private void EnsureHydrationSessionScheduled()
+        {
+            if (_hydrationSessionRunning ||
+                !Application.isPlaying ||
+                !_pendingHydrationRecords.IsCreated)
+            {
+                return;
+            }
+
+            CompactPendingHydrationQueueIfDrained();
+            if (_pendingHydrationReadIndex >= _pendingHydrationRecords.Length)
+                return;
+
+            _hydrationSessionRunning = true;
+            int sessionVersion = ++_hydrationSessionVersion;
+            _ = RunHydrationSessionAsync(sessionVersion);
+        }
+
+        private async Awaitable RunHydrationSessionAsync(int sessionVersion)
+        {
+            try
+            {
+                while (Application.isPlaying &&
+                       ReferenceEquals(_instance, this) &&
+                       _hydrationSessionVersion == sessionVersion)
+                {
+                    if (!TryProcessHydrationBurst())
+                        break;
+
+                    await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                if (_hydrationSessionVersion == sessionVersion)
+                    _hydrationSessionRunning = false;
+
+                CompactPendingHydrationQueueIfDrained();
+                if (!_hydrationSessionRunning)
+                    EnsureHydrationSessionScheduled();
+            }
+        }
+
+        private bool TryProcessHydrationBurst()
         {
             if (!_pendingHydrationRecords.IsCreated || _pendingHydrationReadIndex >= _pendingHydrationRecords.Length)
             {
                 CompactPendingHydrationQueueIfDrained();
-                return;
+                return false;
             }
 
             long budgetDeadline = Stopwatch.GetTimestamp() + HydrationFrameBudgetTicks;
             int processedCount = 0;
-            while (processedCount < MaxHydrationsPerTick && _pendingHydrationReadIndex < _pendingHydrationRecords.Length)
+            while (processedCount < MaxHydrationsPerFrame && _pendingHydrationReadIndex < _pendingHydrationRecords.Length)
             {
                 if (processedCount > 0 && Stopwatch.GetTimestamp() >= budgetDeadline)
                     break;
@@ -1386,6 +1459,7 @@ namespace Hecton8.World
             }
 
             CompactPendingHydrationQueueIfDrained();
+            return _pendingHydrationRecords.IsCreated && _pendingHydrationReadIndex < _pendingHydrationRecords.Length;
         }
 
         private void CompactPendingHydrationQueueIfDrained()
@@ -1395,6 +1469,16 @@ namespace Hecton8.World
 
             _pendingHydrationRecords.Clear();
             _pendingHydrationReadIndex = 0;
+        }
+
+        private void CancelHydrationSession(bool clearQueue)
+        {
+            _hydrationSessionVersion++;
+            _hydrationSessionRunning = false;
+            _pendingHydrationReadIndex = 0;
+
+            if (clearQueue && _pendingHydrationRecords.IsCreated)
+                _pendingHydrationRecords.Clear();
         }
 
         private void ClearHydrationQueuedFlag(in PersistentWorldItemRecord record)

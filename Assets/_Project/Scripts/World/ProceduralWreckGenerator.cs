@@ -574,6 +574,10 @@ namespace Hecton8.World
         [Tooltip("Authoring definitions for up to 16 WFC modules. Element 0 is reserved as the contradiction-safe universal connector.")]
         private ProceduralWreckModuleDefinition[] moduleDefinitions = Array.Empty<ProceduralWreckModuleDefinition>();
 
+        [SerializeField]
+        [Tooltip("Optional BRG render owner that receives the module matrix payload after WFC collapse. When assigned, merged render meshes are skipped.")]
+        private WreckMaterialRegistry wreckMaterialRegistry;
+
         [Header("Damage Decals")]
         [SerializeField]
         [Tooltip("True when the generator should emit a single merged damage decal mesh derived from baked source normals.")]
@@ -904,17 +908,13 @@ namespace Hecton8.World
             XorShift32State rng = new XorShift32State(seed);
             CollapseGrid(cellCount, moduleCount, ref rng);
             BuildPlacements(cellCount, seed);
-
-            Mesh combinedMesh = BuildMergedMesh(_allPlacements);
-            Mesh essentialMesh = BuildMergedMeshForTier((byte)WreckLodTier.Essential);
-            Mesh detailMesh = BuildMergedMeshForTier((byte)WreckLodTier.Detail);
-            Mesh clutterMesh = BuildMergedMeshForTier((byte)WreckLodTier.Clutter);
             BuildDamageDecalStamps(seed);
             Mesh damageDecalMesh = BuildDamageDecalMesh();
             Mesh proxyMesh = BuildProxyMesh();
 
             Bounds localBounds = CalculateLocalBounds(_allPlacements);
             Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
+            PublishWreckRenderPayload(runtimeOrigin, worldBounds);
 
             WreckNavigationHandle navigationHandle = null;
             NavMeshData navMeshData = null;
@@ -926,7 +926,7 @@ namespace Hecton8.World
             _debugLastPlacementCount = _allPlacements.Length;
             _debugLastCellCount = cellCount;
             _debugLastDamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0;
-            _debugLastCombinedBoundsValid = combinedMesh != null && IsFiniteBounds(combinedMesh.bounds);
+            _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
             _debugLastDamageDecalBoundsValid = damageDecalMesh == null || IsFiniteBounds(damageDecalMesh.bounds);
             _debugLastWorldBoundsValid = IsFiniteBounds(worldBounds);
             _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
@@ -934,10 +934,10 @@ namespace Hecton8.World
 
             return new WreckageData
             {
-                CombinedMesh = combinedMesh,
-                EssentialMesh = essentialMesh,
-                DetailMesh = detailMesh,
-                ClutterMesh = clutterMesh,
+                CombinedMesh = null,
+                EssentialMesh = null,
+                DetailMesh = null,
+                ClutterMesh = null,
                 DamageDecalMesh = damageDecalMesh,
                 DamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0,
                 ProxyMesh = proxyMesh,
@@ -965,18 +965,6 @@ namespace Hecton8.World
             await SolveGridAsync(cellCount, initialMask, moduleCount, seed);
             await YieldAfterGenerationStageAsync();
 
-            Mesh combinedMesh = await BuildMergedMeshAsync(_allPlacements);
-            await YieldAfterGenerationStageAsync();
-
-            Mesh essentialMesh = await BuildMergedMeshForTierAsync((byte)WreckLodTier.Essential);
-            await YieldAfterGenerationStageAsync();
-
-            Mesh detailMesh = await BuildMergedMeshForTierAsync((byte)WreckLodTier.Detail);
-            await YieldAfterGenerationStageAsync();
-
-            Mesh clutterMesh = await BuildMergedMeshForTierAsync((byte)WreckLodTier.Clutter);
-            await YieldAfterGenerationStageAsync();
-
             BuildDamageDecalStamps(seed);
             Mesh damageDecalMesh = BuildDamageDecalMesh();
             await YieldAfterGenerationStageAsync();
@@ -984,6 +972,7 @@ namespace Hecton8.World
             Mesh proxyMesh = await BuildProxyMeshAsync();
             Bounds localBounds = CalculateLocalBounds(_allPlacements);
             Bounds worldBounds = TranslateBounds(localBounds, runtimeOrigin);
+            PublishWreckRenderPayload(runtimeOrigin, worldBounds);
 
             WreckNavigationHandle navigationHandle = null;
             NavMeshData navMeshData = null;
@@ -995,7 +984,7 @@ namespace Hecton8.World
             _debugLastPlacementCount = _allPlacements.Length;
             _debugLastCellCount = cellCount;
             _debugLastDamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0;
-            _debugLastCombinedBoundsValid = combinedMesh != null && IsFiniteBounds(combinedMesh.bounds);
+            _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
             _debugLastDamageDecalBoundsValid = damageDecalMesh == null || IsFiniteBounds(damageDecalMesh.bounds);
             _debugLastWorldBoundsValid = IsFiniteBounds(worldBounds);
             _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
@@ -1003,10 +992,10 @@ namespace Hecton8.World
 
             return new WreckageData
             {
-                CombinedMesh = combinedMesh,
-                EssentialMesh = essentialMesh,
-                DetailMesh = detailMesh,
-                ClutterMesh = clutterMesh,
+                CombinedMesh = null,
+                EssentialMesh = null,
+                DetailMesh = null,
+                ClutterMesh = null,
                 DamageDecalMesh = damageDecalMesh,
                 DamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0,
                 ProxyMesh = proxyMesh,
@@ -1018,6 +1007,40 @@ namespace Hecton8.World
                 RuntimeOrigin = runtimeOrigin,
                 GenerationSeed = seed
             };
+        }
+
+        private void PublishWreckRenderPayload(Vector3 runtimeOrigin, Bounds worldBounds)
+        {
+            if (wreckMaterialRegistry == null || !_allPlacements.IsCreated || _allPlacements.Length <= 0)
+                return;
+
+            int placementCount = _allPlacements.Length;
+            NativeArray<Matrix4x4> worldMatrices = new NativeArray<Matrix4x4>(placementCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> moduleIds = new NativeArray<byte>(placementCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+            try
+            {
+                for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
+                {
+                    WreckModulePlacement placement = _allPlacements[placementIndex];
+                    float4x4 localMatrix = float4x4.TRS(placement.Position + (float3)runtimeOrigin, placement.Rotation, new float3(1f));
+                    worldMatrices[placementIndex] = new Matrix4x4(
+                        new Vector4(localMatrix.c0.x, localMatrix.c0.y, localMatrix.c0.z, localMatrix.c0.w),
+                        new Vector4(localMatrix.c1.x, localMatrix.c1.y, localMatrix.c1.z, localMatrix.c1.w),
+                        new Vector4(localMatrix.c2.x, localMatrix.c2.y, localMatrix.c2.z, localMatrix.c2.w),
+                        new Vector4(localMatrix.c3.x, localMatrix.c3.y, localMatrix.c3.z, localMatrix.c3.w));
+                    moduleIds[placementIndex] = placement.ModuleId;
+                }
+
+                wreckMaterialRegistry.Publish(moduleDefinitions, worldMatrices, moduleIds, placementCount, worldBounds);
+            }
+            finally
+            {
+                if (moduleIds.IsCreated)
+                    moduleIds.Dispose();
+                if (worldMatrices.IsCreated)
+                    worldMatrices.Dispose();
+            }
         }
 
         private async Awaitable SolveGridAsync(int cellCount, ushort initialMask, int moduleCount, uint seed)

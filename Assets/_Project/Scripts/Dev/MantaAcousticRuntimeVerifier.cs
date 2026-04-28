@@ -155,8 +155,8 @@ namespace Hecton8.Dev
 
             _debugEquippedManta = manta.IsEquipped;
 
-            if (!playerInventory.ContainsItem(batteryItem))
-                playerInventory.TryAddItem(batteryItem, 1);
+            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(batteryItem.PersistentId)))
+                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(batteryItem.PersistentId), 1);
 
             manta.InsertBattery(batteryItem, 1f);
             playerRigidbody.linearVelocity = Vector3.zero;
@@ -280,8 +280,8 @@ namespace Hecton8.Dev
                 return;
             }
 
-            if (!playerInventory.ContainsItem(prefabScooter.ToolData))
-                playerInventory.TryAddItem(prefabScooter.ToolData, 1);
+            if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(prefabScooter.ToolData.PersistentId)))
+                playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(prefabScooter.ToolData.PersistentId), 1);
 
             toolManager.Holster();
             toolManager.SetAssignedToolPrefab(0, scooterPrefab, holsterIfCurrentInvalid: false);

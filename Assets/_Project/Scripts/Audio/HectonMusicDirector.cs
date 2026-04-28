@@ -65,8 +65,7 @@ namespace Hecton8.Audio
             if (!Application.isPlaying || _instance != null)
                 return;
 
-            GameObject runtimeRoot = new GameObject("HectonMusicDirector_Root");
-            runtimeRoot.AddComponent<HectonMusicDirector>();
+            TryInstantiateConfiguredRuntimeDirector();
         }
 
         [Header("References")]
@@ -81,6 +80,9 @@ namespace Hecton8.Audio
 
         [Tooltip("Optional explicit AI director reference. If null, runtime instance is used when available.")]
         [SerializeField] private HectonDirectorAI _directorAI;
+
+        [Tooltip("Optional authored runtime voice owner. If null, the director resolves an owned MusicVoicePool component.")]
+        [SerializeField] private MusicVoicePool _voicePool;
 
         [Header("Profiles")]
         [Tooltip("Profile used in the main menu scene.")]
@@ -391,7 +393,7 @@ namespace Hecton8.Audio
             // COLD ALLOC: AudioClip[3] â€” recent short-form clip history â€” owner: HectonMusicDirector
             _recentShortClips = new AudioClip[3];
 
-            CreateRuntimeVoices();
+            BindAuthoredVoicePool();
             ResolveDependencies();
             RefreshSceneFlags(SceneManager.GetActiveScene());
         }
@@ -445,6 +447,12 @@ namespace Hecton8.Audio
         /// </summary>
         public void Tick(float deltaTime)
         {
+            if (!AreRuntimeVoicesReady())
+            {
+                WriteDebugState();
+                return;
+            }
+
             UpdateDuck(deltaTime);
             UpdateVoices(deltaTime);
             UpdateStingerState();
@@ -692,34 +700,60 @@ namespace Hecton8.Audio
             }
         }
 
-        private void CreateRuntimeVoices()
+        private static bool TryInstantiateConfiguredRuntimeDirector()
         {
-            for (int i = 0; i < MusicVoiceCount; i++)
+            Scene activeScene = SceneManager.GetActiveScene();
+            HectonMusicDirectorConfig sceneConfig;
+            if (!HectonMusicDirectorAnchor.TryResolveConfigForScene(activeScene, out sceneConfig))
             {
-                GameObject child = new GameObject("MusicVoice_" + i);
-                child.transform.SetParent(transform, false);
-
-                AudioSource source = child.AddComponent<AudioSource>();
-                ConfigureRuntimeSource(source, ResolveMusicMixerGroup(), 48);
-                _musicSources[i] = source;
+                HectonMusicDirectorAnchor anchor = HectonMusicDirectorAnchor.ActiveRuntimeInstance;
+                sceneConfig = anchor != null ? anchor.Config : null;
             }
 
-            GameObject stingerObject = new GameObject("MusicStinger");
-            stingerObject.transform.SetParent(transform, false);
-            _stingerSource = stingerObject.AddComponent<AudioSource>();
-            ConfigureRuntimeSource(_stingerSource, ResolveStingerMixerGroup(), 32);
+            if (sceneConfig == null || sceneConfig.RuntimeDirectorPrefab == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[HectonMusicDirector] Missing authored RuntimeDirectorPrefab on active HectonMusicDirectorConfig.");
+#endif
+                return false;
+            }
+
+            Instantiate(sceneConfig.RuntimeDirectorPrefab);
+            return _instance != null;
         }
 
-        private void ConfigureRuntimeSource(AudioSource source, AudioMixerGroup mixerGroup, int priority)
+        private void BindAuthoredVoicePool()
         {
-            source.playOnAwake = false;
-            source.loop = false;
-            source.spatialBlend = 0f;
-            source.spread = 0f;
-            source.dopplerLevel = 0f;
-            source.rolloffMode = AudioRolloffMode.Linear;
-            source.priority = priority;
-            source.outputAudioMixerGroup = mixerGroup;
+            if (_musicSources == null)
+                return;
+
+            for (int i = 0; i < _musicSources.Length; i++)
+                _musicSources[i] = null;
+
+            _stingerSource = null;
+            ResolveVoicePool();
+            if (_voicePool == null)
+                return;
+
+            for (int i = 0; i < MusicVoiceCount; i++)
+            {
+                if (_voicePool.TryGetMusicVoice(i, out AudioSource source))
+                    _musicSources[i] = source;
+            }
+
+            _stingerSource = _voicePool.StingerSource;
+            _voicePool.ApplyRuntimeRouting(ResolveMusicMixerGroup(), ResolveStingerMixerGroup());
+        }
+
+        private void ResolveVoicePool()
+        {
+            if (_voicePool != null)
+                return;
+
+            if (TryGetComponent(out _voicePool))
+                return;
+
+            _voicePool = ComponentReferenceUtility.ResolveOwnedComponent<MusicVoicePool>(transform);
         }
 
         private void ResolveDependencies()
@@ -762,6 +796,7 @@ namespace Hecton8.Audio
             AudioMixerGroup musicGroup = ResolveMusicMixerGroup();
             AudioMixerGroup stingerGroup = ResolveStingerMixerGroup();
             _layerMixer = musicGroup != null ? musicGroup.audioMixer : null;
+            BindAuthoredVoicePool();
 
             if (_musicSources != null)
             {
@@ -776,6 +811,20 @@ namespace Hecton8.Audio
                 _stingerSource.outputAudioMixerGroup = stingerGroup;
 
             ApplyLayerMixerState(false);
+        }
+
+        private bool AreRuntimeVoicesReady()
+        {
+            if (_musicSources == null || _musicSources.Length < MusicVoiceCount || _stingerSource == null)
+                return false;
+
+            for (int i = 0; i < MusicVoiceCount; i++)
+            {
+                if (_musicSources[i] == null)
+                    return false;
+            }
+
+            return true;
         }
 
         private void RefreshLayerThreatSnapshot()

@@ -21,6 +21,58 @@ namespace Hecton8.SaveSystem
         order    = 100)]
     public sealed class ItemCatalog : ScriptableObject
     {
+        public readonly struct ItemRuntimeDescriptor
+        {
+            public readonly int HashId;
+            public readonly byte Width;
+            public readonly byte Height;
+            public readonly ushort MaxStack;
+            public readonly float Weight;
+            public readonly byte CategoryId;
+            public readonly bool Stackable;
+            public readonly bool IsConsumable;
+            public readonly float OxygenRestore;
+            public readonly float EnergyRestore;
+            public readonly float IntegrityRestore;
+            public readonly float HungerRestore;
+            public readonly float ThirstRestore;
+            public readonly float UseDuration;
+
+            public ItemRuntimeDescriptor(
+                int hashId,
+                byte width,
+                byte height,
+                ushort maxStack,
+                float weight,
+                byte categoryId,
+                bool stackable,
+                bool isConsumable,
+                float oxygenRestore,
+                float energyRestore,
+                float integrityRestore,
+                float hungerRestore,
+                float thirstRestore,
+                float useDuration)
+            {
+                HashId = hashId;
+                Width = width;
+                Height = height;
+                MaxStack = maxStack;
+                Weight = weight;
+                CategoryId = categoryId;
+                Stackable = stackable;
+                IsConsumable = isConsumable;
+                OxygenRestore = oxygenRestore;
+                EnergyRestore = energyRestore;
+                IntegrityRestore = integrityRestore;
+                HungerRestore = hungerRestore;
+                ThirstRestore = thirstRestore;
+                UseDuration = useDuration;
+            }
+
+            public bool IsValid => HashId != 0 && Width > 0 && Height > 0;
+        }
+
         [Header("All item assets in the project")]
         [SerializeField] private List<ItemData> allItems = new List<ItemData>();
 
@@ -30,6 +82,7 @@ namespace Hecton8.SaveSystem
         /// </summary>
         private Dictionary<string, ItemData> _lookup;
         private Dictionary<int, ItemData> _hashLookup;
+        private Dictionary<int, ItemRuntimeDescriptor> _runtimeDescriptorLookup;
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary;
         private List<ItemData> _runtimeItems;
@@ -77,6 +130,20 @@ namespace Hecton8.SaveSystem
 
             _hashLookup.TryGetValue(hashId, out ItemData result);
             return result;
+        }
+
+        public bool TryGetRuntimeDescriptor(int hashId, out ItemRuntimeDescriptor descriptor)
+        {
+            descriptor = default;
+            if (hashId == 0)
+                return false;
+
+            if (_runtimeDescriptorLookup == null)
+                RebuildLookup();
+
+            return _runtimeDescriptorLookup != null &&
+                   _runtimeDescriptorLookup.TryGetValue(hashId, out descriptor) &&
+                   descriptor.IsValid;
         }
 
         /// <summary>
@@ -173,6 +240,7 @@ namespace Hecton8.SaveSystem
             int itemCount = allItems != null ? allItems.Count : 0;
             _lookup = new Dictionary<string, ItemData>(itemCount * 2);
             _hashLookup = new Dictionary<int, ItemData>(itemCount * 2);
+            _runtimeDescriptorLookup = new Dictionary<int, ItemRuntimeDescriptor>(itemCount * 2);
             _hasLookupAmbiguity = false;
             _lookupAmbiguitySummary = string.Empty;
 
@@ -312,6 +380,29 @@ namespace Hecton8.SaveSystem
             }
 
             _hashLookup.Add(hashId, item);
+            _runtimeDescriptorLookup.Add(hashId, BuildRuntimeDescriptor(hashId, item));
+        }
+
+        private static ItemRuntimeDescriptor BuildRuntimeDescriptor(int hashId, ItemData item)
+        {
+            if (hashId == 0 || item == null)
+                return default;
+
+            return new ItemRuntimeDescriptor(
+                hashId,
+                (byte)Mathf.Clamp(item.width, 1, byte.MaxValue),
+                (byte)Mathf.Clamp(item.height, 1, byte.MaxValue),
+                (ushort)Mathf.Clamp(item.maxStack, 1, ushort.MaxValue),
+                item.weight,
+                (byte)item.category,
+                item.stackable && item.maxStack > 1,
+                item.isConsumable,
+                item.oxygenRestore,
+                item.energyRestore,
+                item.integrityRestore,
+                item.hungerRestore,
+                item.thirstRestore,
+                item.UseDuration);
         }
 
         private void RecordHashAmbiguity(int hashId, ItemData existing, ItemData duplicate)

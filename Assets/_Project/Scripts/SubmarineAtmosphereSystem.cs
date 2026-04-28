@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Crafting;
@@ -110,6 +111,19 @@ namespace Hecton8.Atmosphere
         private const float DefaultFabricatorHeatWattsScale = 0.92f;
         private const float DefaultDrillHeatWattsScale = 0.97f;
         private const float DefaultReactorHeatWattsScale = 1.15f;
+        private const float DefaultBoilingFloodTemperatureCelsius = 80f;
+        private const float DefaultBoilingFloodMinimumFillRatio = 0.15f;
+        private const float DefaultBoilingHazardIntensity = 1.1f;
+        private const float DefaultBoilingHazardRadiusPaddingMeters = 1.25f;
+        private const float DefaultBoilingFaunaDamagePerSecond = 14f;
+        private const float DefaultReactorMeltdownTemperatureCelsius = 150f;
+        private const float DefaultReactorMeltdownImpulseDurationSeconds = 0.18f;
+        private const float DefaultReactorMeltdownImpulsePerWattSecond = 42f;
+        private const float DefaultReactorMeltdownMinimumImpulseNewtonSeconds = 3200f;
+        private const float DefaultReactorMeltdownMaximumImpulseNewtonSeconds = 28000f;
+        private const float DefaultReactorMeltdownUpwardBias = 0.55f;
+        private const float DefaultReactorMeltdownFloodAmplification = 1.35f;
+        private const int BoilingFaunaContactCapacity = 16;
         private const float Epsilon = 0.0001f;
 
         [System.Serializable]
@@ -428,6 +442,44 @@ namespace Hecton8.Atmosphere
         [Tooltip("Waste-heat multiplier applied to reactor electrical output.")]
         [SerializeField, Min(0f)] private float reactorHeatWattsScale = DefaultReactorHeatWattsScale;
 
+        [Header("── Boiling Flood Hazard ──────────────────")]
+        [Tooltip("Flooded rooms at or above this temperature register a heat hazard in the surrounding water.")]
+        [SerializeField] private float boilingFloodTemperatureCelsius = DefaultBoilingFloodTemperatureCelsius;
+
+        [Tooltip("Minimum flooded fill ratio required before boiling-water hazards become active.")]
+        [SerializeField, Range(0f, 1f)] private float boilingFloodMinimumFillRatio = DefaultBoilingFloodMinimumFillRatio;
+
+        [Tooltip("Base heat-hazard intensity registered for boiling flooded rooms.")]
+        [SerializeField, Min(0f)] private float boilingHazardIntensity = DefaultBoilingHazardIntensity;
+
+        [Tooltip("Extra radius added to the compartment-derived boiling hazard bounds.")]
+        [SerializeField, Min(0f)] private float boilingHazardRadiusPaddingMeters = DefaultBoilingHazardRadiusPaddingMeters;
+
+        [Tooltip("Per-second thermal damage applied to nearby fauna caught in boiling flooded rooms.")]
+        [SerializeField, Min(0f)] private float boilingFaunaDamagePerSecond = DefaultBoilingFaunaDamagePerSecond;
+
+        [Header("── Reactor Meltdown ──────────────────")]
+        [Tooltip("Room temperature threshold in Celsius that triggers a reactor meltdown impulse.")]
+        [SerializeField] private float reactorMeltdownTemperatureCelsius = DefaultReactorMeltdownTemperatureCelsius;
+
+        [Tooltip("Seconds used to convert reactor thermal force into a one-shot impulse.")]
+        [SerializeField, Min(0.001f)] private float reactorMeltdownImpulseDurationSeconds = DefaultReactorMeltdownImpulseDurationSeconds;
+
+        [Tooltip("Impulse scale in newton-seconds per watt of reactor output.")]
+        [SerializeField, Min(0f)] private float reactorMeltdownImpulsePerWattSecond = DefaultReactorMeltdownImpulsePerWattSecond;
+
+        [Tooltip("Minimum reactor meltdown impulse in newton-seconds.")]
+        [SerializeField, Min(1f)] private float reactorMeltdownMinimumImpulseNewtonSeconds = DefaultReactorMeltdownMinimumImpulseNewtonSeconds;
+
+        [Tooltip("Maximum reactor meltdown impulse in newton-seconds.")]
+        [SerializeField, Min(1f)] private float reactorMeltdownMaximumImpulseNewtonSeconds = DefaultReactorMeltdownMaximumImpulseNewtonSeconds;
+
+        [Tooltip("How much world-up is mixed into the reactor blowout direction.")]
+        [SerializeField, Range(0f, 1f)] private float reactorMeltdownUpwardBias = DefaultReactorMeltdownUpwardBias;
+
+        [Tooltip("Extra impulse multiplier applied when the reactor room is flooded.")]
+        [SerializeField, Min(1f)] private float reactorMeltdownFloodAmplification = DefaultReactorMeltdownFloodAmplification;
+
         [Header("── Pressure Blowout ──────────────────")]
         [Tooltip("Radius around an opened bulkhead that receives the pressure blowout impulse.")]
         [SerializeField, Min(0.25f)] private float pressureImpulseRadiusMeters = DefaultPressureImpulseRadiusMeters;
@@ -487,12 +539,18 @@ namespace Hecton8.Atmosphere
         private readonly Collider[] _pressureImpulseOverlapBuffer = new Collider[PressureImpulseOverlapCapacity];
         // COLD ALLOC: Rigidbody[32] — unique-body scratch for pressure blowout dispatch — owner: SubmarineAtmosphereSystem
         private readonly Rigidbody[] _pressureImpulseBodyBuffer = new Rigidbody[PressureImpulseOverlapCapacity];
+        // COLD ALLOC: int[8] â€” per-room boiling hazard source IDs â€” owner: SubmarineAtmosphereSystem
+        private readonly int[] _boilingHazardIds = new int[RoomCapacity];
+        // COLD ALLOC: SpatialQueryHit[16] â€” fauna spillover query scratch for boiling rooms â€” owner: SubmarineAtmosphereSystem
+        private readonly SpatialQueryHit[] _boilingFaunaContacts = new SpatialQueryHit[BoilingFaunaContactCapacity];
         // COLD ALLOC: FabricatorHeatEmitter[24] — cached fabricator heat sources mapped to rooms — owner: SubmarineAtmosphereSystem
         private readonly FabricatorHeatEmitter[] _fabricatorHeatEmitters = new FabricatorHeatEmitter[HeatEmitterCapacity];
         // COLD ALLOC: DrillHeatEmitter[24] — cached drill heat sources mapped to rooms — owner: SubmarineAtmosphereSystem
         private readonly DrillHeatEmitter[] _drillHeatEmitters = new DrillHeatEmitter[HeatEmitterCapacity];
         // COLD ALLOC: ReactorHeatEmitter[24] — cached reactor heat sources mapped to rooms — owner: SubmarineAtmosphereSystem
         private readonly ReactorHeatEmitter[] _reactorHeatEmitters = new ReactorHeatEmitter[HeatEmitterCapacity];
+        // COLD ALLOC: bool[24] — one-shot reactor meltdown guards keyed to cached emitter slots — owner: SubmarineAtmosphereSystem
+        private readonly bool[] _reactorMeltdownTriggered = new bool[HeatEmitterCapacity];
         // COLD ALLOC: List<Fabricator>[8] — cold-path fabricator scan scratch for thermal emitter cache — owner: SubmarineAtmosphereSystem
         private readonly System.Collections.Generic.List<Fabricator> _fabricatorScanBuffer = new System.Collections.Generic.List<Fabricator>(8);
         // COLD ALLOC: List<DeepDrillModule>[8] — cold-path drill scan scratch for thermal emitter cache — owner: SubmarineAtmosphereSystem
@@ -554,6 +612,7 @@ namespace Hecton8.Atmosphere
         private void Awake()
         {
             CacheReferences();
+            SeedBoilingHazardIds();
             RefreshDebugState();
         }
 
@@ -592,6 +651,8 @@ namespace Hecton8.Atmosphere
             SeedTopologyIfNeeded();
             SeedThermalEmittersIfNeeded();
             AccumulateRoomHeatSources();
+            EvaluateReactorMeltdowns();
+            UpdateBoilingFloodHazards(fixedDeltaTime);
             PublishDoorOpeningPressureEvents();
             ScheduleAtmosphereJob(fixedDeltaTime);
             RefreshDebugState();
@@ -607,6 +668,13 @@ namespace Hecton8.Atmosphere
 
             if (_submarineBody == null && fluidDynamics != null)
                 fluidDynamics.TryGetComponent(out _submarineBody);
+        }
+
+        private void SeedBoilingHazardIds()
+        {
+            int instanceId = GetInstanceID();
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                _boilingHazardIds[roomIndex] = (instanceId * 97) ^ (0x61A0 + roomIndex);
         }
 
         private void TryRegister()
@@ -796,6 +864,9 @@ namespace Hecton8.Atmosphere
                 };
             }
 
+            for (int i = _reactorHeatEmitterCount; i < HeatEmitterCapacity; i++)
+                _reactorMeltdownTriggered[i] = false;
+
             _thermalEmittersSeeded = true;
         }
 
@@ -882,6 +953,58 @@ namespace Hecton8.Atmosphere
                     continue;
 
                 _roomHeatWatts[emitter.RoomIndex] += math.max(0f, emitter.Reactor.PowerRating) * math.max(0f, reactorHeatWattsScale);
+            }
+        }
+
+        private void EvaluateReactorMeltdowns()
+        {
+            if (_submarineBody == null || fluidDynamics == null || !_temperatureFront.IsCreated || !_floodVolumes.IsCreated || !_roomVolumes.IsCreated)
+                return;
+
+            float thresholdTemperature = math.max(DefaultReactorMeltdownTemperatureCelsius, reactorMeltdownTemperatureCelsius);
+            float minimumImpulse = math.max(1f, reactorMeltdownMinimumImpulseNewtonSeconds);
+            float maximumImpulse = math.max(minimumImpulse, reactorMeltdownMaximumImpulseNewtonSeconds);
+            float upwardBias = math.saturate(reactorMeltdownUpwardBias);
+            float impulseDuration = math.max(0.001f, reactorMeltdownImpulseDurationSeconds);
+            float impulsePerWattSecond = math.max(0f, reactorMeltdownImpulsePerWattSecond);
+            float floodAmplification = math.max(1f, reactorMeltdownFloodAmplification);
+
+            for (int emitterIndex = 0; emitterIndex < _reactorHeatEmitterCount; emitterIndex++)
+            {
+                ReactorHeatEmitter emitter = _reactorHeatEmitters[emitterIndex];
+                if (emitter.Reactor == null || emitter.RoomIndex < 0 || emitter.RoomIndex >= RoomCount)
+                    continue;
+
+                if (_reactorMeltdownTriggered[emitterIndex])
+                    continue;
+
+                float roomTemperature = _temperatureFront[emitter.RoomIndex];
+                if (roomTemperature < thresholdTemperature)
+                    continue;
+
+                Vector3 reactorWorldPosition = emitter.Reactor.transform.position;
+                Vector3 centerDirection = _submarineBody.worldCenterOfMass - reactorWorldPosition;
+                Vector3 forceDirection = SafeNormalize(Vector3.Lerp(centerDirection, Vector3.up, upwardBias), Vector3.up);
+
+                float roomVolume = math.max(minimumGasVolumeCubicMeters, _roomVolumes[emitter.RoomIndex]);
+                float floodRatio = math.saturate(_floodVolumes[emitter.RoomIndex] / roomVolume);
+                float floodMultiplier = math.lerp(1f, floodAmplification, floodRatio);
+                float temperatureOvershoot = math.max(0f, roomTemperature - thresholdTemperature);
+                float thermalScale = 1f + math.saturate(temperatureOvershoot / math.max(1f, thresholdTemperature));
+                float baseImpulseMagnitude = math.max(
+                    minimumImpulse,
+                    math.max(0f, emitter.Reactor.PowerRating) * impulsePerWattSecond * impulseDuration);
+                float impulseMagnitude = math.clamp(
+                    baseImpulseMagnitude * floodMultiplier * thermalScale,
+                    minimumImpulse,
+                    maximumImpulse);
+
+                PhysicsForceRouter.QueueForceAtPosition(
+                    _submarineBody,
+                    forceDirection * impulseMagnitude,
+                    reactorWorldPosition,
+                    ForceMode.Impulse);
+                _reactorMeltdownTriggered[emitterIndex] = true;
             }
         }
 
@@ -1177,6 +1300,7 @@ namespace Hecton8.Atmosphere
 
         private void DisposeNativeStateDeferred()
         {
+            ClearBoilingFloodHazards();
             JobHandle dependency = _atmosphereJobRunning ? _atmosphereJobHandle : default;
             _atmosphereJobRunning = false;
             DisposeDeferred(ref _roomVolumes, dependency);
@@ -1234,6 +1358,94 @@ namespace Hecton8.Atmosphere
                 math.max(1f, referencePressureKPa) * math.max(totalGasUnits, 0f) / safeGasVolume,
                 0f,
                 math.max(referencePressureKPa, maximumPressureKPa));
+        }
+
+        private void UpdateBoilingFloodHazards(float fixedDeltaTime)
+        {
+            if (fluidDynamics == null || !_temperatureFront.IsCreated || !_floodVolumes.IsCreated || !_roomVolumes.IsCreated)
+            {
+                ClearBoilingFloodHazards();
+                return;
+            }
+
+            int roomCount = fluidDynamics.CompartmentCount;
+            float thresholdTemperature = boilingFloodTemperatureCelsius;
+            float minimumFillRatio = math.saturate(boilingFloodMinimumFillRatio);
+            float hazardBaseIntensity = math.max(0f, boilingHazardIntensity);
+            float faunaDamagePerStep = math.max(0f, boilingFaunaDamagePerSecond) * math.max(0f, fixedDeltaTime);
+            float maxTemperature = math.max(thresholdTemperature + 1f, maximumTemperatureCelsius);
+
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+            {
+                int hazardId = _boilingHazardIds[roomIndex];
+                if (roomIndex >= roomCount)
+                {
+                    HectonHazardManager.Unregister(hazardId);
+                    continue;
+                }
+
+                float roomVolume = math.max(minimumGasVolumeCubicMeters, _roomVolumes[roomIndex]);
+                float floodVolume = math.clamp(_floodVolumes[roomIndex], 0f, roomVolume);
+                float fillRatio = math.saturate(floodVolume / roomVolume);
+                float temperature = _temperatureFront[roomIndex];
+                if (temperature < thresholdTemperature || fillRatio < minimumFillRatio)
+                {
+                    HectonHazardManager.Unregister(hazardId);
+                    continue;
+                }
+
+                if (!TryResolveBoilingHazardBounds(roomIndex, roomVolume, out Vector3 worldCenter, out float radius))
+                {
+                    HectonHazardManager.Unregister(hazardId);
+                    continue;
+                }
+
+                float temperature01 = math.saturate((temperature - thresholdTemperature) / math.max(1f, maxTemperature - thresholdTemperature));
+                float fill01 = math.saturate((fillRatio - minimumFillRatio) / math.max(0.01f, 1f - minimumFillRatio));
+                float intensity = hazardBaseIntensity * math.max(0.1f, math.max(temperature01, fill01));
+
+                HectonHazardManager.Register(hazardId, worldCenter, intensity, radius, HazardType.Heat);
+                ApplyBoilingFaunaDamage(worldCenter, radius, intensity * faunaDamagePerStep);
+            }
+        }
+
+        private void ClearBoilingFloodHazards()
+        {
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                HectonHazardManager.Unregister(_boilingHazardIds[roomIndex]);
+        }
+
+        private bool TryResolveBoilingHazardBounds(int roomIndex, float roomVolume, out Vector3 worldCenter, out float radius)
+        {
+            worldCenter = Vector3.zero;
+            radius = 0f;
+            if (fluidDynamics == null || _cachedTransform == null)
+                return false;
+
+            Vector3 localCentroid = fluidDynamics.GetCompartmentCentroid(roomIndex);
+            worldCenter = _cachedTransform.TransformPoint(localCentroid);
+
+            float compartmentRadius = math.pow(math.max(roomVolume, minimumGasVolumeCubicMeters) / 4.1887903f, 0.33333334f);
+            radius = math.max(0.5f, compartmentRadius + math.max(0f, boilingHazardRadiusPaddingMeters));
+            return radius > 0f;
+        }
+
+        private void ApplyBoilingFaunaDamage(Vector3 worldCenter, float radius, float damageAmount)
+        {
+            if (damageAmount <= 0f || radius <= 0f)
+                return;
+
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                worldCenter,
+                radius,
+                SpatialTargetKind.Bioform,
+                _boilingFaunaContacts);
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                SpatialQueryHit hit = _boilingFaunaContacts[hitIndex];
+                if (hit.Owner is FaunaBrain faunaBrain)
+                    faunaBrain.TakeDamage(damageAmount);
+            }
         }
 
         private int ResolveNearestRoomIndex(Vector3 worldPosition)

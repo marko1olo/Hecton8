@@ -19,7 +19,7 @@ PlayerTool (MonoBehaviour)
     ↓
 ToolDurabilitySystem (Singleton)
     ↓
-ToolHUDPanel (ImmediateModeShapeDrawer)
+ToolHUDPanel (world-space TMP / instanced marker path)
 ```
 
 ## Быстрая установка

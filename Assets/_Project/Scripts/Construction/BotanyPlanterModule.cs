@@ -110,7 +110,7 @@ namespace Hecton8.Construction
                 if (!TryPlantItem(item))
                     break;
 
-                if (!inventory.TryRemoveQuantity(item, 1))
+                if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
                 {
                     RemoveLastPlantedItem(item);
                     break;

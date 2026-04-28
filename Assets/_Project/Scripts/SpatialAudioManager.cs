@@ -48,8 +48,13 @@
 //   CPU idle: 0ms (no Update)
 // ============================================================================
 
+using System.Collections.Generic;
+using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Physics;
+using Hecton8.World;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -77,6 +82,18 @@ namespace Hecton8.Audio
         private const float ImpactEmitterLifetimeMaxSeconds = 0.42f;
         private const float ImpactEmitterAmplitudeScale = 0.75f;
         private const float ImpactEmitterMinimumAmplitude = 0.02f;
+        private const float BinauralHeadRadiusMeters = 0.0875f;
+        private const int AcousticRadarBinCount = 360;
+        private const float AcousticRadarDecayPerSecond = 1.35f;
+        private const float AcousticRadarDistanceRangeMeters = 180f;
+        private const int MaxListenerContainingCaveVolumes = 8;
+        private const float CaveExternalLowPassBoundaryCutoffHertz = 2600f;
+        private const float CaveExternalLowPassDeepInteriorCutoffHertz = 1100f;
+        private const float CaveInteriorReferenceDistanceMeters = 6f;
+        private const float RearHemisphereLowPassStartDot = -0.12f;
+        private const float RearHemisphereLowPassFullDot = -0.92f;
+        private const float RearHemisphereLowPassMaximumCutoffHertz = 18000f;
+        private const float RearHemisphereLowPassMinimumCutoffHertz = 3200f;
 
         private enum AudioLodTier : byte
         {
@@ -89,6 +106,18 @@ namespace Hecton8.Audio
         {
             public Vector3 Position;
             public float Amplitude;
+        }
+
+        internal struct BinauralEmitterTelemetry
+        {
+            public Vector3 Position;
+            public float DistanceMeters;
+            public float AzimuthRadians;
+            public float ItdSeconds;
+            public float ShadowAmount01;
+            public float ShadowCutoffHertz;
+            public float Energy;
+            public int Valid;
         }
 
         private struct ImpactEmitterSample
@@ -121,11 +150,7 @@ namespace Hecton8.Audio
             {
 #if UNITY_EDITOR
                 if (s_Instance == null)
-                {
-                    Debug.LogError(
-                        "[SpatialAudioManager] Instance is null. " +
-                        "Ensure SpatialAudioManager exists in the scene before first audio call.");
-                }
+                    Debug.LogError("[SpatialAudioManager] Instance is null. Ensure SpatialAudioManager exists in the scene before first audio call.");
 #endif
                 return s_Instance;
             }
@@ -201,8 +226,20 @@ namespace Hecton8.Audio
         private float[] _nextTierUpdateTimes;
         private AudioLodTier[] _audioLodTiers;
         private AudioLowPassFilter[] _lowPassFilters;
+        private int[] _activeWorldIndices;
+        private int[] _activeWorldSlots;
+        private int _activeWorldCount;
         private bool _registeredUpdatable;
         private Transform _listenerTransform;
+        private BinauralEmitterTelemetry _dominantBinauralEmitter;
+        private NativeArray<float> _acousticRadarIntensityBins;
+        private WorldCaveDirector _worldCaveDirector;
+        // COLD ALLOC: List<HectonVoxelVolume>[32] - active cave-volume cache reused for cave-aware audio filtering - owner: SpatialAudioManager
+        private readonly List<HectonVoxelVolume> _caveVolumeBuffer = new List<HectonVoxelVolume>(32);
+        // COLD ALLOC: HectonVoxelVolume[8] - listener-containing cave volumes for external ambient filtering - owner: SpatialAudioManager
+        private readonly HectonVoxelVolume[] _listenerContainingCaveVolumes = new HectonVoxelVolume[MaxListenerContainingCaveVolumes];
+        private int _listenerContainingCaveCount;
+        private float _listenerCaveInterior01;
         // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
         private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
 
@@ -215,8 +252,7 @@ namespace Hecton8.Audio
             // ── Singleton enforcement ──
             if (s_Instance != null && s_Instance != this)
             {
-                Debug.LogWarning(
-                    $"[SpatialAudioManager] Duplicate instance on '{gameObject.name}'. Destroying.");
+                Debug.LogWarningFormat(this, "[SpatialAudioManager] Duplicate instance on '{0}'. Destroying.", gameObject.name);
                 Destroy(gameObject);
                 return;
             }
@@ -226,6 +262,7 @@ namespace Hecton8.Audio
 
             InitializePool();
             InitializePool2D();
+            InitializeTelemetryCaches();
         }
 
         private void OnEnable()
@@ -243,10 +280,13 @@ namespace Hecton8.Audio
             _registeredUpdatable = false;
             ResetAllWorldSourceState();
             ResetImpactEmitters();
+            ResetAcousticRadarBins();
+            ResetListenerCaveState();
         }
 
         private void OnDestroy()
         {
+            ReleaseTelemetryCaches();
             if (s_Instance == this)
             {
                 s_Instance = null;
@@ -262,31 +302,42 @@ namespace Hecton8.Audio
             if (_pool == null || _arrivalTimes == null || _haasReleaseTimes == null)
                 return;
 
-            float safeDeltaTime = Mathf.Max(0f, deltaTime);
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(HaasBlendSharpness, 0.01f) * safeDeltaTime);
+            float safeDeltaTime = math.max(0f, deltaTime);
+            float blendT = 1f - math.exp(-math.max(HaasBlendSharpness, 0.01f) * safeDeltaTime);
             float now = Time.unscaledTime;
+            Transform listener = ResolveListenerTransform();
             DecayImpactEmitters(now);
-            for (int i = 0; i < _poolSize; i++)
+            DecayAcousticRadarBins(safeDeltaTime);
+            RefreshListenerCaveState(listener);
+            int activeSlot = 0;
+            while (activeSlot < _activeWorldCount)
             {
-                AudioSource source = _pool[i];
-                if (source == null || !source.isPlaying)
+                int sourceIndex = _activeWorldIndices[activeSlot];
+                AudioSource source = _pool[sourceIndex];
+                if (source == null || !source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
                 {
-                    ResetWorldSourceState(i, false);
+                    ResetWorldSourceState(sourceIndex, false);
                     continue;
                 }
 
-                UpdateWorldSourceAudioLod(i, source, now, false);
+                UpdateWorldSourceAudioLod(sourceIndex, source, now, false);
                 if (!source.isPlaying)
                 {
-                    ResetWorldSourceState(i, false);
+                    ResetWorldSourceState(sourceIndex, false);
                     continue;
                 }
 
-                float targetBlend = ResolveTargetSpatialBlend(i, now);
-                source.spatialBlend = Mathf.Lerp(source.spatialBlend, targetBlend, blendT);
-                if (_haasReleaseTimes[i] <= now && source.spatialBlend >= targetBlend - 0.001f)
-                    _haasReleaseTimes[i] = 0f;
+                float targetBlend = ResolveTargetSpatialBlend(sourceIndex, now);
+                source.spatialBlend = math.lerp(source.spatialBlend, targetBlend, blendT);
+                if (_haasReleaseTimes[sourceIndex] <= now && source.spatialBlend >= targetBlend - 0.001f)
+                    _haasReleaseTimes[sourceIndex] = 0f;
+
+                DepositAcousticRadarSample(listener, source.transform.position, math.max(0f, source.volume));
+                activeSlot++;
             }
+
+            DepositImpactRadarSamples(listener, now);
+            UpdateDominantBinauralEmitterTelemetry(now, listener);
         }
 
         // ═══════════════════════════════════════════════════════
@@ -299,13 +350,15 @@ namespace Hecton8.Audio
         /// </summary>
         private void InitializePool()
         {
-            int effectivePoolSize = Mathf.Min(_poolSize, CountAuthoredWorldPoolNodes(ResolveWorldPoolRoot()));
+            int effectivePoolSize = math.min(_poolSize, CountAuthoredWorldPoolNodes(ResolveWorldPoolRoot()));
             if (effectivePoolSize < _poolSize)
             {
 #if UNITY_EDITOR
-                Debug.LogError(
-                    $"[SpatialAudioManager] World pool requested {_poolSize} authored nodes, found {effectivePoolSize}. " +
-                    "Assign pre-authored AudioSource + AudioLowPassFilter children before play.");
+                Debug.LogErrorFormat(
+                    this,
+                    "[SpatialAudioManager] World pool requested {0} authored nodes, found {1}. Assign pre-authored AudioSource + AudioLowPassFilter children before play.",
+                    _poolSize,
+                    effectivePoolSize);
 #endif
             }
 
@@ -318,6 +371,14 @@ namespace Hecton8.Audio
             _nextTierUpdateTimes = new float[_poolSize];
             _audioLodTiers = new AudioLodTier[_poolSize];
             _lowPassFilters = new AudioLowPassFilter[_poolSize];
+            _activeWorldIndices = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - sparse active world-source set - owner: SpatialAudioManager
+            _activeWorldSlots = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - sparse world-source slot lookup - owner: SpatialAudioManager
+            _activeWorldCount = 0;
+            for (int i = 0; i < _poolSize; i++)
+            {
+                _activeWorldIndices[i] = -1;
+                _activeWorldSlots[i] = -1;
+            }
 
             if (_poolSize > 0)
             {
@@ -367,13 +428,15 @@ namespace Hecton8.Audio
         /// <summary>Создаёт пул 2D источников (аналогично 3D, без PlayOneShot).</summary>
         private void InitializePool2D()
         {
-            int effectivePool2DSize = Mathf.Min(_pool2DSize, CountAuthoredHelmetPoolNodes(ResolveHelmetPoolRoot()));
+            int effectivePool2DSize = math.min(_pool2DSize, CountAuthoredHelmetPoolNodes(ResolveHelmetPoolRoot()));
             if (effectivePool2DSize < _pool2DSize)
             {
 #if UNITY_EDITOR
-                Debug.LogError(
-                    $"[SpatialAudioManager] Helmet/UI pool requested {_pool2DSize} authored nodes, found {effectivePool2DSize}. " +
-                    "Assign pre-authored 2D AudioSource children before play.");
+                Debug.LogErrorFormat(
+                    this,
+                    "[SpatialAudioManager] Helmet/UI pool requested {0} authored nodes, found {1}. Assign pre-authored 2D AudioSource children before play.",
+                    _pool2DSize,
+                    effectivePool2DSize);
 #endif
             }
 
@@ -514,6 +577,7 @@ namespace Hecton8.Audio
             // ── Запуск ──
             source.Play();
             _startTimes[index] = Time.unscaledTime;
+            MarkWorldSourceActive(index);
         }
 
         // ═══════════════════════════════════════════════════════
@@ -582,6 +646,26 @@ namespace Hecton8.Audio
         /// <summary>Mixer group для эмбиента (подводный гул, давление).</summary>
         public AudioMixerGroup AmbientGroup => _ambientGroup;
 
+        /// <summary>Current 360-bin acoustic radar intensity ring for HUD consumers. Treat as read-only and reacquire each tick.</summary>
+        public NativeArray<float> AcousticRadarIntensityBins => _acousticRadarIntensityBins;
+
+        /// <summary>Current acoustic radar angular resolution in bins.</summary>
+        public int AcousticRadarResolution => AcousticRadarBinCount;
+
+        /// <summary>Returns the persistent 360-degree acoustic radar ring for HUD/visor consumers.</summary>
+        public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)
+        {
+            radialIntensityBins = _acousticRadarIntensityBins;
+            radialResolution = AcousticRadarBinCount;
+            return radialIntensityBins.IsCreated && radialResolution > 0;
+        }
+
+        internal bool TryGetDominantBinauralEmitter(out BinauralEmitterTelemetry telemetry)
+        {
+            telemetry = _dominantBinauralEmitter;
+            return telemetry.Valid != 0;
+        }
+
         internal int CopyActiveWorldEmitterSamples(ActiveEmitterSample[] destination)
         {
             if (destination == null || destination.Length == 0 || _pool == null)
@@ -590,16 +674,17 @@ namespace Hecton8.Audio
             int count = 0;
             int limit = destination.Length;
             float now = Time.unscaledTime;
-            for (int i = 0; i < _poolSize && count < limit; i++)
+            for (int activeSlot = 0; activeSlot < _activeWorldCount && count < limit; activeSlot++)
             {
-                AudioSource source = _pool[i];
+                int sourceIndex = _activeWorldIndices[activeSlot];
+                AudioSource source = _pool[sourceIndex];
                 if (source == null || !source.isPlaying || source.clip == null)
                     continue;
 
                 destination[count] = new ActiveEmitterSample
                 {
                     Position = source.transform.position,
-                    Amplitude = Mathf.Max(0f, source.volume)
+                    Amplitude = math.max(0f, source.volume)
                 };
                 count++;
             }
@@ -648,6 +733,77 @@ namespace Hecton8.Audio
             return count;
         }
 
+        private void UpdateDominantBinauralEmitterTelemetry(float now, Transform listener)
+        {
+            _dominantBinauralEmitter = default;
+            if (listener == null)
+                return;
+
+            float bestScore = 0f;
+            for (int activeSlot = 0; activeSlot < _activeWorldCount; activeSlot++)
+            {
+                int sourceIndex = _activeWorldIndices[activeSlot];
+                AudioSource source = _pool[sourceIndex];
+                if (source == null || !source.isActiveAndEnabled || !source.isPlaying || source.clip == null)
+                    continue;
+
+                TryPromoteBinauralEmitter(listener, source.transform.position, math.max(0f, source.volume), ref bestScore);
+            }
+
+            for (int i = 0; i < _impactEmitters.Length; i++)
+            {
+                ImpactEmitterSample emitter = _impactEmitters[i];
+                float amplitude = ResolveImpactEmitterAmplitude(emitter, now);
+                if (!(amplitude > ImpactEmitterMinimumAmplitude))
+                    continue;
+
+                TryPromoteBinauralEmitter(listener, emitter.Position, amplitude, ref bestScore);
+            }
+        }
+
+        private void TryPromoteBinauralEmitter(Transform listener, Vector3 sourcePosition, float amplitude, ref float bestScore)
+        {
+            if (!(amplitude > 0f))
+                return;
+
+            Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+            float distanceSqr = ResolveAbsoluteDistanceSqr(listener, sourcePosition);
+            if (distanceSqr <= 0.0001f)
+                return;
+
+            float distance = math.sqrt(distanceSqr);
+            float energy = amplitude * (1f - math.saturate(distance / math.max(_maxDistance, 0.01f)));
+            if (!(energy > bestScore))
+                return;
+
+            float azimuth = math.atan2(listenerLocalPosition.x, listenerLocalPosition.z);
+            float absAzimuth = math.abs(azimuth);
+            float absSin = math.abs(math.sin(azimuth));
+            float shadowCutoff = math.lerp(8000f, 3000f, absSin);
+            float shadowAmount = absSin * 0.5f;
+            if (TryResolveRearHemisphereLowPassCutoff(sourcePosition, out float rearHemisphereCutoff))
+            {
+                shadowCutoff = math.min(shadowCutoff, rearHemisphereCutoff);
+                float rearShadowAmount = math.saturate(
+                    (RearHemisphereLowPassMaximumCutoffHertz - rearHemisphereCutoff) /
+                    math.max(RearHemisphereLowPassMaximumCutoffHertz - RearHemisphereLowPassMinimumCutoffHertz, 1f));
+                shadowAmount = math.saturate(math.max(shadowAmount, rearShadowAmount));
+            }
+
+            _dominantBinauralEmitter = new BinauralEmitterTelemetry
+            {
+                Position = sourcePosition,
+                DistanceMeters = distance,
+                AzimuthRadians = azimuth,
+                ItdSeconds = (BinauralHeadRadiusMeters / SoundSpeedWaterMetersPerSecond) * (absAzimuth + math.sin(absAzimuth)),
+                ShadowAmount01 = shadowAmount,
+                ShadowCutoffHertz = shadowCutoff,
+                Energy = energy,
+                Valid = 1
+            };
+            bestScore = energy;
+        }
+
         // ═══════════════════════════════════════════════════════
         //  PUBLIC API — UTILITY
         // ═══════════════════════════════════════════════════════
@@ -680,12 +836,7 @@ namespace Hecton8.Audio
         {
             get
             {
-                int count = 0;
-                for (int i = 0; i < _poolSize; i++)
-                {
-                    if (_pool[i].isPlaying) count++;
-                }
-                return count;
+                return _activeWorldCount;
             }
         }
 
@@ -705,38 +856,45 @@ namespace Hecton8.Audio
         /// Cost: ~0.001ms для пула из 16 элементов.
         /// </summary>
         /// <returns>Индекс источника для использования.</returns>
-        private int AcquireSourceIndex()
+private int AcquireSourceIndex()
         {
             if (_pool == null || _poolSize <= 0)
                 return -1;
 
-            int oldestIndex = 0;
-            float oldestTime = float.MaxValue;
-
             for (int i = 0; i < _poolSize; i++)
             {
-                // ── Свободный источник — мгновенный возврат ──
-                if (!_pool[i].isPlaying)
-                {
+                if (_activeWorldSlots[i] < 0)
                     return i;
-                }
 
-                // ── Отслеживаем самый старый для вытеснения ──
-                if (_startTimes[i] < oldestTime)
+                AudioSource source = _pool[i];
+                if (source == null || !source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
                 {
-                    oldestTime = _startTimes[i];
-                    oldestIndex = i;
+                    ResetWorldSourceState(i, true);
+                    return i;
                 }
             }
 
-            // ── Все заняты — вытесняем самый старый ──
+            int oldestIndex = 0;
+            float oldestTime = float.MaxValue;
+            for (int activeSlot = 0; activeSlot < _activeWorldCount; activeSlot++)
+            {
+                int sourceIndex = _activeWorldIndices[activeSlot];
+                if (_startTimes[sourceIndex] < oldestTime)
+                {
+                    oldestTime = _startTimes[sourceIndex];
+                    oldestIndex = sourceIndex;
+                }
+            }
+
             _pool[oldestIndex].Stop();
             ResetWorldSourceState(oldestIndex, true);
 
 #if UNITY_EDITOR
-            Debug.Log(
-                $"[SpatialAudioManager] Pool full ({_poolSize}/{_poolSize}). " +
-                $"Evicting oldest source at index {oldestIndex}.");
+            Debug.LogFormat(
+                this,
+                "[SpatialAudioManager] Pool full ({0}/{0}). Evicting oldest source at index {1}.",
+                _poolSize,
+                oldestIndex);
 #endif
 
             return oldestIndex;
@@ -756,18 +914,18 @@ namespace Hecton8.Audio
         {
             // Mirrors impact positions for passive radar/UI consumers only.
             // Audible impact energy is synthesized through PlayerCriticalProceduralAudioRenderer.
-            float amplitude = Mathf.Clamp01(impactSignal.Intensity * ImpactEmitterAmplitudeScale);
+            float amplitude = math.saturate(impactSignal.Intensity * ImpactEmitterAmplitudeScale);
             if (impactSignal.IsHeavy)
-                amplitude = Mathf.Max(amplitude, 0.45f);
+                amplitude = math.max(amplitude, 0.45f);
 
             if (!(amplitude > ImpactEmitterMinimumAmplitude))
                 return;
 
             float now = Time.unscaledTime;
-            float lifetime = Mathf.Lerp(
+            float lifetime = math.lerp(
                 ImpactEmitterLifetimeMinSeconds,
                 ImpactEmitterLifetimeMaxSeconds,
-                Mathf.Clamp01(impactSignal.Intensity));
+                math.saturate(impactSignal.Intensity));
             int selectedIndex = -1;
             float weakestAmplitude = float.MaxValue;
             for (int i = 0; i < _impactEmitters.Length; i++)
@@ -809,7 +967,7 @@ namespace Hecton8.Audio
                 if (i == sourceIndex || _pool[i] == null || !_pool[i].isPlaying || _arrivalTimes[i] < 0f)
                     continue;
 
-                float arrivalDelta = Mathf.Abs(predictedArrivalTime - _arrivalTimes[i]);
+                float arrivalDelta = math.abs(predictedArrivalTime - _arrivalTimes[i]);
                 if (arrivalDelta < closestDelta)
                 {
                     closestDelta = arrivalDelta;
@@ -845,7 +1003,7 @@ namespace Hecton8.Audio
                 return Time.unscaledTime;
 
             return Time.unscaledTime +
-                   (Mathf.Sqrt(ResolveAbsoluteDistanceSqr(listener, sourcePosition)) / SoundSpeedWaterMetersPerSecond);
+                   (math.sqrt(ResolveAbsoluteDistanceSqr(listener, sourcePosition)) / SoundSpeedWaterMetersPerSecond);
         }
 
         private Transform ResolveListenerTransform()
@@ -859,19 +1017,8 @@ namespace Hecton8.Audio
                 Camera playerCamera = playerContext.PlayerCamera;
                 if (playerCamera != null)
                 {
-                    if (playerCamera.TryGetComponent(out AudioListener cameraListener))
-                    {
-                        _listenerTransform = cameraListener.transform;
-                        return _listenerTransform;
-                    }
-
-                    AudioListener ownedCameraListener =
-                        ComponentReferenceUtility.ResolveOwnedComponent<AudioListener>(playerCamera.transform);
-                    if (ownedCameraListener != null)
-                    {
-                        _listenerTransform = ownedCameraListener.transform;
-                        return _listenerTransform;
-                    }
+                    _listenerTransform = playerCamera.transform;
+                    return _listenerTransform;
                 }
 
                 GameObject playerObject = playerContext.PlayerObject;
@@ -946,6 +1093,8 @@ namespace Hecton8.Audio
             if (_pool == null || sourceIndex < 0 || sourceIndex >= _poolSize)
                 return;
 
+            RemoveWorldSourceActive(sourceIndex);
+
             AudioSource source = _pool[sourceIndex];
             if (source != null)
             {
@@ -987,6 +1136,8 @@ namespace Hecton8.Audio
                 return;
 
             AudioLodTier resolvedTier = ResolveAudioLodTier(source.transform.position);
+            bool rearHemisphereFilterEnabled = TryResolveRearHemisphereLowPassCutoff(source.transform.position, out float rearHemisphereCutoff);
+            bool caveLowPassEnabled = TryResolveCaveExternalLowPassCutoff(source, source.transform.position, out float caveLowPassCutoff);
             if (!forceImmediate &&
                 resolvedTier == AudioLodTier.Tier1Reduced &&
                 _audioLodTiers[sourceIndex] == AudioLodTier.Tier1Reduced &&
@@ -1001,14 +1152,27 @@ namespace Hecton8.Audio
                 case AudioLodTier.Tier0Full:
                     source.enabled = true;
                     source.panStereo = 0f;
-                    ApplyLowPassFilter(sourceIndex, false, 22000f);
+                    float tierZeroCutoff = 22000f;
+                    if (rearHemisphereFilterEnabled)
+                        tierZeroCutoff = math.min(tierZeroCutoff, rearHemisphereCutoff);
+                    if (caveLowPassEnabled)
+                        tierZeroCutoff = math.min(tierZeroCutoff, caveLowPassCutoff);
+                    ApplyLowPassFilter(
+                        sourceIndex,
+                        rearHemisphereFilterEnabled || caveLowPassEnabled,
+                        tierZeroCutoff);
                     _nextTierUpdateTimes[sourceIndex] = 0f;
                     return;
 
                 case AudioLodTier.Tier1Reduced:
                     source.enabled = true;
                     source.panStereo = ResolveStereoPan(source.transform.position);
-                    ApplyLowPassFilter(sourceIndex, true, Tier1LowPassCutoffHertz);
+                    float tierOneCutoff = Tier1LowPassCutoffHertz;
+                    if (rearHemisphereFilterEnabled)
+                        tierOneCutoff = math.min(tierOneCutoff, rearHemisphereCutoff);
+                    if (caveLowPassEnabled)
+                        tierOneCutoff = math.min(tierOneCutoff, caveLowPassCutoff);
+                    ApplyLowPassFilter(sourceIndex, true, tierOneCutoff);
                     _nextTierUpdateTimes[sourceIndex] = now + Tier1UpdateIntervalSeconds;
                     return;
 
@@ -1037,7 +1201,7 @@ namespace Hecton8.Audio
         {
             float baseBlend = ResolveBaseSpatialBlend(_audioLodTiers[sourceIndex]);
             if (_haasReleaseTimes[sourceIndex] > now)
-                return Mathf.Min(baseBlend, HaasSecondarySpatialBlend);
+                return math.min(baseBlend, HaasSecondarySpatialBlend);
 
             return baseBlend;
         }
@@ -1076,8 +1240,235 @@ namespace Hecton8.Audio
                 return 0f;
 
             Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
-            float lateralPan = listenerLocalPosition.x / Mathf.Max(0.01f, StereoPanDistanceNormalizationMeters);
-            return Mathf.Clamp(lateralPan, -1f, 1f);
+            float lateralPan = listenerLocalPosition.x / math.max(0.01f, StereoPanDistanceNormalizationMeters);
+            return math.clamp(lateralPan, -1f, 1f);
+        }
+
+        private bool TryResolveRearHemisphereLowPassCutoff(Vector3 sourcePosition, out float cutoffFrequency)
+        {
+            cutoffFrequency = 22000f;
+
+            Transform listener = ResolveListenerTransform();
+            if (listener == null)
+                return false;
+
+            Vector3 toSource = sourcePosition - listener.position;
+            if (toSource.sqrMagnitude <= 0.0001f)
+                return false;
+
+            float forwardDot = math.dot((float3)listener.forward, math.normalize((float3)toSource));
+            if (forwardDot >= RearHemisphereLowPassStartDot)
+                return false;
+
+            float rear01 = math.saturate(
+                (forwardDot - RearHemisphereLowPassStartDot) /
+                math.max(RearHemisphereLowPassFullDot - RearHemisphereLowPassStartDot, 0.0001f));
+            cutoffFrequency = math.lerp(
+                RearHemisphereLowPassMaximumCutoffHertz,
+                RearHemisphereLowPassMinimumCutoffHertz,
+                rear01);
+            return true;
+        }
+
+        private void InitializeTelemetryCaches()
+        {
+            if (!_acousticRadarIntensityBins.IsCreated)
+            {
+                _acousticRadarIntensityBins = new NativeArray<float>(
+                    AcousticRadarBinCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[360] - HUD acoustic radar ring - owner: SpatialAudioManager
+            }
+        }
+
+        private void ReleaseTelemetryCaches()
+        {
+            if (_acousticRadarIntensityBins.IsCreated)
+            {
+                _acousticRadarIntensityBins.Dispose();
+                _acousticRadarIntensityBins = default;
+            }
+        }
+
+        private void MarkWorldSourceActive(int sourceIndex)
+        {
+            if (_activeWorldSlots == null || sourceIndex < 0 || sourceIndex >= _activeWorldSlots.Length)
+                return;
+
+            if (_activeWorldSlots[sourceIndex] >= 0)
+                return;
+
+            int insertIndex = _activeWorldCount;
+            if (_activeWorldIndices == null || insertIndex >= _activeWorldIndices.Length)
+                return;
+
+            _activeWorldIndices[insertIndex] = sourceIndex;
+            _activeWorldSlots[sourceIndex] = insertIndex;
+            _activeWorldCount = insertIndex + 1;
+        }
+
+        private void RemoveWorldSourceActive(int sourceIndex)
+        {
+            if (_activeWorldSlots == null || sourceIndex < 0 || sourceIndex >= _activeWorldSlots.Length)
+                return;
+
+            int slot = _activeWorldSlots[sourceIndex];
+            if (slot < 0 || slot >= _activeWorldCount)
+                return;
+
+            int lastSlot = _activeWorldCount - 1;
+            int movedIndex = _activeWorldIndices[lastSlot];
+            _activeWorldIndices[slot] = movedIndex;
+            if (movedIndex >= 0 && movedIndex < _activeWorldSlots.Length)
+                _activeWorldSlots[movedIndex] = slot;
+            _activeWorldIndices[lastSlot] = -1;
+            _activeWorldSlots[sourceIndex] = -1;
+            _activeWorldCount = lastSlot;
+        }
+
+        private void DecayAcousticRadarBins(float deltaTime)
+        {
+            if (!_acousticRadarIntensityBins.IsCreated)
+                return;
+
+            float decay = AcousticRadarDecayPerSecond * math.max(0f, deltaTime);
+            for (int i = 0; i < _acousticRadarIntensityBins.Length; i++)
+                _acousticRadarIntensityBins[i] = math.max(0f, _acousticRadarIntensityBins[i] - decay);
+        }
+
+        private void ResetAcousticRadarBins()
+        {
+            if (!_acousticRadarIntensityBins.IsCreated)
+                return;
+
+            for (int i = 0; i < _acousticRadarIntensityBins.Length; i++)
+                _acousticRadarIntensityBins[i] = 0f;
+        }
+
+        private void DepositImpactRadarSamples(Transform listener, float now)
+        {
+            if (listener == null)
+                return;
+
+            for (int i = 0; i < _impactEmitters.Length; i++)
+            {
+                ImpactEmitterSample emitter = _impactEmitters[i];
+                float amplitude = ResolveImpactEmitterAmplitude(emitter, now);
+                if (!(amplitude > ImpactEmitterMinimumAmplitude))
+                    continue;
+
+                DepositAcousticRadarSample(listener, emitter.Position, amplitude);
+            }
+        }
+
+        private void DepositAcousticRadarSample(Transform listener, Vector3 sourcePosition, float amplitude)
+        {
+            if (listener == null || !_acousticRadarIntensityBins.IsCreated || !(amplitude > 0f))
+                return;
+
+            Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+            float azimuthDegrees = math.degrees(math.atan2(listenerLocalPosition.x, listenerLocalPosition.z));
+            if (azimuthDegrees < 0f)
+                azimuthDegrees += AcousticRadarBinCount;
+
+            int radialIndex = math.clamp((int)math.floor(azimuthDegrees), 0, AcousticRadarBinCount - 1);
+            float distance = math.sqrt(ResolveAbsoluteDistanceSqr(listener, sourcePosition));
+            float falloff = 1f - math.saturate(distance / AcousticRadarDistanceRangeMeters);
+            float intensity = math.saturate(amplitude * falloff);
+            _acousticRadarIntensityBins[radialIndex] = math.max(_acousticRadarIntensityBins[radialIndex], intensity);
+        }
+
+        private void RefreshListenerCaveState(Transform listener)
+        {
+            ResetListenerCaveState();
+            if (listener == null)
+                return;
+
+            if (_worldCaveDirector == null)
+                _worldCaveDirector = WorldCaveDirector.ActiveRuntimeInstance;
+
+            if (_worldCaveDirector == null)
+                return;
+
+            _worldCaveDirector.CollectActiveVolumes(_caveVolumeBuffer);
+            int volumeCount = _caveVolumeBuffer.Count;
+            for (int volumeIndex = 0; volumeIndex < volumeCount; volumeIndex++)
+            {
+                HectonVoxelVolume volume = _caveVolumeBuffer[volumeIndex];
+                if (volume == null || !volume.isActiveAndEnabled)
+                    continue;
+
+                if (!TryResolveCaveInteriorFactor(volume, listener.position, out float caveInterior01))
+                    continue;
+
+                if (_listenerContainingCaveCount < _listenerContainingCaveVolumes.Length)
+                    _listenerContainingCaveVolumes[_listenerContainingCaveCount++] = volume;
+                _listenerCaveInterior01 = math.max(_listenerCaveInterior01, caveInterior01);
+            }
+        }
+
+        private void ResetListenerCaveState()
+        {
+            _listenerCaveInterior01 = 0f;
+            for (int i = 0; i < _listenerContainingCaveCount; i++)
+                _listenerContainingCaveVolumes[i] = null;
+            _listenerContainingCaveCount = 0;
+        }
+
+        private bool TryResolveCaveExternalLowPassCutoff(AudioSource source, Vector3 sourcePosition, out float cutoffFrequency)
+        {
+            cutoffFrequency = 22000f;
+            if (source == null || _ambientGroup == null || source.outputAudioMixerGroup != _ambientGroup || _listenerContainingCaveCount <= 0)
+                return false;
+
+            if (IsInsideListenerContainingCave(sourcePosition))
+                return false;
+
+            cutoffFrequency = math.lerp(
+                CaveExternalLowPassBoundaryCutoffHertz,
+                CaveExternalLowPassDeepInteriorCutoffHertz,
+                _listenerCaveInterior01);
+            return true;
+        }
+
+        private bool IsInsideListenerContainingCave(Vector3 worldPosition)
+        {
+            for (int i = 0; i < _listenerContainingCaveCount; i++)
+            {
+                HectonVoxelVolume volume = _listenerContainingCaveVolumes[i];
+                if (volume == null || !volume.isActiveAndEnabled)
+                    continue;
+
+                if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, volume.preset, out Bounds localBounds))
+                    continue;
+
+                Vector3 localPosition = volume.transform.InverseTransformPoint(worldPosition);
+                if (localBounds.Contains(localPosition))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveCaveInteriorFactor(HectonVoxelVolume volume, Vector3 viewerPositionWS, out float caveInterior01)
+        {
+            caveInterior01 = 0f;
+            if (volume == null || !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, volume.preset, out Bounds localBounds))
+                return false;
+
+            Vector3 localViewerPosition = volume.transform.InverseTransformPoint(viewerPositionWS);
+            if (!localBounds.Contains(localViewerPosition))
+                return false;
+
+            Vector3 min = localBounds.min;
+            Vector3 max = localBounds.max;
+            float distanceToWall = math.min(
+                math.min(localViewerPosition.x - min.x, max.x - localViewerPosition.x),
+                math.min(
+                    math.min(localViewerPosition.y - min.y, max.y - localViewerPosition.y),
+                    math.min(localViewerPosition.z - min.z, max.z - localViewerPosition.z)));
+            caveInterior01 = math.saturate(distanceToWall / CaveInteriorReferenceDistanceMeters);
+            return true;
         }
 
         private static float ResolveImpactEmitterAmplitude(ImpactEmitterSample emitter, float now)
@@ -1085,8 +1476,8 @@ namespace Hecton8.Audio
             if (!(emitter.ExpireAt > now) || !(emitter.Amplitude > ImpactEmitterMinimumAmplitude))
                 return 0f;
 
-            float lifetime = Mathf.Max(0.001f, emitter.ExpireAt - emitter.SpawnAt);
-            float fade = Mathf.Clamp01((emitter.ExpireAt - now) / lifetime);
+            float lifetime = math.max(0.001f, emitter.ExpireAt - emitter.SpawnAt);
+            float fade = math.saturate((emitter.ExpireAt - now) / lifetime);
             return emitter.Amplitude * fade;
         }
 
@@ -1122,9 +1513,7 @@ namespace Hecton8.Audio
             _pool2D[oldestIndex].Stop();
 
 #if UNITY_EDITOR
-            Debug.Log(
-                "[SpatialAudioManager] 2D pool full (" + _pool2DSize + "). " +
-                "Evicting index " + oldestIndex + ".");
+            Debug.LogFormat(this, "[SpatialAudioManager] 2D pool full ({0}). Evicting index {1}.", _pool2DSize, oldestIndex);
 #endif
 
             return oldestIndex;
@@ -1266,8 +1655,8 @@ namespace Hecton8.Audio
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 #endif
-            _poolSize = Mathf.Clamp(_poolSize, 4, 32);
-            _pool2DSize = Mathf.Clamp(_pool2DSize, 2, 16);
+            _poolSize = math.clamp(_poolSize, 4, 32);
+            _pool2DSize = math.clamp(_pool2DSize, 2, 16);
 
             if (_minDistance < 0.1f) _minDistance = 0.1f;
             if (_maxDistance < _minDistance) _maxDistance = _minDistance + 1f;

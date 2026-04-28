@@ -240,7 +240,10 @@ namespace Hecton8.Visor
                     TryInitializeAutoExposureKernels();
                 }
 
-                EnsureAutoExposureResources();
+                // Unity 6 RenderGraph external GraphicsBuffer imports are currently destabilizing
+                // the active PC renderer path. Keep the noir stack on its fixed-exposure branch
+                // until the auto-exposure buffers are re-authored around transient RG resources.
+                ReleaseAutoExposureResources();
             }
 
             public void Dispose()
@@ -660,6 +663,8 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            return;
+
             if (settings == null ||
                 _pass == null ||
                 _raymarchMaterial == null ||

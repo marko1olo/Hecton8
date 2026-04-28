@@ -18,10 +18,13 @@ uint _HectonSourceInstanceCount;
 float4x4 _HectonViewProjection;
 float4x4 _HectonViewMatrix;
 float3 _HectonCameraPosition;
+float3 _HectonCameraForward;
 float4 _GlobalFloatingOffset;
 float _HectonLodNearDistance;
 float _HectonLodFarDistance;
 float _HectonLodTransitionRange;
+float _HectonPeripheralCullDot;
+float _HectonPeripheralCullDistance;
 float4 _HectonZBufferParams;
 float _HectonOcclusionDepthBias;
 uint _HectonOcclusionEnabled;
@@ -358,6 +361,22 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
     return false;
 }
 
+bool IsVisibleInPeripheralCone(float3 samplePositionWS)
+{
+    float peripheralDistance = max(_HectonPeripheralCullDistance, 0.0);
+    if (peripheralDistance <= 0.0)
+        return true;
+
+    float3 toSampleWS = samplePositionWS - _HectonCameraPosition;
+    float distanceSq = dot(toSampleWS, toSampleWS);
+    if (!IsFiniteScalar(distanceSq) || distanceSq <= peripheralDistance * peripheralDistance)
+        return true;
+
+    float3 sampleDirectionWS = SafeNormalize3(toSampleWS);
+    float3 cameraForwardWS = SafeNormalize3(_HectonCameraForward);
+    return dot(sampleDirectionWS, cameraForwardWS) >= _HectonPeripheralCullDot;
+}
+
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
 void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -428,6 +447,9 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (!IsVisibleInDarkness(centerWS))
         return;
 
+    if (!IsVisibleInPeripheralCone(centerWS))
+        return;
+
     if (distanceSq <= lod0MaxDistanceSq)
         _HectonVisibleInstanceIndicesLOD0.Append(instanceIndex);
 
@@ -473,6 +495,9 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     if (!IsVisibleInAnyShadowCascade(rootWS, centerWS, topWS, sideAWS, sideBWS))
+        return;
+
+    if (!IsVisibleInPeripheralCone(centerWS))
         return;
 
     _HectonVisibleInstanceIndicesShadow.Append(instanceIndex);

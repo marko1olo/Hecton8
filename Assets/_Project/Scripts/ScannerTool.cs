@@ -9,15 +9,22 @@ using Hecton8.Scavenging;
 using Hecton8.Tools;
 using Hecton8.World;
 using Hecton.Localization;
-using Shapes;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     public sealed class ScannerTool : PlayerTool, IBatteryTool
     {
+        internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
+        internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
         private const int AtlasDetectionRevealStage = 2;
         private const int AtlasNavigationRevealStage = 3;
 
@@ -218,6 +225,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private float cooldownFeedbackInterval = 0.75f;
         [SerializeField] private float resultFeedbackInterval = 0.5f;
         [SerializeField] private float modeFeedbackInterval = 0.4f;
+        [SerializeField] private Shader scannerMarkerShader;
+        [SerializeField] private Shader scannerPulseShader;
 
         // COLD ALLOC: SpatialQueryHit[128] — scanner spatial contact buffer — owner: ScannerTool
         private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[128];
@@ -362,9 +371,24 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
             RefreshModeStrings();
 
+            #if UNITY_EDITOR
+            if (scannerMarkerShader == null)
+                scannerMarkerShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerMarkerShaderPath);
+
+            if (scannerPulseShader == null)
+                scannerPulseShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerPulseShaderPath);
+            #endif
+
+            HectonScanMarkerSystem markerSystem = GetComponent<HectonScanMarkerSystem>();
+            if (markerSystem == null)
+                markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] — scanner marker owner — owner: ScannerTool
+
+            if (markerSystem != null)
+                markerSystem.Initialize(scannerMarkerShader);
+
             if (GetComponent<ScannerPulseDrawer>() == null)
             {
-                var drawer = gameObject.AddComponent<ScannerPulseDrawer>();
+                var drawer = gameObject.AddComponent<ScannerPulseDrawer>(); // COLD ALLOC: ScannerPulseDrawer[1] — scanner pulse owner — owner: ScannerTool
                 drawer.Init(this);
             }
         }
@@ -1078,13 +1102,26 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
+        internal Shader ScannerPulseShader => scannerPulseShader;
+
         // Zero-GC behavior is now provided by Hecton8.Core.ZeroGCStringCache.
     }
 
     [DisallowMultipleComponent]
-    public sealed class ScannerPulseDrawer : ImmediateModeShapeDrawer
+    public sealed class ScannerPulseDrawer : MonoBehaviour, ITickable, IUpdatable
     {
+        private const int PulseInstanceCapacity = 2;
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int RingThicknessId = Shader.PropertyToID("_RingThickness");
+
         private ScannerTool _scanner;
+        private Material _runtimePulseMaterial;
+        private Mesh _runtimePulseMesh;
+        private NativeArray<Matrix4x4> _pulseMatrices;
+        // COLD ALLOC: Matrix4x4[2] — scanner pulse instanced draw mirror — owner: ScannerPulseDrawer
+        private readonly Matrix4x4[] _pulseMatrixMirror = new Matrix4x4[PulseInstanceCapacity];
+        private bool _registered;
 
         internal void Init(ScannerTool scanner)
         {
@@ -1095,17 +1132,55 @@ namespace Hecton8.Gameplay
         {
             if (_scanner == null)
                 _scanner = GetComponent<ScannerTool>();
+
+            EnsurePulseResources();
         }
 
-        public override void DrawShapes(Camera cam)
+        private void OnEnable()
+        {
+            RegisterTick();
+        }
+
+        private void OnDisable()
+        {
+            UnregisterTick();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterTick();
+
+            if (_pulseMatrices.IsCreated)
+            {
+                _pulseMatrices.Dispose();
+                _pulseMatrices = default;
+            }
+
+            if (_runtimePulseMaterial != null)
+            {
+                Destroy(_runtimePulseMaterial);
+                _runtimePulseMaterial = null;
+            }
+
+            if (_runtimePulseMesh != null)
+            {
+                Destroy(_runtimePulseMesh);
+                _runtimePulseMesh = null;
+            }
+        }
+
+        public void Tick(float deltaTime)
         {
             if (_scanner == null || !_scanner.PulseActive || !_scanner.IsEquipped)
+                return;
+
+            EnsurePulseResources();
+            if (_runtimePulseMaterial == null || _runtimePulseMesh == null || !_pulseMatrices.IsCreated)
                 return;
 
             float elapsed = Time.time - _scanner.PulseStartTime;
             float t = math.saturate(elapsed / _scanner.PulseDuration);
             float currentRadius = math.lerp(0f, _scanner.ScanRadius, t);
-
             Color baseColor = _scanner.PulseColor;
             float alpha = baseColor.a * (1f - t * t);
             if (alpha < 0.01f)
@@ -1115,29 +1190,115 @@ namespace Hecton8.Gameplay
             float baseThickness = _scanner.PulseThickness;
             float thickness = math.lerp(baseThickness, baseThickness * 0.3f, t);
 
-            using (Draw.Command(cam))
+            _runtimePulseMaterial.SetColor(BaseColorId, ringColor);
+            _runtimePulseMaterial.SetFloat(RingThicknessId, thickness / math.max(currentRadius, 0.001f));
+
+            int visibleCount = 0;
+            Quaternion pulseRotation = Quaternion.Euler(90f, 0f, 0f);
+            Matrix4x4 primaryMatrix = Matrix4x4.TRS((Vector3)_scanner.PulseOrigin, pulseRotation, new Vector3(currentRadius * 2f, currentRadius * 2f, 1f));
+            _pulseMatrices[visibleCount] = primaryMatrix;
+            _pulseMatrixMirror[visibleCount] = primaryMatrix;
+            visibleCount++;
+
+            if (t < 0.8f)
             {
-                Draw.Ring(
-                    (Vector3)_scanner.PulseOrigin,
-                    Quaternion.Euler(90f, 0f, 0f),
-                    currentRadius,
-                    thickness,
-                    ringColor);
-
-                if (t < 0.8f)
-                {
-                    float innerRadius = currentRadius * 0.85f;
-                    float innerAlpha = alpha * 0.3f;
-                    Color innerColor = new Color(baseColor.r, baseColor.g, baseColor.b, innerAlpha);
-
-                    Draw.Ring(
-                        (Vector3)_scanner.PulseOrigin,
-                        Quaternion.Euler(90f, 0f, 0f),
-                        innerRadius,
-                        thickness * 0.5f,
-                        innerColor);
-                }
+                float innerRadius = currentRadius * 0.85f;
+                Matrix4x4 innerMatrix = Matrix4x4.TRS((Vector3)_scanner.PulseOrigin, pulseRotation, new Vector3(innerRadius * 2f, innerRadius * 2f, 1f));
+                _pulseMatrices[visibleCount] = innerMatrix;
+                _pulseMatrixMirror[visibleCount] = innerMatrix;
+                visibleCount++;
             }
+
+            Graphics.DrawMeshInstanced(
+                _runtimePulseMesh,
+                0,
+                _runtimePulseMaterial,
+                _pulseMatrixMirror,
+                visibleCount,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                0,
+                null,
+                LightProbeUsage.Off,
+                null);
+        }
+
+        private void EnsurePulseResources()
+        {
+            if (!_pulseMatrices.IsCreated)
+                _pulseMatrices = new NativeArray<Matrix4x4>(PulseInstanceCapacity, Allocator.Persistent);
+
+            if (_runtimePulseMesh == null)
+                _runtimePulseMesh = CreatePulseQuadMesh();
+
+            if (_runtimePulseMaterial != null)
+                return;
+
+            Shader pulseShader = _scanner != null ? _scanner.ScannerPulseShader : null;
+#if UNITY_EDITOR
+            if (pulseShader == null)
+                pulseShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerTool.ScannerPulseShaderPath);
+#endif
+            if (pulseShader == null)
+                return;
+
+            _runtimePulseMaterial = new Material(pulseShader)
+            {
+                enableInstancing = true,
+                hideFlags = HideFlags.DontSave
+            };
+        }
+
+        private void RegisterTick()
+        {
+            if (_registered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registered = true;
+        }
+
+        private void UnregisterTick()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registered = false;
+        }
+
+        private static Mesh CreatePulseQuadMesh()
+        {
+            Mesh mesh = new Mesh
+            {
+                name = "ScannerPulseQuad"
+            };
+
+            Vector3[] vertices =
+            {
+                new Vector3(-0.5f, -0.5f, 0f),
+                new Vector3( 0.5f, -0.5f, 0f),
+                new Vector3( 0.5f,  0.5f, 0f),
+                new Vector3(-0.5f,  0.5f, 0f)
+            };
+
+            Vector2[] uv =
+            {
+                new Vector2(0f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(1f, 1f),
+                new Vector2(0f, 1f)
+            };
+
+            int[] triangles = { 0, 2, 1, 0, 3, 2 };
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(false);
+            return mesh;
         }
     }
 }

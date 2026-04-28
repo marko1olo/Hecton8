@@ -223,7 +223,11 @@ namespace Hecton8.Construction
                 if (item == null || quantity <= 0)
                     continue;
 
-                owner.DropItemQuantityToInventoryOrWorld(item, quantity, inventory, pool, ref dropPosition);
+                int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+                if (itemHashId == 0)
+                    continue;
+
+                owner.DropItemQuantityToInventoryOrWorld(itemHashId, quantity, inventory, pool, ref dropPosition);
             }
 
             ClearBufferedState();

@@ -1,9 +1,11 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
+using Hecton8.Modding;
 using Hecton8.Power;
 using Unity.Mathematics;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -49,6 +51,18 @@ namespace Hecton8.Construction
         [Tooltip("Transit speed in meters per second for staged cargo travelling through the pipe.")]
         [SerializeField, Range(0.5f, 50f)] private float transitSpeedMetersPerSecond = 8f;
 
+        [Tooltip("Logical transport capacity used by the overpressure solver. Sustained blocked deliveries beyond this budget rupture the pipe.")]
+        [SerializeField, Range(1, 8)] private int maxCapacityUnits = 1;
+
+        [Tooltip("Stress added each SlowTick when the payload reaches the destination but the downstream crate still cannot accept it.")]
+        [SerializeField, Range(0.1f, 8f)] private float blockedDeliveryStress = 1f;
+
+        [Tooltip("Stress removed during healthy SlowTicks with no downstream blockage.")]
+        [SerializeField, Range(0f, 4f)] private float stressRecoveryPerTick = 0.25f;
+
+        [Tooltip("Pipe ruptures once accumulated overpressure stress crosses this threshold.")]
+        [SerializeField, Range(0.1f, 16f)] private float ruptureStressThreshold = 3f;
+
         [Header("── Power ──────────────────────────────────")]
         [Tooltip("Continuous draw while the pipe is actively moving or staging a cargo packet.")]
         [SerializeField, Range(0f, 100f)] private float activePowerDraw = 8f;
@@ -59,8 +73,11 @@ namespace Hecton8.Construction
         [Header("── Diagnostics ───────────────────────────")]
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private string _debugInFlightItemId;
+        [SerializeField] private int _debugInFlightItemHashId;
         [SerializeField] private float _debugTransitRemaining;
         [SerializeField] private int _debugReservationId;
+        [SerializeField] private float _debugOverpressureStress;
+        [SerializeField] private bool _debugRuptured;
 
         private PowerNode _powerNode;
         private Transform _cachedTransform;
@@ -72,7 +89,9 @@ namespace Hecton8.Construction
         private int _activeReservationId;
         private int _pipeLinkId;
         private ItemData _inFlightItem;
+        private int _inFlightItemHashId;
         private float _transitRemaining;
+        private float _overpressureStress;
         private float _cachedPathDistanceMeters;
         private Vector3 _cachedSourcePosition;
         private Vector3 _cachedDestinationPosition;
@@ -82,6 +101,8 @@ namespace Hecton8.Construction
         public float PowerRating => _inFlightItem != null ? -activePowerDraw : 0f;
         public int PowerPriority => powerPriority;
         public bool HasPower => _hasPower;
+        internal StorageCrate SourceCrate => sourceCrate;
+        internal StorageCrate DestinationCrate => destinationCrate;
 
         private void Awake()
         {
@@ -117,6 +138,16 @@ namespace Hecton8.Construction
             _hasPower = true;
             _debugHasPower = true;
             _exportTimer = 0f;
+            _overpressureStress = 0f;
+            _debugOverpressureStress = 0f;
+            _debugRuptured = false;
+            _inFlightItemHashId = 0;
+            _debugInFlightItemHashId = 0;
+            if (_powerNode != null)
+            {
+                _powerNode.SetRuptured(false);
+                _powerNode.SetShortCircuited(false);
+            }
             TryRegister();
             RefreshEndpointCache(true);
             RefreshCableVisuals(true);
@@ -128,30 +159,23 @@ namespace Hecton8.Construction
             _hasPower = true;
             _debugHasPower = true;
             _exportTimer = 0f;
+            _overpressureStress = 0f;
+            _debugOverpressureStress = 0f;
+            _debugRuptured = false;
+            _inFlightItemHashId = 0;
+            _debugInFlightItemHashId = 0;
+            if (_powerNode != null)
+            {
+                _powerNode.SetRuptured(false);
+                _powerNode.SetShortCircuited(false);
+            }
             TryUnregister();
             ClearCableVisuals();
         }
 
         public void SlowTick()
         {
-            RefreshEndpointCache(false);
-            RefreshCableVisuals(false);
-
-            if (_inFlightItem != null)
-            {
-                AdvanceInFlightTransfer();
-                return;
-            }
-
-            if (!_hasPower || sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
-                return;
-
-            _exportTimer += SlowTickDeltaTime;
-            if (_exportTimer < exportIntervalSeconds)
-                return;
-
-            _exportTimer = 0f;
-            TryStageTransfer();
+            LogisticsPipeTransportScheduler.TryRunSlowTick(this);
         }
 
         public void OnPowerStatusChanged(bool hasPower)
@@ -195,16 +219,18 @@ namespace Hecton8.Construction
                 return;
 
             _inFlightItem = item;
+            _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
             _transitRemaining = math.max(0f, ResolveTransitDuration() * (1f - math.saturate(dto.pipeTransitProgress)));
             _debugInFlightItemId = item.PersistentId;
+            _debugInFlightItemHashId = _inFlightItemHashId;
             _debugTransitRemaining = _transitRemaining;
         }
 
-        internal bool TryExtractInFlightCargoForDeconstruct(out ItemData item, out int amount)
+        internal bool TryExtractInFlightCargoHashForDeconstruct(out int itemHashId, out int amount)
         {
-            item = _inFlightItem;
-            amount = item != null ? 1 : 0;
-            if (item == null)
+            itemHashId = _inFlightItemHashId;
+            amount = itemHashId != 0 ? 1 : 0;
+            if (itemHashId == 0)
                 return false;
 
             if (_activeReservationId > 0)
@@ -220,6 +246,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            LogisticsPipeTransportScheduler.Register(this);
             _registered = true;
         }
 
@@ -229,6 +256,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            LogisticsPipeTransportScheduler.Unregister(this);
             _registered = false;
         }
 
@@ -249,8 +277,10 @@ namespace Hecton8.Construction
 
             _activeReservationId = reservationId;
             _inFlightItem = item;
+            _inFlightItemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
             _transitRemaining = ResolveTransitDuration();
             _debugInFlightItemId = item.PersistentId;
+            _debugInFlightItemHashId = _inFlightItemHashId;
             _debugTransitRemaining = _transitRemaining;
             _debugReservationId = reservationId;
             NotifyGridBalanceChanged();
@@ -276,11 +306,13 @@ namespace Hecton8.Construction
             if (destinationCrate == null || !destinationCrate.HasAutomatedCapacity() || !destinationCrate.TryAddAutomatedItem(_inFlightItem))
             {
                 _debugTransitRemaining = 0f;
+                AccumulateOverpressureStress();
                 return;
             }
 
             if (_activeReservationId > 0)
                 sourceCrate?.CommitReservation(_activeReservationId);
+            RecoverOverpressureStress(blockageResolved: true);
             ClearInFlightState();
             NotifyGridBalanceChanged();
         }
@@ -297,10 +329,42 @@ namespace Hecton8.Construction
         {
             _activeReservationId = 0;
             _inFlightItem = null;
+            _inFlightItemHashId = 0;
             _transitRemaining = 0f;
             _debugInFlightItemId = string.Empty;
+            _debugInFlightItemHashId = 0;
             _debugTransitRemaining = 0f;
             _debugReservationId = 0;
+        }
+
+        internal void SchedulerRefresh()
+        {
+            RefreshEndpointCache(false);
+            RefreshCableVisuals(false);
+        }
+
+        internal void ExecuteCoordinatedSlowTick()
+        {
+            if (IsRuptured())
+                return;
+
+            RecoverOverpressureStress(blockageResolved: false);
+
+            if (_inFlightItem != null)
+            {
+                AdvanceInFlightTransfer();
+                return;
+            }
+
+            if (!_hasPower || sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
+                return;
+
+            _exportTimer += SlowTickDeltaTime;
+            if (_exportTimer < exportIntervalSeconds)
+                return;
+
+            _exportTimer = 0f;
+            TryStageTransfer();
         }
 
         private float ResolveTransitDuration()
@@ -370,6 +434,68 @@ namespace Hecton8.Construction
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
             if (grid != null)
                 grid.MarkDirty();
+        }
+
+        private bool IsRuptured()
+        {
+            return _debugRuptured || (_powerNode != null && _powerNode.IsRuptured);
+        }
+
+        private void RecoverOverpressureStress(bool blockageResolved)
+        {
+            if (_overpressureStress <= 0f)
+                return;
+
+            float recovery = blockageResolved
+                ? math.max(stressRecoveryPerTick, blockedDeliveryStress)
+                : math.max(0f, stressRecoveryPerTick);
+            if (recovery <= 0f)
+                return;
+
+            _overpressureStress = math.max(0f, _overpressureStress - recovery);
+            _debugOverpressureStress = _overpressureStress;
+        }
+
+        private void AccumulateOverpressureStress()
+        {
+            float capacityScale = math.max(1, maxCapacityUnits);
+            _overpressureStress += math.max(0.1f, blockedDeliveryStress) / capacityScale;
+            _debugOverpressureStress = _overpressureStress;
+            if (_overpressureStress < math.max(0.1f, ruptureStressThreshold))
+                return;
+
+            TriggerOverpressureRupture();
+        }
+
+        private void TriggerOverpressureRupture()
+        {
+            if (IsRuptured())
+                return;
+
+            _debugRuptured = true;
+
+            if (_powerNode != null)
+            {
+                _powerNode.SetRuptured(true);
+                _powerNode.SetShortCircuited(true);
+            }
+
+            Vector3 rupturePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+            int leakedItemHashId = _inFlightItemHashId;
+            HectonEventBus.Publish(new LogisticsPipeOverpressureLeakEvent(
+                _pipeLinkId,
+                rupturePosition,
+                _overpressureStress,
+                leakedItemHashId));
+
+            if (AbyssalFluidDecalManager.Instance != null)
+            {
+                float radiusScale = math.saturate(_overpressureStress / math.max(0.1f, ruptureStressThreshold));
+                AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(rupturePosition, radiusScale);
+            }
+
+            RollbackInFlightTransfer();
+            NotifyGridBalanceChanged();
         }
 
         private static int GetNextReservationId()

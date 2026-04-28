@@ -1,4 +1,8 @@
+using Hecton8.Core;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -11,13 +15,42 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
     public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces
     {
+        private struct ScheduledSweepState
+        {
+            public Vector3 StartPosition;
+            public Vector3 CapsulePoint1;
+            public Vector3 CapsulePoint2;
+            public float CapsuleRadius;
+            public Vector3 Direction;
+            public float Distance;
+            public int LayerMask;
+            public int SelfColliderInstanceId;
+            public float SkinWidth;
+        }
+
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const int MaxSlideSweepIterations = 2;
+        private const int ScheduledSweepCommandCount = 1;
+        private const int ScheduledSweepMaxHits = 8;
+        private const float HydrodynamicGhostBlendOld = 0.15f;
+        private const float HydrodynamicGhostBlendNew = 0.85f;
+
+        private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
+        private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
+        private static readonly ProfilerMarker _hydrodynamicGhostProfilerMarker = new ProfilerMarker("H8.PlayerMotor.HydrodynamicGhost.Resolve");
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
         private bool _isGrounded;
         private readonly RaycastHit[] _sweepHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — motor-owned sweep/collision query buffer for kinematic isolation — owner: HectonPlayerMotor
+        private readonly Vector3[] _hydrodynamicGhostVelocityHistory = new Vector3[4]; // COLD ALLOC: Vector3[4] — 3-frame added-mass inertial ghost history for underwater locomotion perception — owner: HectonPlayerMotor
+        private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
+        private NativeArray<RaycastHit> _scheduledSweepResults;
+        private JobHandle _scheduledSweepHandle;
+        private bool _scheduledSweepPending;
+        private ScheduledSweepState _scheduledSweepState;
+        private int _hydrodynamicGhostWriteIndex;
+        private int _hydrodynamicGhostSampleCount;
 
         /// <inheritdoc />
         public Rigidbody Body => _body;
@@ -36,6 +69,17 @@ namespace Hecton8.Gameplay
         {
             _body = body;
             _capsule = capsule;
+            ResetHydrodynamicAddedMassState();
+        }
+
+        private void OnDisable()
+        {
+            DisposeScheduledSweepState();
+        }
+
+        private void OnDestroy()
+        {
+            DisposeScheduledSweepState();
         }
 
         /// <summary>Updates grounded state mirror for external systems.</summary>
@@ -357,6 +401,157 @@ namespace Hecton8.Gameplay
         public void ResetRuntimeState()
         {
             _isGrounded = false;
+            ResetHydrodynamicAddedMassState();
+        }
+
+        /// <summary>
+        /// Returns a hydrodynamically weighted perceived velocity using a 3-frame inertial ghost.
+        /// 85% comes from the current velocity and 15% from the oldest retained snapshot.
+        /// </summary>
+        public Vector3 ResolveHydrodynamicAddedMassVelocity(Vector3 actualVelocity, bool enableGhost)
+        {
+            Vector3 safeActualVelocity = SafeVelocity(actualVelocity);
+            if (!enableGhost)
+            {
+                ResetHydrodynamicAddedMassState();
+                return safeActualVelocity;
+            }
+
+            using (_hydrodynamicGhostProfilerMarker.Auto())
+            {
+                RecordHydrodynamicGhostVelocity(safeActualVelocity);
+                if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
+                    return safeActualVelocity;
+
+                Vector3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
+                Vector3 perceivedVelocity =
+                    (safeActualVelocity * HydrodynamicGhostBlendNew) +
+                    (oldestVelocity * HydrodynamicGhostBlendOld);
+                return SafeVelocity(perceivedVelocity, safeActualVelocity);
+            }
+        }
+
+        /// <summary>Clears the persistent underwater added-mass history.</summary>
+        public void ResetHydrodynamicAddedMassState()
+        {
+            _hydrodynamicGhostWriteIndex = 0;
+            _hydrodynamicGhostSampleCount = 0;
+            for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
+                _hydrodynamicGhostVelocityHistory[i] = Vector3.zero;
+        }
+
+        /// <summary>
+        /// Schedules an asynchronous capsule sweep batch for a future locomotion integration window.
+        /// This is the Burst/job seam used by high-speed locomotion probes. Consumption is intentionally deferred.
+        /// </summary>
+        public bool ScheduleCapsuleSweepBatch(
+            Vector3 capsulePoint1,
+            Vector3 capsulePoint2,
+            float capsuleRadius,
+            Vector3 direction,
+            float distance,
+            int layerMask,
+            float skinWidth,
+            int selfColliderInstanceId)
+        {
+            if (_scheduledSweepPending || distance <= 0.0001f)
+                return false;
+
+            EnsureScheduledSweepState();
+            _scheduledSweepState = new ScheduledSweepState
+            {
+                StartPosition = _body != null ? _body.position : Vector3.zero,
+                CapsulePoint1 = capsulePoint1,
+                CapsulePoint2 = capsulePoint2,
+                CapsuleRadius = math.max(0.01f, capsuleRadius),
+                Direction = direction,
+                Distance = distance,
+                LayerMask = layerMask,
+                SkinWidth = skinWidth,
+                SelfColliderInstanceId = selfColliderInstanceId
+            };
+
+            _scheduledSweepCommands[0] = new CapsulecastCommand(
+                capsulePoint1,
+                capsulePoint2,
+                math.max(0.01f, capsuleRadius),
+                direction,
+                new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore),
+                distance + skinWidth);
+
+            using (_scheduledSweepProfilerMarker.Auto())
+            {
+                _scheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
+                    _scheduledSweepCommands,
+                    _scheduledSweepResults,
+                    1,
+                    ScheduledSweepMaxHits,
+                    default);
+                _scheduledSweepPending = true;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Returns true when a previously scheduled capsule sweep completed and produced a blocking hit.
+        /// Caller owns the decision about when a completed query may be consumed.
+        /// </summary>
+        public bool TryConsumeScheduledCapsuleSweep(
+            out bool wasBlocked,
+            out RaycastHit blockingHit,
+            out Vector3 resolvedPosition,
+            out float blockedSpeed)
+        {
+            wasBlocked = false;
+            blockingHit = default;
+            resolvedPosition = _body != null ? _body.position : Vector3.zero;
+            blockedSpeed = 0f;
+            if (!_scheduledSweepPending || !_scheduledSweepHandle.IsCompleted)
+                return false;
+
+            using (_scheduledSweepConsumeProfilerMarker.Auto())
+            {
+                _scheduledSweepHandle.Complete();
+                _scheduledSweepPending = false;
+                _scheduledSweepHandle = default;
+
+                float nearestDistance = float.MaxValue;
+                int nearestIndex = -1;
+                for (int i = 0; i < ScheduledSweepMaxHits; i++)
+                {
+                    RaycastHit hit = _scheduledSweepResults[i];
+                    int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                    if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                        continue;
+
+                    if (hit.distance < nearestDistance)
+                    {
+                        nearestDistance = hit.distance;
+                        nearestIndex = i;
+                    }
+                }
+
+                Vector3 startPosition = _scheduledSweepState.StartPosition;
+                if (nearestIndex < 0)
+                {
+                    resolvedPosition = _body != null ? _body.position : startPosition;
+                    return true;
+                }
+
+                wasBlocked = true;
+                blockingHit = _scheduledSweepResults[nearestIndex];
+                float safeDistance = math.max(0f, blockingHit.distance - _scheduledSweepState.SkinWidth);
+                resolvedPosition = startPosition + (_scheduledSweepState.Direction * safeDistance);
+
+                Vector3 previousVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
+                Vector3 projectedVelocity = Vector3.ProjectOnPlane(previousVelocity, blockingHit.normal);
+                blockedSpeed = (previousVelocity - projectedVelocity).magnitude;
+
+                MovePosition(resolvedPosition);
+                SetLinearVelocity(projectedVelocity);
+                return true;
+            }
         }
 
         private static bool IsFiniteNonZero(Vector3 value)
@@ -420,6 +615,49 @@ namespace Hecton8.Gameplay
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             return math.all(math.isfinite(velocity3)) ? velocity : fallback;
+        }
+
+        private void EnsureScheduledSweepState()
+        {
+            if (!_scheduledSweepCommands.IsCreated)
+                _scheduledSweepCommands = new NativeArray<CapsulecastCommand>(ScheduledSweepCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+
+            if (!_scheduledSweepResults.IsCreated)
+                _scheduledSweepResults = new NativeArray<RaycastHit>(ScheduledSweepMaxHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void DisposeScheduledSweepState()
+        {
+            if (_scheduledSweepCommands.IsCreated)
+            {
+                JobHandle dependency = _scheduledSweepPending ? _scheduledSweepHandle : default;
+                dependency = _scheduledSweepCommands.Dispose(dependency);
+                _scheduledSweepCommands = default;
+                if (_scheduledSweepResults.IsCreated)
+                {
+                    dependency = _scheduledSweepResults.Dispose(dependency);
+                    _scheduledSweepResults = default;
+                }
+
+                if (dependency.IsCompleted)
+                    dependency.Complete();
+            }
+            else if (_scheduledSweepResults.IsCreated)
+            {
+                _scheduledSweepResults.Dispose();
+                _scheduledSweepResults = default;
+            }
+
+            _scheduledSweepPending = false;
+            _scheduledSweepHandle = default;
+        }
+
+        private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
+        {
+            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = SafeVelocity(velocity);
+            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
+            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
+                _hydrodynamicGhostSampleCount++;
         }
 
         private int ResolveSelfColliderInstanceId()

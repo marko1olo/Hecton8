@@ -53,7 +53,7 @@ namespace Hecton8.Interaction
     /// Immutable tool dispatch payload captured before routing into the interaction queue.
     /// All positions are absolute-universe coordinates.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct InteractionPacket
     {
         public InteractionPacket(
@@ -74,6 +74,7 @@ namespace Hecton8.Interaction
             Mode = mode;
             ToolStateFlags = toolStateFlags;
             FrameIndex = frameIndex;
+            _padding0 = 0u;
         }
 
         public uint ToolID;
@@ -84,6 +85,7 @@ namespace Hecton8.Interaction
         public byte Mode;
         public byte ToolStateFlags;
         public uint FrameIndex;
+        private uint _padding0;
     }
 
     /// <summary>

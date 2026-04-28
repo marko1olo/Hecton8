@@ -941,10 +941,6 @@ namespace Hecton8.Gameplay
         private readonly Vector3[] _crestQueryVelocities = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] â€” batched Crest sampled water velocities â€” owner: HectonPlayerMovement
         private readonly Vector3[] _crestQueryDisplacements = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] â€” batched Crest sampled displacements â€” owner: HectonPlayerMovement
         private readonly Vector3[] _crestQueryFlows = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] â€” batched Crest flow samples â€” owner: HectonPlayerMovement
-        private int _hydrodynamicGhostWriteIndex;
-        private int _hydrodynamicGhostSampleCount;
-        // COLD ALLOC: Vector3[4] — underwater locomotion ghost velocity history for exosuit weight carry — owner: HectonPlayerMovement
-        private readonly Vector3[] _hydrodynamicGhostVelocityHistory = new Vector3[4];
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CAMERA JUICE
@@ -1210,7 +1206,6 @@ namespace Hecton8.Gameplay
         private const float ParasiteLatchMaxLeverArm = 0.85f;
         private const float ParasiteLatchMaxAngularAcceleration = 12f;
         private const float FeedbackInertialGhostBlend = 0.15f;
-        private const float HydrodynamicInertialGhostBlend = 0.15f;
 
         private struct RenderInterpolationState
         {
@@ -4646,45 +4641,20 @@ namespace Hecton8.Gameplay
                 _transportFeedbackGhostVelocityHistory[i] = Vector3.zero;
         }
 
-        private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
-        {
-            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = HectonPlayerMotor.SafeVelocity(velocity);
-            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
-            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
-                _hydrodynamicGhostSampleCount++;
-        }
-
-        private Vector3 ResolveHydrodynamicGhostVelocity(Vector3 fallbackVelocity)
-        {
-            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
-                return fallbackVelocity;
-
-            return _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
-        }
-
         private Vector3 ResolveHydrodynamicReferenceVelocity(Vector3 actualVelocity)
         {
             Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
             bool useGhost = _currentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion ||
                             (!_isWalking && _waterImmersionRatio > 0.3f);
-            if (!useGhost)
-            {
-                ResetHydrodynamicGhostVelocity();
+            if (_playerMotor == null)
                 return safeActualVelocity;
-            }
 
-            RecordHydrodynamicGhostVelocity(safeActualVelocity);
-            Vector3 ghostVelocity = ResolveHydrodynamicGhostVelocity(safeActualVelocity);
-            Vector3 perceivedVelocity = Vector3.Lerp(safeActualVelocity, ghostVelocity, HydrodynamicInertialGhostBlend);
-            return HectonPlayerMotor.SafeVelocity(perceivedVelocity, safeActualVelocity);
+            return _playerMotor.ResolveHydrodynamicAddedMassVelocity(safeActualVelocity, useGhost);
         }
 
         private void ResetHydrodynamicGhostVelocity()
         {
-            _hydrodynamicGhostWriteIndex = 0;
-            _hydrodynamicGhostSampleCount = 0;
-            for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
-                _hydrodynamicGhostVelocityHistory[i] = Vector3.zero;
+            _playerMotor?.ResetHydrodynamicAddedMassState();
         }
 
         private void BuildJuiceInput(float deltaTime, SuitData suit)
@@ -6372,7 +6342,37 @@ namespace Hecton8.Gameplay
 
         private void ApplyHighSpeedWipeoutSweep(float fixedDeltaTime)
         {
-            if (_wipeoutTimer <= 0f || fixedDeltaTime <= 0f || _playerMotor == null)
+            if (_playerMotor == null)
+                return;
+
+            if (_playerMotor.TryConsumeScheduledCapsuleSweep(
+                    out bool wasBlocked,
+                    out RaycastHit resolvedBlockingHit,
+                    out Vector3 resolvedPosition,
+                    out float blockedSpeed))
+            {
+                if (_useFixedFrameSpatialCache)
+                    SyncFixedFrameMotorPosition(resolvedPosition);
+
+                if (wasBlocked && blockedSpeed > 0.0001f)
+                {
+                    float severity = math.saturate(blockedSpeed / math.max(wipeoutImpactDeltaVelocityMax, 0.01f));
+                    if (severity > 0f)
+                    {
+                        ApplyPhysicalTrauma(-resolvedBlockingHit.normal * blockedSpeed * _rb.mass, severity);
+
+                        if (_juiceProcessor != null && currentSuitData != null)
+                            _juiceProcessor.RegisterCollisionImpulse(blockedSpeed * math.lerp(1.1f, 1.7f, severity), currentSuitData);
+
+                        if (_survivalSystem == null)
+                            TryGetComponent(out _survivalSystem);
+
+                        _survivalSystem?.ReportPhysicalTrauma(blockedSpeed, severity);
+                    }
+                }
+            }
+
+            if (_wipeoutTimer <= 0f || fixedDeltaTime <= 0f)
                 return;
 
             Vector3 velocity = _rb.linearVelocity;
@@ -6380,27 +6380,19 @@ namespace Hecton8.Gameplay
             if (speed <= wipeoutSweepSpeedThreshold)
                 return;
 
-            Vector3 intendedDisplacement = velocity * fixedDeltaTime;
-            if (TrySweepGatedMotorDisplacement(intendedDisplacement, wipeoutSweepSkinWidth, out RaycastHit blockingHit))
-                return;
+            if (!_useFixedFrameSpatialCache)
+                RefreshFixedFrameSpatialCache();
 
-            float blockedSpeed = (velocity - _rb.linearVelocity).magnitude;
-            if (blockedSpeed <= 0.0001f)
-                return;
-
-            float severity = math.saturate(blockedSpeed / math.max(wipeoutImpactDeltaVelocityMax, 0.01f));
-            if (severity <= 0f)
-                return;
-
-            ApplyPhysicalTrauma(-blockingHit.normal * blockedSpeed * _rb.mass, severity);
-
-            if (_juiceProcessor != null && currentSuitData != null)
-                _juiceProcessor.RegisterCollisionImpulse(blockedSpeed * math.lerp(1.1f, 1.7f, severity), currentSuitData);
-
-            if (_survivalSystem == null)
-                TryGetComponent(out _survivalSystem);
-
-            _survivalSystem?.ReportPhysicalTrauma(blockedSpeed, severity);
+            BuildFixedFrameSweepCapsule(out Vector3 point1, out Vector3 point2, out float radius);
+            _playerMotor.ScheduleCapsuleSweepBatch(
+                point1,
+                point2,
+                radius,
+                velocity / speed,
+                speed * fixedDeltaTime,
+                groundLayers,
+                wipeoutSweepSkinWidth,
+                _playerColliderInstanceId);
         }
 
         private float ResolveTransportCavitationEfficiency(

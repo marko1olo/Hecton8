@@ -24,3 +24,4 @@ MonoBehaviour:
   _fallbackProfile: {fileID: 11400000, guid: 6054f072908319f4f85ef9ee8c453e0f, type: 2}
   _musicMixerGroup: {fileID: 0}
   _stingerMixerGroup: {fileID: 0}
+  _runtimeDirectorPrefab: {fileID: 4511111111111111111, guid: 7a86aa3ad745a104d84c2f6622d12430, type: 3}

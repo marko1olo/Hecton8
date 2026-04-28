@@ -13,6 +13,7 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Optimization;
 using Hecton8.SaveSystem;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -91,6 +92,14 @@ namespace Hecton8.VFX
         private JobHandle _focusRaycastHandle;
         private bool _focusRaycastScheduled;
         private float _resolvedFocusDistance = 0.06f;
+        private const int TransparentFxLayerIndex = 1;
+        private const int WaterLayerIndex = 4;
+        private const int UiLayerIndex = 5;
+        private const int HudInternalLayerIndex = 17;
+        private static readonly int _TransparentFxLayer = TransparentFxLayerIndex;
+        private static readonly int _WaterLayer = WaterLayerIndex;
+        private static readonly int _UiLayer = UiLayerIndex;
+        private static readonly int _HudInternalLayer = HudInternalLayerIndex;
 
         // ═══ SETTINGS ═══
         [Header("── Settings ──────────────────")]
@@ -120,6 +129,9 @@ namespace Hecton8.VFX
 
         [SerializeField, Tooltip("Response speed for center-eye focus-distance convergence.")]
         private float _focusResponseSpeed = 9f;
+
+        [SerializeField, Range(0f, 0.8f), Tooltip("Additional chromatic-aberration intensity injected by active submarine structural fatigue.")]
+        private float _structuralFatigueChromaticAberrationMax = 0.26f;
 
         [Header("Adaptive Budget Response")]
         [SerializeField, Tooltip("Allow camera juice to degrade under render-scale and VRAM pressure instead of paying full effect cost on weak hardware.")]
@@ -294,6 +306,7 @@ namespace Hecton8.VFX
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
             EnsureFocusRaycastBuffers();
+            SanitizeInteractionFocusMask();
 
             // Performance mode degradation
             if (QualitySettings.GetQualityLevel() == 0)
@@ -345,6 +358,26 @@ namespace Hecton8.VFX
             {
                 _mainCamera.fieldOfView = _baseFOV;
             }
+        }
+
+        private void SanitizeInteractionFocusMask()
+        {
+            int layerMask = _interactionFocusMask.value;
+            layerMask = ExcludeLayer(layerMask, _TransparentFxLayer);
+            layerMask = ExcludeLayer(layerMask, _WaterLayer);
+            layerMask = ExcludeLayer(layerMask, _UiLayer);
+            layerMask = IncludeLayer(layerMask, _HudInternalLayer);
+            _interactionFocusMask = layerMask;
+        }
+
+        private static int ExcludeLayer(int mask, int layer)
+        {
+            return layer >= 0 ? mask & ~(1 << layer) : mask;
+        }
+
+        private static int IncludeLayer(int mask, int layer)
+        {
+            return layer >= 0 ? mask | (1 << layer) : mask;
         }
 
         private void TryUnregister()
@@ -1069,7 +1102,7 @@ namespace Hecton8.VFX
 
         private void UpdateO2PostProcessing()
         {
-            if (_survivalSystem == null || _o2ChromaticAberration == null) return;
+            if (_o2ChromaticAberration == null) return;
             if (!_chromaticAberrationEnabled)
             {
                 _o2ChromaticAberration.intensity.value = 0f;
@@ -1077,13 +1110,16 @@ namespace Hecton8.VFX
                 return;
             }
 
-            float o2Normalized = _survivalSystem.OxygenNormalized;
-
+            float o2Normalized = _survivalSystem != null ? _survivalSystem.OxygenNormalized : 1f;
+            float oxygenIntensity = 0f;
             if (o2Normalized < 0.2f)
-            {
-                // Calculate chromatic aberration intensity
-                float intensity = Mathf.Lerp(0f, 0.8f, (0.2f - o2Normalized) / 0.2f) * _adaptivePostFxScale;
+                oxygenIntensity = Mathf.Lerp(0f, 0.8f, (0.2f - o2Normalized) / 0.2f);
 
+            float structuralFatigueIntensity = ResolveStructuralFatigueChromaticContribution();
+            float intensity = Mathf.Max(oxygenIntensity, structuralFatigueIntensity) * _adaptivePostFxScale;
+
+            if (intensity > 0.001f)
+            {
                 // Direct Volume override assignment (not renderer-based, no MaterialPropertyBlock needed)
                 _o2ChromaticAberration.intensity.value = intensity;
                 _o2ChromaticAberration.active = intensity > 0.001f;
@@ -1093,6 +1129,16 @@ namespace Hecton8.VFX
                 _o2ChromaticAberration.intensity.value = 0f;
                 _o2ChromaticAberration.active = false;
             }
+        }
+
+        private float ResolveStructuralFatigueChromaticContribution()
+        {
+            ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
+            SubmarineStructuralGrid structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
+            if (structuralGrid == null || !structuralGrid.isActiveAndEnabled || !structuralGrid.IsReady)
+                return 0f;
+
+            return Mathf.Clamp01(structuralGrid.FatiguePeakNormalized) * Mathf.Clamp01(_structuralFatigueChromaticAberrationMax);
         }
 
         private void RefreshAdaptiveBudgetResponse()

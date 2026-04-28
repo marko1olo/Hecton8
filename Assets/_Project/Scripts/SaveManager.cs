@@ -17,7 +17,10 @@ using Hecton8.Core;
 using Hecton8.Modding;
 using Hecton8.Quest;
 using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -26,10 +29,11 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour, ISaveService
+    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
+        private const float IntegrityScanIntervalSeconds = 5f;
 
         // ══════════════════════════════════════════════════════════
         //  SAVE STATE
@@ -88,6 +92,15 @@ namespace Hecton8.SaveSystem
 
         private NativeArray<byte> _savePayloadBuffer;
         private NativeArray<byte> _compressedSaveBuffer;
+        private NativeArray<byte> _integrityPayloadMirror;
+        private NativeArray<ulong> _integrityScanResult;
+        private JobHandle _integrityScanHandle;
+        private ulong _expectedIntegrityPayloadHash64;
+        private float _nextIntegrityScanTime;
+        private int _integrityPayloadLength;
+        private bool _integrityScanScheduled;
+        private bool _updatableRegistered;
+        private string _integritySlotName;
 
         private readonly struct SaveLoadCandidate
         {
@@ -108,6 +121,26 @@ namespace Hecton8.SaveSystem
             Manual = 0,
             Auto,
             Quick
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+        private unsafe struct IntegrityScanJob : IJob
+        {
+            [ReadOnly] public NativeArray<byte> PayloadBytes;
+            public NativeArray<ulong> ResultHash64;
+
+            public void Execute()
+            {
+                if (!PayloadBytes.IsCreated || PayloadBytes.Length <= 0 || !ResultHash64.IsCreated || ResultHash64.Length <= 0)
+                {
+                    if (ResultHash64.IsCreated && ResultHash64.Length > 0)
+                        ResultHash64[0] = 0UL;
+                    return;
+                }
+
+                void* payloadPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(PayloadBytes);
+                ResultHash64[0] = SaveBinaryStorage.Hash64(payloadPtr, PayloadBytes.Length);
+            }
         }
 
         private int GetBackupRetentionCount(string slotName)
@@ -180,6 +213,24 @@ namespace Hecton8.SaveSystem
             GlobalRegistry.RegisterSaveService(this);
         }
 
+        private void OnEnable()
+        {
+            if (_updatableRegistered)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _updatableRegistered = true;
+        }
+
+        private void OnDisable()
+        {
+            if (!_updatableRegistered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _updatableRegistered = false;
+        }
+
         private void OnDestroy()
         {
             if (ReferenceEquals(GlobalRegistry.Save, this))
@@ -188,11 +239,19 @@ namespace Hecton8.SaveSystem
             if (_instance == this)
                 _instance = null;
 
+            if (_updatableRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _updatableRegistered = false;
+            }
+
             if (_savePayloadBuffer.IsCreated)
                 _savePayloadBuffer.Dispose();
 
             if (_compressedSaveBuffer.IsCreated)
                 _compressedSaveBuffer.Dispose();
+
+            DisposeIntegrityResources();
         }
 
         private void InitializeNativeBuffers()
@@ -208,6 +267,117 @@ namespace Hecton8.SaveSystem
                 // COLD ALLOC: NativeArray<byte>[67378176] - worst-case LZ4 block-compressed save payload buffer for 64MB raw save budget - owner: SaveManager
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             }
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (_integrityScanScheduled && _integrityScanHandle.IsCompleted)
+            {
+                _integrityScanHandle.Complete();
+                _integrityScanScheduled = false;
+                EvaluateIntegrityScanResult();
+            }
+
+            if (_isBusy ||
+                _integrityScanScheduled ||
+                !_integrityPayloadMirror.IsCreated ||
+                _integrityPayloadLength <= 0 ||
+                Time.unscaledTime < _nextIntegrityScanTime)
+            {
+                return;
+            }
+
+            if (!_integrityScanResult.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ulong>[1] - background save integrity hash output - owner: SaveManager
+                _integrityScanResult = new NativeArray<ulong>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            IntegrityScanJob job = new IntegrityScanJob
+            {
+                PayloadBytes = _integrityPayloadMirror.GetSubArray(0, _integrityPayloadLength),
+                ResultHash64 = _integrityScanResult
+            };
+            _integrityScanHandle = job.Schedule();
+            _integrityScanScheduled = true;
+            _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
+        }
+
+        private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
+        {
+            if (!payloadBytes.IsCreated || payloadLength <= 0 || payloadLength > payloadBytes.Length)
+                return;
+
+            if (_integrityScanScheduled)
+            {
+                _integrityScanHandle.Complete();
+                _integrityScanScheduled = false;
+            }
+
+            EnsureIntegrityMirrorCapacity(payloadLength);
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloadBytes);
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_integrityPayloadMirror);
+            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, payloadLength);
+            _integrityPayloadLength = payloadLength;
+            _expectedIntegrityPayloadHash64 = expectedHash64;
+            _integritySlotName = slotName ?? string.Empty;
+            _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
+        }
+
+        private void EnsureIntegrityMirrorCapacity(int requiredLength)
+        {
+            if (_integrityPayloadMirror.IsCreated && _integrityPayloadMirror.Length >= requiredLength)
+                return;
+
+            if (_integrityPayloadMirror.IsCreated)
+                _integrityPayloadMirror.Dispose();
+
+            // COLD ALLOC: NativeArray<byte>[requiredLength] - resident decompressed save payload mirror for integrity scans - owner: SaveManager
+            _integrityPayloadMirror = new NativeArray<byte>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        }
+
+        private void EvaluateIntegrityScanResult()
+        {
+            if (!_integrityScanResult.IsCreated || _integrityScanResult.Length <= 0)
+                return;
+
+            ulong computedHash64 = _integrityScanResult[0];
+            if (computedHash64 == _expectedIntegrityPayloadHash64)
+                return;
+
+            string slotName = string.IsNullOrEmpty(_integritySlotName) ? "active" : _integritySlotName;
+            string reason = $"Active save integrity drift detected for '{slotName}'. Expected XXH3-64 {_expectedIntegrityPayloadHash64:X16}, got {computedHash64:X16}.";
+            Debug.LogError($"[SaveManager] {reason}");
+            SaveEvents.RaiseEmergencyBackupRestoreRequested(slotName);
+            SaveEvents.RaiseSaveFailed(slotName, reason);
+            _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
+        }
+
+        private void DisposeIntegrityResources()
+        {
+            if (_integrityPayloadMirror.IsCreated)
+            {
+                if (_integrityScanScheduled)
+                    _integrityPayloadMirror.Dispose(_integrityScanHandle);
+                else
+                    _integrityPayloadMirror.Dispose();
+
+                _integrityPayloadMirror = default;
+            }
+
+            if (_integrityScanResult.IsCreated)
+            {
+                if (_integrityScanScheduled)
+                    _integrityScanResult.Dispose(_integrityScanHandle);
+                else
+                    _integrityScanResult.Dispose();
+
+                _integrityScanResult = default;
+            }
+
+            _integrityScanScheduled = false;
+            _integrityPayloadLength = 0;
+            _expectedIntegrityPayloadHash64 = 0UL;
         }
 
         public void Register(ISaveable saveable)
@@ -266,6 +436,15 @@ namespace Hecton8.SaveSystem
                 const string reason = "Slot name is empty.";
                 LastOperationError = reason;
                 Debug.LogWarning($"[SaveManager] Ignored save request: {reason}");
+                SaveEvents.RaiseSaveFailed(slotName, reason);
+                return;
+            }
+
+            if (HectonFloatingOrigin.IsShiftInProgress || HectonFloatingOrigin.IsPhysicsPausedForShift)
+            {
+                const string reason = "Save blocked during floating-origin shift.";
+                LastOperationError = reason;
+                Debug.LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
                 SaveEvents.RaiseSaveFailed(slotName, reason);
                 return;
             }
@@ -342,6 +521,9 @@ namespace Hecton8.SaveSystem
 
                 await Awaitable.BackgroundThreadAsync();
 
+                ulong payloadHash64;
+                int rawPayloadLength;
+
                 ExecuteVerifiedSavePipeline(
                     slotName,
                     tempPath,
@@ -353,9 +535,12 @@ namespace Hecton8.SaveSystem
                     packedQuestStateSnapshot,
                     voxelDeltaSnapshot,
                     _savePayloadBuffer,
-                    _compressedSaveBuffer);
+                    _compressedSaveBuffer,
+                    out payloadHash64,
+                    out rawPayloadLength);
 
                 await Awaitable.MainThreadAsync();
+                StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 SaveThumbnailSystem.CaptureThumbnail(slotName);
                 int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
@@ -835,8 +1020,12 @@ namespace Hecton8.SaveSystem
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
-            NativeArray<byte> compressedBuffer)
+            NativeArray<byte> compressedBuffer,
+            out ulong payloadHash64,
+            out int rawPayloadLength)
         {
+            payloadHash64 = 0UL;
+            rawPayloadLength = 0;
             // Step 1: clear any stale temp artifact from a previous interrupted transaction.
             DeleteFileIfExists(tempPath);
 
@@ -854,6 +1043,8 @@ namespace Hecton8.SaveSystem
                     voxelDeltaSnapshot,
                     rawBuffer,
                     compressedBuffer,
+                    out payloadHash64,
+                    out rawPayloadLength,
                     out string writeError))
             {
                 throw new Exception(writeError);
@@ -1252,6 +1443,8 @@ namespace Hecton8.SaveSystem
                     out voxelDeltaSnapshot,
                     out metadata,
                     out _,
+                    out _,
+                    out _,
                     out errorMessage))
                 {
                     if (voxelDeltaSnapshot.IsCreated)
@@ -1360,7 +1553,9 @@ namespace Hecton8.SaveSystem
                         packedQuestStateBuffer,
                         voxelDeltaSnapshot,
                         rawBuffer,
-                        compressedBuffer);
+                        compressedBuffer,
+                        out _,
+                        out _);
                 }
                 finally
                 {

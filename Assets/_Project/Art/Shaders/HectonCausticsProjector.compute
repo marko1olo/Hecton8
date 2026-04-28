@@ -73,11 +73,22 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
     float sharpness = max(_HectonCausticsSimulationParamsB.x, 0.1);
     float secondaryWeight = saturate(_HectonCausticsSimulationParamsB.y);
     float timeValue = _HectonCausticsSimulationParamsB.z;
+    float waveDisplacement = _HectonCausticsSimulationParamsC.x;
+    float2 waveFlow = _HectonCausticsSimulationParamsC.yz;
+    float wavePhase = _HectonCausticsSimulationParamsC.w;
+    float waveDisplacementAbs = abs(waveDisplacement);
+    float2 waveOffset = waveFlow * 0.0125 + float2(waveDisplacement * 0.018, -waveDisplacement * 0.013);
+    uv += waveOffset;
+    primaryDensity *= lerp(0.94, 1.08, saturate(waveDisplacementAbs * 0.2));
+    secondaryDensity *= lerp(0.92, 1.12, saturate(length(waveFlow) * 0.08));
 
-    float primaryLayer = VoronoiRidge(uv + float2(timeValue * primarySpeed, -timeValue * primarySpeed * 0.61), primaryDensity, timeValue * primarySpeed);
-    float secondaryLayer = VoronoiRidge(uv + float2(-timeValue * secondarySpeed * 0.73, timeValue * secondarySpeed), secondaryDensity, timeValue * secondarySpeed + 17.0);
+    float primaryTime = timeValue * primarySpeed + wavePhase;
+    float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0;
+    float primaryLayer = VoronoiRidge(uv + float2(primaryTime, -primaryTime * 0.61), primaryDensity, primaryTime);
+    float secondaryLayer = VoronoiRidge(uv + float2(-secondaryTime * 0.73, secondaryTime), secondaryDensity, secondaryTime);
     float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
     combined = pow(saturate(combined * 2.3), sharpness);
+    combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
     combined = saturate(combined * 1.35);
 
     _HectonCausticsOutput[dispatchThreadId.xy] = combined;

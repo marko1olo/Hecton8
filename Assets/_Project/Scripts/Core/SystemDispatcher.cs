@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton8.AI;
 using Hecton8.Bootstrap;
+using Hecton8.World;
 
 namespace Hecton8.Core
 {
@@ -260,6 +261,9 @@ namespace Hecton8.Core
         {
             using (_updateProfilerMarker.Auto())
             {
+#if UNITY_EDITOR
+                NativeAllocationTrackerRuntimeBridge.NotifyDispatcherHeartbeat();
+#endif
                 if (BootstrapStatus.TryTriggerSafeHalt())
                     BootstrapBiosErrorOverlay.Show(BootstrapStatus.SafeHaltDisplayMessage);
 
@@ -308,6 +312,8 @@ namespace Hecton8.Core
         {
             long completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
             _foveatedSimulationManager.CompleteFrameJobs();
+            WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
+            UnsafeArenaAllocator.ResetFrame();
             EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
         }
 

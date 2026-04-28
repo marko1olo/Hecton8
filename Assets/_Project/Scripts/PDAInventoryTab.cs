@@ -209,6 +209,7 @@ namespace Hecton8.UI
         private int _selectedX = -1;
         private int _selectedY = -1;
         private ItemData _selectedItem;
+        private int _selectedItemHashId;
         private int _hoverX = -1;
         private int _hoverY = -1;
         private InventoryViewFilter _currentFilter = InventoryViewFilter.All;
@@ -1269,7 +1270,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!ReferenceEquals(playerInventory.GetItemAt(_selectedX, _selectedY), _selectedItem))
+            if (playerInventory.GetItemHashAt(_selectedX, _selectedY) != _selectedItemHashId)
                 ClearSelectionSilently();
         }
 
@@ -1670,7 +1671,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            ItemData dropped = playerInventory.RemoveOneItem(_selectedX, _selectedY);
+            int droppedHashId = playerInventory.RemoveOneItem(_selectedX, _selectedY);
+            ItemData dropped = ResolveInventoryItem(droppedHashId);
             if (dropped == null) return;
 
             Vector3 spawnPos = dropOrigin.position
@@ -1684,7 +1686,7 @@ namespace Hecton8.UI
                 dropCommitted = persistentWorldRegistry.TryRegisterDroppedItem(dropped, 1, spawnPos);
                 if (!dropCommitted)
                 {
-                    playerInventory.TryAddItem(dropped, 1);
+                    playerInventory.TryAddItem(droppedHashId, 1);
                     NotifyWarning("DROP BLOCKED - PERSISTENT REGISTRY REJECTED ITEM");
                     return;
                 }
@@ -1706,8 +1708,8 @@ namespace Hecton8.UI
             HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, dropOrigin));
 
             // Проверяем остался ли предмет на этой позиции
-            ItemData remaining = playerInventory.GetItemAt(_selectedX, _selectedY);
-            if (!ReferenceEquals(remaining, _selectedItem))
+            int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
+            if (remainingHashId != _selectedItemHashId)
             {
                 ClearSelection();
             }
@@ -1732,9 +1734,10 @@ namespace Hecton8.UI
             _hoverX = gx;
             _hoverY = gy;
 
-            ItemData cell = playerInventory != null
-                ? playerInventory.GetItemAt(gx, gy)
-                : null;
+            int cellHashId = playerInventory != null
+                ? playerInventory.GetItemHashAt(gx, gy)
+                : 0;
+            ItemData cell = ResolveInventoryItem(cellHashId);
 
             if (cell != null)
             {
@@ -1763,21 +1766,23 @@ namespace Hecton8.UI
                 return;
             }
 
-            ItemData cell = playerInventory != null
-                ? playerInventory.GetItemAt(gx, gy)
-                : null;
+            int cellHashId = playerInventory != null
+                ? playerInventory.GetItemHashAt(gx, gy)
+                : 0;
+            ItemData cell = ResolveInventoryItem(cellHashId);
 
             if (cell != null)
             {
                 FindAnchor(cell, gx, gy, out int ax, out int ay);
 
                 // Звук только при смене выбора
-                if (!ReferenceEquals(cell, _selectedItem) || ax != _selectedX || ay != _selectedY)
+                if (cellHashId != _selectedItemHashId || ax != _selectedX || ay != _selectedY)
                     PlayUISound(selectSound);
 
                 _selectedX = ax;
                 _selectedY = ay;
                 _selectedItem = cell;
+                _selectedItemHashId = cellHashId;
                 PositionHighlight(_selectRect, ax, ay, cell.width, cell.height);
                 _selectImage.enabled = true;
             }
@@ -1807,8 +1812,8 @@ namespace Hecton8.UI
             if (!consumed) return;
 
             // Проверяем остался ли предмет
-            ItemData remaining = playerInventory.GetItemAt(_selectedX, _selectedY);
-            if (!ReferenceEquals(remaining, _selectedItem))
+            int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
+            if (remainingHashId != _selectedItemHashId)
                 ClearSelection();
             else
                 RefreshDetails();
@@ -1903,6 +1908,7 @@ namespace Hecton8.UI
             _selectedX = -1;
             _selectedY = -1;
             _selectedItem = null;
+            _selectedItemHashId = 0;
             if (_selectRect != null)
                 _selectImage.enabled = false;
             RefreshDetails();
@@ -1913,6 +1919,7 @@ namespace Hecton8.UI
             _selectedX = -1;
             _selectedY = -1;
             _selectedItem = null;
+            _selectedItemHashId = 0;
             if (_selectRect != null)
                 _selectImage.enabled = false;
             RefreshDetails();
@@ -1937,6 +1944,13 @@ namespace Hecton8.UI
 
             ax = anchorIndex % grid.Columns;
             ay = anchorIndex / grid.Columns;
+        }
+
+        private ItemData ResolveInventoryItem(int itemHashId)
+        {
+            return itemHashId != 0 && playerInventory != null && playerInventory.ItemCatalog != null
+                ? playerInventory.ItemCatalog.FindByHash(itemHashId)
+                : null;
         }
 
         // ══════════════════════════════════════════════════════════

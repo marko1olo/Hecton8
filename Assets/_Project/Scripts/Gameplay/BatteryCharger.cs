@@ -291,7 +291,10 @@ namespace Hecton8.Gameplay
                     if (anchorIndex < 0 || anchorIndex != y * cols + x)
                         continue;
 
-                    ItemData item = playerInventory.GetItemAt(x, y);
+                    int itemHashId = playerInventory.GetItemHashAt(x, y);
+                    ItemData item = itemHashId != 0 && playerInventory.ItemCatalog != null
+                        ? playerInventory.ItemCatalog.FindByHash(itemHashId)
+                        : null;
                     if (item == null)
                         continue;
 
@@ -301,7 +304,7 @@ namespace Hecton8.Gameplay
                     // Insert battery
                     if (InsertBattery(emptySlot, item, 0f))
                     {
-                        playerInventory.RemoveItem(item, x, y);
+                        playerInventory.RemoveItemAt(x, y);
                         return true;
                     }
                 }
@@ -325,7 +328,7 @@ namespace Hecton8.Gameplay
             if (battery == null)
                 return false;
 
-            if (!playerInventory.TryAddItem(battery, 1))
+            if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(battery.PersistentId), 1))
             {
                 // Inventory full, re-insert battery
                 InsertBattery(slotIndex, battery, slots[slotIndex].currentCharge);

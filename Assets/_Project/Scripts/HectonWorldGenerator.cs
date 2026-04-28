@@ -22,10 +22,12 @@ using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Jobs;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
+using Unity.Profiling;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -445,6 +447,21 @@ public struct HectonColorJob : IJobParallelFor
 
 public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 {
+    private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
+    private static readonly ProfilerMarker _physicsBakeBatchProfilerMarker = new ProfilerMarker("H8.WorldGenerator.PhysicsBakeBatch");
+
+    private readonly struct Long2
+    {
+        public readonly long x;
+        public readonly long y;
+
+        public Long2(long x, long y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
     struct PendingPhysicsBake
     {
         public Mesh Mesh;
@@ -568,6 +585,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     readonly Dictionary<int2, HectonChunkData> _active = new Dictionary<int2, HectonChunkData>();
     readonly List<HectonChunkRequest> _queue = new List<HectonChunkRequest>();
+    // COLD ALLOC: Dictionary<int2,int>[512] — reused desired-chunk set for AUP streaming refresh — owner: HectonWorldGenerator
+    readonly Dictionary<int2, int> _desiredChunks = new Dictionary<int2, int>(512);
+    // COLD ALLOC: List<int2>[256] — reused active-chunk removal scratch for AUP streaming refresh — owner: HectonWorldGenerator
+    readonly List<int2> _chunksToRemove = new List<int2>(256);
+    // COLD ALLOC: HashSet<int2>[256] — reused pending-chunk lookup for AUP streaming refresh — owner: HectonWorldGenerator
+    readonly HashSet<int2> _pendingChunkCoordSet = new HashSet<int2>();
+    // COLD ALLOC: List<HectonChunkRequest>[512] — reused chunk-request sort scratch for AUP streaming refresh — owner: HectonWorldGenerator
+    readonly List<HectonChunkRequest> _requestScratch = new List<HectonChunkRequest>(512);
     int _queueHead;
 
     private readonly List<PendingChunk> _pendingChunks = new List<PendingChunk>();
@@ -620,22 +645,25 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     public void Tick(float deltaTime)
     {
-        if (!_streaming || viewer == null) return;
-
-        int2 cur = WorldToChunk(viewer.position);
-        if (!cur.Equals(_lastChunk))
+        using (_tickProfilerMarker.Auto())
         {
-            _lastChunk = cur;
-            RefreshChunks();
-        }
+            if (!_streaming || viewer == null) return;
 
-        ProcessQueue();
-        ProcessPendingChunks();
+            int2 cur = WorldToChunk(viewer.position);
+            if (!cur.Equals(_lastChunk))
+            {
+                _lastChunk = cur;
+                RefreshChunks();
+            }
 
-        if (_physicsBakeFinalizeHead < _pendingPhysicsBakes.Count ||
-            _physicsBakeScheduleHead < _pendingPhysicsBakes.Count)
-        {
-            BakePhysicsBatch();
+            ProcessQueue();
+            ProcessPendingChunks();
+
+            if (_physicsBakeFinalizeHead < _pendingPhysicsBakes.Count ||
+                _physicsBakeScheduleHead < _pendingPhysicsBakes.Count)
+            {
+                BakePhysicsBatch();
+            }
         }
     }
 
@@ -659,7 +687,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     void StartStreaming()
     {
-        if (viewer == null) { Debug.LogWarning("[Hecton] No viewer assigned."); return; }
+        if (viewer == null) { UnityEngine.Debug.LogWarning("[Hecton] No viewer assigned."); return; }
         EnsureLUTs();
         _streaming  = true;
         _lastChunk  = new int2(int.MinValue, int.MinValue);
@@ -745,42 +773,89 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     #region Streaming
 
-    int2 WorldToChunk(Vector3 p) =>
-        new int2(Mathf.FloorToInt(p.x / chunkSize), Mathf.FloorToInt(p.z / chunkSize));
+    int2 WorldToChunk(Vector3 p)
+    {
+        Long2 absoluteChunk = ResolveAbsoluteChunkCoord(p);
+        return new int2(SaturateLongToInt(absoluteChunk.x), SaturateLongToInt(absoluteChunk.y));
+    }
 
-    float2 ChunkOrigin(int2 c) => new float2(c.x * chunkSize, c.y * chunkSize);
+    Long2 ResolveAbsoluteChunkCoord(Vector3 runtimePosition)
+    {
+        AbsoluteUniversePosition viewerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+        double3 absolutePosition = viewerAup.ToAbsoluteDouble3();
+        double safeChunkSize = math.max(1d, (double)chunkSize);
+        return new Long2(
+            (long)math.floor(absolutePosition.x / safeChunkSize),
+            (long)math.floor(absolutePosition.z / safeChunkSize));
+    }
+
+    double2 ResolveViewerAbsoluteXZ()
+    {
+        AbsoluteUniversePosition viewerAup = AbsoluteUniversePosition.FromRuntimePosition(viewer.position);
+        double3 absolutePosition = viewerAup.ToAbsoluteDouble3();
+        return new double2(absolutePosition.x, absolutePosition.z);
+    }
+
+    double2 ResolveChunkCenterAbsoluteXZ(int2 chunkCoord)
+    {
+        double safeChunkSize = math.max(1d, (double)chunkSize);
+        return new double2(
+            ((double)chunkCoord.x + 0.5d) * safeChunkSize,
+            ((double)chunkCoord.y + 0.5d) * safeChunkSize);
+    }
+
+    float2 ChunkOrigin(int2 c)
+    {
+        double safeChunkSize = math.max(1d, (double)chunkSize);
+        Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(new Vector3(
+            (float)(c.x * safeChunkSize),
+            0f,
+            (float)(c.y * safeChunkSize)));
+        return new float2(runtimeOrigin.x, runtimeOrigin.z);
+    }
+
+    static int SaturateLongToInt(long value)
+    {
+        if (value > int.MaxValue)
+            return int.MaxValue;
+
+        if (value < int.MinValue)
+            return int.MinValue;
+
+        return (int)value;
+    }
 
     void RefreshChunks()
     {
-        float3 vp = viewer.position;
-        float2 vxz = new float2(vp.x, vp.z);
-
-        var desired = new Dictionary<int2, int>();
+        double2 viewerAbsoluteXZ = ResolveViewerAbsoluteXZ();
+        double activeRadiusSq = activeRadius * (double)activeRadius;
+        double distantRadiusSq = distantRadius * (double)distantRadius;
+        _desiredChunks.Clear();
         int rMax = Mathf.CeilToInt(distantRadius / chunkSize) + 1;
 
         for (int dz = -rMax; dz <= rMax; dz++)
         for (int dx = -rMax; dx <= rMax; dx++)
         {
             int2 c = _lastChunk + new int2(dx, dz);
-            float2 center = new float2((c.x + 0.5f) * chunkSize, (c.y + 0.5f) * chunkSize);
-            float dSq = math.distancesq(vxz, center);
+            double2 center = ResolveChunkCenterAbsoluteXZ(c);
+            double dSq = math.lengthsq(viewerAbsoluteXZ - center);
 
-            if (dSq <= distantRadius * distantRadius)
-                desired[c] = dSq <= activeRadius * activeRadius ? 0 : 1;
+            if (dSq <= distantRadiusSq)
+                _desiredChunks[c] = dSq <= activeRadiusSq ? 0 : 1;
         }
 
-        var remove = new List<int2>();
+        _chunksToRemove.Clear();
         foreach (var kvp in _active)
         {
-            if (!desired.TryGetValue(kvp.Key, out int wantLod) || wantLod != kvp.Value.lod)
-                remove.Add(kvp.Key);
+            if (!_desiredChunks.TryGetValue(kvp.Key, out int wantLod) || wantLod != kvp.Value.lod)
+                _chunksToRemove.Add(kvp.Key);
         }
-        foreach (var c in remove) { DestroyChunk(_active[c]); _active.Remove(c); }
+        foreach (var c in _chunksToRemove) { DestroyChunk(_active[c]); _active.Remove(c); }
 
         for (int i = _pendingChunks.Count - 1; i >= 0; i--)
         {
             var pc = _pendingChunks[i];
-            if (!desired.TryGetValue(pc.coord, out int wantLod) || wantLod != pc.lod)
+            if (!_desiredChunks.TryGetValue(pc.coord, out int wantLod) || wantLod != pc.lod)
             {
                 pc.combinedHandle.Complete();
                 pc.DisposeArrays();
@@ -788,28 +863,28 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             }
         }
 
-        var pendingSet = new HashSet<int2>();
+        _pendingChunkCoordSet.Clear();
         for (int i = 0; i < _pendingChunks.Count; i++)
-            pendingSet.Add(_pendingChunks[i].coord);
+            _pendingChunkCoordSet.Add(_pendingChunks[i].coord);
 
-        var requests = new List<HectonChunkRequest>();
-        foreach (var kvp in desired)
+        _requestScratch.Clear();
+        foreach (var kvp in _desiredChunks)
         {
             if (_active.ContainsKey(kvp.Key)) continue;
-            if (pendingSet.Contains(kvp.Key)) continue;
+            if (_pendingChunkCoordSet.Contains(kvp.Key)) continue;
 
-            float2 center = new float2((kvp.Key.x + 0.5f) * chunkSize, (kvp.Key.y + 0.5f) * chunkSize);
-            requests.Add(new HectonChunkRequest
+            double2 center = ResolveChunkCenterAbsoluteXZ(kvp.Key);
+            _requestScratch.Add(new HectonChunkRequest
             {
                 coord  = kvp.Key,
                 lod    = kvp.Value,
-                distSq = math.distancesq(vxz, center)
+                distSq = (float)math.lengthsq(viewerAbsoluteXZ - center)
             });
         }
-        requests.Sort((a, b) => a.distSq.CompareTo(b.distSq));
+        _requestScratch.Sort((a, b) => a.distSq.CompareTo(b.distSq));
 
         _queue.Clear();
-        _queue.AddRange(requests);
+        _queue.AddRange(_requestScratch);
         _queueHead = 0;
     }
 
@@ -1271,64 +1346,67 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     void BakePhysicsBatch()
     {
-        long batchStartTimestamp = Stopwatch.GetTimestamp();
-        int scheduled = 0;
-        while (_physicsBakeScheduleHead < _pendingPhysicsBakes.Count &&
-               scheduled < MAX_BAKES_PER_FRAME &&
-               !HasPhysicsBakeBudgetExpired(batchStartTimestamp))
+        using (_physicsBakeBatchProfilerMarker.Auto())
         {
-            PendingPhysicsBake pending = _pendingPhysicsBakes[_physicsBakeScheduleHead];
-            if (pending.Mesh == null || pending.Owner == null)
+            long batchStartTimestamp = Stopwatch.GetTimestamp();
+            int scheduled = 0;
+            while (_physicsBakeScheduleHead < _pendingPhysicsBakes.Count &&
+                   scheduled < MAX_BAKES_PER_FRAME &&
+                   !HasPhysicsBakeBudgetExpired(batchStartTimestamp))
             {
+                PendingPhysicsBake pending = _pendingPhysicsBakes[_physicsBakeScheduleHead];
+                if (pending.Mesh == null || pending.Owner == null)
+                {
+                    pending.State = PhysicsBakeStateCompleted;
+                }
+                else if (pending.State == PhysicsBakeStatePending)
+                {
+                    pending.Handle = ScheduleAsyncPhysicsBake(pending.Mesh);
+                    pending.State = PhysicsBakeStateScheduled;
+                    scheduled++;
+                }
+
+                _pendingPhysicsBakes[_physicsBakeScheduleHead] = pending;
+                _physicsBakeScheduleHead++;
+            }
+
+            while (_physicsBakeFinalizeHead < _physicsBakeScheduleHead &&
+                   !HasPhysicsBakeBudgetExpired(batchStartTimestamp))
+            {
+                PendingPhysicsBake pending = _pendingPhysicsBakes[_physicsBakeFinalizeHead];
+                if (pending.State == PhysicsBakeStateCompleted)
+                {
+                    _physicsBakeFinalizeHead++;
+                    continue;
+                }
+
+                if (pending.State != PhysicsBakeStateScheduled || !pending.Handle.IsCompleted)
+                    break;
+
+                pending.Handle.Complete();
+
+                if (pending.Mesh != null && pending.Owner != null)
+                {
+                    var mc = pending.Owner.GetComponent<MeshCollider>();
+                    if (mc == null) mc = pending.Owner.AddComponent<MeshCollider>();
+                    mc.sharedMesh = pending.Mesh;
+
+                    if (pending.Renderer != null && pending.DefaultMaterial != null)
+                        pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+                }
+
                 pending.State = PhysicsBakeStateCompleted;
-            }
-            else if (pending.State == PhysicsBakeStatePending)
-            {
-                pending.Handle = ScheduleAsyncPhysicsBake(pending.Mesh);
-                pending.State = PhysicsBakeStateScheduled;
-                scheduled++;
-            }
-
-            _pendingPhysicsBakes[_physicsBakeScheduleHead] = pending;
-            _physicsBakeScheduleHead++;
-        }
-
-        while (_physicsBakeFinalizeHead < _physicsBakeScheduleHead &&
-               !HasPhysicsBakeBudgetExpired(batchStartTimestamp))
-        {
-            PendingPhysicsBake pending = _pendingPhysicsBakes[_physicsBakeFinalizeHead];
-            if (pending.State == PhysicsBakeStateCompleted)
-            {
+                _pendingPhysicsBakes[_physicsBakeFinalizeHead] = pending;
                 _physicsBakeFinalizeHead++;
-                continue;
             }
 
-            if (pending.State != PhysicsBakeStateScheduled || !pending.Handle.IsCompleted)
-                break;
-
-            pending.Handle.Complete();
-
-            if (pending.Mesh != null && pending.Owner != null)
+            if (_physicsBakeFinalizeHead >= _pendingPhysicsBakes.Count &&
+                _physicsBakeScheduleHead >= _pendingPhysicsBakes.Count)
             {
-                var mc = pending.Owner.GetComponent<MeshCollider>();
-                if (mc == null) mc = pending.Owner.AddComponent<MeshCollider>();
-                mc.sharedMesh = pending.Mesh;
-
-                if (pending.Renderer != null && pending.DefaultMaterial != null)
-                    pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+                _pendingPhysicsBakes.Clear();
+                _physicsBakeScheduleHead = 0;
+                _physicsBakeFinalizeHead = 0;
             }
-
-            pending.State = PhysicsBakeStateCompleted;
-            _pendingPhysicsBakes[_physicsBakeFinalizeHead] = pending;
-            _physicsBakeFinalizeHead++;
-        }
-
-        if (_physicsBakeFinalizeHead >= _pendingPhysicsBakes.Count &&
-            _physicsBakeScheduleHead >= _pendingPhysicsBakes.Count)
-        {
-            _pendingPhysicsBakes.Clear();
-            _physicsBakeScheduleHead = 0;
-            _physicsBakeFinalizeHead = 0;
         }
     }
 
@@ -1653,7 +1731,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows    = true;
 
-            Debug.Log($"[Hecton] Preview: {res}×{res} = {vc:N0} verts, " +
+            UnityEngine.Debug.Log($"[Hecton] Preview: {res}×{res} = {vc:N0} verts, " +
                       $"{tc / 3:N0} tris. Bounds: {mesh.bounds.size}");
         }
         finally
@@ -1905,7 +1983,7 @@ public class HectonWorldGeneratorEditor : Editor
                              GUILayout.Height(24)))
         {
             gen.RefreshLUTs();
-            Debug.Log("[Hecton] LUTs rebaked from current curves.");
+            UnityEngine.Debug.Log("[Hecton] LUTs rebaked from current curves.");
         }
 
         GUI.backgroundColor = new Color(1f, 0.5f, 0.4f);
