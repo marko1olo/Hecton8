@@ -5297,13 +5297,13 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (!_registeredToTickManager)
+            if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
                 _registeredToTickManager = true;
             }
 
-            if (_registeredToSlowTickManager)
+            if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);

@@ -638,7 +638,10 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registeredTick)
+            if (_registeredTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
@@ -647,7 +650,10 @@ namespace Hecton8.UI
 
         private void RegisterToSlowTickManager()
         {
-            if (_registeredSlowTick)
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);

@@ -1134,9 +1134,11 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager)
+            if (_registeredToTickManager || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = true;
