@@ -265,6 +265,59 @@ namespace Hecton8.World
                 _regrowthStates.AddNoResize(newState);
             }
 
+            _destroyedFloraScratch.Clear();
+            registry.CopyFloraStateOverrideDeltas(_destroyedFloraScratch);
+            for (int i = 0; i < _destroyedFloraScratch.Length; i++)
+            {
+                PersistentWorldDeltaRecord deltaRecord = _destroyedFloraScratch[i];
+                if (deltaRecord.InstanceUid == 0u ||
+                    !destructibleOrganicManager.IsMaterialClassRegrowable(deltaRecord.ItemPersistentIdHash))
+                {
+                    continue;
+                }
+
+                PersistentWorldRegistry.UnpackFloraStateOverride(deltaRecord.Quantity, out float normalizedHealth, out byte persistedHarvestState);
+                if (!destructibleOrganicManager.IsBareHarvestState(persistedHarvestState))
+                    continue;
+
+                float durationSeconds = destructibleOrganicManager.ResolveGrowthTimeSeconds(deltaRecord.ItemPersistentIdHash);
+                float regrowthProgress = math.saturate(normalizedHealth);
+                float regrowthStartPlayTime = currentPlayTime - (Mathf.Max(1f, durationSeconds) * regrowthProgress);
+                Vector3 runtimePosition = ToRuntimePosition(deltaRecord.UnpackPosition(registry.ChunkSizeMeters));
+                if (_stateIndexByInstanceUid.TryGetValue(deltaRecord.InstanceUid, out int stateIndex))
+                {
+                    FloraRegrowthState existing = _regrowthStates[stateIndex];
+                    existing.TemplateHash = deltaRecord.ItemPersistentIdHash;
+                    existing.RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                    existing.RegrowthDurationSeconds = durationSeconds;
+                    existing.State = StateActive;
+                    existing.RegrowthStartPlayTime = regrowthStartPlayTime;
+                    existing.EligiblePlayTime = currentPlayTime;
+                    existing.SeenThisScan = 1;
+                    _regrowthStates[stateIndex] = existing;
+                    continue;
+                }
+
+                if (_regrowthStates.Length >= _regrowthStates.Capacity)
+                    break;
+
+                FloraRegrowthState bareState = new FloraRegrowthState
+                {
+                    InstanceUid = deltaRecord.InstanceUid,
+                    TemplateHash = deltaRecord.ItemPersistentIdHash,
+                    RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                    EligiblePlayTime = currentPlayTime,
+                    RegrowthStartPlayTime = regrowthStartPlayTime,
+                    RegrowthDurationSeconds = durationSeconds,
+                    State = StateActive,
+                    SeenThisScan = 1,
+                    Reserved0 = 0
+                };
+
+                _stateIndexByInstanceUid.TryAdd(bareState.InstanceUid, _regrowthStates.Length);
+                _regrowthStates.AddNoResize(bareState);
+            }
+
             for (int i = _regrowthStates.Length - 1; i >= 0; i--)
             {
                 FloraRegrowthState state = _regrowthStates[i];
