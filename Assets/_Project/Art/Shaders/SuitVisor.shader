@@ -51,6 +51,11 @@ Shader "NASAPunk/SuitVisor"
         _ChromaticAberration ("Structural Chromatic Aberration", Range(0, 0.02)) = 0
         _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
         _HypoxiaLevel ("HUD Hypoxia Failure", Range(0, 1)) = 0
+        _HazardRadiationLevel ("Radiation Glitch Level", Range(0, 1)) = 0
+        _HazardThermalLevel ("Thermal Glitch Level", Range(0, 1)) = 0
+        _HazardToxicLevel ("Toxic Glitch Level", Range(0, 1)) = 0
+        _HazardGlitchLevel ("Composite Hazard Glitch", Range(0, 1)) = 0
+        _BiosRecoveryMode ("BIOS Recovery Mode", Range(0, 1)) = 0
 
         [Header(Fresnel)]
         _FresnelColor ("Fresnel Rim Color", Color) = (0.4, 0.6, 0.8, 1.0)
@@ -135,6 +140,11 @@ Shader "NASAPunk/SuitVisor"
                 float  _ChromaticAberration;
                 float  _StaticNoise;
                 float  _HypoxiaLevel;
+                float  _HazardRadiationLevel;
+                float  _HazardThermalLevel;
+                float  _HazardToxicLevel;
+                float  _HazardGlitchLevel;
+                float  _BiosRecoveryMode;
 
                 float4 _FresnelColor;
                 float  _FresnelPower;
@@ -453,9 +463,15 @@ Shader "NASAPunk/SuitVisor"
 
                 float2 refractedUV = screenUV + distortionOffset;
                 float staticNoise = (Hash21(floor(screenUV * _ScaledScreenParams.xy * 0.35 + _Time.y * 32.0)) - 0.5) * 2.0;
-                float2 chromaOffset = radialScreenOffset * _ChromaticAberration;
+                float hazardRadiation = saturate(_HazardRadiationLevel);
+                float hazardThermal = saturate(_HazardThermalLevel);
+                float hazardToxic = saturate(_HazardToxicLevel);
+                float hazardGlitch = saturate(_HazardGlitchLevel);
+                float biosRecoveryMode = saturate(_BiosRecoveryMode);
+                float2 hazardSceneSplit = float2(hazardRadiation * 0.006 + hazardGlitch * 0.003, 0.0);
+                float2 chromaOffset = radialScreenOffset * _ChromaticAberration + hazardSceneSplit;
                 float3 sceneColor = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
-                if (_ChromaticAberration > 0.0001)
+                if (_ChromaticAberration > 0.0001 || hazardGlitch > 0.0001)
                 {
                     sceneColor.r = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV + chromaOffset).r;
                     sceneColor.b = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV - chromaOffset).b;
@@ -521,12 +537,20 @@ Shader "NASAPunk/SuitVisor"
                 float2 hudUV = ComputeCurvedHudUV(IN.uv, IN.positionOS, hudEdgeFade);
                 hudUV = TRANSFORM_TEX(hudUV, _HUD_RenderTexture);
                 float2 hudDistortedUV = hudUV + distortionOffset * 0.3;
+                float tearBands = floor((hudDistortedUV.y + _Time.y * (7.0 + hazardThermal * 9.0)) * lerp(120.0, 260.0, hazardGlitch));
+                float tearNoise = Hash21(float2(tearBands, floor(_Time.y * 18.0)));
+                float tearGate = step(0.58 - hazardGlitch * 0.26, tearNoise);
+                hudDistortedUV.x += (tearNoise - 0.5) * hazardGlitch * 0.048 * tearGate;
+                hudDistortedUV.y += (Hash21(float2(tearBands * 1.31, floor(_Time.y * 11.0))) - 0.5) * hazardToxic * 0.012;
 
                 float hypoxiaLevel = saturate(_HypoxiaLevel);
                 float2 hudHypoxiaOffset = float2(hypoxiaLevel * 0.0045, 0.0);
+                float2 hudDecaySplit = float2(
+                    hazardRadiation * 0.015 + hazardGlitch * 0.008,
+                    hazardThermal * 0.0025);
                 float4 hudSample = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV);
-                float4 hudSampleR = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudHypoxiaOffset);
-                float4 hudSampleB = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudHypoxiaOffset);
+                float4 hudSampleR = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudHypoxiaOffset + hudDecaySplit);
+                float4 hudSampleB = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudHypoxiaOffset - hudDecaySplit);
                 hudSample.rgb = float3(hudSampleR.r, hudSample.g, hudSampleB.b);
                 float2 insideRT = step(0.0, hudDistortedUV) * step(hudDistortedUV, 1.0);
                 float rtMask = insideRT.x * insideRT.y;
@@ -535,12 +559,27 @@ Shader "NASAPunk/SuitVisor"
                 float3 hudColor = lerp(hudSample.rgb, hudSample.rgb * _HUD_Color.rgb, hudTintStrength) * _HUD_Intensity;
                 float hudLuminance = dot(hudColor, float3(0.2126, 0.7152, 0.0722));
                 hudColor = lerp(hudColor, hudLuminance.xxx, hypoxiaLevel * 0.78);
+                float decayNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * (0.16 + hazardGlitch * 0.24)) + float2(floor(_Time.y * 26.0), tearBands));
+                float decayMask = step(0.46 - hazardGlitch * 0.22, decayNoise) * hazardGlitch;
+                hudColor = lerp(hudColor, hudColor.bgr, hazardRadiation * 0.34);
+                hudColor += decayMask.xxx * (hazardToxic * 0.22);
                 float hypoxiaStaticStrength = saturate((hypoxiaLevel - 0.33333334) * 1.5);
                 float hypoxiaStatic = (Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.85) + floor(_Time.y * 24.0)) - 0.5) * hypoxiaStaticStrength;
                 hudColor += hypoxiaStatic.xxx * 0.22;
                 float hypoxiaAlphaNoise = frac(sin(dot(hudDistortedUV * _ScreenParams.xy, float2(12.9898, 78.233)) + (_Time.y * 43.0)) * 43758.5453);
                 float hypoxiaAlphaDissolve = saturate((hypoxiaAlphaNoise - 0.45) * 1.9) * hypoxiaStaticStrength;
                 hudAlpha *= 1.0 - (hypoxiaAlphaDissolve * 0.68);
+                if (biosRecoveryMode > 0.001)
+                {
+                    float biosNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.11) + float2(tearBands, floor(_Time.y * 14.0)));
+                    float biosScan = abs(frac(hudDistortedUV.y * _ScreenParams.y * 0.32 + _Time.y * 18.0) - 0.5);
+                    float biosThreshold = 0.34 + biosNoise * 0.18 + biosScan * 0.14;
+                    float biosBit = step(biosThreshold, hudLuminance);
+                    float biosPulse = 0.86 + sin(_Time.y * 2.1) * 0.08;
+                    float3 biosColor = float3(0.16, 1.0, 0.22) * (biosBit * biosPulse) * _HUD_Intensity;
+                    hudColor = lerp(hudColor, biosColor, biosRecoveryMode);
+                    hudAlpha = lerp(hudAlpha, max(hudAlpha, biosBit * rtMask * hudEdgeFade), biosRecoveryMode);
+                }
 
                 float wetImperfectionBoost = 1.0 + runoffMask * 0.9;
                 float boostedFingerprint = saturate(fingerprint * wetImperfectionBoost);

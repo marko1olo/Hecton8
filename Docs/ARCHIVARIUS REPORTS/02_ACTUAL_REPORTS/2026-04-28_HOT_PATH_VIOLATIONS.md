@@ -1,38 +1,77 @@
-# HOT_PATH_VIOLATIONS.md — Zero-GC Static Scan
-**Status:** ❌ CRITICAL VIOLATIONS CONFIRMED  
-**Scan Date:** 2026-04-28  
-**Scope:** All `Assets/_Project/Scripts/` — Update/Tick/FixedTick/SlowTick paths
+# HOT_PATH_VIOLATIONS.md
+
+**Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION  
+**Scope:** static source readback of current hot-path and near-hot-path risks under `Assets/_Project/Scripts/`
+
+**Mandates Followed:** `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
 
 ---
 
-## Confirmed Violations (with exact line numbers)
+## Method
 
-| ID | File | Line | Crime | Severity | Fix |
-|----|------|------|-------|----------|-----|
-| HP-01 | `PlayerSwimBlockoutRig.cs` | ~599 | `LayerMask.NameToLayer` in hot path | 🔴 CRITICAL | `static readonly int` |
-| HP-02 | `HectonCrestOceanDepthCacheBootstrap.cs` | 104, 107 | String `"Terrain "` (trailing space = fatal) + `"Water"` | 🔴 CRITICAL | `nameof` or const |
-| HP-03 | `CullingManager.cs` | 185-189 | 5 layer lookups in `ApplyLayerCullDistances()` called from SlowTick | 🔴 CRITICAL | Cache to `static readonly int` fields |
-| HP-04 | `PlayerCriticalProceduralAudioRenderer.cs` | ~437-446 | 4 lazy lookups per frame | 🟡 HIGH | Awake-cache |
-| HP-05 | `HectonSurfaceWeatherDirector.cs` | Unknown | `using Crest;` direct call `OceanRenderer.Instance.SampleHeight` | 🔴 CRITICAL | Use `IHectonOceanKinematics` ACL |
-| HP-06 | `ItemData` events | EventBus | Managed `ItemData` passed in `ItemCollectedEvent`, `ItemCraftedEvent`, etc. | 🔴 CRITICAL | Replace with `uint hashId` |
-| HP-07 | `AcousticOcclusionUtility.cs` | 88-95 | 8 `LayerMask.NameToLayer` calls in static field init | 🟡 HIGH | Move to `RuntimeInitializeOnLoadMethod` |
-| HP-08 | `BaseModule.cs` | 901-977 | 11 `ItemData` SO touch points in `DropItemQuantityToInventoryOrWorld` | 🔴 CRITICAL | Replace with `uint hashId` + struct |
+- Re-checked the concrete files named in the earlier report.
+- Split findings into three buckets:
+  - false prior claims
+  - confirmed architecture or allocation risks
+  - open items that still need runtime proof
 
-## Suspected Violations (requires line-level AST read)
+---
 
-| Pattern | Files Hit | Risk |
-|---------|-----------|------|
-| `string.Format` / `$"..."` | `HectonDiscoveryManager.cs`, `PDAContextualAdvisorySystem.cs` | 🟡 HIGH — string alloc in event publish |
-| `foreach` on `List<T>` | Multiple gameplay files | 🟡 HIGH — enumerator alloc |
-| `new List<T>()` / `new Dictionary` in Tick | Unconfirmed | 🔴 CRITICAL |
-| `GetComponent<T>()` uncached | Unconfirmed | 🟡 HIGH |
+## False Prior Claims
 
-## Zero-GC Compliance — Quick Checklist
-- [x] No `new class` in Tick (verified via grep — no obvious `new ` in tight loops)
-- [x] No LINQ in `.cs` files under `_Project/Scripts` (grep `.Where`, `.Select` → mostly in Editor/tools)
-- [ ] **Strings in events:** `HectonEventBus` events carry strings for IDs — should be `uint` hashes.
-- [ ] **ItemData in events:** Managed SO references in hot event path.
+| Prior claim | Current result |
+|---|---|
+| `PhysicsApplySystem.cs` had no profiler markers | false; file now contains multiple `ProfilerMarker` fields and usage sites |
+| `HectonFluidEngine.cs` had no profiler markers | false; file now contains multiple `ProfilerMarker` fields and usage sites |
+| `HectonPlayerMovement.cs` had no profiler markers | false; file now contains tick and fixed-tick markers |
+| `CullingManager.cs` performed `LayerMask.NameToLayer` lookups inside `ApplyLayerCullDistances()` | false; current method uses cached layer indices |
+| `HectonSurfaceWeatherDirector.cs` performed unguarded runtime `AssetDatabase` loading | false in current source; the observed `AssetDatabase` usage is under `#if UNITY_EDITOR` |
+
+---
+
+## Confirmed Current Risks
+
+| ID | File | Current issue | Severity |
+|---|---|---|---|
+| HP-01 | `World/HectonCrestOceanDepthCacheBootstrap.cs` | retains `using Crest;` direct dependency and caches both `"Terrain"` and `"Terrain "` layer names | HIGH |
+| HP-02 | `World/AcousticOcclusionUtility.cs` | static constructor still resolves eight layer names through `LayerMask.NameToLayer(...)` | MEDIUM |
+| HP-03 | `ModdingAPI/HectonEventBus.cs` | bus is list-backed managed dispatch, not the mandated zero-alloc `NativeQueue<T>` event surface | HIGH |
+| HP-04 | `CraftingEvents.cs` and modding event payloads | `ItemData` references remain in event payload surfaces, keeping managed object traffic in event chains | HIGH |
+| HP-05 | `HectonFluidEngine.cs` | file header still contains stale Russian/garbled performance claims and legacy singleton wording | MEDIUM |
+
+---
+
+## Important Clarifications
+
+- `AcousticOcclusionUtility.cs` is not a per-frame `NameToLayer` offender in the old sense; the lookups currently sit in a static constructor, so this is startup hygiene debt, not repeated hot-loop churn.
+- `HectonCrestOceanDepthCacheBootstrap.cs` likewise performs the layer lookups through a guarded cache-init method, not in a frame loop. The real issue is architecture debt and suspicious `"Terrain "` fallback handling.
+- `BuoyancyObject.cs` resolves `"Water"` once in initialization. That is not evidence of a frame-allocation hotspot by itself.
+
+---
+
+## Open Items
+
+- No live GCMonitor, profiler capture, or Burst timeline was collected in this pass.
+- Static readback cannot prove whether managed event payloads materially breach frame budget on target hardware.
+- Broader hot-path coverage remains incomplete; this rewrite only repairs the claims that were directly rechecked.
+
+---
+
+## Regression Model
+
+| Dimension | Impact |
+|---|---|
+| CPU | None. Documentation-only rewrite. |
+| GC | None. Documentation-only rewrite. |
+| Memory | None. Documentation-only rewrite. |
+| Cadence | None. Runtime code unchanged. |
+| Correctness | Improved by separating false accusations from still-live architectural debt. |
+
+---
 
 ## Verdict
-- **CRITICAL:** 6 confirmed hot-path violations.
-- **Action:** LayerMask crimes must be fixed immediately (compile-time safe). ItemData event purge blocked on AGENT_PERSISTENCE.
+
+The earlier report overstated several hot-path violations that are no longer present in current source.  
+Real debt remains around event architecture, direct Crest coupling, and managed payload surfaces.  
+Runtime performance impact remains `PENDING VERIFICATION`.

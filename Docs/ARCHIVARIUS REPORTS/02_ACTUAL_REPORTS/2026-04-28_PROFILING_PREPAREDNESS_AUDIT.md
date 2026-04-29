@@ -1,162 +1,73 @@
-# PROFILING PREPAREDNESS AUDIT
+# PROFILING_PREPAREDNESS_AUDIT
 
-**Версия:** 2026-04-28 | **Статус:** ETA VERIFIED
+**Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION  
+**Scope:** current profiler marker presence in selected first-party runtime systems
 
----
-
-## 📋 PROFILER MARKER COVERAGE
-
-### ✅ SYSTEMS WITH PROFILER MARKERS
-
-| System | File | Markers | Status |
-|--------|------|---------|--------|
-| SystemDispatcher | SystemDispatcher.cs | 12 markers | ✅ COMPLETE |
-| SubmarineCoreDirector | SubmarineCoreDirector.cs | 1 marker | ✅ COMPLETE |
-| SubmarineStructuralGrid | SubmarineStructuralGrid.cs | 3 markers | ✅ COMPLETE |
-| HectonWorldGenerator | HectonWorldGenerator.cs | 2 markers | ✅ COMPLETE |
-| ProfilerRegistry | ProfilerRegistry.cs | 6 markers | ✅ COMPLETE |
-| HectonSpatialHash | HectonSpatialHash.cs | 4 markers | ✅ COMPLETE |
-| ChunkLocalOffsetQuantization | ChunkLocalOffsetQuantization.cs | 2 markers | ✅ COMPLETE |
-| WorldProceduralScatterDirector | WorldProceduralScatterDirector.cs | 18 markers | ✅ COMPLETE |
-| ScatterRuntimeBackendFacade | ScatterRuntimeBackendFacade.cs | 2 markers | ✅ COMPLETE |
-
-**Total Markers:** ~50+ ProfilerMarkers across codebase
+**Mandates Followed:** `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
 
 ---
 
-### ❌ SYSTEMS WITHOUT PROFILER MARKERS (BLIND SPOTS)
+## Method
 
-#### CRITICAL BLIND SPOTS (Hot Path)
-
-| System | File | Why It Matters |
-|--------|------|----------------|
-| **PhysicsApplySystem** | PhysicsApplySystem.cs | Force packet processing |
-| **HectonFluidEngine** | HectonFluidEngine.cs | Buoyancy/wave simulation |
-| **SubmarineAtmosphereSystem** | SubmarineAtmosphereSystem.cs | Air/oxygen simulation |
-| **HectonPlayerMovement** | HectonPlayerMovement.cs | Player locomotion |
-| **PlayerToolManager** | PlayerToolManager.cs | Tool switching |
-| **EquipmentInteractionHandler** | EquipmentInteractionHandler.cs | Interaction raycasts |
-| **AbyssalThermalManager** | AbyssalThermalManager.cs | Temperature simulation |
-| **HectonDiscoveryManager** | HectonDiscoveryManager.cs | Scanning/progression |
-| **HectonBiomeMatrixDirector** | HectonBiomeMatrixDirector.cs | Biome transitions |
-| **PowerGridManager** | PowerGridManager.cs | Power distribution |
-
-#### MEDIUM PRIORITY BLIND SPOTS
-
-| System | File | Why It Matters |
-|--------|------|----------------|
-| **VoxelDeltaProcessor** | VoxelDeltaProcessor.cs | Voxel changes |
-| **ContextualPhysicalIkRuntime** | ContextualPhysicalIkRuntime.cs | IK solving |
-| **PhysicalHandController** | PhysicalHandController.cs | Hand physics |
-| **EcosystemDirector** | EcosystemDirector.cs | AI population |
-| **PredatorCognitionDomain** | PredatorCognitionDomain.cs | AI decision-making |
-| **SargassumMicroFaunaBoids** | SargassumMicroFaunaBoids.cs | Boid simulation |
-| **FloraInteractionManager** | FloraInteractionManager.cs | Flora interactions |
-| **DebrisManager** | DebrisManager.cs | Debris bursts |
-
-#### LOW PRIORITY BLIND SPOTS
-
-| System | File | Why It Matters |
-|--------|------|----------------|
-| **SaveManager** | SaveManager.cs | Save/load (not hot path) |
-| **HectonFabricatorUI** | HectonFabricatorUI.cs | UI (not hot path) |
-| **PlayerPDA** | PlayerPDA.cs | UI (not hot path) |
-| **MapMagicBridge** | MapMagicBridge.cs | Terrain (one-time) |
+- Re-read the specific files the old audit called out as blind spots.
+- Limited this pass to marker presence in source, not measured cost.
+- Removed any "complete" or "verified" language that lacked live profiler evidence.
 
 ---
 
-## 📋 RECOMMENDED MARKER INJECTION
+## Marker Coverage Rechecked
 
-### Priority 1: Physics & Fluid
-
-```csharp
-// PhysicsApplySystem.cs
-private static readonly ProfilerMarker _forceApplyMarker = new ProfilerMarker("H8.Physics.ForceApply");
-
-// SubmarineAtmosphereSystem.cs  
-private static readonly ProfilerMarker _atmosphereTickMarker = new ProfilerMarker("H8.Atmosphere.Tick");
-
-// HectonFluidEngine.cs
-private static readonly ProfilerMarker _buoyancyMarker = new ProfilerMarker("H8.Fluid.Buoyancy");
-private static readonly ProfilerMarker _waveQueryMarker = new ProfilerMarker("H8.Fluid.WaveQuery");
-```
-
-### Priority 2: Player Systems
-
-```csharp
-// HectonPlayerMovement.cs
-private static readonly ProfilerMarker _movementTickMarker = new ProfilerMarker("H8.Player.Movement");
-
-// PlayerToolManager.cs
-private static readonly ProfilerMarker _toolSwitchMarker = new ProfilerMarker("H8.Player.ToolSwitch");
-
-// EquipmentInteractionHandler.cs
-private static readonly ProfilerMarker _interactionMarker = new ProfilerMarker("H8.Interaction.Handle");
-```
-
-### Priority 3: AI & World
-
-```csharp
-// EcosystemDirector.cs
-private static readonly ProfilerMarker _ecosystemTickMarker = new ProfilerMarker("H8.AI.Ecosystem.Tick");
-
-// PredatorCognitionDomain.cs
-private static readonly ProfilerMarker _cognitionMarker = new ProfilerMarker("H8.AI.Cognition.Process");
-
-// HectonBiomeMatrixDirector.cs
-private static readonly ProfilerMarker _biomeMarker = new ProfilerMarker("H8.Biome.Transition");
-```
+| System | Current result | Evidence |
+|---|---|---|
+| `PhysicsApplySystem.cs` | `MARKERS PRESENT` | fixed-tick, packet validation, and flush markers are defined and used |
+| `HectonFluidEngine.cs` | `MARKERS PRESENT` | gather, schedule, apply, and GPU readback markers are defined and used |
+| `HectonPlayerMovement.cs` | `MARKERS PRESENT` | tick and fixed-tick markers are defined and used |
+| `Quest/QuestManager.cs` | `NO MARKERS CONFIRMED IN THIS PASS` | file did not show matching profiler marker evidence during this sweep |
+| `PlayerToolManager.cs` | `NOT RE-VERIFIED IN DETAIL` | outside this pass's narrow readback |
+| `EquipmentInteractionHandler.cs` | `PATH NOT CONFIRMED` | old filename reference did not resolve directly in current workspace |
 
 ---
 
-## 📋 PROFILER MARKER NAMING CONVENTION
+## Corrected Conclusions
 
-All markers follow pattern: `H8.{Domain}.{System}.{Action}`
-
-| Domain | Systems |
-|--------|---------|
-| H8.Physics | PhysicsApplySystem, SubmarineStructuralGrid |
-| H8.Fluid | HectonFluidEngine, Buoyancy |
-| H8.Player | Movement, ToolManager, Inventory |
-| H8.AI | EcosystemDirector, PredatorCognition, Boids |
-| H8.World | Generator, Scatter, Flora |
-| H8.Atmosphere | SubmarineAtmosphereSystem |
-| H8.Thermal | AbyssalThermalManager |
-| H8.Debris | DebrisManager |
-| H8.Voxel | VoxelDeltaProcessor |
-| H8.UI | (not needed) |
+- The older report's critical blind-spot claims for `PhysicsApplySystem`, `HectonFluidEngine`, and `HectonPlayerMovement` are stale.
+- Current source already contains instrumentation in several major runtime systems that the older report described as uninstrumented.
+- This does not prove budget compliance. It only proves that the code now exposes marker hooks for profiling.
 
 ---
 
-## 📋 CURRENT PROFILER MARKER USAGE
+## What This Audit Does Not Prove
 
-### Per-Frame Markers (Hot Path):
-
-| Marker | Typical Duration | Status |
-|--------|-----------------|--------|
-| H8.Dispatcher.Update | 0.1-2 ms | ✅ OK |
-| H8.Dispatcher.FixedUpdate | 0.5-4 ms | ✅ OK |
-| H8.Dispatcher.SlowTick | 5-15 ms | ⚠️ HEAVY |
-| H8.WorldGenerator.Tick | 0-10 ms | ✅ OK |
-| H8.WorldScatter.Tick | 1-8 ms | ✅ OK |
-| H8.Submarine.CoreDirector.FixedTick | 0.5-3 ms | ✅ OK |
-| H8.Submarine.StructuralGrid.FixedTick | 1-5 ms | ✅ OK |
+- No Unity Profiler session was run.
+- No marker durations, frame slices, or GPU timings were measured.
+- No MX350 hardware verification was performed.
 
 ---
 
-## 📋 BLIND SPOT RISK ASSESSMENT
+## Remaining Gaps
 
-| Risk Level | Systems | Action Required |
-|------------|---------|-----------------|
-| 🔴 CRITICAL | PhysicsApplySystem, HectonFluidEngine | Inject markers NOW |
-| 🟠 HIGH | PlayerMovement, AtmosphereSystem | Inject before alpha |
-| 🟡 MEDIUM | AI systems, Flora | Inject before beta |
-| 🟢 LOW | UI, Save | Not required |
+- Marker presence is still uneven across the codebase.
+- The project still needs a dedicated measured pass for:
+  - marker duration ranking
+  - long-tail blind spots
+  - CPU/GPU budget fit against the project target hardware
 
 ---
 
-**STATUS:** ETA VERIFIED ✅
+## Regression Model
 
-**Covered:** ~50 markers across 9 systems  
-**Blind Spots:** 20+ systems need markers  
-**Critical:** 2 systems (Physics, Fluid) need immediate injection
+| Dimension | Impact |
+|---|---|
+| CPU | None. Documentation-only rewrite. |
+| GC | None. Documentation-only rewrite. |
+| Memory | None. Documentation-only rewrite. |
+| Cadence | None. Runtime code unchanged. |
+| Correctness | Improved by removing false blind-spot claims and narrowing the report to real evidence. |
+
+---
+
+## Verdict
+
+Profiler instrumentation coverage is better than the old audit claimed.  
+Budget compliance and marker usefulness remain `PENDING VERIFICATION` until a live profiler run is captured.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Environment;
 using MapMagic.Products;
 using MapMagic.Terrains;
 using Unity.Burst;
@@ -78,6 +79,8 @@ namespace Hecton8.World
         private const float DefaultThermalGridRadius = 1000f;
         private const float DefaultThermalGridHorizontalCellSize = 50f;
         private const float DefaultThermalGridVerticalCellSize = 250f;
+        private const float BiolumeSurgeDurationSeconds = 4f;
+        private const float BiolumeSurgeVelocityDeltaThreshold = 8f;
         private const float DefaultThermalGridDepthMeters = 4000f;
         private const float AbyssalFlowNoiseStartDepthMeters = 2000f;
         private const int MaxTileCacheLruIterations = 512;
@@ -1351,6 +1354,8 @@ namespace Hecton8.World
         private int _surfaceBackCount;
         private int _underwaterFrontCount;
         private int _underwaterBackCount;
+        private int _surfaceActiveAggregateRevision;
+        private int _underwaterActiveAggregateRevision;
         private Bounds _surfaceFrontDrawBounds;
         private Bounds _surfaceBackDrawBounds;
         private Bounds _underwaterFrontDrawBounds;
@@ -2138,6 +2143,12 @@ namespace Hecton8.World
 
         /// <summary>Number of active underwater instances.</summary>
         public int ActiveUnderwaterInstanceCount => _underwaterFrontCount;
+
+        /// <summary>Incremented whenever the surface active aggregate is rebuilt or cleared.</summary>
+        public int ActiveSurfaceAggregateRevision => _surfaceActiveAggregateRevision;
+
+        /// <summary>Incremented whenever the underwater active aggregate is rebuilt or cleared.</summary>
+        public int ActiveUnderwaterAggregateRevision => _underwaterActiveAggregateRevision;
 
         /// <summary>Number of active resident abyssal anchors currently exported by the bridge.</summary>
         public int ActiveAbyssalAnchorCount => _abyssalAnchorCount;
@@ -4371,12 +4382,27 @@ namespace Hecton8.World
                 return;
 
             _flowFieldHandle.Complete();
+            bool canComparePreviousFlow =
+                _flowFieldInitialized &&
+                _ecosystemFlowFieldCurrentNative.IsCreated &&
+                _ecosystemFlowFieldNextNative.IsCreated &&
+                _ecosystemThreatGridResolution > 2 &&
+                (_scheduledFlowFieldCenter - _ecosystemFlowFieldCenter).sqrMagnitude <= threatGridCellSize * threatGridCellSize;
+            bool shouldTriggerBiolumeSurge = canComparePreviousFlow &&
+                                             DetectBiolumeSurgeCluster(
+                                                 _ecosystemFlowFieldCurrentNative,
+                                                 _ecosystemFlowFieldNextNative,
+                                                 _ecosystemThreatGridResolution,
+                                                 BiolumeSurgeVelocityDeltaThreshold);
             NativeArray<float2> flowSwap = _ecosystemFlowFieldCurrentNative;
             _ecosystemFlowFieldCurrentNative = _ecosystemFlowFieldNextNative;
             _ecosystemFlowFieldNextNative = flowSwap;
             _ecosystemFlowFieldCenter = _scheduledFlowFieldCenter;
             _flowFieldInitialized = true;
             _flowFieldScheduled = false;
+
+            if (shouldTriggerBiolumeSurge)
+                TryRegisterBiolumeSurge(BiolumeSurgeDurationSeconds);
         }
 
         private void CompleteThermalGridJob(bool forceComplete)
@@ -4422,6 +4448,8 @@ namespace Hecton8.World
             float hotspotThreatLevel = _currentThreatHotspotLevel >= flowFieldHotspotMinimumThreat
                 ? _currentThreatHotspotLevel
                 : 0f;
+            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            float2 weatherDirectionXZ = math.normalizesafe(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
 
             var job = new BuildAbyssalFlowFieldJob
             {
@@ -4441,6 +4469,10 @@ namespace Hecton8.World
                 PlayerPosition = new float3(playerPosition.x, playerPosition.y, playerPosition.z),
                 HotspotPosition = new float3(hotspotPosition.x, hotspotPosition.y, hotspotPosition.z),
                 HotspotThreatLevel = hotspotThreatLevel,
+                WeatherStateMask = (uint)weatherSnapshot.StateMask,
+                WeatherDirectionXZ = weatherDirectionXZ,
+                WeatherCurrentSpeed = math.max(0f, weatherSnapshot.CurrentMeta.GlobalScale),
+                WeatherIntensity = math.max(0f, weatherSnapshot.WeatherIntensity),
                 ThreatBias = flowFieldThreatBias,
                 PlayerBias = flowFieldPlayerBias,
                 HotspotBias = flowFieldHotspotBias,
@@ -4503,6 +4535,62 @@ namespace Hecton8.World
             _scheduledAbyssalThermalGridCenter = thermalCenter;
             _abyssalThermalGridHandle = job.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize);
             _abyssalThermalGridScheduled = true;
+        }
+
+        private static WeatherRuntimeSnapshot ResolveWeatherSnapshot()
+        {
+            IWeatherService weatherService = GlobalRegistry.Weather;
+            if (weatherService == null || !weatherService.IsInitialized)
+                return default;
+
+            return weatherService.GetRuntimeSnapshot();
+        }
+
+        private static bool DetectBiolumeSurgeCluster(
+            NativeArray<float2> previousField,
+            NativeArray<float2> currentField,
+            int gridResolution,
+            float velocityDeltaThreshold)
+        {
+            if (!previousField.IsCreated ||
+                !currentField.IsCreated ||
+                gridResolution <= 2 ||
+                previousField.Length < gridResolution * gridResolution ||
+                currentField.Length < gridResolution * gridResolution)
+            {
+                return false;
+            }
+
+            for (int cellZ = 1; cellZ < gridResolution - 1; cellZ++)
+            {
+                for (int cellX = 1; cellX < gridResolution - 1; cellX++)
+                {
+                    float previousMaxSpeed = 0f;
+                    float currentMaxSpeed = 0f;
+                    for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
+                    {
+                        int sampleZ = cellZ + offsetZ;
+                        int baseIndex = sampleZ * gridResolution;
+                        for (int offsetX = -1; offsetX <= 1; offsetX++)
+                        {
+                            int sampleIndex = baseIndex + cellX + offsetX;
+                            previousMaxSpeed = math.max(previousMaxSpeed, math.length(previousField[sampleIndex]));
+                            currentMaxSpeed = math.max(currentMaxSpeed, math.length(currentField[sampleIndex]));
+                        }
+                    }
+
+                    if (math.abs(currentMaxSpeed - previousMaxSpeed) > velocityDeltaThreshold)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void TryRegisterBiolumeSurge(float durationSeconds)
+        {
+            if (GlobalRegistry.Weather is GlobalWeatherDirector weatherDirector && weatherDirector.IsInitialized)
+                weatherDirector.RegisterBiolumeSurge(durationSeconds);
         }
 
         private void ResolveThreatSignalSnapshot(out Vector3 emissionPosition, out float emissionRadius, out float emissionStrength)
@@ -6197,11 +6285,13 @@ namespace Hecton8.World
                     ref _surfaceBackReaderHandle,
                     ref _surfaceFrontBufferIndex,
                     ref _surfaceBackBufferIndex);
+                _surfaceActiveAggregateRevision++;
             }
             else
             {
                 _surfaceFrontCount = 0;
                 _hasSurfaceFrontBounds = false;
+                _surfaceActiveAggregateRevision++;
             }
 
             if (totalUnderwaterCount > 0)
@@ -6242,11 +6332,13 @@ namespace Hecton8.World
                     ref _underwaterBackReaderHandle,
                     ref _underwaterFrontBufferIndex,
                     ref _underwaterBackBufferIndex);
+                _underwaterActiveAggregateRevision++;
             }
             else
             {
                 _underwaterFrontCount = 0;
                 _hasUnderwaterFrontBounds = false;
+                _underwaterActiveAggregateRevision++;
             }
 
             return true;
@@ -9145,6 +9237,10 @@ namespace Hecton8.World
             public float3 PlayerPosition;
             public float3 HotspotPosition;
             public float HotspotThreatLevel;
+            public uint WeatherStateMask;
+            public float2 WeatherDirectionXZ;
+            public float WeatherCurrentSpeed;
+            public float WeatherIntensity;
             public float ThreatBias;
             public float PlayerBias;
             public float HotspotBias;
@@ -9186,15 +9282,52 @@ namespace Hecton8.World
                 float navSupport = SampleNavSupport(cellX, cellZ);
                 float2 roadDir = math.normalizesafe(ComputeNavGradient(cellX, cellZ), seekDir);
                 float2 wakeDir = SampleWakeFlow(position);
+                float2 weatherBias = ResolveWeatherBias();
 
                 float2 combined = seekDir;
                 combined += roadDir * NavSupportBias * navSupport;
                 combined += wakeDir;
+                combined += weatherBias;
                 combined += avoidanceDir * ObstacleAvoidBias * math.max(obstacleFactor, centerObstacle);
                 if (centerObstacle >= ObstacleHardThreshold && navSupport <= 0.001f)
                     combined = avoidanceDir * math.max(1f, ObstacleAvoidBias);
 
-                Output[index] = math.normalizesafe(combined, float2.zero);
+                float resolvedSpeed = ResolveFlowSpeedMetersPerSecond(wakeDir);
+                Output[index] = math.normalizesafe(combined, float2.zero) * resolvedSpeed;
+            }
+
+            private float2 ResolveWeatherBias()
+            {
+                if (math.lengthsq(WeatherDirectionXZ) <= 0.0001f)
+                    return float2.zero;
+
+                return WeatherDirectionXZ * (ResolveWeatherBiasMultiplier() * math.max(0.05f, WeatherCurrentSpeed));
+            }
+
+            private float ResolveWeatherBiasMultiplier()
+            {
+                float stateBlend = math.max(0.15f, WeatherIntensity);
+                if ((WeatherStateMask & (uint)WeatherState.ThermoclineActive) != 0u ||
+                    (WeatherStateMask & (uint)WeatherState.HaloclineActive) != 0u)
+                {
+                    return 1.35f * stateBlend;
+                }
+
+                if ((WeatherStateMask & (uint)WeatherState.Storm) != 0u)
+                    return 1f * stateBlend;
+
+                if ((WeatherStateMask & (uint)WeatherState.Calm) != 0u)
+                    return 0.15f;
+
+                return 0f;
+            }
+
+            private float ResolveFlowSpeedMetersPerSecond(float2 wakeDir)
+            {
+                float baseSpeed = math.max(0.05f, WeatherCurrentSpeed * math.max(0.35f, WeatherIntensity));
+                float wakeSpeed = math.length(wakeDir);
+                float hotspotSpeed = math.saturate(HotspotThreatLevel) * 0.85f;
+                return math.min(20f, baseSpeed + wakeSpeed + hotspotSpeed);
             }
 
             private float2 ComputeThreatGradient(int cellX, int cellZ)

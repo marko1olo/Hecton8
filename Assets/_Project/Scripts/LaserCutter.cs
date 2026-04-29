@@ -26,6 +26,7 @@ namespace Hecton8.Gameplay
     using Hecton.Localization;
     using Hecton8.Physics;
     using Hecton8.Scavenging;
+    using Hecton8.Tools;
     using Hecton8.World;
     using EquipmentInteractionPacket = Hecton8.Interaction.InteractionPacket;
     using EquipmentInteractionSignal = Hecton8.Interaction.InteractionSignal;
@@ -256,6 +257,20 @@ namespace Hecton8.Gameplay
         /// <summary>Is the tool currently in overheat lockout.</summary>
         public bool IsOverheated => _isLockedOut;
 
+        internal override float ResolveModularHeatNormalized()
+        {
+            return _heatLevel;
+        }
+
+        protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
+        {
+            profile.MaxRange = Mathf.Max(0.1f, maxRange);
+            profile.PowerScalar = Mathf.Max(0.1f, damagePerSecond);
+            profile.HeatGenerationRate = 1f / math.max(overheatTime, 0.1f);
+            profile.CooldownRate = Mathf.Max(0f, cooldownRate);
+            profile.RecoilImpulse = Mathf.Max(0f, recoilImpulseBase);
+        }
+
         public bool DebugRecoverModule(BaseModule module)
         {
             if (module == null || !module.CanDeconstruct())
@@ -364,11 +379,12 @@ namespace Hecton8.Gameplay
             _isFiring = true;
             PublishBeamState(true);
 
-            _heatLevel += deltaTime / math.max(overheatTime, 0.1f);
+            _heatLevel += deltaTime * GetRuntimeHeatGenerationRate(1f / math.max(overheatTime, 0.1f));
 
             if (_heatLevel >= 1f)
             {
                 _heatLevel = 1f;
+                SyncModularHeat(_heatLevel);
                 TriggerOverheatLockout();
                 return;
             }
@@ -401,6 +417,7 @@ namespace Hecton8.Gameplay
                 ApplyOpenWaterBoil(deltaTime);
             }
 
+            SyncModularHeat(_heatLevel);
             PublishHeat();
         }
 
@@ -439,25 +456,28 @@ namespace Hecton8.Gameplay
                 _lockoutTimer = math.max(0f, _lockoutTimer - deltaTime);
                 if (_lockoutTimer <= 0f)
                 {
-                    _isLockedOut = false;
-                    _lockoutSoundPlayed = false;
-                    _heatLevel = math.min(_heatLevel, 0.8f);
-                    ClearFlag(OverheatedState);
-                    EnterCooldownState();
-                    PublishHeat();
-                    ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
-                }
-            }
+                      _isLockedOut = false;
+                      _lockoutSoundPlayed = false;
+                      _heatLevel = math.min(_heatLevel, 0.8f);
+                      ClearFlag(OverheatedState);
+                      EnterCooldownState();
+                      SyncModularHeat(_heatLevel);
+                      PublishHeat();
+                      ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
+                  }
+              }
 
             if (!_isFiring && !_isLockedOut)
             {
-                if (_heatLevel > 0f)
-                {
-                    _heatLevel = math.max(0f, _heatLevel - deltaTime * cooldownRate * (1f + ResolvePassiveCoolingBonus()));
-                    EnterCooldownState();
-                    PublishHeat();
-                }
-                else
+                  if (_heatLevel > 0f)
+                  {
+                      float runtimeCooldown = GetRuntimeCooldownRate(cooldownRate);
+                      _heatLevel = math.max(0f, _heatLevel - deltaTime * runtimeCooldown * (1f + ResolvePassiveCoolingBonus()));
+                      EnterCooldownState();
+                      SyncModularHeat(_heatLevel);
+                      PublishHeat();
+                  }
+                  else
                 {
                     Deactivate();
                 }
@@ -603,7 +623,8 @@ namespace Hecton8.Gameplay
             }
 
             float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
-            float damage = damagePerSecond * deltaTime * powerScale * heatMultiplier;
+            float runtimePower = GetRuntimePowerScalar(damagePerSecond);
+            float damage = runtimePower * deltaTime * powerScale * heatMultiplier;
             if (damage <= 0f)
                 return;
 
@@ -615,7 +636,7 @@ namespace Hecton8.Gameplay
 
             Vector3 absoluteOrigin = ResolveAbsoluteUniversePoint(_cachedTransform.position);
             Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
-            float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
+            float normalizedPower = ResolveNormalizedPower((runtimePower / math.max(damagePerSecond, 0.0001f)) * powerScale, heatMultiplier);
             if (normalizedPower < MinEffectiveBeamPower)
             {
                 SetFlag(LowPowerState);
@@ -628,7 +649,7 @@ namespace Hecton8.Gameplay
                 new float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),
                 new float3(direction.x, direction.y, direction.z),
                 normalizedPower,
-                maxRange,
+                GetRuntimeMaxRange(maxRange),
                 (byte)ToolActionMode.Primary,
                 _toolStateFlags,
                 (uint)Time.frameCount);
@@ -652,6 +673,10 @@ namespace Hecton8.Gameplay
                     cutManager.RegisterExternalCut(_hitInfo.point, terrainDamageRadius, normalizedPower, direction, 0.1f);
                 }
 
+                DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+                if (organicManager != null)
+                    organicManager.TryApplyToolHit(_hitInfo.point, _hitInfo.normal, direction, damage, normalizedPower);
+
                 ApplyRecoilImpulse(direction, normalizedPower);
             }
         }
@@ -672,7 +697,8 @@ namespace Hecton8.Gameplay
                 powerScale *= LowPowerOutputScale;
 
             float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
-            float cutStrength = damagePerSecond * deltaTime * powerScale * heatMultiplier * math.max(0f, waterHeatCouplingScale);
+            float runtimePower = GetRuntimePowerScalar(damagePerSecond);
+            float cutStrength = runtimePower * deltaTime * powerScale * heatMultiplier * math.max(0f, waterHeatCouplingScale);
             if (cutStrength <= 0f)
                 return;
 
@@ -682,11 +708,12 @@ namespace Hecton8.Gameplay
             else
                 direction.Normalize();
 
-            float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
+            float normalizedPower = ResolveNormalizedPower((runtimePower / math.max(damagePerSecond, 0.0001f)) * powerScale, heatMultiplier);
             if (normalizedPower < MinEffectiveBeamPower)
                 return;
 
-            Vector3 samplePoint = _cachedTransform.position + (direction * math.min(maxRange, 8f));
+            float runtimeRange = GetRuntimeMaxRange(maxRange);
+            Vector3 samplePoint = _cachedTransform.position + (direction * math.min(runtimeRange, 8f));
             fluidDynamics.InjectLocalizedWaterHeat(samplePoint, direction, cutStrength, normalizedPower);
         }
 
@@ -985,7 +1012,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                laserLine.SetPosition(1, Vector3.forward * maxRange);
+                laserLine.SetPosition(1, Vector3.forward * GetRuntimeMaxRange(maxRange));
             }
         }
 
@@ -1166,7 +1193,7 @@ namespace Hecton8.Gameplay
         {
             IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
             if (interactionService != null && interactionService.IsInitialized)
-                return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, maxRange, ResolveCuttableRaycastMask(), QueryTriggerInteraction.Ignore, out hit);
+                return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, GetRuntimeMaxRange(maxRange), ResolveCuttableRaycastMask(), QueryTriggerInteraction.Ignore, out hit);
 
             hit = default;
             return false;
@@ -1251,7 +1278,8 @@ namespace Hecton8.Gameplay
 
             float mass = Mathf.Max(_cachedPlayerRigidbody.mass, 0.1f);
             float recoilScale = _cachedPlayerMovement != null && _cachedPlayerMovement.IsPlayerSubmerged ? submergedRecoilScale : 1f;
-            float impulseMagnitude = Mathf.Min(MaxRecoilImpulse, (recoilImpulseBase * normalizedPower * recoilScale) / mass);
+            float runtimeRecoil = GetRuntimeRecoilImpulse(recoilImpulseBase);
+            float impulseMagnitude = Mathf.Min(MaxRecoilImpulse, (runtimeRecoil * normalizedPower * recoilScale) / mass);
             if (impulseMagnitude <= 0.0001f)
                 return;
 

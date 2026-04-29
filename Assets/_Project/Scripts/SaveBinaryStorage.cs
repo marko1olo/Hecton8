@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
+using Hecton8.Quest;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -248,7 +249,7 @@ namespace Hecton8.SaveSystem
 
         private const long UnixEpochTicks = 621355968000000000L;
         private const int PayloadPrefixSizeBytes = SaveDataMigration_AupV8.CurrentPayloadPrefixSizeBytes;
-        private const int PackedQuestStateSectionHeaderSize = 8;
+        private const int PackedQuestStateSectionHeaderSize = 64;
         private const int PersistentWorldSectionHeaderSize = 12;
         private const int EcosystemSectionHeaderSize = 4;
         private const int SaveFileHeaderPrefixSize = 8;
@@ -652,13 +653,6 @@ namespace Hecton8.SaveSystem
             public ushort GameVersionByteLength;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = PackedQuestStateSectionHeaderSize)]
-        private struct PackedQuestStateSectionHeader
-        {
-            public uint WordCount;
-            public uint Checksum;
-        }
-
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = PersistentWorldSectionHeaderSize)]
         private struct PersistentWorldSectionHeader
         {
@@ -713,6 +707,7 @@ namespace Hecton8.SaveSystem
             SaveData data,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
             NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
@@ -721,243 +716,21 @@ namespace Hecton8.SaveSystem
             out int rawPayloadLength,
             out string error)
         {
-            if (CurrentVersion >= IndexedBlockStorageVersion)
-            {
-                return TryWriteSaveFileIndexedV8(
-                    absolutePath,
-                    metadata,
-                    data,
-                    persistentWorldDeltas,
-                    ecosystemSectorStates,
-                    packedQuestStateWords,
-                    voxelDeltaSnapshot,
-                    rawBuffer,
-                    compressedBuffer,
-                    DefaultIndexedPersistentWorldChunkSizeMeters,
-                    out payloadHash64,
-                    out rawPayloadLength,
-                    out error);
-            }
-
-            payloadHash64 = 0UL;
-            rawPayloadLength = 0;
-            error = string.Empty;
-            NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
-            NativeList<int3> persistentWorldChunkTable = default;
-            NativeParallelHashMap<ulong, ushort> persistentWorldItemHashLookup = default;
-            NativeList<ulong> persistentWorldItemHashTable = default;
-
-            try
-            {
-                if (string.IsNullOrEmpty(absolutePath))
-                {
-                    error = "Save path is empty.";
-                    return false;
-                }
-
-                if (!rawBuffer.IsCreated || !compressedBuffer.IsCreated)
-                {
-                    error = "Native save buffers are not initialized.";
-                    return false;
-                }
-
-                if (metadata == null || data == null)
-                {
-                    error = "Save payload is null.";
-                    return false;
-                }
-
-                string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? "Unknown" : metadata.SceneName;
-                string gameVersion = string.IsNullOrEmpty(metadata.GameVersion) ? Application.version : metadata.GameVersion;
-                int sceneBytesLength = checked(sceneName.Length * sizeof(char));
-                int versionBytesLength = checked(gameVersion.Length * sizeof(char));
-
-                if (sceneBytesLength > ushort.MaxValue || versionBytesLength > ushort.MaxValue)
-                {
-                    error = "Save metadata strings exceed the payload prefix limits.";
-                    return false;
-                }
-
-                int entityCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
-                if (entityCount > 0 &&
-                    !TryBuildPersistentWorldSectionTables(
-                        persistentWorldDeltas,
-                        out persistentWorldChunkLookup,
-                        out persistentWorldChunkTable,
-                        out persistentWorldItemHashLookup,
-                        out persistentWorldItemHashTable,
-                        out error))
-                {
-                    return false;
-                }
-
-                int packedQuestWordCount = packedQuestStateWords.IsCreated ? packedQuestStateWords.Length : 0;
-                int ecosystemSectorCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
-                int voxelDeltaByteLength = voxelDeltaSnapshot.IsCreated ? voxelDeltaSnapshot.Length : 0;
-                int packedQuestSectionLength = packedQuestWordCount > 0
-                    ? PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>())
-                    : 0;
-                int persistentWorldSectionLength = entityCount > 0
-                    ? ComputePersistentWorldSectionLength(entityCount, persistentWorldChunkTable.Length, persistentWorldItemHashTable.Length)
-                    : 0;
-                int ecosystemSectionLength = ComputeEcosystemSectionLength(ecosystemSectorCount);
-
-                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
-                byte* compressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedBuffer);
-                UnsafeUtility.MemClear(rawPtr, rawBuffer.Length);
-
-                int payloadCursor = PayloadPrefixSizeBytes + sceneBytesLength + versionBytesLength;
-                if (!SaveBinaryPayloadCodec.TryWrite(data, AddByteOffset(rawPtr, payloadCursor), rawBuffer.Length - payloadCursor, out int saveDataByteLength, out error))
-                    return false;
-
-                rawPayloadLength = payloadCursor + saveDataByteLength + packedQuestSectionLength + persistentWorldSectionLength + ecosystemSectionLength + voxelDeltaByteLength;
-                if (rawPayloadLength > rawBuffer.Length)
-                {
-                    error = $"Save payload ({rawPayloadLength} bytes) exceeded the {rawBuffer.Length} byte raw buffer ceiling.";
-                    return false;
-                }
-
-                ulong timestampUnixMs = ToUnixMilliseconds(metadata.Timestamp);
-                PayloadPrefix prefix = new PayloadPrefix
-                {
-                    TimestampUnixMs = timestampUnixMs,
-                    PlayTimeSeconds = metadata.PlayTimeSeconds,
-                    PlayerPosition = ToAup(metadata.PlayerPosition),
-                    SaveDataVersion = math.max(data.version, 0),
-                    SaveDataByteLength = (uint)saveDataByteLength,
-                    SceneNameByteLength = (ushort)sceneBytesLength,
-                    GameVersionByteLength = (ushort)versionBytesLength
-                };
-
-                UnsafeUtility.CopyStructureToPtr(ref prefix, rawPtr);
-                payloadCursor = PayloadPrefixSizeBytes;
-                CopyUtf16StringToUnmanaged(sceneName, AddByteOffset(rawPtr, payloadCursor));
-                payloadCursor += sceneBytesLength;
-                CopyUtf16StringToUnmanaged(gameVersion, AddByteOffset(rawPtr, payloadCursor));
-                payloadCursor += versionBytesLength;
-                payloadCursor += saveDataByteLength;
-                int packedQuestOffsetInPayload = payloadCursor;
-
-                if (packedQuestWordCount > 0)
-                {
-                    PackedQuestStateSectionHeader packedQuestHeader = new PackedQuestStateSectionHeader
-                    {
-                        WordCount = (uint)packedQuestWordCount,
-                        Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords)
-                    };
-
-                    UnsafeUtility.CopyStructureToPtr(ref packedQuestHeader, AddByteOffset(rawPtr, payloadCursor));
-                    payloadCursor += PackedQuestStateSectionHeaderSize;
-
-                    void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
-                    UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), packedQuestSourcePtr, packedQuestWordCount * UnsafeUtility.SizeOf<uint>());
-                    payloadCursor += packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
-                }
-
-                int entityOffsetInPayload = payloadCursor;
-                if (entityCount > 0)
-                {
-                    WritePersistentWorldSection(
-                        AddByteOffset(rawPtr, payloadCursor),
-                        persistentWorldDeltas,
-                        persistentWorldChunkLookup,
-                        persistentWorldChunkTable,
-                        persistentWorldItemHashLookup,
-                        persistentWorldItemHashTable);
-
-                    payloadCursor += persistentWorldSectionLength;
-                }
-
-                WriteEcosystemSection(AddByteOffset(rawPtr, payloadCursor), ecosystemSectorStates);
-                payloadCursor += ecosystemSectionLength;
-
-                if (voxelDeltaByteLength > 0)
-                {
-                    void* voxelSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
-                    UnsafeUtility.MemCpy(AddByteOffset(rawPtr, payloadCursor), voxelSourcePtr, voxelDeltaByteLength);
-                    payloadCursor += voxelDeltaByteLength;
-                }
-
-                ulong payloadHash = Hash64(rawPtr, rawPayloadLength);
-                payloadHash64 = payloadHash;
-
-                SaveFileHeader header = new SaveFileHeader
-                {
-                    MagicValue = Magic,
-                    Version = CurrentVersion,
-                    CompatMask = CurrentCompatMask,
-                    Flags = FlagLz4Blocks,
-                    TimestampUnixMs = timestampUnixMs,
-                    DeltaCount = (uint)packedQuestWordCount,
-                    EntityCount = (uint)entityCount,
-                    PlayerOffset = CurrentHeaderSize,
-                    DeltaOffset = (uint)(CurrentHeaderSize + packedQuestOffsetInPayload),
-                    EntityOffset = (uint)(CurrentHeaderSize + entityOffsetInPayload),
-                    HashPayload64 = payloadHash,
-                    HashHeader64 = 0UL
-                };
-
-                header.HashHeader64 = ComputeHeaderHash(ref header);
-
-                if (!TryCompressPayload(
-                        rawPtr,
-                        rawPayloadLength,
-                        compressedPtr,
-                        compressedBuffer.Length,
-                        out int compressedPayloadLength,
-                        out uint compressionFlags,
-                        out error))
-                    return false;
-
-                if ((compressionFlags & FlagTokenSubstitution) != 0)
-                    header.Flags |= FlagTokenSubstitution;
-                if ((compressionFlags & FlagStaticDictionary) != 0)
-                    header.Flags |= FlagStaticDictionary;
-
-                header.HashHeader64 = ComputeHeaderHash(ref header);
-
-                string directory = Path.GetDirectoryName(absolutePath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                byte* headerPtr = stackalloc byte[CurrentHeaderSize];
-                UnsafeUtility.MemClear(headerPtr, CurrentHeaderSize);
-                UnsafeUtility.CopyStructureToPtr(ref header, headerPtr);
-
-                if (!AsyncWriteManager.WriteAll(
-                        absolutePath,
-                        headerPtr,
-                        CurrentHeaderSize,
-                        compressedPtr,
-                        compressedPayloadLength,
-                        out error))
-                {
-                    return false;
-                }
-
-                if (!TryReadMetadata(absolutePath, metadata.SlotName, rawBuffer, out _, out _, out string verifyError))
-                {
-                    error = $"Write-verify failed: {verifyError}";
-                    return false;
-                }
-
-                metadata.Checksum = payloadHash.ToString("X16");
-                return true;
-            }
-            finally
-            {
-                if (persistentWorldItemHashTable.IsCreated)
-                    persistentWorldItemHashTable.Dispose();
-
-                if (persistentWorldItemHashLookup.IsCreated)
-                    persistentWorldItemHashLookup.Dispose();
-
-                if (persistentWorldChunkTable.IsCreated)
-                    persistentWorldChunkTable.Dispose();
-
-                if (persistentWorldChunkLookup.IsCreated)
-                    persistentWorldChunkLookup.Dispose();
-            }
+            return TryWriteSaveFileIndexedV8(
+                absolutePath,
+                metadata,
+                data,
+                persistentWorldDeltas,
+                ecosystemSectorStates,
+                packedQuestHeader,
+                packedQuestStateWords,
+                voxelDeltaSnapshot,
+                rawBuffer,
+                compressedBuffer,
+                DefaultIndexedPersistentWorldChunkSizeMeters,
+                out payloadHash64,
+                out rawPayloadLength,
+                out error);
         }
 
         internal static bool TryReadMetadata(
@@ -1026,6 +799,7 @@ namespace Hecton8.SaveSystem
             SaveData data,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltas,
             NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
@@ -1107,13 +881,11 @@ namespace Hecton8.SaveSystem
 
             if (packedQuestWordCount > 0)
             {
-                PackedQuestStateSectionHeader packedQuestHeader = new PackedQuestStateSectionHeader
-                {
-                    WordCount = (uint)packedQuestWordCount,
-                    Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords)
-                };
-
-                UnsafeUtility.CopyStructureToPtr(ref packedQuestHeader, AddByteOffset(rawPtr, metadataCursor));
+                QuestSaveHeader serializedQuestHeader = packedQuestHeader;
+                serializedQuestHeader.Magic = QuestSaveHeader.HeaderMagic;
+                serializedQuestHeader.FlagCount = (uint)packedQuestWordCount;
+                serializedQuestHeader.Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords);
+                UnsafeUtility.CopyStructureToPtr(ref serializedQuestHeader, AddByteOffset(rawPtr, metadataCursor));
                 metadataCursor += PackedQuestStateSectionHeaderSize;
 
                 void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
@@ -1638,6 +1410,7 @@ namespace Hecton8.SaveSystem
             in SaveFileHeader header,
             ref AsyncWriteManager.ReadOnlyMapping mapping,
             out SaveData data,
+            out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
             out PersistentWorldDeltaRecord[] persistentWorldDeltas,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
@@ -1649,6 +1422,7 @@ namespace Hecton8.SaveSystem
             out string error)
         {
             data = null;
+            packedQuestHeader = default;
             packedQuestStateWords = null;
             persistentWorldDeltas = null;
             ecosystemSectorStates = null;
@@ -1706,20 +1480,26 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                PackedQuestStateSectionHeader packedQuestHeader = UnsafeUtility.ReadArrayElement<PackedQuestStateSectionHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
-                if (packedQuestHeader.WordCount != header.DeltaCount)
+                packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
+                if (packedQuestHeader.Magic != QuestSaveHeader.HeaderMagic)
+                {
+                    error = "Indexed packed quest section magic mismatch.";
+                    return false;
+                }
+
+                if (packedQuestHeader.FlagCount != header.DeltaCount)
                 {
                     error = "Indexed packed quest section count mismatch.";
                     return false;
                 }
 
-                packedQuestStateWords = new uint[packedQuestHeader.WordCount];
+                packedQuestStateWords = new uint[packedQuestHeader.FlagCount];
                 payloadCursor += PackedQuestStateSectionHeaderSize;
-                if (packedQuestHeader.WordCount > 0)
+                if (packedQuestHeader.FlagCount > 0)
                 {
                     fixed (uint* destinationPtr = packedQuestStateWords)
                     {
-                        UnsafeUtility.MemCpy(destinationPtr, AddByteOffset(rawPtr, payloadCursor), packedQuestHeader.WordCount * UnsafeUtility.SizeOf<uint>());
+                        UnsafeUtility.MemCpy(destinationPtr, AddByteOffset(rawPtr, payloadCursor), packedQuestHeader.FlagCount * UnsafeUtility.SizeOf<uint>());
                     }
 
                     if (ComputePackedQuestStateChecksum(packedQuestStateWords) != packedQuestHeader.Checksum)
@@ -1729,10 +1509,11 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
-                payloadCursor += checked((int)packedQuestHeader.WordCount) * UnsafeUtility.SizeOf<uint>();
+                payloadCursor += checked((int)packedQuestHeader.FlagCount) * UnsafeUtility.SizeOf<uint>();
             }
             else
             {
+                packedQuestHeader = default;
                 packedQuestStateWords = Array.Empty<uint>();
             }
 
@@ -2588,6 +2369,7 @@ namespace Hecton8.SaveSystem
             string slotName,
             NativeArray<byte> rawBuffer,
             out SaveData data,
+            out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
             out PersistentWorldDeltaRecord[] persistentWorldDeltas,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
@@ -2599,6 +2381,7 @@ namespace Hecton8.SaveSystem
             out string error)
         {
             data = null;
+            packedQuestHeader = default;
             packedQuestStateWords = null;
             persistentWorldDeltas = null;
             ecosystemSectorStates = null;
@@ -2621,6 +2404,7 @@ namespace Hecton8.SaveSystem
                             in v8Header,
                             ref v8Mapping,
                             out data,
+                            out packedQuestHeader,
                             out packedQuestStateWords,
                             out persistentWorldDeltas,
                             out ecosystemSectorStates,
@@ -2679,6 +2463,7 @@ namespace Hecton8.SaveSystem
                     rawPayloadLength,
                     header,
                     cursor + saveDataLength,
+                    out packedQuestHeader,
                     out packedQuestStateWords,
                     out error))
             {
@@ -3099,9 +2884,11 @@ namespace Hecton8.SaveSystem
             int rawPayloadLength,
             SaveFileHeader header,
             int playerPayloadLength,
+            out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
             out string error)
         {
+            packedQuestHeader = default;
             packedQuestStateWords = null;
             error = string.Empty;
 
@@ -3133,8 +2920,14 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            PackedQuestStateSectionHeader sectionHeader = UnsafeUtility.ReadArrayElement<PackedQuestStateSectionHeader>(AddByteOffset(rawPtr, packedQuestSectionOffset), 0);
-            if (sectionHeader.WordCount != header.DeltaCount)
+            packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, packedQuestSectionOffset), 0);
+            if (packedQuestHeader.Magic != QuestSaveHeader.HeaderMagic)
+            {
+                error = "Packed quest-state header magic mismatch.";
+                return false;
+            }
+
+            if (packedQuestHeader.FlagCount != header.DeltaCount)
             {
                 error = "Packed quest-state word count header mismatch.";
                 return false;
@@ -3161,7 +2954,7 @@ namespace Hecton8.SaveSystem
             }
 
             uint computedChecksum = ComputePackedQuestStateChecksum(packedQuestStateWords);
-            if (computedChecksum != sectionHeader.Checksum)
+            if (computedChecksum != packedQuestHeader.Checksum)
             {
                 error = "Packed quest-state checksum mismatch.";
                 return false;

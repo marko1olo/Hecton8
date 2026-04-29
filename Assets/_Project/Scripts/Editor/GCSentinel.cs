@@ -23,7 +23,7 @@ namespace Hecton8.Editor
             if (!Application.isPlaying)
                 return;
 
-            GCSentinel existing = FindFirstObjectByType<GCSentinel>();
+            GCSentinel existing = FindAnyObjectByType<GCSentinel>();
             if (existing != null)
                 return;
 

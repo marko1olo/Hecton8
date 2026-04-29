@@ -16,10 +16,16 @@ namespace Hecton8.World
         public float weight;
         public float playerDistance;
         public float planWeight;
+        public bool hasTerrainSample;
+        public Vector3 absoluteTerrainContactPosition;
+        public float slopeDegrees;
+        public float seamBlendRadius;
+        public float suggestedTerrainCut;
         public WorldGenerativeGeologyProfile.CaveBlendMode caveBlendMode;
         public WorldChunkCoordinate chunkCoord;
         public bool hasMacroZone;
         public WorldMacroZoneCoordinate macroZoneCoord;
         public Vector3 RuntimeCenter => HectonFloatingOrigin.ToRuntimePosition(absoluteUniverseCenter);
+        public Vector3 RuntimeTerrainContactPosition => HectonFloatingOrigin.ToRuntimePosition(absoluteTerrainContactPosition);
     }
 }

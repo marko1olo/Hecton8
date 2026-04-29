@@ -44,7 +44,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 43; // v43: inventory biological quality + state flags + timestamps
+        public const int CurrentVersion = 44; // v44: procedural geology seam registry persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -474,15 +474,37 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    public struct ProceduralGeologySeamStateDTO
+    {
+        public long runtimeKey;
+        public int chunkX;
+        public int chunkZ;
+        public float absoluteTerrainHeight;
+        public float absoluteSeamHeight;
+        public float seamBlendRadius;
+        public float terrainBlendWeight;
+        public float caveBlendWeight;
+        public float absolutePositionX;
+        public float absolutePositionY;
+        public float absolutePositionZ;
+        public float absoluteVoxelCenterX;
+        public float absoluteVoxelCenterY;
+        public float absoluteVoxelCenterZ;
+    }
+
+    [Serializable]
     public struct ProceduralWorldStateDTO
     {
         public int suppressedPlacementCount;
         public long[] suppressedPlacementKeys;
         public int faunaStateCount;
         public ProceduralFaunaStateDTO[] faunaStates;
+        public int geologySeamStateCount;
+        public ProceduralGeologySeamStateDTO[] geologySeamStates;
 
         public const int MaxSuppressedPlacements = 8192;
         public const int MaxFaunaStates = 4096;
+        public const int MaxGeologySeamStates = 512;
 
         public void EnsureCapacity()
         {
@@ -491,6 +513,9 @@ namespace Hecton8.SaveSystem
 
             if (faunaStates == null || faunaStates.Length < MaxFaunaStates)
                 faunaStates = new ProceduralFaunaStateDTO[MaxFaunaStates];
+
+            if (geologySeamStates == null || geologySeamStates.Length < MaxGeologySeamStates)
+                geologySeamStates = new ProceduralGeologySeamStateDTO[MaxGeologySeamStates];
         }
     }
 

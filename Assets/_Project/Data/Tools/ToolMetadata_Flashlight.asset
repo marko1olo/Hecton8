@@ -27,6 +27,13 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  defaultModules:
+  - {fileID: 11400000, guid: 4addd39e796324343a05e87e6e1c71f5, type: 2}
+  - {fileID: 11400000, guid: 2a31cdf62be4e0241ac50b0a7a1420d6, type: 2}
+  - {fileID: 0}
+  authoredHeatGenerationRate: 0
+  authoredCooldownRate: 0
+  authoredRecoilImpulse: 0
   repairCostFull: 5
   repairResourceID: titanium
   nameLocKey: TOOL_FLASHLIGHT_NAME

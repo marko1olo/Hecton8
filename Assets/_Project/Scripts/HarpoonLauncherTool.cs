@@ -1,6 +1,7 @@
 using Hecton8.AI;
 using Hecton.Localization;
 using Hecton8.Physics;
+using Hecton8.Tools;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -74,6 +75,7 @@ namespace Hecton8.Gameplay
         private Collider _tetheredCollider;
         private HeavyTowWinch _heavyTowWinch;
         private HectonPlayerMovement _playerMovement;
+        private Rigidbody _playerRigidbody;
         private string _tetheredName;
         private string _tetheredNameUpper;
         private Collider _grappleAnchorCollider;
@@ -94,6 +96,13 @@ namespace Hecton8.Gameplay
             SetTracer(false, Vector3.zero);
         }
 
+        protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
+        {
+            profile.MaxRange = Mathf.Max(0.1f, range);
+            profile.PowerScalar = Mathf.Max(0.1f, damage);
+            profile.RecoilImpulse = Mathf.Max(0f, impulse);
+        }
+
         public override void UsePrimary(float deltaTime)
         {
             base.UsePrimary(deltaTime);
@@ -103,14 +112,16 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            Vector3 endPoint = _cachedTransform.position + _cachedTransform.forward * range;
+            float runtimeRange = GetRuntimeMaxRange(range);
+            float runtimeDamage = GetRuntimePowerScalar(damage);
+            Vector3 endPoint = _cachedTransform.position + _cachedTransform.forward * runtimeRange;
 
             if (TryGetTargetHit(out RaycastHit hit))
             {
                 endPoint = hit.point;
                 ToolHitUtility.ApplyDamage(
                     hit.collider,
-                    damage * GetEfficiency(),
+                    runtimeDamage * GetEfficiency(),
                     hit.point,
                     _cachedTransform.forward,
                     impulse);
@@ -173,6 +184,7 @@ namespace Hecton8.Gameplay
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
+            ApplyLaunchRecoil(_cachedTransform.forward, runtimeDamage);
             SetTracer(true, endPoint);
             _tracerTimer = tracerLifetime;
             _cooldown = shotCooldown / Mathf.Max(0.25f, GetSpeed());
@@ -393,6 +405,9 @@ namespace Hecton8.Gameplay
         {
             if (_playerMovement == null)
                 _playerMovement = GetComponentInParent<HectonPlayerMovement>();
+
+            if (_playerRigidbody == null)
+                _playerRigidbody = GetComponentInParent<Rigidbody>();
         }
 
         private void WarnReel(string message)
@@ -603,7 +618,26 @@ namespace Hecton8.Gameplay
 
         private bool TryGetTargetHit(out RaycastHit hit)
         {
-            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, GetRuntimeMaxRange(range), targetMask.value, QueryTriggerInteraction.Ignore, out hit);
+        }
+
+        private void ApplyLaunchRecoil(Vector3 direction, float runtimeDamage)
+        {
+            ResolvePlayerMovement();
+            if (_playerRigidbody == null)
+                return;
+
+            Vector3 safeDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : _cachedTransform.forward;
+            float mass = Mathf.Max(_playerRigidbody.mass, 0.1f);
+            float runtimeRecoil = GetRuntimeRecoilImpulse(impulse);
+            float impulseMagnitude = Mathf.Min(12f, (runtimeRecoil * Mathf.Max(0.1f, runtimeDamage / Mathf.Max(damage, 0.1f))) / mass);
+            if (impulseMagnitude <= 0.0001f)
+                return;
+
+            if (ToolHitUtility.TryApplyRelativeCarrierImpulse(safeDirection, impulseMagnitude))
+                return;
+
+            PhysicsForceRouter.QueueForce(_playerRigidbody, -safeDirection * impulseMagnitude, ForceMode.Impulse);
         }
 
         private bool TryGetAssessmentCached(out HarpoonAssessment assessment)

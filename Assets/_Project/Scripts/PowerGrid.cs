@@ -213,6 +213,43 @@ namespace Hecton8.Power
         /// <summary>Read-only access for manager-level membership changes.</summary>
         public HashSet<PowerNode> Nodes => _nodes;
 
+        internal float TryConsumeWirelessToolDemand(float requestedEnergyWattSeconds)
+        {
+            if (requestedEnergyWattSeconds <= 0f || !_hasBatteryBanks || _batteryEmergencyReserveActive)
+                return 0f;
+
+            float remaining = requestedEnergyWattSeconds;
+            int batteryCount = _batteryRefs.Count;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+            {
+                if (remaining <= 0.0001f)
+                    break;
+
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                remaining -= battery.TryConsumeDirectGridEnergy(remaining, BatteryEmergencyReserveThreshold);
+            }
+
+            _totalBatteryStoredEnergyWattSeconds = 0f;
+            _totalBatteryCapacityWattSeconds = 0f;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+            {
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                _totalBatteryStoredEnergyWattSeconds += battery.StoredEnergyWattSeconds;
+                _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
+            }
+
+            _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
+                _totalBatteryStoredEnergyWattSeconds,
+                _totalBatteryCapacityWattSeconds);
+            return requestedEnergyWattSeconds - remaining;
+        }
+
         public PowerGrid(int initialCapacity = 16)
         {
             int safeCapacity = math.max(1, initialCapacity);

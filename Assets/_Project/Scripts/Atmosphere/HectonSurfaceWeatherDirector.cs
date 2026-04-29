@@ -23,6 +23,7 @@ namespace Hecton8.Atmosphere
     [DefaultExecutionOrder(-4500)]
     public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener
     {
+        private const float ExponentialBlendCompletion = 0.99f;
         private const float ResolveRetryInterval = 2f;
         private const int ShelterSampleCount = 5;
 
@@ -1211,8 +1212,16 @@ namespace Hecton8.Atmosphere
 
         private void BlendWeather(float deltaTime)
         {
-            float blendT = math.saturate(deltaTime / math.max(weatherBlendDuration, 0.0001f));
+            float blendT = ResolveExponentialBlendFactor(deltaTime, weatherBlendDuration);
             _currentState = WeatherFrameState.Lerp(_currentState, _targetProfile.state, blendT);
+        }
+
+        private static float ResolveExponentialBlendFactor(float deltaTime, float durationSeconds)
+        {
+            float clampedDeltaTime = math.max(0f, deltaTime);
+            float duration = math.max(0.0001f, durationSeconds);
+            float blendRate = -math.log(1f - ExponentialBlendCompletion) / duration;
+            return 1f - math.exp(-blendRate * clampedDeltaTime);
         }
 
         private void UpdateDiagnostics()

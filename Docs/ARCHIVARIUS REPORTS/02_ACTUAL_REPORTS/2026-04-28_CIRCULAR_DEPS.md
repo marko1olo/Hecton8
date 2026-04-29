@@ -1,105 +1,85 @@
-# CIRCULAR_DEPS.md — Assembly Dependency Audit
-**Status:** ✅ NO CIRCULAR DEPENDENCIES DETECTED  
-**Scan Date:** 2026-04-28  
-**Scope:** All `.asmdef` under `Assets/_Project/`
+# CIRCULAR_DEPS.md
+
+**Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION  
+**Scope:** current `.asmdef` dependency surface under `Assets/_Project/Scripts`
+
+**Mandates Followed:** `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
 
 ---
 
-## Assembly Dependency Map
+## Method
 
-```
-Hecton8.Bootstrap.Contracts (leaf)
-Hecton8.World.Contracts (leaf)
-  └─ Unity.Collections, Unity.Mathematics
+- Re-read the current first-party `.asmdef` files under `Assets/_Project/Scripts`.
+- Rechecked the dependency list embedded in `Hecton8.Core.asmdef`.
+- Limited findings to what is visible from the assembly-definition graph; no Roslyn or full compile graph export was generated.
 
-Hecton8.Input.Generated (leaf)
-  └─ Unity.InputSystem
+---
 
-Hecton8.Input
-  ├─ Hecton8.Input.Generated
-  ├─ Unity.InputSystem
-  └─ Unity.TextMeshPro
+## Current Assembly Inventory
 
-Hecton8.Core
-  ├─ Hecton8.Bootstrap.Contracts
-  ├─ Hecton8.World.Contracts
-  ├─ Hecton8.Input
-  ├─ Hecton8.Input.Generated
-  ├─ Unity.InputSystem
-  ├─ Unity.Mathematics
-  ├─ Unity.Burst
-  ├─ Unity.Collections
-  ├─ Unity.Profiling.Core
-  ├─ Unity.TextMeshPro
-  ├─ UnityEngine.UI
-  ├─ Unity.RenderPipelines.Core.Runtime
-  ├─ Unity.RenderPipelines.Universal.Runtime
-  ├─ GPUInstancer
-  ├─ Den.Tools
-  ├─ MapMagic
-  ├─ Crest
-  ├─ WaveHarmonic.Crest
-  ├─ WaveHarmonic.Crest.Shared
-  ├─ ShapesRuntime
-  ├─ EasySave3
-  └─ VolumetricLightBeam
+- `Hecton8.Core.asmdef`
+- `Hecton8.Bootstrap.Contracts.asmdef`
+- `Hecton8.Editor.asmdef`
+- `Hecton8.Input.asmdef`
+- `Hecton8.Optimization.Editor.asmdef`
+- `Hecton8.UI.Editor.asmdef`
+- `Hecton8.World.Contracts.asmdef`
+- `Hecton8.World.Dots.asmdef`
 
-Hecton8.World.Dots
-  ├─ Hecton8.World.Contracts
-  ├─ Unity.Entities
-  ├─ Unity.Collections
-  ├─ Unity.Mathematics
-  └─ Unity.Burst
+Total first-party asmdefs rechecked in this pass: `8`
 
-Hecton8.Editor
-  ├─ Hecton8.Core
-  ├─ UnityEngine.TestRunner
-  ├─ UnityEditor.TestRunner
-  ├─ Unity.InputSystem
-  └─ Unity.TextMeshPro
+---
 
-Hecton8.Optimization.Editor
-  └─ Hecton8.Core
+## Current Findings
 
-Hecton8.UI.Editor
-  └─ Hecton8.Core
+### Cycles
 
-Hecton8.EditModeTests
-  ├─ Hecton8.Core
-  ├─ Hecton8.Editor
-  ├─ UnityEngine.TestRunner
-  └─ UnityEditor.TestRunner
+No direct circular dependency was confirmed from the present `.asmdef` readback in this pass.
 
-Hecton8.PlayModeTests (leaf)
-  └─ UnityEngine.TestRunner, UnityEditor.TestRunner
-```
+### Hecton8.Core third-party coupling
 
-## Critical Finding: ACL Violation in Hecton8.Core
+`Hecton8.Core.asmdef` currently references these third-party assemblies directly:
 
-`Hecton8.Core.asmdef` contains **direct references to 8 third-party assemblies**:
+- `GPUInstancer`
+- `Den.Tools`
+- `MapMagic`
+- `Crest`
+- `WaveHarmonic.Crest`
+- `WaveHarmonic.Crest.Shared`
+- `VolumetricLightBeam`
 
-| Assembly | Type | ACL Status |
-|----------|------|------------|
-| `GPUInstancer` | Third-party rendering | ❌ DIRECT — must be behind RENDER bridge |
-| `Den.Tools` | MapMagic dependency | ❌ DIRECT — must be behind WORLD bridge |
-| `MapMagic` | World generation | ❌ DIRECT — must be behind `Hecton8.World` bridge |
-| `Crest` | Ocean system (legacy) | ❌ DIRECT — must be behind `IHectonOceanKinematics` |
-| `WaveHarmonic.Crest` | Ocean system (package) | ❌ DIRECT — must be behind `IHectonOceanKinematics` |
-| `WaveHarmonic.Crest.Shared` | Ocean system (shared) | ❌ DIRECT — must be behind `IHectonOceanKinematics` |
-| `ShapesRuntime` | Third-party primitives | ❌ DIRECT — must be behind UI/VFX bridge |
-| `EasySave3` | Save system (FORBIDDEN) | ❌ DIRECT — AGENTS.md forbids Easy Save 3 |
-| `VolumetricLightBeam` | VFX third-party | ❌ DIRECT — must be behind VFX bridge |
+This is architecture coupling debt even without a proven cycle.
 
-**Evidence:** `Assets/_Project/Scripts/Hecton8.Core.asmdef` lines 18-26.
+### Removed false claims from the prior version
 
-**Required Fix:** Extract all third-party references into dedicated bridge assemblies:
-- `Hecton8.CrestBridge.asmdef` (references Crest, implements `IHectonOceanKinematics`)
-- `Hecton8.MapMagicBridge.asmdef` (references MapMagic/Den.Tools)
-- `Hecton8.SaveBridge.asmdef` — **REMOVE EasySave3 entirely** per AGENTS.md mandate
-- `Hecton8.VFXBridge.asmdef` (references GPUInstancer, ShapesRuntime, VolumetricLightBeam)
+- `ShapesRuntime` is not present in the current `Hecton8.Core.asmdef` dependency list.
+- `EasySave3` is not present in the current `Hecton8.Core.asmdef` dependency list.
+
+---
+
+## Interpretation
+
+- The old report was directionally right about direct third-party contamination in `Hecton8.Core`.
+- It was factually wrong on at least two referenced assemblies.
+- "No cycles" remains a narrow graph statement, not a full architecture approval.
+
+---
+
+## Regression Model
+
+| Dimension | Impact |
+|---|---|
+| CPU | None. Documentation-only rewrite. |
+| GC | None. Documentation-only rewrite. |
+| Memory | None. Documentation-only rewrite. |
+| Cadence | None. Runtime code unchanged. |
+| Correctness | Improved by pruning false dependency claims while preserving the real coupling warning. |
+
+---
 
 ## Verdict
-- **Cycles:** None.
-- **ACL Compliance:** ❌ FAILED — Hecton8.Core is contaminated with 9 third-party direct references.
-- **Compile Order:** Safe.
-- **Action:** Bridge extraction mandatory before production milestone.
+
+No direct `.asmdef` cycle was confirmed in this pass.  
+Direct third-party references inside `Hecton8.Core` remain live architecture debt.  
+Compile-graph correctness beyond static `.asmdef` readback remains `PENDING VERIFICATION`.

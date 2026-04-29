@@ -53,6 +53,7 @@ namespace Hecton8.Crafting
     {
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
+        private static bool s_emergencyPowerLockActive;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -123,6 +124,7 @@ namespace Hecton8.Crafting
 
         // ── Power State ──
         private bool _hasPower = true;
+        private bool _emergencyPowerLockActive;
 
         private const int MaxLocalCraftReservations = 64;
         private const int MaxNetworkCraftCosts = 32;
@@ -180,7 +182,7 @@ namespace Hecton8.Crafting
         }
 
         /// <summary>Крафт на паузе из-за отсутствия питания.</summary>
-        public bool IsPausedNoPower => _isCrafting && !_hasPower;
+        public bool IsPausedNoPower => _isCrafting && !HasOperationalPower;
 
         internal PowerGrid CurrentPowerGrid => _powerNode != null ? _powerNode.Grid : null;
 
@@ -201,13 +203,16 @@ namespace Hecton8.Crafting
         /// Итого при крафте: BuildableData.powerRating + (-craftPowerDraw).
         ///   Пример: -20 (базовый) + (-100) (крафт) = -120 Вт.
         /// </summary>
-        public float PowerRating => _isCrafting ? -craftPowerDraw * _activeCraftPowerMultiplier : 0f;
+        public float PowerRating => _isCrafting && !_emergencyPowerLockActive ? -craftPowerDraw * _activeCraftPowerMultiplier : 0f;
 
         /// <summary>Приоритет отключения.</summary>
         public int PowerPriority => powerPriority;
 
         /// <summary>Текущее состояние питания.</summary>
         public bool HasPower => _hasPower;
+
+        /// <summary>True while the submarine OS has suspended this fabricator from non-essential load service.</summary>
+        public bool IsEmergencyPowerLocked => _emergencyPowerLockActive;
 
         /// <summary>
         /// Уведомление от PowerGrid об изменении питания.
@@ -228,6 +233,26 @@ namespace Hecton8.Crafting
             {
                 // Крафт заморожен
                 PlaySound(powerLostSound);
+            }
+        }
+
+        /// <summary>
+        /// Applies or clears the submarine-wide non-essential power lock across all live fabricators.
+        /// Active crafts pause without losing inputs and resume automatically once the lock clears.
+        /// </summary>
+        public static void SetEmergencyPowerLockAll(bool active)
+        {
+            if (s_emergencyPowerLockActive == active)
+                return;
+
+            s_emergencyPowerLockActive = active;
+            for (int i = 0; i < _activeFabricators.Count; i++)
+            {
+                Fabricator fabricator = _activeFabricators[i];
+                if (fabricator == null)
+                    continue;
+
+                fabricator.ApplyEmergencyPowerLock(active);
             }
         }
 
@@ -258,6 +283,7 @@ namespace Hecton8.Crafting
             EnsureScanLogSystem();
             SubscribeToScanLog();
             MarkRecipeCacheDirty();
+            ApplyEmergencyPowerLock(s_emergencyPowerLockActive);
         }
 
         private void OnDisable()
@@ -317,7 +343,7 @@ namespace Hecton8.Crafting
         {
             if (recipe == null) return false;
             if (_isCrafting) return false;
-            if (!_hasPower) return false;
+            if (!HasOperationalPower) return false;
             if (_playerInventory == null || _playerInventory.Grid == null) return false;
             if (recipe.ingredients == null || recipe.ingredients.Count == 0) return false;
             if (recipe.resultItem == null || recipe.resultQuantity <= 0) return false;
@@ -450,7 +476,7 @@ namespace Hecton8.Crafting
             // ═══════════════════════════════════════════════════
             //  POWER PAUSE: нет питания → таймер заморожен
             // ═══════════════════════════════════════════════════
-            if (!_hasPower)
+            if (!HasOperationalPower)
                 return;
 
             // ── Обновление таймера ──
@@ -570,6 +596,18 @@ namespace Hecton8.Crafting
         {
             if (_powerNode != null && _powerNode.Grid != null)
                 _powerNode.Grid.MarkDirty();
+        }
+
+        private bool HasOperationalPower => _hasPower && !_emergencyPowerLockActive;
+
+        private void ApplyEmergencyPowerLock(bool active)
+        {
+            if (_emergencyPowerLockActive == active)
+                return;
+
+            _emergencyPowerLockActive = active;
+            if (_isCrafting)
+                NotifyGridBalanceChanged();
         }
 
         // ══════════════════════════════════════════════════════════

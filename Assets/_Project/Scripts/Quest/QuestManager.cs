@@ -1,12 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Hecton.Localization;
-using Hecton8.AtlasSignal;
-using Hecton8.Celestial;
 using Hecton8.Core;
-using Hecton8.Items;
-using Hecton8.Modding;
-using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Collections;
@@ -27,19 +21,18 @@ namespace Hecton8.Quest
         [SerializeField] private QuestData[] allQuests = Array.Empty<QuestData>();
 
         private const string QuestFolder = "Assets/_Project/Data/Lore/Quests";
-        private const string EventSubscriberId = "quest.manager";
         private const float DepthTierTwoMeters = 100f;
         private const float DepthTierThreeMeters = 300f;
         private const float DepthTierFourMeters = 1000f;
 
         private static uint[] s_stagedLoadedPackedState;
+        private static QuestSaveHeader s_stagedLoadedQuestHeader;
 
         // COLD ALLOC: Dictionary<string,QuestData>[64] - authored quest lookup by stable questId - owner: QuestManager
         private readonly Dictionary<string, QuestData> _questLookup = new Dictionary<string, QuestData>(64);
+
         private QuestStateManager _stateManager;
-        private HectonEventSubscription _itemCollectedSubscription;
-        private HectonEventSubscription _biomeDiscoveredSubscription;
-        private HectonEventSubscription _loreAcquiredSubscription;
+        private QuestGraphEvaluator _graphEvaluator;
         private bool _loadedFromSave;
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary = string.Empty;
@@ -51,6 +44,7 @@ namespace Hecton8.Quest
         {
             Instance = null;
             s_stagedLoadedPackedState = null;
+            s_stagedLoadedQuestHeader = default;
         }
 
         public int SavePriority => 7;
@@ -73,20 +67,19 @@ namespace Hecton8.Quest
         private void OnEnable()
         {
             GlobalRegistry.Save?.Register(this);
-
-            SubscribeToEvents();
+            _graphEvaluator?.Bind();
         }
 
         private void OnDisable()
         {
+            _graphEvaluator?.Unbind();
             GlobalRegistry.Save?.Unregister(this);
-
-            UnsubscribeFromEvents();
         }
 
         private void OnDestroy()
         {
-            UnsubscribeFromEvents();
+            _graphEvaluator?.Dispose();
+            _graphEvaluator = null;
 
             if (_stateManager != null)
             {
@@ -124,7 +117,7 @@ namespace Hecton8.Quest
                 return;
 
             _stateManager.RecordManualTransition(questIndex, completed: false);
-            EmitQuestTransition(questIndex, completed: false);
+            EmitQuestTransition(questIndex, completed: false, QuestTransitionType.Activate);
         }
 
         public void CompleteQuest(string questId)
@@ -136,7 +129,7 @@ namespace Hecton8.Quest
                 return;
 
             _stateManager.RecordManualTransition(questIndex, completed: true);
-            EmitQuestTransition(questIndex, completed: true);
+            EmitQuestTransition(questIndex, completed: true, QuestTransitionType.Complete);
         }
 
         public bool IsActive(string questId)
@@ -155,7 +148,7 @@ namespace Hecton8.Quest
 
         public void UpdateDepth(float depthMeters)
         {
-            EvaluateSignal(new QuestSignal(QuestSignalKind.DepthReached, 0u, depthMeters));
+            _graphEvaluator?.UpdateDepth(depthMeters);
         }
 
         public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
@@ -165,8 +158,22 @@ namespace Hecton8.Quest
                 : new NativeArray<uint>(0, allocator, NativeArrayOptions.ClearMemory);
         }
 
+        internal NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator, out QuestSaveHeader header, double timestamp)
+        {
+            header = _stateManager != null
+                ? _stateManager.BuildSaveHeader(timestamp)
+                : default;
+            return CapturePackedStateSnapshot(allocator);
+        }
+
         public static void StageLoadedPackedState(uint[] packedWords)
         {
+            StageLoadedPackedState(default, packedWords);
+        }
+
+        internal static void StageLoadedPackedState(in QuestSaveHeader header, uint[] packedWords)
+        {
+            s_stagedLoadedQuestHeader = header;
             if (packedWords == null || packedWords.Length <= 0)
             {
                 s_stagedLoadedPackedState = null;
@@ -212,22 +219,41 @@ namespace Hecton8.Quest
         public void LoadFromSaveData(SaveData data)
         {
             _loadedFromSave = true;
-
             if (_stateManager == null)
                 return;
 
             uint[] stagedWords = s_stagedLoadedPackedState;
+            QuestSaveHeader stagedHeader = s_stagedLoadedQuestHeader;
             s_stagedLoadedPackedState = null;
+            s_stagedLoadedQuestHeader = default;
 
             if (stagedWords != null && stagedWords.Length > 0)
             {
-                _stateManager.RestorePackedState(stagedWords);
+                _stateManager.RestorePackedState(stagedHeader, stagedWords);
                 return;
             }
 
             IEnumerable<string> activeQuestIds = data != null ? data.questActiveIds : null;
             IEnumerable<string> completedQuestIds = data != null ? data.questCompletedIds : null;
             _stateManager.RestoreLegacyState(activeQuestIds, completedQuestIds);
+        }
+
+        [ContextMenu("Dump Recent Quest Transitions")]
+        public void DumpRecentTransitionsToConsole()
+        {
+            if (_stateManager == null)
+                return;
+
+            int count = Math.Min(_stateManager.TransitionHistoryCount, 32);
+            for (int i = 0; i < count; i++)
+            {
+                if (!_stateManager.TryGetTransitionHistory(i, out QuestTransitionHistoryEntry entry))
+                    continue;
+
+                Debug.Log(
+                    $"[QuestManager] Hist[{i}] Quest=0x{entry.QuestHash:X8} From=0x{entry.FromFlagID:X8} To=0x{entry.ToFlagID:X8} " +
+                    $"Event={(QuestSignalKind)entry.EventType} Payload=0x{entry.SignalPayloadHash:X8} Transition={(QuestTransitionType)entry.TransitionType} Completed={entry.Completed}");
+            }
         }
 
         private void InitializeStateGraph()
@@ -248,105 +274,11 @@ namespace Hecton8.Quest
                 string compileSummary = _stateManager != null ? _stateManager.CompileErrorSummary : "Unknown quest compile error.";
                 Debug.LogError($"[QuestManager] Quest state graph compilation failed.{System.Environment.NewLine}{compileSummary}");
                 enabled = false;
-            }
-        }
-
-        private void SubscribeToEvents()
-        {
-            if (_itemCollectedSubscription == null)
-                _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, EventSubscriberId);
-
-            if (_biomeDiscoveredSubscription == null)
-                _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
-
-            if (_loreAcquiredSubscription == null)
-                _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
-
-            NarrativeEvents.OnDepthTierReached += HandleDepthTierReached;
-            HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
-        }
-
-        private void UnsubscribeFromEvents()
-        {
-            if (_itemCollectedSubscription != null)
-            {
-                _itemCollectedSubscription.Dispose();
-                _itemCollectedSubscription = null;
+                return;
             }
 
-            if (_biomeDiscoveredSubscription != null)
-            {
-                _biomeDiscoveredSubscription.Dispose();
-                _biomeDiscoveredSubscription = null;
-            }
-
-            if (_loreAcquiredSubscription != null)
-            {
-                _loreAcquiredSubscription.Dispose();
-                _loreAcquiredSubscription = null;
-            }
-
-            NarrativeEvents.OnDepthTierReached -= HandleDepthTierReached;
-            HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
-        }
-
-        private void HandleItemCollected(ItemCollectedEvent evt)
-        {
-            if (evt == null)
-                return;
-
-            uint payloadHash = evt.ItemHashId != 0
-                ? unchecked((uint)evt.ItemHashId)
-                : 0u;
-
-            EvaluateSignal(new QuestSignal(QuestSignalKind.ItemCollected, payloadHash, evt.Quantity));
-        }
-
-        private void HandleBiomeDiscovered(BiomeDiscoveredEvent evt)
-        {
-            if (evt == null)
-                return;
-
-            EvaluateSignal(new QuestSignal(QuestSignalKind.BiomeEntered, 0u, evt.BiomeId));
-        }
-
-        private void HandleLoreAcquired(LoreAcquiredEvent evt)
-        {
-            if (evt == null)
-                return;
-
-            EvaluateSignal(new QuestSignal(QuestSignalKind.DiscoveryMade, evt.LoreHash, 0f));
-            EvaluateSignal(new QuestSignal(QuestSignalKind.AudioLogFound, evt.LoreHash, 0f));
-        }
-
-        private void HandleDepthTierReached(int tier)
-        {
-            UpdateDepth(MapDepthTierToMeters(tier));
-        }
-
-        private void HandleEclipseStart()
-        {
-            EvaluateSignal(new QuestSignal(QuestSignalKind.EclipseStarted, 0u, 0f));
-        }
-
-        private void HandleSignalDecoded(string messageId)
-        {
-            uint payloadHash = string.IsNullOrWhiteSpace(messageId)
-                ? 0u
-                : unchecked((uint)LocHash.Compute(messageId));
-
-            EvaluateSignal(new QuestSignal(QuestSignalKind.SignalDecoded, payloadHash, 0f));
-        }
-
-        private void EvaluateSignal(QuestSignal signal)
-        {
-            if (_stateManager == null)
-                return;
-
-            _stateManager.EvaluateSignal(signal);
-            FlushRuntimeResults();
+            _graphEvaluator?.Dispose();
+            _graphEvaluator = new QuestGraphEvaluator(_stateManager, FlushRuntimeResults);
         }
 
         private void FlushRuntimeResults()
@@ -357,31 +289,34 @@ namespace Hecton8.Quest
             for (int i = 0; i < _stateManager.ResultCount; i++)
             {
                 QuestRuntimeResult result = _stateManager.GetResult(i);
-                EmitQuestTransition(result.QuestIndex, result.Completed);
+                EmitQuestTransition(result.QuestIndex, result.Completed, result.TransitionType);
             }
         }
 
-        private void EmitQuestTransition(int questIndex, bool completed)
+        private void EmitQuestTransition(int questIndex, bool completed, QuestTransitionType transitionType)
         {
             QuestData questData = GetQuestDataByIndex(questIndex);
             if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
                 return;
 
             string title = questData.DisplayTitleOrFallback;
-            LocalizationManager localization = LocalizationManager.Instance;
-            if (completed)
+            switch (transitionType)
             {
-                QuestEvents.RaiseCompleted(questData.questId);
-                NotificationEvents.PushInfo(localization != null
-                    ? localization.GetFormatted(LocalizationKeys.QUEST_COMPLETED, title)
-                    : "OBJECTIVE COMPLETED: " + title);
-                return;
-            }
+                case QuestTransitionType.Complete:
+                    QuestEvents.RaiseCompleted(questData.questId);
+                    NotificationEvents.PushInfo($"OBJECTIVE COMPLETED: {title}");
+                    return;
 
-            QuestEvents.RaiseActivated(questData.questId);
-            NotificationEvents.PushInfo(localization != null
-                ? localization.GetFormatted(LocalizationKeys.QUEST_NEW_OBJECTIVE, title)
-                : "NEW OBJECTIVE: " + title);
+                case QuestTransitionType.Revert:
+                    QuestEvents.RaiseActivated(questData.questId);
+                    NotificationEvents.PushInfo($"OBJECTIVE RESTORED: {title}");
+                    return;
+
+                default:
+                    QuestEvents.RaiseActivated(questData.questId);
+                    NotificationEvents.PushInfo(completed ? $"OBJECTIVE COMPLETED: {title}" : $"NEW OBJECTIVE: {title}");
+                    return;
+            }
         }
 
         private QuestData GetQuestDataByIndex(int questIndex)
@@ -407,7 +342,7 @@ namespace Hecton8.Quest
                 return false;
             }
 
-            questHash = unchecked((uint)LocHash.Compute(questId));
+            questHash = QuestFlagHashKernel.ComputeStableHash(questId);
             return questHash != 0u;
         }
 
@@ -478,7 +413,7 @@ namespace Hecton8.Quest
             if (guids == null || guids.Length == 0)
                 return;
 
-            QuestData[] loadedQuests = new QuestData[guids.Length];
+            QuestData[] loadedQuests = new QuestData[guids.Length]; // COLD ALLOC: QuestData[guids.Length] - editor-time quest registry bootstrap - owner: QuestManager
             int loadedCount = 0;
             for (int i = 0; i < guids.Length; i++)
             {

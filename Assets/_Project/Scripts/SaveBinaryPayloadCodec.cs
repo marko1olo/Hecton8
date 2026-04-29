@@ -153,7 +153,7 @@ namespace Hecton8.SaveSystem
                 || !ReadPlayerStats(ref reader, data.version, out data.playerStats)
                 || !ReadInventory(ref reader, data.version, out data.inventory)
                 || !ReadWorldState(ref reader, out data.worldState)
-                || !ReadProceduralWorldState(ref reader, out data.proceduralWorldState)
+                || !ReadProceduralWorldState(ref reader, data.version, out data.proceduralWorldState)
                 || !ReadConstruction(ref reader, out data.construction)
                 || !ReadScanLog(ref reader, out data.scanLog)
                 || !ReadBarter(ref reader, out data.barter)
@@ -521,16 +521,27 @@ namespace Hecton8.SaveSystem
             return writer.WriteInt(value.suppressedPlacementCount)
                 && writer.WriteStructArray(value.suppressedPlacementKeys)
                 && writer.WriteInt(value.faunaStateCount)
-                && writer.WriteStructArray(value.faunaStates);
+                && writer.WriteStructArray(value.faunaStates)
+                && writer.WriteInt(value.geologySeamStateCount)
+                && writer.WriteStructArray(value.geologySeamStates);
         }
 
-        private static bool ReadProceduralWorldState(ref BufferReader reader, out ProceduralWorldStateDTO value)
+        private static bool ReadProceduralWorldState(ref BufferReader reader, int version, out ProceduralWorldStateDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.suppressedPlacementCount)
-                && reader.ReadStructArray(out value.suppressedPlacementKeys)
-                && reader.ReadInt(out value.faunaStateCount)
-                && reader.ReadStructArray(out value.faunaStates);
+            if (!reader.ReadInt(out value.suppressedPlacementCount)
+                || !reader.ReadStructArray(out value.suppressedPlacementKeys)
+                || !reader.ReadInt(out value.faunaStateCount)
+                || !reader.ReadStructArray(out value.faunaStates))
+            {
+                return false;
+            }
+
+            if (version < 44)
+                return true;
+
+            return reader.ReadInt(out value.geologySeamStateCount)
+                && reader.ReadStructArray(out value.geologySeamStates);
         }
 
         private static bool WriteConstruction(ref BufferWriter writer, ConstructionDTO value)

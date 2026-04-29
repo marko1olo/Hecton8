@@ -2,6 +2,7 @@ using System;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.Tools;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -26,6 +27,7 @@ namespace Hecton8.Core
         private static IUIService _ui;
         private static IPlayerRuntimeContext _player;
         private static IPlayerInventoryService _playerInventory;
+        private static IModularEquipmentService _modularEquipment;
         private static IPlayerSensoryService _playerSensory;
         private static IEnvironmentRuntimeContext _environment;
         private static IWeatherService _weather;
@@ -81,6 +83,11 @@ namespace Hecton8.Core
         /// Registered player inventory/tooling service slot.
         /// </summary>
         public static IPlayerInventoryService PlayerInventory => _playerInventory;
+
+        /// <summary>
+        /// Registered modular-equipment runtime service slot.
+        /// </summary>
+        public static IModularEquipmentService ModularEquipment => _modularEquipment;
 
         /// <summary>
         /// Registered player sensory/presentation service slot.
@@ -184,6 +191,7 @@ namespace Hecton8.Core
             _ui = null;
             _player = null;
             _playerInventory = null;
+            _modularEquipment = null;
             _playerSensory = null;
             _environment = null;
             _weather = null;
@@ -312,6 +320,14 @@ namespace Hecton8.Core
         public static void RegisterPlayerInventoryService(IPlayerInventoryService instance)
         {
             RegisterService(ref _playerInventory, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative modular-equipment runtime service.
+        /// </summary>
+        public static void RegisterModularEquipmentService(IModularEquipmentService instance)
+        {
+            RegisterService(ref _modularEquipment, instance);
         }
 
         /// <summary>
@@ -474,6 +490,14 @@ namespace Hecton8.Core
         public static void UnregisterPlayerInventoryService(IPlayerInventoryService instance)
         {
             UnregisterService(ref _playerInventory, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current modular-equipment runtime service if the owner matches.
+        /// </summary>
+        public static void UnregisterModularEquipmentService(IModularEquipmentService instance)
+        {
+            UnregisterService(ref _modularEquipment, instance);
         }
 
         /// <summary>

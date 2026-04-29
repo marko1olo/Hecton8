@@ -16,6 +16,9 @@ namespace Hecton8.PDA
     {
         private sealed class MarkerIconDisplay
         {
+            public const int TitleBufferCapacity = 128;
+            public const int DistanceBufferCapacity = 16;
+
             public RectTransform rectTransform;
             public CanvasGroup canvasGroup;
             public Image iconImage;
@@ -23,6 +26,8 @@ namespace Hecton8.PDA
             public TMP_Text distanceText;
             public string cachedTitle;
             public string cachedDistance;
+            public char[] titleBuffer;
+            public char[] distanceBuffer;
         }
 
         [Header("References")]
@@ -130,7 +135,9 @@ namespace Hecton8.PDA
                     titleText = ResolveChildText(iconObject.transform, "Label"),
                     distanceText = ResolveChildText(iconObject.transform, "Distance"),
                     cachedTitle = string.Empty,
-                    cachedDistance = string.Empty
+                    cachedDistance = string.Empty,
+                    titleBuffer = new char[MarkerIconDisplay.TitleBufferCapacity], // COLD ALLOC: char[128] — per-marker HUD title staging buffer for zero-GC TMP writes — owner: PDAMarkerHUDElement
+                    distanceBuffer = new char[MarkerIconDisplay.DistanceBufferCapacity] // COLD ALLOC: char[16] — per-marker HUD distance staging buffer for zero-GC TMP writes — owner: PDAMarkerHUDElement
                 };
 
                 _iconDisplays[i] = display;
@@ -196,7 +203,7 @@ namespace Hecton8.PDA
                 string nextTitle = showLabels ? marker.Title : string.Empty;
                 if (!string.Equals(display.cachedTitle, nextTitle, System.StringComparison.Ordinal))
                 {
-                    display.titleText.text = nextTitle;
+                    ApplyText(display.titleText, display.titleBuffer, nextTitle);
                     display.cachedTitle = nextTitle;
                 }
             }
@@ -206,7 +213,7 @@ namespace Hecton8.PDA
                 string nextDistance = showDistance ? ResolveDistanceLabel(Mathf.RoundToInt(distance)) : string.Empty;
                 if (!string.Equals(display.cachedDistance, nextDistance, System.StringComparison.Ordinal))
                 {
-                    display.distanceText.text = nextDistance;
+                    ApplyText(display.distanceText, display.distanceBuffer, nextDistance);
                     display.cachedDistance = nextDistance;
                 }
             }
@@ -275,6 +282,22 @@ namespace Hecton8.PDA
                 return DistanceLabelCache[MaxCachedDistanceMeters];
 
             return DistanceLabelCache[meters];
+        }
+
+        private static void ApplyText(TMP_Text text, char[] buffer, string value)
+        {
+            if (text == null || buffer == null)
+                return;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                text.SetCharArray(buffer, 0, 0);
+                return;
+            }
+
+            int copyLength = Mathf.Min(buffer.Length, value.Length);
+            value.CopyTo(0, buffer, 0, copyLength);
+            text.SetCharArray(buffer, 0, copyLength);
         }
 
         private static string[] BuildDistanceLabelCache()

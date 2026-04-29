@@ -159,6 +159,7 @@ namespace NASAPunk.Visor
         private bool _runtimeTickRegistered;
         private bool _editorPreviewSuspended;
         private HectonSurvivalSystem _survivalSystem;
+        private TraumaDispatcher _traumaDispatcher;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private SubmarineStructuralGrid _structuralGrid;
@@ -169,6 +170,11 @@ namespace NASAPunk.Visor
         private float _structuralFatigueChromaticAberration;
         private float _structuralFatigueStaticNoise;
         private float _hudHypoxiaLevel;
+        private float _hazardRadiationLevel;
+        private float _hazardThermalLevel;
+        private float _hazardToxicLevel;
+        private float _hazardGlitchLevel;
+        private float _biosRecoveryModeBlend;
 
         private uint _glitchRngState = 1u;
 
@@ -190,6 +196,11 @@ namespace NASAPunk.Visor
         private static readonly int ID_ChromaticAberration = Shader.PropertyToID("_ChromaticAberration");
         private static readonly int ID_StaticNoise = Shader.PropertyToID("_StaticNoise");
         private static readonly int ID_HypoxiaLevel = Shader.PropertyToID("_HypoxiaLevel");
+        private static readonly int ID_HazardRadiationLevel = Shader.PropertyToID("_HazardRadiationLevel");
+        private static readonly int ID_HazardThermalLevel = Shader.PropertyToID("_HazardThermalLevel");
+        private static readonly int ID_HazardToxicLevel = Shader.PropertyToID("_HazardToxicLevel");
+        private static readonly int ID_HazardGlitchLevel = Shader.PropertyToID("_HazardGlitchLevel");
+        private static readonly int ID_BiosRecoveryMode = Shader.PropertyToID("_BiosRecoveryMode");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -285,8 +296,14 @@ namespace NASAPunk.Visor
 
             RefreshSurvivalSubscription(null);
             _survivalSystem = null;
+            _traumaDispatcher = null;
             _hasTemperatureSample = false;
             _hasPressureSample = false;
+            _hazardRadiationLevel = 0f;
+            _hazardThermalLevel = 0f;
+            _hazardToxicLevel = 0f;
+            _hazardGlitchLevel = 0f;
+            _biosRecoveryModeBlend = 0f;
             UnregisterRuntimeTick();
             ReleaseRT();
             InvalidatePoseCache();
@@ -351,6 +368,7 @@ namespace NASAPunk.Visor
             UpdateFrostState(deltaTime);
             UpdateInterferenceState(deltaTime);
             UpdateStructuralFatigueState(deltaTime);
+            UpdateHazardTraumaState(deltaTime);
             UpdateHypoxiaState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
@@ -468,6 +486,7 @@ namespace NASAPunk.Visor
             bool needsReferenceCamera = _syncToReferenceCamera && _referenceCamera == null;
             bool needsHudCamera = _projectionMode != ProjectionMode.Disabled && _hudCamera == null;
             bool needsSurvivalSystem = Application.isPlaying && _survivalSystem == null;
+            bool needsTraumaDispatcher = Application.isPlaying && _traumaDispatcher == null;
             bool needsStructuralGrid = Application.isPlaying && _structuralGrid == null;
 
             return _visorRenderer == null
@@ -475,6 +494,7 @@ namespace NASAPunk.Visor
                 || needsBaseStackCamera
                 || needsReferenceCamera
                 || needsSurvivalSystem
+                || needsTraumaDispatcher
                 || needsStructuralGrid;
         }
 
@@ -508,6 +528,8 @@ namespace NASAPunk.Visor
 
             float condensationStrength = Mathf.Clamp01(_condensationShockIntensity + _criticalPressureCondensation);
             float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
+            float hazardChromaticAberration = (_hazardRadiationLevel * 0.010f) + (_hazardGlitchLevel * 0.006f);
+            float hazardStaticNoise = (_hazardGlitchLevel * 0.28f) + (_hazardToxicLevel * 0.18f);
 
             _visorRenderer.GetPropertyBlock(_mpb);
             _mpb.SetFloat(ID_HUDIntensity, _hudIntensity);
@@ -524,9 +546,14 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_CondensationEdgeExponent, _condensationEdgeExponent);
             _mpb.SetFloat(ID_CondensationDriftSpeed, _condensationDriftSpeed);
             _mpb.SetFloat(ID_ScreenFrostStrength, _screenFrostStrength);
-            _mpb.SetFloat(ID_ChromaticAberration, _structuralFatigueChromaticAberration);
-            _mpb.SetFloat(ID_StaticNoise, _structuralFatigueStaticNoise);
+            _mpb.SetFloat(ID_ChromaticAberration, Mathf.Max(_structuralFatigueChromaticAberration, hazardChromaticAberration));
+            _mpb.SetFloat(ID_StaticNoise, Mathf.Max(_structuralFatigueStaticNoise, hazardStaticNoise));
             _mpb.SetFloat(ID_HypoxiaLevel, _hudHypoxiaLevel);
+            _mpb.SetFloat(ID_HazardRadiationLevel, _hazardRadiationLevel);
+            _mpb.SetFloat(ID_HazardThermalLevel, _hazardThermalLevel);
+            _mpb.SetFloat(ID_HazardToxicLevel, _hazardToxicLevel);
+            _mpb.SetFloat(ID_HazardGlitchLevel, _hazardGlitchLevel);
+            _mpb.SetFloat(ID_BiosRecoveryMode, _biosRecoveryModeBlend);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
         }
@@ -588,15 +615,22 @@ namespace NASAPunk.Visor
                 return;
 
             HectonSurvivalSystem resolvedSystem = _survivalSystem;
+            TraumaDispatcher resolvedTraumaDispatcher = _traumaDispatcher;
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&
                 currentPlayerTransform != null)
             {
                 if (resolvedSystem == null || resolvedSystem.transform != currentPlayerTransform)
                     currentPlayerTransform.TryGetComponent(out resolvedSystem);
+
+                if (resolvedTraumaDispatcher == null || resolvedTraumaDispatcher.transform != currentPlayerTransform)
+                    currentPlayerTransform.TryGetComponent(out resolvedTraumaDispatcher);
             }
 
             if (_survivalSystem != resolvedSystem)
                 _survivalSystem = resolvedSystem;
+
+            if (_traumaDispatcher != resolvedTraumaDispatcher)
+                _traumaDispatcher = resolvedTraumaDispatcher;
 
             RefreshSurvivalSubscription(_survivalSystem);
         }
@@ -810,6 +844,41 @@ namespace NASAPunk.Visor
             }
         }
 
+        private void UpdateHazardTraumaState(float deltaTime)
+        {
+            float targetRadiation = 0f;
+            float targetThermal = 0f;
+            float targetToxic = 0f;
+            float targetBiosRecovery = 0f;
+            if (_traumaDispatcher != null)
+            {
+                targetRadiation = Mathf.Clamp01(_traumaDispatcher.HazardRadiationSignal01);
+                targetThermal = Mathf.Clamp01(_traumaDispatcher.HazardThermalSignal01);
+                targetToxic = Mathf.Clamp01(_traumaDispatcher.HazardToxicSignal01);
+                targetBiosRecovery = _traumaDispatcher.BiosRecoveryModeActive ? 1f : 0f;
+            }
+
+            float targetGlitch = Mathf.Clamp01(Mathf.Max(
+                targetRadiation,
+                Mathf.Max(targetThermal * 0.82f, targetToxic * 0.91f)));
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _structuralFatigueBlendSharpness) * deltaTime);
+
+            if (UpdateSmoothedVisualChannel(ref _hazardRadiationLevel, targetRadiation, blendT))
+                _materialPropertiesDirty = true;
+
+            if (UpdateSmoothedVisualChannel(ref _hazardThermalLevel, targetThermal, blendT))
+                _materialPropertiesDirty = true;
+
+            if (UpdateSmoothedVisualChannel(ref _hazardToxicLevel, targetToxic, blendT))
+                _materialPropertiesDirty = true;
+
+            if (UpdateSmoothedVisualChannel(ref _hazardGlitchLevel, targetGlitch, blendT))
+                _materialPropertiesDirty = true;
+
+            if (UpdateSmoothedVisualChannel(ref _biosRecoveryModeBlend, targetBiosRecovery, blendT))
+                _materialPropertiesDirty = true;
+        }
+
         private void UpdateHypoxiaState(float deltaTime)
         {
             float targetHypoxia = 0f;
@@ -836,6 +905,16 @@ namespace NASAPunk.Visor
                 return Mathf.Clamp01(_structuralGrid.FatiguePeakNormalized);
 
             return 0f;
+        }
+
+        private static bool UpdateSmoothedVisualChannel(ref float current, float target, float blendT)
+        {
+            float nextValue = Mathf.Lerp(current, target, blendT);
+            if (Mathf.Approximately(nextValue, current))
+                return false;
+
+            current = nextValue;
+            return true;
         }
 
         private void PrepareProjectionTexture()

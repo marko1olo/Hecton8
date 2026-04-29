@@ -95,6 +95,7 @@ namespace Hecton8.Gameplay
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
+            SyncModularBattery();
 
             return removed;
         }
@@ -112,6 +113,7 @@ namespace Hecton8.Gameplay
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
+            SyncModularBattery();
 
             return true;
         }
@@ -178,6 +180,19 @@ namespace Hecton8.Gameplay
             InvalidateSnapshotCache();
         }
 
+        internal override float ResolveModularBatteryNormalized()
+        {
+            return _installedBattery != null ? Mathf.Clamp01(_batteryCharge) : 0f;
+        }
+
+        protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
+        {
+            profile.MaxRange = Mathf.Max(0.1f, contextProbeRange);
+            profile.PowerScalar = 1f;
+            profile.BatteryCapacity = 1f;
+            profile.BatteryDrainPerSecond = Metadata != null ? Mathf.Max(0f, Metadata.GetTotalEnergyConsumption()) : 0.02f;
+        }
+
         public override void OnUnequip()
         {
             if (autoTurnOffOnUnequip &&
@@ -203,6 +218,17 @@ namespace Hecton8.Gameplay
 
             if (!TryResolveFlashlight())
                 return;
+
+            if (!_flashlight.IsOn && (_installedBattery == null || _batteryCharge <= 0f))
+            {
+                PublishAssessment(new LampAssessment(
+                    "DIVE LAMP - CELL DEPLETED",
+                    "No charged battery module is available for lamp startup.",
+                    "Insert a charged cell or route power before deployment.",
+                    "WARN"));
+                InvalidateSnapshotCache();
+                return;
+            }
 
             if (_flashlight.IsOverheated)
             {
@@ -275,6 +301,38 @@ namespace Hecton8.Gameplay
 
             if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
+
+            if (!TryResolveFlashlight())
+                return;
+
+            if (_flashlight.IsOn && (_installedBattery == null || _batteryCharge <= 0f))
+            {
+                _flashlight.TurnOff();
+                _batteryCharge = 0f;
+                UpdatePowerIndicator();
+                SyncModularBattery();
+                InvalidateSnapshotCache();
+                return;
+            }
+
+            if (_flashlight.IsOn && _installedBattery != null && _batteryCharge > 0f)
+            {
+                _batteryCharge = Mathf.Max(0f, _batteryCharge - (GetEnergyConsumption() * deltaTime));
+                UpdatePowerIndicator();
+                SyncModularBattery();
+                InvalidateSnapshotCache();
+
+                if (_batteryCharge <= 0f)
+                {
+                    _batteryCharge = 0f;
+                    _flashlight.TurnOff();
+                    PublishAssessment(new LampAssessment(
+                        "DIVE LAMP - CELL DEPLETED",
+                        "Active battery module reached zero charge during lamp operation.",
+                        "Swap the cell or route external power before relight.",
+                        "WARN"));
+                }
+            }
         }
 
         private void ResolveRuntimeReferences()

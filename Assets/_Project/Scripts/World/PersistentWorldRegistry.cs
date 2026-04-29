@@ -163,7 +163,8 @@ namespace Hecton8.World
     internal enum PersistentWorldItemFlags : byte
     {
         None = 0,
-        Collected = 1 << 0
+        Collected = 1 << 0,
+        FloraDestroyed = 1 << 1
     }
 
     [Flags]
@@ -233,6 +234,8 @@ namespace Hecton8.World
         }
 
         public bool IsCollected => (Flags & PersistentWorldItemFlags.Collected) != 0;
+
+        public bool IsFloraDestroyed => (Flags & PersistentWorldItemFlags.FloraDestroyed) != 0;
 
         public void MarkCollected()
         {
@@ -393,8 +396,6 @@ namespace Hecton8.World
         private const long PersistentMemoryBudgetBytes = 10485760L;
         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
         private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.0015d));
-        private static readonly double SectorEvictionDistanceSq = SectorEvictionDistanceMeters * SectorEvictionDistanceMeters;
-
         private static PersistentWorldRegistry _instance;
         private static int _nextInstanceUidCounter;
 
@@ -725,6 +726,39 @@ namespace Hecton8.World
             return TryRegisterDroppedItem(itemData, quantity, runtimePosition);
         }
 
+        internal bool TryRegisterDestroyedFlora(ulong floraPersistentIdHash, uint instanceUid, Vector3 runtimePosition)
+        {
+            if (floraPersistentIdHash == 0UL ||
+                instanceUid == 0u ||
+                !_records.IsCreated ||
+                _records.Length >= _records.Capacity)
+            {
+                return false;
+            }
+
+            if (ContainsRecordInstanceUid(instanceUid))
+                return true;
+
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
+            PersistentWorldItemRecord record = new PersistentWorldItemRecord
+            {
+                Position = position,
+                ChunkId = chunkId,
+                ItemPersistentIdHash = floraPersistentIdHash,
+                ItemPersistentId = default,
+                Quantity = 1,
+                Flags = PersistentWorldItemFlags.FloraDestroyed,
+                InstanceUid = instanceUid
+            };
+
+            _records.AddNoResize(record);
+            _recordsByChunk.Add(chunkId, _records.Length - 1);
+            UpsertDeltaRecord(in record);
+            UpdateDiagnostics();
+            return true;
+        }
+
         private static Vector3 ApplyDeterministicDropScatter(Vector3 runtimePosition, uint instanceUid)
         {
             uint state = instanceUid != 0u ? instanceUid : 0xA511E9B3u;
@@ -838,8 +872,11 @@ namespace Hecton8.World
                     _records.AddNoResize(record);
                     int recordIndex = _records.Length - 1;
                     _recordsByChunk.Add(record.ChunkId, recordIndex);
-                    RegisterOrUpdatePoolSlot(recordIndex, in record);
-                    RegisterOrUpdateEntityState(in record);
+                    if (!record.IsFloraDestroyed)
+                    {
+                        RegisterOrUpdatePoolSlot(recordIndex, in record);
+                        RegisterOrUpdateEntityState(in record);
+                    }
                     if (TryBuildCompactDeltaRecord(in record, out PersistentWorldCompactDeltaRecord compactRecord))
                     {
                         _deltaRecordIndexByEntityId.TryAdd(record.InstanceUid, _deltaRecords.Length);
@@ -1097,7 +1134,7 @@ namespace Hecton8.World
                 }
 
                 PersistentWorldItemRecord record = _records[recordIndex];
-                if (record.IsCollected || !ShouldKeepHydratedRecord(in record, in playerAup))
+                if (record.IsCollected || record.IsFloraDestroyed || !ShouldKeepHydratedRecord(in record, in playerAup))
                     QueueRecordForDehydration(recordIndex);
             }
 
@@ -1126,6 +1163,7 @@ namespace Hecton8.World
 
                             PersistentWorldItemRecord record = _records[recordIndex];
                             if (record.IsCollected ||
+                                record.IsFloraDestroyed ||
                                 _hydratedInstancesByRecordIndex.ContainsKey(recordIndex) ||
                                 !ShouldHydrateDehydratedRecord(in record, in playerAup))
                             {
@@ -1168,7 +1206,7 @@ namespace Hecton8.World
 
         private bool HydrateRecord(int recordIndex, in PersistentWorldItemRecord record)
         {
-            if (record.IsCollected || _hydratedInstancesByRecordIndex.ContainsKey(recordIndex))
+            if (record.IsCollected || record.IsFloraDestroyed || _hydratedInstancesByRecordIndex.ContainsKey(recordIndex))
                 return false;
 
             if (!TryGetPoolIndex(in record, out int poolIndex))
@@ -1377,7 +1415,7 @@ namespace Hecton8.World
 
         private bool ShouldHydrateDehydratedRecord(in PersistentWorldItemRecord record, in AbsoluteUniversePosition playerAup)
         {
-            if (record.IsCollected)
+            if (record.IsCollected || record.IsFloraDestroyed)
                 return false;
 
             AbsoluteUniversePosition recordAup = ResolveResidencyPosition(in record);
@@ -1386,7 +1424,7 @@ namespace Hecton8.World
 
         private bool ShouldKeepHydratedRecord(in PersistentWorldItemRecord record, in AbsoluteUniversePosition playerAup)
         {
-            if (record.IsCollected)
+            if (record.IsCollected || record.IsFloraDestroyed)
                 return false;
 
             AbsoluteUniversePosition recordAup = ResolveResidencyPosition(in record);
@@ -2626,6 +2664,44 @@ namespace Hecton8.World
             while (_deltaRecordsByChunk.TryGetNextValue(out compactRecord, ref iterator));
 
             return copiedCount;
+        }
+
+        internal int CopyDestroyedFloraDeltas(NativeList<PersistentWorldDeltaRecord> destination)
+        {
+            if (!destination.IsCreated || !_deltaRecords.IsCreated)
+                return 0;
+
+            int copiedCount = 0;
+            for (int i = 0; i < _deltaRecords.Length; i++)
+            {
+                if (!TryResolveDeltaRecord(_deltaRecords[i], out PersistentWorldDeltaRecord expandedRecord))
+                    continue;
+
+                if (((PersistentWorldItemFlags)expandedRecord.ItemFlags & PersistentWorldItemFlags.FloraDestroyed) == 0)
+                    continue;
+
+                if (destination.Length >= destination.Capacity)
+                    break;
+
+                destination.AddNoResize(expandedRecord);
+                copiedCount++;
+            }
+
+            return copiedCount;
+        }
+
+        private bool ContainsRecordInstanceUid(uint instanceUid)
+        {
+            if (instanceUid == 0u || !_records.IsCreated)
+                return false;
+
+            for (int i = 0; i < _records.Length; i++)
+            {
+                if (_records[i].InstanceUid == instanceUid)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool TryBuildCompactDeltaRecord(in PersistentWorldItemRecord record, out PersistentWorldCompactDeltaRecord compactRecord)

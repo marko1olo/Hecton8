@@ -1,3 +1,4 @@
+using System;
 using Hecton.Localization;
 using UnityEngine;
 
@@ -60,6 +61,16 @@ namespace Hecton8.Quest
         [SerializeField] public QuestCompletionType completionType = QuestCompletionType.Manual;
         [SerializeField] public string completionId;
         [SerializeField] public float completionValue;
+
+        [Header("── Graph ────────────────────────────────")]
+        [Tooltip("Quest IDs that must already be completed before this quest may activate.")]
+        [SerializeField] public string[] prerequisiteQuestIds = Array.Empty<string>();
+
+        [Tooltip("Critical item persistent ID that reverts this quest if lost after completion. Leave empty to infer from completionId when completionType is OnItemCollected.")]
+        [SerializeField] public string criticalItemId;
+
+        [Tooltip("Stable respawn event ID raised when a critical item must be re-spawned after destruction or discard.")]
+        [SerializeField] public string respawnEventId;
 
         [Header("── Flags ────────────────────────────────")]
         [SerializeField] public bool autoActivateOnStart;

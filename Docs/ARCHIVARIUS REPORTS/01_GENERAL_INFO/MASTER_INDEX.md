@@ -17,9 +17,9 @@ It replaces stale references to renamed, moved, or obsolete reports.
 | Bucket | Count |
 |---|---:|
 | `01_GENERAL_INFO` markdown files | 13 |
-| `02_ACTUAL_REPORTS` markdown files | 31 |
+| `02_ACTUAL_REPORTS` markdown files | 32 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| **Total files covered by this index** | **45** |
+| **Total files covered by this index** | **46** |
 
 ---
 
@@ -37,7 +37,7 @@ It replaces stale references to renamed, moved, or obsolete reports.
 | `INTERFACE_CONTRACT_TABLE.md` | Verified interface-to-implementor table |
 | `INTERFACE_STRATEGY.md` | Interface cleanup and ownership strategy |
 | `MASTER_INDEX.md` | This file |
-| `PROJECT_ATLAS.md` | Broad project atlas; partially corrected, still mixed-quality |
+| `PROJECT_ATLAS.md` | Live workspace atlas rebuilt against current file-system state |
 | `STRUCTURAL_NARRATIVE.md` | One-frame code-walk narrative; not a measured profiler report |
 | `SYSTEM_INTERCONNECT_MATRIX.md` | AUP-sensitive interconnect matrix |
 
@@ -49,7 +49,7 @@ It replaces stale references to renamed, moved, or obsolete reports.
 
 | File | Role |
 |---|---|
-| `EVENT_FLOW_MAP.md` | Static event-flow and signal mapping |
+| `EVENT_FLOW_MAP.md` | Source-backed event topology for current first-party code |
 | `INTERFACE_HEALTH_DASHBOARD.md` | Interface health summary corrected against live code |
 | `SINGLETON_FIX_PRIORITY.md` | Singleton remediation roadmap |
 | `SINGLETON_VIOLATIONS.md` | Singleton violation inventory |
@@ -68,7 +68,7 @@ It replaces stale references to renamed, moved, or obsolete reports.
 | `RENDERGRAPH_AUDIT.md` | RenderGraph lifetime audit |
 | `COMPUTE_BUFFER_AUDIT.md` | GraphicsBuffer / ComputeBuffer lifecycle audit |
 | `2026-04-28_MEMORY_ALIGNMENT_FIX.md` | Struct alignment remediation notes |
-| `2026-04-28_PROFILING_PREPAREDNESS_AUDIT.md` | Profiler coverage audit |
+| `2026-04-28_PROFILING_PREPAREDNESS_AUDIT.md` | Source-backed profiler-marker readiness snapshot |
 
 ### Data / Assets / Content
 
@@ -77,7 +77,7 @@ It replaces stale references to renamed, moved, or obsolete reports.
 | `2026-04-28_DATA_DICTIONARY.md` | Structs, layouts, alignment findings |
 | `2026-04-28_ASSET_DEPENDENCY_MAP.md` | Dated asset dependency report |
 | `ITEM_ASSET_GUIDS.md` | Item prefab GUID lookup table |
-| `2026-04-28_DEAD_ASSET_SWEEP.md` | Dead-asset sweep |
+| `2026-04-28_DEAD_ASSET_SWEEP.md` | Filesystem-only dead-asset candidate sweep with deletion claims downgraded |
 | `DEAD_CODE_GRAVEYARD.md` | Dead-code registry |
 | `vram_detail.csv` | Raw VRAM detail dataset backing the budget audit |
 
@@ -88,11 +88,12 @@ It replaces stale references to renamed, moved, or obsolete reports.
 | `2026-04-28_SUPREME_AUDITOR_REPORT.md` | Large static audit bundle |
 | `2026-04-28_DEEP_FORENSIC_AUDIT.md` | Deep static archaeology report |
 | `2026-04-28_ETA2_SUPREME_SUMMARY.md` | ETA2 summary report |
+| `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | This reverification pass over folders `01` and `02` |
 | `2026-04-28_LIAR_DETECTION.md` | Claim-vs-code liar detection |
-| `2026-04-28_HOT_PATH_VIOLATIONS.md` | Zero-GC hot-path violations |
-| `2026-04-28_EVENT_LEAK_REPORT.md` | Event subscription leak report |
-| `2026-04-28_CIRCULAR_DEPS.md` | Circular dependency scan |
-| `2026-04-28_CYRILLIC_SWEEP.md` | Cyrillic / non-ASCII scan |
+| `2026-04-28_HOT_PATH_VIOLATIONS.md` | Current-source hot-path and architecture debt snapshot |
+| `2026-04-28_EVENT_LEAK_REPORT.md` | Current-source `HectonEventBus` subscription hygiene snapshot |
+| `2026-04-28_CIRCULAR_DEPS.md` | Current asmdef dependency snapshot |
+| `2026-04-28_CYRILLIC_SWEEP.md` | Measured non-ASCII asset-path sweep |
 | `AGENTS_SKILLS_AUDIT.md` | `.agents-skills` coverage audit |
 | `AUDIO_ROUTING_AUDIT.md` | Audio routing ownership audit |
 | `DEBUG_LOG_DELETION_QUEUE.md` | Debug log cleanup queue |

@@ -86,6 +86,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float4 color : COLOR;
                 float2 uv : TEXCOORD0;
             };
 
@@ -378,15 +379,27 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return originWS + billboardRight * (localPosition.x * widthAtHeight) + billboardUp * (heightMask * heightScale);
             }
 
-            float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float2 uv, float4x4 instanceMatrix, float4 instanceData, float timeValue, float3 cameraPositionWS)
+            float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale, float timeValue)
+            {
+                if (encodedHeightScale >= 0.0)
+                    return 0.0;
+
+                return saturate((timeValue - max(0.0, encodedWidthScale)) / 0.85);
+            }
+
+            float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float4 color, float2 uv, float4x4 instanceMatrix, float4 instanceData, float timeValue, float3 cameraPositionWS)
             {
                 float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)) + _GlobalFloatingOffset.xyz;
                 float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
-                float heightScale = saturate(instanceData.y);
-                float widthScale = max(0.2, instanceData.z);
+                float encodedHeightScale = instanceData.y;
+                float encodedWidthScale = instanceData.z;
+                float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
+                float heightScale = saturate(abs(encodedHeightScale));
+                float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
                 float variation = frac(instanceData.w);
                 float heightMask = saturate(uv.y);
                 float bendMask = heightMask * heightMask;
+                float curvatureMask = saturate(color.a);
                 float instanceNoise = Hash21(originWS.xz + variation);
                 float instanceHeight;
                 float instanceWidth;
@@ -434,6 +447,13 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     animatedPositionWS += flowSynchronyOffset * 0.85;
                 }
 
+                if (entropyProgress > 0.0001)
+                {
+                    float entropyWeight = saturate(entropyProgress * lerp(0.22, 1.0, heightMask) * lerp(0.35, 1.0, curvatureMask));
+                    animatedPositionWS = lerp(animatedPositionWS, originWS + driftOffsetWS, entropyWeight * 0.72);
+                    animatedPositionWS.y -= entropyWeight * instanceHeight * lerp(0.08, 0.42, heightMask);
+                }
+
                 return animatedPositionWS;
             }
 
@@ -448,9 +468,9 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 float4 instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
 
-                float3 currentPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, _Time.y, _WorldSpaceCameraPos);
+                float3 currentPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.color, input.uv, instanceMatrix, instanceData, _Time.y, _WorldSpaceCameraPos);
                 float previousTime = _Time.y - unity_DeltaTime.x;
-                float3 previousPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, previousTime, _HectonPreviousCameraPosition);
+                float3 previousPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.color, input.uv, instanceMatrix, instanceData, previousTime, _HectonPreviousCameraPosition);
                 output.positionWS = currentPositionWS;
                 output.vegetationData = float2(clamp(round(instanceData.x), 0.0, 2.0), saturate(input.uv.y));
 

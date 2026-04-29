@@ -1,0 +1,2138 @@
+﻿diff --git a/Assets/_Project/Data/Tools/ToolMetadata_Flashlight.asset b/Assets/_Project/Data/Tools/ToolMetadata_Flashlight.asset
+index dd36eabb..d608c51f 100644
+--- a/Assets/_Project/Data/Tools/ToolMetadata_Flashlight.asset
++++ b/Assets/_Project/Data/Tools/ToolMetadata_Flashlight.asset
+@@ -27,6 +27,13 @@ MonoBehaviour:
+   - {fileID: 0}
+   - {fileID: 0}
+   - {fileID: 0}
++  defaultModules:
++  - {fileID: 11400000, guid: 4addd39e796324343a05e87e6e1c71f5, type: 2}
++  - {fileID: 11400000, guid: 2a31cdf62be4e0241ac50b0a7a1420d6, type: 2}
++  - {fileID: 0}
++  authoredHeatGenerationRate: 0
++  authoredCooldownRate: 0
++  authoredRecoilImpulse: 0
+   repairCostFull: 5
+   repairResourceID: titanium
+   nameLocKey: TOOL_FLASHLIGHT_NAME
+diff --git a/Assets/_Project/Data/Tools/ToolMetadata_HarpoonLauncher.asset b/Assets/_Project/Data/Tools/ToolMetadata_HarpoonLauncher.asset
+index 2fd3d872..d0bce980 100644
+--- a/Assets/_Project/Data/Tools/ToolMetadata_HarpoonLauncher.asset
++++ b/Assets/_Project/Data/Tools/ToolMetadata_HarpoonLauncher.asset
+@@ -27,6 +27,13 @@ MonoBehaviour:
+   - {fileID: 0}
+   - {fileID: 0}
+   - {fileID: 0}
++  defaultModules:
++  - {fileID: 11400000, guid: 4addd39e796324343a05e87e6e1c71f5, type: 2}
++  - {fileID: 11400000, guid: b2b023f1b5bcd9441932932dc0d6cfb6, type: 2}
++  - {fileID: 0}
++  authoredHeatGenerationRate: 0
++  authoredCooldownRate: 0
++  authoredRecoilImpulse: 18
+   repairCostFull: 9
+   repairResourceID: titanium
+   nameLocKey: TOOL_HARPOON_NAME
+diff --git a/Assets/_Project/Data/Tools/ToolMetadata_LaserCutter.asset b/Assets/_Project/Data/Tools/ToolMetadata_LaserCutter.asset
+index ca3a1303..d0a4ee75 100644
+--- a/Assets/_Project/Data/Tools/ToolMetadata_LaserCutter.asset
++++ b/Assets/_Project/Data/Tools/ToolMetadata_LaserCutter.asset
+@@ -27,6 +27,13 @@ MonoBehaviour:
+   - {fileID: 0}
+   - {fileID: 0}
+   - {fileID: 0}
++  defaultModules:
++  - {fileID: 11400000, guid: 35b8c22c7e63f7349b0f1ee11ccc50b4, type: 2}
++  - {fileID: 11400000, guid: 40e49accd17e21142af2a7d776a6af32, type: 2}
++  - {fileID: 0}
++  authoredHeatGenerationRate: 0.2
++  authoredCooldownRate: 0.3
++  authoredRecoilImpulse: 4
+   repairCostFull: 10
+   repairResourceID: titanium
+   nameLocKey: TOOL_LASER_CUTTER_NAME
+diff --git a/Assets/_Project/Scripts/Construction/BatteryBankModule.cs b/Assets/_Project/Scripts/Construction/BatteryBankModule.cs
+index 54263669..b2bc94ce 100644
+--- a/Assets/_Project/Scripts/Construction/BatteryBankModule.cs
++++ b/Assets/_Project/Scripts/Construction/BatteryBankModule.cs
+@@ -232,5 +232,36 @@ namespace Hecton8.Construction
+             _debugChargeNormalized = ChargeNormalized;
+             _debugPlannedGridPowerWatts = _plannedGridPowerWatts;
+         }
++
++        internal float TryConsumeDirectGridEnergy(float requestedGridEnergyWattSeconds, float reserveFloorNormalized)
++        {
++            if (requestedGridEnergyWattSeconds <= 0f)
++                return 0f;
++
++            float safeCapacity = math.max(1f, energyCapacityWattSeconds);
++            float reserveEnergyFloor = math.saturate(reserveFloorNormalized) * safeCapacity;
++            float safeEfficiency = math.max(0.1f, dischargeEfficiency);
++            float availableStoredEnergy = math.max(0f, _storedEnergyWattSeconds - reserveEnergyFloor);
++            if (availableStoredEnergy <= 0f)
++                return 0f;
++
++            float maxDeliverableByStoredEnergy = availableStoredEnergy * safeEfficiency;
++            float maxDeliverableByPower = math.max(0f, maxDischargePowerWatts) * DispatchDeltaTimeSeconds;
++            float deliveredGridEnergy = math.min(
++                requestedGridEnergyWattSeconds,
++                math.min(maxDeliverableByStoredEnergy, maxDeliverableByPower));
++            if (deliveredGridEnergy <= 0f)
++                return 0f;
++
++            float nextStoredEnergy = math.max(0f, _storedEnergyWattSeconds - (deliveredGridEnergy / safeEfficiency));
++            _pendingHeatLossJoules = ResolvePendingHeatLossJoules(
++                _storedEnergyWattSeconds,
++                nextStoredEnergy,
++                deliveredGridEnergy / DispatchDeltaTimeSeconds);
++            _storedEnergyWattSeconds = nextStoredEnergy;
++            FlushPendingHeatLoss();
++            RefreshDebugState();
++            return deliveredGridEnergy;
++        }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistry.cs b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+index 638bb46b..964a0a9c 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistry.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+@@ -2,6 +2,7 @@ using System;
+ using Hecton8.Gameplay;
+ using Hecton8.Interaction;
+ using Hecton8.Physics;
++using Hecton8.Tools;
+ using UnityEngine;
+ 
+ namespace Hecton8.Core
+@@ -26,6 +27,7 @@ namespace Hecton8.Core
+         private static IUIService _ui;
+         private static IPlayerRuntimeContext _player;
+         private static IPlayerInventoryService _playerInventory;
++        private static IModularEquipmentService _modularEquipment;
+         private static IPlayerSensoryService _playerSensory;
+         private static IEnvironmentRuntimeContext _environment;
+         private static IWeatherService _weather;
+@@ -82,6 +84,11 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IPlayerInventoryService PlayerInventory => _playerInventory;
+ 
++        /// <summary>
++        /// Registered modular-equipment runtime service slot.
++        /// </summary>
++        public static IModularEquipmentService ModularEquipment => _modularEquipment;
++
+         /// <summary>
+         /// Registered player sensory/presentation service slot.
+         /// </summary>
+@@ -184,6 +191,7 @@ namespace Hecton8.Core
+             _ui = null;
+             _player = null;
+             _playerInventory = null;
++            _modularEquipment = null;
+             _playerSensory = null;
+             _environment = null;
+             _weather = null;
+@@ -314,6 +322,14 @@ namespace Hecton8.Core
+             RegisterService(ref _playerInventory, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative modular-equipment runtime service.
++        /// </summary>
++        public static void RegisterModularEquipmentService(IModularEquipmentService instance)
++        {
++            RegisterService(ref _modularEquipment, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative player sensory/presentation service.
+         /// </summary>
+@@ -476,6 +492,14 @@ namespace Hecton8.Core
+             UnregisterService(ref _playerInventory, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current modular-equipment runtime service if the owner matches.
++        /// </summary>
++        public static void UnregisterModularEquipmentService(IModularEquipmentService instance)
++        {
++            UnregisterService(ref _modularEquipment, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current player sensory/presentation service if the owner matches.
+         /// </summary>
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+index 3ad50c76..f60eae49 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+@@ -7,6 +7,7 @@ using Hecton8.Environment;
+ using Hecton8.Gameplay;
+ using Hecton8.Inventory;
+ using Hecton8.Physics;
++using Hecton8.Tools;
+ using Hecton8.UI;
+ using NASAPunk.Visor;
+ using Unity.Mathematics;
+@@ -676,6 +677,68 @@ namespace Hecton8.Core
+         Transform HandAnchor { get; }
+     }
+ 
++    /// <summary>
++    /// Focused modular-equipment runtime service exposed through <see cref="GlobalRegistry"/>.
++    /// Hot-path consumers read compiled tool stats and state from this owner only.
++    /// </summary>
++    public interface IModularEquipmentService
++    {
++        /// <summary>
++        /// True once the service has completed bootstrap registration.
++        /// </summary>
++        bool IsInitialized { get; }
++
++        /// <summary>
++        /// Registers or refreshes one active handheld tool and returns its stable runtime ID.
++        /// </summary>
++        uint RegisterTool(PlayerTool tool);
++
++        /// <summary>
++        /// Unregisters one active handheld tool.
++        /// </summary>
++        void UnregisterTool(PlayerTool tool, uint toolId);
++
++        /// <summary>
++        /// Returns the current tool-state snapshot when the tool is active.
++        /// </summary>
++        bool TryGetToolState(uint toolId, out ToolState state);
++
++        /// <summary>
++        /// Returns the current compiled stat snapshot when the tool is active.
++        /// </summary>
++        bool TryGetToolStats(uint toolId, out ToolRuntimeStats stats);
++
++        /// <summary>
++        /// Installs one module into the active tool runtime and recompiles its bitmask-backed stats.
++        /// </summary>
++        bool TryInstallModule(uint toolId, ToolModuleData module);
++
++        /// <summary>
++        /// Removes one module from the active tool runtime and recompiles its bitmask-backed stats.
++        /// </summary>
++        bool TryRemoveModule(uint toolId, string moduleId);
++
++        /// <summary>
++        /// Returns true when the supplied upgrade flag is active on the tool.
++        /// </summary>
++        bool HasUpgrade(uint toolId, ToolUpgradeBits flag);
++
++        float GetMaxRange(uint toolId, float fallback);
++        float GetPowerScalar(uint toolId, float fallback);
++        float GetEfficiencyScalar(uint toolId, float fallback);
++        float GetSpeedScalar(uint toolId, float fallback);
++        float GetHeatGenerationRate(uint toolId, float fallback);
++        float GetCooldownRate(uint toolId, float fallback);
++        float GetBatteryDrainPerSecond(uint toolId, float fallback);
++        float GetDurabilityDrainMultiplier(uint toolId, float fallback);
++        float GetRecoilImpulse(uint toolId, float fallback);
++        float GetBatteryNormalized(uint toolId, float fallback);
++        void SetBattery(uint toolId, float normalizedBattery);
++        void ConsumeBattery(uint toolId, float normalizedBatteryDelta);
++        void SetHeat(uint toolId, float normalizedHeat);
++        void SetDurability(uint toolId, float normalizedDurability);
++    }
++
+     /// <summary>
+     /// Focused player sensory/presentation context extracted from the player god object.
+     /// Consumers should prefer this service over root-player component scraping.
+diff --git a/Assets/_Project/Scripts/Core/PowerGridRuntimeService.cs b/Assets/_Project/Scripts/Core/PowerGridRuntimeService.cs
+index a266cc4b..ae6d1745 100644
+--- a/Assets/_Project/Scripts/Core/PowerGridRuntimeService.cs
++++ b/Assets/_Project/Scripts/Core/PowerGridRuntimeService.cs
+@@ -34,5 +34,11 @@ namespace Hecton8.Core
+ 
+         /// <summary>Aggregate battery state across all grids.</summary>
+         BatteryRuntimeSnapshot BatterySnapshot { get; }
++
++        /// <summary>
++        /// Queues one submarine-only wireless tool-drain request against the power runtime.
++        /// The request is accounted by the power owner on its next logistics evaluation.
++        /// </summary>
++        bool TryQueueWirelessToolDrain(float energyWattSeconds, out float grantedEnergyWattSeconds);
+     }
+ }
+diff --git a/Assets/_Project/Scripts/FlashlightTool.cs b/Assets/_Project/Scripts/FlashlightTool.cs
+index 3b3a2618..144ce33a 100644
+--- a/Assets/_Project/Scripts/FlashlightTool.cs
++++ b/Assets/_Project/Scripts/FlashlightTool.cs
+@@ -95,6 +95,7 @@ namespace Hecton8.Gameplay
+ 
+             UpdateBatteryVisuals();
+             UpdatePowerIndicator();
++            SyncModularBattery();
+ 
+             return removed;
+         }
+@@ -112,6 +113,7 @@ namespace Hecton8.Gameplay
+ 
+             UpdateBatteryVisuals();
+             UpdatePowerIndicator();
++            SyncModularBattery();
+ 
+             return true;
+         }
+@@ -178,6 +180,19 @@ namespace Hecton8.Gameplay
+             InvalidateSnapshotCache();
+         }
+ 
++        internal override float ResolveModularBatteryNormalized()
++        {
++            return _installedBattery != null ? Mathf.Clamp01(_batteryCharge) : 0f;
++        }
++
++        protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
++        {
++            profile.MaxRange = Mathf.Max(0.1f, contextProbeRange);
++            profile.PowerScalar = 1f;
++            profile.BatteryCapacity = 1f;
++            profile.BatteryDrainPerSecond = Metadata != null ? Mathf.Max(0f, Metadata.GetTotalEnergyConsumption()) : 0.02f;
++        }
++
+         public override void OnUnequip()
+         {
+             if (autoTurnOffOnUnequip &&
+@@ -204,6 +219,17 @@ namespace Hecton8.Gameplay
+             if (!TryResolveFlashlight())
+                 return;
+ 
++            if (!_flashlight.IsOn && (_installedBattery == null || _batteryCharge <= 0f))
++            {
++                PublishAssessment(new LampAssessment(
++                    "DIVE LAMP - CELL DEPLETED",
++                    "No charged battery module is available for lamp startup.",
++                    "Insert a charged cell or route power before deployment.",
++                    "WARN"));
++                InvalidateSnapshotCache();
++                return;
++            }
++
+             if (_flashlight.IsOverheated)
+             {
+                 InvalidateSnapshotCache();
+@@ -275,6 +301,38 @@ namespace Hecton8.Gameplay
+ 
+             if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
+                 _secondaryLatched = false;
++
++            if (!TryResolveFlashlight())
++                return;
++
++            if (_flashlight.IsOn && (_installedBattery == null || _batteryCharge <= 0f))
++            {
++                _flashlight.TurnOff();
++                _batteryCharge = 0f;
++                UpdatePowerIndicator();
++                SyncModularBattery();
++                InvalidateSnapshotCache();
++                return;
++            }
++
++            if (_flashlight.IsOn && _installedBattery != null && _batteryCharge > 0f)
++            {
++                _batteryCharge = Mathf.Max(0f, _batteryCharge - (GetEnergyConsumption() * deltaTime));
++                UpdatePowerIndicator();
++                SyncModularBattery();
++                InvalidateSnapshotCache();
++
++                if (_batteryCharge <= 0f)
++                {
++                    _batteryCharge = 0f;
++                    _flashlight.TurnOff();
++                    PublishAssessment(new LampAssessment(
++                        "DIVE LAMP - CELL DEPLETED",
++                        "Active battery module reached zero charge during lamp operation.",
++                        "Swap the cell or route external power before relight.",
++                        "WARN"));
++                }
++            }
+         }
+ 
+         private void ResolveRuntimeReferences()
+diff --git a/Assets/_Project/Scripts/HarpoonLauncherTool.cs b/Assets/_Project/Scripts/HarpoonLauncherTool.cs
+index 8d979f4d..b4b8d96e 100644
+--- a/Assets/_Project/Scripts/HarpoonLauncherTool.cs
++++ b/Assets/_Project/Scripts/HarpoonLauncherTool.cs
+@@ -1,6 +1,7 @@
+ using Hecton8.AI;
+ using Hecton.Localization;
+ using Hecton8.Physics;
++using Hecton8.Tools;
+ using UnityEngine;
+ 
+ namespace Hecton8.Gameplay
+@@ -74,6 +75,7 @@ namespace Hecton8.Gameplay
+         private Collider _tetheredCollider;
+         private HeavyTowWinch _heavyTowWinch;
+         private HectonPlayerMovement _playerMovement;
++        private Rigidbody _playerRigidbody;
+         private string _tetheredName;
+         private string _tetheredNameUpper;
+         private Collider _grappleAnchorCollider;
+@@ -94,6 +96,13 @@ namespace Hecton8.Gameplay
+             SetTracer(false, Vector3.zero);
+         }
+ 
++        protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
++        {
++            profile.MaxRange = Mathf.Max(0.1f, range);
++            profile.PowerScalar = Mathf.Max(0.1f, damage);
++            profile.RecoilImpulse = Mathf.Max(0f, impulse);
++        }
++
+         public override void UsePrimary(float deltaTime)
+         {
+             base.UsePrimary(deltaTime);
+@@ -103,14 +112,16 @@ namespace Hecton8.Gameplay
+             if (!IsEquipped || _cooldown > 0f)
+                 return;
+ 
+-            Vector3 endPoint = _cachedTransform.position + _cachedTransform.forward * range;
++            float runtimeRange = GetRuntimeMaxRange(range);
++            float runtimeDamage = GetRuntimePowerScalar(damage);
++            Vector3 endPoint = _cachedTransform.position + _cachedTransform.forward * runtimeRange;
+ 
+             if (TryGetTargetHit(out RaycastHit hit))
+             {
+                 endPoint = hit.point;
+                 ToolHitUtility.ApplyDamage(
+                     hit.collider,
+-                    damage * GetEfficiency(),
++                    runtimeDamage * GetEfficiency(),
+                     hit.point,
+                     _cachedTransform.forward,
+                     impulse);
+@@ -173,6 +184,7 @@ namespace Hecton8.Gameplay
+                 _nextFeedbackAt = Time.time + feedbackInterval;
+             }
+ 
++            ApplyLaunchRecoil(_cachedTransform.forward, runtimeDamage);
+             SetTracer(true, endPoint);
+             _tracerTimer = tracerLifetime;
+             _cooldown = shotCooldown / Mathf.Max(0.25f, GetSpeed());
+@@ -393,6 +405,9 @@ namespace Hecton8.Gameplay
+         {
+             if (_playerMovement == null)
+                 _playerMovement = GetComponentInParent<HectonPlayerMovement>();
++
++            if (_playerRigidbody == null)
++                _playerRigidbody = GetComponentInParent<Rigidbody>();
+         }
+ 
+         private void WarnReel(string message)
+@@ -603,7 +618,26 @@ namespace Hecton8.Gameplay
+ 
+         private bool TryGetTargetHit(out RaycastHit hit)
+         {
+-            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
++            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, GetRuntimeMaxRange(range), targetMask.value, QueryTriggerInteraction.Ignore, out hit);
++        }
++
++        private void ApplyLaunchRecoil(Vector3 direction, float runtimeDamage)
++        {
++            ResolvePlayerMovement();
++            if (_playerRigidbody == null)
++                return;
++
++            Vector3 safeDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : _cachedTransform.forward;
++            float mass = Mathf.Max(_playerRigidbody.mass, 0.1f);
++            float runtimeRecoil = GetRuntimeRecoilImpulse(impulse);
++            float impulseMagnitude = Mathf.Min(12f, (runtimeRecoil * Mathf.Max(0.1f, runtimeDamage / Mathf.Max(damage, 0.1f))) / mass);
++            if (impulseMagnitude <= 0.0001f)
++                return;
++
++            if (ToolHitUtility.TryApplyRelativeCarrierImpulse(safeDirection, impulseMagnitude))
++                return;
++
++            PhysicsForceRouter.QueueForce(_playerRigidbody, -safeDirection * impulseMagnitude, ForceMode.Impulse);
+         }
+ 
+         private bool TryGetAssessmentCached(out HarpoonAssessment assessment)
+diff --git a/Assets/_Project/Scripts/LaserCutter.cs b/Assets/_Project/Scripts/LaserCutter.cs
+index 891c270c..a59fe5ad 100644
+--- a/Assets/_Project/Scripts/LaserCutter.cs
++++ b/Assets/_Project/Scripts/LaserCutter.cs
+@@ -26,6 +26,7 @@ namespace Hecton8.Gameplay
+     using Hecton.Localization;
+     using Hecton8.Physics;
+     using Hecton8.Scavenging;
++    using Hecton8.Tools;
+     using Hecton8.World;
+     using EquipmentInteractionPacket = Hecton8.Interaction.InteractionPacket;
+     using EquipmentInteractionSignal = Hecton8.Interaction.InteractionSignal;
+@@ -256,6 +257,20 @@ namespace Hecton8.Gameplay
+         /// <summary>Is the tool currently in overheat lockout.</summary>
+         public bool IsOverheated => _isLockedOut;
+ 
++        internal override float ResolveModularHeatNormalized()
++        {
++            return _heatLevel;
++        }
++
++        protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
++        {
++            profile.MaxRange = Mathf.Max(0.1f, maxRange);
++            profile.PowerScalar = Mathf.Max(0.1f, damagePerSecond);
++            profile.HeatGenerationRate = 1f / math.max(overheatTime, 0.1f);
++            profile.CooldownRate = Mathf.Max(0f, cooldownRate);
++            profile.RecoilImpulse = Mathf.Max(0f, recoilImpulseBase);
++        }
++
+         public bool DebugRecoverModule(BaseModule module)
+         {
+             if (module == null || !module.CanDeconstruct())
+@@ -364,11 +379,12 @@ namespace Hecton8.Gameplay
+             _isFiring = true;
+             PublishBeamState(true);
+ 
+-            _heatLevel += deltaTime / math.max(overheatTime, 0.1f);
++            _heatLevel += deltaTime * GetRuntimeHeatGenerationRate(1f / math.max(overheatTime, 0.1f));
+ 
+             if (_heatLevel >= 1f)
+             {
+                 _heatLevel = 1f;
++                SyncModularHeat(_heatLevel);
+                 TriggerOverheatLockout();
+                 return;
+             }
+@@ -401,6 +417,7 @@ namespace Hecton8.Gameplay
+                 ApplyOpenWaterBoil(deltaTime);
+             }
+ 
++            SyncModularHeat(_heatLevel);
+             PublishHeat();
+         }
+ 
+@@ -439,25 +456,28 @@ namespace Hecton8.Gameplay
+                 _lockoutTimer = math.max(0f, _lockoutTimer - deltaTime);
+                 if (_lockoutTimer <= 0f)
+                 {
+-                    _isLockedOut = false;
+-                    _lockoutSoundPlayed = false;
+-                    _heatLevel = math.min(_heatLevel, 0.8f);
+-                    ClearFlag(OverheatedState);
+-                    EnterCooldownState();
+-                    PublishHeat();
+-                    ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
+-                }
+-            }
++                      _isLockedOut = false;
++                      _lockoutSoundPlayed = false;
++                      _heatLevel = math.min(_heatLevel, 0.8f);
++                      ClearFlag(OverheatedState);
++                      EnterCooldownState();
++                      SyncModularHeat(_heatLevel);
++                      PublishHeat();
++                      ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
++                  }
++              }
+ 
+             if (!_isFiring && !_isLockedOut)
+             {
+-                if (_heatLevel > 0f)
+-                {
+-                    _heatLevel = math.max(0f, _heatLevel - deltaTime * cooldownRate * (1f + ResolvePassiveCoolingBonus()));
+-                    EnterCooldownState();
+-                    PublishHeat();
+-                }
+-                else
++                  if (_heatLevel > 0f)
++                  {
++                      float runtimeCooldown = GetRuntimeCooldownRate(cooldownRate);
++                      _heatLevel = math.max(0f, _heatLevel - deltaTime * runtimeCooldown * (1f + ResolvePassiveCoolingBonus()));
++                      EnterCooldownState();
++                      SyncModularHeat(_heatLevel);
++                      PublishHeat();
++                  }
++                  else
+                 {
+                     Deactivate();
+                 }
+@@ -603,7 +623,8 @@ namespace Hecton8.Gameplay
+             }
+ 
+             float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
+-            float damage = damagePerSecond * deltaTime * powerScale * heatMultiplier;
++            float runtimePower = GetRuntimePowerScalar(damagePerSecond);
++            float damage = runtimePower * deltaTime * powerScale * heatMultiplier;
+             if (damage <= 0f)
+                 return;
+ 
+@@ -615,7 +636,7 @@ namespace Hecton8.Gameplay
+ 
+             Vector3 absoluteOrigin = ResolveAbsoluteUniversePoint(_cachedTransform.position);
+             Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
+-            float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
++            float normalizedPower = ResolveNormalizedPower((runtimePower / math.max(damagePerSecond, 0.0001f)) * powerScale, heatMultiplier);
+             if (normalizedPower < MinEffectiveBeamPower)
+             {
+                 SetFlag(LowPowerState);
+@@ -628,7 +649,7 @@ namespace Hecton8.Gameplay
+                 new float3(absoluteOrigin.x, absoluteOrigin.y, absoluteOrigin.z),
+                 new float3(direction.x, direction.y, direction.z),
+                 normalizedPower,
+-                maxRange,
++                GetRuntimeMaxRange(maxRange),
+                 (byte)ToolActionMode.Primary,
+                 _toolStateFlags,
+                 (uint)Time.frameCount);
+@@ -652,6 +673,10 @@ namespace Hecton8.Gameplay
+                     cutManager.RegisterExternalCut(_hitInfo.point, terrainDamageRadius, normalizedPower, direction, 0.1f);
+                 }
+ 
++                DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
++                if (organicManager != null)
++                    organicManager.TryApplyToolHit(_hitInfo.point, _hitInfo.normal, direction, damage, normalizedPower);
++
+                 ApplyRecoilImpulse(direction, normalizedPower);
+             }
+         }
+@@ -672,7 +697,8 @@ namespace Hecton8.Gameplay
+                 powerScale *= LowPowerOutputScale;
+ 
+             float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
+-            float cutStrength = damagePerSecond * deltaTime * powerScale * heatMultiplier * math.max(0f, waterHeatCouplingScale);
++            float runtimePower = GetRuntimePowerScalar(damagePerSecond);
++            float cutStrength = runtimePower * deltaTime * powerScale * heatMultiplier * math.max(0f, waterHeatCouplingScale);
+             if (cutStrength <= 0f)
+                 return;
+ 
+@@ -682,11 +708,12 @@ namespace Hecton8.Gameplay
+             else
+                 direction.Normalize();
+ 
+-            float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
++            float normalizedPower = ResolveNormalizedPower((runtimePower / math.max(damagePerSecond, 0.0001f)) * powerScale, heatMultiplier);
+             if (normalizedPower < MinEffectiveBeamPower)
+                 return;
+ 
+-            Vector3 samplePoint = _cachedTransform.position + (direction * math.min(maxRange, 8f));
++            float runtimeRange = GetRuntimeMaxRange(maxRange);
++            Vector3 samplePoint = _cachedTransform.position + (direction * math.min(runtimeRange, 8f));
+             fluidDynamics.InjectLocalizedWaterHeat(samplePoint, direction, cutStrength, normalizedPower);
+         }
+ 
+@@ -985,7 +1012,7 @@ namespace Hecton8.Gameplay
+             }
+             else
+             {
+-                laserLine.SetPosition(1, Vector3.forward * maxRange);
++                laserLine.SetPosition(1, Vector3.forward * GetRuntimeMaxRange(maxRange));
+             }
+         }
+ 
+@@ -1166,7 +1193,7 @@ namespace Hecton8.Gameplay
+         {
+             IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
+             if (interactionService != null && interactionService.IsInitialized)
+-                return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, maxRange, ResolveCuttableRaycastMask(), QueryTriggerInteraction.Ignore, out hit);
++                return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, GetRuntimeMaxRange(maxRange), ResolveCuttableRaycastMask(), QueryTriggerInteraction.Ignore, out hit);
+ 
+             hit = default;
+             return false;
+@@ -1251,7 +1278,8 @@ namespace Hecton8.Gameplay
+ 
+             float mass = Mathf.Max(_cachedPlayerRigidbody.mass, 0.1f);
+             float recoilScale = _cachedPlayerMovement != null && _cachedPlayerMovement.IsPlayerSubmerged ? submergedRecoilScale : 1f;
+-            float impulseMagnitude = Mathf.Min(MaxRecoilImpulse, (recoilImpulseBase * normalizedPower * recoilScale) / mass);
++            float runtimeRecoil = GetRuntimeRecoilImpulse(recoilImpulseBase);
++            float impulseMagnitude = Mathf.Min(MaxRecoilImpulse, (runtimeRecoil * normalizedPower * recoilScale) / mass);
+             if (impulseMagnitude <= 0.0001f)
+                 return;
+ 
+diff --git a/Assets/_Project/Scripts/PlayerTool.cs b/Assets/_Project/Scripts/PlayerTool.cs
+index a2d22486..e87b327f 100644
+--- a/Assets/_Project/Scripts/PlayerTool.cs
++++ b/Assets/_Project/Scripts/PlayerTool.cs
+@@ -126,6 +126,8 @@ namespace Hecton8.Gameplay
+         private string _cachedOperationalToolName;
+         private float _lastUseTime = float.NegativeInfinity;
+         private ulong _queuedRaycastRequesterId;
++        private uint _runtimeToolId;
++        private bool _runtimeToolRegistered;
+ 
+         // ══════════════════════════════════════════════════════════
+         //  IPoolable
+@@ -153,11 +155,14 @@ namespace Hecton8.Gameplay
+         {
+             LogLifecycleDebug($"{GetType().Name}.OnDespawn");
+             if (IsEquipped) OnUnequip();
++            UnregisterModularRuntime();
+             IsEquipped = false;
+             _lowDurabilityWarningFired = false;
+             _lastUseTime = float.NegativeInfinity;
+             _cachedOperationalToolName = null;
+             _queuedRaycastRequesterId = 0UL;
++            _runtimeToolId = 0u;
++            _runtimeToolRegistered = false;
+         }
+ 
+         protected void RefreshQueuedRaycastRequesterId()
+@@ -190,6 +195,10 @@ namespace Hecton8.Gameplay
+             _lowDurabilityWarningFired = false;
+             var system = ToolDurabilitySystem.Instance;
+             if (system != null && _toolMetadata != null) system.OnToolBroken += HandleToolBroken;
++            EnsureModularRuntimeRegistration();
++            SyncModularBattery();
++            SyncModularHeat(ResolveModularHeatNormalized());
++            SyncModularDurability();
+         }
+ 
+         public virtual void OnUnequip()
+@@ -197,6 +206,7 @@ namespace Hecton8.Gameplay
+             IsEquipped = false;
+             var system = ToolDurabilitySystem.Instance;
+             if (system != null && _toolMetadata != null) system.OnToolBroken -= HandleToolBroken;
++            UnregisterModularRuntime();
+         }
+ 
+         public virtual void UsePrimary(float deltaTime)
+@@ -274,9 +284,71 @@ namespace Hecton8.Gameplay
+         //  PROTECTED — STAT MODIFIERS
+         // ══════════════════════════════════════════════════════════
+ 
+-        protected float GetEfficiency() => _toolMetadata == null ? 1f : _toolMetadata.GetTotalEfficiency();
+-        protected float GetSpeed() => _toolMetadata == null ? 1f : _toolMetadata.GetTotalSpeed();
+-        protected float GetEnergyConsumption() => _toolMetadata == null ? 0f : _toolMetadata.GetTotalEnergyConsumption();
++        protected float GetEfficiency()
++        {
++            float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalEfficiency();
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetEfficiencyScalar(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected float GetSpeed()
++        {
++            float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalSpeed();
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetSpeedScalar(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected float GetEnergyConsumption()
++        {
++            float fallback = _toolMetadata == null ? 0f : _toolMetadata.GetTotalEnergyConsumption();
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetBatteryDrainPerSecond(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected float GetRuntimeMaxRange(float fallback)
++        {
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetMaxRange(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected float GetRuntimePowerScalar(float fallback)
++        {
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetPowerScalar(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected float GetRuntimeHeatGenerationRate(float fallback)
++        {
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetHeatGenerationRate(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected float GetRuntimeCooldownRate(float fallback)
++        {
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetCooldownRate(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected float GetRuntimeRecoilImpulse(float fallback)
++        {
++            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetRecoilImpulse(_runtimeToolId, fallback)
++                : fallback;
++        }
++
++        protected bool HasModularUpgrade(ToolUpgradeBits flag)
++        {
++            return TryGetModularEquipment(out IModularEquipmentService service) &&
++                   _runtimeToolRegistered &&
++                   service.HasUpgrade(_runtimeToolId, flag);
++        }
+ 
+         protected float GetConditionPerformanceScale()
+         {
+@@ -295,20 +367,35 @@ namespace Hecton8.Gameplay
+             var system = ToolDurabilitySystem.Instance;
+             if (system == null || _toolMetadata == null) return;
+             float drainRate = isPrimary ? _toolMetadata.durabilityDrainRate : _toolMetadata.durabilityDrainRateSecondary;
+-            float multiplier = 1f;
+-            for (int i = 0; i < _toolMetadata.maxUpgradeSlots && i < _toolMetadata.installedUpgrades.Length; i++)
+-            {
+-                var upgrade = _toolMetadata.installedUpgrades[i];
+-                if (upgrade != null) multiplier *= upgrade.durabilityDrainMultiplier;
+-            }
++            float multiplier = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
++                ? service.GetDurabilityDrainMultiplier(_runtimeToolId, 1f)
++                : 1f;
+             system.DrainDurability(_toolMetadata.toolID, drainRate * multiplier * deltaTime, _toolMetadata.maxDurability);
++            SyncModularDurability();
+         }
+ 
+         private void ApplyEnergyConsumption(float deltaTime)
+         {
+             if (_survivalSystem == null || _toolMetadata == null) return;
+-            int drainAmount = Mathf.FloorToInt(GetEnergyConsumption() * deltaTime);
+-            if (drainAmount > 0) _survivalSystem.DrainEnergy(drainAmount);
++            float requestedDrain = GetEnergyConsumption() * deltaTime;
++            if (requestedDrain <= 0f)
++                return;
++
++            float remainingDrain = requestedDrain;
++            if (HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
++                GlobalRegistry.Submarine != null &&
++                GlobalRegistry.Submarine.AtmosphereSystem != null &&
++                GlobalRegistry.PowerGrid != null &&
++                GlobalRegistry.PowerGrid.TryQueueWirelessToolDrain(requestedDrain, out float grantedDrain))
++            {
++                remainingDrain = Mathf.Max(0f, requestedDrain - grantedDrain);
++            }
++
++            int suitDrainAmount = Mathf.FloorToInt(remainingDrain);
++            if (suitDrainAmount > 0)
++                _survivalSystem.DrainEnergy(suitDrainAmount);
++
++            SyncModularBattery();
+         }
+ 
+         private void CheckLowDurability()
+@@ -328,6 +415,113 @@ namespace Hecton8.Gameplay
+ 
+         protected virtual void OnToolBrokenWhileUsing() { }
+ 
++        internal ToolRuntimeProfile BuildModularRuntimeProfile()
++        {
++            ToolRuntimeProfile profile = new ToolRuntimeProfile
++            {
++                ToolId = ResolveRuntimeToolId(),
++                MaxRange = 1f,
++                PowerScalar = 1f,
++                EfficiencyScalar = _toolMetadata != null ? Mathf.Max(0.1f, _toolMetadata.efficiency) : 1f,
++                SpeedScalar = _toolMetadata != null ? Mathf.Max(0.1f, _toolMetadata.speed) : 1f,
++                HeatGenerationRate = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.authoredHeatGenerationRate) : 0f,
++                CooldownRate = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.authoredCooldownRate) : 0f,
++                BatteryCapacity = 1f,
++                BatteryDrainPerSecond = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.energyConsumptionRate) : 0f,
++                DurabilityDrainMultiplier = 1f,
++                RecoilImpulse = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.authoredRecoilImpulse) : 0f,
++                ModuleSlotCount = (byte)Mathf.Clamp(_toolMetadata != null ? _toolMetadata.maxUpgradeSlots : 0, 0, ToolUpgradeSystem.MaxModuleSlots)
++            };
++
++            ConfigureModularRuntimeProfile(ref profile);
++            return profile;
++        }
++
++        internal int CopyAuthoredModules(ToolModuleData[] destination)
++        {
++            if (destination == null || destination.Length == 0 || _toolMetadata == null)
++                return 0;
++
++            for (int i = 0; i < destination.Length; i++)
++                destination[i] = null;
++
++            return _toolMetadata.CopyDefaultModules(destination);
++        }
++
++        internal virtual float ResolveModularBatteryNormalized()
++        {
++            return _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.EnergyNormalized) : 1f;
++        }
++
++        internal virtual float ResolveModularHeatNormalized()
++        {
++            return 0f;
++        }
++
++        protected virtual void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile) { }
++
++        protected void SyncModularHeat(float normalizedHeat)
++        {
++            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
++                service.SetHeat(_runtimeToolId, normalizedHeat);
++        }
++
++        protected void SyncModularBattery()
++        {
++            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
++                service.SetBattery(_runtimeToolId, ResolveModularBatteryNormalized());
++        }
++
++        protected void SyncModularDurability()
++        {
++            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
++                service.SetDurability(_runtimeToolId, DurabilityNormalized);
++        }
++
++        private uint ResolveRuntimeToolId()
++        {
++            if (_runtimeToolId != 0u)
++                return _runtimeToolId;
++
++            string toolIdSource = _toolMetadata != null && !string.IsNullOrWhiteSpace(_toolMetadata.toolID)
++                ? _toolMetadata.toolID
++                : (_toolData != null && !string.IsNullOrWhiteSpace(_toolData.itemName) ? _toolData.itemName : GetType().Name);
++            _runtimeToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
++            return _runtimeToolId;
++        }
++
++        private void EnsureModularRuntimeRegistration()
++        {
++            if (_runtimeToolRegistered)
++                return;
++
++            ModularEquipmentEngine runtime = ModularEquipmentEngine.EnsureRuntimeInstance();
++            runtime.InitializeService();
++
++            if (!TryGetModularEquipment(out IModularEquipmentService service))
++                return;
++
++            _runtimeToolId = service.RegisterTool(this);
++            _runtimeToolRegistered = _runtimeToolId != 0u;
++        }
++
++        private void UnregisterModularRuntime()
++        {
++            if (!_runtimeToolRegistered)
++                return;
++
++            if (TryGetModularEquipment(out IModularEquipmentService service))
++                service.UnregisterTool(this, _runtimeToolId);
++
++            _runtimeToolRegistered = false;
++        }
++
++        private bool TryGetModularEquipment(out IModularEquipmentService service)
++        {
++            service = GlobalRegistry.ModularEquipment;
++            return service != null && service.IsInitialized;
++        }
++
+         internal ToolMetadata RuntimeMetadata => _toolMetadata;
+         internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= Mathf.Max(0.05f, maxIdleSeconds));
+         private void LogLifecycleDebug(string message) { if (lifecycleDebugLogging) Debug.Log("[ToolLifecycle] " + message); }
+diff --git a/Assets/_Project/Scripts/PowerGrid.cs b/Assets/_Project/Scripts/PowerGrid.cs
+index b954f27f..6ee94116 100644
+--- a/Assets/_Project/Scripts/PowerGrid.cs
++++ b/Assets/_Project/Scripts/PowerGrid.cs
+@@ -213,6 +213,43 @@ namespace Hecton8.Power
+         /// <summary>Read-only access for manager-level membership changes.</summary>
+         public HashSet<PowerNode> Nodes => _nodes;
+ 
++        internal float TryConsumeWirelessToolDemand(float requestedEnergyWattSeconds)
++        {
++            if (requestedEnergyWattSeconds <= 0f || !_hasBatteryBanks || _batteryEmergencyReserveActive)
++                return 0f;
++
++            float remaining = requestedEnergyWattSeconds;
++            int batteryCount = _batteryRefs.Count;
++            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
++            {
++                if (remaining <= 0.0001f)
++                    break;
++
++                BatteryBankModule battery = _batteryRefs[batteryIndex];
++                if (battery == null)
++                    continue;
++
++                remaining -= battery.TryConsumeDirectGridEnergy(remaining, BatteryEmergencyReserveThreshold);
++            }
++
++            _totalBatteryStoredEnergyWattSeconds = 0f;
++            _totalBatteryCapacityWattSeconds = 0f;
++            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
++            {
++                BatteryBankModule battery = _batteryRefs[batteryIndex];
++                if (battery == null)
++                    continue;
++
++                _totalBatteryStoredEnergyWattSeconds += battery.StoredEnergyWattSeconds;
++                _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
++            }
++
++            _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
++                _totalBatteryStoredEnergyWattSeconds,
++                _totalBatteryCapacityWattSeconds);
++            return requestedEnergyWattSeconds - remaining;
++        }
++
+         public PowerGrid(int initialCapacity = 16)
+         {
+             int safeCapacity = math.max(1, initialCapacity);
+diff --git a/Assets/_Project/Scripts/PowerGridManager.cs b/Assets/_Project/Scripts/PowerGridManager.cs
+index 37b0f5ae..116f0d23 100644
+--- a/Assets/_Project/Scripts/PowerGridManager.cs
++++ b/Assets/_Project/Scripts/PowerGridManager.cs
+@@ -53,9 +53,12 @@ namespace Hecton8.Power
+         [SerializeField] private float _debugBatteryCapacityWattSeconds;
+         [SerializeField] private float _debugBatteryChargeNormalized;
+         [SerializeField] private int _debugEmergencyReserveGridCount;
++        [SerializeField] private float _debugPendingWirelessToolDemandWattSeconds;
+ 
+         private bool _dispatcherRegistered;
+         private bool _serviceRegistered;
++        private float _pendingWirelessToolDemandWattSeconds;
++        private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
+ 
+         public BatteryRuntimeSnapshot BatterySnapshot => new BatteryRuntimeSnapshot
+         {
+@@ -65,6 +68,22 @@ namespace Hecton8.Power
+             EmergencyReserveActive = _debugEmergencyReserveGridCount > 0
+         };
+ 
++        public bool TryQueueWirelessToolDrain(float energyWattSeconds, out float grantedEnergyWattSeconds)
++        {
++            grantedEnergyWattSeconds = 0f;
++            if (energyWattSeconds <= 0f || _debugBatteryStoredEnergyWattSeconds <= 0.0001f || _debugEmergencyReserveGridCount > 0)
++                return false;
++
++            float remainingQueueCapacity = math.max(0f, MaxPendingWirelessToolDemandWattSeconds - _pendingWirelessToolDemandWattSeconds);
++            if (remainingQueueCapacity <= 0.0001f)
++                return false;
++
++            grantedEnergyWattSeconds = math.min(energyWattSeconds, remainingQueueCapacity);
++            _pendingWirelessToolDemandWattSeconds += grantedEnergyWattSeconds;
++            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
++            return grantedEnergyWattSeconds > 0.0001f;
++        }
++
+         private void Awake()
+         {
+             if (_instance != null && _instance != this)
+@@ -104,6 +123,8 @@ namespace Hecton8.Power
+             float totalBatteryStoredEnergy = 0f;
+             float totalBatteryCapacity = 0f;
+             int emergencyReserveGridCount = 0;
++            float lowestSupplyRatio = 1f;
++            LogisticsBrownoutTier highestBrownoutTier = LogisticsBrownoutTier.None;
+ 
+             for (int gridIndex = _allGrids.Count - 1; gridIndex >= 0; gridIndex--)
+             {
+@@ -130,11 +151,30 @@ namespace Hecton8.Power
+                 totalConsumption += grid.TotalConsumption;
+                 totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
+                 totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
++                lowestSupplyRatio = math.min(lowestSupplyRatio, grid.SupplyRatio);
+ 
+                 if (grid.HasPowerDeficit)
+                     deficitCount++;
+                 if (grid.IsBatteryEmergencyReserveActive)
+                     emergencyReserveGridCount++;
++                if (grid.BrownoutTier > highestBrownoutTier)
++                    highestBrownoutTier = grid.BrownoutTier;
++            }
++
++            ConsumePendingWirelessToolDemand();
++            totalBatteryStoredEnergy = 0f;
++            totalBatteryCapacity = 0f;
++            emergencyReserveGridCount = 0;
++            for (int gridIndex = 0; gridIndex < finalizedGridCount; gridIndex++)
++            {
++                PowerGrid grid = _allGrids[gridIndex];
++                if (grid == null)
++                    continue;
++
++                totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
++                totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
++                if (grid.IsBatteryEmergencyReserveActive)
++                    emergencyReserveGridCount++;
+             }
+ 
+             UpdateDiagnostics(totalGeneration, totalConsumption, totalNodes, deficitCount);
+@@ -144,6 +184,30 @@ namespace Hecton8.Power
+                 ? math.saturate(totalBatteryStoredEnergy / totalBatteryCapacity)
+                 : 0f;
+             _debugEmergencyReserveGridCount = emergencyReserveGridCount;
++            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
++
++            float supplyRatio = totalConsumption > 0.0001f
++                ? math.saturate(totalGeneration / totalConsumption)
++                : 1f;
++            if (finalizedGridCount > 0)
++                supplyRatio = math.min(supplyRatio, lowestSupplyRatio);
++
++            float availablePowerNormalized = totalBatteryCapacity > 0.0001f
++                ? _debugBatteryChargeNormalized
++                : supplyRatio;
++
++            PowerGridTelemetrySnapshot telemetrySnapshot = new PowerGridTelemetrySnapshot(
++                finalizedGridCount,
++                deficitCount,
++                totalGeneration,
++                totalConsumption,
++                supplyRatio,
++                _debugBatteryChargeNormalized,
++                availablePowerNormalized,
++                highestBrownoutTier,
++                deficitCount > 0,
++                emergencyReserveGridCount > 0);
++            PowerGridTelemetryEvents.Raise(in telemetrySnapshot);
+         }
+ 
+         private void OnDestroy()
+@@ -338,6 +402,29 @@ namespace Hecton8.Power
+             _serviceRegistered = false;
+         }
+ 
++        private void ConsumePendingWirelessToolDemand()
++        {
++            if (_pendingWirelessToolDemandWattSeconds <= 0.0001f || _allGrids == null)
++                return;
++
++            float remaining = _pendingWirelessToolDemandWattSeconds;
++            int gridCount = _allGrids.Count;
++            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
++            {
++                if (remaining <= 0.0001f)
++                    break;
++
++                PowerGrid grid = _allGrids[gridIndex];
++                if (grid == null)
++                    continue;
++
++                remaining -= grid.TryConsumeWirelessToolDemand(remaining);
++            }
++
++            _pendingWirelessToolDemandWattSeconds = math.max(0f, remaining);
++            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
++        }
++
+         [System.Diagnostics.Conditional("UNITY_EDITOR")]
+         private void UpdateDiagnostics(float generation, float consumption, int totalNodes, int deficitGrids)
+         {
+diff --git a/Assets/_Project/Scripts/Tools/ToolMetadata.cs b/Assets/_Project/Scripts/Tools/ToolMetadata.cs
+index 079b2c0a..233c67c0 100644
+--- a/Assets/_Project/Scripts/Tools/ToolMetadata.cs
++++ b/Assets/_Project/Scripts/Tools/ToolMetadata.cs
+@@ -95,6 +95,21 @@ namespace Hecton8.Tools
+         [Tooltip("Текущие установленные улучшения (max 3).")]
+         public ToolUpgradeData[] installedUpgrades = new ToolUpgradeData[3];
+ 
++        [Tooltip("Authored modular loadout consumed by the NativeArray-backed equipment runtime.")]
++        public ToolModuleData[] defaultModules = new ToolModuleData[3];
++
++        [Tooltip("Optional fallback heat-generation rate copied into the modular runtime when the concrete tool does not override it.")]
++        [Range(0f, 4f)]
++        public float authoredHeatGenerationRate = 0f;
++
++        [Tooltip("Optional fallback cooldown rate copied into the modular runtime when the concrete tool does not override it.")]
++        [Range(0f, 4f)]
++        public float authoredCooldownRate = 0f;
++
++        [Tooltip("Optional fallback recoil impulse copied into the modular runtime when the concrete tool does not override it.")]
++        [Range(0f, 12f)]
++        public float authoredRecoilImpulse = 0f;
++
+         // ══════════════════════════════════════════════════════════
+         //  INSPECTOR — REPAIR
+         // ══════════════════════════════════════════════════════════
+@@ -222,6 +237,25 @@ namespace Hecton8.Tools
+             installedUpgrades[slotIndex] = null;
+             return true;
+         }
++
++        /// <summary>
++        /// Copies the authored modular loadout into the caller-provided scratch buffer.
++        /// Runtime systems must not retain or mutate the ScriptableObject array directly.
++        /// </summary>
++        public int CopyDefaultModules(ToolModuleData[] destination)
++        {
++            if (destination == null || destination.Length == 0 || defaultModules == null || defaultModules.Length == 0)
++                return 0;
++
++            int copyCount = Math.Min(Math.Min(destination.Length, defaultModules.Length), Math.Max(0, maxUpgradeSlots));
++            for (int i = 0; i < copyCount; i++)
++                destination[i] = defaultModules[i];
++
++            for (int i = copyCount; i < destination.Length; i++)
++                destination[i] = null;
++
++            return copyCount;
++        }
+     }
+ 
+     // ══════════════════════════════════════════════════════════
+diff --git a/Assets/_Project/Scripts/ModularEquipmentEngine.cs b/Assets/_Project/Scripts/ModularEquipmentEngine.cs
+new file mode 100644
+index 00000000..82797dac
+--- /dev/null
++++ b/Assets/_Project/Scripts/ModularEquipmentEngine.cs
+@@ -0,0 +1,485 @@
++namespace Hecton8.Tools
++{
++    using Hecton8.Core;
++    using Hecton8.Gameplay;
++    using Unity.Collections;
++    using Unity.Mathematics;
++    using UnityEngine;
++
++    /// <summary>
++    /// Authoritative runtime owner for active handheld-tool state.
++    /// Tool authoring remains in ScriptableObjects and components; hot paths read only native memory.
++    /// </summary>
++    [DisallowMultipleComponent]
++    [DefaultExecutionOrder(-9918)]
++    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable
++    {
++        private const int MaxTrackedTools = 16;
++
++        private static ModularEquipmentEngine _instance;
++
++        // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
++        private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
++        // COLD ALLOC: bool[16] — slot occupancy flags for native tool slots — owner: ModularEquipmentEngine
++        private readonly bool[] _slotUsed = new bool[MaxTrackedTools];
++        // COLD ALLOC: ToolModuleData[64] — authored module mirrors copied into runtime slots — owner: ModularEquipmentEngine
++        private readonly ToolModuleData[] _moduleSlots = new ToolModuleData[MaxTrackedTools * ToolUpgradeSystem.MaxModuleSlots];
++        // COLD ALLOC: ToolModuleData[4] — cold-path scratch buffer for one tool registration — owner: ModularEquipmentEngine
++        private readonly ToolModuleData[] _registrationModules = new ToolModuleData[ToolUpgradeSystem.MaxModuleSlots];
++
++        private NativeArray<ToolState> _toolStates;
++        private NativeArray<ToolRuntimeStats> _toolStats;
++        private NativeHashMap<uint, int> _toolIndexById;
++        private bool _isInitialized;
++        private bool _registeredService;
++        private bool _registeredUpdatable;
++
++        public bool IsInitialized => _isInitialized;
++
++        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
++        private static void ResetStaticState()
++        {
++            _instance = null;
++        }
++
++        public static ModularEquipmentEngine EnsureRuntimeInstance()
++        {
++            if (_instance != null)
++                return _instance;
++
++            GameObject runtimeRoot = new GameObject("[ModularEquipmentEngine]"); // COLD ALLOC: GameObject[1] — bootstrap-owned equipment runtime root — owner: ModularEquipmentEngine
++            return runtimeRoot.AddComponent<ModularEquipmentEngine>();
++        }
++
++        public void InitializeService()
++        {
++            if (_isInitialized)
++            {
++                TryRegisterService();
++                TryRegisterUpdatable();
++                return;
++            }
++
++            EnsureSingletonOwnership();
++            if (_instance != this)
++                return;
++
++            if (!_toolStates.IsCreated)
++            {
++                // COLD ALLOC: NativeArray<ToolState>[16] — active modular tool state buffer — owner: ModularEquipmentEngine
++                _toolStates = new NativeArray<ToolState>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            }
++
++            if (!_toolStats.IsCreated)
++            {
++                // COLD ALLOC: NativeArray<ToolRuntimeStats>[16] — active compiled tool-stat buffer — owner: ModularEquipmentEngine
++                _toolStats = new NativeArray<ToolRuntimeStats>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            }
++
++            if (!_toolIndexById.IsCreated)
++            {
++                // COLD ALLOC: NativeHashMap<uint,int>[16] — tool-id to slot index table — owner: ModularEquipmentEngine
++                _toolIndexById = new NativeHashMap<uint, int>(MaxTrackedTools, Allocator.Persistent);
++            }
++
++            if (Application.isPlaying)
++            {
++                if (transform.parent != null)
++                    transform.SetParent(null, true);
++
++                DontDestroyOnLoad(gameObject);
++            }
++
++            _isInitialized = true;
++            TryRegisterService();
++            TryRegisterUpdatable();
++        }
++
++        public void Tick(float deltaTime)
++        {
++            if (!_isInitialized)
++                return;
++
++            for (int i = 0; i < MaxTrackedTools; i++)
++            {
++                if (!_slotUsed[i] || _toolOwners[i] == null)
++                    continue;
++
++                ToolState state = _toolStates[i];
++                state.Durability = math.saturate(_toolOwners[i].DurabilityNormalized);
++                _toolStates[i] = state;
++            }
++        }
++
++        public uint RegisterTool(PlayerTool tool)
++        {
++            if (tool == null)
++                return 0u;
++
++            InitializeService();
++            if (!_isInitialized)
++                return 0u;
++
++            ToolRuntimeProfile profile = tool.BuildModularRuntimeProfile();
++            if (profile.ToolId == 0u)
++                return 0u;
++
++            int slotIndex = ResolveOrAllocateSlot(profile.ToolId);
++            if (slotIndex < 0)
++                return 0u;
++
++            int moduleSlotCount = tool.CopyAuthoredModules(_registrationModules);
++            uint upgradeMask;
++            ToolRuntimeStats compiledStats = ToolUpgradeSystem.CompileRuntimeStats(
++                profile,
++                _registrationModules,
++                Mathf.Min(moduleSlotCount, (int)profile.ModuleSlotCount),
++                out upgradeMask);
++
++            ToolState nextState = _toolStates[slotIndex];
++            nextState.CurrentBattery = math.saturate(tool.ResolveModularBatteryNormalized()) * math.max(0.1f, compiledStats.BatteryCapacity);
++            nextState.InternalHeat = math.saturate(tool.ResolveModularHeatNormalized());
++            nextState.Durability = math.saturate(tool.DurabilityNormalized);
++            nextState.UpgradeBitmask = upgradeMask;
++
++            _toolOwners[slotIndex] = tool;
++            _slotUsed[slotIndex] = true;
++            _toolStates[slotIndex] = nextState;
++            _toolStats[slotIndex] = compiledStats;
++            _toolIndexById[profile.ToolId] = slotIndex;
++            WriteModuleMirror(slotIndex, _registrationModules, moduleSlotCount);
++            return profile.ToolId;
++        }
++
++        public void UnregisterTool(PlayerTool tool, uint toolId)
++        {
++            if (!_isInitialized || tool == null || toolId == 0u)
++                return;
++
++            if (!_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return;
++
++            if (!ReferenceEquals(_toolOwners[slotIndex], tool))
++                return;
++
++            _toolIndexById.Remove(toolId);
++            _toolOwners[slotIndex] = null;
++            _slotUsed[slotIndex] = false;
++            _toolStates[slotIndex] = default;
++            _toolStats[slotIndex] = default;
++            ClearModuleMirror(slotIndex);
++        }
++
++        public bool TryGetToolState(uint toolId, out ToolState state)
++        {
++            state = default;
++            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return false;
++
++            state = _toolStates[slotIndex];
++            return true;
++        }
++
++        public bool TryGetToolStats(uint toolId, out ToolRuntimeStats stats)
++        {
++            stats = default;
++            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return false;
++
++            stats = _toolStats[slotIndex];
++            return true;
++        }
++
++        public bool TryInstallModule(uint toolId, ToolModuleData module)
++        {
++            if (!_isInitialized || module == null || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return false;
++
++            PlayerTool owner = _toolOwners[slotIndex];
++            if (owner == null || !module.IsCompatibleWith(owner.RuntimeMetadata))
++                return false;
++
++            int slotCount = GetConfiguredSlotCount(owner);
++            int baseIndex = slotIndex * ToolUpgradeSystem.MaxModuleSlots;
++            ReadModuleMirror(slotIndex, slotCount, _registrationModules);
++            if (!ToolUpgradeSystem.TryInsertModule(_registrationModules, slotCount, module))
++                return false;
++
++            WriteModuleMirror(slotIndex, _registrationModules, slotCount);
++            RebuildCompiledState(slotIndex, owner, toolId);
++            return true;
++        }
++
++        public bool TryRemoveModule(uint toolId, string moduleId)
++        {
++            if (!_isInitialized || string.IsNullOrWhiteSpace(moduleId) || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return false;
++
++            PlayerTool owner = _toolOwners[slotIndex];
++            if (owner == null)
++                return false;
++
++            int slotCount = GetConfiguredSlotCount(owner);
++            ReadModuleMirror(slotIndex, slotCount, _registrationModules);
++            if (!ToolUpgradeSystem.TryRemoveModule(_registrationModules, slotCount, moduleId))
++                return false;
++
++            WriteModuleMirror(slotIndex, _registrationModules, slotCount);
++            RebuildCompiledState(slotIndex, owner, toolId);
++            return true;
++        }
++
++        public bool HasUpgrade(uint toolId, ToolUpgradeBits flag)
++        {
++            if (!TryGetToolState(toolId, out ToolState state))
++                return false;
++
++            return (state.UpgradeBitmask & (uint)flag) != 0u;
++        }
++
++        public float GetMaxRange(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.MaxRange : fallback;
++        }
++
++        public float GetPowerScalar(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.PowerScalar : fallback;
++        }
++
++        public float GetEfficiencyScalar(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.EfficiencyScalar : fallback;
++        }
++
++        public float GetSpeedScalar(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.SpeedScalar : fallback;
++        }
++
++        public float GetHeatGenerationRate(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.HeatGenerationRate : fallback;
++        }
++
++        public float GetCooldownRate(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.CooldownRate : fallback;
++        }
++
++        public float GetBatteryDrainPerSecond(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.BatteryDrainPerSecond : fallback;
++        }
++
++        public float GetDurabilityDrainMultiplier(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.DurabilityDrainMultiplier : fallback;
++        }
++
++        public float GetRecoilImpulse(uint toolId, float fallback)
++        {
++            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.RecoilImpulse : fallback;
++        }
++
++        public void SetBattery(uint toolId, float normalizedBattery)
++        {
++            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return;
++
++            ToolState state = _toolStates[slotIndex];
++            float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
++            state.CurrentBattery = math.saturate(normalizedBattery) * capacity;
++            _toolStates[slotIndex] = state;
++        }
++
++        public float GetBatteryNormalized(uint toolId, float fallback)
++        {
++            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return fallback;
++
++            float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
++            return math.saturate(_toolStates[slotIndex].CurrentBattery / capacity);
++        }
++
++        public void ConsumeBattery(uint toolId, float normalizedBatteryDelta)
++        {
++            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return;
++
++            ToolState state = _toolStates[slotIndex];
++            float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
++            state.CurrentBattery = math.max(0f, state.CurrentBattery - math.max(0f, normalizedBatteryDelta) * capacity);
++            _toolStates[slotIndex] = state;
++        }
++
++        public void SetHeat(uint toolId, float normalizedHeat)
++        {
++            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return;
++
++            ToolState state = _toolStates[slotIndex];
++            state.InternalHeat = math.saturate(normalizedHeat);
++            _toolStates[slotIndex] = state;
++        }
++
++        public void SetDurability(uint toolId, float normalizedDurability)
++        {
++            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
++                return;
++
++            ToolState state = _toolStates[slotIndex];
++            state.Durability = math.saturate(normalizedDurability);
++            _toolStates[slotIndex] = state;
++        }
++
++        private void Awake()
++        {
++            EnsureSingletonOwnership();
++        }
++
++        private void OnEnable()
++        {
++            if (_isInitialized)
++            {
++                TryRegisterService();
++                TryRegisterUpdatable();
++            }
++        }
++
++        private void OnDisable()
++        {
++            TryUnregisterService();
++            TryUnregisterUpdatable();
++        }
++
++        private void OnDestroy()
++        {
++            TryUnregisterService();
++            TryUnregisterUpdatable();
++
++            if (_toolStates.IsCreated)
++                _toolStates.Dispose();
++
++            if (_toolStats.IsCreated)
++                _toolStats.Dispose();
++
++            if (_toolIndexById.IsCreated)
++                _toolIndexById.Dispose();
++
++            if (_instance == this)
++                _instance = null;
++        }
++
++        private void EnsureSingletonOwnership()
++        {
++            if (_instance != null && _instance != this)
++            {
++                Destroy(gameObject);
++                return;
++            }
++
++            _instance = this;
++        }
++
++        private int ResolveOrAllocateSlot(uint toolId)
++        {
++            if (_toolIndexById.TryGetValue(toolId, out int existingIndex))
++                return existingIndex;
++
++            for (int i = 0; i < MaxTrackedTools; i++)
++            {
++                if (!_slotUsed[i])
++                    return i;
++            }
++
++            return -1;
++        }
++
++        private void WriteModuleMirror(int slotIndex, ToolModuleData[] modules, int moduleSlotCount)
++        {
++            int baseIndex = slotIndex * ToolUpgradeSystem.MaxModuleSlots;
++            for (int i = 0; i < ToolUpgradeSystem.MaxModuleSlots; i++)
++                _moduleSlots[baseIndex + i] = i < moduleSlotCount ? modules[i] : null;
++        }
++
++        private void ReadModuleMirror(int slotIndex, int moduleSlotCount, ToolModuleData[] destination)
++        {
++            int baseIndex = slotIndex * ToolUpgradeSystem.MaxModuleSlots;
++            for (int i = 0; i < ToolUpgradeSystem.MaxModuleSlots; i++)
++                destination[i] = i < moduleSlotCount ? _moduleSlots[baseIndex + i] : null;
++        }
++
++        private void ClearModuleMirror(int slotIndex)
++        {
++            int baseIndex = slotIndex * ToolUpgradeSystem.MaxModuleSlots;
++            for (int i = 0; i < ToolUpgradeSystem.MaxModuleSlots; i++)
++                _moduleSlots[baseIndex + i] = null;
++        }
++
++        private static int GetConfiguredSlotCount(PlayerTool owner)
++        {
++            if (owner == null || owner.RuntimeMetadata == null)
++                return 0;
++
++            return Mathf.Clamp(owner.RuntimeMetadata.maxUpgradeSlots, 0, ToolUpgradeSystem.MaxModuleSlots);
++        }
++
++        private void RebuildCompiledState(int slotIndex, PlayerTool owner, uint toolId)
++        {
++            if (owner == null)
++                return;
++
++            ToolRuntimeProfile profile = owner.BuildModularRuntimeProfile();
++            int slotCount = Mathf.Min(GetConfiguredSlotCount(owner), (int)profile.ModuleSlotCount);
++            ReadModuleMirror(slotIndex, slotCount, _registrationModules);
++
++            float normalizedBattery = GetBatteryNormalized(toolId, owner.ResolveModularBatteryNormalized());
++            ToolState state = _toolStates[slotIndex];
++            state.CurrentBattery = math.saturate(normalizedBattery);
++
++            uint upgradeMask;
++            ToolRuntimeStats compiledStats = ToolUpgradeSystem.CompileRuntimeStats(profile, _registrationModules, slotCount, out upgradeMask);
++            state.CurrentBattery *= math.max(0.1f, compiledStats.BatteryCapacity);
++            state.UpgradeBitmask = upgradeMask;
++            _toolStats[slotIndex] = compiledStats;
++            _toolStates[slotIndex] = state;
++        }
++
++        private void TryRegisterService()
++        {
++            if (_registeredService)
++                return;
++
++            GlobalRegistry.RegisterModularEquipmentService(this);
++            _registeredService = true;
++        }
++
++        private void TryUnregisterService()
++        {
++            if (!_registeredService)
++                return;
++
++            GlobalRegistry.UnregisterModularEquipmentService(this);
++            _registeredService = false;
++        }
++
++        private void TryRegisterUpdatable()
++        {
++            if (_registeredUpdatable)
++                return;
++
++            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
++            _registeredUpdatable = true;
++        }
++
++        private void TryUnregisterUpdatable()
++        {
++            if (!_registeredUpdatable)
++                return;
++
++            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
++            _registeredUpdatable = false;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Tools/ToolUpgradeSystem.cs b/Assets/_Project/Scripts/Tools/ToolUpgradeSystem.cs
+new file mode 100644
+index 00000000..7fdfedf5
+--- /dev/null
++++ b/Assets/_Project/Scripts/Tools/ToolUpgradeSystem.cs
+@@ -0,0 +1,201 @@
++namespace Hecton8.Tools
++{
++    using System.Runtime.InteropServices;
++    using UnityEngine;
++
++    /// <summary>
++    /// Stable upgrade-bit ids compiled into the runtime modular-equipment state.
++    /// </summary>
++    [System.Flags]
++    public enum ToolUpgradeBits : uint
++    {
++        None = 0u,
++        RangeBoost = 1u << 0,
++        EfficiencyPlus = 1u << 1,
++        ThermalOverclock = 1u << 2,
++        WirelessCharging = 1u << 3,
++        HighCapacityCell = 1u << 4,
++        CoolingSink = 1u << 5,
++        KineticAccelerator = 1u << 6,
++        StandardBattery = 1u << 7
++    }
++
++    /// <summary>
++    /// Mutable per-tool runtime state stored in contiguous native memory.
++    /// </summary>
++    [StructLayout(LayoutKind.Sequential)]
++    public struct ToolState
++    {
++        public float CurrentBattery;
++        public float InternalHeat;
++        public float Durability;
++        public uint UpgradeBitmask;
++    }
++
++    /// <summary>
++    /// Cold-path authored profile copied from tool components into the modular runtime.
++    /// </summary>
++    [StructLayout(LayoutKind.Sequential)]
++    public struct ToolRuntimeProfile
++    {
++        public uint ToolId;
++        public float MaxRange;
++        public float PowerScalar;
++        public float EfficiencyScalar;
++        public float SpeedScalar;
++        public float HeatGenerationRate;
++        public float CooldownRate;
++        public float BatteryCapacity;
++        public float BatteryDrainPerSecond;
++        public float DurabilityDrainMultiplier;
++        public float RecoilImpulse;
++        public byte ModuleSlotCount;
++        public byte Reserved0;
++        public byte Reserved1;
++        public byte Reserved2;
++    }
++
++    /// <summary>
++    /// Hot-path compiled stats stored beside <see cref="ToolState"/> in native memory.
++    /// </summary>
++    [StructLayout(LayoutKind.Sequential)]
++    public struct ToolRuntimeStats
++    {
++        public float MaxRange;
++        public float PowerScalar;
++        public float EfficiencyScalar;
++        public float SpeedScalar;
++        public float HeatGenerationRate;
++        public float CooldownRate;
++        public float BatteryCapacity;
++        public float BatteryDrainPerSecond;
++        public float DurabilityDrainMultiplier;
++        public float RecoilImpulse;
++    }
++
++    /// <summary>
++    /// Cold-path module compiler. Hot paths consume only the compiled bitmask and blittable stats.
++    /// </summary>
++    public static class ToolUpgradeSystem
++    {
++        public const int MaxModuleSlots = 4;
++
++        public static bool HasRangeBoost(uint mask) => (mask & (uint)ToolUpgradeBits.RangeBoost) != 0u;
++        public static bool HasEfficiencyPlus(uint mask) => (mask & (uint)ToolUpgradeBits.EfficiencyPlus) != 0u;
++        public static bool HasThermalOverclock(uint mask) => (mask & (uint)ToolUpgradeBits.ThermalOverclock) != 0u;
++        public static bool HasWirelessCharging(uint mask) => (mask & (uint)ToolUpgradeBits.WirelessCharging) != 0u;
++        public static bool HasHighCapacityCell(uint mask) => (mask & (uint)ToolUpgradeBits.HighCapacityCell) != 0u;
++        public static bool HasCoolingSink(uint mask) => (mask & (uint)ToolUpgradeBits.CoolingSink) != 0u;
++        public static bool HasKineticAccelerator(uint mask) => (mask & (uint)ToolUpgradeBits.KineticAccelerator) != 0u;
++
++        public static bool TryInsertModule(ToolModuleData[] modules, int slotCount, ToolModuleData module)
++        {
++            if (modules == null || module == null || slotCount <= 0)
++                return false;
++
++            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
++            for (int i = 0; i < safeSlotCount; i++)
++            {
++                ToolModuleData existing = modules[i];
++                if (existing != null && existing.ModuleId == module.ModuleId)
++                    return false;
++            }
++
++            for (int i = 0; i < safeSlotCount; i++)
++            {
++                if (modules[i] != null)
++                    continue;
++
++                modules[i] = module;
++                return true;
++            }
++
++            return false;
++        }
++
++        public static bool TryRemoveModule(ToolModuleData[] modules, int slotCount, string moduleId)
++        {
++            if (modules == null || string.IsNullOrWhiteSpace(moduleId) || slotCount <= 0)
++                return false;
++
++            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
++            for (int i = 0; i < safeSlotCount; i++)
++            {
++                ToolModuleData existing = modules[i];
++                if (existing == null || existing.ModuleId != moduleId)
++                    continue;
++
++                modules[i] = null;
++                return true;
++            }
++
++            return false;
++        }
++
++        public static uint CompileUpgradeMask(ToolModuleData[] modules, int slotCount)
++        {
++            if (modules == null || slotCount <= 0)
++                return 0u;
++
++            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
++            uint mask = 0u;
++            for (int i = 0; i < safeSlotCount; i++)
++            {
++                ToolModuleData module = modules[i];
++                if (module == null)
++                    continue;
++
++                mask |= (uint)module.UpgradeBits;
++            }
++
++            return mask;
++        }
++
++        public static ToolRuntimeStats CompileRuntimeStats(in ToolRuntimeProfile profile, ToolModuleData[] modules, int slotCount, out uint upgradeMask)
++        {
++            ToolRuntimeStats stats = new ToolRuntimeStats
++            {
++                MaxRange = Mathf.Max(0.1f, profile.MaxRange),
++                PowerScalar = Mathf.Max(0.1f, profile.PowerScalar),
++                EfficiencyScalar = Mathf.Max(0.1f, profile.EfficiencyScalar),
++                SpeedScalar = Mathf.Max(0.1f, profile.SpeedScalar),
++                HeatGenerationRate = Mathf.Max(0f, profile.HeatGenerationRate),
++                CooldownRate = Mathf.Max(0f, profile.CooldownRate),
++                BatteryCapacity = Mathf.Max(0.1f, profile.BatteryCapacity),
++                BatteryDrainPerSecond = Mathf.Max(0f, profile.BatteryDrainPerSecond),
++                DurabilityDrainMultiplier = Mathf.Max(0.1f, profile.DurabilityDrainMultiplier),
++                RecoilImpulse = Mathf.Max(0f, profile.RecoilImpulse)
++            };
++
++            if (modules == null || slotCount <= 0)
++            {
++                upgradeMask = 0u;
++                return stats;
++            }
++
++            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
++            uint mask = 0u;
++            for (int i = 0; i < safeSlotCount; i++)
++            {
++                ToolModuleData module = modules[i];
++                if (module == null)
++                    continue;
++
++                mask |= (uint)module.UpgradeBits;
++                stats.MaxRange *= Mathf.Max(0.1f, module.RangeMultiplier);
++                stats.PowerScalar *= Mathf.Max(0.1f, module.PowerMultiplier);
++                stats.EfficiencyScalar *= Mathf.Max(0.1f, module.EfficiencyMultiplier);
++                stats.SpeedScalar *= Mathf.Max(0.1f, module.SpeedMultiplier);
++                stats.HeatGenerationRate *= Mathf.Max(0.1f, module.HeatGenerationMultiplier);
++                stats.CooldownRate *= Mathf.Max(0.1f, module.CooldownMultiplier);
++                stats.BatteryCapacity *= Mathf.Max(0.1f, module.BatteryCapacityMultiplier);
++                stats.BatteryDrainPerSecond *= Mathf.Max(0.1f, module.BatteryDrainMultiplier);
++                stats.DurabilityDrainMultiplier *= Mathf.Max(0.1f, module.DurabilityDrainMultiplier);
++                stats.RecoilImpulse *= Mathf.Max(0.1f, module.RecoilMultiplier);
++            }
++
++            upgradeMask = mask;
++            return stats;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Tools/ToolModuleData.cs b/Assets/_Project/Scripts/Tools/ToolModuleData.cs
+new file mode 100644
+index 00000000..8fa95952
+--- /dev/null
++++ b/Assets/_Project/Scripts/Tools/ToolModuleData.cs
+@@ -0,0 +1,93 @@
++namespace Hecton8.Tools
++{
++    using Hecton8.Items;
++    using UnityEngine;
++
++    /// <summary>
++    /// Authored compile-time module definition consumed by the modular equipment runtime.
++    /// Runtime systems copy these values into blittable structs and never mutate the asset.
++    /// </summary>
++    [CreateAssetMenu(fileName = "ToolModule_", menuName = "Hecton8/Tools/Tool Module")]
++    public sealed class ToolModuleData : ScriptableObject
++    {
++        [Header("── Identity ─────────────────────────────")]
++        [Tooltip("Stable module ID used by saves and diagnostics.")]
++        [SerializeField] private string moduleId = "module_standard_battery";
++
++        [Tooltip("Optional inventory item that represents this module in designer-facing content.")]
++        [SerializeField] private ItemData linkedItem;
++
++        [Tooltip("Bit flags compiled into the runtime tool-state mask.")]
++        [SerializeField] private ToolUpgradeBits upgradeBits = ToolUpgradeBits.None;
++
++        [Header("── Compatibility ────────────────────────")]
++        [Tooltip("Categories this module can be installed into. Empty = any tool category.")]
++        [SerializeField] private ToolCategory[] compatibleCategories = new ToolCategory[0];
++
++        [Header("── Multipliers ──────────────────────────")]
++        [Tooltip("Range multiplier applied to the owning tool.")]
++        [SerializeField, Min(0.1f)] private float rangeMultiplier = 1f;
++
++        [Tooltip("Power multiplier applied to the owning tool output.")]
++        [SerializeField, Min(0.1f)] private float powerMultiplier = 1f;
++
++        [Tooltip("Efficiency multiplier applied to the owning tool.")]
++        [SerializeField, Min(0.1f)] private float efficiencyMultiplier = 1f;
++
++        [Tooltip("Operation-speed multiplier applied to the owning tool.")]
++        [SerializeField, Min(0.1f)] private float speedMultiplier = 1f;
++
++        [Tooltip("Heat-generation multiplier applied while the tool is active.")]
++        [SerializeField, Min(0.1f)] private float heatGenerationMultiplier = 1f;
++
++        [Tooltip("Cooldown-rate multiplier applied while the tool vents heat.")]
++        [SerializeField, Min(0.1f)] private float cooldownMultiplier = 1f;
++
++        [Tooltip("Battery-capacity multiplier applied to the runtime charge reservoir.")]
++        [SerializeField, Min(0.1f)] private float batteryCapacityMultiplier = 1f;
++
++        [Tooltip("Battery-drain multiplier applied to the owning tool.")]
++        [SerializeField, Min(0.1f)] private float batteryDrainMultiplier = 1f;
++
++        [Tooltip("Durability-drain multiplier applied to the owning tool.")]
++        [SerializeField, Min(0.1f)] private float durabilityDrainMultiplier = 1f;
++
++        [Tooltip("Recoil multiplier applied to player kickback.")]
++        [SerializeField, Min(0.1f)] private float recoilMultiplier = 1f;
++
++        public string ModuleId => moduleId;
++        public ItemData LinkedItem => linkedItem;
++        public ToolUpgradeBits UpgradeBits => upgradeBits;
++        public float RangeMultiplier => rangeMultiplier;
++        public float PowerMultiplier => powerMultiplier;
++        public float EfficiencyMultiplier => efficiencyMultiplier;
++        public float SpeedMultiplier => speedMultiplier;
++        public float HeatGenerationMultiplier => heatGenerationMultiplier;
++        public float CooldownMultiplier => cooldownMultiplier;
++        public float BatteryCapacityMultiplier => batteryCapacityMultiplier;
++        public float BatteryDrainMultiplier => batteryDrainMultiplier;
++        public float DurabilityDrainMultiplier => durabilityDrainMultiplier;
++        public float RecoilMultiplier => recoilMultiplier;
++
++        /// <summary>
++        /// Returns true when the module can be installed into the supplied tool metadata.
++        /// </summary>
++        public bool IsCompatibleWith(ToolMetadata metadata)
++        {
++            if (metadata == null)
++                return false;
++
++            if (compatibleCategories == null || compatibleCategories.Length == 0)
++                return true;
++
++            ToolCategory category = metadata.category;
++            for (int i = 0; i < compatibleCategories.Length; i++)
++            {
++                if (compatibleCategories[i] == category)
++                    return true;
++            }
++
++            return false;
++        }
++    }
++}
+diff --git a/Assets/_Project/Data/Tools/Modules/ToolModule_StandardBattery.asset b/Assets/_Project/Data/Tools/Modules/ToolModule_StandardBattery.asset
+new file mode 100644
+index 00000000..23ce2567
+--- /dev/null
++++ b/Assets/_Project/Data/Tools/Modules/ToolModule_StandardBattery.asset
+@@ -0,0 +1,28 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 054cc1203a6f87c4c9153d89234057bf, type: 3}
++  m_Name: ToolModule_StandardBattery
++  m_EditorClassIdentifier: 
++  moduleId: tool_module_standard_battery
++  linkedItem: {fileID: 11400000, guid: 4fff05ba725d1c14a997e48f2f5e16ab, type: 2}
++  upgradeBits: 128
++  compatibleCategories: []
++  rangeMultiplier: 1
++  powerMultiplier: 1
++  efficiencyMultiplier: 1
++  speedMultiplier: 1
++  heatGenerationMultiplier: 1
++  cooldownMultiplier: 1
++  batteryCapacityMultiplier: 1.15
++  batteryDrainMultiplier: 1
++  durabilityDrainMultiplier: 1
++  recoilMultiplier: 1
+diff --git a/Assets/_Project/Data/Tools/Modules/ToolModule_HighCapCell.asset b/Assets/_Project/Data/Tools/Modules/ToolModule_HighCapCell.asset
+new file mode 100644
+index 00000000..e48d1d60
+--- /dev/null
++++ b/Assets/_Project/Data/Tools/Modules/ToolModule_HighCapCell.asset
+@@ -0,0 +1,28 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 054cc1203a6f87c4c9153d89234057bf, type: 3}
++  m_Name: ToolModule_HighCapCell
++  m_EditorClassIdentifier: 
++  moduleId: tool_module_high_capacity_cell
++  linkedItem: {fileID: 11400000, guid: 02536e73b3fe4cc4593bb90b44c03511, type: 2}
++  upgradeBits: 24
++  compatibleCategories: []
++  rangeMultiplier: 1
++  powerMultiplier: 1
++  efficiencyMultiplier: 1.05
++  speedMultiplier: 1
++  heatGenerationMultiplier: 1
++  cooldownMultiplier: 1
++  batteryCapacityMultiplier: 1.6
++  batteryDrainMultiplier: 0.9
++  durabilityDrainMultiplier: 1
++  recoilMultiplier: 1
+diff --git a/Assets/_Project/Data/Tools/Modules/ToolModule_FocusLens.asset b/Assets/_Project/Data/Tools/Modules/ToolModule_FocusLens.asset
+new file mode 100644
+index 00000000..2445b6eb
+--- /dev/null
++++ b/Assets/_Project/Data/Tools/Modules/ToolModule_FocusLens.asset
+@@ -0,0 +1,28 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 054cc1203a6f87c4c9153d89234057bf, type: 3}
++  m_Name: ToolModule_FocusLens
++  m_EditorClassIdentifier: 
++  moduleId: tool_module_focus_lens
++  linkedItem: {fileID: 11400000, guid: a85858d645dd9fe4e93fed3fbf501d0d, type: 2}
++  upgradeBits: 1
++  compatibleCategories: []
++  rangeMultiplier: 1.35
++  powerMultiplier: 1.1
++  efficiencyMultiplier: 1
++  speedMultiplier: 1
++  heatGenerationMultiplier: 1.05
++  cooldownMultiplier: 1
++  batteryCapacityMultiplier: 1
++  batteryDrainMultiplier: 1.05
++  durabilityDrainMultiplier: 1
++  recoilMultiplier: 1
+diff --git a/Assets/_Project/Data/Tools/Modules/ToolModule_CoolingSink.asset b/Assets/_Project/Data/Tools/Modules/ToolModule_CoolingSink.asset
+new file mode 100644
+index 00000000..9a76bc52
+--- /dev/null
++++ b/Assets/_Project/Data/Tools/Modules/ToolModule_CoolingSink.asset
+@@ -0,0 +1,28 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 054cc1203a6f87c4c9153d89234057bf, type: 3}
++  m_Name: ToolModule_CoolingSink
++  m_EditorClassIdentifier: 
++  moduleId: tool_module_cooling_sink
++  linkedItem: {fileID: 11400000, guid: 25a396571465ef74494020aa732aa9ee, type: 2}
++  upgradeBits: 34
++  compatibleCategories: []
++  rangeMultiplier: 1
++  powerMultiplier: 1
++  efficiencyMultiplier: 1.1
++  speedMultiplier: 1
++  heatGenerationMultiplier: 0.72
++  cooldownMultiplier: 1.45
++  batteryCapacityMultiplier: 1
++  batteryDrainMultiplier: 0.92
++  durabilityDrainMultiplier: 0.95
++  recoilMultiplier: 1
+diff --git a/Assets/_Project/Data/Tools/Modules/ToolModule_KineticAccelerator.asset b/Assets/_Project/Data/Tools/Modules/ToolModule_KineticAccelerator.asset
+new file mode 100644
+index 00000000..9b070f0b
+--- /dev/null
++++ b/Assets/_Project/Data/Tools/Modules/ToolModule_KineticAccelerator.asset
+@@ -0,0 +1,28 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 054cc1203a6f87c4c9153d89234057bf, type: 3}
++  m_Name: ToolModule_KineticAccelerator
++  m_EditorClassIdentifier: 
++  moduleId: tool_module_kinetic_accelerator
++  linkedItem: {fileID: 11400000, guid: fc90438aa8e2810449b936d3a4506bbf, type: 2}
++  upgradeBits: 68
++  compatibleCategories: []
++  rangeMultiplier: 1
++  powerMultiplier: 1.35
++  efficiencyMultiplier: 1
++  speedMultiplier: 1.05
++  heatGenerationMultiplier: 1.3
++  cooldownMultiplier: 0.9
++  batteryCapacityMultiplier: 1
++  batteryDrainMultiplier: 1.15
++  durabilityDrainMultiplier: 1.08
++  recoilMultiplier: 1.4

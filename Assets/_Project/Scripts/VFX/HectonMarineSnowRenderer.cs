@@ -16,6 +16,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     public sealed class HectonMarineSnowRenderer : MonoBehaviour, ITickable, IUpdatable, IOriginShiftListener
     {
+        private const float BiolumeSurgeDurationSeconds = 4f;
         private const int ThreadGroupSize = 64;
         private const int ParticleStride = 64;
         private const int FrameConstantsStride = 96;
@@ -129,6 +130,12 @@ namespace Hecton8.Environment
         [Tooltip("Shadow-casting mode for the marine-snow particle draw.")]
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
+        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Biolume Surge Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [Tooltip("Temporary particle-population multiplier applied while the global biolume surge bit remains active.")]
+        [SerializeField, Range(1f, 3f)] private float biolumeSurgeParticleMultiplier = 1.75f;
+        [Tooltip("Temporary turbulence multiplier applied while the global biolume surge bit remains active.")]
+        [SerializeField, Range(1f, 4f)] private float biolumeSurgeTurbulenceMultiplier = 2f;
+
         private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] â€” reusable per-frame constant-buffer upload cache â€” owner: HectonMarineSnowRenderer
 
         private ParticleGpuData[] _bootstrapParticles;
@@ -149,6 +156,7 @@ namespace Hecton8.Environment
         private bool _buffersReady;
         private bool _staticBindingsDirty = true;
         private bool _underwaterActive;
+        private float _biolumeSurgeTimer;
         private float _visualDensityScale;
         private float _lastDepth;
         private float _lastLightFactor = 1f;
@@ -159,6 +167,7 @@ namespace Hecton8.Environment
         [SerializeField] private float _debugAdaptiveRenderScale = 1f;
         [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
         [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
+        [SerializeField] private float _debugBiolumeSurgeBlend;
 
         /// <summary>
         /// True when the compute path has all required resources and can replace the fallback particle system.
@@ -259,6 +268,7 @@ namespace Hecton8.Environment
             if (!_buffersReady)
                 return;
 
+            UpdateBiolumeSurgeState(dt);
             _activeParticleCount = ResolveActiveParticleCount();
             RefreshFlowFieldUpload(dt);
             ApplyStaticBindingsIfNeeded();
@@ -266,6 +276,23 @@ namespace Hecton8.Environment
             DispatchSimulation();
             RenderMarineSnow();
             _frameParity ^= 1;
+        }
+
+        private void UpdateBiolumeSurgeState(float dt)
+        {
+            IWeatherService weatherService = GlobalRegistry.Weather;
+            if (weatherService != null &&
+                weatherService.IsInitialized &&
+                (weatherService.CurrentWeatherState & WeatherState.BiolumeSurge) != 0)
+            {
+                _biolumeSurgeTimer = math.max(_biolumeSurgeTimer, BiolumeSurgeDurationSeconds);
+            }
+            else
+            {
+                _biolumeSurgeTimer = math.max(0f, _biolumeSurgeTimer - math.max(0f, dt));
+            }
+
+            _debugBiolumeSurgeBlend = ResolveBiolumeSurgeBlend();
         }
 
         private void ResolveTargetCamera()
@@ -462,13 +489,6 @@ namespace Hecton8.Environment
                     densityBiasFlowGain,
                     0.15f,
                     0f));
-            marineSnowCompute.SetVector(
-                ShaderIds.EmissionParamsId,
-                new Vector4(
-                    emissionSettings.buoyancyModifier,
-                    emissionSettings.turbulenceScale,
-                    emissionSettings.wobbleScale,
-                    (float)fluidType));
 
             marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _frameConstantsBuffer);
             marineSnowMaterial.SetVector(
@@ -530,6 +550,16 @@ namespace Hecton8.Environment
             };
 
             GraphicsBufferUploadUtility.UploadArray(_frameConstantsBuffer, _frameConstantsUpload, 1);
+            VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
+            float biolumeSurgeBlend = ResolveBiolumeSurgeBlend();
+            float surgeTurbulenceScale = math.lerp(1f, biolumeSurgeTurbulenceMultiplier, biolumeSurgeBlend);
+            marineSnowCompute.SetVector(
+                ShaderIds.EmissionParamsId,
+                new Vector4(
+                    emissionSettings.buoyancyModifier,
+                    emissionSettings.turbulenceScale * surgeTurbulenceScale,
+                    emissionSettings.wobbleScale * surgeTurbulenceScale,
+                    (float)fluidType));
             marineSnowCompute.SetVector(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams());
             if (_targetCameraComponent != null)
             {
@@ -659,10 +689,16 @@ namespace Hecton8.Environment
 
             _debugAdaptiveVramPressureState = pressureState;
             _debugAdaptiveBudgetScale = budgetScale;
+            budgetScale *= math.lerp(1f, biolumeSurgeParticleMultiplier, ResolveBiolumeSurgeBlend());
 
             int resolvedCount = math.clamp((int)math.round(capacity * budgetScale), 64, capacity);
             _debugActiveParticleCount = resolvedCount;
             return resolvedCount;
+        }
+
+        private float ResolveBiolumeSurgeBlend()
+        {
+            return math.saturate(_biolumeSurgeTimer / BiolumeSurgeDurationSeconds);
         }
     }
 }

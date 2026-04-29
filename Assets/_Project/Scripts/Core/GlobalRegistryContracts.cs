@@ -7,6 +7,7 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Physics;
+using Hecton8.Tools;
 using Hecton8.UI;
 using NASAPunk.Visor;
 using Unity.Mathematics;
@@ -674,6 +675,68 @@ namespace Hecton8.Core
         /// Hand-anchor transform used by held tools.
         /// </summary>
         Transform HandAnchor { get; }
+    }
+
+    /// <summary>
+    /// Focused modular-equipment runtime service exposed through <see cref="GlobalRegistry"/>.
+    /// Hot-path consumers read compiled tool stats and state from this owner only.
+    /// </summary>
+    public interface IModularEquipmentService
+    {
+        /// <summary>
+        /// True once the service has completed bootstrap registration.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Registers or refreshes one active handheld tool and returns its stable runtime ID.
+        /// </summary>
+        uint RegisterTool(PlayerTool tool);
+
+        /// <summary>
+        /// Unregisters one active handheld tool.
+        /// </summary>
+        void UnregisterTool(PlayerTool tool, uint toolId);
+
+        /// <summary>
+        /// Returns the current tool-state snapshot when the tool is active.
+        /// </summary>
+        bool TryGetToolState(uint toolId, out ToolState state);
+
+        /// <summary>
+        /// Returns the current compiled stat snapshot when the tool is active.
+        /// </summary>
+        bool TryGetToolStats(uint toolId, out ToolRuntimeStats stats);
+
+        /// <summary>
+        /// Installs one module into the active tool runtime and recompiles its bitmask-backed stats.
+        /// </summary>
+        bool TryInstallModule(uint toolId, ToolModuleData module);
+
+        /// <summary>
+        /// Removes one module from the active tool runtime and recompiles its bitmask-backed stats.
+        /// </summary>
+        bool TryRemoveModule(uint toolId, string moduleId);
+
+        /// <summary>
+        /// Returns true when the supplied upgrade flag is active on the tool.
+        /// </summary>
+        bool HasUpgrade(uint toolId, ToolUpgradeBits flag);
+
+        float GetMaxRange(uint toolId, float fallback);
+        float GetPowerScalar(uint toolId, float fallback);
+        float GetEfficiencyScalar(uint toolId, float fallback);
+        float GetSpeedScalar(uint toolId, float fallback);
+        float GetHeatGenerationRate(uint toolId, float fallback);
+        float GetCooldownRate(uint toolId, float fallback);
+        float GetBatteryDrainPerSecond(uint toolId, float fallback);
+        float GetDurabilityDrainMultiplier(uint toolId, float fallback);
+        float GetRecoilImpulse(uint toolId, float fallback);
+        float GetBatteryNormalized(uint toolId, float fallback);
+        void SetBattery(uint toolId, float normalizedBattery);
+        void ConsumeBattery(uint toolId, float normalizedBatteryDelta);
+        void SetHeat(uint toolId, float normalizedHeat);
+        void SetDurability(uint toolId, float normalizedDurability);
     }
 
     /// <summary>

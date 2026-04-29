@@ -37,7 +37,9 @@ namespace Hecton8.Gameplay
         Pressure = 1u << 0,
         Thermal = 1u << 1,
         Impact = 1u << 2,
-        Parasite = 1u << 3
+        Parasite = 1u << 3,
+        Radioactive = 1u << 4,
+        Toxic = 1u << 5
     }
 
     /// <summary>

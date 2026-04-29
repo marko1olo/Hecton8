@@ -27,6 +27,13 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  defaultModules:
+  - {fileID: 11400000, guid: 4addd39e796324343a05e87e6e1c71f5, type: 2}
+  - {fileID: 11400000, guid: b2b023f1b5bcd9441932932dc0d6cfb6, type: 2}
+  - {fileID: 0}
+  authoredHeatGenerationRate: 0
+  authoredCooldownRate: 0
+  authoredRecoilImpulse: 18
   repairCostFull: 9
   repairResourceID: titanium
   nameLocKey: TOOL_HARPOON_NAME

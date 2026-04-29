@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe2d2d0ae9265e4e84de15d55c62041, type: 3}
+  m_Name: WeatherProfile_BiolumeBloom
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.WeatherProfile
+  windVector: {x: 0.74, y: 0, z: 1.18}
+  waveHeightMax: 2.35
+  abyssalTurbulenceMultiplier: 1.9
+  fogColorLut: {fileID: 2800000, guid: ec0cba6d1fd7dbf498b7c94ad947826f, type: 3}

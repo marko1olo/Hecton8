@@ -15,6 +15,7 @@ namespace Hecton8.Gameplay
         public float Radius;
         public float InvRadiusSqr;
         public float Intensity;
+        public float VisorGlitchBias;
         public HazardType Type;
     }
 
@@ -24,10 +25,18 @@ namespace Hecton8.Gameplay
         public float PlayerHeat;
         public float PlayerToxicity;
         public float PlayerBiohazard;
+        public float PlayerRadiationGlitchBias;
+        public float PlayerHeatGlitchBias;
+        public float PlayerToxicityGlitchBias;
+        public float PlayerBiohazardGlitchBias;
         public float VehicleRadiation;
         public float VehicleHeat;
         public float VehicleToxicity;
         public float VehicleBiohazard;
+        public float VehicleRadiationGlitchBias;
+        public float VehicleHeatGlitchBias;
+        public float VehicleToxicityGlitchBias;
+        public float VehicleBiohazardGlitchBias;
         public byte PlayerExposureMask;
         public byte VehicleExposureMask;
     }
@@ -63,7 +72,7 @@ namespace Hecton8.Gameplay
                         volume.Intensity);
 
                     if (playerContribution > 0f)
-                        AddContribution(ref result, volume.Type, playerContribution, true);
+                        AddContribution(ref result, volume.Type, playerContribution, volume.VisorGlitchBias, true);
                 }
 
                 if (HasVehicleBounds)
@@ -77,14 +86,14 @@ namespace Hecton8.Gameplay
                         volume.Intensity);
 
                     if (vehicleContribution > 0f)
-                        AddContribution(ref result, volume.Type, vehicleContribution, false);
+                        AddContribution(ref result, volume.Type, vehicleContribution, volume.VisorGlitchBias, false);
                 }
             }
 
             Result[0] = result;
         }
 
-        private static void AddContribution(ref HazardExposureJobResult result, HazardType hazardType, float contribution, bool player)
+        private static void AddContribution(ref HazardExposureJobResult result, HazardType hazardType, float contribution, float visorGlitchBias, bool player)
         {
             int maskBit = 1 << (int)hazardType;
             if (player)
@@ -94,15 +103,19 @@ namespace Hecton8.Gameplay
                 {
                     case HazardType.Radiation:
                         result.PlayerRadiation += contribution;
+                        result.PlayerRadiationGlitchBias = math.max(result.PlayerRadiationGlitchBias, visorGlitchBias);
                         break;
                     case HazardType.Heat:
                         result.PlayerHeat += contribution;
+                        result.PlayerHeatGlitchBias = math.max(result.PlayerHeatGlitchBias, visorGlitchBias);
                         break;
                     case HazardType.Toxicity:
                         result.PlayerToxicity += contribution;
+                        result.PlayerToxicityGlitchBias = math.max(result.PlayerToxicityGlitchBias, visorGlitchBias);
                         break;
                     case HazardType.Biohazard:
                         result.PlayerBiohazard += contribution;
+                        result.PlayerBiohazardGlitchBias = math.max(result.PlayerBiohazardGlitchBias, visorGlitchBias);
                         break;
                 }
 
@@ -114,15 +127,19 @@ namespace Hecton8.Gameplay
             {
                 case HazardType.Radiation:
                     result.VehicleRadiation += contribution;
+                    result.VehicleRadiationGlitchBias = math.max(result.VehicleRadiationGlitchBias, visorGlitchBias);
                     break;
                 case HazardType.Heat:
                     result.VehicleHeat += contribution;
+                    result.VehicleHeatGlitchBias = math.max(result.VehicleHeatGlitchBias, visorGlitchBias);
                     break;
                 case HazardType.Toxicity:
                     result.VehicleToxicity += contribution;
+                    result.VehicleToxicityGlitchBias = math.max(result.VehicleToxicityGlitchBias, visorGlitchBias);
                     break;
                 case HazardType.Biohazard:
                     result.VehicleBiohazard += contribution;
+                    result.VehicleBiohazardGlitchBias = math.max(result.VehicleBiohazardGlitchBias, visorGlitchBias);
                     break;
             }
         }
@@ -158,11 +175,17 @@ namespace Hecton8.Gameplay
         private const int MaxStepIterationsPerTick = 4;
         private const float HazardStepIntervalSeconds = 0.1f;
         private const float MinHazardRadius = 0.01f;
+        private const double HazardSpatialCellSizeMeters = 12d;
+        private const int HazardSpatialQueryCapacity = 64;
+        private const int HazardKindMaskAll = (1 << HazardTypeCount) - 1;
         private const float ToxicityDoseThreshold = 1f;
         private const float ToxicityDoseDecayPerSecond = 0.18f;
         private const float ToxicityDamagePulseIntervalSeconds = 0.5f;
         private const float ToxicityDamagePerPulse = 1.1f;
         private const float ToxicityOverdoseDamageScale = 0.85f;
+        private const float RadiationClarityTransferScale = 0.85f;
+        private const float ThermalClarityTransferDenominator = 18f;
+        private const float ToxicClarityTransferScale = 1.35f;
         private const float MinResistance = 0.1f;
         private const float MaxProtectedResistance = 1000f;
         private static readonly Vector3 DefaultPlayerBoundsSize = new Vector3(0.9f, 1.9f, 0.9f);
@@ -186,9 +209,13 @@ namespace Hecton8.Gameplay
 
         private NativeArray<HazardVolumeData> _volumes;
         private NativeArray<int> _volumeIds;
+        private NativeArray<int> _volumeSpatialHandles;
         private NativeArray<HazardVolumeData> _jobVolumes;
         private NativeArray<HazardExposureJobResult> _jobResult;
+        private NativeArray<byte> _candidateVolumeFlags;
         private JobHandle _jobHandle;
+        private HectonSpatialHash _spatialHash;
+        private NativeList<int> _spatialQueryHandles;
         private bool _jobRunning;
         private bool _registered;
         private int _activeCount;
@@ -210,6 +237,10 @@ namespace Hecton8.Gameplay
         private readonly float[] _playerHazardIntensity = new float[HazardTypeCount];
         // COLD ALLOC: float[4] â€” cached vehicle hazard intensities by HazardType â€” owner: HazardZoneManager
         private readonly float[] _vehicleHazardIntensity = new float[HazardTypeCount];
+        // COLD ALLOC: float[4] â€” cached player hazard glitch bias by HazardType â€” owner: HazardZoneManager
+        private readonly float[] _playerHazardGlitchBias = new float[HazardTypeCount];
+        // COLD ALLOC: float[4] â€” cached vehicle hazard glitch bias by HazardType â€” owner: HazardZoneManager
+        private readonly float[] _vehicleHazardGlitchBias = new float[HazardTypeCount];
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -233,16 +264,17 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Registers or updates a spherical hazard volume in runtime absolute-universe space.
         /// </summary>
-        public bool RegisterZone(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type)
+        public bool RegisterZone(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias = 1f)
         {
             if (!_volumes.IsCreated)
                 return false;
 
             int existingIndex = FindZoneIndex(id);
-            HazardVolumeData data = BuildVolumeData(runtimePosition, intensity, radius, type);
+            HazardVolumeData data = BuildVolumeData(runtimePosition, intensity, radius, type, visorGlitchBias);
             if (existingIndex >= 0)
             {
                 _volumes[existingIndex] = data;
+                UpdateSpatialEntry(existingIndex, id, in data);
                 return true;
             }
 
@@ -254,6 +286,7 @@ namespace Hecton8.Gameplay
 
             _volumeIds[_activeCount] = id;
             _volumes[_activeCount] = data;
+            _volumeSpatialHandles[_activeCount] = RegisterSpatialEntry(id, in data);
             _activeCount++;
             UpdateDiagnostics();
             return true;
@@ -272,14 +305,19 @@ namespace Hecton8.Gameplay
                 return;
 
             int lastIndex = _activeCount - 1;
+            UnregisterSpatialEntry(index);
             if (index != lastIndex)
             {
                 _volumeIds[index] = _volumeIds[lastIndex];
                 _volumes[index] = _volumes[lastIndex];
+                _volumeSpatialHandles[index] = _volumeSpatialHandles[lastIndex];
+                HazardVolumeData movedVolume = _volumes[index];
+                UpdateSpatialEntry(index, _volumeIds[index], in movedVolume);
             }
 
             _volumeIds[lastIndex] = 0;
             _volumes[lastIndex] = default;
+            _volumeSpatialHandles[lastIndex] = 0;
             _activeCount = math.max(0, lastIndex);
             UpdateDiagnostics();
         }
@@ -293,17 +331,82 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             float3 absolutePoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePoint);
+            if (_spatialHash == null || !_spatialQueryHandles.IsCreated)
+                return SumHazardIntensityLinear(absolutePoint, type);
+
+            int candidateCount = _spatialHash.CollectSphere(
+                AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolutePoint.x, absolutePoint.y, absolutePoint.z)),
+                MinHazardRadius,
+                ResolveHazardKindMask(type),
+                _spatialQueryHandles);
             float totalIntensity = 0f;
-            for (int i = 0; i < _activeCount; i++)
+            for (int i = 0; i < candidateCount; i++)
             {
-                HazardVolumeData volume = _volumes[i];
-                if (volume.Type != type)
+                if (!_spatialHash.TryGetEntry(_spatialQueryHandles[i], out HectonSpatialHash.SpatialEntry entry))
                     continue;
 
+                int index = FindZoneIndex(entry.PayloadId);
+                if (index < 0)
+                    continue;
+
+                HazardVolumeData volume = _volumes[index];
                 totalIntensity += EvaluatePointContribution(volume, absolutePoint);
             }
 
             return totalIntensity;
+        }
+
+        internal bool TrySampleHazardAvoidance(Vector3 runtimePoint, float sampleRadius, out Vector3 fleeDirection, out float hazardPressure01)
+        {
+            fleeDirection = Vector3.zero;
+            hazardPressure01 = 0f;
+            if (_spatialHash == null || !_spatialQueryHandles.IsCreated || _activeCount <= 0 || sampleRadius <= 0.001f)
+                return false;
+
+            float3 absolutePoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePoint);
+            int candidateCount = _spatialHash.CollectSphere(
+                AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolutePoint.x, absolutePoint.y, absolutePoint.z)),
+                sampleRadius,
+                HazardKindMaskAll,
+                _spatialQueryHandles);
+            if (candidateCount <= 0)
+                return false;
+
+            float3 accumulatedAway = float3.zero;
+            float peakPressure = 0f;
+            for (int i = 0; i < candidateCount; i++)
+            {
+                if (!_spatialHash.TryGetEntry(_spatialQueryHandles[i], out HectonSpatialHash.SpatialEntry entry))
+                    continue;
+
+                int index = FindZoneIndex(entry.PayloadId);
+                if (index < 0)
+                    continue;
+
+                HazardVolumeData volume = _volumes[index];
+                float contribution = EvaluatePointContribution(volume, absolutePoint);
+                if (contribution <= 0.001f)
+                    continue;
+
+                float pressure = NormalizeHazardClarityContribution(volume.Type, contribution);
+                if (pressure <= 0.001f)
+                    continue;
+
+                float3 away = absolutePoint - volume.AbsoluteUniversePosition;
+                if (math.lengthsq(away) <= 0.0001f)
+                    away = new float3(0f, 1f, 0f);
+
+                accumulatedAway += math.normalizesafe(away, new float3(0f, 1f, 0f)) * pressure;
+                if (pressure > peakPressure)
+                    peakPressure = pressure;
+            }
+
+            if (peakPressure <= 0.001f || math.lengthsq(accumulatedAway) <= 0.0001f)
+                return false;
+
+            fleeDirection = math.normalizesafe(accumulatedAway, new float3(0f, 1f, 0f));
+            hazardPressure01 = peakPressure;
+            return true;
         }
 
         /// <summary>Current toxicity dose accumulated by the local player.</summary>
@@ -387,8 +490,12 @@ namespace Hecton8.Gameplay
             int safeCapacity = math.max(MinZoneCapacity, maxZoneCount);
             _volumes = new NativeArray<HazardVolumeData>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _volumeIds = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _volumeSpatialHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _jobVolumes = new NativeArray<HazardVolumeData>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _jobResult = new NativeArray<HazardExposureJobResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _candidateVolumeFlags = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _spatialHash = new HectonSpatialHash(safeCapacity, safeCapacity * 6, HazardSpatialCellSizeMeters);
+            _spatialQueryHandles = new NativeList<int>(HazardSpatialQueryCapacity, Allocator.Persistent);
         }
 
         private void DisposeNativeState()
@@ -405,6 +512,12 @@ namespace Hecton8.Gameplay
                 _volumeIds = default;
             }
 
+            if (_volumeSpatialHandles.IsCreated)
+            {
+                _volumeSpatialHandles.Dispose();
+                _volumeSpatialHandles = default;
+            }
+
             JobHandle disposeHandle = _jobRunning ? _jobHandle : default;
             _jobRunning = false;
 
@@ -419,6 +532,21 @@ namespace Hecton8.Gameplay
                 _jobResult.Dispose(disposeHandle);
                 _jobResult = default;
             }
+
+            if (_candidateVolumeFlags.IsCreated)
+            {
+                _candidateVolumeFlags.Dispose(disposeHandle);
+                _candidateVolumeFlags = default;
+            }
+
+            if (_spatialQueryHandles.IsCreated)
+            {
+                _spatialQueryHandles.Dispose();
+                _spatialQueryHandles = default;
+            }
+
+            _spatialHash?.Dispose();
+            _spatialHash = null;
         }
 
         private void ResolvePlayerContext()
@@ -478,12 +606,21 @@ namespace Hecton8.Gameplay
             _playerHazardIntensity[(int)HazardType.Heat] = result.PlayerHeat;
             _playerHazardIntensity[(int)HazardType.Toxicity] = result.PlayerToxicity;
             _playerHazardIntensity[(int)HazardType.Biohazard] = result.PlayerBiohazard;
+            _playerHazardGlitchBias[(int)HazardType.Radiation] = result.PlayerRadiationGlitchBias;
+            _playerHazardGlitchBias[(int)HazardType.Heat] = result.PlayerHeatGlitchBias;
+            _playerHazardGlitchBias[(int)HazardType.Toxicity] = result.PlayerToxicityGlitchBias;
+            _playerHazardGlitchBias[(int)HazardType.Biohazard] = result.PlayerBiohazardGlitchBias;
             _vehicleHazardIntensity[(int)HazardType.Radiation] = result.VehicleRadiation;
             _vehicleHazardIntensity[(int)HazardType.Heat] = result.VehicleHeat;
             _vehicleHazardIntensity[(int)HazardType.Toxicity] = result.VehicleToxicity;
             _vehicleHazardIntensity[(int)HazardType.Biohazard] = result.VehicleBiohazard;
+            _vehicleHazardGlitchBias[(int)HazardType.Radiation] = result.VehicleRadiationGlitchBias;
+            _vehicleHazardGlitchBias[(int)HazardType.Heat] = result.VehicleHeatGlitchBias;
+            _vehicleHazardGlitchBias[(int)HazardType.Toxicity] = result.VehicleToxicityGlitchBias;
+            _vehicleHazardGlitchBias[(int)HazardType.Biohazard] = result.VehicleBiohazardGlitchBias;
 
             PublishExposureMask(result.PlayerExposureMask | result.VehicleExposureMask);
+            DispatchClarityTraumaSignals();
         }
 
         private void ApplyToxicityDose(float dt)
@@ -569,16 +706,29 @@ namespace Hecton8.Gameplay
                 out float3 playerHalfExtents);
             bool hasVehicleBounds = TryBuildVehicleQueryBounds(out float3 vehicleCenter, out float3 vehicleHalfExtents);
             if (!hasPlayerBounds && !hasVehicleBounds)
+            {
+                ClearExposureState();
                 return;
+            }
 
-            for (int i = 0; i < _activeCount; i++)
-                _jobVolumes[i] = _volumes[i];
+            int candidateCount = CollectCandidateVolumes(
+                hasPlayerBounds,
+                playerCenter,
+                playerHalfExtents,
+                hasVehicleBounds,
+                vehicleCenter,
+                vehicleHalfExtents);
+            if (candidateCount <= 0)
+            {
+                ClearExposureState();
+                return;
+            }
 
             _jobResult[0] = default;
             EvaluateHazardExposureJob job = new EvaluateHazardExposureJob
             {
                 Volumes = _jobVolumes,
-                VolumeCount = _activeCount,
+                VolumeCount = candidateCount,
                 HasPlayerBounds = hasPlayerBounds,
                 HasVehicleBounds = hasVehicleBounds,
                 PlayerCenter = playerCenter,
@@ -646,6 +796,69 @@ namespace Hecton8.Gameplay
             return directCollider;
         }
 
+        private int CollectCandidateVolumes(
+            bool hasPlayerBounds,
+            float3 playerCenter,
+            float3 playerHalfExtents,
+            bool hasVehicleBounds,
+            float3 vehicleCenter,
+            float3 vehicleHalfExtents)
+        {
+            if (_spatialHash == null || !_candidateVolumeFlags.IsCreated || !_spatialQueryHandles.IsCreated)
+            {
+                for (int i = 0; i < _activeCount; i++)
+                    _jobVolumes[i] = _volumes[i];
+
+                return _activeCount;
+            }
+
+            for (int i = 0; i < _activeCount; i++)
+                _candidateVolumeFlags[i] = 0;
+
+            int candidateCount = 0;
+            if (hasPlayerBounds)
+            {
+                candidateCount = AppendCandidateVolumes(
+                    playerCenter,
+                    math.max(MinHazardRadius, math.length(playerHalfExtents)),
+                    candidateCount);
+            }
+
+            if (hasVehicleBounds)
+            {
+                candidateCount = AppendCandidateVolumes(
+                    vehicleCenter,
+                    math.max(MinHazardRadius, math.length(vehicleHalfExtents)),
+                    candidateCount);
+            }
+
+            return candidateCount;
+        }
+
+        private int AppendCandidateVolumes(float3 absoluteCenter, float queryRadius, int candidateCount)
+        {
+            int handleCount = _spatialHash.CollectSphere(
+                AbsoluteUniversePosition.FromAbsolutePosition(new double3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z)),
+                queryRadius,
+                HazardKindMaskAll,
+                _spatialQueryHandles);
+            for (int i = 0; i < handleCount; i++)
+            {
+                if (!_spatialHash.TryGetEntry(_spatialQueryHandles[i], out HectonSpatialHash.SpatialEntry entry))
+                    continue;
+
+                int zoneIndex = FindZoneIndex(entry.PayloadId);
+                if (zoneIndex < 0 || _candidateVolumeFlags[zoneIndex] != 0)
+                    continue;
+
+                _candidateVolumeFlags[zoneIndex] = 1;
+                _jobVolumes[candidateCount] = _volumes[zoneIndex];
+                candidateCount++;
+            }
+
+            return candidateCount;
+        }
+
         private static float EvaluatePointContribution(HazardVolumeData volume, float3 absolutePoint)
         {
             float3 offset = volume.AbsoluteUniversePosition - absolutePoint;
@@ -657,7 +870,7 @@ namespace Hecton8.Gameplay
             return volume.Intensity * (attenuation * attenuation);
         }
 
-        private HazardVolumeData BuildVolumeData(Vector3 runtimePosition, float intensity, float radius, HazardType type)
+        private HazardVolumeData BuildVolumeData(Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias)
         {
             float safeRadius = radius > MinHazardRadius ? radius : MinHazardRadius;
             HazardVolumeData data = default;
@@ -665,6 +878,7 @@ namespace Hecton8.Gameplay
             data.Radius = safeRadius;
             data.InvRadiusSqr = 1f / (safeRadius * safeRadius);
             data.Intensity = Mathf.Max(0f, intensity);
+            data.VisorGlitchBias = Mathf.Clamp(visorGlitchBias, 0f, 2f);
             data.Type = type;
             return data;
         }
@@ -703,7 +917,22 @@ namespace Hecton8.Gameplay
             {
                 _playerHazardIntensity[i] = 0f;
                 _vehicleHazardIntensity[i] = 0f;
+                _playerHazardGlitchBias[i] = 0f;
+                _vehicleHazardGlitchBias[i] = 0f;
             }
+        }
+
+        private void ClearExposureState()
+        {
+            for (int i = 0; i < HazardTypeCount; i++)
+            {
+                _playerHazardIntensity[i] = 0f;
+                _vehicleHazardIntensity[i] = 0f;
+                _playerHazardGlitchBias[i] = 0f;
+                _vehicleHazardGlitchBias[i] = 0f;
+            }
+
+            PublishExposureMask(0);
         }
 
         private void PublishExposureMask(int nextMask)
@@ -734,6 +963,143 @@ namespace Hecton8.Gameplay
                 else
                     HazardExposureNotifier.Exit(type);
             }
+        }
+
+        private void DispatchClarityTraumaSignals()
+        {
+            if (_playerTraumaDispatcher == null)
+                return;
+
+            DispatchClarityHazardSignal(HazardType.Radiation, (uint)DamageTypeMask.Radioactive);
+            DispatchClarityHazardSignal(HazardType.Heat, (uint)DamageTypeMask.Thermal);
+            DispatchClarityHazardSignal(HazardType.Toxicity, (uint)DamageTypeMask.Toxic);
+        }
+
+        private void DispatchClarityHazardSignal(HazardType hazardType, uint damageMask)
+        {
+            int hazardIndex = (int)hazardType;
+            float intensity = math.max(_playerHazardIntensity[hazardIndex], _vehicleHazardIntensity[hazardIndex]);
+            if (intensity <= 0.001f)
+                return;
+
+            float resistance = ResolveHazardResistance(hazardType);
+            float clarityImpulse = NormalizeHazardClarityContribution(hazardType, intensity / resistance);
+            float visorBias = math.max(_playerHazardGlitchBias[hazardIndex], _vehicleHazardGlitchBias[hazardIndex]);
+            if (visorBias > 0.001f)
+                clarityImpulse = Mathf.Clamp01(clarityImpulse * visorBias);
+
+            if (clarityImpulse <= 0.001f)
+                return;
+
+            DamageSignal signal = default;
+            signal.magnitude = clarityImpulse;
+            signal.localPoint = float3.zero;
+            signal.damageType = damageMask;
+            signal.integrityDelta = 0;
+            signal.depth = _playerSurvival != null ? _playerSurvival.Depth : 0f;
+            signal.sourceID = DamageSourceIds.EnvironmentHazard;
+            _playerTraumaDispatcher.OnClarityChanged(0f, clarityImpulse, signal);
+        }
+
+        private float ResolveHazardResistance(HazardType hazardType)
+        {
+            if (_playerSurvival == null)
+                return 1f;
+
+            return Mathf.Clamp(
+                _playerSurvival.ResolveEnvironmentalResistance(hazardType),
+                MinResistance,
+                MaxProtectedResistance);
+        }
+
+        private static float NormalizeHazardClarityContribution(HazardType hazardType, float exposure)
+        {
+            float safeExposure = math.max(0f, exposure);
+            switch (hazardType)
+            {
+                case HazardType.Radiation:
+                    return 1f - math.exp(-(safeExposure * RadiationClarityTransferScale));
+
+                case HazardType.Heat:
+                    return 1f - math.exp(-(safeExposure / math.max(0.01f, ThermalClarityTransferDenominator)));
+
+                case HazardType.Toxicity:
+                    return 1f - math.exp(-(safeExposure * ToxicClarityTransferScale));
+
+                default:
+                    return math.saturate(safeExposure);
+            }
+        }
+
+        private float SumHazardIntensityLinear(float3 absolutePoint, HazardType type)
+        {
+            float totalIntensity = 0f;
+            for (int i = 0; i < _activeCount; i++)
+            {
+                HazardVolumeData volume = _volumes[i];
+                if (volume.Type != type)
+                    continue;
+
+                totalIntensity += EvaluatePointContribution(volume, absolutePoint);
+            }
+
+            return totalIntensity;
+        }
+
+        private int RegisterSpatialEntry(int id, in HazardVolumeData data)
+        {
+            if (_spatialHash == null)
+                return 0;
+
+            return _spatialHash.Register(
+                AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                    data.AbsoluteUniversePosition.x,
+                    data.AbsoluteUniversePosition.y,
+                    data.AbsoluteUniversePosition.z)),
+                new float3(data.Radius, data.Radius, data.Radius),
+                ResolveHazardKindMask(data.Type),
+                id);
+        }
+
+        private void UpdateSpatialEntry(int index, int id, in HazardVolumeData data)
+        {
+            if (_spatialHash == null || !_volumeSpatialHandles.IsCreated || index < 0 || index >= _volumeSpatialHandles.Length)
+                return;
+
+            int handle = _volumeSpatialHandles[index];
+            if (handle <= 0)
+            {
+                _volumeSpatialHandles[index] = RegisterSpatialEntry(id, in data);
+                return;
+            }
+
+            _spatialHash.UpdateEntry(
+                handle,
+                AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                    data.AbsoluteUniversePosition.x,
+                    data.AbsoluteUniversePosition.y,
+                    data.AbsoluteUniversePosition.z)),
+                new float3(data.Radius, data.Radius, data.Radius),
+                ResolveHazardKindMask(data.Type),
+                id);
+        }
+
+        private void UnregisterSpatialEntry(int index)
+        {
+            if (_spatialHash == null || !_volumeSpatialHandles.IsCreated || index < 0 || index >= _volumeSpatialHandles.Length)
+                return;
+
+            int handle = _volumeSpatialHandles[index];
+            if (handle <= 0)
+                return;
+
+            _spatialHash.Unregister(handle);
+            _volumeSpatialHandles[index] = 0;
+        }
+
+        private static int ResolveHazardKindMask(HazardType type)
+        {
+            return 1 << (int)type;
         }
 
         private void TryRegister()

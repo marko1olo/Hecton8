@@ -53,9 +53,12 @@ namespace Hecton8.Power
         [SerializeField] private float _debugBatteryCapacityWattSeconds;
         [SerializeField] private float _debugBatteryChargeNormalized;
         [SerializeField] private int _debugEmergencyReserveGridCount;
+        [SerializeField] private float _debugPendingWirelessToolDemandWattSeconds;
 
         private bool _dispatcherRegistered;
         private bool _serviceRegistered;
+        private float _pendingWirelessToolDemandWattSeconds;
+        private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
 
         public BatteryRuntimeSnapshot BatterySnapshot => new BatteryRuntimeSnapshot
         {
@@ -64,6 +67,22 @@ namespace Hecton8.Power
             ChargeNormalized = _debugBatteryChargeNormalized,
             EmergencyReserveActive = _debugEmergencyReserveGridCount > 0
         };
+
+        public bool TryQueueWirelessToolDrain(float energyWattSeconds, out float grantedEnergyWattSeconds)
+        {
+            grantedEnergyWattSeconds = 0f;
+            if (energyWattSeconds <= 0f || _debugBatteryStoredEnergyWattSeconds <= 0.0001f || _debugEmergencyReserveGridCount > 0)
+                return false;
+
+            float remainingQueueCapacity = math.max(0f, MaxPendingWirelessToolDemandWattSeconds - _pendingWirelessToolDemandWattSeconds);
+            if (remainingQueueCapacity <= 0.0001f)
+                return false;
+
+            grantedEnergyWattSeconds = math.min(energyWattSeconds, remainingQueueCapacity);
+            _pendingWirelessToolDemandWattSeconds += grantedEnergyWattSeconds;
+            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
+            return grantedEnergyWattSeconds > 0.0001f;
+        }
 
         private void Awake()
         {
@@ -104,6 +123,8 @@ namespace Hecton8.Power
             float totalBatteryStoredEnergy = 0f;
             float totalBatteryCapacity = 0f;
             int emergencyReserveGridCount = 0;
+            float lowestSupplyRatio = 1f;
+            LogisticsBrownoutTier highestBrownoutTier = LogisticsBrownoutTier.None;
 
             for (int gridIndex = _allGrids.Count - 1; gridIndex >= 0; gridIndex--)
             {
@@ -130,9 +151,28 @@ namespace Hecton8.Power
                 totalConsumption += grid.TotalConsumption;
                 totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
                 totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
+                lowestSupplyRatio = math.min(lowestSupplyRatio, grid.SupplyRatio);
 
                 if (grid.HasPowerDeficit)
                     deficitCount++;
+                if (grid.IsBatteryEmergencyReserveActive)
+                    emergencyReserveGridCount++;
+                if (grid.BrownoutTier > highestBrownoutTier)
+                    highestBrownoutTier = grid.BrownoutTier;
+            }
+
+            ConsumePendingWirelessToolDemand();
+            totalBatteryStoredEnergy = 0f;
+            totalBatteryCapacity = 0f;
+            emergencyReserveGridCount = 0;
+            for (int gridIndex = 0; gridIndex < finalizedGridCount; gridIndex++)
+            {
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null)
+                    continue;
+
+                totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
+                totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
                 if (grid.IsBatteryEmergencyReserveActive)
                     emergencyReserveGridCount++;
             }
@@ -144,6 +184,30 @@ namespace Hecton8.Power
                 ? math.saturate(totalBatteryStoredEnergy / totalBatteryCapacity)
                 : 0f;
             _debugEmergencyReserveGridCount = emergencyReserveGridCount;
+            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
+
+            float supplyRatio = totalConsumption > 0.0001f
+                ? math.saturate(totalGeneration / totalConsumption)
+                : 1f;
+            if (finalizedGridCount > 0)
+                supplyRatio = math.min(supplyRatio, lowestSupplyRatio);
+
+            float availablePowerNormalized = totalBatteryCapacity > 0.0001f
+                ? _debugBatteryChargeNormalized
+                : supplyRatio;
+
+            PowerGridTelemetrySnapshot telemetrySnapshot = new PowerGridTelemetrySnapshot(
+                finalizedGridCount,
+                deficitCount,
+                totalGeneration,
+                totalConsumption,
+                supplyRatio,
+                _debugBatteryChargeNormalized,
+                availablePowerNormalized,
+                highestBrownoutTier,
+                deficitCount > 0,
+                emergencyReserveGridCount > 0);
+            PowerGridTelemetryEvents.Raise(in telemetrySnapshot);
         }
 
         private void OnDestroy()
@@ -336,6 +400,29 @@ namespace Hecton8.Power
 
             GlobalRegistry.UnregisterPowerGridService(this);
             _serviceRegistered = false;
+        }
+
+        private void ConsumePendingWirelessToolDemand()
+        {
+            if (_pendingWirelessToolDemandWattSeconds <= 0.0001f || _allGrids == null)
+                return;
+
+            float remaining = _pendingWirelessToolDemandWattSeconds;
+            int gridCount = _allGrids.Count;
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+            {
+                if (remaining <= 0.0001f)
+                    break;
+
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null)
+                    continue;
+
+                remaining -= grid.TryConsumeWirelessToolDemand(remaining);
+            }
+
+            _pendingWirelessToolDemandWattSeconds = math.max(0f, remaining);
+            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

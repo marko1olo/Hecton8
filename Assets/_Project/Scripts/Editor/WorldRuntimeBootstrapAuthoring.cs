@@ -111,6 +111,7 @@ namespace Hecton8.EditorTools
             WorldGenerativeGeologySeamExecutionDirector geologySeamExecutionDirector = GetOrAddComponent<WorldGenerativeGeologySeamExecutionDirector>(managersRoot);
             WorldGenerativeGeologyTerrainSeamApplier geologyTerrainSeamApplier = GetOrAddComponent<WorldGenerativeGeologyTerrainSeamApplier>(managersRoot);
             WorldGenerativeGeologyVoxelBridgeDirector geologyVoxelBridgeDirector = GetOrAddComponent<WorldGenerativeGeologyVoxelBridgeDirector>(managersRoot);
+            GetOrAddComponent<SeamRegistry>(managersRoot);
             WorldFaunaSpawnRegistry faunaSpawnRegistry = GetOrAddComponent<WorldFaunaSpawnRegistry>(managersRoot);
             WorldProceduralStateRegistry proceduralStateRegistry = GetOrAddComponent<WorldProceduralStateRegistry>(managersRoot);
             BiomeMatrixDirector biomeMatrixDirector = GetOrAddComponent<BiomeMatrixDirector>(managersRoot);

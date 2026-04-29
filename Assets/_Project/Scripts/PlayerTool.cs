@@ -126,6 +126,8 @@ namespace Hecton8.Gameplay
         private string _cachedOperationalToolName;
         private float _lastUseTime = float.NegativeInfinity;
         private ulong _queuedRaycastRequesterId;
+        private uint _runtimeToolId;
+        private bool _runtimeToolRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  IPoolable
@@ -153,11 +155,14 @@ namespace Hecton8.Gameplay
         {
             LogLifecycleDebug($"{GetType().Name}.OnDespawn");
             if (IsEquipped) OnUnequip();
+            UnregisterModularRuntime();
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
             _cachedOperationalToolName = null;
             _queuedRaycastRequesterId = 0UL;
+            _runtimeToolId = 0u;
+            _runtimeToolRegistered = false;
         }
 
         protected void RefreshQueuedRaycastRequesterId()
@@ -190,6 +195,10 @@ namespace Hecton8.Gameplay
             _lowDurabilityWarningFired = false;
             var system = ToolDurabilitySystem.Instance;
             if (system != null && _toolMetadata != null) system.OnToolBroken += HandleToolBroken;
+            EnsureModularRuntimeRegistration();
+            SyncModularBattery();
+            SyncModularHeat(ResolveModularHeatNormalized());
+            SyncModularDurability();
         }
 
         public virtual void OnUnequip()
@@ -197,6 +206,7 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             var system = ToolDurabilitySystem.Instance;
             if (system != null && _toolMetadata != null) system.OnToolBroken -= HandleToolBroken;
+            UnregisterModularRuntime();
         }
 
         public virtual void UsePrimary(float deltaTime)
@@ -274,9 +284,71 @@ namespace Hecton8.Gameplay
         //  PROTECTED — STAT MODIFIERS
         // ══════════════════════════════════════════════════════════
 
-        protected float GetEfficiency() => _toolMetadata == null ? 1f : _toolMetadata.GetTotalEfficiency();
-        protected float GetSpeed() => _toolMetadata == null ? 1f : _toolMetadata.GetTotalSpeed();
-        protected float GetEnergyConsumption() => _toolMetadata == null ? 0f : _toolMetadata.GetTotalEnergyConsumption();
+        protected float GetEfficiency()
+        {
+            float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalEfficiency();
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetEfficiencyScalar(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected float GetSpeed()
+        {
+            float fallback = _toolMetadata == null ? 1f : _toolMetadata.GetTotalSpeed();
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetSpeedScalar(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected float GetEnergyConsumption()
+        {
+            float fallback = _toolMetadata == null ? 0f : _toolMetadata.GetTotalEnergyConsumption();
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetBatteryDrainPerSecond(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected float GetRuntimeMaxRange(float fallback)
+        {
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetMaxRange(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected float GetRuntimePowerScalar(float fallback)
+        {
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetPowerScalar(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected float GetRuntimeHeatGenerationRate(float fallback)
+        {
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetHeatGenerationRate(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected float GetRuntimeCooldownRate(float fallback)
+        {
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetCooldownRate(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected float GetRuntimeRecoilImpulse(float fallback)
+        {
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetRecoilImpulse(_runtimeToolId, fallback)
+                : fallback;
+        }
+
+        protected bool HasModularUpgrade(ToolUpgradeBits flag)
+        {
+            return TryGetModularEquipment(out IModularEquipmentService service) &&
+                   _runtimeToolRegistered &&
+                   service.HasUpgrade(_runtimeToolId, flag);
+        }
 
         protected float GetConditionPerformanceScale()
         {
@@ -295,20 +367,35 @@ namespace Hecton8.Gameplay
             var system = ToolDurabilitySystem.Instance;
             if (system == null || _toolMetadata == null) return;
             float drainRate = isPrimary ? _toolMetadata.durabilityDrainRate : _toolMetadata.durabilityDrainRateSecondary;
-            float multiplier = 1f;
-            for (int i = 0; i < _toolMetadata.maxUpgradeSlots && i < _toolMetadata.installedUpgrades.Length; i++)
-            {
-                var upgrade = _toolMetadata.installedUpgrades[i];
-                if (upgrade != null) multiplier *= upgrade.durabilityDrainMultiplier;
-            }
+            float multiplier = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetDurabilityDrainMultiplier(_runtimeToolId, 1f)
+                : 1f;
             system.DrainDurability(_toolMetadata.toolID, drainRate * multiplier * deltaTime, _toolMetadata.maxDurability);
+            SyncModularDurability();
         }
 
         private void ApplyEnergyConsumption(float deltaTime)
         {
             if (_survivalSystem == null || _toolMetadata == null) return;
-            int drainAmount = Mathf.FloorToInt(GetEnergyConsumption() * deltaTime);
-            if (drainAmount > 0) _survivalSystem.DrainEnergy(drainAmount);
+            float requestedDrain = GetEnergyConsumption() * deltaTime;
+            if (requestedDrain <= 0f)
+                return;
+
+            float remainingDrain = requestedDrain;
+            if (HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
+                GlobalRegistry.Submarine != null &&
+                GlobalRegistry.Submarine.AtmosphereSystem != null &&
+                GlobalRegistry.PowerGrid != null &&
+                GlobalRegistry.PowerGrid.TryQueueWirelessToolDrain(requestedDrain, out float grantedDrain))
+            {
+                remainingDrain = Mathf.Max(0f, requestedDrain - grantedDrain);
+            }
+
+            int suitDrainAmount = Mathf.FloorToInt(remainingDrain);
+            if (suitDrainAmount > 0)
+                _survivalSystem.DrainEnergy(suitDrainAmount);
+
+            SyncModularBattery();
         }
 
         private void CheckLowDurability()
@@ -327,6 +414,113 @@ namespace Hecton8.Gameplay
         }
 
         protected virtual void OnToolBrokenWhileUsing() { }
+
+        internal ToolRuntimeProfile BuildModularRuntimeProfile()
+        {
+            ToolRuntimeProfile profile = new ToolRuntimeProfile
+            {
+                ToolId = ResolveRuntimeToolId(),
+                MaxRange = 1f,
+                PowerScalar = 1f,
+                EfficiencyScalar = _toolMetadata != null ? Mathf.Max(0.1f, _toolMetadata.efficiency) : 1f,
+                SpeedScalar = _toolMetadata != null ? Mathf.Max(0.1f, _toolMetadata.speed) : 1f,
+                HeatGenerationRate = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.authoredHeatGenerationRate) : 0f,
+                CooldownRate = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.authoredCooldownRate) : 0f,
+                BatteryCapacity = 1f,
+                BatteryDrainPerSecond = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.energyConsumptionRate) : 0f,
+                DurabilityDrainMultiplier = 1f,
+                RecoilImpulse = _toolMetadata != null ? Mathf.Max(0f, _toolMetadata.authoredRecoilImpulse) : 0f,
+                ModuleSlotCount = (byte)Mathf.Clamp(_toolMetadata != null ? _toolMetadata.maxUpgradeSlots : 0, 0, ToolUpgradeSystem.MaxModuleSlots)
+            };
+
+            ConfigureModularRuntimeProfile(ref profile);
+            return profile;
+        }
+
+        internal int CopyAuthoredModules(ToolModuleData[] destination)
+        {
+            if (destination == null || destination.Length == 0 || _toolMetadata == null)
+                return 0;
+
+            for (int i = 0; i < destination.Length; i++)
+                destination[i] = null;
+
+            return _toolMetadata.CopyDefaultModules(destination);
+        }
+
+        internal virtual float ResolveModularBatteryNormalized()
+        {
+            return _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.EnergyNormalized) : 1f;
+        }
+
+        internal virtual float ResolveModularHeatNormalized()
+        {
+            return 0f;
+        }
+
+        protected virtual void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile) { }
+
+        protected void SyncModularHeat(float normalizedHeat)
+        {
+            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
+                service.SetHeat(_runtimeToolId, normalizedHeat);
+        }
+
+        protected void SyncModularBattery()
+        {
+            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
+                service.SetBattery(_runtimeToolId, ResolveModularBatteryNormalized());
+        }
+
+        protected void SyncModularDurability()
+        {
+            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
+                service.SetDurability(_runtimeToolId, DurabilityNormalized);
+        }
+
+        private uint ResolveRuntimeToolId()
+        {
+            if (_runtimeToolId != 0u)
+                return _runtimeToolId;
+
+            string toolIdSource = _toolMetadata != null && !string.IsNullOrWhiteSpace(_toolMetadata.toolID)
+                ? _toolMetadata.toolID
+                : (_toolData != null && !string.IsNullOrWhiteSpace(_toolData.itemName) ? _toolData.itemName : GetType().Name);
+            _runtimeToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
+            return _runtimeToolId;
+        }
+
+        private void EnsureModularRuntimeRegistration()
+        {
+            if (_runtimeToolRegistered)
+                return;
+
+            ModularEquipmentEngine runtime = ModularEquipmentEngine.EnsureRuntimeInstance();
+            runtime.InitializeService();
+
+            if (!TryGetModularEquipment(out IModularEquipmentService service))
+                return;
+
+            _runtimeToolId = service.RegisterTool(this);
+            _runtimeToolRegistered = _runtimeToolId != 0u;
+        }
+
+        private void UnregisterModularRuntime()
+        {
+            if (!_runtimeToolRegistered)
+                return;
+
+            if (TryGetModularEquipment(out IModularEquipmentService service))
+                service.UnregisterTool(this, _runtimeToolId);
+
+            _runtimeToolRegistered = false;
+        }
+
+        private bool TryGetModularEquipment(out IModularEquipmentService service)
+        {
+            service = GlobalRegistry.ModularEquipment;
+            return service != null && service.IsInitialized;
+        }
 
         internal ToolMetadata RuntimeMetadata => _toolMetadata;
         internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= Mathf.Max(0.05f, maxIdleSeconds));

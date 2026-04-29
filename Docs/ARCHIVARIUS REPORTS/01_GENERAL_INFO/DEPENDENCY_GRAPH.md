@@ -1,267 +1,105 @@
 # GLOBAL REGISTRY DEPENDENCY GRAPH
 
-**Версия:** 2026-04-28 | **Статус:** ETA VERIFIED
+Date: 2026-04-29
+Status: PENDING VERIFICATION
+Scope: source-backed dependency orientation for core runtime services
+Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
 
----
+## 1. Purpose
 
-## 📋 INITIALIZATION FLOW (Mermaid Diagram)
+This file is a narrowed dependency orientation page.
+It does not claim exhaustive compile-time graph completeness and does not claim runtime initialization was measured in Unity during this pass.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          GRANDPARENT SYSTEMS                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────┐     ┌──────────────────┐                            │
-│  │  GameBootstrapper │────▶│  SystemDispatcher │                            │
-│  │   (Entry Point)   │     │   (Frame Owner)   │                            │
-│  └────────┬─────────┘     └────────┬─────────┘                            │
-│           │                         │                                       │
-│           ▼                         ▼                                       │
-│  ┌──────────────────┐     ┌──────────────────┐                            │
-│  │ GlobalRegistry   │────▶│  ProfilerRegistry│                            │
-│  │  (Service Locator)│     │  (Instrumentation)│                            │
-│  └────────┬─────────┘     └──────────────────┘                            │
-│           │                                                          │
-└───────────┼──────────────────────────────────────────────────────────────┘
-            │
-            ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          CORE SERVICES (Layer 0)                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-│  │InputDispatcher│  │SceneRuntime  │  │MemoryBudget  │  │RenderSettings│    │
-│  │  .Input      │  │  .Scene      │  │  Tracker     │  │  Lifecycle   │    │
-│  └──────┬───────┘  └──────┬───────┘  └──────────────┘  └──────────────┘    │
-│         │                │                                                   │
-│  ┌──────┴───────┐  ┌──────┴───────┐                                         │
-│  │ PlayerRuntime│  │EnvironmentRT│                                          │
-│  │  Context     │  │  Context    │                                          │
-│  │  .Player     │  │  .Environment                                       │
-│  └──────┬───────┘  └──────┬───────┘                                         │
-│         │                │                                                   │
-└─────────┼────────────────┼───────────────────────────────────────────────────┘
-          │                │
-          ▼                ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          PLAYER SERVICES (Layer 1)                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ PlayerInventory  │  │ PlayerSensory    │  │ PlayerTool       │         │
-│  │  .PlayerInventory│  │  .PlayerSensory  │  │   Manager        │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ PlayerMovement   │  │ PlayerPDA        │  │ PlayerBuilder   │         │
-│  │ (HectonPlayer    │  │                  │  │                  │         │
-│  │   Movement)      │  │                  │  │                  │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          WORLD SERVICES (Layer 2)                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ SubmarineRuntime │  │ HectonWorld     │  │ OceanKinematics │         │
-│  │  Context        │  │  Generator      │  │  Runtime        │         │
-│  │  .Submarine     │  │                 │  │  Service        │         │
-│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘         │
-│           │                     │                     │                    │
-│           ▼                     ▼                     ▼                    │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ SubmarineAtmo    │  │ WorldProcedural │  │ IHectonOcean     │         │
-│  │  System          │  │  ScatterDirector │  │  Kinematics      │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ SubmarineStruct  │  │ MapMagicBridge   │  │ Ecosystem       │         │
-│  │  Grid            │  │                  │  │  Director        │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          GAMEPLAY SERVICES (Layer 3)                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ HazardZone      │  │ Construction     │  │ PowerGrid       │         │
-│  │  Manager        │  │  Manager         │  │  Manager        │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ BiomeMatrix      │  │ BeaconNetwork    │  │ HectonDiscovery │         │
-│  │  Director        │  │  System          │  │  Manager        │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          UI SERVICES (Layer 4)                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ HectonFabricator │  │ HectonInventory  │  │ HectonSuitHUD   │         │
-│  │  UI              │  │  UI              │  │  _v4            │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐         │
-│  │ PlayerTool       │  │ ScanLogSystem    │  │ SaveManager     │         │
-│  │  Manager         │  │                  │  │                 │         │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘         │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+## 2. Verified Core Dependency Surface
 
----
+Current code review confirmed these core service owners/interfaces in the active registry-contract layer:
 
-## 📋 INITIALIZATION ORDER (Text Format)
+- `InputDispatcher` -> `IInputService`
+- `PhysicsApplySystem` -> `IPhysicsService`
+- `SceneRuntimeService` -> `ISceneService`
+- `SaveManager` -> `ISaveService`
+- `PlayerRuntimeContextService` -> `IPlayerRuntimeContext`
+- `PlayerInventoryManager` -> `IPlayerInventoryService`
+- `PlayerSensoryManager` -> `IPlayerSensoryService`
+- `EnvironmentRuntimeContextService` -> `IEnvironmentRuntimeContext`
+- `GlobalWeatherDirector` -> `IWeatherService`
+- `OceanKinematicsRuntimeService` -> `IHectonOceanKinematicsService`
+- `EquipmentInteractionHandler` -> `IInteractionSignalService`
+- `DebrisManager` -> `IDebrisService`
+- `EcosystemDirector` -> `IEcosystemDirectorService`
 
-### Phase 1: Bootstrap (Before Scene Load)
-```
-1. GameBootstrapper.Awake()
-   ├── ResetStaticState() → GlobalRegistry.ClearRuntimeBuckets()
-   └── GameBootstrapper.Initialize()
-       ├── SystemDispatcher.EnsureRuntimeInstance()
-       ├── GlobalRegistry.RegisterInputService(InputDispatcher)
-       ├── GlobalRegistry.RegisterPhysicsService(PhysicsApplySystem)
-       ├── GlobalRegistry.RegisterAudioService(SpatialAudioManager)
-       └── GlobalRegistry.RegisterSaveService(SaveManager)
-```
+Unresolved service gap still confirmed:
 
-### Phase 2: Scene Services (During 00_BOOTSTRAP)
-```
-2. SceneRuntimeService.Awake()
-   └── GlobalRegistry.RegisterSceneService(this)
+- `IAudioService` -> no verified implementor in current pass
 
-3. InputDispatcher.Awake()
-   ├── GlobalRegistry.RegisterInputService(this)
-   └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core)
+## 3. Structural Interpretation
 
-4. PhysicsApplySystem.Awake()
-   ├── GlobalRegistry.RegisterPhysicsService(this)
-   └── GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.UI)
-```
+Observed dependency style is mixed, not pure:
 
-### Phase 3: Player Context (During 01_MAIN_MENU → 02_HECTON_WORLD)
-```
-5. PlayerRuntimeContextService.Awake()
-   ├── GlobalRegistry.RegisterPlayerRuntimeContext(this)
-   └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core)
+- `GlobalRegistry` / service-locator access is present
+- static event buses are present
+- feature-local static buses are present
+- direct component/service references are also present
 
-6. PlayerInventoryManager.Awake()
-   ├── GlobalRegistry.RegisterPlayerInventoryService(this)
-   └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core)
+This means the project is not a single clean DI graph. It is a layered runtime with several competing communication styles.
 
-7. PlayerSensoryManager.Awake()
-   ├── GlobalRegistry.RegisterPlayerSensoryService(this)
-   └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core)
-```
+## 4. High-Risk Dependency Areas
 
-### Phase 4: World Systems (During 02_HECTON_WORLD load)
-```
-8. SubmarineCoreDirector.Awake()
-   └── GlobalRegistry.RegisterSubmarine(this)
+### 4.1 Audio
 
-9. SubmarineStructuralGrid.Awake()
-   ├── GlobalRegistry.RegisterSubmarineHullBreach(this)
-   └── GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment)
+- `SpatialAudioManager` exists
+- `IAudioService` ownership remains unresolved
+- audio runtime is therefore structurally weaker than other service surfaces
 
-10. SubmarineAtmosphereSystem.Awake()
-    └── GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment)
+### 4.2 UI
 
-11. HectonWorldGenerator.Awake()
-    └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment)
+- `IUIService` is fragmented across multiple implementors
+- UI behavior also relies heavily on feature-local event surfaces such as `PDAEvents`
 
-12. WorldProceduralScatterDirector.Awake()
-    ├── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment)
-    └── GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment)
-```
+### 4.3 Damage / Integrity
 
-### Phase 5: Gameplay Directors (After Scene Load)
-```
-13. BiomeMatrixDirector.Awake()
-    └── GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment)
+- `IDamageReceiver` remains semantically conflicting because a shadow/nested definition was previously documented and code context remains high-risk
 
-14. EcosystemDirector.Awake()
-    └── GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment)
+## 5. Dependency Narrative
 
-15. HazardZoneManager.Awake()
-    └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment)
-```
+Representative architectural path inferred from current code:
 
-### Phase 6: UI Systems (After Player Spawn)
-```
-16. HectonFabricatorUI.Awake()
-    └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI)
+1. bootstrap/runtime setup establishes core services
+2. feature systems query `GlobalRegistry` or subscribe to static buses
+3. player/world/UI systems exchange state through mixed direct calls and event surfaces
+4. mod-facing signals can also pass through `HectonEventBus`
 
-17. PlayerPDA.Awake()
-    ├── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI)
-    └── GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI)
+This is sufficient for orientation, not for claiming deterministic or leak-free startup.
 
-18. HectonSuitHUD_v4.Awake()
-    └── GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI)
-```
+## 6. What Was Removed
 
----
+Removed from older versions:
 
-## 📋 DEPENDENCY CHAIN (Who Needs Whom)
+- `ETA VERIFIED` status language
+- unsupported certainty about full graph completeness
+- stale dependency claims not rechecked in the current audit pass
 
-### Grandfather → Father → Son Chain:
+## 7. Regression Model
 
-| System | Requires | Required By |
-|--------|----------|-------------|
-| **GameBootstrapper** | Nothing | All |
-| **SystemDispatcher** | GameBootstrapper | All Tickables |
-| **GlobalRegistry** | SystemDispatcher | All Services |
-| **InputDispatcher** | GlobalRegistry | PlayerMovement, Tools |
-| **PlayerRuntimeContext** | InputDispatcher | UI, Inventory |
-| **PlayerMovement** | PlayerRuntimeContext | Camera, Audio |
-| **SubmarineCoreDirector** | PlayerMovement | Atmosphere, Structural |
-| **WorldGenerator** | SubmarineCoreDirector | Scatter, Flora |
-| **ScatterDirector** | WorldGenerator | Boids, Fauna |
+CPU: no runtime code changed
+GC: no runtime code changed
+Memory: no runtime code changed
+Cadence: no runtime sequencing changed
+Correctness: improved by replacing stale certainty with source-backed dependency orientation
 
----
+## 8. Hot Path Impact
 
-## 📋 SERVICE REGISTRATION SUMMARY
+None. Markdown-only change.
 
-### Registered Services (25 total):
+## 9. Failure Modes
 
-| Service | Interface | Layer | Priority |
-|---------|-----------|-------|----------|
-| InputDispatcher | IInputService | Core | 0 |
-| PhysicsApplySystem | IPhysicsService | Core | 0 |
-| SpatialAudioManager | IAudioService | Core | 0 |
-| SceneRuntimeService | ISceneService | Core | 0 |
-| SaveManager | ISaveService | Core | 0 |
-| PlayerRuntimeContextService | IPlayerRuntimeContext | Core | 0 |
-| PlayerInventoryManager | IPlayerInventoryService | Core | 0 |
-| PlayerSensoryManager | IPlayerSensoryService | Core | 0 |
-| EnvironmentRuntimeContextService | IEnvironmentRuntimeContext | Core | 0 |
-| GlobalWeatherDirector | IWeatherService | Environment | 20 |
-| OceanKinematicsRuntimeService | IHectonOceanKinematicsService | Physics | 20 |
-| SubmarineCoreDirector | ISubmarineRuntimeContext | Gameplay | 30 |
-| SubmarineStructuralGrid | ISubmarineHullBreachReadModel | Gameplay | 30 |
-| DebrisManager | IDebrisService | Gameplay | 30 |
-| EcosystemDirector | IEcosystemDirectorService | World | 40 |
+- hidden scene wiring may bypass the dependency picture described here
+- registry ownership can drift if code changes without paired doc maintenance
+- compile-time relationships outside the rechecked core surfaces are not fully enumerated here
 
-### Registered Tickables (120+ total):
+## 10. Why This Version Was Kept
 
-| Category | Count | Priority Layer |
-|----------|-------|-----------------|
-| Core | ~20 | Core |
-| Environment | ~40 | Environment |
-| Player | ~30 | Player |
-| UI | ~30 | UI |
+Kept because it is narrower, readable, and backed by current source inspection.
+Rejected content: unsupported verification language and stale graph claims.
 
----
-
-**STATUS:** ETA VERIFIED ✅
-
-**Grandfather:** `GameBootstrapper` → `SystemDispatcher` → `GlobalRegistry`
+STATUS: PENDING VERIFICATION

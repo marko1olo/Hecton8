@@ -114,6 +114,8 @@ namespace Hecton8.UI
 
         // Pre-allocated raycast buffer
         private readonly RaycastHit[] _hitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe â€” owner: InteractionUI
+        // COLD ALLOC: char[256] â€” interaction prompt TMP staging buffer â€” owner: InteractionUI
+        private readonly char[] _promptCharBuffer = new char[256];
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC PROPERTIES
@@ -253,29 +255,25 @@ namespace Hecton8.UI
             }
 
             // Check for BatteryCharger
-            BatteryCharger charger = collider.GetComponent<BatteryCharger>();
-            if (charger != null)
+            if (collider.TryGetComponent(out BatteryCharger charger))
             {
                 return BuildBatteryChargerPrompt(charger);
             }
 
             // Check for BioReactor
-            BioReactor reactor = collider.GetComponent<BioReactor>();
-            if (reactor != null)
+            if (collider.TryGetComponent(out BioReactor reactor))
             {
                 return BuildBioReactorPrompt(reactor);
             }
 
             // Check for StorageCrate
-            StorageCrate crate = collider.GetComponent<StorageCrate>();
-            if (crate != null)
+            if (collider.TryGetComponent(out StorageCrate crate))
             {
                 return BuildStorageCratePrompt(crate);
             }
 
             // Check for PickupItem
-            PickupItem pickup = collider.GetComponent<PickupItem>();
-            if (pickup != null && pickup.ItemData != null)
+            if (collider.TryGetComponent(out PickupItem pickup) && pickup.ItemData != null)
             {
                 return BuildPickupItemPrompt(pickup);
             }
@@ -427,9 +425,26 @@ namespace Hecton8.UI
             _currentPrompt = expandedPrompt;
 
             if (promptText != null)
-                promptText.text = expandedPrompt;
+                ApplyPromptText(expandedPrompt);
 
             OnPromptChanged?.Invoke(expandedPrompt);
+        }
+
+        private void ApplyPromptText(string prompt)
+        {
+            if (promptText == null)
+                return;
+
+            if (string.IsNullOrEmpty(prompt))
+            {
+                promptText.SetCharArray(_promptCharBuffer, 0, 0);
+                return;
+            }
+
+            int charCount = prompt.Length;
+            int copyLength = charCount <= _promptCharBuffer.Length ? charCount : _promptCharBuffer.Length;
+            prompt.CopyTo(0, _promptCharBuffer, 0, copyLength);
+            promptText.SetCharArray(_promptCharBuffer, 0, copyLength);
         }
 
         private void SetVisible(bool visible)

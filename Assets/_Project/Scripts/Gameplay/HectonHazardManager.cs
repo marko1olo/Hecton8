@@ -36,10 +36,10 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Registers or updates a runtime hazard volume.
         /// </summary>
-        public static bool Register(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type)
+        public static bool Register(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias = 1f)
         {
             HazardZoneManager zoneManager = ResolveZoneManager();
-            return zoneManager != null && zoneManager.RegisterZone(id, runtimePosition, intensity, radius, type);
+            return zoneManager != null && zoneManager.RegisterZone(id, runtimePosition, intensity, radius, type, visorGlitchBias);
         }
 
         /// <summary>

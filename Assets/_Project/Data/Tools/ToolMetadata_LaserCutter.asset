@@ -27,6 +27,13 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  defaultModules:
+  - {fileID: 11400000, guid: 35b8c22c7e63f7349b0f1ee11ccc50b4, type: 2}
+  - {fileID: 11400000, guid: 40e49accd17e21142af2a7d776a6af32, type: 2}
+  - {fileID: 0}
+  authoredHeatGenerationRate: 0.2
+  authoredCooldownRate: 0.3
+  authoredRecoilImpulse: 4
   repairCostFull: 10
   repairResourceID: titanium
   nameLocKey: TOOL_LASER_CUTTER_NAME

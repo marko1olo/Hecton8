@@ -199,6 +199,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half instanceType : TEXCOORD6;
                 half kelpDepthFade : TEXCOORD7;
                 half edgeMask : TEXCOORD8;
+                half curvatureMask : TEXCOORD9;
+                half entropyProgress : TEXCOORD10;
             };
 
             float Hash21(float2 value)
@@ -759,6 +761,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     billboardUp * (heightMask * heightScale);
             }
 
+            float ResolveOrganicEntropyProgress(float encodedHeightScale, float encodedWidthScale, float timeValue)
+            {
+                if (encodedHeightScale >= 0.0)
+                    return 0.0;
+
+                return saturate((timeValue - max(0.0, encodedWidthScale)) / 0.85);
+            }
+
             Varyings Vert(Attributes input, uint instanceID : SV_InstanceID)
             {
                 Varyings output;
@@ -776,11 +786,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float lodAlpha = ResolveLodAlpha(distanceToCamera, _HectonLodPassMode);
 
                 float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
-                float heightScale = saturate(instanceData.y);
-                float widthScale = max(0.2, instanceData.z);
+                float encodedHeightScale = instanceData.y;
+                float encodedWidthScale = instanceData.z;
+                float timeValue = _Time.y;
+                float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
+                float heightScale = saturate(abs(encodedHeightScale));
+                float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
                 float variation = frac(instanceData.w);
                 float heightMask = saturate(input.uv.y);
                 float bendMask = heightMask * heightMask;
+                float curvatureMask = saturate(input.color.a);
                 float2 originXZ = originWS.xz;
                 float instanceNoise = Hash21(originXZ + variation);
                 float resolvedWaterLevel = ResolveWaterLevel();
@@ -793,7 +808,6 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 baseNormalWS = TransformDirection(instanceMatrix, input.normalOS);
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 renderOriginWS = originWS + driftOffsetWS;
-                float timeValue = _Time.y;
 
                 if (instanceType < 0.5)
                 {
@@ -951,6 +965,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     }
                 }
 
+                if (entropyProgress > 0.0001)
+                {
+                    float entropyWeight = saturate(entropyProgress * lerp(0.22, 1.0, heightMask) * lerp(0.35, 1.0, curvatureMask));
+                    animatedPositionWS = lerp(animatedPositionWS, renderOriginWS, entropyWeight * 0.72);
+                    animatedPositionWS.y -= entropyWeight * instanceHeight * lerp(0.08, 0.42, heightMask);
+                }
+
                 float3 swayOffset = animatedPositionWS - basePositionWS;
                 float3 normalWS = normalize(baseNormalWS - swayOffset * (_NormalResponse * bendMask));
 
@@ -974,6 +995,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.instanceType = instanceType;
                 output.kelpDepthFade = kelpDepthFade;
                 output.edgeMask = saturate(abs(input.uv.x * 2.0 - 1.0));
+                output.curvatureMask = curvatureMask;
+                output.entropyProgress = entropyProgress;
                 return output;
             }
 
@@ -986,7 +1009,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (input.instanceType > 1.5h)
                     clip(porousCoverageMask - 0.16h);
 
-                half coverage = saturate(_Opacity) * porousCoverageMask;
+                half entropyCoverage = 1.0h - input.entropyProgress * saturate(lerp(0.28h, 1.0h, input.heightMask) * lerp(0.35h, 1.0h, input.curvatureMask));
+                half coverage = saturate(_Opacity) * porousCoverageMask * entropyCoverage;
                 clip(coverage - ResolveBayer4x4(floor(input.positionCS.xy)));
 
                 half3 normalWS = normalize(input.normalWS);
@@ -1020,6 +1044,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 }
 
                 half3 gradientColor = lerp(baseColor, tipColor, input.heightMask);
+                gradientColor = lerp(gradientColor, gradientColor * half3(0.55h, 0.48h, 0.42h), input.entropyProgress * 0.75h);
 
                 if (input.instanceType > 0.5h && input.instanceType < 1.5h)
                 {

@@ -288,13 +288,17 @@ namespace Hecton8.UI
         private void RefreshThreatPings()
         {
             _activeThreatPingCount = 0;
-            SpatialAudioManager audio = SpatialAudioManager.Instance;
+            SpatialAudioManager audio = GlobalRegistry.Audio as SpatialAudioManager;
+            NativeArray<float> gridEnergy = default;
+            int azimuthBins = 0;
+            int elevationBins = 0;
+            ComputeBuffer radarGridBuffer = null;
             if (audio == null ||
                 !audio.TryGetAcousticRadarGridPayload(
-                    out NativeArray<float> gridEnergy,
-                    out int azimuthBins,
-                    out int elevationBins,
-                    out _))
+                    out gridEnergy,
+                    out azimuthBins,
+                    out elevationBins,
+                    out radarGridBuffer))
             {
                 return;
             }

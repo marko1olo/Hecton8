@@ -83,6 +83,8 @@ namespace Hecton8.AI
         private const float AmbientCurrentMaxVelocity = 3.8f;
         private const float AmbientCurrentCullDistance = 100f;
         private const float AmbientCurrentCullDistanceSqr = AmbientCurrentCullDistance * AmbientCurrentCullDistance;
+        private const float PredatorHazardAvoidanceRadius = 14f;
+        private const float PredatorHazardFearThreshold = 0.5f;
         private const int MaxVoxelRouteWaypointCount = 16;
         private const float VoxelRouteRefreshIntervalSeconds = 0.25f;
         private const float VoxelRouteRetargetDistanceSqr = 16f;
@@ -395,6 +397,8 @@ namespace Hecton8.AI
             bool hasPreyTarget = _sensorSuite.currentPrey != null;
             bool hasScavengeTarget = _sensorSuite.currentScavengeTarget != null;
             float fearPressure01 = _sensorSuite.isThreatened ? 0.35f : 0f;
+            bool hasHazardScatterDirection = _sensorSuite.isScattering;
+            float3 scatterDirection = _sensorSuite.scatterDirection;
             if (hasThreatTarget)
                 fearPressure01 += 0.2f;
             if (_utilityBrain.UsesPredatorRole)
@@ -404,6 +408,18 @@ namespace Hecton8.AI
                 {
                     int speciesId = _speciesProfile != null ? _speciesProfile.speciesID : 0;
                     fearPressure01 += vegetationBridge.SamplePredatorFearPressure(selfPosition, speciesId);
+                }
+
+                HazardZoneManager hazardZoneManager = HazardZoneManager.Instance;
+                if (hazardZoneManager != null &&
+                    hazardZoneManager.TrySampleHazardAvoidance((Vector3)selfPosition, PredatorHazardAvoidanceRadius, out Vector3 hazardFleeDirection, out float hazardPressure01))
+                {
+                    fearPressure01 += hazardPressure01;
+                    if (hazardPressure01 > PredatorHazardFearThreshold)
+                    {
+                        hasHazardScatterDirection = true;
+                        scatterDirection = hazardFleeDirection;
+                    }
                 }
             }
 
@@ -425,7 +441,7 @@ namespace Hecton8.AI
                 _sensorSuite.flockCenter,
                 _sensorSuite.flockDirection,
                 _sensorSuite.flockAvoidance,
-                _sensorSuite.scatterDirection,
+                scatterDirection,
                 HealthNormalized,
                 _sensorSuite.distSqrToPlayer,
                 attackRange,
@@ -444,7 +460,7 @@ namespace Hecton8.AI
                 hasScavengeTarget,
                 _stateMachine.useTerritory,
                 _stateMachine.isFlockingFish,
-                _sensorSuite.isScattering,
+                hasHazardScatterDirection,
                 isAggressive);
 
             CreatureUtilityEvaluation evaluation = _utilityBrain.Evaluate(frameId, dt, _cognitionTimeSeconds, in context);

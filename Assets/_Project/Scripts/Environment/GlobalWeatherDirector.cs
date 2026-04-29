@@ -10,6 +10,8 @@ namespace Hecton8.Environment
     [DefaultExecutionOrder(-4550)]
     public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IWeatherService
     {
+        private const float ExponentialBlendCompletion = 0.99f;
+        private const float TransitionCompletionThreshold = 0.999f;
         private const float CurrentSyncEpsilonSq = 0.000025f;
         private const float VectorNormalizeEpsilon = 0.0001f;
 
@@ -77,6 +79,12 @@ namespace Hecton8.Environment
         [SerializeField] private uint randomSeed = 13081u;
         [Tooltip("Seconds used to blend from one macro state into the next.")]
         [SerializeField, Min(1f)] private float transitionDurationSeconds = 60f;
+        [Tooltip("Optional authored calm-weather profile used to override wind and wave-height targets.")]
+        [SerializeField] private WeatherProfile calmWeatherProfile;
+        [Tooltip("Optional authored storm-weather profile used to override wind and wave-height targets.")]
+        [SerializeField] private WeatherProfile stormWeatherProfile;
+        [Tooltip("Optional authored surge-weather profile used to override wind and wave-height targets.")]
+        [SerializeField] private WeatherProfile surgeWeatherProfile;
         [Tooltip("Calm-state current, wind, and wave response profile.")]
         [SerializeField] private PhaseProfile calmProfile = new PhaseProfile
         {
@@ -173,6 +181,7 @@ namespace Hecton8.Environment
         private WeatherPhase _activePhase = WeatherPhase.Calm;
         private WeatherPhase _sourcePhase = WeatherPhase.Calm;
         private WeatherPhase _targetPhase = WeatherPhase.Calm;
+        private float _biolumeSurgeTimer;
         private WeatherRuntimeSnapshot _runtimeSnapshot;
         private float3 _lastAppliedCurrentVector;
         private Unity.Mathematics.Random _weatherRandom;
@@ -235,6 +244,7 @@ namespace Hecton8.Environment
             TryUnregisterTickManager();
             if (ReferenceEquals(GlobalRegistry.Weather, this))
                 GlobalRegistry.UnregisterWeatherService(this);
+            _biolumeSurgeTimer = 0f;
             Shader.SetGlobalVector(_GlobalCurrentVectorId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalWindVectorId, Vector4.zero);
             Shader.SetGlobalFloat(_WeatherIntensityId, 0f);
@@ -261,6 +271,7 @@ namespace Hecton8.Environment
                 return;
 
             _runtimeSnapshot.CurrentMeta.TimeAccumulator += math.max(0f, deltaTime);
+            _biolumeSurgeTimer = math.max(0f, _biolumeSurgeTimer - math.max(0f, deltaTime));
             AdvanceTransition(deltaTime);
             PublishSnapshot();
         }
@@ -309,6 +320,15 @@ namespace Hecton8.Environment
         public WeatherRuntimeSnapshot GetRuntimeSnapshot()
         {
             return _runtimeSnapshot;
+        }
+
+        /// <summary>
+        /// Forces the bioluminescent surge bit high for the requested duration.
+        /// </summary>
+        /// <param name="durationSeconds">Surge hold duration in seconds.</param>
+        public void RegisterBiolumeSurge(float durationSeconds)
+        {
+            _biolumeSurgeTimer = math.max(_biolumeSurgeTimer, math.max(0.1f, durationSeconds));
         }
 
         private void TryRegisterTickManager()
@@ -367,10 +387,13 @@ namespace Hecton8.Environment
                 return;
             }
 
-            _transitionTimer += math.max(0f, deltaTime);
-            float duration = math.max(1f, transitionDurationSeconds);
-            _weatherIntensity = math.saturate(_transitionTimer / duration);
-            if (_weatherIntensity < 1f)
+            float clampedDeltaTime = math.max(0f, deltaTime);
+            _transitionTimer += clampedDeltaTime;
+            _weatherIntensity = math.lerp(
+                _weatherIntensity,
+                1f,
+                ResolveExponentialBlendFactor(clampedDeltaTime, transitionDurationSeconds));
+            if (_weatherIntensity < TransitionCompletionThreshold)
                 return;
 
             _activePhase = _targetPhase;
@@ -397,6 +420,8 @@ namespace Hecton8.Environment
         {
             PhaseProfile fromProfile = GetProfile(_transitioning ? _sourcePhase : _activePhase);
             PhaseProfile toProfile = GetProfile(_targetPhase);
+            WeatherProfile fromWeatherProfile = GetWeatherProfile(_transitioning ? _sourcePhase : _activePhase);
+            WeatherProfile toWeatherProfile = GetWeatherProfile(_targetPhase);
             float blend = _transitioning ? _weatherIntensity : 1f;
 
             float3 currentVector = math.lerp(
@@ -411,6 +436,27 @@ namespace Hecton8.Environment
             float amplitudeScale = math.lerp(fromProfile.waveAmplitudeScale, toProfile.waveAmplitudeScale, blend);
             float steepnessScale = math.lerp(fromProfile.waveSteepnessScale, toProfile.waveSteepnessScale, blend);
             float speedScale = math.lerp(fromProfile.waveSpeedScale, toProfile.waveSpeedScale, blend);
+            if (fromWeatherProfile != null || toWeatherProfile != null)
+            {
+                windVector = math.lerp(
+                    ResolveWeatherProfileWindVector(fromWeatherProfile, windVector),
+                    ResolveWeatherProfileWindVector(toWeatherProfile, windVector),
+                    blend);
+
+                float authoredWaveHeight = math.lerp(
+                    ResolveWeatherProfileWaveHeight(fromWeatherProfile, amplitudeScale),
+                    ResolveWeatherProfileWaveHeight(toWeatherProfile, amplitudeScale),
+                    blend);
+                float totalBaseWaveHeight = ResolveBaseWaveHeight();
+                if (authoredWaveHeight > VectorNormalizeEpsilon && totalBaseWaveHeight > VectorNormalizeEpsilon)
+                    amplitudeScale = authoredWaveHeight / totalBaseWaveHeight;
+
+                float authoredTurbulenceMultiplier = math.lerp(
+                    ResolveWeatherProfileTurbulenceMultiplier(fromWeatherProfile),
+                    ResolveWeatherProfileTurbulenceMultiplier(toWeatherProfile),
+                    blend);
+                thermalIntensity *= math.max(0f, authoredTurbulenceMultiplier);
+            }
 
             CurrentMeta currentMeta = _runtimeSnapshot.CurrentMeta;
             currentMeta.GlobalBaseVector = math.normalizesafe(currentVector, new float3(0f, 0f, 1f));
@@ -451,10 +497,17 @@ namespace Hecton8.Environment
         private WeatherState ResolvePublishedMask()
         {
             WeatherState activeMask = ResolvePhaseMask(_activePhase);
+            if (_biolumeSurgeTimer > 0f)
+                activeMask |= WeatherState.BiolumeSurge;
+
             if (!_transitioning || _weatherIntensity >= 1f)
                 return activeMask;
 
-            return ResolvePhaseMask(_sourcePhase) | ResolvePhaseMask(_targetPhase);
+            WeatherState transitionMask = ResolvePhaseMask(_sourcePhase) | ResolvePhaseMask(_targetPhase);
+            if (_biolumeSurgeTimer > 0f)
+                transitionMask |= WeatherState.BiolumeSurge;
+
+            return transitionMask;
         }
 
         private static WeatherState ResolvePhaseMask(WeatherPhase phase)
@@ -514,6 +567,61 @@ namespace Hecton8.Environment
                 default:
                     return calmProfile;
             }
+        }
+
+        private WeatherProfile GetWeatherProfile(WeatherPhase phase)
+        {
+            switch (phase)
+            {
+                case WeatherPhase.Storm:
+                    return stormWeatherProfile;
+                case WeatherPhase.CurrentSurge:
+                    return surgeWeatherProfile;
+                default:
+                    return calmWeatherProfile;
+            }
+        }
+
+        private float ResolveBaseWaveHeight()
+        {
+            return math.max(
+                VectorNormalizeEpsilon,
+                math.max(0f, wave0.amplitude) +
+                math.max(0f, wave1.amplitude) +
+                math.max(0f, wave2.amplitude));
+        }
+
+        private float ResolveWeatherProfileWaveHeight(WeatherProfile profile, float fallbackAmplitudeScale)
+        {
+            if (profile == null)
+                return ResolveBaseWaveHeight() * math.max(0f, fallbackAmplitudeScale);
+
+            return math.max(0f, profile.WaveHeightMax);
+        }
+
+        private static float ResolveWeatherProfileTurbulenceMultiplier(WeatherProfile profile)
+        {
+            return profile != null ? math.max(0f, profile.AbyssalTurbulenceMultiplier) : 1f;
+        }
+
+        private static float3 ResolveWeatherProfileWindVector(WeatherProfile profile, float3 fallbackWindVector)
+        {
+            if (profile == null)
+                return fallbackWindVector;
+
+            Vector3 authoredWind = profile.WindVector;
+            float3 authoredWindFloat3 = new float3(authoredWind.x, authoredWind.y, authoredWind.z);
+            return math.lengthsq(authoredWindFloat3) > VectorNormalizeEpsilon
+                ? authoredWindFloat3
+                : fallbackWindVector;
+        }
+
+        private static float ResolveExponentialBlendFactor(float deltaTime, float durationSeconds)
+        {
+            float clampedDeltaTime = math.max(0f, deltaTime);
+            float duration = math.max(0.0001f, durationSeconds);
+            float blendRate = -math.log(1f - ExponentialBlendCompletion) / duration;
+            return 1f - math.exp(-blendRate * clampedDeltaTime);
         }
 
         private float ResolveHoldDuration(PhaseProfile profile)

@@ -14,6 +14,8 @@ namespace Hecton8.Gameplay
         private const float IntegrityChannelDecayPerSecond = 0.35f;
         private const float PowerChannelDecayPerSecond = 0.28f;
         private const float ClarityChannelDecayPerSecond = 0.75f;
+        private const float HazardSignalDecayPerSecond = 0.95f;
+        private const float BiosRecoveryClarityThreshold = 0.1f;
         private const float ImpactStressTransferFactor = 0.15f;
         private const float ImpactStressNormalizationSpeed = 20f;
         private const float VehicleIntegrityLeakThreshold = 0.4f;
@@ -28,6 +30,9 @@ namespace Hecton8.Gameplay
         private float _integrityChannel01;
         private float _powerChannel01;
         private float _clarityChannel01;
+        private float _hazardRadiationSignal01;
+        private float _hazardThermalSignal01;
+        private float _hazardToxicSignal01;
         private float _activeTransportChargeNormalized = 1f;
         private float _activeTransportIntegrityNormalized = 1f;
         private HabitatIntegrityManager _activeHabitatManager;
@@ -47,6 +52,20 @@ namespace Hecton8.Gameplay
 
         /// <summary>Current clarity trauma channel intensity.</summary>
         public float ClarityChannel01 => _clarityChannel01;
+
+        internal float HazardRadiationSignal01 => _hazardRadiationSignal01;
+
+        internal float HazardThermalSignal01 => _hazardThermalSignal01;
+
+        internal float HazardToxicSignal01 => _hazardToxicSignal01;
+
+        internal float ClarityRemaining01 => 1f - Mathf.Clamp01(_clarityChannel01);
+
+        internal bool BiosRecoveryModeActive => ResolveBiosRecoveryMode(
+            _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized) : 1f,
+            Mathf.Min(
+                _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized) : 1f,
+                _activeTransportIntegrityNormalized));
 
         /// <summary>Normalized flood ratio of the currently occupied habitat module.</summary>
         public float FloodLevelNormalized => _activeHabitatManager != null
@@ -125,6 +144,9 @@ namespace Hecton8.Gameplay
             _integrityChannel01 = DecayChannel(_integrityChannel01, IntegrityChannelDecayPerSecond, deltaTime);
             _powerChannel01 = DecayChannel(_powerChannel01, PowerChannelDecayPerSecond, deltaTime);
             _clarityChannel01 = DecayChannel(_clarityChannel01, ClarityChannelDecayPerSecond, deltaTime);
+            _hazardRadiationSignal01 = DecayChannel(_hazardRadiationSignal01, HazardSignalDecayPerSecond, deltaTime);
+            _hazardThermalSignal01 = DecayChannel(_hazardThermalSignal01, HazardSignalDecayPerSecond, deltaTime);
+            _hazardToxicSignal01 = DecayChannel(_hazardToxicSignal01, HazardSignalDecayPerSecond, deltaTime);
 
             if (_activeTransportOwner != null)
             {
@@ -179,6 +201,16 @@ namespace Hecton8.Gameplay
         public void OnClarityChanged(float prev, float next, DamageSignal src)
         {
             PromoteChannel(ref _clarityChannel01, Mathf.Max(Mathf.Abs(next - prev), next));
+
+            float hazardSignal = Mathf.Clamp01(Mathf.Max(src.magnitude, next));
+            if ((src.damageType & (uint)DamageTypeMask.Radioactive) != 0u)
+                PromoteChannel(ref _hazardRadiationSignal01, hazardSignal);
+
+            if ((src.damageType & (uint)DamageTypeMask.Thermal) != 0u)
+                PromoteChannel(ref _hazardThermalSignal01, hazardSignal);
+
+            if ((src.damageType & (uint)DamageTypeMask.Toxic) != 0u)
+                PromoteChannel(ref _hazardToxicSignal01, hazardSignal);
         }
 
         /// <summary>
@@ -320,6 +352,9 @@ namespace Hecton8.Gameplay
             _integrityChannel01 = 0f;
             _powerChannel01 = 0f;
             _clarityChannel01 = 0f;
+            _hazardRadiationSignal01 = 0f;
+            _hazardThermalSignal01 = 0f;
+            _hazardToxicSignal01 = 0f;
             _lastPublishedTraumaSignature = int.MinValue;
             _lastPublishedInteractionSignature = int.MinValue;
         }
@@ -339,17 +374,22 @@ namespace Hecton8.Gameplay
                 ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized)
                 : 1f;
             float hullIntegrity01 = Mathf.Min(playerIntegrity01, _activeTransportIntegrityNormalized);
+            float hazardGlitchIntensity = Mathf.Clamp01(Mathf.Max(
+                _hazardRadiationSignal01,
+                Mathf.Max(
+                    _hazardThermalSignal01 * 0.82f,
+                    _hazardToxicSignal01 * 0.91f)));
             float glitchIntensity = Mathf.Clamp01(Mathf.Max(
-                _clarityChannel01,
-                _integrityChannel01 * 0.82f,
-                _powerChannel01 * 0.68f,
-                hullStress01 * 0.92f,
-                fatalPressure01));
+                Mathf.Max(
+                    _clarityChannel01,
+                    Mathf.Max(_integrityChannel01 * 0.82f, _powerChannel01 * 0.68f)),
+                Mathf.Max(
+                    hazardGlitchIntensity,
+                    Mathf.Max(hullStress01 * 0.92f, fatalPressure01))));
             float recoilScalar = Mathf.Clamp01(Mathf.Max(
                 hullStress01,
-                _integrityChannel01 * 0.86f,
-                _powerChannel01 * 0.34f));
-            bool biosRecoveryMode = _activeTransportChargeNormalized <= 0.0001f || hullIntegrity01 < 0.05f;
+                Mathf.Max(_integrityChannel01 * 0.86f, _powerChannel01 * 0.34f)));
+            bool biosRecoveryMode = ResolveBiosRecoveryMode(playerIntegrity01, hullIntegrity01);
 
             int traumaSignature = ComposeSignalSignature(
                 glitchIntensity,
@@ -369,11 +409,10 @@ namespace Hecton8.Gameplay
             }
 
             float stress01 = Mathf.Clamp01(Mathf.Max(
-                underwaterStress01,
-                hullStress01,
-                fatalPressure01,
-                _clarityChannel01 * 0.7f,
-                _integrityChannel01 * 0.45f));
+                Mathf.Max(underwaterStress01, hullStress01),
+                Mathf.Max(
+                    fatalPressure01,
+                    Mathf.Max(_clarityChannel01 * 0.7f, _integrityChannel01 * 0.45f))));
             float volume01 = Mathf.Lerp(0.24f, 1f, stress01);
             float pitchScale = Mathf.Lerp(0.92f, 1.18f, stress01);
             float frequency01 = Mathf.Lerp(0.35f, 1f, stress01);
@@ -429,6 +468,15 @@ namespace Hecton8.Gameplay
                 default:
                     return 0f;
             }
+        }
+
+        private bool ResolveBiosRecoveryMode(float playerIntegrity01, float hullIntegrity01)
+        {
+            if (_activeTransportChargeNormalized <= 0.0001f || hullIntegrity01 < 0.05f)
+                return true;
+
+            float clarityRemaining01 = 1f - Mathf.Clamp01(_clarityChannel01);
+            return clarityRemaining01 < BiosRecoveryClarityThreshold || playerIntegrity01 < 0.05f;
         }
     }
 }

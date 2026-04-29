@@ -232,5 +232,36 @@ namespace Hecton8.Construction
             _debugChargeNormalized = ChargeNormalized;
             _debugPlannedGridPowerWatts = _plannedGridPowerWatts;
         }
+
+        internal float TryConsumeDirectGridEnergy(float requestedGridEnergyWattSeconds, float reserveFloorNormalized)
+        {
+            if (requestedGridEnergyWattSeconds <= 0f)
+                return 0f;
+
+            float safeCapacity = math.max(1f, energyCapacityWattSeconds);
+            float reserveEnergyFloor = math.saturate(reserveFloorNormalized) * safeCapacity;
+            float safeEfficiency = math.max(0.1f, dischargeEfficiency);
+            float availableStoredEnergy = math.max(0f, _storedEnergyWattSeconds - reserveEnergyFloor);
+            if (availableStoredEnergy <= 0f)
+                return 0f;
+
+            float maxDeliverableByStoredEnergy = availableStoredEnergy * safeEfficiency;
+            float maxDeliverableByPower = math.max(0f, maxDischargePowerWatts) * DispatchDeltaTimeSeconds;
+            float deliveredGridEnergy = math.min(
+                requestedGridEnergyWattSeconds,
+                math.min(maxDeliverableByStoredEnergy, maxDeliverableByPower));
+            if (deliveredGridEnergy <= 0f)
+                return 0f;
+
+            float nextStoredEnergy = math.max(0f, _storedEnergyWattSeconds - (deliveredGridEnergy / safeEfficiency));
+            _pendingHeatLossJoules = ResolvePendingHeatLossJoules(
+                _storedEnergyWattSeconds,
+                nextStoredEnergy,
+                deliveredGridEnergy / DispatchDeltaTimeSeconds);
+            _storedEnergyWattSeconds = nextStoredEnergy;
+            FlushPendingHeatLoss();
+            RefreshDebugState();
+            return deliveredGridEnergy;
+        }
     }
 }

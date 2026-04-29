@@ -34,5 +34,11 @@ namespace Hecton8.Core
 
         /// <summary>Aggregate battery state across all grids.</summary>
         BatteryRuntimeSnapshot BatterySnapshot { get; }
+
+        /// <summary>
+        /// Queues one submarine-only wireless tool-drain request against the power runtime.
+        /// The request is accounted by the power owner on its next logistics evaluation.
+        /// </summary>
+        bool TryQueueWirelessToolDrain(float energyWattSeconds, out float grantedEnergyWattSeconds);
     }
 }

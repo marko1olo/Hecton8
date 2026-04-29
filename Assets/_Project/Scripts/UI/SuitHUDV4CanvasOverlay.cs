@@ -802,7 +802,6 @@ namespace Hecton8.UI
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RebuildLocalizationCache();
-            HideIncompleteRootImmediately();
 
             if (!Application.isPlaying && isActiveAndEnabled && keepVisibleInEditMode)
             {
@@ -819,6 +818,7 @@ namespace Hecton8.UI
 
             NormalizeCanvas();
             EnsureHierarchy();
+            HideIncompleteRootImmediately();
             RefreshVisuals(0f, refreshMediumCadence: true, refreshSlowCadence: true);
         }
 

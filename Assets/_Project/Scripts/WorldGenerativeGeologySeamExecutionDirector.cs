@@ -85,6 +85,7 @@ namespace Hecton8.World
     public sealed class WorldGenerativeGeologySeamExecutionDirector : MonoBehaviour, ISlowTickable
     {
         private const string SeamRootName = "__GEOLOGY_SEAM";
+        private const string GapDitherName = "__SEAM_DITHER";
         private static readonly string[] _TerrainSkirtNames = CreateIndexedNames("TerrainSkirt_", 12);
         private static readonly string[] _VoxelCollarNames = CreateIndexedNames("VoxelCollar_", 10);
         private static readonly string[] _DebrisNames = CreateIndexedNames("Debris_", 14);
@@ -101,6 +102,9 @@ namespace Hecton8.World
         [SerializeField] private int voxelCollarSegments = 5;
         [SerializeField] private float verticalBlendScale = 0.42f;
         [SerializeField] private float debrisScale = 0.42f;
+        [SerializeField] private float seamDitherVerticalOffset = 0.14f;
+        [SerializeField] private int seamDitherMaxParticles = 36;
+        [SerializeField] private float seamDitherSize = 0.16f;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -319,6 +323,8 @@ namespace Hecton8.World
             int buildSignature = ComputeBuildSignature(plan);
             if (runtime.BuildSignature == buildSignature)
             {
+                ConfigureGapDitherVfx(seamRoot, plan);
+                SeamRegistry.ActiveRuntimeInstance?.Upsert(plan);
                 CountPlan(plan);
                 return;
             }
@@ -335,8 +341,10 @@ namespace Hecton8.World
             if (plan.RequiresDebrisSeam)
                 BuildDebrisBand(seamRoot, seamMaterial, plan, ref primitiveIndex);
 
+            ConfigureGapDitherVfx(seamRoot, plan);
             DisableUnusedChildren(seamRoot, primitiveIndex);
             runtime.Configure(plan.runtimeKey, buildSignature, plan);
+            SeamRegistry.ActiveRuntimeInstance?.Upsert(plan);
             CountPlan(plan);
         }
 
@@ -357,11 +365,116 @@ namespace Hecton8.World
                 weight = plan.caveBlendWeight,
                 playerDistance = plan.playerDistance,
                 planWeight = plan.planWeight,
+                hasTerrainSample = plan.hasTerrainSample,
+                absoluteTerrainContactPosition = new Vector3(plan.absoluteUniversePosition.x, plan.absoluteTerrainHeight, plan.absoluteUniversePosition.z),
+                slopeDegrees = plan.slopeDegrees,
+                seamBlendRadius = plan.seamBlendRadius,
+                suggestedTerrainCut = plan.suggestedTerrainCut,
                 caveBlendMode = plan.caveBlendMode,
                 chunkCoord = plan.ChunkCoord,
                 hasMacroZone = plan.hasMacroZone,
                 macroZoneCoord = plan.MacroZoneCoord
             });
+        }
+
+        private void ConfigureGapDitherVfx(Transform root, in WorldGenerativeGeologySeamPlan plan)
+        {
+            if (root == null)
+                return;
+
+            Transform existing = root.Find(GapDitherName);
+            bool shouldRender = plan.RequiresTerrainBlend || plan.RequiresVoxelBlend;
+            if (!shouldRender)
+            {
+                if (existing != null && existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(false);
+
+                return;
+            }
+
+            ParticleSystem system = existing != null
+                ? existing.GetComponent<ParticleSystem>()
+                : null;
+            if (system == null)
+                system = CreateGapDitherSystem(root);
+
+            if (system == null)
+                return;
+
+            Transform systemTransform = system.transform;
+            Vector3 contact = root.InverseTransformPoint(plan.TerrainContactPosition);
+            systemTransform.localPosition = new Vector3(contact.x, contact.y + seamDitherVerticalOffset, contact.z);
+            systemTransform.localRotation = Quaternion.identity;
+            systemTransform.localScale = Vector3.one;
+
+            GameObject vfxRoot = system.gameObject;
+            if (!vfxRoot.activeSelf)
+                vfxRoot.SetActive(true);
+
+            system.useAutoRandomSeed = false;
+            system.randomSeed = unchecked((uint)plan.runtimeKey);
+
+            var main = system.main;
+            main.maxParticles = Mathf.Clamp(Mathf.RoundToInt(plan.seamBlendRadius * 6f), 12, Mathf.Max(12, seamDitherMaxParticles));
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.2f, 4.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.08f, 0.22f);
+            main.startSize = new ParticleSystem.MinMaxCurve(seamDitherSize * 0.72f, seamDitherSize * 1.35f);
+            main.startColor = new Color(0.32f, 0.92f, 1f, 0.9f);
+
+            var emission = system.emission;
+            emission.rateOverTime = Mathf.Clamp(plan.seamBlendRadius * 5.5f, 8f, 28f);
+
+            var shape = system.shape;
+            shape.radius = Mathf.Max(0.9f, plan.seamBlendRadius * 0.82f);
+
+            if (!system.isPlaying)
+                system.Play(true);
+        }
+
+        private ParticleSystem CreateGapDitherSystem(Transform root)
+        {
+            GameObject vfxRoot = new GameObject(GapDitherName);
+            vfxRoot.transform.SetParent(root, false);
+
+            ParticleSystem system = vfxRoot.AddComponent<ParticleSystem>();
+            ParticleSystemRenderer renderer = vfxRoot.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            var main = system.main;
+            main.loop = true;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.maxParticles = seamDitherMaxParticles;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(2.2f, 4.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.08f, 0.22f);
+            main.startSize = new ParticleSystem.MinMaxCurve(seamDitherSize * 0.72f, seamDitherSize * 1.35f);
+            main.startColor = new Color(0.32f, 0.92f, 1f, 0.9f);
+
+            var emission = system.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 12f;
+
+            var shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 1.8f;
+            shape.radiusThickness = 0.12f;
+
+            var noise = system.noise;
+            noise.enabled = true;
+            noise.strength = 0.08f;
+            noise.frequency = 0.2f;
+            noise.scrollSpeed = 0.08f;
+
+            var velocity = system.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.Local;
+            velocity.radial = new ParticleSystem.MinMaxCurve(-0.04f, 0.08f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0.02f, 0.08f);
+
+            return system;
         }
 
         private void BuildTerrainSkirt(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)
@@ -573,6 +686,7 @@ namespace Hecton8.World
                 if (_desiredRuntimeKeys.Contains(runtime.RuntimeKey))
                     continue;
 
+                SeamRegistry.ActiveRuntimeInstance?.Remove(runtime.RuntimeKey);
                 if (runtime.gameObject.activeSelf)
                     runtime.gameObject.SetActive(false);
             }
@@ -600,6 +714,9 @@ namespace Hecton8.World
             {
                 Transform child = root.GetChild(i);
                 if (child == null)
+                    continue;
+
+                if (child.name == GapDitherName)
                     continue;
 
                 bool keepActive = i < activeChildCount;

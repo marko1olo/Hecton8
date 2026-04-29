@@ -22,6 +22,8 @@ namespace Hecton8.Gameplay
         [Header("── Hazard Settings ───────────────────────────")]
         [Tooltip("Тип излучаемой опасности.")]
         [SerializeField] private HazardType _type = HazardType.Radiation;
+        [Tooltip("Optional authored profile for hazard metadata and visor corruption bias.")]
+        [SerializeField] private HazardZoneProfile _profile;
 
         [Tooltip("Базовая интенсивность в центре (0-100+).")]
         [SerializeField] private float _intensity = 50f;
@@ -98,7 +100,23 @@ namespace Hecton8.Gameplay
 
         private void InternalUpdateRegistry()
         {
-            HectonHazardManager.Register(_instanceID, _tr.position, _intensity, _radius, _type);
+            HectonHazardManager.Register(
+                _instanceID,
+                _tr.position,
+                _intensity,
+                _radius,
+                ResolveHazardType(),
+                ResolveVisorGlitchBias());
+        }
+
+        private HazardType ResolveHazardType()
+        {
+            return _profile != null ? _profile.HazardType : _type;
+        }
+
+        private float ResolveVisorGlitchBias()
+        {
+            return _profile != null ? _profile.VisorGlitchBias : 1f;
         }
 
         private void TryRegisterToTickManager()
@@ -126,7 +144,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            Color c = _type switch
+            Color c = ResolveHazardType() switch
             {
                 HazardType.Radiation => Color.cyan,
                 HazardType.Heat => Color.yellow,

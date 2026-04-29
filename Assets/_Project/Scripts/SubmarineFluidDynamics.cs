@@ -2659,7 +2659,9 @@ namespace Hecton8.Physics
             if (_exteriorThermalHazardIds[slotIndex] != 0)
                 return _exteriorThermalHazardIds[slotIndex];
 
-            int hullId = _cachedTransform != null ? _cachedTransform.GetInstanceID() : GetInstanceID();
+            int hullId = _cachedTransform != null
+                ? unchecked((int)EntityId.ToULong(_cachedTransform.GetEntityId()))
+                : unchecked((int)EntityId.ToULong(GetEntityId()));
             _exteriorThermalHazardIds[slotIndex] = (hullId * 31) ^ (slotIndex + 1);
             return _exteriorThermalHazardIds[slotIndex];
         }

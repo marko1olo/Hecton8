@@ -1,42 +1,87 @@
-# CYRILLIC_SWEEP.md — Non-ASCII Character Audit
-**Status:** ⚠️ VIOLATIONS DETECTED  
-**Scan Date:** 2026-04-28  
-**Scope:** `Assets/_Project/` + root `.shader` / `.hlsl`
+# CYRILLIC_SWEEP.md
+
+**Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION  
+**Scope:** non-ASCII path sweep under `Assets/_Project`
+
+**Mandates Followed:** `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 
 ---
 
-## Shader / HLSL Files — FIRST-PARTY
-| File | Cyrillic? | Verdict |
-|------|-----------|---------|
-| `Assets/_Project/Shaders/Hecton_Item_Highlight.shader` | ❌ No | ✅ COMPLIANT |
-| `Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader` | ❌ No | ✅ COMPLIANT |
+## Method
 
-## C# Source Files — Russian Comments
-| File | Location | Content |
-|------|----------|---------|
-| `HectonBoidController.cs` | Header comments | Russian architecture notes |
-| `BuoyancyObject.cs` | Header / inline | Russian lifecycle comments |
-| `InteractionHighlighter.cs` | Header / inline | Russian state-machine comments |
-| `HectonItem.cs` | Header | Russian pooling notes |
-| `ObjectPoolManager.cs` | Header / inline | Russian timer comments |
-| `HectonUnderwaterVisuals.cs` | Inline | Mangled/corrupted unicode lines |
-| `Items/PickupItem.cs` | Header | Russian SlowTick notes |
-| `HectonFabricatorUI.cs` | Inline | Russian hologram comments |
-| `HectonPlayerMovement.cs` | Inline | Russian Sargassum notes |
+- Re-ran a filesystem sweep for file paths containing non-ASCII characters under `Assets/_Project`.
+- Counted file entries only.
+- This pass does not attempt a complete audit of source comments, string literals, or external docs.
 
-## Folder Names — Russian
-| Path | Issue |
-|------|-------|
-| `Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/` | Russian folder name + subfolder `УНИВЕРСАЛЬНЫЙ ВЫБОР (ТЕКСТУРЫ)` |
+---
 
-## Root / Lore — Russian Text Files
-| File | Verdict |
-|------|---------|
-| `Lore/лор1.txt`, `Lore/лор2.txt`, `Lore/лор3.txt` | Expected (lore docs) |
-| `Assets/_Project/Data/текст.txt` | ⚠️ Russian design doc inside runtime asset tree |
+## Current Scale
+
+Non-ASCII file paths currently present under `Assets/_Project`: `606`
+
+The older report materially understated the scope.
+
+---
+
+## Confirmed Examples
+
+### Fonts
+
+- `Assets/_Project/Art/Materials/Fonts/текст.ttf`
+- `Assets/_Project/Art/Materials/Fonts/цифры.ttf`
+
+### Mesh assets
+
+- many `Assets/_Project/Art/Meshes/Cleaned/ENV__...` assets with Cyrillic names
+
+### Rock data and prefabs
+
+- multiple `Assets/_Project/Data/RockSockets/...` assets with Cyrillic names
+- multiple `Assets/_Project/Prefabs/Nature/...` prefab paths with Cyrillic names
+
+### Sandboxed or content folders
+
+- `Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/...`
+- `Assets/_Project/_PROLOGUE_CONTENT/Prefabs/облака гектон8.prefab`
+
+### Text assets
+
+- `Assets/_Project/Data/план.txt`
+- `Assets/_Project/Data/текст.txt`
+
+---
+
+## Corrected Conclusion
+
+This is not a small comment-hygiene issue.  
+It is a broad asset-path naming problem spanning fonts, meshes, data assets, prefabs, and content folders.
+
+---
+
+## What This Sweep Does Not Cover
+
+- full source-comment language audit
+- shader string-literal audit
+- CI/build breakage proof on external locales
+
+Those require separate targeted passes.
+
+---
+
+## Regression Model
+
+| Dimension | Impact |
+|---|---|
+| CPU | None. Documentation-only rewrite. |
+| GC | None. Documentation-only rewrite. |
+| Memory | None. Documentation-only rewrite. |
+| Cadence | None. Runtime code unchanged. |
+| Correctness | Improved by replacing a tiny misleading sample with a measured path-count snapshot. |
+
+---
 
 ## Verdict
-- **Shaders:** ✅ CLEAN — no Cyrillic in first-party `.shader`/`.hlsl`.
-- **C# Comments:** ⚠️ ARCHITECTURAL DEBT — does not affect runtime, but violates "English-only codebase" standard for AA commercial product.
-- **Folder Names:** ❌ VIOLATION — Russian path may break CI/build tools on some locales.
-- **Action:** Rename rock folder to ASCII transliteration. Migrate Russian comments to English in next hygiene pass.
+
+Non-ASCII path debt is widespread, not isolated.  
+Exact build impact remains `PENDING VERIFICATION`, but the naming exposure is real and large.

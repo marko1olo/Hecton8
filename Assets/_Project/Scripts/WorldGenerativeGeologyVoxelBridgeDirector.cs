@@ -602,11 +602,12 @@ namespace Hecton8.World
                     out int resolvedResolution,
                     out int detailBand,
                     out CaveGenerationParams generationParams,
+                    out NativeArray<CaveEntrance> entranceArray,
                     out NativeArray<CaveStructure> structureArray);
                 float buildDataMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - buildDataStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
                 NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
                 NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
-                NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(0, Allocator.Persistent);
+                NativeArray<CaveEntrance> entrances = entranceArray;
                 TraceRequestPrepared(
                     request.runtimeKey,
                     request.familyId,
@@ -753,6 +754,7 @@ namespace Hecton8.World
             out int resolvedResolution,
             out int detailBand,
             out CaveGenerationParams generationParams,
+            out NativeArray<CaveEntrance> entrances,
             out NativeArray<CaveStructure> structures)
         {
             float dominantSize = Mathf.Clamp(math.cmax((float3)request.size), minVoxelSize, maxVoxelSize) + voxelPadding;
@@ -776,6 +778,7 @@ namespace Hecton8.World
             generationParams.spawnContext = SpawnContext.CaveShallow;
 
             Vector3 upOffset = Vector3.up * Mathf.Max(0.75f, request.size.y * 0.08f);
+            entrances = BuildEntrances(request);
             structures = new NativeArray<CaveStructure>(
                 ResolveStructureCount(request.archetype),
                 Allocator.Persistent,
@@ -985,8 +988,28 @@ namespace Hecton8.World
                 hash = (hash * 397) ^ resolvedResolution;
                 hash = (hash * 397) ^ voxelLodLevel;
                 hash = (hash * 397) ^ (buildCollider ? 1 : 0);
+                hash = (hash * 397) ^ (request.hasTerrainSample ? 1 : 0);
+                hash = (hash * 397) ^ Mathf.RoundToInt(request.slopeDegrees * 10f);
+                hash = (hash * 397) ^ Mathf.RoundToInt(request.seamBlendRadius * 100f);
+                hash = (hash * 397) ^ Mathf.RoundToInt(request.suggestedTerrainCut * 100f);
                 return hash;
             }
+        }
+
+        private NativeArray<CaveEntrance> BuildEntrances(in WorldGenerativeGeologyVoxelBlendRequest request)
+        {
+            if (!VoxelSeamDirector.ShouldCreateCaveMouth(request.hasTerrainSample, request.slopeDegrees, request.caveBlendMode))
+                return new NativeArray<CaveEntrance>(0, Allocator.Persistent);
+
+            NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            entrances[0] = VoxelSeamDirector.BuildCaveEntrance(
+                request.RuntimeTerrainContactPosition,
+                request.RuntimeCenter,
+                request.size,
+                request.weight,
+                request.seamBlendRadius,
+                request.suggestedTerrainCut);
+            return entrances;
         }
 
         private void ResolveRequestBuildSettings(

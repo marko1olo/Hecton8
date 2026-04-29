@@ -34,6 +34,7 @@ namespace Hecton8.World
         }
 
         private const int MaxPublishedInteractionPoints = 12;
+        private const int MaxExternalInteractionPoints = 4;
         private const int MaxQueryColliders = 32;
         private const int InteractionPointStride = 32;
         private const int FlowFieldStride = sizeof(float) * 2;
@@ -293,8 +294,10 @@ namespace Hecton8.World
         private bool _hasActiveScooterWake;
         private bool _isRegistered;
         private int _lastPublishedInteractionCount;
+        private int _externalInteractionCount;
 
         private FloraInteractionPointGpuData[] _interactionPoints;
+        private FloraInteractionPointGpuData[] _externalInteractionPoints;
         private Collider[] _interactionColliders;
         private Rigidbody[] _interactionBodies;
         private GraphicsBuffer _interactionBuffer;
@@ -369,6 +372,8 @@ namespace Hecton8.World
 
             // COLD ALLOC: FloraInteractionPointGpuData[_maxInteractionPoints] - global vegetation interaction payload - owner: FloraInteractionManager
             _interactionPoints = new FloraInteractionPointGpuData[_maxInteractionPoints];
+            // COLD ALLOC: FloraInteractionPointGpuData[4] - external tool-impact vegetation interaction payloads - owner: FloraInteractionManager
+            _externalInteractionPoints = new FloraInteractionPointGpuData[MaxExternalInteractionPoints];
             // COLD ALLOC: Collider[32] - NonAlloc interaction query results - owner: FloraInteractionManager
             _interactionColliders = new Collider[MaxQueryColliders];
             // COLD ALLOC: Rigidbody[32] - duplicate suppression for interaction query results - owner: FloraInteractionManager
@@ -451,6 +456,7 @@ namespace Hecton8.World
             if (runtimePlayerTransform == null)
             {
                 ResetInteractionGlobals();
+                ResetExternalInteractions();
                 return;
             }
 
@@ -478,6 +484,7 @@ namespace Hecton8.World
             interactionCount = AppendInteractionPoint(_smoothPosition, playerVelocity, playerBendRadius, interactionCount);
             interactionCount = AppendScooterInteractionPoint(playerVelocity, interactionCount, deltaTime);
             interactionCount = CollectDynamicInteractionPoints(targetPosition, interactionCount);
+            interactionCount = AppendExternalInteractions(interactionCount);
             UpdateWakeTrail(runtimePlayerTransform.position, playerVelocity, deltaTime);
             TryEmitSedimentBursts(targetPosition, playerVelocity);
 
@@ -492,11 +499,36 @@ namespace Hecton8.World
                 Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
                 Shader.SetGlobalInt(_InteractionCountId, interactionCount);
                 _lastPublishedInteractionCount = interactionCount;
+                ResetExternalInteractions();
                 return;
             }
 
             Shader.SetGlobalInt(_InteractionCountId, 0);
             _lastPublishedInteractionCount = 0;
+            ResetExternalInteractions();
+        }
+
+        /// <summary>
+        /// Queues one external vegetation interaction burst for publication during the next Tick.
+        /// </summary>
+        public void RegisterExternalInteraction(Vector3 positionWS, Vector3 velocityWS, float radius)
+        {
+            if (_externalInteractionPoints == null || _externalInteractionCount >= MaxExternalInteractionPoints)
+                return;
+
+            _externalInteractionPoints[_externalInteractionCount++] = new FloraInteractionPointGpuData
+            {
+                PositionRadius = new Vector4(
+                    positionWS.x,
+                    positionWS.y,
+                    positionWS.z,
+                    Mathf.Max(0.05f, radius)),
+                VelocitySpeed = new Vector4(
+                    velocityWS.x,
+                    velocityWS.y,
+                    velocityWS.z,
+                    velocityWS.magnitude)
+            };
         }
 
         private Transform ResolveRuntimePlayerTransform()
@@ -921,6 +953,26 @@ namespace Hecton8.World
                     velocity.magnitude)
             };
             return interactionCount + 1;
+        }
+
+        private int AppendExternalInteractions(int interactionCount)
+        {
+            if (_externalInteractionPoints == null || _externalInteractionCount <= 0)
+                return interactionCount;
+
+            int copyCount = Mathf.Min(_externalInteractionCount, _externalInteractionPoints.Length);
+            for (int i = 0; i < copyCount && interactionCount < _maxInteractionPoints; i++)
+            {
+                _interactionPoints[interactionCount] = _externalInteractionPoints[i];
+                interactionCount++;
+            }
+
+            return interactionCount;
+        }
+
+        private void ResetExternalInteractions()
+        {
+            _externalInteractionCount = 0;
         }
 
         private void PublishEnvironmentGlobals(Vector3 samplePositionWS)

@@ -558,6 +558,7 @@ namespace Hecton8.SaveSystem
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshot = default;
             NativeArray<EcosystemSectorSaveRecord> ecosystemSectorSnapshot = default;
             NativeArray<uint> packedQuestStateSnapshot = default;
+            QuestSaveHeader packedQuestSaveHeader = default;
             NativeArray<byte> voxelDeltaSnapshot = default;
 
             try
@@ -596,15 +597,21 @@ namespace Hecton8.SaveSystem
                 }
 
                 divergenceSnapshotTimer.Stop();
+                long saveTimestampTicks = DateTime.UtcNow.Ticks;
                 QuestManager questManager = QuestManager.Instance;
                 if (questManager != null)
-                    packedQuestStateSnapshot = questManager.CapturePackedStateSnapshot(Allocator.Persistent);
+                {
+                    packedQuestStateSnapshot = questManager.CapturePackedStateSnapshot(
+                        Allocator.Persistent,
+                        out packedQuestSaveHeader,
+                        saveTimestampTicks);
+                }
 
                 SaveMetadata metadata = new SaveMetadata
                 {
                     SlotName = slotName,
                     GameVersion = Application.version,
-                    Timestamp = DateTime.UtcNow.Ticks,
+                    Timestamp = saveTimestampTicks,
                     PlayTimeSeconds = (float)playTime,
                     SceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
                     PlayerPosition = data.playerStats.GetPosition()
@@ -630,6 +637,7 @@ namespace Hecton8.SaveSystem
                     data,
                     persistentWorldDeltaSnapshot,
                     ecosystemSectorSnapshot,
+                    packedQuestSaveHeader,
                     packedQuestStateSnapshot,
                     voxelDeltaSnapshot,
                     _savePayloadBuffer,
@@ -727,6 +735,7 @@ namespace Hecton8.SaveSystem
             {
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;
+                QuestSaveHeader loadedQuestHeader = default;
                 uint[] loadedQuestStateWords = null;
                 PersistentWorldDeltaRecord[] loadedWorldDeltas = null;
                 EcosystemSectorSaveRecord[] loadedEcosystemSectors = null;
@@ -744,6 +753,7 @@ namespace Hecton8.SaveSystem
                         slotName,
                         candidates[i],
                         out SaveData candidateData,
+                        out QuestSaveHeader candidateQuestHeader,
                         out uint[] candidateQuestStateWords,
                         out PersistentWorldDeltaRecord[] candidateWorldDeltas,
                         out EcosystemSectorSaveRecord[] candidateEcosystemSectors,
@@ -755,6 +765,7 @@ namespace Hecton8.SaveSystem
                         out string candidateError))
                     {
                         data = candidateData;
+                        loadedQuestHeader = candidateQuestHeader;
                         loadedQuestStateWords = candidateQuestStateWords;
                         loadedWorldDeltas = candidateWorldDeltas;
                         loadedEcosystemSectors = candidateEcosystemSectors;
@@ -788,7 +799,7 @@ namespace Hecton8.SaveSystem
                 _totalPlayTime = data.totalPlayTime;
                 _sessionStartTime = Time.realtimeSinceStartupAsDouble;
                 ModSaveStateStore.LoadFromSaveData(data);
-                QuestManager.StageLoadedPackedState(loadedQuestStateWords);
+                QuestManager.StageLoadedPackedState(loadedQuestHeader, loadedQuestStateWords);
                 
                 _registryDirty = true;
                 SortRegistryIfDirty(LoadPriorityCompare);
@@ -849,7 +860,7 @@ namespace Hecton8.SaveSystem
                         SceneName = string.IsNullOrEmpty(activeSceneName) ? "Unknown" : activeSceneName,
                         PlayerPosition = playerPosition
                     };
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot);
+                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -1142,6 +1153,7 @@ namespace Hecton8.SaveSystem
             SaveData data,
             NativeArray<PersistentWorldDeltaRecord> persistentWorldItems,
             NativeArray<EcosystemSectorSaveRecord> ecosystemSectorStates,
+            QuestSaveHeader packedQuestHeader,
             NativeArray<uint> packedQuestStateWords,
             NativeArray<byte> voxelDeltaSnapshot,
             NativeArray<byte> rawBuffer,
@@ -1164,6 +1176,7 @@ namespace Hecton8.SaveSystem
                     data,
                     persistentWorldItems,
                     ecosystemSectorStates,
+                    packedQuestHeader,
                     packedQuestStateWords,
                     voxelDeltaSnapshot,
                     rawBuffer,
@@ -1268,6 +1281,7 @@ namespace Hecton8.SaveSystem
 
             List<SaveLoadCandidate> candidates = BuildLoadCandidates(slotName);
             SaveData repairedData = null;
+            QuestSaveHeader packedQuestHeader = default;
             uint[] packedQuestStateWords = null;
             PersistentWorldDeltaRecord[] persistentWorldItems = null;
             EcosystemSectorSaveRecord[] ecosystemSectorStates = null;
@@ -1283,6 +1297,7 @@ namespace Hecton8.SaveSystem
                     slotName,
                     candidates[i],
                     out SaveData candidateData,
+                    out QuestSaveHeader candidateQuestHeader,
                     out uint[] candidatePackedQuestStateWords,
                     out PersistentWorldDeltaRecord[] candidateWorldItems,
                     out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
@@ -1294,6 +1309,7 @@ namespace Hecton8.SaveSystem
                     out string candidateError))
                 {
                     repairedData = candidateData;
+                    packedQuestHeader = candidateQuestHeader;
                     packedQuestStateWords = candidatePackedQuestStateWords;
                     persistentWorldItems = candidateWorldItems;
                     ecosystemSectorStates = candidateEcosystemSectorStates;
@@ -1330,6 +1346,7 @@ namespace Hecton8.SaveSystem
                 slotName,
                 repairedData,
                 metadataSource,
+                packedQuestHeader,
                 packedQuestStateWords,
                 persistentWorldItems,
                 ecosystemSectorStates,
@@ -1397,6 +1414,7 @@ namespace Hecton8.SaveSystem
                     slotName,
                     candidate,
                     out SaveData candidateData,
+                    out _,
                     out _,
                     out _,
                     out _,
@@ -1492,6 +1510,7 @@ namespace Hecton8.SaveSystem
             string slotName,
             SaveData data,
             SaveMetadata metadata,
+            QuestSaveHeader packedQuestHeader,
             uint[] packedQuestStateWords,
             PersistentWorldDeltaRecord[] persistentWorldItems,
             EcosystemSectorSaveRecord[] ecosystemSectorStates,
@@ -1501,6 +1520,7 @@ namespace Hecton8.SaveSystem
                 slotName,
                 data,
                 metadata,
+                packedQuestHeader,
                 packedQuestStateWords,
                 persistentWorldItems,
                 ecosystemSectorStates,
@@ -1512,6 +1532,7 @@ namespace Hecton8.SaveSystem
             string slotName,
             SaveLoadCandidate candidate,
             out SaveData data,
+            out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
             out PersistentWorldDeltaRecord[] persistentWorldItems,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
@@ -1523,6 +1544,7 @@ namespace Hecton8.SaveSystem
             out string errorMessage)
         {
             data = null;
+            packedQuestHeader = default;
             packedQuestStateWords = null;
             persistentWorldItems = null;
             ecosystemSectorStates = null;
@@ -1536,7 +1558,7 @@ namespace Hecton8.SaveSystem
             string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
             if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
             {
-                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestStateWords, out persistentWorldItems, out ecosystemSectorStates, out voxelDeltaSnapshot, out metadata, out payloadHash64, out rawPayloadLength, out errorMessage);
+                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestHeader, out packedQuestStateWords, out persistentWorldItems, out ecosystemSectorStates, out voxelDeltaSnapshot, out metadata, out payloadHash64, out rawPayloadLength, out errorMessage);
             }
 
             errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
@@ -1547,6 +1569,7 @@ namespace Hecton8.SaveSystem
             string slotName,
             SaveLoadCandidate candidate,
             out SaveData data,
+            out QuestSaveHeader packedQuestHeader,
             out uint[] packedQuestStateWords,
             out PersistentWorldDeltaRecord[] persistentWorldItems,
             out EcosystemSectorSaveRecord[] ecosystemSectorStates,
@@ -1557,6 +1580,7 @@ namespace Hecton8.SaveSystem
             out string errorMessage)
         {
             data = null;
+            packedQuestHeader = default;
             packedQuestStateWords = null;
             persistentWorldItems = null;
             ecosystemSectorStates = null;
@@ -1574,6 +1598,7 @@ namespace Hecton8.SaveSystem
                     slotName,
                     readBuffer,
                     out data,
+                    out packedQuestHeader,
                     out packedQuestStateWords,
                     out persistentWorldItems,
                     out ecosystemSectorStates,
@@ -1633,6 +1658,7 @@ namespace Hecton8.SaveSystem
             string slotName,
             SaveData data,
             SaveMetadata metadataSource,
+            QuestSaveHeader packedQuestHeader,
             uint[] packedQuestStateWords,
             PersistentWorldDeltaRecord[] persistentWorldItems,
             EcosystemSectorSaveRecord[] ecosystemSectorStates,
@@ -1687,6 +1713,7 @@ namespace Hecton8.SaveSystem
                         data,
                         persistentWorldItemBuffer,
                         ecosystemSectorBuffer,
+                        packedQuestHeader,
                         packedQuestStateBuffer,
                         voxelDeltaSnapshot,
                         rawBuffer,

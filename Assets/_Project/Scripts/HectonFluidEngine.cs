@@ -597,6 +597,10 @@ namespace Hecton8.Physics
                     currentVector.y * currentStrength,
                     currentVector.z * currentStrength),
                 time             = Time.unscaledTime,
+                weatherStateMask = (uint)weatherSnapshot.StateMask,
+                weatherCurrentDirection = weatherSnapshot.CurrentMeta.GlobalBaseVector,
+                weatherCurrentScale = weatherSnapshot.CurrentMeta.GlobalScale,
+                weatherBlend = weatherSnapshot.WeatherIntensity,
                 enablePhantomCurrent = enablePhantomCurrent ? (byte)1 : (byte)0,
                 currentNoiseScale = currentNoiseScale,
                 currentTimeScale = currentTimeScale,
@@ -1312,6 +1316,12 @@ namespace Hecton8.Physics
     [StructLayout(LayoutKind.Sequential)]
     public struct BuoyancyJob : IJobParallelFor
     {
+        private const float ThermoclineDepthMeters = 120f;
+        private const float ThermoclineHalfBandMeters = 8f;
+        private const float ThermoclineVerticalAttenuation = 0.1f;
+        private const float SurfaceStormLayerDepthMeters = 50f;
+        private const float StormSurfaceTurbulenceStrength = 0.4f;
+
         // ── Input (ReadOnly) ──
         [ReadOnly] public NativeArray<float3>         positions;
         [ReadOnly] public NativeArray<float3>         velocities;
@@ -1333,6 +1343,10 @@ namespace Hecton8.Physics
         public float  gravity;
         public float3 baseCurrentForce;
         public float  time;
+        public uint   weatherStateMask;
+        public float3 weatherCurrentDirection;
+        public float  weatherCurrentScale;
+        public float  weatherBlend;
         public byte   enablePhantomCurrent;
         public float  currentNoiseScale;
         public float  currentTimeScale;
@@ -1421,6 +1435,35 @@ namespace Hecton8.Physics
                     currentTimeScale,
                     phantomCurrentStrength,
                     currentVerticalFactor);
+            }
+
+            bool stormActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.Storm) != 0u;
+            bool thermoclineActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.ThermoclineActive) != 0u;
+            bool haloclineActive = (weatherStateMask & (uint)Hecton8.Core.WeatherState.HaloclineActive) != 0u;
+            if (stormActive)
+            {
+                float surfaceLayer01 = 1f - math.saturate(depthBelowSurface / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
+                float stormBlend = math.max(0f, weatherBlend);
+                float stormBiasScale = weatherCurrentScale * math.max(0.35f, stormBlend);
+                sampledCurrent.xz += weatherCurrentDirection.xz * stormBiasScale;
+
+                if (surfaceLayer01 > 0.0001f && p.currentResponse > 0.0001f)
+                {
+                    sampledCurrent += CurrentManager.SampleCurrent(
+                        pos + new float3(17.3f, 0f, 11.1f),
+                        time,
+                        currentNoiseScale,
+                        currentTimeScale,
+                        phantomCurrentStrength * (StormSurfaceTurbulenceStrength * surfaceLayer01),
+                        currentVerticalFactor * surfaceLayer01);
+                }
+            }
+
+            if (thermoclineActive || haloclineActive)
+            {
+                float thermoclineBand01 = 1f - math.saturate(math.abs(depthBelowSurface - ThermoclineDepthMeters) / math.max(ThermoclineHalfBandMeters, 0.0001f));
+                if (thermoclineBand01 > 0.0001f)
+                    sampledCurrent.y = math.lerp(sampledCurrent.y, sampledCurrent.y * ThermoclineVerticalAttenuation, thermoclineBand01);
             }
 
             float3 currentF = sampledCurrent * (subRatio * p.mass * p.currentResponse);

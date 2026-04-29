@@ -1,6 +1,6 @@
 # SYSTEM INTERCONNECT MATRIX — AbsoluteUniversePosition (AUP)
 
-**Status:** ETA ARCHITECT_READY  
+**Status:** PENDING VERIFICATION  
 **Target Struct:** `AbsoluteUniversePosition` (`Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`, lines 19–109)  
 **Blit Struct:** `AbsoluteUniversePositionBlit128` (lines 132–141)  
 **Rule Basis:** AGENTS.md § [REQ] All universe math MUST use Absolute Universe Position (AUP = int64x3 grid + float3 local). Transform.position is presentation-only.  
@@ -105,5 +105,5 @@ If you change a field in `AbsoluteUniversePosition` (e.g., `CellSizeMeters`, pac
 
 ---
 
-*STATUS: ETA ARCHITECT_READY*  
+*STATUS: PENDING VERIFICATION*  
 *Action: AUP Surgery requires approval of SaveDataVersion bump + migration path.*

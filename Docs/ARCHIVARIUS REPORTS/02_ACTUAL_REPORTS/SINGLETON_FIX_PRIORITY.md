@@ -1,6 +1,6 @@
 # SINGLETON ELIMINATION ROADMAP — HECTON-8
 
-**Status:** ETA ARCHITECT_READY  
+**Status:** PENDING VERIFICATION  
 **Authority:** CTO / Lead Architect  
 **Rule Basis:** AGENTS.md § PRIME DIRECTIVES — "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."  
 **Source Violations:** `SINGLETON_VIOLATIONS.md` (101 first-party violations)  
@@ -319,5 +319,5 @@ Week 6: Purge + MCP validation per batch
 
 ---
 
-*STATUS: ETA ARCHITECT_READY*  
+*STATUS: PENDING VERIFICATION*  
 *No optimism. Facts only. Next step: CTO approves Tier 1 batch order.*

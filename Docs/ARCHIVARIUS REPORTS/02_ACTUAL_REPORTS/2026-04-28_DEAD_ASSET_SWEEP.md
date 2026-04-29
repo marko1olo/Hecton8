@@ -1,77 +1,78 @@
-# DEAD ASSET SWEEP REPORT
+# DEAD_ASSET_SWEEP_REPORT
 
-**Версия:** 2026-04-28 | **Статус:** ETA VERIFIED
+**Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION  
+**Scope:** filesystem-only recheck of prior dead-asset accusations under `Assets/_Project`
 
----
-
-## 📋 METHODOLOGY
-
-Анализ проведён на основе:
-1. Сканирования `Assets/_Project/Art` на наличие текстур
-2. Сканирования `Assets/_Project/Art/Materials` на наличие материалов
-3. Выборочной проверки ссылок в `.mat` файлах
+**Mandates Followed:** `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 
 ---
 
-## 📋 TEXTURE INVENTORY
+## Method
 
-### Общее количество текстур
-
-| Категория | Форматы | Количество |
-|-----------|---------|------------|
-| Rocks | .jpg, .png | ~50+ |
-| Flora | .png, .jpg | ~30+ |
-| Skyboxes | .png | 2 |
-| Particles | .png | ~20+ |
-| UI | .png | ~40+ |
-| Environment | .png, .jpg | ~60+ |
-| **TOTAL** | | **~200+** |
+- Re-checked the specific paths named in the earlier sweep.
+- Counted live filesystem entries only.
+- Did not run Unity dependency graph, Addressables dependency graph, or `AssetDatabase.FindDependencies`.
 
 ---
 
-## 📋 MATERIAL INVENTORY
+## What Can Be Proved From This Pass
 
-### Общее количество материалов
-
-| Категория | Количество | Статус |
-|-----------|-----------|--------|
-| Celestial (луны) | 6 | ✅ Используются |
-| Construction | ~10 | ✅ Используются |
-| Submarine | ~15 | ✅ Используются |
-| Environment | ~20 | ✅ Используются |
-| Flora | ~10 | ✅ Используются |
-| VFX | ~15 | ✅ Используются |
-| **TOTAL** | **~76** | **✅ Все используются** |
+| Path or area | Current result |
+|---|---|
+| `Assets/_Project` | `7963` files currently present |
+| `Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР` | folder exists and currently contains `41` files in this sweep |
+| `Assets/_Project/Art/Models/Sandbox` | folder exists and currently contains `4` files in this sweep |
+| `Assets/_Project/Art/Models/Sandbox/Coral_Albedo.png` | present |
+| `Assets/_Project/Art/Models/Sandbox/Coral_Normal.png` | present |
+| sandbox content at project level | present beyond the two textures, including sandbox scenes and sandbox attraction profiles |
 
 ---
 
-## 📋 DEAD ASSET CANDIDATES
+## Claims The Old Report Could Not Support
 
-### 🔴 ВЫСОКИЙ РИСК — Неиспользуемые
-
-| Ассет | Путь | Причина |
-|-------|------|---------|
-| `Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР` | `Art/Models/Rocks/Rock 4/` | 12 текстур, не найдено материалов со ссылкой |
-| `Rock 6` | `Art/Models/Rocks/Rock 6/` | 3 текстуры, статус неизвестен |
-| `Rock 7` | `Art/Models/Rocks/Rock 7/` | 1 текстура, статус неизвестен |
-
-### 🟡 СРЕДНИЙ РИСК — Sandbox
-
-| Ассет | Путь | Причина |
-|-------|------|---------|
-| `Coral_Albedo.png` | `Art/Models/Sandbox/` | Sandbox = не production |
-| `Coral_Normal.png` | `Art/Models/Sandbox/` | Sandbox = не production |
+- `"all materials are used"` was not proven.
+- `"Rock 4-7 are unused"` was not proven.
+- `"delete Sandbox textures"` was not justified by current project state.
+- A filesystem scan alone cannot classify an asset as dead when sandbox scenes, authoring profiles, or late-bound references exist.
 
 ---
 
-## 📋 RECOMMENDATIONS
+## Current Verdict On The Earlier Candidates
 
-1. **Удалить Sandbox текстуры** — `Coral_Albedo.png`, `Coral_Normal.png`
-2. **Проверить Rock 4-7** — Возможно используются через MaterialPropertyBlock
-3. **Провести полный анализ** — Использовать Unity Editor → `Window → Asset Management → Addressables Report`
+| Candidate | Current judgement |
+|---|---|
+| `Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР` | `NOT PROVEN DEAD` |
+| `Coral_Albedo.png` / `Coral_Normal.png` | `NOT PROVEN DEAD` |
+| Sandbox-labeled assets in general | `NOT PROVEN DEAD`; sandbox content still exists as an active content bucket in the project tree |
 
 ---
 
-**STATUS:** ETA VERIFIED — Выборочный анализ
+## What Is Required For A Real Dead-Asset Audit
 
-**Рекомендация:** Для полного анализа использовать Unity Editor или AssetDatabase.FindDependencies API
+- Unity-side dependency graph readback
+- prefab/material/scene referencer resolution
+- Addressables group membership review
+- explicit distinction between production, sandbox, editor-only, and archival content
+
+Without that, deletion advice is not evidence-based.
+
+---
+
+## Regression Model
+
+| Dimension | Impact |
+|---|---|
+| CPU | None. Documentation-only rewrite. |
+| GC | None. Documentation-only rewrite. |
+| Memory | None. Documentation-only rewrite. |
+| Cadence | None. Runtime code unchanged. |
+| Correctness | Improved by removing unsupported deletion recommendations. |
+
+---
+
+## Verdict
+
+The prior dead-asset sweep was selective and overconfident.  
+This pass only confirms presence, not liveness.  
+All deletion conclusions remain `PENDING VERIFICATION`.

@@ -103,6 +103,7 @@ namespace Hecton8.Construction
         /// Pre-allocated. Swap-remove Ð´Ð»Ñ O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ñ.
         /// </summary>
         private List<GameObject> _spawnedModules;
+        private HabitatGraphManager _habitatGraphManager;
         private bool _tickRegistered;
         private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
@@ -152,6 +153,8 @@ namespace Hecton8.Construction
 
             // â”€â”€ Pre-allocate â”€â”€
             _spawnedModules = new List<GameObject>(initialCapacity);
+            // COLD ALLOC: HabitatGraphManager[1] — persistent placed-module CSR adjacency owner — owner: ConstructionManager
+            _habitatGraphManager = new HabitatGraphManager(initialCapacity);
             _ambientAccidentTimer = 0f;
         }
 
@@ -172,6 +175,11 @@ namespace Hecton8.Construction
         private void OnDestroy()
         {
             TryUnregister();
+            if (_habitatGraphManager != null)
+            {
+                _habitatGraphManager.Dispose();
+                _habitatGraphManager = null;
+            }
 
             if (_instance == this)
                 _instance = null;
@@ -234,6 +242,7 @@ namespace Hecton8.Construction
 
             // â”€â”€ Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð² Ñ€ÐµÐµÑÑ‚Ñ€ â”€â”€
             _spawnedModules.Add(module);
+            RefreshHabitatGraph();
 
             UpdateDiagnostics();
         }
@@ -274,6 +283,7 @@ namespace Hecton8.Construction
             if (module == null) return;
 
             SwapRemove(module);
+            RefreshHabitatGraph();
 
             UpdateDiagnostics();
         }
@@ -327,6 +337,7 @@ namespace Hecton8.Construction
             }
 
             _spawnedModules.Clear();
+            RefreshHabitatGraph();
 
             UpdateDiagnostics();
         }
@@ -832,6 +843,14 @@ namespace Hecton8.Construction
         private void UpdateDiagnostics()
         {
             _debugModuleCount = _spawnedModules.Count;
+        }
+
+        private void RefreshHabitatGraph()
+        {
+            if (_habitatGraphManager == null || _spawnedModules == null)
+                return;
+
+            _habitatGraphManager.Rebuild(_spawnedModules);
         }
     }
 }

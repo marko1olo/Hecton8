@@ -95,6 +95,21 @@ namespace Hecton8.Tools
         [Tooltip("Текущие установленные улучшения (max 3).")]
         public ToolUpgradeData[] installedUpgrades = new ToolUpgradeData[3];
 
+        [Tooltip("Authored modular loadout consumed by the NativeArray-backed equipment runtime.")]
+        public ToolModuleData[] defaultModules = new ToolModuleData[3];
+
+        [Tooltip("Optional fallback heat-generation rate copied into the modular runtime when the concrete tool does not override it.")]
+        [Range(0f, 4f)]
+        public float authoredHeatGenerationRate = 0f;
+
+        [Tooltip("Optional fallback cooldown rate copied into the modular runtime when the concrete tool does not override it.")]
+        [Range(0f, 4f)]
+        public float authoredCooldownRate = 0f;
+
+        [Tooltip("Optional fallback recoil impulse copied into the modular runtime when the concrete tool does not override it.")]
+        [Range(0f, 12f)]
+        public float authoredRecoilImpulse = 0f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REPAIR
         // ══════════════════════════════════════════════════════════
@@ -221,6 +236,25 @@ namespace Hecton8.Tools
 
             installedUpgrades[slotIndex] = null;
             return true;
+        }
+
+        /// <summary>
+        /// Copies the authored modular loadout into the caller-provided scratch buffer.
+        /// Runtime systems must not retain or mutate the ScriptableObject array directly.
+        /// </summary>
+        public int CopyDefaultModules(ToolModuleData[] destination)
+        {
+            if (destination == null || destination.Length == 0 || defaultModules == null || defaultModules.Length == 0)
+                return 0;
+
+            int copyCount = Math.Min(Math.Min(destination.Length, defaultModules.Length), Math.Max(0, maxUpgradeSlots));
+            for (int i = 0; i < copyCount; i++)
+                destination[i] = defaultModules[i];
+
+            for (int i = copyCount; i < destination.Length; i++)
+                destination[i] = null;
+
+            return copyCount;
         }
     }
 

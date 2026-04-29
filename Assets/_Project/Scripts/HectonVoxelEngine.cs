@@ -1948,30 +1948,40 @@ public struct VoxelTerrainSeamSnapJob : IJobParallelFor
     public int ptsX;
     public int ptsZ;
     public float3 volumeOrigin;
+    public float3 absoluteUniverseOffset;
     public float voxelStep;
-    public float seamSnapBand;
+    public float seamTransitionBand;
+    public float seamOverlap;
 
     [ReadOnly] public NativeArray<float> terrainHeights;
     public NativeArray<float3> positions;
 
     public void Execute(int idx)
     {
-        if (!terrainHeights.IsCreated || ptsX <= 1 || ptsZ <= 1 || seamSnapBand <= 0f)
+        if (!terrainHeights.IsCreated || ptsX <= 1 || ptsZ <= 1 || seamTransitionBand <= 0f)
             return;
 
         float3 position = positions[idx];
-        float terrainHeight = SampleTerrainHeight(position.xz);
-        float distanceToTerrain = math.abs(terrainHeight - position.y);
-        if (distanceToTerrain >= seamSnapBand)
+        float2 absoluteWorldXZ = position.xz + absoluteUniverseOffset.xz;
+        float boundaryDistance = VoxelSeamDirector.ComputeBoundaryDistance(
+            absoluteWorldXZ,
+            volumeOrigin + absoluteUniverseOffset,
+            ptsX,
+            ptsZ,
+            voxelStep);
+        if (boundaryDistance > seamTransitionBand)
             return;
 
-        positions[idx] = new float3(position.x, terrainHeight, position.z);
+        float terrainHeight = SampleTerrainHeight(absoluteWorldXZ);
+        float blendToTerrain = VoxelSeamDirector.ComputeBoundaryBlend01(boundaryDistance, seamTransitionBand);
+        float targetHeight = VoxelSeamDirector.ComputeTargetSnapHeight(terrainHeight, seamOverlap);
+        positions[idx] = new float3(position.x, math.lerp(position.y, targetHeight, blendToTerrain), position.z);
     }
 
-    float SampleTerrainHeight(float2 worldXZ)
+    float SampleTerrainHeight(float2 absoluteWorldXZ)
     {
-        float localX = (worldXZ.x - volumeOrigin.x) / voxelStep;
-        float localZ = (worldXZ.y - volumeOrigin.z) / voxelStep;
+        float localX = (absoluteWorldXZ.x - (volumeOrigin.x + absoluteUniverseOffset.x)) / voxelStep;
+        float localZ = (absoluteWorldXZ.y - (volumeOrigin.z + absoluteUniverseOffset.z)) / voxelStep;
         localX = math.clamp(localX, 0f, ptsX - 1f);
         localZ = math.clamp(localZ, 0f, ptsZ - 1f);
 
@@ -1995,6 +2005,7 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
     public int ptsX;
     public int ptsZ;
     public float3 volumeOrigin;
+    public float3 absoluteUniverseOffset;
     public float voxelStep;
     public float seamTransitionBand;
 
@@ -2008,21 +2019,26 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
             return;
 
         float3 position = positions[idx];
-        float terrainHeight = SampleTerrainHeight(position.xz);
-        float distanceToTerrain = math.abs(terrainHeight - position.y);
-        if (distanceToTerrain >= seamTransitionBand)
+        float2 absoluteWorldXZ = position.xz + absoluteUniverseOffset.xz;
+        float boundaryDistance = VoxelSeamDirector.ComputeBoundaryDistance(
+            absoluteWorldXZ,
+            volumeOrigin + absoluteUniverseOffset,
+            ptsX,
+            ptsZ,
+            voxelStep);
+        if (boundaryDistance > seamTransitionBand)
             return;
 
-        float3 terrainNormal = SampleTerrainNormal(position.xz);
+        float3 terrainNormal = SampleTerrainNormal(absoluteWorldXZ);
         float3 voxelNormal = math.normalizesafe(normals[idx], new float3(0f, 1f, 0f));
-        float blendT = math.smoothstep(0f, seamTransitionBand, distanceToTerrain);
-        normals[idx] = BlendNormalsSlerp(terrainNormal, voxelNormal, blendT);
+        float blendToTerrain = VoxelSeamDirector.ComputeBoundaryBlend01(boundaryDistance, seamTransitionBand);
+        normals[idx] = BlendNormalsSlerp(voxelNormal, terrainNormal, blendToTerrain);
     }
 
-    float SampleTerrainHeight(float2 worldXZ)
+    float SampleTerrainHeight(float2 absoluteWorldXZ)
     {
-        float localX = (worldXZ.x - volumeOrigin.x) / voxelStep;
-        float localZ = (worldXZ.y - volumeOrigin.z) / voxelStep;
+        float localX = (absoluteWorldXZ.x - (volumeOrigin.x + absoluteUniverseOffset.x)) / voxelStep;
+        float localZ = (absoluteWorldXZ.y - (volumeOrigin.z + absoluteUniverseOffset.z)) / voxelStep;
         localX = math.clamp(localX, 0f, ptsX - 1f);
         localZ = math.clamp(localZ, 0f, ptsZ - 1f);
 
@@ -2040,10 +2056,10 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
     }
 
-    float3 SampleTerrainNormal(float2 worldXZ)
+    float3 SampleTerrainNormal(float2 absoluteWorldXZ)
     {
-        float localX = (worldXZ.x - volumeOrigin.x) / voxelStep;
-        float localZ = (worldXZ.y - volumeOrigin.z) / voxelStep;
+        float localX = (absoluteWorldXZ.x - (volumeOrigin.x + absoluteUniverseOffset.x)) / voxelStep;
+        float localZ = (absoluteWorldXZ.y - (volumeOrigin.z + absoluteUniverseOffset.z)) / voxelStep;
         localX = math.clamp(localX, 0f, ptsX - 1f);
         localZ = math.clamp(localZ, 0f, ptsZ - 1f);
 
@@ -2082,21 +2098,21 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
         return math.normalizesafe(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
     }
 
-    static float3 BlendNormalsSlerp(float3 terrainNormal, float3 voxelNormal, float t)
+    static float3 BlendNormalsSlerp(float3 startNormal, float3 endNormal, float t)
     {
         float blend = math.saturate(t);
-        float dot = math.clamp(math.dot(terrainNormal, voxelNormal), -1f, 1f);
+        float dot = math.clamp(math.dot(startNormal, endNormal), -1f, 1f);
         if (math.abs(dot) > 0.9999f)
-            return math.normalizesafe(math.lerp(terrainNormal, voxelNormal, blend), terrainNormal);
+            return math.normalizesafe(math.lerp(startNormal, endNormal, blend), startNormal);
 
         float theta = math.acos(dot);
         float sinTheta = math.sin(theta);
         if (sinTheta <= 0.0001f)
-            return math.normalizesafe(math.lerp(terrainNormal, voxelNormal, blend), terrainNormal);
+            return math.normalizesafe(math.lerp(startNormal, endNormal, blend), startNormal);
 
-        float terrainWeight = math.sin((1f - blend) * theta) / sinTheta;
-        float voxelWeight = math.sin(blend * theta) / sinTheta;
-        return math.normalizesafe(terrainNormal * terrainWeight + voxelNormal * voxelWeight, terrainNormal);
+        float startWeight = math.sin((1f - blend) * theta) / sinTheta;
+        float endWeight = math.sin(blend * theta) / sinTheta;
+        return math.normalizesafe(startNormal * startWeight + endNormal * endWeight, startNormal);
     }
 }
 
@@ -2376,7 +2392,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
     // ── Constants ──
     const float ABYSSAL_MAX_DEPTH = 5000f;
-    const float TerrainVoxelSeamTransitionBand = 3.5f;
+    const float TerrainVoxelSeamTransitionBand = VoxelSeamDirector.SeamTransitionBandMeters;
     const int JOB_BATCH = 64;
 
     /// <summary>
@@ -3553,8 +3569,10 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsX = data.PtsX,
             ptsZ = data.PtsZ,
             volumeOrigin = data.VolumeOrigin,
+            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
             voxelStep = data.VoxelStep,
-            seamSnapBand = TerrainVoxelSeamTransitionBand * 0.35f,
+            seamTransitionBand = TerrainVoxelSeamTransitionBand,
+            seamOverlap = VoxelSeamDirector.TerrainOverlapMeters,
             terrainHeights = terrainHeights,
             positions = data.WeldedPositions
         }.Schedule(data.WeldedCount, JOB_BATCH);
@@ -3578,6 +3596,7 @@ public class HectonVoxelEngine : MonoBehaviour
             ptsX = data.PtsX,
             ptsZ = data.PtsZ,
             volumeOrigin = data.VolumeOrigin,
+            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
             voxelStep = data.VoxelStep,
             seamTransitionBand = TerrainVoxelSeamTransitionBand,
             positions = data.WeldedPositions,
