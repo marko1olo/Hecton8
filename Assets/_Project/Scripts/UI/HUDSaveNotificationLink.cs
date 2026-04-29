@@ -9,7 +9,7 @@ namespace Hecton8.UI
     /// Ensures Zero-GC and clean separation of concerns.
     /// </summary>
     [AddComponentMenu("Hecton8/UI/HUD Save Notification Link")]
-    public sealed class HUDSaveNotificationLink : MonoBehaviour
+    public sealed class HUDSaveNotificationLink : MonoBehaviour, ISaveEventListener
     {
         [SerializeField] private HUDNotification notificationSystem;
         
@@ -18,26 +18,30 @@ namespace Hecton8.UI
             if (notificationSystem == null)
                 notificationSystem = GetComponent<HUDNotification>();
 
-            SaveEvents.OnSaveCompleted += HandleSaveCompleted;
-            SaveEvents.OnSaveFailed += HandleSaveFailed;
+            SaveEvents.Register(this);
         }
 
         private void OnDisable()
         {
-            SaveEvents.OnSaveCompleted -= HandleSaveCompleted;
-            SaveEvents.OnSaveFailed -= HandleSaveFailed;
+            SaveEvents.Unregister(this);
         }
 
-        private void HandleSaveCompleted(string slotName)
+        public void OnSaveEvent(in SaveEventPayload payload)
         {
-            if (notificationSystem != null)
-                notificationSystem.ShowInfo(BuildCompletedMessage(slotName));
-        }
+            if (notificationSystem == null)
+                return;
 
-        private void HandleSaveFailed(string slotName, string error)
-        {
-            if (notificationSystem != null)
-                notificationSystem.ShowCritical(BuildFailedMessage(slotName));
+            string slotName = payload.SlotName.ToString();
+            switch (payload.Type)
+            {
+                case SaveEventType.SaveCompleted:
+                    notificationSystem.ShowInfo(BuildCompletedMessage(slotName));
+                    return;
+
+                case SaveEventType.SaveFailed:
+                    notificationSystem.ShowCritical(BuildFailedMessage(slotName));
+                    return;
+            }
         }
 
         private static string BuildCompletedMessage(string slotName)

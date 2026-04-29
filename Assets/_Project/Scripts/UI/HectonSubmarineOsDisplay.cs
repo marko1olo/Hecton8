@@ -518,7 +518,8 @@ namespace Hecton8.UI
         {
             int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
             int percent = Mathf.RoundToInt(Mathf.Clamp01(normalizedValue) * 100f);
-            if (!percent.TryFormat(destination.AsSpan(safeCursor), out int written))
+            Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
+            if (!percent.TryFormat(writableSpan, out int written))
                 return safeCursor;
 
             safeCursor += written;
@@ -531,7 +532,8 @@ namespace Hecton8.UI
         private static int AppendInt(char[] destination, int cursor, int value)
         {
             int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
-            if (!value.TryFormat(destination.AsSpan(safeCursor), out int written))
+            Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
+            if (!value.TryFormat(writableSpan, out int written))
                 return safeCursor;
 
             return safeCursor + written;

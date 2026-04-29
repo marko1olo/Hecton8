@@ -1,71 +1,149 @@
-// ============================================================================
-// HECTON-8 — SaveEvents.cs
-// Статический Event Bus для системы сохранений.
-// UI, HUD и другие системы подписываются здесь.
-// ============================================================================
-
-using System;
+using System.Diagnostics;
+using Hecton8.Core;
+using Unity.Collections;
 
 namespace Hecton8.SaveSystem
 {
+    public enum SaveEventType : byte
+    {
+        SaveStarted = 0,
+        SaveCompleted = 1,
+        SaveFailed = 2,
+        LoadStarted = 3,
+        LoadCompleted = 4,
+        LoadFailed = 5,
+        EmergencyBackupRestoreRequested = 6
+    }
+
+    public struct SaveEventPayload
+    {
+        public SaveEventType Type;
+        public ulong TimestampTicks;
+        public FixedString64Bytes SlotName;
+        public FixedString128Bytes Message;
+    }
+
+    public interface ISaveEventListener
+    {
+        void OnSaveEvent(in SaveEventPayload payload);
+    }
+
     public static class SaveEvents
     {
-        /// <summary>Сохранение началось. Param: имя слота.</summary>
-        public static event Action<string> OnSaveStarted;
+        // COLD ALLOC: RegistryBucket<ISaveEventListener>[16] - save event listener registry drained on dispatcher LateUpdate - owner: SaveEvents
+        private static readonly RegistryBucket<ISaveEventListener> _listeners = new RegistryBucket<ISaveEventListener>(16);
+        private static NativeQueue<SaveEventPayload> _pendingEvents;
 
-        /// <summary>Сохранение завершено успешно. Param: имя слота.</summary>
-        public static event Action<string> OnSaveCompleted;
+        [UnityEngine.RuntimeInitializeOnLoadMethod(
+            UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
 
-        /// <summary>Ошибка сохранения. Params: слот, сообщение ошибки.</summary>
-        public static event Action<string, string> OnSaveFailed;
+            _listeners.Clear();
+        }
 
-        /// <summary>Загрузка началась. Param: имя слота.</summary>
-        public static event Action<string> OnLoadStarted;
+        public static void Register(ISaveEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>Загрузка завершена успешно. Param: имя слота.</summary>
-        public static event Action<string> OnLoadCompleted;
+            EnsureInitialized();
+            _listeners.Register(listener);
+        }
 
-        /// <summary>Ошибка загрузки. Params: слот, сообщение ошибки.</summary>
-        public static event Action<string, string> OnLoadFailed;
+        public static void Unregister(ISaveEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>Критическое расхождение checksum в активном сохранении. Param: слот.</summary>
-        public static event Action<string> OnEmergencyBackupRestoreRequested;
+            _listeners.Unregister(listener);
+        }
 
-        // ── Raise Methods ──
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out SaveEventPayload payload))
+            {
+                ISaveEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnSaveEvent(in payload);
+            }
+        }
 
         public static void RaiseSaveStarted(string slot)
         {
-            var h = OnSaveStarted; h?.Invoke(slot);
+            Enqueue(SaveEventType.SaveStarted, slot, default);
         }
 
         public static void RaiseSaveCompleted(string slot)
         {
-            var h = OnSaveCompleted; h?.Invoke(slot);
+            Enqueue(SaveEventType.SaveCompleted, slot, default);
         }
 
         public static void RaiseSaveFailed(string slot, string error)
         {
-            var h = OnSaveFailed; h?.Invoke(slot, error);
+            Enqueue(SaveEventType.SaveFailed, slot, error);
         }
 
         public static void RaiseLoadStarted(string slot)
         {
-            var h = OnLoadStarted; h?.Invoke(slot);
+            Enqueue(SaveEventType.LoadStarted, slot, default);
         }
 
         public static void RaiseLoadCompleted(string slot)
         {
-            var h = OnLoadCompleted; h?.Invoke(slot);
+            Enqueue(SaveEventType.LoadCompleted, slot, default);
         }
 
         public static void RaiseLoadFailed(string slot, string error)
         {
-            var h = OnLoadFailed; h?.Invoke(slot, error);
+            Enqueue(SaveEventType.LoadFailed, slot, error);
         }
 
         public static void RaiseEmergencyBackupRestoreRequested(string slot)
         {
-            var h = OnEmergencyBackupRestoreRequested; h?.Invoke(slot);
+            Enqueue(SaveEventType.EmergencyBackupRestoreRequested, slot, default);
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<SaveEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SaveEventPayload>[16] - deferred save event lane flushed by SystemDispatcher LateUpdate - owner: SaveEvents
+            }
+        }
+
+        private static void Enqueue(SaveEventType type, string slot, string message)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new SaveEventPayload
+            {
+                Type = type,
+                TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
+                SlotName = string.IsNullOrEmpty(slot) ? default : slot,
+                Message = string.IsNullOrEmpty(message) ? default : message
+            });
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
         }
     }
 }

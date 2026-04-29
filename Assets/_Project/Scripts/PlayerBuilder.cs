@@ -1662,8 +1662,8 @@ namespace Hecton8.Building
             if (clip == null)
                 return;
 
-            if (SpatialAudioManager.Instance != null)
-                SpatialAudioManager.Instance.PlayStatic2D(clip);
+            if (Hecton8.Core.GlobalRegistry.Audio != null)
+                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1714,3 +1714,4 @@ namespace Hecton8.Building
 #endif
     }
 }
+

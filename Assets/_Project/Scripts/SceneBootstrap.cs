@@ -40,7 +40,7 @@
 //   [ADD] _isLoadingSave flag — Ground check выполняется только при загрузке
 //         сохранения, не при New Game (fallback на поверхности).
 //
-// НИКАКОГО Update(). Вся логика — async void Start().
+// НИКАКОГО Update(). Вся логика — Awaitable bootstrap state machine triggered from Start().
 // ============================================================================
 
 using System;
@@ -302,10 +302,14 @@ namespace Hecton8.Bootstrap
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Async pipeline загрузки. async void допустим,
-        /// так как это точка входа Unity (MonoBehaviour.Start).
+        /// Start remains synchronous and kicks an Awaitable bootstrap state machine.
         /// </summary>
-        private async void Start()
+        private void Start()
+        {
+            _ = RunBootstrapAsync();
+        }
+
+        private async Awaitable RunBootstrapAsync()
         {
             BootstrapState.PublishGameReady(false);
             SceneInstantiationGate.Instance?.BeginSceneLoad(gameObject.scene.name);

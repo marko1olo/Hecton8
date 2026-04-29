@@ -1,0 +1,2152 @@
+﻿diff --git a/Assets/_Project/Scripts/AcousticZoneController.cs b/Assets/_Project/Scripts/AcousticZoneController.cs
+index 04bf5e7e..3b95e165 100644
+--- a/Assets/_Project/Scripts/AcousticZoneController.cs
++++ b/Assets/_Project/Scripts/AcousticZoneController.cs
+@@ -1010,7 +1010,8 @@ namespace Hecton8.Audio
+         {
+             if (clip == null) return;
+ 
+-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
++            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
++            if (sam == null)
+                 return;
+ 
+             sam.PlayStatic2D(clip, transitionVolume);
+@@ -1018,7 +1019,8 @@ namespace Hecton8.Audio
+ 
+         internal void PlayMadnessWhisperCue()
+         {
+-            if (Time.unscaledTime < _nextMadnessWhisperTime || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
++            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
++            if (Time.unscaledTime < _nextMadnessWhisperTime || sam == null)
+                 return;
+ 
+             AudioClip clip = stormStaticPrimary;
+@@ -1605,7 +1607,7 @@ namespace Hecton8.Audio
+             }
+ 
+             if (ambientSource.outputAudioMixerGroup == null &&
+-                SpatialAudioManager.TryGetInstance(out SpatialAudioManager spatialAudioManager) &&
++                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService spatialAudioManager &&
+                 spatialAudioManager != null &&
+                 spatialAudioManager.AmbientGroup != null)
+             {
+@@ -1855,7 +1857,8 @@ namespace Hecton8.Audio
+             AudioClip clip = acousticType == HectonMapMagicVegetationBridge.VegetationAcousticType.SargassumBubbles
+                 ? underwaterSargassumBubblesClip
+                 : underwaterGrassRustleClip;
+-            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
++            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
++            if (clip == null || sam == null)
+                 return;
+ 
+             float densityT = Mathf.InverseLerp(underwaterVegetationDensityThreshold, 1f, density);
+@@ -1896,7 +1899,8 @@ namespace Hecton8.Audio
+                 clip = fatalPressureNoiseSecondary;
+             }
+ 
+-            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
++            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
++            if (clip == null || sam == null)
+                 return;
+ 
+             float volume = Mathf.Lerp(fatalPressureNoiseVolumeMin, fatalPressureNoiseVolumeMax, intensity);
+@@ -1915,7 +1919,8 @@ namespace Hecton8.Audio
+             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
+                 return;
+ 
+-            if (sonarPingClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
++            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
++            if (sonarPingClip == null || sam == null)
+                 return;
+ 
+             float volume = Mathf.Lerp(sonarPingVolumeMin, sonarPingVolumeMax, Mathf.Clamp01(intensity));
+@@ -1952,7 +1957,8 @@ namespace Hecton8.Audio
+ 
+         internal void PlayMantaMisfire(float intensity)
+         {
+-            if (mantaMisfireClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
++            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
++            if (mantaMisfireClip == null || sam == null)
+                 return;
+ 
+             float volume = Mathf.Lerp(mantaMisfireVolumeMin, mantaMisfireVolumeMax, Mathf.Clamp01(intensity));
+@@ -1976,7 +1982,8 @@ namespace Hecton8.Audio
+                 clip = stormStaticSecondary;
+             }
+ 
+-            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
++            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
++            if (clip == null || sam == null)
+                 return;
+ 
+             float volume = Mathf.Lerp(stormStaticVolumeMin, stormStaticVolumeMax, stormInterference);
+@@ -2166,7 +2173,7 @@ namespace Hecton8.Audio
+             _emitterOcclusionTransmission01 = 1f;
+             _emitterOcclusionLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+ 
+-            if ((object)listener == null || listener == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager spatialAudioManager))
++            if ((object)listener == null || listener == null || !(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
+                 return;
+ 
+             if (_resolvedEmitterOcclusionLayerMask == 0)
+diff --git a/Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs b/Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs
+index 4e2cd809..7bd074da 100644
+--- a/Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs
++++ b/Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs
+@@ -1536,7 +1536,8 @@ namespace Hecton8.Atmosphere
+             if (thunderClips == null || thunderClips.Length == 0)
+                 return;
+ 
+-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
++            if (audioManager == null)
+                 return;
+ 
+             int clipIndex = math.clamp((int)(NextRandom01() * thunderClips.Length), 0, thunderClips.Length - 1);
+@@ -2201,3 +2202,5 @@ namespace Hecton8.Atmosphere
+ #endif
+     }
+ }
++
++
+diff --git a/Assets/_Project/Scripts/Audio/DeepPsychosisController.cs b/Assets/_Project/Scripts/Audio/DeepPsychosisController.cs
+index c3346dba..74fd3dff 100644
+--- a/Assets/_Project/Scripts/Audio/DeepPsychosisController.cs
++++ b/Assets/_Project/Scripts/Audio/DeepPsychosisController.cs
+@@ -192,7 +192,8 @@ namespace Hecton8.Audio
+ 
+         private void PlayPsychosisCue()
+         {
+-            if (_playerTransform == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
++            if (_playerTransform == null || audioManager == null)
+                 return;
+ 
+             AudioClip clip = SelectCueClip();
+@@ -251,3 +252,5 @@ namespace Hecton8.Audio
+         }
+     }
+ }
++
++
+diff --git a/Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs b/Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+index ebfeb7fc..e0f4fe93 100644
+--- a/Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
++++ b/Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+@@ -2677,8 +2677,7 @@ namespace Hecton8.Audio
+ 
+         private void UpdateBinauralTargets()
+         {
+-            SpatialAudioManager audioManager = SpatialAudioManager.Instance;
+-            if (audioManager == null ||
++            if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager) ||
+                 !audioManager.TryGetDominantBinauralEmitter(out SpatialAudioManager.BinauralEmitterTelemetry telemetry))
+             {
+                 _targetBinauralAzimuthRadians = 0f;
+diff --git a/Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs b/Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs
+index 1c97ac9b..050f8d4c 100644
+--- a/Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs
++++ b/Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs
+@@ -150,7 +150,7 @@ namespace Hecton8.Narrative
+             _currentLogHash = 0u;
+             _playbackTimer = 0f;
+ 
+-            AudioLogEvents.RaisePlaybackCompleted(completedId);
++            AudioLogEvents.RaisePlaybackCompleted(completedHash);
+             SubtitleEventBus.RaisePlaybackCompleted(completedHash);
+ 
+             LogPlaybackCompleted(completedId);
+@@ -172,8 +172,10 @@ namespace Hecton8.Narrative
+                 return;
+ 
+             string displayTitle = data.DisplayTitleOrFallback;
++            uint discoveredHash = LoreDatabaseManager.ComputeLoreHash(data.SafeLogId);
+             _discoveredLogs.Add(data.logId);
+-            AudioLogEvents.RaiseLogDiscovered(data.logId);
++            if (discoveredHash != 0u)
++                AudioLogEvents.RaiseLogDiscovered(discoveredHash);
+             LocalizationManager localization = LocalizationManager.Instance;
+             NotificationEvents.PushInfo(localization != null
+                 ? localization.GetFormatted(LocalizationKeys.AUDIOLOG_DISCOVERED, displayTitle)
+@@ -181,7 +183,7 @@ namespace Hecton8.Narrative
+ 
+             // Также регистрируем в NarrativeDirector
+             NarrativeEvents.RaiseDiscoveryMade(data.logId);
+-            HectonEventBus.Publish(new LoreAcquiredEvent(LoreDatabaseManager.ComputeLoreHash(data.logId)));
++            HectonEventBus.Publish(new LoreAcquiredEvent(discoveredHash));
+ 
+             LogDiscovered(data.logId, displayTitle);
+         }
+@@ -205,7 +207,7 @@ namespace Hecton8.Narrative
+             AudioClip playbackClip = data.ResolvedAudioClip;
+             if (playbackClip != null)
+             {
+-                if (SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
++                if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager)
+                 {
+                     audioManager.PlayStatic2D(playbackClip, playbackVolume);
+                 }
+@@ -216,7 +218,7 @@ namespace Hecton8.Narrative
+             _playbackTimer = data.Duration;
+             _isPlaying = true;
+ 
+-            AudioLogEvents.RaisePlaybackStarted(data);
++            AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
+             SubtitleEventBus.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
+ 
+             LogPlaying(data.logId, data.Duration);
+@@ -230,14 +232,13 @@ namespace Hecton8.Narrative
+             if (!_isPlaying || _currentLog == null)
+                 return;
+ 
+-            string stoppedId = _currentLog.logId;
+             uint stoppedHash = _currentLogHash;
+             _isPlaying = false;
+             _currentLog = null;
+             _currentLogHash = 0u;
+             _playbackTimer = 0f;
+ 
+-            AudioLogEvents.RaisePlaybackStopped(stoppedId);
++            AudioLogEvents.RaisePlaybackStopped(stoppedHash);
+             SubtitleEventBus.RaisePlaybackStopped(stoppedHash);
+         }
+ 
+@@ -345,3 +346,4 @@ namespace Hecton8.Narrative
+         }
+     }
+ }
++
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistry.cs b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+index 964a0a9c..55472190 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistry.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+@@ -2,6 +2,7 @@ using System;
+ using Hecton8.Gameplay;
+ using Hecton8.Interaction;
+ using Hecton8.Physics;
++using Hecton8.SaveSystem;
+ using Hecton8.Tools;
+ using UnityEngine;
+ 
+@@ -25,6 +26,7 @@ namespace Hecton8.Core
+         private static ISceneService _scene;
+         private static ISaveService _save;
+         private static IUIService _ui;
++        private static ObjectPoolManager _objectPool;
+         private static IPlayerRuntimeContext _player;
+         private static IPlayerInventoryService _playerInventory;
+         private static IModularEquipmentService _modularEquipment;
+@@ -69,11 +71,21 @@ namespace Hecton8.Core
+         /// </summary>
+         public static ISaveService Save => _save;
+ 
++        /// <summary>
++        /// Registered concrete save runtime owner for compatibility during singleton migration.
++        /// </summary>
++        public static Hecton8.SaveSystem.SaveManager SaveRuntime => _save as Hecton8.SaveSystem.SaveManager;
++
+         /// <summary>
+         /// Registered UI service slot.
+         /// </summary>
+         public static IUIService UI => _ui;
+ 
++        /// <summary>
++        /// Registered object-pool runtime owner.
++        /// </summary>
++        public static ObjectPoolManager ObjectPool => _objectPool;
++
+         /// <summary>
+         /// Registered player runtime context slot.
+         /// </summary>
+@@ -189,6 +201,7 @@ namespace Hecton8.Core
+             _scene = null;
+             _save = null;
+             _ui = null;
++            _objectPool = null;
+             _player = null;
+             _playerInventory = null;
+             _modularEquipment = null;
+@@ -304,6 +317,15 @@ namespace Hecton8.Core
+             RegisterService(ref _ui, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative object-pool runtime owner.
++        /// </summary>
++        /// <param name="instance">Object-pool owner instance.</param>
++        public static void RegisterObjectPoolService(ObjectPoolManager instance)
++        {
++            RegisterService(ref _objectPool, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative player runtime context.
+         /// </summary>
+@@ -474,6 +496,15 @@ namespace Hecton8.Core
+             UnregisterService(ref _ui, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current object-pool runtime owner if the owner matches.
++        /// </summary>
++        /// <param name="instance">Object-pool owner requesting unregistration.</param>
++        public static void UnregisterObjectPoolService(ObjectPoolManager instance)
++        {
++            UnregisterService(ref _objectPool, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current player runtime context if the owner matches.
+         /// </summary>
+diff --git a/Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs b/Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs
+index 393eb146..cec4b625 100644
+--- a/Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs
++++ b/Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs
+@@ -2,6 +2,9 @@ using Hecton8.Core;
+ using Hecton8.Physics;
+ using Unity.Mathematics;
+ using UnityEngine;
++#if UNITY_EDITOR
++using UnityEditor;
++#endif
+ 
+ namespace Hecton8.Environment
+ {
+@@ -14,6 +17,11 @@ namespace Hecton8.Environment
+         private const float TransitionCompletionThreshold = 0.999f;
+         private const float CurrentSyncEpsilonSq = 0.000025f;
+         private const float VectorNormalizeEpsilon = 0.0001f;
++#if UNITY_EDITOR
++        private const string CalmWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_DeepStillness.asset";
++        private const string StormWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_CyclonicSurge.asset";
++        private const string SurgeWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_BiolumeBloom.asset";
++#endif
+ 
+         private enum WeatherPhase : byte
+         {
+@@ -672,6 +680,19 @@ namespace Hecton8.Environment
+             SanitizeWave(ref wave0);
+             SanitizeWave(ref wave1);
+             SanitizeWave(ref wave2);
++            AssignDefaultProfilesIfMissing();
++        }
++
++        private void AssignDefaultProfilesIfMissing()
++        {
++            if (calmWeatherProfile == null)
++                calmWeatherProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(CalmWeatherProfileAssetPath);
++
++            if (stormWeatherProfile == null)
++                stormWeatherProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(StormWeatherProfileAssetPath);
++
++            if (surgeWeatherProfile == null)
++                surgeWeatherProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(SurgeWeatherProfileAssetPath);
+         }
+ #endif
+ 
+diff --git a/Assets/_Project/Scripts/HectonPlayerMovement.cs b/Assets/_Project/Scripts/HectonPlayerMovement.cs
+index 3278e669..efb37d13 100644
+--- a/Assets/_Project/Scripts/HectonPlayerMovement.cs
++++ b/Assets/_Project/Scripts/HectonPlayerMovement.cs
+@@ -650,7 +650,7 @@ namespace Hecton8.Gameplay
+         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+ 
+         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Control Scheme Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+-        
++
+         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Input System Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+ 
+         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Swim Vertical (fallback ÃÂµÃ‘ÂÃÂ»ÃÂ¸ ÃÂ½ÃÂµÃ‘â€š ControlScheme) Ã¢â€â‚¬Ã¢â€â‚¬")]
+@@ -2486,8 +2486,8 @@ namespace Hecton8.Gameplay
+             return ResolveActiveTransportPreset();
+         }
+ 
+-        private void OnEnable() 
+-        { 
++        private void OnEnable()
++        {
+             SargassumGlobalDragManager.OnEntanglementStrain += HandleSargassumEntanglementStrain;
+             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+             ResolvePlayerToolManager();
+@@ -2760,7 +2760,7 @@ namespace Hecton8.Gameplay
+             MonoBehaviour ambientPlatformBehaviour = null;
+             bool hasLifecycleOwner = _playerTransportCoordinator != null &&
+                                      _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out lifecycleOwner);
+-            if (!hasLifecycleOwner && !TryResolveAmbientTransportPlatform(out ambientPlatform, out ambientPlatformBehaviour))
++            if (!hasLifecycleOwner && !PlayerTransportBinder.TryResolveAmbientSubmarinePlatform(IsInDryInterior(), out ambientPlatform, out ambientPlatformBehaviour))
+             {
+                 _activeTransportPlatform = null;
+                 _activeTransportPlatformBehaviour = null;
+@@ -2810,20 +2810,6 @@ namespace Hecton8.Gameplay
+             _activeTransportPlatformTransform = platform.PlatformTransform;
+         }
+ 
+-        private bool TryResolveAmbientTransportPlatform(out ITransportPlatform platform, out MonoBehaviour platformBehaviour)
+-        {
+-            platform = null;
+-            platformBehaviour = null;
+-
+-            ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
+-            if (submarineRuntimeContext == null || !submarineRuntimeContext.IsTransportPlatformActive || !IsInDryInterior())
+-                return false;
+-
+-            platform = submarineRuntimeContext;
+-            platformBehaviour = submarineRuntimeContext as MonoBehaviour;
+-            return platformBehaviour != null;
+-        }
+-
+         private bool TryGetActiveTransportPlatformTransform(out Transform platformTransform)
+         {
+             ResolveActiveTransportPlatform();
+@@ -3848,7 +3834,8 @@ namespace Hecton8.Gameplay
+             if (clip == null)
+                 return;
+ 
+-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
++            if (audioManager == null)
+                 return;
+ 
+             float volume = math.lerp(0.12f, 0.42f, signal.Shake01);
+@@ -6039,7 +6026,7 @@ namespace Hecton8.Gameplay
+             if (crushDepthGroanClip == null || _hullStressIntensity < crushDepthGroanThreshold || _hullStressGroanCooldownTimer > 0f)
+                 return;
+ 
+-            SpatialAudioManager audioManager = SpatialAudioManager.Instance;
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+             if (audioManager == null)
+                 return;
+ 
+@@ -6486,7 +6473,7 @@ namespace Hecton8.Gameplay
+ 
+             if (crushDepthImplosionClip != null)
+             {
+-                SpatialAudioManager audioManager = SpatialAudioManager.Instance;
++                Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+                 if (audioManager != null)
+                     audioManager.PlayStatic2D(crushDepthImplosionClip, 0.95f, audioManager.InterfaceGroup);
+             }
+@@ -6793,7 +6780,8 @@ namespace Hecton8.Gameplay
+             if (exitedWater)
+                 EmitBreachImpactFeedback(math.lerp(0.45f, 1f, speedT));
+ 
+-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
++            if (audioManager == null)
+                 return;
+ 
+             AudioClip clip = enteredWater
+@@ -6851,7 +6839,8 @@ namespace Hecton8.Gameplay
+             if (underwaterImpactClip == null)
+                 return;
+ 
+-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
++            if (audioManager == null)
+                 return;
+ 
+             float clampedIntensity = math.saturate(intensity);
+@@ -6900,7 +6889,7 @@ namespace Hecton8.Gameplay
+         private void EmitSurfaceGasp()
+         {
+             if (surfaceGaspClip != null &&
+-                SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) &&
++                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager &&
+                 audioManager != null)
+             {
+                 audioManager.PlayStatic2D(surfaceGaspClip, surfaceGaspVolume, audioManager.InterfaceGroup);
+diff --git a/Assets/_Project/Scripts/PlayerPDA.cs b/Assets/_Project/Scripts/PlayerPDA.cs
+index b54db050..c3c14e6f 100644
+--- a/Assets/_Project/Scripts/PlayerPDA.cs
++++ b/Assets/_Project/Scripts/PlayerPDA.cs
+@@ -389,7 +389,14 @@ namespace Hecton8.UI
+             rect.offsetMax = new Vector2(-24f, -72f);
+             if (tabComponentType != null)
+                 tab.AddComponent(tabComponentType);
+-            tab.SetActive(false);
++
++            CanvasGroup canvasGroup = tab.GetComponent<CanvasGroup>();
++            if (canvasGroup == null)
++                canvasGroup = tab.AddComponent<CanvasGroup>();
++
++            canvasGroup.alpha = 0f;
++            canvasGroup.interactable = false;
++            canvasGroup.blocksRaycasts = false;
+             return tab;
+         }
+ 
+@@ -740,9 +747,6 @@ namespace Hecton8.UI
+                     pdaCanvasGroup = pdaPanel.AddComponent<CanvasGroup>();
+             }
+ 
+-            if (!pdaPanel.activeSelf)
+-                pdaPanel.SetActive(true);
+-
+             EnsureTabCanvasGroups();
+ 
+             pdaCanvasGroup.alpha = 0f;
+@@ -785,9 +789,6 @@ namespace Hecton8.UI
+                     continue;
+                 }
+ 
+-                if (!tab.activeSelf)
+-                    tab.SetActive(true);
+-
+                 CanvasGroup group = _tabCanvasGroups[i];
+                 if (group == null)
+                 {
+@@ -895,7 +896,8 @@ namespace Hecton8.UI
+         private void PlaySound(AudioClip clip)
+         {
+             if (clip == null) return;
+-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager)) return;
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
++            if (audioManager == null) return;
+ 
+             audioManager.PlayStatic2D(clip, audioVolume);
+         }
+@@ -973,6 +975,7 @@ namespace Hecton8.UI
+     {
+         private const int DiagnosticsTabIndex = 7;
+         private const string TitleText = "DIAGNOSTIC TERMINAL // PERF / HULL / OFFSET";
++        private static readonly char[] TitleTextBuffer = TitleText.ToCharArray();
+ 
+         private static readonly Color BackgroundColor = new Color(0.03f, 0.08f, 0.10f, 0.86f);
+         private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.16f);
+@@ -1090,12 +1093,12 @@ namespace Hecton8.UI
+ 
+             _titleLabel = CreateText(root, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.TopLeft, TitleColor);
+             Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -14f), new Vector2(-16f, -42f));
+-            _titleLabel.text = TitleText;
++            _titleLabel.SetCharArray(TitleTextBuffer, 0, TitleTextBuffer.Length);
+ 
+             _bodyLabel = CreateText(root, "Body", numericFont != null ? numericFont : labelFont, 15f, FontStyles.Normal, TextAlignmentOptions.TopLeft, BodyColor);
+             _bodyLabel.textWrappingMode = TextWrappingModes.NoWrap;
+             Anchor(_bodyLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -72f), new Vector2(-16f, -236f));
+-            _bodyLabel.text = string.Empty;
++            _bodyLabel.SetCharArray(Array.Empty<char>(), 0, 0);
+ 
+             _built = true;
+         }
+@@ -1270,3 +1273,5 @@ namespace Hecton8.UI
+         }
+     }
+ }
++
++
+diff --git a/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs b/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs
+index 60605227..fdc1dd1b 100644
+--- a/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs
++++ b/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs
+@@ -5,6 +5,7 @@ using Hecton8.Celestial;
+ using Hecton8.Core;
+ using Hecton8.Modding;
+ using Hecton8.Narrative;
++using Unity.Collections;
+ using UnityEngine;
+ 
+ namespace Hecton8.Quest
+@@ -12,10 +13,10 @@ namespace Hecton8.Quest
+     internal sealed class QuestGraphEvaluator : IDisposable
+     {
+         private const string EventSubscriberId = "quest.graph.evaluator";
+-        private const int MaxSignalDepth = 4;
+         private const float DepthTierTwoMeters = 100f;
+         private const float DepthTierThreeMeters = 300f;
+         private const float DepthTierFourMeters = 1000f;
++        private static readonly uint _deepAbyssZoneHash = QuestFlagHashKernel.ComputeStableHash("zone_deep_abyss");
+ 
+         private readonly QuestStateManager _stateManager;
+         private readonly Action _onResultsAvailable;
+@@ -24,18 +25,23 @@ namespace Hecton8.Quest
+         private HectonEventSubscription _itemDiscardedSubscription;
+         private HectonEventSubscription _biomeDiscoveredSubscription;
+         private HectonEventSubscription _loreAcquiredSubscription;
++        private NativeQueue<QuestSignalPayload> _pendingSignals;
+         private bool _isBound;
+-        private int _signalDepth;
++        private bool _isDrainingSignals;
+ 
+         public QuestGraphEvaluator(QuestStateManager stateManager, Action onResultsAvailable)
+         {
+             _stateManager = stateManager;
+             _onResultsAvailable = onResultsAvailable;
++            _pendingSignals = new NativeQueue<QuestSignalPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] - quest signal ingress lane drained on event receipt - owner: QuestGraphEvaluator
+         }
+ 
+         public void Dispose()
+         {
+             Unbind();
++
++            if (_pendingSignals.IsCreated)
++                _pendingSignals.Dispose();
+         }
+ 
+         public void Bind()
+@@ -46,7 +52,7 @@ namespace Hecton8.Quest
+             _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, EventSubscriberId);
+             _itemDiscardedSubscription = HectonEventBus.Subscribe<ItemDiscardedEvent>(HandleItemDiscarded, EventSubscriberId);
+             _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
+-            _loreAcquiredSubscription = HectonEventBus.Subscribe<Hecton8.Narrative.LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
++            _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
+             NarrativeEvents.OnDepthTierReached += HandleDepthTierReached;
+             HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
+             AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
+@@ -70,33 +76,32 @@ namespace Hecton8.Quest
+             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
+             AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
+             _isBound = false;
++
++            while (_pendingSignals.IsCreated && _pendingSignals.TryDequeue(out _))
++            {
++            }
+         }
+ 
+         public void UpdateDepth(float depthMeters)
+         {
+-            Evaluate(new QuestEventPayload
+-            {
+-                EventType = (ushort)QuestSignalKind.DepthReached,
+-                Timestamp = Time.timeAsDouble,
+-                NumericValue = depthMeters
+-            });
++            UpdateDepthContext(depthMeters, 0u, false);
+         }
+ 
+-        public void Evaluate(in QuestEventPayload payload)
++        public void UpdateDepthContext(float depthMeters, uint zoneHash, bool isThermalZone)
+         {
+-            if (_stateManager == null || _signalDepth >= MaxSignalDepth)
+-                return;
++            QuestSignalContextFlags flags = QuestSignalContextFlags.None;
++            if (isThermalZone)
++                flags |= QuestSignalContextFlags.ThermalPhase;
++            if (zoneHash == _deepAbyssZoneHash)
++                flags |= QuestSignalContextFlags.AbyssalPhase;
+ 
+-            _signalDepth++;
+-            try
++            EnqueueSignal(new QuestSignalPayload
+             {
+-                _stateManager.EvaluateSignal(payload);
+-                _onResultsAvailable?.Invoke();
+-            }
+-            finally
+-            {
+-                _signalDepth--;
+-            }
++                EventType = (ushort)QuestSignalKind.DepthReached,
++                Timestamp = Time.timeAsDouble,
++                NumericValue = depthMeters,
++                Flags = (uint)flags
++            });
+         }
+ 
+         private void HandleItemCollected(ItemCollectedEvent evt)
+@@ -110,7 +115,7 @@ namespace Hecton8.Quest
+                     ? QuestFlagHashKernel.ComputeStableHash(evt.Item.PersistentId)
+                     : 0u;
+ 
+-            Evaluate(new QuestEventPayload
++            EnqueueSignal(new QuestSignalPayload
+             {
+                 EntityHash = itemHash,
+                 EventType = (ushort)QuestSignalKind.ItemCollected,
+@@ -146,7 +151,7 @@ namespace Hecton8.Quest
+             if (evt == null)
+                 return;
+ 
+-            Evaluate(new QuestEventPayload
++            EnqueueSignal(new QuestSignalPayload
+             {
+                 EventType = (ushort)QuestSignalKind.BiomeEntered,
+                 Timestamp = Time.timeAsDouble,
+@@ -154,27 +159,24 @@ namespace Hecton8.Quest
+             });
+         }
+ 
+-        private void HandleLoreAcquired(Hecton8.Narrative.LoreAcquiredEvent evt)
++        private void HandleLoreAcquired(LoreAcquiredEvent evt)
+         {
+             if (evt == null)
+                 return;
+ 
+             double timestamp = Time.timeAsDouble;
+-            QuestEventPayload discoveryPayload = new QuestEventPayload
++            EnqueueSignal(new QuestSignalPayload
+             {
+                 EntityHash = evt.LoreHash,
+                 EventType = (ushort)QuestSignalKind.DiscoveryMade,
+                 Timestamp = timestamp
+-            };
+-            Evaluate(discoveryPayload);
+-
+-            QuestEventPayload audioLogPayload = new QuestEventPayload
++            });
++            EnqueueSignal(new QuestSignalPayload
+             {
+                 EntityHash = evt.LoreHash,
+                 EventType = (ushort)QuestSignalKind.AudioLogFound,
+                 Timestamp = timestamp
+-            };
+-            Evaluate(audioLogPayload);
++            });
+         }
+ 
+         private void HandleDepthTierReached(int tier)
+@@ -184,7 +186,7 @@ namespace Hecton8.Quest
+ 
+         private void HandleEclipseStart()
+         {
+-            Evaluate(new QuestEventPayload
++            EnqueueSignal(new QuestSignalPayload
+             {
+                 EventType = (ushort)QuestSignalKind.EclipseStarted,
+                 Timestamp = Time.timeAsDouble
+@@ -196,7 +198,7 @@ namespace Hecton8.Quest
+             uint payloadHash = string.IsNullOrWhiteSpace(messageId)
+                 ? 0u
+                 : QuestFlagHashKernel.ComputeStableHash(messageId);
+-            Evaluate(new QuestEventPayload
++            EnqueueSignal(new QuestSignalPayload
+             {
+                 EntityHash = payloadHash,
+                 EventType = (ushort)QuestSignalKind.SignalDecoded,
+@@ -204,6 +206,35 @@ namespace Hecton8.Quest
+             });
+         }
+ 
++        private void EnqueueSignal(in QuestSignalPayload payload)
++        {
++            if (!_pendingSignals.IsCreated)
++                return;
++
++            _pendingSignals.Enqueue(payload);
++            DrainPendingSignals();
++        }
++
++        private void DrainPendingSignals()
++        {
++            if (_stateManager == null || !_pendingSignals.IsCreated || _isDrainingSignals)
++                return;
++
++            _isDrainingSignals = true;
++            try
++            {
++                while (_pendingSignals.TryDequeue(out QuestSignalPayload payload))
++                {
++                    _stateManager.EvaluateSignal(payload);
++                    _onResultsAvailable?.Invoke();
++                }
++            }
++            finally
++            {
++                _isDrainingSignals = false;
++            }
++        }
++
+         private static float MapDepthTierToMeters(int tier)
+         {
+             switch (tier)
+diff --git a/Assets/_Project/Scripts/Quest/QuestManager.cs b/Assets/_Project/Scripts/Quest/QuestManager.cs
+index ced01724..48a0a294 100644
+--- a/Assets/_Project/Scripts/Quest/QuestManager.cs
++++ b/Assets/_Project/Scripts/Quest/QuestManager.cs
+@@ -30,6 +30,8 @@ namespace Hecton8.Quest
+ 
+         // COLD ALLOC: Dictionary<string,QuestData>[64] - authored quest lookup by stable questId - owner: QuestManager
+         private readonly Dictionary<string, QuestData> _questLookup = new Dictionary<string, QuestData>(64);
++        // COLD ALLOC: Dictionary<uint,QuestData>[64] - authored quest lookup by stable FNV quest hash - owner: QuestManager
++        private readonly Dictionary<uint, QuestData> _questHashLookup = new Dictionary<uint, QuestData>(64);
+ 
+         private QuestStateManager _stateManager;
+         private QuestGraphEvaluator _graphEvaluator;
+@@ -151,6 +153,27 @@ namespace Hecton8.Quest
+             _graphEvaluator?.UpdateDepth(depthMeters);
+         }
+ 
++        public void UpdateDepthContext(float depthMeters, uint zoneHash, bool isThermalZone)
++        {
++            _graphEvaluator?.UpdateDepthContext(depthMeters, zoneHash, isThermalZone);
++        }
++
++        public bool TryGetQuestIdByHash(uint questHash, out string questId)
++        {
++            questId = string.Empty;
++            if (questHash == 0u)
++                return false;
++
++            if (_questHashLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
++                BuildLookup();
++
++            if (!_questHashLookup.TryGetValue(questHash, out QuestData questData) || questData == null || string.IsNullOrWhiteSpace(questData.questId))
++                return false;
++
++            questId = questData.questId;
++            return true;
++        }
++
+         public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
+         {
+             return _stateManager != null
+@@ -299,21 +322,25 @@ namespace Hecton8.Quest
+             if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                 return;
+ 
++            uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
++            if (questHash == 0u)
++                return;
++
+             string title = questData.DisplayTitleOrFallback;
+             switch (transitionType)
+             {
+                 case QuestTransitionType.Complete:
+-                    QuestEvents.RaiseCompleted(questData.questId);
++                    QuestEvents.RaiseCompleted(questHash);
+                     NotificationEvents.PushInfo($"OBJECTIVE COMPLETED: {title}");
+                     return;
+ 
+                 case QuestTransitionType.Revert:
+-                    QuestEvents.RaiseActivated(questData.questId);
++                    QuestEvents.RaiseActivated(questHash);
+                     NotificationEvents.PushInfo($"OBJECTIVE RESTORED: {title}");
+                     return;
+ 
+                 default:
+-                    QuestEvents.RaiseActivated(questData.questId);
++                    QuestEvents.RaiseActivated(questHash);
+                     NotificationEvents.PushInfo(completed ? $"OBJECTIVE COMPLETED: {title}" : $"NEW OBJECTIVE: {title}");
+                     return;
+             }
+@@ -349,6 +376,7 @@ namespace Hecton8.Quest
+         private void BuildLookup()
+         {
+             _questLookup.Clear();
++            _questHashLookup.Clear();
+             _hasLookupAmbiguity = false;
+             _lookupAmbiguitySummary = string.Empty;
+ 
+@@ -366,6 +394,9 @@ namespace Hecton8.Quest
+                 }
+ 
+                 _questLookup[questData.questId] = questData;
++                uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
++                if (questHash != 0u && !_questHashLookup.ContainsKey(questHash))
++                    _questHashLookup[questHash] = questData;
+             }
+         }
+ 
+diff --git a/Assets/_Project/Scripts/SpatialAudioManager.cs b/Assets/_Project/Scripts/SpatialAudioManager.cs
+index 6d3603c5..a2afd3a8 100644
+--- a/Assets/_Project/Scripts/SpatialAudioManager.cs
++++ b/Assets/_Project/Scripts/SpatialAudioManager.cs
+@@ -16,11 +16,11 @@
+ //   â€¢ ÐŸÑƒÐ» ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð² Awake, Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿ÐµÑ€ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ðµ.
+ //
+ // API:
+-//   SpatialAudioManager.Instance.PlayAtPoint(clip, position, volume, pitch)
+-//   SpatialAudioManager.Instance.PlayAtPoint(clip, position, volume, pitch, mixerGroup)
+-//   SpatialAudioManager.Instance.PlayStatic2D(clip, volume)
+-//   SpatialAudioManager.Instance.PlayStatic2D(clip, volume, mixerGroup)
+-//   SpatialAudioManager.Instance.StopAll()
++//   Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, position, volume, pitch)
++//   Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, position, volume, pitch, mixerGroup)
++//   Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, volume)
++//   Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, volume, mixerGroup)
++//   Hecton8.Core.GlobalRegistry.Audio.StopAll()
+ //
+ // MIXER GROUPS:
+ //   ÐÐ°Ð·Ð½Ð°Ñ‡Ð°ÑŽÑ‚ÑÑ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ: SfxGroup, InterfaceGroup, AmbientGroup.
+@@ -65,10 +65,10 @@ namespace Hecton8.Audio
+ {
+     /// <summary>
+     /// Ð¦ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
+-    /// Singleton â€” Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ñ‡ÐµÑ€ÐµÐ· SpatialAudioManager.Instance.
++    /// Singleton â€” Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ñ‡ÐµÑ€ÐµÐ· Hecton8.Core.GlobalRegistry.Audio.
+     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
+     /// </summary>
+-    public sealed class SpatialAudioManager : MonoBehaviour, IUpdatable
++    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable
+     {
+         private const float SoundSpeedWaterMetersPerSecond = 1480f;
+         private const float SoundSpeedAirMetersPerSecond = 343f;
+@@ -178,41 +178,16 @@ namespace Hecton8.Audio
+         //  SINGLETON
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+-        private static SpatialAudioManager s_Instance;
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            s_Instance = null;
+-        }
+-
+         /// <summary>
+         /// Ð“Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€Ñƒ. ÐÐµ ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ Ð¾Ð±ÑŠÐµÐºÑ‚ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸ â€”
+         /// Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ñ€Ð°Ð·Ð¼ÐµÑ‰Ñ‘Ð½ Ð½Ð° ÑÑ†ÐµÐ½Ðµ Ð²Ñ€ÑƒÑ‡Ð½ÑƒÑŽ Ð¸Ð»Ð¸ Ñ‡ÐµÑ€ÐµÐ· bootstrap.
+         /// </summary>
+-        public static SpatialAudioManager Instance
+-        {
+-            get
+-            {
+-#if UNITY_EDITOR
+-                if (s_Instance == null)
+-                    Debug.LogError("[SpatialAudioManager] Instance is null. Ensure SpatialAudioManager exists in the scene before first audio call.");
+-#endif
+-                return s_Instance;
+-            }
+-        }
++        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+         /// <summary>
+-        /// Silent singleton probe for optional UI/gameplay audio calls.
+-        /// Does not emit editor errors when the manager is intentionally absent.
++        /// Legacy compatibility access. Authoritative ownership still lives in <see cref="GlobalRegistry"/>.
+         /// </summary>
+-        public static bool TryGetInstance(out SpatialAudioManager instance)
+-        {
+-            instance = s_Instance;
+-            return instance != null;
+-        }
+ 
+-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         //  INSPECTOR CONFIGURATION
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+ 
+@@ -329,6 +304,7 @@ namespace Hecton8.Audio
+         private int _delayedAudioIngressCount;
+         private NativeQueue<DelayedAudioEvent> _delayedAudioIngress;
+         private NativeList<DelayedAudioEvent> _pendingDelayedAudioEvents;
++        private bool _isInitialized;
+         // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
+         private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
+ 
+@@ -339,15 +315,6 @@ namespace Hecton8.Audio
+         private void Awake()
+         {
+             // â”€â”€ Singleton enforcement â”€â”€
+-            if (s_Instance != null && s_Instance != this)
+-            {
+-                Debug.LogWarningFormat(this, "[SpatialAudioManager] Duplicate instance on '{0}'. Destroying.", gameObject.name);
+-                Destroy(gameObject);
+-                return;
+-            }
+-
+-            s_Instance = this;
+-            DontDestroyOnLoad(gameObject);
+             _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
+ 
+             InitializePool();
+@@ -359,13 +326,18 @@ namespace Hecton8.Audio
+         {
+             PhysicsEvents.OnImpact += HandlePhysicsImpact;
+             FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
+-            TryRegisterUpdatable();
+         }
+ 
+         private void OnDisable()
+         {
+             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
+             FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
++            if (_isInitialized)
++            {
++                GlobalRegistry.UnregisterAudioService(this);
++                _isInitialized = false;
++            }
++
+             if (_registeredUpdatable)
+                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+ 
+@@ -387,10 +359,27 @@ namespace Hecton8.Audio
+         private void OnDestroy()
+         {
+             ReleaseTelemetryCaches();
+-            if (s_Instance == this)
++        }
++
++        /// <summary>
++        /// True once the audio runtime has been registered into the global service locator.
++        /// </summary>
++        public bool IsInitialized => _isInitialized;
++
++        /// <summary>
++        /// Registers the audio runtime into <see cref="GlobalRegistry"/> and the environment update bucket.
++        /// </summary>
++        public void InitializeService()
++        {
++            if (_isInitialized)
+             {
+-                s_Instance = null;
++                TryRegisterUpdatable();
++                return;
+             }
++
++            GlobalRegistry.RegisterAudioService(this);
++            TryRegisterUpdatable();
++            _isInitialized = true;
+         }
+ 
+         /// <summary>
+@@ -646,7 +635,7 @@ namespace Hecton8.Audio
+         ///   2. Ð•ÑÐ»Ð¸ Ð²ÑÐµ Ð·Ð°Ð½ÑÑ‚Ñ‹ â€” Ð²Ñ‹Ñ‚ÐµÑÐ½ÑÐµÑ‚ ÑÐ°Ð¼Ñ‹Ð¹ ÑÑ‚Ð°Ñ€Ñ‹Ð¹ (lowest startTime).
+         ///   3. Zero-GC: Ñ‚Ð¾Ð»ÑŒÐºÐ¾ array traversal, Ð½Ð¸ÐºÐ°ÐºÐ¸Ñ… Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ð¹.
+         ///
+-        /// Ð’Ñ‹Ð·Ð¾Ð²: SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
++        /// Ð’Ñ‹Ð·Ð¾Ð²: Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, transform.position);
+         /// </summary>
+         /// <param name="clip">AudioClip Ð´Ð»Ñ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ. Null-safe.</param>
+         /// <param name="position">ÐœÐ¸Ñ€Ð¾Ð²Ð°Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ñ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ° Ð·Ð²ÑƒÐºÐ°.</param>
+@@ -737,7 +726,7 @@ namespace Hecton8.Audio
+         /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ Ð¿ÑƒÐ» 2D-Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð² â€” Ð½ÐµÑÐºÐ¾Ð»ÑŒÐºÐ¾ ÐºÐ¾Ñ€Ð¾Ñ‚ÐºÐ¸Ñ… ÑÐ¸Ð³Ð½Ð°Ð»Ð¾Ð² Ð¼Ð¾Ð³ÑƒÑ‚ Ð¸Ð³Ñ€Ð°Ñ‚ÑŒ
+         /// Ð¿Ð°Ñ€Ð°Ð»Ð»ÐµÐ»ÑŒÐ½Ð¾ Ð´Ð¾ Ð¸ÑÑ‡ÐµÑ€Ð¿Ð°Ð½Ð¸Ñ Ð¿ÑƒÐ»Ð°; Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ð²Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ðµ Ð¿Ð¾ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸.
+         ///
+-        /// Ð’Ñ‹Ð·Ð¾Ð²: SpatialAudioManager.Instance.PlayStatic2D(beepClip, 0.5f);
++        /// Ð’Ñ‹Ð·Ð¾Ð²: Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(beepClip, 0.5f);
+         /// </summary>
+         /// <param name="clip">AudioClip. Null-safe.</param>
+         /// <param name="volume">Ð“Ñ€Ð¾Ð¼ÐºÐ¾ÑÑ‚ÑŒ [0..1]. Default = 1.</param>
+diff --git a/Assets/_Project/Scripts/UI/PDAMapTab.cs b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+index 6e8c9d05..bf294926 100644
+--- a/Assets/_Project/Scripts/UI/PDAMapTab.cs
++++ b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+@@ -288,13 +288,17 @@ namespace Hecton8.UI
+         private void RefreshThreatPings()
+         {
+             _activeThreatPingCount = 0;
+-            SpatialAudioManager audio = GlobalRegistry.Audio as SpatialAudioManager;
++            Hecton8.Core.IAudioService audio = Hecton8.Core.GlobalRegistry.Audio;
++            if (audio == null)
++            {
++                return;
++            }
++
+             NativeArray<float> gridEnergy = default;
+             int azimuthBins = 0;
+             int elevationBins = 0;
+             ComputeBuffer radarGridBuffer = null;
+-            if (audio == null ||
+-                !audio.TryGetAcousticRadarGridPayload(
++            if (!audio.TryGetAcousticRadarGridPayload(
+                     out gridEnergy,
+                     out azimuthBins,
+                     out elevationBins,
+@@ -459,3 +463,5 @@ namespace Hecton8.UI
+         }
+     }
+ }
++
++
+diff --git a/Assets/_Project/Scripts/UI/SonarHoloCompass.cs b/Assets/_Project/Scripts/UI/SonarHoloCompass.cs
+index b0610c19..8bde6ea0 100644
+--- a/Assets/_Project/Scripts/UI/SonarHoloCompass.cs
++++ b/Assets/_Project/Scripts/UI/SonarHoloCompass.cs
+@@ -184,7 +184,7 @@ namespace Hecton8.UI
+             if (!TryCompleteProjectionIfScheduled())
+                 return;
+ 
+-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
++            if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager))
+             {
+                 HideDots();
+                 ApplyRootAlpha(0f);
+diff --git a/Assets/_Project/Scripts/Visor/PlayerStressVFX.cs b/Assets/_Project/Scripts/Visor/PlayerStressVFX.cs
+index 6dbc6884..2e108832 100644
+--- a/Assets/_Project/Scripts/Visor/PlayerStressVFX.cs
++++ b/Assets/_Project/Scripts/Visor/PlayerStressVFX.cs
+@@ -332,7 +332,8 @@ namespace Hecton8.Visor
+ 
+         private void PlayHeartbeat(float stress01)
+         {
+-            if (heartbeatClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
++            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
++            if (heartbeatClip == null || audioManager == null)
+                 return;
+ 
+             float signalVolume = _hasInteractionSignal ? _interactionVolume01 : 1f;
+@@ -385,3 +386,5 @@ namespace Hecton8.Visor
+         }
+     }
+ }
++
++
+diff --git a/Assets/_Project/Scripts/World/GPUScatterDirector.cs b/Assets/_Project/Scripts/World/GPUScatterDirector.cs
+index 66091ffd..7b02d191 100644
+--- a/Assets/_Project/Scripts/World/GPUScatterDirector.cs
++++ b/Assets/_Project/Scripts/World/GPUScatterDirector.cs
+@@ -49,7 +49,7 @@ namespace Hecton8.World
+         private ComputeShader scatterCompute;
+ 
+         [SerializeField]
+-        [Tooltip("Authored source material for the indirect scatter draw. Runtime uses a hidden clone for buffer binding.")]
++        [Tooltip("Shared authored material for the indirect scatter draw. Per-instance payload is supplied through global graphics buffers.")]
+         private Material scatterMaterial;
+ 
+         [SerializeField]
+@@ -123,7 +123,6 @@ namespace Hecton8.World
+         private bool _registered;
+         private int _generateKernel = -1;
+         private int _gridResolution;
+-        private Material _runtimeMaterial;
+         private GraphicsBuffer _instanceBuffer;
+         private GraphicsBuffer _visibleIndicesBuffer;
+         private GraphicsBuffer _argsBuffer;
+@@ -170,7 +169,7 @@ namespace Hecton8.World
+             if (scatterCompute == null ||
+                 _generateKernel < 0 ||
+                 scatterMesh == null ||
+-                _runtimeMaterial == null ||
++                scatterMaterial == null ||
+                 _instanceBuffer == null ||
+                 _visibleIndicesBuffer == null ||
+                 _argsBuffer == null ||
+@@ -216,8 +215,8 @@ namespace Hecton8.World
+             scatterCompute.Dispatch(_generateKernel, dispatchGroups, 1, 1);
+ 
+             GraphicsBuffer.CopyCount(_visibleIndicesBuffer, _argsBuffer, sizeof(uint));
+-            _runtimeMaterial.SetBuffer(_ScatterInstancesId, _instanceBuffer);
+-            _runtimeMaterial.SetBuffer(_VisibleIndicesId, _visibleIndicesBuffer);
++            Shader.SetGlobalBuffer(_ScatterInstancesId, _instanceBuffer);
++            Shader.SetGlobalBuffer(_VisibleIndicesId, _visibleIndicesBuffer);
+ 
+             float terrainTop = heightPayload.TerrainPosition.y + heightPayload.TerrainSize.y;
+             Bounds drawBounds = new Bounds(
+@@ -227,7 +226,7 @@ namespace Hecton8.World
+             Graphics.DrawMeshInstancedIndirect(
+                 scatterMesh,
+                 0,
+-                _runtimeMaterial,
++                scatterMaterial,
+                 drawBounds,
+                 _argsBuffer,
+                 0,
+@@ -271,7 +270,6 @@ namespace Hecton8.World
+             EnsureInstanceBufferCapacity(resolvedCapacity);
+             EnsureVisibleIndexBufferCapacity(resolvedCapacity);
+             EnsureIndirectArgsBuffer();
+-            EnsureRuntimeMaterial();
+         }
+ 
+         private void EnsureInstanceBufferCapacity(int requiredCapacity)
+@@ -305,19 +303,6 @@ namespace Hecton8.World
+             _argsBuffer.SetData(_argsUpload);
+         }
+ 
+-        private void EnsureRuntimeMaterial()
+-        {
+-            if (_runtimeMaterial != null || scatterMaterial == null)
+-                return;
+-
+-            _runtimeMaterial = new Material(scatterMaterial)
+-            {
+-                hideFlags = HideFlags.HideAndDontSave,
+-                name = "__HectonGpuScatterRuntimeMaterial",
+-                enableInstancing = true
+-            }; // COLD ALLOC: Material[1] — runtime-only indirect scatter material clone for buffer binding — owner: GPUScatterDirector
+-        }
+-
+         private void PopulateFrustumPlaneUpload(Camera cullCamera)
+         {
+             GeometryUtility.CalculateFrustumPlanes(cullCamera, _frustumPlaneCache);
+@@ -351,15 +336,6 @@ namespace Hecton8.World
+             ReleaseBuffer(ref _instanceBuffer);
+             ReleaseBuffer(ref _visibleIndicesBuffer);
+             ReleaseBuffer(ref _argsBuffer);
+-            if (_runtimeMaterial != null)
+-            {
+-                if (Application.isPlaying)
+-                    Destroy(_runtimeMaterial);
+-                else
+-                    DestroyImmediate(_runtimeMaterial);
+-
+-                _runtimeMaterial = null;
+-            }
+         }
+ 
+         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
+diff --git a/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs b/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+index 797592d8..df8c8ace 100644
+--- a/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
++++ b/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+@@ -1536,6 +1536,8 @@ namespace Hecton8.World
+         private NativeArray<SwarmWakeImpulse> _swarmWakeImpulseNative;
+         private NativeArray<float> _abyssalThermalGridNative;
+         private NativeArray<float> _abyssalThermalGridNextNative;
++        private NativeArray<float3> _abyssalFlowVolumeCurrentNative;
++        private NativeArray<float3> _abyssalFlowVolumeNextNative;
+         private NativeArray<float> _canopyHeightGridNative;
+         private NativeArray<TerrainHoleRecord> _terrainHoleRecordsNative;
+         private NativeArray<TerrainHoleStreamingRecord> _terrainHoleStreamingRecordsNative;
+@@ -1611,6 +1613,7 @@ namespace Hecton8.World
+         private int _swarmWakeImpulseCount;
+         private bool _canopyGridInitialized;
+         private bool _abyssalThermalGridInitialized;
++        private bool _abyssalFlowVolumeInitialized;
+         private bool _abyssalThermalGridScheduled;
+         private bool _abyssalPathScheduled;
+         private bool _hlodCullScheduled;
+@@ -2186,6 +2189,9 @@ namespace Hecton8.World
+         /// <summary>Current abyssal thermal grid. Treat as read-only and reacquire after each SlowTick.</summary>
+         public NativeArray<float> AbyssalThermalGrid => _abyssalThermalGridNative;
+ 
++        /// <summary>Current 3D abyssal flow volume. Treat as read-only and reacquire after each SlowTick.</summary>
++        public NativeArray<float3> AbyssalFlowVolume => _abyssalFlowVolumeCurrentNative;
++
+         /// <summary>Current abyssal thermal-grid center in world space.</summary>
+         public Vector3 AbyssalThermalGridCenter => _abyssalThermalGridCenter;
+ 
+@@ -2885,6 +2891,31 @@ namespace Hecton8.World
+                    verticalCellSize > 0f;
+         }
+ 
++        /// <summary>
++        /// Returns the current 3D abyssal flow-volume payload and metadata for current-driven deep-ocean consumers.
++        /// </summary>
++        public bool TryGetAbyssalFlowVolumePayload(
++            out NativeArray<float3> flowVectors,
++            out int horizontalResolution,
++            out int verticalResolution,
++            out Vector3 gridCenter,
++            out float horizontalCellSize,
++            out float verticalCellSize)
++        {
++            flowVectors = _abyssalFlowVolumeCurrentNative;
++            horizontalResolution = _abyssalThermalGridResolutionXZ;
++            verticalResolution = _abyssalThermalGridResolutionY;
++            gridCenter = _abyssalThermalGridCenter;
++            horizontalCellSize = thermalGridHorizontalCellSize;
++            verticalCellSize = thermalGridVerticalCellSize;
++            return _abyssalFlowVolumeInitialized &&
++                   flowVectors.IsCreated &&
++                   horizontalResolution > 0 &&
++                   verticalResolution > 0 &&
++                   horizontalCellSize > 0f &&
++                   verticalCellSize > 0f;
++        }
++
+         /// <summary>
+         /// Returns the current mega-wreck section streaming payload for composite-structure consumers.
+         /// </summary>
+@@ -4371,6 +4402,21 @@ namespace Hecton8.World
+                 // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
+                 _abyssalThermalGridNextNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+             }
++
++            if (!_abyssalFlowVolumeCurrentNative.IsCreated || _abyssalFlowVolumeCurrentNative.Length != _abyssalThermalGridCellCount)
++            {
++                DisposeNativeArray(ref _abyssalFlowVolumeCurrentNative);
++                // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume front buffer for deep-current sampling - owner: HectonMapMagicVegetationBridge
++                _abyssalFlowVolumeCurrentNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++                _abyssalFlowVolumeInitialized = false;
++            }
++
++            if (!_abyssalFlowVolumeNextNative.IsCreated || _abyssalFlowVolumeNextNative.Length != _abyssalThermalGridCellCount)
++            {
++                DisposeNativeArray(ref _abyssalFlowVolumeNextNative);
++                // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
++                _abyssalFlowVolumeNextNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            }
+         }
+ 
+         private void CompleteFlowFieldJob(bool forceComplete)
+@@ -4382,27 +4428,12 @@ namespace Hecton8.World
+                 return;
+ 
+             _flowFieldHandle.Complete();
+-            bool canComparePreviousFlow =
+-                _flowFieldInitialized &&
+-                _ecosystemFlowFieldCurrentNative.IsCreated &&
+-                _ecosystemFlowFieldNextNative.IsCreated &&
+-                _ecosystemThreatGridResolution > 2 &&
+-                (_scheduledFlowFieldCenter - _ecosystemFlowFieldCenter).sqrMagnitude <= threatGridCellSize * threatGridCellSize;
+-            bool shouldTriggerBiolumeSurge = canComparePreviousFlow &&
+-                                             DetectBiolumeSurgeCluster(
+-                                                 _ecosystemFlowFieldCurrentNative,
+-                                                 _ecosystemFlowFieldNextNative,
+-                                                 _ecosystemThreatGridResolution,
+-                                                 BiolumeSurgeVelocityDeltaThreshold);
+             NativeArray<float2> flowSwap = _ecosystemFlowFieldCurrentNative;
+             _ecosystemFlowFieldCurrentNative = _ecosystemFlowFieldNextNative;
+             _ecosystemFlowFieldNextNative = flowSwap;
+             _ecosystemFlowFieldCenter = _scheduledFlowFieldCenter;
+             _flowFieldInitialized = true;
+             _flowFieldScheduled = false;
+-
+-            if (shouldTriggerBiolumeSurge)
+-                TryRegisterBiolumeSurge(BiolumeSurgeDurationSeconds);
+         }
+ 
+         private void CompleteThermalGridJob(bool forceComplete)
+@@ -4414,12 +4445,34 @@ namespace Hecton8.World
+                 return;
+ 
+             _abyssalThermalGridHandle.Complete();
++            bool canComparePreviousFlowVolume =
++                _abyssalFlowVolumeInitialized &&
++                _abyssalFlowVolumeCurrentNative.IsCreated &&
++                _abyssalFlowVolumeNextNative.IsCreated &&
++                _abyssalThermalGridResolutionXZ > 2 &&
++                _abyssalThermalGridResolutionY > 2 &&
++                (_scheduledAbyssalThermalGridCenter - _abyssalThermalGridCenter).sqrMagnitude <=
++                (thermalGridHorizontalCellSize * thermalGridHorizontalCellSize);
++            bool shouldTriggerBiolumeSurge = canComparePreviousFlowVolume &&
++                                             DetectBiolumeSurgeCluster3D(
++                                                 _abyssalFlowVolumeCurrentNative,
++                                                 _abyssalFlowVolumeNextNative,
++                                                 _abyssalThermalGridResolutionXZ,
++                                                 _abyssalThermalGridResolutionY,
++                                                 BiolumeSurgeVelocityDeltaThreshold);
+             NativeArray<float> thermalSwap = _abyssalThermalGridNative;
+             _abyssalThermalGridNative = _abyssalThermalGridNextNative;
+             _abyssalThermalGridNextNative = thermalSwap;
++            NativeArray<float3> flowVolumeSwap = _abyssalFlowVolumeCurrentNative;
++            _abyssalFlowVolumeCurrentNative = _abyssalFlowVolumeNextNative;
++            _abyssalFlowVolumeNextNative = flowVolumeSwap;
+             _abyssalThermalGridCenter = _scheduledAbyssalThermalGridCenter;
+             _abyssalThermalGridInitialized = true;
++            _abyssalFlowVolumeInitialized = true;
+             _abyssalThermalGridScheduled = false;
++
++            if (shouldTriggerBiolumeSurge)
++                TryRegisterBiolumeSurge(BiolumeSurgeDurationSeconds);
+         }
+ 
+         private void ScheduleFlowFieldJob()
+@@ -4496,6 +4549,8 @@ namespace Hecton8.World
+                 return;
+ 
+             EnsureThermalGridBuffers();
++            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
++            float2 weatherDirectionXZ = math.normalizesafe(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
+ 
+             Vector3 thermalCenter = playerTransform != null
+                 ? new Vector3(playerTransform.position.x, waterLevel - (thermalGridDepthMeters * 0.5f), playerTransform.position.z)
+@@ -4532,8 +4587,33 @@ namespace Hecton8.World
+                 RingOffsetZ = _abyssalThermalGridRingOffsetZ
+             };
+ 
++            var flowVolumeJob = new BuildAbyssalFlowVolumeJob
++            {
++                ThermalGrid = _abyssalThermalGridNextNative,
++                ExternalWakeImpulses = _swarmWakeImpulseNative,
++                Output = _abyssalFlowVolumeNextNative,
++                HorizontalResolution = _abyssalThermalGridResolutionXZ,
++                VerticalResolution = _abyssalThermalGridResolutionY,
++                RingOffsetX = _abyssalThermalGridRingOffsetX,
++                RingOffsetY = _abyssalThermalGridRingOffsetY,
++                RingOffsetZ = _abyssalThermalGridRingOffsetZ,
++                ExternalWakeImpulseCount = _swarmWakeImpulseCount,
++                HorizontalCellSize = thermalGridHorizontalCellSize,
++                VerticalCellSize = thermalGridVerticalCellSize,
++                WaterLevel = waterLevel,
++                GridDepthMeters = thermalGridDepthMeters,
++                ThermoclineDepthMeters = 120f,
++                WeatherStateMask = (uint)weatherSnapshot.StateMask,
++                WeatherDirectionXZ = weatherDirectionXZ,
++                WeatherCurrentSpeed = math.max(0f, weatherSnapshot.CurrentMeta.GlobalScale),
++                WeatherIntensity = math.max(0f, weatherSnapshot.WeatherIntensity),
++                ThermalIntensity = math.max(0f, weatherSnapshot.CurrentMeta.ThermalIntensity),
++                GridCenter = new float3(thermalCenter.x, thermalCenter.y, thermalCenter.z)
++            };
++
+             _scheduledAbyssalThermalGridCenter = thermalCenter;
+-            _abyssalThermalGridHandle = job.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize);
++            JobHandle thermalHandle = job.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize);
++            _abyssalThermalGridHandle = flowVolumeJob.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize, thermalHandle);
+             _abyssalThermalGridScheduled = true;
+         }
+ 
+@@ -4546,41 +4626,54 @@ namespace Hecton8.World
+             return weatherService.GetRuntimeSnapshot();
+         }
+ 
+-        private static bool DetectBiolumeSurgeCluster(
+-            NativeArray<float2> previousField,
+-            NativeArray<float2> currentField,
+-            int gridResolution,
++        private static bool DetectBiolumeSurgeCluster3D(
++            NativeArray<float3> previousField,
++            NativeArray<float3> currentField,
++            int horizontalResolution,
++            int verticalResolution,
+             float velocityDeltaThreshold)
+         {
+             if (!previousField.IsCreated ||
+                 !currentField.IsCreated ||
+-                gridResolution <= 2 ||
+-                previousField.Length < gridResolution * gridResolution ||
+-                currentField.Length < gridResolution * gridResolution)
++                horizontalResolution <= 2 ||
++                verticalResolution <= 2)
+             {
+                 return false;
+             }
+ 
+-            for (int cellZ = 1; cellZ < gridResolution - 1; cellZ++)
++            int cellsPerLayer = horizontalResolution * horizontalResolution;
++            int requiredLength = cellsPerLayer * verticalResolution;
++            if (previousField.Length < requiredLength || currentField.Length < requiredLength)
++                return false;
++
++            for (int cellY = 1; cellY < verticalResolution - 1; cellY++)
+             {
+-                for (int cellX = 1; cellX < gridResolution - 1; cellX++)
++                int layerOffset = cellY * cellsPerLayer;
++                for (int cellZ = 1; cellZ < horizontalResolution - 1; cellZ++)
+                 {
+-                    float previousMaxSpeed = 0f;
+-                    float currentMaxSpeed = 0f;
+-                    for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
++                    int rowOffset = layerOffset + (cellZ * horizontalResolution);
++                    for (int cellX = 1; cellX < horizontalResolution - 1; cellX++)
+                     {
+-                        int sampleZ = cellZ + offsetZ;
+-                        int baseIndex = sampleZ * gridResolution;
+-                        for (int offsetX = -1; offsetX <= 1; offsetX++)
++                        float previousMaxSpeed = 0f;
++                        float currentMaxSpeed = 0f;
++                        for (int offsetY = -1; offsetY <= 1; offsetY++)
+                         {
+-                            int sampleIndex = baseIndex + cellX + offsetX;
+-                            previousMaxSpeed = math.max(previousMaxSpeed, math.length(previousField[sampleIndex]));
+-                            currentMaxSpeed = math.max(currentMaxSpeed, math.length(currentField[sampleIndex]));
++                            int sampleLayerOffset = (cellY + offsetY) * cellsPerLayer;
++                            for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
++                            {
++                                int sampleRowOffset = sampleLayerOffset + ((cellZ + offsetZ) * horizontalResolution);
++                                for (int offsetX = -1; offsetX <= 1; offsetX++)
++                                {
++                                    int sampleIndex = sampleRowOffset + cellX + offsetX;
++                                    previousMaxSpeed = math.max(previousMaxSpeed, math.length(previousField[sampleIndex]));
++                                    currentMaxSpeed = math.max(currentMaxSpeed, math.length(currentField[sampleIndex]));
++                                }
++                            }
+                         }
+-                    }
+ 
+-                    if (math.abs(currentMaxSpeed - previousMaxSpeed) > velocityDeltaThreshold)
+-                        return true;
++                        if (math.abs(currentMaxSpeed - previousMaxSpeed) > velocityDeltaThreshold)
++                            return true;
++                    }
+                 }
+             }
+ 
+@@ -7092,10 +7185,10 @@ namespace Hecton8.World
+             if (largestAxis < hlodMinimumStructureSize)
+                 return false;
+ 
+-            Vector3 delta = center - viewerPosition;
+-            float distanceSq = delta.sqrMagnitude;
++            double distanceSq = ComputeAupDistanceSq(center, viewerPosition);
+             float maxDistance = hlodMaximumDistance + (largestAxis * 0.5f);
+-            return distanceSq <= (maxDistance * maxDistance);
++            double maxDistanceSq = maxDistance * maxDistance;
++            return distanceSq <= maxDistanceSq;
+         }
+ 
+         private void ScheduleHLODVisibilityCullJob()
+@@ -7124,7 +7217,9 @@ namespace Hecton8.World
+             for (int i = 0; i < _hlodRegistryCount; i++)
+             {
+                 HLODData entry = _hlodRegistrySnapshotNative[i];
+-                entry.Fade01 = ComputeHLODFade01(Vector3.Distance(viewerPosition, entry.Center), residentRadius, fullyVisibleDistance);
++                double distanceSq = ComputeAupDistanceSq(viewerPosition, entry.Center);
++                float distance = distanceSq > 0d ? (float)math.sqrt(distanceSq) : 0f;
++                entry.Fade01 = ComputeHLODFade01(distance, residentRadius, fullyVisibleDistance);
+                 _hlodRegistrySnapshot[i] = entry;
+                 _hlodRegistrySnapshotNative[i] = entry;
+             }
+@@ -7188,6 +7283,13 @@ namespace Hecton8.World
+             return Mathf.Clamp01((distance - fadeStart) / (fadeEnd - fadeStart));
+         }
+ 
++        private static double ComputeAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
++        {
++            AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);
++            AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);
++            return AbsoluteUniversePosition.DistanceSq(in a, in b);
++        }
++
+         private void RebuildCanopyHeightGrid()
+         {
+             EnsureCanopyGridBuffer();
+@@ -9542,6 +9644,140 @@ namespace Hecton8.World
+             }
+         }
+ 
++        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
++        private struct BuildAbyssalFlowVolumeJob : IJobParallelFor
++        {
++            private const float ThermoclineHalfBandMeters = 8f;
++            private const float ThermoclineVerticalAttenuation = 0.1f;
++            private const float SurfaceStormLayerDepthMeters = 50f;
++            private const float StormSurfaceTurbulenceStrength = 0.4f;
++
++            [ReadOnly] public NativeArray<float> ThermalGrid;
++            [ReadOnly] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
++            [NativeDisableParallelForRestriction]
++            [WriteOnly] public NativeArray<float3> Output;
++            public int HorizontalResolution;
++            public int VerticalResolution;
++            public int RingOffsetX;
++            public int RingOffsetY;
++            public int RingOffsetZ;
++            public int ExternalWakeImpulseCount;
++            public float HorizontalCellSize;
++            public float VerticalCellSize;
++            public float WaterLevel;
++            public float GridDepthMeters;
++            public float ThermoclineDepthMeters;
++            public uint WeatherStateMask;
++            public float2 WeatherDirectionXZ;
++            public float WeatherCurrentSpeed;
++            public float WeatherIntensity;
++            public float ThermalIntensity;
++            public float3 GridCenter;
++
++            public void Execute(int index)
++            {
++                if (!Output.IsCreated ||
++                    !ThermalGrid.IsCreated ||
++                    index < 0 ||
++                    index >= Output.Length ||
++                    index >= ThermalGrid.Length ||
++                    HorizontalResolution <= 0 ||
++                    VerticalResolution <= 0)
++                {
++                    return;
++                }
++
++                int cellsPerLayer = HorizontalResolution * HorizontalResolution;
++                int layer = index / cellsPerLayer;
++                int rem = index - (layer * cellsPerLayer);
++                int cellZ = rem / HorizontalResolution;
++                int cellX = rem - (cellZ * HorizontalResolution);
++                int halfExtent = HorizontalResolution >> 1;
++
++                float worldX = GridCenter.x + ((cellX - halfExtent) * HorizontalCellSize);
++                float worldY = WaterLevel - (layer * VerticalCellSize);
++                float worldZ = GridCenter.z + ((cellZ - halfExtent) * HorizontalCellSize);
++                float depthMeters = math.clamp(WaterLevel - worldY, 0f, GridDepthMeters);
++                int physicalIndex = GetPhysicalIndex(cellX, layer, cellZ);
++                float localTemperature = ThermalGrid[physicalIndex];
++                float aboveTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.max(0, layer - 1), cellZ)];
++                float belowTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.min(VerticalResolution - 1, layer + 1), cellZ)];
++
++                float2 weatherDirection = math.normalizesafe(WeatherDirectionXZ, new float2(0f, 1f));
++                float2 horizontalCurrent = weatherDirection * WeatherCurrentSpeed;
++                float verticalCurrent = (aboveTemperature - belowTemperature) * math.max(0.05f, ThermalIntensity);
++                float thermalOffset = localTemperature - belowTemperature;
++                verticalCurrent += thermalOffset * 0.02f;
++
++                if ((WeatherStateMask & (uint)WeatherState.Storm) != 0u)
++                {
++                    float surfaceLayer01 = 1f - math.saturate(depthMeters / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
++                    float stormBiasScale = WeatherCurrentSpeed * math.max(0.35f, WeatherIntensity);
++                    horizontalCurrent += weatherDirection * stormBiasScale;
++                    if (surfaceLayer01 > 0.0001f)
++                    {
++                        float noiseX = (HectonMapMagicVegetationBridge.SampleValueNoise((worldX * 0.11f) + 17.3f, (worldZ * 0.11f) + 11.1f, 0x6D2B79F5u) * 2f) - 1f;
++                        float noiseZ = (HectonMapMagicVegetationBridge.SampleValueNoise((worldX * 0.13f) - 5.7f, (worldZ * 0.13f) + 23.9f, 0xB5297A4Du) * 2f) - 1f;
++                        horizontalCurrent += new float2(noiseX, noiseZ) *
++                                             (StormSurfaceTurbulenceStrength * surfaceLayer01 * math.max(0.1f, WeatherIntensity));
++                    }
++                }
++
++                float3 flow = new float3(horizontalCurrent.x, verticalCurrent, horizontalCurrent.y);
++                flow += SampleWakeImpulse(new float3(worldX, worldY, worldZ));
++
++                if ((WeatherStateMask & ((uint)WeatherState.ThermoclineActive | (uint)WeatherState.HaloclineActive)) != 0u)
++                {
++                    float thermoclineBand01 = 1f - math.saturate(math.abs(depthMeters - ThermoclineDepthMeters) / math.max(ThermoclineHalfBandMeters, 0.0001f));
++                    if (thermoclineBand01 > 0.0001f)
++                        flow.y = math.lerp(flow.y, flow.y * ThermoclineVerticalAttenuation, thermoclineBand01);
++                }
++
++                Output[physicalIndex] = flow;
++            }
++
++            private float3 SampleWakeImpulse(float3 position)
++            {
++                if (!ExternalWakeImpulses.IsCreated || ExternalWakeImpulseCount <= 0)
++                    return float3.zero;
++
++                float3 wake = float3.zero;
++                for (int i = 0; i < ExternalWakeImpulseCount; i++)
++                {
++                    SwarmWakeImpulse impulse = ExternalWakeImpulses[i];
++                    if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
++                        continue;
++
++                    float3 delta = position - impulse.Position;
++                    float distance = math.length(delta);
++                    float weight = math.saturate(1f - (distance / math.max(impulse.Radius, 0.001f)));
++                    if (weight <= 0f)
++                        continue;
++
++                    wake += math.normalizesafe(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
++                }
++
++                return wake;
++            }
++
++            private int GetPhysicalIndex(int x, int y, int z)
++            {
++                int wrappedX = WrapIndex(x + RingOffsetX, HorizontalResolution);
++                int wrappedY = WrapIndex(y + RingOffsetY, VerticalResolution);
++                int wrappedZ = WrapIndex(z + RingOffsetZ, HorizontalResolution);
++                return (wrappedY * HorizontalResolution * HorizontalResolution) + (wrappedZ * HorizontalResolution) + wrappedX;
++            }
++
++            private static int WrapIndex(int value, int length)
++            {
++                if (length <= 0)
++                    return 0;
++
++                int wrapped = value % length;
++                return wrapped < 0 ? wrapped + length : wrapped;
++            }
++        }
++
+         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+         private struct NativeAStarJob : IJob
+         {
+@@ -12557,6 +12793,7 @@ namespace Hecton8.World
+                 _threatGridInitialized = false;
+                 _flowFieldInitialized = false;
+                 _abyssalThermalGridInitialized = false;
++                _abyssalFlowVolumeInitialized = false;
+                 _abyssalThermalGridCenter = Vector3.zero;
+                 _scheduledAbyssalThermalGridCenter = Vector3.zero;
+                 _currentThreatHotspotLevel = 0f;
+@@ -13489,9 +13726,12 @@ namespace Hecton8.World
+             JobHandle disposeHandle = _abyssalThermalGridScheduled ? _abyssalThermalGridHandle : default;
+             DisposeNativeArray(ref _abyssalThermalGridNative, disposeHandle);
+             DisposeNativeArray(ref _abyssalThermalGridNextNative, disposeHandle);
++            DisposeNativeArray(ref _abyssalFlowVolumeCurrentNative, disposeHandle);
++            DisposeNativeArray(ref _abyssalFlowVolumeNextNative, disposeHandle);
+             _abyssalThermalGridHandle = default;
+             _abyssalThermalGridScheduled = false;
+             _abyssalThermalGridInitialized = false;
++            _abyssalFlowVolumeInitialized = false;
+             _abyssalThermalGridCenter = Vector3.zero;
+             _scheduledAbyssalThermalGridCenter = Vector3.zero;
+             _abyssalThermalGridRingOffsetX = 0;
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_BiolumeBloom.asset" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_BiolumeBloom.asset"
+new file mode 100644
+index 00000000..a087b87f
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_BiolumeBloom.asset"
+@@ -0,0 +1,18 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: ffe2d2d0ae9265e4e84de15d55c62041, type: 3}
++  m_Name: WeatherProfile_BiolumeBloom
++  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.WeatherProfile
++  windVector: {x: 0.74, y: 0, z: 1.18}
++  waveHeightMax: 2.35
++  abyssalTurbulenceMultiplier: 1.9
++  fogColorLut: {fileID: 2800000, guid: ec0cba6d1fd7dbf498b7c94ad947826f, type: 3}
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_BiolumeBloom.asset.meta" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_BiolumeBloom.asset.meta"
+new file mode 100644
+index 00000000..b2840568
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_BiolumeBloom.asset.meta"
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: d41282120da540144abfed46b1d16b53
++NativeFormatImporter:
++  externalObjects: {}
++  mainObjectFileID: 0
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_CyclonicSurge.asset" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_CyclonicSurge.asset"
+new file mode 100644
+index 00000000..56e6c225
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_CyclonicSurge.asset"
+@@ -0,0 +1,18 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: ffe2d2d0ae9265e4e84de15d55c62041, type: 3}
++  m_Name: WeatherProfile_CyclonicSurge
++  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.WeatherProfile
++  windVector: {x: 1.65, y: 0, z: 0.92}
++  waveHeightMax: 4.8
++  abyssalTurbulenceMultiplier: 1.45
++  fogColorLut: {fileID: 2800000, guid: e5ee8714e5322a94fa056abedbc9a0fd, type: 3}
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_CyclonicSurge.asset.meta" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_CyclonicSurge.asset.meta"
+new file mode 100644
+index 00000000..00b439d3
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_CyclonicSurge.asset.meta"
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: 86e243460b39bea449b7a791baec1747
++NativeFormatImporter:
++  externalObjects: {}
++  mainObjectFileID: 0
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_DeepStillness.asset" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_DeepStillness.asset"
+new file mode 100644
+index 00000000..85955572
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_DeepStillness.asset"
+@@ -0,0 +1,18 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: ffe2d2d0ae9265e4e84de15d55c62041, type: 3}
++  m_Name: WeatherProfile_DeepStillness
++  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Environment.WeatherProfile
++  windVector: {x: 0.18, y: 0, z: 0.34}
++  waveHeightMax: 1.2
++  abyssalTurbulenceMultiplier: 0.75
++  fogColorLut: {fileID: 2800000, guid: f517eef2caf73cf4db656792188e915b, type: 3}
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_DeepStillness.asset.meta" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_DeepStillness.asset.meta"
+new file mode 100644
+index 00000000..f6233993
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Data\\Environment\\Weather\\WeatherProfile_DeepStillness.asset.meta"
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: cf3e7bcf062e8bb40818591be577bcff
++NativeFormatImporter:
++  externalObjects: {}
++  mainObjectFileID: 0
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_BiolumeBloom.png" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_BiolumeBloom.png"
+new file mode 100644
+index 0000000000000000000000000000000000000000..8c0178e50f2faefd6d722c5cd74d33dece911ed6
+GIT binary patch
+literal 73
+zcmeAS@N?(olHy`uVBq!ia0vp^3P8-r!3HGvcdbbWQUabXjv*Yf$st}RexEmJU|{&-
+W$@o!D;`e2s9D}E;pUXO@geCwQ!xAU}
+
+literal 0
+HcmV?d00001
+
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_BiolumeBloom.png.meta" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_BiolumeBloom.png.meta"
+new file mode 100644
+index 00000000..6f2c07de
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_BiolumeBloom.png.meta"
+@@ -0,0 +1,117 @@
++fileFormatVersion: 2
++guid: ec0cba6d1fd7dbf498b7c94ad947826f
++TextureImporter:
++  internalIDToNameTable: []
++  externalObjects: {}
++  serializedVersion: 13
++  mipmaps:
++    mipMapMode: 0
++    enableMipMap: 1
++    sRGBTexture: 1
++    linearTexture: 0
++    fadeOut: 0
++    borderMipMap: 0
++    mipMapsPreserveCoverage: 0
++    alphaTestReferenceValue: 0.5
++    mipMapFadeDistanceStart: 1
++    mipMapFadeDistanceEnd: 3
++  bumpmap:
++    convertToNormalMap: 0
++    externalNormalMap: 0
++    heightScale: 0.25
++    normalMapFilter: 0
++    flipGreenChannel: 0
++  isReadable: 0
++  streamingMipmaps: 0
++  streamingMipmapsPriority: 0
++  vTOnly: 0
++  ignoreMipmapLimit: 0
++  grayScaleToAlpha: 0
++  generateCubemap: 6
++  cubemapConvolution: 0
++  seamlessCubemap: 0
++  textureFormat: 1
++  maxTextureSize: 2048
++  textureSettings:
++    serializedVersion: 2
++    filterMode: 1
++    aniso: 1
++    mipBias: 0
++    wrapU: 0
++    wrapV: 0
++    wrapW: 0
++  nPOTScale: 1
++  lightmap: 0
++  compressionQuality: 50
++  spriteMode: 0
++  spriteExtrude: 1
++  spriteMeshType: 1
++  alignment: 0
++  spritePivot: {x: 0.5, y: 0.5}
++  spritePixelsToUnits: 100
++  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
++  spriteGenerateFallbackPhysicsShape: 1
++  alphaUsage: 1
++  alphaIsTransparency: 0
++  spriteTessellationDetail: -1
++  textureType: 0
++  textureShape: 1
++  singleChannelComponent: 0
++  flipbookRows: 1
++  flipbookColumns: 1
++  maxTextureSizeSet: 0
++  compressionQualitySet: 0
++  textureFormatSet: 0
++  ignorePngGamma: 0
++  applyGammaDecoding: 0
++  swizzle: 50462976
++  cookieLightType: 0
++  platformSettings:
++  - serializedVersion: 4
++    buildTarget: DefaultTexturePlatform
++    maxTextureSize: 2048
++    resizeAlgorithm: 0
++    textureFormat: -1
++    textureCompression: 1
++    compressionQuality: 50
++    crunchedCompression: 0
++    allowsAlphaSplitting: 0
++    overridden: 0
++    ignorePlatformSupport: 0
++    androidETC2FallbackOverride: 0
++    forceMaximumCompressionQuality_BC6H_BC7: 0
++  - serializedVersion: 4
++    buildTarget: Standalone
++    maxTextureSize: 2048
++    resizeAlgorithm: 0
++    textureFormat: -1
++    textureCompression: 1
++    compressionQuality: 50
++    crunchedCompression: 0
++    allowsAlphaSplitting: 0
++    overridden: 0
++    ignorePlatformSupport: 0
++    androidETC2FallbackOverride: 0
++    forceMaximumCompressionQuality_BC6H_BC7: 0
++  spriteSheet:
++    serializedVersion: 2
++    sprites: []
++    outline: []
++    customData: 
++    physicsShape: []
++    bones: []
++    spriteID: 
++    internalID: 0
++    vertices: []
++    indices: 
++    edges: []
++    weights: []
++    secondaryTextures: []
++    spriteCustomMetadata:
++      entries: []
++    nameFileIdTable: {}
++  mipmapLimitGroupName: 
++  pSDRemoveMatte: 0
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_CyclonicSurge.png" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_CyclonicSurge.png"
+new file mode 100644
+index 0000000000000000000000000000000000000000..030e55d7cee234dceb12c3c34db83055338344de
+GIT binary patch
+literal 73
+zcmeAS@N?(olHy`uVBq!ia0vp^3P8-r!3HGvcdbbWQUabXjv*Yf$zQZr{625cz`!7-
+W!DOqEnyCepWAJqKb6Mw<&;$VcMGyA?
+
+literal 0
+HcmV?d00001
+
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_CyclonicSurge.png.meta" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_CyclonicSurge.png.meta"
+new file mode 100644
+index 00000000..2d60243a
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_CyclonicSurge.png.meta"
+@@ -0,0 +1,117 @@
++fileFormatVersion: 2
++guid: e5ee8714e5322a94fa056abedbc9a0fd
++TextureImporter:
++  internalIDToNameTable: []
++  externalObjects: {}
++  serializedVersion: 13
++  mipmaps:
++    mipMapMode: 0
++    enableMipMap: 1
++    sRGBTexture: 1
++    linearTexture: 0
++    fadeOut: 0
++    borderMipMap: 0
++    mipMapsPreserveCoverage: 0
++    alphaTestReferenceValue: 0.5
++    mipMapFadeDistanceStart: 1
++    mipMapFadeDistanceEnd: 3
++  bumpmap:
++    convertToNormalMap: 0
++    externalNormalMap: 0
++    heightScale: 0.25
++    normalMapFilter: 0
++    flipGreenChannel: 0
++  isReadable: 0
++  streamingMipmaps: 0
++  streamingMipmapsPriority: 0
++  vTOnly: 0
++  ignoreMipmapLimit: 0
++  grayScaleToAlpha: 0
++  generateCubemap: 6
++  cubemapConvolution: 0
++  seamlessCubemap: 0
++  textureFormat: 1
++  maxTextureSize: 2048
++  textureSettings:
++    serializedVersion: 2
++    filterMode: 1
++    aniso: 1
++    mipBias: 0
++    wrapU: 0
++    wrapV: 0
++    wrapW: 0
++  nPOTScale: 1
++  lightmap: 0
++  compressionQuality: 50
++  spriteMode: 0
++  spriteExtrude: 1
++  spriteMeshType: 1
++  alignment: 0
++  spritePivot: {x: 0.5, y: 0.5}
++  spritePixelsToUnits: 100
++  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
++  spriteGenerateFallbackPhysicsShape: 1
++  alphaUsage: 1
++  alphaIsTransparency: 0
++  spriteTessellationDetail: -1
++  textureType: 0
++  textureShape: 1
++  singleChannelComponent: 0
++  flipbookRows: 1
++  flipbookColumns: 1
++  maxTextureSizeSet: 0
++  compressionQualitySet: 0
++  textureFormatSet: 0
++  ignorePngGamma: 0
++  applyGammaDecoding: 0
++  swizzle: 50462976
++  cookieLightType: 0
++  platformSettings:
++  - serializedVersion: 4
++    buildTarget: DefaultTexturePlatform
++    maxTextureSize: 2048
++    resizeAlgorithm: 0
++    textureFormat: -1
++    textureCompression: 1
++    compressionQuality: 50
++    crunchedCompression: 0
++    allowsAlphaSplitting: 0
++    overridden: 0
++    ignorePlatformSupport: 0
++    androidETC2FallbackOverride: 0
++    forceMaximumCompressionQuality_BC6H_BC7: 0
++  - serializedVersion: 4
++    buildTarget: Standalone
++    maxTextureSize: 2048
++    resizeAlgorithm: 0
++    textureFormat: -1
++    textureCompression: 1
++    compressionQuality: 50
++    crunchedCompression: 0
++    allowsAlphaSplitting: 0
++    overridden: 0
++    ignorePlatformSupport: 0
++    androidETC2FallbackOverride: 0
++    forceMaximumCompressionQuality_BC6H_BC7: 0
++  spriteSheet:
++    serializedVersion: 2
++    sprites: []
++    outline: []
++    customData: 
++    physicsShape: []
++    bones: []
++    spriteID: 
++    internalID: 0
++    vertices: []
++    indices: 
++    edges: []
++    weights: []
++    secondaryTextures: []
++    spriteCustomMetadata:
++      entries: []
++    nameFileIdTable: {}
++  mipmapLimitGroupName: 
++  pSDRemoveMatte: 0
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_DeepStillness.png" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_DeepStillness.png"
+new file mode 100644
+index 0000000000000000000000000000000000000000..390b34941508349e925bea8bf21e6afb5b6a26de
+GIT binary patch
+literal 73
+zcmeAS@N?(olHy`uVBq!ia0vp^3P8-r!3HGvcdbbWQUabXjv*Yf$yYvh|2%Kdz`*dl
+Wp7FYaSVk~Vj=|H_&t;ucLK6Tfpb{(q
+
+literal 0
+HcmV?d00001
+
+diff --git "a/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_DeepStillness.png.meta" "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_DeepStillness.png.meta"
+new file mode 100644
+index 00000000..5a00f79b
+--- /dev/null
++++ "b/C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Textures\\Weather\\TX_FogLUT_DeepStillness.png.meta"
+@@ -0,0 +1,117 @@
++fileFormatVersion: 2
++guid: f517eef2caf73cf4db656792188e915b
++TextureImporter:
++  internalIDToNameTable: []
++  externalObjects: {}
++  serializedVersion: 13
++  mipmaps:
++    mipMapMode: 0
++    enableMipMap: 1
++    sRGBTexture: 1
++    linearTexture: 0
++    fadeOut: 0
++    borderMipMap: 0
++    mipMapsPreserveCoverage: 0
++    alphaTestReferenceValue: 0.5
++    mipMapFadeDistanceStart: 1
++    mipMapFadeDistanceEnd: 3
++  bumpmap:
++    convertToNormalMap: 0
++    externalNormalMap: 0
++    heightScale: 0.25
++    normalMapFilter: 0
++    flipGreenChannel: 0
++  isReadable: 0
++  streamingMipmaps: 0
++  streamingMipmapsPriority: 0
++  vTOnly: 0
++  ignoreMipmapLimit: 0
++  grayScaleToAlpha: 0
++  generateCubemap: 6
++  cubemapConvolution: 0
++  seamlessCubemap: 0
++  textureFormat: 1
++  maxTextureSize: 2048
++  textureSettings:
++    serializedVersion: 2
++    filterMode: 1
++    aniso: 1
++    mipBias: 0
++    wrapU: 0
++    wrapV: 0
++    wrapW: 0
++  nPOTScale: 1
++  lightmap: 0
++  compressionQuality: 50
++  spriteMode: 0
++  spriteExtrude: 1
++  spriteMeshType: 1
++  alignment: 0
++  spritePivot: {x: 0.5, y: 0.5}
++  spritePixelsToUnits: 100
++  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
++  spriteGenerateFallbackPhysicsShape: 1
++  alphaUsage: 1
++  alphaIsTransparency: 0
++  spriteTessellationDetail: -1
++  textureType: 0
++  textureShape: 1
++  singleChannelComponent: 0
++  flipbookRows: 1
++  flipbookColumns: 1
++  maxTextureSizeSet: 0
++  compressionQualitySet: 0
++  textureFormatSet: 0
++  ignorePngGamma: 0
++  applyGammaDecoding: 0
++  swizzle: 50462976
++  cookieLightType: 0
++  platformSettings:
++  - serializedVersion: 4
++    buildTarget: DefaultTexturePlatform
++    maxTextureSize: 2048
++    resizeAlgorithm: 0
++    textureFormat: -1
++    textureCompression: 1
++    compressionQuality: 50
++    crunchedCompression: 0
++    allowsAlphaSplitting: 0
++    overridden: 0
++    ignorePlatformSupport: 0
++    androidETC2FallbackOverride: 0
++    forceMaximumCompressionQuality_BC6H_BC7: 0
++  - serializedVersion: 4
++    buildTarget: Standalone
++    maxTextureSize: 2048
++    resizeAlgorithm: 0
++    textureFormat: -1
++    textureCompression: 1
++    compressionQuality: 50
++    crunchedCompression: 0
++    allowsAlphaSplitting: 0
++    overridden: 0
++    ignorePlatformSupport: 0
++    androidETC2FallbackOverride: 0
++    forceMaximumCompressionQuality_BC6H_BC7: 0
++  spriteSheet:
++    serializedVersion: 2
++    sprites: []
++    outline: []
++    customData: 
++    physicsShape: []
++    bones: []
++    spriteID: 
++    internalID: 0
++    vertices: []
++    indices: 
++    edges: []
++    weights: []
++    secondaryTextures: []
++    spriteCustomMetadata:
++      entries: []
++    nameFileIdTable: {}
++  mipmapLimitGroupName: 
++  pSDRemoveMatte: 0
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 

@@ -381,37 +381,64 @@ namespace Hecton8.Bootstrap
 
         private static SystemDispatcher EnsureSystemDispatcher()
         {
-            return GlobalRegistry.Dispatcher;
+            SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            if (dispatcher == null)
+                dispatcher = UnityEngine.Object.FindAnyObjectByType<SystemDispatcher>();
+
+            if (dispatcher == null)
+            {
+                GameObject go = new GameObject("[SystemDispatcher]");
+                dispatcher = go.AddComponent<SystemDispatcher>();
+            }
+
+            dispatcher.InitializeService();
+            return dispatcher;
         }
 
         private static SaveManager EnsureSaveManager()
         {
-            SaveManager manager = SaveManager.Instance;
+            SaveManager manager = GlobalRegistry.SaveRuntime;
             if (manager != null)
+            {
+                manager.InitializeService();
                 return manager;
+            }
 
-            SaveManager existing = SaveManager.Instance;
+            SaveManager existing = UnityEngine.Object.FindAnyObjectByType<SaveManager>();
             if (existing != null)
+            {
+                existing.InitializeService();
                 return existing;
+            }
 
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
             GameObject go = new GameObject(SaveManagerRuntimeName);
-            return go.AddComponent<SaveManager>();
+            SaveManager created = go.AddComponent<SaveManager>();
+            created.InitializeService();
+            return created;
         }
 
         private static ObjectPoolManager EnsureObjectPoolManager()
         {
-            ObjectPoolManager manager = ObjectPoolManager.Instance;
+            ObjectPoolManager manager = GlobalRegistry.ObjectPool;
             if (manager != null)
+            {
+                manager.InitializeService();
                 return manager;
+            }
 
-            ObjectPoolManager existing = ObjectPoolManager.Instance;
+            ObjectPoolManager existing = UnityEngine.Object.FindAnyObjectByType<ObjectPoolManager>();
             if (existing != null)
+            {
+                existing.InitializeService();
                 return existing;
+            }
 
             // COLD ALLOC: bootstrap fallback singleton root when scene authoring omitted manager.
             GameObject go = new GameObject(ObjectPoolManagerRuntimeName);
-            return go.AddComponent<ObjectPoolManager>();
+            ObjectPoolManager created = go.AddComponent<ObjectPoolManager>();
+            created.InitializeService();
+            return created;
         }
 
         private static PrefabRegistry EnsurePrefabRegistry()

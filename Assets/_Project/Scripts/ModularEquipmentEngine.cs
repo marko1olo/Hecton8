@@ -5,6 +5,7 @@ namespace Hecton8.Tools
     using Unity.Collections;
     using Unity.Mathematics;
     using UnityEngine;
+    using UnityEngine.SceneManagement;
 
     /// <summary>
     /// Authoritative runtime owner for active handheld-tool state.
@@ -82,13 +83,8 @@ namespace Hecton8.Tools
                 _toolIndexById = new NativeHashMap<uint, int>(MaxTrackedTools, Allocator.Persistent);
             }
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
+            if (Application.isPlaying && transform.parent != null)
+                transform.SetParent(null, true);
 
             _isInitialized = true;
             TryRegisterService();
@@ -340,6 +336,8 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
+
             if (_isInitialized)
             {
                 TryRegisterService();
@@ -349,23 +347,17 @@ namespace Hecton8.Tools
 
         private void OnDisable()
         {
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             TryUnregisterService();
             TryUnregisterUpdatable();
         }
 
         private void OnDestroy()
         {
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             TryUnregisterService();
             TryUnregisterUpdatable();
-
-            if (_toolStates.IsCreated)
-                _toolStates.Dispose();
-
-            if (_toolStats.IsCreated)
-                _toolStats.Dispose();
-
-            if (_toolIndexById.IsCreated)
-                _toolIndexById.Dispose();
+            DisposeNativeState();
 
             if (_instance == this)
                 _instance = null;
@@ -480,6 +472,37 @@ namespace Hecton8.Tools
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void HandleSceneUnloaded(Scene unloadedScene)
+        {
+            if (gameObject.scene != unloadedScene)
+                return;
+
+            DisposeNativeState();
+        }
+
+        private void DisposeNativeState()
+        {
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                _toolOwners[i] = null;
+                _slotUsed[i] = false;
+            }
+
+            for (int i = 0; i < _moduleSlots.Length; i++)
+                _moduleSlots[i] = null;
+
+            if (_toolStates.IsCreated)
+                _toolStates.Dispose();
+
+            if (_toolStats.IsCreated)
+                _toolStats.Dispose();
+
+            if (_toolIndexById.IsCreated)
+                _toolIndexById.Dispose();
+
+            _isInitialized = false;
         }
     }
 }

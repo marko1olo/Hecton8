@@ -300,7 +300,7 @@ namespace Hecton8.Audio
             float pitch = 1f + locomotionPitchOffset + UnityEngine.Random.Range(-pitchVariation, pitchVariation);
             Vector3 playPosition = _surfaceHitValid ? _surfaceHit.point : transform.position;
 
-            SpatialAudioManager sam = SpatialAudioManager.Instance;
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
             if (sam != null)
                 sam.PlayAtPoint(clip, playPosition, finalVolume, pitch);
         }

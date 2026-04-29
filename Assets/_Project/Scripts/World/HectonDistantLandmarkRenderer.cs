@@ -23,7 +23,7 @@ namespace Hecton8.World
 #endif
 
         private static readonly int LandmarkMatricesId = Shader.PropertyToID("_HectonLandmarkMatrices");
-        private static readonly int LandmarkFadeId = Shader.PropertyToID("_HectonHLODInstanceFade");
+        private static readonly int LandmarkFadeId = Shader.PropertyToID("_HectonLandmarkInstanceFade");
 
         [Header("-- Rendering ----------------")]
         [SerializeField]
@@ -56,8 +56,6 @@ namespace Hecton8.World
         private Vector3 _boundsSize = new Vector3(1200f, 600f, 1200f);
 
         private GraphicsBuffer _externalMatrixBuffer;
-        private MaterialPropertyBlock _propertyBlock;
-        private Material _runtimeMaterial;
         private NativeArray<Matrix4x4> _uploadedLandmarkMatrices;
         private NativeArray<Vector4> _uploadedLandmarkFade;
         private GraphicsBuffer _uploadedMatrixBuffer;
@@ -66,7 +64,6 @@ namespace Hecton8.World
         private int _instanceCount;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
-        private bool _ownsRuntimeMaterial;
         private bool _usingOwnedUploadBuffers;
         private BatchRendererGroup _batchRendererGroup;
         private NativeArray<MetadataValue> _batchMetadata;
@@ -76,9 +73,6 @@ namespace Hecton8.World
         private BatchMaterialID _batchMaterialId;
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
-        private Material _brgMaterial;
-        private Material _brgMaterialSource;
-        private bool _ownsBrgMaterial;
 
         /// <summary>
         /// Gets whether an external landmark matrix buffer is currently bound.
@@ -92,7 +86,6 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - distant landmark draw properties - owner: HectonDistantLandmarkRenderer
             _drawBounds = new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             EnsureResources();
         }
@@ -126,7 +119,7 @@ namespace Hecton8.World
                 return;
 
             Mesh activeMesh = _mesh;
-            Material activeMaterial = EnsureBrgMaterial();
+            Material activeMaterial = ResolveMaterial();
             if (activeMesh == null || activeMaterial == null)
                 return;
 
@@ -135,9 +128,9 @@ namespace Hecton8.World
                 if (_uploadedMatrixBuffer == null)
                     return;
 
-                activeMaterial.SetBuffer(LandmarkMatricesId, _uploadedMatrixBuffer);
+                Shader.SetGlobalBuffer(LandmarkMatricesId, _uploadedMatrixBuffer);
                 if (_uploadedFadeBuffer != null)
-                    activeMaterial.SetBuffer(LandmarkFadeId, _uploadedFadeBuffer);
+                    Shader.SetGlobalBuffer(LandmarkFadeId, _uploadedFadeBuffer);
                 _batchRendererGroup.SetBatchBuffer(_batchId, _uploadedMatrixBuffer.bufferHandle);
             }
             else
@@ -145,7 +138,7 @@ namespace Hecton8.World
                 if (_externalMatrixBuffer == null)
                     return;
 
-                activeMaterial.SetBuffer(LandmarkMatricesId, _externalMatrixBuffer);
+                Shader.SetGlobalBuffer(LandmarkMatricesId, _externalMatrixBuffer);
                 _batchRendererGroup.SetBatchBuffer(_batchId, _externalMatrixBuffer.bufferHandle);
             }
 
@@ -339,22 +332,6 @@ namespace Hecton8.World
 
         private void EnsureResources()
         {
-#if UNITY_EDITOR
-            if (_silhouetteShader == null)
-                _silhouetteShader = AssetDatabase.LoadAssetAtPath<Shader>(SilhouetteShaderAssetPath);
-#endif
-
-            if (_material == null && _runtimeMaterial == null && _silhouetteShader != null)
-            {
-                _runtimeMaterial = new Material(_silhouetteShader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave,
-                    name = "__HectonDistantLandmarkRuntimeMaterial",
-                    enableInstancing = true
-                }; // COLD ALLOC: Material[1] - first-party hidden silhouette material - owner: HectonDistantLandmarkRenderer
-                _ownsRuntimeMaterial = true;
-            }
-
             if (_batchRendererGroup == null)
             {
                 _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
@@ -368,27 +345,6 @@ namespace Hecton8.World
                 _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
                 _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
             }
-        }
-
-        private Material EnsureBrgMaterial()
-        {
-            Material sourceMaterial = ResolveMaterial();
-            if (sourceMaterial == null)
-                return null;
-
-            if (_brgMaterial != null && _brgMaterialSource == sourceMaterial)
-                return _brgMaterial;
-
-            ReleaseBrgMaterial();
-            _brgMaterial = new Material(sourceMaterial)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                name = "__HectonDistantLandmarkBrgMaterial",
-                enableInstancing = true
-            }; // COLD ALLOC: Material[1] - BRG-local distant landmark material clone for per-renderer buffer binding - owner: HectonDistantLandmarkRenderer
-            _brgMaterialSource = sourceMaterial;
-            _ownsBrgMaterial = true;
-            return _brgMaterial;
         }
 
         private void SyncBatchRegistration(Mesh activeMesh, Material activeMaterial)
@@ -451,29 +407,9 @@ namespace Hecton8.World
             _uploadedFadeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark fade upload buffer - owner: HectonDistantLandmarkRenderer
         }
 
-        private bool TryBindPropertyBuffers()
-        {
-            if (_usingOwnedUploadBuffers)
-            {
-                if (_uploadedMatrixBuffer == null)
-                    return false;
-
-                _propertyBlock.SetBuffer(LandmarkMatricesId, _uploadedMatrixBuffer);
-                if (_uploadedFadeBuffer != null && _uploadedFadeBuffer.count >= _instanceCount)
-                    _propertyBlock.SetBuffer(LandmarkFadeId, _uploadedFadeBuffer);
-                return true;
-            }
-
-            if (_externalMatrixBuffer == null)
-                return false;
-
-            _propertyBlock.SetBuffer(LandmarkMatricesId, _externalMatrixBuffer);
-            return true;
-        }
-
         private Material ResolveMaterial()
         {
-            return _material != null ? _material : _runtimeMaterial;
+            return _material;
         }
 
         private Bounds ResolveDrawBounds()
@@ -532,37 +468,6 @@ namespace Hecton8.World
             if (_uploadedLandmarkFade.IsCreated)
                 _uploadedLandmarkFade.Dispose();
 
-            if (_ownsRuntimeMaterial && _runtimeMaterial != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(_runtimeMaterial);
-                else
-                    DestroyImmediate(_runtimeMaterial);
-            }
-
-            _runtimeMaterial = null;
-            _ownsRuntimeMaterial = false;
-            ReleaseBrgMaterial();
-        }
-
-        private void ReleaseBrgMaterial()
-        {
-            if (!_ownsBrgMaterial || _brgMaterial == null)
-            {
-                _brgMaterial = null;
-                _brgMaterialSource = null;
-                _ownsBrgMaterial = false;
-                return;
-            }
-
-            if (Application.isPlaying)
-                Destroy(_brgMaterial);
-            else
-                DestroyImmediate(_brgMaterial);
-
-            _brgMaterial = null;
-            _brgMaterialSource = null;
-            _ownsBrgMaterial = false;
         }
 
         private JobHandle OnPerformCulling(

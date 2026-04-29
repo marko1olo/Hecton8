@@ -18,7 +18,7 @@ namespace Hecton.UI.MainMenu
     /// save slot generation, and async scene loading.
     /// All UI text is driven through LocalizationManager.
     /// </summary>
-    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener
     {
         private enum PanelTransitionState
         {
@@ -138,12 +138,7 @@ namespace Hecton.UI.MainMenu
             LocalizationManager.OnLanguageChanged += OnLanguageChanged;
             
             // Subscribe to save/load events for UI feedback
-            SaveEvents.OnSaveStarted += OnSaveStarted;
-            SaveEvents.OnSaveCompleted += OnSaveCompleted;
-            SaveEvents.OnSaveFailed += OnSaveFailed;
-            SaveEvents.OnLoadStarted += OnLoadStarted;
-            SaveEvents.OnLoadCompleted += OnLoadCompleted;
-            SaveEvents.OnLoadFailed += OnLoadFailed;
+            SaveEvents.Register(this);
             
             RefreshLocalizedTexts();
         }
@@ -157,12 +152,7 @@ namespace Hecton.UI.MainMenu
                 LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
             
             // Unsubscribe from save/load events with null checks
-            SaveEvents.OnSaveStarted -= OnSaveStarted;
-            SaveEvents.OnSaveCompleted -= OnSaveCompleted;
-            SaveEvents.OnSaveFailed -= OnSaveFailed;
-            SaveEvents.OnLoadStarted -= OnLoadStarted;
-            SaveEvents.OnLoadCompleted -= OnLoadCompleted;
-            SaveEvents.OnLoadFailed -= OnLoadFailed;
+            SaveEvents.Unregister(this);
             
             UnregisterFromTickManager();
             _lastUnscaledTickTime = 0f;
@@ -172,6 +162,37 @@ namespace Hecton.UI.MainMenu
         {
             RefreshLocalizedTexts();
             RefreshLoadingLocalization();
+        }
+
+        public void OnSaveEvent(in SaveEventPayload payload)
+        {
+            string slotName = payload.SlotName.ToString();
+            switch (payload.Type)
+            {
+                case SaveEventType.SaveStarted:
+                    OnSaveStarted(slotName);
+                    return;
+
+                case SaveEventType.SaveCompleted:
+                    OnSaveCompleted(slotName);
+                    return;
+
+                case SaveEventType.SaveFailed:
+                    OnSaveFailed(slotName, payload.Message.ToString());
+                    return;
+
+                case SaveEventType.LoadStarted:
+                    OnLoadStarted(slotName);
+                    return;
+
+                case SaveEventType.LoadCompleted:
+                    OnLoadCompleted(slotName);
+                    return;
+
+                case SaveEventType.LoadFailed:
+                    OnLoadFailed(slotName, payload.Message.ToString());
+                    return;
+            }
         }
 
         private void RefreshLocalizedTexts()

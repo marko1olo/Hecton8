@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using Hecton8.Bootstrap;
 using Hecton8.Crafting;
 using Hecton8.Items;
@@ -13,6 +12,15 @@ namespace Hecton8.Modding
 {
     internal static class ModLoader
     {
+        private sealed class SaveEventListener : ISaveEventListener
+        {
+            public void OnSaveEvent(in SaveEventPayload payload)
+            {
+                if (payload.Type == SaveEventType.LoadCompleted)
+                    HandleLoadCompleted(payload.SlotName.ToString());
+            }
+        }
+
         private const string ManifestFileName = "mod.json";
         private const string DefaultAssemblyExtension = ".dll";
         private const string DefaultBundleExtension = ".bundle";
@@ -23,6 +31,11 @@ namespace Hecton8.Modding
         private static readonly List<ModRuntimeInfo> _runtimeInfos = new List<ModRuntimeInfo>(32);
         // COLD ALLOC: Dictionary<string,int>[32] — modId to runtime info index lookup — owner: ModLoader
         private static readonly Dictionary<string, int> _runtimeInfoIndexById = new Dictionary<string, int>(32);
+        // COLD ALLOC: Dictionary<string,Func<IHectonMod>>[16] — explicit boot-registered managed mod factories — owner: ModLoader
+        private static readonly Dictionary<string, Func<IHectonMod>> _managedModFactories =
+            new Dictionary<string, Func<IHectonMod>>(16);
+        // COLD ALLOC: SaveEventListener[1] — static save-event bridge for mod runtime hooks — owner: ModLoader
+        private static readonly SaveEventListener _saveEventListener = new SaveEventListener();
 
         private static bool _bootstrapped;
         private static bool _modsInitialized;
@@ -39,6 +52,7 @@ namespace Hecton8.Modding
             _loadedMods.Clear();
             _runtimeInfos.Clear();
             _runtimeInfoIndexById.Clear();
+            _managedModFactories.Clear();
             _bootstrapped = false;
             _modsInitialized = false;
             _hooksInstalled = false;
@@ -78,12 +92,29 @@ namespace Hecton8.Modding
             return !string.IsNullOrWhiteSpace(directoryPath);
         }
 
+        internal static bool RegisterManagedFactory(string modId, Func<IHectonMod> factory)
+        {
+            if (string.IsNullOrWhiteSpace(modId) || factory == null)
+                return false;
+
+            _managedModFactories[modId] = factory;
+            return true;
+        }
+
+        internal static void UnregisterManagedFactory(string modId)
+        {
+            if (string.IsNullOrWhiteSpace(modId))
+                return;
+
+            _managedModFactories.Remove(modId);
+        }
+
         private static void InstallHooks()
         {
             if (_hooksInstalled)
                 return;
 
-            SaveEvents.OnLoadCompleted += HandleLoadCompleted;
+            SaveEvents.Register(_saveEventListener);
             CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
             SceneBootstrap.OnGameReady += HandleGameReady;
             Application.quitting += HandleApplicationQuitting;
@@ -96,7 +127,7 @@ namespace Hecton8.Modding
             if (!_hooksInstalled)
                 return;
 
-            SaveEvents.OnLoadCompleted -= HandleLoadCompleted;
+            SaveEvents.Unregister(_saveEventListener);
             CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
             SceneBootstrap.OnGameReady -= HandleGameReady;
             Application.quitting -= HandleApplicationQuitting;
@@ -174,20 +205,12 @@ namespace Hecton8.Modding
 
                 string modDirectory = Path.GetDirectoryName(manifestPath);
                 string assemblyPath = ResolveAssemblyPath(modDirectory, manifest);
-                bool requiresManagedEntry =
+                bool hasManagedEntry =
                     !string.IsNullOrWhiteSpace(manifest.EntryAssembly) ||
                     !string.IsNullOrWhiteSpace(manifest.EntryType) ||
                     !string.IsNullOrWhiteSpace(assemblyPath);
 
-                if (requiresManagedEntry && string.IsNullOrWhiteSpace(assemblyPath))
-                {
-                    candidate = BuildCandidate(manifest, manifestPath, modDirectory, assemblyPath);
-                    candidate.IsDisabled = true;
-                    candidate.DisabledReason = "Managed entry was declared but no assembly could be resolved.";
-                    return true;
-                }
-
-                candidate = BuildCandidate(manifest, manifestPath, modDirectory, assemblyPath);
+                candidate = BuildCandidate(manifest, manifestPath, modDirectory, assemblyPath, hasManagedEntry);
                 return true;
             }
             catch (Exception ex)
@@ -197,7 +220,12 @@ namespace Hecton8.Modding
             }
         }
 
-        private static ModCandidate BuildCandidate(ModManifest manifest, string manifestPath, string modDirectory, string assemblyPath)
+        private static ModCandidate BuildCandidate(
+            ModManifest manifest,
+            string manifestPath,
+            string modDirectory,
+            string assemblyPath,
+            bool hasManagedEntry)
         {
             return new ModCandidate
             {
@@ -215,7 +243,7 @@ namespace Hecton8.Modding
                 ModDirectory = modDirectory,
                 BundlePath = ResolveBundlePath(modDirectory, manifest.Id),
                 LocalizationFiles = ResolveLocalizationFiles(modDirectory),
-                HasManagedEntry = !string.IsNullOrWhiteSpace(assemblyPath)
+                HasManagedEntry = hasManagedEntry
             };
         }
 
@@ -400,23 +428,9 @@ namespace Hecton8.Modding
 
             try
             {
-                if (!File.Exists(candidate.EntryAssemblyPath))
+                if (!TryCreateRegisteredManagedMod(candidate.Metadata.Id, out IHectonMod modInstance, out string failureReason))
                 {
-                    DisableCandidate(candidate, $"Assembly '{candidate.EntryAssemblyPath}' was not found.");
-                    return;
-                }
-
-                Assembly assembly = Assembly.LoadFrom(candidate.EntryAssemblyPath);
-                Type entryType = ResolveEntryType(assembly, candidate);
-                if (entryType == null)
-                {
-                    DisableCandidate(candidate, "No IHectonMod entry type was resolved.");
-                    return;
-                }
-
-                if (!(Activator.CreateInstance(entryType) is IHectonMod modInstance))
-                {
-                    DisableCandidate(candidate, $"Failed to instantiate '{entryType.FullName}'.");
+                    DisableCandidate(candidate, failureReason);
                     return;
                 }
 
@@ -464,45 +478,36 @@ namespace Hecton8.Modding
             });
         }
 
-        private static Type ResolveEntryType(Assembly assembly, ModCandidate candidate)
+        private static bool TryCreateRegisteredManagedMod(
+            string modId,
+            out IHectonMod modInstance,
+            out string failureReason)
         {
-            if (assembly == null)
-                return null;
-
-            if (!string.IsNullOrWhiteSpace(candidate.EntryTypeName))
+            modInstance = null;
+            failureReason = null;
+            if (!_managedModFactories.TryGetValue(modId, out Func<IHectonMod> factory) || factory == null)
             {
-                Type explicitType = assembly.GetType(candidate.EntryTypeName, false);
-                return IsValidEntryType(explicitType) ? explicitType : null;
+                failureReason =
+                    "Managed code entry requires explicit boot registration. Runtime assembly reflection loading is disabled for IL2CPP compliance.";
+                return false;
             }
 
-            Type[] types;
             try
             {
-                types = assembly.GetTypes();
+                modInstance = factory();
+                if (modInstance == null)
+                {
+                    failureReason = "Managed mod factory returned null.";
+                    return false;
+                }
+
+                return true;
             }
-            catch (ReflectionTypeLoadException ex)
+            catch (Exception ex)
             {
-                types = ex.Types;
+                failureReason = $"Managed mod factory threw '{ex.Message}'.";
+                return false;
             }
-
-            if (types == null)
-                return null;
-
-            for (int i = 0; i < types.Length; i++)
-            {
-                Type type = types[i];
-                if (IsValidEntryType(type))
-                    return type;
-            }
-
-            return null;
-        }
-
-        private static bool IsValidEntryType(Type type)
-        {
-            return type != null &&
-                   !type.IsAbstract &&
-                   typeof(IHectonMod).IsAssignableFrom(type);
         }
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)

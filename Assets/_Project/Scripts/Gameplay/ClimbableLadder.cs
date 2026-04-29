@@ -229,7 +229,7 @@ namespace Hecton8.Gameplay
             OnClimbStart?.Invoke();
 
             // Play climb sound
-            if (climbSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (climbSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(climbSound, player.position, climbVolume);
             }
@@ -383,3 +383,4 @@ namespace Hecton8.Gameplay
 #endif
     }
 }
+

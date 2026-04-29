@@ -362,7 +362,7 @@ namespace Hecton8.Gameplay
             }
 
             // Play shoot sound
-            if (shootSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (shootSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(shootSound, spawnPos, shootVolume);
             }
@@ -449,3 +449,4 @@ namespace Hecton8.Gameplay
 #endif
     }
 }
+

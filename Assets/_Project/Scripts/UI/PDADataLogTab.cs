@@ -20,6 +20,7 @@
 //   â€¢ ÐÐ¸ÐºÐ°ÐºÐ¸Ñ… new/LINQ Ð² Tick.
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -33,7 +34,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
-    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener
     {
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
         private static readonly char[] PlaybackTimerTemplateChars = PlaybackTimerTemplate.ToCharArray();
@@ -57,6 +58,16 @@ namespace Hecton8.UI
         [SerializeField] private Color colorDim         = new Color(0.45f, 0.50f, 0.45f, 1f);
         [SerializeField] private Color colorSelected    = new Color(0.10f, 0.25f, 0.18f, 1f);
         [SerializeField] private Color colorPlaying     = new Color(0.05f, 0.35f, 0.20f, 1f);
+
+        [Header("── Hologram ──────────────────────────────")]
+        [SerializeField] private Mesh[] hologramProxyMeshes = System.Array.Empty<Mesh>();
+        [SerializeField] private Shader hologramShader;
+        [SerializeField] private float hologramHeight = 0.14f;
+        [SerializeField] private float hologramForwardOffset = 0.06f;
+        [SerializeField] private float hologramScale = 0.045f;
+        [SerializeField] private float hologramSpinDegreesPerSecond = 42f;
+        [SerializeField] private float hologramBobAmplitude = 0.008f;
+        [SerializeField] private float hologramBobFrequency = 1.7f;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PRIVATE STATE
@@ -88,6 +99,12 @@ namespace Hecton8.UI
         private readonly string[] _localizedCategoryLabels = new string[5]; // COLD ALLOC: string[5] — localized category labels — owner: PDADataLogTab
         // COLD ALLOC: char[128] — uppercase title staging buffer for allocation-free TMP updates — owner: PDADataLogTab
         private char[] _detailTitleBuffer = new char[128];
+        // COLD ALLOC: char[256] — general PDA archive text staging buffer — owner: PDADataLogTab
+        private char[] _dynamicTextBuffer = new char[256];
+        // COLD ALLOC: char[2048] — PDA archive long-form summary staging buffer — owner: PDADataLogTab
+        private char[] _summaryTextBuffer = new char[2048];
+        // COLD ALLOC: Matrix4x4[1] — PDA data-log hologram draw buffer — owner: PDADataLogTab
+        private readonly Matrix4x4[] _hologramMatrices = new Matrix4x4[1];
 
         // State
         private int _selectedIndex = -1;
@@ -112,7 +129,11 @@ namespace Hecton8.UI
         private string _activeDetailLogId = string.Empty;
         private string _pendingSummaryDecryptLogId = string.Empty;
         private string _resolvedSummaryBaseText = string.Empty;
-        private string _resolvedSummaryHexText = string.Empty;
+        // COLD ALLOC: char[4096] — PDA archive hex-decrypt overlay staging buffer — owner: PDADataLogTab
+        private char[] _resolvedSummaryHexBuffer = new char[4096];
+        private int _resolvedSummaryHexLength;
+        private float _hologramAnimationTime;
+        private Material _runtimeHologramMaterial;
 
         private const float TICK_DT = 1f / 60f;
         private const float HiddenRecordDelaySeconds = 5f;
@@ -191,6 +212,8 @@ namespace Hecton8.UI
             _root = GetComponent<RectTransform>();
             if (_root == null)
                 _root = gameObject.AddComponent<RectTransform>();
+
+            EnsureHologramMaterial();
         }
 
         private void OnEnable()
@@ -201,10 +224,7 @@ namespace Hecton8.UI
 
             TryRegister();
 
-            AudioLogEvents.OnLogDiscovered       += HandleLogDiscovered;
-            AudioLogEvents.OnLogPlaybackStarted  += HandlePlaybackStarted;
-            AudioLogEvents.OnLogPlaybackStopped  += HandlePlaybackStopped;
-            AudioLogEvents.OnLogPlaybackCompleted += HandlePlaybackCompleted;
+            AudioLogEvents.Register(this);
             PDAEvents.OnOpened += HandlePDAOpened;
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
@@ -215,10 +235,7 @@ namespace Hecton8.UI
         {
             TryUnregister();
 
-            AudioLogEvents.OnLogDiscovered       -= HandleLogDiscovered;
-            AudioLogEvents.OnLogPlaybackStarted  -= HandlePlaybackStarted;
-            AudioLogEvents.OnLogPlaybackStopped  -= HandlePlaybackStopped;
-            AudioLogEvents.OnLogPlaybackCompleted -= HandlePlaybackCompleted;
+            AudioLogEvents.Unregister(this);
             PDAEvents.OnOpened -= HandlePDAOpened;
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
         }
@@ -226,6 +243,11 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregister();
+            if (_runtimeHologramMaterial != null)
+            {
+                Destroy(_runtimeHologramMaterial);
+                _runtimeHologramMaterial = null;
+            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -250,6 +272,7 @@ namespace Hecton8.UI
 
             TickDetailNarrativeFx(deltaTime);
             RefreshStressReactiveDetailIfNeeded();
+            RenderSelectedLoreHologram(deltaTime);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -287,31 +310,54 @@ namespace Hecton8.UI
         //  EVENT HANDLERS
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private void HandleLogDiscovered(string logId)
+        public void OnAudioLogEvent(in AudioLogEventPayload payload)
+        {
+            switch (payload.Type)
+            {
+                case AudioLogEventType.Discovered:
+                    HandleLogDiscovered(payload.LogHash);
+                    return;
+
+                case AudioLogEventType.PlaybackStarted:
+                    HandlePlaybackStarted(payload.DurationSeconds);
+                    return;
+
+                case AudioLogEventType.PlaybackStopped:
+                    HandlePlaybackStopped();
+                    return;
+
+                case AudioLogEventType.PlaybackCompleted:
+                    HandlePlaybackCompleted();
+                    return;
+            }
+        }
+
+        private void HandlePDAOpened(int tab) => _dirty = true;
+
+        private void HandleLogDiscovered(uint logHash)
         {
             if (ShouldArmSummaryDecryption())
-                _pendingSummaryDecryptLogId = logId ?? string.Empty;
+                _pendingSummaryDecryptLogId = ResolveLogId(logHash);
 
             _dirty = true;
             AudioLogData selectedLog = GetSelectedLog();
             if (selectedLog != null &&
-                !string.IsNullOrEmpty(logId) &&
-                string.Equals(selectedLog.logId, logId, System.StringComparison.Ordinal))
+                logHash != 0u &&
+                LoreDatabaseManager.ComputeLoreHash(selectedLog.SafeLogId) == logHash)
             {
                 RefreshDetail();
                 RefreshPlayButton();
             }
         }
 
-        private void HandlePDAOpened(int tab) => _dirty = true;
-
-        private void HandlePlaybackStarted(AudioLogData data)
+        private void HandlePlaybackStarted(float durationSeconds)
         {
-            _playbackRemaining = data != null ? data.Duration : 0f;
+            AudioLogData data = AudioLogSystem.Instance != null ? AudioLogSystem.Instance.CurrentLog : null;
+            _playbackRemaining = durationSeconds > 0f ? durationSeconds : (data != null ? data.Duration : 0f);
             if (_subtitleLabel != null && data != null)
             {
                 string visibleSubtitle = data.VisibleSubtitleOrFallback;
-                _subtitleLabel.text = ResolveLogStressReactiveText(data, "subtitle", visibleSubtitle);
+                ApplyDynamicText(_subtitleLabel, ResolveLogStressReactiveText(data, "subtitle", visibleSubtitle), ref _summaryTextBuffer);
                 _prevSubtitleText = visibleSubtitle;
             }
 
@@ -320,14 +366,14 @@ namespace Hecton8.UI
             RefreshPlayButton();
         }
 
-        private void HandlePlaybackStopped(string logId)
+        private void HandlePlaybackStopped()
         {
             _playbackRemaining = 0f;
             ResetPlaybackTimerDisplay();
             RefreshPlayButton();
             if (_subtitleLabel != null)
             {
-                _subtitleLabel.text = string.Empty;
+                ApplyDynamicText(_subtitleLabel, string.Empty, ref _summaryTextBuffer);
                 _prevSubtitleText = string.Empty;
             }
 
@@ -335,13 +381,31 @@ namespace Hecton8.UI
                 _subtitleMadnessFx.SetEffectActive(false);
         }
 
-        private void HandlePlaybackCompleted(string logId)
+        private void HandlePlaybackCompleted()
         {
             _playbackRemaining = 0f;
             ResetPlaybackTimerDisplay();
             RefreshPlayButton();
             if (_subtitleMadnessFx != null)
                 _subtitleMadnessFx.SetEffectActive(false);
+        }
+
+        private string ResolveLogId(uint logHash)
+        {
+            if (logHash == 0u || allLogs == null)
+                return string.Empty;
+
+            for (int i = 0; i < allLogs.Length; i++)
+            {
+                AudioLogData candidate = allLogs[i];
+                if (candidate == null)
+                    continue;
+
+                if (LoreDatabaseManager.ComputeLoreHash(candidate.SafeLogId) == logHash)
+                    return candidate.SafeLogId;
+            }
+
+            return string.Empty;
         }
 
         private void TryRegister()
@@ -399,7 +463,7 @@ namespace Hecton8.UI
                 new Vector2(-8, 0), new Vector2(-12, 0));
 
             _headerTitleLabel = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            _headerTitleLabel.text = _localizedArchiveTitle;
+            ApplyDynamicText(_headerTitleLabel, _localizedArchiveTitle, ref _dynamicTextBuffer);
             _headerTitleLabel.fontStyle = FontStyles.Bold;
             Anchor(_headerTitleLabel.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));
@@ -444,17 +508,17 @@ namespace Hecton8.UI
                 TextMeshProUGUI idxLabel = CreateText("Idx", rowRoot, 9f, colorDim, TextAlignmentOptions.MidlineLeft);
                 Anchor(idxLabel.rectTransform, new Vector2(0, 0), new Vector2(0.08f, 1),
                     new Vector2(6, 0), new Vector2(0, 0));
-                idxLabel.text = $"{i + 1:D2}";
+                ApplyTwoDigitText(idxLabel, i + 1, ref _dynamicTextBuffer);
 
                 TextMeshProUGUI titleLabel = CreateText("Title", rowRoot, 10f, colorText, TextAlignmentOptions.MidlineLeft);
                 Anchor(titleLabel.rectTransform, new Vector2(0.08f, 0), new Vector2(0.75f, 1),
                     new Vector2(4, 0), new Vector2(0, 0));
-                titleLabel.text = log.DisplayTitleOrFallback;
+                ApplyDynamicText(titleLabel, log.DisplayTitleOrFallback, ref _dynamicTextBuffer);
 
                 TextMeshProUGUI catLabel = CreateText("Cat", rowRoot, 8f, colorDim, TextAlignmentOptions.MidlineRight);
                 Anchor(catLabel.rectTransform, new Vector2(0.75f, 0), new Vector2(1, 1),
                     new Vector2(0, 0), new Vector2(-6, 0));
-                catLabel.text = GetCachedCategoryLabel(log.category);
+                ApplyDynamicText(catLabel, GetCachedCategoryLabel(log.category), ref _dynamicTextBuffer);
 
                 // Button component
                 LogRowButton btn = rowRoot.gameObject.AddComponent<LogRowButton>();
@@ -487,7 +551,7 @@ namespace Hecton8.UI
 
             _emptyStateLabel = CreateText("EmptyStateLabel", emptyState, 10f, colorDim, TextAlignmentOptions.Center);
             _emptyStateLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
-            _emptyStateLabel.text = _localizedEmptyStateText;
+            ApplyDynamicText(_emptyStateLabel, _localizedEmptyStateText, ref _summaryTextBuffer);
             Stretch(_emptyStateLabel.rectTransform, 16, 16, 16, 16);
         }
 
@@ -532,7 +596,7 @@ namespace Hecton8.UI
             _summaryDecryptOverlayLabel.color = new Color(colorAccent.r, colorAccent.g, colorAccent.b, 0.86f);
             Anchor(_summaryDecryptOverlayLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -200), new Vector2(-12, -96));
-            _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+            SetElementVisible(_summaryDecryptOverlayLabel, false);
 
             // Subtitle (playback)
             _subtitleLabel = CreateText("Subtitle", _detailPanel, 9f, colorAccent, TextAlignmentOptions.TopLeft);
@@ -560,7 +624,7 @@ namespace Hecton8.UI
 
             _playButtonLabel = CreateText("PlayLabel", playBtn, 11f, colorBackground, TextAlignmentOptions.Midline);
             _playButtonLabel.fontStyle = FontStyles.Bold;
-            _playButtonLabel.text = _localizedPlayAudioLabel;
+            ApplyDynamicText(_playButtonLabel, _localizedPlayAudioLabel, ref _dynamicTextBuffer);
             Stretch(_playButtonLabel.rectTransform);
 
             PlayButtonHandler pbh = playBtn.gameObject.AddComponent<PlayButtonHandler>();
@@ -581,14 +645,13 @@ namespace Hecton8.UI
             int logCount = CatalogCount;
 
             if (_countLabel != null)
-                _countLabel.text = ResolveStressReactiveText(string.Format(_localizedCountFormat, discovered, logCount));
+                ApplyCountLabelText(_countLabel, discovered, logCount, ref _dynamicTextBuffer);
 
             if (_emptyStateLabel != null)
             {
                 bool shouldShowEmptyState = logCount == 0;
-                if (_emptyStateLabel.gameObject.activeSelf != shouldShowEmptyState)
-                    _emptyStateLabel.gameObject.SetActive(shouldShowEmptyState);
-                _emptyStateLabel.text = ResolveStressReactiveText(_localizedEmptyStateText);
+                SetElementVisible(_emptyStateLabel, shouldShowEmptyState);
+                ApplyDynamicText(_emptyStateLabel, ResolveStressReactiveText(_localizedEmptyStateText), ref _summaryTextBuffer);
             }
 
             if (logCount == 0)
@@ -608,16 +671,22 @@ namespace Hecton8.UI
                 if (row.TitleLabel != null) row.TitleLabel.color = textColor;
                 if (row.IndexLabel != null) row.IndexLabel.color = colorDim;
                 if (row.CategoryLabel != null)
-                    row.CategoryLabel.text = log != null
-                        ? ResolveStressReactiveText(GetCachedCategoryLabel(log.category))
-                        : ResolveStressReactiveText(_localizedCategoryUnknown);
+                    ApplyDynamicText(
+                        row.CategoryLabel,
+                        log != null
+                            ? ResolveStressReactiveText(GetCachedCategoryLabel(log.category))
+                            : ResolveStressReactiveText(_localizedCategoryUnknown),
+                        ref _dynamicTextBuffer);
                 if (row.CategoryLabel != null) row.CategoryLabel.color = isDiscovered ? colorDim : new Color(colorDim.r, colorDim.g, colorDim.b, 0.3f);
 
                 // Replace title with ??? for undiscovered
                 if (row.TitleLabel != null)
-                    row.TitleLabel.text = isDiscovered
-                        ? ResolveLogStressReactiveText(log, "row.title", log.DisplayTitleOrFallback)
-                        : ResolveStressReactiveText(_localizedEncryptedLabel);
+                    ApplyDynamicText(
+                        row.TitleLabel,
+                        isDiscovered
+                            ? ResolveLogStressReactiveText(log, "row.title", log.DisplayTitleOrFallback)
+                            : ResolveStressReactiveText(_localizedEncryptedLabel),
+                        ref _summaryTextBuffer);
             }
 
             RefreshRowHighlights();
@@ -648,14 +717,20 @@ namespace Hecton8.UI
             }
 
             if (_authorLabel != null)
-                _authorLabel.text = isDiscovered
-                    ? ResolveLogStressReactiveText(log, "detail.author", string.Concat(_localizedAuthorPrefix, log.AuthorOrFallback))
-                    : ResolveStressReactiveText(string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor));
+                ApplyDynamicText(
+                    _authorLabel,
+                    isDiscovered
+                        ? ResolveLogStressReactiveText(log, "detail.author", string.Concat(_localizedAuthorPrefix, log.AuthorOrFallback))
+                        : ResolveStressReactiveText(string.Concat(_localizedAuthorPrefix, _localizedUnknownAuthor)),
+                    ref _dynamicTextBuffer);
 
             if (_dateLabel != null)
-                _dateLabel.text = isDiscovered
-                    ? ResolveLogStressReactiveText(log, "detail.date", log.RecordDateOrFallback)
-                    : ResolveStressReactiveText(string.Concat(_localizedDatePrefix, _localizedUnknownDate));
+                ApplyDynamicText(
+                    _dateLabel,
+                    isDiscovered
+                        ? ResolveLogStressReactiveText(log, "detail.date", log.RecordDateOrFallback)
+                        : ResolveStressReactiveText(string.Concat(_localizedDatePrefix, _localizedUnknownDate)),
+                    ref _dynamicTextBuffer);
 
             if (_summaryLabel != null)
             {
@@ -720,7 +795,7 @@ namespace Hecton8.UI
             }
 
             if (_playButtonLabel != null)
-                _playButtonLabel.text = GetCachedPlayButtonLabel(system, selectedLog, isDiscovered);
+                ApplyDynamicText(_playButtonLabel, GetCachedPlayButtonLabel(system, selectedLog, isDiscovered), ref _dynamicTextBuffer);
 
             RefreshRowHighlights();
         }
@@ -752,15 +827,15 @@ namespace Hecton8.UI
                 return;
 
             _detailVisible = visible;
-            if (_titleLabel != null)   _titleLabel.gameObject.SetActive(visible);
-            if (_authorLabel != null)  _authorLabel.gameObject.SetActive(visible);
-            if (_dateLabel != null)    _dateLabel.gameObject.SetActive(visible);
-            if (_summaryLabel != null) _summaryLabel.gameObject.SetActive(visible);
-            if (_subtitleLabel != null) _subtitleLabel.gameObject.SetActive(visible);
-            if (_playbackTimerLabel != null) _playbackTimerLabel.gameObject.SetActive(visible);
-            if (_playButtonBg != null) _playButtonBg.gameObject.SetActive(visible);
-            if (_playButtonLabel != null) _playButtonLabel.gameObject.SetActive(visible);
-            if (_summaryDecryptOverlayLabel != null) _summaryDecryptOverlayLabel.gameObject.SetActive(visible && _summaryDecryptActive);
+            SetElementVisible(_titleLabel, visible);
+            SetElementVisible(_authorLabel, visible);
+            SetElementVisible(_dateLabel, visible);
+            SetElementVisible(_summaryLabel, visible);
+            SetElementVisible(_subtitleLabel, visible);
+            SetElementVisible(_playbackTimerLabel, visible);
+            SetElementVisible(_playButtonBg, visible);
+            SetElementVisible(_playButtonLabel, visible);
+            SetElementVisible(_summaryDecryptOverlayLabel, visible && _summaryDecryptActive);
 
             if (!visible)
             {
@@ -888,10 +963,10 @@ namespace Hecton8.UI
         private void ApplyLocalizedStaticText()
         {
             if (_headerTitleLabel != null)
-                _headerTitleLabel.text = ResolveStressReactiveText(_localizedArchiveTitle);
+                ApplyDynamicText(_headerTitleLabel, ResolveStressReactiveText(_localizedArchiveTitle), ref _dynamicTextBuffer);
 
             if (_emptyStateLabel != null)
-                _emptyStateLabel.text = ResolveStressReactiveText(_localizedEmptyStateText);
+                ApplyDynamicText(_emptyStateLabel, ResolveStressReactiveText(_localizedEmptyStateText), ref _summaryTextBuffer);
         }
 
         private string GetCachedSummaryText(AudioLogData log)
@@ -960,8 +1035,7 @@ namespace Hecton8.UI
                 AudioLogSystem system = AudioLogSystem.Instance;
                 AudioLogData subtitleLog = system != null && system.IsPlaying ? system.CurrentLog : GetSelectedLog();
                 string displaySubtitle = ResolveLogStressReactiveText(subtitleLog, "subtitle", _prevSubtitleText);
-                if (!string.Equals(_subtitleLabel.text, displaySubtitle, System.StringComparison.Ordinal))
-                    _subtitleLabel.text = displaySubtitle;
+                ApplyDynamicText(_subtitleLabel, displaySubtitle, ref _summaryTextBuffer);
 
                 UpdateMadnessFxState(subtitleLog, _subtitleMadnessFx);
             }
@@ -1059,9 +1133,9 @@ namespace Hecton8.UI
             {
                 ResetDetailNarrativeState(clearPendingDecryption: false);
                 _summaryLabel.maxVisibleCharacters = int.MaxValue;
-                _summaryLabel.text = summaryText;
+                ApplyDynamicText(_summaryLabel, summaryText, ref _summaryTextBuffer);
                 if (_summaryDecryptOverlayLabel != null)
-                    _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+                    SetElementVisible(_summaryDecryptOverlayLabel, false);
                 return;
             }
 
@@ -1076,7 +1150,7 @@ namespace Hecton8.UI
 
             if (_summaryDecryptActive)
             {
-                _summaryLabel.text = _resolvedSummaryBaseText;
+                ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
                 _summaryLabel.ForceMeshUpdate();
                 _summaryVisibleCharacterTarget = _summaryLabel.textInfo.characterCount;
                 UpdateSummaryDecryptPresentation();
@@ -1087,11 +1161,10 @@ namespace Hecton8.UI
                 return;
 
             _summaryLabel.maxVisibleCharacters = int.MaxValue;
-            if (!string.Equals(_summaryLabel.text, _resolvedSummaryBaseText, System.StringComparison.Ordinal))
-                _summaryLabel.text = _resolvedSummaryBaseText;
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
 
             if (_summaryDecryptOverlayLabel != null)
-                _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+                SetElementVisible(_summaryDecryptOverlayLabel, false);
 
             if (TryConsumePendingSummaryDecryption(log.logId))
                 BeginSummaryDecryption(log);
@@ -1106,15 +1179,15 @@ namespace Hecton8.UI
             _summaryDecryptTimer = 0f;
             _hiddenRecordFlashActive = false;
             _hiddenRecordFlashConsumed = true;
-            _resolvedSummaryHexText = BuildHexCipherText(_resolvedSummaryBaseText);
+            BuildHexCipherText(_resolvedSummaryBaseText, ref _resolvedSummaryHexBuffer, out _resolvedSummaryHexLength);
 
-            _summaryLabel.text = _resolvedSummaryBaseText;
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
             _summaryLabel.ForceMeshUpdate();
             _summaryVisibleCharacterTarget = _summaryLabel.textInfo.characterCount;
 
-            _summaryDecryptOverlayLabel.text = _resolvedSummaryHexText;
+            ApplyDynamicText(_summaryDecryptOverlayLabel, _resolvedSummaryHexBuffer, _resolvedSummaryHexLength);
             _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
-            _summaryDecryptOverlayLabel.gameObject.SetActive(true);
+            SetElementVisible(_summaryDecryptOverlayLabel, true);
             _summaryDecryptOverlayLabel.ForceMeshUpdate();
             _summaryHexVisibleCharacterTarget = _summaryDecryptOverlayLabel.textInfo.characterCount;
 
@@ -1137,8 +1210,7 @@ namespace Hecton8.UI
 
             _summaryLabel.maxVisibleCharacters = summaryVisible;
             _summaryDecryptOverlayLabel.maxVisibleCharacters = hexVisible;
-            if (!_summaryDecryptOverlayLabel.gameObject.activeSelf)
-                _summaryDecryptOverlayLabel.gameObject.SetActive(true);
+            SetElementVisible(_summaryDecryptOverlayLabel, true);
         }
 
         private void CompleteSummaryDecryption(AudioLogData log)
@@ -1152,12 +1224,11 @@ namespace Hecton8.UI
             if (_summaryDecryptOverlayLabel != null)
             {
                 _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
-                _summaryDecryptOverlayLabel.text = string.Empty;
-                _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+                ApplyDynamicText(_summaryDecryptOverlayLabel, string.Empty, ref _summaryTextBuffer);
+                SetElementVisible(_summaryDecryptOverlayLabel, false);
             }
 
-            if (!string.Equals(_summaryLabel.text, _resolvedSummaryBaseText, System.StringComparison.Ordinal))
-                _summaryLabel.text = _resolvedSummaryBaseText;
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
 
             _detailReadTimer = 0f;
             if (_summaryMadnessFx != null)
@@ -1182,7 +1253,7 @@ namespace Hecton8.UI
             _hiddenRecordFlashConsumed = true;
             _hiddenRecordFlashTimer = HiddenRecordBlinkSeconds;
             _summaryLabel.maxVisibleCharacters = int.MaxValue;
-            _summaryLabel.text = hiddenText;
+            ApplyDynamicText(_summaryLabel, hiddenText, ref _summaryTextBuffer);
             if (_summaryMadnessFx != null)
                 _summaryMadnessFx.SetEffectActive(true);
         }
@@ -1192,7 +1263,7 @@ namespace Hecton8.UI
             _hiddenRecordFlashActive = false;
             _hiddenRecordFlashTimer = 0f;
             _summaryLabel.maxVisibleCharacters = int.MaxValue;
-            _summaryLabel.text = _resolvedSummaryBaseText;
+            ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
             if (_summaryMadnessFx != null)
                 UpdateMadnessFxState(log, _summaryMadnessFx);
         }
@@ -1209,7 +1280,7 @@ namespace Hecton8.UI
             _summaryHexVisibleCharacterTarget = int.MaxValue;
             _activeDetailLogId = string.Empty;
             _resolvedSummaryBaseText = string.Empty;
-            _resolvedSummaryHexText = string.Empty;
+            _resolvedSummaryHexLength = 0;
 
             if (clearPendingDecryption)
                 _pendingSummaryDecryptLogId = string.Empty;
@@ -1220,8 +1291,8 @@ namespace Hecton8.UI
             if (_summaryDecryptOverlayLabel != null)
             {
                 _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
-                _summaryDecryptOverlayLabel.text = string.Empty;
-                _summaryDecryptOverlayLabel.gameObject.SetActive(false);
+                ApplyDynamicText(_summaryDecryptOverlayLabel, string.Empty, ref _summaryTextBuffer);
+                SetElementVisible(_summaryDecryptOverlayLabel, false);
             }
         }
 
@@ -1246,38 +1317,40 @@ namespace Hecton8.UI
             return state.Type == StructureType.MegaWreck;
         }
 
-        private static string BuildHexCipherText(string sourceText)
+        private static void BuildHexCipherText(string sourceText, ref char[] buffer, out int length)
         {
             if (string.IsNullOrEmpty(sourceText))
-                return string.Empty;
+            {
+                EnsureCharCapacity(ref buffer, 1);
+                length = 0;
+                return;
+            }
 
-            System.Text.StringBuilder builder = StringBuilderPool.Get();
+            EnsureCharCapacity(ref buffer, sourceText.Length * 3);
+            int cursor = 0;
             for (int i = 0; i < sourceText.Length; i++)
             {
                 char current = sourceText[i];
                 if (current == '\n' || current == '\r')
                 {
-                    builder.Append(current);
+                    buffer[cursor++] = current;
                     continue;
                 }
 
                 if (char.IsWhiteSpace(current))
                 {
-                    builder.Append(' ');
+                    buffer[cursor++] = ' ';
                     continue;
                 }
 
                 int value = current & 0xFF;
-                builder.Append(HexDigits[(value >> 4) & 0x0F]);
-                builder.Append(HexDigits[value & 0x0F]);
+                buffer[cursor++] = HexDigits[(value >> 4) & 0x0F];
+                buffer[cursor++] = HexDigits[value & 0x0F];
 
                 if (i + 1 < sourceText.Length && !char.IsWhiteSpace(sourceText[i + 1]))
-                    builder.Append(' ');
+                    buffer[cursor++] = ' ';
             }
-
-            string cipherText = builder.ToString();
-            StringBuilderPool.Return(builder);
-            return cipherText;
+            length = cursor;
         }
 
         private RectTransform CreateRect(string name, RectTransform parent)
@@ -1378,6 +1451,145 @@ namespace Hecton8.UI
                 capacity <<= 1;
 
             buffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded PDA text staging buffer — owner: PDADataLogTab
+        }
+
+        private static void ApplyDynamicText(TMP_Text label, string value, ref char[] buffer)
+        {
+            if (label == null)
+                return;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                label.SetCharArray(System.Array.Empty<char>(), 0, 0);
+                label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+                return;
+            }
+
+            EnsureCharCapacity(ref buffer, value.Length);
+            value.AsSpan().CopyTo(buffer.AsSpan());
+            label.SetCharArray(buffer, 0, value.Length);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void ApplyDynamicText(TMP_Text label, char[] valueBuffer, int valueLength)
+        {
+            if (label == null)
+                return;
+
+            if (valueBuffer == null || valueLength <= 0)
+            {
+                label.SetCharArray(System.Array.Empty<char>(), 0, 0);
+                label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+                return;
+            }
+
+            int safeLength = Mathf.Clamp(valueLength, 0, valueBuffer.Length);
+            label.SetCharArray(valueBuffer, 0, safeLength);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void ApplyTwoDigitText(TMP_Text label, int value, ref char[] buffer)
+        {
+            if (label == null)
+                return;
+
+            EnsureCharCapacity(ref buffer, 2);
+            int clamped = Mathf.Clamp(value, 0, 99);
+            buffer[0] = (char)('0' + (clamped / 10));
+            buffer[1] = (char)('0' + (clamped % 10));
+            label.SetCharArray(buffer, 0, 2);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void ApplyCountLabelText(TMP_Text label, int discovered, int total, ref char[] buffer)
+        {
+            if (label == null)
+                return;
+
+            EnsureCharCapacity(ref buffer, 32);
+            int cursor = 0;
+            if (!discovered.TryFormat(buffer.AsSpan(cursor), out int discoveredLength))
+                discoveredLength = 0;
+            cursor += discoveredLength;
+            if (cursor < buffer.Length)
+                buffer[cursor++] = '/';
+            if (!total.TryFormat(buffer.AsSpan(cursor), out int totalLength))
+                totalLength = 0;
+            cursor += totalLength;
+            if (cursor < buffer.Length)
+                buffer[cursor++] = ' ';
+            ReadOnlySpan<char> logsLiteral = "LOGS".AsSpan();
+            logsLiteral.CopyTo(buffer.AsSpan(cursor));
+            cursor += logsLiteral.Length;
+            label.SetCharArray(buffer, 0, cursor);
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static void SetElementVisible(Component component, bool visible)
+        {
+            if (component == null)
+                return;
+
+            if (!component.TryGetComponent(out CanvasGroup canvasGroup))
+                canvasGroup = component.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — PDA data-log element visibility gate — owner: PDADataLogTab
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
+
+        private void EnsureHologramMaterial()
+        {
+            if (_runtimeHologramMaterial != null || hologramShader == null)
+                return;
+
+            _runtimeHologramMaterial = new Material(hologramShader)
+            {
+                name = "Runtime_PDADataLogHologram"
+            }; // COLD ALLOC: Material[1] — PDA data-log hologram material — owner: PDADataLogTab
+        }
+
+        private void RenderSelectedLoreHologram(float deltaTime)
+        {
+            if (!_detailVisible || _selectedIndex < 0)
+                return;
+
+            EnsureHologramMaterial();
+            if (_runtimeHologramMaterial == null || hologramProxyMeshes == null || hologramProxyMeshes.Length == 0)
+                return;
+
+            AudioLogData log = GetSelectedLog();
+            if (log == null)
+                return;
+
+            int meshIndex = log.ProxyMeshIndex;
+            if ((uint)meshIndex >= (uint)hologramProxyMeshes.Length)
+                return;
+
+            Mesh mesh = hologramProxyMeshes[meshIndex];
+            if (mesh == null)
+                return;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (playerCamera == null)
+                return;
+
+            _hologramAnimationTime += deltaTime;
+
+            Transform anchor = transform;
+            Vector3 worldPosition =
+                anchor.position +
+                anchor.up * (hologramHeight + Mathf.Sin(_hologramAnimationTime * hologramBobFrequency) * hologramBobAmplitude) +
+                anchor.forward * hologramForwardOffset;
+
+            Vector3 facing = worldPosition - playerCamera.transform.position;
+            Quaternion rotation = facing.sqrMagnitude > 0.0001f
+                ? Quaternion.LookRotation(facing.normalized, anchor.up) * Quaternion.Euler(0f, _hologramAnimationTime * hologramSpinDegreesPerSecond, 0f)
+                : Quaternion.identity;
+
+            _hologramMatrices[0] = Matrix4x4.TRS(worldPosition, rotation, Vector3.one * hologramScale);
+            Graphics.DrawMeshInstanced(mesh, 0, _runtimeHologramMaterial, _hologramMatrices, 1, null, UnityEngine.Rendering.ShadowCastingMode.Off, false, gameObject.layer);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

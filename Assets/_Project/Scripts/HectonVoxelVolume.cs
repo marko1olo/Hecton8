@@ -192,6 +192,58 @@ namespace Hecton8.Caves
         /// <summary>Published PDA sonar snapshot revision.</summary>
         public int PublishedSonarVersion => _publishedSonarVersion;
 
+        /// <summary>
+        /// Samples the published runtime SDF payload at one runtime-space position.
+        /// Positive densities indicate denser solid mass; negative densities indicate cavity/open water.
+        /// </summary>
+        /// <param name="worldPosition">Runtime-space sample position.</param>
+        /// <param name="density">Decoded signed density in authored world-space units.</param>
+        /// <param name="density01">Normalized solid-density strength mapped to 0..1.</param>
+        /// <returns>True when the runtime sonar payload is available and the point can be sampled.</returns>
+        public bool TrySampleDensity(Vector3 worldPosition, out float density, out float density01)
+        {
+            density = 0f;
+            density01 = 0f;
+
+            if (!_runtimeDataReady ||
+                !_publishedSonarSdf.IsCreated ||
+                _publishedSonarGridDimensions.x <= 1 ||
+                _publishedSonarGridDimensions.y <= 1 ||
+                _publishedSonarGridDimensions.z <= 1 ||
+                _publishedSonarSdfRange <= 0f)
+            {
+                return false;
+            }
+
+            float cellSizeX = Mathf.Max(0.0001f, _publishedSonarCellSize.x);
+            float cellSizeY = Mathf.Max(0.0001f, _publishedSonarCellSize.y);
+            float cellSizeZ = Mathf.Max(0.0001f, _publishedSonarCellSize.z);
+            float sampleX = Mathf.Clamp(
+                (worldPosition.x - _publishedSonarOrigin.x) / cellSizeX,
+                0f,
+                _publishedSonarGridDimensions.x - 1.001f);
+            float sampleY = Mathf.Clamp(
+                (worldPosition.y - _publishedSonarOrigin.y) / cellSizeY,
+                0f,
+                _publishedSonarGridDimensions.y - 1.001f);
+            float sampleZ = Mathf.Clamp(
+                (worldPosition.z - _publishedSonarOrigin.z) / cellSizeZ,
+                0f,
+                _publishedSonarGridDimensions.z - 1.001f);
+
+            density = DecodePublishedDensity(sampleX, sampleY, sampleZ);
+            density01 = Mathf.Clamp01(Mathf.Max(0f, density) / _publishedSonarSdfRange);
+            return true;
+        }
+
+        /// <summary>
+        /// Samples the published runtime SDF payload and returns only the decoded density.
+        /// </summary>
+        public bool TrySampleDensity(Vector3 worldPosition, out float density)
+        {
+            return TrySampleDensity(worldPosition, out density, out _);
+        }
+
         private static int ResolveDominantAxis(Vector3 normal)
         {
             Vector3 absNormal = new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z));
@@ -199,6 +251,49 @@ namespace Hecton8.Caves
                 return 0;
 
             return absNormal.y >= absNormal.z ? 1 : 2;
+        }
+
+        private float DecodePublishedDensity(float sampleX, float sampleY, float sampleZ)
+        {
+            int x0 = Mathf.FloorToInt(sampleX);
+            int y0 = Mathf.FloorToInt(sampleY);
+            int z0 = Mathf.FloorToInt(sampleZ);
+
+            int x1 = Mathf.Min(x0 + 1, _publishedSonarGridDimensions.x - 1);
+            int y1 = Mathf.Min(y0 + 1, _publishedSonarGridDimensions.y - 1);
+            int z1 = Mathf.Min(z0 + 1, _publishedSonarGridDimensions.z - 1);
+
+            float tx = sampleX - x0;
+            float ty = sampleY - y0;
+            float tz = sampleZ - z0;
+
+            float c000 = DecodePublishedDensityAt(x0, y0, z0);
+            float c100 = DecodePublishedDensityAt(x1, y0, z0);
+            float c010 = DecodePublishedDensityAt(x0, y1, z0);
+            float c110 = DecodePublishedDensityAt(x1, y1, z0);
+            float c001 = DecodePublishedDensityAt(x0, y0, z1);
+            float c101 = DecodePublishedDensityAt(x1, y0, z1);
+            float c011 = DecodePublishedDensityAt(x0, y1, z1);
+            float c111 = DecodePublishedDensityAt(x1, y1, z1);
+
+            float c00 = Mathf.Lerp(c000, c100, tx);
+            float c10 = Mathf.Lerp(c010, c110, tx);
+            float c01 = Mathf.Lerp(c001, c101, tx);
+            float c11 = Mathf.Lerp(c011, c111, tx);
+            float c0 = Mathf.Lerp(c00, c10, ty);
+            float c1 = Mathf.Lerp(c01, c11, ty);
+            return Mathf.Lerp(c0, c1, tz);
+        }
+
+        private float DecodePublishedDensityAt(int x, int y, int z)
+        {
+            int index = x +
+                        (_publishedSonarGridDimensions.x * (y + (_publishedSonarGridDimensions.y * z)));
+            if ((uint)index >= (uint)_publishedSonarSdf.Length)
+                return 0f;
+
+            float normalized = (_publishedSonarSdf[index] / 255f) * 2f - 1f;
+            return normalized * _publishedSonarSdfRange;
         }
 
         private static float ResolveCornerCoordinate(float coordinate, float signedFaceAxis, int gridDimension)

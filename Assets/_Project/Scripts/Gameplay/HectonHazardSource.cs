@@ -106,7 +106,8 @@ namespace Hecton8.Gameplay
                 _intensity,
                 _radius,
                 ResolveHazardType(),
-                ResolveVisorGlitchBias());
+                ResolveVisorGlitchBias(),
+                _profile);
         }
 
         private HazardType ResolveHazardType()

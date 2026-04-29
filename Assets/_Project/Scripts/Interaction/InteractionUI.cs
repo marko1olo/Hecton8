@@ -29,11 +29,13 @@ namespace Hecton8.Interaction
         private string inputPrefix = "<button:interact> ";
 
         private IInteractable _lastDisplayedTarget;
-        private string _cachedInteractPrefix;
+        private int _cachedInteractPrefixLength;
         private CanvasGroup _promptCanvasGroup;
 
         // COLD ALLOC: char[192] - hover prompt rich-text buffer - owner: InteractionUI
         private readonly char[] _charBuffer = new char[192];
+        // COLD ALLOC: char[96] - cached interaction prefix staging buffer - owner: InteractionUI
+        private readonly char[] _prefixBuffer = new char[96];
 
         private void Awake()
         {
@@ -170,10 +172,12 @@ namespace Hecton8.Interaction
             {
                 string interactText = target.GetInteractText();
                 LocalizationManager localizationManager = LocalizationManager.Instance;
-                if (localizationManager != null)
+                if (localizationManager != null && ContainsExpansionToken(interactText))
                     interactText = localizationManager.ExpandText(interactText);
 
-                int totalLength = WriteToBuffer(_cachedInteractPrefix, interactText);
+                int totalLength = WriteToBuffer(
+                    _prefixBuffer.AsSpan(0, _cachedInteractPrefixLength),
+                    interactText.AsSpan());
                 promptLabel.SetCharArray(_charBuffer, 0, totalLength);
             }
 
@@ -192,10 +196,10 @@ namespace Hecton8.Interaction
             if (!Application.isPlaying)
             {
                 LocalizationManager manager = LocalizationManager.Instance;
-                _cachedInteractPrefix = manager != null
+                string template = manager != null
                     ? manager.GetExpandedOrFallback(manager.CurrentLanguage, LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT, inputPrefix + "{0} {1}")
                     : inputPrefix + "{0} {1}";
-                _cachedInteractPrefix = ExtractPrefix(_cachedInteractPrefix);
+                CachePrefixFromTemplate(template);
                 return;
             }
 
@@ -203,22 +207,22 @@ namespace Hecton8.Interaction
                 InputManager.Instance.TryGetBindingMarkupForToken("interact", out string markup) &&
                 !string.IsNullOrEmpty(markup))
             {
-                _cachedInteractPrefix = string.Concat(markup, " ");
+                CachePrefixLiteral(markup.AsSpan(), appendTrailingSpace: true);
                 return;
             }
 
             LocalizationManager localizationManager = LocalizationManager.Instance;
             if (localizationManager != null)
             {
-                string fallbackTemplate = localizationManager.GetExpandedOrFallback(
+                string template = localizationManager.GetExpandedOrFallback(
                     localizationManager.CurrentLanguage,
                     LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT,
                     inputPrefix + "{0} {1}");
-                _cachedInteractPrefix = ExtractPrefix(fallbackTemplate);
+                CachePrefixFromTemplate(template);
                 return;
             }
 
-            _cachedInteractPrefix = inputPrefix;
+            CachePrefixLiteral(inputPrefix.AsSpan(), appendTrailingSpace: false);
         }
 
         private void ConfigurePromptLabel()
@@ -239,9 +243,6 @@ namespace Hecton8.Interaction
             if (promptContainer == null)
                 return;
 
-            if (!promptContainer.activeSelf)
-                promptContainer.SetActive(true);
-
             if (_promptCanvasGroup == null && !promptContainer.TryGetComponent(out _promptCanvasGroup))
             {
                 _promptCanvasGroup = promptContainer.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - prompt visibility gating without SetActive - owner: InteractionUI
@@ -260,46 +261,68 @@ namespace Hecton8.Interaction
                 return;
 
             InitializePromptContainer();
-            if (_promptCanvasGroup != null)
+            if (_promptCanvasGroup == null)
+                return;
+
+            _promptCanvasGroup.alpha = visible ? 1f : 0f;
+            _promptCanvasGroup.blocksRaycasts = false;
+            _promptCanvasGroup.interactable = false;
+        }
+
+        private void CachePrefixFromTemplate(string template)
+        {
+            if (string.IsNullOrEmpty(template))
             {
-                _promptCanvasGroup.alpha = visible ? 1f : 0f;
+                _cachedInteractPrefixLength = 0;
                 return;
             }
 
-            if (promptContainer.activeSelf != visible)
-                promptContainer.SetActive(visible);
-        }
-
-        private static string ExtractPrefix(string template)
-        {
-            if (string.IsNullOrEmpty(template))
-                return string.Empty;
-
             int placeholderIndex = template.IndexOf("{0}", StringComparison.Ordinal);
-            if (placeholderIndex <= 0)
-                return template;
-
-            return template.Substring(0, placeholderIndex);
+            ReadOnlySpan<char> prefixSpan = placeholderIndex <= 0
+                ? template.AsSpan()
+                : template.AsSpan(0, placeholderIndex);
+            CachePrefixLiteral(prefixSpan, appendTrailingSpace: false);
         }
 
-        private int WriteToBuffer(string prefix, string body)
+        private void CachePrefixLiteral(ReadOnlySpan<char> prefix, bool appendTrailingSpace)
+        {
+            int maxLength = _prefixBuffer.Length;
+            int safeLength = Mathf.Min(prefix.Length, appendTrailingSpace ? maxLength - 1 : maxLength);
+            prefix.Slice(0, safeLength).CopyTo(_prefixBuffer);
+
+            int cursor = safeLength;
+            if (appendTrailingSpace && cursor < maxLength)
+                _prefixBuffer[cursor++] = ' ';
+
+            _cachedInteractPrefixLength = cursor;
+        }
+
+        private static bool ContainsExpansionToken(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            return value.IndexOf('<') >= 0;
+        }
+
+        private int WriteToBuffer(ReadOnlySpan<char> prefix, ReadOnlySpan<char> body)
         {
             int bufferLength = _charBuffer.Length;
             int offset = 0;
 
-            if (!string.IsNullOrEmpty(prefix))
+            if (!prefix.IsEmpty)
             {
                 int prefixLength = Mathf.Min(prefix.Length, bufferLength);
-                for (int i = 0; i < prefixLength; i++)
-                    _charBuffer[offset++] = prefix[i];
+                prefix.Slice(0, prefixLength).CopyTo(_charBuffer);
+                offset += prefixLength;
             }
 
-            if (!string.IsNullOrEmpty(body))
+            if (!body.IsEmpty)
             {
                 int remaining = bufferLength - offset;
                 int bodyLength = Mathf.Min(body.Length, remaining);
-                for (int i = 0; i < bodyLength; i++)
-                    _charBuffer[offset++] = body[i];
+                body.Slice(0, bodyLength).CopyTo(_charBuffer.AsSpan(offset));
+                offset += bodyLength;
             }
 
             return offset;

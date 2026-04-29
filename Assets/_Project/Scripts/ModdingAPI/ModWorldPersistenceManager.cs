@@ -14,7 +14,7 @@ namespace Hecton8.Modding
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7900)]
-    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable
+    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener
     {
         private const string ManagerRuntimeName = "[ModWorldPersistenceManager]";
         private const string SaveKey = "hecton.internal.mod_world_spawns";
@@ -84,7 +84,7 @@ namespace Hecton8.Modding
         {
             SceneManager.sceneLoaded += HandleSceneLoaded;
             SceneBootstrap.OnGameReady += HandleGameReady;
-            SaveEvents.OnLoadCompleted += HandleLoadCompleted;
+            SaveEvents.Register(this);
             TryRegisterWithSaveManager();
         }
 
@@ -92,7 +92,7 @@ namespace Hecton8.Modding
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneBootstrap.OnGameReady -= HandleGameReady;
-            SaveEvents.OnLoadCompleted -= HandleLoadCompleted;
+            SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
         }
 
@@ -240,8 +240,11 @@ namespace Hecton8.Modding
             TryRegisterWithSaveManager();
         }
 
-        private void HandleLoadCompleted(string slotName)
+        public void OnSaveEvent(in SaveEventPayload payload)
         {
+            if (payload.Type != SaveEventType.LoadCompleted)
+                return;
+
             _restorePending = _records.Count > 0;
         }
 

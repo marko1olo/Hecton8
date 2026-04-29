@@ -2,6 +2,9 @@ using Hecton8.Core;
 using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Environment
 {
@@ -14,6 +17,11 @@ namespace Hecton8.Environment
         private const float TransitionCompletionThreshold = 0.999f;
         private const float CurrentSyncEpsilonSq = 0.000025f;
         private const float VectorNormalizeEpsilon = 0.0001f;
+#if UNITY_EDITOR
+        private const string CalmWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_DeepStillness.asset";
+        private const string StormWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_CyclonicSurge.asset";
+        private const string SurgeWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_BiolumeBloom.asset";
+#endif
 
         private enum WeatherPhase : byte
         {
@@ -672,6 +680,19 @@ namespace Hecton8.Environment
             SanitizeWave(ref wave0);
             SanitizeWave(ref wave1);
             SanitizeWave(ref wave2);
+            AssignDefaultProfilesIfMissing();
+        }
+
+        private void AssignDefaultProfilesIfMissing()
+        {
+            if (calmWeatherProfile == null)
+                calmWeatherProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(CalmWeatherProfileAssetPath);
+
+            if (stormWeatherProfile == null)
+                stormWeatherProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(StormWeatherProfileAssetPath);
+
+            if (surgeWeatherProfile == null)
+                surgeWeatherProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(SurgeWeatherProfileAssetPath);
         }
 #endif
 

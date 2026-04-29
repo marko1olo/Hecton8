@@ -19,7 +19,10 @@ namespace Hecton8.Editor
         private string _savePath = string.Empty;
         private string _lastError = string.Empty;
         private string _fragmentationAscii = string.Empty;
+        private long _totalFileBytes;
         private long _totalCompressedBytes;
+        private long _usedFileBytes;
+        private long _fragmentationBytes;
         private long _largestGapBytes;
         private int _chunkSizeMeters;
 
@@ -63,8 +66,17 @@ namespace Hecton8.Editor
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField($"Chunk Size: {_chunkSizeMeters} m");
             EditorGUILayout.LabelField($"Sector Blocks: {_sortedRows.Count}");
+            EditorGUILayout.LabelField($"Total File Size: {FormatBytes(_totalFileBytes)}");
+            EditorGUILayout.LabelField($"Used Space: {FormatBytes(_usedFileBytes)}");
+            EditorGUILayout.LabelField($"Fragmentation: {FormatBytes(_fragmentationBytes)}");
             EditorGUILayout.LabelField($"Compressed Payload: {FormatBytes(_totalCompressedBytes)}");
             EditorGUILayout.LabelField($"Largest Gap: {FormatBytes(_largestGapBytes)}");
+            if (_totalFileBytes > 0L)
+            {
+                float usedRatio = Mathf.Clamp01((float)_usedFileBytes / _totalFileBytes);
+                Rect usageRect = GUILayoutUtility.GetRect(18f, 18f);
+                EditorGUI.ProgressBar(usageRect, usedRatio, $"Used {usedRatio * 100f:0.0}%");
+            }
             if (!string.IsNullOrEmpty(_fragmentationAscii))
                 EditorGUILayout.SelectableLabel(_fragmentationAscii, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 
@@ -92,7 +104,10 @@ namespace Hecton8.Editor
             _lastError = string.Empty;
             _sectorEntries.Clear();
             _sortedRows.Clear();
+            _totalFileBytes = 0L;
             _totalCompressedBytes = 0L;
+            _usedFileBytes = 0L;
+            _fragmentationBytes = 0L;
             _largestGapBytes = 0L;
             _fragmentationAscii = string.Empty;
 
@@ -101,6 +116,8 @@ namespace Hecton8.Editor
                 _lastError = "Save path is empty or missing.";
                 return;
             }
+
+            _totalFileBytes = new FileInfo(_savePath).Length;
 
             if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(_savePath, _sectorEntries, out _chunkSizeMeters, out string error))
             {
@@ -135,6 +152,9 @@ namespace Hecton8.Editor
                 _totalCompressedBytes += row.CompressedSize;
                 expectedOffset = row.ByteOffset + row.CompressedSize;
             }
+
+            _usedFileBytes = expectedOffset == long.MinValue ? 0L : expectedOffset;
+            _fragmentationBytes = Math.Max(0L, _totalFileBytes - _usedFileBytes);
 
             _fragmentationAscii = BuildFragmentationAscii(_sortedRows);
             Debug.Log($"[SaveSystemTelemetry] Fragmentation {_fragmentationAscii}");

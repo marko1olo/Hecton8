@@ -25,6 +25,7 @@ using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
+using Hecton8.Narrative;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -55,6 +56,9 @@ namespace Hecton8.Gameplay
         private static readonly int _ScanProgressID = Shader.PropertyToID("_ScanProgress");
         private static readonly int _ScanGlowColorID = Shader.PropertyToID("_ScanGlowColor");
         private static readonly int _ScanPulseID = Shader.PropertyToID("_ScanPulse");
+        private const byte QuarterLoreStageBit = 1 << 0;
+        private const byte HalfLoreStageBit = 1 << 1;
+        private const byte FinalLoreStageBit = 1 << 2;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SCANNING
@@ -69,6 +73,9 @@ namespace Hecton8.Gameplay
 
         [Tooltip("ID of the tech/blueprint this fragment unlocks.")]
         [SerializeField] private string unlockId = "unknown_tech";
+
+        [Tooltip("Optional scientific research contract that owns scan duration, lore unlock stages, and reward hashes.")]
+        [SerializeField] private ResearchDataTemplate researchData;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — VISUALS
@@ -140,6 +147,7 @@ namespace Hecton8.Gameplay
         private float _currentProgress;
         private bool _isScanning;
         private Vector3 _originalPosition;
+        private byte _appliedLoreStagesMask;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for scan VFX.
@@ -163,7 +171,14 @@ namespace Hecton8.Gameplay
         public float CurrentProgress => _currentProgress;
 
         /// <summary>Normalized progress (0 to 1).</summary>
-        public float ProgressNormalized => scanTime > 0f ? _currentProgress / scanTime : 0f;
+        public float ProgressNormalized
+        {
+            get
+            {
+                float duration = ResolveScanDuration();
+                return duration > 0f ? _currentProgress / duration : 0f;
+            }
+        }
 
         /// <summary>Is the fragment fully scanned?</summary>
         public bool IsCompleted => _state == FragmentState.Completed;
@@ -173,6 +188,15 @@ namespace Hecton8.Gameplay
 
         /// <summary>ID of the tech this fragment unlocks.</summary>
         public string UnlockId => unlockId;
+
+        /// <summary>Optional authored research contract for this fragment.</summary>
+        public ResearchDataTemplate ResearchData => researchData;
+
+        /// <summary>Reward item hash used for visor hologram lookup.</summary>
+        public int RewardItemHash => researchData != null ? researchData.RewardItemHash : 0;
+
+        /// <summary>Proxy mesh index resolved from the authored research reward hash.</summary>
+        public int HologramProxyMeshIndex => researchData != null ? researchData.HologramProxyMeshIndex : -1;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -258,17 +282,23 @@ namespace Hecton8.Gameplay
                 StartScanning();
             }
 
+            float previousProgressNormalized = ProgressNormalized;
+
             // Add progress
-            _currentProgress += progressDelta;
+            float scanDuration = ResolveScanDuration();
+            _currentProgress = Mathf.Min(_currentProgress + progressDelta, scanDuration);
+
+            float currentProgressNormalized = ProgressNormalized;
+            TryUnlockLoreStages(previousProgressNormalized, currentProgressNormalized);
 
             // Update visuals
             UpdateScanVisuals();
 
             // Fire progress event
-            OnProgressChanged?.Invoke(ProgressNormalized);
+            OnProgressChanged?.Invoke(currentProgressNormalized);
 
             // Check for completion
-            if (_currentProgress >= scanTime)
+            if (_currentProgress >= scanDuration)
             {
                 CompleteScan();
             }
@@ -335,7 +365,7 @@ namespace Hecton8.Gameplay
             _originalPosition = _transform.position;
 
             // Play scanning sound
-            if (scanningSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (scanningSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(scanningSound, _transform.position, scanVolume);
             }
@@ -360,7 +390,7 @@ namespace Hecton8.Gameplay
             }
 
             // Play complete sound
-            if (completeSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (completeSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(completeSound, _transform.position, scanVolume);
             }
@@ -426,6 +456,7 @@ namespace Hecton8.Gameplay
             _state = canBeScanned ? FragmentState.Scannable : FragmentState.Locked;
             _currentProgress = 0f;
             _isScanning = false;
+            _appliedLoreStagesMask = 0;
 
             // Reset visuals
             ResetScanVisuals();
@@ -511,5 +542,44 @@ namespace Hecton8.Gameplay
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
         }
+
+        private float ResolveScanDuration()
+        {
+            return researchData != null ? researchData.ScanDuration : Mathf.Max(0.5f, scanTime);
+        }
+
+        private void TryUnlockLoreStages(float previousProgressNormalized, float currentProgressNormalized)
+        {
+            if (researchData == null || LoreDatabaseManager.Instance == null)
+                return;
+
+            TryUnlockLoreStage(previousProgressNormalized, currentProgressNormalized, 0.25f, QuarterLoreStageBit, 0);
+            TryUnlockLoreStage(previousProgressNormalized, currentProgressNormalized, 0.5f, HalfLoreStageBit, 1);
+            TryUnlockLoreStage(previousProgressNormalized, currentProgressNormalized, 1f, FinalLoreStageBit, 2);
+        }
+
+        private void TryUnlockLoreStage(
+            float previousProgressNormalized,
+            float currentProgressNormalized,
+            float threshold,
+            byte stageBit,
+            int stageIndex)
+        {
+            if ((_appliedLoreStagesMask & stageBit) != 0 ||
+                previousProgressNormalized >= threshold ||
+                currentProgressNormalized < threshold)
+            {
+                return;
+            }
+
+            _appliedLoreStagesMask |= stageBit;
+            if (researchData != null &&
+                researchData.TryGetLoreUnlockMask(stageIndex, out ulong packedBits) &&
+                packedBits != 0UL)
+            {
+                LoreDatabaseManager.Instance.UnlockByPackedBits(packedBits);
+            }
+        }
     }
 }
+

@@ -155,7 +155,7 @@ namespace Hecton8.Gameplay
             if (bubble == null) return;
 
             // Play release sound
-            if (releaseSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (releaseSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(releaseSound, spawnPos, releaseVolume);
             }
@@ -232,3 +232,4 @@ namespace Hecton8.Gameplay
 #endif
     }
 }
+

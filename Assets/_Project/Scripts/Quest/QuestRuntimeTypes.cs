@@ -35,8 +35,23 @@ namespace Hecton8.Quest
         Revert = 2
     }
 
+    public enum QuestPhaseGateType : byte
+    {
+        None = 0,
+        Abyssal = 1,
+        Thermal = 2
+    }
+
+    [Flags]
+    internal enum QuestSignalContextFlags : uint
+    {
+        None = 0u,
+        ThermalPhase = 1u << 0,
+        AbyssalPhase = 1u << 1
+    }
+
     [StructLayout(LayoutKind.Sequential)]
-    internal struct QuestEventPayload
+    internal struct QuestSignalPayload
     {
         public uint EntityHash;
         public ushort EventType;
@@ -146,6 +161,18 @@ namespace Hecton8.Quest
         public uint Checksum;
         public double Timestamp;
         public fixed uint Reserved[10];
+
+        public void WriteSchemaVersion()
+        {
+            fixed (uint* reserved = Reserved)
+                reserved[0] = CurrentSchemaVersion;
+        }
+
+        public readonly uint ReadSchemaVersion()
+        {
+            fixed (uint* reserved = Reserved)
+                return reserved[0];
+        }
     }
 
     internal static class QuestFlagHashKernel

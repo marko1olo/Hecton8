@@ -8,7 +8,7 @@ namespace Hecton8.Gameplay
     /// Compatibility facade over the packed quest runtime.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MissionManager : MonoBehaviour
+    public sealed class MissionManager : MonoBehaviour, IQuestEventListener
     {
         public sealed class MissionInstance
         {
@@ -20,10 +20,10 @@ namespace Hecton8.Gameplay
             public string MissionId { get; }
         }
 
-        // COLD ALLOC: Dictionary<string,MissionInstance>[32] - compatibility facade active mission cache - owner: MissionManager
-        private readonly Dictionary<string, MissionInstance> _activeMissions = new Dictionary<string, MissionInstance>(32);
-        // COLD ALLOC: HashSet<string>[32] - compatibility facade completed mission cache - owner: MissionManager
-        private readonly HashSet<string> _completedMissions = new HashSet<string>();
+        // COLD ALLOC: Dictionary<uint,MissionInstance>[32] - compatibility facade active mission cache keyed by FNV quest hash - owner: MissionManager
+        private readonly Dictionary<uint, MissionInstance> _activeMissions = new Dictionary<uint, MissionInstance>(32);
+        // COLD ALLOC: HashSet<uint>[32] - compatibility facade completed mission cache keyed by FNV quest hash - owner: MissionManager
+        private readonly HashSet<uint> _completedMissions = new HashSet<uint>();
 
         public static MissionManager Instance { get; private set; }
 
@@ -40,14 +40,12 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            QuestEvents.OnQuestActivated += HandleQuestActivated;
-            QuestEvents.OnQuestCompleted += HandleQuestCompleted;
+            QuestEvents.Register(this);
         }
 
         private void OnDisable()
         {
-            QuestEvents.OnQuestActivated -= HandleQuestActivated;
-            QuestEvents.OnQuestCompleted -= HandleQuestCompleted;
+            QuestEvents.Unregister(this);
         }
 
         private void OnDestroy()
@@ -61,7 +59,8 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(missionId))
                 return;
 
-            if (_completedMissions.Contains(missionId) || _activeMissions.ContainsKey(missionId))
+            uint missionHash = ComputeMissionHash(missionId);
+            if (missionHash == 0u || _completedMissions.Contains(missionHash) || _activeMissions.ContainsKey(missionHash))
                 return;
 
             QuestManager questManager = QuestManager.Instance;
@@ -70,7 +69,7 @@ namespace Hecton8.Gameplay
 
             questManager.ActivateQuest(missionId);
             if (questManager.IsActive(missionId))
-                EnsureActiveInstance(missionId);
+                EnsureActiveInstance(missionHash, missionId);
         }
 
         public void CompleteObjective(string missionId, string objectiveId)
@@ -90,11 +89,15 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(missionId))
                 return null;
 
+            uint missionHash = ComputeMissionHash(missionId);
+            if (missionHash == 0u)
+                return null;
+
             QuestManager questManager = QuestManager.Instance;
             if (questManager != null && questManager.IsActive(missionId))
-                return EnsureActiveInstance(missionId);
+                return EnsureActiveInstance(missionHash, missionId);
 
-            _activeMissions.Remove(missionId);
+            _activeMissions.Remove(missionHash);
             return null;
         }
 
@@ -108,40 +111,51 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(missionId))
                 return false;
 
-            if (_completedMissions.Contains(missionId))
+            uint missionHash = ComputeMissionHash(missionId);
+            if (missionHash == 0u)
+                return false;
+
+            if (_completedMissions.Contains(missionHash))
                 return true;
 
             QuestManager questManager = QuestManager.Instance;
             return questManager != null && questManager.IsCompleted(missionId);
         }
 
-        private MissionInstance EnsureActiveInstance(string missionId)
+        public void OnQuestEvent(in QuestEventPayload payload)
         {
-            if (!_activeMissions.TryGetValue(missionId, out MissionInstance instance))
+            if (payload.QuestHashID == 0u)
+                return;
+
+            switch ((QuestEventType)payload.EventType)
+            {
+                case QuestEventType.Activated:
+                    _completedMissions.Remove(payload.QuestHashID);
+                    return;
+
+                case QuestEventType.Completed:
+                    _activeMissions.Remove(payload.QuestHashID);
+                    _completedMissions.Add(payload.QuestHashID);
+                    return;
+            }
+        }
+
+        private MissionInstance EnsureActiveInstance(uint missionHash, string missionId)
+        {
+            if (!_activeMissions.TryGetValue(missionHash, out MissionInstance instance))
             {
                 instance = new MissionInstance(missionId); // COLD ALLOC: MissionInstance[1] - compatibility facade wrapper for quest-backed mission - owner: MissionManager
-                _activeMissions.Add(missionId, instance);
+                _activeMissions.Add(missionHash, instance);
             }
 
             return instance;
         }
 
-        private void HandleQuestActivated(string questId)
+        private static uint ComputeMissionHash(string missionId)
         {
-            if (string.IsNullOrWhiteSpace(questId))
-                return;
-
-            EnsureActiveInstance(questId);
-            _completedMissions.Remove(questId);
-        }
-
-        private void HandleQuestCompleted(string questId)
-        {
-            if (string.IsNullOrWhiteSpace(questId))
-                return;
-
-            _activeMissions.Remove(questId);
-            _completedMissions.Add(questId);
+            return string.IsNullOrWhiteSpace(missionId)
+                ? 0u
+                : QuestFlagHashKernel.ComputeStableHash(missionId);
         }
     }
 }

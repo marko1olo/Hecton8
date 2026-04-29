@@ -1,12 +1,11 @@
 // ============================================================================
 // HECTON-8 — CameraJuiceSystem.cs
 // Camera shake, FOV effects, and post-processing modulation system.
-// Zero-GC hot paths, 1.0ms frame budget, DOTween integration.
+// Zero-GC hot paths, 1.0ms frame budget, native tick-driven transitions.
 // ============================================================================
 
 using System;
 using System.Collections.Generic;
-using DG.Tweening;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -68,7 +67,11 @@ namespace Hecton8.VFX
         private FOVState _fovState = FOVState.Idle;
         private float _baseFOV;
         private float _currentFOVOffset;
-        private Tween _fovTween;
+        private float _fovBlendStart;
+        private float _fovBlendTarget;
+        private float _fovBlendDuration;
+        private float _fovBlendElapsed;
+        private bool _fovBlendActive;
         private const float MIN_FOV = 40f;
         private const float MAX_FOV = 90f;
 
@@ -82,7 +85,10 @@ namespace Hecton8.VFX
         // ═══ BIOME PROFILE ═══
         private BiomeProfile _currentBiome;
         private BiomeProfile _targetBiome;
-        private Tween _biomeTween;
+        private BiomeProfile _biomeBlendFrom;
+        private float _biomeBlendDuration;
+        private float _biomeBlendElapsed;
+        private bool _biomeBlendActive;
 
         // ═══ INTERACTION FOCUS ═══
         private IInteractable _focusTarget;
@@ -351,9 +357,8 @@ namespace Hecton8.VFX
 
             InteractionEvents.OnHoverChanged -= HandleHoverChanged;
 
-            // Kill tweens
-            _fovTween?.Kill();
-            _biomeTween?.Kill();
+            _fovBlendActive = false;
+            _biomeBlendActive = false;
 
             _focusTarget = null;
             _focusTargetTransform = null;
@@ -413,8 +418,6 @@ namespace Hecton8.VFX
 
             ReleaseFocusRaycastBuffers();
 
-            // Kill all tweens targeting this instance
-            DOTween.Kill(this);
         }
 
         // ═══ ITICKABLE ═══
@@ -447,6 +450,16 @@ namespace Hecton8.VFX
             {
                 Debug.LogError($"[CameraJuiceSystem] FOV calculation failed: {ex.Message}");
                 _fovEnabled = false;
+            }
+
+            try
+            {
+                UpdateBiomeBlend(dt);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[CameraJuiceSystem] Biome blend failed: {ex.Message}");
+                _biomeBlendActive = false;
             }
 
             try
@@ -596,13 +609,11 @@ namespace Hecton8.VFX
         {
             if (!_fovEnabled) return;
 
-            _fovTween?.Kill();
-            _fovTween = DOTween.To(
-                () => _currentFOVOffset,
-                x => _currentFOVOffset = x,
-                amount,
-                duration
-            ).SetEase(Ease.OutQuad);
+            _fovBlendStart = _currentFOVOffset;
+            _fovBlendTarget = amount;
+            _fovBlendDuration = Mathf.Max(0.0001f, duration);
+            _fovBlendElapsed = 0f;
+            _fovBlendActive = true;
         }
 
         /// <summary>
@@ -621,25 +632,27 @@ namespace Hecton8.VFX
 
             if (!_postProcessingEnabled || _urpVolume == null) return;
 
-            _biomeTween?.Kill();
             _targetBiome = biome;
+            _biomeBlendFrom = _currentBiome ?? biome;
+            _biomeBlendDuration = Mathf.Max(0.0001f, blendDuration);
+            _biomeBlendElapsed = 0f;
+            _biomeBlendActive = true;
+            ApplyBiomeBlend(_biomeBlendFrom, _targetBiome, 0f);
+        }
 
-            // Store current values for blending
-            BiomeProfile startBiome = _currentBiome ?? biome;
+        private static float EvaluateEaseOutQuad(float t)
+        {
+            t = Mathf.Clamp01(t);
+            float inverse = 1f - t;
+            return 1f - inverse * inverse;
+        }
 
-            // Blend using DOTween
-            float t = 0f;
-            _biomeTween = DOTween.To(
-                () => t,
-                x => {
-                    t = x;
-                    ApplyBiomeBlend(startBiome, _targetBiome, t);
-                },
-                1f,
-                blendDuration
-            ).SetEase(Ease.InOutQuad).OnComplete(() => {
-                _currentBiome = _targetBiome;
-            });
+        private static float EvaluateEaseInOutQuad(float t)
+        {
+            t = Mathf.Clamp01(t);
+            return t < 0.5f
+                ? 2f * t * t
+                : 1f - Mathf.Pow(-2f * t + 2f, 2f) * 0.5f;
         }
 
         private void ApplyBiomeBlend(BiomeProfile from, BiomeProfile to, float t)
@@ -786,12 +799,41 @@ namespace Hecton8.VFX
         {
             if (!_fovEnabled) return;
 
+            if (_fovBlendActive)
+            {
+                _fovBlendElapsed = Mathf.Min(_fovBlendElapsed + dt, _fovBlendDuration);
+                float normalizedBlend = Mathf.Clamp01(_fovBlendElapsed / _fovBlendDuration);
+                float easedBlend = EvaluateEaseOutQuad(normalizedBlend);
+                _currentFOVOffset = Mathf.Lerp(_fovBlendStart, _fovBlendTarget, easedBlend);
+                if (normalizedBlend >= 1f)
+                {
+                    _currentFOVOffset = _fovBlendTarget;
+                    _fovBlendActive = false;
+                }
+            }
+
             // Calculate target FOV
             float targetFOV = _baseFOV + (_currentFOVOffset * _fovIntensityMultiplier * _adaptiveFOVScale);
             targetFOV = Mathf.Clamp(targetFOV, MIN_FOV, MAX_FOV);
 
             // Apply to camera
             _mainCamera.fieldOfView = targetFOV;
+        }
+
+        private void UpdateBiomeBlend(float dt)
+        {
+            if (!_biomeBlendActive)
+                return;
+
+            _biomeBlendElapsed = Mathf.Min(_biomeBlendElapsed + dt, _biomeBlendDuration);
+            float normalizedBlend = Mathf.Clamp01(_biomeBlendElapsed / _biomeBlendDuration);
+            float easedBlend = EvaluateEaseInOutQuad(normalizedBlend);
+            ApplyBiomeBlend(_biomeBlendFrom, _targetBiome, easedBlend);
+            if (normalizedBlend >= 1f)
+            {
+                _currentBiome = _targetBiome;
+                _biomeBlendActive = false;
+            }
         }
 
         private void UpdateInteractionFocus(float dt)

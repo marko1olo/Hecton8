@@ -1079,6 +1079,7 @@ namespace Hecton8.World
                    ReferenceEquals(_instance, this) &&
                    !_resolvedItemCatalog.AreWorldPrefabsReadyNonAlloc(_worldPrefabPrewarmHashScratch))
             {
+                _resolvedItemCatalog.PumpWorldPrefabDispatchTickets();
                 await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
             }
         }

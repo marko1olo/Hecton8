@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.World
 {
@@ -105,6 +106,7 @@ namespace Hecton8.World
         [SerializeField] private float seamDitherVerticalOffset = 0.14f;
         [SerializeField] private int seamDitherMaxParticles = 36;
         [SerializeField] private float seamDitherSize = 0.16f;
+        [SerializeField] private Material gapDitherMaterial;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -124,6 +126,7 @@ namespace Hecton8.World
         private readonly List<long> _runtimeCacheTrimBuffer = new List<long>(128);
         private readonly Dictionary<long, WorldGenerativeGeologySeamRuntime> _runtimeCacheByKey = new Dictionary<long, WorldGenerativeGeologySeamRuntime>(128);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
+        private Material _runtimeGapDitherMaterial;
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
@@ -158,6 +161,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregisterFromTickManager();
+            ReleaseGapDitherMaterial();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -439,8 +443,10 @@ namespace Hecton8.World
             ParticleSystem system = vfxRoot.AddComponent<ParticleSystem>();
             ParticleSystemRenderer renderer = vfxRoot.GetComponent<ParticleSystemRenderer>();
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
             renderer.receiveShadows = false;
+            renderer.sharedMaterial = ResolveGapDitherMaterial();
+            renderer.sortMode = ParticleSystemSortMode.Distance;
 
             var main = system.main;
             main.loop = true;
@@ -475,6 +481,39 @@ namespace Hecton8.World
             velocity.y = new ParticleSystem.MinMaxCurve(0.02f, 0.08f);
 
             return system;
+        }
+
+        private Material ResolveGapDitherMaterial()
+        {
+            if (gapDitherMaterial != null)
+                return gapDitherMaterial;
+
+            if (_runtimeGapDitherMaterial != null)
+                return _runtimeGapDitherMaterial;
+
+            Shader additiveShader = Shader.Find("Legacy Shaders/Particles/Additive");
+            if (additiveShader == null)
+                additiveShader = Shader.Find("Particles/Additive");
+
+            if (additiveShader == null)
+                return null;
+
+            // COLD ALLOC: Material[1] - shared additive seam dither particle material - owner: WorldGenerativeGeologySeamExecutionDirector
+            _runtimeGapDitherMaterial = new Material(additiveShader)
+            {
+                name = "MAT_GeologySeamDither_Runtime"
+            };
+            _runtimeGapDitherMaterial.hideFlags = HideFlags.HideAndDontSave;
+            return _runtimeGapDitherMaterial;
+        }
+
+        private void ReleaseGapDitherMaterial()
+        {
+            if (_runtimeGapDitherMaterial == null)
+                return;
+
+            Destroy(_runtimeGapDitherMaterial);
+            _runtimeGapDitherMaterial = null;
         }
 
         private void BuildTerrainSkirt(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)

@@ -144,6 +144,8 @@ namespace Hecton8.Gameplay
         private static readonly char[] s_lowPowerCaption = "SUBMARINE LOW POWER".ToCharArray();
         private static readonly char[] s_lifeSupportCaption = "LIFE SUPPORT CRITICAL".ToCharArray();
         private static readonly char[] s_multiFailureCaption = "MULTIPLE SYSTEM FAILURES".ToCharArray();
+        private static readonly char[] s_emergencyDangerCaption = "EMERGENCY LEVEL DANGER".ToCharArray();
+        private static readonly char[] s_emergencyEvacuateCaption = "EMERGENCY LEVEL EVACUATE".ToCharArray();
 
         [Header("Audio")]
         [Tooltip("Optional helmet warning for low-power transition events.")]
@@ -459,6 +461,8 @@ namespace Hecton8.Gameplay
             {
                 _emergencyLevel = nextEmergencyLevel;
                 PublishLog(ResolveEmergencyLevelLogCode(_emergencyLevel), _emergencyLevel >= SubmarineEmergencyLevel.Danger ? LogPriorityCritical : LogPriorityNormal);
+                if (_emergencyLevel >= SubmarineEmergencyLevel.Danger)
+                    PlayEmergencyLevelAlarm(_emergencyLevel);
             }
 
             HectonSubmarineOsSnapshot nextSnapshot = new HectonSubmarineOsSnapshot(
@@ -536,10 +540,36 @@ namespace Hecton8.Gameplay
             PlayVoiceAlarm(multiSystemFailureClip, s_multiFailureCaption, 1f);
         }
 
+        private void PlayEmergencyLevelAlarm(SubmarineEmergencyLevel emergencyLevel)
+        {
+            switch (emergencyLevel)
+            {
+                case SubmarineEmergencyLevel.Evacuate:
+                    PlayVoiceAlarm(
+                        lifeSupportCriticalClip != null ? lifeSupportCriticalClip : multiSystemFailureClip,
+                        s_emergencyEvacuateCaption,
+                        1f);
+                    break;
+
+                case SubmarineEmergencyLevel.Danger:
+                    PlayVoiceAlarm(
+                        multiSystemFailureClip != null ? multiSystemFailureClip : lifeSupportCriticalClip,
+                        s_emergencyDangerCaption,
+                        1f);
+                    break;
+            }
+        }
+
         private void PlayVoiceAlarm(AudioClip clip, char[] captionChars, float intensity)
         {
-            if (SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) && clip != null)
-                audioManager.PlayStatic2D(clip, warningVolume, audioManager.InterfaceGroup);
+            IAudioService audioService = GlobalRegistry.Audio;
+            if (clip != null)
+            {
+                if (audioService != null && audioService.IsInitialized)
+                {
+                    audioService.PlayStatic2D(clip, warningVolume);
+                }
+            }
 
             if (captionChars == null || captionChars.Length <= 0)
                 return;

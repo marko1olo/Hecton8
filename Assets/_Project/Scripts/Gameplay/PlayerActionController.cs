@@ -408,9 +408,9 @@ namespace Hecton8.Gameplay
 
             if (clip == null) return;
 
-            if (SpatialAudioManager.Instance != null && _cachedTransform != null)
+            if (Hecton8.Core.GlobalRegistry.Audio != null && _cachedTransform != null)
             {
-                SpatialAudioManager.Instance.PlayAtPoint(clip, _cachedTransform.position);
+                Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, _cachedTransform.position);
             }
         }
 
@@ -418,9 +418,9 @@ namespace Hecton8.Gameplay
         {
             if (cancelSound == null) return;
 
-            if (SpatialAudioManager.Instance != null && _cachedTransform != null)
+            if (Hecton8.Core.GlobalRegistry.Audio != null && _cachedTransform != null)
             {
-                SpatialAudioManager.Instance.PlayAtPoint(cancelSound, _cachedTransform.position);
+                Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(cancelSound, _cachedTransform.position);
             }
         }
 
@@ -445,3 +445,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

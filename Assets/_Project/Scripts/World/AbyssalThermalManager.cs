@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -1619,7 +1620,8 @@ namespace Hecton8.World
                         nest.Cooldown = 0f;
                 }
 
-                float distance = Vector3.Distance(playerPosition, nest.PositionWS);
+                double distanceSq = ComputeAupDistanceSq(playerPosition, nest.PositionWS);
+                float distance = distanceSq > 0d ? (float)math.sqrt(distanceSq) : 0f;
                 bool canCharge = transportActive && distance <= nest.RadiusWS;
                 if (canCharge && nest.Cooldown <= 0f)
                 {
@@ -1744,7 +1746,8 @@ namespace Hecton8.World
             for (int i = 0; i < activeCount; i++)
             {
                 Vector3 targetAnchor = _ventStates[i].CableAnchorWS;
-                float travelDistance = Vector3.Distance(sourceAnchor, targetAnchor);
+                double travelDistanceSq = ComputeAupDistanceSq(sourceAnchor, targetAnchor);
+                float travelDistance = travelDistanceSq > 0d ? (float)math.sqrt(travelDistanceSq) : 0f;
                 float delay = i == sourceVentIndex
                     ? 0f
                     : travelDistance / Mathf.Max(empChainPropagationSpeed, 0.001f);
@@ -1762,6 +1765,13 @@ namespace Hecton8.World
 
             if (_fluidDecalManager != null)
                 _fluidDecalManager.RegisterCableFluid(sourcePositionWS, 0.42f);
+        }
+
+        private static double ComputeAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
+        {
+            AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);
+            AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);
+            return AbsoluteUniversePosition.DistanceSq(in a, in b);
         }
 
         private void UpdateCableVisuals(float dt)

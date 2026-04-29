@@ -192,7 +192,8 @@ namespace Hecton8.Audio
 
         private void PlayPsychosisCue()
         {
-            if (_playerTransform == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (_playerTransform == null || audioManager == null)
                 return;
 
             AudioClip clip = SelectCueClip();
@@ -251,3 +252,5 @@ namespace Hecton8.Audio
         }
     }
 }
+
+

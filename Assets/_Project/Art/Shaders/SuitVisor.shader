@@ -548,7 +548,8 @@ Shader "NASAPunk/SuitVisor"
                 float2 hudDecaySplit = float2(
                     hazardRadiation * 0.015 + hazardGlitch * 0.008,
                     hazardThermal * 0.0025);
-                float4 hudSample = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV);
+                float4 hudBaseSample = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV);
+                float4 hudSample = hudBaseSample;
                 float4 hudSampleR = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudHypoxiaOffset + hudDecaySplit);
                 float4 hudSampleB = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudHypoxiaOffset - hudDecaySplit);
                 hudSample.rgb = float3(hudSampleR.r, hudSample.g, hudSampleB.b);
@@ -571,14 +572,26 @@ Shader "NASAPunk/SuitVisor"
                 hudAlpha *= 1.0 - (hypoxiaAlphaDissolve * 0.68);
                 if (biosRecoveryMode > 0.001)
                 {
+                    float2 phosphorTrailOffset = float2(-(0.0015 + hazardRadiation * 0.004 + hazardGlitch * 0.002), 0.0);
+                    float trailLuminanceA = dot(
+                        SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + phosphorTrailOffset).rgb,
+                        float3(0.2126, 0.7152, 0.0722));
+                    float trailLuminanceB = dot(
+                        SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + phosphorTrailOffset * 2.5).rgb,
+                        float3(0.2126, 0.7152, 0.0722));
+                    float rawHudLuminance = dot(hudBaseSample.rgb, float3(0.2126, 0.7152, 0.0722));
+                    float trailLuminance = max(rawHudLuminance, max(trailLuminanceA * 0.72, trailLuminanceB * 0.46));
                     float biosNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.11) + float2(tearBands, floor(_Time.y * 14.0)));
-                    float biosScan = abs(frac(hudDistortedUV.y * _ScreenParams.y * 0.32 + _Time.y * 18.0) - 0.5);
-                    float biosThreshold = 0.34 + biosNoise * 0.18 + biosScan * 0.14;
-                    float biosBit = step(biosThreshold, hudLuminance);
-                    float biosPulse = 0.86 + sin(_Time.y * 2.1) * 0.08;
-                    float3 biosColor = float3(0.16, 1.0, 0.22) * (biosBit * biosPulse) * _HUD_Intensity;
+                    float biosScan = abs(frac(hudDistortedUV.y * _ScreenParams.y * 0.28 + _Time.y * 16.0) - 0.5);
+                    float biosThreshold = 0.38 + biosNoise * 0.16 + biosScan * 0.12;
+                    float biosPrimaryBit = step(biosThreshold, trailLuminance);
+                    float biosTrailBit = step(biosThreshold + 0.08, max(trailLuminanceA * 0.82, trailLuminanceB * 0.64));
+                    float phosphorPulse = 0.82 + sin(_Time.y * 2.1) * 0.06;
+                    float phosphorScanGlow = (1.0 - smoothstep(0.0, 0.5, biosScan)) * 0.18;
+                    float phosphorLevel = saturate(biosPrimaryBit + biosTrailBit * 0.45);
+                    float3 biosColor = float3(0.0, (phosphorLevel * phosphorPulse) + phosphorScanGlow, 0.0) * _HUD_Intensity;
                     hudColor = lerp(hudColor, biosColor, biosRecoveryMode);
-                    hudAlpha = lerp(hudAlpha, max(hudAlpha, biosBit * rtMask * hudEdgeFade), biosRecoveryMode);
+                    hudAlpha = lerp(hudAlpha, saturate(max(hudAlpha * 0.25, phosphorLevel * rtMask * hudEdgeFade)), biosRecoveryMode);
                 }
 
                 float wetImperfectionBoost = 1.0 + runoffMask * 0.9;

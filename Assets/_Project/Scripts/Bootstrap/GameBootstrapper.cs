@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -150,8 +151,11 @@ namespace Hecton8.Bootstrap
 
         private void InitializeCoreLayer()
         {
-            VRAMEnforcer.InitializeRuntimeBudget();
             EnsureSystemDispatcherRegistered();
+            EnsureGameTickManagerRegistered();
+            EnsureSaveServiceRegistered();
+            EnsureObjectPoolServiceRegistered();
+            VRAMEnforcer.InitializeRuntimeBudget();
             EnsureRenderDispatcherRegistered();
             SceneInstantiationGate.EnsureRuntimeInstance();
             SceneRuntimeService sceneRuntimeService = SceneRuntimeService.EnsureRuntimeInstance();
@@ -167,10 +171,12 @@ namespace Hecton8.Bootstrap
             DebrisManager debrisManager = DebrisManager.EnsureRuntimeInstance();
             EnvironmentRuntimeContextService environmentContextService = EnvironmentRuntimeContextService.EnsureRuntimeInstance();
             OceanKinematicsRuntimeService oceanKinematicsRuntimeService = OceanKinematicsRuntimeService.EnsureRuntimeInstance();
+            SpatialAudioManager spatialAudioManager = EnsureAudioServiceRegistered();
             physicsApplySystem.InitializeService();
             debrisManager.InitializeService();
             environmentContextService.InitializeService();
             oceanKinematicsRuntimeService.InitializeService();
+            spatialAudioManager.InitializeService();
         }
 
         private bool InitializePlayerLayer()
@@ -218,11 +224,78 @@ namespace Hecton8.Bootstrap
 
         private static SystemDispatcher EnsureSystemDispatcherRegistered()
         {
-            if (GlobalRegistry.Dispatcher != null)
-                return GlobalRegistry.Dispatcher;
+            SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            if (dispatcher == null)
+                dispatcher = UnityEngine.Object.FindAnyObjectByType<SystemDispatcher>();
 
-            GameObject runtimeRoot = new GameObject("[SystemDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned gameplay dispatcher root - owner: GameBootstrapper
-            return runtimeRoot.AddComponent<SystemDispatcher>();
+            if (dispatcher == null)
+            {
+                GameObject runtimeRoot = new GameObject("[SystemDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned gameplay dispatcher root - owner: GameBootstrapper
+                dispatcher = runtimeRoot.AddComponent<SystemDispatcher>();
+            }
+
+            if (Application.isPlaying)
+                DontDestroyOnLoad(dispatcher.gameObject);
+
+            dispatcher.InitializeService();
+            return dispatcher;
+        }
+
+        private static GameTickManager EnsureGameTickManagerRegistered()
+        {
+            GameTickManager tickManager = GlobalRegistry.TickManager;
+            if (tickManager == null)
+                tickManager = UnityEngine.Object.FindAnyObjectByType<GameTickManager>();
+
+            if (tickManager == null)
+            {
+                GameObject runtimeRoot = new GameObject("[GameTickManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned tick manager root - owner: GameBootstrapper
+                tickManager = runtimeRoot.AddComponent<GameTickManager>();
+            }
+
+            if (Application.isPlaying)
+                DontDestroyOnLoad(tickManager.gameObject);
+
+            tickManager.InitializeService();
+            return tickManager;
+        }
+
+        private static SaveManager EnsureSaveServiceRegistered()
+        {
+            SaveManager saveManager = GlobalRegistry.SaveRuntime;
+            if (saveManager == null)
+                saveManager = UnityEngine.Object.FindAnyObjectByType<SaveManager>();
+
+            if (saveManager == null)
+            {
+                GameObject runtimeRoot = new GameObject("[SaveManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned save manager root - owner: GameBootstrapper
+                saveManager = runtimeRoot.AddComponent<SaveManager>();
+            }
+
+            if (Application.isPlaying)
+                DontDestroyOnLoad(saveManager.gameObject);
+
+            saveManager.InitializeService();
+            return saveManager;
+        }
+
+        private static ObjectPoolManager EnsureObjectPoolServiceRegistered()
+        {
+            ObjectPoolManager objectPoolManager = GlobalRegistry.ObjectPool;
+            if (objectPoolManager == null)
+                objectPoolManager = UnityEngine.Object.FindAnyObjectByType<ObjectPoolManager>();
+
+            if (objectPoolManager == null)
+            {
+                GameObject runtimeRoot = new GameObject("[ObjectPoolManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned object pool root - owner: GameBootstrapper
+                objectPoolManager = runtimeRoot.AddComponent<ObjectPoolManager>();
+            }
+
+            if (Application.isPlaying)
+                DontDestroyOnLoad(objectPoolManager.gameObject);
+
+            objectPoolManager.InitializeService();
+            return objectPoolManager;
         }
 
         private static RenderDispatcher EnsureRenderDispatcherRegistered()
@@ -241,6 +314,22 @@ namespace Hecton8.Bootstrap
 
             GameObject runtimeRoot = new GameObject("[GlobalPhysicsStateManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned global physics-state manager root - owner: GameBootstrapper
             return runtimeRoot.AddComponent<GlobalPhysicsStateManager>();
+        }
+
+        private static SpatialAudioManager EnsureAudioServiceRegistered()
+        {
+            if (GlobalRegistry.Audio is SpatialAudioManager registeredAudioService)
+                return registeredAudioService;
+
+            SpatialAudioManager sceneAudioService = UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>();
+            if (sceneAudioService != null)
+                return sceneAudioService;
+
+            GameObject runtimeRoot = new GameObject("[SpatialAudioManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned audio service root - owner: GameBootstrapper
+            if (Application.isPlaying)
+                DontDestroyOnLoad(runtimeRoot);
+
+            return runtimeRoot.AddComponent<SpatialAudioManager>(); // COLD ALLOC: SpatialAudioManager[1] - bootstrap-owned audio service runtime - owner: GameBootstrapper
         }
 
         private static bool TryRunBootstrapStep(BootstrapStepToken stepToken, string phaseName, Action initializeAction)

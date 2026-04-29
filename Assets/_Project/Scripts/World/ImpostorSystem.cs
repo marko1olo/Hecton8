@@ -792,57 +792,26 @@ namespace Hecton8.World
             return true;
         }
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR && HECTON8_AMPLIFY_IMPOSTORS
         [MenuItem("Hecton8/LOD System/Verify Amplify Impostors")]
         private static void VerifyAmplifyImpostors()
         {
-            Type amplifyType = ResolveAmplifyType("AmplifyImpostors.AmplifyImpostor");
-            if (amplifyType != null)
-                Debug.Log("[ImpostorSystem] Amplify Impostors runtime type found.");
-            else
-                Debug.LogWarning("[ImpostorSystem] Amplify Impostors runtime type not found.");
-
             Shader impostorShader = FindAmplifyImpostorShaderAsset();
             if (impostorShader != null)
                 Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
             else
-                Debug.LogWarning("[ImpostorSystem] Impostor shader not found.");
+                Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
         }
 
         [MenuItem("Hecton8/LOD System/Create Impostor Baking Preset")]
         private static void CreateImpostorBakingPreset()
         {
-            Type presetType = ResolveAmplifyType("AmplifyImpostors.AmplifyImpostorBakePreset");
-            if (presetType == null)
-            {
-                Debug.LogError("[ImpostorSystem] Amplify impostor preset type not found.");
-                return;
-            }
-
-            ScriptableObject preset = ScriptableObject.CreateInstance(presetType) as ScriptableObject;
-            if (preset == null)
-            {
-                Debug.LogError("[ImpostorSystem] Failed to instantiate Amplify impostor preset.");
-                return;
-            }
-
-            string path = "Assets/_Project/Data/ImpostorBakingPreset.asset";
-            AssetDatabase.CreateAsset(preset, path);
-            AssetDatabase.SaveAssets();
-            Selection.activeObject = preset;
-            Debug.Log($"[ImpostorSystem] Impostor baking preset created at {path}");
+            Debug.LogWarning("[ImpostorSystem] Amplify impostor bake preset creation is unavailable because the Amplify package is not installed.");
         }
 
         [MenuItem("Hecton8/LOD System/Batch Bake Impostors")]
         private static void BatchBakeImpostors()
         {
-            Type amplifyType = ResolveAmplifyType("AmplifyImpostors.AmplifyImpostor");
-            if (amplifyType == null)
-            {
-                Debug.LogError("[ImpostorSystem] Amplify impostor runtime type not found. Batch bake aborted.");
-                return;
-            }
-
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
             int bakedCount = 0;
             for (int i = 0; i < prefabGuids.Length; i++)
@@ -852,7 +821,7 @@ namespace Hecton8.World
                 if (prefab == null || prefab.GetComponent<LODGroup>() == null)
                     continue;
 
-                if (prefab.GetComponent(amplifyType) == null)
+                if (prefab.GetComponent("AmplifyImpostor") == null)
                     continue;
 
                 bakedCount++;
@@ -860,13 +829,6 @@ namespace Hecton8.World
 
             Debug.Log($"[ImpostorSystem] Batch bake scan complete. Candidates={bakedCount}");
         }
-
-        private static Type ResolveAmplifyType(string typeName)
-        {
-            return Type.GetType($"{typeName}, AmplifyImpostors.Runtime") ??
-                   Type.GetType($"{typeName}, Assembly-CSharp");
-        }
-
         private static Shader FindAmplifyImpostorShaderAsset()
         {
             string[] shaderGuids = AssetDatabase.FindAssets("Impostor Standard t:Shader");

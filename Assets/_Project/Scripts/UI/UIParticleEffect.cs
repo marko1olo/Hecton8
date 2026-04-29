@@ -34,6 +34,8 @@ namespace Hecton8.UI
         private ParticleSystem.MainModule _mainModule;
         private ParticleSystem.EmissionModule _emissionModule;
         private bool _initialized;
+        private GameObject _particleInstance;
+        private bool _particleInstanceOwnedByPool;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -42,6 +44,19 @@ namespace Hecton8.UI
         private void Awake()
         {
             Initialize();
+        }
+
+        private void OnDestroy()
+        {
+            if (!_particleInstanceOwnedByPool || _particleInstance == null)
+                return;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool != null && _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+                pool.Despawn(_particleInstance);
+
+            _particleInstance = null;
+            _particleInstanceOwnedByPool = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -100,8 +115,17 @@ namespace Hecton8.UI
             // Create particle system if prefab provided
             if (particlePrefab != null)
             {
-                GameObject instance = Instantiate(particlePrefab, transform);
-                _particleSystem = instance.GetComponent<ParticleSystem>();
+                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                if (pool != null)
+                {
+                    _particleInstance = pool.Spawn(particlePrefab, transform.position, transform.rotation);
+                    if (_particleInstance != null)
+                    {
+                        _particleInstance.transform.SetParent(transform, false);
+                        _particleSystem = _particleInstance.GetComponent<ParticleSystem>();
+                        _particleInstanceOwnedByPool = _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
+                    }
+                }
             }
 
             // Create default particle system if none exists
@@ -110,6 +134,8 @@ namespace Hecton8.UI
                 GameObject particleObj = new GameObject("Particles");
                 particleObj.transform.SetParent(transform, false);
                 _particleSystem = particleObj.AddComponent<ParticleSystem>();
+                _particleInstance = particleObj;
+                _particleInstanceOwnedByPool = false;
                 ConfigureDefaultParticleSystem();
             }
 

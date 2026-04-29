@@ -20,7 +20,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, IUIService
+    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -108,13 +108,10 @@ namespace Hecton8.UI
         private float _craftProgress;
         private bool _tickRegistered;
         private bool _recipePointerScheduled;
-        private bool _ownsGlobalUiSlot;
         private float _hologramAnimationTime;
         private JobHandle _recipePointerHandle;
 
         public static bool IsMenuOpen { get; private set; }
-        public bool IsInitialized => isActiveAndEnabled && _hologramMatrices.IsCreated && _recipeListRoot != null;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -222,24 +219,10 @@ namespace Hecton8.UI
 
         private void TryRegisterUiService()
         {
-            if (!Application.isPlaying || _ownsGlobalUiSlot)
-                return;
-
-            IUIService current = GlobalRegistry.UI;
-            if (current != null && !ReferenceEquals(current, this))
-                return;
-
-            GlobalRegistry.RegisterUIService(this);
-            _ownsGlobalUiSlot = true;
         }
 
         private void UnregisterUiService()
         {
-            if (!_ownsGlobalUiSlot)
-                return;
-
-            GlobalRegistry.UnregisterUIService(this);
-            _ownsGlobalUiSlot = false;
         }
 
         public void Tick(float deltaTime)

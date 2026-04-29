@@ -177,6 +177,7 @@ namespace Hecton8.Core
         /// </summary>
         private float _nextSceneBindingRefreshTime = float.NegativeInfinity;
         private bool _runtimeTerrainResolutionRepairPending;
+        private bool _loggedMissingMapMagicBinding;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -211,11 +212,8 @@ namespace Hecton8.Core
 
             _instance = this;
 
-            // ── Поиск MapMagicObject ──
-            if (mapMagicObject == null)
-            {
-                mapMagicObject = FindMapMagicObjectIncludingInactive();
-            }
+            TryResolveCoLocatedMapMagicObject();
+            ReportMissingMapMagicBindingIfNeeded();
 
             _runtimeTerrainResolutionRepairPending = mapMagicObject != null;
             EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
@@ -233,25 +231,6 @@ namespace Hecton8.Core
             _initialBiomePublished = false;
 
             UpdateDiagnostics();
-        }
-
-        private static MapMagicObject FindMapMagicObjectIncludingInactive()
-        {
-            MapMagicObject[] candidates = Resources.FindObjectsOfTypeAll<MapMagicObject>();
-            for (int i = 0; i < candidates.Length; i++)
-            {
-                MapMagicObject candidate = candidates[i];
-                if (candidate == null)
-                    continue;
-
-                GameObject go = candidate.gameObject;
-                if (go == null || !go.scene.IsValid())
-                    continue;
-
-                return candidate;
-            }
-
-            return null;
         }
 
         // ════════════════════════════════════════════════════════
@@ -1142,7 +1121,7 @@ namespace Hecton8.Core
 
             if (mapMagicObject == null)
             {
-                mapMagicObject = FindMapMagicObjectIncludingInactive(); // COLD ALLOC: recovery search only when MapMagic binding is missing
+                TryResolveCoLocatedMapMagicObject();
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
                 InvalidateBiomeTextureCache();
@@ -1155,8 +1134,35 @@ namespace Hecton8.Core
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
+            ReportMissingMapMagicBindingIfNeeded();
             RepairRuntimeTerrainResolutionMismatchIfNeeded();
             UpdateDiagnostics();
+        }
+
+        private void TryResolveCoLocatedMapMagicObject()
+        {
+            if (mapMagicObject != null)
+            {
+                _loggedMissingMapMagicBinding = false;
+                return;
+            }
+
+            if (TryGetComponent(out MapMagicObject coLocatedObject))
+            {
+                mapMagicObject = coLocatedObject;
+                _loggedMissingMapMagicBinding = false;
+            }
+        }
+
+        private void ReportMissingMapMagicBindingIfNeeded()
+        {
+            if (mapMagicObject != null || _loggedMissingMapMagicBinding)
+                return;
+
+            _loggedMissingMapMagicBinding = true;
+            Debug.LogError(
+                "[MapMagicBridge] Missing MapMagicObject binding. Assign it explicitly or place MapMagicBridge on the same GameObject as MapMagicObject. Runtime scene-wide fallback search is forbidden.",
+                this);
         }
 
         /// <summary>

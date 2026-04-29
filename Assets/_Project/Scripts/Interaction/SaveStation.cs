@@ -109,7 +109,7 @@ namespace Hecton8.Interaction
             if (_interactionSound == null)
                 return;
 
-            SpatialAudioManager audioManager = SpatialAudioManager.Instance;
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
             if (audioManager == null)
                 return;
 

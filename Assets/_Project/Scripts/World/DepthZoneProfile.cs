@@ -56,9 +56,11 @@ namespace Hecton8.World
         [SerializeField] public string discoveryId;
 
         [System.NonSerialized] public string cachedHudLabel;
+        [System.NonSerialized] private uint _cachedZoneHash;
 
         public string DisplayNameOrFallback => localizedDisplayName.ResolveOrFallback(FallbackOrDefault(displayName, "UNKNOWN ZONE"));
         public string DescriptionOrFallback => localizedDescription.ResolveOrFallback(description);
+        public uint ZoneHash => _cachedZoneHash;
 
         private void OnEnable()
         {
@@ -67,6 +69,10 @@ namespace Hecton8.World
 
         public void RebuildCache()
         {
+            _cachedZoneHash = string.IsNullOrWhiteSpace(zoneId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(zoneId));
+
             string resolvedDisplayName = DisplayNameOrFallback;
             string upperDisplayName = string.IsNullOrWhiteSpace(resolvedDisplayName)
                 ? "UNKNOWN ZONE"

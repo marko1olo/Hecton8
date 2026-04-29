@@ -87,58 +87,46 @@ namespace Hecton8.World
                     return;
 
                 const int MaxDistance = ushort.MaxValue;
-                for (int z = 0; z < depth; z++)
+                for (int flatIndex = 0; flatIndex < pointCount; flatIndex++)
                 {
-                    int zOffset = z * slice;
-                    for (int y = 0; y < height; y++)
+                    int z = flatIndex / slice;
+                    int y = (flatIndex - (z * slice)) / width;
+                    int x = flatIndex - (z * slice) - (y * width);
+                    if (Passability[flatIndex] == SolidCell)
                     {
-                        int yOffset = zOffset + (y * width);
-                        for (int x = 0; x < width; x++)
-                        {
-                            int flatIndex = yOffset + x;
-                            if (Passability[flatIndex] == SolidCell)
-                            {
-                                DistanceMap[flatIndex] = 0;
-                                continue;
-                            }
-
-                            int distance = MaxDistance;
-                            if (x > 0)
-                                distance = math.min(distance, DistanceMap[flatIndex - 1] + 1);
-                            if (y > 0)
-                                distance = math.min(distance, DistanceMap[flatIndex - width] + 1);
-                            if (z > 0)
-                                distance = math.min(distance, DistanceMap[flatIndex - slice] + 1);
-
-                            DistanceMap[flatIndex] = (ushort)math.min(distance, MaxDistance);
-                        }
+                        DistanceMap[flatIndex] = 0;
+                        continue;
                     }
+
+                    int distance = MaxDistance;
+                    if (x > 0)
+                        distance = math.min(distance, DistanceMap[flatIndex - 1] + 1);
+                    if (y > 0)
+                        distance = math.min(distance, DistanceMap[flatIndex - width] + 1);
+                    if (z > 0)
+                        distance = math.min(distance, DistanceMap[flatIndex - slice] + 1);
+
+                    DistanceMap[flatIndex] = (ushort)math.min(distance, MaxDistance);
                 }
 
-                for (int z = depth - 1; z >= 0; z--)
+                for (int flatIndex = pointCount - 1; flatIndex >= 0; flatIndex--)
                 {
-                    int zOffset = z * slice;
-                    for (int y = height - 1; y >= 0; y--)
-                    {
-                        int yOffset = zOffset + (y * width);
-                        for (int x = width - 1; x >= 0; x--)
-                        {
-                            int flatIndex = yOffset + x;
-                            int distance = DistanceMap[flatIndex];
-                            if (x + 1 < width)
-                                distance = math.min(distance, DistanceMap[flatIndex + 1] + 1);
-                            if (y + 1 < height)
-                                distance = math.min(distance, DistanceMap[flatIndex + width] + 1);
-                            if (z + 1 < depth)
-                                distance = math.min(distance, DistanceMap[flatIndex + slice] + 1);
+                    int z = flatIndex / slice;
+                    int y = (flatIndex - (z * slice)) / width;
+                    int x = flatIndex - (z * slice) - (y * width);
+                    int distance = DistanceMap[flatIndex];
+                    if (x + 1 < width)
+                        distance = math.min(distance, DistanceMap[flatIndex + 1] + 1);
+                    if (y + 1 < height)
+                        distance = math.min(distance, DistanceMap[flatIndex + width] + 1);
+                    if (z + 1 < depth)
+                        distance = math.min(distance, DistanceMap[flatIndex + slice] + 1);
 
-                            ushort resolvedDistance = (ushort)math.min(distance, MaxDistance);
-                            DistanceMap[flatIndex] = resolvedDistance;
-                            Passability[flatIndex] = resolvedDistance <= AgentRadiusCells
-                                ? SolidCell
-                                : OpenCell;
-                        }
-                    }
+                    ushort resolvedDistance = (ushort)math.min(distance, MaxDistance);
+                    DistanceMap[flatIndex] = resolvedDistance;
+                    Passability[flatIndex] = resolvedDistance <= AgentRadiusCells
+                        ? SolidCell
+                        : OpenCell;
                 }
             }
         }

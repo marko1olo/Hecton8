@@ -35,6 +35,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
 using Hecton8.Input;
+using Hecton8.Tools;
 using Hecton8.Visor;
 using System;
 using VLB;
@@ -87,6 +88,7 @@ namespace Hecton8.Gameplay
 
         [Tooltip("HectonSurvivalSystem для battery drain. Опционально.")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
+        private IBatteryTool _externalBatteryTool;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SETTINGS
@@ -219,7 +221,7 @@ namespace Hecton8.Gameplay
         public bool IsFlickering => _isFlickering;
         public BeamMode CurrentBeamMode => _beamMode;
         public float CooldownRemaining => _overheatCooldownTimer;
-        public float EnergyPercent => survivalSystem != null ? survivalSystem.EnergyPercent : 0f;
+        public float EnergyPercent => _externalBatteryTool != null ? _externalBatteryTool.BatteryCharge * 100f : (survivalSystem != null ? survivalSystem.EnergyPercent : 0f);
         public string BeamModeLabel =>
             _beamMode == BeamMode.Flood ? "FLOOD" :
             _beamMode == BeamMode.Focus ? "FOCUS" :
@@ -401,7 +403,7 @@ namespace Hecton8.Gameplay
             }
 
             // ── Battery drain ──
-            if (_isOn && enableBatteryDrain && survivalSystem != null)
+            if (_isOn && enableBatteryDrain && survivalSystem != null && _externalBatteryTool == null)
             {
                 ProcessBatteryDrain(deltaTime);
             }
@@ -469,6 +471,20 @@ namespace Hecton8.Gameplay
         {
             if (on) TurnOn();
             else TurnOff();
+        }
+
+        internal void BindExternalBatteryTool(IBatteryTool batteryTool)
+        {
+            if (batteryTool == null)
+                return;
+
+            _externalBatteryTool = batteryTool;
+        }
+
+        internal void UnbindExternalBatteryTool(IBatteryTool batteryTool)
+        {
+            if (ReferenceEquals(_externalBatteryTool, batteryTool))
+                _externalBatteryTool = null;
         }
 
         public void CycleBeamMode()
@@ -691,7 +707,7 @@ namespace Hecton8.Gameplay
 
         private void ValidateSurvivalSystemBinding()
         {
-            if (survivalSystem != null || !enableBatteryDrain)
+            if (_externalBatteryTool != null || survivalSystem != null || !enableBatteryDrain)
                 return;
 
             Debug.LogWarning(
@@ -819,7 +835,16 @@ namespace Hecton8.Gameplay
             bool batteryOrHeatFlicker = false;
 
             // Trigger flickering on low battery
-            if (enableBatteryDrain && survivalSystem != null)
+            if (_externalBatteryTool != null)
+            {
+                float energyPercent = EnergyPercent;
+                if (energyPercent <= lowBatteryThreshold)
+                {
+                    shouldFlicker = true;
+                    batteryOrHeatFlicker = true;
+                }
+            }
+            else if (enableBatteryDrain && survivalSystem != null)
             {
                 float energyPercent = survivalSystem.EnergyPercent;
                 if (energyPercent <= lowBatteryThreshold)
@@ -1010,9 +1035,9 @@ namespace Hecton8.Gameplay
         private void PlaySound(AudioClip clip)
         {
             if (clip == null) return;
-            if (SpatialAudioManager.Instance == null) return;
+            if (Hecton8.Core.GlobalRegistry.Audio == null) return;
 
-            SpatialAudioManager.Instance.PlayStatic2D(clip, audioVolume);
+            Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, audioVolume);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1031,3 +1056,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

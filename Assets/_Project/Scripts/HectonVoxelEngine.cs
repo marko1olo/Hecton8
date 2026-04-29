@@ -3444,9 +3444,7 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             if (navGridDistanceMap.IsCreated)
             {
-                // COLD SYNC JOB: canceled voxel rebuild still owns TempJob scratch that must be completed before disposal.
-                firstPhaseHandle.Complete();
-                navGridDistanceMap.Dispose();
+                navGridDistanceMap.Dispose(firstPhaseHandle);
                 navGridDistanceMap = default;
             }
 

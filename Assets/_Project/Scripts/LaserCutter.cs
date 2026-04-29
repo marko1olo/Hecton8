@@ -57,7 +57,7 @@ namespace Hecton8.Gameplay
         }
 
         // COLD ALLOC: String[101] — localized recovery progress HUD cache — owner: LaserCutter
-        private static string[] _recoveryProgressMessages = BuildRecoveryProgressMessages();
+        private static string[] _recoveryProgressMessages;
         private static GameLanguage _recoveryProgressLanguage = (GameLanguage)(-1);
 
         // ══════════════════════════════════════════════════════════
@@ -365,8 +365,8 @@ namespace Hecton8.Gameplay
                 SetOverheatedState();
                 if (!_lockoutSoundPlayed && overheatErrorClip != null)
                 {
-                    if (Hecton8.Audio.SpatialAudioManager.Instance != null)
-                        Hecton8.Audio.SpatialAudioManager.Instance.PlayStatic2D(overheatErrorClip, 0.5f);
+                    if (Hecton8.Core.GlobalRegistry.Audio != null)
+                        Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(overheatErrorClip, 0.5f);
                     
                     _lockoutSoundPlayed = true;
                     ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_OVERHEAT_LOCKOUT, "LASER CUTTER - OVERHEAT LOCKOUT"));
@@ -857,18 +857,12 @@ namespace Hecton8.Gameplay
             if (_recoveryProgressMessages != null && _recoveryProgressMessages.Length == RecoveryProgressMessageCount && _recoveryProgressLanguage == language)
                 return;
 
-            _recoveryProgressMessages = BuildRecoveryProgressMessages();
-            _recoveryProgressLanguage = language;
-        }
-
-        private static string[] BuildRecoveryProgressMessages()
-        {
             string[] messages = new string[RecoveryProgressMessageCount];
             string template = ResolveLocalized(LocalizationKeys.LASER_RECOVERY_PROGRESS, "RECOVERY PROGRESS - {0}%");
             for (int i = 0; i < RecoveryProgressMessageCount; i++)
                 messages[i] = string.Format(template, i);
-
-            return messages;
+            _recoveryProgressMessages = messages;
+            _recoveryProgressLanguage = language;
         }
 
         private void EnsurePlayerInventory()
@@ -1320,3 +1314,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

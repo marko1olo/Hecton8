@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Items;
+using Hecton8.Optimization;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -36,9 +37,10 @@ namespace Hecton8.SaveSystem
         private enum WorldPrefabLoadState : byte
         {
             Unloaded = 0,
-            Loading = 1,
-            Loaded = 2,
-            Failed = 3
+            Queued = 1,
+            Loading = 2,
+            Loaded = 3,
+            Failed = 4
         }
 
         [Serializable]
@@ -55,6 +57,8 @@ namespace Hecton8.SaveSystem
             public AsyncOperationHandle<GameObject> Handle;
             public WorldPrefabLoadState LoadState;
             public int LastAccessFrame;
+            public int DispatchRequestId;
+            public uint DispatchAssetKey;
         }
 
         private readonly struct WorldPrefabGuidFallbackEntry
@@ -164,6 +168,8 @@ namespace Hecton8.SaveSystem
         private Dictionary<int, WorldPrefabRuntimeRecord> _worldPrefabRuntimeLookup;
         private Queue<int> _pendingWorldPrefabReleaseQueue;
         private HashSet<int> _pendingWorldPrefabReleaseSet;
+        // COLD ALLOC: List<int>[32] - staged world-prefab dispatch claims from AssetLoadDispatcher - owner: ItemCatalog
+        private List<int> _worldPrefabDispatchScratch;
 #endif
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary;
@@ -249,6 +255,9 @@ namespace Hecton8.SaveSystem
                 if (runtimeRecord.LoadState == WorldPrefabLoadState.Loaded)
                     return runtimeRecord.Handle.IsValid() && runtimeRecord.Handle.Result != null;
 
+                if (runtimeRecord.LoadState == WorldPrefabLoadState.Queued)
+                    return true;
+
                 if (runtimeRecord.LoadState == WorldPrefabLoadState.Loading)
                     return true;
 
@@ -264,13 +273,31 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            uint dispatchAssetKey = BuildWorldPrefabDispatchKey(hashId);
+            if (dispatcher != null &&
+                dispatcher.Enqueue(dispatchAssetKey, AssetPriorityTier.Tier2Proximity, false, out int requestId))
+            {
+                _worldPrefabRuntimeLookup[hashId] = new WorldPrefabRuntimeRecord
+                {
+                    PrefabReference = prefabReference,
+                    LoadState = WorldPrefabLoadState.Queued,
+                    LastAccessFrame = Time.frameCount,
+                    DispatchRequestId = requestId,
+                    DispatchAssetKey = dispatchAssetKey
+                };
+                return true;
+            }
+
             AsyncOperationHandle<GameObject> handle = prefabReference.LoadAssetAsync<GameObject>();
             _worldPrefabRuntimeLookup[hashId] = new WorldPrefabRuntimeRecord
             {
                 PrefabReference = prefabReference,
                 Handle = handle,
                 LoadState = WorldPrefabLoadState.Loading,
-                LastAccessFrame = Time.frameCount
+                LastAccessFrame = Time.frameCount,
+                DispatchRequestId = 0,
+                DispatchAssetKey = dispatchAssetKey
             };
 
             return true;
@@ -300,6 +327,8 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup == null)
                 RebuildWorldPrefabLookup();
 
+            PumpWorldPrefabDispatchTickets();
+
             if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
                 return false;
 
@@ -312,6 +341,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (runtimeRecord.LoadState == WorldPrefabLoadState.Queued)
+                return false;
+
             if (runtimeRecord.LoadState == WorldPrefabLoadState.Loading)
             {
                 if (!runtimeRecord.Handle.IsDone)
@@ -319,11 +351,13 @@ namespace Hecton8.SaveSystem
 
                 if (runtimeRecord.Handle.Status != AsyncOperationStatus.Succeeded || runtimeRecord.Handle.Result == null)
                 {
+                    CompleteWorldPrefabDispatch(ref runtimeRecord, success: false);
                     runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
                     _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
                     return false;
                 }
 
+                CompleteWorldPrefabDispatch(ref runtimeRecord, success: true);
                 runtimeRecord.LoadState = WorldPrefabLoadState.Loaded;
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
             }
@@ -341,6 +375,8 @@ namespace Hecton8.SaveSystem
         {
             if (hashIds == null || hashIds.Count <= 0)
                 return true;
+
+            PumpWorldPrefabDispatchTickets();
 
             for (int i = 0; i < hashIds.Count; i++)
             {
@@ -643,13 +679,90 @@ namespace Hecton8.SaveSystem
         }
 
 #if UNITY_ADDRESSABLES_EXIST
+        public void PumpWorldPrefabDispatchTickets()
+        {
+            if (_worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count <= 0)
+                return;
+
+            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            if (dispatcher == null)
+                return;
+
+            _worldPrefabDispatchScratch ??= new List<int>(32); // COLD ALLOC: List<int>[32] - staged world-prefab dispatch claims from AssetLoadDispatcher - owner: ItemCatalog
+            _worldPrefabDispatchScratch.Clear();
+
+            Dictionary<int, WorldPrefabRuntimeRecord>.Enumerator enumerator = _worldPrefabRuntimeLookup.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (enumerator.Current.Value.LoadState == WorldPrefabLoadState.Queued)
+                    _worldPrefabDispatchScratch.Add(enumerator.Current.Key);
+            }
+
+            enumerator.Dispose();
+
+            for (int i = 0; i < _worldPrefabDispatchScratch.Count; i++)
+            {
+                int hashId = _worldPrefabDispatchScratch[i];
+                if (!_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord) ||
+                    runtimeRecord.LoadState != WorldPrefabLoadState.Queued ||
+                    runtimeRecord.DispatchAssetKey == 0u ||
+                    !dispatcher.TryConsumeReadyTicketByAssetKey(runtimeRecord.DispatchAssetKey, out AssetDispatchTicket ticket))
+                {
+                    continue;
+                }
+
+                runtimeRecord.DispatchRequestId = ticket.RequestId;
+                runtimeRecord.Handle = runtimeRecord.PrefabReference.LoadAssetAsync<GameObject>();
+                runtimeRecord.LoadState = WorldPrefabLoadState.Loading;
+                runtimeRecord.LastAccessFrame = Time.frameCount;
+                _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
+            }
+
+            _worldPrefabDispatchScratch.Clear();
+        }
+
         private void ReleaseWorldPrefabRuntimeRecord(int hashId, WorldPrefabRuntimeRecord runtimeRecord)
         {
+            CancelPendingWorldPrefabDispatch(ref runtimeRecord);
             if (runtimeRecord.Handle.IsValid())
                 Addressables.Release(runtimeRecord.Handle);
 
             _pendingWorldPrefabReleaseSet?.Remove(hashId);
             _worldPrefabRuntimeLookup.Remove(hashId);
+        }
+
+        private static uint BuildWorldPrefabDispatchKey(int hashId)
+        {
+            return unchecked((uint)hashId) ^ 0xA77E0001u;
+        }
+
+        private static void CancelPendingWorldPrefabDispatch(ref WorldPrefabRuntimeRecord runtimeRecord)
+        {
+            if (runtimeRecord.DispatchAssetKey == 0u)
+                return;
+
+            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            if (dispatcher != null)
+            {
+                dispatcher.CancelByAssetKey(runtimeRecord.DispatchAssetKey);
+                if (runtimeRecord.DispatchRequestId != 0)
+                    dispatcher.Complete(runtimeRecord.DispatchRequestId, false);
+            }
+
+            runtimeRecord.DispatchRequestId = 0;
+            runtimeRecord.DispatchAssetKey = 0u;
+        }
+
+        private static void CompleteWorldPrefabDispatch(ref WorldPrefabRuntimeRecord runtimeRecord, bool success)
+        {
+            if (runtimeRecord.DispatchRequestId == 0)
+                return;
+
+            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            if (dispatcher != null)
+                dispatcher.Complete(runtimeRecord.DispatchRequestId, success);
+
+            runtimeRecord.DispatchRequestId = 0;
         }
 #endif
 

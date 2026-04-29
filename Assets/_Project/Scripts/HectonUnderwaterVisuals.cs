@@ -3994,8 +3994,8 @@ namespace Hecton8.Environment
                     thermoclineVisorDistortionRecoverySpeed);
             }
 
-            if (thermoclineTransitionClip != null && SpatialAudioManager.Instance != null)
-                SpatialAudioManager.Instance.PlayStatic2D(thermoclineTransitionClip, thermoclineAudioVolume * intensity);
+            if (thermoclineTransitionClip != null && Hecton8.Core.GlobalRegistry.Audio != null)
+                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(thermoclineTransitionClip, thermoclineAudioVolume * intensity);
 
             _nextThermoclineAllowedTime = Time.unscaledTime + thermoclineMinRepeatInterval;
         }
@@ -5651,3 +5651,4 @@ namespace Hecton8.Environment
 #endif
     }
 }
+

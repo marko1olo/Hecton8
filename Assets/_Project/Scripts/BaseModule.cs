@@ -1391,7 +1391,7 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
-            SpatialAudioManager sam = SpatialAudioManager.Instance;
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
             if (sam != null)
                 sam.PlayAtPoint(clip, transform.position);
         }

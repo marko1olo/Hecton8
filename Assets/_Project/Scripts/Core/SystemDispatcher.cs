@@ -6,6 +6,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton8.AI;
 using Hecton8.Bootstrap;
+using Hecton8.Narrative;
+using Hecton8.Quest;
+using Hecton8.SaveSystem;
 using Hecton8.World;
 
 namespace Hecton8.Core
@@ -82,6 +85,7 @@ namespace Hecton8.Core
         // COLD ALLOC: int[256] — dispatcher-owned scheduled raycast request ids — owner: SystemDispatcher
         private static readonly int[] _scheduledDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
         private float _slowTickAccumulator;
+        private bool _serviceRegistered;
         private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
         private static NativeList<RaycastCommand> _scheduledDispatcherRaycastCommands;
         private static NativeArray<RaycastHit> _scheduledDispatcherRaycastHits;
@@ -250,32 +254,30 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            SystemDispatcher registeredDispatcher = GlobalRegistry.Dispatcher;
-            if (registeredDispatcher != null && !ReferenceEquals(registeredDispatcher, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            GlobalRegistry.RegisterSystemDispatcher(this);
             _slowTickAccumulator = 0f;
-
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
         }
 
         private void OnDestroy()
         {
-            if (ReferenceEquals(GlobalRegistry.Dispatcher, this))
+            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Dispatcher, this))
             {
                 DisposeDispatcherRaycastBuffers();
                 GlobalRegistry.UnregisterSystemDispatcher(this);
             }
+
+            _serviceRegistered = false;
+        }
+
+        /// <summary>
+        /// Registers this dispatcher as the authoritative runtime dispatcher service.
+        /// </summary>
+        public void InitializeService()
+        {
+            if (_serviceRegistered)
+                return;
+
+            GlobalRegistry.RegisterSystemDispatcher(this);
+            _serviceRegistered = true;
         }
 
         private void Update()
@@ -335,6 +337,9 @@ namespace Hecton8.Core
             CompleteDispatcherRaycasts();
             long completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
             _foveatedSimulationManager.CompleteFrameJobs();
+            SaveEvents.FlushPending();
+            QuestEvents.FlushPending();
+            AudioLogEvents.FlushPending();
             WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
             UnsafeArenaAllocator.ResetFrame();
             EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");

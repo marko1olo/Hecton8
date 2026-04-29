@@ -150,7 +150,7 @@ namespace Hecton8.Narrative
             _currentLogHash = 0u;
             _playbackTimer = 0f;
 
-            AudioLogEvents.RaisePlaybackCompleted(completedId);
+            AudioLogEvents.RaisePlaybackCompleted(completedHash);
             SubtitleEventBus.RaisePlaybackCompleted(completedHash);
 
             LogPlaybackCompleted(completedId);
@@ -172,8 +172,10 @@ namespace Hecton8.Narrative
                 return;
 
             string displayTitle = data.DisplayTitleOrFallback;
+            uint discoveredHash = LoreDatabaseManager.ComputeLoreHash(data.SafeLogId);
             _discoveredLogs.Add(data.logId);
-            AudioLogEvents.RaiseLogDiscovered(data.logId);
+            if (discoveredHash != 0u)
+                AudioLogEvents.RaiseLogDiscovered(discoveredHash);
             LocalizationManager localization = LocalizationManager.Instance;
             NotificationEvents.PushInfo(localization != null
                 ? localization.GetFormatted(LocalizationKeys.AUDIOLOG_DISCOVERED, displayTitle)
@@ -181,7 +183,7 @@ namespace Hecton8.Narrative
 
             // Также регистрируем в NarrativeDirector
             NarrativeEvents.RaiseDiscoveryMade(data.logId);
-            HectonEventBus.Publish(new LoreAcquiredEvent(LoreDatabaseManager.ComputeLoreHash(data.logId)));
+            HectonEventBus.Publish(new LoreAcquiredEvent(discoveredHash));
 
             LogDiscovered(data.logId, displayTitle);
         }
@@ -205,7 +207,7 @@ namespace Hecton8.Narrative
             AudioClip playbackClip = data.ResolvedAudioClip;
             if (playbackClip != null)
             {
-                if (SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
+                if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager)
                 {
                     audioManager.PlayStatic2D(playbackClip, playbackVolume);
                 }
@@ -216,7 +218,7 @@ namespace Hecton8.Narrative
             _playbackTimer = data.Duration;
             _isPlaying = true;
 
-            AudioLogEvents.RaisePlaybackStarted(data);
+            AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
             SubtitleEventBus.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
 
             LogPlaying(data.logId, data.Duration);
@@ -230,14 +232,13 @@ namespace Hecton8.Narrative
             if (!_isPlaying || _currentLog == null)
                 return;
 
-            string stoppedId = _currentLog.logId;
             uint stoppedHash = _currentLogHash;
             _isPlaying = false;
             _currentLog = null;
             _currentLogHash = 0u;
             _playbackTimer = 0f;
 
-            AudioLogEvents.RaisePlaybackStopped(stoppedId);
+            AudioLogEvents.RaisePlaybackStopped(stoppedHash);
             SubtitleEventBus.RaisePlaybackStopped(stoppedHash);
         }
 
@@ -345,3 +346,4 @@ namespace Hecton8.Narrative
         }
     }
 }
+

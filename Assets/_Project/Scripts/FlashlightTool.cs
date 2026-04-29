@@ -62,7 +62,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private Color _powerOnColor = new Color(1f, 0.9f, 0.5f);
 
         private ItemData _installedBattery;
-        private float _batteryCharge;
 
         // MaterialPropertyBlock for power indicator
         private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
@@ -76,7 +75,7 @@ namespace Hecton8.Gameplay
         public bool HasBattery => _installedBattery != null;
 
         /// <summary>Current battery charge level (0-1). Returns 0 if no battery.</summary>
-        public float BatteryCharge => _installedBattery != null ? _batteryCharge : 0f;
+        public float BatteryCharge => _installedBattery != null ? GetRuntimeBatteryNormalized(0f) : 0f;
 
         /// <summary>The battery item currently installed (null if none).</summary>
         public ItemData BatteryItem => _installedBattery;
@@ -91,11 +90,10 @@ namespace Hecton8.Gameplay
 
             ItemData removed = _installedBattery;
             _installedBattery = null;
-            _batteryCharge = 0f;
 
+            SetRuntimeBatteryNormalized(0f);
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
-            SyncModularBattery();
 
             return removed;
         }
@@ -109,11 +107,9 @@ namespace Hecton8.Gameplay
                 return false;
 
             _installedBattery = battery;
-            _batteryCharge = Mathf.Clamp01(charge);
-
+            SetRuntimeBatteryNormalized(charge);
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
-            SyncModularBattery();
 
             return true;
         }
@@ -131,11 +127,12 @@ namespace Hecton8.Gameplay
 
             _powerIndicatorRenderer.GetPropertyBlock(_mpb);
 
-            if (_installedBattery == null || _batteryCharge <= 0f)
+            float batteryCharge = BatteryCharge;
+            if (_installedBattery == null || batteryCharge <= 0f)
             {
                 _mpb.SetColor(_EmissionColorID, Color.black);
             }
-            else if (_batteryCharge <= 0.2f)
+            else if (batteryCharge <= 0.2f)
             {
                 _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f));
             }
@@ -177,12 +174,13 @@ namespace Hecton8.Gameplay
             _stateBeforeEquip = _flashlight != null && _flashlight.IsOn;
             _primaryLatched = false;
             _secondaryLatched = false;
+            UpdatePowerIndicator();
             InvalidateSnapshotCache();
         }
 
         internal override float ResolveModularBatteryNormalized()
         {
-            return _installedBattery != null ? Mathf.Clamp01(_batteryCharge) : 0f;
+            return _installedBattery != null ? GetRuntimeBatteryNormalized(1f) : 0f;
         }
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
@@ -209,6 +207,14 @@ namespace Hecton8.Gameplay
             base.OnUnequip();
         }
 
+        public override void OnDespawn()
+        {
+            if (_flashlight != null)
+                _flashlight.UnbindExternalBatteryTool(this);
+
+            base.OnDespawn();
+        }
+
         public override void UsePrimary(float deltaTime)
         {
             if (_primaryLatched)
@@ -219,7 +225,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveFlashlight())
                 return;
 
-            if (!_flashlight.IsOn && (_installedBattery == null || _batteryCharge <= 0f))
+            if (!_flashlight.IsOn && !HasToolEnergyOrWirelessPath())
             {
                 PublishAssessment(new LampAssessment(
                     "DIVE LAMP - CELL DEPLETED",
@@ -305,26 +311,22 @@ namespace Hecton8.Gameplay
             if (!TryResolveFlashlight())
                 return;
 
-            if (_flashlight.IsOn && (_installedBattery == null || _batteryCharge <= 0f))
+            if (_flashlight.IsOn && !HasToolEnergyOrWirelessPath())
             {
                 _flashlight.TurnOff();
-                _batteryCharge = 0f;
                 UpdatePowerIndicator();
-                SyncModularBattery();
                 InvalidateSnapshotCache();
                 return;
             }
 
-            if (_flashlight.IsOn && _installedBattery != null && _batteryCharge > 0f)
+            if (_flashlight.IsOn)
             {
-                _batteryCharge = Mathf.Max(0f, _batteryCharge - (GetEnergyConsumption() * deltaTime));
+                bool hadEnergy = TryConsumeRuntimeEnergy(deltaTime);
                 UpdatePowerIndicator();
-                SyncModularBattery();
                 InvalidateSnapshotCache();
 
-                if (_batteryCharge <= 0f)
+                if (!hadEnergy)
                 {
-                    _batteryCharge = 0f;
                     _flashlight.TurnOff();
                     PublishAssessment(new LampAssessment(
                         "DIVE LAMP - CELL DEPLETED",
@@ -348,6 +350,9 @@ namespace Hecton8.Gameplay
                     _flashlight = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.Flashlight != null) ? Hecton8.Core.GlobalRegistry.Player.Flashlight : playerTransform.GetComponent<PlayerFlashlight>());
                 }
             }
+
+            if (_flashlight != null)
+                _flashlight.BindExternalBatteryTool(this);
 
             if (_hudNotification == null)
                 HUDNotification.TryGetActive(out _hudNotification);

@@ -58,8 +58,6 @@ namespace Hecton8.World
 
         private GraphicsBuffer _matrixBuffer;
         private GraphicsBuffer _fadeBuffer;
-        private MaterialPropertyBlock _propertyBlock;
-        private Material _runtimeMaterial;
         private NativeArray<Matrix4x4> _uploadedMatrices;
         private NativeArray<Vector4> _uploadedFade;
         private GraphicsBuffer _uploadedMatrixBuffer;
@@ -68,7 +66,6 @@ namespace Hecton8.World
         private int _instanceCount;
         private bool _hasBoundsOverride;
         private bool _isRegistered;
-        private bool _ownsRuntimeMaterial;
         private Vector4 _lastGlobalFloatingOffset = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private BatchRendererGroup _batchRendererGroup;
         private NativeArray<MetadataValue> _batchMetadata;
@@ -78,13 +75,9 @@ namespace Hecton8.World
         private BatchMaterialID _batchMaterialId;
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
-        private Material _brgMaterial;
-        private Material _brgMaterialSource;
-        private bool _ownsBrgMaterial;
 
         private void Awake()
         {
-            _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - HLOD draw properties - owner: HectonHLODRenderer
             _drawBounds = new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             EnsureResources();
         }
@@ -118,19 +111,19 @@ namespace Hecton8.World
                 return;
 
             Mesh activeMesh = _mesh;
-            Material activeMaterial = EnsureBrgMaterial();
+            Material activeMaterial = ResolveMaterial();
             if (activeMesh == null || activeMaterial == null)
                 return;
 
             Vector4 globalFloatingOffset = ResolveGlobalFloatingOffset();
             if (_lastGlobalFloatingOffset != globalFloatingOffset)
             {
-                activeMaterial.SetVector(GlobalFloatingOffsetId, globalFloatingOffset);
+                Shader.SetGlobalVector(GlobalFloatingOffsetId, globalFloatingOffset);
                 _lastGlobalFloatingOffset = globalFloatingOffset;
             }
 
-            activeMaterial.SetBuffer(InstanceMatricesId, _matrixBuffer);
-            activeMaterial.SetBuffer(InstanceFadeId, _fadeBuffer);
+            Shader.SetGlobalBuffer(InstanceMatricesId, _matrixBuffer);
+            Shader.SetGlobalBuffer(InstanceFadeId, _fadeBuffer);
             SyncBatchRegistration(activeMesh, activeMaterial);
             _batchRendererGroup.SetBatchBuffer(_batchId, _matrixBuffer.bufferHandle);
             _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
@@ -228,22 +221,6 @@ namespace Hecton8.World
 
         private void EnsureResources()
         {
-#if UNITY_EDITOR
-            if (_shader == null)
-                _shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
-#endif
-
-            if (_material == null && _runtimeMaterial == null && _shader != null)
-            {
-                _runtimeMaterial = new Material(_shader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave,
-                    name = "__HectonHLODRuntimeMaterial",
-                    enableInstancing = true
-                }; // COLD ALLOC: Material[1] - hidden first-party HLOD material - owner: HectonHLODRenderer
-                _ownsRuntimeMaterial = true;
-            }
-
             if (_batchRendererGroup == null)
             {
                 _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
@@ -257,29 +234,6 @@ namespace Hecton8.World
                 _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
                 _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
             }
-        }
-
-        private Material EnsureBrgMaterial()
-        {
-            Material sourceMaterial = ResolveMaterial();
-            if (sourceMaterial == null)
-                return null;
-
-            if (_brgMaterial != null && _brgMaterialSource == sourceMaterial)
-                return _brgMaterial;
-
-            ReleaseBrgMaterial();
-
-            _brgMaterial = new Material(sourceMaterial)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                name = "__HectonHLODBrgMaterial",
-                enableInstancing = true
-            }; // COLD ALLOC: Material[1] - BRG-local HLOD material clone for per-renderer buffer binding - owner: HectonHLODRenderer
-            _brgMaterialSource = sourceMaterial;
-            _ownsBrgMaterial = true;
-            _lastGlobalFloatingOffset = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
-            return _brgMaterial;
         }
 
         private void SyncBatchRegistration(Mesh activeMesh, Material activeMaterial)
@@ -346,7 +300,7 @@ namespace Hecton8.World
 
         private Material ResolveMaterial()
         {
-            return _material != null ? _material : _runtimeMaterial;
+            return _material;
         }
 
         private Bounds ResolveDrawBounds()
@@ -402,37 +356,6 @@ namespace Hecton8.World
             if (_uploadedFade.IsCreated)
                 _uploadedFade.Dispose();
 
-            if (_ownsRuntimeMaterial && _runtimeMaterial != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(_runtimeMaterial);
-                else
-                    DestroyImmediate(_runtimeMaterial);
-            }
-
-            _runtimeMaterial = null;
-            _ownsRuntimeMaterial = false;
-            ReleaseBrgMaterial();
-        }
-
-        private void ReleaseBrgMaterial()
-        {
-            if (!_ownsBrgMaterial || _brgMaterial == null)
-            {
-                _brgMaterial = null;
-                _brgMaterialSource = null;
-                _ownsBrgMaterial = false;
-                return;
-            }
-
-            if (Application.isPlaying)
-                Destroy(_brgMaterial);
-            else
-                DestroyImmediate(_brgMaterial);
-
-            _brgMaterial = null;
-            _brgMaterialSource = null;
-            _ownsBrgMaterial = false;
         }
 
         private JobHandle OnPerformCulling(

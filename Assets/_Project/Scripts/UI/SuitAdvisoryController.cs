@@ -366,7 +366,7 @@ namespace Hecton8.UI
             if (clip == null)
                 return;
 
-            SpatialAudioManager audio = SpatialAudioManager.Instance;
+            Hecton8.Core.IAudioService audio = Hecton8.Core.GlobalRegistry.Audio;
             if (audio != null)
                 audio.PlayStatic2D(clip, uiVolume);
         }

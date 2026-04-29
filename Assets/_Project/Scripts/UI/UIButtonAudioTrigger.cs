@@ -41,7 +41,7 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private Button _button;
-        private SpatialAudioManager _audioManager;
+        private Hecton8.Core.IAudioService _audioManager;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -50,7 +50,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _button = GetComponent<Button>();
-            _audioManager = SpatialAudioManager.Instance;
+            _audioManager = Hecton8.Core.GlobalRegistry.Audio;
         }
 
         private void OnEnable()

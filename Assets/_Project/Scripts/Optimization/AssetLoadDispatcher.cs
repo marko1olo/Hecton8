@@ -140,6 +140,22 @@ namespace Hecton8.Optimization
             return true;
         }
 
+        internal bool TryConsumeReadyTicketByAssetKey(uint assetKey, out AssetDispatchTicket ticket)
+        {
+            for (int i = _readyTickets.Count - 1; i >= 0; i--)
+            {
+                if (_readyTickets[i].AssetKey != assetKey)
+                    continue;
+
+                ticket = _readyTickets[i];
+                RemoveAtSwapBack(_readyTickets, i);
+                return true;
+            }
+
+            ticket = default;
+            return false;
+        }
+
         internal bool Complete(int requestId, bool success)
         {
             for (int i = 0; i < _inflightRequests.Count; i++)
@@ -184,6 +200,13 @@ namespace Hecton8.Optimization
 
                 RemoveAtSwapBack(_inflightRequests, i);
             }
+        }
+
+        internal static void ForceDrainDeferredReleases()
+        {
+            AssetLifecycleGovernor governor = AssetLifecycleGovernor.Instance;
+            if (governor != null)
+                governor.ForceDrainPendingReleaseQueue();
         }
 
         private void TryRegister()

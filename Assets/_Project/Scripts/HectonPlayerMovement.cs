@@ -650,7 +650,7 @@ namespace Hecton8.Gameplay
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Control Scheme Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
-        
+
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Input System Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
 
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Swim Vertical (fallback ÃÂµÃ‘ÂÃÂ»ÃÂ¸ ÃÂ½ÃÂµÃ‘â€š ControlScheme) Ã¢â€â‚¬Ã¢â€â‚¬")]
@@ -2486,8 +2486,8 @@ namespace Hecton8.Gameplay
             return ResolveActiveTransportPreset();
         }
 
-        private void OnEnable() 
-        { 
+        private void OnEnable()
+        {
             SargassumGlobalDragManager.OnEntanglementStrain += HandleSargassumEntanglementStrain;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             ResolvePlayerToolManager();
@@ -2760,7 +2760,7 @@ namespace Hecton8.Gameplay
             MonoBehaviour ambientPlatformBehaviour = null;
             bool hasLifecycleOwner = _playerTransportCoordinator != null &&
                                      _playerTransportCoordinator.TryResolveTransportLifecycleOwner(out lifecycleOwner);
-            if (!hasLifecycleOwner && !TryResolveAmbientTransportPlatform(out ambientPlatform, out ambientPlatformBehaviour))
+            if (!hasLifecycleOwner && !PlayerTransportBinder.TryResolveAmbientSubmarinePlatform(IsInDryInterior(), out ambientPlatform, out ambientPlatformBehaviour))
             {
                 _activeTransportPlatform = null;
                 _activeTransportPlatformBehaviour = null;
@@ -2808,20 +2808,6 @@ namespace Hecton8.Gameplay
             _activeTransportPlatform = platform;
             _activeTransportPlatformBehaviour = platformBehaviour;
             _activeTransportPlatformTransform = platform.PlatformTransform;
-        }
-
-        private bool TryResolveAmbientTransportPlatform(out ITransportPlatform platform, out MonoBehaviour platformBehaviour)
-        {
-            platform = null;
-            platformBehaviour = null;
-
-            ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
-            if (submarineRuntimeContext == null || !submarineRuntimeContext.IsTransportPlatformActive || !IsInDryInterior())
-                return false;
-
-            platform = submarineRuntimeContext;
-            platformBehaviour = submarineRuntimeContext as MonoBehaviour;
-            return platformBehaviour != null;
         }
 
         private bool TryGetActiveTransportPlatformTransform(out Transform platformTransform)
@@ -3848,7 +3834,8 @@ namespace Hecton8.Gameplay
             if (clip == null)
                 return;
 
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (audioManager == null)
                 return;
 
             float volume = math.lerp(0.12f, 0.42f, signal.Shake01);
@@ -6039,7 +6026,7 @@ namespace Hecton8.Gameplay
             if (crushDepthGroanClip == null || _hullStressIntensity < crushDepthGroanThreshold || _hullStressGroanCooldownTimer > 0f)
                 return;
 
-            SpatialAudioManager audioManager = SpatialAudioManager.Instance;
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
             if (audioManager == null)
                 return;
 
@@ -6486,7 +6473,7 @@ namespace Hecton8.Gameplay
 
             if (crushDepthImplosionClip != null)
             {
-                SpatialAudioManager audioManager = SpatialAudioManager.Instance;
+                Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
                 if (audioManager != null)
                     audioManager.PlayStatic2D(crushDepthImplosionClip, 0.95f, audioManager.InterfaceGroup);
             }
@@ -6793,7 +6780,8 @@ namespace Hecton8.Gameplay
             if (exitedWater)
                 EmitBreachImpactFeedback(math.lerp(0.45f, 1f, speedT));
 
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (audioManager == null)
                 return;
 
             AudioClip clip = enteredWater
@@ -6851,7 +6839,8 @@ namespace Hecton8.Gameplay
             if (underwaterImpactClip == null)
                 return;
 
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (audioManager == null)
                 return;
 
             float clampedIntensity = math.saturate(intensity);
@@ -6900,7 +6889,7 @@ namespace Hecton8.Gameplay
         private void EmitSurfaceGasp()
         {
             if (surfaceGaspClip != null &&
-                SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) &&
+                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioManager &&
                 audioManager != null)
             {
                 audioManager.PlayStatic2D(surfaceGaspClip, surfaceGaspVolume, audioManager.InterfaceGroup);

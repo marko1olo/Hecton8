@@ -5,6 +5,7 @@ using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Modding;
 using Hecton8.Narrative;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Quest
@@ -12,10 +13,10 @@ namespace Hecton8.Quest
     internal sealed class QuestGraphEvaluator : IDisposable
     {
         private const string EventSubscriberId = "quest.graph.evaluator";
-        private const int MaxSignalDepth = 4;
         private const float DepthTierTwoMeters = 100f;
         private const float DepthTierThreeMeters = 300f;
         private const float DepthTierFourMeters = 1000f;
+        private static readonly uint _deepAbyssZoneHash = QuestFlagHashKernel.ComputeStableHash("zone_deep_abyss");
 
         private readonly QuestStateManager _stateManager;
         private readonly Action _onResultsAvailable;
@@ -24,18 +25,23 @@ namespace Hecton8.Quest
         private HectonEventSubscription _itemDiscardedSubscription;
         private HectonEventSubscription _biomeDiscoveredSubscription;
         private HectonEventSubscription _loreAcquiredSubscription;
+        private NativeQueue<QuestSignalPayload> _pendingSignals;
         private bool _isBound;
-        private int _signalDepth;
+        private bool _isDrainingSignals;
 
         public QuestGraphEvaluator(QuestStateManager stateManager, Action onResultsAvailable)
         {
             _stateManager = stateManager;
             _onResultsAvailable = onResultsAvailable;
+            _pendingSignals = new NativeQueue<QuestSignalPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] - quest signal ingress lane drained on event receipt - owner: QuestGraphEvaluator
         }
 
         public void Dispose()
         {
             Unbind();
+
+            if (_pendingSignals.IsCreated)
+                _pendingSignals.Dispose();
         }
 
         public void Bind()
@@ -46,7 +52,7 @@ namespace Hecton8.Quest
             _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, EventSubscriberId);
             _itemDiscardedSubscription = HectonEventBus.Subscribe<ItemDiscardedEvent>(HandleItemDiscarded, EventSubscriberId);
             _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
-            _loreAcquiredSubscription = HectonEventBus.Subscribe<Hecton8.Narrative.LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
+            _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
             NarrativeEvents.OnDepthTierReached += HandleDepthTierReached;
             HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
             AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
@@ -70,33 +76,32 @@ namespace Hecton8.Quest
             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
             AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
             _isBound = false;
+
+            while (_pendingSignals.IsCreated && _pendingSignals.TryDequeue(out _))
+            {
+            }
         }
 
         public void UpdateDepth(float depthMeters)
         {
-            Evaluate(new QuestEventPayload
+            UpdateDepthContext(depthMeters, 0u, false);
+        }
+
+        public void UpdateDepthContext(float depthMeters, uint zoneHash, bool isThermalZone)
+        {
+            QuestSignalContextFlags flags = QuestSignalContextFlags.None;
+            if (isThermalZone)
+                flags |= QuestSignalContextFlags.ThermalPhase;
+            if (zoneHash == _deepAbyssZoneHash)
+                flags |= QuestSignalContextFlags.AbyssalPhase;
+
+            EnqueueSignal(new QuestSignalPayload
             {
                 EventType = (ushort)QuestSignalKind.DepthReached,
                 Timestamp = Time.timeAsDouble,
-                NumericValue = depthMeters
+                NumericValue = depthMeters,
+                Flags = (uint)flags
             });
-        }
-
-        public void Evaluate(in QuestEventPayload payload)
-        {
-            if (_stateManager == null || _signalDepth >= MaxSignalDepth)
-                return;
-
-            _signalDepth++;
-            try
-            {
-                _stateManager.EvaluateSignal(payload);
-                _onResultsAvailable?.Invoke();
-            }
-            finally
-            {
-                _signalDepth--;
-            }
         }
 
         private void HandleItemCollected(ItemCollectedEvent evt)
@@ -110,7 +115,7 @@ namespace Hecton8.Quest
                     ? QuestFlagHashKernel.ComputeStableHash(evt.Item.PersistentId)
                     : 0u;
 
-            Evaluate(new QuestEventPayload
+            EnqueueSignal(new QuestSignalPayload
             {
                 EntityHash = itemHash,
                 EventType = (ushort)QuestSignalKind.ItemCollected,
@@ -146,7 +151,7 @@ namespace Hecton8.Quest
             if (evt == null)
                 return;
 
-            Evaluate(new QuestEventPayload
+            EnqueueSignal(new QuestSignalPayload
             {
                 EventType = (ushort)QuestSignalKind.BiomeEntered,
                 Timestamp = Time.timeAsDouble,
@@ -154,27 +159,24 @@ namespace Hecton8.Quest
             });
         }
 
-        private void HandleLoreAcquired(Hecton8.Narrative.LoreAcquiredEvent evt)
+        private void HandleLoreAcquired(LoreAcquiredEvent evt)
         {
             if (evt == null)
                 return;
 
             double timestamp = Time.timeAsDouble;
-            QuestEventPayload discoveryPayload = new QuestEventPayload
+            EnqueueSignal(new QuestSignalPayload
             {
                 EntityHash = evt.LoreHash,
                 EventType = (ushort)QuestSignalKind.DiscoveryMade,
                 Timestamp = timestamp
-            };
-            Evaluate(discoveryPayload);
-
-            QuestEventPayload audioLogPayload = new QuestEventPayload
+            });
+            EnqueueSignal(new QuestSignalPayload
             {
                 EntityHash = evt.LoreHash,
                 EventType = (ushort)QuestSignalKind.AudioLogFound,
                 Timestamp = timestamp
-            };
-            Evaluate(audioLogPayload);
+            });
         }
 
         private void HandleDepthTierReached(int tier)
@@ -184,7 +186,7 @@ namespace Hecton8.Quest
 
         private void HandleEclipseStart()
         {
-            Evaluate(new QuestEventPayload
+            EnqueueSignal(new QuestSignalPayload
             {
                 EventType = (ushort)QuestSignalKind.EclipseStarted,
                 Timestamp = Time.timeAsDouble
@@ -196,12 +198,41 @@ namespace Hecton8.Quest
             uint payloadHash = string.IsNullOrWhiteSpace(messageId)
                 ? 0u
                 : QuestFlagHashKernel.ComputeStableHash(messageId);
-            Evaluate(new QuestEventPayload
+            EnqueueSignal(new QuestSignalPayload
             {
                 EntityHash = payloadHash,
                 EventType = (ushort)QuestSignalKind.SignalDecoded,
                 Timestamp = Time.timeAsDouble
             });
+        }
+
+        private void EnqueueSignal(in QuestSignalPayload payload)
+        {
+            if (!_pendingSignals.IsCreated)
+                return;
+
+            _pendingSignals.Enqueue(payload);
+            DrainPendingSignals();
+        }
+
+        private void DrainPendingSignals()
+        {
+            if (_stateManager == null || !_pendingSignals.IsCreated || _isDrainingSignals)
+                return;
+
+            _isDrainingSignals = true;
+            try
+            {
+                while (_pendingSignals.TryDequeue(out QuestSignalPayload payload))
+                {
+                    _stateManager.EvaluateSignal(payload);
+                    _onResultsAvailable?.Invoke();
+                }
+            }
+            finally
+            {
+                _isDrainingSignals = false;
+            }
         }
 
         private static float MapDepthTierToMeters(int tier)

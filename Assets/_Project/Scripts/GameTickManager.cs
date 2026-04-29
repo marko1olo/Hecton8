@@ -133,6 +133,7 @@ namespace Hecton8.Core
         private float _nextSlowTickReportTime;
         private bool _loggedFirstUpdateExecution;
         private bool _loggedFirstSlowTickExecution;
+        private bool _serviceRegistered;
         private bool _registeredToDispatcher;
 
         // ══════════════════════════════════════════════════════════
@@ -141,27 +142,6 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            // ── Singleton enforcement ──
-            GameTickManager registeredTickManager = GlobalRegistry.TickManager;
-            if (registeredTickManager != null && !ReferenceEquals(registeredTickManager, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            GlobalRegistry.RegisterTickManager(this);
-
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
-
-            // ── Initialize tick lists ──
-            // Initial capacity: предполагаем ~100 тикабельных объектов.
-            // List расширится автоматически, если нужно — одна аллокация.
             EnsureInitialized();
         }
 
@@ -170,7 +150,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             ResetSlowTickState();
 
-            if (Application.isPlaying && !_registeredToDispatcher)
+            if (_serviceRegistered && Application.isPlaying && !_registeredToDispatcher)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
@@ -213,7 +193,29 @@ namespace Hecton8.Core
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
                 _registeredToDispatcher = false;
             }
-            GlobalRegistry.UnregisterTickManager(this);
+
+            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.TickManager, this))
+                GlobalRegistry.UnregisterTickManager(this);
+
+            _serviceRegistered = false;
+        }
+
+        public void InitializeService()
+        {
+            EnsureInitialized();
+
+            if (!_serviceRegistered)
+            {
+                GlobalRegistry.RegisterTickManager(this);
+                _serviceRegistered = true;
+            }
+
+            if (isActiveAndEnabled && !_registeredToDispatcher && Application.isPlaying)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
+                _registeredToDispatcher = true;
+            }
         }
 
         private void OnApplicationQuit()

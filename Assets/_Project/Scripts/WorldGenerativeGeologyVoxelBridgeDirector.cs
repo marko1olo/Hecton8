@@ -621,6 +621,8 @@ namespace Hecton8.World
                 try
                 {
                     Vector3 runtimeCenter = request.RuntimeCenter;
+                    // Entrances are forwarded into HectonVoxelEngine, which owns terrain-hole registration
+                    // through RegisterEntranceTerrainHoles -> RegisterTerrainHoleHandle.
                     GameObject volume = await voxelEngine.GenerateVolumeFromDataAsync(
                         runtimeCenter,
                         gridDimension,

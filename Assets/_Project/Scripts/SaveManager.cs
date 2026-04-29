@@ -45,15 +45,8 @@ namespace Hecton8.SaveSystem
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static SaveManager _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-        public static SaveManager Instance => _instance;
-        public bool IsInitialized => ReferenceEquals(_instance, this) && ReferenceEquals(GlobalRegistry.Save, this);
+        public static SaveManager Instance => GlobalRegistry.Save as SaveManager;
+        public bool IsInitialized => _serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this);
         public bool IsBusy => _isBusy;
         public float CurrentPlayTimeSeconds => (float)ResolveCurrentPlayTimeSeconds();
         public bool LastOperationSucceeded { get; private set; }
@@ -102,6 +95,7 @@ namespace Hecton8.SaveSystem
         private int _integrityPayloadLength;
         private bool _integrityScanScheduled;
         private bool _updatableRegistered;
+        private bool _serviceRegistered;
         private bool _emergencyBackupScheduled;
         private bool _indexedDefragInFlight;
         private string _integritySlotName;
@@ -215,18 +209,14 @@ namespace Hecton8.SaveSystem
 
         private void Awake()
         {
-            if (_instance != null && _instance != this) { Destroy(gameObject); return; }
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
             _sessionStartTime = Time.realtimeSinceStartupAsDouble;
             InitializeNativeBuffers();
             SaveBinaryStorage.WarmRuntime();
-            GlobalRegistry.RegisterSaveService(this);
         }
 
         private void OnEnable()
         {
-            if (_updatableRegistered)
+            if (!_serviceRegistered || _updatableRegistered)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
@@ -244,17 +234,16 @@ namespace Hecton8.SaveSystem
 
         private void OnDestroy()
         {
-            if (ReferenceEquals(GlobalRegistry.Save, this))
+            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this))
                 GlobalRegistry.UnregisterSaveService(this);
-
-            if (_instance == this)
-                _instance = null;
 
             if (_updatableRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                 _updatableRegistered = false;
             }
+
+            _serviceRegistered = false;
 
             if (_savePayloadBuffer.IsCreated)
                 _savePayloadBuffer.Dispose();
@@ -263,6 +252,29 @@ namespace Hecton8.SaveSystem
                 _compressedSaveBuffer.Dispose();
 
             DisposeIntegrityResources();
+        }
+
+        public void InitializeService()
+        {
+            if (_serviceRegistered)
+            {
+                if (isActiveAndEnabled && !_updatableRegistered)
+                {
+                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                    _updatableRegistered = true;
+                }
+
+                return;
+            }
+
+            GlobalRegistry.RegisterSaveService(this);
+            _serviceRegistered = true;
+
+            if (isActiveAndEnabled && !_updatableRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                _updatableRegistered = true;
+            }
         }
 
         private void InitializeNativeBuffers()

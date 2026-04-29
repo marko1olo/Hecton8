@@ -191,7 +191,7 @@ namespace Hecton8.Gameplay
 
         private void HitPlayer(Vector3 hitPoint, PlayerActionController actionController)
         {
-            if (hitPlayerSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (hitPlayerSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
                 audio.PlayAtPoint(hitPlayerSound, hitPoint, impactVolume);
 
             OnHitPlayer?.Invoke(damage);
@@ -210,7 +210,7 @@ namespace Hecton8.Gameplay
                 impactParticles.Play();
             }
 
-            if (impactSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (impactSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
                 audio.PlayAtPoint(impactSound, hitPoint, impactVolume);
 
             OnHitEnvironment?.Invoke();
@@ -258,3 +258,4 @@ namespace Hecton8.Gameplay
 #endif
     }
 }
+

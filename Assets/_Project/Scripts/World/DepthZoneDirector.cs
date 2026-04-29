@@ -148,13 +148,18 @@ namespace Hecton8.World
 
             float depth = survivalSystem.Depth;
 
-            // Обновляем QuestManager
-            QuestManager questManager = QuestManager.Instance;
-            if (questManager != null)
-                questManager.UpdateDepth(depth);
-
             // Находим текущую зону
             DepthZoneProfile newZone = FindZoneForDepth(depth);
+
+            // Обновляем QuestManager после разрешения текущей authored zone context.
+            QuestManager questManager = QuestManager.Instance;
+            if (questManager != null)
+            {
+                questManager.UpdateDepthContext(
+                    depth,
+                    newZone != null ? newZone.ZoneHash : 0u,
+                    newZone != null && newZone.isThermal);
+            }
 
             if (newZone == _currentZone)
             {

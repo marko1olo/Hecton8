@@ -135,6 +135,7 @@ namespace Hecton8.UI
         {
             _cachedTransform = transform;
             _cameraRetryTime = 0f; // Allow immediate first resolve in Tick
+            InteractableRegistry.WarmSceneCache();
             ConfigurePromptText();
             RefreshLocalizedPromptCache();
             SetVisible(false);
@@ -142,6 +143,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            InteractableRegistry.WarmSceneCache();
             ResolvePlayerReferences();
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             if (InputManager.Instance != null)
@@ -247,36 +249,23 @@ namespace Hecton8.UI
 
         private string BuildPrompt(Collider collider, float distance)
         {
-            // Check for IInteractable
-            IInteractable interactable = collider.GetComponent<IInteractable>();
-            if (interactable != null)
-            {
-                return BuildInteractablePrompt(interactable, collider);
-            }
+            if (!InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo))
+                return null;
 
-            // Check for BatteryCharger
-            if (collider.TryGetComponent(out BatteryCharger charger))
-            {
-                return BuildBatteryChargerPrompt(charger);
-            }
+            if (targetInfo.Interactable != null)
+                return BuildInteractablePrompt(targetInfo);
 
-            // Check for BioReactor
-            if (collider.TryGetComponent(out BioReactor reactor))
-            {
-                return BuildBioReactorPrompt(reactor);
-            }
+            if (targetInfo.Charger != null)
+                return BuildBatteryChargerPrompt(targetInfo.Charger);
 
-            // Check for StorageCrate
-            if (collider.TryGetComponent(out StorageCrate crate))
-            {
-                return BuildStorageCratePrompt(crate);
-            }
+            if (targetInfo.Reactor != null)
+                return BuildBioReactorPrompt(targetInfo.Reactor);
 
-            // Check for PickupItem
-            if (collider.TryGetComponent(out PickupItem pickup) && pickup.ItemData != null)
-            {
-                return BuildPickupItemPrompt(pickup);
-            }
+            if (targetInfo.Crate != null)
+                return BuildStorageCratePrompt(targetInfo.Crate);
+
+            if (targetInfo.Pickup != null && targetInfo.Pickup.ItemData != null)
+                return BuildPickupItemPrompt(targetInfo.Pickup);
 
             return null;
         }
@@ -324,13 +313,17 @@ namespace Hecton8.UI
             return _localizedVerbUse;
         }
 
-        private string BuildInteractablePrompt(IInteractable interactable, Collider collider)
+        private string BuildInteractablePrompt(in InteractableRegistry.TargetInfo targetInfo)
         {
+            IInteractable interactable = targetInfo.Interactable;
+            if (interactable == null)
+                return null;
+
             // Get base interaction text
             string baseText = interactable.GetInteractText();
 
             // Check if this is a battery tool context
-            IBatteryTool batteryTool = collider.GetComponent<IBatteryTool>();
+            IBatteryTool batteryTool = targetInfo.BatteryTool;
             if (batteryTool != null)
             {
                 return BuildBatteryToolPrompt(batteryTool);

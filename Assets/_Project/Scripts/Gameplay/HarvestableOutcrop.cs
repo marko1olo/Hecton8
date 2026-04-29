@@ -319,7 +319,7 @@ namespace Hecton8.Gameplay
 
         private void PlayHitEffects(Vector3 hitPoint)
         {
-            if (hitSound != null && SpatialAudioManager.TryGetInstance(out SpatialAudioManager audio))
+            if (hitSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
                 audio.PlayAtPoint(hitSound, hitPoint, hitVolume);
 
             if (hitParticlePrefab != null)
@@ -333,7 +333,7 @@ namespace Hecton8.Gameplay
         private void PlayBreakEffects()
         {
             Vector3 position = _cachedTransform.position;
-            if (breakSound != null && SpatialAudioManager.TryGetInstance(out SpatialAudioManager audio))
+            if (breakSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
                 audio.PlayAtPoint(breakSound, position, breakVolume);
 
             if (breakParticlePrefab != null)
@@ -497,3 +497,4 @@ namespace Hecton8.Gameplay
 #endif
     }
 }
+

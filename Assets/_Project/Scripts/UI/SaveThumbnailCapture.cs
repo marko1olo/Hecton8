@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Save Thumbnail Capture")]
-    public sealed class SaveThumbnailCapture : MonoBehaviour
+    public sealed class SaveThumbnailCapture : MonoBehaviour, ISaveEventListener
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -46,20 +46,24 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            SaveEvents.OnSaveCompleted += OnSaveCompleted;
+            SaveEvents.Register(this);
         }
 
         private void OnDisable()
         {
-            SaveEvents.OnSaveCompleted -= OnSaveCompleted;
+            SaveEvents.Unregister(this);
         }
 
         // ══════════════════════════════════════════════════════════
         // EVENT HANDLERS
         // ══════════════════════════════════════════════════════════
 
-        private void OnSaveCompleted(string slotName)
+        public void OnSaveEvent(in SaveEventPayload payload)
         {
+            if (payload.Type != SaveEventType.SaveCompleted)
+                return;
+
+            string slotName = payload.SlotName.ToString();
             if (thumbnailComponent == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

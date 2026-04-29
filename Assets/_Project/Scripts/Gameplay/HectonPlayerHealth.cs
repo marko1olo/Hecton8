@@ -17,6 +17,8 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player Health")]
     public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ITickable, IUpdatable
     {
+        private const float MinimumRuntimeMaxHealth = 1f;
+
         /// <summary>Maximum health points.</summary>
         [Header("Health Settings")]
         [SerializeField] private float maxHealth = 100f;
@@ -54,16 +56,38 @@ namespace Hecton8.Gameplay
         /// <summary>Gets whether the player is currently invulnerable.</summary>
         public bool IsInvulnerable => _invulnerabilityTimer > 0;
 
+        internal void SetRuntimeMaxHealthScale(float scale)
+        {
+            float minScale = MinimumRuntimeMaxHealth / Mathf.Max(MinimumRuntimeMaxHealth, _baseMaxHealth);
+            float clampedScale = Mathf.Clamp(scale, minScale, 1f);
+            float nextMaxHealth = Mathf.Max(MinimumRuntimeMaxHealth, _baseMaxHealth * clampedScale);
+            if (Mathf.Approximately(_runtimeMaxHealthScale, clampedScale) && Mathf.Approximately(maxHealth, nextMaxHealth))
+                return;
+
+            _runtimeMaxHealthScale = clampedScale;
+            maxHealth = nextMaxHealth;
+            if (currentHealth <= maxHealth)
+                return;
+
+            float previousHealth = currentHealth;
+            currentHealth = maxHealth;
+            OnHealthChanged?.Invoke(previousHealth, currentHealth);
+        }
+
         // Private state
         private float _invulnerabilityTimer;
         private bool _isInitialized;
         private bool _registeredToTickManager;
+        private float _baseMaxHealth = 100f;
+        private float _runtimeMaxHealthScale = 1f;
 
         /// <summary>Initializes the health system.</summary>
         private void Awake()
         {
             if (!_isInitialized)
             {
+                _baseMaxHealth = Mathf.Max(MinimumRuntimeMaxHealth, maxHealth);
+                maxHealth = _baseMaxHealth;
                 currentHealth = maxHealth;
                 _isInitialized = true;
             }

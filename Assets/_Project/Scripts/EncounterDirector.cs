@@ -1043,29 +1043,19 @@ namespace Hecton8.Systems.AI
 
         private bool TestPlanesAABB(float3 center, float3 extents)
         {
-            if (FrustumPlanes.Length < 6)
-                return false;
+            if (FrustumPlanes.Length < EncounterDirector.FrustumPlaneCount)
+                return true;
 
-            float4 plane0 = FrustumPlanes[0];
-            float4 plane1 = FrustumPlanes[1];
-            float4 plane2 = FrustumPlanes[2];
-            float4 plane3 = FrustumPlanes[3];
-            float4 plane4 = FrustumPlanes[4];
-            float4 plane5 = FrustumPlanes[5];
+            for (int planeIndex = 0; planeIndex < EncounterDirector.FrustumPlaneCount; planeIndex++)
+            {
+                float4 plane = FrustumPlanes[planeIndex];
+                float projectedRadius = math.dot(math.abs(plane.xyz), extents);
+                float signedDistance = math.dot(plane.xyz, center) + plane.w;
+                if (signedDistance + projectedRadius < 0f)
+                    return false;
+            }
 
-            float distance0 = math.dot(plane0.xyz, center) + plane0.w + math.dot(math.abs(plane0.xyz), extents);
-            float distance1 = math.dot(plane1.xyz, center) + plane1.w + math.dot(math.abs(plane1.xyz), extents);
-            float distance2 = math.dot(plane2.xyz, center) + plane2.w + math.dot(math.abs(plane2.xyz), extents);
-            float distance3 = math.dot(plane3.xyz, center) + plane3.w + math.dot(math.abs(plane3.xyz), extents);
-            float distance4 = math.dot(plane4.xyz, center) + plane4.w + math.dot(math.abs(plane4.xyz), extents);
-            float distance5 = math.dot(plane5.xyz, center) + plane5.w + math.dot(math.abs(plane5.xyz), extents);
-
-            return distance0 >= 0f &&
-                   distance1 >= 0f &&
-                   distance2 >= 0f &&
-                   distance3 >= 0f &&
-                   distance4 >= 0f &&
-                   distance5 >= 0f;
+            return true;
         }
 
         private static bool TryResolveDesiredThreatClass(

@@ -13,9 +13,11 @@ namespace Hecton8.Gameplay
     {
         public float3 AbsoluteUniversePosition;
         public float Radius;
+        public float InvRadius;
         public float InvRadiusSqr;
         public float Intensity;
         public float VisorGlitchBias;
+        public int CurveLutOffset;
         public HazardType Type;
     }
 
@@ -45,6 +47,8 @@ namespace Hecton8.Gameplay
     internal struct EvaluateHazardExposureJob : IJob
     {
         [ReadOnly] public NativeArray<HazardVolumeData> Volumes;
+        [ReadOnly] public NativeArray<float> CurveLutSamples;
+        public int CurveLutSampleCount;
         public int VolumeCount;
         public bool HasPlayerBounds;
         public bool HasVehicleBounds;
@@ -66,10 +70,9 @@ namespace Hecton8.Gameplay
                     float playerContribution = EvaluateAabbSphereContribution(
                         PlayerCenter,
                         PlayerHalfExtents,
-                        volume.AbsoluteUniversePosition,
-                        volume.InvRadiusSqr,
-                        volume.Radius,
-                        volume.Intensity);
+                        in volume,
+                        CurveLutSamples,
+                        CurveLutSampleCount);
 
                     if (playerContribution > 0f)
                         AddContribution(ref result, volume.Type, playerContribution, volume.VisorGlitchBias, true);
@@ -80,10 +83,9 @@ namespace Hecton8.Gameplay
                     float vehicleContribution = EvaluateAabbSphereContribution(
                         VehicleCenter,
                         VehicleHalfExtents,
-                        volume.AbsoluteUniversePosition,
-                        volume.InvRadiusSqr,
-                        volume.Radius,
-                        volume.Intensity);
+                        in volume,
+                        CurveLutSamples,
+                        CurveLutSampleCount);
 
                     if (vehicleContribution > 0f)
                         AddContribution(ref result, volume.Type, vehicleContribution, volume.VisorGlitchBias, false);
@@ -147,21 +149,41 @@ namespace Hecton8.Gameplay
         private static float EvaluateAabbSphereContribution(
             float3 aabbCenter,
             float3 aabbHalfExtents,
-            float3 sphereCenter,
-            float invRadiusSqr,
-            float radius,
-            float intensity)
+            in HazardVolumeData volume,
+            NativeArray<float> curveLutSamples,
+            int curveLutSampleCount)
         {
             float3 min = aabbCenter - aabbHalfExtents;
             float3 max = aabbCenter + aabbHalfExtents;
-            float3 closestPoint = math.clamp(sphereCenter, min, max);
-            float3 offset = closestPoint - sphereCenter;
+            float3 closestPoint = math.clamp(volume.AbsoluteUniversePosition, min, max);
+            float3 offset = closestPoint - volume.AbsoluteUniversePosition;
             float distSqr = math.lengthsq(offset);
-            if (distSqr >= radius * radius)
+            if (distSqr >= volume.Radius * volume.Radius)
                 return 0f;
 
-            float attenuation = 1f - (distSqr * invRadiusSqr);
-            return intensity * (attenuation * attenuation);
+            float normalizedDistance = math.saturate(math.sqrt(distSqr) * volume.InvRadius);
+            float attenuation = SampleIntensityCurve(curveLutSamples, curveLutSampleCount, volume.CurveLutOffset, normalizedDistance);
+            return volume.Intensity * attenuation;
+        }
+
+        private static float SampleIntensityCurve(NativeArray<float> curveLutSamples, int curveLutSampleCount, int curveLutOffset, float normalizedDistance)
+        {
+            if (!curveLutSamples.IsCreated || curveLutSampleCount <= 1)
+                return ResolveDefaultCurveSample(normalizedDistance);
+
+            float scaledIndex = normalizedDistance * (curveLutSampleCount - 1);
+            int sampleIndex = (int)math.floor(scaledIndex);
+            int nextIndex = math.min(curveLutSampleCount - 1, sampleIndex + 1);
+            float fraction = scaledIndex - sampleIndex;
+            float a = curveLutSamples[curveLutOffset + sampleIndex];
+            float b = curveLutSamples[curveLutOffset + nextIndex];
+            return math.lerp(a, b, fraction);
+        }
+
+        private static float ResolveDefaultCurveSample(float normalizedDistance)
+        {
+            float attenuation = 1f - (normalizedDistance * normalizedDistance);
+            return attenuation > 0f ? attenuation * attenuation : 0f;
         }
     }
 
@@ -177,7 +199,8 @@ namespace Hecton8.Gameplay
         private const float MinHazardRadius = 0.01f;
         private const double HazardSpatialCellSizeMeters = 12d;
         private const int HazardSpatialQueryCapacity = 64;
-        private const int HazardKindMaskAll = (1 << HazardTypeCount) - 1;
+        private const int HazardSpatialLayerMask = 1 << 30;
+        private const int HazardTypeMaskAll = (1 << HazardTypeCount) - 1;
         private const float ToxicityDoseThreshold = 1f;
         private const float ToxicityDoseDecayPerSecond = 0.18f;
         private const float ToxicityDamagePulseIntervalSeconds = 0.5f;
@@ -210,6 +233,7 @@ namespace Hecton8.Gameplay
         private NativeArray<HazardVolumeData> _volumes;
         private NativeArray<int> _volumeIds;
         private NativeArray<int> _volumeSpatialHandles;
+        private NativeArray<float> _volumeCurveLutSamples;
         private NativeArray<HazardVolumeData> _jobVolumes;
         private NativeArray<HazardExposureJobResult> _jobResult;
         private NativeArray<byte> _candidateVolumeFlags;
@@ -266,13 +290,19 @@ namespace Hecton8.Gameplay
         /// </summary>
         public bool RegisterZone(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias = 1f)
         {
+            return RegisterZone(id, runtimePosition, intensity, radius, type, visorGlitchBias, null);
+        }
+
+        internal bool RegisterZone(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias, HazardZoneProfile profile)
+        {
             if (!_volumes.IsCreated)
                 return false;
 
             int existingIndex = FindZoneIndex(id);
-            HazardVolumeData data = BuildVolumeData(runtimePosition, intensity, radius, type, visorGlitchBias);
             if (existingIndex >= 0)
             {
+                HazardVolumeData data = BuildVolumeData(existingIndex, runtimePosition, intensity, radius, type, visorGlitchBias);
+                WriteVolumeCurveLut(existingIndex, profile);
                 _volumes[existingIndex] = data;
                 UpdateSpatialEntry(existingIndex, id, in data);
                 return true;
@@ -284,9 +314,11 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
+            HazardVolumeData newData = BuildVolumeData(_activeCount, runtimePosition, intensity, radius, type, visorGlitchBias);
             _volumeIds[_activeCount] = id;
-            _volumes[_activeCount] = data;
-            _volumeSpatialHandles[_activeCount] = RegisterSpatialEntry(id, in data);
+            _volumes[_activeCount] = newData;
+            WriteVolumeCurveLut(_activeCount, profile);
+            _volumeSpatialHandles[_activeCount] = RegisterSpatialEntry(id, in newData);
             _activeCount++;
             UpdateDiagnostics();
             return true;
@@ -311,7 +343,10 @@ namespace Hecton8.Gameplay
                 _volumeIds[index] = _volumeIds[lastIndex];
                 _volumes[index] = _volumes[lastIndex];
                 _volumeSpatialHandles[index] = _volumeSpatialHandles[lastIndex];
+                CopyVolumeCurveLut(lastIndex, index);
                 HazardVolumeData movedVolume = _volumes[index];
+                movedVolume.CurveLutOffset = index * HazardZoneProfile.IntensityLutSampleCount;
+                _volumes[index] = movedVolume;
                 UpdateSpatialEntry(index, _volumeIds[index], in movedVolume);
             }
 
@@ -337,7 +372,7 @@ namespace Hecton8.Gameplay
             int candidateCount = _spatialHash.CollectSphere(
                 AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolutePoint.x, absolutePoint.y, absolutePoint.z)),
                 MinHazardRadius,
-                ResolveHazardKindMask(type),
+                HazardSpatialLayerMask,
                 _spatialQueryHandles);
             float totalIntensity = 0f;
             for (int i = 0; i < candidateCount; i++)
@@ -350,6 +385,9 @@ namespace Hecton8.Gameplay
                     continue;
 
                 HazardVolumeData volume = _volumes[index];
+                if (volume.Type != type)
+                    continue;
+
                 totalIntensity += EvaluatePointContribution(volume, absolutePoint);
             }
 
@@ -367,7 +405,7 @@ namespace Hecton8.Gameplay
             int candidateCount = _spatialHash.CollectSphere(
                 AbsoluteUniversePosition.FromAbsolutePosition(new double3(absolutePoint.x, absolutePoint.y, absolutePoint.z)),
                 sampleRadius,
-                HazardKindMaskAll,
+                HazardSpatialLayerMask,
                 _spatialQueryHandles);
             if (candidateCount <= 0)
                 return false;
@@ -491,6 +529,7 @@ namespace Hecton8.Gameplay
             _volumes = new NativeArray<HazardVolumeData>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _volumeIds = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _volumeSpatialHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _volumeCurveLutSamples = new NativeArray<float>(safeCapacity * HazardZoneProfile.IntensityLutSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _jobVolumes = new NativeArray<HazardVolumeData>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _jobResult = new NativeArray<HazardExposureJobResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _candidateVolumeFlags = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -516,6 +555,12 @@ namespace Hecton8.Gameplay
             {
                 _volumeSpatialHandles.Dispose();
                 _volumeSpatialHandles = default;
+            }
+
+            if (_volumeCurveLutSamples.IsCreated)
+            {
+                _volumeCurveLutSamples.Dispose();
+                _volumeCurveLutSamples = default;
             }
 
             JobHandle disposeHandle = _jobRunning ? _jobHandle : default;
@@ -728,6 +773,8 @@ namespace Hecton8.Gameplay
             EvaluateHazardExposureJob job = new EvaluateHazardExposureJob
             {
                 Volumes = _jobVolumes,
+                CurveLutSamples = _volumeCurveLutSamples,
+                CurveLutSampleCount = HazardZoneProfile.IntensityLutSampleCount,
                 VolumeCount = candidateCount,
                 HasPlayerBounds = hasPlayerBounds,
                 HasVehicleBounds = hasVehicleBounds,
@@ -840,7 +887,7 @@ namespace Hecton8.Gameplay
             int handleCount = _spatialHash.CollectSphere(
                 AbsoluteUniversePosition.FromAbsolutePosition(new double3(absoluteCenter.x, absoluteCenter.y, absoluteCenter.z)),
                 queryRadius,
-                HazardKindMaskAll,
+                HazardSpatialLayerMask,
                 _spatialQueryHandles);
             for (int i = 0; i < handleCount; i++)
             {
@@ -866,21 +913,91 @@ namespace Hecton8.Gameplay
             if (distSqr >= volume.Radius * volume.Radius)
                 return 0f;
 
-            float attenuation = 1f - (distSqr * volume.InvRadiusSqr);
-            return volume.Intensity * (attenuation * attenuation);
+            float normalizedDistance = math.saturate(math.sqrt(distSqr) * volume.InvRadius);
+            float attenuation = ResolveVolumeCurveSample(normalizedDistance);
+            if (Instance != null && Instance._volumeCurveLutSamples.IsCreated)
+                attenuation = Instance.SampleIntensityCurve(volume.CurveLutOffset, normalizedDistance);
+
+            return volume.Intensity * attenuation;
         }
 
-        private HazardVolumeData BuildVolumeData(Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias)
+        private HazardVolumeData BuildVolumeData(int volumeIndex, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias)
         {
             float safeRadius = radius > MinHazardRadius ? radius : MinHazardRadius;
             HazardVolumeData data = default;
             data.AbsoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
             data.Radius = safeRadius;
+            data.InvRadius = 1f / safeRadius;
             data.InvRadiusSqr = 1f / (safeRadius * safeRadius);
             data.Intensity = Mathf.Max(0f, intensity);
             data.VisorGlitchBias = Mathf.Clamp(visorGlitchBias, 0f, 2f);
+            data.CurveLutOffset = volumeIndex * HazardZoneProfile.IntensityLutSampleCount;
             data.Type = type;
             return data;
+        }
+
+        private void WriteVolumeCurveLut(int volumeIndex, HazardZoneProfile profile)
+        {
+            if (!_volumeCurveLutSamples.IsCreated)
+                return;
+
+            int lutOffset = volumeIndex * HazardZoneProfile.IntensityLutSampleCount;
+            float[] bakedLut = profile != null ? profile.BakedIntensityLut : null;
+            if (bakedLut == null || bakedLut.Length < HazardZoneProfile.IntensityLutSampleCount)
+            {
+                WriteDefaultCurveLut(lutOffset);
+                return;
+            }
+
+            for (int i = 0; i < HazardZoneProfile.IntensityLutSampleCount; i++)
+                _volumeCurveLutSamples[lutOffset + i] = Mathf.Clamp01(bakedLut[i]);
+        }
+
+        private void CopyVolumeCurveLut(int sourceIndex, int targetIndex)
+        {
+            if (!_volumeCurveLutSamples.IsCreated || sourceIndex == targetIndex)
+                return;
+
+            int sampleCount = HazardZoneProfile.IntensityLutSampleCount;
+            int sourceOffset = sourceIndex * sampleCount;
+            int targetOffset = targetIndex * sampleCount;
+            for (int i = 0; i < sampleCount; i++)
+                _volumeCurveLutSamples[targetOffset + i] = _volumeCurveLutSamples[sourceOffset + i];
+        }
+
+        private void WriteDefaultCurveLut(int lutOffset)
+        {
+            if (!_volumeCurveLutSamples.IsCreated)
+                return;
+
+            for (int i = 0; i < HazardZoneProfile.IntensityLutSampleCount; i++)
+            {
+                float normalizedDistance = HazardZoneProfile.IntensityLutSampleCount > 1
+                    ? i / (float)(HazardZoneProfile.IntensityLutSampleCount - 1)
+                    : 0f;
+                _volumeCurveLutSamples[lutOffset + i] = ResolveVolumeCurveSample(normalizedDistance);
+            }
+        }
+
+        private float SampleIntensityCurve(int curveLutOffset, float normalizedDistance)
+        {
+            if (!_volumeCurveLutSamples.IsCreated)
+                return ResolveVolumeCurveSample(normalizedDistance);
+
+            float scaledIndex = Mathf.Clamp01(normalizedDistance) * (HazardZoneProfile.IntensityLutSampleCount - 1);
+            int sampleIndex = Mathf.FloorToInt(scaledIndex);
+            int nextIndex = Mathf.Min(HazardZoneProfile.IntensityLutSampleCount - 1, sampleIndex + 1);
+            float fraction = scaledIndex - sampleIndex;
+            float a = _volumeCurveLutSamples[curveLutOffset + sampleIndex];
+            float b = _volumeCurveLutSamples[curveLutOffset + nextIndex];
+            return Mathf.Lerp(a, b, fraction);
+        }
+
+        private static float ResolveVolumeCurveSample(float normalizedDistance)
+        {
+            float safeDistance = math.saturate(normalizedDistance);
+            float attenuation = 1f - (safeDistance * safeDistance);
+            return attenuation > 0f ? attenuation * attenuation : 0f;
         }
 
         private int FindZoneIndex(int id)
@@ -1057,7 +1174,7 @@ namespace Hecton8.Gameplay
                     data.AbsoluteUniversePosition.y,
                     data.AbsoluteUniversePosition.z)),
                 new float3(data.Radius, data.Radius, data.Radius),
-                ResolveHazardKindMask(data.Type),
+                ResolveSpatialKindMask(data.Type),
                 id);
         }
 
@@ -1080,7 +1197,7 @@ namespace Hecton8.Gameplay
                     data.AbsoluteUniversePosition.y,
                     data.AbsoluteUniversePosition.z)),
                 new float3(data.Radius, data.Radius, data.Radius),
-                ResolveHazardKindMask(data.Type),
+                ResolveSpatialKindMask(data.Type),
                 id);
         }
 
@@ -1097,7 +1214,12 @@ namespace Hecton8.Gameplay
             _volumeSpatialHandles[index] = 0;
         }
 
-        private static int ResolveHazardKindMask(HazardType type)
+        private static int ResolveSpatialKindMask(HazardType type)
+        {
+            return HazardSpatialLayerMask | ResolveHazardTypeMask(type);
+        }
+
+        private static int ResolveHazardTypeMask(HazardType type)
         {
             return 1 << (int)type;
         }

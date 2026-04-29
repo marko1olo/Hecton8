@@ -105,6 +105,10 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0.01f, 0.5f)] private float _hypoxiaStartThreshold = 0.15f;
         [SerializeField, Range(0.25f, 12f)] private float _hypoxiaBlendSharpness = 5.6f;
 
+        [Header("BIOS Recovery")]
+        [SerializeField] private Color _biosRecoveryHudTint = new Color(0.16f, 1f, 0.22f, 0.18f);
+        [SerializeField, Range(0f, 5f)] private float _biosRecoveryHudIntensity = 2.2f;
+
         [Header("Pose Lock")]
         [SerializeField] private bool _syncToReferenceCamera = true;
         [SerializeField] private bool _syncPoseInEditMode = false;
@@ -530,10 +534,18 @@ namespace NASAPunk.Visor
             float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
             float hazardChromaticAberration = (_hazardRadiationLevel * 0.010f) + (_hazardGlitchLevel * 0.006f);
             float hazardStaticNoise = (_hazardGlitchLevel * 0.28f) + (_hazardToxicLevel * 0.18f);
+            float biosRecoveryBlend = Mathf.Clamp01(_biosRecoveryModeBlend);
+            float compositeHudIntensity = Mathf.Lerp(_hudIntensity, _biosRecoveryHudIntensity, biosRecoveryBlend);
+            Color compositeHudTint = Color.Lerp(_hudTint, _biosRecoveryHudTint, biosRecoveryBlend);
+            float compositeChromaticAberration = Mathf.Max(_structuralFatigueChromaticAberration, hazardChromaticAberration) * (1f - biosRecoveryBlend);
+            float compositeStaticNoise = Mathf.Lerp(
+                Mathf.Max(_structuralFatigueStaticNoise, hazardStaticNoise),
+                hazardStaticNoise * 0.12f,
+                biosRecoveryBlend);
 
             _visorRenderer.GetPropertyBlock(_mpb);
-            _mpb.SetFloat(ID_HUDIntensity, _hudIntensity);
-            _mpb.SetColor(ID_HUDColor, _hudTint);
+            _mpb.SetFloat(ID_HUDIntensity, compositeHudIntensity);
+            _mpb.SetColor(ID_HUDColor, compositeHudTint);
             _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
             _mpb.SetFloat(ID_Distortion, _distortion + environmentalDistortion);
             _mpb.SetFloat(ID_WaterRunoffStrength, _waterRunoffIntensity);
@@ -546,8 +558,8 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_CondensationEdgeExponent, _condensationEdgeExponent);
             _mpb.SetFloat(ID_CondensationDriftSpeed, _condensationDriftSpeed);
             _mpb.SetFloat(ID_ScreenFrostStrength, _screenFrostStrength);
-            _mpb.SetFloat(ID_ChromaticAberration, Mathf.Max(_structuralFatigueChromaticAberration, hazardChromaticAberration));
-            _mpb.SetFloat(ID_StaticNoise, Mathf.Max(_structuralFatigueStaticNoise, hazardStaticNoise));
+            _mpb.SetFloat(ID_ChromaticAberration, compositeChromaticAberration);
+            _mpb.SetFloat(ID_StaticNoise, compositeStaticNoise);
             _mpb.SetFloat(ID_HypoxiaLevel, _hudHypoxiaLevel);
             _mpb.SetFloat(ID_HazardRadiationLevel, _hazardRadiationLevel);
             _mpb.SetFloat(ID_HazardThermalLevel, _hazardThermalLevel);

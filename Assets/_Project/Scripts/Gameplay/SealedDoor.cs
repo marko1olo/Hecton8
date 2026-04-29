@@ -357,7 +357,7 @@ namespace Hecton8.Gameplay
             }
 
             // Play cutting sound
-            if (cuttingLoopSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (cuttingLoopSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(cuttingLoopSound, _transform.position, cuttingVolume);
             }
@@ -387,7 +387,7 @@ namespace Hecton8.Gameplay
             }
 
             // Play open sound
-            if (openSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (openSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(openSound, _transform.position, openVolume);
             }
@@ -539,3 +539,4 @@ namespace Hecton8.Gameplay
 #endif
     }
 }
+

@@ -1010,7 +1010,8 @@ namespace Hecton8.Audio
         {
             if (clip == null) return;
 
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            if (sam == null)
                 return;
 
             sam.PlayStatic2D(clip, transitionVolume);
@@ -1018,7 +1019,8 @@ namespace Hecton8.Audio
 
         internal void PlayMadnessWhisperCue()
         {
-            if (Time.unscaledTime < _nextMadnessWhisperTime || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            if (Time.unscaledTime < _nextMadnessWhisperTime || sam == null)
                 return;
 
             AudioClip clip = stormStaticPrimary;
@@ -1605,7 +1607,7 @@ namespace Hecton8.Audio
             }
 
             if (ambientSource.outputAudioMixerGroup == null &&
-                SpatialAudioManager.TryGetInstance(out SpatialAudioManager spatialAudioManager) &&
+                Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService spatialAudioManager &&
                 spatialAudioManager != null &&
                 spatialAudioManager.AmbientGroup != null)
             {
@@ -1855,7 +1857,8 @@ namespace Hecton8.Audio
             AudioClip clip = acousticType == HectonMapMagicVegetationBridge.VegetationAcousticType.SargassumBubbles
                 ? underwaterSargassumBubblesClip
                 : underwaterGrassRustleClip;
-            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            if (clip == null || sam == null)
                 return;
 
             float densityT = Mathf.InverseLerp(underwaterVegetationDensityThreshold, 1f, density);
@@ -1896,7 +1899,8 @@ namespace Hecton8.Audio
                 clip = fatalPressureNoiseSecondary;
             }
 
-            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            if (clip == null || sam == null)
                 return;
 
             float volume = Mathf.Lerp(fatalPressureNoiseVolumeMin, fatalPressureNoiseVolumeMax, intensity);
@@ -1915,7 +1919,8 @@ namespace Hecton8.Audio
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
                 return;
 
-            if (sonarPingClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            if (sonarPingClip == null || sam == null)
                 return;
 
             float volume = Mathf.Lerp(sonarPingVolumeMin, sonarPingVolumeMax, Mathf.Clamp01(intensity));
@@ -1952,7 +1957,8 @@ namespace Hecton8.Audio
 
         internal void PlayMantaMisfire(float intensity)
         {
-            if (mantaMisfireClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            if (mantaMisfireClip == null || sam == null)
                 return;
 
             float volume = Mathf.Lerp(mantaMisfireVolumeMin, mantaMisfireVolumeMax, Mathf.Clamp01(intensity));
@@ -1976,7 +1982,8 @@ namespace Hecton8.Audio
                 clip = stormStaticSecondary;
             }
 
-            if (clip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager sam))
+            Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
+            if (clip == null || sam == null)
                 return;
 
             float volume = Mathf.Lerp(stormStaticVolumeMin, stormStaticVolumeMax, stormInterference);
@@ -2166,7 +2173,7 @@ namespace Hecton8.Audio
             _emitterOcclusionTransmission01 = 1f;
             _emitterOcclusionLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
 
-            if ((object)listener == null || listener == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager spatialAudioManager))
+            if ((object)listener == null || listener == null || !(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
                 return;
 
             if (_resolvedEmitterOcclusionLayerMask == 0)

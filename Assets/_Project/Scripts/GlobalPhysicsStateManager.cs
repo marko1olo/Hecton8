@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -112,6 +113,7 @@ namespace Hecton8.Physics
         {
             public ulong EntityId;
             public int CompensationRefCount;
+            public float MaxAngularVelocityClamp;
             public bool AllowDistanceKinematicSleep;
             public bool DistanceKinematicSleepActive;
             public bool HasLastValidPosition;
@@ -534,6 +536,7 @@ namespace Hecton8.Physics
             {
                 EntityId = bodyEntityId,
                 CompensationRefCount = 0,
+                MaxAngularVelocityClamp = ResolveMaxAngularVelocityClamp(body),
                 AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body),
                 DistanceKinematicSleepActive = false,
                 HasLastValidPosition = IsFinite(body.position),
@@ -542,6 +545,7 @@ namespace Hecton8.Physics
                 LastValidLinearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero,
                 LastValidAngularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero
             };
+            ApplyTrackedBodyAngularVelocityClamp(body, _bodyStates[bodyIndex].MaxAngularVelocityClamp);
             _trackedBodyIndexByEntityId[bodyEntityId] = bodyIndex;
             _lastValidPositions[bodyIndex] = new float3(body.position.x, body.position.y, body.position.z);
         }
@@ -753,6 +757,7 @@ namespace Hecton8.Physics
                     continue;
 
                 RigidbodyState bodyState = _bodyStates[i];
+                ApplyTrackedBodyAngularVelocityClamp(body, bodyState.MaxAngularVelocityClamp);
                 bodyState.HasLastValidPosition = true;
                 bodyState.LastValidLinearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
                 bodyState.LastValidAngularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero;
@@ -923,6 +928,33 @@ namespace Hecton8.Physics
             }
 
             return true;
+        }
+
+        private static float ResolveMaxAngularVelocityClamp(Rigidbody body)
+        {
+            if (body == null)
+                return 0f;
+
+            if (body.TryGetComponent(out MountablePlayerTransport _) ||
+                body.TryGetComponent(out VehicleMotor _) ||
+                body.TryGetComponent(out SubmarineCoreDirector _))
+            {
+                return 3f;
+            }
+
+            if (body.TryGetComponent(out FaunaBrain _))
+                return 4f;
+
+            return 0f;
+        }
+
+        private static void ApplyTrackedBodyAngularVelocityClamp(Rigidbody body, float maxAngularVelocityClamp)
+        {
+            if (body == null || maxAngularVelocityClamp <= 0f)
+                return;
+
+            if (math.abs(body.maxAngularVelocity - maxAngularVelocityClamp) > 0.0001f)
+                body.maxAngularVelocity = maxAngularVelocityClamp;
         }
 
         private void RemoveConnectionAt(int connectionIndex)

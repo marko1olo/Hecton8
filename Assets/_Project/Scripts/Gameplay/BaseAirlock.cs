@@ -257,7 +257,7 @@ namespace Hecton8.Gameplay
             UpdateStatusLight(cyclingColor);
 
             // Play cycle start sound
-            if (cycleStartSound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+            if (cycleStartSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(cycleStartSound, _cachedTransform.position);
             }
@@ -278,7 +278,7 @@ namespace Hecton8.Gameplay
             UpdateStatusLight(readyColor);
 
             // Play cycle end sound
-            if (cycleEndSound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+            if (cycleEndSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(cycleEndSound, _cachedTransform.position);
             }
@@ -417,3 +417,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

@@ -16,11 +16,11 @@
 //   â€¢ ÐŸÑƒÐ» ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð² Awake, Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿ÐµÑ€ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ðµ.
 //
 // API:
-//   SpatialAudioManager.Instance.PlayAtPoint(clip, position, volume, pitch)
-//   SpatialAudioManager.Instance.PlayAtPoint(clip, position, volume, pitch, mixerGroup)
-//   SpatialAudioManager.Instance.PlayStatic2D(clip, volume)
-//   SpatialAudioManager.Instance.PlayStatic2D(clip, volume, mixerGroup)
-//   SpatialAudioManager.Instance.StopAll()
+//   Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, position, volume, pitch)
+//   Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, position, volume, pitch, mixerGroup)
+//   Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, volume)
+//   Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(clip, volume, mixerGroup)
+//   Hecton8.Core.GlobalRegistry.Audio.StopAll()
 //
 // MIXER GROUPS:
 //   ÐÐ°Ð·Ð½Ð°Ñ‡Ð°ÑŽÑ‚ÑÑ Ð² Ð¸Ð½ÑÐ¿ÐµÐºÑ‚Ð¾Ñ€Ðµ: SfxGroup, InterfaceGroup, AmbientGroup.
@@ -65,10 +65,10 @@ namespace Hecton8.Audio
 {
     /// <summary>
     /// Ð¦ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
-    /// Singleton â€” Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ñ‡ÐµÑ€ÐµÐ· SpatialAudioManager.Instance.
+    /// Singleton â€” Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ñ‡ÐµÑ€ÐµÐ· Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IUpdatable
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float SoundSpeedAirMetersPerSecond = 343f;
@@ -178,41 +178,16 @@ namespace Hecton8.Audio
         //  SINGLETON
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private static SpatialAudioManager s_Instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            s_Instance = null;
-        }
-
         /// <summary>
         /// Ð“Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€Ñƒ. ÐÐµ ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ Ð¾Ð±ÑŠÐµÐºÑ‚ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸ â€”
         /// Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ñ€Ð°Ð·Ð¼ÐµÑ‰Ñ‘Ð½ Ð½Ð° ÑÑ†ÐµÐ½Ðµ Ð²Ñ€ÑƒÑ‡Ð½ÑƒÑŽ Ð¸Ð»Ð¸ Ñ‡ÐµÑ€ÐµÐ· bootstrap.
         /// </summary>
-        public static SpatialAudioManager Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (s_Instance == null)
-                    Debug.LogError("[SpatialAudioManager] Instance is null. Ensure SpatialAudioManager exists in the scene before first audio call.");
-#endif
-                return s_Instance;
-            }
-        }
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
-        /// Silent singleton probe for optional UI/gameplay audio calls.
-        /// Does not emit editor errors when the manager is intentionally absent.
+        /// Legacy compatibility access. Authoritative ownership still lives in <see cref="GlobalRegistry"/>.
         /// </summary>
-        public static bool TryGetInstance(out SpatialAudioManager instance)
-        {
-            instance = s_Instance;
-            return instance != null;
-        }
 
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR CONFIGURATION
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
@@ -329,6 +304,7 @@ namespace Hecton8.Audio
         private int _delayedAudioIngressCount;
         private NativeQueue<DelayedAudioEvent> _delayedAudioIngress;
         private NativeList<DelayedAudioEvent> _pendingDelayedAudioEvents;
+        private bool _isInitialized;
         // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
         private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
 
@@ -339,15 +315,6 @@ namespace Hecton8.Audio
         private void Awake()
         {
             // â”€â”€ Singleton enforcement â”€â”€
-            if (s_Instance != null && s_Instance != this)
-            {
-                Debug.LogWarningFormat(this, "[SpatialAudioManager] Duplicate instance on '{0}'. Destroying.", gameObject.name);
-                Destroy(gameObject);
-                return;
-            }
-
-            s_Instance = this;
-            DontDestroyOnLoad(gameObject);
             _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
 
             InitializePool();
@@ -359,13 +326,18 @@ namespace Hecton8.Audio
         {
             PhysicsEvents.OnImpact += HandlePhysicsImpact;
             FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
-            TryRegisterUpdatable();
         }
 
         private void OnDisable()
         {
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
+            if (_isInitialized)
+            {
+                GlobalRegistry.UnregisterAudioService(this);
+                _isInitialized = false;
+            }
+
             if (_registeredUpdatable)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
@@ -387,10 +359,27 @@ namespace Hecton8.Audio
         private void OnDestroy()
         {
             ReleaseTelemetryCaches();
-            if (s_Instance == this)
+        }
+
+        /// <summary>
+        /// True once the audio runtime has been registered into the global service locator.
+        /// </summary>
+        public bool IsInitialized => _isInitialized;
+
+        /// <summary>
+        /// Registers the audio runtime into <see cref="GlobalRegistry"/> and the environment update bucket.
+        /// </summary>
+        public void InitializeService()
+        {
+            if (_isInitialized)
             {
-                s_Instance = null;
+                TryRegisterUpdatable();
+                return;
             }
+
+            GlobalRegistry.RegisterAudioService(this);
+            TryRegisterUpdatable();
+            _isInitialized = true;
         }
 
         /// <summary>
@@ -646,7 +635,7 @@ namespace Hecton8.Audio
         ///   2. Ð•ÑÐ»Ð¸ Ð²ÑÐµ Ð·Ð°Ð½ÑÑ‚Ñ‹ â€” Ð²Ñ‹Ñ‚ÐµÑÐ½ÑÐµÑ‚ ÑÐ°Ð¼Ñ‹Ð¹ ÑÑ‚Ð°Ñ€Ñ‹Ð¹ (lowest startTime).
         ///   3. Zero-GC: Ñ‚Ð¾Ð»ÑŒÐºÐ¾ array traversal, Ð½Ð¸ÐºÐ°ÐºÐ¸Ñ… Ð°Ð»Ð»Ð¾ÐºÐ°Ñ†Ð¸Ð¹.
         ///
-        /// Ð’Ñ‹Ð·Ð¾Ð²: SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
+        /// Ð’Ñ‹Ð·Ð¾Ð²: Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, transform.position);
         /// </summary>
         /// <param name="clip">AudioClip Ð´Ð»Ñ Ð²Ð¾ÑÐ¿Ñ€Ð¾Ð¸Ð·Ð²ÐµÐ´ÐµÐ½Ð¸Ñ. Null-safe.</param>
         /// <param name="position">ÐœÐ¸Ñ€Ð¾Ð²Ð°Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ñ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ° Ð·Ð²ÑƒÐºÐ°.</param>
@@ -737,7 +726,7 @@ namespace Hecton8.Audio
         /// Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÑ‚ Ð¿ÑƒÐ» 2D-Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð² â€” Ð½ÐµÑÐºÐ¾Ð»ÑŒÐºÐ¾ ÐºÐ¾Ñ€Ð¾Ñ‚ÐºÐ¸Ñ… ÑÐ¸Ð³Ð½Ð°Ð»Ð¾Ð² Ð¼Ð¾Ð³ÑƒÑ‚ Ð¸Ð³Ñ€Ð°Ñ‚ÑŒ
         /// Ð¿Ð°Ñ€Ð°Ð»Ð»ÐµÐ»ÑŒÐ½Ð¾ Ð´Ð¾ Ð¸ÑÑ‡ÐµÑ€Ð¿Ð°Ð½Ð¸Ñ Ð¿ÑƒÐ»Ð°; Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ð²Ñ‹Ñ‚ÐµÑÐ½ÐµÐ½Ð¸Ðµ Ð¿Ð¾ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸.
         ///
-        /// Ð’Ñ‹Ð·Ð¾Ð²: SpatialAudioManager.Instance.PlayStatic2D(beepClip, 0.5f);
+        /// Ð’Ñ‹Ð·Ð¾Ð²: Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(beepClip, 0.5f);
         /// </summary>
         /// <param name="clip">AudioClip. Null-safe.</param>
         /// <param name="volume">Ð“Ñ€Ð¾Ð¼ÐºÐ¾ÑÑ‚ÑŒ [0..1]. Default = 1.</param>

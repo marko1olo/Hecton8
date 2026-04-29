@@ -10,8 +10,10 @@ using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
 using NASAPunk.Visor;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Rendering;
 
 namespace Hecton8.Core
@@ -478,6 +480,55 @@ namespace Hecton8.Core
         /// True once the service has completed explicit bootstrap registration.
         /// </summary>
         bool IsInitialized { get; }
+
+        /// <summary>
+        /// Mixer group used for helmet/UI playback.
+        /// </summary>
+        AudioMixerGroup InterfaceGroup { get; }
+
+        /// <summary>
+        /// Mixer group used for ambient bed playback.
+        /// </summary>
+        AudioMixerGroup AmbientGroup { get; }
+
+        /// <summary>
+        /// Plays one world-space clip through the authored 3D pool.
+        /// </summary>
+        void PlayAtPoint(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f);
+
+        /// <summary>
+        /// Plays one world-space clip through the authored 3D pool and explicit mixer route.
+        /// </summary>
+        void PlayAtPoint(AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup);
+
+        /// <summary>
+        /// Plays one helmet/UI clip through the authored 2D pool.
+        /// </summary>
+        void PlayStatic2D(AudioClip clip, float volume = 1f);
+
+        /// <summary>
+        /// Plays one helmet/UI clip through the authored 2D pool and explicit mixer route.
+        /// </summary>
+        void PlayStatic2D(AudioClip clip, float volume, AudioMixerGroup mixerGroup);
+
+        /// <summary>
+        /// Returns the 360-degree acoustic radar ring payload when available.
+        /// </summary>
+        bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution);
+
+        /// <summary>
+        /// Returns the 8x4 acoustic radar grid payload when available.
+        /// </summary>
+        bool TryGetAcousticRadarGridPayload(
+            out NativeArray<float> energyGrid,
+            out int azimuthBins,
+            out int elevationBins,
+            out ComputeBuffer gridBuffer);
+
+        /// <summary>
+        /// Stops every active world and UI voice immediately.
+        /// </summary>
+        void StopAll();
     }
 
     /// <summary>

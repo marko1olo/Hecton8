@@ -1,9 +1,6 @@
-// ============================================================================
-// HECTON-8 — QuestEvents.cs
-// Статическая шина событий квестовой системы. Zero GC.
-// ============================================================================
-
-using System;
+using System.Runtime.InteropServices;
+using Hecton8.Core;
+using Unity.Collections;
 
 namespace Hecton8.Quest
 {
@@ -23,52 +20,127 @@ namespace Hecton8.Quest
         public int QuestIndex { get; }
     }
 
+    public enum QuestEventType : byte
+    {
+        Activated = 0,
+        Completed = 1,
+        Failed = 2,
+        RevertRequested = 3
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct QuestEventPayload
+    {
+        public uint QuestHashID;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    public interface IQuestEventListener
+    {
+        void OnQuestEvent(in QuestEventPayload payload);
+    }
+
     public static class QuestEvents
     {
+        // COLD ALLOC: RegistryBucket<IQuestEventListener>[16] - quest event listener registry drained on dispatcher LateUpdate - owner: QuestEvents
+        private static readonly RegistryBucket<IQuestEventListener> _listeners = new RegistryBucket<IQuestEventListener>(16);
+        private static NativeQueue<QuestEventPayload> _pendingEvents;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnQuestActivated = null;
-            OnQuestCompleted = null;
-            OnQuestFailed = null;
-            OnQuestRevertRequested = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
         }
 
-        /// <summary>Квест активирован. string: questId.</summary>
-        public static event Action<string> OnQuestActivated;
-
-        /// <summary>Квест завершён. string: questId.</summary>
-        public static event Action<string> OnQuestCompleted;
-
-        /// <summary>Квест провален. string: questId.</summary>
-        public static event Action<string> OnQuestFailed;
-
-        /// <summary>Критический квестовый предмет утрачен. Consumers should re-spawn the authored item for reacquisition.</summary>
-        public static event Action<QuestRevertRequest> OnQuestRevertRequested;
-
-        public static void RaiseActivated(string questId)
+        public static void Register(IQuestEventListener listener)
         {
-            if (string.IsNullOrEmpty(questId)) return;
-            OnQuestActivated?.Invoke(questId);
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            _listeners.Register(listener);
         }
 
-        public static void RaiseCompleted(string questId)
+        public static void Unregister(IQuestEventListener listener)
         {
-            if (string.IsNullOrEmpty(questId)) return;
-            OnQuestCompleted?.Invoke(questId);
+            if (listener == null)
+                return;
+
+            _listeners.Unregister(listener);
         }
 
-        public static void RaiseFailed(string questId)
+        public static void FlushPending()
         {
-            if (string.IsNullOrEmpty(questId)) return;
-            OnQuestFailed?.Invoke(questId);
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out QuestEventPayload payload))
+            {
+                IQuestEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnQuestEvent(in payload);
+            }
+        }
+
+        public static void RaiseActivated(uint questHash)
+        {
+            Enqueue(QuestEventType.Activated, questHash);
+        }
+
+        public static void RaiseCompleted(uint questHash)
+        {
+            Enqueue(QuestEventType.Completed, questHash);
+        }
+
+        public static void RaiseFailed(uint questHash)
+        {
+            Enqueue(QuestEventType.Failed, questHash);
         }
 
         public static void RaiseRevertRequested(in QuestRevertRequest request)
         {
-            var handler = OnQuestRevertRequested;
-            handler?.Invoke(request);
+            Enqueue(QuestEventType.RevertRequested, request.QuestHash);
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<QuestEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<QuestEventPayload>[16] - deferred quest event lane flushed by SystemDispatcher LateUpdate - owner: QuestEvents
+            }
+        }
+
+        private static void Enqueue(QuestEventType type, uint questHash)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new QuestEventPayload
+            {
+                QuestHashID = questHash,
+                EventType = (ushort)type,
+                Reserved = 0
+            });
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
         }
     }
 }

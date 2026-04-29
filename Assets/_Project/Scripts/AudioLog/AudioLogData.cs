@@ -67,6 +67,10 @@ namespace Hecton8.Narrative
         [Tooltip("Localized record date.")]
         [SerializeField] private LocalizedTextReference localizedRecordDate;
 
+        [Header("── Hologram ──────────────────────────────")]
+        [Tooltip("Proxy-mesh index used by diegetic PDA hologram previews.")]
+        [SerializeField] private ushort proxyMeshIndex;
+
         /// <summary>
         /// Playback duration using override first, then the resolved localized clip length.
         /// </summary>
@@ -101,6 +105,7 @@ namespace Hecton8.Narrative
         public bool HasArchiveSummary => !string.IsNullOrWhiteSpace(ArchiveSummaryOrFallback);
         public bool HasVisibleContent => HasPlaybackPayload || HasArchiveSummary;
         public string SafeLogId => string.IsNullOrWhiteSpace(logId) ? "audio_log" : logId;
+        public ushort ProxyMeshIndex => proxyMeshIndex;
         public string DisplayTitleOrFallback => localizedDisplayTitle.ResolveOrFallback(FallbackOrDefault(displayTitle, SafeLogId));
         public string AuthorOrFallback => localizedAuthor.ResolveOrFallback(FallbackOrDefault(author, "UNKNOWN"));
         public string SubtitleOrFallback => localizedSubtitleText.ResolveOrFallback(subtitleText);

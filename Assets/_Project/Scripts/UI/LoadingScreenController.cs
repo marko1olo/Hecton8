@@ -166,7 +166,7 @@ namespace Hecton8.UI
             _canvasGroup.blocksRaycasts = true;
             TryRegisterToTickManager();
 
-            if (SpatialAudioManager.Instance != null)
+            if (Hecton8.Core.GlobalRegistry.Audio != null)
             {
                 // Loading audio hook stays cold-path only.
             }
@@ -352,3 +352,4 @@ namespace Hecton8.UI
 #endif
     }
 }
+

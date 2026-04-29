@@ -19,6 +19,7 @@ namespace Hecton8.World
         [SerializeField] private int _debugRegisteredSeamCount;
         [SerializeField] private long _debugLastRuntimeKey;
         [SerializeField] private float _debugLastAbsoluteSeamHeight;
+        [SerializeField] private int _debugLastChunkOverlapCount;
 
         private Dictionary<long, ProceduralGeologySeamStateDTO> _recordsByRuntimeKey;
         private NativeParallelHashMap<int2, float> _seamHeightsByChunk;
@@ -91,7 +92,7 @@ namespace Hecton8.World
             };
 
             _recordsByRuntimeKey[plan.runtimeKey] = state;
-            _seamHeightsByChunk[new int2(plan.chunkX, plan.chunkZ)] = state.absoluteSeamHeight;
+            RebuildChunkSeamHeight(new int2(plan.chunkX, plan.chunkZ));
             UpdateDiagnostics(plan.runtimeKey, state.absoluteSeamHeight);
         }
 
@@ -172,7 +173,7 @@ namespace Hecton8.World
                     continue;
 
                 _recordsByRuntimeKey[state.runtimeKey] = state;
-                _seamHeightsByChunk[new int2(state.chunkX, state.chunkZ)] = state.absoluteSeamHeight;
+                RebuildChunkSeamHeight(new int2(state.chunkX, state.chunkZ));
                 UpdateDiagnostics(state.runtimeKey, state.absoluteSeamHeight);
             }
         }
@@ -182,31 +183,40 @@ namespace Hecton8.World
             if (!_seamHeightsByChunk.IsCreated)
                 return;
 
-            float replacementHeight = 0f;
-            bool foundReplacement = false;
+            RebuildChunkSeamHeight(chunkKey, removedRuntimeKey);
+        }
+
+        private void RebuildChunkSeamHeight(int2 chunkKey, long ignoredRuntimeKey = 0L)
+        {
+            if (!_seamHeightsByChunk.IsCreated)
+                return;
+
+            float maxSeamHeight = float.MinValue;
+            int overlapCount = 0;
             if (_recordsByRuntimeKey != null)
             {
                 Dictionary<long, ProceduralGeologySeamStateDTO>.Enumerator enumerator = _recordsByRuntimeKey.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     KeyValuePair<long, ProceduralGeologySeamStateDTO> pair = enumerator.Current;
-                    if (pair.Key == removedRuntimeKey)
+                    if (pair.Key == ignoredRuntimeKey)
                         continue;
 
                     ProceduralGeologySeamStateDTO state = pair.Value;
                     if (state.chunkX != chunkKey.x || state.chunkZ != chunkKey.y)
                         continue;
 
-                    replacementHeight = state.absoluteSeamHeight;
-                    foundReplacement = true;
-                    break;
+                    overlapCount++;
+                    if (state.absoluteSeamHeight > maxSeamHeight)
+                        maxSeamHeight = state.absoluteSeamHeight;
                 }
 
                 enumerator.Dispose();
             }
 
-            if (foundReplacement)
-                _seamHeightsByChunk[chunkKey] = replacementHeight;
+            _debugLastChunkOverlapCount = overlapCount;
+            if (overlapCount > 0)
+                _seamHeightsByChunk[chunkKey] = maxSeamHeight;
             else
                 _seamHeightsByChunk.Remove(chunkKey);
         }

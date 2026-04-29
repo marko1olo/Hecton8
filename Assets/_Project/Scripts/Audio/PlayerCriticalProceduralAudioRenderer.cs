@@ -2677,8 +2677,7 @@ namespace Hecton8.Audio
 
         private void UpdateBinauralTargets()
         {
-            SpatialAudioManager audioManager = SpatialAudioManager.Instance;
-            if (audioManager == null ||
+            if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager) ||
                 !audioManager.TryGetDominantBinauralEmitter(out SpatialAudioManager.BinauralEmitterTelemetry telemetry))
             {
                 _targetBinauralAzimuthRadians = 0f;

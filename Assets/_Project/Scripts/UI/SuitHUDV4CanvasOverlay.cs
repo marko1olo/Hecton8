@@ -88,6 +88,7 @@ namespace Hecton8.UI
         private const float ProjectionPoseScaleTolerance = 0.000001f;
         private const string AcousticRadarShaderPath = "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader";
         private const string ThreatChevronShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
+        private const string ScannerHologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const int MaxThreatChevronCount = 4;
         private const int HudInternalLayerIndex = 17;
@@ -99,6 +100,8 @@ namespace Hecton8.UI
         private static readonly int _ThreatChevronFlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
         private static readonly int _ThreatChevronFlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
         private static readonly int _ThreatChevronFillAlphaId = Shader.PropertyToID("_FillAlpha");
+        private static readonly int _ScannerHologramBaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int _ScannerHologramColorId = Shader.PropertyToID("_Color");
         private static readonly int _AcousticRadarTexId = Shader.PropertyToID("_AcousticRadarTex");
         private static readonly int _AcousticRadarPrimaryColorId = Shader.PropertyToID("_PrimaryColor");
         private static readonly int _AcousticRadarWarningColorId = Shader.PropertyToID("_WarningColor");
@@ -346,6 +349,38 @@ namespace Hecton8.UI
         [Tooltip("Flicker amplitude used by the threat chevrons.")]
         private float threatChevronFlickerIntensity = 0.04f;
 
+        [Header("Scanner Hologram")]
+        [SerializeField]
+        [Tooltip("Visor hologram shader used while the scanner holds a scientific target.")]
+        private Shader scannerHologramShader;
+        [SerializeField]
+        [Tooltip("Proxy mesh bank indexed by ItemTemplateRegistry.ProxyMeshIndex for scanner visor holograms.")]
+        private Mesh[] scannerHologramProxyMeshes = Array.Empty<Mesh>();
+        [SerializeField, Min(0.1f)]
+        [Tooltip("Distance from the visor camera to the scanner hologram plane.")]
+        private float scannerHologramDistance = 0.74f;
+        [SerializeField]
+        [Tooltip("Visor-local offset applied to the scanner hologram anchor.")]
+        private Vector3 scannerHologramLocalOffset = new Vector3(0f, -0.025f, 0f);
+        [SerializeField, Min(0.001f)]
+        [Tooltip("Base hologram scale used for visor scan previews.")]
+        private float scannerHologramScale = 0.052f;
+        [SerializeField, Min(0f)]
+        [Tooltip("Low-amplitude bob applied to the scanner hologram.")]
+        private float scannerHologramBobAmplitude = 0.006f;
+        [SerializeField, Min(0f)]
+        [Tooltip("Bob frequency applied to the scanner hologram.")]
+        private float scannerHologramBobFrequency = 1.8f;
+        [SerializeField, Min(0f)]
+        [Tooltip("Continuous yaw spin applied to the scanner hologram.")]
+        private float scannerHologramSpinDegreesPerSecond = 38f;
+        [SerializeField]
+        [Tooltip("Scan-start hologram tint.")]
+        private Color scannerHologramScanStartColor = new Color(0.08f, 0.88f, 1f, 0.44f);
+        [SerializeField]
+        [Tooltip("Scan-complete hologram tint.")]
+        private Color scannerHologramScanCompleteColor = new Color(0.14f, 1f, 0.46f, 0.52f);
+
         private const string RootName = "HUD_V4_CanvasRoot";
 
         private RectTransform _root;
@@ -541,7 +576,7 @@ namespace Hecton8.UI
         private PlayerInventory _playerInventory;
         private ItemCatalog _itemCatalog;
         private PlayerToolManager _toolManager;
-        private SpatialAudioManager _spatialAudioManager;
+        private Hecton8.Core.IAudioService _spatialAudioManager;
         private int _lastInventoryVersion = -1;
         private readonly int[] _quickbarSlotHashCache = new int[QuickbarSlotCount];
         private readonly bool[] _quickbarSlotHashResolved = new bool[QuickbarSlotCount];
@@ -569,6 +604,11 @@ namespace Hecton8.UI
         // COLD ALLOC: ThreatChevronState[4] â€” cached top threat-grid chevron slots â€” owner: SuitHUDV4CanvasOverlay
         private readonly ThreatChevronState[] _threatChevronStates = new ThreatChevronState[MaxThreatChevronCount];
         private int _threatChevronVisibleCount;
+        // COLD ALLOC: Matrix4x4[1] — scanner visor hologram draw buffer — owner: SuitHUDV4CanvasOverlay
+        private readonly Matrix4x4[] _scannerHologramMatrices = new Matrix4x4[1];
+        private Material _scannerHologramMaterial;
+        private Mesh _scannerHologramFallbackMesh;
+        private float _scannerHologramAnimationTime;
 
         public Canvas TargetCanvas => ResolveTargetCanvas();
         public Camera ProjectionCamera => projectionCamera;
@@ -686,6 +726,7 @@ namespace Hecton8.UI
             TryRegisterRuntimeTick();
             EnsureAcousticRadarRuntimeResources();
             EnsureThreatChevronRuntimeResources();
+            EnsureScannerHologramRuntimeResources();
         }
 
         private void Start()
@@ -721,6 +762,7 @@ namespace Hecton8.UI
             _threatChevronVisibleCount = 0;
             DisposeAcousticRadarRuntimeResources();
             DisposeThreatChevronRuntimeResources();
+            DisposeScannerHologramRuntimeResources();
 
             SetRootVisible(false);
         }
@@ -730,6 +772,7 @@ namespace Hecton8.UI
             UnregisterUiService();
             DisposeAcousticRadarRuntimeResources();
             DisposeThreatChevronRuntimeResources();
+            DisposeScannerHologramRuntimeResources();
         }
 
         private void HideIncompleteRootImmediately()
@@ -998,6 +1041,7 @@ namespace Hecton8.UI
             if (renderPath == RenderPath.ProjectionSource && targetCanvas != null)
                 UpdateProjectionCanvasPose(targetCanvas.transform as RectTransform, ResolveUiReferenceResolution());
 
+            RenderScannerHologram(Time.unscaledDeltaTime);
             RenderThreatChevrons();
 
             if (!_rootBaseAnchoredPositionCaptured)
@@ -1579,6 +1623,28 @@ namespace Hecton8.UI
                 _threatChevronMatrices = new NativeArray<Matrix4x4>(MaxThreatChevronCount, Allocator.Persistent);
         }
 
+        private void EnsureScannerHologramRuntimeResources()
+        {
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_EDITOR
+            if (scannerHologramShader == null)
+                scannerHologramShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerHologramShaderPath);
+#endif
+
+            if (_scannerHologramMaterial == null && scannerHologramShader != null)
+            {
+                _scannerHologramMaterial = new Material(scannerHologramShader)
+                {
+                    name = "HUD_ScannerHologram_Runtime"
+                }; // COLD ALLOC: Material[1] — visor scanner hologram material — owner: SuitHUDV4CanvasOverlay
+            }
+
+            if (_scannerHologramFallbackMesh == null)
+                _scannerHologramFallbackMesh = CreateScannerFallbackCubeMesh();
+        }
+
         private void EnsureAcousticRadarRuntimeResources()
         {
             if (!Application.isPlaying)
@@ -1631,7 +1697,10 @@ namespace Hecton8.UI
             if (_acousticRadarMaterial == null)
                 return;
 
-            if (_spatialAudioManager == null && !SpatialAudioManager.TryGetInstance(out _spatialAudioManager))
+            if (_spatialAudioManager == null)
+                _spatialAudioManager = Hecton8.Core.GlobalRegistry.Audio;
+
+            if (_spatialAudioManager == null)
                 return;
 
             if (_spatialAudioManager == null ||
@@ -1706,6 +1775,23 @@ namespace Hecton8.UI
                 Destroy(_threatChevronMesh);
                 _threatChevronMesh = null;
             }
+        }
+
+        private void DisposeScannerHologramRuntimeResources()
+        {
+            if (_scannerHologramMaterial != null)
+            {
+                Destroy(_scannerHologramMaterial);
+                _scannerHologramMaterial = null;
+            }
+
+            if (_scannerHologramFallbackMesh != null)
+            {
+                Destroy(_scannerHologramFallbackMesh);
+                _scannerHologramFallbackMesh = null;
+            }
+
+            _scannerHologramAnimationTime = 0f;
         }
 
         private void RefreshThreatChevronTargets()
@@ -1796,6 +1882,74 @@ namespace Hecton8.UI
                 Threat01 = threat01,
                 Active = true
             };
+        }
+
+        private void RenderScannerHologram(float deltaTime)
+        {
+            if (!Application.isPlaying ||
+                renderPath != RenderPath.ProjectionSource ||
+                projectionCamera == null ||
+                _toolManager == null ||
+                !(_toolManager.CurrentTool is ScannerTool scanner) ||
+                !scanner.TryGetScientificScanSnapshot(out ScannerTool.ScientificScanSnapshot snapshot))
+            {
+                return;
+            }
+
+            EnsureScannerHologramRuntimeResources();
+            if (_scannerHologramMaterial == null)
+                return;
+
+            Mesh mesh = ResolveScannerHologramMesh(snapshot.ProxyMeshIndex);
+            if (mesh == null)
+                return;
+
+            _scannerHologramAnimationTime += Mathf.Max(0f, deltaTime);
+
+            Transform cameraTransform = projectionCamera.transform;
+            float bobOffset = Mathf.Sin(_scannerHologramAnimationTime * scannerHologramBobFrequency) * scannerHologramBobAmplitude;
+            Vector3 worldPosition =
+                cameraTransform.position +
+                cameraTransform.forward * Mathf.Max(ResolveProjectionPlaneDistance(), scannerHologramDistance) +
+                cameraTransform.right * scannerHologramLocalOffset.x +
+                cameraTransform.up * (scannerHologramLocalOffset.y + bobOffset) +
+                cameraTransform.forward * scannerHologramLocalOffset.z;
+            Quaternion rotation = cameraTransform.rotation * Quaternion.Euler(0f, _scannerHologramAnimationTime * scannerHologramSpinDegreesPerSecond, 0f);
+            float pulseScale = 1f + (Mathf.Sin(_scannerHologramAnimationTime * 2.1f) * 0.06f);
+            Vector3 scale = Vector3.one * (scannerHologramScale * pulseScale);
+            _scannerHologramMatrices[0] = Matrix4x4.TRS(worldPosition, rotation, scale);
+
+            Color hologramColor = Color.Lerp(scannerHologramScanStartColor, scannerHologramScanCompleteColor, Mathf.Clamp01(snapshot.Progress01));
+            if (_scannerHologramMaterial.HasProperty(_ScannerHologramBaseColorId))
+                _scannerHologramMaterial.SetColor(_ScannerHologramBaseColorId, hologramColor);
+            else if (_scannerHologramMaterial.HasProperty(_ScannerHologramColorId))
+                _scannerHologramMaterial.SetColor(_ScannerHologramColorId, hologramColor);
+
+            Graphics.DrawMeshInstanced(
+                mesh,
+                0,
+                _scannerHologramMaterial,
+                _scannerHologramMatrices,
+                1,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                HudInternalLayerIndex,
+                projectionCamera,
+                LightProbeUsage.Off,
+                null);
+        }
+
+        private Mesh ResolveScannerHologramMesh(int proxyMeshIndex)
+        {
+            if ((uint)proxyMeshIndex < (uint)scannerHologramProxyMeshes.Length)
+            {
+                Mesh authoredMesh = scannerHologramProxyMeshes[proxyMeshIndex];
+                if (authoredMesh != null)
+                    return authoredMesh;
+            }
+
+            return _scannerHologramFallbackMesh;
         }
 
         private void RenderThreatChevrons()
@@ -2013,6 +2167,43 @@ namespace Hecton8.UI
             mesh.uv = uvs;
             mesh.triangles = triangles;
             mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static Mesh CreateScannerFallbackCubeMesh()
+        {
+            Mesh mesh = new Mesh
+            {
+                name = "HUD_ScannerHologramCube"
+            };
+
+            Vector3[] vertices =
+            {
+                new Vector3(-0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f,  0.5f, -0.5f),
+                new Vector3(-0.5f,  0.5f, -0.5f),
+                new Vector3(-0.5f, -0.5f,  0.5f),
+                new Vector3( 0.5f, -0.5f,  0.5f),
+                new Vector3( 0.5f,  0.5f,  0.5f),
+                new Vector3(-0.5f,  0.5f,  0.5f)
+            };
+
+            int[] triangles =
+            {
+                0, 2, 1, 0, 3, 2,
+                1, 2, 6, 1, 6, 5,
+                5, 6, 7, 5, 7, 4,
+                4, 7, 3, 4, 3, 0,
+                3, 7, 6, 3, 6, 2,
+                4, 0, 1, 4, 1, 5
+            };
+
+            mesh.vertices = vertices;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            mesh.UploadMeshData(false);
             return mesh;
         }
 
@@ -2587,6 +2778,10 @@ namespace Hecton8.UI
                 float depletedAlpha = IsBlinkVisible(Time.unscaledTime, 16f) ? 1f : 0.22f;
                 LocNumericBuffer.Write(DefaultToolDepletedLabel.AsSpan(), out char[] depletedBuffer, out int depletedLength);
                 SetDisplayBufferIfChanged(_statusLabel, depletedBuffer, depletedLength, false, Alpha(pulsedWarning, depletedAlpha), _toolDepletedVersion ^ _toolDepletedHashId, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 307, ref _appliedStatusWhisperVersion, ref _appliedStatusLabelColor);
+                _hasAppliedStatusKeyHash = false;
+            }
+            else if (TryApplyScannerStatusLabelOverride(statusColor, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion))
+            {
                 _hasAppliedStatusKeyHash = false;
             }
             else if (hullStressWhisperMode)
@@ -3739,6 +3934,113 @@ namespace Hecton8.UI
                 label.color = color;
                 cachedColor = color;
             }
+        }
+
+        private bool TryApplyScannerStatusLabelOverride(
+            Color statusColor,
+            bool corruptedMode,
+            float corruptionIntensity,
+            int corruptionVersion)
+        {
+            if (_statusLabel == null ||
+                _toolManager == null ||
+                !(_toolManager.CurrentTool is ScannerTool scanner) ||
+                !scanner.TryGetScientificScanSnapshot(out ScannerTool.ScientificScanSnapshot snapshot) ||
+                !snapshot.IsActive ||
+                !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!TryBuildScannerStatusBuffer(snapshot, lease.Buffer, out int length, out int version))
+                    return false;
+
+                SetDisplayBufferIfChanged(
+                    _statusLabel,
+                    lease.Buffer,
+                    length,
+                    false,
+                    statusColor,
+                    version,
+                    corruptedMode,
+                    corruptionIntensity,
+                    corruptionVersion,
+                    307,
+                    ref _appliedStatusWhisperVersion,
+                    ref _appliedStatusLabelColor);
+                return true;
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static bool TryBuildScannerStatusBuffer(
+            ScannerTool.ScientificScanSnapshot snapshot,
+            char[] buffer,
+            out int length,
+            out int version)
+        {
+            length = 0;
+            version = 0;
+            if (buffer == null || buffer.Length == 0)
+                return false;
+
+            int cursor = 0;
+            int progressPercent = Mathf.Clamp(Mathf.RoundToInt(snapshot.Progress01 * 100f), 0, 100);
+            int purityPercent = Mathf.Clamp(Mathf.RoundToInt(snapshot.Purity01 * 100f), 0, 100);
+
+            cursor = AppendLiteral("SCAN ", buffer, cursor);
+            cursor = AppendInt(progressPercent, buffer, cursor);
+            cursor = AppendLiteral("% // ", buffer, cursor);
+            cursor = AppendScientificMaterial(snapshot.MaterialClass, buffer, cursor);
+            cursor = AppendLiteral(" // P ", buffer, cursor);
+            cursor = AppendInt(purityPercent, buffer, cursor);
+
+            length = Mathf.Clamp(cursor, 0, buffer.Length);
+            version = unchecked((progressPercent * 397) ^ (purityPercent * 17) ^ ((int)snapshot.MaterialClass * 13));
+            return true;
+        }
+
+        private static int AppendScientificMaterial(
+            ScannerTool.ScientificMaterialClass materialClass,
+            char[] buffer,
+            int cursor)
+        {
+            switch (materialClass)
+            {
+                case ScannerTool.ScientificMaterialClass.Basalt:
+                    return AppendLiteral("BASALT", buffer, cursor);
+                case ScannerTool.ScientificMaterialClass.Sediment:
+                    return AppendLiteral("SEDIMENT", buffer, cursor);
+                default:
+                    return AppendLiteral("UNKNOWN", buffer, cursor);
+            }
+        }
+
+        private static int AppendLiteral(string value, char[] buffer, int cursor)
+        {
+            if (string.IsNullOrEmpty(value) || buffer == null || cursor >= buffer.Length)
+                return cursor;
+
+            ReadOnlySpan<char> span = value.AsSpan();
+            int writable = Mathf.Min(span.Length, buffer.Length - cursor);
+            span.Slice(0, writable).CopyTo(buffer.AsSpan(cursor, writable));
+            return cursor + writable;
+        }
+
+        private static int AppendInt(int value, char[] buffer, int cursor)
+        {
+            if (buffer == null || cursor >= buffer.Length)
+                return cursor;
+
+            if (!value.TryFormat(buffer.AsSpan(cursor), out int written))
+                return cursor;
+
+            return cursor + written;
         }
 
         private static void SetDisplayBufferIfChanged(

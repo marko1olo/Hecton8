@@ -38,8 +38,13 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static bool Register(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias = 1f)
         {
+            return Register(id, runtimePosition, intensity, radius, type, visorGlitchBias, null);
+        }
+
+        internal static bool Register(int id, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias, HazardZoneProfile profile)
+        {
             HazardZoneManager zoneManager = ResolveZoneManager();
-            return zoneManager != null && zoneManager.RegisterZone(id, runtimePosition, intensity, radius, type, visorGlitchBias);
+            return zoneManager != null && zoneManager.RegisterZone(id, runtimePosition, intensity, radius, type, visorGlitchBias, profile);
         }
 
         /// <summary>

@@ -110,6 +110,7 @@ namespace Hecton8.World
         private readonly List<ShapeGerstnerBatched> _gerstnerScratch = new List<ShapeGerstnerBatched>(16);
         // COLD ALLOC: List<GameObject>[16] - scene-root scratch used to sweep distributed Crest shapes during rare origin shifts - owner: HectonCrestOceanDepthCacheBootstrap
         private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(16);
+        private bool _loggedMissingActiveTerrains;
 
         private void Awake()
         {
@@ -453,11 +454,11 @@ namespace Hecton8.World
             Terrain[] terrains = Terrain.activeTerrains;
             if (terrains == null || terrains.Length == 0)
             {
-                terrains =
-                    Resources.FindObjectsOfTypeAll<Terrain>(); // COLD ALLOC: Terrain[] - depth-cache recovery fallback when Unity's active terrain cache is empty - owner: HectonCrestOceanDepthCacheBootstrap
-                if (terrains == null || terrains.Length == 0)
-                    return false;
+                ReportMissingActiveTerrains();
+                return false;
             }
+
+            _loggedMissingActiveTerrains = false;
 
             bool initialized = false;
             for (int terrainIndex = 0; terrainIndex < terrains.Length; terrainIndex++)
@@ -502,6 +503,17 @@ namespace Hecton8.World
             }
 
             return initialized;
+        }
+
+        private void ReportMissingActiveTerrains()
+        {
+            if (_loggedMissingActiveTerrains)
+                return;
+
+            _loggedMissingActiveTerrains = true;
+            UnityEngine.Debug.LogError(
+                "[HectonCrestOceanDepthCacheBootstrap] Terrain.activeTerrains is empty. Crest depth-cache bootstrap requires explicitly active terrain ownership; runtime fallback search is forbidden.",
+                this);
         }
 
         private float ResolveWaterLevel()

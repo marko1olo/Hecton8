@@ -1023,7 +1023,12 @@ void KernelPBDSolve(uint3 dispatchThreadID : SV_DispatchThreadID)
     float minDistanceSq = minDistance * minDistance;
 
     float safeGridCellSize = max(ResolveGridCellSize(), 0.001);
-    int neighbourCellRange = max(1, (int)ceil(2.0 / safeGridCellSize));
+    // Spatial-grid cell size is authored from C# with a 0.5m floor, so a 2m collision shell never needs
+    // more than four cells of reach. Clamp anyway to fail closed if invalid frame constants slip through.
+    int neighbourCellRange = max(0, (int)ceil(2.0 / safeGridCellSize));
+    int gridBoundRange = max(max(gridResolution.x, max(gridResolution.y, gridResolution.z)) - 1, 0);
+    neighbourCellRange = min(neighbourCellRange, gridBoundRange);
+    neighbourCellRange = min(neighbourCellRange, 4);
 
     [loop]
     for (int offsetZ = -neighbourCellRange; offsetZ <= neighbourCellRange; offsetZ++)

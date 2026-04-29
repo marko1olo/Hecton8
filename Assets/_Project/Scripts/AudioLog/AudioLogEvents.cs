@@ -1,75 +1,131 @@
-// ============================================================================
-// HECTON-8 — AudioLogEvents.cs
-// Статическая шина событий для системы аудиодневников.
-// Zero GC, main thread only.
-// ============================================================================
-
-using System;
+using System.Diagnostics;
+using Hecton8.Core;
+using Unity.Collections;
 
 namespace Hecton8.Narrative
 {
-    /// <summary>
-    /// Статический event bus для AudioLog системы.
-    /// Подписчики: PDA архив, HUD субтитры, SpatialAudioManager.
-    /// </summary>
+    public enum AudioLogEventType : byte
+    {
+        Discovered = 0,
+        PlaybackStarted = 1,
+        PlaybackStopped = 2,
+        PlaybackCompleted = 3
+    }
+
+    public struct AudioLogEventPayload
+    {
+        public AudioLogEventType Type;
+        public ulong TimestampTicks;
+        public uint LogHash;
+        public float DurationSeconds;
+    }
+
+    public interface IAudioLogEventListener
+    {
+        void OnAudioLogEvent(in AudioLogEventPayload payload);
+    }
+
     public static class AudioLogEvents
     {
+        // COLD ALLOC: RegistryBucket<IAudioLogEventListener>[16] - audio log event listener registry drained on dispatcher LateUpdate - owner: AudioLogEvents
+        private static readonly RegistryBucket<IAudioLogEventListener> _listeners = new RegistryBucket<IAudioLogEventListener>(16);
+        private static NativeQueue<AudioLogEventPayload> _pendingEvents;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnLogDiscovered = null;
-            OnLogPlaybackStarted = null;
-            OnLogPlaybackStopped = null;
-            OnLogPlaybackCompleted = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
         }
 
-        /// <summary>
-        /// Вызывается при первом обнаружении аудиодневника.
-        /// string: logId
-        /// </summary>
-        public static event Action<string> OnLogDiscovered;
-
-        /// <summary>
-        /// Вызывается при начале воспроизведения.
-        /// AudioLogData: данные лога.
-        /// </summary>
-        public static event Action<AudioLogData> OnLogPlaybackStarted;
-
-        /// <summary>
-        /// Вызывается при остановке воспроизведения (прерывание).
-        /// string: logId
-        /// </summary>
-        public static event Action<string> OnLogPlaybackStopped;
-
-        /// <summary>
-        /// Вызывается при завершении воспроизведения (естественный конец).
-        /// string: logId
-        /// </summary>
-        public static event Action<string> OnLogPlaybackCompleted;
-
-        public static void RaiseLogDiscovered(string logId)
+        public static void Register(IAudioLogEventListener listener)
         {
-            if (string.IsNullOrEmpty(logId)) return;
-            OnLogDiscovered?.Invoke(logId);
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            _listeners.Register(listener);
         }
 
-        public static void RaisePlaybackStarted(AudioLogData data)
+        public static void Unregister(IAudioLogEventListener listener)
         {
-            if (data == null) return;
-            OnLogPlaybackStarted?.Invoke(data);
+            if (listener == null)
+                return;
+
+            _listeners.Unregister(listener);
         }
 
-        public static void RaisePlaybackStopped(string logId)
+        public static void FlushPending()
         {
-            if (string.IsNullOrEmpty(logId)) return;
-            OnLogPlaybackStopped?.Invoke(logId);
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out AudioLogEventPayload payload))
+            {
+                IAudioLogEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnAudioLogEvent(in payload);
+            }
         }
 
-        public static void RaisePlaybackCompleted(string logId)
+        public static void RaiseLogDiscovered(uint logHash)
         {
-            if (string.IsNullOrEmpty(logId)) return;
-            OnLogPlaybackCompleted?.Invoke(logId);
+            Enqueue(AudioLogEventType.Discovered, logHash, 0f);
+        }
+
+        public static void RaisePlaybackStarted(uint logHash, float durationSeconds)
+        {
+            Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds);
+        }
+
+        public static void RaisePlaybackStopped(uint logHash)
+        {
+            Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f);
+        }
+
+        public static void RaisePlaybackCompleted(uint logHash)
+        {
+            Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f);
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] - deferred audio-log event lane flushed by SystemDispatcher LateUpdate - owner: AudioLogEvents
+            }
+        }
+
+        private static void Enqueue(AudioLogEventType type, uint logHash, float durationSeconds)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new AudioLogEventPayload
+            {
+                Type = type,
+                TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
+                LogHash = logHash,
+                DurationSeconds = durationSeconds
+            });
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
         }
     }
 }

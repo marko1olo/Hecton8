@@ -1536,6 +1536,8 @@ namespace Hecton8.World
         private NativeArray<SwarmWakeImpulse> _swarmWakeImpulseNative;
         private NativeArray<float> _abyssalThermalGridNative;
         private NativeArray<float> _abyssalThermalGridNextNative;
+        private NativeArray<float3> _abyssalFlowVolumeCurrentNative;
+        private NativeArray<float3> _abyssalFlowVolumeNextNative;
         private NativeArray<float> _canopyHeightGridNative;
         private NativeArray<TerrainHoleRecord> _terrainHoleRecordsNative;
         private NativeArray<TerrainHoleStreamingRecord> _terrainHoleStreamingRecordsNative;
@@ -1611,6 +1613,7 @@ namespace Hecton8.World
         private int _swarmWakeImpulseCount;
         private bool _canopyGridInitialized;
         private bool _abyssalThermalGridInitialized;
+        private bool _abyssalFlowVolumeInitialized;
         private bool _abyssalThermalGridScheduled;
         private bool _abyssalPathScheduled;
         private bool _hlodCullScheduled;
@@ -2185,6 +2188,9 @@ namespace Hecton8.World
 
         /// <summary>Current abyssal thermal grid. Treat as read-only and reacquire after each SlowTick.</summary>
         public NativeArray<float> AbyssalThermalGrid => _abyssalThermalGridNative;
+
+        /// <summary>Current 3D abyssal flow volume. Treat as read-only and reacquire after each SlowTick.</summary>
+        public NativeArray<float3> AbyssalFlowVolume => _abyssalFlowVolumeCurrentNative;
 
         /// <summary>Current abyssal thermal-grid center in world space.</summary>
         public Vector3 AbyssalThermalGridCenter => _abyssalThermalGridCenter;
@@ -2879,6 +2885,31 @@ namespace Hecton8.World
             verticalCellSize = thermalGridVerticalCellSize;
             return _abyssalThermalGridInitialized &&
                    temperatures.IsCreated &&
+                   horizontalResolution > 0 &&
+                   verticalResolution > 0 &&
+                   horizontalCellSize > 0f &&
+                   verticalCellSize > 0f;
+        }
+
+        /// <summary>
+        /// Returns the current 3D abyssal flow-volume payload and metadata for current-driven deep-ocean consumers.
+        /// </summary>
+        public bool TryGetAbyssalFlowVolumePayload(
+            out NativeArray<float3> flowVectors,
+            out int horizontalResolution,
+            out int verticalResolution,
+            out Vector3 gridCenter,
+            out float horizontalCellSize,
+            out float verticalCellSize)
+        {
+            flowVectors = _abyssalFlowVolumeCurrentNative;
+            horizontalResolution = _abyssalThermalGridResolutionXZ;
+            verticalResolution = _abyssalThermalGridResolutionY;
+            gridCenter = _abyssalThermalGridCenter;
+            horizontalCellSize = thermalGridHorizontalCellSize;
+            verticalCellSize = thermalGridVerticalCellSize;
+            return _abyssalFlowVolumeInitialized &&
+                   flowVectors.IsCreated &&
                    horizontalResolution > 0 &&
                    verticalResolution > 0 &&
                    horizontalCellSize > 0f &&
@@ -4371,6 +4402,21 @@ namespace Hecton8.World
                 // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
                 _abyssalThermalGridNextNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
+
+            if (!_abyssalFlowVolumeCurrentNative.IsCreated || _abyssalFlowVolumeCurrentNative.Length != _abyssalThermalGridCellCount)
+            {
+                DisposeNativeArray(ref _abyssalFlowVolumeCurrentNative);
+                // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume front buffer for deep-current sampling - owner: HectonMapMagicVegetationBridge
+                _abyssalFlowVolumeCurrentNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _abyssalFlowVolumeInitialized = false;
+            }
+
+            if (!_abyssalFlowVolumeNextNative.IsCreated || _abyssalFlowVolumeNextNative.Length != _abyssalThermalGridCellCount)
+            {
+                DisposeNativeArray(ref _abyssalFlowVolumeNextNative);
+                // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
+                _abyssalFlowVolumeNextNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
         }
 
         private void CompleteFlowFieldJob(bool forceComplete)
@@ -4382,27 +4428,12 @@ namespace Hecton8.World
                 return;
 
             _flowFieldHandle.Complete();
-            bool canComparePreviousFlow =
-                _flowFieldInitialized &&
-                _ecosystemFlowFieldCurrentNative.IsCreated &&
-                _ecosystemFlowFieldNextNative.IsCreated &&
-                _ecosystemThreatGridResolution > 2 &&
-                (_scheduledFlowFieldCenter - _ecosystemFlowFieldCenter).sqrMagnitude <= threatGridCellSize * threatGridCellSize;
-            bool shouldTriggerBiolumeSurge = canComparePreviousFlow &&
-                                             DetectBiolumeSurgeCluster(
-                                                 _ecosystemFlowFieldCurrentNative,
-                                                 _ecosystemFlowFieldNextNative,
-                                                 _ecosystemThreatGridResolution,
-                                                 BiolumeSurgeVelocityDeltaThreshold);
             NativeArray<float2> flowSwap = _ecosystemFlowFieldCurrentNative;
             _ecosystemFlowFieldCurrentNative = _ecosystemFlowFieldNextNative;
             _ecosystemFlowFieldNextNative = flowSwap;
             _ecosystemFlowFieldCenter = _scheduledFlowFieldCenter;
             _flowFieldInitialized = true;
             _flowFieldScheduled = false;
-
-            if (shouldTriggerBiolumeSurge)
-                TryRegisterBiolumeSurge(BiolumeSurgeDurationSeconds);
         }
 
         private void CompleteThermalGridJob(bool forceComplete)
@@ -4414,12 +4445,34 @@ namespace Hecton8.World
                 return;
 
             _abyssalThermalGridHandle.Complete();
+            bool canComparePreviousFlowVolume =
+                _abyssalFlowVolumeInitialized &&
+                _abyssalFlowVolumeCurrentNative.IsCreated &&
+                _abyssalFlowVolumeNextNative.IsCreated &&
+                _abyssalThermalGridResolutionXZ > 2 &&
+                _abyssalThermalGridResolutionY > 2 &&
+                (_scheduledAbyssalThermalGridCenter - _abyssalThermalGridCenter).sqrMagnitude <=
+                (thermalGridHorizontalCellSize * thermalGridHorizontalCellSize);
+            bool shouldTriggerBiolumeSurge = canComparePreviousFlowVolume &&
+                                             DetectBiolumeSurgeCluster3D(
+                                                 _abyssalFlowVolumeCurrentNative,
+                                                 _abyssalFlowVolumeNextNative,
+                                                 _abyssalThermalGridResolutionXZ,
+                                                 _abyssalThermalGridResolutionY,
+                                                 BiolumeSurgeVelocityDeltaThreshold);
             NativeArray<float> thermalSwap = _abyssalThermalGridNative;
             _abyssalThermalGridNative = _abyssalThermalGridNextNative;
             _abyssalThermalGridNextNative = thermalSwap;
+            NativeArray<float3> flowVolumeSwap = _abyssalFlowVolumeCurrentNative;
+            _abyssalFlowVolumeCurrentNative = _abyssalFlowVolumeNextNative;
+            _abyssalFlowVolumeNextNative = flowVolumeSwap;
             _abyssalThermalGridCenter = _scheduledAbyssalThermalGridCenter;
             _abyssalThermalGridInitialized = true;
+            _abyssalFlowVolumeInitialized = true;
             _abyssalThermalGridScheduled = false;
+
+            if (shouldTriggerBiolumeSurge)
+                TryRegisterBiolumeSurge(BiolumeSurgeDurationSeconds);
         }
 
         private void ScheduleFlowFieldJob()
@@ -4496,6 +4549,8 @@ namespace Hecton8.World
                 return;
 
             EnsureThermalGridBuffers();
+            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            float2 weatherDirectionXZ = math.normalizesafe(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
 
             Vector3 thermalCenter = playerTransform != null
                 ? new Vector3(playerTransform.position.x, waterLevel - (thermalGridDepthMeters * 0.5f), playerTransform.position.z)
@@ -4532,8 +4587,33 @@ namespace Hecton8.World
                 RingOffsetZ = _abyssalThermalGridRingOffsetZ
             };
 
+            var flowVolumeJob = new BuildAbyssalFlowVolumeJob
+            {
+                ThermalGrid = _abyssalThermalGridNextNative,
+                ExternalWakeImpulses = _swarmWakeImpulseNative,
+                Output = _abyssalFlowVolumeNextNative,
+                HorizontalResolution = _abyssalThermalGridResolutionXZ,
+                VerticalResolution = _abyssalThermalGridResolutionY,
+                RingOffsetX = _abyssalThermalGridRingOffsetX,
+                RingOffsetY = _abyssalThermalGridRingOffsetY,
+                RingOffsetZ = _abyssalThermalGridRingOffsetZ,
+                ExternalWakeImpulseCount = _swarmWakeImpulseCount,
+                HorizontalCellSize = thermalGridHorizontalCellSize,
+                VerticalCellSize = thermalGridVerticalCellSize,
+                WaterLevel = waterLevel,
+                GridDepthMeters = thermalGridDepthMeters,
+                ThermoclineDepthMeters = 120f,
+                WeatherStateMask = (uint)weatherSnapshot.StateMask,
+                WeatherDirectionXZ = weatherDirectionXZ,
+                WeatherCurrentSpeed = math.max(0f, weatherSnapshot.CurrentMeta.GlobalScale),
+                WeatherIntensity = math.max(0f, weatherSnapshot.WeatherIntensity),
+                ThermalIntensity = math.max(0f, weatherSnapshot.CurrentMeta.ThermalIntensity),
+                GridCenter = new float3(thermalCenter.x, thermalCenter.y, thermalCenter.z)
+            };
+
             _scheduledAbyssalThermalGridCenter = thermalCenter;
-            _abyssalThermalGridHandle = job.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize);
+            JobHandle thermalHandle = job.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize);
+            _abyssalThermalGridHandle = flowVolumeJob.Schedule(_abyssalThermalGridCellCount, DefaultJobBatchSize, thermalHandle);
             _abyssalThermalGridScheduled = true;
         }
 
@@ -4546,41 +4626,54 @@ namespace Hecton8.World
             return weatherService.GetRuntimeSnapshot();
         }
 
-        private static bool DetectBiolumeSurgeCluster(
-            NativeArray<float2> previousField,
-            NativeArray<float2> currentField,
-            int gridResolution,
+        private static bool DetectBiolumeSurgeCluster3D(
+            NativeArray<float3> previousField,
+            NativeArray<float3> currentField,
+            int horizontalResolution,
+            int verticalResolution,
             float velocityDeltaThreshold)
         {
             if (!previousField.IsCreated ||
                 !currentField.IsCreated ||
-                gridResolution <= 2 ||
-                previousField.Length < gridResolution * gridResolution ||
-                currentField.Length < gridResolution * gridResolution)
+                horizontalResolution <= 2 ||
+                verticalResolution <= 2)
             {
                 return false;
             }
 
-            for (int cellZ = 1; cellZ < gridResolution - 1; cellZ++)
-            {
-                for (int cellX = 1; cellX < gridResolution - 1; cellX++)
-                {
-                    float previousMaxSpeed = 0f;
-                    float currentMaxSpeed = 0f;
-                    for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
-                    {
-                        int sampleZ = cellZ + offsetZ;
-                        int baseIndex = sampleZ * gridResolution;
-                        for (int offsetX = -1; offsetX <= 1; offsetX++)
-                        {
-                            int sampleIndex = baseIndex + cellX + offsetX;
-                            previousMaxSpeed = math.max(previousMaxSpeed, math.length(previousField[sampleIndex]));
-                            currentMaxSpeed = math.max(currentMaxSpeed, math.length(currentField[sampleIndex]));
-                        }
-                    }
+            int cellsPerLayer = horizontalResolution * horizontalResolution;
+            int requiredLength = cellsPerLayer * verticalResolution;
+            if (previousField.Length < requiredLength || currentField.Length < requiredLength)
+                return false;
 
-                    if (math.abs(currentMaxSpeed - previousMaxSpeed) > velocityDeltaThreshold)
-                        return true;
+            for (int cellY = 1; cellY < verticalResolution - 1; cellY++)
+            {
+                int layerOffset = cellY * cellsPerLayer;
+                for (int cellZ = 1; cellZ < horizontalResolution - 1; cellZ++)
+                {
+                    int rowOffset = layerOffset + (cellZ * horizontalResolution);
+                    for (int cellX = 1; cellX < horizontalResolution - 1; cellX++)
+                    {
+                        float previousMaxSpeed = 0f;
+                        float currentMaxSpeed = 0f;
+                        for (int offsetY = -1; offsetY <= 1; offsetY++)
+                        {
+                            int sampleLayerOffset = (cellY + offsetY) * cellsPerLayer;
+                            for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
+                            {
+                                int sampleRowOffset = sampleLayerOffset + ((cellZ + offsetZ) * horizontalResolution);
+                                for (int offsetX = -1; offsetX <= 1; offsetX++)
+                                {
+                                    int sampleIndex = sampleRowOffset + cellX + offsetX;
+                                    previousMaxSpeed = math.max(previousMaxSpeed, math.length(previousField[sampleIndex]));
+                                    currentMaxSpeed = math.max(currentMaxSpeed, math.length(currentField[sampleIndex]));
+                                }
+                            }
+                        }
+
+                        if (math.abs(currentMaxSpeed - previousMaxSpeed) > velocityDeltaThreshold)
+                            return true;
+                    }
                 }
             }
 
@@ -7092,10 +7185,10 @@ namespace Hecton8.World
             if (largestAxis < hlodMinimumStructureSize)
                 return false;
 
-            Vector3 delta = center - viewerPosition;
-            float distanceSq = delta.sqrMagnitude;
+            double distanceSq = ComputeAupDistanceSq(center, viewerPosition);
             float maxDistance = hlodMaximumDistance + (largestAxis * 0.5f);
-            return distanceSq <= (maxDistance * maxDistance);
+            double maxDistanceSq = maxDistance * maxDistance;
+            return distanceSq <= maxDistanceSq;
         }
 
         private void ScheduleHLODVisibilityCullJob()
@@ -7124,7 +7217,9 @@ namespace Hecton8.World
             for (int i = 0; i < _hlodRegistryCount; i++)
             {
                 HLODData entry = _hlodRegistrySnapshotNative[i];
-                entry.Fade01 = ComputeHLODFade01(Vector3.Distance(viewerPosition, entry.Center), residentRadius, fullyVisibleDistance);
+                double distanceSq = ComputeAupDistanceSq(viewerPosition, entry.Center);
+                float distance = distanceSq > 0d ? (float)math.sqrt(distanceSq) : 0f;
+                entry.Fade01 = ComputeHLODFade01(distance, residentRadius, fullyVisibleDistance);
                 _hlodRegistrySnapshot[i] = entry;
                 _hlodRegistrySnapshotNative[i] = entry;
             }
@@ -7186,6 +7281,13 @@ namespace Hecton8.World
             float fadeStart = Mathf.Max(0f, lod0Radius);
             float fadeEnd = Mathf.Max(fadeStart + 1f, fullyVisibleDistance);
             return Mathf.Clamp01((distance - fadeStart) / (fadeEnd - fadeStart));
+        }
+
+        private static double ComputeAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
+        {
+            AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);
+            AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);
+            return AbsoluteUniversePosition.DistanceSq(in a, in b);
         }
 
         private void RebuildCanopyHeightGrid()
@@ -9522,6 +9624,140 @@ namespace Hecton8.World
                 float pocketMask = math.saturate((pocketNoise - HotPocketThreshold) / math.max(0.0001f, 1f - HotPocketThreshold));
                 float pocketBias = math.max(colony01, deadZone01);
                 return HotPocketBoostCelsius * pocketMask * pocketBias;
+            }
+
+            private int GetPhysicalIndex(int x, int y, int z)
+            {
+                int wrappedX = WrapIndex(x + RingOffsetX, HorizontalResolution);
+                int wrappedY = WrapIndex(y + RingOffsetY, VerticalResolution);
+                int wrappedZ = WrapIndex(z + RingOffsetZ, HorizontalResolution);
+                return (wrappedY * HorizontalResolution * HorizontalResolution) + (wrappedZ * HorizontalResolution) + wrappedX;
+            }
+
+            private static int WrapIndex(int value, int length)
+            {
+                if (length <= 0)
+                    return 0;
+
+                int wrapped = value % length;
+                return wrapped < 0 ? wrapped + length : wrapped;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        private struct BuildAbyssalFlowVolumeJob : IJobParallelFor
+        {
+            private const float ThermoclineHalfBandMeters = 8f;
+            private const float ThermoclineVerticalAttenuation = 0.1f;
+            private const float SurfaceStormLayerDepthMeters = 50f;
+            private const float StormSurfaceTurbulenceStrength = 0.4f;
+
+            [ReadOnly] public NativeArray<float> ThermalGrid;
+            [ReadOnly] public NativeArray<SwarmWakeImpulse> ExternalWakeImpulses;
+            [NativeDisableParallelForRestriction]
+            [WriteOnly] public NativeArray<float3> Output;
+            public int HorizontalResolution;
+            public int VerticalResolution;
+            public int RingOffsetX;
+            public int RingOffsetY;
+            public int RingOffsetZ;
+            public int ExternalWakeImpulseCount;
+            public float HorizontalCellSize;
+            public float VerticalCellSize;
+            public float WaterLevel;
+            public float GridDepthMeters;
+            public float ThermoclineDepthMeters;
+            public uint WeatherStateMask;
+            public float2 WeatherDirectionXZ;
+            public float WeatherCurrentSpeed;
+            public float WeatherIntensity;
+            public float ThermalIntensity;
+            public float3 GridCenter;
+
+            public void Execute(int index)
+            {
+                if (!Output.IsCreated ||
+                    !ThermalGrid.IsCreated ||
+                    index < 0 ||
+                    index >= Output.Length ||
+                    index >= ThermalGrid.Length ||
+                    HorizontalResolution <= 0 ||
+                    VerticalResolution <= 0)
+                {
+                    return;
+                }
+
+                int cellsPerLayer = HorizontalResolution * HorizontalResolution;
+                int layer = index / cellsPerLayer;
+                int rem = index - (layer * cellsPerLayer);
+                int cellZ = rem / HorizontalResolution;
+                int cellX = rem - (cellZ * HorizontalResolution);
+                int halfExtent = HorizontalResolution >> 1;
+
+                float worldX = GridCenter.x + ((cellX - halfExtent) * HorizontalCellSize);
+                float worldY = WaterLevel - (layer * VerticalCellSize);
+                float worldZ = GridCenter.z + ((cellZ - halfExtent) * HorizontalCellSize);
+                float depthMeters = math.clamp(WaterLevel - worldY, 0f, GridDepthMeters);
+                int physicalIndex = GetPhysicalIndex(cellX, layer, cellZ);
+                float localTemperature = ThermalGrid[physicalIndex];
+                float aboveTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.max(0, layer - 1), cellZ)];
+                float belowTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.min(VerticalResolution - 1, layer + 1), cellZ)];
+
+                float2 weatherDirection = math.normalizesafe(WeatherDirectionXZ, new float2(0f, 1f));
+                float2 horizontalCurrent = weatherDirection * WeatherCurrentSpeed;
+                float verticalCurrent = (aboveTemperature - belowTemperature) * math.max(0.05f, ThermalIntensity);
+                float thermalOffset = localTemperature - belowTemperature;
+                verticalCurrent += thermalOffset * 0.02f;
+
+                if ((WeatherStateMask & (uint)WeatherState.Storm) != 0u)
+                {
+                    float surfaceLayer01 = 1f - math.saturate(depthMeters / math.max(SurfaceStormLayerDepthMeters, 0.0001f));
+                    float stormBiasScale = WeatherCurrentSpeed * math.max(0.35f, WeatherIntensity);
+                    horizontalCurrent += weatherDirection * stormBiasScale;
+                    if (surfaceLayer01 > 0.0001f)
+                    {
+                        float noiseX = (HectonMapMagicVegetationBridge.SampleValueNoise((worldX * 0.11f) + 17.3f, (worldZ * 0.11f) + 11.1f, 0x6D2B79F5u) * 2f) - 1f;
+                        float noiseZ = (HectonMapMagicVegetationBridge.SampleValueNoise((worldX * 0.13f) - 5.7f, (worldZ * 0.13f) + 23.9f, 0xB5297A4Du) * 2f) - 1f;
+                        horizontalCurrent += new float2(noiseX, noiseZ) *
+                                             (StormSurfaceTurbulenceStrength * surfaceLayer01 * math.max(0.1f, WeatherIntensity));
+                    }
+                }
+
+                float3 flow = new float3(horizontalCurrent.x, verticalCurrent, horizontalCurrent.y);
+                flow += SampleWakeImpulse(new float3(worldX, worldY, worldZ));
+
+                if ((WeatherStateMask & ((uint)WeatherState.ThermoclineActive | (uint)WeatherState.HaloclineActive)) != 0u)
+                {
+                    float thermoclineBand01 = 1f - math.saturate(math.abs(depthMeters - ThermoclineDepthMeters) / math.max(ThermoclineHalfBandMeters, 0.0001f));
+                    if (thermoclineBand01 > 0.0001f)
+                        flow.y = math.lerp(flow.y, flow.y * ThermoclineVerticalAttenuation, thermoclineBand01);
+                }
+
+                Output[physicalIndex] = flow;
+            }
+
+            private float3 SampleWakeImpulse(float3 position)
+            {
+                if (!ExternalWakeImpulses.IsCreated || ExternalWakeImpulseCount <= 0)
+                    return float3.zero;
+
+                float3 wake = float3.zero;
+                for (int i = 0; i < ExternalWakeImpulseCount; i++)
+                {
+                    SwarmWakeImpulse impulse = ExternalWakeImpulses[i];
+                    if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
+                        continue;
+
+                    float3 delta = position - impulse.Position;
+                    float distance = math.length(delta);
+                    float weight = math.saturate(1f - (distance / math.max(impulse.Radius, 0.001f)));
+                    if (weight <= 0f)
+                        continue;
+
+                    wake += math.normalizesafe(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
+                }
+
+                return wake;
             }
 
             private int GetPhysicalIndex(int x, int y, int z)
@@ -12557,6 +12793,7 @@ namespace Hecton8.World
                 _threatGridInitialized = false;
                 _flowFieldInitialized = false;
                 _abyssalThermalGridInitialized = false;
+                _abyssalFlowVolumeInitialized = false;
                 _abyssalThermalGridCenter = Vector3.zero;
                 _scheduledAbyssalThermalGridCenter = Vector3.zero;
                 _currentThreatHotspotLevel = 0f;
@@ -13489,9 +13726,12 @@ namespace Hecton8.World
             JobHandle disposeHandle = _abyssalThermalGridScheduled ? _abyssalThermalGridHandle : default;
             DisposeNativeArray(ref _abyssalThermalGridNative, disposeHandle);
             DisposeNativeArray(ref _abyssalThermalGridNextNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalFlowVolumeCurrentNative, disposeHandle);
+            DisposeNativeArray(ref _abyssalFlowVolumeNextNative, disposeHandle);
             _abyssalThermalGridHandle = default;
             _abyssalThermalGridScheduled = false;
             _abyssalThermalGridInitialized = false;
+            _abyssalFlowVolumeInitialized = false;
             _abyssalThermalGridCenter = Vector3.zero;
             _scheduledAbyssalThermalGridCenter = Vector3.zero;
             _abyssalThermalGridRingOffsetX = 0;

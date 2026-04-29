@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -105,7 +106,7 @@ namespace Hecton8.Gameplay
             if (_body == null || !IsFiniteNonZero(force))
                 return;
 
-            _body.AddForce(force, ForceMode.Force);
+            PhysicsForceRouter.QueueForce(_body, force, ForceMode.Force);
         }
 
         /// <summary>Applies a world-space acceleration after finite validation.</summary>
@@ -114,7 +115,7 @@ namespace Hecton8.Gameplay
             if (_body == null || !IsFiniteNonZero(acceleration))
                 return;
 
-            _body.AddForce(acceleration, ForceMode.Acceleration);
+            PhysicsForceRouter.QueueForce(_body, acceleration, ForceMode.Acceleration);
         }
 
         /// <summary>Applies a world-space velocity change after finite validation.</summary>
@@ -123,7 +124,7 @@ namespace Hecton8.Gameplay
             if (_body == null || !IsFiniteNonZero(velocityChange))
                 return;
 
-            _body.AddForce(velocityChange, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueForce(_body, velocityChange, ForceMode.VelocityChange);
         }
 
         /// <summary>Applies an impulse after finite validation.</summary>
@@ -132,7 +133,7 @@ namespace Hecton8.Gameplay
             if (_body == null || !IsFiniteNonZero(impulse))
                 return;
 
-            _body.AddForce(impulse, ForceMode.Impulse);
+            PhysicsForceRouter.QueueForce(_body, impulse, ForceMode.Impulse);
         }
 
         /// <summary>
@@ -147,7 +148,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteNonZero(clampedTorque))
                 return;
 
-            _body.AddTorque(clampedTorque, ForceMode.Force);
+            PhysicsForceRouter.QueueTorque(_body, clampedTorque, ForceMode.Force);
         }
 
         /// <summary>
@@ -171,7 +172,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteNonZero(clampedDelta))
                 return;
 
-            _body.AddTorque(clampedDelta, ForceMode.VelocityChange);
+            PhysicsForceRouter.QueueTorque(_body, clampedDelta, ForceMode.VelocityChange);
         }
 
         /// <summary>

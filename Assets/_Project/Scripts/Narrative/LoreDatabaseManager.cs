@@ -376,6 +376,41 @@ namespace Hecton8.Narrative
         }
 
         /// <summary>
+        /// Unlocks one authored lore record by stable hash.
+        /// </summary>
+        /// <param name="logHash">Stable lore hash.</param>
+        /// <returns>True when the record transitioned from locked to unlocked.</returns>
+        public bool TryUnlockByHash(uint logHash)
+        {
+            return UnlockByHashInternal(logHash);
+        }
+
+        /// <summary>
+        /// Unlocks all authored lore records represented by one packed bit mask.
+        /// </summary>
+        /// <param name="packedBits">Packed lore mask aligned to the fixed record bank.</param>
+        /// <returns>Number of newly unlocked records.</returns>
+        public int UnlockByPackedBits(ulong packedBits)
+        {
+            EnsureUnlockStorage();
+            if (!_unlockedBits.IsCreated || packedBits == 0UL)
+                return 0;
+
+            int unlockedCount = 0;
+            for (int index = 0; index < IndustrialLoreBitMask.RecordCount; index++)
+            {
+                ulong bit = 1UL << index;
+                if ((packedBits & bit) == 0UL || _unlockedBits.IsSet(index))
+                    continue;
+
+                _unlockedBits.Set(index, true);
+                unlockedCount++;
+            }
+
+            return unlockedCount;
+        }
+
+        /// <summary>
         /// Resolve the localized-or-fallback title buffer for one lore record.
         /// </summary>
         public bool TryGetTitleBuffer(int index, out char[] buffer, out int length, out bool rtl)
@@ -490,7 +525,7 @@ namespace Hecton8.Narrative
             {
                 string discoveryId = data.narrativeDiscoveryIds[i];
                 if (!string.IsNullOrEmpty(discoveryId))
-                    UnlockByHash(ComputeLoreHash(discoveryId));
+                    UnlockByHashInternal(ComputeLoreHash(discoveryId));
             }
 
             if (data.audioLogDiscoveredIds == null)
@@ -500,7 +535,7 @@ namespace Hecton8.Narrative
             {
                 string logId = data.audioLogDiscoveredIds[i];
                 if (!string.IsNullOrEmpty(logId))
-                    UnlockByHash(ComputeLoreHash(logId));
+                    UnlockByHashInternal(ComputeLoreHash(logId));
             }
         }
 
@@ -570,10 +605,10 @@ namespace Hecton8.Narrative
             if (evt == null)
                 return;
 
-            UnlockByHash(evt.LoreHash);
+            UnlockByHashInternal(evt.LoreHash);
         }
 
-        private bool UnlockByHash(uint logHash)
+        private bool UnlockByHashInternal(uint logHash)
         {
             BuildLookupIfNeeded();
             EnsureUnlockStorage();

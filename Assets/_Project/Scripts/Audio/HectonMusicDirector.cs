@@ -2091,9 +2091,8 @@ namespace Hecton8.Audio
             if (_musicMixerGroup != null)
                 return _musicMixerGroup;
 
-            SpatialAudioManager spatialAudioManager;
-            if (SpatialAudioManager.TryGetInstance(out spatialAudioManager))
-                return spatialAudioManager.AmbientGroup;
+            if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audioService)
+                return audioService.AmbientGroup;
 
             return null;
         }

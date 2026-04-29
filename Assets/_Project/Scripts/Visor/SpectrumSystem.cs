@@ -648,7 +648,7 @@ namespace Hecton8.Visor
             for (int i = 0; i < _passiveRadarGrid.Length; i++)
                 _passiveRadarGrid[i] *= PassiveRadarDecayFactor;
 
-            if (!ResolvePlayerTransform() || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
+            if (!ResolvePlayerTransform() || !(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager))
             {
                 UpdatePassiveRadarPeakAndShaderState();
                 return;
@@ -849,7 +849,8 @@ namespace Hecton8.Visor
             if (abyssalAnchorReturnClip == null || response01 <= 0f)
                 return;
 
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (audioManager == null)
                 return;
 
             float volume = Mathf.Lerp(

@@ -332,7 +332,8 @@ namespace Hecton8.Visor
 
         private void PlayHeartbeat(float stress01)
         {
-            if (heartbeatClip == null || !SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (heartbeatClip == null || audioManager == null)
                 return;
 
             float signalVolume = _hasInteractionSignal ? _interactionVolume01 : 1f;
@@ -385,3 +386,5 @@ namespace Hecton8.Visor
         }
     }
 }
+
+

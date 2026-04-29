@@ -805,8 +805,8 @@ namespace Hecton8.Crafting
             if (clip == null)
                 return;
 
-            if (SpatialAudioManager.Instance != null)
-                SpatialAudioManager.Instance.PlayAtPoint(clip, transform.position);
+            if (Hecton8.Core.GlobalRegistry.Audio != null)
+                Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, transform.position);
         }
 
         private void EnsureScanLogSystem()
@@ -1076,3 +1076,4 @@ namespace Hecton8.Crafting
 #endif
     }
 }
+

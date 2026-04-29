@@ -30,6 +30,8 @@ namespace Hecton8.Quest
 
         // COLD ALLOC: Dictionary<string,QuestData>[64] - authored quest lookup by stable questId - owner: QuestManager
         private readonly Dictionary<string, QuestData> _questLookup = new Dictionary<string, QuestData>(64);
+        // COLD ALLOC: Dictionary<uint,QuestData>[64] - authored quest lookup by stable FNV quest hash - owner: QuestManager
+        private readonly Dictionary<uint, QuestData> _questHashLookup = new Dictionary<uint, QuestData>(64);
 
         private QuestStateManager _stateManager;
         private QuestGraphEvaluator _graphEvaluator;
@@ -149,6 +151,27 @@ namespace Hecton8.Quest
         public void UpdateDepth(float depthMeters)
         {
             _graphEvaluator?.UpdateDepth(depthMeters);
+        }
+
+        public void UpdateDepthContext(float depthMeters, uint zoneHash, bool isThermalZone)
+        {
+            _graphEvaluator?.UpdateDepthContext(depthMeters, zoneHash, isThermalZone);
+        }
+
+        public bool TryGetQuestIdByHash(uint questHash, out string questId)
+        {
+            questId = string.Empty;
+            if (questHash == 0u)
+                return false;
+
+            if (_questHashLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+                BuildLookup();
+
+            if (!_questHashLookup.TryGetValue(questHash, out QuestData questData) || questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                return false;
+
+            questId = questData.questId;
+            return true;
         }
 
         public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
@@ -299,21 +322,25 @@ namespace Hecton8.Quest
             if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
                 return;
 
+            uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+            if (questHash == 0u)
+                return;
+
             string title = questData.DisplayTitleOrFallback;
             switch (transitionType)
             {
                 case QuestTransitionType.Complete:
-                    QuestEvents.RaiseCompleted(questData.questId);
+                    QuestEvents.RaiseCompleted(questHash);
                     NotificationEvents.PushInfo($"OBJECTIVE COMPLETED: {title}");
                     return;
 
                 case QuestTransitionType.Revert:
-                    QuestEvents.RaiseActivated(questData.questId);
+                    QuestEvents.RaiseActivated(questHash);
                     NotificationEvents.PushInfo($"OBJECTIVE RESTORED: {title}");
                     return;
 
                 default:
-                    QuestEvents.RaiseActivated(questData.questId);
+                    QuestEvents.RaiseActivated(questHash);
                     NotificationEvents.PushInfo(completed ? $"OBJECTIVE COMPLETED: {title}" : $"NEW OBJECTIVE: {title}");
                     return;
             }
@@ -349,6 +376,7 @@ namespace Hecton8.Quest
         private void BuildLookup()
         {
             _questLookup.Clear();
+            _questHashLookup.Clear();
             _hasLookupAmbiguity = false;
             _lookupAmbiguitySummary = string.Empty;
 
@@ -366,6 +394,9 @@ namespace Hecton8.Quest
                 }
 
                 _questLookup[questData.questId] = questData;
+                uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+                if (questHash != 0u && !_questHashLookup.ContainsKey(questHash))
+                    _questHashLookup[questHash] = questData;
             }
         }
 

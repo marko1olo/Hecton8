@@ -282,7 +282,7 @@ namespace Hecton8.Gameplay
             _fadeTimer = 0f;
 
             // Play extinguish sound
-            if (extinguishSound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (extinguishSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(extinguishSound, _transform.position, deployVolume);
             }
@@ -350,7 +350,7 @@ namespace Hecton8.Gameplay
             }
 
             // Play deploy sound
-            if (deploySound != null && SpatialAudioManager.TryGetInstance(out var audio))
+            if (deploySound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(deploySound, _transform.position, deployVolume);
             }
@@ -542,3 +542,4 @@ namespace Hecton8.Gameplay
 #endif
     }
 }
+

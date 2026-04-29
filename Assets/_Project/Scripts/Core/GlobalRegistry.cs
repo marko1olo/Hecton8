@@ -2,6 +2,7 @@ using System;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.SaveSystem;
 using Hecton8.Tools;
 using UnityEngine;
 
@@ -25,6 +26,7 @@ namespace Hecton8.Core
         private static ISceneService _scene;
         private static ISaveService _save;
         private static IUIService _ui;
+        private static ObjectPoolManager _objectPool;
         private static IPlayerRuntimeContext _player;
         private static IPlayerInventoryService _playerInventory;
         private static IModularEquipmentService _modularEquipment;
@@ -70,9 +72,19 @@ namespace Hecton8.Core
         public static ISaveService Save => _save;
 
         /// <summary>
+        /// Registered concrete save runtime owner for compatibility during singleton migration.
+        /// </summary>
+        public static Hecton8.SaveSystem.SaveManager SaveRuntime => _save as Hecton8.SaveSystem.SaveManager;
+
+        /// <summary>
         /// Registered UI service slot.
         /// </summary>
         public static IUIService UI => _ui;
+
+        /// <summary>
+        /// Registered object-pool runtime owner.
+        /// </summary>
+        public static ObjectPoolManager ObjectPool => _objectPool;
 
         /// <summary>
         /// Registered player runtime context slot.
@@ -189,6 +201,7 @@ namespace Hecton8.Core
             _scene = null;
             _save = null;
             _ui = null;
+            _objectPool = null;
             _player = null;
             _playerInventory = null;
             _modularEquipment = null;
@@ -302,6 +315,15 @@ namespace Hecton8.Core
         public static void RegisterUIService(IUIService instance)
         {
             RegisterService(ref _ui, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative object-pool runtime owner.
+        /// </summary>
+        /// <param name="instance">Object-pool owner instance.</param>
+        public static void RegisterObjectPoolService(ObjectPoolManager instance)
+        {
+            RegisterService(ref _objectPool, instance);
         }
 
         /// <summary>
@@ -472,6 +494,15 @@ namespace Hecton8.Core
         public static void UnregisterUIService(IUIService instance)
         {
             UnregisterService(ref _ui, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current object-pool runtime owner if the owner matches.
+        /// </summary>
+        /// <param name="instance">Object-pool owner requesting unregistration.</param>
+        public static void UnregisterObjectPoolService(ObjectPoolManager instance)
+        {
+            UnregisterService(ref _objectPool, instance);
         }
 
         /// <summary>

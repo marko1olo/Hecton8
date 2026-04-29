@@ -8,7 +8,7 @@ namespace Hecton8.UI
     internal static class CharBufferPool
     {
         private const int SlotCount = 16;
-        private const int SlotLength = 64;
+        private const int SlotLength = 128;
 
         // COLD ALLOC: char[16][] — transient HUD text staging pool — owner: CharBufferPool
         private static readonly char[][] s_slots =

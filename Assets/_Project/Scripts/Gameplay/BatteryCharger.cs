@@ -538,7 +538,7 @@ namespace Hecton8.Gameplay
                     OnChargeComplete?.Invoke(i);
 
                     // Play charge complete sound
-                    if (chargeCompleteSound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+                    if (chargeCompleteSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
                     {
                         audio.PlayAtPoint(chargeCompleteSound, _cachedTransform.position);
                     }
@@ -570,7 +570,7 @@ namespace Hecton8.Gameplay
             _slotChargedFlags[slotIndex] = currentCharge >= 1f;
 
             // Play insert sound
-            if (insertSound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+            if (insertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(insertSound, _cachedTransform.position);
             }
@@ -740,3 +740,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

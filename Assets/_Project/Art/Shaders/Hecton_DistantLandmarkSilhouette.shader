@@ -41,7 +41,7 @@ Shader "Hidden/Hecton8/World/DistantLandmarkSilhouette"
             CBUFFER_END
 
             StructuredBuffer<float4x4> _HectonLandmarkMatrices;
-            StructuredBuffer<float4> _HectonHLODInstanceFade;
+            StructuredBuffer<float4> _HectonLandmarkInstanceFade;
 
             struct Attributes
             {
@@ -78,7 +78,7 @@ Shader "Hidden/Hecton8/World/DistantLandmarkSilhouette"
                 output.positionCS = positionCS;
                 output.fogFactor = ComputeFogFactor(positionCS.z);
                 output.distanceToCamera = distance(positionWS, _WorldSpaceCameraPos);
-                output.fade = saturate(_HectonHLODInstanceFade[instanceID].x);
+                output.fade = saturate(_HectonLandmarkInstanceFade[instanceID].x);
                 return output;
             }
 

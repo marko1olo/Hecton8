@@ -49,7 +49,7 @@ namespace Hecton8.World
         private ComputeShader scatterCompute;
 
         [SerializeField]
-        [Tooltip("Authored source material for the indirect scatter draw. Runtime uses a hidden clone for buffer binding.")]
+        [Tooltip("Shared authored material for the indirect scatter draw. Per-instance payload is supplied through global graphics buffers.")]
         private Material scatterMaterial;
 
         [SerializeField]
@@ -123,7 +123,6 @@ namespace Hecton8.World
         private bool _registered;
         private int _generateKernel = -1;
         private int _gridResolution;
-        private Material _runtimeMaterial;
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _visibleIndicesBuffer;
         private GraphicsBuffer _argsBuffer;
@@ -170,7 +169,7 @@ namespace Hecton8.World
             if (scatterCompute == null ||
                 _generateKernel < 0 ||
                 scatterMesh == null ||
-                _runtimeMaterial == null ||
+                scatterMaterial == null ||
                 _instanceBuffer == null ||
                 _visibleIndicesBuffer == null ||
                 _argsBuffer == null ||
@@ -216,8 +215,8 @@ namespace Hecton8.World
             scatterCompute.Dispatch(_generateKernel, dispatchGroups, 1, 1);
 
             GraphicsBuffer.CopyCount(_visibleIndicesBuffer, _argsBuffer, sizeof(uint));
-            _runtimeMaterial.SetBuffer(_ScatterInstancesId, _instanceBuffer);
-            _runtimeMaterial.SetBuffer(_VisibleIndicesId, _visibleIndicesBuffer);
+            Shader.SetGlobalBuffer(_ScatterInstancesId, _instanceBuffer);
+            Shader.SetGlobalBuffer(_VisibleIndicesId, _visibleIndicesBuffer);
 
             float terrainTop = heightPayload.TerrainPosition.y + heightPayload.TerrainSize.y;
             Bounds drawBounds = new Bounds(
@@ -227,7 +226,7 @@ namespace Hecton8.World
             Graphics.DrawMeshInstancedIndirect(
                 scatterMesh,
                 0,
-                _runtimeMaterial,
+                scatterMaterial,
                 drawBounds,
                 _argsBuffer,
                 0,
@@ -271,7 +270,6 @@ namespace Hecton8.World
             EnsureInstanceBufferCapacity(resolvedCapacity);
             EnsureVisibleIndexBufferCapacity(resolvedCapacity);
             EnsureIndirectArgsBuffer();
-            EnsureRuntimeMaterial();
         }
 
         private void EnsureInstanceBufferCapacity(int requiredCapacity)
@@ -303,19 +301,6 @@ namespace Hecton8.World
             _argsUpload[0].baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u;
             _argsUpload[0].startInstance = 0u;
             _argsBuffer.SetData(_argsUpload);
-        }
-
-        private void EnsureRuntimeMaterial()
-        {
-            if (_runtimeMaterial != null || scatterMaterial == null)
-                return;
-
-            _runtimeMaterial = new Material(scatterMaterial)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                name = "__HectonGpuScatterRuntimeMaterial",
-                enableInstancing = true
-            }; // COLD ALLOC: Material[1] — runtime-only indirect scatter material clone for buffer binding — owner: GPUScatterDirector
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)
@@ -351,15 +336,6 @@ namespace Hecton8.World
             ReleaseBuffer(ref _instanceBuffer);
             ReleaseBuffer(ref _visibleIndicesBuffer);
             ReleaseBuffer(ref _argsBuffer);
-            if (_runtimeMaterial != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(_runtimeMaterial);
-                else
-                    DestroyImmediate(_runtimeMaterial);
-
-                _runtimeMaterial = null;
-            }
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

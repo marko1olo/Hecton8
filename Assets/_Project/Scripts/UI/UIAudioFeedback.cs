@@ -78,7 +78,7 @@ namespace Hecton8.UI
         // FIELDS
         // ══════════════════════════════════════════════════════════
 
-        private SpatialAudioManager _audioManager;
+        private Hecton8.Core.IAudioService _audioManager;
         private float _lastSliderTickTime;
         private static UIAudioFeedback _instance;
         // COLD ALLOC: List<Button>(64) — UI button registration buffer — owner: UIAudioFeedback
@@ -103,7 +103,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
-            _audioManager = SpatialAudioManager.Instance;
+            _audioManager = Hecton8.Core.GlobalRegistry.Audio;
             RegisterAllButtons();
             RegisterAllSliders();
             RegisterAllToggles();
@@ -265,7 +265,7 @@ namespace Hecton8.UI
                 return ButtonType.Destructive;
 
             // Primary
-            if (lower.Contains("new") || lower.Contains("start") || lower.Contains("resume") || 
+            if (lower.Contains("new") || lower.Contains("start") || lower.Contains("resume") ||
                 lower.Contains("save") || lower.Contains("load") || lower.Contains("apply") ||
                 lower.Contains("confirm") || lower.Contains("ok"))
                 return ButtonType.Primary;
@@ -327,7 +327,7 @@ namespace Hecton8.UI
         {
             if (_audioManager == null)
             {
-                _audioManager = SpatialAudioManager.Instance;
+                _audioManager = Hecton8.Core.GlobalRegistry.Audio;
                 if (_audioManager == null)
                     return;
             }

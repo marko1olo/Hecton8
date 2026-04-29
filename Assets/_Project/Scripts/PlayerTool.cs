@@ -149,6 +149,11 @@ namespace Hecton8.Gameplay
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
                     _survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
             }
+
+            EnsureModularRuntimeRegistration();
+            SyncModularBattery();
+            SyncModularHeat(ResolveModularHeatNormalized());
+            SyncModularDurability();
         }
 
         public virtual void OnDespawn()
@@ -196,7 +201,6 @@ namespace Hecton8.Gameplay
             var system = ToolDurabilitySystem.Instance;
             if (system != null && _toolMetadata != null) system.OnToolBroken += HandleToolBroken;
             EnsureModularRuntimeRegistration();
-            SyncModularBattery();
             SyncModularHeat(ResolveModularHeatNormalized());
             SyncModularDurability();
         }
@@ -206,14 +210,18 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             var system = ToolDurabilitySystem.Instance;
             if (system != null && _toolMetadata != null) system.OnToolBroken -= HandleToolBroken;
-            UnregisterModularRuntime();
         }
 
         public virtual void UsePrimary(float deltaTime)
         {
             if (IsBroken) { OnToolBrokenWhileUsing(); return; }
+            if (enableEnergyConsumption && _toolMetadata != null)
+            {
+                if (!HasToolEnergyOrWirelessPath() || !TryConsumeRuntimeEnergy(deltaTime))
+                    return;
+            }
+
             if (enableDurabilityDrain && _toolMetadata != null) ApplyDurabilityDrain(deltaTime, true);
-            if (enableEnergyConsumption && _toolMetadata != null && _survivalSystem != null) ApplyEnergyConsumption(deltaTime);
             _lastUseTime = Time.time;
             OnToolUsed?.Invoke(true);
             CheckLowDurability();
@@ -222,8 +230,13 @@ namespace Hecton8.Gameplay
         public virtual void UseSecondary(float deltaTime)
         {
             if (IsBroken) { OnToolBrokenWhileUsing(); return; }
+            if (enableEnergyConsumption && _toolMetadata != null)
+            {
+                if (!HasToolEnergyOrWirelessPath() || !TryConsumeRuntimeEnergy(deltaTime * 0.5f))
+                    return;
+            }
+
             if (enableDurabilityDrain && _toolMetadata != null) ApplyDurabilityDrain(deltaTime, false);
-            if (enableEnergyConsumption && _toolMetadata != null && _survivalSystem != null) ApplyEnergyConsumption(deltaTime * 0.5f);
             _lastUseTime = Time.time;
             OnToolUsed?.Invoke(false);
             CheckLowDurability();
@@ -343,11 +356,29 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
+        protected float GetRuntimeBatteryNormalized(float fallback)
+        {
+            return TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
+                ? service.GetBatteryNormalized(_runtimeToolId, fallback)
+                : fallback;
+        }
+
         protected bool HasModularUpgrade(ToolUpgradeBits flag)
         {
             return TryGetModularEquipment(out IModularEquipmentService service) &&
                    _runtimeToolRegistered &&
                    service.HasUpgrade(_runtimeToolId, flag);
+        }
+
+        protected bool HasToolEnergyOrWirelessPath()
+        {
+            if (GetRuntimeBatteryNormalized(0f) > 0.0001f)
+                return true;
+
+            return HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
+                   GlobalRegistry.Submarine != null &&
+                   GlobalRegistry.Submarine.AtmosphereSystem != null &&
+                   GlobalRegistry.PowerGrid != null;
         }
 
         protected float GetConditionPerformanceScale()
@@ -376,26 +407,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyEnergyConsumption(float deltaTime)
         {
-            if (_survivalSystem == null || _toolMetadata == null) return;
-            float requestedDrain = GetEnergyConsumption() * deltaTime;
-            if (requestedDrain <= 0f)
-                return;
-
-            float remainingDrain = requestedDrain;
-            if (HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
-                GlobalRegistry.Submarine != null &&
-                GlobalRegistry.Submarine.AtmosphereSystem != null &&
-                GlobalRegistry.PowerGrid != null &&
-                GlobalRegistry.PowerGrid.TryQueueWirelessToolDrain(requestedDrain, out float grantedDrain))
-            {
-                remainingDrain = Mathf.Max(0f, requestedDrain - grantedDrain);
-            }
-
-            int suitDrainAmount = Mathf.FloorToInt(remainingDrain);
-            if (suitDrainAmount > 0)
-                _survivalSystem.DrainEnergy(suitDrainAmount);
-
-            SyncModularBattery();
+            TryConsumeRuntimeEnergy(deltaTime);
         }
 
         private void CheckLowDurability()
@@ -450,7 +462,7 @@ namespace Hecton8.Gameplay
 
         internal virtual float ResolveModularBatteryNormalized()
         {
-            return _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.EnergyNormalized) : 1f;
+            return GetRuntimeBatteryNormalized(1f);
         }
 
         internal virtual float ResolveModularHeatNormalized()
@@ -470,6 +482,39 @@ namespace Hecton8.Gameplay
         {
             if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
                 service.SetBattery(_runtimeToolId, ResolveModularBatteryNormalized());
+        }
+
+        protected void SetRuntimeBatteryNormalized(float normalizedBattery)
+        {
+            if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
+                service.SetBattery(_runtimeToolId, normalizedBattery);
+        }
+
+        protected bool TryConsumeRuntimeEnergy(float deltaTime)
+        {
+            if (_toolMetadata == null || !TryGetModularEquipment(out IModularEquipmentService service) || !_runtimeToolRegistered)
+                return false;
+
+            float requestedDrain = GetEnergyConsumption() * deltaTime;
+            if (requestedDrain <= 0f)
+                return true;
+
+            float remainingDrain = requestedDrain;
+            if (HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
+                GlobalRegistry.Submarine != null &&
+                GlobalRegistry.Submarine.AtmosphereSystem != null &&
+                GlobalRegistry.PowerGrid != null &&
+                GlobalRegistry.PowerGrid.TryQueueWirelessToolDrain(requestedDrain, out float grantedDrain))
+            {
+                remainingDrain = Mathf.Max(0f, requestedDrain - grantedDrain);
+            }
+
+            if (remainingDrain <= 0f)
+                return true;
+
+            float batteryBefore = service.GetBatteryNormalized(_runtimeToolId, 0f);
+            service.ConsumeBattery(_runtimeToolId, remainingDrain);
+            return batteryBefore + 0.0001f >= remainingDrain;
         }
 
         protected void SyncModularDurability()

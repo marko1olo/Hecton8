@@ -197,7 +197,7 @@ namespace Hecton8.Gameplay
             UpdateBeaconLight();
 
             // Play deploy sound
-            if (deploySound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+            if (deploySound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(deploySound, _cachedTransform.position);
             }
@@ -315,7 +315,7 @@ namespace Hecton8.Gameplay
         public void Interact(Transform interactor)
         {
             // Play interact sound
-            if (interactSound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+            if (interactSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayStatic2D(interactSound, 0.7f);
             }
@@ -499,3 +499,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

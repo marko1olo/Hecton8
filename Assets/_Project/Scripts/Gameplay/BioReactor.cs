@@ -502,7 +502,7 @@ namespace Hecton8.Gameplay
             _currentFuelLevel += fuelValue;
 
             // Play insert sound
-            if (insertSound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+            if (insertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
             {
                 audio.PlayAtPoint(insertSound, _cachedTransform.position);
             }
@@ -569,7 +569,7 @@ namespace Hecton8.Gameplay
                     _fuelItems.RemoveAt(0);
 
                     // Play depleted sound
-                    if (depletedSound != null && Hecton8.Audio.SpatialAudioManager.TryGetInstance(out var audio))
+                    if (depletedSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
                     {
                         audio.PlayAtPoint(depletedSound, _cachedTransform.position);
                     }
@@ -810,3 +810,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

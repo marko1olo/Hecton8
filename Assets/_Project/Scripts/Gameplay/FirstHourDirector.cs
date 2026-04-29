@@ -66,7 +66,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-65)]
-    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener
     {
         [Flags]
         private enum GuidanceStateFlags
@@ -225,10 +225,10 @@ namespace Hecton8.Gameplay
 
             CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
             NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
-            QuestEvents.OnQuestCompleted += HandleQuestCompleted;
+            QuestEvents.Register(this);
             ScanEvents.OnEntryDiscovered += HandleScanEntryDiscovered;
             InteractionEvents.OnItemCollected += HandleItemCollected;
-            AudioLogEvents.OnLogDiscovered += HandleAudioLogDiscovered;
+            AudioLogEvents.Register(this);
         }
 
         private void OnDisable()
@@ -240,10 +240,10 @@ namespace Hecton8.Gameplay
 
             CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
             NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
-            QuestEvents.OnQuestCompleted -= HandleQuestCompleted;
+            QuestEvents.Unregister(this);
             ScanEvents.OnEntryDiscovered -= HandleScanEntryDiscovered;
             InteractionEvents.OnItemCollected -= HandleItemCollected;
-            AudioLogEvents.OnLogDiscovered -= HandleAudioLogDiscovered;
+            AudioLogEvents.Unregister(this);
 
             _lastObservedZone = null;
             _nextContextualGuidanceTime = 0f;
@@ -407,24 +407,29 @@ namespace Hecton8.Gameplay
                 CheckMilestone(FirstHourMilestone.FirstModule, true);
         }
 
-        private void HandleQuestCompleted(string questId)
+        public void OnQuestEvent(in QuestEventPayload payload)
         {
-            if (string.Equals(questId, firstDepthQuestId, StringComparison.Ordinal))
+            if ((QuestEventType)payload.EventType != QuestEventType.Completed)
+                return;
+
+            uint firstDepthQuestHash = QuestFlagHashKernel.ComputeStableHash(firstDepthQuestId);
+            if (payload.QuestHashID == firstDepthQuestHash)
             {
                 _firstDepthReminderIssued = true;
                 return;
             }
 
-            if (!string.Equals(questId, firstResourceQuestId, StringComparison.Ordinal))
+            uint firstResourceQuestHash = QuestFlagHashKernel.ComputeStableHash(firstResourceQuestId);
+            if (payload.QuestHashID != firstResourceQuestHash)
                 return;
 
             _firstResourceReminderIssued = true;
             ActivateQuest(firstDepthQuestId);
         }
 
-        private void HandleAudioLogDiscovered(string logId)
+        public void OnAudioLogEvent(in AudioLogEventPayload payload)
         {
-            if (!string.IsNullOrEmpty(logId))
+            if (payload.Type == AudioLogEventType.Discovered && payload.LogHash != 0u)
                 _hasLoreRouteContact = true;
         }
 

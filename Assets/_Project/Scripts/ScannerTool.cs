@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Caves;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
@@ -27,12 +28,53 @@ namespace Hecton8.Gameplay
         internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
         private const int AtlasDetectionRevealStage = 2;
         private const int AtlasNavigationRevealStage = 3;
+        private const int ScientificConeRayCount = 7;
+        private const float ScientificScanHoldGraceMultiplier = 1.75f;
 
         private enum ScanMode
         {
             Expedition = 0,
             Resource = 1,
             Structure = 2
+        }
+
+        internal enum ScientificMaterialClass : byte
+        {
+            None = 0,
+            Sediment = 1,
+            Basalt = 2
+        }
+
+        internal readonly struct ScientificScanSnapshot
+        {
+            public ScientificScanSnapshot(
+                bool isActive,
+                float progress01,
+                float density,
+                float density01,
+                float purity01,
+                ScientificMaterialClass materialClass,
+                ScannableFragment fragment,
+                int proxyMeshIndex)
+            {
+                IsActive = isActive;
+                Progress01 = progress01;
+                Density = density;
+                Density01 = density01;
+                Purity01 = purity01;
+                MaterialClass = materialClass;
+                Fragment = fragment;
+                ProxyMeshIndex = proxyMeshIndex;
+            }
+
+            public bool IsActive { get; }
+            public float Progress01 { get; }
+            public float Density { get; }
+            public float Density01 { get; }
+            public float Purity01 { get; }
+            public ScientificMaterialClass MaterialClass { get; }
+            public ScannableFragment Fragment { get; }
+            public int ProxyMeshIndex { get; }
         }
 
         private struct ScanResultSummary
@@ -209,6 +251,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private float scanRadius = 50f;
         [SerializeField] private float scanCooldown = 3f;
         [SerializeField] private LayerMask scanLayerMask = ~0;
+        [SerializeField, Min(1f)] private float focusedScanRange = 14f;
+        [SerializeField, Range(1f, 18f)] private float focusedScanConeAngleDegrees = 5.5f;
+        [SerializeField, Range(0.05f, 0.5f)] private float focusedScanResampleInterval = 0.12f;
+        [SerializeField, Range(0.01f, 0.5f)] private float focusedScanSurfaceInset = 0.12f;
+        [SerializeField, Range(0f, 1f)] private float basaltDensityThreshold01 = 0.58f;
 
         [Header("Pulse Visual")]
         [SerializeField] private float pulseDuration = 1.5f;
@@ -253,6 +300,19 @@ namespace Hecton8.Gameplay
         private string _currentModeSummary;
         private string _currentModeHudMessage;
         private string _currentModeOperationTitle;
+        // COLD ALLOC: NativeArray<RaycastCommand>[7] — focused scientific scanner cone batch — owner: ScannerTool
+        private NativeArray<RaycastCommand> _scientificRayCommands;
+        // COLD ALLOC: NativeArray<RaycastHit>[7] — focused scientific scanner cone hit buffer — owner: ScannerTool
+        private NativeArray<RaycastHit> _scientificRayHits;
+        private JobHandle _scientificBatchHandle;
+        private ScannableFragment _activeScientificFragment;
+        private HectonVoxelVolume _activeScientificVoxelVolume;
+        private ScientificScanSnapshot _scientificSnapshot;
+        private float _scientificNextResampleAt;
+        private float _scientificLastContactTime = float.NegativeInfinity;
+        private float _heldPrimaryDeltaTime;
+        private bool _heldPrimaryThisFrame;
+        private bool _scientificBatchScheduled;
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool STATE
@@ -287,6 +347,7 @@ namespace Hecton8.Gameplay
         internal float ScanRadius => scanRadius;
         internal Color PulseColor => pulseColor;
         internal float PulseThickness => pulseThickness;
+        internal ScientificScanSnapshot ActiveScientificScanSnapshot => _scientificSnapshot;
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool IMPLEMENTATION
@@ -370,6 +431,7 @@ namespace Hecton8.Gameplay
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: ScannerTool
             _cachedTransform = transform;
             RefreshModeStrings();
+            EnsureScientificBuffers();
 
             #if UNITY_EDITOR
             if (scannerMarkerShader == null)
@@ -403,12 +465,17 @@ namespace Hecton8.Gameplay
         {
             base.OnUnequip();
             PulseActive = false;
+            ResetScientificFocus();
         }
 
         public override void UsePrimary(float deltaTime)
         {
             if (!IsEquipped)
                 return;
+
+            _heldPrimaryThisFrame = true;
+            if (deltaTime > _heldPrimaryDeltaTime)
+                _heldPrimaryDeltaTime = deltaTime;
 
             float now = Time.time;
             float effectiveCooldown = ResolveEffectiveScanCooldown();
@@ -432,8 +499,8 @@ namespace Hecton8.Gameplay
             PulseOrigin = origin;
             PulseStartTime = now;
 
-            if (pingClip != null && SpatialAudioManager.Instance != null)
-                SpatialAudioManager.Instance.PlayStatic2D(pingClip, pingVolume);
+            if (pingClip != null && Hecton8.Core.GlobalRegistry.Audio != null)
+                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(pingClip, pingVolume);
 
             ScanEvents.OnScanTriggered?.Invoke(origin, effectiveScanRadius);
 
@@ -478,12 +545,26 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
+            UpdateScientificScanning(deltaTime);
+
             if (!PulseActive)
                 return;
 
             float elapsed = Time.time - PulseStartTime;
             if (elapsed > pulseDuration)
                 PulseActive = false;
+        }
+
+        public override void OnSpawn()
+        {
+            base.OnSpawn();
+            ResetScientificFocus();
+        }
+
+        public override void OnDespawn()
+        {
+            ResetScientificFocus();
+            base.OnDespawn();
         }
 
         public override string GetOperationalSummary()
@@ -1104,6 +1185,281 @@ namespace Hecton8.Gameplay
 
         internal Shader ScannerPulseShader => scannerPulseShader;
 
+        internal bool TryGetScientificScanSnapshot(out ScientificScanSnapshot snapshot)
+        {
+            snapshot = _scientificSnapshot;
+            return snapshot.IsActive;
+        }
+
+        private void OnDestroy()
+        {
+            DisposeScientificBuffers();
+        }
+
+        private void EnsureScientificBuffers()
+        {
+            if (!_scientificRayCommands.IsCreated)
+                _scientificRayCommands = new NativeArray<RaycastCommand>(ScientificConeRayCount, Allocator.Persistent);
+
+            if (!_scientificRayHits.IsCreated)
+                _scientificRayHits = new NativeArray<RaycastHit>(ScientificConeRayCount, Allocator.Persistent);
+        }
+
+        private void DisposeScientificBuffers()
+        {
+            JobHandle disposeHandle = _scientificBatchScheduled ? _scientificBatchHandle : default;
+
+            if (_scientificRayCommands.IsCreated)
+            {
+                disposeHandle = _scientificRayCommands.Dispose(disposeHandle);
+                _scientificRayCommands = default;
+            }
+
+            if (_scientificRayHits.IsCreated)
+            {
+                disposeHandle = _scientificRayHits.Dispose(disposeHandle);
+                _scientificRayHits = default;
+            }
+
+            _scientificBatchHandle = disposeHandle;
+            _scientificBatchScheduled = false;
+        }
+
+        private void UpdateScientificScanning(float deltaTime)
+        {
+            if (_scientificBatchScheduled && _scientificBatchHandle.IsCompleted)
+                ConsumeScientificBatch();
+
+            bool heldThisFrame = _heldPrimaryThisFrame;
+            float heldDeltaTime = _heldPrimaryDeltaTime;
+            _heldPrimaryThisFrame = false;
+            _heldPrimaryDeltaTime = 0f;
+
+            if (!heldThisFrame)
+            {
+                if (_activeScientificFragment != null)
+                    StopScientificFragmentScan();
+
+                ClearScientificSnapshot();
+                return;
+            }
+
+            float holdTimeout = Mathf.Max(focusedScanResampleInterval * ScientificScanHoldGraceMultiplier, 0.1f);
+            if (_activeScientificFragment != null &&
+                Time.time - _scientificLastContactTime <= holdTimeout &&
+                heldDeltaTime > 0f)
+            {
+                _activeScientificFragment.OnScan(heldDeltaTime);
+                RefreshScientificSnapshotProgress();
+            }
+
+            if (!_scientificBatchScheduled && Time.time >= _scientificNextResampleAt)
+                ScheduleScientificConeBatch();
+        }
+
+        private void ScheduleScientificConeBatch()
+        {
+            if (_cachedTransform == null)
+                return;
+
+            EnsureScientificBuffers();
+            if (!_scientificRayCommands.IsCreated || !_scientificRayHits.IsCreated)
+                return;
+
+            Transform cachedTransform = _cachedTransform;
+            Vector3 origin = cachedTransform.position;
+            Vector3 forward = cachedTransform.forward;
+            Vector3 right = cachedTransform.right;
+            Vector3 up = cachedTransform.up;
+            QueryParameters query = new QueryParameters(scanLayerMask, false, QueryTriggerInteraction.Collide);
+            float range = Mathf.Max(1f, focusedScanRange);
+            float coneTangent = math.tan(math.radians(Mathf.Clamp(focusedScanConeAngleDegrees, 0.1f, 45f)));
+
+            for (int commandIndex = 0; commandIndex < ScientificConeRayCount; commandIndex++)
+            {
+                float2 sampleOffset = ResolveScientificConeOffset(commandIndex);
+                Vector3 direction = forward + (right * (sampleOffset.x * coneTangent)) + (up * (sampleOffset.y * coneTangent));
+                if (direction.sqrMagnitude <= 0.0001f)
+                    direction = forward;
+                else
+                    direction.Normalize();
+
+                _scientificRayCommands[commandIndex] = new RaycastCommand(
+                    origin,
+                    direction,
+                    query,
+                    range);
+            }
+
+            _scientificBatchHandle = RaycastCommand.ScheduleBatch(_scientificRayCommands, _scientificRayHits, 1);
+            _scientificBatchScheduled = true;
+            _scientificNextResampleAt = Time.time + Mathf.Max(0.05f, focusedScanResampleInterval);
+        }
+
+        private void ConsumeScientificBatch()
+        {
+            _scientificBatchHandle.Complete();
+            _scientificBatchScheduled = false;
+
+            ScannableFragment resolvedFragment = null;
+            HectonVoxelVolume resolvedVolume = null;
+            float nearestFragmentDistance = float.MaxValue;
+            float densitySum = 0f;
+            float density01Sum = 0f;
+            int densitySampleCount = 0;
+
+            for (int hitIndex = 0; hitIndex < ScientificConeRayCount; hitIndex++)
+            {
+                RaycastHit hit = _scientificRayHits[hitIndex];
+                _scientificRayHits[hitIndex] = default;
+
+                Collider hitCollider = hit.collider;
+                if (hitCollider == null)
+                    continue;
+
+                ScannableFragment fragment = hitCollider.GetComponent<ScannableFragment>();
+                if (fragment == null)
+                    fragment = hitCollider.GetComponentInParent<ScannableFragment>();
+
+                if (fragment != null && hit.distance < nearestFragmentDistance)
+                {
+                    resolvedFragment = fragment;
+                    nearestFragmentDistance = hit.distance;
+                }
+
+                HectonVoxelVolume volume = hitCollider.GetComponent<HectonVoxelVolume>();
+                if (volume == null)
+                    volume = hitCollider.GetComponentInParent<HectonVoxelVolume>();
+
+                if (volume == null)
+                    continue;
+
+                Vector3 sampleWorldPosition = hit.point - (hit.normal * Mathf.Max(0.01f, focusedScanSurfaceInset));
+                if (!volume.TrySampleDensity(sampleWorldPosition, out float density, out float density01))
+                    continue;
+
+                densitySum += density;
+                density01Sum += density01;
+                densitySampleCount++;
+                if (resolvedVolume == null)
+                    resolvedVolume = volume;
+            }
+
+            if (!ReferenceEquals(_activeScientificFragment, resolvedFragment))
+            {
+                StopScientificFragmentScan();
+                _activeScientificFragment = resolvedFragment;
+            }
+
+            _activeScientificVoxelVolume = resolvedVolume;
+
+            if (resolvedFragment == null && densitySampleCount <= 0)
+            {
+                ClearScientificSnapshot();
+                return;
+            }
+
+            float averagedDensity = densitySampleCount > 0 ? densitySum / densitySampleCount : 0f;
+            float averagedDensity01 = densitySampleCount > 0 ? density01Sum / densitySampleCount : 0f;
+            ScientificMaterialClass materialClass = ClassifyScientificMaterial(averagedDensity01);
+            _scientificLastContactTime = Time.time;
+
+            if (densitySampleCount > 0)
+            {
+                PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+                    0f,
+                    Mathf.Clamp01(averagedDensity01),
+                    materialClass == ScientificMaterialClass.Basalt ? 1.08f : 0.96f,
+                    Mathf.Clamp01(averagedDensity01)));
+            }
+
+            UpdateScientificSnapshot(resolvedFragment, averagedDensity, averagedDensity01, materialClass);
+        }
+
+        private void UpdateScientificSnapshot(
+            ScannableFragment fragment,
+            float density,
+            float density01,
+            ScientificMaterialClass materialClass)
+        {
+            float progress01 = fragment != null ? Mathf.Clamp01(fragment.ProgressNormalized) : 0f;
+            _scientificSnapshot = new ScientificScanSnapshot(
+                true,
+                progress01,
+                density,
+                Mathf.Clamp01(density01),
+                Mathf.Clamp01(density01),
+                materialClass,
+                fragment,
+                fragment != null ? fragment.HologramProxyMeshIndex : -1);
+        }
+
+        private void RefreshScientificSnapshotProgress()
+        {
+            if (!_scientificSnapshot.IsActive)
+                return;
+
+            ScannableFragment fragment = _scientificSnapshot.Fragment;
+            float progress01 = fragment != null ? Mathf.Clamp01(fragment.ProgressNormalized) : _scientificSnapshot.Progress01;
+            _scientificSnapshot = new ScientificScanSnapshot(
+                _scientificSnapshot.IsActive,
+                progress01,
+                _scientificSnapshot.Density,
+                _scientificSnapshot.Density01,
+                _scientificSnapshot.Purity01,
+                _scientificSnapshot.MaterialClass,
+                fragment,
+                fragment != null ? fragment.HologramProxyMeshIndex : _scientificSnapshot.ProxyMeshIndex);
+        }
+
+        private void StopScientificFragmentScan()
+        {
+            if (_activeScientificFragment != null)
+                _activeScientificFragment.StopScanning();
+
+            _activeScientificFragment = null;
+        }
+
+        private void ResetScientificFocus()
+        {
+            StopScientificFragmentScan();
+            _activeScientificVoxelVolume = null;
+            _heldPrimaryThisFrame = false;
+            _heldPrimaryDeltaTime = 0f;
+            _scientificNextResampleAt = 0f;
+            _scientificLastContactTime = float.NegativeInfinity;
+            ClearScientificSnapshot();
+        }
+
+        private void ClearScientificSnapshot()
+        {
+            _scientificSnapshot = default;
+        }
+
+        private ScientificMaterialClass ClassifyScientificMaterial(float density01)
+        {
+            if (density01 <= 0.0001f)
+                return ScientificMaterialClass.None;
+
+            return density01 >= basaltDensityThreshold01
+                ? ScientificMaterialClass.Basalt
+                : ScientificMaterialClass.Sediment;
+        }
+
+        private static float2 ResolveScientificConeOffset(int index)
+        {
+            switch (index)
+            {
+                case 1: return new float2(0f, 1f);
+                case 2: return new float2(0.8660254f, 0.5f);
+                case 3: return new float2(0.8660254f, -0.5f);
+                case 4: return new float2(0f, -1f);
+                case 5: return new float2(-0.8660254f, -0.5f);
+                case 6: return new float2(-0.8660254f, 0.5f);
+                default: return float2.zero;
+            }
+        }
+
         // Zero-GC behavior is now provided by Hecton8.Core.ZeroGCStringCache.
     }
 
@@ -1302,3 +1658,4 @@ namespace Hecton8.Gameplay
         }
     }
 }
+

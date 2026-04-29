@@ -1536,7 +1536,8 @@ namespace Hecton8.Atmosphere
             if (thunderClips == null || thunderClips.Length == 0)
                 return;
 
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager) || audioManager == null)
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (audioManager == null)
                 return;
 
             int clipIndex = math.clamp((int)(NextRandom01() * thunderClips.Length), 0, thunderClips.Length - 1);
@@ -2201,3 +2202,5 @@ namespace Hecton8.Atmosphere
 #endif
     }
 }
+
+

@@ -2084,7 +2084,7 @@ namespace Hecton8.UI
         {
             if (clip == null) return;
 
-            var audio = Hecton8.Audio.SpatialAudioManager.Instance;
+            var audio = Hecton8.Core.GlobalRegistry.Audio;
             if (audio != null)
                 audio.PlayStatic2D(clip, uiVolume);
         }
@@ -3217,3 +3217,4 @@ namespace Hecton8.UI
         }
     }
 }
+

@@ -184,7 +184,7 @@ namespace Hecton8.UI
             if (!TryCompleteProjectionIfScheduled())
                 return;
 
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager))
+            if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager))
             {
                 HideDots();
                 ApplyRootAlpha(0f);

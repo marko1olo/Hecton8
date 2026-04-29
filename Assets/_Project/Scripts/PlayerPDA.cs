@@ -389,7 +389,14 @@ namespace Hecton8.UI
             rect.offsetMax = new Vector2(-24f, -72f);
             if (tabComponentType != null)
                 tab.AddComponent(tabComponentType);
-            tab.SetActive(false);
+
+            CanvasGroup canvasGroup = tab.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = tab.AddComponent<CanvasGroup>();
+
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
             return tab;
         }
 
@@ -740,9 +747,6 @@ namespace Hecton8.UI
                     pdaCanvasGroup = pdaPanel.AddComponent<CanvasGroup>();
             }
 
-            if (!pdaPanel.activeSelf)
-                pdaPanel.SetActive(true);
-
             EnsureTabCanvasGroups();
 
             pdaCanvasGroup.alpha = 0f;
@@ -784,9 +788,6 @@ namespace Hecton8.UI
                     _tabCanvasGroups[i] = null;
                     continue;
                 }
-
-                if (!tab.activeSelf)
-                    tab.SetActive(true);
 
                 CanvasGroup group = _tabCanvasGroups[i];
                 if (group == null)
@@ -895,7 +896,8 @@ namespace Hecton8.UI
         private void PlaySound(AudioClip clip)
         {
             if (clip == null) return;
-            if (!SpatialAudioManager.TryGetInstance(out SpatialAudioManager audioManager)) return;
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            if (audioManager == null) return;
 
             audioManager.PlayStatic2D(clip, audioVolume);
         }
@@ -973,6 +975,7 @@ namespace Hecton8.UI
     {
         private const int DiagnosticsTabIndex = 7;
         private const string TitleText = "DIAGNOSTIC TERMINAL // PERF / HULL / OFFSET";
+        private static readonly char[] TitleTextBuffer = TitleText.ToCharArray();
 
         private static readonly Color BackgroundColor = new Color(0.03f, 0.08f, 0.10f, 0.86f);
         private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.16f);
@@ -1090,12 +1093,12 @@ namespace Hecton8.UI
 
             _titleLabel = CreateText(root, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.TopLeft, TitleColor);
             Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -14f), new Vector2(-16f, -42f));
-            _titleLabel.text = TitleText;
+            _titleLabel.SetCharArray(TitleTextBuffer, 0, TitleTextBuffer.Length);
 
             _bodyLabel = CreateText(root, "Body", numericFont != null ? numericFont : labelFont, 15f, FontStyles.Normal, TextAlignmentOptions.TopLeft, BodyColor);
             _bodyLabel.textWrappingMode = TextWrappingModes.NoWrap;
             Anchor(_bodyLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -72f), new Vector2(-16f, -236f));
-            _bodyLabel.text = string.Empty;
+            _bodyLabel.SetCharArray(Array.Empty<char>(), 0, 0);
 
             _built = true;
         }
@@ -1270,3 +1273,5 @@ namespace Hecton8.UI
         }
     }
 }
+
+

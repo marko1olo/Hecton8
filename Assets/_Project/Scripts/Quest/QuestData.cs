@@ -72,6 +72,9 @@ namespace Hecton8.Quest
         [Tooltip("Stable respawn event ID raised when a critical item must be re-spawned after destruction or discard.")]
         [SerializeField] public string respawnEventId;
 
+        [Tooltip("Optional phase gate that must already be unlocked before this quest may activate.")]
+        [SerializeField] public QuestPhaseGateType phaseGate = QuestPhaseGateType.None;
+
         [Header("── Flags ────────────────────────────────")]
         [SerializeField] public bool autoActivateOnStart;
         [SerializeField] public bool oneTimeOnly = true;

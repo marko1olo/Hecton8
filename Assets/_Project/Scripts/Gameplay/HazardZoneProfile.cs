@@ -8,6 +8,8 @@ namespace Hecton8.Gameplay
     [CreateAssetMenu(fileName = "HazardZoneProfile_", menuName = "Hecton8/Gameplay/Hazard Zone Profile")]
     public sealed class HazardZoneProfile : ScriptableObject
     {
+        public const int IntensityLutSampleCount = 64;
+
         [Header("Hazard")]
         [Tooltip("Canonical hazard type emitted by the authored source.")]
         [SerializeField] private HazardType hazardType = HazardType.Radiation;
@@ -21,11 +23,16 @@ namespace Hecton8.Gameplay
         [Tooltip("Authoring identifier for downstream dread-acoustics routing.")]
         [SerializeField] private uint acousticDreadID;
 
+        [SerializeField, HideInInspector] private float[] bakedIntensityLut = new float[IntensityLutSampleCount];
+
         /// <summary>Canonical emitted hazard type.</summary>
         public HazardType HazardType => hazardType;
 
         /// <summary>Normalized authored falloff curve for content tooling.</summary>
         public AnimationCurve IntensityCurve => intensityCurve;
+
+        /// <summary>Prebaked normalized falloff LUT consumed by runtime hazard evaluation.</summary>
+        public float[] BakedIntensityLut => bakedIntensityLut;
 
         /// <summary>Multiplier applied to visor corruption for this profile.</summary>
         public float VisorGlitchBias => visorGlitchBias;
@@ -39,7 +46,55 @@ namespace Hecton8.Gameplay
             visorGlitchBias = Mathf.Clamp(visorGlitchBias, 0f, 2f);
             if (intensityCurve == null || intensityCurve.length == 0)
                 intensityCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+
+            EnsureLutStorage();
+            BakeIntensityCurveLut();
         }
 #endif
+
+        private void EnsureLutStorage()
+        {
+            if (bakedIntensityLut == null || bakedIntensityLut.Length != IntensityLutSampleCount)
+                bakedIntensityLut = new float[IntensityLutSampleCount];
+        }
+
+        private void BakeIntensityCurveLut()
+        {
+            if (bakedIntensityLut == null || bakedIntensityLut.Length != IntensityLutSampleCount)
+                return;
+
+            for (int i = 0; i < IntensityLutSampleCount; i++)
+            {
+                float normalizedDistance = IntensityLutSampleCount > 1
+                    ? i / (float)(IntensityLutSampleCount - 1)
+                    : 0f;
+                float sample = intensityCurve != null && intensityCurve.length > 0
+                    ? intensityCurve.Evaluate(normalizedDistance)
+                    : ResolveDefaultIntensitySample(normalizedDistance);
+                bakedIntensityLut[i] = Mathf.Clamp01(sample);
+            }
+        }
+
+        private static void BakeDefaultIntensityCurveLut(float[] target)
+        {
+            if (target == null)
+                return;
+
+            int sampleCount = Mathf.Min(target.Length, IntensityLutSampleCount);
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float normalizedDistance = sampleCount > 1
+                    ? i / (float)(sampleCount - 1)
+                    : 0f;
+                target[i] = ResolveDefaultIntensitySample(normalizedDistance);
+            }
+        }
+
+        private static float ResolveDefaultIntensitySample(float normalizedDistance)
+        {
+            float safeDistance = Mathf.Clamp01(normalizedDistance);
+            float attenuation = 1f - (safeDistance * safeDistance);
+            return attenuation > 0f ? attenuation * attenuation : 0f;
+        }
     }
 }

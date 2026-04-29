@@ -22,9 +22,16 @@ namespace Hecton8.Gameplay
         private const float VehicleLeakOxygenDrainMultiplier = 1.25f;
         private const float FloodThermalThreshold = 0.3f;
         private const float FloodedInsulationFactor = 0.2f;
+        private const float RadiationFatigueExposureThresholdSeconds = 60f;
+        private const float RadiationFatigueFullDoseWindowSeconds = 90f;
+        private const float RadiationFatigueExposureDecayPerSecond = 0.5f;
+        private const float RadiationFatigueMinimumMaxHealthScale = 0.65f;
+        private const float RadiationFatigueBlendSharpness = 2.4f;
+        private const float RadiationFatigueSignalThreshold = 0.05f;
 
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
+        private HectonPlayerHealth _playerHealth;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private bool _registered;
         private float _integrityChannel01;
@@ -43,6 +50,8 @@ namespace Hecton8.Gameplay
         private MonoBehaviour _activeTransportEmitterBehaviour;
         private int _lastPublishedTraumaSignature = int.MinValue;
         private int _lastPublishedInteractionSignature = int.MinValue;
+        private float _radiationExposureSeconds;
+        private float _radiationFatigueMaxHealthScale = 1f;
 
         /// <summary>Current integrity trauma channel intensity.</summary>
         public float IntegrityChannel01 => _integrityChannel01;
@@ -133,6 +142,7 @@ namespace Hecton8.Gameplay
             ClearTransportBinding();
             TryUnregister();
             ResetChannels();
+            ResetRadiationFatigue();
             PublishSignals(true);
         }
 
@@ -147,6 +157,7 @@ namespace Hecton8.Gameplay
             _hazardRadiationSignal01 = DecayChannel(_hazardRadiationSignal01, HazardSignalDecayPerSecond, deltaTime);
             _hazardThermalSignal01 = DecayChannel(_hazardThermalSignal01, HazardSignalDecayPerSecond, deltaTime);
             _hazardToxicSignal01 = DecayChannel(_hazardToxicSignal01, HazardSignalDecayPerSecond, deltaTime);
+            UpdateRadiationFatigue(deltaTime);
 
             if (_activeTransportOwner != null)
             {
@@ -266,6 +277,9 @@ namespace Hecton8.Gameplay
             if (_playerMovement == null)
                 TryGetComponent(out _playerMovement);
 
+            if (_playerHealth == null)
+                TryGetComponent(out _playerHealth);
+
             if (_playerTransportCoordinator == null)
                 TryGetComponent(out _playerTransportCoordinator);
         }
@@ -357,6 +371,14 @@ namespace Hecton8.Gameplay
             _hazardToxicSignal01 = 0f;
             _lastPublishedTraumaSignature = int.MinValue;
             _lastPublishedInteractionSignature = int.MinValue;
+        }
+
+        private void ResetRadiationFatigue()
+        {
+            _radiationExposureSeconds = 0f;
+            _radiationFatigueMaxHealthScale = 1f;
+            if (_playerHealth != null)
+                _playerHealth.SetRuntimeMaxHealthScale(1f);
         }
 
         private void PublishSignals(bool force)
@@ -451,6 +473,42 @@ namespace Hecton8.Gameplay
         {
             if (candidate > channel)
                 channel = Mathf.Clamp01(candidate);
+        }
+
+        private void UpdateRadiationFatigue(float deltaTime)
+        {
+            if (_playerHealth == null)
+                return;
+
+            float radiationSignal = Mathf.Clamp01(_hazardRadiationSignal01);
+            if (radiationSignal > RadiationFatigueSignalThreshold)
+            {
+                _radiationExposureSeconds += deltaTime * Mathf.Lerp(0.35f, 1f, radiationSignal);
+            }
+            else
+            {
+                _radiationExposureSeconds = Mathf.Max(
+                    0f,
+                    _radiationExposureSeconds - (RadiationFatigueExposureDecayPerSecond * Mathf.Max(0f, deltaTime)));
+            }
+
+            float targetMaxHealthScale = 1f;
+            if (_radiationExposureSeconds > RadiationFatigueExposureThresholdSeconds)
+            {
+                float fatigueT = Mathf.InverseLerp(
+                    RadiationFatigueExposureThresholdSeconds,
+                    RadiationFatigueExposureThresholdSeconds + RadiationFatigueFullDoseWindowSeconds,
+                    _radiationExposureSeconds);
+                targetMaxHealthScale = Mathf.Lerp(1f, RadiationFatigueMinimumMaxHealthScale, fatigueT);
+            }
+
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, RadiationFatigueBlendSharpness) * Mathf.Max(0f, deltaTime));
+            float nextScale = Mathf.Lerp(_radiationFatigueMaxHealthScale, targetMaxHealthScale, blendT);
+            if (Mathf.Approximately(nextScale, _radiationFatigueMaxHealthScale))
+                return;
+
+            _radiationFatigueMaxHealthScale = nextScale;
+            _playerHealth.SetRuntimeMaxHealthScale(_radiationFatigueMaxHealthScale);
         }
 
         private static float ResolveTraumaImpulse(TraumaLevel level)
