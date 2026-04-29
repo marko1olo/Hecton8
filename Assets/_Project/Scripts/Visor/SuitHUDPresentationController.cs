@@ -111,6 +111,12 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EditorTick()
         {
+            if (this == null || !this)
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
             if (Application.isPlaying || !isActiveAndEnabled)
             {
                 UnregisterEditorTick();

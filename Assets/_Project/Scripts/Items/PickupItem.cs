@@ -37,6 +37,10 @@ namespace Hecton8.Interaction
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
         private const float OverflowScatterTorqueImpulse = 0.35f;
+        private const float DeepSeaSeawaterDensityKgPerM3 = 1025f;
+        private const float LooseItemUnderwaterLinearDamping = 1.6f;
+        private const float LooseItemUnderwaterAngularDamping = 6.5f;
+        private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
 
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -48,8 +52,11 @@ namespace Hecton8.Interaction
 
         private InteractionHighlighter _highlighter;
         private Rigidbody _rigidbody;
+        private BuoyancyObject _buoyancy;
         private Collider _collider;
         private PhysicsMaterial _defaultColliderMaterial;
+        private float _defaultLinearDamping;
+        private float _defaultAngularDamping;
         private HectonPlayerMovement _playerMovement;
         private string _cachedInteractText;
         private int _cachedItemHashId;
@@ -107,8 +114,14 @@ namespace Hecton8.Interaction
         {
             TryGetComponent(out _highlighter);
             TryGetComponent(out _rigidbody);
+            TryGetComponent(out _buoyancy);
             TryGetComponent(out _collider);
             _defaultColliderMaterial = _collider != null ? _collider.sharedMaterial : null;
+            if (_rigidbody != null)
+            {
+                _defaultLinearDamping = _rigidbody.linearDamping;
+                _defaultAngularDamping = _rigidbody.angularDamping;
+            }
             RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             RebuildInteractTextCache();
@@ -118,6 +131,8 @@ namespace Hecton8.Interaction
         {
             if (_rigidbody != null && itemData != null)
                 _rigidbody.mass = itemData.MassKg;
+
+            ConfigureWaterDynamicsFromData();
 
             if (_collider == null)
                 return;
@@ -155,6 +170,9 @@ namespace Hecton8.Interaction
             RegisterSpatialHandle();
             TryRegisterSlowTick();
             TryRegisterFixedTick();
+
+            if (_rigidbody != null && !_rigidbody.isKinematic)
+                GlobalPhysicsStateManager.RegisterTrackedBody(_rigidbody);
         }
 
         private void Start()
@@ -170,6 +188,7 @@ namespace Hecton8.Interaction
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
             ClearPersistentWorldRecord();
+            RestoreDamping();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -220,7 +239,12 @@ namespace Hecton8.Interaction
             }
 
             if (!ResolveSubmergedState())
+            {
+                RestoreDamping();
                 return;
+            }
+
+            ApplyUnderwaterDamping();
 
             Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(_rigidbody.worldCenterOfMass);
             if (sampledCurrent.sqrMagnitude <= 0.0001f)
@@ -474,6 +498,63 @@ namespace Hecton8.Interaction
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private void ConfigureWaterDynamicsFromData()
+        {
+            if (itemData == null || _rigidbody == null)
+                return;
+
+            if (_buoyancy == null)
+            {
+                TryGetComponent(out _buoyancy);
+                if (_buoyancy == null)
+                    _buoyancy = gameObject.AddComponent<BuoyancyObject>(); // COLD ALLOC: BuoyancyObject[1] â€” runtime world-item buoyancy proxy — owner: PickupItem
+            }
+
+            if (_buoyancy == null)
+                return;
+
+            if (itemData.worldBuoyancyProfile != null)
+                _buoyancy.SetProfile(itemData.worldBuoyancyProfile);
+
+            _buoyancy.ConfigureRuntimeFluidState(
+                itemData.MassKg,
+                itemData.VolumeM3,
+                ResolveBuoyancyHeightMeters(),
+                DeepSeaSeawaterDensityKgPerM3,
+                LooseItemBuoyancyAngularDragMultiplier);
+        }
+
+        private float ResolveBuoyancyHeightMeters()
+        {
+            if (_collider != null)
+            {
+                Bounds bounds = _collider.bounds;
+                if (bounds.size.y > 0.01f)
+                    return bounds.size.y;
+            }
+
+            Vector3 lossyScale = transform.lossyScale;
+            return Mathf.Max(0.1f, lossyScale.y);
+        }
+
+        private void ApplyUnderwaterDamping()
+        {
+            if (_rigidbody == null)
+                return;
+
+            _rigidbody.linearDamping = Mathf.Max(_defaultLinearDamping, LooseItemUnderwaterLinearDamping);
+            _rigidbody.angularDamping = Mathf.Max(_defaultAngularDamping, LooseItemUnderwaterAngularDamping);
+        }
+
+        private void RestoreDamping()
+        {
+            if (_rigidbody == null)
+                return;
+
+            _rigidbody.linearDamping = _defaultLinearDamping;
+            _rigidbody.angularDamping = _defaultAngularDamping;
         }
 
         private void ResolveWorldStateIdentity()

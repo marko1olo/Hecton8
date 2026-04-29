@@ -401,6 +401,8 @@ namespace Hecton8.EditorTools
             SetVector3(serializedObject, "breakVfxSocketLocal", breakSocket);
             SetColor(serializedObject, "bioluminescenceColor", spec.BiolumColor);
             SetFloat(serializedObject, "pulseFrequency", spec.PulseFrequency);
+            SetFloat(serializedObject, "swaySpeed", ResolveDefaultSwaySpeed(spec.Category));
+            SetFloat(serializedObject, "bendAmplitude", ResolveDefaultBendAmplitude(spec.Category));
             SetBool(serializedObject, "parasiticToModules", spec.ParasiticToModules);
             SetFloat(serializedObject, "modulePowerDrainWatts", spec.ModulePowerDrainWatts);
             SetFloat(serializedObject, "moduleInfectionStrength", spec.ModuleInfectionStrength);
@@ -485,6 +487,40 @@ namespace Hecton8.EditorTools
 
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static float ResolveDefaultSwaySpeed(FloraDataTemplate.FloraCategory category)
+        {
+            switch (category)
+            {
+                case FloraDataTemplate.FloraCategory.MicroGrass:
+                    return 1.35f;
+                case FloraDataTemplate.FloraCategory.HarvestableKelp:
+                    return 0.62f;
+                case FloraDataTemplate.FloraCategory.HardCoral:
+                    return 0.22f;
+                case FloraDataTemplate.FloraCategory.GiantSargassum:
+                    return 0.78f;
+                default:
+                    return 1f;
+            }
+        }
+
+        private static float ResolveDefaultBendAmplitude(FloraDataTemplate.FloraCategory category)
+        {
+            switch (category)
+            {
+                case FloraDataTemplate.FloraCategory.MicroGrass:
+                    return 0.72f;
+                case FloraDataTemplate.FloraCategory.HarvestableKelp:
+                    return 1.18f;
+                case FloraDataTemplate.FloraCategory.HardCoral:
+                    return 0.18f;
+                case FloraDataTemplate.FloraCategory.GiantSargassum:
+                    return 0.94f;
+                default:
+                    return 1f;
+            }
         }
 
         private static GameObject EnsureProxyPrefab(FloraSpec spec, Material material)

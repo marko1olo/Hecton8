@@ -214,6 +214,8 @@ namespace Hecton8.AI
             public Vector3 linearVelocity;
             public Vector3 angularVelocity;
             public float health;
+            public float pendingHibernationSleepSeconds;
+            public float hibernationStartTimeSeconds;
             public int speciesId;
             public int creatureTypeIndex;
             public int biomeIndex;
@@ -2341,6 +2343,8 @@ namespace Hecton8.AI
                 linearVelocity = linearVelocity,
                 angularVelocity = angularVelocity,
                 health = health,
+                pendingHibernationSleepSeconds = 0f,
+                hibernationStartTimeSeconds = -1f,
                 speciesId = ResolveStableSpeciesId(archetype, prefabSource),
                 creatureTypeIndex = creatureTypeIndex,
                 biomeIndex = biomeIndex,
@@ -2407,6 +2411,9 @@ namespace Hecton8.AI
                     float restoreDamage = ai.MaxHealth - clampedHealth;
                     if (restoreDamage > 0.001f)
                         ai.TakeDamage(restoreDamage);
+
+                    if (state.pendingHibernationSleepSeconds > 0.001f)
+                        ai.ApplyHibernationCatchUp(state.pendingHibernationSleepSeconds);
                 }
 
                 if (instance.TryGetComponent(out Rigidbody rigidbody))
@@ -2433,6 +2440,8 @@ namespace Hecton8.AI
 
                 _activeCreatures.Add(creature);
                 state.isDehydrated = false;
+                state.pendingHibernationSleepSeconds = 0f;
+                state.hibernationStartTimeSeconds = -1f;
                 _dehydratedCreatureStates[slotIndex] = state;
 
                 slotData = _dehydratedPoolSlots[slotIndex];
@@ -2484,7 +2493,8 @@ namespace Hecton8.AI
                     state.health,
                     in creatureAup,
                     state.isLargeThreat,
-                    state.isPredator);
+                    state.isPredator,
+                    Time.time);
                 if (!registry.TryCacheFaunaHibernationState(in cachedState))
                     continue;
 
@@ -2543,6 +2553,7 @@ namespace Hecton8.AI
             WorldMacroZoneCoordinate macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(runtimePosition, _runtimeMacroZoneSize);
             bool isLargeThreat = PersistentWorldRegistry.GetFaunaHibernationLargeThreatFlag(in cachedState) || entry.isLargeThreat;
             bool isPredator = PersistentWorldRegistry.GetFaunaHibernationPredatorFlag(in cachedState) || entry.isPredator;
+            float sleepStartTimeSeconds = PersistentWorldRegistry.GetFaunaHibernationSleepStartTimeSeconds(in cachedState);
 
             UpdateResidencySlot(
                 slotIndex,
@@ -2561,6 +2572,10 @@ namespace Hecton8.AI
 
             FaunaResidencyState restoredState = _dehydratedCreatureStates[slotIndex];
             restoredState.health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState);
+            restoredState.pendingHibernationSleepSeconds = sleepStartTimeSeconds > 0f
+                ? Mathf.Max(0f, Time.time - sleepStartTimeSeconds)
+                : 0f;
+            restoredState.hibernationStartTimeSeconds = sleepStartTimeSeconds;
             restoredState.speciesId = speciesId;
             restoredState.isLargeThreat = isLargeThreat;
             restoredState.isPredator = isPredator;
@@ -2740,6 +2755,8 @@ namespace Hecton8.AI
             restoredState.linearVelocity = new Vector3(savedState.linearVelocityX, savedState.linearVelocityY, savedState.linearVelocityZ);
             restoredState.angularVelocity = new Vector3(savedState.angularVelocityX, savedState.angularVelocityY, savedState.angularVelocityZ);
             restoredState.health = savedState.health;
+            restoredState.pendingHibernationSleepSeconds = 0f;
+            restoredState.hibernationStartTimeSeconds = -1f;
             restoredState.speciesId = savedState.speciesId;
             restoredState.isLargeThreat = isLargeThreat;
             restoredState.isPredator = entry.isPredator;

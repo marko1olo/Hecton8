@@ -36,6 +36,8 @@ namespace Hecton8.Items
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
         private const float OverflowScatterTorqueImpulse = 0.35f;
+        private const float DeepSeaSeawaterDensityKgPerM3 = 1025f;
+        private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
         // ─────────────────────── Data ────────────────────────────
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -104,6 +106,9 @@ namespace Hecton8.Items
 
             if (_rb != null)
             {
+                if (!_rb.isKinematic)
+                    GlobalPhysicsStateManager.RegisterTrackedBody(_rb);
+
                 _rb.WakeUp();
                 BeginSettle();
             }
@@ -269,13 +274,34 @@ namespace Hecton8.Items
 
         private void ConfigureWaterDynamicsFromData()
         {
-            if (itemData == null || itemData.worldBuoyancyProfile == null || _rb == null)
+            if (itemData == null || _rb == null)
                 return;
 
             if (_buoyancy == null)
                 _buoyancy = GetComponent<BuoyancyObject>() ?? gameObject.AddComponent<BuoyancyObject>();
 
-            _buoyancy.SetProfile(itemData.worldBuoyancyProfile);
+            if (itemData.worldBuoyancyProfile != null)
+                _buoyancy.SetProfile(itemData.worldBuoyancyProfile);
+
+            _buoyancy.ConfigureRuntimeFluidState(
+                itemData.MassKg,
+                itemData.VolumeM3,
+                ResolveBuoyancyHeightMeters(),
+                DeepSeaSeawaterDensityKgPerM3,
+                LooseItemBuoyancyAngularDragMultiplier);
+        }
+
+        private float ResolveBuoyancyHeightMeters()
+        {
+            if (_collider != null)
+            {
+                Bounds bounds = _collider.bounds;
+                if (bounds.size.y > 0.01f)
+                    return bounds.size.y;
+            }
+
+            Vector3 lossyScale = transform.lossyScale;
+            return Mathf.Max(0.1f, lossyScale.y);
         }
 
         private void ApplyPhysicalMetadata()

@@ -448,6 +448,10 @@ namespace Hecton8.World
         private const int FaunaHibernationStateValueMask = 0x00FFFFFF;
         private const int FaunaStateFlagLargeThreat = 1 << 0;
         private const int FaunaStateFlagPredator = 1 << 1;
+        private const int FaunaStateFlagsMask = FaunaStateFlagLargeThreat | FaunaStateFlagPredator;
+        private const int FaunaSleepStartShift = 2;
+        private const int FaunaSleepStartMaxEncoded = (1 << 22) - 1;
+        private const float FaunaSleepStartQuantumSeconds = 0.25f;
         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
         private const long PersistentMemoryBudgetBytes = 10485760L;
         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
@@ -2586,15 +2590,16 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 KeyValuePair<uint, EntityDataRecord> pair = enumerator.Current;
-                if (IsFloraSpawnTimestampState(in pair.Value))
+                EntityDataRecord pairValue = pair.Value;
+                if (IsFloraSpawnTimestampState(in pairValue))
                 {
                     _floraSpawnStateByInstanceUid.Remove(pair.Key);
-                    _floraSpawnStateByInstanceUid.TryAdd(pair.Key, pair.Value);
+                    _floraSpawnStateByInstanceUid.TryAdd(pair.Key, pairValue);
                     continue;
                 }
 
                 _entityStateByInstanceUid.Remove(pair.Key);
-                _entityStateByInstanceUid.TryAdd(pair.Key, pair.Value);
+                _entityStateByInstanceUid.TryAdd(pair.Key, pairValue);
             }
 
             enumerator.Dispose();
@@ -2985,7 +2990,8 @@ namespace Hecton8.World
             float health,
             in AbsoluteUniversePosition position,
             bool isLargeThreat,
-            bool isPredator)
+            bool isPredator,
+            float sleepStartTimeSeconds)
         {
             int flags = 0;
             if (isLargeThreat)
@@ -2993,12 +2999,17 @@ namespace Hecton8.World
             if (isPredator)
                 flags |= FaunaStateFlagPredator;
 
+            uint packedSleepStart = PackFaunaSleepStartTimeSeconds(sleepStartTimeSeconds);
+            uint packedState = FaunaHibernationStateTypeMask |
+                               ((packedSleepStart & (uint)FaunaSleepStartMaxEncoded) << FaunaSleepStartShift) |
+                               (uint)(flags & FaunaStateFlagsMask);
+
             return new EntityDataRecord
             {
                 Position = position.ToAlignedBlit(),
                 Quantity = math.max(1, speciesId),
                 Integrity01 = health,
-                InventoryHash = unchecked((int)(FaunaHibernationStateTypeMask | (uint)(flags & FaunaHibernationStateValueMask))),
+                InventoryHash = unchecked((int)packedState),
                 InstanceUid = instanceUid
             };
         }
@@ -3057,6 +3068,12 @@ namespace Hecton8.World
             return (state.InventoryHash & FaunaStateFlagPredator) != 0;
         }
 
+        internal static float GetFaunaHibernationSleepStartTimeSeconds(in EntityDataRecord state)
+        {
+            uint encoded = ((uint)state.InventoryHash & FaunaHibernationStateValueMask) >> FaunaSleepStartShift;
+            return encoded <= 0u ? 0f : encoded * FaunaSleepStartQuantumSeconds;
+        }
+
         private void RegisterSpawnImpulse(uint instanceUid, Vector3 initialImpulse)
         {
             if (!_spawnImpulseByInstanceUid.IsCreated || instanceUid == 0u)
@@ -3068,6 +3085,14 @@ namespace Hecton8.World
 
             _spawnImpulseByInstanceUid.Remove(instanceUid);
             _spawnImpulseByInstanceUid.TryAdd(instanceUid, impulse);
+        }
+
+        private static uint PackFaunaSleepStartTimeSeconds(float sleepStartTimeSeconds)
+        {
+            if (!float.IsFinite(sleepStartTimeSeconds) || sleepStartTimeSeconds <= 0f)
+                return 0u;
+
+            return (uint)math.min(FaunaSleepStartMaxEncoded, (int)math.round(sleepStartTimeSeconds / FaunaSleepStartQuantumSeconds));
         }
 
         private void RegisterSpawnVelocityChange(uint instanceUid, Vector3 inheritedVelocityChange)

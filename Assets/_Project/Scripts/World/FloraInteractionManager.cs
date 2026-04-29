@@ -173,6 +173,9 @@ namespace Hecton8.World
         private static readonly int _FloraPredatorThreatParamsId = Shader.PropertyToID("_HectonFloraPredatorThreatParams");
         private static readonly int _FloraLifecycleParamsId = Shader.PropertyToID("_HectonFloraLifecycleParams");
         private static readonly int _FloraCascadeParamsId = Shader.PropertyToID("_HectonFloraCascadeParams");
+        private static readonly int _SeasonCycleId = Shader.PropertyToID("_HectonSeasonCycle");
+        private static readonly int _SubmarineWashSphereId = Shader.PropertyToID("_HectonSubmarineWashSphere");
+        private static readonly int _SubmarineWashVelocityId = Shader.PropertyToID("_HectonSubmarineWashVelocity");
         private static readonly int _WakeTrailTextureId = Shader.PropertyToID("_HectonVegetationWakeTrailRT");
         private static readonly int _WakeTrailWorldRectId = Shader.PropertyToID("_HectonVegetationWakeTrailWorldRect");
         private static readonly int _WakeTrailActiveId = Shader.PropertyToID("_HectonVegetationWakeTrailActive");
@@ -859,6 +862,7 @@ namespace Hecton8.World
 
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
             PublishEnvironmentGlobals(runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero);
+            PublishSubmarineWashGlobals();
             RefreshFlowFieldGlobals(deltaTime);
             RefreshModuleParasiteState(deltaTime);
             if (runtimePlayerTransform == null)
@@ -1455,6 +1459,7 @@ namespace Hecton8.World
                     decayWeight,
                     Mathf.Lerp(1f, _bloomEmissionBoost, bloomWeight),
                     _decayWiltStrength));
+            Shader.SetGlobalFloat(_SeasonCycleId, cyclePhase);
         }
 
         private void PublishCascadeGlobals()
@@ -1486,6 +1491,46 @@ namespace Hecton8.World
             float wrappedDelta = Mathf.Abs(Mathf.DeltaAngle(cyclePhase * 360f, Mathf.Repeat(centerNormalized, 1f) * 360f)) / 360f;
             float normalized = Mathf.Clamp01(1f - (wrappedDelta / Mathf.Max(0.001f, halfWidthNormalized)));
             return normalized * normalized * (3f - (2f * normalized));
+        }
+
+        private void PublishSubmarineWashGlobals()
+        {
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            Rigidbody submarineHull = submarine != null ? submarine.HullRigidbody : null;
+            if (submarineHull == null)
+            {
+                Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                return;
+            }
+
+            Vector3 velocity = submarineHull.linearVelocity;
+            float speed = velocity.magnitude;
+            if (speed < _wakeTrailSubmarineMinSpeed)
+            {
+                Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                return;
+            }
+
+            float radius = Mathf.Clamp(
+                _wakeTrailSubmarineRadius + speed * 0.16f,
+                _wakeTrailSubmarineRadius,
+                _wakeTrailSubmarineRadius * 2.1f);
+            Shader.SetGlobalVector(
+                _SubmarineWashSphereId,
+                new Vector4(
+                    submarineHull.worldCenterOfMass.x,
+                    submarineHull.worldCenterOfMass.y,
+                    submarineHull.worldCenterOfMass.z,
+                    radius));
+            Shader.SetGlobalVector(
+                _SubmarineWashVelocityId,
+                new Vector4(
+                    velocity.x,
+                    velocity.y,
+                    velocity.z,
+                    speed));
         }
 
         private void UpdateToxicSporeExposure(Vector3 playerPositionWS, float deltaTime)
@@ -3264,6 +3309,9 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_VegetationCurrentStrengthId, 0f);
             Shader.SetGlobalVector(_FloraPredatorThreatParamsId, Vector4.zero);
             Shader.SetGlobalVector(_FloraLifecycleParamsId, new Vector4(0f, 0f, 1f, 0f));
+            Shader.SetGlobalFloat(_SeasonCycleId, 0f);
+            Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+            Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
             Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
             Shader.SetGlobalInt(_FloraFlowFieldResolutionId, 0);
             Shader.SetGlobalVector(_ParasiteGlobalsId, Vector4.zero);

@@ -142,6 +142,9 @@ namespace Hecton8.Physics
         private Rigidbody _rb;
         private Collider _collider;
         private Transform _cachedTransform;
+        private float _runtimeLocalFluidDensity = 0f;
+        private float _runtimeAngularDragMultiplier = 1f;
+        private bool _runtimeLocalFluidDensityOverrideActive;
 
         // ══════════════════════════════════════════════════════════
         //  DRY ZONE STATE
@@ -239,6 +242,9 @@ namespace Hecton8.Physics
         /// </summary>
         public bool IsInAir => _dryZoneRefCount > 0 || _isGrounded;
         public BuoyancyProfile Profile => profile;
+        public bool UseLocalFluidDensityOverride => _runtimeLocalFluidDensityOverrideActive;
+        public float LocalFluidDensityOverride => _runtimeLocalFluidDensity;
+        public float RuntimeAngularDragMultiplier => _runtimeAngularDragMultiplier;
 
         /// <summary>
         /// True while another system explicitly suppresses buoyancy forces for this body.
@@ -349,6 +355,26 @@ namespace Hecton8.Physics
 
             if (applyImmediately)
                 ApplyProfileIfNeeded();
+        }
+
+        internal void ConfigureRuntimeFluidState(
+            float massKg,
+            float volumeM3,
+            float heightMeters,
+            float localFluidDensityKgPerM3,
+            float angularDragMultiplier)
+        {
+            float safeVolumeM3 = Mathf.Max(0.0001f, volumeM3);
+            float safeMassKg = Mathf.Max(0.01f, massKg);
+
+            volume = safeVolumeM3;
+            density = safeMassKg / safeVolumeM3;
+            height = Mathf.Max(0.05f, heightMeters);
+            _runtimeLocalFluidDensityOverrideActive = localFluidDensityKgPerM3 > 0.01f;
+            _runtimeLocalFluidDensity = _runtimeLocalFluidDensityOverrideActive
+                ? Mathf.Max(0.01f, localFluidDensityKgPerM3)
+                : 0f;
+            _runtimeAngularDragMultiplier = Mathf.Max(0.1f, angularDragMultiplier);
         }
 
         private void ApplyProfileIfNeeded()

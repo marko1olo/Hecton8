@@ -155,6 +155,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float RuntimeFlags;
                 float PulseFrequency;
                 float4 BioluminescenceColor;
+                float SwaySpeed;
+                float BendAmplitude;
+                float HealthNormalized;
+                float Reserved0;
             };
 
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
@@ -181,7 +185,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonFloraPredatorThreatParams;
             float4 _HectonFloraLifecycleParams;
             float4 _HectonFloraCascadeParams;
+            float4 _HectonSubmarineWashSphere;
+            float4 _HectonSubmarineWashVelocity;
             float4 _HectonFlowSynchronyParams;
+            float _HectonSeasonCycle;
             float _HectonVegetationDepth;
             float _HectonVegetationLightFactor;
             float _HectonVegetationTurbidity;
@@ -604,6 +611,30 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return (planarWakeDirection + baseNormalWS * 0.02) * flattening + float3(0.0, -downwardBias, 0.0);
             }
 
+            float3 ResolveSubmarineWashOffset(float3 evaluationPositionWS, float3 baseNormalWS, float bendMask, float heightMask, float instanceType)
+            {
+                if (bendMask <= 0.0001 || _HectonSubmarineWashSphere.w <= 0.0001 || _HectonSubmarineWashVelocity.w <= 0.0001)
+                    return float3(0.0, 0.0, 0.0);
+
+                float3 delta = evaluationPositionWS - _HectonSubmarineWashSphere.xyz;
+                float radius = max(_HectonSubmarineWashSphere.w, 0.05);
+                float dist = length(delta);
+                if (dist >= radius)
+                    return float3(0.0, 0.0, 0.0);
+
+                float proximity = saturate(1.0 - dist / radius);
+                proximity *= proximity;
+                float3 awayDirection = SafeNormalize3(float3(delta.x, 0.0, delta.z));
+                float3 velocityDirection = _HectonSubmarineWashVelocity.xyz - baseNormalWS * dot(_HectonSubmarineWashVelocity.xyz, baseNormalWS);
+                velocityDirection = SafeNormalize3(velocityDirection);
+                float3 bendDirection = SafeNormalize3(lerp(awayDirection, velocityDirection, 0.65));
+                float speedFactor = saturate(_HectonSubmarineWashVelocity.w * 0.045);
+                float typeScale = instanceType < 0.5 ? 0.55 : (instanceType < 1.5 ? 1.25 : 0.72);
+                float flattening = proximity * speedFactor * bendMask * typeScale * lerp(0.35, 1.0, heightMask);
+                float downwardBias = lerp(0.02, 0.12, heightMask) * flattening;
+                return bendDirection * flattening + float3(0.0, -downwardBias, 0.0);
+            }
+
             float EvaluateSargassumOrganicDensity(float2 worldXZ)
             {
                 float2 sample = worldXZ * 0.024 + _SargassumGlobalDriftOffset.xz * 0.014;
@@ -889,7 +920,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
                 float encodedHeightScale = instanceData.HeightScale;
                 float encodedWidthScale = instanceData.WidthScale;
-                float timeValue = _Time.y;
+                float authoredSwaySpeed = max(instanceData.SwaySpeed, 0.05);
+                float authoredBendAmplitude = max(instanceData.BendAmplitude, 0.0);
+                float normalizedHealth = saturate(instanceData.HealthNormalized);
+                float timeValue = _Time.y * authoredSwaySpeed;
                 float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
                 float parasiteMask = ResolveParasiteMask(instanceData.RuntimeFlags);
                 float biomeLayer = ResolveBiomeLayer(instanceData.RuntimeFlags);
@@ -898,7 +932,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float widthScale = ResolveOrganicWidthScale(encodedWidthScale, entropyProgress);
                 float variation = frac(instanceData.Variation);
                 float heightMask = saturate(input.uv.y);
-                float bendMask = heightMask * heightMask;
+                float bendMask = heightMask * heightMask * authoredBendAmplitude;
                 float curvatureMask = saturate(input.color.a);
                 float2 originXZ = originWS.xz;
                 float instanceNoise = Hash21(originXZ + variation);
@@ -945,12 +979,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float2 currentDirection = ResolvePlanarOceanFlowDirection(currentVector);
                 float3 animatedPositionWS = basePositionWS;
                 float3 wakeTrailOffset = ResolveWakeTrailOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
+                float3 submarineWashOffset = ResolveSubmarineWashOffset(basePositionWS, baseNormalWS, bendMask, heightMask, instanceType);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
 
                 if (_HectonLodPassMode < 0.5)
                 {
                     float stateSwayScale = lerp(1.0, 1.28, agitatedWeight) * lerp(1.0, 0.52, dyingWeight);
-                    float detailAmplitude = saturate(lodAlpha + 0.2) * wiltSuppression * stateSwayScale;
+                    float detailAmplitude = saturate(lodAlpha + 0.2) * wiltSuppression * stateSwayScale * lerp(0.35, 1.0, normalizedHealth);
                     float currentTorsion;
                     float3 currentOffset = CalculateUnderwaterCurrents(
                         renderOriginWS,
@@ -973,6 +1008,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                             sin(phase),
                             cos(phase * 1.37 + heightMask * _GrassWindFrequency)));
                         animatedPositionWS += wakeTrailOffset;
+                        animatedPositionWS += submarineWashOffset;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (0.85 * detailAmplitude);
                         animatedPositionWS.xz += grassWind * (_GrassWindAmplitude * bendMask * detailAmplitude);
@@ -987,11 +1023,12 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                             sin(phase),
                             cos(phase * 0.71 + heightMask * _KelpCurrentFrequency));
                         float2 kelpFlow = ResolvePlanarOceanFlowDirection(currentVector + noiseFlow * currentStrength);
-                        float kelpAmplitude = _KelpCurrentAmplitude;
+                        float kelpAmplitude = _KelpCurrentAmplitude * lerp(0.45, 1.0, authoredBendAmplitude);
                         #if defined(_QUALITY_MX350)
                         kelpAmplitude *= 0.8;
                         #endif
                         animatedPositionWS += wakeTrailOffset * 1.1;
+                        animatedPositionWS += submarineWashOffset * 1.15;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS += currentOffset * (1.15 * detailAmplitude);
                         animatedPositionWS.xz += kelpFlow * (kelpAmplitude * bendMask * detailAmplitude);
@@ -1005,8 +1042,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                             dot(originXZ, float2(_SargassumWaveFrequency * 0.2, _SargassumWaveFrequency * 0.16));
                         float organicDensity = EvaluateSargassumOrganicDensity(renderOriginWS.xz);
                         float edgePulse = saturate(1.0 - abs(organicDensity * 2.0 - 1.0));
-                        float waveLift = sin(phase) * _SargassumWaveAmplitude;
-                        float bob = cos(phase * 1.31 + variation * 6.0) * (_SargassumWaveAmplitude * 0.18);
+                        float waveLift = sin(phase) * (_SargassumWaveAmplitude * lerp(0.35, 1.0, authoredBendAmplitude));
+                        float bob = cos(phase * 1.31 + variation * 6.0) * (_SargassumWaveAmplitude * 0.18 * lerp(0.35, 1.0, authoredBendAmplitude));
                         float verticalFromRoot = basePositionWS.y - renderOriginWS.y;
                         renderOriginWS.y = resolvedWaterLevel + driftOffsetWS.y + waveLift;
                         animatedPositionWS.y = renderOriginWS.y + verticalFromRoot + bob * bendMask;
@@ -1016,6 +1053,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         float pulse = sin(pulsePhase) * _SargassumPulsationAmplitude * edgePulse * bendMask * detailAmplitude;
                         float2 radialWS = SafeNormalize2(animatedPositionWS.xz - renderOriginWS.xz + float2(0.001, 0.001));
                         animatedPositionWS += wakeTrailOffset * 0.45;
+                        animatedPositionWS += submarineWashOffset * 0.72;
                         animatedPositionWS += flowSynchronyOffset;
                         animatedPositionWS.xz += currentOffset.xz * (0.5 * detailAmplitude);
                         animatedPositionWS.y += currentOffset.y * (0.18 * detailAmplitude);
@@ -1048,8 +1086,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                     float2 farFlow = ResolvePlanarOceanFlowDirection(currentVector + float2(sin(farPhase), cos(farPhase * 0.83)) * currentStrength);
                     float farStateSwayScale = lerp(1.0, 1.18, agitatedWeight) * lerp(1.0, 0.58, dyingWeight);
-                    float farSwayStrength = (instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42) * wiltSuppression * farStateSwayScale;
+                    float farSwayStrength = (instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42) * wiltSuppression * farStateSwayScale * lerp(0.35, 1.0, authoredBendAmplitude) * lerp(0.35, 1.0, normalizedHealth);
                     animatedPositionWS += wakeTrailOffset * 0.8;
+                    animatedPositionWS += submarineWashOffset * 0.75;
                     animatedPositionWS += flowSynchronyOffset * 0.85;
                     animatedPositionWS.xz += farFlow * (farSwayStrength * bendMask * lodAlpha);
                     animatedPositionWS += farCurrentOffset * 0.65;
@@ -1125,7 +1164,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.parasiteMask = parasiteMask;
                 output.runtimeState = instanceData.RuntimeState;
                 output.pulseFrequency = max(0.05, instanceData.PulseFrequency);
-                output.biolumColor = instanceData.BioluminescenceColor;
+                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, instanceData.BioluminescenceColor.a * normalizedHealth);
                 output.flowMagnitude = flowMagnitude;
                 output.biomeLayer = biomeLayer;
                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
@@ -1255,10 +1294,14 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half biolumVisibility = saturate(1.0h - input.entropyProgress * 0.65h);
                 half flowReactiveBoost = 1.0h + (max(0.0h, input.flowMagnitude) * 0.5h);
                 half seasonalBloomScale = ResolveSeasonalBloomEmissionScale();
-                half seasonalDecaySuppression = lerp(1.0h, 0.82h, saturate(_HectonFloraLifecycleParams.y * _HectonFloraLifecycleParams.w));
+                half decaySeasonPulse = 0.5h + 0.5h * cos((_HectonSeasonCycle - 0.75h) * 6.28318h);
+                half decaySeasonWeight = saturate(_HectonFloraLifecycleParams.y) * lerp(0.55h, 1.0h, decaySeasonPulse);
+                half seasonalDecaySuppression = lerp(1.0h, 0.78h, saturate(decaySeasonWeight * _HectonFloraLifecycleParams.w));
                 half cascadeEmissionScale = 1.0h + ResolveCascadeEmissionScale(input.cascadeSeed);
                 half3 biolumEmission = input.biolumColor.rgb *
                     (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale);
+                half3 decayTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(0.92h, 0.84h, 0.68h), decaySeasonWeight * 0.22h);
+                finalColor *= decayTint;
                 finalColor += biolumEmission;
 
                 #ifdef _ADDITIONAL_LIGHTS

@@ -80,6 +80,7 @@ namespace Hecton8.Inventory
 
                 NativeArray<InventorySortEntry> source = Entries;
                 NativeArray<InventorySortEntry> destination = Scratch;
+                bool sourceIsEntries = true;
 
                 for (int pass = 0; pass < PackedKeyPassCount; pass++)
                 {
@@ -113,9 +114,10 @@ namespace Hecton8.Inventory
                     NativeArray<InventorySortEntry> swap = source;
                     source = destination;
                     destination = swap;
+                    sourceIsEntries = !sourceIsEntries;
                 }
 
-                if (source != Entries)
+                if (!sourceIsEntries)
                 {
                     for (int index = 0; index < Count; index++)
                         Entries[index] = source[index];
@@ -1664,6 +1666,7 @@ namespace Hecton8.Inventory
                 _itemStateFlags[anchorIndex] = 0;
                 _qualityMilli[anchorIndex] = 0;
                 _lastUpdateUnixSeconds[anchorIndex] = 0;
+                ClearAnchorPhysicalMetadata(anchorIndex);
                 TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
                 return true;
             }
@@ -1683,6 +1686,45 @@ namespace Hecton8.Inventory
         {
             ClearNativeArray(_craftLockedCounts);
             ClearNativeArray(_anchorStateFlags);
+        }
+
+        private void SyncAnchorPhysicalMetadata(int anchorIndex, int itemHashId)
+        {
+            if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+            {
+                ClearAnchorPhysicalMetadata(anchorIndex);
+                return;
+            }
+
+            SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
+        }
+
+        private void SetAnchorPhysicalMetadata(int anchorIndex, float massKg, float volumeM3)
+        {
+            if (!_anchorUnitMassKg.IsCreated ||
+                !_anchorUnitVolumeM3.IsCreated ||
+                (uint)anchorIndex >= (uint)_anchorUnitMassKg.Length ||
+                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length)
+            {
+                return;
+            }
+
+            _anchorUnitMassKg[anchorIndex] = Mathf.Max(0f, massKg);
+            _anchorUnitVolumeM3[anchorIndex] = Mathf.Max(0f, volumeM3);
+        }
+
+        private void ClearAnchorPhysicalMetadata(int anchorIndex)
+        {
+            if (!_anchorUnitMassKg.IsCreated ||
+                !_anchorUnitVolumeM3.IsCreated ||
+                (uint)anchorIndex >= (uint)_anchorUnitMassKg.Length ||
+                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length)
+            {
+                return;
+            }
+
+            _anchorUnitMassKg[anchorIndex] = 0f;
+            _anchorUnitVolumeM3[anchorIndex] = 0f;
         }
 
         private static uint ResolveCurrentUnixTimestamp()
@@ -1800,6 +1842,15 @@ namespace Hecton8.Inventory
 
             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
             UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<uint>());
+        }
+
+        private static unsafe void ClearNativeArray(NativeArray<float> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+            UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<float>());
         }
 
         private static unsafe void CopyNativeArray(NativeArray<ushort> source, NativeArray<ushort> destination)

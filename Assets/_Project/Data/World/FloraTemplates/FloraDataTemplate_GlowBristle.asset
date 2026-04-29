@@ -36,6 +36,8 @@ MonoBehaviour:
   breakVfxSocketLocal: {x: 0, y: 0.1408, z: 0}
   bioluminescenceColor: {r: 0.12, g: 0.92, b: 0.56, a: 0.8}
   pulseFrequency: 1.02
+  swaySpeed: 1.35
+  bendAmplitude: 0.72
   parasiticToModules: 0
   modulePowerDrainWatts: 0
   moduleInfectionStrength: 0

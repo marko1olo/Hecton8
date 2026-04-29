@@ -55,6 +55,29 @@ namespace Hecton8.Tools
             runtime.EnqueueBackBuffer(powerDelivered, ratedPower, priority);
         }
 
+        public static void EnqueueCommand(
+            float lowFreqIntensity,
+            float highFreqIntensity,
+            float durationSeconds,
+            float decayRate,
+            byte priority,
+            byte motorMask,
+            byte blendMode)
+        {
+            ToolHapticsRuntime runtime = EnsureRuntimeInstance();
+            if (runtime == null)
+                return;
+
+            runtime.EnqueueBackBufferCommand(
+                lowFreqIntensity,
+                highFreqIntensity,
+                durationSeconds,
+                decayRate,
+                priority,
+                motorMask,
+                blendMode);
+        }
+
         public static ToolHapticsRuntime EnsureRuntimeInstance()
         {
             if (_instance != null)
@@ -207,6 +230,46 @@ namespace Hecton8.Tools
                 Priority = priority,
                 MotorMask = RightMotorMask,
                 BlendMode = 1
+            };
+        }
+
+        private void EnqueueBackBufferCommand(
+            float lowFreqIntensity,
+            float highFreqIntensity,
+            float durationSeconds,
+            float decayRate,
+            byte priority,
+            byte motorMask,
+            byte blendMode)
+        {
+            EnsureBuffers();
+            if (_backCount >= BufferCapacity || motorMask == 0)
+                return;
+
+            float resolvedLow = math.isfinite(lowFreqIntensity)
+                ? math.saturate(lowFreqIntensity)
+                : 0f;
+            float resolvedHigh = math.isfinite(highFreqIntensity)
+                ? math.saturate(highFreqIntensity)
+                : 0f;
+            float resolvedDuration = math.isfinite(durationSeconds)
+                ? math.max(0f, durationSeconds)
+                : 0f;
+            float resolvedDecay = math.isfinite(decayRate)
+                ? math.max(0f, decayRate)
+                : 0f;
+            if ((resolvedLow <= 0f && resolvedHigh <= 0f) || resolvedDuration <= 0f)
+                return;
+
+            _backBuffer[_backCount++] = new HapticCommand
+            {
+                LowFreqIntensity = resolvedLow,
+                HighFreqIntensity = resolvedHigh,
+                DurationRemaining = resolvedDuration,
+                DecayRate = resolvedDecay,
+                Priority = priority,
+                MotorMask = motorMask,
+                BlendMode = (byte)math.clamp((int)blendMode, 0, 2)
             };
         }
 

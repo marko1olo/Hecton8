@@ -123,6 +123,9 @@ namespace Hecton8.AI
         private const float ParentalDefenseIntensityThreshold = 0.1f;
         private const float DefaultEmpAttackRadiusMeters = 18f;
         private const float DefaultDazzleLockDurationSeconds = 0.35f;
+        private const float FeedingObservationCooldownSeconds = 6f;
+        private const float FeedingObservationRadiusMeters = 80f;
+        private const float FeedingObservationRadiusMetersSqr = FeedingObservationRadiusMeters * FeedingObservationRadiusMeters;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextSlowTickWatchdogLogTime;
 #endif
@@ -168,7 +171,9 @@ namespace Hecton8.AI
         private float _apexIntimidationUntilTime;
         private float _forcedMigrationUntilTime;
         private float _nextBurrowBreachTime;
+        private float _nextBestiaryObservationTime;
         private bool _hasForcedMigrationTarget;
+        private uint _cachedScanEntryHash;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -874,6 +879,7 @@ namespace Hecton8.AI
                 ecosystemDirector.TryConsumeCorpseScavengeTarget(corpseNodeId, ecosystemDirector.ScavengerConsumeUnitsPerSecond * dt))
             {
                 _utilityBrain.ForceSated(_cognitionTimeSeconds, HerbivoreSatedDurationSeconds);
+                TryReportFaunaFeedingObservation();
                 ApplyDirectedStateOverride(selfPosition, corpsePosition, AIState.Sated);
                 return true;
             }
@@ -924,6 +930,7 @@ namespace Hecton8.AI
                     ecosystemDirector.TryConsumeHerbivoreGrazeTarget(floraInstanceUid))
                 {
                     _utilityBrain.ForceSated(_cognitionTimeSeconds, HerbivoreSatedDurationSeconds);
+                    TryReportFaunaFeedingObservation();
                     ApplyDirectedStateOverride(selfPosition, selfWorldPosition + transform.forward, AIState.Sated);
                     return true;
                 }
@@ -1763,6 +1770,18 @@ namespace Hecton8.AI
             _utilityBrain.ApplyFatigueRelief(fatigueRelief);
         }
 
+        internal void ApplyHibernationCatchUp(float sleepSeconds)
+        {
+            if (sleepSeconds <= 0f)
+                return;
+
+            if (_utilityBrain.ApplyHibernationCatchUp(sleepSeconds, _cognitionTimeSeconds))
+            {
+                _stateMachine.currentState = AIState.Aggressive;
+                _currentStateCache = AIState.Aggressive;
+            }
+        }
+
         internal void SetLogicalLodTier(FaunaLogicalLodTier logicalLodTier)
         {
             _logicalLodTier = logicalLodTier;
@@ -1813,6 +1832,7 @@ namespace Hecton8.AI
             _apexIntimidationUntilTime = 0f;
             _forcedMigrationUntilTime = 0f;
             _nextBurrowBreachTime = 0f;
+            _nextBestiaryObservationTime = 0f;
             _hasForcedMigrationTarget = false;
             ClearVoxelPathGuidance();
         }
@@ -2023,9 +2043,11 @@ namespace Hecton8.AI
 
         private void ConfigureFaunaScanMetadata()
         {
+            _cachedScanEntryHash = 0u;
             if (_faunaDataTemplate == null)
                 return;
 
+            _cachedScanEntryHash = ScanEvents.ComputeEntryHash(_faunaDataTemplate.ScanEntryId);
             if (_scannableTarget == null)
                 TryGetComponent(out _scannableTarget);
 
@@ -2048,6 +2070,24 @@ namespace Hecton8.AI
                 _faunaDataTemplate.ResolveScanTitle(fallbackTitle),
                 _faunaDataTemplate.ResolveScanCategory(fallbackCategory),
                 _faunaDataTemplate.ResolveScanSummary(fallbackSummary));
+        }
+
+        private void TryReportFaunaFeedingObservation()
+        {
+            if (_cachedScanEntryHash == 0u || _cognitionTimeSeconds < _nextBestiaryObservationTime)
+                return;
+
+            Transform playerTransform = _currentCullingPlayerTransform;
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            _currentCullingPlayerTransform = playerTransform;
+            if (playerTransform == null ||
+                (playerTransform.position - transform.position).sqrMagnitude > FeedingObservationRadiusMetersSqr)
+            {
+                return;
+            }
+
+            _nextBestiaryObservationTime = _cognitionTimeSeconds + FeedingObservationCooldownSeconds;
+            ScanEvents.RaiseFaunaFeedingObserved(_cachedScanEntryHash, transform.position);
         }
 
         private Unity.Mathematics.Random CreateDeterministicRandom()

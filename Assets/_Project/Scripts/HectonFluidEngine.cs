@@ -866,12 +866,15 @@ namespace Hecton8.Physics
                     mass    = rb.mass,
                     currentResponse = obj.CurrentResponse * currentWeight,
                     surfaceStability = obj.SurfaceStability * stabilityWeight,
-                    localFluidDensity = waterDensity,
+                    localFluidDensity = obj.UseLocalFluidDensityOverride
+                        ? obj.LocalFluidDensityOverride
+                        : waterDensity,
                     localCurrent = new float3(localCurrent.x, localCurrent.y, localCurrent.z),
                     isInAir = obj.ShouldSuppressFluid(waterLevel) ? (byte)1 : (byte)0,
                     simulationMode = simulationMode,
                     simplifiedSubmersion = simplifiedSubmersion,
-                    useLocalFluidDensityOverride = 0
+                    useLocalFluidDensityOverride = obj.UseLocalFluidDensityOverride ? (byte)1 : (byte)0,
+                    angularDragMultiplier = obj.RuntimeAngularDragMultiplier
                 };
 
                 ResourceDistributionDirector brineDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
@@ -1603,6 +1606,7 @@ namespace Hecton8.Physics
         public float currentResponse;
         public float surfaceStability;
         public float localFluidDensity;
+        public float angularDragMultiplier;
         public float3 localCurrent;
 
         /// <summary>
@@ -1892,7 +1896,7 @@ namespace Hecton8.Physics
             float surfaceBand = math.saturate(1f - math.abs(depthBelowSurface - p.height) / math.max(0.25f, p.height * 1.5f));
             float3 tiltAxis = math.cross(up, new float3(0f, 1f, 0f));
             float3 stabilityTorque = tiltAxis * (p.surfaceStability * buoyancyMagnitude * surfaceBand * 0.12f);
-            float3 angularDragTorque = -angularVel * (angularDragCoeff * subRatio * math.max(1f, p.mass * 0.35f));
+            float3 angularDragTorque = -angularVel * (angularDragCoeff * math.max(0.1f, p.angularDragMultiplier) * subRatio * math.max(1f, p.mass * 0.35f));
 
             resultForces[i] = ResolveFiniteFloat3OrZero(buoyancyForce + dragForce + currentF + dampingVec);
             resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque);

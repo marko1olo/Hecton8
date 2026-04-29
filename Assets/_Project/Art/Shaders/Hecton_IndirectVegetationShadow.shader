@@ -61,6 +61,10 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float RuntimeFlags;
                 float PulseFrequency;
                 float4 BioluminescenceColor;
+                float SwaySpeed;
+                float BendAmplitude;
+                float HealthNormalized;
+                float Reserved0;
             };
 
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
@@ -411,7 +415,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
                 float variation = frac(instanceData.Variation);
                 float heightMask = saturate(uv.y);
-                float bendMask = heightMask * heightMask;
+                float bendMask = heightMask * heightMask * max(instanceData.BendAmplitude, 0.0);
                 float curvatureMask = heightMask;
                 float instanceNoise = Hash21(originWS.xz + variation);
                 float instanceHeight;
@@ -437,7 +441,8 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float3 baseNormalWS = TransformDirection(instanceMatrix, normalOS);
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 animatedPositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + _GlobalFloatingOffset.xyz;
-                float timeValue = _Time.y;
+                float timeValue = _Time.y * max(instanceData.SwaySpeed, 0.05);
+                float healthSwayScale = lerp(0.35, 1.0, saturate(instanceData.HealthNormalized));
                 float3 sampledFlowVector = ResolveMarineSnowFlowField(animatedPositionWS);
                 float2 sampledCurrentVector = sampledFlowVector.xz;
                 float2 currentVector = dot(sampledCurrentVector, sampledCurrentVector) > 0.0001
@@ -446,8 +451,8 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
                 float currentStrength = max(length(sampledCurrentVector), ResolvePlanarCurrentStrength());
                 float swayWave = sin(timeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(animatedPositionWS, bendMask, instanceType, instanceNoise);
-                animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave);
-                animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask);
+                animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave * healthSwayScale);
+                animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask * healthSwayScale);
                 animatedPositionWS += flowSynchronyOffset;
                 animatedPositionWS += ResolveWakeTrailOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
                 animatedPositionWS += ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask);

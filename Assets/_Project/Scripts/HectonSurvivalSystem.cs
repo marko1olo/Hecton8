@@ -1060,10 +1060,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveOxygenCarryMassScale()
         {
-            if (weight <= OxygenCarryMassGraceKg)
-                return 1f;
-
-            float carry01 = math.saturate((weight - OxygenCarryMassGraceKg) / math.max(0.01f, stats.CarryCapacityKg));
+            float carry01 = math.saturate(weight / math.max(0.01f, stats.CarryCapacityKg));
             return 1f + carry01 * OxygenCarryMassScaleCeilingBonus;
         }
 

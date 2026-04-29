@@ -432,7 +432,7 @@ namespace Hecton8.Gameplay
         /// <summary>Optional immutable template that owns abandoned-module integrity authoring and VFX sockets.</summary>
         public BaseModuleTemplate ModuleTemplate => moduleTemplate;
         /// <summary>Discrete integrity state derived from flood, breach, and abandonment thresholds.</summary>
-        public BaseModuleIntegrityState IntegrityState => ResolveDiscreteIntegrityState();
+        public BaseModuleIntegrityState IntegrityState => ResolveModuleIntegrityStateDiscrete();
         /// <summary>Normalized module integrity in the [0..1] range.</summary>
         public float IntegrityStateNormalized => _integrityComponent.MaxIntegrity > 0.01f
             ? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)
@@ -448,7 +448,7 @@ namespace Hecton8.Gameplay
         /// <summary>Normalized CO2 saturation inside the module loop.</summary>
         public float Co2Normalized => _lifeSupportComponent.Co2Normalized;
         /// <summary>Active power supply ratio for this module's current grid connection.</summary>
-        public float PowerSupplyRatio => ResolveOperationalPowerSupplyRatio01();
+        public float PowerSupplyRatio => ResolveModulePowerSupplyRatio01();
         /// <summary>True when CO2 saturation has reached the life-support lockout threshold.</summary>
         public bool IsCo2Critical => _lifeSupportComponent.IsCo2Critical;
         /// <summary>True when CO2 saturation has crossed the toxic dry-room threshold.</summary>
@@ -1377,7 +1377,7 @@ namespace Hecton8.Gameplay
         private bool HasOperationalPower => _integrityComponent.HasOperationalPower(_hasPower);
         private bool ShouldLightsBeEnabled() => HasOperationalPower && !_ambientLightsBrownedOut;
 
-        private BaseModuleIntegrityState ResolveDiscreteIntegrityState()
+        private BaseModuleIntegrityState ResolveModuleIntegrityStateDiscrete()
         {
             if (IsBreached)
                 return BaseModuleIntegrityState.Ruptured;
@@ -1469,7 +1469,7 @@ namespace Hecton8.Gameplay
                 dt,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
                 HasOperationalPower,
-                ResolveOperationalPowerSupplyRatio01(),
+                ResolveModulePowerSupplyRatio01(),
                 _trackedPlayerSurvival);
 
             HandleLifeSupportSignals(signals);
@@ -1486,7 +1486,7 @@ namespace Hecton8.Gameplay
                 0f,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
                 HasOperationalPower,
-                ResolveOperationalPowerSupplyRatio01(),
+                ResolveModulePowerSupplyRatio01(),
                 _trackedPlayerSurvival));
         }
 
@@ -2333,7 +2333,7 @@ namespace Hecton8.Gameplay
             _powerNode.Grid.MarkDirty();
         }
 
-        private float ResolveOperationalPowerSupplyRatio01()
+        private float ResolveModulePowerSupplyRatio01()
         {
             if (!HasOperationalPower)
                 return 0f;

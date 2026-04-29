@@ -20,6 +20,10 @@ struct HectonVegetationInstanceGpuData
     float RuntimeFlags;
     float PulseFrequency;
     float4 BioluminescenceColor;
+    float SwaySpeed;
+    float BendAmplitude;
+    float HealthNormalized;
+    float Reserved0;
 };
 
 StructuredBuffer<HectonVegetationInstanceGpuData> _HectonSourceVegetationInstanceData;
@@ -69,7 +73,7 @@ float4 _CascadeShadowSplitSphereRadii;
 
 bool IsFiniteScalar(float value)
 {
-    return isfinite(value);
+    return value == value && abs(value) <= 3.402823466e+38;
 }
 
 bool IsFiniteFloat3(float3 value)

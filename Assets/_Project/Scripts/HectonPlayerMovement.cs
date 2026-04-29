@@ -47,8 +47,6 @@ namespace Hecton8.Gameplay
         private const float GroundCheckSkin = 0.02f;
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
-        private const float InventoryLoadGraceMassKg = 18f;
-        private const float InventoryLoadClampMassKg = 90f;
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
@@ -2733,16 +2731,25 @@ namespace Hecton8.Gameplay
         private void HandleInventoryLoadChanged()
         {
             float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
-            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplier(totalMassKg));
+            SetRuntimeInventoryLoadMovementMultiplier(
+                ResolveInventoryLoadMovementMultiplier(
+                    totalMassKg,
+                    ResolveInventoryCarryCapacityKg()));
         }
 
-        private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg)
+        private float ResolveInventoryCarryCapacityKg()
         {
-            if (totalMassKg <= InventoryLoadGraceMassKg)
-                return 1f;
+            if (_survivalSystem == null)
+                TryGetComponent(out _survivalSystem);
 
-            float massRange = math.max(0.01f, InventoryLoadClampMassKg - InventoryLoadGraceMassKg);
-            float load01 = math.saturate((totalMassKg - InventoryLoadGraceMassKg) / massRange);
+            return _survivalSystem != null && _survivalSystem.Stats != null
+                ? math.max(0.01f, _survivalSystem.Stats.CarryCapacityKg)
+                : 200f;
+        }
+
+        private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg, float carryCapacityKg)
+        {
+            float load01 = math.saturate(totalMassKg / math.max(0.01f, carryCapacityKg));
             return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01);
         }
 

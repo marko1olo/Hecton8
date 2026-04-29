@@ -3,6 +3,8 @@ using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.Tools;
+using Hecton8.UI;
 using Hecton8.World;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -30,6 +32,14 @@ namespace Hecton8.Gameplay
         private const float MountedDriveSkinWidth = 0.08f;
         private const int EntanglementDensityProbeCount = 4;
         private const int MaxEntanglingFloraCount = 4;
+        private const string EntanglementCriticalNotification = "PROPULSION ENTANGLED // CUT KELP TO RESTORE THRUST";
+        private const float EntanglementStallHapticLowMotor = 0.9f;
+        private const float EntanglementStallHapticHighMotor = 0.32f;
+        private const float EntanglementStallHapticDurationSeconds = 0.4f;
+        private const float EntanglementStallHapticDecayRate = 3.25f;
+        private const byte EntanglementStallHapticPriority = 3;
+        private const byte EntanglementStallHapticMotorMask = 0b0011;
+        private const byte EntanglementStallHapticBlendMode = 2;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -847,6 +857,7 @@ namespace Hecton8.Gameplay
             anchorPosition /= trackedCount;
             float tetherLength = Vector3.Distance(_transportBody.position, anchorPosition);
             _vehicleMotor.BeginEntanglement(anchorPosition, tetherLength);
+            NotifyEntanglementCritical();
 
             Vector3 anchorFlowVelocity = Vector3.zero;
             vegetationBridge.TrySampleAbyssalFlow(anchorPosition, out anchorFlowVelocity);
@@ -889,6 +900,19 @@ namespace Hecton8.Gameplay
                 _entanglementInstanceUids[i] = 0u;
                 _entanglementInstancePositions[i] = Vector3.zero;
             }
+        }
+
+        private static void NotifyEntanglementCritical()
+        {
+            NotificationEvents.PushCritical(EntanglementCriticalNotification);
+            ToolHapticsRuntime.EnqueueCommand(
+                EntanglementStallHapticLowMotor,
+                EntanglementStallHapticHighMotor,
+                EntanglementStallHapticDurationSeconds,
+                EntanglementStallHapticDecayRate,
+                EntanglementStallHapticPriority,
+                EntanglementStallHapticMotorMask,
+                EntanglementStallHapticBlendMode);
         }
 
         private Quaternion ResolveDesiredRiderRotation()

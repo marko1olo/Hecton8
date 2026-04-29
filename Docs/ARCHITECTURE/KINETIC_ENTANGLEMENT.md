@@ -93,6 +93,36 @@ When all tracked flora are dead:
 - entanglement state clears
 - thrust integration resumes on the next fixed tick
 
+## HUD And Haptic Hook
+Entanglement alert emission is tied to lock entry, not to the sustained tether step.
+
+On the fixed tick where `BeginEntanglement` succeeds:
+- `NotificationEvents.PushCritical("PROPULSION ENTANGLED // CUT KELP TO RESTORE THRUST")`
+- `ToolHapticsRuntime.EnqueueCommand(...)` with a bounded critical stall pulse
+
+That keeps the warning deterministic and non-spammy:
+- one notification per lock event
+- one haptic stall pulse per lock event
+- no per-frame UI or haptic queue churn while already tethered
+
+## Zero-Allocation Density Query Proof
+The fixed-step macro-flora query path is allocation-free after initialization.
+
+`MountablePlayerTransport.SampleMacroFloraDensityAlongVelocity`:
+- uses constant `EntanglementDensityProbeCount = 4`
+- creates only stack/local `Vector3` temporaries
+- performs no `new`, no LINQ, no boxing, no string work
+- reads density through `HectonMapMagicVegetationBridge.SampleMacroFloraDensityImmediate`
+
+`HectonMapMagicVegetationBridge.SampleMacroFloraDensityImmediate`:
+- samples resident native chunk snapshots already owned by the bridge
+- performs hash lookup plus direct `NativeArray` reads
+- allocates nothing in the call path
+
+Tracked-flora capture is also bounded:
+- `uint[4]` and `Vector3[4]` are preallocated on `MountablePlayerTransport`
+- nearest-distance scratch in `DestructibleOrganicManager` is `stackalloc float[4]`
+
 ## PhysicsApplySystem Boundary
 `PhysicsApplySystem` was inspected but not made the owner of the entanglement force.
 

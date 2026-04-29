@@ -1,9 +1,11 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Scavenging;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
+using Unity.Jobs;
 
 namespace Hecton8.World
 {
@@ -53,6 +55,55 @@ namespace Hecton8.World
             public ushort Reserved1;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct FloraMaturationState
+        {
+            public uint InstanceUid;
+            public float3 RuntimePosition;
+            public float SpawnPlayTimeSeconds;
+            public float GrowthDurationSeconds;
+            public byte SeenThisScan;
+            public byte Reserved0;
+            public ushort Reserved1;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct FloraMaturationResult
+        {
+            public uint InstanceUid;
+            public float Progress01;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct EvaluateMaturationJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<FloraMaturationState> States;
+            public float CurrentPlayTimeSeconds;
+            [WriteOnly] public NativeArray<FloraMaturationResult> Results;
+
+            public void Execute(int index)
+            {
+                if (!States.IsCreated ||
+                    !Results.IsCreated ||
+                    index < 0 ||
+                    index >= States.Length ||
+                    index >= Results.Length)
+                {
+                    return;
+                }
+
+                FloraMaturationState state = States[index];
+                float durationSeconds = math.max(1f, state.GrowthDurationSeconds);
+                float ageSeconds = math.max(0f, CurrentPlayTimeSeconds - state.SpawnPlayTimeSeconds);
+                float progress01 = math.saturate(ageSeconds / durationSeconds);
+                Results[index] = new FloraMaturationResult
+                {
+                    InstanceUid = state.InstanceUid,
+                    Progress01 = progress01
+                };
+            }
+        }
+
         [SerializeField]
         [Tooltip("Runtime owner that mutates streamed flora metadata and harvest health state.")]
         private DestructibleOrganicManager destructibleOrganicManager;
@@ -68,6 +119,11 @@ namespace Hecton8.World
         private NativeList<SeedFlightState> _seedFlightStates;
         private NativeHashMap<uint, int> _seedFlightIndexByUid;
         private NativeHashMap<uint, byte> _seedEmissionByDestroyedUid;
+        private NativeList<FloraMaturationState> _maturationStates;
+        private NativeHashMap<uint, int> _maturationIndexByInstanceUid;
+        private NativeArray<FloraMaturationResult> _maturationResults;
+        private JobHandle _maturationJobHandle;
+        private bool _maturationJobScheduled;
         private float _lastSeedPlayTime;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
@@ -101,6 +157,12 @@ namespace Hecton8.World
             _seedEmissionByDestroyedUid = new NativeHashMap<uint, byte>(
                 DefaultTrackedRegrowthCapacity,
                 Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,byte>[2048] - destroyed flora seed-emission gate keyed by source flora uid - owner: FloraRegrowthDirector
+            _maturationStates = new NativeList<FloraMaturationState>(
+                DefaultTrackedRegrowthCapacity,
+                Allocator.Persistent); // COLD ALLOC: NativeList<FloraMaturationState>[2048] - live flora maturation state lane keyed by deterministic flora uid - owner: FloraRegrowthDirector
+            _maturationIndexByInstanceUid = new NativeHashMap<uint, int>(
+                DefaultTrackedRegrowthCapacity,
+                Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[2048] - maturation state lookup keyed by deterministic flora uid - owner: FloraRegrowthDirector
             _lastSeedPlayTime = GetCurrentPlayTimeSeconds();
         }
 
@@ -139,6 +201,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            JobHandle disposeHandle = _maturationJobScheduled ? _maturationJobHandle : default;
             if (_destroyedFloraScratch.IsCreated)
                 _destroyedFloraScratch.Dispose();
 
@@ -159,6 +222,209 @@ namespace Hecton8.World
 
             if (_seedEmissionByDestroyedUid.IsCreated)
                 _seedEmissionByDestroyedUid.Dispose();
+
+            if (_maturationResults.IsCreated)
+            {
+                if (_maturationJobScheduled)
+                    _maturationResults.Dispose(disposeHandle);
+                else
+                    _maturationResults.Dispose();
+                _maturationResults = default;
+            }
+
+            if (_maturationStates.IsCreated)
+            {
+                if (_maturationJobScheduled)
+                    _maturationStates.Dispose(disposeHandle);
+                else
+                    _maturationStates.Dispose();
+            }
+
+            if (_maturationIndexByInstanceUid.IsCreated)
+            {
+                if (_maturationJobScheduled)
+                    _maturationIndexByInstanceUid.Dispose(disposeHandle);
+                else
+                    _maturationIndexByInstanceUid.Dispose();
+            }
+        }
+
+        private void SyncMaturationStates(PersistentWorldRegistry registry, float currentPlayTime)
+        {
+            if (registry == null ||
+                destructibleOrganicManager == null ||
+                vegetationBridge == null ||
+                !_maturationStates.IsCreated ||
+                !_maturationIndexByInstanceUid.IsCreated)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _maturationStates.Length; i++)
+            {
+                FloraMaturationState state = _maturationStates[i];
+                state.SeenThisScan = 0;
+                _maturationStates[i] = state;
+            }
+
+            SyncMaturationStatesForPayload(registry, currentPlayTime, underwater: false);
+            SyncMaturationStatesForPayload(registry, currentPlayTime, underwater: true);
+
+            for (int i = _maturationStates.Length - 1; i >= 0; i--)
+            {
+                if (_maturationStates[i].SeenThisScan == 0)
+                    RemoveMaturationStateAtSwapBack(i);
+            }
+        }
+
+        private void SyncMaturationStatesForPayload(PersistentWorldRegistry registry, float currentPlayTime, bool underwater)
+        {
+            if (vegetationBridge == null || destructibleOrganicManager == null)
+                return;
+
+            NativeArray<Matrix4x4> matrices;
+            NativeArray<HectonVegetationInstanceData> metadata;
+            NativeArray<int> types;
+            int count;
+            bool hasPayload = underwater
+                ? vegetationBridge.TryGetActiveUnderwaterNativePayload(out matrices, out metadata, out types, out count)
+                : vegetationBridge.TryGetActiveSurfaceNativePayload(out matrices, out metadata, out types, out count);
+            if (!hasPayload || count <= 0)
+                return;
+
+            NativeArray<int> semanticTypes;
+            int semanticCount;
+            bool hasSemanticPayload = underwater
+                ? vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out semanticTypes, out _, out semanticCount)
+                : vegetationBridge.TryGetActiveSurfaceSemanticPayload(out semanticTypes, out _, out semanticCount);
+            if (!hasSemanticPayload)
+                return;
+
+            int upperBound = math.min(count, math.min(matrices.Length, math.min(metadata.Length, math.min(types.Length, math.min(semanticTypes.Length, semanticCount)))));
+            for (int i = 0; i < upperBound; i++)
+            {
+                if (!destructibleOrganicManager.TryResolveFloraGrowthDescriptor(
+                        matrices[i],
+                        metadata[i],
+                        types[i],
+                        semanticTypes[i],
+                        out uint instanceUid,
+                        out _,
+                        out float growthTimeSeconds))
+                {
+                    continue;
+                }
+
+                Vector3 runtimePosition = ExtractTranslation(matrices[i]);
+                float spawnPlayTimeSeconds;
+                if (!registry.TryGetFloraSpawnTimestamp(instanceUid, out spawnPlayTimeSeconds))
+                {
+                    spawnPlayTimeSeconds = Mathf.Max(0f, currentPlayTime - Mathf.Max(1f, growthTimeSeconds));
+                    registry.TryRegisterFloraSpawnTimestamp(instanceUid, runtimePosition, spawnPlayTimeSeconds);
+                }
+
+                if (_maturationIndexByInstanceUid.TryGetValue(instanceUid, out int existingIndex))
+                {
+                    FloraMaturationState state = _maturationStates[existingIndex];
+                    state.RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                    state.SpawnPlayTimeSeconds = spawnPlayTimeSeconds;
+                    state.GrowthDurationSeconds = Mathf.Max(1f, growthTimeSeconds);
+                    state.SeenThisScan = 1;
+                    _maturationStates[existingIndex] = state;
+                    continue;
+                }
+
+                if (_maturationStates.Length >= _maturationStates.Capacity)
+                    break;
+
+                FloraMaturationState newState = new FloraMaturationState
+                {
+                    InstanceUid = instanceUid,
+                    RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                    SpawnPlayTimeSeconds = spawnPlayTimeSeconds,
+                    GrowthDurationSeconds = Mathf.Max(1f, growthTimeSeconds),
+                    SeenThisScan = 1,
+                    Reserved0 = 0,
+                    Reserved1 = 0
+                };
+                _maturationIndexByInstanceUid.TryAdd(instanceUid, _maturationStates.Length);
+                _maturationStates.AddNoResize(newState);
+            }
+        }
+
+        private void ScheduleMaturationJob(float currentPlayTime)
+        {
+            if (_maturationJobScheduled || !_maturationStates.IsCreated || _maturationStates.Length <= 0)
+                return;
+
+            EnsureMaturationResultCapacity(_maturationStates.Length);
+            if (!_maturationResults.IsCreated || _maturationResults.Length < _maturationStates.Length)
+                return;
+
+            _maturationJobHandle = new EvaluateMaturationJob
+            {
+                States = _maturationStates.AsArray(),
+                CurrentPlayTimeSeconds = currentPlayTime,
+                Results = _maturationResults
+            }.Schedule(_maturationStates.Length, 32);
+            _maturationJobScheduled = true;
+        }
+
+        private void CompleteMaturationJobIfNeeded()
+        {
+            if (!_maturationJobScheduled)
+                return;
+
+            _maturationJobHandle.Complete();
+            _maturationJobScheduled = false;
+
+            if (destructibleOrganicManager == null || !_maturationResults.IsCreated || !_maturationStates.IsCreated)
+                return;
+
+            int resultCount = math.min(_maturationStates.Length, _maturationResults.Length);
+            for (int i = 0; i < resultCount; i++)
+            {
+                FloraMaturationResult result = _maturationResults[i];
+                if (result.InstanceUid == 0u)
+                    continue;
+
+                destructibleOrganicManager.TrySetMaturationProgress(result.InstanceUid, result.Progress01);
+            }
+        }
+
+        private void EnsureMaturationResultCapacity(int requiredCount)
+        {
+            if (requiredCount <= 0)
+                return;
+
+            if (_maturationResults.IsCreated && _maturationResults.Length >= requiredCount)
+                return;
+
+            if (_maturationResults.IsCreated)
+                _maturationResults.Dispose();
+
+            _maturationResults = new NativeArray<FloraMaturationResult>(
+                requiredCount,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<FloraMaturationResult>[requiredCount] - burst maturation result lane for slow-tick flora growth application - owner: FloraRegrowthDirector
+        }
+
+        private void RemoveMaturationStateAtSwapBack(int index)
+        {
+            if (!_maturationStates.IsCreated || !_maturationIndexByInstanceUid.IsCreated || index < 0 || index >= _maturationStates.Length)
+                return;
+
+            FloraMaturationState removed = _maturationStates[index];
+            int lastIndex = _maturationStates.Length - 1;
+            FloraMaturationState last = _maturationStates[lastIndex];
+            _maturationStates.RemoveAtSwapBack(index);
+            _maturationIndexByInstanceUid.Remove(removed.InstanceUid);
+
+            if (index < lastIndex)
+            {
+                _maturationIndexByInstanceUid.Remove(last.InstanceUid);
+                _maturationIndexByInstanceUid.TryAdd(last.InstanceUid, index);
+            }
         }
 
         /// <summary>
@@ -171,6 +437,7 @@ namespace Hecton8.World
 
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             float currentPlayTime = GetCurrentPlayTimeSeconds();
+            CompleteMaturationJobIfNeeded();
             UpdateSeedFlights(deltaTime);
             for (int i = _regrowthStates.Length - 1; i >= 0; i--)
             {
@@ -239,6 +506,10 @@ namespace Hecton8.World
                     {
                         existing.State = StateActive;
                         existing.RegrowthStartPlayTime = currentPlayTime;
+                        registry.TryRegisterFloraSpawnTimestamp(
+                            existing.InstanceUid,
+                            runtimePosition,
+                            currentPlayTime);
                     }
 
                     _regrowthStates[stateIndex] = existing;
@@ -324,6 +595,9 @@ namespace Hecton8.World
                 if (state.State == StateWaiting && state.SeenThisScan == 0)
                     RemoveStateAtSwapBack(i);
             }
+
+            SyncMaturationStates(registry, currentPlayTime);
+            ScheduleMaturationJob(currentPlayTime);
         }
 
         private void UpdateSeedFlights(float deltaTime)
@@ -475,6 +749,11 @@ namespace Hecton8.World
 
                 registry.TryMarkPendingFloraSeedReady(seedRecord.InstanceUid);
             }
+        }
+
+        private static Vector3 ExtractTranslation(Matrix4x4 matrix)
+        {
+            return new Vector3(matrix.m03, matrix.m13, matrix.m23);
         }
 
         private void RemoveSeedFlightAtSwapBack(int index)

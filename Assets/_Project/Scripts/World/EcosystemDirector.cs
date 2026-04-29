@@ -42,8 +42,15 @@ namespace Hecton8.World
         private const float ThermalSpawnTemperatureThresholdCelsius = 40f;
         private const float ThermalSpawnDepthThresholdMeters = 2000f;
         private const float LightFalloffDepthMeters = 2500f;
+        private const float PredatorDietValidationRadiusMeters = 500f;
+        private const float CorpseSpawnInfluenceRadiusMeters = 100f;
+        private const float CorpseSpawnSelectionScale = 2.6f;
+        private const int PredatorSpawnValidationHitCapacity = 64;
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
+        private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
+        // COLD ALLOC: SpatialQueryHit[64] — non-alloc predator diet validation scratch for spawn gating — owner: EcosystemDirector
+        private static readonly SpatialQueryHit[] _predatorSpawnValidationHits = new SpatialQueryHit[PredatorSpawnValidationHitCapacity];
 
         [StructLayout(LayoutKind.Sequential)]
         private struct SectorPopulationState
@@ -455,6 +462,12 @@ namespace Hecton8.World
             if (archetype == null)
                 return true;
 
+            if (IsPredatorOrApex(archetype) &&
+                !CanSupportPredatorSpawn(archetype, worldPosition, PredatorDietValidationRadiusMeters))
+            {
+                return false;
+            }
+
             TryBuildEnvelope(worldPosition, out EcosystemEnvelope envelope);
             if (RequiresThermalEnvelope(archetype) &&
                 (envelope.TemperatureCelsius < ThermalSpawnTemperatureThresholdCelsius ||
@@ -475,7 +488,49 @@ namespace Hecton8.World
                 selectionMultiplier = math.lerp(0.9f, 1.35f, scentPressure01);
             }
 
+            if (RespondsToCorpseFalls(archetype))
+            {
+                float corpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, CorpseSpawnInfluenceRadiusMeters);
+                if (corpseInfluence01 > 0f)
+                    selectionMultiplier *= math.lerp(1f, CorpseSpawnSelectionScale, corpseInfluence01);
+            }
+
             return selectionMultiplier > 0f;
+        }
+
+        internal bool CanSupportPredatorSpawn(CreatureArchetypeData archetype, Vector3 worldPosition, float searchRadiusMeters)
+        {
+            if (archetype == null || !IsPredatorOrApex(archetype))
+                return true;
+
+            FaunaDataTemplate faunaDataTemplate = archetype.faunaDataTemplate;
+            uint dietMaskBits = faunaDataTemplate != null ? faunaDataTemplate.DietMaskBits : 0u;
+            if (dietMaskBits == 0u)
+                return false;
+
+            int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                worldPosition,
+                searchRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _predatorSpawnValidationHits);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                SpatialQueryHit hit = _predatorSpawnValidationHits[i];
+                FaunaBrain preyBrain = hit.Owner as FaunaBrain;
+                if (preyBrain == null &&
+                    (hit.Transform == null || !hit.Transform.TryGetComponent(out preyBrain)))
+                {
+                    continue;
+                }
+
+                FaunaDataTemplate preyDataTemplate = preyBrain.DataTemplate;
+                uint preyMaskBits = preyDataTemplate != null ? preyDataTemplate.PreyMaskBits : 0u;
+                if (preyMaskBits != 0u && (dietMaskBits & preyMaskBits) != 0u)
+                    return true;
+            }
+
+            return false;
         }
 
         internal bool IsHerbivoreSpecies(int speciesId)
@@ -886,6 +941,16 @@ namespace Hecton8.World
                    MatchesAnyToken(archetype.behaviorTreeHint, ThermalSpawnTokens);
         }
 
+        private static bool IsPredatorOrApex(CreatureArchetypeData archetype)
+        {
+            if (archetype == null)
+                return false;
+
+            return archetype.isAggressive ||
+                   archetype.roleType == CreatureRoleType.Hunter ||
+                   archetype.roleType == CreatureRoleType.Leviathan;
+        }
+
         private static bool IsSharkLikePredator(CreatureArchetypeData archetype)
         {
             if (archetype == null)
@@ -894,6 +959,32 @@ namespace Hecton8.World
             return MatchesAnyToken(archetype.creatureId, SharkSpawnTokens) ||
                    MatchesAnyToken(archetype.displayName, SharkSpawnTokens) ||
                    (archetype.isAggressive && archetype.roleType == CreatureRoleType.Hunter);
+        }
+
+        private static bool RespondsToCorpseFalls(CreatureArchetypeData archetype)
+        {
+            if (archetype == null)
+                return false;
+
+            FaunaDataTemplate faunaDataTemplate = archetype.faunaDataTemplate;
+            if (faunaDataTemplate != null &&
+                (faunaDataTemplate.DietMaskBits & (uint)FaunaDietMask.Carcass) != 0u)
+            {
+                return true;
+            }
+
+            return MatchesAnyToken(archetype.creatureId, ScavengerSpawnTokens) ||
+                   MatchesAnyToken(archetype.displayName, ScavengerSpawnTokens) ||
+                   MatchesAnyToken(archetype.gameplayPurpose, ScavengerSpawnTokens) ||
+                   MatchesAnyToken(archetype.behaviorTreeHint, ScavengerSpawnTokens);
+        }
+
+        private static float ResolveCorpseSpawnInfluence01(Vector3 worldPosition, float radiusMeters)
+        {
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            return organicManager != null
+                ? organicManager.ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters)
+                : 0f;
         }
 
         private static bool MatchesAnyToken(string value, string[] tokens)

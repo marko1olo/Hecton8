@@ -62,6 +62,10 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float RuntimeFlags;
                 float PulseFrequency;
                 float4 BioluminescenceColor;
+                float SwaySpeed;
+                float BendAmplitude;
+                float HealthNormalized;
+                float Reserved0;
             };
 
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
@@ -443,7 +447,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
                 float variation = frac(instanceData.Variation);
                 float heightMask = saturate(uv.y);
-                float bendMask = heightMask * heightMask;
+                float bendMask = heightMask * heightMask * max(instanceData.BendAmplitude, 0.0);
                 float curvatureMask = heightMask;
                 float instanceNoise = Hash21(originWS.xz + variation);
                 float instanceHeight;
@@ -476,10 +480,12 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     ? SafeNormalize2(sampledCurrentVector)
                     : ResolvePlanarCurrentDirection();
                 float currentStrength = max(length(sampledCurrentVector), ResolvePlanarCurrentStrength());
-                float swayWave = sin(_Time.y * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
+                float timeValue = _Time.y * max(instanceData.SwaySpeed, 0.05);
+                float healthSwayScale = lerp(0.35, 1.0, saturate(instanceData.HealthNormalized));
+                float swayWave = sin(timeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
-                animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave);
-                animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask);
+                animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave * healthSwayScale);
+                animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask * healthSwayScale);
                 animatedPositionWS += flowSynchronyOffset;
                 animatedPositionWS += ResolveWakeTrailOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
                 animatedPositionWS += ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask);
@@ -488,7 +494,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float2 stateWeights = ResolveStateBlendWeights(instanceData.RuntimeState);
                 if (stateWeights.x > 0.0001 || stateWeights.y > 0.0001)
                 {
-                    float statePhase = sin(_Time.y * (1.35 + max(instanceData.PulseFrequency, 0.05)) + instanceNoise * 9.0 + heightMask * 3.2);
+                    float statePhase = sin(timeValue * (1.35 + max(instanceData.PulseFrequency, 0.05)) + instanceNoise * 9.0 + heightMask * 3.2);
                     animatedPositionWS.xz += ResolvePlanarCurrentDirection() * (statePhase * bendMask * 0.16 * stateWeights.x);
                     animatedPositionWS.y -= instanceHeight * bendMask * (0.06 * stateWeights.x + 0.18 * stateWeights.y);
                 }
