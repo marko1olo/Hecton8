@@ -39,6 +39,7 @@ namespace Hecton8.Interaction
         Weld = 2,
         PlasmaCut = 3,
         Torch = 4,
+        Boil = 5,
     }
 
     /// <summary>

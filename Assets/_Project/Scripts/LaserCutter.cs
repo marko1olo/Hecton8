@@ -41,6 +41,8 @@ namespace Hecton8.Gameplay
         private const float MinEffectiveBeamPower = 0.02f;
         private const float LowPowerThresholdNormalized = 0.12f;
         private const float LowPowerOutputScale = 0.35f;
+        private static int _WaterLayer = int.MinValue;
+        private static int _TransparentFxLayer = int.MinValue;
         private const byte IdleState = (byte)ToolStateBits.Idle;
         private const byte ActiveState = (byte)ToolStateBits.Active;
         private const byte BusyState = (byte)ToolStateBits.Busy;
@@ -110,6 +112,9 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Additional recoil damping applied while submerged.")]
         [SerializeField, Range(0.1f, 1f)] private float submergedRecoilScale = 0.6f;
+
+        [Tooltip("Thermal coupling scale that converts cutter damage units into seawater heat energy for localized boil anomalies.")]
+        [SerializeField, Min(0f)] private float waterHeatCouplingScale = 250000f;
 
         [Header("── Beam Visual ───────────────────────────────")]
         [Tooltip("Maximum jitter amplitude at full heat (meters).\n" +
@@ -281,6 +286,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            EnsureLayerCache();
             _cachedTransform = transform;
             CacheSparksEmission();
             CacheToolId();
@@ -288,6 +294,14 @@ namespace Hecton8.Gameplay
             SetVisualsActive(false);
             
             EnsurePlayerBindings();
+        }
+
+        private static void EnsureLayerCache()
+        {
+            if (_WaterLayer == int.MinValue)
+                _WaterLayer = LayerMask.NameToLayer("Water");
+            if (_TransparentFxLayer == int.MinValue)
+                _TransparentFxLayer = LayerMask.NameToLayer("TransparentFX");
         }
 
         public override void OnSpawn()
@@ -384,6 +398,7 @@ namespace Hecton8.Gameplay
             else
             {
                 ResetDeconstructState();
+                ApplyOpenWaterBoil(deltaTime);
             }
 
             PublishHeat();
@@ -628,6 +643,8 @@ namespace Hecton8.Gameplay
 
             if (interactionService.Publish(signal, _hitInfo.collider))
             {
+                TryPublishBoilSignal(interactionService, packet, damage, normalizedPower);
+
                 SargassumCutManager cutManager = SargassumCutManager.Instance;
                 if (cutManager != null)
                 {
@@ -637,6 +654,40 @@ namespace Hecton8.Gameplay
 
                 ApplyRecoilImpulse(direction, normalizedPower);
             }
+        }
+
+        private void ApplyOpenWaterBoil(float deltaTime)
+        {
+            if (_cachedPlayerMovement == null || !_cachedPlayerMovement.IsPlayerSubmerged)
+                return;
+
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            SubmarineFluidDynamics fluidDynamics = submarine != null ? submarine.FluidDynamics : null;
+            if (fluidDynamics == null || !fluidDynamics.isActiveAndEnabled)
+                return;
+
+            float powerScale = GetEfficiency() * GetConditionPerformanceScale();
+            float energyNormalized = ResolveSuitEnergyNormalized();
+            if (energyNormalized < LowPowerThresholdNormalized)
+                powerScale *= LowPowerOutputScale;
+
+            float heatMultiplier = 1f + _heatLevel * heatDamageBonus;
+            float cutStrength = damagePerSecond * deltaTime * powerScale * heatMultiplier * math.max(0f, waterHeatCouplingScale);
+            if (cutStrength <= 0f)
+                return;
+
+            Vector3 direction = _cachedTransform.forward;
+            if (direction.sqrMagnitude < 0.0001f)
+                direction = Vector3.forward;
+            else
+                direction.Normalize();
+
+            float normalizedPower = ResolveNormalizedPower(powerScale, heatMultiplier);
+            if (normalizedPower < MinEffectiveBeamPower)
+                return;
+
+            Vector3 samplePoint = _cachedTransform.position + (direction * math.min(maxRange, 8f));
+            fluidDynamics.InjectLocalizedWaterHeat(samplePoint, direction, cutStrength, normalizedPower);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1115,10 +1166,41 @@ namespace Hecton8.Gameplay
         {
             IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
             if (interactionService != null && interactionService.IsInitialized)
-                return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, maxRange, cuttableLayer.value, QueryTriggerInteraction.Ignore, out hit);
+                return interactionService.TryRaycastPrimary(_raycastRequesterId, _cachedTransform.position, _cachedTransform.forward, maxRange, ResolveCuttableRaycastMask(), QueryTriggerInteraction.Ignore, out hit);
 
             hit = default;
             return false;
+        }
+
+        private void TryPublishBoilSignal(IInteractionSignalService interactionService, in EquipmentInteractionPacket packet, float deliveredDamage, float normalizedPower)
+        {
+            if (interactionService == null || _hitInfo.collider == null || _cachedPlayerMovement == null || !_cachedPlayerMovement.IsPlayerSubmerged)
+                return;
+
+            float coupledCutStrength = deliveredDamage * math.max(0f, waterHeatCouplingScale);
+            if (coupledCutStrength <= 0f || normalizedPower < MinEffectiveBeamPower)
+                return;
+
+            EquipmentInteractionSignal boilSignal = new EquipmentInteractionSignal(
+                packet,
+                unchecked((int)EntityId.ToULong(_hitInfo.collider.GetEntityId())),
+                new float3(_hitInfo.point.x, _hitInfo.point.y, _hitInfo.point.z),
+                new float3(_hitInfo.normal.x, _hitInfo.normal.y, _hitInfo.normal.z),
+                coupledCutStrength,
+                (byte)InteractionEffectType.Boil,
+                0);
+
+            interactionService.Publish(in boilSignal, _hitInfo.collider);
+        }
+
+        private int ResolveCuttableRaycastMask()
+        {
+            int mask = cuttableLayer.value;
+            if (_WaterLayer >= 0)
+                mask &= ~(1 << _WaterLayer);
+            if (_TransparentFxLayer >= 0)
+                mask &= ~(1 << _TransparentFxLayer);
+            return mask;
         }
 
         private void PublishDiagnosis()

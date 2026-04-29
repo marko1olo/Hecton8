@@ -1,199 +1,120 @@
-# HECTON-8 CODEX — MASTER INDEX
+# HECTON-8 ARCHIVARIUS MASTER INDEX
 
-**Версия:** 2026-04-28 | **Статус:** ETA CODEX VERIFIED
-
----
-
-## 📁 ИЕРАРХИЧЕСКАЯ СТРУКТУРА ДОКУМЕНТАЦИИ
-
-### [ARCH] — Architecture & Global Systems
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `AGENTS.md` | Root AI Agent mandates | ✅ ACTIVE |
-| `PROJECT_ATLAS.md` | Master directory проекта | ✅ COMPLETE |
-| `SUPREME_AUDITOR_CONTINUOUS_REPORT.md` | Сводный аудит | ✅ COMPLETE |
-| `DEEP_FORENSIC_AUDIT_REPORT.md` | Глубокий криминальный аудит | ✅ COMPLETE |
-| `GLOBAL_ARCHITECTURE_MAP.md` | Архитектурная карта | ✅ COMPLETE |
-| `ETA2_CIRCULAR_DEPS.md` | AsmDef dependency audit | ✅ COMPLETE |
-
-### [CORE] — Physics, AUP, Locomotion
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `AGENT_03_PHYSICS_LOG.md` | Physics agent worklog | ✅ COMPLETE |
-| `AUP_DRIFT_WARNINGS.md` | AUP drift alerts | ✅ COMPLETE |
-| `TRANSFORM_ACCESS_CRIMES.md` | Transform access violations | ⚠️ ARCHIVE |
-| `MATH_API_WARNINGS.md` | Mathf violations | ⚠️ ARCHIVE |
-| `ETA2_HOT_PATH_VIOLATIONS.md` | Zero-GC hot-path scan | ✅ COMPLETE |
-
-### [REND] — Shaders, BRG, URP
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `AGENT_01_GRAPHICS_LOG.md` | Graphics agent worklog | ✅ COMPLETE |
-| `VRAM_BUDGET_AUDIT.md` | VRAM budget analysis | ✅ COMPLETE |
-| `SHADER_VARIANT_BLOAT.md` | Shader optimization | ✅ COMPLETE |
-| `ETA2_VRAM_EXECUTION_LIST.md` | Top 20 VRAM offenders | ✅ COMPLETE |
-| `ETA2_CYRILLIC_SWEEP.md` | Cyrillic in shaders/code | ✅ COMPLETE |
-| `RENDERGRAPH_AUDIT.md` | URP RenderFeature/Pass leak audit | ✅ COMPLETE |
-| `COMPUTE_BUFFER_AUDIT.md` | GraphicsBuffer/ComputeBuffer lifecycle | ✅ COMPLETE |
-
-### [LOGI] — Logistics, Atmosphere, Power
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `AGENT_04_CORE_LOG.md` | Core systems worklog | ✅ COMPLETE |
-| `EVENT_FLOW_MAP.md` | Event bus architecture | ✅ COMPLETE |
-| `DOUBLE_BUFFER_COMPLIANCE.md` | Double-buffer patterns | ✅ COMPLETE |
-| `ETA2_EVENT_LEAK_REPORT.md` | EventBus unsubscription leaks | ✅ COMPLETE |
-
-### [AI] — Boids, Directors, Genetics
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `AGENT_02_AI_LOG.md` | AI agent worklog | ✅ COMPLETE |
-| `SYSTEM_COUPLING_WARNINGS.md` | AI system coupling | ✅ COMPLETE |
-
-### [UI] — User Interface
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `AGENT_05_UI_AUDIO_LOG.md` | UI/Audio agent worklog | ✅ COMPLETE |
-
-### [TECH] — Technical Art & Performance
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `AGENT_06_TECHART_LOG.md` | TechArt agent worklog | ✅ COMPLETE |
-| `PERFORMANCE_WARNINGS.md` | Performance alerts | ✅ COMPLETE |
-| `MEMORY_LEAK_WARNINGS.md` | Memory leak warnings | ✅ COMPLETE |
-| `SCENE_OBJECT_HYGIENE.md` | Scene optimization | ✅ COMPLETE |
-
-### [DATA] — Data Dictionaries & Contracts
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `DATA_DICTIONARY.md` | Struct layouts & memory alignment | ✅ COMPLETE |
-| `DEPENDENCY_GRAPH.md` | Global init order & service registration | ✅ COMPLETE |
-| `INTERFACE_CONTRACT_TABLE.md` | Interface → Implementation mapping | ✅ COMPLETE |
-| `PROFILING_PREPAREDNESS_AUDIT.md` | ProfilerMarker coverage | ✅ COMPLETE |
-| `ASSET_DEPENDENCY_MAP.md` | Prefab/SO hardcoded refs | ✅ COMPLETE |
-| `AUP_SURGERY_MAP.md` | Byte-level AUP layout migration map | ✅ COMPLETE |
-| `BUILD_DEPENDENCY_GRAPH.md` | Bootstrapper bloat & forced RAM audit | ✅ COMPLETE |
-| `ETA2_LIAR_DETECTION.md` | Agent mandate compliance audit | ✅ COMPLETE |
-
-### [NARRATIVE] — Frame Flow & Architecture
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `STRUCTURAL_NARRATIVE.md` | Одна рамка от Input до Audio | ✅ COMPLETE |
-| `DEAD_ASSET_SWEEP_REPORT.md` | Неиспользуемые ассеты | ✅ COMPLETE |
-
-### [INVENTORY] — Inventory & Persistence Audits
-
-| Файл | Назначение | Статус |
-|------|-----------|--------|
-| `INVENTORY_AUDIT/STATIC_AUDIT_MASTER_SUMMARY.md` | Master static audit | ✅ COMPLETE |
-| `INVENTORY_AUDIT/TECH_DEBT_REGISTRY.md` | Technical debt | ✅ COMPLETE |
-| `INVENTORY_AUDIT/THIRD_PARTY_POISON.md` | Third-party ACL | ✅ COMPLETE |
-| `INVENTORY_AUDIT/NAMING_VIOLATIONS.md` | Naming compliance | ✅ COMPLETE |
-| `INVENTORY_AUDIT/STRING_LITERAL_CRIMES.md` | String allocations | ✅ COMPLETE |
+**Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION  
+**Scope:** `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO` + `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`
 
 ---
 
-## 📋 БЫСТРЫЕ ССЫЛКИ
+## Purpose
 
-### Для нового агента — С чего начать:
+This index lists the documents that physically exist in folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS` as of 2026-04-29.
 
-1. **Прочитай `PROJECT_ATLAS.md`** — полная карта проекта
-2. **Прочитай `GLOSSARY.md`** — терминология проекта
-3. **Проверь `TECH_DEBT_REGISTRY.md`** — что нужно исправить
-4. **Проверь свой домен в `AGENT_XX_LOG.md`**
+It replaces stale references to renamed, moved, or obsolete reports.
 
-### Критические аудиты:
+## Coverage Snapshot
 
-- **Crest ACL:** `THIRD_PARTY_POISON.md`
-- **ItemData Zero-GC:** `DEEP_FORENSIC_AUDIT_REPORT.md`
-- **VRAM Budget:** `VRAM_BUDGET_AUDIT.md`
-- **Player.prefab:** `GOD_OBJECT_AUDIT.md`
-
----
-
-## 📊 СТАТИСТИКА ДОКУМЕНТАЦИИ
-
-| Категория | Файлов |
-|-----------|--------|
-| Total .md | 42 |
-| Agent Logs | 6 |
-| Inventory Audits | 10 |
-| Root Docs | 8 |
-| CODEX Documents | 8 |
-| ETA-2 Deep Audits | 6 |
-| Leak Tracking Audits | 3 |
-
-## 📋 TOP 5 DOD STRUCTS
-
-| Struct | Size | Alignment | File |
-|--------|------|-----------|------|
-| `AbsoluteUniversePositionBlit128` | 48 bytes | 16-byte ✅ | PersistentWorldRegistry.cs |
-| `CognitionCore` | 64 bytes | 64-byte ✅ | PredatorCognitionDomain.cs |
-| `BoidData` | 32 bytes | 4-byte ✅ | SargassumMicroFaunaBoids.cs |
-| `HectonVegetationInstanceData` | ~104 bytes | Default | HectonIndirectVegetationContracts.cs |
-| `ForcePacket` | ~36 bytes | Default | PhysicsApplySystem.cs |
-
-## 👻 GHOST INTERFACES
-
-| Interface | Status | Action |
-|-----------|--------|--------|
-| `IRenderable` | ⚠️ PARTIAL | Remove or implement |
-| `IUIService` | ⚠️ PARTIAL | Register UI systems |
-| `IDamageReceiver` | ⚠️ PARTIAL | Unify damage system |
-
-## 🎯 PROFILING BLIND SPOTS
-
-| System | Priority | Status |
-|--------|----------|--------|
-| `PhysicsApplySystem` | 🔴 CRITICAL | No markers |
-| `HectonFluidEngine` | 🔴 CRITICAL | No markers |
-| `HectonPlayerMovement` | 🟠 HIGH | No markers |
+| Bucket | Count |
+|---|---:|
+| `01_GENERAL_INFO` markdown files | 13 |
+| `02_ACTUAL_REPORTS` markdown files | 31 |
+| `02_ACTUAL_REPORTS` CSV datasets | 1 |
+| **Total files covered by this index** | **45** |
 
 ---
 
-## 🔗 ВНЕШНИЕ РЕСУРСЫ
+## 01. General Info
 
-| Ресурс | Путь |
-|--------|------|
-| Lore docs | `Lore/` |
-| Internal specs | `internal-specs/` |
-| Tools | `Tools/` |
-| Diff patches | `*.diff` files |
+| File | Role |
+|---|---|
+| `ASSET_DEPENDENCY_MAP.md` | General asset-reference map and migration notes |
+| `AUP_SURGERY_MAP.md` | AUP layout and migration planning |
+| `BUILD_DEPENDENCY_GRAPH.md` | Bootstrap dependency and cold-load audit |
+| `DEPENDENCY_GRAPH.md` | Runtime service and dependency overview |
+| `EVENT_BUS_MAP.md` | Historical event-bus map with chronology caveat |
+| `GLOSSARY.md` | Shared terminology |
+| `HUD_EDITOR_SPEC.md` | HUD editor/layout spec |
+| `INTERFACE_CONTRACT_TABLE.md` | Verified interface-to-implementor table |
+| `INTERFACE_STRATEGY.md` | Interface cleanup and ownership strategy |
+| `MASTER_INDEX.md` | This file |
+| `PROJECT_ATLAS.md` | Broad project atlas; partially corrected, still mixed-quality |
+| `STRUCTURAL_NARRATIVE.md` | One-frame code-walk narrative; not a measured profiler report |
+| `SYSTEM_INTERCONNECT_MATRIX.md` | AUP-sensitive interconnect matrix |
 
 ---
 
-**STATUS:** ✅ ETA CODEX VERIFIED
+## 02. Actual Reports
 
-**Следующий обзор:** 2026-05-05
+### Runtime / Architecture / Interfaces
 
-## 📋 КРИТИЧЕСКИЕ НАРУШЕНИЯ (Требуют действий)
+| File | Role |
+|---|---|
+| `EVENT_FLOW_MAP.md` | Static event-flow and signal mapping |
+| `INTERFACE_HEALTH_DASHBOARD.md` | Interface health summary corrected against live code |
+| `SINGLETON_FIX_PRIORITY.md` | Singleton remediation roadmap |
+| `SINGLETON_VIOLATIONS.md` | Singleton violation inventory |
+| `GOD_OBJECT_AUDIT.md` | Large-owner decomposition audit |
+| `HARD_LINK_DEBT.md` | Hardcoded asset-path debt audit |
+| `FRAME_TIMELINE.md` | Frame sequencing report |
 
-| ID | Issue | Файл | Статус |
-|----|-------|------|--------|
-| ACL-01 | Crest ACL violation | HectonSurfaceWeatherDirector.cs | ❌ |
-| GC-01 | ItemData managed refs | PlayerInventory.cs | ❌ |
-| LM-01 | LayerMask.NameToLayer | 4 файла | ❌ |
-| GOD-01 | 42 компонентов | Player.prefab | ❌ |
-| PROF-01 | Нет ProfilerMarker | PhysicsApplySystem.cs | ❌ |
-| PROF-02 | Нет ProfilerMarker | HectonFluidEngine.cs | ❌ |
-| EVT-01 | EventBus leak (no Dispose) | GlobalProfileManager.cs | ❌ |
-| EVT-02 | EventBus leak (no Dispose) | RunModifierController.cs | ❌ |
-| CYR-01 | Russian folder name | Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР | ⚠️ |
-| HP-01 | NameToLayer in hot path | PlayerSwimBlockoutRig.cs | ❌ |
-| HP-02 | Trailing space string | HectonCrestOceanDepthCacheBootstrap.cs | ❌ |
+### Performance / Memory / VRAM / Rendering
 
-**Все нарушения задокументированы в:** `SUPREME_AUDITOR_CONTINUOUS_REPORT.md`, `ETA2_EVENT_LEAK_REPORT.md`, `ETA2_HOT_PATH_VIOLATIONS.md`
+| File | Role |
+|---|---|
+| `2026-04-28_VRAM_BUDGET_AUDIT.md` | Detailed dated VRAM audit |
+| `VRAM_BUDGET_AUDIT.md` | Sanitized VRAM budget summary |
+| `2026-04-28_VRAM_EXECUTION_LIST.md` | VRAM remediation queue |
+| `SCENE_VRAM_FOOTPRINT.md` | Scene VRAM estimate |
+| `RENDERGRAPH_AUDIT.md` | RenderGraph lifetime audit |
+| `COMPUTE_BUFFER_AUDIT.md` | GraphicsBuffer / ComputeBuffer lifecycle audit |
+| `2026-04-28_MEMORY_ALIGNMENT_FIX.md` | Struct alignment remediation notes |
+| `2026-04-28_PROFILING_PREPAREDNESS_AUDIT.md` | Profiler coverage audit |
 
-**Новые аудиты (Mission 2 — Leak Tracking):**
-- `RENDERGRAPH_AUDIT.md` — URP RenderFeature/Pass lifecycle (0 first-party leaks)
-- `COMPUTE_BUFFER_AUDIT.md` — GraphicsBuffer/ComputeBuffer disposal (0 first-party leaks)
-- `BUILD_DEPENDENCY_GRAPH.md` — Bootstrapper forced-RAM analysis (0 heavy assets at boot)
+### Data / Assets / Content
+
+| File | Role |
+|---|---|
+| `2026-04-28_DATA_DICTIONARY.md` | Structs, layouts, alignment findings |
+| `2026-04-28_ASSET_DEPENDENCY_MAP.md` | Dated asset dependency report |
+| `ITEM_ASSET_GUIDS.md` | Item prefab GUID lookup table |
+| `2026-04-28_DEAD_ASSET_SWEEP.md` | Dead-asset sweep |
+| `DEAD_CODE_GRAVEYARD.md` | Dead-code registry |
+| `vram_detail.csv` | Raw VRAM detail dataset backing the budget audit |
+
+### Forensics / Compliance / Deep Audit
+
+| File | Role |
+|---|---|
+| `2026-04-28_SUPREME_AUDITOR_REPORT.md` | Large static audit bundle |
+| `2026-04-28_DEEP_FORENSIC_AUDIT.md` | Deep static archaeology report |
+| `2026-04-28_ETA2_SUPREME_SUMMARY.md` | ETA2 summary report |
+| `2026-04-28_LIAR_DETECTION.md` | Claim-vs-code liar detection |
+| `2026-04-28_HOT_PATH_VIOLATIONS.md` | Zero-GC hot-path violations |
+| `2026-04-28_EVENT_LEAK_REPORT.md` | Event subscription leak report |
+| `2026-04-28_CIRCULAR_DEPS.md` | Circular dependency scan |
+| `2026-04-28_CYRILLIC_SWEEP.md` | Cyrillic / non-ASCII scan |
+| `AGENTS_SKILLS_AUDIT.md` | `.agents-skills` coverage audit |
+| `AUDIO_ROUTING_AUDIT.md` | Audio routing ownership audit |
+| `DEBUG_LOG_DELETION_QUEUE.md` | Debug log cleanup queue |
+
+---
+
+## Confirmed Documentation Defects In The Previous Index
+
+| Area | Confirmed defect |
+|---|---|
+| Old master index | Referenced many files that do not exist in folders `01_GENERAL_INFO` or `02_ACTUAL_REPORTS` |
+| Legacy paths | Referred to `Assets/DOCS/AGENT_*` and other historical locations that are not live sources in the current workspace |
+| Obsolete names | Used names such as `SUPREME_AUDITOR_CONTINUOUS_REPORT.md`, `DEEP_FORENSIC_AUDIT_REPORT.md`, `GLOBAL_ARCHITECTURE_MAP.md`, `ETA2_CIRCULAR_DEPS.md`, and `DEAD_ASSET_SWEEP_REPORT.md` without path proof |
+
+---
+
+## Obsolete Reference Policy
+
+If a report name appears in older documents but is not listed above, treat it as one of:
+
+1. Renamed into the dated `2026-04-28_*` report set.
+2. Moved to `Docs/ARCHIVARIUS REPORTS/03_OBSOLETE`.
+3. Deleted or never created in the current workspace snapshot.
+
+Do not trust stale references until the path is revalidated.

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Hecton8.Atmosphere;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -81,6 +82,16 @@ namespace Hecton8.Physics
         private const float DefaultExteriorBuoyancyTorqueClampScale = 1.25f;
         private const int ExteriorBuoyancySampleCount = 8;
         private const int MaxQueuedSplashEvents = 32;
+        private const int ExteriorThermalAnomalyCapacity = 8;
+        private const int ExteriorThermalContactCapacity = 16;
+        private const float ExteriorThermalCellSizeMeters = 8f;
+        private const float ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius = 3990f;
+        private const float ExteriorWaterReferenceTemperatureCelsius = 6f;
+        private const float ExteriorThermalDecayPerSecond = 8f;
+        private const float ExteriorThermalLifetimeSeconds = 1.25f;
+        private const float ExteriorBoilingDepthSlopeCelsiusPerMeter = 1.2f;
+        private const float ExteriorBoilingImpulseRadiusMeters = 4f;
+        private const float ExteriorBoilingAccelerationMetersPerSecondSquared = 18f;
         private const float SplashSubmersionThreshold = 0.5f;
         private const float CriticalFillThreshold = 0.8f;
         private const float Epsilon = 0.0001f;
@@ -257,9 +268,15 @@ namespace Hecton8.Physics
         [SerializeField] private float _debugAppliedLinearDamping;
         [SerializeField] private float _debugAppliedAngularDamping;
         [SerializeField] private float _debugSubmersionFactor;
+        [SerializeField] private Vector3 _debugLastThermalAnomalyCenter;
+        [SerializeField] private float _debugLastThermalAnomalyTemperature;
+        [SerializeField] private float _debugLastThermalAnomalyDepth;
 
         private Rigidbody _rigidbody;
         private Transform _cachedTransform;
+        private Transform _cachedPlayerTransform;
+        private HectonPlayerMovement _cachedPlayerMovement;
+        private Rigidbody _cachedPlayerRigidbody;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _fluidJobRunning;
@@ -313,6 +330,16 @@ namespace Hecton8.Physics
         private readonly SpatialQueryHit[] _depressurizationContacts = new SpatialQueryHit[DepressurizationContactCapacity];
         // COLD ALLOC: Rigidbody[16] â€” unique rigidbody scratch for depressurization routing â€” owner: SubmarineFluidDynamics
         private readonly Rigidbody[] _depressurizationBodies = new Rigidbody[DepressurizationContactCapacity];
+        // COLD ALLOC: Vector3[8] â€” runtime centers of localized exterior boil cells quantized to 8m volumes â€” owner: SubmarineFluidDynamics
+        private readonly Vector3[] _exteriorThermalAnomalyCenters = new Vector3[ExteriorThermalAnomalyCapacity];
+        // COLD ALLOC: float[8] â€” per-cell exterior water temperatures in Celsius for temporary plasma boil anomalies â€” owner: SubmarineFluidDynamics
+        private readonly float[] _exteriorThermalAnomalyTemperatures = new float[ExteriorThermalAnomalyCapacity];
+        // COLD ALLOC: float[8] â€” remaining lifetime of each exterior boil anomaly in seconds â€” owner: SubmarineFluidDynamics
+        private readonly float[] _exteriorThermalAnomalyLifetimes = new float[ExteriorThermalAnomalyCapacity];
+        // COLD ALLOC: int[8] â€” hazard source ids mapped one-to-one with exterior boil anomaly slots â€” owner: SubmarineFluidDynamics
+        private readonly int[] _exteriorThermalHazardIds = new int[ExteriorThermalAnomalyCapacity];
+        // COLD ALLOC: Collider[16] â€” bounded boiling-water rigidbody query scratch â€” owner: SubmarineFluidDynamics
+        private readonly Collider[] _exteriorThermalContacts = new Collider[ExteriorThermalContactCapacity];
 
         private NativeArray<float> _compartmentFloodVolumes;
         private NativeArray<float> _compartmentMaxVolumes;
@@ -675,6 +702,7 @@ namespace Hecton8.Physics
         {
             TryUnregisterOriginShiftListener();
             TryUnregister();
+            ClearExteriorThermalAnomalies();
             RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
         }
@@ -683,6 +711,7 @@ namespace Hecton8.Physics
         {
             TryUnregisterOriginShiftListener();
             TryUnregister();
+            ClearExteriorThermalAnomalies();
             RestoreRigidbodyDynamics();
             DisposeNativeStateDeferred();
         }
@@ -737,6 +766,10 @@ namespace Hecton8.Physics
                 return;
 
             ApplyAddedMassDamping();
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
+            UpdateExteriorThermalAnomalies(fixedDeltaTime);
             if (ShouldAbortHydrodynamicsFixedTick())
                 return;
 
@@ -924,6 +957,54 @@ namespace Hecton8.Physics
 
             _queuedSplashEventCount--;
             return true;
+        }
+
+        /// <summary>
+        /// Injects localized exterior water heat from a high-energy tool impact into the quantized 8 m thermal anomaly field.
+        /// </summary>
+        /// <param name="runtimePoint">Runtime world-space sample point inside the water volume.</param>
+        /// <param name="direction">Beam direction used for buoyancy impulse orientation.</param>
+        /// <param name="cutStrength">Coupled cutter heat strength in joule-like gameplay units.</param>
+        /// <param name="normalizedPower">Normalized beam power in the [0..1] range.</param>
+        public void InjectLocalizedWaterHeat(Vector3 runtimePoint, Vector3 direction, float cutStrength, float normalizedPower)
+        {
+            if (_cachedTransform == null || cutStrength <= 0f || normalizedPower <= MinEffectiveBeamPowerForThermalAnomaly())
+                return;
+
+            float surfaceY = ResolveSurfaceHeightAtSample(runtimePoint, runtimePoint.y);
+            float depthMeters = math.max(0f, surfaceY - runtimePoint.y);
+            if (depthMeters <= 0.01f)
+                return;
+
+            Vector3 quantizedCenter = QuantizeExteriorThermalCell(runtimePoint);
+            int slotIndex = ResolveExteriorThermalSlot(quantizedCenter);
+            if (slotIndex < 0)
+                return;
+
+            if (_exteriorThermalAnomalyLifetimes[slotIndex] > 0f &&
+                (_exteriorThermalAnomalyCenters[slotIndex] - quantizedCenter).sqrMagnitude > 0.01f &&
+                _exteriorThermalHazardIds[slotIndex] != 0)
+            {
+                HectonHazardManager.Unregister(_exteriorThermalHazardIds[slotIndex]);
+                _exteriorThermalHazardIds[slotIndex] = 0;
+            }
+
+            float cellVolume = ExteriorThermalCellSizeMeters * ExteriorThermalCellSizeMeters * ExteriorThermalCellSizeMeters;
+            float cellMass = cellVolume * WaterDensityKgPerCubicMeter;
+            float heatEnergy = cutStrength * math.saturate(normalizedPower);
+            float deltaTemperature = heatEnergy / math.max(1f, cellMass * ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius);
+            if (!math.isfinite(deltaTemperature) || deltaTemperature <= 0f)
+                return;
+
+            float currentTemperature = _exteriorThermalAnomalyLifetimes[slotIndex] > 0f
+                ? _exteriorThermalAnomalyTemperatures[slotIndex]
+                : ExteriorWaterReferenceTemperatureCelsius;
+            _exteriorThermalAnomalyCenters[slotIndex] = quantizedCenter;
+            _exteriorThermalAnomalyTemperatures[slotIndex] = math.max(ExteriorWaterReferenceTemperatureCelsius, currentTemperature + deltaTemperature);
+            _exteriorThermalAnomalyLifetimes[slotIndex] = math.max(_exteriorThermalAnomalyLifetimes[slotIndex], ExteriorThermalLifetimeSeconds);
+            _debugLastThermalAnomalyCenter = quantizedCenter;
+            _debugLastThermalAnomalyTemperature = _exteriorThermalAnomalyTemperatures[slotIndex];
+            _debugLastThermalAnomalyDepth = depthMeters;
         }
 
         /// <summary>
@@ -2388,6 +2469,204 @@ namespace Hecton8.Physics
                 _rigidbody.angularDamping = targetAngularDamping;
                 _lastAppliedAngularDamping = targetAngularDamping;
             }
+        }
+
+        private void UpdateExteriorThermalAnomalies(float fixedDeltaTime)
+        {
+            if (fixedDeltaTime <= 0f)
+                return;
+
+            EnsurePlayerBindings();
+
+            for (int slotIndex = 0; slotIndex < ExteriorThermalAnomalyCapacity; slotIndex++)
+            {
+                float remainingLifetime = _exteriorThermalAnomalyLifetimes[slotIndex];
+                if (remainingLifetime <= 0f)
+                    continue;
+
+                float nextLifetime = math.max(0f, remainingLifetime - fixedDeltaTime);
+                float currentTemperature = math.max(ExteriorWaterReferenceTemperatureCelsius, _exteriorThermalAnomalyTemperatures[slotIndex]);
+                currentTemperature = math.max(
+                    ExteriorWaterReferenceTemperatureCelsius,
+                    currentTemperature - (ExteriorThermalDecayPerSecond * fixedDeltaTime));
+
+                Vector3 cellCenter = _exteriorThermalAnomalyCenters[slotIndex];
+                float surfaceY = ResolveSurfaceHeightAtSample(cellCenter, cellCenter.y);
+                float depthMeters = math.max(0f, surfaceY - cellCenter.y);
+                float boilingPointCelsius = ResolveBoilingPointCelsius(depthMeters);
+
+                if (currentTemperature > boilingPointCelsius)
+                {
+                    float intensity = math.saturate((currentTemperature - boilingPointCelsius) / 35f);
+                    int hazardId = ResolveExteriorThermalHazardId(slotIndex);
+                    HectonHazardManager.Register(hazardId, cellCenter, intensity, ExteriorBoilingImpulseRadiusMeters, HazardType.Heat);
+                    ApplyExteriorBoilingUpdraft(cellCenter, intensity, fixedDeltaTime);
+                }
+                else if (_exteriorThermalHazardIds[slotIndex] != 0)
+                {
+                    HectonHazardManager.Unregister(_exteriorThermalHazardIds[slotIndex]);
+                    _exteriorThermalHazardIds[slotIndex] = 0;
+                }
+
+                _exteriorThermalAnomalyTemperatures[slotIndex] = currentTemperature;
+                _exteriorThermalAnomalyLifetimes[slotIndex] = nextLifetime;
+                if (nextLifetime > 0f || currentTemperature > ExteriorWaterReferenceTemperatureCelsius + 0.1f)
+                    continue;
+
+                if (_exteriorThermalHazardIds[slotIndex] != 0)
+                {
+                    HectonHazardManager.Unregister(_exteriorThermalHazardIds[slotIndex]);
+                    _exteriorThermalHazardIds[slotIndex] = 0;
+                }
+
+                _exteriorThermalAnomalyCenters[slotIndex] = Vector3.zero;
+                _exteriorThermalAnomalyTemperatures[slotIndex] = ExteriorWaterReferenceTemperatureCelsius;
+                _exteriorThermalAnomalyLifetimes[slotIndex] = 0f;
+            }
+        }
+
+        private void ApplyExteriorBoilingUpdraft(Vector3 cellCenter, float intensity, float fixedDeltaTime)
+        {
+            if (intensity <= 0f)
+                return;
+
+            float influenceRadius = ExteriorBoilingImpulseRadiusMeters;
+            int contactCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                cellCenter,
+                influenceRadius,
+                _exteriorThermalContacts,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+
+            for (int contactIndex = 0; contactIndex < contactCount; contactIndex++)
+            {
+                Collider contact = _exteriorThermalContacts[contactIndex];
+                if (contact == null)
+                    continue;
+
+                Rigidbody body = contact.attachedRigidbody;
+                if (body == null || body == _rigidbody)
+                    continue;
+
+                Vector3 samplePoint = body.worldCenterOfMass;
+                float distance = Vector3.Distance(samplePoint, cellCenter);
+                float distanceT = 1f - math.saturate(distance / math.max(0.01f, influenceRadius));
+                if (distanceT <= 0f)
+                    continue;
+
+                float accelerationMagnitude = ExteriorBoilingAccelerationMetersPerSecondSquared * intensity * distanceT;
+                PhysicsForceRouter.QueueForce(body, Vector3.up * accelerationMagnitude, ForceMode.Acceleration);
+            }
+
+            if (_cachedPlayerTransform == null || _cachedPlayerMovement == null)
+                return;
+
+            float playerDistance = Vector3.Distance(_cachedPlayerTransform.position, cellCenter);
+            float playerDistanceT = 1f - math.saturate(playerDistance / math.max(0.01f, influenceRadius));
+            if (playerDistanceT <= 0f)
+                return;
+
+            Vector3 updraftVelocity = Vector3.up * (ExteriorBoilingAccelerationMetersPerSecondSquared * 0.06f * intensity * playerDistanceT * fixedDeltaTime);
+            _cachedPlayerMovement.ApplyExternalThermalUpdraft(updraftVelocity);
+            if (_cachedPlayerRigidbody != null)
+                PhysicsForceRouter.QueueForce(_cachedPlayerRigidbody, Vector3.up * (ExteriorBoilingAccelerationMetersPerSecondSquared * intensity * playerDistanceT), ForceMode.Acceleration);
+        }
+
+        private void EnsurePlayerBindings()
+        {
+            Transform playerTransform = BootstrapState.CurrentPlayerTransform;
+            if (playerTransform == null)
+            {
+                _cachedPlayerTransform = null;
+                _cachedPlayerMovement = null;
+                _cachedPlayerRigidbody = null;
+                return;
+            }
+
+            if (_cachedPlayerTransform != playerTransform)
+            {
+                _cachedPlayerTransform = playerTransform;
+                _cachedPlayerMovement = null;
+                _cachedPlayerRigidbody = null;
+            }
+
+            if (_cachedPlayerMovement == null)
+                playerTransform.TryGetComponent(out _cachedPlayerMovement);
+
+            if (_cachedPlayerRigidbody == null)
+                playerTransform.TryGetComponent(out _cachedPlayerRigidbody);
+        }
+
+        private void ClearExteriorThermalAnomalies()
+        {
+            for (int slotIndex = 0; slotIndex < ExteriorThermalAnomalyCapacity; slotIndex++)
+            {
+                if (_exteriorThermalHazardIds[slotIndex] != 0)
+                    HectonHazardManager.Unregister(_exteriorThermalHazardIds[slotIndex]);
+
+                _exteriorThermalHazardIds[slotIndex] = 0;
+                _exteriorThermalAnomalyCenters[slotIndex] = Vector3.zero;
+                _exteriorThermalAnomalyTemperatures[slotIndex] = ExteriorWaterReferenceTemperatureCelsius;
+                _exteriorThermalAnomalyLifetimes[slotIndex] = 0f;
+            }
+        }
+
+        private static float MinEffectiveBeamPowerForThermalAnomaly()
+        {
+            return 0.02f;
+        }
+
+        private static Vector3 QuantizeExteriorThermalCell(Vector3 runtimePoint)
+        {
+            float invCellSize = 1f / ExteriorThermalCellSizeMeters;
+            return new Vector3(
+                (math.floor(runtimePoint.x * invCellSize) + 0.5f) * ExteriorThermalCellSizeMeters,
+                (math.floor(runtimePoint.y * invCellSize) + 0.5f) * ExteriorThermalCellSizeMeters,
+                (math.floor(runtimePoint.z * invCellSize) + 0.5f) * ExteriorThermalCellSizeMeters);
+        }
+
+        private int ResolveExteriorThermalSlot(Vector3 quantizedCenter)
+        {
+            int expiredSlot = -1;
+            float lowestLifetime = float.MaxValue;
+            int oldestSlot = 0;
+
+            for (int slotIndex = 0; slotIndex < ExteriorThermalAnomalyCapacity; slotIndex++)
+            {
+                if (_exteriorThermalAnomalyLifetimes[slotIndex] > 0f)
+                {
+                    if ((_exteriorThermalAnomalyCenters[slotIndex] - quantizedCenter).sqrMagnitude <= 0.01f)
+                        return slotIndex;
+
+                    if (_exteriorThermalAnomalyLifetimes[slotIndex] < lowestLifetime)
+                    {
+                        lowestLifetime = _exteriorThermalAnomalyLifetimes[slotIndex];
+                        oldestSlot = slotIndex;
+                    }
+
+                    continue;
+                }
+
+                expiredSlot = slotIndex;
+                break;
+            }
+
+            return expiredSlot >= 0 ? expiredSlot : oldestSlot;
+        }
+
+        private int ResolveExteriorThermalHazardId(int slotIndex)
+        {
+            if (_exteriorThermalHazardIds[slotIndex] != 0)
+                return _exteriorThermalHazardIds[slotIndex];
+
+            int hullId = _cachedTransform != null ? _cachedTransform.GetInstanceID() : GetInstanceID();
+            _exteriorThermalHazardIds[slotIndex] = (hullId * 31) ^ (slotIndex + 1);
+            return _exteriorThermalHazardIds[slotIndex];
+        }
+
+        private static float ResolveBoilingPointCelsius(float depthMeters)
+        {
+            return 100f + (math.max(0f, depthMeters) * ExteriorBoilingDepthSlopeCelsiusPerMeter);
         }
 
         private void ApplyDelayedSloshTorque()

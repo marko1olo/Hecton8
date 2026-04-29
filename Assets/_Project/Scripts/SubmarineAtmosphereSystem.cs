@@ -784,6 +784,39 @@ namespace Hecton8.Atmosphere
                 maximumTemperatureCelsius);
         }
 
+        public void TransferRoomHeatEnergyJoules(int sourceRoomIndex, int destinationRoomIndex, float heatEnergyJoules)
+        {
+            if (heatEnergyJoules <= 0f ||
+                !_temperatureFront.IsCreated ||
+                sourceRoomIndex < 0 || sourceRoomIndex >= RoomCount ||
+                destinationRoomIndex < 0 || destinationRoomIndex >= RoomCount ||
+                sourceRoomIndex == destinationRoomIndex)
+            {
+                return;
+            }
+
+            CompleteAtmosphereJobForAuthoritativeWrite();
+
+            float sourceCapacity = ResolveInstantThermalCapacity(sourceRoomIndex);
+            float destinationCapacity = ResolveInstantThermalCapacity(destinationRoomIndex);
+            if (sourceCapacity <= Epsilon || destinationCapacity <= Epsilon)
+                return;
+
+            float sourceDelta = heatEnergyJoules / sourceCapacity;
+            float destinationDelta = heatEnergyJoules / destinationCapacity;
+            if (!math.isfinite(sourceDelta) || !math.isfinite(destinationDelta) || sourceDelta <= 0f || destinationDelta <= 0f)
+                return;
+
+            _temperatureFront[sourceRoomIndex] = math.clamp(
+                _temperatureFront[sourceRoomIndex] - sourceDelta,
+                minimumTemperatureCelsius,
+                maximumTemperatureCelsius);
+            _temperatureFront[destinationRoomIndex] = math.clamp(
+                _temperatureFront[destinationRoomIndex] + destinationDelta,
+                minimumTemperatureCelsius,
+                maximumTemperatureCelsius);
+        }
+
         internal float ResolveThermalFatigueMultiplier(int roomIndex)
         {
             if (roomIndex < 0 || roomIndex >= RoomCount || !_temperatureFront.IsCreated)

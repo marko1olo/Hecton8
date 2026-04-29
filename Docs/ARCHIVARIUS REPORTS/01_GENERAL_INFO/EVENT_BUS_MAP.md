@@ -1,52 +1,47 @@
-# HECTON-8 EVENT-BUS NERVOUS SYSTEM MAP
+# HECTON-8 EVENT BUS MAP
 
-**Status:** ETA SANITIZED  
-**Scope:** `HectonEventBus` typed event bus (`HectonEvent` / `HectonCancellableEvent`) only.  
-**Scan Date:** 2026-05-02  
-**Mandates Followed:** AGENTS.md § Event Buses · § Modding API
-
----
-
-## ATLAS — PUBLISH ↔ SUBSCRIBE MATRIX
-
-| Event Type | Publisher(s) | Subscriber(s) | Resulting Action | Status |
-|---|---|---|---|---|
-| `GameLoadedEvent` | `ModLoader` (on load complete) | `DynamicDifficultyDirector`, `GlobalProfileManager`, `PDALogbookManager`, `PDAContextualAdvisorySystem`, `RunModifierController`, `PlayerAchievementRegistry`, `HectonOSBootManager` | Reset progression state, rebuild UI, re-enable boot sequence, refresh difficulty scaling | **LIVE** |
-| `PlayerSpawnedEvent` | `ModLoader` (post-bootstrap) | `PDALogbookManager`, `PDAContextualAdvisorySystem`, `HectonOSBootManager` | Init player-specific PDA tabs, trigger contextual advisories, start OS boot sequence | **LIVE** |
-| `ItemCraftedEvent` | `ModLoader` (craft complete) | `GlobalProfileManager`, `PDALogbookManager`, `PlayerAchievementRegistry` | Update profile stats, append logbook entry, check achievement triggers | **LIVE** |
-| `ItemCollectedEvent` | `HectonItem`, `PickupItem`, `HarvestableOutcrop` | `ResourceScarcityDirector`, `GlobalProfileManager`, `QuestManager` | Track resource scarcity, advance marathon metrics, evaluate quest conditions | **LIVE** |
-| `ItemRecycledEvent` | `ScrapManager`, `ResourceRecyclerModule` | `GlobalProfileManager`, `EnvironmentalStrainManager` | Update recycling profile stats, track environmental strain | **LIVE** |
-| `ItemDiscardedEvent` | `PDAInventoryTab` | `EnvironmentalStrainManager` | Track player-discarded waste for ecosystem strain | **LIVE** |
-| `BiomeDiscoveredEvent` | `HectonDiscoveryManager` | `DynamicDifficultyDirector`, `GlobalProfileManager`, `QuestManager` | Scale difficulty, update profile discoveries, check quest triggers | **LIVE** |
-| `PlayerDiedEvent` | `HectonSurvivalSystem` | `DynamicDifficultyDirector`, `GlobalProfileManager`, `RunModifierController`, `PDADeathMemoryDump` | Adjust difficulty, record death stats, reset run modifiers, generate death memory dump | **LIVE** |
-| `AchievementUnlockedEvent` | `PlayerAchievementRegistry` | `DynamicDifficultyDirector`, `GlobalProfileManager` | Scale difficulty based on achievement meta, update profile | **LIVE** |
-| `PlayerAdvisoryIssuedEvent` | `PDAContextualAdvisorySystem` | `DynamicDifficultyDirector` | Feed advisory history into dynamic difficulty model | **LIVE** |
-| `LoreAcquiredEvent` | `NarrativeDiscovery`, `AudioLogSystem` | `LoreDatabaseManager`, `QuestManager` | Unlock industrial lore bit-mask, check quest conditions | **LIVE** |
-| `PlayerTakeDamageEvent` *(Cancellable)* | `HectonSurvivalSystem` | **NONE** (first-party) | Inline cancellation check; no first-party subscriber | **DEAD** (first-party) |
-| `BaseModulePlacedEvent` | `PlayerBuilder` | **NONE** (first-party) | Intended for modding hooks | **DEAD** (first-party) |
-| `LogisticsPipeOverpressureLeakEvent` | `LogisticsPipeNode` | **NONE** (first-party) | Intended for modding hooks | **DEAD** (first-party) |
+**Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION  
+**Scope:** Historical summary of the event-bus layer.  
+**Chronology Note:** The previous version carried an impossible future scan date. This rewrite removes that contradiction.
 
 ---
 
-## DEBT — DEAD EVENTS SUMMARY
+## Purpose
 
-| # | Event | Publisher | Why No Subscriber? | Risk |
-|---|---|---|---|---|
-| 1 | `PlayerTakeDamageEvent` | `HectonSurvivalSystem` | Event is read inline for cancellation (`damageEvent.IsCancelled`); no external system reacts. | **LOW** — still functional as cancellable gate. |
-| 2 | `BaseModulePlacedEvent` | `PlayerBuilder` | No first-party listener; only modding surface. | **LOW** — modding API contract. |
-| 3 | `LogisticsPipeOverpressureLeakEvent` | `LogisticsPipeNode` | No first-party listener; only modding surface. | **LOW** — modding API contract. |
+This file is a lightweight orientation map only.
 
-**Total Dead Events:** **3** (all first-party dead; modding API may externally subscribe).
+It should not be treated as the definitive publisher/subscriber truth table.  
+For the larger static readout, use:
 
----
+- `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 
-## ARCHITECTURE NOTES
+## Buses In Scope
 
-- **Bus Owner:** `HectonEventBus` (static generic dispatcher in `ModdingAPI/HectonEventBus.cs`).
-- **Subscription Token:** `HectonEventSubscription` (IDisposable). All first-party subscribers dispose in `OnDisable` / `OnDestroy`.
-- **Cancellable Events:** Only `PlayerTakeDamageEvent` uses `HectonCancellableEvent`. Cancellation is monotonic; first cancel wins.
-- **Static Zero-Alloc Buses (NOT in this map):** `InteractionEvents`, `CraftingEvents`, `SaveEvents`, `FlashlightEvents`, `PDAEvents`, `ModuleStatusEvents`, `ScanEvents` — these use raw `Action<T>` delegates and are documented in `INTERFACE_CONTRACT_TABLE.md`.
+| Bus family | Notes |
+|---|---|
+| `HectonEventBus` typed events | Generic event-bus layer used by first-party and mod-facing systems |
+| Static zero-alloc buses | `InteractionEvents`, `CraftingEvents`, `SaveEvents`, `FlashlightEvents`, `PDAEvents`, `ModuleStatusEvents`, `ScanEvents` |
 
----
+## Current Documentation Boundary
 
-*Report generated by ARCHIVARIUS. No optimism. Facts only.*
+The present workspace contains two event-mapping documents:
+
+1. This file in `01_GENERAL_INFO`
+2. `EVENT_FLOW_MAP.md` in `02_ACTUAL_REPORTS`
+
+The detailed routing document is the better source for raw mappings.  
+This file should remain a short orientation page, not a second large truth table.
+
+## Verified Constraints From Project Instructions
+
+| Constraint | Source |
+|---|---|
+| Event buses are expected to be static and zero-allocation | `AGENTS.md` |
+| String-based event names are forbidden in first-party event-bus design | `AGENTS.md` |
+| Queue-backed / late-flush behavior is the mandated direction for the canonical event bus | `AGENTS.md` |
+
+## Open Risk
+
+No live event replay or Unity runtime trace was executed in this documentation-only pass.  
+Publisher/subscriber truth therefore remains `PENDING VERIFICATION`.

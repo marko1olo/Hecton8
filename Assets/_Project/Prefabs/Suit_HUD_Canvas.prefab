@@ -2495,7 +2495,26 @@ MonoBehaviour:
   gaugeIconSize: {x: 16, y: 16}
   gaugeValueOffsetY: 0
   gaugeLabelOffsetY: -34
+  quickbarOffset: {x: 0, y: 94}
+  quickbarSize: {x: 244, y: 64}
+  quickbarSlotSize: 44
+  quickbarSlotGap: 8
+  acousticRadarShader: {fileID: 0}
+  acousticRadarOpacity: 0.18
+  acousticRadarInnerEdge: 0.74
+  acousticRadarBandThickness: 0.18
+  acousticRadarWaveAmplitude: 2.4
+  acousticRadarPulseFrequency: 3.2
+  acousticRadarGlitchStrength: 0.2
   threatChevronShader: {fileID: 4800000, guid: 93d4136c67d64c5bb944522bd67021a1, type: 3}
+  threatChevronColor: {r: 1, g: 0.18, b: 0.2, a: 0.88}
+  threatChevronThreshold: 0.62
+  threatChevronRadiusMeters: 50
+  threatChevronEdgeInsetPixels: 96
+  threatChevronSizePixels: 26
+  threatChevronFillAlpha: 0.08
+  threatChevronFlickerFrequency: 7
+  threatChevronFlickerIntensity: 0.04
   _appliedLayoutRevision: 0
 --- !u!114 &3896178095003698194
 MonoBehaviour:
@@ -5322,6 +5341,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7761531992116127932}
+  - component: {fileID: 6858977662027598016}
   m_Layer: 0
   m_Name: HUD_V4_CanvasRoot
   m_TagString: Untagged
@@ -5363,6 +5383,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &6858977662027598016
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5667609833963473601}
+  m_Enabled: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &5727192624620850672
 GameObject:
   m_ObjectHideFlags: 0

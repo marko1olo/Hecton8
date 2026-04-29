@@ -18,6 +18,7 @@ namespace Hecton8.Editor
         private Vector2 _scroll;
         private string _savePath = string.Empty;
         private string _lastError = string.Empty;
+        private string _fragmentationAscii = string.Empty;
         private long _totalCompressedBytes;
         private long _largestGapBytes;
         private int _chunkSizeMeters;
@@ -64,6 +65,8 @@ namespace Hecton8.Editor
             EditorGUILayout.LabelField($"Sector Blocks: {_sortedRows.Count}");
             EditorGUILayout.LabelField($"Compressed Payload: {FormatBytes(_totalCompressedBytes)}");
             EditorGUILayout.LabelField($"Largest Gap: {FormatBytes(_largestGapBytes)}");
+            if (!string.IsNullOrEmpty(_fragmentationAscii))
+                EditorGUILayout.SelectableLabel(_fragmentationAscii, EditorStyles.textField, GUILayout.Height(EditorGUIUtility.singleLineHeight));
 
             EditorGUILayout.Space(6f);
             DrawHeatMap();
@@ -91,6 +94,7 @@ namespace Hecton8.Editor
             _sortedRows.Clear();
             _totalCompressedBytes = 0L;
             _largestGapBytes = 0L;
+            _fragmentationAscii = string.Empty;
 
             if (string.IsNullOrWhiteSpace(_savePath) || !File.Exists(_savePath))
             {
@@ -104,13 +108,9 @@ namespace Hecton8.Editor
                 return;
             }
 
-            long expectedOffset = long.MinValue;
             for (int i = 0; i < _sectorEntries.Count; i++)
             {
                 SaveBinaryStorage.IndexedSectorEntryInfo entry = _sectorEntries[i];
-                long gapBefore = expectedOffset == long.MinValue ? 0L : Math.Max(0L, entry.ByteOffset - expectedOffset);
-                _largestGapBytes = Math.Max(_largestGapBytes, gapBefore);
-                _totalCompressedBytes += entry.CompressedSize;
                 _sortedRows.Add(new SectorTelemetryRow
                 {
                     SectorCoord = UnpackSectorHash(entry.SectorHash),
@@ -119,12 +119,25 @@ namespace Hecton8.Editor
                     CompressedSize = entry.CompressedSize,
                     DecompressedSize = entry.DecompressedSize,
                     Checksum = entry.Checksum,
-                    GapBefore = gapBefore
+                    GapBefore = 0L
                 });
-
-                expectedOffset = entry.ByteOffset + entry.CompressedSize;
             }
 
+            _sortedRows.Sort(static (left, right) => left.ByteOffset.CompareTo(right.ByteOffset));
+            long expectedOffset = long.MinValue;
+            for (int i = 0; i < _sortedRows.Count; i++)
+            {
+                SectorTelemetryRow row = _sortedRows[i];
+                long gapBefore = expectedOffset == long.MinValue ? 0L : Math.Max(0L, row.ByteOffset - expectedOffset);
+                row.GapBefore = gapBefore;
+                _sortedRows[i] = row;
+                _largestGapBytes = Math.Max(_largestGapBytes, gapBefore);
+                _totalCompressedBytes += row.CompressedSize;
+                expectedOffset = row.ByteOffset + row.CompressedSize;
+            }
+
+            _fragmentationAscii = BuildFragmentationAscii(_sortedRows);
+            Debug.Log($"[SaveSystemTelemetry] Fragmentation {_fragmentationAscii}");
             _sortedRows.Sort(static (left, right) => right.CompressedSize.CompareTo(left.CompressedSize));
         }
 
@@ -196,6 +209,34 @@ namespace Hecton8.Editor
             if (bytes >= 1024L)
                 return $"{bytes / 1024f:0.0} KB";
             return $"{bytes} B";
+        }
+
+        private static string BuildFragmentationAscii(List<SectorTelemetryRow> rows)
+        {
+            if (rows == null || rows.Count <= 0)
+                return string.Empty;
+
+            const int SlotCount = 48;
+            char[] buffer = new char[SlotCount + 2];
+            buffer[0] = '[';
+            buffer[buffer.Length - 1] = ']';
+            for (int i = 1; i < buffer.Length - 1; i++)
+                buffer[i] = '.';
+
+            long maxEnd = 1L;
+            for (int i = 0; i < rows.Count; i++)
+                maxEnd = Math.Max(maxEnd, rows[i].ByteOffset + rows[i].CompressedSize);
+
+            for (int i = 0; i < rows.Count; i++)
+            {
+                SectorTelemetryRow row = rows[i];
+                int start = Mathf.Clamp((int)((row.ByteOffset * SlotCount) / (double)maxEnd), 0, SlotCount - 1);
+                int endExclusive = Mathf.Clamp((int)Math.Ceiling(((row.ByteOffset + row.CompressedSize) * SlotCount) / (double)maxEnd), start + 1, SlotCount);
+                for (int slot = start; slot < endExclusive; slot++)
+                    buffer[slot + 1] = 'X';
+            }
+
+            return new string(buffer);
         }
     }
 }

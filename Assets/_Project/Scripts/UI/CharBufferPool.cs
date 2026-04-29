@@ -21,6 +21,8 @@ namespace Hecton8.UI
 
         private static ushort _slotMask = 0xFFFF;
 
+        internal static int AvailableSlotCount => CountAvailableSlots(_slotMask);
+
         internal readonly struct Lease
         {
             public Lease(int slotIndex, char[] buffer)
@@ -71,6 +73,18 @@ namespace Hecton8.UI
             }
 
             return -1;
+        }
+
+        private static int CountAvailableSlots(ushort slotMask)
+        {
+            int count = 0;
+            for (int i = 0; i < SlotCount; i++)
+            {
+                if ((slotMask & (1 << i)) != 0)
+                    count++;
+            }
+
+            return count;
         }
     }
 }

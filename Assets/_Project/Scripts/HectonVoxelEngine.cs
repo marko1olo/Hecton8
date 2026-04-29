@@ -2753,7 +2753,14 @@ public class HectonVoxelEngine : MonoBehaviour
             await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct);
             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             ConfigureVolumeRuntimeData(targetGO, seed, worldCenter, absoluteUniverseOffsetAtStart, preset, gridDim, voxelStep, clampedLodLevel, caveParams,
-                caveNodes, caveTunnels, caveEntrances, caveStructures, true);
+                caveNodes, caveTunnels, caveEntrances, caveStructures,
+                pipelineData.ScratchLease.SmoothDensityField,
+                pipelineData.PtsX,
+                pipelineData.PtsY,
+                pipelineData.PtsZ,
+                (Vector3)pipelineData.VolumeOrigin,
+                pipelineData.VoxelStep,
+                true);
             RegisterEntranceTerrainHoles(targetGO, caveEntrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
             _activeVolumes.Add(targetGO);
             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
@@ -2924,7 +2931,14 @@ public class HectonVoxelEngine : MonoBehaviour
             await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct);
             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             ConfigureVolumeRuntimeData(targetGO, caveParams.seed, worldCenter, absoluteUniverseOffsetAtStart, null, gridDim, voxelStep, clampedLodLevel, caveParams,
-                nodes, tunnels, entrances, structures, buildCollider);
+                nodes, tunnels, entrances, structures,
+                pipelineData.ScratchLease.SmoothDensityField,
+                pipelineData.PtsX,
+                pipelineData.PtsY,
+                pipelineData.PtsZ,
+                (Vector3)pipelineData.VolumeOrigin,
+                pipelineData.VoxelStep,
+                buildCollider);
             RegisterEntranceTerrainHoles(targetGO, entrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
             _activeVolumes.Add(targetGO);
             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
@@ -3176,6 +3190,33 @@ public class HectonVoxelEngine : MonoBehaviour
     }
 
     public int ActiveVolumeCount => _activeVolumes.Count;
+
+    internal bool TryGetNearestActiveVolume(Vector3 worldPosition, out Hecton8.Caves.HectonVoxelVolume nearestVolume)
+    {
+        nearestVolume = null;
+        float bestSqrDistance = float.PositiveInfinity;
+
+        for (int i = 0; i < _activeVolumes.Count; i++)
+        {
+            GameObject activeVolume = _activeVolumes[i];
+            if (activeVolume == null ||
+                !activeVolume.TryGetComponent(out Hecton8.Caves.HectonVoxelVolume volume) ||
+                !volume.HasRuntimeData ||
+                volume.BakeState != Hecton8.Caves.VoxelBakeState.Complete)
+            {
+                continue;
+            }
+
+            float sqrDistance = (volume.generationPosition - worldPosition).sqrMagnitude;
+            if (sqrDistance >= bestSqrDistance)
+                continue;
+
+            bestSqrDistance = sqrDistance;
+            nearestVolume = volume;
+        }
+
+        return nearestVolume != null;
+    }
 
     void TeardownRuntimeState()
     {
@@ -4482,6 +4523,12 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeArray<CaveTunnel> tunnels,
         NativeArray<CaveEntrance> entrances,
         NativeArray<CaveStructure> structures,
+        NativeArray<float> smoothDensityField,
+        int ptsX,
+        int ptsY,
+        int ptsZ,
+        Vector3 volumeOrigin,
+        float voxelStep,
         bool buildCollider)
     {
         if (go == null)
@@ -4506,6 +4553,12 @@ public class HectonVoxelEngine : MonoBehaviour
             entrances,
             structures,
             buildCollider);
+
+        volume.PublishSonarSdfSnapshot(
+            new Vector3Int(ptsX, ptsY, ptsZ),
+            volumeOrigin,
+            Vector3.one * voxelStep,
+            smoothDensityField);
     }
 
     void RegisterEntranceTerrainHoles(

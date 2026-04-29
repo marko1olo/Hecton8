@@ -1,7 +1,8 @@
 # LIVE SCENE VRAM SURVEILLANCE — `02_HECTON_WORLD.unity`
 
-**Status:** ETA SANITIZED — PENDING VERIFICATION (requires Unity Editor Frame Debugger)  
-**Scan Date:** 2026-05-02  
+**Status:** PENDING VERIFICATION (requires Unity Editor Frame Debugger)  
+**Scan Date:** 2026-04-29  
+**Chronology Note:** The prior `2026-05-02` scan date could not be true in the current workspace. Content kept as estimate-only; no new Unity measurement was produced in this pass.
 **Mandates Followed:** AGENTS.md § VRAM HARD CEILING · § Textures · § Graduation Response
 
 ---

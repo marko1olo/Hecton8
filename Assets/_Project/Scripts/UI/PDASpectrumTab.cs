@@ -61,6 +61,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _resourceSummaryLabel;
         private TextMeshProUGUI _bioformSummaryLabel;
         private TextMeshProUGUI _signalSummaryLabel;
+        private PDAMapTab _mapTab;
         private HectonSurvivalSystem _survivalSystem;
         // COLD ALLOC: StringBuilder[96] — sonar contact line assembly — owner: PDASpectrumTab
         private readonly StringBuilder _lineBuilder = new StringBuilder(96);
@@ -239,34 +240,44 @@ namespace Hecton8.UI
             Image pBg = panel.gameObject.AddComponent<Image>();
             pBg.color = new Color(0.02f, 0.04f, 0.03f, 1f);
 
+            RectTransform mapViewport = CreateRect("SonarMapViewport", panel);
+            Anchor(mapViewport, new Vector2(0f, 0f), new Vector2(0.48f, 1f),
+                new Vector2(12f, 12f), new Vector2(-8f, -12f));
+
+            Image mapViewportFrame = mapViewport.gameObject.AddComponent<Image>();
+            mapViewportFrame.color = new Color(0.03f, 0.08f, 0.08f, 0.94f);
+            _mapTab = mapViewport.gameObject.GetComponent<PDAMapTab>();
+            if (_mapTab == null)
+                _mapTab = mapViewport.gameObject.AddComponent<PDAMapTab>();
+
             _currentModeLabel = CreateText("CurrentMode", panel, 11f, colorAccent, TextAlignmentOptions.TopLeft);
             _currentModeLabel.fontStyle = FontStyles.Bold;
-            Anchor(_currentModeLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
+            Anchor(_currentModeLabel.rectTransform, new Vector2(0.52f, 1), new Vector2(1, 1),
                 new Vector2(12, -36), new Vector2(-12, -8));
 
             _statusLabel = CreateText("Status", panel, 10f, colorText, TextAlignmentOptions.TopLeft);
             _statusLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
-            Anchor(_statusLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
+            Anchor(_statusLabel.rectTransform, new Vector2(0.52f, 1), new Vector2(1, 1),
                 new Vector2(12, -88), new Vector2(-12, -44));
 
             _sonarStatusLabel = CreateText("SonarStatus", panel, 9f, colorDim, TextAlignmentOptions.BottomLeft);
-            Anchor(_sonarStatusLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+            Anchor(_sonarStatusLabel.rectTransform, new Vector2(0.52f, 0), new Vector2(1, 0),
                 new Vector2(12, 84), new Vector2(-12, 104));
 
             _contactSummaryLabel = CreateText("ContactSummary", panel, 8.5f, colorAccent, TextAlignmentOptions.BottomLeft);
-            Anchor(_contactSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+            Anchor(_contactSummaryLabel.rectTransform, new Vector2(0.52f, 0), new Vector2(1, 0),
                 new Vector2(12, 60), new Vector2(-12, 80));
 
             _resourceSummaryLabel = CreateText("ResourceSummary", panel, 8.5f, colorText, TextAlignmentOptions.BottomLeft);
-            Anchor(_resourceSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+            Anchor(_resourceSummaryLabel.rectTransform, new Vector2(0.52f, 0), new Vector2(1, 0),
                 new Vector2(12, 40), new Vector2(-12, 60));
 
             _bioformSummaryLabel = CreateText("BioformSummary", panel, 8.5f, colorText, TextAlignmentOptions.BottomLeft);
-            Anchor(_bioformSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+            Anchor(_bioformSummaryLabel.rectTransform, new Vector2(0.52f, 0), new Vector2(1, 0),
                 new Vector2(12, 20), new Vector2(-12, 40));
 
             _signalSummaryLabel = CreateText("SignalSummary", panel, 8.5f, colorText, TextAlignmentOptions.BottomLeft);
-            Anchor(_signalSummaryLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0),
+            Anchor(_signalSummaryLabel.rectTransform, new Vector2(0.52f, 0), new Vector2(1, 0),
                 new Vector2(12, 0), new Vector2(-12, 20));
         }
 

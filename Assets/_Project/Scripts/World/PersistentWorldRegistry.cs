@@ -1496,13 +1496,13 @@ namespace Hecton8.World
             return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
         }
 
-        private void SnapshotResidentSectorOverrides(NativeArray<long> desiredSectorHashes)
+        private async Awaitable<bool> SnapshotResidentSectorOverridesAsync(NativeArray<long> desiredSectorHashes)
         {
             if (!_indexedSectorPagingEnabled ||
                 string.IsNullOrEmpty(_indexedSectorOverrideDirectory) ||
                 !_records.IsCreated)
             {
-                return;
+                return true;
             }
 
             SyncAllHydratedRecords();
@@ -1536,9 +1536,102 @@ namespace Hecton8.World
             }
 
             if (sectors.Count <= 0)
-                return;
+                return true;
 
             float now = Time.unscaledTime;
+            List<SectorOverrideWriteResult> writeResults = new List<SectorOverrideWriteResult>(sectors.Count);
+            string failureMessage = string.Empty;
+            try
+            {
+                await Awaitable.BackgroundThreadAsync();
+                foreach (KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair in sectors)
+                {
+                    List<PersistentWorldDeltaRecord> bucket = pair.Value;
+                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    try
+                    {
+                        for (int i = 0; i < bucket.Count; i++)
+                            sectorRecords[i] = bucket[i];
+
+                        string tempPath = ResolveSectorOverrideTempPath(pair.Key);
+                        if (!SaveBinaryStorage.TryWriteIndexedPersistentWorldSectorOverride(tempPath, pair.Key, sectorRecords, chunkSizeMeters, out string error))
+                        {
+                            failureMessage = $"[PersistentWorldRegistry] Sector override snapshot failed for 0x{pair.Key:X16}: {error}";
+                            break;
+                        }
+
+                        string entityStateTempPath = string.Empty;
+                        if (sectorEntityStates.TryGetValue(pair.Key, out List<EntityDataRecord> entityStateBucket) &&
+                            entityStateBucket != null &&
+                            entityStateBucket.Count > 0)
+                        {
+                            EntityDataRecord[] sectorStateArray = entityStateBucket.ToArray();
+                            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(sectorStateArray, Allocator.Temp);
+                            try
+                            {
+                                entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
+                                if (!SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, pair.Key, sectorStates, chunkSizeMeters, out string entityStateError))
+                                {
+                                    failureMessage = $"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}";
+                                    break;
+                                }
+                            }
+                            finally
+                            {
+                                sectorStates.Dispose();
+                            }
+                        }
+
+                        writeResults.Add(new SectorOverrideWriteResult(pair.Key, tempPath, entityStateTempPath));
+                    }
+                    finally
+                    {
+                        sectorRecords.Dispose();
+                    }
+
+                    if (!string.IsNullOrEmpty(failureMessage))
+                        break;
+                }
+
+                await Awaitable.MainThreadAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(failureMessage))
+            {
+                Debug.LogError(failureMessage);
+                return false;
+            }
+
+            for (int i = 0; i < writeResults.Count; i++)
+            {
+                SectorOverrideWriteResult result = writeResults[i];
+                if (!_sectorOverrideStates.TryGetValue(result.SectorHash, out SectorOverrideState state))
+                {
+                    state = new SectorOverrideState();
+                    _sectorOverrideStates.Add(result.SectorHash, state);
+                }
+
+                state.TempPath = result.TempPath;
+                if (!string.IsNullOrEmpty(result.EntityStateTempPath))
+                {
+                    state.EntityStateTempPath = result.EntityStateTempPath;
+                }
+                else if (!string.IsNullOrEmpty(state.EntityStateTempPath) && File.Exists(state.EntityStateTempPath))
+                {
+                    File.Delete(state.EntityStateTempPath);
+                    state.EntityStateTempPath = string.Empty;
+                }
+
+                state.LastUnloadedTime = now;
+                state.IsResident = false;
+            }
+
+            return true;
+#if false
             // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[sectorRecordCount] â€” resident sector override staging buffer â€” owner: PersistentWorldRegistry
             foreach (KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair in sectors)
             {
@@ -1573,7 +1666,7 @@ namespace Hecton8.World
                         try
                         {
                             string entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
-                            if (!SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, pair.Key, sectorStates, out string entityStateError))
+                            if (!SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, pair.Key, sectorStates, chunkSizeMeters, out string entityStateError))
                             {
                                 Debug.LogError($"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}");
                             }
@@ -1595,6 +1688,7 @@ namespace Hecton8.World
                     sectorRecords.Dispose();
                 }
             }
+#endif
         }
 
         private bool ApplySectorOverrides(

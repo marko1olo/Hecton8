@@ -1,14 +1,15 @@
 # SINGLETON WITCH HUNT — FIRST-PARTY VIOLATIONS
 
-**Status:** ETA SANITIZED  
-**Scan Date:** 2026-05-02  
+**Status:** PENDING VERIFICATION  
+**Audit Review Date:** 2026-04-29  
+**Chronology Note:** The previous header claimed `2026-05-02`, which is impossible relative to the current workspace date. Treat this file as a static inventory until re-scanned.
 **Rule:** AGENTS.md § PRIME DIRECTIVES — "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-**Violation Count:** 74 first-party scripts expose `public static Instance` (or equivalent) instead of routing through `GlobalRegistry`.
+**Violation Count:** 101 listed rows in this document expose `public static Instance` (or equivalent) instead of routing through `GlobalRegistry`.
 
 **Categories:**
 - Core infrastructure (tick, physics, dispatcher)

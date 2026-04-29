@@ -33,6 +33,8 @@ namespace Hecton8.Power
         private const float MinimumOverloadHeatWatts = 1800f;
         private const float OverloadThermalDamagePerSecond = 18f;
         private const float OverloadMeltdownTemperatureCelsius = 150f;
+        private const float CableThermalConductivityWattsPerCelsius = 140f;
+        private const float MinimumCableThermalDeltaCelsius = 0.5f;
 
         private enum BatteryDispatchMode : byte
         {
@@ -378,6 +380,7 @@ namespace Hecton8.Power
                 _logisticsGraph.GetScheduledDistributionSummary());
             ApplyConsumerStates();
             ApplyOverloadThermalDamage();
+            ApplyCableThermalSharing();
             _slowTickEvaluationPending = false;
             _hasEvaluatedAtLeastOnce = true;
         }
@@ -434,6 +437,7 @@ namespace Hecton8.Power
                 _logisticsGraph.GetScheduledDistributionSummary());
             ApplyConsumerStates();
             ApplyOverloadThermalDamage();
+            ApplyCableThermalSharing();
         }
 
         internal List<PowerNode> TopologyNodes => _topologyNodes;
@@ -728,6 +732,73 @@ namespace Hecton8.Power
                         TraumaLevel = 0
                     };
                     binding.DamageReceiver.ReceiveDamage(in packet);
+                }
+            }
+        }
+
+        private void ApplyCableThermalSharing()
+        {
+            int nodeCount = math.min(_topologyNodes.Count, _overloadThermalBindings.Count);
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                PowerNode sourceNode = _topologyNodes[nodeIndex];
+                if (sourceNode == null)
+                    continue;
+
+                OverloadThermalBinding sourceBinding = _overloadThermalBindings[nodeIndex];
+                if (sourceBinding.Atmosphere == null || sourceBinding.RoomIndex < 0)
+                    continue;
+
+                List<PowerNode> neighbors = sourceNode.Neighbors;
+                if (neighbors == null)
+                    continue;
+
+                float sourceTemperature = sourceBinding.Atmosphere.GetRoomTemperatureCelsius(sourceBinding.RoomIndex);
+                int neighborCount = neighbors.Count;
+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
+                {
+                    PowerNode destinationNode = neighbors[neighborIndex];
+                    if (destinationNode == null ||
+                        !ReferenceEquals(destinationNode.Grid, this) ||
+                        destinationNode.GraphScratchVersion != _graphBuildVersion ||
+                        destinationNode.GraphScratchIndex <= nodeIndex ||
+                        destinationNode.GraphScratchIndex >= nodeCount)
+                    {
+                        continue;
+                    }
+
+                    OverloadThermalBinding destinationBinding = _overloadThermalBindings[destinationNode.GraphScratchIndex];
+                    if (destinationBinding.Atmosphere == null ||
+                        destinationBinding.RoomIndex < 0 ||
+                        destinationBinding.RoomIndex == sourceBinding.RoomIndex ||
+                        !ReferenceEquals(destinationBinding.Atmosphere, sourceBinding.Atmosphere))
+                    {
+                        continue;
+                    }
+
+                    float destinationTemperature = destinationBinding.Atmosphere.GetRoomTemperatureCelsius(destinationBinding.RoomIndex);
+                    float deltaTemperature = sourceTemperature - destinationTemperature;
+                    if (math.abs(deltaTemperature) < MinimumCableThermalDeltaCelsius)
+                        continue;
+
+                    float transferredHeatJoules = math.abs(deltaTemperature) * CableThermalConductivityWattsPerCelsius * BatteryDispatchDeltaTimeSeconds;
+                    if (transferredHeatJoules <= 0f)
+                        continue;
+
+                    if (deltaTemperature > 0f)
+                    {
+                        sourceBinding.Atmosphere.TransferRoomHeatEnergyJoules(
+                            sourceBinding.RoomIndex,
+                            destinationBinding.RoomIndex,
+                            transferredHeatJoules);
+                    }
+                    else
+                    {
+                        destinationBinding.Atmosphere.TransferRoomHeatEnergyJoules(
+                            destinationBinding.RoomIndex,
+                            sourceBinding.RoomIndex,
+                            transferredHeatJoules);
+                    }
                 }
             }
         }

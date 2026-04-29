@@ -1,6 +1,7 @@
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -234,6 +235,10 @@ namespace Hecton8.Interaction
                     DispatchCutDamage(signal, targetCollider);
                     return;
 
+                case InteractionEffectType.Boil:
+                    DispatchBoil(signal);
+                    return;
+
                 default:
                     DispatchCutDamage(signal, targetCollider);
                     return;
@@ -259,6 +264,18 @@ namespace Hecton8.Interaction
                 direction,
                 signal.Source.Power,
                 signal.Source.Range);
+        }
+
+        private static void DispatchBoil(InteractionSignal signal)
+        {
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            SubmarineFluidDynamics fluidDynamics = submarine != null ? submarine.FluidDynamics : null;
+            if (fluidDynamics == null || !fluidDynamics.isActiveAndEnabled)
+                return;
+
+            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
+            Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
+            fluidDynamics.InjectLocalizedWaterHeat(runtimeHitPoint, direction, signal.PowerDelivered, signal.Source.Power);
         }
 
         private static void DispatchCutDamage(InteractionSignal signal, Collider targetCollider)

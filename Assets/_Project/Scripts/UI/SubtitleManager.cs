@@ -197,6 +197,9 @@ namespace Hecton8.UI
         private int _timedAudioLogNextCueIndex;
         private int _timedAudioLogCurrentCueStartIndex;
         private int _timedAudioLogCurrentCueLength;
+        private int _timedAudioLogCurrentRevealLength;
+        private float _timedAudioLogCurrentCueDuration;
+        private float _timedAudioLogCueRevealStartTime;
         private char[] _timedAudioLogTitleBuffer;
         private int _timedAudioLogTitleLength;
         private char[] _timedAudioLogBodyBuffer;
@@ -302,11 +305,11 @@ namespace Hecton8.UI
                     _currentMessage = string.Empty;
                     _currentSource = SubtitleSource.Generic;
 
-                    if (_queue.Count > 0)
-                    {
-                        SubtitleRequest next = _queue[0];
-                        _queue.RemoveAt(0);
-                        ShowImmediate(next.Message, next.Duration, next.Source);
+                if (_queue.Count > 0)
+                {
+                    SubtitleRequest next = _queue[0];
+                    _queue.RemoveAt(0);
+                    ShowImmediate(next.Message, next.Duration, next.Source);
                     }
                     else
                     {
@@ -499,6 +502,9 @@ namespace Hecton8.UI
             _timedAudioLogNextCueIndex = 0;
             _timedAudioLogCurrentCueStartIndex = 0;
             _timedAudioLogCurrentCueLength = 0;
+            _timedAudioLogCurrentRevealLength = 0;
+            _timedAudioLogCurrentCueDuration = 0f;
+            _timedAudioLogCueRevealStartTime = 0f;
             _timedAudioLogTitleBuffer = null;
             _timedAudioLogTitleLength = 0;
             _timedAudioLogBodyBuffer = null;
@@ -519,9 +525,12 @@ namespace Hecton8.UI
                 {
                     _timedAudioLogCurrentCueStartIndex = _timedAudioLogCues[0].StartIndex;
                     _timedAudioLogCurrentCueLength = _timedAudioLogCues[0].Length;
+                    _timedAudioLogCurrentCueDuration = GetCueDuration(0);
+                    _timedAudioLogCueRevealStartTime = Time.unscaledTime;
+                    _timedAudioLogCurrentRevealLength = 0;
                     _timedAudioLogNextCueIndex = 1;
                     NotifyCueChanged(
-                        GetCueDuration(0),
+                        _timedAudioLogCurrentCueDuration,
                         _timedAudioLogBodyBuffer,
                         _timedAudioLogCurrentCueStartIndex,
                         _timedAudioLogCurrentCueLength,
@@ -536,6 +545,9 @@ namespace Hecton8.UI
             {
                 _timedAudioLogCurrentCueStartIndex = 0;
                 _timedAudioLogCurrentCueLength = hasBody ? _timedAudioLogBodyLength : 0;
+                _timedAudioLogCurrentCueDuration = _timedAudioLogTotalDuration;
+                _timedAudioLogCueRevealStartTime = Time.unscaledTime;
+                _timedAudioLogCurrentRevealLength = 0;
                 NotifyCueChanged(
                     _timedAudioLogTotalDuration,
                     _timedAudioLogBodyBuffer,
@@ -559,26 +571,36 @@ namespace Hecton8.UI
                 lastCueIndex = _timedAudioLogNextCueIndex;
                 _timedAudioLogCurrentCueStartIndex = _timedAudioLogCues[lastCueIndex].StartIndex;
                 _timedAudioLogCurrentCueLength = _timedAudioLogCues[lastCueIndex].Length;
+                _timedAudioLogCurrentCueDuration = GetCueDuration(lastCueIndex);
+                _timedAudioLogCueRevealStartTime = Time.unscaledTime;
+                _timedAudioLogCurrentRevealLength = 0;
                 _timedAudioLogNextCueIndex++;
                 changed = true;
             }
 
-            if (!changed || lastCueIndex < 0)
+            if (changed && lastCueIndex >= 0)
+            {
+                NotifyCueChanged(
+                    _timedAudioLogCurrentCueDuration,
+                    _timedAudioLogBodyBuffer,
+                    _timedAudioLogCurrentCueStartIndex,
+                    _timedAudioLogCurrentCueLength,
+                    _timedAudioLogCues[lastCueIndex].SpeakerIntensity);
+            }
+
+            int revealLength = ResolveCurrentCueRevealLength();
+            if (!changed && revealLength == _timedAudioLogCurrentRevealLength)
                 return;
 
-            NotifyCueChanged(
-                GetCueDuration(lastCueIndex),
-                _timedAudioLogBodyBuffer,
-                _timedAudioLogCurrentCueStartIndex,
-                _timedAudioLogCurrentCueLength,
-                _timedAudioLogCues[lastCueIndex].SpeakerIntensity);
+            _timedAudioLogCurrentRevealLength = revealLength;
             ApplySubtitleBuffer(BuildCurrentAudioLogFrame());
         }
 
         private int BuildCurrentAudioLogFrame()
         {
             bool hasTitle = _timedAudioLogTitleBuffer != null && _timedAudioLogTitleLength > 0;
-            bool hasBody = _timedAudioLogBodyBuffer != null && _timedAudioLogCurrentCueLength > 0;
+            int bodyLength = Mathf.Min(_timedAudioLogCurrentCueLength, _timedAudioLogCurrentRevealLength);
+            bool hasBody = _timedAudioLogBodyBuffer != null && bodyLength > 0;
             SubtitleSpanBuilder builder = new SubtitleSpanBuilder(_subtitleRenderBuffer);
 
             if (hasTitle)
@@ -592,7 +614,7 @@ namespace Hecton8.UI
                 builder.Append(
                     _timedAudioLogBodyBuffer,
                     _timedAudioLogCurrentCueStartIndex,
-                    _timedAudioLogCurrentCueLength);
+                    bodyLength);
             }
 
             return builder.Length;
@@ -607,6 +629,9 @@ namespace Hecton8.UI
             _timedAudioLogNextCueIndex = 0;
             _timedAudioLogCurrentCueStartIndex = 0;
             _timedAudioLogCurrentCueLength = 0;
+            _timedAudioLogCurrentRevealLength = 0;
+            _timedAudioLogCurrentCueDuration = 0f;
+            _timedAudioLogCueRevealStartTime = 0f;
             _timedAudioLogTitleBuffer = null;
             _timedAudioLogTitleLength = 0;
             _timedAudioLogBodyBuffer = null;
@@ -626,6 +651,20 @@ namespace Hecton8.UI
                 ? Mathf.Max(currentStart, _timedAudioLogCues[cueIndex + 1].StartTime)
                 : Mathf.Max(currentStart, _timedAudioLogTotalDuration);
             return Mathf.Max(0.1f, nextStart - currentStart);
+        }
+
+        private int ResolveCurrentCueRevealLength()
+        {
+            if (_timedAudioLogCurrentCueLength <= 0)
+                return 0;
+
+            float revealDuration = Mathf.Max(0.1f, _timedAudioLogCurrentCueDuration);
+            float elapsed = Mathf.Max(0f, Time.unscaledTime - _timedAudioLogCueRevealStartTime);
+            float normalized = Mathf.Clamp01(elapsed / revealDuration);
+            return Mathf.Clamp(
+                Mathf.CeilToInt(_timedAudioLogCurrentCueLength * normalized),
+                0,
+                _timedAudioLogCurrentCueLength);
         }
 
         private void NotifyCueChanged(float duration, char[] textBuffer, int textStart, int textLength, float speakerIntensity)

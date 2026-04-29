@@ -93,6 +93,7 @@ namespace Hecton8.VFX
         private JobHandle _focusRaycastHandle;
         private bool _focusRaycastScheduled;
         private float _resolvedFocusDistance = 0.06f;
+        private float _focusDistanceVelocity;
         private const int TransparentFxLayerIndex = 1;
         private const int WaterLayerIndex = 4;
         private const int UiLayerIndex = 5;
@@ -137,8 +138,8 @@ namespace Hecton8.VFX
         [SerializeField, Tooltip("Maximum center-ray hit distance treated as a PDA focus lock.")]
         private float _pdaFocusThreshold = 0.15f;
 
-        [SerializeField, Tooltip("Response speed for center-eye focus-distance convergence.")]
-        private float _focusResponseSpeed = 9f;
+        [SerializeField, Range(0.1f, 1f), Tooltip("Smoothing duration for center-eye focus-distance convergence between near-field UI focus and far-field ocean focus.")]
+        private float _focusTransitionDuration = 0.5f;
 
         [SerializeField, Range(0f, 0.8f), Tooltip("Additional chromatic-aberration intensity injected by active submarine structural fatigue.")]
         private float _structuralFatigueChromaticAberrationMax = 0.26f;
@@ -356,6 +357,7 @@ namespace Hecton8.VFX
 
             _focusTarget = null;
             _focusTargetTransform = null;
+            _focusDistanceVelocity = 0f;
             _shakeOffset = Vector3.zero;
             ReleaseFocusRaycastBuffers();
 
@@ -808,11 +810,13 @@ namespace Hecton8.VFX
             ResolveScheduledFocusRaycast();
 
             float targetFocusDistance = ResolveTargetFocusDistance();
-            float lerpT = 1f - Mathf.Exp(-Mathf.Max(0.01f, _focusResponseSpeed) * dt);
-            _focusDistance = Mathf.Lerp(
+            _focusDistance = Mathf.SmoothDamp(
                 _focusDistance > 0f ? _focusDistance : targetFocusDistance,
                 targetFocusDistance,
-                lerpT);
+                ref _focusDistanceVelocity,
+                Mathf.Max(0.1f, _focusTransitionDuration),
+                Mathf.Infinity,
+                dt);
 
             _interactionDoF.focusDistance.value = _focusDistance;
             _interactionDoF.active = true;

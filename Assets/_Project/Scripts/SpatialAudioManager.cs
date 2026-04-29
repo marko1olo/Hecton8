@@ -50,8 +50,10 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.Atmosphere;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
@@ -69,6 +71,7 @@ namespace Hecton8.Audio
     public sealed class SpatialAudioManager : MonoBehaviour, IUpdatable
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
+        private const float SoundSpeedAirMetersPerSecond = 343f;
         private const float HaasArrivalWindowSeconds = 0.035f;
         private const float HaasReleaseThresholdSeconds = 0.04f;
         private const float HaasSecondarySpatialBlendFactor = 0.2f;
@@ -108,15 +111,27 @@ namespace Hecton8.Audio
         private const float RearHemisphereLowPassFullDot = -0.92f;
         private const float RearHemisphereLowPassMaximumCutoffHertz = 18000f;
         private const float RearHemisphereLowPassMinimumCutoffHertz = 3200f;
+        private const float BinauralWaterBlendSharpness = 7f;
         private const float ThreatBusDuckMaximumDb = -10f;
         private const float ThreatBusDuckAttackSharpness = 18f;
         private const float ThreatBusDuckReleaseSharpness = 5f;
+        private const int MaxDelayedAudioEvents = 16;
+        private const float FatalPressureImplosionEventVolume = 0.96f;
+        private const float FatalPressureImplosionEventPitch = 0.84f;
+        private const float FatalPressureImplosionTraumaRangeMeters = 220f;
+        private const float FatalPressureImplosionTraumaImpulse = 18f;
+        private const float FatalPressureImplosionTraumaWeight = 0.82f;
 
         private enum AudioLodTier : byte
         {
             Tier0Full = 0,
             Tier1Reduced = 1,
             Tier2Culled = 2
+        }
+
+        private enum DelayedAudioEventKind : byte
+        {
+            FatalPressureImplosion = 1
         }
 
         internal struct ActiveEmitterSample
@@ -134,7 +149,21 @@ namespace Hecton8.Audio
             public float ShadowAmount01;
             public float ShadowCutoffHertz;
             public float Energy;
+            public float WaterDensityMul;
             public int Valid;
+        }
+
+        private struct DelayedAudioEvent
+        {
+            public DelayedAudioEventKind Kind;
+            public Vector3 Position;
+            public float EventTimeSeconds;
+            public float DelaySeconds;
+            public float Volume;
+            public float Pitch;
+            public float TraumaRangeMeters;
+            public float TraumaImpulse;
+            public float TraumaWeight;
         }
 
         private struct ImpactEmitterSample
@@ -226,6 +255,10 @@ namespace Hecton8.Audio
         [Tooltip("Exposed mixer parameter that attenuates the Bed bus in dB while Threat is active.")]
         [SerializeField] private string _bedDuckDbParameter = "BedDuckDb";
 
+        [Header("Delayed World Events")]
+        [Tooltip("Threat-bus implosion clip fired after underwater propagation delay. Left null to keep the event trauma-only.")]
+        [SerializeField] private AudioClip _fatalPressureImplosionClip;
+
         [Header("Authored Pool Roots")]
         [Tooltip("Pre-authored root containing world-space AudioSource + AudioLowPassFilter pool nodes. Runtime AddComponent is forbidden.")]
         [SerializeField] private Transform _worldPoolRoot;
@@ -290,7 +323,12 @@ namespace Hecton8.Audio
         private int _listenerContainingCaveCount;
         private float _listenerCaveInterior01;
         private float _threatBusDuck01;
+        private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
+        private HectonPlayerMovement _listenerPlayerMovement;
+        private int _delayedAudioIngressCount;
+        private NativeQueue<DelayedAudioEvent> _delayedAudioIngress;
+        private NativeList<DelayedAudioEvent> _pendingDelayedAudioEvents;
         // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
         private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
 
@@ -320,12 +358,14 @@ namespace Hecton8.Audio
         private void OnEnable()
         {
             PhysicsEvents.OnImpact += HandlePhysicsImpact;
+            FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
             TryRegisterUpdatable();
         }
 
         private void OnDisable()
         {
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
+            FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
             if (_registeredUpdatable)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
@@ -337,6 +377,9 @@ namespace Hecton8.Audio
             ResetAcousticRadarBins();
             ResetAcousticRadarGrid();
             ResetListenerCaveState();
+            ClearDelayedAudioEvents();
+            _listenerPlayerMovement = null;
+            _listenerWaterDensityMul = 0f;
             ApplyThreatBusDucking(0f, 0f);
             _radarDecayAccumulator = 0f;
         }
@@ -367,11 +410,14 @@ namespace Hecton8.Audio
                 ? HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position)
                 : default;
             Vector3 listenerVelocity = ResolveListenerAbsoluteVelocity(listenerAbsolutePosition, safeDeltaTime);
+            UpdateListenerWaterDensityMul(safeDeltaTime);
             float threatActivity = 0f;
             DecayImpactEmitters(now);
             AdvanceAcousticRadarDecayCadence(safeDeltaTime);
             RefreshListenerCaveState(listener);
             ResetNearestRadarEmitterScratch();
+            DrainDelayedAudioIngress();
+            ProcessDelayedAudioEvents(listenerAbsolutePosition);
             int activeSlot = 0;
             while (activeSlot < _activeWorldCount)
             {
@@ -904,8 +950,12 @@ namespace Hecton8.Audio
             float azimuth = math.atan2(listenerLocalPosition.x, listenerLocalPosition.z);
             float absAzimuth = math.abs(azimuth);
             float absSin = math.abs(math.sin(azimuth));
-            float shadowCutoff = math.lerp(8000f, 3000f, absSin);
-            float shadowAmount = absSin * 0.5f;
+            float waterDensityMul = math.saturate(_listenerWaterDensityMul);
+            float soundSpeed = math.lerp(SoundSpeedAirMetersPerSecond, SoundSpeedWaterMetersPerSecond, waterDensityMul);
+            float airShadowCutoff = math.lerp(8000f, 1200f, absSin);
+            float waterShadowCutoff = math.lerp(8000f, 3000f, absSin);
+            float shadowCutoff = math.lerp(airShadowCutoff, waterShadowCutoff, waterDensityMul);
+            float shadowAmount = math.lerp(absSin, absSin * 0.5f, waterDensityMul);
             if (TryResolveRearHemisphereLowPassCutoff(sourcePosition, out float rearHemisphereCutoff))
             {
                 shadowCutoff = math.min(shadowCutoff, rearHemisphereCutoff);
@@ -920,10 +970,11 @@ namespace Hecton8.Audio
                 Position = sourcePosition,
                 DistanceMeters = distance,
                 AzimuthRadians = azimuth,
-                ItdSeconds = (BinauralHeadRadiusMeters / SoundSpeedWaterMetersPerSecond) * (absAzimuth + math.sin(absAzimuth)),
+                ItdSeconds = (BinauralHeadRadiusMeters / math.max(soundSpeed, 0.0001f)) * (absAzimuth + math.sin(absAzimuth)),
                 ShadowAmount01 = shadowAmount,
                 ShadowCutoffHertz = shadowCutoff,
                 Energy = energy,
+                WaterDensityMul = waterDensityMul,
                 Valid = 1
             };
             bestScore = energy;
@@ -1077,6 +1128,128 @@ private int AcquireSourceIndex()
                 SpawnAt = now,
                 ExpireAt = now + lifetime
             };
+        }
+
+        private void HandleFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent)
+        {
+            Vector3 listenerAbsolutePosition = _listenerTransform != null
+                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
+                : implosionEvent.RuntimePosition;
+            float distanceMeters = math.length(implosionEvent.RuntimePosition - listenerAbsolutePosition);
+            DelayedAudioEvent delayedEvent = new DelayedAudioEvent
+            {
+                Kind = DelayedAudioEventKind.FatalPressureImplosion,
+                Position = implosionEvent.RuntimePosition,
+                EventTimeSeconds = Time.time,
+                DelaySeconds = distanceMeters / SoundSpeedWaterMetersPerSecond,
+                Volume = FatalPressureImplosionEventVolume,
+                Pitch = FatalPressureImplosionEventPitch,
+                TraumaRangeMeters = FatalPressureImplosionTraumaRangeMeters,
+                TraumaImpulse = FatalPressureImplosionTraumaImpulse,
+                TraumaWeight = FatalPressureImplosionTraumaWeight
+            };
+            TryEnqueueDelayedAudioEvent(in delayedEvent);
+        }
+
+        private void TryEnqueueDelayedAudioEvent(in DelayedAudioEvent delayedEvent)
+        {
+            if (!_delayedAudioIngress.IsCreated || !_pendingDelayedAudioEvents.IsCreated)
+                return;
+
+            if (_pendingDelayedAudioEvents.Length + _delayedAudioIngressCount >= MaxDelayedAudioEvents)
+                return;
+
+            _delayedAudioIngress.Enqueue(delayedEvent);
+            _delayedAudioIngressCount++;
+        }
+
+        private void DrainDelayedAudioIngress()
+        {
+            if (!_delayedAudioIngress.IsCreated || !_pendingDelayedAudioEvents.IsCreated || _delayedAudioIngressCount <= 0)
+                return;
+
+            while (_delayedAudioIngressCount > 0 && _delayedAudioIngress.TryDequeue(out DelayedAudioEvent delayedEvent))
+            {
+                _pendingDelayedAudioEvents.Add(delayedEvent);
+                _delayedAudioIngressCount--;
+            }
+        }
+
+        private void ProcessDelayedAudioEvents(Vector3 listenerAbsolutePosition)
+        {
+            if (!_pendingDelayedAudioEvents.IsCreated || _pendingDelayedAudioEvents.Length == 0)
+                return;
+
+            float now = Time.time;
+            int writeIndex = 0;
+            for (int i = 0; i < _pendingDelayedAudioEvents.Length; i++)
+            {
+                DelayedAudioEvent delayedEvent = _pendingDelayedAudioEvents[i];
+                if (now < delayedEvent.EventTimeSeconds + delayedEvent.DelaySeconds)
+                {
+                    if (writeIndex != i)
+                        _pendingDelayedAudioEvents[writeIndex] = delayedEvent;
+                    writeIndex++;
+                    continue;
+                }
+
+                DispatchDelayedAudioEvent(in delayedEvent, listenerAbsolutePosition);
+            }
+
+            if (writeIndex != _pendingDelayedAudioEvents.Length)
+                _pendingDelayedAudioEvents.ResizeUninitialized(writeIndex);
+        }
+
+        private void DispatchDelayedAudioEvent(in DelayedAudioEvent delayedEvent, Vector3 listenerAbsolutePosition)
+        {
+            switch (delayedEvent.Kind)
+            {
+                case DelayedAudioEventKind.FatalPressureImplosion:
+                    if (_fatalPressureImplosionClip != null)
+                    {
+                        PlayThreatAtPoint(
+                            _fatalPressureImplosionClip,
+                            delayedEvent.Position,
+                            delayedEvent.Volume,
+                            delayedEvent.Pitch);
+                    }
+
+                    ApplyDelayedTrauma(in delayedEvent, listenerAbsolutePosition);
+                    break;
+            }
+        }
+
+        private void ApplyDelayedTrauma(in DelayedAudioEvent delayedEvent, Vector3 listenerAbsolutePosition)
+        {
+            if (_listenerPlayerMovement == null)
+                return;
+
+            Vector3 listenerOffset = listenerAbsolutePosition - delayedEvent.Position;
+            float distanceMeters = listenerOffset.magnitude;
+            if (distanceMeters > delayedEvent.TraumaRangeMeters)
+                return;
+
+            Vector3 traumaDirection = distanceMeters > 0.0001f
+                ? listenerOffset / distanceMeters
+                : Vector3.up;
+            float trauma01 = 1f - math.saturate(distanceMeters / math.max(delayedEvent.TraumaRangeMeters, 0.0001f));
+            _listenerPlayerMovement.ApplyPhysicalTrauma(
+                traumaDirection * (delayedEvent.TraumaImpulse * trauma01),
+                delayedEvent.TraumaWeight * trauma01);
+        }
+
+        private void ClearDelayedAudioEvents()
+        {
+            if (_delayedAudioIngress.IsCreated)
+            {
+                while (_delayedAudioIngress.TryDequeue(out _))
+                {
+                }
+            }
+
+            _delayedAudioIngressCount = 0;
+            if (_pendingDelayedAudioEvents.IsCreated)
+                _pendingDelayedAudioEvents.Clear();
         }
 
         private void ApplyHaasMask(int sourceIndex, Vector3 sourcePosition)
@@ -1444,6 +1617,12 @@ private int AcquireSourceIndex()
 
             if (_acousticRadarGridBuffer == null)
                 _acousticRadarGridBuffer = new ComputeBuffer(AcousticRadarGridCellCount, sizeof(float));
+
+            if (!_delayedAudioIngress.IsCreated)
+                _delayedAudioIngress = new NativeQueue<DelayedAudioEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DelayedAudioEvent>[16] - underwater propagation ingress queue for delayed world events - owner: SpatialAudioManager
+
+            if (!_pendingDelayedAudioEvents.IsCreated)
+                _pendingDelayedAudioEvents = new NativeList<DelayedAudioEvent>(MaxDelayedAudioEvents, Allocator.Persistent); // COLD ALLOC: NativeList<DelayedAudioEvent>[16] - active delayed world-event schedule - owner: SpatialAudioManager
         }
 
         private void ReleaseTelemetryCaches()
@@ -1465,6 +1644,20 @@ private int AcquireSourceIndex()
                 _acousticRadarGridBuffer.Release();
                 _acousticRadarGridBuffer = null;
             }
+
+            if (_delayedAudioIngress.IsCreated)
+            {
+                _delayedAudioIngress.Dispose();
+                _delayedAudioIngress = default;
+            }
+
+            if (_pendingDelayedAudioEvents.IsCreated)
+            {
+                _pendingDelayedAudioEvents.Dispose();
+                _pendingDelayedAudioEvents = default;
+            }
+
+            _delayedAudioIngressCount = 0;
         }
 
         private AudioMixerGroup ResolvedDefaultWorldMixerGroup => _sfxGroup != null ? _sfxGroup : ResolvedBedBusGroup;
@@ -1924,6 +2117,21 @@ private int AcquireSourceIndex()
             Vector3 velocity = (listenerAbsolutePosition - _previousListenerAbsolutePosition) / deltaTime;
             _previousListenerAbsolutePosition = listenerAbsolutePosition;
             return velocity;
+        }
+
+        private void UpdateListenerWaterDensityMul(float deltaTime)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            _listenerPlayerMovement = playerContext != null ? playerContext.PlayerMovement as HectonPlayerMovement : null;
+            float target = _listenerPlayerMovement != null && _listenerPlayerMovement.IsPlayerSubmerged ? 1f : 0f;
+            if (deltaTime <= 0f)
+            {
+                _listenerWaterDensityMul = target;
+                return;
+            }
+
+            float blendT = 1f - math.exp(-math.max(BinauralWaterBlendSharpness, 0.01f) * deltaTime);
+            _listenerWaterDensityMul = math.lerp(_listenerWaterDensityMul, target, blendT);
         }
 
         private void UpdateManualDopplerPitch(

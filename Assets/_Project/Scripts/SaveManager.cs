@@ -34,6 +34,7 @@ namespace Hecton8.SaveSystem
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private const float IntegrityScanIntervalSeconds = 10f;
+        private const float IndexedDefragCheckIntervalSeconds = 5f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
 
         // ══════════════════════════════════════════════════════════
@@ -102,7 +103,10 @@ namespace Hecton8.SaveSystem
         private bool _integrityScanScheduled;
         private bool _updatableRegistered;
         private bool _emergencyBackupScheduled;
+        private bool _indexedDefragInFlight;
         private string _integritySlotName;
+        private string _activeIndexedSavePath;
+        private float _nextIndexedDefragCheckTime;
 
         private sealed class MemoryCorruptionException : Exception
         {
@@ -285,6 +289,18 @@ namespace Hecton8.SaveSystem
                 EvaluateIntegrityScanResult();
             }
 
+            if (!_isBusy &&
+                !_integrityScanScheduled &&
+                !_indexedDefragInFlight &&
+                !string.IsNullOrEmpty(_activeIndexedSavePath) &&
+                Time.unscaledTime >= _nextIndexedDefragCheckTime)
+            {
+                _indexedDefragInFlight = true;
+                _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
+                _ = RunIndexedSaveDefragAsync(_activeIndexedSavePath);
+                return;
+            }
+
             if (_isBusy ||
                 _integrityScanScheduled ||
                 !_integrityPayloadMirror.IsCreated ||
@@ -386,6 +402,53 @@ namespace Hecton8.SaveSystem
             {
                 _emergencyBackupScheduled = false;
             }
+        }
+
+        private async Awaitable RunIndexedSaveDefragAsync(string absolutePath)
+        {
+            long reclaimedBytes = 0L;
+            string error = string.Empty;
+            try
+            {
+                await Awaitable.BackgroundThreadAsync();
+                SaveBinaryStorage.TryDefragmentIndexedPersistentWorldSectors(
+                    absolutePath,
+                    SaveBinaryStorage.IndexedSectorDefragSlackThresholdBytes,
+                    out reclaimedBytes,
+                    out error);
+                await Awaitable.MainThreadAsync();
+
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Debug.LogError($"[SaveManager] Indexed save defrag failed for '{absolutePath}': {error}");
+                }
+                else if (verboseLogging && reclaimedBytes > 0L)
+                {
+                    Debug.Log($"[SaveManager] Indexed save defrag reclaimed {reclaimedBytes} bytes for '{absolutePath}'.");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                _indexedDefragInFlight = false;
+                _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
+            }
+        }
+
+        private void UpdateActiveIndexedSavePath(string absolutePath)
+        {
+            _activeIndexedSavePath = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+                return;
+
+            List<SaveBinaryStorage.IndexedSectorEntryInfo> scratchDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(1);
+            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(absolutePath, scratchDirectory, out _, out _))
+                return;
+
+            _activeIndexedSavePath = absolutePath;
+            _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
         }
 
         private void DisposeIntegrityResources()
@@ -576,6 +639,7 @@ namespace Hecton8.SaveSystem
 
                 await Awaitable.MainThreadAsync();
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
+                UpdateActiveIndexedSavePath(GetPersistentAbsolutePath(GetPrimarySaveFilePath(slotName)));
                 SaveThumbnailSystem.CaptureThumbnail(slotName);
                 int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
@@ -753,9 +817,15 @@ namespace Hecton8.SaveSystem
                     string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);
                     List<SaveBinaryStorage.IndexedSectorEntryInfo> indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(128);
                     if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(loadedAbsolutePath, indexedSectorDirectory, out _, out _))
+                    {
                         persistentWorldRegistryForLoad.RestoreFromIndexedSave(loadedAbsolutePath);
+
+                        string primaryAbsolutePath = GetPersistentAbsolutePath(GetPrimarySaveFilePath(slotName));
+                        UpdateActiveIndexedSavePath(FileExists(GetPrimarySaveFilePath(slotName)) ? primaryAbsolutePath : loadedAbsolutePath);
+                    }
                     else
                     {
+                        UpdateActiveIndexedSavePath(string.Empty);
                         persistentWorldRegistryForLoad.DisableIndexedSavePaging();
                         persistentWorldRegistryForLoad.RestoreFromLoadedRecords(loadedWorldDeltas);
                     }
