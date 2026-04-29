@@ -467,6 +467,9 @@ namespace Crest
 
         void SetUpScreenSpaceShadows()
         {
+#if UNITY_6000_0_OR_NEWER
+            return;
+#else
             // Make the screen-space shadow texture available for the ocean shader for caustic occlusion.
             _screenSpaceShadowMapCommandBuffer = new CommandBuffer()
             {
@@ -474,6 +477,7 @@ namespace Crest
             };
             _screenSpaceShadowMapCommandBuffer.SetGlobalTexture(sp_CrestScreenSpaceShadowTexture, BuiltinRenderTextureType.CurrentActive);
             _mainLight.AddCommandBuffer(LightEvent.AfterScreenspaceMask, _screenSpaceShadowMapCommandBuffer);
+#endif
         }
 
         void CleanUpScreenSpaceShadows()
@@ -486,6 +490,9 @@ namespace Crest
 
         void SetUpDeferredShadows()
         {
+#if UNITY_6000_0_OR_NEWER
+            return;
+#else
             // Make the screen-space shadow texture available for the ocean shader for caustic occlusion.
             _deferredShadowMapCommandBuffer = new CommandBuffer()
             {
@@ -493,6 +500,7 @@ namespace Crest
             };
             _deferredShadowMapCommandBuffer.SetGlobalTexture(sp_ShadowMapTexture, BuiltinRenderTextureType.CurrentActive);
             _mainLight.AddCommandBuffer(LightEvent.AfterShadowMap, _deferredShadowMapCommandBuffer);
+#endif
         }
 
         void CleanUpDeferredShadows()

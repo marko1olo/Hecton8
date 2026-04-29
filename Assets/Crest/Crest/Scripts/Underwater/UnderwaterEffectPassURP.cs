@@ -288,7 +288,14 @@ namespace Crest
                 commandBuffer.CopyTexture(_colorTarget, _temporaryColorTarget);
             }
 
+#if UNITY_6000_0_OR_NEWER
+            if (_temporaryColorHandle != null)
+            {
+                underwaterMaterial.SetTexture(UnderwaterRenderer.ShaderIDs.s_CrestCameraColorTexture, _temporaryColorHandle.rt);
+            }
+#else
             commandBuffer.SetGlobalTexture(UnderwaterRenderer.ShaderIDs.s_CrestCameraColorTexture, _temporaryColorTarget);
+#endif
 
             if (_underwaterRenderer.UseStencilBufferOnEffect)
             {
