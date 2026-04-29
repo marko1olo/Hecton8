@@ -5,6 +5,8 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Quest
 {
@@ -90,6 +92,19 @@ namespace Hecton8.Quest
         public bool Completed { get; }
     }
 
+    internal struct QuestTransitionHistoryEntry
+    {
+        public uint Sequence;
+        public uint QuestHash;
+        public uint SignalPayloadHash;
+        public float SignalNumericValue;
+        public int SnapshotWordOffset;
+        public int FrameIndex;
+        public byte Completed;
+        public byte SignalKind;
+        public ushort Reserved;
+    }
+
     internal sealed class QuestStateManager : IDisposable
     {
         private const int WordCapacity = 320;
@@ -108,6 +123,7 @@ namespace Hecton8.Quest
         private const int EntityDestroyWordCount = 32;
         private const int DeadlockWordStart = 288;
         private const int DeadlockWordCount = 32;
+        private const int TransitionHistoryCapacity = 256;
         private const uint ActiveFlagSalt = 0xA11F0A11u;
         private const uint CompletedFlagSalt = 0xC0DE0C01u;
         private const uint BiomeFlagSalt = 0xB10F0001u;
@@ -124,7 +140,13 @@ namespace Hecton8.Quest
         private Dictionary<uint, int> _questIndexByHash;
         private QuestBitAddress[] _activeAddressesByQuestIndex;
         private QuestBitAddress[] _completedAddressesByQuestIndex;
+        private uint[] _questHashesByQuestIndex;
         private ThresholdFlag[] _depthThresholdFlags;
+        private NativeArray<QuestTransitionHistoryEntry> _transitionHistory;
+        private NativeArray<uint> _transitionHistoryWords;
+        private int _transitionHistoryWriteIndex;
+        private int _transitionHistoryCount;
+        private uint _transitionSequence;
         private string _compileErrorSummary = string.Empty;
         private bool _isInitialized;
 
@@ -151,12 +173,22 @@ namespace Hecton8.Quest
             if (_globalPrerequisites.IsCreated)
                 _globalPrerequisites.Dispose();
 
+            if (_transitionHistory.IsCreated)
+                _transitionHistory.Dispose();
+
+            if (_transitionHistoryWords.IsCreated)
+                _transitionHistoryWords.Dispose();
+
             _runtimeResults.Clear();
             _bitAddressByHash = null;
             _questIndexByHash = null;
             _activeAddressesByQuestIndex = null;
             _completedAddressesByQuestIndex = null;
+            _questHashesByQuestIndex = null;
             _depthThresholdFlags = null;
+            _transitionHistoryWriteIndex = 0;
+            _transitionHistoryCount = 0;
+            _transitionSequence = 0u;
             _compileErrorSummary = string.Empty;
             _isInitialized = false;
         }
@@ -171,6 +203,7 @@ namespace Hecton8.Quest
             _questIndexByHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 16)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] — quest hash to source index mapping — owner: QuestStateManager
             _activeAddressesByQuestIndex = new QuestBitAddress[questArrayLength]; // COLD ALLOC: QuestBitAddress[questArrayLength] — quest active bit cache — owner: QuestStateManager
             _completedAddressesByQuestIndex = new QuestBitAddress[questArrayLength]; // COLD ALLOC: QuestBitAddress[questArrayLength] — quest completed bit cache — owner: QuestStateManager
+            _questHashesByQuestIndex = new uint[questArrayLength]; // COLD ALLOC: uint[questArrayLength] — quest hash cache for rollback history — owner: QuestStateManager
 
             // COLD ALLOC: List<QuestNodeDescriptor>[questArrayLength*2] — compiled quest state graph nodes — owner: QuestStateManager
             List<QuestNodeDescriptor> nodeBuilder = new List<QuestNodeDescriptor>(Math.Max(questArrayLength * 2, 8));
@@ -203,6 +236,7 @@ namespace Hecton8.Quest
                 }
 
                 _questIndexByHash[questHash] = questIndex;
+                _questHashesByQuestIndex[questIndex] = questHash;
                 _activeAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(questHash, ActiveFlagSalt),
                     QuestStateBand.Quest,
@@ -289,6 +323,8 @@ namespace Hecton8.Quest
 
             _activatedQuestIndices = new NativeList<int>(Math.Max(nodeBuilder.Count, 1), Allocator.Persistent);
             _completedQuestIndices = new NativeList<int>(Math.Max(nodeBuilder.Count, 1), Allocator.Persistent);
+            _transitionHistory = new NativeArray<QuestTransitionHistoryEntry>(TransitionHistoryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _transitionHistoryWords = new NativeArray<uint>(TransitionHistoryCapacity * WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _depthThresholdFlags = depthFlags.ToArray();
             _isInitialized = true;
             return !HasCompileErrors;
@@ -353,7 +389,10 @@ namespace Hecton8.Quest
 
                 uint questHash = unchecked((uint)LocHash.Compute(questData.questId));
                 if (TryActivateQuest(questHash, out int activatedQuestIndex))
+                {
                     _runtimeResults.Add(new QuestRuntimeResult(activatedQuestIndex, completed: false));
+                    AppendTransitionHistory(activatedQuestIndex, completed: false, default);
+                }
             }
         }
 
@@ -379,15 +418,35 @@ namespace Hecton8.Quest
             job.Run();
 
             for (int i = 0; i < _activatedQuestIndices.Length; i++)
-                _runtimeResults.Add(new QuestRuntimeResult(_activatedQuestIndices[i], completed: false));
+            {
+                int questIndex = _activatedQuestIndices[i];
+                _runtimeResults.Add(new QuestRuntimeResult(questIndex, completed: false));
+                AppendTransitionHistory(questIndex, completed: false, signal);
+            }
 
             for (int i = 0; i < _completedQuestIndices.Length; i++)
-                _runtimeResults.Add(new QuestRuntimeResult(_completedQuestIndices[i], completed: true));
+            {
+                int questIndex = _completedQuestIndices[i];
+                _runtimeResults.Add(new QuestRuntimeResult(questIndex, completed: true));
+                AppendTransitionHistory(questIndex, completed: true, signal);
+            }
         }
 
         public int ResultCount => _runtimeResults.Count;
 
+        public int TransitionHistoryCount => math.min(_transitionHistoryCount, TransitionHistoryCapacity);
+
         public QuestRuntimeResult GetResult(int index) => _runtimeResults[index];
+
+        public bool TryGetTransitionHistory(int newestHistoryOffset, out QuestTransitionHistoryEntry entry)
+        {
+            entry = default;
+            if (!_transitionHistory.IsCreated || newestHistoryOffset < 0 || newestHistoryOffset >= TransitionHistoryCount)
+                return false;
+
+            entry = _transitionHistory[ResolveTransitionHistorySlot(newestHistoryOffset)];
+            return true;
+        }
 
         public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
         {
@@ -410,6 +469,7 @@ namespace Hecton8.Quest
             if (!_globalPrerequisites.IsCreated)
                 return;
 
+            ClearTransitionHistory();
             unsafe
             {
                 UnsafeUtility.MemClear(
@@ -436,6 +496,7 @@ namespace Hecton8.Quest
             if (!_globalPrerequisites.IsCreated)
                 return;
 
+            ClearTransitionHistory();
             unsafe
             {
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
@@ -444,6 +505,36 @@ namespace Hecton8.Quest
 
             RestoreLegacyRange(activeQuestIds, completed: false);
             RestoreLegacyRange(completedQuestIds, completed: true);
+        }
+
+        public bool TryRestoreTransitionHistory(int newestHistoryOffset)
+        {
+            if (!_globalPrerequisites.IsCreated ||
+                !_transitionHistory.IsCreated ||
+                !_transitionHistoryWords.IsCreated ||
+                newestHistoryOffset < 0 ||
+                newestHistoryOffset >= TransitionHistoryCount)
+            {
+                return false;
+            }
+
+            QuestTransitionHistoryEntry entry = _transitionHistory[ResolveTransitionHistorySlot(newestHistoryOffset)];
+            if (entry.SnapshotWordOffset < 0 || entry.SnapshotWordOffset + WordCapacity > _transitionHistoryWords.Length)
+                return false;
+
+            unsafe
+            {
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
+                void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_transitionHistoryWords) + (entry.SnapshotWordOffset * UnsafeUtility.SizeOf<uint>());
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, WordCapacity * UnsafeUtility.SizeOf<uint>());
+            }
+
+            return true;
+        }
+
+        public void RecordManualTransition(int questIndex, bool completed)
+        {
+            AppendTransitionHistory(questIndex, completed, default);
         }
 
         private void RestoreLegacyRange(IEnumerable<string> questIds, bool completed)
@@ -614,6 +705,81 @@ namespace Hecton8.Quest
             }
 
             _compileErrorSummary += System.Environment.NewLine + message;
+        }
+
+        private void AppendTransitionHistory(int questIndex, bool completed, in QuestSignal signal)
+        {
+            if (!_globalPrerequisites.IsCreated ||
+                !_transitionHistory.IsCreated ||
+                !_transitionHistoryWords.IsCreated ||
+                questIndex < 0 ||
+                _questHashesByQuestIndex == null ||
+                questIndex >= _questHashesByQuestIndex.Length)
+            {
+                return;
+            }
+
+            int slot = _transitionHistoryWriteIndex;
+            int snapshotWordOffset = slot * WordCapacity;
+            unsafe
+            {
+                void* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_transitionHistoryWords) + (snapshotWordOffset * UnsafeUtility.SizeOf<uint>());
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, WordCapacity * UnsafeUtility.SizeOf<uint>());
+            }
+
+            _transitionHistory[slot] = new QuestTransitionHistoryEntry
+            {
+                Sequence = ++_transitionSequence,
+                QuestHash = _questHashesByQuestIndex[questIndex],
+                SignalPayloadHash = signal.PayloadHash,
+                SignalNumericValue = signal.NumericValue,
+                SnapshotWordOffset = snapshotWordOffset,
+                FrameIndex = Time.frameCount,
+                Completed = completed ? (byte)1 : (byte)0,
+                SignalKind = (byte)signal.Kind,
+                Reserved = 0
+            };
+
+            _transitionHistoryWriteIndex = (_transitionHistoryWriteIndex + 1) % TransitionHistoryCapacity;
+            if (_transitionHistoryCount < TransitionHistoryCapacity)
+                _transitionHistoryCount++;
+        }
+
+        private void ClearTransitionHistory()
+        {
+            _transitionHistoryWriteIndex = 0;
+            _transitionHistoryCount = 0;
+            _transitionSequence = 0u;
+
+            if (_transitionHistory.IsCreated)
+            {
+                unsafe
+                {
+                    UnsafeUtility.MemClear(
+                        NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_transitionHistory),
+                        _transitionHistory.Length * UnsafeUtility.SizeOf<QuestTransitionHistoryEntry>());
+                }
+            }
+
+            if (_transitionHistoryWords.IsCreated)
+            {
+                unsafe
+                {
+                    UnsafeUtility.MemClear(
+                        NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_transitionHistoryWords),
+                        _transitionHistoryWords.Length * UnsafeUtility.SizeOf<uint>());
+                }
+            }
+        }
+
+        private int ResolveTransitionHistorySlot(int newestHistoryOffset)
+        {
+            int slot = _transitionHistoryWriteIndex - 1 - newestHistoryOffset;
+            while (slot < 0)
+                slot += TransitionHistoryCapacity;
+
+            return slot;
         }
 
         private bool TrySetResolvedBit(uint bitHash)

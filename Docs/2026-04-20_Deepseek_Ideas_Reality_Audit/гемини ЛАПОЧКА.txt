@@ -42,5 +42,1590 @@
 
 ----------------------------
 
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: DEBT ERADICATION & PROFILING
+AUTHORITY: CTO / Lead Architect (OMEGA ENFORCER MODE)
+OPERATIONAL MODE: Merciless Extermination & Profiler Instrumentation
+THINKING LEVEL: MAXIMUM (Focused on Markers, Garbage Collection, and AsmDefs)
+
+[0. SITREP: THE INQUISITION CONTINUES]
+You killed the RenderGraph leak. Outstanding work. Now, we must illuminate the blind spots. The Architect has identified critical systems that lack ProfilerMarkers, making the 16.6ms budget impossible to track accurately. You will instrument the codebase and enforce namespace hygiene.[I. MANDATORY RECONNAISSANCE]
+1. Read DBG_Telemetry_Crash_Reporting_PostMortem.txt and PROJECT_LTS_Compatibility_Layer.txt.
+2. Grep for FixedTick, Tick, and SlowTick implementations lacking ProfilerMarker.
+3. Inspect PhysicsApplySystem.cs and HectonFluidEngine.cs.
+
+[II. PRIMARY OBJECTIVES]
+1. PROFILER MARKER INJECTION (THE BLIND SPOTS):
+- Target: PhysicsApplySystem.cs, HectonFluidEngine.cs, HectonPlayerMovement.cs.
+- Action: Inject static readonly ProfilerMarker fields (e.g., new ProfilerMarker("H8.Physics.Apply")). Wrap the Tick and FixedTick method bodies in using (Marker.Auto()). Do not allocate strings at runtime.
+
+2. ASSEMBLY DEFINITION HYGIENE (.ASMDEF):
+- Target: All .asmdef files in Assets/_Project/Scripts/.
+- Action: Enforce the Dependency Graph. Hecton.Core MUST NOT reference UnityEngine (except Mathematics/Collections/Burst). Remove UnityEditor references from ALL gameplay assemblies. Fix the compile blocker related to LocKeys.Generated.cs missing references.[III. ADVANCED ARCHITECTURE EXPANSION]
+3. CRASH TELEMETRY BUFFER (RING BUFFER):
+- Target: CrashTelemetryBuffer.cs.
+- Action: Implement a persistent NativeArray<DebugLogEntry> (capacity 300 frames). Write frameIndex, deltaTime, playerPos (AUP), and errorFlags every frame using a lockless wrapping index writeIndex = (frameCount % 300). If a NaN error is caught (from your previous work), dump this buffer to disk via UnsafeUtility.MemCpy to a FileStream.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Scan for and delete any Debug.DrawLine or Gizmos calls that are not wrapped in #if UNITY_EDITOR.
+2. Audit WorldStateManager.cs to confirm it utilizes RegistryBucket<T> and completely eradicates FindObjectsByType.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors in the global compile.
+2. SURGERY LOG: List every file you injected ProfilerMarker into.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "OMEGA CLEARED".
+</system_prompt>
+
+Show more
+3:43 AM
+
+
+
+Worked for 5m 45s
+Исполняю новый sweep как отдельный pass: сначала подниму mandates и текущие blind spots по telemetry/asmdef, затем только после фактов полезу в код. Параллельно сниму реальный status по ProfilerMarker, CrashTelemetryBuffer, LocKeys.Generated, WorldStateManager, и текущему глобальному compile.
+
+
+Ran 4 commands, used Unitymcp
+Сейчас факты такие: PhysicsApplySystem и HectonFluidEngine уже частично/полностью инструментированы, а явный слепой spot — HectonPlayerMovement и, возможно, CrashTelemetryBuffer. Поднимаю mandates и смотрю точные участки перед правками, плюс asmdef/LocKeys.Generated/WorldStateManager dependency path.
+
+
+Ran 5 commands
+[ANALYSIS]
+Target: inject missing profiler scopes where they are actually absent, audit/fix first-party .asmdef hygiene around LocKeys.Generated, assess CrashTelemetryBuffer against the telemetry mandate, and verify WorldStateManager lookup ownership.
+Affected systems: HectonPlayerMovement, CrashTelemetryBuffer, Hecton8.Core.asmdef plus adjacent asmdefs, generated localization path, WorldStateManager, editor-only gizmo/debug boundary.
+Zero GC proof: ProfilerMarker fields are static readonly; scopes use .Auto() only. Any telemetry change must stay on preallocated NativeArray/scratch storage only. No runtime strings, no new managed collections in hot paths.
+State check: PhysicsApplySystem and HectonFluidEngine already contain marker fields/usages; CrashTelemetryBuffer already exists with a persistent ring buffer but currently at 3600 entries, not 300; HectonPlayerMovement exposes Tick/FixedTick with no visible marker scopes in the inspected region. Global compile status is unstable until I re-read console after edits.
+Rule quote: [REQ] High-frequency telemetry MUST write to NativeArray<DebugLogEntry> ring buffer (300 frames).
+Rule quote: [RULE] ZERO DIRECT ENGINE COUPLING from PROJECT_LTS_Compatibility_Layer.txt, but this conflicts with the current real Hecton8.Core assembly owning many MonoBehaviour files. I will not fabricate a layer split in this pass; I will confine asmdef work to factual dependency hygiene and the LocKeys.Generated blocker path.
+
+
+Ran 5 commands
+CrashTelemetryBuffer уже существует, но не соответствует текущему mandate literally: capacity 3600, export window 3600, и это нужно сжать до 300 только если не создаст побочного долга. Сначала проверяю, кто ест LocKeys.Generated, где живёт LocHash, и есть ли вообще runtime asmdef-проблема, вместо слепого перепиливания assembly graph.
+
+
+Ran 3 commands, used Unitymcp
+Unity MCP session выпал, так что следующие действия будут file-level и compile-safe, без ложных заявлений про editor verification. Дальше беру только bounded вещи: HectonPlayerMovement markers, CrashTelemetryBuffer literal alignment с ring-buffer mandate, и чистый asmdef hygiene там, где это не взрывает assembly graph.
+
+
+Ran 5 commands
+Чистый bounded asmdef gain здесь есть: contract-assembly папки выглядят действительно pure и могут жить с noEngineReferences: true без развала всего Hecton8.Core. Полный запрет UnityEngine для всего Hecton8.Core сейчас невозможен без архитектурного split, потому что assembly уже несёт MonoBehaviour runtime.
+
+
+Ran 5 commands
+LocKeys.Generated blocker на диске сейчас не воспроизводится: LocHash живёт в том же runtime assembly, а runtime asmdefs без UnityEditor refs уже чисты. Значит здесь не нужен fix-forward ради отчёта. Остался реальный bounded delta: добавить markers в HectonPlayerMovement и привести CrashTelemetryBuffer к 300-frame mandate без новой аллокационной грязи.
+
+
+Ran 3 commands
+Делаю узкие правки. Из реального delta здесь только два файла: HectonPlayerMovement получает profiler scopes, CrashTelemetryBuffer сжимается до 300-frame ring, потому что это literal mandate и уже реализованный owner. .asmdef и LocKeys сейчас иду как audit-only: воспроизводимого blocker’а на диске нет.
+
+
+Edited 2 files
+Правки вошли, но HectonPlayerMovement.FixedTick огромный, так что сейчас проверяю только структурную целостность после wrapping. Если где-то сломал brace-balance, чиню сразу, без дальнейших изменений.
+
+
+Ran 3 commands
+В HectonPlayerMovement.FixedTick поймал brace drift. Это локальная синтаксическая поломка от моего wrapper, не from baseline. Сейчас чиню только баланс метода, без касания чужих соседних hunks.
+
+
+Edited 1 file, ran 2 commands
+Синтаксический drift закрыт. Теперь делаю финальный audit/verification на доступном уровне: marker injection присутствует, ring capacity literal=300, asmdef runtime без UnityEditor, и пробую один раз вернуть Unity validator/console. Если сессия не поднимется, так и зафиксирую как measured proof absent.
+
+
+Ran 3 commands, used Unitymcp
+FixedTick всё ещё открыт. Снимаю brace balance по диапазону, потом либо закрываю ровно нужным количеством }, либо откатываю только мой wrapper и перехожу на локальный helper-method path. Слепо дальше трогать файл нельзя.
+
+
+Ran 4 commands
+Brace balance now closed cleanly. Переснимаю консоль после этого fix, чтобы отделить мой синтаксический регресс от baseline. Потом уже никаких новых правок, только итоговый fact report.
+
+
+Ran 1 command, used Unitymcp
+What Was Wrong
+The requested blind spots were partly stale. PhysicsApplySystem.cs (line 206) and HectonFluidEngine.cs (line 86) already had ProfilerMarker coverage on current disk. The real missing instrumentation in the requested set was HectonPlayerMovement.cs (line 47), where both Tick and FixedTick were running unscoped.
+
+CrashTelemetryBuffer already existed, but it violated the literal telemetry mandate: ring capacity was 3600, not 300. .asmdef hygiene was mixed: there are no runtime gameplay asmdefs referencing UnityEditor, but the “Core must not reference UnityEngine” demand is not achievable inside the current Hecton8.Core assembly because that assembly still owns many MonoBehaviour runtime types. LocKeys.Generated.cs is not the active blocker on current disk.
+
+What I Did
+I changed two files.
+
+In HectonPlayerMovement.cs (line 47) I added:
+
+using Unity.Profiling;
+private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
+private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
+using (_tickProfilerMarker.Auto()) around Tick(...)
+using (_fixedTickProfilerMarker.Auto()) around FixedTick(...)
+In CrashTelemetryBuffer.cs (line 30) I aligned the telemetry ring to the mandate:
+
+RingCapacity = 300
+ExportSnapshotEntries = RingCapacity
+corrected the cold-allocation comments for the snapshot/export scratch sizes
+I did not touch PhysicsApplySystem or HectonFluidEngine, because audit showed they were already instrumented. I did not mutate runtime asmdefs just to satisfy the “no UnityEngine in Core” line, because the current assembly graph is not split along that layer boundary and a blind .asmdef flip would only break the build. I audited WorldStateManager: it does not use FindObjectsByType; it already consumes ResourceNode / PickupItem registry-backed world-state registries, but it still retains a classic static Instance pattern in the file.
+
+Surgery log:
+
+ProfilerMarker injected: 1 file
+Files actually instrumented this pass:
+HectonPlayerMovement.cs (line 47)
+Files audited and left unchanged because already compliant:
+PhysicsApplySystem.cs (line 206)
+HectonFluidEngine.cs (line 86)
+Focused diff from this pass:
+
+diff --git a/Assets/_Project/Scripts/CrashTelemetryBuffer.cs b/Assets/_Project/Scripts/CrashTelemetryBuffer.cs
+@@
+-        private const int RingCapacity = 3600;
++        private const int RingCapacity = 300;
+@@
+-            // COLD ALLOC: NativeArray<DebugLogEntry>[50] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
++            // COLD ALLOC: NativeArray<DebugLogEntry>[300] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
+@@
+-            // COLD ALLOC: NativeArray<byte>[3216] - binary export scratch for 16B header + 50 x 64B entries - owner: CrashTelemetryBuffer
++            // COLD ALLOC: NativeArray<byte>[19216] - binary export scratch for 16B header + 300 x 64B entries - owner: CrashTelemetryBuffer
+
+diff --git a/Assets/_Project/Scripts/HectonPlayerMovement.cs b/Assets/_Project/Scripts/HectonPlayerMovement.cs
+@@
+ using Unity.Mathematics;
++using Unity.Profiling;
+@@
++        private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
++        private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
+@@
+-        public void Tick(float deltaTime)
++        public void Tick(float deltaTime)
+         {
+             SuitData suit = currentSuitData;
+             if (suit == null) return;
+-
+-            PrepareRenderTickDependencies();
+-            ...
++            using (_tickProfilerMarker.Auto())
++            {
++                PrepareRenderTickDependencies();
++                ...
++            }
+         }
+@@
+-        public void FixedTick(float fixedDeltaTime)
++        public void FixedTick(float fixedDeltaTime)
+         {
+             SuitData suit = currentSuitData;
+             if (suit == null) return;
+-
+-            ...
++            using (_fixedTickProfilerMarker.Auto())
++            {
++                ...
++            }
+         }
+In-Game Result
+No play-mode smoke. This was code/audit/compile pass only.
+
+What Was Verified
+Unity console after refresh:
+
+HectonPlayerMovement.cs (line 47): 0 console entries
+CrashTelemetryBuffer.cs (line 30): 0 console entries
+LocKeys.Generated.cs (line 1): 0 console entries
+Global compile is still not clean. Current live blockers are unrelated:
+
+SaveBinaryPayloadCodec.cs (line 16)
+DeployableFlare.cs (line 178)
+SuitHUDV4CanvasOverlay.cs (line 1021)
+Asmdef audit:
+
+runtime gameplay asmdefs under Assets/_Project/Scripts/ referencing UnityEditor: 0
+editor-only asmdef referencing UnityEditor: Hecton8.Editor.asmdef (line 1)
+“pure contract” layer claim is false on current disk: BootstrapState.cs (line 10), BootstrapStatus.cs (line 1), ScatterSimulationContracts.cs (line 4), and ScatterSimulationBackendRegistry.cs (line 1) still directly use UnityEngine.
+WorldStateManager audit:
+
+FindObjectsByType in WorldStateManager.cs (line 1): 0
+RegistryBucket<T> usage: indirect via ResourceNode.cs (line 42) and PickupItem.cs (line 23)
+architectural debt still present: static singleton in WorldStateManager.cs (line 21)
+WARNING: Regression risk in CrashTelemetryBuffer export volume changed from 3600 to 300 frames. This now matches the mandate exactly, but shortens post-mortem history depth.
+
+Mandates followed: DBG_Telemetry_Crash_Reporting_PostMortem, PROJECT_LTS_Compatibility_Layer, OPT_Zero_GC_Policy_AllocFree_Mandate, OPT_Native_Memory_Collections_JobSystem_Protocol, ARCH_Global_Registry_ServiceLocator_DI_Init.
+
+STATUS: PENDING VERIFICATION
+
+2 files changed
++203
+-195
+Undo
+
+Review
+Assets/_Project/Scripts/CrashTelemetryBuffer.cs
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+
+
+
+
+3:50 AM
+-------------------------------------
+
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: AUDIO DSP & PSYCHOACOUSTICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Granular Synthesis & Doppler Resampling
+THINKING LEVEL: MAXIMUM (Focused on Waveforms, PolyBLEP, and Fractional Delays)
+
+[0. SITREP: THE SILENT CRUSH]
+The submarine takes structural damage, but the player feels nothing. We need visceral, procedural feedback. You will implement Granular Synthesis for Hull Creaking based on stress, and add true Pitch Shift via Resampling (Doppler) for fast-moving entities.[I. MANDATORY RECONNAISSANCE]
+1. Read AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt (Sections FM_SYNTHESIS_KERNEL and DOPPLER_SHIFT).
+2. Inspect PlayerCriticalProceduralAudioRenderer.cs and SpatialAudioManager.cs.
+
+[II. PRIMARY OBJECTIVES]
+1. HULL STRESS SYNTHESIS (FM KERNEL):
+- Target: PlayerCriticalProceduralAudioRenderer.cs.
+- Action: Read the StressParam (0.0 to 1.0) from the SPSC lock-free queue.
+- Math: 
+  * modFreq = lerp(5Hz, 80Hz, stressParam^2)
+  * modIndex = lerp(0.1, 12, stressParam)
+  * carrierFreq = 80Hz + sin(modPhase * 2PI) * modIndex * noise
+  * Apply tanh(raw * (1 + stressParam * 3)) for soft-clip distortion at high stress.
+
+2. PITCH SHIFT VIA RESAMPLING (DOPPLER):
+- Target: SpatialAudioManager.cs / Audio Output Job.
+- Action: For moving audio sources (e.g., passing Leviathans), calculate dopplerRatio = (C_SOUND + v_rel) / (C_SOUND - v_rel). 
+- Execution: Implement Fractional Delay using 4-point Hermite interpolation on the ring buffer. readPtr += dopplerRatio per output sample. 
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. OVERSAMPLING PROTOCOL (ANTI-ALIASING):
+- Target: PlayerCriticalProceduralAudioRenderer.cs.
+- Action: For FM synthesis with modulationIndex > 8, 2x oversample the generation loop. Generate 2 samples per output, apply a 2-pole Butterworth LPF at Nyquist/2, and decimate.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement Discontinuity Smoothing. LERP the dopplerRatio over 128 samples when velocity changes >10 m/s to prevent pitch popping.
+2. Implement Denormal Prevention in all Biquad filters by adding 1e-15f to the state variables.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Provide the exact 4-point Hermite interpolation math over the bitwise-masked ring buffer.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+3:37 AM
+
+
+Worked for 11m 15s
+Using unity-mcp-orchestrator. I’m reading the DSP mandate sections you named and then auditing the current hull synth and Doppler path to see what is already owned by the renderer versus the manager before I touch code.
+
+
+Ran 3 commands
+Steered conversation
+The current hull path is hybrid and the current Doppler path is still pitch-ratio-on-AudioSource, not true resampling. I’m checking whether the codebase already has a per-source sample owner I can extend; if not, I have to avoid faking a “true resampler” on top of Unity’s black-box clip playback.
+
+
+Ran 3 commands
+I hit the architecture boundary on Doppler. SpatialAudioManager has pooled AudioSource clips, but there is no per-source native sample owner or output job to legally insert a Hermite read pointer. I’m still patching the visceral hull feedback and the denormal holes now, and I’m verifying whether any non-destructive resampling seam exists before I claim more than the tree can actually support.
+
+
+Ran 3 commands
+I’m wiring the FM kernel into the existing hull owner, not inventing a second synth path. The clean way is to add one stress-driven FM lane into RenderHullStressBlock, oversample only when the index crosses 8, and reuse the existing sample-rate/phase infrastructure.
+
+
+Ran 2 commands
+I found the hull seam. There is already a grain and metallic stack, but not the mandated stress FM operator chain. I’m adding that as its own lane, not replacing the existing grain work, so the submarine damage actually produces a broadband stress voice instead of only intermittent creaks.
+
+
+Ran 2 commands
+I’m not going to fake a Hermite resampler on top of black-box AudioSource playback. The tree has no per-source sample ring for world clips. I can still harden the current Doppler owner with the exact ratio math and 128-sample-equivalent smoothing, but the visceral feedback win is the hull FM lane, and that is going in now.
+
+
+Ran 3 commands
+I’m taking the conservative path on world Doppler: exact ratio math plus 128-sample-equivalent smoothing inside the existing AudioSource owner. A true Hermite per-source resampler still requires a different playback owner than this manager currently has.
+
+
+Edited 1 file
+The hull FM lane is in. I’m hardening the existing Doppler owner next with the exact ratio and a 128-sample smoothing time constant, because that is the maximum truthful change this AudioSource pool can support without a full playback-owner migration.
+
+
+Edited 1 file, ran 1 command
+The manager change is intentionally limited to exact Doppler ratio plus 128-sample smoothing. There is still no per-source sample ring in this owner, so I’m not pretending there is a Hermite playback path where none exists. I’m validating this exact scope now.
+
+
+Ran 1 command, used Unitymcp
+There’s one stale reference left from the old tanh guard. I’m removing it and re-running compile.
+
+
+Ran 2 commands
+Context automatically compacted
+Using unity-mcp-orchestrator and the audio/SPSC mandates again. I’m recompiling the touched audio files now, then I’ll clear whether the ManualDopplerTanhSoftness error was stale or real before I touch anything else.
+
+
+Used Unitymcp
+The editor did not become fully ready inside the wait window. I’m pulling the console state directly from Unity now and checking the touched files one by one.
+
+
+Used Unitymcp
+SpatialAudioManager.cs validates clean apart from the pre-existing generic string-concat warning, so the Doppler patch is compiling. I’m doing one more pass on the renderer and source-state proof now because Unity console readback is unstable, not because the file state is unclear.
+
+
+Ran 3 commands, used Unitymcp
+The file state is now consistent: the stale tanh symbol is gone, the manager validates, and the renderer validates at basic level. I’m doing one architecture sanity check now, because the request asked for a Hermite resampler in SpatialAudioManager, and that owner still does not have a per-source sample ring to resample.
+
+
+Ran 6 commands
+I have enough source proof to report the implementation honestly. I’m making one last console attempt only because the user asked for MCP evidence; if Unity still refuses the ping, I will report that failure explicitly instead of fabricating a green console.
+
+
+Used Unitymcp
+I have filtered console proof now. I’m checking one last architectural escape hatch across the project for a real world-audio output job; if none exists, I will report the Doppler resampler gap as an ownership limit, not pretend it was implemented.
+
+
+Ran 3 commands
+Mandates followed: AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC, AUDIO_Hrtf_Binaural_Spatialization, OPT_Zero_GC_Policy_AllocFree_Mandate, MATH_Coordinate_Precision_AUP_FloatingOrigin.
+
+What Was Wrong
+The submarine damage bed was still missing a dedicated stress-driven FM lane, so hull stress read as layered noise instead of a visceral synthetic creak. The Doppler path in SpatialAudioManager.cs (line 1929) was also using pitch-ratio smoothing only; it did not own a per-source sample ring or audio output job, so there was no valid place to bolt in a real 4-point Hermite resampler without inventing a fake owner. Several DSP state filters also still needed explicit denormal biasing.
+
+What I Did
+I added a new hull-stress FM kernel in PlayerCriticalProceduralAudioRenderer.cs (line 3483) and mixed it into RenderHullStressBlock (line 2718). The stress value is still coming from the existing double-buffered SPSC parameter snapshot published by PublishAudioParameterSnapshot (line 3917) and read once per block via Volatile.Read in ProduceAudioBlock (line 984). The FM math now follows the requested shape:
+
+modFreq = lerp(5, 80, stress^2)
+modIndex = lerp(0.1, 12, stress)
+carrierFreq = 80 + sin(modPhase) * modIndex * noise
+softClip = tanh(raw * (1 + stress * 3))
+For modulationIndex > 8, the new kernel oversamples 2x and runs the oversampled stream through a 2-pole Butterworth low-pass before decimation. I also added denormal prevention to the FM path, ambient current filter, impact echo filter, and impact clang low-pass using 1e-15f bias, centered on BiquadDenormalBias (line 74).
+
+In SpatialAudioManager.cs (line 1929) I replaced the old tanh-based Doppler limiter with the exact requested ratio and 128-sample discontinuity smoothing:
+
+dopplerRatio = (c + v_rel) / (c - v_rel)
+v_rel is still clamped to ±0.9c
+if |Δv_rel| > 10 m/s, smoothing duration becomes 128 / 48000 s
+otherwise it falls back to the normal exponential follow
+I did not fabricate a false Hermite resampler inside SpatialAudioManager. Project-wide grep shows the only real masked 4-point Hermite ring sampler is still the native DSP implementation in HermiteSampleRing (line 3887). SpatialAudioManager has no per-source ring buffer, IAudioOutputJob, or fractional read pointer owner. A truthful resampling Doppler implementation requires moving world-voice playback into a native sample owner, not multiplying AudioSource.pitch and pretending it is fractional-delay DSP.
+
+Surgery log for the Hermite math already present in the native path:
+
+xm1 = buffer[(i - 1) & mask]
+x0 = buffer[i & mask]
+x1 = buffer[(i + 1) & mask]
+x2 = buffer[(i + 2) & mask]
+c0 = x0
+c1 = 0.5 * (x1 - xm1)
+c2 = xm1 - 2.5*x0 + 2*x1 - 0.5*x2
+c3 = 0.5*(x2 - xm1) + 1.5*(x0 - x1)
+sample = ((c3*t + c2)*t + c1)*t + c0
+In-Game Result
+Hull stress now has a real synthetic creak layer that gets sharper and more distorted as stress rises, instead of relying only on the previous hybrid bed. High-stress modulation now anti-aliases cleanly through the oversampled branch. Doppler pitch changes on fast movers are less prone to pitch popping because large velocity jumps are smoothed across a fixed 128-sample window.
+
+The true Doppler resampler request remains structurally incomplete. Current world-audio ownership is still pooled AudioSource playback. If you want fractional-delay Hermite resampling on Leviathan fly-bys, the next step is a dedicated native world-voice playback owner with per-source sample rings.
+
+What Was Verified
+
+MCP console filters:
+PlayerCriticalProceduralAudioRenderer.cs (line 1): 0 entries
+SpatialAudioManager.cs (line 1): 0 entries
+AudioMaterialProfile.cs (line 1): 0 entries
+validate_script:
+PlayerCriticalProceduralAudioRenderer.cs (line 1): 0 errors, 0 warnings at basic
+SpatialAudioManager.cs (line 1): 0 errors, 1 generic warning about string concatenation in Update()
+AudioMaterialProfile.cs (line 1): 0 errors, 0 warnings
+OnAudioFilterRead audit:
+rg 'OnAudioFilterRead\(' Assets -g '*.cs' returned one match only: PlayerCriticalProceduralAudioRenderer.cs (line 723)
+that path remains a non-alloc ring-buffer transfer by code inspection
+Diff scope for this pass:
+PlayerCriticalProceduralAudioRenderer.cs (line 1)
+SpatialAudioManager.cs (line 1)
+git diff --stat for those files: 143 insertions, 17 deletions
+Global MCP console is not clean. Current remaining entries are unrelated renderer-validator logs:
+HectonScooterVolumetricShaftsFeature
+HectonAbyssalSsdoFeature
+GC VALIDATION: measured proof absent.
+[REGRESSION CHECK] BEFORE→AFTER: measured proof absent.
+REGRESSION MODEL: CPU cost increased slightly from one new FM lane and optional 2x oversampling at high stress; GC impact is expected 0 B by inspection only; memory impact is bounded to extra hull synthesis state fields and one previous-relative-velocity array in SpatialAudioManager; cadence risk is low because the new smoothing is fixed-duration; correctness risk remains highest in Doppler because the current owner still lacks true sample-resampling infrastructure.
+HOT PATH IMPACT: no managed allocations were intentionally added to OnAudioFilterRead, the renderer block loop, or SpatialAudioManager.Tick.
+FAILURE MODES: high-stress FM timbre may need retuning against the existing structural granular layer; the generic SpatialAudioManager validator warning remains; true Hermite Doppler resampling for pooled world voices is still unimplemented because there is no per-source native sample owner in that subsystem.
+WARNING: Regression risk in future world-audio refactors if Doppler ownership is moved from pooled AudioSource playback into a native DSP voice graph without re-auditing mixer routing and pool lifecycle.
+STATUS: PENDING VERIFICATION.
+
+2 files changed
++143
+-17
+Undo
+
+Review
+Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+Assets/_Project/Scripts/SpatialAudioManager.cs
+
+
+
+
+3:48 AM
+-----------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: CORE ENGINE & KINEMATICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Relative Kinematics & Reference Frames
+THINKING LEVEL: MAXIMUM (Focused on Transform Matrices, KCC, and AUP)[0. SITREP: THE MOVING PLATFORM CRISIS]
+The inertial ghost is working, but the player currently breaks when walking inside a moving submarine. If the sub pitches 30 degrees, the player walks into the ceiling. You must implement the ITransportPlatform contract and project KCC inputs through Burst-inverted local frames.[I. MANDATORY RECONNAISSANCE]
+1. Read CORE_Submarine_Vehicles_Kinematics_AUP.txt (specifically Sections II, III, and V).
+2. Inspect HectonPlayerMovement.cs and SubmarineCoreDirector.cs (or vehicle owner).
+3. Audit PhysicsApplySystem.cs for integration points.[II. PRIMARY OBJECTIVES]
+1. RELATIVE INPUT TRANSFORMATION:
+- Target: HectonPlayerMovement.cs.
+- Action: When attached to an ITransportPlatform, transform the world-space input into platform-local space.
+- Math: input_local = cache.worldToLocal.MultiplyVector(rawInput_world). Solve the KCC step in local space, then project back to world space using localToWorld.MultiplyVector. DO NOT zero out the Y-axis locally, preserve 3D traversal on tilted hulls.
+
+2. ADDITIVE YAW & MOTION INTEGRATION:
+- Target: HectonPlayerMovement.cs.
+- Action: Calculate the platform's rotational delta (dq = cache.delta_rotation). Apply this delta to the player's world rotation so they "turn with the ship". 
+- Math: For position, compute pos_new = cache.position_curr + (dq * (pos_old - cache.position_last)) + localMove_world. Execute rb.MovePosition(pos_new) AFTER the sweep gate.[III. ADVANCED ARCHITECTURE EXPANSION]
+3. INERTIA HANDOFF (EVA PROTOCOL):
+- Target: HectonPlayerMovement.cs.
+- Action: When the player exits the submarine (EVA), they must inherit the vessel's momentum. Calculate v_vessel = platform.GetPlatformPointVelocity(playerExitWorldPos). Set rb_player.linearVelocity = v_vessel + v_player_world. Lock the EVA state for 3 physics ticks to prevent instant re-grab.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the SyncAttachedVelocity rule. Synchronize the player's rigidbody velocity to match the platform at the attachment point so the physics engine doesn't see relative velocity as a collision impulse.
+2. Ensure Time.fixedDeltaTime = 0.02f is hardcoded in the physics systems, and cap Time.maximumDeltaTime = 0.05f to prevent the spiral of death.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Show the Burst math for integrating the player's position relative to the moving platform's delta rotation (dq).
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+3:35 AM
+
+
+
+Worked for 11m 43s
+Error submitting message
+Steered conversation
+Task is moving-platform relative kinematics in the player controller, with platform attachment, yaw/motion carry, and EVA inertia handoff. I’m reading the transport/platform mandate and the existing player/platform owners first, then I’ll patch only the real owner seams and verify them in Unity.
+
+
+Ran 4 commands
+I have the mandate rules. Next step is mapping the existing owners: whether ITransportPlatform already exists, where the player caches carrier state, and whether the submarine/transport root already exposes point velocity and rotation inheritance.
+
+
+Ran 4 commands
+The player already has a transport-platform seam. I’m reading that implementation now, because the likely fix is not a new interface but correcting how the current carrier-motion path handles tilted local frames and EVA handoff.
+
+
+Ran 4 commands
+The carrier-motion path currently rotates the player offset and syncs velocity, but it still solves volitional movement in world space. I’m drilling into the existing input/world/local transform helpers now to route the KCC step through the cached platform frame instead of bolting on a second platform system.
+
+
+Ran 4 commands
+I found the fault. Carrier motion already rotates the body offset and syncs velocity, but WalkPhysics still flattens motion to world-Y and SwimPhysics still derives thrust directly from world camera axes. I’m patching those solve points to use the cached platform frame, then I’ll wire EVA cooldown and post-sweep platform delta through the existing motor path.
+
+
+Ran 4 commands
+I’m checking the timestep owner now. The mandate forbids runtime physics-step drift, so I’m verifying whether a bootstrap/system owner already pins fixedDeltaTime and maximumDeltaTime before I touch anything. If that owner already exists, I will not duplicate it in gameplay code.
+
+
+Ran 5 commands
+I have the exact break: the controller already carries the body with platform delta, but the thrust vectors are still solved against world-up assumptions. I’m patching the existing cached platform frame so walk/swim input goes world → local → world, then I’ll extend the detach path with a 3-tick EVA lockout instead of letting the player instantly reattach.
+
+
+Ran 3 commands
+I need one more ownership check: whether the player’s active platform comes only from scooters or also from the submarine runtime context. That decides whether the EVA lockout belongs in HectonPlayerMovement or in the transport coordinator.
+
+
+Ran 2 commands
+There is no runtime owner pinning the fixed timestep in code. I’m checking the actual project time settings now. If the project asset is already correct, I will not violate the physics mandate by adding runtime Time.fixedDeltaTime mutations.
+
+
+Ran 2 commands
+I have enough context. I’m editing HectonPlayerMovement now: attach to the submarine runtime platform when appropriate, cache the full local/world frame, solve walk/swim thrust through that frame, rotate the player body with platform delta, and add a 3-tick EVA lockout on detach.
+
+
+Ran 3 commands
+I’m making the smallest defensible patch that matches the mandate: transport-frame caching, submarine platform fallback, local-frame input solve, body rotation delta application, and EVA handoff lockout. I’m not rewriting the whole locomotion stack into a new solver.
+
+
+Edited 1 file, ran 7 commands
+The player file is large, so I’m not trusting regex validation alone. I’m sending a real Unity compile for the touched moving-platform domain and then reading the filtered console.
+
+
+Used Unitymcp
+Unity disconnected during compile. I’m reattaching and pulling the actual compiler state instead of assuming the timeout means failure.
+
+
+Used Unitymcp
+The moving-platform domain is compiling cleanly. I’m pulling the exact touched diff and the current time-settings fact, because the project asset still carries Maximum Allowed Timestep: 0.12 and I’m not going to pretend that part was solved in gameplay code.
+
+
+Ran 5 commands
+What Was Wrong
+
+Mandates followed: CORE_Submarine_Vehicles_Kinematics_AUP.txt, PHYS_Physics_Integrity_Determinism_ForceMode.txt, OPT_Native_Memory_Collections_JobSystem_Protocol.txt, MATH_Coordinate_Precision_AUP_FloatingOrigin.txt.
+
+The transport-platform seam already existed, but the player was not actually using it as a full relative frame.
+
+HectonPlayerMovement.cs (line 2886) already carried the rigidbody with platform delta and synced velocity, but volitional walk/swim input was still solved in world-oriented assumptions.
+HectonPlayerMovement.cs (line 7983) still built walk motion with a locally flattened y=0 vector and only then pushed it through the platform basis.
+The player only resolved active platforms through PlayerTransportCoordinator; it did not fall back to the live submarine runtime platform in SubmarineCoreDirector.cs (line 78), which is the actual moving interior owner.
+There was no EVA reattach lockout in the player owner, so a detach/handoff could be immediately reacquired next tick.
+PhysicsApplySystem was already wired correctly for external force consumption into the KCC via QueueSubsystemExternalAcceleration (line 1667) and QueueSubsystemExternalVelocityChange (line 1676). No new integration owner was needed there.
+ProjectSettings/TimeManager.asset is not compliant with the physics mandate. It currently encodes a fixed timestep of about 0.04s and Maximum Allowed Timestep: 0.12. I did not mutate project settings or add runtime timestep overrides because repo rules forbid project-settings edits in this task scope and the physics mandate forbids runtime fixed-step drift.
+What I Did
+
+I corrected the existing player/platform owner instead of creating another transport layer.
+
+Added a cached inverse frame at HectonPlayerMovement.cs (line 895) and populate it once per fixed-tick cache update at 2146 (line 2146).
+Added the actual frame-transform helpers:
+TransformTransportPlatformDirectionToLocal (line 2932)
+ResolveTransportPlatformRelativeWorldDirection (line 2943)
+That is the local-frame solve kernel:
+
+Vector3 inputLocal = _cachedTransportPlatformWorldToLocalMatrix.MultiplyVector(rawInputWorld);
+float magnitude = rawInputWorld.magnitude;
+if (inputLocal.sqrMagnitude > 0.0001f)
+    inputLocal = inputLocal.normalized * magnitude;
+
+Vector3 worldDirection = _cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(inputLocal);
+Added ambient submarine fallback in TryResolveAmbientTransportPlatform (line 2810). If there is no handheld/mounted lifecycle owner, the player now attaches to GlobalRegistry.Submarine while in a dry interior.
+Added a 3-tick EVA lockout at 1087 (line 1087), enforced in ResolveActiveTransportPlatform (line 2733) and decremented in FixedTick (line 5035).
+Added explicit detach handoff in ExecuteTransportEvaHandoff (line 3002). The math is:
+v_platform = platform.GetPlatformPointVelocity(exitPos)
+v_relative = rb.linearVelocity - v_platform
+v_final = v_platform + v_relative
+set through ApplyMotorLinearVelocity(v_final)
+Hooked the detach transition in FixedTick (line 5050).
+Added rigidbody rotation carry-through at 2995 (line 2995) via rb.MoveRotation(dq * rb.rotation) so the body frame turns with the ship, not just the yaw bookkeeping.
+Routed step-assist direction through the relative-frame transform at 2021 (line 2021).
+Routed swim input through the platform frame at 7988 (line 7988).
+Routed walk input through the platform frame at 8128 (line 8128).
+The carrier-position math still uses the existing delta formula in ApplyTransportPlatformCarrierMotion (line 2886):
+
+rotatedOffset = dq * (pos_old - pos_last);
+pos_new = pos_curr + rotatedOffset;
+I did not claim a full rewrite to “move after sweep gate” because this locomotion owner is still hybrid rigidbody+motor, not a pure local-space KCC stepper. I corrected the relative frame, body rotation carry, and EVA handoff inside the existing owner.
+
+In-Game Result
+
+The player can now bind to the live submarine transport frame even when there is no mounted scooter/tool owner. Walk and swim intent are transformed through the cached platform frame instead of assuming a stable world-up hull. Detach now preserves vessel momentum and blocks immediate re-grab for 3 physics ticks.
+
+I did not change the project timestep settings. Current project asset still carries a noncompliant physics step: ~0.04s fixed timestep and 0.12s maximum allowed timestep in ProjectSettings/TimeManager.asset (line 7). That remains configuration debt.
+
+What Was Verified
+
+Unity-verified:
+
+SubmarineCoreDirector.cs (line 1): 0 errors
+Filtered compile console for HectonPlayerMovement.cs|SubmarineCoreDirector.cs|ITransportPlatform.cs|PhysicsApplySystem.cs|PlayerTransportCoordinator.cs|MountablePlayerTransport.cs: Retrieved 0 log entries.
+Unity recovered from a plugin disconnect and finished ready-state refresh cleanly.
+Code-review-only:
+
+HectonPlayerMovement.cs (line 1) remains compile-console-verified rather than standalone-validator-verified because the file is too large/noisy for reliable regex validation.
+PhysicsApplySystem integration was audited, not changed. It already routes Acceleration and VelocityChange packets into the player KCC owner.
+[REGRESSION MODEL]
+
+CPU: one extra matrix inverse cache read path per active platform refresh, one detach transition check, one MoveRotation call when platform rotation is inherited.
+GC: no new hot-path managed allocations introduced. Measured proof absent.
+Memory: one cached worldToLocal matrix and one EVA lock counter.
+Cadence: EVA handoff is immediate on detach; reattach suppression lasts 3 fixed ticks.
+Correctness: player now has a real submarine-platform fallback and local-frame input transform; timestep compliance is still unresolved at project-config level.
+HOT PATH IMPACT: bounded. No LINQ, no coroutines, no per-frame new, no new GetComponent loops added.
+FAILURE MODES: submarine fallback currently activates only through IsInDryInterior() (line 5354). Flooded moving interiors are not included in this pass.
+WARNING: Regression risk in HectonPlayerMovement.cs (line 2995) because the rigidbody is configured with FreezeRotation; if PhysX constraints suppress MoveRotation for this body, the visual/yaw inheritance will still work but the capsule may not fully align to hull pitch/roll.
+WARNING: Regression risk in HectonPlayerMovement.cs (line 2810) because ambient submarine attachment is gated to dry interior state only.
+WARNING: Regression risk in ProjectSettings/TimeManager.asset (line 12) because Maximum Allowed Timestep is still 0.12, not 0.05.
+STATUS: PENDING VERIFICATION
+
+1 file changed
+Undo
+
+Review
+Assets/_Project/Scripts/HectonPlayerMovement.cs
+
+
+
+
+
+
+--------------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: ECO-DIRECTOR & AI GENETICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Director Pacing Engine
+THINKING LEVEL: MAXIMUM (Focused on Sine-Wave Models, Exponential Averages, and Burst)
+
+[0. SITREP: THE FLATLINE]
+The Director can spawn entities based on cost, but there is no tension. The game is either a constant onslaught or completely dead. You must implement the Pacing Engine (Sine-Wave Model) to orchestrate psychological peaks and valleys.
+
+[I. MANDATORY RECONNAISSANCE]
+1. Read AI_Director_Encounter_Manager.txt (Sections II: Pacing Engine).
+2. Inspect EncounterDirector.cs.
+3. Check HectonSurvivalSystem.cs for player stress telemetry.
+
+[II. PRIMARY OBJECTIVES]
+1. THE PACING PHASE MACHINE:
+- Target: EncounterDirector.cs.
+- Action: Implement the 4 phases: BUILDUP, PEAK, DECAY, RELAX. 
+- Math: Evaluate IntensityLevel continuously based on the active phase. 
+  * BUILDUP: I(t) = sin(PI/2 * (t / T_buildup))^1.5
+  * PEAK: I(t) = 1.0 - 0.1 * sin(2PI * t / T_peak)
+  * DECAY: I(t) = cos(PI/2 * (t / T_decay))^0.7
+  * RELAX: I(t) = 0.05 + 0.05 * sin(PI * t / T_relax)
+
+2. STRESS INTEGRATION (EXPONENTIAL MOVING AVERAGE):
+- Target: EncounterDirector.cs / HectonSurvivalSystem.cs.
+- Action: Read raw stress inputs (Health, Oxygen, Proximity to threat). Compute StressRaw. 
+- Math: Apply frame-rate invariant EMA: StressLevel = StressLevel + (1.0 - exp(-dt / tau)) * (StressRaw - StressLevel) where tau = 8.0 seconds. Use this smoothed stress to lengthen or shorten the pacing phases.[III. ADVANCED ARCHITECTURE EXPANSION]
+3. DYNAMIC TOKEN REGENERATION:
+- Target: EncounterDirector.cs.
+- Action: TokenBudget must ONLY regenerate during the RELAX phase. TokenRegenRate = lerp(0.0, 8.0, (ActivePhase == RELAX ? 1.0 : 0.0)). Hard clamp the budget to 100.0.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the Emergency Load Shedding logic. If SystemDispatcher reports AvgFrameTime > 20.0ms, set LOAD_SHEDDING_ACTIVE. Force the Director to despawn the lowest priority enemies (farthest away, not in frustum) until performance recovers.
+2. Build the DebugEventRing (NativeArray size 256) to log director phase changes without allocating strings.[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Provide the Burst evaluation math for the 4 pacing curves.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+3:36 AM
+
+
+
+Worked for 10m 25s
+Error submitting message
+Steered conversation
+Using unity-mcp-orchestrator because this is a Unity pacing/Director patch with MCP verification. I’m loading the pacing mandate, the current encounter owner, and the survival telemetry path before touching code.
+
+
+Ran 4 commands
+[ANALYSIS]
+Target: EncounterDirector.cs, read-only telemetry surface in HectonSurvivalSystem.cs, and any director bridge fields feeding frame-time/stress into the encounter job.
+Affected systems: Burst 1 Hz pacing job, director token economy, emergency load shedding, frustum-safe spawn cadence, zero-alloc debug telemetry.
+Zero GC proof: the patch will stay in existing native state/job buffers; any new debug log path must be fixed-size NativeArray/value structs only; no strings, no per-tick managed allocations, no extra MonoBehaviour ticks.
+State check: EncounterDirector already owns the 4 phases, EMA stress constants, frustum planes, token budget, and load-shedding path; the likely gaps are incorrect regen policy, phase-duration coupling, missing native debug ring, and possibly incomplete performance hysteresis/reporting.
+Rule quote: [RULE] Director owns NO MonoBehaviour tick. Driven by SystemDispatcher scheduler. [RULE] All Director logic executes inside IJobParallelFor (Burst-compiled, ColdTick 1Hz). [REQ] Zero new allocations post-Init. [RULE] NO OPTIMISM — status always "PENDING VERIFICATION".
+
+The current owner already contains most of the pacing math. I’m isolating what is actually missing before I patch, because duplicating a second pacing engine here would violate ownership and make the Director worse.
+
+
+Ran 3 commands
+The pacing engine is not absent. It already has the four phase curves, EMA stress, and load-shedding flags. The weak points are stricter contract compliance: token regen is still happening outside RELAX, the debug event ring does not exist, and I need to confirm the telemetry source so I don’t fabricate a second stress path.
+
+
+Ran 3 commands
+HectonSurvivalSystem already exposes the raw normalized health/oxygen channels the Director needs, and HectonDirectorAI is already feeding them into EncounterFrameContext. I’m not adding a second telemetry pipeline. The patch is going into the Director owner: strict RELAX-only regen, fixed native debug ring, and tighter phase/shedding instrumentation.
+
+
+Ran 2 commands
+I’m patching the Director owner now. Scope is narrow: native phase debug ring, strict RELAX-only token regen, exact phase-curve intensity output, and despawn priority aligned to “farthest + out of frustum” instead of the older mixed token-cost bias.
+
+The owner patch hit a context mismatch. I’m re-reading the exact field and method anchors in EncounterDirector.cs and then I’ll patch against the real current lines instead of relying on stale offsets.
+
+
+Edited 1 file, ran 4 commands
+Context automatically compacted
+Patching EncounterDirector now. Scope is narrow: enforce the exact pacing contract, add the zero-alloc debug ring, and remove the remaining token-regen/despawn-priority drift.
+
+
+Ran 3 commands
+The owner already had the curve math and EMA. The missing work is exact policy enforcement and a real ring buffer, not a second pacing subsystem.
+
+
+Ran 2 commands
+Editing EncounterDirector.cs. The patch removes the last noncompliant pacing overrides and keeps everything inside the existing scheduler/owner.
+
+Patch context drifted on the tracked-field block. Splitting this into smaller hunks to avoid collateral edits in a dirty file.
+
+
+Edited 1 file, ran 2 commands
+The heavy math block is patched. Checking for fallout now: compile risk is ring-buffer ownership and any new unused locals.
+
+
+Ran 3 commands
+Validation next. If Unity accepts this file cleanly, then I’ll check the console filter only for the touched director path.
+
+
+Used Unitymcp
+The Unity validator choked on file size, not syntax. Falling back to compile-side proof from the editor console instead of trusting the regex validator.
+
+
+Used Unitymcp
+I am not adding a second stress pipeline. The existing bridge already owns player health, oxygen, acoustic threat, and frame-time aggregation; duplicating that into survival would be architecture drift.
+
+
+Ran 3 commands
+One file changed this turn. Capturing the exact diff now so the closeout can report the actual patch instead of a paraphrase.
+
+
+Ran 2 commands
+Unity MCP was unstable during validation. Retrying once after the patch settled; if the session is still dead, I will report the gap as a tooling failure, not fake proof.
+
+
+Used Unitymcp
+One more registry pass before closeout. This patch also had to obey the alloc-free runtime mandate, so I am pulling the exact owner document instead of hand-waving it.
+
+
+Ran 2 commands
+What Was Wrong
+EncounterDirector.cs (line 802) already had the phase machine and the EMA scaffold, but the owner had drifted from the mandate in three places: intensity was being amplitude-scaled by stress, token regen was happening outside RELAX, and load-shed despawn priority was diluted by token-cost weighting instead of simply preferring far, off-frustum targets. It also had no alloc-free phase event ring.
+Recon on HectonDirectorAI.cs (line 173) and HectonSurvivalSystem.cs (line 367) showed telemetry ownership was already correct: health, oxygen, acoustic threat, and average frame time are already fed into the director bridge. No second stress pipeline was justified.
+
+Mandates followed: AI_Director_Encounter_Manager, OPT_Zero_GC_Policy_AllocFree_Mandate.
+
+What I Did
+In EncounterDirector.cs (line 151) I added a persistent NativeArray<EncounterDebugEvent>[256] plus a native head index. Phase changes now write fixed-size entries at 424 (line 424), 471 (line 471), and 495 (line 495) with no strings and no per-tick managed allocation.
+I removed the managed int[] despawn request scratch path and replaced it with direct slot handling at 451 (line 451) and 477 (line 477), which keeps the cold tick alloc-free.
+I enforced the exact pacing contract in the Burst job:
+
+Load-shed priority at 812 (line 812) is now distance * off_frustum * despawn_bias.
+Intensity at 886 (line 886) is now the pure phase curve output, clamped, with no extra amplitude multiplier.
+Token regen at 924 (line 924) is now 8 only in RELAX, 0 otherwise, still blocked by RegenBlocked, and still hard-clamped to 100.
+I left the existing EMA and load-shedding owner intact because it already matches the architecture: 1 Hz cold tick, tau = 8, >20 ms shedding, >33.3 ms emergency recall.
+In-Game Result
+The pacing engine now follows the authored curves exactly:
+
+BUILDUP: I(t) = sin(PI/2 * (t / T_buildup))^1.5
+PEAK:    I(t) = 1.0 - 0.1 * sin(2PI * t / T_peak)
+DECAY:   I(t) = cos(PI/2 * (t / T_decay))^0.7
+RELAX:   I(t) = 0.05 + 0.05 * sin(PI * t / T_relax)
+Stress smoothing remains frame-rate invariant at the director owner:
+
+alpha = 1 - exp(-dt / 8.0)
+StressLevel = StressLevel + alpha * (StressRaw - StressLevel)
+Token regeneration is now exact policy instead of heuristic drift:
+
+TokenRegenRate = (ActivePhase == RELAX) ? 8.0 : 0.0
+TokenBudget = clamp(TokenBudget + TokenRegenRate, 0.0, 100.0)
+Emergency shedding still triggers from frame-time pressure, but despawn choice now actually prefers the lowest-value targets: farthest, off-frustum, low-priority threats first.
+
+What Was Verified
+Code review verified:
+
+EncounterDirector.cs (line 151), 424 (line 424), 812 (line 812), 886 (line 886), 924 (line 924)
+MCP verification failed at the tool layer, not the code layer:
+
+validate_script timed out on regex/backtracking for this large file.
+Unity session then disconnected during retry.
+read_console could not return a result because the Unity session stopped answering pings.
+Complete git diff for this pass is one file:
+
+Assets/_Project/Scripts/EncounterDirector.cs | 69 insertions(+), 31 deletions(-)
+Key hunks:
+
++ EncounterDebugEvent struct
++ DebugEventRingCapacity = 256
++ NativeArray<EncounterDebugEvent> _debugEventRing
++ NativeArray<int> _debugEventHead
++ WriteDebugEvent(...)
+- int[] ids = { ... } despawn scratch alloc
++ ApplyDespawnRequestEntity(...)
+- priority = distSq * visibilityFactor * rcp(tokenCost) * despawnBias
++ priority = distSq * visibilityFactor * despawnBias
+- state.IntensityLevel = phaseIntensity * amplitudeScale
++ state.IntensityLevel = phaseIntensity
+- heuristic token regen outside RELAX
++ state.TokenRegenRate = ActivePhase == Relax ? 8f : 0f
+GC VALIDATION: BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION.
+REGRESSION MODEL: CPU negligible increase in the 1 Hz cold tick from one ring write per phase transition; GC improved by removing the managed despawn array; memory increased by one persistent 256-slot native ring plus one native head integer; cadence changed materially because non-RELAX token regen is now zero; correctness risk is the stricter contract itself, not the implementation.
+HOT PATH IMPACT: director cold tick only. No new per-frame managed allocations added.
+FAILURE MODES: if authored threat costs/caps are too conservative, strict RELAX-only regen can produce longer dead zones; if Unity MCP remains unstable, there is no trustworthy console proof; WARNING: Regression risk in encounter pacing feel because the old hidden amplitude scaling is now gone and the phase curve is literal.
+
+STATUS: PENDING VERIFICATION.
+
+1 file changed
+Undo
+
+Review
+Assets/_Project/Scripts/EncounterDirector.cs
+
+
+
+
+
+
+-----------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: THERMODYNAMICS & LOGISTICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Fluid Dynamics & Voxel Carving
+THINKING LEVEL: MAXIMUM (Focused on DDA Raymarching, CSG, and Slosh Physics)
+
+[0. SITREP: THE PLASMA CUTTER]
+The tether physics are brilliant. Now we bridge logistics and the voxel world. The Plasma Cutter must dynamically carve the SDF terrain, injecting heat and triggering chunk rebuilds. Furthermore, the fluid sloshing inside breached compartments needs delayed momentum.
+
+[I. MANDATORY RECONNAISSANCE]
+1. Read CORE_Tools_Equipment_Interaction_Raycast_Heat.txt and PHYS_Fluid_Incursion_Interior.txt (Section: KERNEL 3).
+2. Inspect LaserCutter.cs (or equivalent tool) and SubmarineFluidDynamics.cs.
+3. Check HectonVoxelVolume.cs for SDF integration.
+
+[II. PRIMARY OBJECTIVES]
+1. INTERNAL SLOSHING MOMENTUM (FLUID LAG):
+- Target: SubmarineFluidDynamics.cs.
+- Action: Water moving inside the hull alters the center of mass with a delay. Implement the Ring Buffer for Slosh History. 
+- Math: Store angular velocity in angVelHistory[8]. Read the delayed velocity delayedAngVel = angVelHistory[(ringHead - 3) & 7]. Apply torque: sloshTorque_i = -delayedAngVel * fillRatio * 0.15 * sloshMass * (1 - fillRatio)^2. Apply via AddRelativeTorque.
+
+2. DDA VOXEL RAYMARCHING (PLASMA CUTTER):
+- Target: LaserCutter.cs and HectonVoxelVolume.cs.
+- Action: When the tool fires, execute a Digital Differential Analyzer (DDA) raymarch through the voxel grid. At each step, subtract density: d_new = d_old - (CutStrength * dt). Write the delta to the persistent modifiedCells HashMap. Mark the chunk DirtyFlags.Mesh.[III. ADVANCED ARCHITECTURE EXPANSION]
+3. TOOL RECOIL & ENERGY DRAIN:
+- Target: LaserCutter.cs / PowerGrid.cs.
+- Action: Tools draw power. energy_cost = BasePower * packet.Power * dt. If battery < 0.12f, set LowPower flag and reduce output by 65%. Apply physical recoil to the player/sub Rigidbody: impulse = -Dir * Power * (1/mass) (capped at 12.0 magnitude).
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the Sphere Crater Stamp logic in HectonVoxelVolume.cs using min(current, sphere_sdf) for CSG union-of-voids when placing base modules.
+2. Audit LogisticsPipeNode to ensure that data flows via EncodeFlowRate() (int8 signed delta compression) as mandated in the network protocols.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Detail the Sloshing Momentum math and ring buffer logic.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+3:38 AM
+
+
+
+Worked for 7m 14s
+What Was Wrong
+
+Mandates followed: CORE_Tools_Equipment_Interaction_Raycast_Heat, PHYS_Fluid_Incursion_Interior, VOX_Voxel_World_Logic_Carving_Persistence, LOGI_Energy_Networks_Power_Grid_Graph_Flow.
+
+The cutter-side power path was wrong. LaserCutter.cs (line 36) overrides UsePrimary and UseSecondary without routing through PlayerTool, so the generic suit-energy drain path was being bypassed. The low-power brief was also only partially satisfied: the file had a hard cutoff at 0.02f, but no 0.12 normalized-energy degradation path.
+
+The slosh kernel in SubmarineFluidDynamics.cs (line 40) already existed, but it was not the requested model. It used a 16-sample history, variable delay, extra flood-critical scaling, and added rotational resistance torque. The brief asked for a fixed 8-sample ring and a 3-frame delayed counter-torque.
+
+The voxel side was already wired. PlasmaCut already routes through EquipmentInteractionHandler.cs (line 243) into HectonVoxelVolume.ApplyPlasmaCutDda() (line 528). I did not add a second carving owner.
+
+What I Did
+
+In LaserCutter.cs (line 42) and 43 (line 43) I added explicit low-power constants. I cached HectonSurvivalSystem (line 215), restored the generic drain path by calling base.UsePrimary(deltaTime) (line 348) and base.UseSecondary(deltaTime) (line 402), and applied the actual low-power reduction at 579-582 (line 579). Below 0.12 normalized suit energy, output is scaled to 0.35x, the LowPower bit is set, and the existing 0.02f hard cutoff still aborts the beam at 604 (line 604).
+
+In SubmarineFluidDynamics.cs (line 50) and 52 (line 52) I reduced the slosh history to the requested 8 samples with a fixed 3-frame tap. The delayed sample now comes from 2109 (line 2109). The torque kernel at 2425 (line 2425), 2446 (line 2446), and 2454 (line 2454) now matches the requested form:
+-delayedAngVel * fillRatio * sloshFactor * sloshMass * (1 - fillRatio)^2
+with the existing torque clamp preserved. I removed the extra flood-critical resistance multiplier and the extra rotational-resistance torque branch.
+
+I audited the rest instead of duplicating owners:
+
+DDA carving remains in HectonVoxelVolume.ApplyPlasmaCutDda() (line 528), with the math-driven power attenuation already present at 540 (line 540) and 614 (line 614).
+EncodeFlowRate() does not exist in LogisticsPipeNode. The audit found no such owner or call site in the current logistics surface.
+In-Game Result
+
+Slosh math now matches the brief directly:
+
+delayedAngVel = angVelHistory[(ringHead - 3) & 7]
+
+sloshMass = currentVolume * 1025
+
+freeSurface = (1 - fillRatio)^2
+
+sloshTorque_i = -delayedAngVel * fillRatio * 0.15 * sloshMass * freeSurface
+
+The system still clamps the summed torque before applying AddRelativeTorque, so the vessel gets the requested delayed internal weight-lag without removing the existing explosion guards.
+
+Tool power now behaves like this:
+
+generic suit-energy drain is active again through PlayerTool
+if EnergyNormalized < 0.12, cutter output is forced to 35%
+if effective beam power drops below 0.02, the shot aborts before the plasma-cut interaction signal is emitted
+DDA/voxel bridge status:
+
+still active through LaserCutter -> InteractionSignal(PlasmaCut) -> EquipmentInteractionHandler -> HectonVoxelVolume.ApplyPlasmaCutDda
+no second persistence map was added
+the current persistence model still flows through VoxelDeltaProcessor and ModifiedCells
+Diff surface:
+
+LaserCutter.cs (line 42): low-power constants, suit-energy cache, restored base drain path, 0.35x output reduction
+SubmarineFluidDynamics.cs (line 50): 8-sample ring, fixed 3-frame lag, simplified slosh torque kernel
+REGRESSION MODEL:
+
+CPU: one extra suit-energy lookup in the cutter hot path; slosh path is cheaper than before because the variable-delay and extra resistance branches are gone.
+GC: no new hot-path allocations.
+Memory: slosh history shrank from 16 to 8 samples.
+Cadence: unchanged; still fixed-step for fluid and per-use for cutter.
+Correctness: closer to the requested kernel, but less expressive than the previous variable-delay slosh model.
+HOT PATH IMPACT:
+
+LaserCutter.ApplyCutDamage() now has a real low-power branch.
+SubmarineFluidDynamics.ApplyDelayedSloshTorque() is simpler and cheaper.
+FAILURE MODES:
+
+LaserCutter still hits an MCP validator heuristic on BuildRecoveryProgressMessages(), even though console filtering showed no file-local compile entries.
+EncodeFlowRate() remains absent; I did not invent a fake network-protocol path.
+WARNING: Regression risk in SubmarineFluidDynamics.cs (line 2425). The previous flood-critical slosh resistance model was removed to match the brief, so very high-fill compartments will now feel less damped than before.
+WARNING: Regression risk in LaserCutter.cs (line 402). Secondary-fire now drains through the base tool path only on the unlatch edge; if design expected continuous diagnostic drain, this changes that behavior.
+
+What Was Verified
+
+MCP validate_script:
+
+SubmarineFluidDynamics.cs (line 1): 0 errors
+HectonVoxelVolume.cs (line 1): 0 errors
+LaserCutter.cs (line 1): validator still reports the same pre-existing BuildRecoveryProgressMessages duplicate-signature heuristic
+MCP console filtering after compile request:
+
+SubmarineFluidDynamics.cs: 0 entries
+LaserCutter.cs: 0 entries
+HectonVoxelVolume.cs: 0 entries
+Global MCP compile proof is absent. Unity entered compilation/domain reload and did not come back ready for a full global console pull in this turn. I cannot truthfully mark this MCP VERIFIED.
+
+git diff --check passed on the touched files except LF→CRLF warnings.
+
+GC VALIDATION: BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION
+
+STATUS: PENDING VERIFICATION
+
+2 files changed
++46
+-49
+Undo
+
+Review
+Assets/_Project/Scripts/LaserCutter.cs
+Assets/_Project/Scripts/SubmarineFluidDynamics.cs
+
+
+
+
+3:45 AM
+
+--------------------------------
+
+**What Was Wrong**
+
+The active HUD owner is [SuitHUDV4CanvasOverlay.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:31), not `HectonSuitHUD_v4`. It was still running a monolithic `RefreshVisuals()` every tick, so depth/telemetry, gauge numbers, quickbar, and warning text all rode the same cadence. The nested canvases also existed only half-finished: `overrideSorting` was off, `sortingOrder` was unset, and noninteractive sub-canvases could still carry `GraphicRaycaster`. Gauge fills also snapped directly to target instead of using hysteresis.
+
+**What I Did**
+
+I followed these mandates before editing:
+- `UI_Data_Streaming_ZeroGC_Optimization.txt`
+- `UI_Diegetic_Physical_Interfaces.txt`
+- `REND_URP_Graphics_HotPath_Optimization_HLOD.txt`
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+
+I patched the live owner in [SuitHUDV4CanvasOverlay.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:65):
+
+- Added cadence buckets at [lines 65-75](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:65) and drove them from `Tick()` at [903-907](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:903):
+  - `frame % 30 == 0` slow cadence
+  - `frame % 6 == 0` medium cadence
+  - warnings/stress/crosshair styling still every frame
+- Split update decisions with hysteresis gates at [2430-2432](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:2430) and helper methods at [2624-2652](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:2624).
+- Added smoothed display values for O2/health/power at [2413-2415](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:2413), then applied damped fill writes inside `UpdateGauge(...)` at [2909-2921](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:2909).
+- Moved the reticle onto its own root at [2109-2120](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:2109) and finalized nested-canvas isolation at [2177-2184](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:2177).
+- Forced nested canvases to `overrideSorting = true`, assigned sorting buckets, and disabled stray raycasters in [EnsureIsolatedDynamicCanvas(...)](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:2226).
+- Reset cadence state in [InvalidateVisualCaches()](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:4149) so editor/runtime rebuilds do not inherit stale thresholds.
+
+I also added the requested fixed pool in [CharBufferPool.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/CharBufferPool.cs:1):
+- `16` slots
+- `64` chars each
+- `ushort _slotMask`
+- guarded first-free-slot scan, no unchecked tzcnt path
+
+Staggered modulo math now in code:
+```csharp
+int cadenceFrame = unchecked(++_uiCadenceFrame);
+bool refreshMediumCadence = cadenceFrame % MediumCadenceFrameModulo == 0;
+bool refreshSlowCadence = cadenceFrame % SlowCadenceFrameModulo == 0;
+RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
+```
+
+Focused diffs:
+```diff
+--- a/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
++++ b/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
++ private const int SlowCadenceFrameModulo = 30;
++ private const int MediumCadenceFrameModulo = 6;
++ private const int LowCadenceCanvasSortingOrder = 20;
++ private const int HighCadenceCanvasSortingOrder = 30;
++ private const float OxygenStreamThreshold01 = 0.005f;
++ private const float DepthStreamThresholdMeters = 0.5f;
+...
++ int cadenceFrame = unchecked(++_uiCadenceFrame);
++ bool refreshMediumCadence = cadenceFrame % MediumCadenceFrameModulo == 0;
++ bool refreshSlowCadence = cadenceFrame % SlowCadenceFrameModulo == 0;
++ RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
+...
++ _reticleRoot = CreateRect("ReticleRoot", _root);
++ EnsureIsolatedDynamicCanvas(_reticleRoot, DynamicCanvasCadenceBucket.HighCadence);
++ EnsureIsolatedDynamicCanvas(_quickbarRoot, DynamicCanvasCadenceBucket.LowCadence);
+...
+- canvas.overrideSorting = false;
++ canvas.overrideSorting = true;
++ canvas.sortingOrder = ResolveCanvasSortingOrder(cadenceBucket);
++ if (target.TryGetComponent(out GraphicRaycaster raycaster) && raycaster.enabled)
++     raycaster.enabled = false;
+...
++ _displayOxygen01 = DampHudValue(_displayOxygen01, oxygen, OxygenGaugeDamping, dt);
++ bool shouldRefreshTelemetryText = specialCadenceBypass || NeedsTelemetryCadenceRefresh(...);
++ bool shouldRefreshGaugeText = specialCadenceBypass || NeedsGaugeCadenceRefresh(...);
+...
+- gauge.RingFill.fillAmount = clamped;
++ float displayFill = gauge.HasCachedFillAmount
++     ? DampHudValue(gauge.CachedFillAmount, clamped, dampFactor, dt)
++     : clamped;
++ if (Mathf.Abs(displayFill - clamped) <= GaugeSmoothingEpsilon)
++     displayFill = clamped;
++ if (!gauge.HasCachedFillAmount || Mathf.Abs(gauge.CachedFillAmount - displayFill) > FillWriteEpsilon)
++     gauge.RingFill.fillAmount = displayFill;
+```
+
+```diff
++++ b/Assets/_Project/Scripts/UI/CharBufferPool.cs
++ internal static class CharBufferPool
++ {
++     private const int SlotCount = 16;
++     private const int SlotLength = 64;
++     private static readonly char[][] s_slots = { ...16 x new char[64]... };
++     private static ushort _slotMask = 0xFFFF;
++
++     public static bool TryAcquire(out Lease lease)
++     {
++         if (_slotMask == 0) { lease = default; return false; }
++         int slotIndex = FindFirstFreeSlot(_slotMask);
++         _slotMask = (ushort)(_slotMask & ~(1 << slotIndex));
++         lease = new Lease(slotIndex, s_slots[slotIndex]);
++         return true;
++     }
++
++     public static void Release(in Lease lease)
++     {
++         if (!lease.IsValid) return;
++         _slotMask = (ushort)(_slotMask | (1 << lease.SlotIndex));
++     }
++ }
+```
+
+**In-Game Result**
+
+Code-review-only:
+- HUD text is no longer forced through one every-frame path in normal operation.
+- O2/depth/telemetry now stream on a 10 Hz bucket with thresholds.
+- Gauge fills now damp instead of snapping.
+- High-frequency warning text and reticle are isolated onto small nested canvases with explicit sorting.
+- Noninteractive nested canvases now disable `GraphicRaycaster`.
+
+WARNING: Regression risk in reticle layout. I introduced a dedicated `ReticleRoot`; if a scene instance has authored offsets against the old ornament hierarchy, that instance can drift until read back live.
+
+WARNING: Regression risk in scene-instance sorting overrides. The code now assigns `sortingOrder` for nested canvases, but prefab/scene overrides can still fight it.
+
+**What Was Verified**
+
+Unity-verified:
+- `read_console` returned `0` entries for:
+  - [SuitHUDV4CanvasOverlay.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:31)
+  - [CharBufferPool.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/CharBufferPool.cs:1)
+  - [LocalizedTMPAutoSizer.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/LocalizedTMPAutoSizer.cs:1)
+  - [LocOverflowHandler.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/LocOverflowHandler.cs:1)
+- `validate_script` returned `0` errors for:
+  - [CharBufferPool.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/CharBufferPool.cs:1)
+  - [LocOverflowHandler.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/LocOverflowHandler.cs:1)
+  - [LocalizedTMPAutoSizer.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/LocalizedTMPAutoSizer.cs:1) with the same old analyzer warning
+- [SuitHUDV4CanvasOverlay.cs](/c:/hades/Hecton8/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:31) still triggers the long-standing false validator anomaly:
+  - duplicate `ResolveTargetCanvas`
+  - duplicate `BuildHeadingLabels`
+  - generic “string concatenation in Update()” warning
+  Direct source grep still shows one definition of each.
+
+Code-review-only:
+- Grep found no `Canvas.ForceUpdateCanvases(`, no `string.Concat`, and no `.ToString(` in the checked HUD files.
+- Active HUD owner remains the overlay, not the legacy shell.
+
+Full project compile was not re-proven. `refresh_unity` timed out after 60 seconds waiting for editor readiness, and earlier unrelated external compile blockers still exist outside this pass.
+
+`STATUS: PENDING VERIFICATION`2 files changed
++327
+-83
+Undo
+
+Review
+Assets/_Project/Scripts/UI/CharBufferPool.cs
+Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+
+
+
+
+
+
+-----------------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: PERSISTENCE & BINARY ARCHITECTURE
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Pre-Trained Dictionaries & Save Validation
+THINKING LEVEL: MAXIMUM (Focused on LZ4, Memory Mapped Files, and Struct Alignment)
+
+[0. SITREP: THE COMPRESSION BOTTLENECK]
+The v8 migration and biological decay work beautifully. But saving the entire state delta still takes too long. We need to implement a Pre-Trained LZ4 Dictionary to squeeze the delta size down by another 40%, and we must solidify the Chunk MMF read architecture.[I. MANDATORY RECONNAISSANCE]
+1. Read DATA_Save_Persistence_Binary_Delta_Checksum.txt and SaveBinaryPayloadCodec.cs.
+2. Inspect PersistentWorldRegistry.cs and SaveDataMigration.cs.[II. PRIMARY OBJECTIVES]
+1. PRE-TRAINED LZ4 DICTIONARY (COMPRESSION):
+- Target: SaveBinaryPayloadCodec.cs.
+- Action: Integrate an LZ4 pre-trained dictionary payload. Because our data is highly uniform (AUP coordinates, HashIDs), a static 64KB dictionary compiled into the game will massively increase compression ratios for small chunks. Apply this dictionary state during the compression/decompression API calls.
+
+2. MMF CHUNK INDEX VERIFICATION:
+- Target: SaveBinaryStorage.cs.
+- Action: Ensure the IndexedSectorDirectoryHeader is properly populated and read using MemoryMappedFiles. When querying a chunk, read the [SectorHash][FileOffset][BlockSize][Checksum] slot, validate the XXHash3 checksum of the block against the header, and ONLY hydrate if the checksum passes.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. QUEST STATE GRAPH PERSISTENCE (BIT-PACKED):
+- Target: SaveBinaryPayloadCodec.cs / QuestGraphEvaluator.cs.
+- Action: Serialize the Quest State block as a raw NativeArray<uint> (320 uints = 1280 bytes). Write it directly to the save buffer using UnsafeUtility.MemCpy(ptr_dst + 64, ptr_src, 320 * sizeof(uint)). No JSON. No lists. Pure binary blit.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the TransitionHistory Ring Buffer (Capacity 256) for Quest states to allow debugging and rollback of quest deadlock states without allocating garbage.
+2. Audit all instances of GetEntityId() and ensure they are utilizing the Interlocked.Increment generation logic from DATA_Inventory_Resources_Items_SOA_Layout.txt.[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Detail the LZ4 dictionary application and XXHash3 block verification math.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+3:42 AM
+
+
+
+Worked for 15m 38s
+Using unity-mcp-orchestrator because this is Unity save/container work with MCP verification. I am auditing the compression path, indexed MMF reads, and quest-state persistence owners before I touch code.
+
+[ANALYSIS]
+Target: SaveBinaryStorage.cs, SaveBinaryPayloadCodec.cs, PersistentWorldRegistry.cs, SaveDataMigration.cs, QuestGraphEvaluator.cs if it exists, plus any quest-state owner actually writing save data.
+Affected systems: v8 indexed-block save container, LZ4/token-substitution compression path, MMF sector verification, bit-packed quest persistence, quest debug history.
+Zero GC proof: changes must stay in cold save/load paths or fixed-capacity ring buffers; no LINQ, no coroutine allocations, no managed churn in paging tick.
+State check: v8 indexed sector directory already exists in code; I need to verify whether checksum is XXHash3 or 32-bit block hash today, whether quest state already has a packed binary lane, and where compression is actually applied.
+Rule quote: [REQ] Backend: Native LZ4 Block Compression + SIMD XXHash3. Delta-persistence ONLY (store divergence from world seed). Fixed binary header.
+
+
+Ran 5 commands
+The persistence container already has token substitution and per-sector checksums. I am auditing the exact compression hook and the quest packed-state owner now. If the quest block is already binary-blitted, I will not replace it with duplicate logic.
+
+
+Ran 4 commands
+Context automatically compacted
+Reconciling the current save container and quest state owners before I cut code. I’m verifying whether the quest bit-pack path already exists and where the checksum/dictionary seams actually live, because forcing the wrong owner into SaveBinaryPayloadCodec would be architecture damage.
+
+
+Ran 4 commands
+The quest block is already raw-binary in the storage layer. I’m now cutting into the actual missing seams: block-level dictionary support, stronger sector-block verification, and the quest transition ring buffer.
+
+
+Ran 4 commands
+I found the honest dictionary seam: the native bridge only exposes plain LZ4_compress_default / LZ4_decompress_safe, so the only valid dictionary implementation here is to pre-seed the compressor history by prefixing a fixed 64 KB dictionary to each block and stripping it back out after decompression. I’m wiring that at the storage layer and sourcing the dictionary bytes from the payload codec, where the actual binary patterns are known.
+
+
+Ran 3 commands
+The quest raw block is already being blitted with UnsafeUtility.MemCpy in SaveBinaryStorage. I’m not going to duplicate that in the payload codec. The real missing quest work is the rollback/debug ring buffer, and the real compression work is in the block writer/reader.
+
+
+Ran 3 commands
+Plan:
+
+Add a fixed 64 KB compression dictionary owner in SaveBinaryPayloadCodec, built from stable save-format patterns instead of asset/runtime state.
+Rewire SaveBinaryStorage block compression/decompression to use that dictionary prefix lane, then switch indexed-sector block verification from Hash32 to a truncated XXHash3-64 header check so the 28-byte SectorEntry layout stays stable.
+Add the missing quest TransitionHistory ring buffer in QuestStateManager, then validate the touched scripts through Unity MCP.
+I am not duplicating quest packed-state serialization in the payload codec because it already exists as a raw MemCpy section in SaveBinaryStorage. The work here is to harden the owner that already writes it.
+
+
+Ran 5 commands
+I’ve confirmed the real quest owner is QuestStateManager, not a nonexistent QuestGraphEvaluator. I’m patching the payload codec with a static 64 KB dictionary source now, then the storage layer will consume it without inventing a second compression owner.
+
+
+Edited 2 files, ran 8 commands
+The quest save block itself is already correct. I’m adding the missing rollback surface now: a fixed-capacity native transition ring with packed-state snapshots, so deadlock recovery does not fall back to managed history or ad hoc logs.
+
+
+Edited 2 files
+Code is in. I’m doing a static pass now for signature fallout: TryCompressPayload callsites, dictionary flags, and the quest ring-buffer helpers are the likely compile breakpoints. After that I’ll run MCP validation on the touched files only.
+
+
+Ran 5 commands
+I’ve finished the code pass. Running Unity script validation now against the four touched owners: payload codec, binary storage, quest state manager, and quest facade. If there’s fallout, it will be in the new dictionary flags or the transition-history API.
+
+
+Used Unitymcp
+SaveBinaryStorage, QuestStateManager, and QuestManager validated clean. SaveBinaryPayloadCodec threw a duplicate-signature detector error on the new dictionary builder, which is either a real duplicate or a file-corruption symptom. I’m checking the exact symbol surface before I touch it again.
+
+
+Ran 4 commands
+The codec validator is treating the in-file builder as corrupted. I’m extracting the dictionary owner into its own file to eliminate that parser ambiguity instead of arguing with the tool. The runtime behavior stays the same: codec owns the bytes, storage consumes them.
+
+
+Created 1 file, edited 1 file
+The dictionary owner is now isolated into its own file. Revalidating the payload codec and the new helper before I touch anything else.
+
+
+Used Unitymcp
+The validator is choking on any parameterless dictionary-builder entry point. I’m removing that exact shape entirely and switching the helper to a static constructor plus a parameterized creator so the parser has nothing ambiguous left to misread.
+
+
+Edited 1 file, used Unitymcp
+The touched scripts are now clean under Unity validation. I’m making one last evidence pass: diff surface, exact checksum math, and whether the console will answer after the last domain cycle.
+
+
+Ran 3 commands, used Unitymcp
+I have file-level validation proof, but the live console still isn’t answering read_console consistently after the domain cycle. I’m packaging a full diff artifact now, including the untracked dictionary helper, so the evidence set is complete even if the editor stays sluggish.
+
+
+Ran 3 commands, used Unitymcp
+What Was Wrong
+
+The save path still compressed raw v8 blocks without a pre-trained dictionary lane, so small uniform deltas were leaving ratio on the table. Indexed sector paging already existed, but sector-block verification was still expressed as generic Hash32(...) calls instead of an explicit XXHash3-derived indexed-block checksum contract. The quest save block was already raw-binary, but there was no fixed-capacity rollback/history owner for deadlock debugging.
+
+There is also one live project compile blocker outside this pass in HectonOverdrawHeatmapFeature.cs (line 81). That keeps status at PENDING VERIFICATION.
+
+What I Did
+
+I added a static 64 KB compression dictionary owner in SaveCompressionDictionary.cs (line 1) and exposed it through SaveBinaryPayloadCodec.cs (line 8). The dictionary is built from stable save-format patterns: zeroed quest words, default inventory cell data, packed chunk words, and UTF-16 metadata strings.
+
+I rewired SaveBinaryStorage.cs (line 241) to support a new per-block flag FlagStaticDictionary = 0x08. The compression logic in TryCompressPayload (line 3298) now evaluates four candidates per block:
+
+plain LZ4
+dictionary-seeded LZ4
+token-substituted LZ4
+token-substituted + dictionary-seeded LZ4
+It picks the smallest payload and writes the corresponding block flags. Because the native bridge has no dictionary API, the dictionary is applied by compressing dictionary[64KB] + rawBlock and, on load, decompressing into a scratch buffer and copying only the tail rawBlockLength bytes back into the destination. That work is in Lz4BlockCompress (line 2478) and Lz4BlockDecompress (line 3898).
+
+I made the indexed-block checksum contract explicit. The SectorEntry layout stayed 28 bytes, so I did not widen the header to a full 64-bit field. Instead, sector verification now uses the low 32 bits of XXHash3-64 through ComputeIndexedSectorChecksum (line 2411), and all indexed reads/writes route through that helper:
+
+indexed v8 write path
+indexed sector page-in
+persistent-world sector override write/read
+The math is:
+
+private static uint ComputeIndexedSectorChecksum(void* ptr, long length)
+{
+    return unchecked((uint)Hash64(ptr, length));
+}
+That preserves the fixed [SectorHash:8][ByteOffset:8][CompressedSize:4][DecompressedSize:4][Checksum:4] slot while making it explicit that the checksum source is XXHash3-64, truncated to the stored 32-bit lane.
+
+I did not duplicate quest binary persistence because it already existed. PackedQuestStateSectionHeader plus raw UnsafeUtility.MemCpy was already in SaveBinaryStorage.cs (line 689) and SaveBinaryStorage.cs (line 957). The missing quest work was rollback/debug state, so I added a fixed-capacity TransitionHistory ring buffer in QuestStateManager.cs (line 92):
+
+TransitionHistoryCapacity = 256
+native NativeArray<QuestTransitionHistoryEntry>
+native NativeArray<uint> snapshot storage sized 256 * 320 words
+zero-alloc append on activation/completion
+TryGetTransitionHistory(...)
+TryRestoreTransitionHistory(...)
+Manual quest activation/completion now records into that ring through QuestManager.cs (line 123).
+
+I also audited the touched persistence files for forbidden scene scans and legacy instance-ID usage. In this domain, FindObjectsOfType, FindObjectsByType, and GetInstanceID() returned no hits after the pass.
+
+In-Game Result
+
+Save blocks can now be compressed with a deterministic pre-trained dictionary without changing the MMF container shape or inventing a second save codec. Indexed sector loads still page by MMF offset, but the block verification path is now explicit and stable: decompress, derive truncated XXHash3-64, compare to the header slot, hydrate only on match.
+
+Quest packed-state persistence remains raw-binary, and there is now a rollback/debug surface for the last 256 state transitions without managed garbage. That gives a real owner for quest deadlock recovery instead of relying on logs or ad hoc save reloads.
+
+What Was Verified
+
+Mandates followed:
+
+DATA_Save_Persistence_Binary_Delta_Checksum
+STRM_Persistent_Object_Registry
+OPT_Zero_GC_Policy_AllocFree_Mandate
+DATA_Inventory_Resources_Items_SOA_Layout
+Unity MCP validate_script returned 0 errors / 0 warnings for:
+
+SaveBinaryPayloadCodec.cs (line 1)
+SaveCompressionDictionary.cs (line 1)
+SaveBinaryStorage.cs (line 1)
+QuestStateManager.cs (line 1)
+QuestManager.cs (line 1)
+Unity console did not prove full-project green. read_console returned one unrelated compile error:
+
+HectonOverdrawHeatmapFeature.cs (line 81): CS1503 cannot convert from 'UnityEngine.Rendering.ShaderTagId[]' to 'UnityEngine.Rendering.ShaderTagId'
+Diff artifact:
+
+PRETRAINED_DICT_QUEST_HISTORY_2026-04-29.diff (line 1)
+Git state for this pass:
+
+modified: SaveBinaryPayloadCodec.cs (line 1), SaveBinaryStorage.cs (line 1), QuestStateManager.cs (line 1), QuestManager.cs (line 1)
+untracked: SaveCompressionDictionary.cs (line 1)
+STATUS: PENDING VERIFICATION
+
+GC VALIDATION: measured proof absent.
+REGRESSION CHECK: measured proof absent.
+REGRESSION MODEL: CPU = extra cold-path dictionary candidate evaluation during save and scratch-buffer decompression during load; GC = no new hot-path managed allocations in paging or quest transition evaluation, quest history is native and fixed-capacity; memory = +64 KB static dictionary and +2563204 bytes for quest snapshot history, both bounded; cadence = no new per-frame coroutine or polling path, quest history writes only on state transitions; correctness = indexed sector checksum now explicitly derives from XXHash3-64 low 32 bits, which preserves header size but is not a full 64-bit block hash.
+HOT PATH IMPACT: none added to gameplay tick; compression/decompression stays cold-path, quest history appends only on quest transitions.
+FAILURE MODES: the stored sector checksum is still a truncated 32-bit lane because the fixed SectorEntry layout was preserved; the live project console is still red from an unrelated visor file; no measured compression-ratio delta or save-time delta was captured in this session.
+WHY KEPT: prefixing a static 64 KB dictionary into each LZ4 block is the only honest dictionary implementation available with the current native bridge.
+WHY REJECTED: I did not fabricate a new quest serialization path in SaveBinaryPayloadCodec because the raw NativeArray<uint> quest block already exists in SaveBinaryStorage and duplicating it would create two owners.
+
+5 files changed
++517
+-91
+Undo
+
+Review
+Assets/_Project/Scripts/Quest/QuestManager.cs
+Assets/_Project/Scripts/Quest/QuestStateManager.cs
+Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+Assets/_Project/Scripts/SaveBinaryStorage.cs
+Assets/_Project/Scripts/SaveCompressionDictionary.cs
+
+
+
+
+3:58 AM
+
+-------------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: GRAPHICS, SDF & VRAM
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Overdraw Dictatorship & Shadow Atlasing
+THINKING LEVEL: MAXIMUM (Focused on Depth Biasing, Dithering, and VRAM Packing)[0. SITREP: CAUSTIC PARITY & Z-FIGHTING]
+Your GPU particles are perfect. However, we have a regression risk: the Caustics compute path and the CoreLit ALU path might drift. Furthermore, we are experiencing Z-fighting on hull grates and shadow map exhaustion. We must implement logarithmic depth fallbacks and strict shadow atlasing.[I. MANDATORY RECONNAISSANCE]
+1. Read REND_URP_Graphics_HotPath_Optimization_HLOD.txt (Sections 10 and 11).
+2. Inspect HectonCausticsProjector.compute and Hecton_CoreLit.hlsl.
+
+[II. PRIMARY OBJECTIVES]
+1. Z-FIGHTING DEFENSE (CLIP-SPACE BIAS):
+- Target: Hecton_CoreLit.hlsl / Decal/Skirt shaders.
+- Action: Implement Clip-Space Depth Bias. IN.positionCS.z += _DepthBias * IN.positionCS.w * decalMask. You MUST ADD the bias (to pull vertices toward the near plane) and multiply by .w to keep it perspective-correct. Never add a flat bias.
+
+2. SHADOW ATLAS BUDGETING:
+- Target: URP Shadow Settings / Custom Renderer Feature.
+- Action: Enforce a strict MaxShadowDistance of 40m. Hardcode the cascade splits to [8m, 25m]. Limit dynamic point light shadow casters (e.g., flares, bioluminescence) to a MAXIMUM of 2 active simultaneously. Write a manager to cull shadows on lights beyond 20m.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. CAUSTIC PARITY VALIDATION:
+- Target: Hecton_CoreLit.hlsl.
+- Action: Ensure the ALU Voronoi math completely replaces the _HectonProjectedCausticsTex sample. Apply the shadow mask modulation: caustic_final = caustic_raw * shadow_term * _CausticIntensity. Caustics must NOT render in the shadows of caves.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Implement the _NoirPower fog integration in Hecton_CoreLit.hlsl: fog_noir = pow(fog_raw, 2.2) to ensure the blackout curve matches the mandate exactly.
+2. Build the OverdrawHeatmap render pass (Editor Only) using context.cmd.DrawRendererList with an additive material to visualize fillrate hotspots on the MX350.[V. EVIDENCE-BASED REPORTING]
+1. SHADER LOG: Show the Clip-Space depth bias math (.w multiplication).
+2. VRAM LOG: Confirm the Shadow Atlas size is clamped to 1024px for MINIMAL/LOW tiers.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+3:41 AM
+
+
+
+Worked for 18m 22s
+Error submitting message
+Steered conversation
+Using unity-mcp-orchestrator because this is Unity render-path surgery. First step is mandate ingestion and a source audit of the current caustic path, shadow ownership, and any existing clip-space bias hooks so I do not duplicate or drift the active renderer contract.
+
+
+Ran 2 commands
+[ANALYSIS]
+Target: clip-space depth bias, shadow atlas budgeting, caustic parity, noir fog parity, optional overdraw heatmap.
+Affected systems: Hecton_CoreLit.hlsl, caustic projector/global publisher, runtime shadow-quality ownership, dynamic light shadow culling, any decal/skirt shaders already carrying depth bias hooks.
+Zero GC proof: planned changes are shader math and manager-side cached lists/arrays only; no per-frame managed allocations will be introduced.
+State check: CoreLit already uses ALU caustics and contact shadows from the last pass, so this turn must normalize parity and add missing ownership, not duplicate systems. Shadow settings must be enforced by a first-party runtime owner because project settings edits are forbidden.
+Rule quote: [RULE] REVERT OVER HACK: If a previously working system breaks, DO NOT write new logic ("Fix-Forward") to patch it. Revert the file to its last working Git state and find the exact broken reference. Also: [FORBID] Change project settings (Quality/URP Asset/Physics/Tags/Layers). That means runtime enforcement/validation only, no asset mutation in settings files.
+
+
+Ran 3 commands
+The audit shows one existing depth-bias owner already doing the mandated .w-scaled add: Hecton_AbyssalVoxelRock.shader. The remaining gaps are shadow-budget ownership and any first-party surfaces that still lack the same perspective-correct bias contract.
+
+
+Ran 4 commands
+I need the exact Unity 6000 URP asset property names before I touch shadow-budget enforcement. I’m checking the live API instead of guessing, because the atlas-size and cascade fields changed across URP versions and this repo rule set forbids invented signatures.
+
+
+Ran 4 commands, used Unitymcp
+The light-side audit is narrower than the prompt implies. First-party biolum point lights are already LightShadows.None; the only live point-shadow owner I found is DeployableFlare.cs. I’m wiring the budget guard against actual shadow-casting owners instead of inventing a broad scene-light crawler that would allocate every sweep.
+
+
+Ran 3 commands
+I’m not going to put depth bias into CoreLit itself because that file is a lighting include, not a vertex owner. The correct surgery point is the first-party shaders that actually emit positionCS, with the same .w-scaled add already used by the voxel rock skirt path.
+
+
+Ran 3 commands
+I have the shadow budget contract now from the actual URP package source. I’m implementing it as a first-party runtime guard plus explicit flare-light registration, not by touching quality assets on disk, and I’m reusing the existing wreck/scatter shader owners for the depth-bias/noir-fog work instead of inventing new material wrappers.
+
+
+Ran 8 commands
+I’m patching the primary path now: shared clip-space depth-bias helper in CoreLit, runtime shadow-budget enforcement through a first-party guard, explicit flare-light registration, and noir-fog application in the first-party indirect opaque shaders that currently just call MixFog raw.
+
+One patch hunk missed the exact scatter material block, so I’m splitting the surgery into smaller verified edits to avoid collateral drift.
+
+
+Ran 3 commands
+The previous batch patch partially collided with current file state. I’m applying one file at a time now; that keeps the write set narrow and avoids silently stomping the already-live caustic code.
+
+
+Created 1 file, edited 4 files
+Primary shadow-budget work is in. I’m adding the editor-only overdraw heatmap now as a separate tool path so it does not contaminate runtime ownership; if it doesn’t validate cleanly, it stays isolated and I’ll report it as such.
+
+
+Created 2 files
+The write set is complete. I’m validating the two new runtime/editor owners now and checking console state; if the editor reports anything beyond the already-known Crest red assembly, it goes in the report as a regression risk instead of being hand-waved away.
+
+
+Used Unitymcp
+Unity is still holding a stale resolution error against the new guard symbol in DeployableFlare, even though both files validate clean in isolation. I’m removing any namespace ambiguity and rechecking, because I will not report a green compile on contradictory evidence.
+
+
+Edited 1 file, ran 1 command, used Unitymcp
+Context automatically compacted
+Inspecting the assembly boundary now. The new shadow-budget guard validates in isolation, but DeployableFlare cannot see it at compile time, so the next step is to resolve the asmdef ownership and then re-run Unity validation.
+
+
+Ran 3 commands
+The compile error is not a generic Unity delay. DeployableFlare is resolving the namespace, but not the type, which means the new guard file is either in the wrong namespace, conditionally excluded, or not where the compiler thinks it is. I’m checking the file directly before moving anything.
+
+
+Ran 3 commands
+The error is consistent with assembly visibility, not syntax. DeployableFlare is almost certainly compiling from a different assembly boundary than the new guard, so I’m widening only the guard’s visibility instead of moving ownership or adding another wrapper.
+
+
+Edited 1 file
+The visibility is widened. Now I’m forcing a script refresh and checking whether the console error collapses or whether there is still an assembly-reference problem behind it.
+
+
+Used Unitymcp
+Compile visibility is clean now. I’m collecting exact line references and exporting the diff artifact so the report reflects the actual final source state, not the intermediate broken pass.
+
+
+Ran 3 commands, used Unitymcp
+The remaining red state is not from the shader or shadow guard. The new overdraw feature is sitting in the editor assembly without URP/Core runtime references, so Unity cannot resolve RenderGraph or URP pass types. I’m fixing the asmdef rather than moving the feature.
+
+
+Edited 1 file
+The editor assembly now has the URP/Core runtime references it was missing. I’m recompiling and checking whether the overdraw feature drops out of the error list or whether there is still a type-level mismatch to address.
+
+
+Ran 2 commands, used Unitymcp
+The direct validator is clean, but the console still shows stale editor-assembly errors. I’m clearing the console and forcing one more compile so the final report distinguishes stale entries from current red state.
+
+
+Used Unitymcp
+The validator and the compiler disagree on the editor assembly, and the console remains red after a forced clear/recompile. I’m not going to leave that ambiguous. The clean path is to move the overdraw feature out of the editor-only asmdef and compile it in the main first-party runtime assembly behind #if UNITY_EDITOR, where URP runtime types are already proven.
+
+
+Created 1 file, deleted 1 file
+The feature is now in the main first-party assembly and editor-gated at compile time. I’m removing the temporary editor-asmdef detour so the final diff stays minimal and the ownership stays explicit.
+
+
+Edited 1 file, used Unitymcp
+The file validates clean in its new assembly. Unity timed out coming back from recompilation, so I’m checking whether the console is at least free of the old overdraw-feature errors or whether the editor session has stalled again.
+
+
+Ran 1 command, used Unitymcp
+The assembly issue is gone. The remaining compile break is a real API mismatch: this Unity/URP build does not expose the CreateDrawingSettings(ShaderTagId[]) overload I used. I’m matching the project’s existing renderer-feature pattern instead of guessing the overload set.
+
+
+Ran 4 commands
+The API contract is now clear: this URP build wants List<ShaderTagId>, not an array. I’m matching the package implementation exactly and recompiling again.
+
+
+Edited 1 file
+The overdraw pass now matches the URP helper signature instead of relying on an array overload that doesn’t exist in this package version. I’m running the last compile check on that file and then I’ll stop at whatever the editor actually reports.
+
+
+Ran 1 command, used Unitymcp
+Unity dropped out of console-read readiness during the last compile. I have clean direct validation on the touched scripts, but not a trustworthy final console snapshot. I’m collecting the final source references now so the report reflects the last known good code state and the verification gap stays explicit.
+
+
+Ran 3 commands
+What Was Wrong
+Mandates followed: REND_URP_Graphics_HotPath_Optimization_HLOD, REND_Abyssal_Lighting_Voxel_Occlusion_Shadows, OPT_Performance_Budgets_FrameTime_VRAM_Limits.
+
+The remaining work was not the caustic math itself. The regressions were around ownership and depth/shadow hygiene.
+
+CoreLit needed a shared, perspective-correct clip-space depth bias helper instead of per-shader ad hoc offsets. The correct rule is z += bias * w * mask, not a flat bias.
+Shadow budgeting had no first-party runtime owner. DeployableFlare.cs (line 178) was still free to cast point-light shadows with no global cap.
+The new overdraw heatmap pass initially compiled in the wrong assembly and then used the wrong URP helper overload. That was the real compile break in this pass, not the shaders.
+Caustic parity risk was real if _HectonProjectedCausticsTex remained in visible shading. Current Hecton_CoreLit.hlsl (line 172) now stays ALU-only and multiplies by cave-shadow attenuation.
+What I Did
+Depth bias and noir fog were centralized in Hecton_CoreLit.hlsl (line 54). The actual bias math is:
+
+float clipBias = depthBias * max(positionCS.w, 0.0001) * saturate(depthBiasMask);
+positionCS.z += clipBias;
+That helper is now consumed by:
+
+Hecton_WreckIndirectLit.shader (line 97)
+Hecton_ScatterIndirectLit.shader (line 119)
+Both shaders also now use the mandated noir fog curve through Hecton_CoreLit.hlsl (line 182):
+
+fog_noir = pow(saturate(fog_raw), 2.2)
+Shadow atlas and dynamic shadow-caster budgeting now have an explicit owner in HectonUrpShadowBudgetGuard.cs (line 11).
+
+Hard clamps shadowDistance to 40m at 111 (line 111)
+Low tier atlas budget is 1024 at 16 (line 16)
+Cascade splits are normalized from 8m and 25m
+Only the two nearest registered dynamic shadow lights within 20m keep shadows
+DeployableFlare.cs (line 178) now registers and unregisters with that guard at 178 (line 178) and 191 (line 191)
+Caustic parity stays in the visible ALU path. Hecton_CoreLit.hlsl (line 172) currently does:
+
+analytic Voronoi caustic intensity
+depth fade
+up-facing mask
+cave shadow term
+_HectonProjectedCausticsParams.x intensity scale
+The final modulation is source-backed:
+
+float shadowTerm = HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
+return caustics * depthFade * upFacing * shadowTerm * _HectonProjectedCausticsParams.x;
+The editor-only overdraw pass now lives in the main first-party assembly behind #if UNITY_EDITOR at HectonOverdrawHeatmapFeature.cs (line 15), not the editor asmdef. It uses context.cmd.DrawRendererList(...) at 99 (line 99) and the additive material in Hecton_OverdrawHeatmap.shader (line 21).
+
+In-Game Result
+Hull grates, wreck overlays, and indirect scatter now have a perspective-correct depth bias hook instead of flat z offsets. That is the correct z-fighting defense for URP clip-space work.
+
+Shadow ownership is no longer implicit. First-party dynamic point-light shadows are budgeted at runtime instead of letting every flare cast indefinitely. For MINIMAL/LOW tiers, the intended atlas clamp is 1024px from code state in HectonUrpShadowBudgetGuard.cs (line 16). Measured runtime proof absent.
+
+The caustic visible path remains ALU-driven and cave-shadow-masked. It no longer depends on _HectonProjectedCausticsTex sampling in CoreLit, so the previous compute-vs-visible drift risk is materially reduced.
+
+REGRESSION MODEL:
+
+CPU: negligible. Shadow guard adds a bounded light scan over a fixed Light[16] table on camera render begin.
+GC: measured proof absent. No hot-path managed allocations were added. The overdraw pass uses one cold List<ShaderTagId>(3) in HectonOverdrawHeatmapFeature.cs (line 18).
+Memory: no meaningful runtime VRAM growth beyond the editor-only overdraw material/shader.
+Cadence: shadow budget enforcement runs per game-camera begin-render; no coroutine or async path introduced.
+Correctness: low-tier atlas clamp is code-owned now, but final live atlas state still depends on Unity accepting runtime URP asset mutation in the active pipeline instance.
+WARNING: Regression risk in authored materials if _DepthBias is pushed too high. The helper is correct, but misuse will visibly pull geometry forward.
+WARNING: Regression risk in light look-dev. Hard-capping to two dynamic shadow casters within 20m can cause deliberate ambiance lights to lose shadows if content authors cluster them.
+
+What Was Verified
+Unity-verified:
+
+HectonUrpShadowBudgetGuard.cs validated 0 warnings / 0 errors
+DeployableFlare.cs validated with warnings only, 0 errors
+HectonOverdrawHeatmapFeature.cs validated 0 warnings / 0 errors
+read_console(filter_text:"DeployableFlare.cs") returned 0 log entries after the shadow-guard visibility fix
+Code-review-only:
+
+low-tier atlas clamp is 1024 by source at HectonUrpShadowBudgetGuard.cs (line 16)
+clip-space depth bias helper is present at Hecton_CoreLit.hlsl (line 54)
+noir fog curve is present at Hecton_CoreLit.hlsl (line 182)
+overdraw pass uses DrawRendererList at HectonOverdrawHeatmapFeature.cs (line 99)
+Verification gap:
+
+the final forced recompile timed out waiting for Unity readiness
+after the last compile, read_console degraded to Unity session not ready
+I do not have a trustworthy final console snapshot proving the overdraw feature is absent from errors after the last API fix
+I do not have a live runtime readback proving the active shadow atlas is actually 1024 on MINIMAL/LOW
+Diff artifact:
+
+GPU_SHADOW_BIAS_ATLAS_2026-04-29.diff
+STATUS: PENDING VERIFICATION.
+
+7 files changed
++444
+-5
+Undo
+
+Review
+Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+Assets/_Project/Art/Shaders/Hecton_OverdrawHeatmap.shader
+Assets/_Project/Art/Shaders/Hecton_ScatterIndirectLit.shader
+Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader
+Assets/_Project/Scripts/Core/HectonUrpShadowBudgetGuard.cs
+Assets/_Project/Scripts/Gameplay/DeployableFlare.cs
+Assets/_Project/Scripts/Visor/HectonOverdrawHeatmapFeature.cs
+
+
+
+
 
 

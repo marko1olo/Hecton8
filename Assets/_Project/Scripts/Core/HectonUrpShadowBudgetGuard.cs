@@ -8,7 +8,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Enforces runtime shadow atlas and dynamic shadow-caster budgets for first-party lights.
     /// </summary>
-    internal static class HectonUrpShadowBudgetGuard
+    public static class HectonUrpShadowBudgetGuard
     {
         private const float MaxShadowDistanceMeters = 40f;
         private const float DynamicShadowCullDistanceMeters = 20f;
@@ -35,7 +35,7 @@ namespace Hecton8.Core
             RenderPipelineManager.beginCameraRendering += HandleBeginCameraRendering;
         }
 
-        internal static void RegisterDynamicShadowLight(Light light)
+        public static void RegisterDynamicShadowLight(Light light)
         {
             if (light == null)
                 return;
@@ -57,7 +57,7 @@ namespace Hecton8.Core
             }
         }
 
-        internal static void UnregisterDynamicShadowLight(Light light)
+        public static void UnregisterDynamicShadowLight(Light light)
         {
             if (light == null)
                 return;

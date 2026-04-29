@@ -175,7 +175,7 @@ namespace Hecton8.Gameplay
 
             // Initialize light
             InitializeLight();
-            HectonUrpShadowBudgetGuard.RegisterDynamicShadowLight(pointLight);
+            Hecton8.Core.HectonUrpShadowBudgetGuard.RegisterDynamicShadowLight(pointLight);
         }
 
         private void OnEnable()
@@ -188,7 +188,7 @@ namespace Hecton8.Gameplay
             // Unregister from tick system
             UnregisterFromTick();
             UnregisterSpatialHandle();
-            HectonUrpShadowBudgetGuard.UnregisterDynamicShadowLight(pointLight);
+            Hecton8.Core.HectonUrpShadowBudgetGuard.UnregisterDynamicShadowLight(pointLight);
         }
 
         // ══════════════════════════════════════════════════════════

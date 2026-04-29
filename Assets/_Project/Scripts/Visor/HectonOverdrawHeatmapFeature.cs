@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -14,7 +15,8 @@ namespace Hecton8.EditorTools
     public sealed class HectonOverdrawHeatmapFeature : ScriptableRendererFeature
     {
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_OverdrawHeatmap.shader";
-        private static readonly ShaderTagId[] ShaderTagIds =
+        // COLD ALLOC: List<ShaderTagId>[3] — renderer-list pass tags for overdraw heatmap — owner: HectonOverdrawHeatmapFeature
+        private static readonly List<ShaderTagId> ShaderTagIds = new List<ShaderTagId>(3)
         {
             new ShaderTagId("UniversalForward"),
             new ShaderTagId("UniversalForwardOnly"),

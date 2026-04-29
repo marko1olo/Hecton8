@@ -1018,7 +1018,7 @@ namespace Hecton8.UI
             AutoResolve(forceResolve);
             NormalizeCanvas();
             EnsureHierarchy();
-            RefreshVisuals(dt);
+            RefreshVisuals(dt, refreshMediumCadence: true, refreshSlowCadence: true);
         }
 
         private void QueueRuntimeCanvasRefresh(bool forceResolve, bool refreshDepthSignal)
@@ -1048,7 +1048,7 @@ namespace Hecton8.UI
                 RefreshDepthSignalSubscription();
 
             if (_layoutBuilt && _root != null && targetCanvas != null)
-                RefreshVisuals(0.016f);
+                RefreshVisuals(0.016f, refreshMediumCadence: true, refreshSlowCadence: true);
 
             bool ready = IsRuntimeHierarchyReady();
             _pendingRuntimeCanvasRefresh = !ready;
@@ -4149,6 +4149,15 @@ namespace Hecton8.UI
 
         private void InvalidateVisualCaches()
         {
+            _uiCadenceFrame = 0;
+            _quickbarVisualsInitialized = false;
+            _lastStreamedOxygen01 = float.NaN;
+            _lastStreamedPower01 = float.NaN;
+            _lastStreamedHealth01 = float.NaN;
+            _lastStreamedDepthMeters = float.NaN;
+            _lastStreamedTemperature = float.NaN;
+            _lastStreamedPressure = float.NaN;
+            _lastStreamedHeadingDegrees = float.NaN;
             _appliedSuitLabelVersion = int.MinValue;
             _appliedSuitLabelColor = default;
             _appliedHeadingLabelVersion = int.MinValue;

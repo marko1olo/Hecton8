@@ -123,6 +123,7 @@ namespace Hecton8.Quest
             if (_stateManager == null || !_stateManager.TryActivateQuest(questHash, out int questIndex))
                 return;
 
+            _stateManager.RecordManualTransition(questIndex, completed: false);
             EmitQuestTransition(questIndex, completed: false);
         }
 
@@ -134,6 +135,7 @@ namespace Hecton8.Quest
             if (_stateManager == null || !_stateManager.TryCompleteQuest(questHash, out int questIndex))
                 return;
 
+            _stateManager.RecordManualTransition(questIndex, completed: true);
             EmitQuestTransition(questIndex, completed: true);
         }
 
