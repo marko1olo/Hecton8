@@ -195,7 +195,7 @@ namespace Hecton8.SaveSystem
                 || !ReadInventory(ref reader, data.version, out data.inventory)
                 || !ReadWorldState(ref reader, out data.worldState)
                 || !ReadProceduralWorldState(ref reader, data.version, out data.proceduralWorldState)
-                || !ReadConstruction(ref reader, out data.construction)
+                || !ReadConstruction(ref reader, data.version, out data.construction)
                 || !ReadScanLog(ref reader, out data.scanLog)
                 || !ReadBarter(ref reader, out data.barter)
                 || !ReadFieldOperationLog(ref reader, out data.fieldOperations)
@@ -610,14 +610,35 @@ namespace Hecton8.SaveSystem
         private static bool WriteConstruction(ref BufferWriter writer, ConstructionDTO value)
         {
             return writer.WriteInt(value.moduleCount)
-                && WriteModuleArray(ref writer, value.modules);
+                && WriteModuleArray(ref writer, value.modules)
+                && writer.WriteInt(value.graphNodeCount)
+                && WriteModuleGraphNodeArray(ref writer, value.graphNodes)
+                && writer.WriteInt(value.graphEdgeCount)
+                && WriteModuleGraphEdgeArray(ref writer, value.graphEdges);
         }
 
-        private static bool ReadConstruction(ref BufferReader reader, out ConstructionDTO value)
+        private static bool ReadConstruction(ref BufferReader reader, int version, out ConstructionDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.moduleCount)
-                && ReadModuleArray(ref reader, out value.modules);
+            if (!reader.ReadInt(out value.moduleCount) ||
+                !ReadModuleArray(ref reader, out value.modules))
+            {
+                return false;
+            }
+
+            if (version >= 47)
+            {
+                return reader.ReadInt(out value.graphNodeCount)
+                    && ReadModuleGraphNodeArray(ref reader, out value.graphNodes)
+                    && reader.ReadInt(out value.graphEdgeCount)
+                    && ReadModuleGraphEdgeArray(ref reader, out value.graphEdges);
+            }
+
+            value.graphNodeCount = 0;
+            value.graphNodes = null;
+            value.graphEdgeCount = 0;
+            value.graphEdges = null;
+            return true;
         }
 
         private static bool WriteScanLog(ref BufferWriter writer, ScanLogDTO value)
@@ -1060,6 +1081,52 @@ namespace Hecton8.SaveSystem
                 && reader.ReadByte(out value.failureMode);
         }
 
+        private static bool WriteModuleGraphNode(ref BufferWriter writer, in ModuleGraphNodeDTO value)
+        {
+            return writer.WriteString(value.prefabId)
+                && writer.WriteInt(value.moduleHashId)
+                && writer.WriteLong(value.aupGridX)
+                && writer.WriteLong(value.aupGridY)
+                && writer.WriteLong(value.aupGridZ)
+                && writer.WriteFloat(value.aupLocalX)
+                && writer.WriteFloat(value.aupLocalY)
+                && writer.WriteFloat(value.aupLocalZ)
+                && writer.WriteFloat(value.rotX)
+                && writer.WriteFloat(value.rotY)
+                && writer.WriteFloat(value.rotZ)
+                && writer.WriteFloat(value.rotW);
+        }
+
+        private static bool ReadModuleGraphNode(ref BufferReader reader, out ModuleGraphNodeDTO value)
+        {
+            value = default;
+            return reader.ReadString(out value.prefabId)
+                && reader.ReadInt(out value.moduleHashId)
+                && reader.ReadLong(out value.aupGridX)
+                && reader.ReadLong(out value.aupGridY)
+                && reader.ReadLong(out value.aupGridZ)
+                && reader.ReadFloat(out value.aupLocalX)
+                && reader.ReadFloat(out value.aupLocalY)
+                && reader.ReadFloat(out value.aupLocalZ)
+                && reader.ReadFloat(out value.rotX)
+                && reader.ReadFloat(out value.rotY)
+                && reader.ReadFloat(out value.rotZ)
+                && reader.ReadFloat(out value.rotW);
+        }
+
+        private static bool WriteModuleGraphEdge(ref BufferWriter writer, in ModuleGraphEdgeDTO value)
+        {
+            return writer.WriteInt(value.sourceNodeIndex)
+                && writer.WriteInt(value.destinationNodeIndex);
+        }
+
+        private static bool ReadModuleGraphEdge(ref BufferReader reader, out ModuleGraphEdgeDTO value)
+        {
+            value = default;
+            return reader.ReadInt(out value.sourceNodeIndex)
+                && reader.ReadInt(out value.destinationNodeIndex);
+        }
+
         private static bool WriteInventoryCellArray(ref BufferWriter writer, InventoryCellDTO[] values)
         {
             return WriteCustomArray(ref writer, values, WriteInventoryCell);
@@ -1158,6 +1225,26 @@ namespace Hecton8.SaveSystem
         private static bool ReadModuleArray(ref BufferReader reader, out ModuleDTO[] values)
         {
             return ReadCustomArray(ref reader, out values, ReadModule);
+        }
+
+        private static bool WriteModuleGraphNodeArray(ref BufferWriter writer, ModuleGraphNodeDTO[] values)
+        {
+            return WriteCustomArray(ref writer, values, WriteModuleGraphNode);
+        }
+
+        private static bool ReadModuleGraphNodeArray(ref BufferReader reader, out ModuleGraphNodeDTO[] values)
+        {
+            return ReadCustomArray(ref reader, out values, ReadModuleGraphNode);
+        }
+
+        private static bool WriteModuleGraphEdgeArray(ref BufferWriter writer, ModuleGraphEdgeDTO[] values)
+        {
+            return WriteCustomArray(ref writer, values, WriteModuleGraphEdge);
+        }
+
+        private static bool ReadModuleGraphEdgeArray(ref BufferReader reader, out ModuleGraphEdgeDTO[] values)
+        {
+            return ReadCustomArray(ref reader, out values, ReadModuleGraphEdge);
         }
 
         private static bool WriteStringArray(ref BufferWriter writer, string[] values)

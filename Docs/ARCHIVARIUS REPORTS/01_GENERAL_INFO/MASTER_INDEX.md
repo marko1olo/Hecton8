@@ -23,9 +23,9 @@ This index is path-accurate, not truth-uniform.
 | Bucket | Count |
 |---|---:|
 | `01_GENERAL_INFO` markdown files | 22 |
-| `02_ACTUAL_REPORTS` markdown files | 43 |
+| `02_ACTUAL_REPORTS` markdown files | 46 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| **Total files covered by this index** | **66** |
+| **Total files covered by this index** | **69** |
 
 ---
 
@@ -110,6 +110,9 @@ This index is path-accurate, not truth-uniform.
 | `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | This reverification pass over folders `01` and `02` |
 | `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md` | Trust-boundary note clarifying that the 2026-04-29 reverification layer is no longer the newest active anchor |
 | `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md` | Current continuation log for the next-day active docset expansion |
+| `2026-04-30_EDITOR_RUNTIME_FORENSICS.md` | Current live-console and source-backed forensic follow-up for editor/runtime debt |
+| `2026-04-30_SERVICE_AUTHORITY_DRIFT.md` | Current source-backed audit of mixed singleton, `DontDestroyOnLoad`, and `GlobalRegistry` service authority |
+| `2026-04-30_PERSISTENCE_AND_SCENE_SEARCH_DRIFT.md` | Current source-backed audit of runtime persistence surfaces outside `SaveManager` and runtime scene-search fallback debt |
 | `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md` | Detailed runtime authority matrix for `GlobalRegistry` publishers and bootstrap fallback coverage |
 | `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` | Broad `ISaveable` participant ledger and observed priority-band map |
 | `2026-04-28_LIAR_DETECTION.md` | Claim-vs-code liar detection |

@@ -636,6 +636,23 @@ namespace Hecton8.AI
             return TryResolveObstacleAvoidanceDirection(_cachedSelfForward, _queuedObstacleRayLength, out avoidanceDirection, out obstaclePressure01);
         }
 
+        internal bool TryGetForwardObstacleSurface(out Vector3 surfaceNormal, out float obstaclePressure01)
+        {
+            surfaceNormal = Vector3.zero;
+            obstaclePressure01 = 0f;
+
+            if (!_hasDeferredForwardObstacleHit || _deferredForwardObstacleHit.collider == null)
+                return false;
+
+            float rayLength = Mathf.Max(avoidanceRange, _queuedObstacleRayLength);
+            if (_deferredForwardObstacleHit.distance <= 0f || _deferredForwardObstacleHit.distance > rayLength)
+                return false;
+
+            surfaceNormal = _deferredForwardObstacleHit.normal;
+            obstaclePressure01 = 1f - Mathf.Clamp01(_deferredForwardObstacleHit.distance / Mathf.Max(rayLength, 0.001f));
+            return obstaclePressure01 > 0f && surfaceNormal.sqrMagnitude > 0.0001f;
+        }
+
         public Transform GetPlayerTransform() => _playerTransform;
 
         private bool TryResolveObstacleAvoidanceDirection(

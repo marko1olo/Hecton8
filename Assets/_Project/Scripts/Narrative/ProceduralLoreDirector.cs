@@ -15,6 +15,9 @@ namespace Hecton8.Narrative
     [AddComponentMenu("Hecton8/Narrative/Procedural Lore Director")]
     public sealed class ProceduralLoreDirector : MonoBehaviour, ISlowTickable, ISaveable
     {
+        private const float CatalogFallbackRetryIntervalSeconds = 2f;
+        private const float PickupTemplateFallbackRetryIntervalSeconds = 2f;
+
         private struct ActiveLorePlacement
         {
             public string discoveryId;
@@ -62,6 +65,8 @@ namespace Hecton8.Narrative
         private bool _registeredToSave;
         private bool _poolWarmed;
         private bool _needsRespawn;
+        private float _nextCatalogResolveTime;
+        private float _nextPickupTemplateResolveTime;
 
         /// <inheritdoc />
         public int SavePriority => 208;
@@ -330,6 +335,10 @@ namespace Hecton8.Narrative
             if (_catalogCount > 0)
                 return true;
 
+            if (Time.unscaledTime < _nextCatalogResolveTime)
+                return false;
+
+            _nextCatalogResolveTime = Time.unscaledTime + CatalogFallbackRetryIntervalSeconds;
             PDADataLogTab[] tabs = UnityEngine.Object.FindObjectsByType<PDADataLogTab>(FindObjectsInactive.Include);
             if (tabs == null || tabs.Length == 0)
                 return false;
@@ -342,7 +351,10 @@ namespace Hecton8.Narrative
 
                 _catalogCount = tab.CopyCatalog(_catalogBuffer);
                 if (_catalogCount > 0)
+                {
+                    _nextCatalogResolveTime = 0f;
                     return true;
+                }
             }
 
             return false;
@@ -353,6 +365,10 @@ namespace Hecton8.Narrative
             if (_pickupTemplate != null)
                 return true;
 
+            if (Time.unscaledTime < _nextPickupTemplateResolveTime)
+                return false;
+
+            _nextPickupTemplateResolveTime = Time.unscaledTime + PickupTemplateFallbackRetryIntervalSeconds;
             AudioLogPickup[] pickups = UnityEngine.Object.FindObjectsByType<AudioLogPickup>(FindObjectsInactive.Include);
             if (pickups == null || pickups.Length == 0)
                 return false;
@@ -364,6 +380,7 @@ namespace Hecton8.Narrative
                     continue;
 
                 _pickupTemplate = pickup;
+                _nextPickupTemplateResolveTime = 0f;
                 return true;
             }
 

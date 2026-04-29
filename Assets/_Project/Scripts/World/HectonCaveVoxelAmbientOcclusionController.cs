@@ -13,6 +13,8 @@ namespace Hecton8.World
     public sealed class HectonCaveVoxelAmbientOcclusionController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         private const float BaselineEpsilon = 0.0005f;
+        private const float ViewerFallbackRetryIntervalSeconds = 2f;
+        private const float VolumeFallbackRefreshIntervalSeconds = 2f;
 
         [Header("-- References ----------------")]
         [Tooltip("Optional explicit viewer transform. Falls back to the player transform and main camera.")]
@@ -49,6 +51,8 @@ namespace Hecton8.World
         private float _lastAppliedAmbientIntensity = -1f;
         private float _lastAppliedReflectionIntensity = -1f;
         private Camera _fallbackViewerCamera;
+        private float _nextViewerFallbackResolveTime;
+        private float _nextVolumeFallbackRefreshTime;
 
         private void Awake()
         {
@@ -165,8 +169,11 @@ namespace Hecton8.World
 
             if (viewerCamera == null)
             {
-                if (_fallbackViewerCamera == null)
+                if (_fallbackViewerCamera == null && Time.unscaledTime >= _nextViewerFallbackResolveTime)
+                {
                     _fallbackViewerCamera = Object.FindAnyObjectByType<Camera>(FindObjectsInactive.Exclude);
+                    _nextViewerFallbackResolveTime = Time.unscaledTime + ViewerFallbackRetryIntervalSeconds;
+                }
 
                 viewerCamera = _fallbackViewerCamera;
             }
@@ -185,6 +192,13 @@ namespace Hecton8.World
             }
 
             _volumeBuffer.Clear();
+            if (Time.unscaledTime < _nextVolumeFallbackRefreshTime)
+            {
+                _debugVolumeCount = 0;
+                return;
+            }
+
+            _nextVolumeFallbackRefreshTime = Time.unscaledTime + VolumeFallbackRefreshIntervalSeconds;
             HectonVoxelVolume[] fallbackVolumes =
                 Object.FindObjectsByType<HectonVoxelVolume>(
                     FindObjectsInactive.Exclude); // COLD ALLOC: HectonVoxelVolume[] - fallback cave AO scan when WorldCaveDirector is unavailable - owner: HectonCaveVoxelAmbientOcclusionController

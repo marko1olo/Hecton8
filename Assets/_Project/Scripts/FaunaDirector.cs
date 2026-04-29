@@ -1767,8 +1767,10 @@ namespace Hecton8.AI
             _availablePoolCountsPerBiome ??= new Dictionary<FaunaBiomeData, int[]>(capacity);
             _prefabTypeIndexLookup ??= new Dictionary<FaunaBiomeData, Dictionary<GameObject, int>>(capacity);
             _countsPerChunk ??= new Dictionary<long, int>(32);
+            // COLD ALLOC: Dictionary<long,int>[32] — predator budget counts keyed by 1 km fauna sector — owner: FaunaDirector
             _predatorCountsPerSector ??= new Dictionary<long, int>(32);
             _largeThreatCountsPerMacroZone ??= new Dictionary<long, int>(16);
+            // COLD ALLOC: List<EntityDataRecord>[64] — MMF-backed Tier 2 fauna restore scratch buffer — owner: FaunaDirector
             _persistedFaunaRestoreScratch ??= new List<EntityDataRecord>(64);
 
             _biomeLookup.Clear();
@@ -3511,6 +3513,7 @@ namespace Hecton8.AI
             if (resolvedPrefab == null)
                 return false;
 
+            int biomeIndex = biomeData.biomeIndex;
             uint uniqueInstanceUid = IsApexPredatorArchetype(selectedEntry.archetype, selectedEntry.isLargeThreat)
                 ? BuildApexFaunaInstanceUid(selectedEntry.archetype, in spawnMacroZone)
                 : BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIndex, spawnChunk, spawnPosition);
@@ -3526,7 +3529,6 @@ namespace Hecton8.AI
             if (instance == null)
                 return false;
 
-            int biomeIndex = biomeData.biomeIndex;
             int typeIndex = selectedEntry.creatureTypeIndex;
 
             if (instance.TryGetComponent(out FaunaBrain ai))

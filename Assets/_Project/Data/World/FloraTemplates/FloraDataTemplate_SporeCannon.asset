@@ -15,13 +15,32 @@ MonoBehaviour:
   stableId: flora.spore_cannon
   displayName: Spore Cannon
   vegetationType: 0
+  category: 2
   semanticType: 0
-  biomeLayer: 0
-  harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
-  lootItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  biomeLayer: 1
+  harvestTemplate: {fileID: 11400000, guid: 2971cc2971e94534b9fb360aa24e88e6, type: 2}
+  lootItem: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
   lootHashId: 0
   vulnerabilityMask: 3
-  audioMaterialId: 1
-  attachmentSurface: 1
-  bioluminescenceColor: {r: 0.94, g: 0.84, b: 0.22, a: 0.88}
+  audioMaterialId: 2
+  maxHealth: 6.4
+  growthTimeSeconds: 640
+  attachmentSurface: 2
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 1763030639931520439, guid: e5f7554e7f0af4048a852263bd58c011, type: 3}
+  proxyShape: 2
+  boundingBoxCenter: {x: 0, y: 0.71, z: 0}
+  boundingBoxSize: {x: 0.88, y: 1.42, z: 0.88}
+  cutVfxSocketLocal: {x: 0, y: 0.49699998, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.96559995, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.22719999, z: 0}
+  bioluminescenceColor: {r: 0.62, g: 0.9, b: 0.22, a: 0.72}
   pulseFrequency: 0.74
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

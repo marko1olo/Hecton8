@@ -470,13 +470,14 @@ namespace Hecton8.Core
             _debugTotalPooled = total;
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private static void WarnExpand(GameObject prefab, string reason)
         {
             string prefabName = prefab != null ? prefab.name : "NullPrefab";
             string report = $"[ObjectPoolManager] '{prefabName}': {reason} Consider increasing Warmup count.";
             RuntimeDiagnosticsTrace.WriteEvent("pool", report);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(report);
+#endif
         }
 
         /// <summary>
@@ -526,6 +527,19 @@ namespace Hecton8.Core
                 if (delaySeconds <= 0f)
                 {
                     ObjectPoolManager pool = ObjectPoolManager.Instance;
+                    if (pool != null)
+                        pool.Despawn(gameObject);
+                    return;
+                }
+
+                if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                {
+                    ObjectPoolManager pool = ObjectPoolManager.Instance;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogError(
+                        "[ObjectPoolManager] DespawnTimer requested before SystemDispatcher was ready. Falling back to immediate despawn.",
+                        this);
+#endif
                     if (pool != null)
                         pool.Despawn(gameObject);
                     return;

@@ -554,14 +554,14 @@ namespace Hecton8.Construction
                     continue;
 
                 bool shouldLock = false;
-                if (module.IsEmergencyAirlock)
+                if (module.IsEmergencyAirlock && baseModule.IntegrityState == BaseModuleIntegrityState.Pristine)
                 {
                     int edgeStart = _edgeOffsets[nodeIndex];
                     int edgeEnd = _edgeOffsets[nodeIndex + 1];
                     for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                     {
                         BaseModule adjacentModule = _moduleBuffer[_edgeDestinations[edgeIndex]].BaseModule;
-                        if (adjacentModule != null && adjacentModule.IsBreached)
+                        if (adjacentModule != null && adjacentModule.IntegrityState == BaseModuleIntegrityState.Ruptured)
                         {
                             shouldLock = true;
                             break;

@@ -15,21 +15,32 @@ MonoBehaviour:
   stableId: flora.thermal_tubeworm
   displayName: Thermal Tubeworm
   vegetationType: 1
-  semanticType: 3
-  biomeLayer: 1
-  harvestTemplate: {fileID: 11400000, guid: 2971cc2971e94534b9fb360aa24e88e6, type: 2}
-  lootItem: {fileID: 11400000, guid: 91d1c706ac87dda4c939dcef146bcbd1, type: 2}
+  category: 1
+  semanticType: 5
+  biomeLayer: 2
+  harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
+  lootItem: {fileID: 11400000, guid: 207b8a178c42b574faf975e2455bcf7b, type: 2}
   lootHashId: 0
   vulnerabilityMask: 16
   audioMaterialId: 1
+  maxHealth: 7.8
+  growthTimeSeconds: 720
   attachmentSurface: 3
-  bioluminescenceColor: {r: 0.94, g: 0.62, b: 0.18, a: 0.38}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 2311431147385920850, guid: 94f615d3baa121a4583890d7162ca1b9, type: 3}
+  proxyShape: 3
+  boundingBoxCenter: {x: 0, y: 0.925, z: 0}
+  boundingBoxSize: {x: 0.92, y: 1.85, z: 0.92}
+  cutVfxSocketLocal: {x: 0, y: 0.6475, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 1.258, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.296, z: 0}
+  bioluminescenceColor: {r: 0.98, g: 0.44, b: 0.18, a: 0.72}
   pulseFrequency: 0.66
-  parasiticToModules: 1
-  modulePowerDrainWatts: 24
-  moduleInfectionStrength: 0.88
-  moduleInfectionRadiusMeters: 3.1
-  moduleInfectionPulseFrequency: 0.72
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
   thermophilicModuleGrowth: 1
   thermalActivationTemperatureCelsius: 100
   thermalActivationDwellSeconds: 300

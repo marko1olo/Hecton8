@@ -14,14 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
   stableId: flora.ghost_weed
   displayName: Ghost Weed
-  vegetationType: 0
-  semanticType: 0
+  vegetationType: 1
+  category: 1
+  semanticType: 1
   biomeLayer: 0
   harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
-  lootItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  lootItem: {fileID: 11400000, guid: 32a9672f690416b4fb198838e2b2ff35, type: 2}
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
+  maxHealth: 6.8
+  growthTimeSeconds: 600
   attachmentSurface: 1
-  bioluminescenceColor: {r: 0.24, g: 0.92, b: 0.88, a: 0.74}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 7232062856750164126, guid: 09e91915cda281e4db86b2563f9c39cc, type: 3}
+  proxyShape: 3
+  boundingBoxCenter: {x: 0, y: 1.55, z: 0}
+  boundingBoxSize: {x: 0.82, y: 3.1, z: 0.82}
+  cutVfxSocketLocal: {x: 0, y: 1.0849999, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 2.108, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.49599996, z: 0}
+  bioluminescenceColor: {r: 0.76, g: 0.92, b: 1, a: 0.74}
   pulseFrequency: 0.62
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

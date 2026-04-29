@@ -31,7 +31,7 @@ namespace Hecton8.Inventory
     }
 
     /// <summary>
-    /// Stable world-physics material family used to bind shared PhysicMaterial assets on dropped items.
+    /// Stable world-physics material family used to bind shared PhysicsMaterial assets on dropped items.
     /// </summary>
     public enum ItemPhysicsMaterialTag : byte
     {

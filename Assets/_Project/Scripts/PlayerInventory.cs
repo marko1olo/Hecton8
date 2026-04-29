@@ -62,6 +62,101 @@ namespace Hecton8.Inventory
             }
         }
 
+        [BurstCompile]
+        private struct InventoryRadixSortJob : IJob
+        {
+            private const int ByteBucketCount = 256;
+            private const int PackedKeyPassCount = 6;
+
+            public NativeArray<InventorySortEntry> Entries;
+            public NativeArray<InventorySortEntry> Scratch;
+            public NativeArray<int> Counts;
+            public int Count;
+
+            public void Execute()
+            {
+                if (Count <= 1)
+                    return;
+
+                NativeArray<InventorySortEntry> source = Entries;
+                NativeArray<InventorySortEntry> destination = Scratch;
+
+                for (int pass = 0; pass < PackedKeyPassCount; pass++)
+                {
+                    for (int bucket = 0; bucket < ByteBucketCount; bucket++)
+                        Counts[bucket] = 0;
+
+                    int shift = pass * 8;
+                    for (int index = 0; index < Count; index++)
+                    {
+                        int bucket = (int)((source[index].PackedKey >> shift) & 0xFFuL);
+                        Counts[bucket]++;
+                    }
+
+                    int runningOffset = 0;
+                    for (int bucket = 0; bucket < ByteBucketCount; bucket++)
+                    {
+                        int bucketCount = Counts[bucket];
+                        Counts[bucket] = runningOffset;
+                        runningOffset += bucketCount;
+                    }
+
+                    for (int index = 0; index < Count; index++)
+                    {
+                        InventorySortEntry entry = source[index];
+                        int bucket = (int)((entry.PackedKey >> shift) & 0xFFuL);
+                        int writeIndex = Counts[bucket];
+                        destination[writeIndex] = entry;
+                        Counts[bucket] = writeIndex + 1;
+                    }
+
+                    NativeArray<InventorySortEntry> swap = source;
+                    source = destination;
+                    destination = swap;
+                }
+
+                if (source != Entries)
+                {
+                    for (int index = 0; index < Count; index++)
+                        Entries[index] = source[index];
+                }
+            }
+        }
+
+        [BurstCompile]
+        private struct InventoryMassVolumeJob : IJob
+        {
+            [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
+            [ReadOnly] public NativeArray<ushort> StackCounts;
+            [ReadOnly] public NativeArray<float> AnchorUnitMassKg;
+            [ReadOnly] public NativeArray<float> AnchorUnitVolumeM3;
+            public NativeArray<float2> Totals;
+
+            public void Execute()
+            {
+                int count = math.min(
+                    math.min(AnchorHashIds.Length, StackCounts.Length),
+                    math.min(AnchorUnitMassKg.Length, AnchorUnitVolumeM3.Length));
+
+                float totalMassKg = 0f;
+                float totalVolumeM3 = 0f;
+
+                for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+                {
+                    if (AnchorHashIds[anchorIndex] == 0)
+                        continue;
+
+                    int stackCount = math.max(1, (int)StackCounts[anchorIndex]);
+                    totalMassKg += AnchorUnitMassKg[anchorIndex] * stackCount;
+                    totalVolumeM3 += AnchorUnitVolumeM3[anchorIndex] * stackCount;
+                }
+
+                Totals[0] = new float2(
+                    math.max(0f, totalMassKg),
+                    math.max(0f, totalVolumeM3));
+            }
+        }
+
         public struct CraftReservation
         {
             public int AnchorIndex;
@@ -138,6 +233,12 @@ namespace Hecton8.Inventory
         private NativeArray<uint> _lastUpdateUnixSeconds;
         private NativeArray<ushort> _scavengeSimStackCounts;
         private NativeArray<byte> _simulationOccupiedCells;
+        private NativeArray<float> _anchorUnitMassKg;
+        private NativeArray<float> _anchorUnitVolumeM3;
+        private NativeArray<InventorySortEntry> _sortEntriesNative;
+        private NativeArray<InventorySortEntry> _sortScratchNative;
+        private NativeArray<int> _sortRadixCounts;
+        private NativeArray<float2> _derivedMassVolumeScratch;
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
         private bool _registeredSlowTick;
@@ -192,6 +293,12 @@ namespace Hecton8.Inventory
             // COLD ALLOC: byte[columns * rows] — occupancy simulation scratch — owner: PlayerInventory
             _simulationOccupiedCells = new NativeArray<byte>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ItemPlacement[columns * rows] — placement snapshot buffer — owner: PlayerInventory
+            _anchorUnitMassKg = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit mass cache for Burst-derived carry totals â€” owner: PlayerInventory
+            _anchorUnitVolumeM3 = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit volume cache for Burst-derived carry totals â€” owner: PlayerInventory
+            _sortEntriesNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort input scratch â€” owner: PlayerInventory
+            _sortScratchNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort output scratch â€” owner: PlayerInventory
+            _sortRadixCounts = new NativeArray<int>(256, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[256] â€” radix bucket counts reused by inventory sorting â€” owner: PlayerInventory
+            _derivedMassVolumeScratch = new NativeArray<float2>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float2[1] â€” Burst-derived mass/volume totals scratch â€” owner: PlayerInventory
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
             _sortedPlacements = new ItemPlacement[columns * rows];
@@ -244,6 +351,24 @@ namespace Hecton8.Inventory
             if (_simulationOccupiedCells.IsCreated)
                 _simulationOccupiedCells.Dispose(default);
 
+            if (_anchorUnitMassKg.IsCreated)
+                _anchorUnitMassKg.Dispose(default);
+
+            if (_anchorUnitVolumeM3.IsCreated)
+                _anchorUnitVolumeM3.Dispose(default);
+
+            if (_sortEntriesNative.IsCreated)
+                _sortEntriesNative.Dispose(default);
+
+            if (_sortScratchNative.IsCreated)
+                _sortScratchNative.Dispose(default);
+
+            if (_sortRadixCounts.IsCreated)
+                _sortRadixCounts.Dispose(default);
+
+            if (_derivedMassVolumeScratch.IsCreated)
+                _derivedMassVolumeScratch.Dispose(default);
+
             if (_instance == this)
                 _instance = null;
         }
@@ -265,6 +390,7 @@ namespace Hecton8.Inventory
             _itemStateFlags[anchorIndex] = 0;
             _qualityMilli[anchorIndex] = 0;
             _lastUpdateUnixSeconds[anchorIndex] = 0;
+            ClearAnchorPhysicalMetadata(anchorIndex);
 
             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * count);
             NotifyInventoryChanged();
@@ -297,6 +423,7 @@ namespace Hecton8.Inventory
                 _itemStateFlags[anchorIndex] = 0;
                 _qualityMilli[anchorIndex] = 0;
                 _lastUpdateUnixSeconds[anchorIndex] = 0;
+                ClearAnchorPhysicalMetadata(anchorIndex);
             }
 
             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight);
@@ -563,6 +690,10 @@ namespace Hecton8.Inventory
                     _stackCounts[anchorIndex] = 0;
                     _craftLockedCounts[anchorIndex] = 0;
                     _anchorStateFlags[anchorIndex] = 0;
+                    _itemStateFlags[anchorIndex] = 0;
+                    _qualityMilli[anchorIndex] = 0;
+                    _lastUpdateUnixSeconds[anchorIndex] = 0;
+                    ClearAnchorPhysicalMetadata(anchorIndex);
                 }
                 else
                 {
@@ -633,6 +764,7 @@ namespace Hecton8.Inventory
                     _itemStateFlags[anchorIndex] = 0;
                     _qualityMilli[anchorIndex] = 0;
                     _lastUpdateUnixSeconds[anchorIndex] = 0;
+                    ClearAnchorPhysicalMetadata(anchorIndex);
                 }
                 else
                 {
@@ -734,6 +866,7 @@ namespace Hecton8.Inventory
                     _itemStateFlags[anchorIndex] = ResolveLoadedItemStateFlags(dto, i, runtimeDescriptor.StateFlags);
                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
+                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
                     ApplyLoadedBiologicalDecay(anchorIndex);
                     TotalWeight += descriptor.Weight * loadedCount;
                     continue;
@@ -746,6 +879,7 @@ namespace Hecton8.Inventory
                     _itemStateFlags[anchorIndex] = ResolveLoadedItemStateFlags(dto, i, runtimeDescriptor.StateFlags);
                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
+                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
                     ApplyLoadedBiologicalDecay(anchorIndex);
                     TotalWeight += descriptor.Weight * loadedCount;
                 }
@@ -763,46 +897,55 @@ namespace Hecton8.Inventory
             if (count <= 0)
                 return;
 
-            NativeArray<InventorySortEntry> sortEntries = new NativeArray<InventorySortEntry>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            try
+            if (!_sortEntriesNative.IsCreated ||
+                !_sortScratchNative.IsCreated ||
+                !_sortRadixCounts.IsCreated ||
+                count > _sortEntriesNative.Length ||
+                count > _sortScratchNative.Length)
             {
-                for (int i = 0; i < count; i++)
-                    sortEntries[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
-
-                // COLD SYNC JOB: inventory sort is explicit user action outside gameplay hot paths.
-                JobHandle handle = new InventorySortJob { Entries = sortEntries }.Schedule();
-                handle.Complete();
-
-                for (int i = 0; i < count; i++)
-                    _sortedPlacements[i] = _sortBuffer[sortEntries[i].OriginalIndex];
-
-                _grid.Clear();
-                ClearNativeArray(_stackCounts);
-                ClearCraftReservationState();
-                ClearNativeArray(_itemStateFlags);
-                ClearNativeArray(_qualityMilli);
-                ClearNativeArray(_lastUpdateUnixSeconds);
-                TotalWeight = 0f;
-
-                for (int i = 0; i < count; i++)
-                {
-                    ItemPlacement placement = _sortedPlacements[i];
-                    InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
-                    if (_grid.TryAddItem(in descriptor, out int px, out int py))
-                    {
-                        int anchorIndex = AnchorIndex(px, py);
-                        _stackCounts[anchorIndex] = placement.stackCount;
-                        _itemStateFlags[anchorIndex] = placement.stateFlags;
-                        _qualityMilli[anchorIndex] = placement.qualityMilli;
-                        _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
-                        TotalWeight += placement.weight * placement.stackCount;
-                    }
-                }
+                return;
             }
-            finally
+
+            for (int i = 0; i < count; i++)
+                _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
+
+            // COLD SYNC JOB: inventory sort is explicit user action outside gameplay hot paths.
+            JobHandle handle = new InventoryRadixSortJob
             {
-                if (sortEntries.IsCreated)
-                    sortEntries.Dispose();
+                Entries = _sortEntriesNative,
+                Scratch = _sortScratchNative,
+                Counts = _sortRadixCounts,
+                Count = count
+            }.Schedule();
+            handle.Complete();
+
+            for (int i = 0; i < count; i++)
+                _sortedPlacements[i] = _sortBuffer[_sortEntriesNative[i].OriginalIndex];
+
+            _grid.Clear();
+            ClearNativeArray(_stackCounts);
+            ClearCraftReservationState();
+            ClearNativeArray(_itemStateFlags);
+            ClearNativeArray(_qualityMilli);
+            ClearNativeArray(_lastUpdateUnixSeconds);
+            ClearNativeArray(_anchorUnitMassKg);
+            ClearNativeArray(_anchorUnitVolumeM3);
+            TotalWeight = 0f;
+
+            for (int i = 0; i < count; i++)
+            {
+                ItemPlacement placement = _sortedPlacements[i];
+                InventoryGrid.InventoryItemDescriptor descriptor = placement.Descriptor;
+                if (_grid.TryAddItem(in descriptor, out int px, out int py))
+                {
+                    int anchorIndex = AnchorIndex(px, py);
+                    _stackCounts[anchorIndex] = placement.stackCount;
+                    _itemStateFlags[anchorIndex] = placement.stateFlags;
+                    _qualityMilli[anchorIndex] = placement.qualityMilli;
+                    _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
+                    SyncAnchorPhysicalMetadata(anchorIndex, placement.itemHashId);
+                    TotalWeight += placement.weight * placement.stackCount;
+                }
             }
 
             NotifyInventoryChanged();
@@ -856,6 +999,8 @@ namespace Hecton8.Inventory
                 SwapAnchorState(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
                 return;
             }
 
@@ -865,6 +1010,8 @@ namespace Hecton8.Inventory
             MoveAnchorStateValue(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
         }
 
         private static void SwapAnchorState<T>(NativeArray<T> values, int firstIndex, int secondIndex) where T : struct
@@ -966,6 +1113,7 @@ namespace Hecton8.Inventory
                     _itemStateFlags[anchorIndex] = runtimeDescriptor.StateFlags;
                     _qualityMilli[anchorIndex] = DefaultQualityMilli;
                     _lastUpdateUnixSeconds[anchorIndex] = (runtimeDescriptor.StateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
+                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
                     TotalWeight += descriptor.Weight;
                     addedQuantity++;
                 }
@@ -1202,6 +1350,8 @@ namespace Hecton8.Inventory
             ClearNativeArray(_itemStateFlags);
             ClearNativeArray(_qualityMilli);
             ClearNativeArray(_lastUpdateUnixSeconds);
+            ClearNativeArray(_anchorUnitMassKg);
+            ClearNativeArray(_anchorUnitVolumeM3);
             TotalWeight = 0f;
 
             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
@@ -1221,6 +1371,7 @@ namespace Hecton8.Inventory
                     _qualityMilli[anchorIndex] = placement.qualityMilli;
                 if (_lastUpdateUnixSeconds.IsCreated)
                     _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
+                SyncAnchorPhysicalMetadata(anchorIndex, placement.itemHashId);
                 TotalWeight += placement.weight * Mathf.Max(1, placement.stackCount);
             }
 
@@ -1321,55 +1472,35 @@ namespace Hecton8.Inventory
 
         private void RefreshDerivedMassAndSurvivalLoad()
         {
-            TotalMassKg = ComputeTotalMassKg();
-            TotalVolumeM3 = ComputeTotalVolumeM3();
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_anchorUnitMassKg.IsCreated ||
+                !_anchorUnitVolumeM3.IsCreated ||
+                !_derivedMassVolumeScratch.IsCreated)
+            {
+                TotalMassKg = 0f;
+                TotalVolumeM3 = 0f;
+            }
+            else
+            {
+                // COLD SYNC JOB: inventory-derived carry totals refresh only on authored inventory mutation.
+                JobHandle handle = new InventoryMassVolumeJob
+                {
+                    AnchorHashIds = _grid.AnchorHashIds,
+                    StackCounts = _stackCounts,
+                    AnchorUnitMassKg = _anchorUnitMassKg,
+                    AnchorUnitVolumeM3 = _anchorUnitVolumeM3,
+                    Totals = _derivedMassVolumeScratch
+                }.Schedule();
+                handle.Complete();
+
+                float2 totals = _derivedMassVolumeScratch[0];
+                TotalMassKg = totals.x;
+                TotalVolumeM3 = totals.y;
+            }
+
             if (survival != null)
                 survival.SetWeight(TotalMassKg);
-        }
-
-        private float ComputeTotalMassKg()
-        {
-            if (_grid == null || !_stackCounts.IsCreated)
-                return 0f;
-
-            float totalMassKg = 0f;
-            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
-            {
-                if (!_grid.HasAnchor(anchorIndex))
-                    continue;
-
-                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
-                if (itemHashId == 0 ||
-                    !TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
-                {
-                    continue;
-                }
-
-                totalMassKg += runtimeDescriptor.MassKg * Mathf.Max(1, (int)_stackCounts[anchorIndex]);
-            }
-
-            return Mathf.Max(0f, totalMassKg);
-        }
-
-        private float ComputeTotalVolumeM3()
-        {
-            if (_grid == null || !_stackCounts.IsCreated)
-                return 0f;
-
-            float totalVolumeM3 = 0f;
-            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
-            {
-                if (!_grid.HasAnchor(anchorIndex))
-                    continue;
-
-                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
-                if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
-                    continue;
-
-                totalVolumeM3 += runtimeDescriptor.VolumeM3 * Mathf.Max(1, (int)_stackCounts[anchorIndex]);
-            }
-
-            return Mathf.Max(0f, totalVolumeM3);
         }
 
         private bool ApplyEnvironmentalDegradation(

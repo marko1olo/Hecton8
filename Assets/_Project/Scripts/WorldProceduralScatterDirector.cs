@@ -479,7 +479,7 @@ namespace Hecton8.World
         private ref CandidateMap _structureBioCandidates => ref _memory.StructureBioCandidates;
         private ref CandidateMap _passiveSpawnCandidates => ref _memory.PassiveSpawnCandidates;
         private ref CandidateMap _predatorSpawnCandidates => ref _memory.PredatorSpawnCandidates;
-        private Dictionary<long, ScatterPlacement> _desiredPlacements => _memory.DesiredPlacements;
+        private Dictionary<long, ScatterPlacement> _desiredPlacements => _memory != null ? _memory.DesiredPlacements : null;
         private Dictionary<long, ScatterPlacement> _retainedPlacements => _memory.RetainedPlacements;
         private Dictionary<long, float> _placementLastSeenTimes => _memory.PlacementLastSeenTimes;
         private Stack<ScatterPlacement> _placementPool => _memory.PlacementPool;
@@ -1826,7 +1826,11 @@ namespace Hecton8.World
                 return;
 
             buffer.Clear();
-            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            Dictionary<long, ScatterPlacement> desiredPlacements = _desiredPlacements;
+            if (desiredPlacements == null || desiredPlacements.Count == 0)
+                return;
+
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = desiredPlacements.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 ScatterPlacement placement = enumerator.Current.Value;

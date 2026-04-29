@@ -28,6 +28,7 @@ namespace Hecton8.Core
         private InputManager _nativeInputManager;
         private Gamepad _cachedGamepad;
         private bool _registeredUpdatable;
+        private bool _registeredInputService;
         private bool _isInitialized;
         private bool _subscribedToNativeInput;
         private bool _subscribedToDeviceChanges;
@@ -125,7 +126,7 @@ namespace Hecton8.Core
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
             TryRegisterToDispatcher();
-            GlobalRegistry.RegisterInputService(this);
+            TryRegisterInputService();
             _isInitialized = true;
             CaptureState();
         }
@@ -143,7 +144,7 @@ namespace Hecton8.Core
             if (_isInitialized)
             {
                 TryRegisterToDispatcher();
-                GlobalRegistry.RegisterInputService(this);
+                TryRegisterInputService();
                 CaptureState();
             }
         }
@@ -155,8 +156,7 @@ namespace Hecton8.Core
             UnsubscribeFromDeviceChanges();
             TryUnregisterFromDispatcher();
 
-            if (_isInitialized)
-                GlobalRegistry.UnregisterInputService(this);
+            TryUnregisterInputService();
 
             ClearFrameState();
         }
@@ -168,8 +168,7 @@ namespace Hecton8.Core
             UnsubscribeFromDeviceChanges();
             TryUnregisterFromDispatcher();
 
-            if (_isInitialized)
-                GlobalRegistry.UnregisterInputService(this);
+            TryUnregisterInputService();
 
             if (_instance == this)
                 _instance = null;
@@ -400,6 +399,35 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredUpdatable = false;
+        }
+
+        private void TryRegisterInputService()
+        {
+            if (!_isInitialized && !ReferenceEquals(_instance, this))
+                return;
+
+            if (_registeredInputService)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.Input, this))
+            {
+                _registeredInputService = true;
+                return;
+            }
+
+            GlobalRegistry.RegisterInputService(this);
+            _registeredInputService = true;
+        }
+
+        private void TryUnregisterInputService()
+        {
+            if (!_registeredInputService)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.Input, this))
+                GlobalRegistry.UnregisterInputService(this);
+
+            _registeredInputService = false;
         }
 
         private void CaptureState()

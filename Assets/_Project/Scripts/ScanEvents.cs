@@ -11,7 +11,8 @@ namespace Hecton8.Gameplay
     {
         ScanTriggered = 0,
         NodeFound = 1,
-        EntryDiscovered = 2
+        EntryDiscovered = 2,
+        FaunaFeedingObserved = 3
     }
 
     public enum ScanEntryKind : byte
@@ -215,6 +216,26 @@ namespace Hecton8.Gameplay
                 SummaryHash = summaryHash,
                 EventType = (ushort)ScanEventType.EntryDiscovered,
                 EntryKind = (byte)kind,
+                Reserved = 0
+            });
+        }
+
+        public static void RaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
+        {
+            if (entryHash == 0u)
+                return;
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new ScanEventPayload
+            {
+                Position = worldPos,
+                Radius = 0f,
+                EntryHash = entryHash,
+                TitleHash = 0u,
+                CategoryHash = 0u,
+                SummaryHash = 0u,
+                EventType = (ushort)ScanEventType.FaunaFeedingObserved,
+                EntryKind = (byte)ScanEntryKind.Scannable,
                 Reserved = 0
             });
         }

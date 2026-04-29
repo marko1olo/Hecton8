@@ -9,8 +9,10 @@
 using System;
 using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton8.AI;
 using Hecton.Localization;
 using Hecton8.Modding;
+using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -22,11 +24,14 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Hecton Discovery Manager")]
-    public sealed class HectonDiscoveryManager : MonoBehaviour, ISaveable
+    public sealed class HectonDiscoveryManager : MonoBehaviour, ISaveable, IScanEventListener
     {
         private const int MinBiomeId = BiomeDiscoveryBitMask.MinBiomeId;
         private const int MaxBiomeId = BiomeDiscoveryBitMask.MaxBiomeId;
         private const int InvalidBiomeId = BiomeDiscoveryBitMask.InvalidBiomeId;
+        private const byte FaunaBestiaryBehaviorThreshold = 1;
+        private const byte FaunaBestiaryDietThreshold = 5;
+        private const byte FaunaBestiaryVulnerabilityThreshold = 10;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR - REFERENCES
@@ -41,7 +46,10 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         private readonly HashSet<int> _discoveredBiomeIds = new HashSet<int>();
+        // COLD ALLOC: Dictionary<uint,byte>[64] — runtime fauna bestiary observation counters keyed by scan entry hash — owner: HectonDiscoveryManager
+        private readonly Dictionary<uint, byte> _faunaInteractionCounts = new Dictionary<uint, byte>(64);
         private bool _registeredWithSaveManager;
+        private bool _registeredWithScanEvents;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -98,16 +106,19 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterWithSaveManager();
+            TryRegisterWithScanEvents();
         }
 
         private void Start()
         {
             TryRegisterWithSaveManager();
+            TryRegisterWithScanEvents();
         }
 
         private void OnDisable()
         {
             UnregisterFromSaveManager();
+            UnregisterFromScanEvents();
 
             if (Instance == this)
                 Instance = null;
@@ -177,6 +188,18 @@ namespace Hecton8.Gameplay
                 return default;
 
             return _registry.GetBiome(id);
+        }
+
+        public void OnScanEvent(in ScanEventPayload payload)
+        {
+            ScanEventType eventType = (ScanEventType)payload.EventType;
+            if ((eventType != ScanEventType.EntryDiscovered && eventType != ScanEventType.FaunaFeedingObserved) ||
+                payload.EntryHash == 0u)
+            {
+                return;
+            }
+
+            TryRecordFaunaObservation(payload.EntryHash);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -278,6 +301,15 @@ namespace Hecton8.Gameplay
             _registeredWithSaveManager = true;
         }
 
+        private void TryRegisterWithScanEvents()
+        {
+            if (_registeredWithScanEvents)
+                return;
+
+            ScanEvents.Register(this);
+            _registeredWithScanEvents = true;
+        }
+
         private void UnregisterFromSaveManager()
         {
             if (!_registeredWithSaveManager)
@@ -288,6 +320,94 @@ namespace Hecton8.Gameplay
                 saveManager.Unregister(this);
 
             _registeredWithSaveManager = false;
+        }
+
+        private void UnregisterFromScanEvents()
+        {
+            if (!_registeredWithScanEvents)
+                return;
+
+            ScanEvents.Unregister(this);
+            _registeredWithScanEvents = false;
+        }
+
+        private void TryRecordFaunaObservation(uint entryHash)
+        {
+            if (!FaunaScanRuntimeRegistry.TryGetScanMetadata(entryHash, out FaunaScanRuntimeRegistry.FaunaScanMetadata metadata))
+                return;
+
+            byte previousCount = ResolveFaunaObservationCountFloor(entryHash, in metadata);
+            byte nextCount = previousCount < byte.MaxValue
+                ? (byte)(previousCount + 1)
+                : byte.MaxValue;
+            _faunaInteractionCounts[entryHash] = nextCount;
+            TryUnlockFaunaBestiaryMilestone(in metadata, previousCount, nextCount, FaunaBestiaryBehaviorThreshold, 0);
+            TryUnlockFaunaBestiaryMilestone(in metadata, previousCount, nextCount, FaunaBestiaryDietThreshold, 1);
+            TryUnlockFaunaBestiaryMilestone(in metadata, previousCount, nextCount, FaunaBestiaryVulnerabilityThreshold, 2);
+        }
+
+        private byte ResolveFaunaObservationCountFloor(uint entryHash, in FaunaScanRuntimeRegistry.FaunaScanMetadata metadata)
+        {
+            byte currentCount = 0;
+            if (_faunaInteractionCounts.TryGetValue(entryHash, out byte storedCount))
+                currentCount = storedCount;
+
+            LoreDatabaseManager loreDatabase = LoreDatabaseManager.Instance;
+            if (loreDatabase == null)
+                return currentCount;
+
+            if (TryResolveFaunaBestiaryLoreHash(in metadata, 2, out uint vulnerabilityHash) && loreDatabase.IsUnlocked(vulnerabilityHash))
+                return currentCount < FaunaBestiaryVulnerabilityThreshold ? FaunaBestiaryVulnerabilityThreshold : currentCount;
+
+            if (TryResolveFaunaBestiaryLoreHash(in metadata, 1, out uint dietHash) && loreDatabase.IsUnlocked(dietHash))
+                return currentCount < FaunaBestiaryDietThreshold ? FaunaBestiaryDietThreshold : currentCount;
+
+            if (TryResolveFaunaBestiaryLoreHash(in metadata, 0, out uint behaviorHash) && loreDatabase.IsUnlocked(behaviorHash))
+                return currentCount < FaunaBestiaryBehaviorThreshold ? FaunaBestiaryBehaviorThreshold : currentCount;
+
+            return currentCount;
+        }
+
+        private static bool TryResolveFaunaBestiaryLoreHash(in FaunaScanRuntimeRegistry.FaunaScanMetadata metadata, int milestoneIndex, out uint loreHash)
+        {
+            uint[] authoredLoreHashes = metadata.LoreUnlockHashes;
+            if (authoredLoreHashes != null &&
+                milestoneIndex >= 0 &&
+                milestoneIndex < authoredLoreHashes.Length &&
+                authoredLoreHashes[milestoneIndex] != 0u)
+            {
+                loreHash = authoredLoreHashes[milestoneIndex];
+                return true;
+            }
+
+            if (milestoneIndex == 0 && metadata.FullLoreHash != 0u)
+            {
+                loreHash = metadata.FullLoreHash;
+                return true;
+            }
+
+            loreHash = 0u;
+            return false;
+        }
+
+        private static void TryUnlockFaunaBestiaryMilestone(
+            in FaunaScanRuntimeRegistry.FaunaScanMetadata metadata,
+            byte previousCount,
+            byte nextCount,
+            byte threshold,
+            int milestoneIndex)
+        {
+            if (previousCount >= threshold || nextCount < threshold || !TryResolveFaunaBestiaryLoreHash(in metadata, milestoneIndex, out uint loreHash))
+                return;
+
+            LoreDatabaseManager loreDatabase = LoreDatabaseManager.Instance;
+            if (loreDatabase != null)
+            {
+                loreDatabase.TryUnlockByHash(loreHash);
+                return;
+            }
+
+            HectonEventBus.Publish(new LoreAcquiredEvent(loreHash));
         }
     }
 }

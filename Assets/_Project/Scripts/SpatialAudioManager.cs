@@ -52,6 +52,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Atmosphere;
 using Hecton8.Caves;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
@@ -326,12 +327,14 @@ namespace Hecton8.Audio
         {
             PhysicsEvents.OnImpact += HandlePhysicsImpact;
             FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
+            RepairDroneTorchAcousticEvents.OnTorchAcoustic += HandleRepairDroneTorchAcoustic;
         }
 
         private void OnDisable()
         {
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
+            RepairDroneTorchAcousticEvents.OnTorchAcoustic -= HandleRepairDroneTorchAcoustic;
             if (_isInitialized)
             {
                 GlobalRegistry.UnregisterAudioService(this);
@@ -660,6 +663,15 @@ namespace Hecton8.Audio
         public void PlayBedAtPoint(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
         {
             PlayAtPoint(clip, position, volume, pitch, ResolvedBedBusGroup);
+        }
+
+        internal void PlayHarvestAtAup(in AbsoluteUniversePosition positionAup, AudioClip clip, float volume = 1f, float pitch = 1f)
+        {
+            if (clip == null)
+                return;
+
+            float3 runtimePosition = positionAup.ToRuntimeFloat3();
+            PlayAtPoint(clip, new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z), volume, pitch, ResolvedDefaultWorldMixerGroup);
         }
 
         /// <summary>
@@ -1209,6 +1221,19 @@ private int AcquireSourceIndex()
                     ApplyDelayedTrauma(in delayedEvent, listenerAbsolutePosition);
                     break;
             }
+        }
+
+        private void HandleRepairDroneTorchAcoustic(in RepairDroneTorchAcousticEvent acousticEvent)
+        {
+            if (acousticEvent.Clip == null)
+                return;
+
+            PlayAtPoint(
+                acousticEvent.Clip,
+                acousticEvent.Position,
+                acousticEvent.Volume,
+                acousticEvent.Pitch,
+                ResolvedDefaultWorldMixerGroup);
         }
 
         private void ApplyDelayedTrauma(in DelayedAudioEvent delayedEvent, Vector3 listenerAbsolutePosition)

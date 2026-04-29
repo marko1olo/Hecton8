@@ -237,6 +237,12 @@ namespace Hecton8.Gameplay
         [Tooltip("Объект воды внутри модуля. Активен, когда модуль затоплен.")]
         [SerializeField] private GameObject waterVolume;
 
+        [Tooltip("Optional water-surface proxy transform driven by room flood fill. Only the local Y value is animated.")]
+        [SerializeField] private Transform floodSurfacePlane;
+
+        [Tooltip("Fallback local-space Y range for the water-surface proxy when the interior trigger cannot provide bounds.")]
+        [SerializeField] private Vector2 floodSurfaceLocalYRange = new Vector2(-1.25f, 1.25f);
+
         [Tooltip("Эффект пузырьков / утечки при повреждении.")]
         [SerializeField] private ParticleSystem leakVfx;
 
@@ -309,6 +315,7 @@ namespace Hecton8.Gameplay
         private ModuleMarker _moduleMarker;
         private HabitatIntegrityManager _habitatIntegrityManager;
         private SubmarineAtmosphereSystem _submarineAtmosphereSystem;
+        private PowerNode _powerNode;
         private bool _breachLatched;
         private Rigidbody _moduleRigidbody;
         private int _cachedAtmosphereRoomIndex = -1;
@@ -318,11 +325,14 @@ namespace Hecton8.Gameplay
         private float _defaultBodyMass;
         private float _defaultLinearDamping;
         private float _defaultAngularDamping;
+        private Vector3 _defaultFloodSurfaceLocalPosition;
+        private float _cachedFloodLevel01;
         private bool _defaultBodyIsKinematic;
         private bool _defaultBodyUseGravity;
         private CollisionDetectionMode _defaultCollisionDetectionMode;
         private RigidbodyInterpolation _defaultInterpolation;
         private bool _moduleBodyDefaultsCaptured;
+        private bool _floodSurfaceDefaultsCaptured;
 
         /// <summary>
         /// Предыдущее состояние isFlooded, используемое для определения
@@ -366,6 +376,8 @@ namespace Hecton8.Gameplay
         private readonly List<int> _keysToRemove = new List<int>(TRACKED_INITIAL_CAPACITY);
         // COLD ALLOC: List<BaseAirlock>[2] — cached owned airlock controllers for emergency lockdown fan-out — owner: BaseModule
         private readonly List<BaseAirlock> _airlockBuffer = new List<BaseAirlock>(2);
+        // COLD ALLOC: List<SealedDoor>[2] — cached owned sealed bulkhead doors for quarantine locking — owner: BaseModule
+        private readonly List<SealedDoor> _sealedDoorBuffer = new List<SealedDoor>(2);
 
         // COLD ALLOC: Collider[32] — resync interior occupants on enable/load/spawn — owner: BaseModule
         private readonly Collider[] _interiorOverlapBuffer = new Collider[INTERIOR_OVERLAP_CAPACITY];
@@ -420,19 +432,23 @@ namespace Hecton8.Gameplay
         /// <summary>Optional immutable template that owns abandoned-module integrity authoring and VFX sockets.</summary>
         public BaseModuleTemplate ModuleTemplate => moduleTemplate;
         /// <summary>Discrete integrity state derived from flood, breach, and abandonment thresholds.</summary>
-        public BaseModuleIntegrityState IntegrityState => ResolveIntegrityState();
+        public BaseModuleIntegrityState IntegrityState => ResolveDiscreteIntegrityState();
         /// <summary>Normalized module integrity in the [0..1] range.</summary>
         public float IntegrityStateNormalized => _integrityComponent.MaxIntegrity > 0.01f
             ? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)
             : 0f;
         /// <summary>Normalized breathable reserve available for dry-zone life support.</summary>
         public float AirReserveNormalized => _lifeSupportComponent.AirReserveNormalized;
+        /// <summary>Normalized room flood fill currently driving local module visuals.</summary>
+        public float FloodLevel01 => _cachedFloodLevel01;
         /// <summary>True when the player is currently inside this module's interior volume.</summary>
         public bool IsPlayerInsideInterior => _trackedPlayerSurvival != null;
         /// <summary>True when breathable reserve has degraded into a stale-air window.</summary>
         public bool IsAirQualityLow => _lifeSupportComponent.IsAirQualityLow;
         /// <summary>Normalized CO2 saturation inside the module loop.</summary>
         public float Co2Normalized => _lifeSupportComponent.Co2Normalized;
+        /// <summary>Active power supply ratio for this module's current grid connection.</summary>
+        public float PowerSupplyRatio => ResolveOperationalPowerSupplyRatio01();
         /// <summary>True when CO2 saturation has reached the life-support lockout threshold.</summary>
         public bool IsCo2Critical => _lifeSupportComponent.IsCo2Critical;
         /// <summary>True when CO2 saturation has crossed the toxic dry-room threshold.</summary>
@@ -514,6 +530,7 @@ namespace Hecton8.Gameplay
             _breachLatched = IsBreached;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
+            _cachedFloodLevel01 = 0f;
 
             RefreshVisualStateImmediate();
             ResyncInteriorOccupants(true);
@@ -541,6 +558,7 @@ namespace Hecton8.Gameplay
             _breachLatched = false;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
+            _cachedFloodLevel01 = 0f;
             _trackedPlayerSurvival = null;
             _integrityComponent.ResetForDespawn();
             _lifeSupportComponent.ResetForDespawn();
@@ -567,6 +585,7 @@ namespace Hecton8.Gameplay
         {
             ApplyCascadeFailureEffects();
             UpdateLifeSupport(SLOW_TICK_DT);
+            UpdateFloodVisualStateImmediate();
             if (!HasOperationalPower)
                 return;
 
@@ -655,8 +674,9 @@ namespace Hecton8.Gameplay
             ConfigureRuntimeComponentsFromSerializedState();
 
             _wasFlooded = _integrityComponent.IsFlooded;
-            CacheAirlockComponents();
+            CacheOwnedBulkheadComponents();
             CaptureModuleRigidbodyDefaults();
+            CaptureFloodSurfaceDefaults();
         }
 
         private void OnEnable()
@@ -672,6 +692,8 @@ namespace Hecton8.Gameplay
                 EnableUnmooredPhysics();
                 TryRegisterFixedTick();
             }
+
+            UpdateFloodVisualStateImmediate();
         }
 
         private void OnDisable()
@@ -683,6 +705,7 @@ namespace Hecton8.Gameplay
 
             NotifyModuleExitIfNeeded();
             ReleaseAllTrackedObjects();
+            _cachedFloodLevel01 = 0f;
         }
 
         private void OnDestroy()
@@ -1354,7 +1377,7 @@ namespace Hecton8.Gameplay
         private bool HasOperationalPower => _integrityComponent.HasOperationalPower(_hasPower);
         private bool ShouldLightsBeEnabled() => HasOperationalPower && !_ambientLightsBrownedOut;
 
-        private BaseModuleIntegrityState ResolveIntegrityState()
+        private BaseModuleIntegrityState ResolveDiscreteIntegrityState()
         {
             if (IsBreached)
                 return BaseModuleIntegrityState.Ruptured;
@@ -1446,6 +1469,7 @@ namespace Hecton8.Gameplay
                 dt,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
                 HasOperationalPower,
+                ResolveOperationalPowerSupplyRatio01(),
                 _trackedPlayerSurvival);
 
             HandleLifeSupportSignals(signals);
@@ -1462,6 +1486,7 @@ namespace Hecton8.Gameplay
                 0f,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
                 HasOperationalPower,
+                ResolveOperationalPowerSupplyRatio01(),
                 _trackedPlayerSurvival));
         }
 
@@ -1649,11 +1674,99 @@ namespace Hecton8.Gameplay
 
         private void SetFloodedVisual(bool flooded)
         {
-            if (waterVolume != null && waterVolume.activeSelf != flooded)
-                waterVolume.SetActive(flooded);
+            UpdateFloodVisualState(flooded ? ResolveRuntimeFloodLevel01() : 0f);
+        }
 
-            if (floodedLocalVolume != null && floodedLocalVolume.enabled != flooded)
-                floodedLocalVolume.enabled = flooded;
+        private void UpdateFloodVisualStateImmediate()
+        {
+            UpdateFloodVisualState(ResolveRuntimeFloodLevel01());
+        }
+
+        private void UpdateFloodVisualState(float floodLevel01)
+        {
+            float sanitizedFloodLevel01 = Mathf.Clamp01(floodLevel01);
+            _cachedFloodLevel01 = sanitizedFloodLevel01;
+            bool floodVisible = sanitizedFloodLevel01 > 0.001f;
+
+            if (waterVolume != null && waterVolume.activeSelf != floodVisible)
+                waterVolume.SetActive(floodVisible);
+
+            if (floodedLocalVolume != null && floodedLocalVolume.enabled != floodVisible)
+                floodedLocalVolume.enabled = floodVisible;
+
+            if (floodSurfacePlane == null)
+                return;
+
+            CaptureFloodSurfaceDefaults();
+            Vector3 nextLocalPosition = _defaultFloodSurfaceLocalPosition;
+            nextLocalPosition.y = Mathf.Lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), sanitizedFloodLevel01);
+            floodSurfacePlane.localPosition = nextLocalPosition;
+        }
+
+        private float ResolveRuntimeFloodLevel01()
+        {
+            if (_integrityComponent.IsFlooded)
+            {
+                if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) &&
+                    atmosphereSystem != null)
+                {
+                    if (_cachedAtmosphereRoomIndex >= 0)
+                        return atmosphereSystem.ResolveRoomFloodFillNormalized(_cachedAtmosphereRoomIndex);
+
+                    if (atmosphereSystem.TryResolveRoomFloodFillNormalized(transform.position, out int roomIndex, out float floodFill01))
+                    {
+                        _cachedAtmosphereRoomIndex = roomIndex;
+                        return floodFill01;
+                    }
+                }
+
+                return 1f;
+            }
+
+            _cachedAtmosphereRoomIndex = -1;
+            return 0f;
+        }
+
+        private void CaptureFloodSurfaceDefaults()
+        {
+            if (_floodSurfaceDefaultsCaptured || floodSurfacePlane == null)
+                return;
+
+            _defaultFloodSurfaceLocalPosition = floodSurfacePlane.localPosition;
+            _floodSurfaceDefaultsCaptured = true;
+        }
+
+        private float ResolveFloodSurfaceMinimumLocalY()
+        {
+            if (!TryResolveInteriorFloodBounds(out float minimumLocalY, out _))
+                return floodSurfaceLocalYRange.x;
+
+            return minimumLocalY;
+        }
+
+        private float ResolveFloodSurfaceMaximumLocalY()
+        {
+            if (!TryResolveInteriorFloodBounds(out _, out float maximumLocalY))
+                return floodSurfaceLocalYRange.y;
+
+            return maximumLocalY;
+        }
+
+        private bool TryResolveInteriorFloodBounds(out float minimumLocalY, out float maximumLocalY)
+        {
+            minimumLocalY = floodSurfaceLocalYRange.x;
+            maximumLocalY = floodSurfaceLocalYRange.y;
+
+            if (interiorTrigger == null)
+                return false;
+
+            Transform triggerTransform = interiorTrigger.transform;
+            Vector3 localCenter = transform.InverseTransformPoint(triggerTransform.TransformPoint(interiorTrigger.center));
+            Vector3 lossyScale = triggerTransform.lossyScale;
+            float halfHeight = interiorTrigger.size.y * 0.5f * Mathf.Abs(lossyScale.y);
+            minimumLocalY = localCenter.y - halfHeight;
+            maximumLocalY = localCenter.y + halfHeight;
+            return maximumLocalY > minimumLocalY;
         }
 
         private void SetLightsEnabled(bool enabled)
@@ -1707,17 +1820,23 @@ namespace Hecton8.Gameplay
             if (_submarineAtmosphereSystem == null)
                 _submarineAtmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
 
+            if (_powerNode == null)
+                TryGetComponent(out _powerNode);
+
             if (interiorTrigger == null)
                 interiorTrigger = GetComponentInChildren<BoxCollider>(true);
 
-            CacheAirlockComponents();
+            CacheOwnedBulkheadComponents();
             CaptureModuleRigidbodyDefaults();
+            CaptureFloodSurfaceDefaults();
         }
 
-        private void CacheAirlockComponents()
+        private void CacheOwnedBulkheadComponents()
         {
             _airlockBuffer.Clear();
             GetComponentsInChildren(true, _airlockBuffer);
+            _sealedDoorBuffer.Clear();
+            GetComponentsInChildren(true, _sealedDoorBuffer);
         }
 
         private string ResolvePersistentId(ModuleMarker markerOverride)
@@ -2085,12 +2204,24 @@ namespace Hecton8.Gameplay
             if (!ResolveEmergencyAirlockRole())
                 return;
 
-            CacheAirlockComponents();
+            CacheOwnedBulkheadComponents();
             for (int i = 0; i < _airlockBuffer.Count; i++)
             {
                 BaseAirlock airlock = _airlockBuffer[i];
                 if (airlock != null)
                     airlock.SetEmergencyLockdown(lockedDown);
+            }
+
+            for (int i = 0; i < _sealedDoorBuffer.Count; i++)
+            {
+                SealedDoor sealedDoor = _sealedDoorBuffer[i];
+                if (sealedDoor == null)
+                    continue;
+
+                if (lockedDown)
+                    sealedDoor.Lock();
+                else
+                    sealedDoor.Unlock();
             }
         }
 
@@ -2193,10 +2324,27 @@ namespace Hecton8.Gameplay
 
         private void TryMarkPowerGridDirty()
         {
-            if (!TryGetComponent(out PowerNode powerNode) || powerNode.Grid == null)
+            if (_powerNode == null)
+                TryGetComponent(out _powerNode);
+
+            if (_powerNode == null || _powerNode.Grid == null)
                 return;
 
-            powerNode.Grid.MarkDirty();
+            _powerNode.Grid.MarkDirty();
+        }
+
+        private float ResolveOperationalPowerSupplyRatio01()
+        {
+            if (!HasOperationalPower)
+                return 0f;
+
+            if (_powerNode == null)
+                TryGetComponent(out _powerNode);
+
+            if (_powerNode != null && _powerNode.Grid != null)
+                return Mathf.Clamp01(_powerNode.Grid.SupplyRatio);
+
+            return _hasPower ? 1f : 0f;
         }
 
         internal void ApplyFloodExposure(float normalizedFloodDelta, float co2Amplifier)

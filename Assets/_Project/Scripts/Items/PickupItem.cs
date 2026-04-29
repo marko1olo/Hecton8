@@ -49,7 +49,7 @@ namespace Hecton8.Interaction
         private InteractionHighlighter _highlighter;
         private Rigidbody _rigidbody;
         private Collider _collider;
-        private PhysicMaterial _defaultColliderMaterial;
+        private PhysicsMaterial _defaultColliderMaterial;
         private HectonPlayerMovement _playerMovement;
         private string _cachedInteractText;
         private int _cachedItemHashId;

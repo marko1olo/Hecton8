@@ -46,7 +46,7 @@ namespace Hecton8.World
     public struct HectonVegetationInstanceData
     {
         /// <summary>Exact GPU stride in bytes.</summary>
-        public const int Stride = 48;
+        public const int Stride = 64;
         public const float RuntimeStateIdle = (float)HectonVegetationRuntimeState.Idle;
         public const float RuntimeStateAgitated = (float)HectonVegetationRuntimeState.Agitated;
         public const float RuntimeStateDying = (float)HectonVegetationRuntimeState.Dying;
@@ -82,6 +82,18 @@ namespace Hecton8.World
         /// <summary>Per-instance bioluminescence color in linear space. Alpha stores emission intensity.</summary>
         public Vector4 BioluminescenceColor;
 
+        /// <summary>Per-instance VAT sway speed multiplier stamped from flora authoring.</summary>
+        public float SwaySpeed;
+
+        /// <summary>Per-instance VAT bend amplitude multiplier stamped from flora authoring.</summary>
+        public float BendAmplitude;
+
+        /// <summary>Normalized health lane consumed by harvest visuals and emissive dimming.</summary>
+        public float HealthNormalized;
+
+        /// <summary>Padding/reserved scalar retained for future payload expansion.</summary>
+        public float Reserved0;
+
         /// <summary>
         /// Creates one per-instance vegetation metadata payload.
         /// </summary>
@@ -98,7 +110,11 @@ namespace Hecton8.World
             float runtimeState,
             float runtimeFlags,
             float pulseFrequency,
-            Vector4 bioluminescenceColor)
+            Vector4 bioluminescenceColor,
+            float swaySpeed,
+            float bendAmplitude,
+            float healthNormalized,
+            float reserved0)
         {
             Type = (float)type;
             HeightScale = heightScale;
@@ -109,6 +125,10 @@ namespace Hecton8.World
             RuntimeFlags = runtimeFlags;
             PulseFrequency = pulseFrequency;
             BioluminescenceColor = bioluminescenceColor;
+            SwaySpeed = swaySpeed;
+            BendAmplitude = bendAmplitude;
+            HealthNormalized = healthNormalized;
+            Reserved0 = reserved0;
         }
 
         /// <summary>
@@ -128,7 +148,11 @@ namespace Hecton8.World
                 RuntimeStateIdle,
                 0f,
                 0f,
-                Vector4.zero)
+                Vector4.zero,
+                1f,
+                1f,
+                1f,
+                0f)
         {
         }
     }

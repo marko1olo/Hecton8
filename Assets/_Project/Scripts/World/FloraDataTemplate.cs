@@ -34,7 +34,8 @@ namespace Hecton8.World
             None = 0,
             Organic = 1,
             Brittle = 2,
-            Metallic = 3
+            Metallic = 3,
+            Fibrous = 4
         }
 
         public enum AttachmentSurface : byte
@@ -62,7 +63,7 @@ namespace Hecton8.World
             Fan = 4
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 56)]
         public struct RuntimeDescriptor
         {
             public int StableHashId;
@@ -73,6 +74,8 @@ namespace Hecton8.World
             public float PulseFrequency;
             public int HarvestTemplateStableHashId;
             public uint AttachmentSurface;
+            public float SwaySpeed;
+            public float BendAmplitude;
             public uint Reserved0;
         }
 
@@ -178,6 +181,14 @@ namespace Hecton8.World
         [SerializeField, Min(0.05f)]
         [Tooltip("Pulse frequency in Hertz applied by the indirect vegetation shader.")]
         private float pulseFrequency = 0.85f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Per-species VAT sway speed multiplier. Zero falls back to category defaults so existing assets remain valid.")]
+        private float swaySpeed;
+
+        [SerializeField, Range(0f, 2f)]
+        [Tooltip("Per-species VAT bend amplitude multiplier. Zero falls back to category defaults so existing assets remain valid.")]
+        private float bendAmplitude;
 
         [Header("Base Parasitism")]
         [SerializeField]
@@ -291,6 +302,54 @@ namespace Hecton8.World
         /// <summary>Authored shader pulse frequency in Hertz.</summary>
         public float PulseFrequency => Mathf.Max(0.05f, pulseFrequency);
 
+        /// <summary>Per-species VAT sway speed multiplier.</summary>
+        public float SwaySpeed
+        {
+            get
+            {
+                if (swaySpeed > 0.0001f)
+                    return swaySpeed;
+
+                switch (category)
+                {
+                    case FloraCategory.MicroGrass:
+                        return 1.35f;
+                    case FloraCategory.HarvestableKelp:
+                        return 0.62f;
+                    case FloraCategory.HardCoral:
+                        return 0.22f;
+                    case FloraCategory.GiantSargassum:
+                        return 0.78f;
+                    default:
+                        return 1f;
+                }
+            }
+        }
+
+        /// <summary>Per-species VAT bend amplitude multiplier.</summary>
+        public float BendAmplitude
+        {
+            get
+            {
+                if (bendAmplitude > 0.0001f)
+                    return bendAmplitude;
+
+                switch (category)
+                {
+                    case FloraCategory.MicroGrass:
+                        return 0.72f;
+                    case FloraCategory.HarvestableKelp:
+                        return 1.18f;
+                    case FloraCategory.HardCoral:
+                        return 0.18f;
+                    case FloraCategory.GiantSargassum:
+                        return 0.94f;
+                    default:
+                        return 1f;
+                }
+            }
+        }
+
         /// <summary>True when this flora may drain power from base modules.</summary>
         public bool IsParasiticToModules => parasiticToModules;
 
@@ -331,9 +390,11 @@ namespace Hecton8.World
                 VulnerabilityMask = (uint)vulnerabilityMask,
                 AudioMaterialId = (uint)audioMaterialId,
                 BioluminescenceColor = new float4(linearColor.r, linearColor.g, linearColor.b, linearColor.a),
-                PulseFrequency = Mathf.Max(0.05f, pulseFrequency),
+                PulseFrequency = PulseFrequency,
                 HarvestTemplateStableHashId = harvestStableHashId,
                 AttachmentSurface = (uint)attachmentSurface,
+                SwaySpeed = SwaySpeed,
+                BendAmplitude = BendAmplitude,
                 Reserved0 = 0u
             };
         }
@@ -347,6 +408,8 @@ namespace Hecton8.World
             maxHealth = Mathf.Max(0.1f, maxHealth);
             growthTimeSeconds = Mathf.Max(1f, growthTimeSeconds);
             pulseFrequency = Mathf.Max(0.05f, pulseFrequency);
+            swaySpeed = Mathf.Max(0f, swaySpeed);
+            bendAmplitude = Mathf.Clamp(bendAmplitude, 0f, 2f);
             boundingBoxSize.x = Mathf.Max(0.05f, boundingBoxSize.x);
             boundingBoxSize.y = Mathf.Max(0.05f, boundingBoxSize.y);
             boundingBoxSize.z = Mathf.Max(0.05f, boundingBoxSize.z);

@@ -14,14 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
   stableId: flora.knife_mat
   displayName: Knife Mat
-  vegetationType: 2
-  semanticType: 2
+  vegetationType: 0
+  category: 0
+  semanticType: 0
   biomeLayer: 0
   harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
   lootItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
-  attachmentSurface: 0
-  bioluminescenceColor: {r: 0.08, g: 0.52, b: 0.58, a: 0.4}
+  maxHealth: 3.2
+  growthTimeSeconds: 300
+  attachmentSurface: 1
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 1312666289609544870, guid: 9f33aed3c4857524db0029cf6e378f44, type: 3}
+  proxyShape: 4
+  boundingBoxCenter: {x: 0, y: 0.17, z: 0}
+  boundingBoxSize: {x: 1.35, y: 0.34, z: 1.35}
+  cutVfxSocketLocal: {x: 0, y: 0.119, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.23120001, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.0544, z: 0}
+  bioluminescenceColor: {r: 0.26, g: 0.86, b: 0.72, a: 0.46}
   pulseFrequency: 0.58
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

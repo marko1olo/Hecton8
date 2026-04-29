@@ -2526,11 +2526,11 @@ namespace Hecton8.World
             switch (_legacyFallbackType)
             {
                 case HectonVegetationInstanceType.GiantKelp:
-                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.GiantKelp, 0.55f, 0.8f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.55f, new Vector4(0.11f, 0.52f, 0.47f, 0.42f));
+                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.GiantKelp, 0.55f, 0.8f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.55f, new Vector4(0.11f, 0.52f, 0.47f, 0.42f), 0.62f, 1.18f, 1f, 0f);
                 case HectonVegetationInstanceType.Sargassum:
-                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Sargassum, 0.4f, 0.9f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.45f, new Vector4(0.08f, 0.42f, 0.38f, 0.26f));
+                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Sargassum, 0.4f, 0.9f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.45f, new Vector4(0.08f, 0.42f, 0.38f, 0.26f), 0.78f, 0.94f, 1f, 0f);
                 default:
-                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Grass, 0.55f, 1f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.35f, new Vector4(0.10f, 0.48f, 0.34f, 0.22f));
+                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Grass, 0.55f, 1f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.35f, new Vector4(0.10f, 0.48f, 0.34f, 0.22f), 1.35f, 0.72f, 1f, 0f);
             }
         }
 

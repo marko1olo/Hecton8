@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98a2e1b49b31ede4386a6c6f3c5b0c81, type: 3}
+  m_Name: Build_Airlock_Hatch
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.BuildableData
+  moduleName: Airlock
+  stableId: Build_Airlock_Hatch
+  icon: {fileID: 0}
+  description: Emergency ingress hatch with lockdown authority.
+  family: 2
+  ghostPrefab: {fileID: 0}
+  finalPrefab: {fileID: 0}
+  moduleTemplate: {fileID: 11400000, guid: 5eef2f98101d3404884e8931c158ae8d, type: 2}
+  buildCost: []
+  powerRating: -6
+  powerPriority: 20

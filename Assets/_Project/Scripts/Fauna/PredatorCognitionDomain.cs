@@ -538,6 +538,27 @@ namespace Hecton8.AI
             _cores[slot] = core;
         }
 
+        internal static bool ApplyHibernationCatchUp(int slot, float sleepSeconds, float currentTime)
+        {
+            if (!IsValidSlot(slot) || sleepSeconds <= 0f)
+                return false;
+
+            CognitionCore core = _cores[slot];
+            UnpackDriveChannels(core.QuantizedDrives, out float hunger, out float aggression, out float fear, out float threatLevel);
+            float fatigue = UnpackSingleDrive(core.QuantizedFatigue);
+            hunger = math.clamp(hunger + (HungerRate * sleepSeconds), 0f, 1f);
+            fatigue = math.clamp(fatigue + (FatigueRate * sleepSeconds), 0f, 1f);
+            core.QuantizedDrives = PackDriveChannels(hunger, aggression, fear, threatLevel);
+            core.QuantizedFatigue = PackSingleDrive(fatigue);
+            _cores[slot] = core;
+
+            bool forceHunt = hunger >= 0.999f;
+            if (forceHunt)
+                ApplyExternalState(slot, PredatorUtilityState.Attacking, currentTime);
+
+            return forceHunt;
+        }
+
         internal static void NotifyAttackPerformed(int slot, float currentTime, float cooldownSeconds)
         {
             if (!IsValidSlot(slot))

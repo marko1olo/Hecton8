@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
@@ -46,6 +47,7 @@ namespace Hecton8.Gameplay
         private readonly Dictionary<string, int> _entryIndexById = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly List<ScanEntryRecord> _entries = new List<ScanEntryRecord>(64);
         private readonly List<string> _recentIds = new List<string>(8);
+        private bool _saveRegistered;
         private ScanEntrySnapshot[] _recentBuffer;
         private HUDNotification _hudNotification;
 
@@ -83,18 +85,18 @@ namespace Hecton8.Gameplay
             if (Instance == null)
                 Instance = this;
 
-            SaveManager.Instance?.Register(this);
+            TryRegisterSaveParticipant();
             ScanEvents.Register(this);
         }
 
         private void Start()
         {
-            SaveManager.Instance?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            TryUnregisterSaveParticipant();
             ScanEvents.Unregister(this);
         }
 
@@ -144,6 +146,31 @@ namespace Hecton8.Gameplay
             ScanEntryRecord record = _entries[entryIndex];
             entry = new ScanEntrySnapshot(record.id, record.title, record.category, record.summary);
             return true;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.Save;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.Save;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         public bool ContainsEntry(string entryId)

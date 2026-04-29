@@ -428,6 +428,8 @@ namespace Hecton8.World
         private const int InstanceUidTypeShift = 24;
         private const uint InstanceUidCounterMask = 0x00FFFFFFu;
         private const float HydrateRadiusMeters = 150f;
+        private const uint FloraSpawnTimestampStateTypeMask = 0xFA000000u;
+        private const float FloraSpawnTimestampQuantizationSeconds = 60f;
         private const double HydrateRadiusSq = HydrateRadiusMeters * HydrateRadiusMeters;
         private const float DehydrateRadiusMeters = 160f;
         private const double DehydrateRadiusSq = DehydrateRadiusMeters * DehydrateRadiusMeters;
@@ -475,11 +477,10 @@ namespace Hecton8.World
 
         internal int ChunkSizeMeters => chunkSizeMeters;
 
-        internal static ushort PackFloraStateOverride(float normalizedHealth, float normalizedHeightScale)
+        internal static ushort PackFloraStateOverride(float normalizedHealth, byte harvestState)
         {
             byte packedHealth = QuantizeFloraStateChannel(normalizedHealth);
-            byte packedHeight = QuantizeFloraStateChannel(normalizedHeightScale);
-            return (ushort)(packedHealth | (packedHeight << 8));
+            return (ushort)(packedHealth | (harvestState << 8));
         }
 
         internal static bool IsPristineFloraState(float normalizedHealth, float normalizedHeightScale)
@@ -487,10 +488,23 @@ namespace Hecton8.World
             return math.saturate(normalizedHealth) >= 0.9999f && math.saturate(normalizedHeightScale) >= 0.9999f;
         }
 
-        internal static void UnpackFloraStateOverride(ushort packedState, out float normalizedHealth, out float normalizedHeightScale)
+        internal static void UnpackFloraStateOverride(ushort packedState, out float normalizedHealth, out byte harvestState)
         {
             normalizedHealth = ((packedState & 0xFF) / FloraStateQuantizationScale);
-            normalizedHeightScale = (((packedState >> 8) & 0xFF) / FloraStateQuantizationScale);
+            harvestState = (byte)((packedState >> 8) & 0xFF);
+        }
+
+        internal static int PackFloraSpawnTimestampMinutes(float spawnPlayTimeSeconds)
+        {
+            float clampedSeconds = math.max(0f, spawnPlayTimeSeconds);
+            int quantizedMinutes = math.clamp((int)math.floor(clampedSeconds / FloraSpawnTimestampQuantizationSeconds), 0, ushort.MaxValue - 1);
+            return quantizedMinutes + 1;
+        }
+
+        internal static float UnpackFloraSpawnTimestampSeconds(int packedMinutes)
+        {
+            int quantizedMinutes = math.max(0, packedMinutes - 1);
+            return quantizedMinutes * FloraSpawnTimestampQuantizationSeconds;
         }
 
         private static byte QuantizeFloraStateChannel(float value)
@@ -513,6 +527,7 @@ namespace Hecton8.World
         private NativeArray<PoolSlotData> _poolSlotData;
         private NativeHashMap<ulong, int> _guidToPoolIndex;
         private NativeHashMap<uint, EntityDataRecord> _entityStateByInstanceUid;
+        private NativeHashMap<uint, EntityDataRecord> _floraSpawnStateByInstanceUid;
         private NativeHashMap<uint, float3> _spawnImpulseByInstanceUid;
         private NativeHashMap<uint, float3> _spawnVelocityChangeByInstanceUid;
         private NativeQueue<int> _dehydrateQueue;
@@ -527,6 +542,7 @@ namespace Hecton8.World
         private List<int> _worldPrefabReleaseScratch;
         private List<int> _recordIndexScratch;
         private List<EntityDataRecord> _entityStateScratch;
+        private List<EntityDataRecord> _floraSpawnStateScratch;
         private Transform _playerTransform;
         private ItemCatalog _resolvedItemCatalog;
         private bool _tickRegistered;
@@ -642,6 +658,7 @@ namespace Hecton8.World
             _guidToPoolIndex = new NativeHashMap<ulong, int>(maxTrackedItems, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] — authoritative dehydration payload store keyed by InstanceUid — owner: PersistentWorldRegistry
             _entityStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent);
+            _floraSpawnStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] - standalone flora spawn-timestamp payload store keyed by deterministic flora uid - owner: PersistentWorldRegistry
             // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] â€” deferred spawn impulse staging keyed by InstanceUid for persistent debris hydration â€” owner: PersistentWorldRegistry
             _spawnImpulseByInstanceUid = new NativeHashMap<uint, float3>(maxTrackedItems, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] — deferred spawn velocity-change staging keyed by InstanceUid for transport-relative dropped-item inheritance — owner: PersistentWorldRegistry
@@ -668,7 +685,9 @@ namespace Hecton8.World
             _worldPrefabReleaseScratch = new List<int>(256);
             // COLD ALLOC: List<int>[128] — hydrated record scratch buffer for sync/dehydrate passes — owner: PersistentWorldRegistry
             _recordIndexScratch = new List<int>(128);
+            // COLD ALLOC: List<EntityDataRecord>[128] — sector entity-state rewrite scratch buffer for MMF fauna hibernation pages — owner: PersistentWorldRegistry
             _entityStateScratch = new List<EntityDataRecord>(128);
+            _floraSpawnStateScratch = new List<EntityDataRecord>(128); // COLD ALLOC: List<EntityDataRecord>[128] - standalone flora spawn-state snapshot scratch - owner: PersistentWorldRegistry
             // COLD ALLOC: List<IndexedSectorEntryInfo>[256] â€” cached v8 sector directory entries for paged restore â€” owner: PersistentWorldRegistry
             _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
             // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] â€” paged sector temp-override residency map â€” owner: PersistentWorldRegistry
@@ -747,6 +766,9 @@ namespace Hecton8.World
 
             if (_entityStateByInstanceUid.IsCreated)
                 _entityStateByInstanceUid.Dispose();
+
+            if (_floraSpawnStateByInstanceUid.IsCreated)
+                _floraSpawnStateByInstanceUid.Dispose();
 
             if (_spawnImpulseByInstanceUid.IsCreated)
                 _spawnImpulseByInstanceUid.Dispose();
@@ -931,12 +953,12 @@ namespace Hecton8.World
             uint instanceUid,
             Vector3 runtimePosition,
             float normalizedHealth,
-            float normalizedHeightScale)
+            byte harvestState)
         {
             if (floraPersistentIdHash == 0UL || instanceUid == 0u || !_records.IsCreated)
                 return false;
 
-            ushort packedState = PackFloraStateOverride(normalizedHealth, normalizedHeightScale);
+            ushort packedState = PackFloraStateOverride(normalizedHealth, harvestState);
             if (packedState == 0)
                 return TryClearFloraStateOverride(instanceUid);
 
@@ -1111,6 +1133,41 @@ namespace Hecton8.World
             }
 
             return false;
+        }
+
+        internal bool TryRegisterFloraSpawnTimestamp(uint instanceUid, Vector3 runtimePosition, float spawnPlayTimeSeconds)
+        {
+            if (instanceUid == 0u || !_floraSpawnStateByInstanceUid.IsCreated)
+                return false;
+
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            EntityDataRecord state = CreateFloraSpawnTimestampState(instanceUid, spawnPlayTimeSeconds, in position);
+            _floraSpawnStateByInstanceUid.Remove(instanceUid);
+            _floraSpawnStateByInstanceUid.TryAdd(instanceUid, state);
+            return true;
+        }
+
+        internal bool TryGetFloraSpawnTimestamp(uint instanceUid, out float spawnPlayTimeSeconds)
+        {
+            spawnPlayTimeSeconds = 0f;
+            if (instanceUid == 0u ||
+                !_floraSpawnStateByInstanceUid.IsCreated ||
+                !_floraSpawnStateByInstanceUid.TryGetValue(instanceUid, out EntityDataRecord state) ||
+                !IsFloraSpawnTimestampState(in state))
+            {
+                return false;
+            }
+
+            spawnPlayTimeSeconds = GetFloraSpawnTimestampSeconds(in state);
+            return true;
+        }
+
+        internal bool TryClearFloraSpawnTimestamp(uint instanceUid)
+        {
+            if (instanceUid == 0u || !_floraSpawnStateByInstanceUid.IsCreated)
+                return false;
+
+            return _floraSpawnStateByInstanceUid.Remove(instanceUid);
         }
 
         internal bool IsTombstoned(uint instanceUid)
@@ -2197,6 +2254,38 @@ namespace Hecton8.World
                 entityStateBucket.Add(ResolveEntityState(in record));
             }
 
+            if (_floraSpawnStateByInstanceUid.IsCreated)
+            {
+                NativeHashMap<uint, EntityDataRecord>.Enumerator floraEnumerator = _floraSpawnStateByInstanceUid.GetEnumerator();
+                while (floraEnumerator.MoveNext())
+                {
+                    EntityDataRecord state = floraEnumerator.Current.Value;
+                    if (!IsFloraSpawnTimestampState(in state))
+                        continue;
+
+                    AbsoluteUniversePosition floraPosition = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
+                    long sectorHash = ComputeSectorHash(in floraPosition);
+                    if (IsDesiredPagedSector(desiredSectorHashes, sectorHash))
+                        continue;
+
+                    if (!sectors.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> floraBucket))
+                    {
+                        floraBucket = new List<PersistentWorldDeltaRecord>(0);
+                        sectors.Add(sectorHash, floraBucket);
+                    }
+
+                    if (!sectorEntityStates.TryGetValue(sectorHash, out List<EntityDataRecord> floraStateBucket))
+                    {
+                        floraStateBucket = new List<EntityDataRecord>(4);
+                        sectorEntityStates.Add(sectorHash, floraStateBucket);
+                    }
+
+                    floraStateBucket.Add(state);
+                }
+
+                floraEnumerator.Dispose();
+            }
+
             if (sectors.Count <= 0)
                 return true;
 
@@ -2485,13 +2574,25 @@ namespace Hecton8.World
 
         private void ApplyStagedEntityStates(Dictionary<uint, EntityDataRecord> stagedEntityStates)
         {
-            if (stagedEntityStates == null || stagedEntityStates.Count <= 0 || !_entityStateByInstanceUid.IsCreated)
+            if (stagedEntityStates == null ||
+                stagedEntityStates.Count <= 0 ||
+                !_entityStateByInstanceUid.IsCreated ||
+                !_floraSpawnStateByInstanceUid.IsCreated)
+            {
                 return;
+            }
 
             Dictionary<uint, EntityDataRecord>.Enumerator enumerator = stagedEntityStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 KeyValuePair<uint, EntityDataRecord> pair = enumerator.Current;
+                if (IsFloraSpawnTimestampState(in pair.Value))
+                {
+                    _floraSpawnStateByInstanceUid.Remove(pair.Key);
+                    _floraSpawnStateByInstanceUid.TryAdd(pair.Key, pair.Value);
+                    continue;
+                }
+
                 _entityStateByInstanceUid.Remove(pair.Key);
                 _entityStateByInstanceUid.TryAdd(pair.Key, pair.Value);
             }
@@ -2784,11 +2885,20 @@ namespace Hecton8.World
             if (string.IsNullOrEmpty(entityStateTempPath) || entityStates == null || entityStates.Count <= 0)
                 return false;
 
-            using NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStates.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            EntityDataRecord[] sectorStateScratch = new EntityDataRecord[entityStates.Count]; // COLD ALLOC: EntityDataRecord[entityStates.Count] - save-path sector state staging prior to NativeArray copy - owner: PersistentWorldRegistry
             for (int i = 0; i < entityStates.Count; i++)
-                sectorStates[i] = entityStates[i];
+                sectorStateScratch[i] = entityStates[i];
 
-            return SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, sectorHash, sectorStates, math.max(1, chunkSizeMeters), out _);
+            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(sectorStateScratch, Allocator.TempJob);
+            try
+            {
+                return SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, sectorHash, sectorStates, math.max(1, chunkSizeMeters), out _);
+            }
+            finally
+            {
+                if (sectorStates.IsCreated)
+                    sectorStates.Dispose();
+            }
         }
 
         private static long ComputeSectorHash(in AbsoluteUniversePosition position)
@@ -2898,6 +3008,33 @@ namespace Hecton8.World
             return state.InstanceUid != 0u &&
                    state.Quantity > 0 &&
                    (((uint)state.InventoryHash & 0xFF000000u) == FaunaHibernationStateTypeMask);
+        }
+
+        internal static EntityDataRecord CreateFloraSpawnTimestampState(
+            uint instanceUid,
+            float spawnPlayTimeSeconds,
+            in AbsoluteUniversePosition position)
+        {
+            return new EntityDataRecord
+            {
+                Position = position.ToAlignedBlit(),
+                Quantity = PackFloraSpawnTimestampMinutes(spawnPlayTimeSeconds),
+                Integrity01 = 1f,
+                InventoryHash = unchecked((int)FloraSpawnTimestampStateTypeMask),
+                InstanceUid = instanceUid
+            };
+        }
+
+        internal static bool IsFloraSpawnTimestampState(in EntityDataRecord state)
+        {
+            return state.InstanceUid != 0u &&
+                   state.Quantity > 0 &&
+                   (((uint)state.InventoryHash & 0xFF000000u) == FloraSpawnTimestampStateTypeMask);
+        }
+
+        internal static float GetFloraSpawnTimestampSeconds(in EntityDataRecord state)
+        {
+            return UnpackFloraSpawnTimestampSeconds(state.Quantity);
         }
 
         internal static int GetFaunaHibernationSpeciesId(in EntityDataRecord state)
@@ -3276,6 +3413,9 @@ namespace Hecton8.World
 
             if (_entityStateByInstanceUid.IsCreated)
                 _entityStateByInstanceUid.Clear();
+
+            if (_floraSpawnStateByInstanceUid.IsCreated)
+                _floraSpawnStateByInstanceUid.Clear();
 
             if (_deltaRecordIndexByEntityId.IsCreated)
                 _deltaRecordIndexByEntityId.Clear();

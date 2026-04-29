@@ -10,9 +10,11 @@ Supersedes: transient construction notes spread across dated audit bundles. Olde
 ## Scope
 
 - habitat module adjacency
+- standardized module socket topology
 - logistics pipe visual generation
 - rupture propagation and visual aftermath
 - support-loss cascade behavior
+- construction graph persistence
 
 Out of scope:
 
@@ -27,11 +29,29 @@ Out of scope:
   - CSR adjacency build
   - support-loss rupture detection
   - logical edge severing on unsupported spans
+  - connected-component low-power evaluation
 - `Assets/_Project/Scripts/Core/LogisticsPipeBuilder.cs`
   - spline descriptor math
   - Bishop / rotation-minimizing frame transport
   - visual LOD selection
 - `Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs`
+
+## Module Standard
+
+- `Assets/_Project/Scripts/BaseModuleTemplate.cs` is the authored source of truth for module socket layout, proxy bounds, integrity defaults, and stable template hash IDs.
+- `Assets/_Project/Scripts/ModuleSocket.cs` owns strict directional compatibility. A snap is valid only when the candidate socket direction is the inverse of the target socket direction and the compatibility lanes match.
+- `Assets/_Project/Scripts/PlayerBuilder.cs` and `Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs` must generate ghost/final proxy cubes when a buildable has no authored prefab. Proxy geometry is derived from `BaseModuleTemplate.proxyBounds*` and `socketDefinitions`.
+
+## Persistence Contract
+
+- `Assets/_Project/Scripts/SaveData.cs`
+  - `ConstructionDTO.modules[]` remains the legacy/runtime-state channel for integrity, flooding, and component-specific payloads.
+  - `ConstructionDTO.graphNodes[]` stores node AUP, module hash ID, prefab ID, and rotation.
+  - `ConstructionDTO.graphEdges[]` stores undirected topology pairs using saved node indices.
+- `Assets/_Project/Scripts/ConstructionManager.cs`
+  - save writes both the flat module state and the graph topology in the same pass.
+  - load prefers graph nodes for transform reconstruction and hash fallback, then restores runtime state from `modules[]`.
+  - legacy saves without graph arrays still load through the flat module DTO path.
   - batched runtime mesh build for pipe proxies
   - Burst jobs for sample frames, tube vertices, and indices
   - line fallback for distant pipes

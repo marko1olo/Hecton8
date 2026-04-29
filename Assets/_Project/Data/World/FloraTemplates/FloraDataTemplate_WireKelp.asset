@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_WireKelp
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
+  stableId: flora.wire_kelp
+  displayName: Wire Kelp
+  vegetationType: 1
+  category: 1
+  semanticType: 1
+  biomeLayer: 0
+  harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
+  lootItem: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 1
+  audioMaterialId: 1
+  maxHealth: 6.9
+  growthTimeSeconds: 510
+  attachmentSurface: 1
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 7853899551642607432, guid: f1f2bae9c8ee1404dbe99b124aec5191, type: 3}
+  proxyShape: 3
+  boundingBoxCenter: {x: 0, y: 1.925, z: 0}
+  boundingBoxSize: {x: 0.58, y: 3.85, z: 0.58}
+  cutVfxSocketLocal: {x: 0, y: 1.3475, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 2.618, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.616, z: 0}
+  bioluminescenceColor: {r: 0.22, g: 0.86, b: 0.74, a: 0.64}
+  pulseFrequency: 0.72
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

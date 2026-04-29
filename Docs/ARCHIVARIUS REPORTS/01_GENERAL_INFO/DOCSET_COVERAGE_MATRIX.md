@@ -35,6 +35,7 @@ Authority levels used below:
 | Bootstrap / init order | strong | `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`, `BUILD_DEPENDENCY_GRAPH.md` | `DEPENDENCY_GRAPH.md`, `FRAME_TIMELINE.md` | PRIMARY | no live bootstrap branch traversal proof |
 | Scene / prefab service-owner truth | medium | `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` | `PROJECT_ATLAS.md`, `BUILD_DEPENDENCY_GRAPH.md` | PRIMARY | scan is bounded to current first-party scenes/prefabs, not all runtime states |
 | GlobalRegistry / service ownership | strong | `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_HEALTH_DASHBOARD.md` | `INTERFACE_STRATEGY.md`, `DEPENDENCY_GRAPH.md`, `PROJECT_ATLAS.md` | PRIMARY | prefab/scene wiring proof still absent |
+| Service authority drift / mixed singleton-registry ownership | medium | `2026-04-30_SERVICE_AUTHORITY_DRIFT.md` | `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md`, `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`, `SINGLETON_VIOLATIONS.md` | PRIMARY | no live duplicate-registration or startup-regression replay |
 | Interface truth / contract drift | strong | `INTERFACE_HEALTH_DASHBOARD.md` | `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_STRATEGY.md` | PRIMARY | no automated diff against future source drift |
 | Event architecture | strong | `EVENT_FLOW_MAP.md` | `EVENT_BUS_MAP.md`, `FRAME_TIMELINE.md`, `2026-04-28_EVENT_LEAK_REPORT.md` | PRIMARY | full subscriber graph and teardown proof absent |
 | Tick / frame execution | medium | `FRAME_TIMELINE.md` | `STRUCTURAL_NARRATIVE.md`, `DEPENDENCY_GRAPH.md` | PRIMARY | no measured frame-budget replay |
@@ -48,12 +49,15 @@ Authority levels used below:
 | Assembly / package dependency surface | medium | `2026-04-28_CIRCULAR_DEPS.md` | `DEPENDENCY_GRAPH.md`, `PROJECT_ATLAS.md` | PRIMARY | no Roslyn/full compile graph export |
 | Audio ownership / routing | medium | `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md` | `AUDIO_ROUTING_AUDIT.md`, `INTERFACE_HEALTH_DASHBOARD.md`, `DEPENDENCY_GRAPH.md`, `PROJECT_ATLAS.md` | PRIMARY | no live DSP/runtime mix-path verification |
 | UI / HUD architecture | strong | `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md` | `HUD_EDITOR_SPEC.md`, `INTERFACE_HEALTH_DASHBOARD.md`, `STRUCTURAL_NARRATIVE.md`, `SINGLETON_FIX_PRIORITY.md` | PRIMARY | no measured canvas/RT runtime cost proof |
+| Editor/runtime forensic debt | medium | `2026-04-30_EDITOR_RUNTIME_FORENSICS.md` | `2026-04-28_HOT_PATH_VIOLATIONS.md`, `DEAD_CODE_GRAVEYARD.md`, `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md` | PRIMARY | no measured runtime replay or fix-validation proof |
 | Save / load runtime truth | medium | `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` | `EVENT_FLOW_MAP.md`, `FRAME_TIMELINE.md` | PRIMARY | no live slot traversal or corruption-recovery proof |
+| Runtime persistence drift beyond save slots | medium | `2026-04-30_PERSISTENCE_AND_SCENE_SEARCH_DRIFT.md` | `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`, `2026-04-30_SERVICE_AUTHORITY_DRIFT.md` | PRIMARY | no live artifact audit or persistence-failure replay |
 | Save-participant breadth | medium | `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` | `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`, `EVENT_FLOW_MAP.md` | PRIMARY | participant ordering is source-backed, not live-validated |
 | Rendering / RT / render graph | medium | `RENDERGRAPH_AUDIT.md`, `COMPUTE_BUFFER_AUDIT.md` | `SCENE_VRAM_FOOTPRINT.md`, `VRAM_BUDGET_AUDIT.md` | PRIMARY | no fresh measured RenderDoc / Frame Debugger authority |
 | VRAM / memory budgets | medium | `VRAM_BUDGET_AUDIT.md` | `2026-04-28_VRAM_BUDGET_AUDIT.md`, `2026-04-28_VRAM_EXECUTION_LIST.md`, `SCENE_VRAM_FOOTPRINT.md`, `vram_detail.csv` | PRIMARY | current measured residency still absent |
 | Struct layouts / data surfaces | medium | `2026-04-28_DATA_DICTIONARY.md` | `2026-04-28_MEMORY_ALIGNMENT_FIX.md`, `SYSTEM_INTERCONNECT_MATRIX.md` | SECONDARY | many notes remain dated and surgery-ready only after fresh reread |
 | Asset dependency / referencer mapping | medium | `ASSET_DEPENDENCY_MAP.md` | `2026-04-28_ASSET_DEPENDENCY_MAP.md`, `ITEM_ASSET_GUIDS.md`, `PROJECT_CONTENT_LEDGER.md` | PRIMARY | no fresh Unity-side referencer export |
+| Content authoring / hash / proxy validation | medium | `PROJECT_CONTENT_LEDGER.md` | `ITEM_ASSET_GUIDS.md`, `DEAD_CODE_GRAVEYARD.md` | PRIMARY | validator exists, but no fresh MCP execution proof yet |
 | Dead assets / dead code | medium | `2026-04-28_DEAD_ASSET_SWEEP.md`, `DEAD_CODE_GRAVEYARD.md` | `DEBUG_LOG_DELETION_QUEUE.md` | PRIMARY | deletion-safe proof still weak without dependency graph |
 | Hot-path / GC / profiler readiness | medium | `2026-04-28_HOT_PATH_VIOLATIONS.md`, `2026-04-28_PROFILING_PREPAREDNESS_AUDIT.md` | `FRAME_TIMELINE.md`, `2026-04-28_LIAR_DETECTION.md` | PRIMARY | no live profiler or GCMonitor pass |
 | Singleton remediation | medium | `SINGLETON_VIOLATIONS.md`, `SINGLETON_FIX_PRIORITY.md` | `DEPENDENCY_GRAPH.md`, `INTERFACE_STRATEGY.md` | PRIMARY | roadmap still needs owner-by-owner execution proof |
@@ -82,17 +86,21 @@ Authority levels used below:
 | Need narrative/discovery/progression ownership | `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md` -> `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` -> `EVENT_FLOW_MAP.md` |
 | Need world/environment/submarine ownership | `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md` -> `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md` -> `PROJECT_ATLAS.md` |
 | Need registry/runtime authority truth | `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md` -> `INTERFACE_HEALTH_DASHBOARD.md` -> `BUILD_DEPENDENCY_GRAPH.md` |
+| Need mixed singleton/registry service-authority truth | `2026-04-30_SERVICE_AUTHORITY_DRIFT.md` -> `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md` -> `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md` |
 | Need authored-vs-runtime owner truth | `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` -> `BUILD_DEPENDENCY_GRAPH.md` -> `PROJECT_ATLAS.md` |
 | Need interface/service truth | `INTERFACE_HEALTH_DASHBOARD.md` -> `INTERFACE_CONTRACT_TABLE.md` -> `INTERFACE_STRATEGY.md` |
 | Need event-bus truth | `EVENT_FLOW_MAP.md` -> `EVENT_BUS_MAP.md` -> `2026-04-28_EVENT_LEAK_REPORT.md` |
 | Need bootstrap/init context | `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md` -> `BUILD_DEPENDENCY_GRAPH.md` -> `DEPENDENCY_GRAPH.md` -> `FRAME_TIMELINE.md` |
 | Need UI/audio/presentation ownership | `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md` -> `INTERFACE_HEALTH_DASHBOARD.md` -> `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` |
+| Need live console / editor-runtime forensic truth | `2026-04-30_EDITOR_RUNTIME_FORENSICS.md` -> `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md` -> `2026-04-28_HOT_PATH_VIOLATIONS.md` |
 | Need player/gameplay ownership truth | `PLAYER_GAMEPLAY_CORE_MAP.md` -> `INTERFACE_HEALTH_DASHBOARD.md` -> `FRAME_TIMELINE.md` |
 | Need construction/runtime truth | `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` -> `MODULAR_EQUIPMENT_ENGINE_SURGERY_LOG.md` -> `FRAME_TIMELINE.md` |
 | Need save/load truth | `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` -> `EVENT_FLOW_MAP.md` -> `FRAME_TIMELINE.md` |
+| Need non-slot persistence / runtime scene-search truth | `2026-04-30_PERSISTENCE_AND_SCENE_SEARCH_DRIFT.md` -> `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` -> `2026-04-30_SERVICE_AUTHORITY_DRIFT.md` |
 | Need save participant inventory | `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` -> `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` -> `EVENT_FLOW_MAP.md` |
 | Need AUP/world coupling truth | `SYSTEM_INTERCONNECT_MATRIX.md` -> `AUP_SURGERY_MAP.md` -> `2026-04-28_DATA_DICTIONARY.md` |
 | Need rendering/memory context | `VRAM_BUDGET_AUDIT.md` -> `RENDERGRAPH_AUDIT.md` -> `COMPUTE_BUFFER_AUDIT.md` -> `SCENE_VRAM_FOOTPRINT.md` |
+| Need content hash/proxy/collider truth | `PROJECT_CONTENT_LEDGER.md` -> `ITEM_ASSET_GUIDS.md` -> `DEAD_CODE_GRAVEYARD.md` |
 | Need singleton cleanup context | `SINGLETON_VIOLATIONS.md` -> `SINGLETON_FIX_PRIORITY.md` -> `INTERFACE_HEALTH_DASHBOARD.md` |
 
 ## Current Trust Boundary

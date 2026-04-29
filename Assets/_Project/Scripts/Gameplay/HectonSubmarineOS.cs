@@ -1,5 +1,6 @@
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Power;
@@ -207,6 +208,7 @@ namespace Hecton8.Gameplay
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
         private bool _stationKeepingStateCached;
+        private HectonDroneFleetSnapshot _fleetSnapshot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstalled()
@@ -245,6 +247,9 @@ namespace Hecton8.Gameplay
         /// <summary>Current maximum room pressure in kilopascals.</summary>
         public float MaxPressureKPa => _maxPressureKPa;
 
+        /// <summary>Latest fleet telemetry published by the repair-drone dispatcher.</summary>
+        public HectonDroneFleetSnapshot FleetSnapshot => _fleetSnapshot;
+
         private void Awake()
         {
             CacheReferences();
@@ -255,6 +260,7 @@ namespace Hecton8.Gameplay
             CacheReferences();
             RebuildBrownoutCaches();
             Subscribe();
+            _fleetSnapshot = DroneFleetManager.CurrentSnapshot;
             TryRegister();
             PublishLog(HectonSubmarineOsLogCode.ReactorStable, LogPriorityNormal);
             RefreshTelemetryFromServices();
@@ -333,6 +339,8 @@ namespace Hecton8.Gameplay
             HighPressureEvents.OnHighPressure += HandleHighPressure;
             FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
             FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
+            HectonDroneFleetEvents.OnSnapshotUpdated -= HandleFleetSnapshotUpdated;
+            HectonDroneFleetEvents.OnSnapshotUpdated += HandleFleetSnapshotUpdated;
         }
 
         private void Unsubscribe()
@@ -340,6 +348,12 @@ namespace Hecton8.Gameplay
             PowerGridTelemetryEvents.OnTelemetryUpdated -= HandlePowerTelemetryUpdated;
             HighPressureEvents.OnHighPressure -= HandleHighPressure;
             FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
+            HectonDroneFleetEvents.OnSnapshotUpdated -= HandleFleetSnapshotUpdated;
+        }
+
+        private void HandleFleetSnapshotUpdated(in HectonDroneFleetSnapshot snapshot)
+        {
+            _fleetSnapshot = snapshot;
         }
 
         private void TryRegister()

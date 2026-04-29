@@ -95,8 +95,24 @@ namespace Hecton8.Bootstrap
             if (!activeScene.IsValid() || !activeScene.name.Contains("00_BOOTSTRAP"))
                 return;
 
-            BootstrapController existing =
-                BootstrapController.Instance;
+            BootstrapController existing = BootstrapController.Instance;
+            if (existing == null)
+            {
+                BootstrapController[] controllers = Object.FindObjectsByType<BootstrapController>(FindObjectsInactive.Include);
+                for (int i = 0; i < controllers.Length; i++)
+                {
+                    BootstrapController candidate = controllers[i];
+                    if (candidate == null || candidate.gameObject == null)
+                        continue;
+
+                    if (candidate.gameObject.scene == activeScene)
+                    {
+                        existing = candidate;
+                        break;
+                    }
+                }
+            }
+
             if (existing != null)
             {
                 existing.EnsureInitializedAfterSceneLoad();

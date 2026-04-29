@@ -869,6 +869,16 @@ namespace Hecton8.Scavenging
             _registeredToWorldStateRegistry = false;
         }
 
+        private Vector3 ResolveFallbackNormal(Vector3 worldHitPoint)
+        {
+            Vector3 origin = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            Vector3 normal = worldHitPoint - origin;
+            if (normal.sqrMagnitude <= 0.000001f)
+                return _cachedTransform != null ? _cachedTransform.up : Vector3.up;
+
+            return normal.normalized;
+        }
+
         private void UpdateMeltProperties(Vector3 worldHitPoint)
         {
             Vector3 localPosition = _cachedTransform.InverseTransformPoint(worldHitPoint);

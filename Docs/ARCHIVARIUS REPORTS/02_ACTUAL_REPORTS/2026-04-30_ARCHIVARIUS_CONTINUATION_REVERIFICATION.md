@@ -16,9 +16,9 @@ It exists because active documentation changed again on `2026-04-30`, and same-d
 | Bucket | Count |
 |---|---:|
 | `01_GENERAL_INFO` markdown files | 22 |
-| `02_ACTUAL_REPORTS` markdown files | 43 |
+| `02_ACTUAL_REPORTS` markdown files | 46 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| Total files reviewed | 66 |
+| Total files reviewed | 69 |
 
 ## New Additions In This Pass
 
@@ -31,6 +31,9 @@ It exists because active documentation changed again on `2026-04-30`, and same-d
 | `01_GENERAL_INFO/TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md` | added detailed ownership map for player tools, interaction-routing runtime, scanner/cutter/repair/beacon branches, and adjacent operational save surfaces |
 | `02_ACTUAL_REPORTS/2026-04-30_SAVE_PARTICIPANT_LEDGER.md` | added broad `ISaveable` participant inventory and observed priority-band analysis |
 | `02_ACTUAL_REPORTS/2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md` | added source-backed split-bootstrap authority map across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap` |
+| `02_ACTUAL_REPORTS/2026-04-30_EDITOR_RUNTIME_FORENSICS.md` | added live-console and source-backed forensic report for scatter gizmo NRE spam, tick-adjacent UI mutation debt, verifier coroutine debt, and false-positive `Complete()` clarifications |
+| `02_ACTUAL_REPORTS/2026-04-30_SERVICE_AUTHORITY_DRIFT.md` | added source-backed audit of mixed singleton, `DontDestroyOnLoad`, and `GlobalRegistry` authority in active service owners, plus recheck of the stale `VoxelDynamicNavGridRuntime` accusation |
+| `02_ACTUAL_REPORTS/2026-04-30_PERSISTENCE_AND_SCENE_SEARCH_DRIFT.md` | added source-backed audit of non-slot runtime persistence surfaces and slow-tick/runtime scene-search fallback debt outside bootstrap/editor |
 | `02_ACTUAL_REPORTS/2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md` | added trust-boundary note so the older reverification layer is not misread as the latest anchor |
 | `02_ACTUAL_REPORTS/2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md` | this continuation report |
 
@@ -38,12 +41,20 @@ It exists because active documentation changed again on `2026-04-30`, and same-d
 
 - broad `ISaveable` participant surface
 - current save/load priority clustering
+- current live Unity console exception surface reachable through MCP
+- current low-risk source fix for scatter preview gizmo null-safety after the last verified console snapshot
+- current low-risk source fix for `InputDispatcher` same-instance `GlobalRegistry.Input` duplicate publish path
+- current editor/runtime forensic debt around scatter preview gizmos, tick-adjacent UI mutation, and coroutine-heavy verifiers
+- current mixed service-authority surface across singleton ownership, `DontDestroyOnLoad`, and `GlobalRegistry` publication
+- current non-slot runtime persistence surface and slow-tick scene-search fallback debt
 - current survival / damage / hazard ownership and consequence layering
 - current tools / interaction / scanner / durability / beacon operational ownership
 - world/environment/ocean/thermal/scatter/ecosystem/submarine ownership
 - current UI/audio/presentation ownership
 - current narrative/discovery/progression ownership
 - current split-bootstrap runtime authority
+- current content hash/proxy/collider validation boundaries
+- current dead-code graveyard trust boundary
 - active folder counts after new document creation
 
 ## Current Confirmed Additions To Truth Layer
@@ -57,7 +68,19 @@ It exists because active documentation changed again on `2026-04-30`, and same-d
 | Save-participant breadth | active docset now has a broad participant ledger rather than only save-pipeline description |
 | Survival / hazard truth | active docset now has a dedicated map for survival authority, hazard routing, thermodynamics hazard sources, and the parallel `HectonPlayerHealth` branch |
 | Tools / interaction / operational runtime mapping | active docset now has a dedicated source-backed map for hand-tool dispatch, shared tool spine, interaction routing, scanner persistence, durability runtime, and beacon network ownership |
-| Active docset totals | folders `01` and `02` now cover `66` files including `1` CSV dataset |
+| Content validation truth | active docset now records real hash authority, ghost/proxy policy, and scoped `MeshCollider` enforcement through `ContentSanityValidator` |
+| Dead-code trust boundary | old graveyard overclaim was replaced by evidence-backed strong orphan candidates plus explicit retained diagnostics |
+| Editor/runtime forensic truth | active docset now contains a dedicated report for current live console spam, UI mutation debt, verifier coroutine debt, and rechecked non-findings around `JobHandle.Complete()` |
+| Service authority drift truth | active docset now contains a dedicated report for mixed singleton/registry active service owners and for the reread that clears the older `VoxelDynamicNavGridRuntime` lifetime accusation |
+| Persistence / scene-search drift truth | active docset now contains a dedicated report for input/meta-profile file persistence outside `SaveManager` and for cave AO slow-tick scene-search fallback debt |
+| Active docset totals | folders `01` and `02` now cover `69` files including `1` CSV dataset |
+
+## Current Source Fixes Applied But Not Live-Reverified
+
+| Fix | Current state |
+|---|---|
+| scatter preview gizmo null-safety | source patch applied in `WorldProceduralScatterDirector.BuildScatterPreviewGizmoSnapshot(...)` and `WorldProceduralScatterPreviewGizmoDrawer`, but Unity MCP session dropped before compile/console recheck |
+| `InputDispatcher` same-instance input-service republish | source patch applied through `TryRegisterInputService()` / `TryUnregisterInputService()` lifecycle guards, but Unity MCP session remained unavailable for live recheck |
 
 ## Current Trust Boundary On 2026-04-30
 

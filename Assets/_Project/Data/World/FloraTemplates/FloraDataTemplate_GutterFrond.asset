@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_GutterFrond
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
+  stableId: flora.gutter_frond
+  displayName: Gutter Frond
+  vegetationType: 1
+  category: 1
+  semanticType: 1
+  biomeLayer: 0
+  harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
+  lootItem: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 17
+  audioMaterialId: 1
+  maxHealth: 5.8
+  growthTimeSeconds: 430
+  attachmentSurface: 1
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 5228878647796043864, guid: 0c798cc781e5daf4c9f416fd4f737012, type: 3}
+  proxyShape: 3
+  boundingBoxCenter: {x: 0, y: 1.275, z: 0}
+  boundingBoxSize: {x: 0.76, y: 2.55, z: 0.76}
+  cutVfxSocketLocal: {x: 0, y: 0.8925, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 1.734, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.408, z: 0}
+  bioluminescenceColor: {r: 0.48, g: 0.76, b: 0.22, a: 0.34}
+  pulseFrequency: 0.36
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

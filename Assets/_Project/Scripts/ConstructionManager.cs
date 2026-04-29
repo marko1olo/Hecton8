@@ -29,6 +29,8 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
+using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -106,6 +108,7 @@ namespace Hecton8.Construction
         private HabitatGraphManager _habitatGraphManager;
         private bool _tickRegistered;
         private bool _logisticsServiceRegistered;
+        private bool _saveRegistered;
         private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
@@ -169,7 +172,7 @@ namespace Hecton8.Construction
             _slowTickAccumulator = 0f;
             TryRegisterLogisticsService();
             TryRegisterTick();
-            SaveManager.Instance?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
@@ -177,13 +180,14 @@ namespace Hecton8.Construction
             TryUnregisterTick();
             TryUnregisterLogisticsService();
             _slowTickAccumulator = 0f;
-            SaveManager.Instance?.Unregister(this);
+            TryUnregisterSaveParticipant();
         }
 
         private void OnDestroy()
         {
             TryUnregisterTick();
             TryUnregisterLogisticsService();
+            TryUnregisterSaveParticipant();
             if (_habitatGraphManager != null)
             {
                 _habitatGraphManager.Dispose();
@@ -283,6 +287,9 @@ namespace Hecton8.Construction
             if (data != null)
                 marker.Initialize(data);
 
+            if (data != null && module.TryGetComponent(out BaseModule baseModule))
+                baseModule.ApplyBuildableTemplate(data);
+
             RegisterModule(module);
         }
 
@@ -313,10 +320,7 @@ namespace Hecton8.Construction
             UnregisterModule(module);
 
             ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool != null)
-                pool.Despawn(module);
-            else
-                Destroy(module);
+            DespawnOrDestroyModuleInstance(module, pool);
         }
 
         /// <summary>
@@ -359,10 +363,7 @@ namespace Hecton8.Construction
 
                 if (module == null) continue; // ÑƒÐ¶Ðµ ÑƒÐ½Ð¸Ñ‡Ñ‚Ð¾Ð¶ÐµÐ½
 
-                if (pool != null)
-                    pool.Despawn(module);
-                else
-                    Destroy(module);
+                DespawnOrDestroyModuleInstance(module, pool);
             }
 
             _spawnedModules.Clear();
@@ -396,6 +397,8 @@ namespace Hecton8.Construction
         {
             ref ConstructionDTO dto = ref data.construction;
             dto.EnsureCapacity();
+            dto.graphNodeCount = 0;
+            dto.graphEdgeCount = 0;
 
             int moduleIndex = 0;
             int count = _spawnedModules.Count;
@@ -443,6 +446,12 @@ namespace Hecton8.Construction
                 moduleDto.SetRotation(t.rotation);
                 moduleDto.slottedToolItemId = string.Empty;
 
+                ModuleGraphNodeDTO graphNodeDto = new ModuleGraphNodeDTO();
+                graphNodeDto.prefabId = prefabId;
+                graphNodeDto.moduleHashId = marker.Data != null ? marker.Data.ModuleHashId : 0;
+                graphNodeDto.SetAup(AbsoluteUniversePosition.FromRuntimePosition(t.position));
+                graphNodeDto.SetRotation(t.rotation);
+
                 // â”€â”€ Serialize dynamic state â”€â”€
                 // ÐŸÐ°ÑÑÐ¸Ð²Ð½Ñ‹Ðµ Ð¼Ð¾Ð´ÑƒÐ»Ð¸ (Ð¾Ð¿Ð¾Ñ€Ñ‹, Ð´ÐµÐºÐ¾Ñ€) Ð½Ðµ Ð¸Ð¼ÐµÑŽÑ‚ BaseModule.
                 // Ð”Ð»Ñ Ð½Ð¸Ñ… Ð¿Ð¸ÑˆÐµÐ¼ Ð´ÐµÑ„Ð¾Ð»Ñ‚Ð½Ñ‹Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ â€” Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ Ð¾Ð½Ð¸ ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð½Ñ‹.
@@ -478,10 +487,13 @@ namespace Hecton8.Construction
                     logisticsPipe.PopulateSaveData(ref moduleDto);
 
                 dto.modules[moduleIndex] = moduleDto;
+                dto.graphNodes[moduleIndex] = graphNodeDto;
                 moduleIndex++;
             }
 
             dto.moduleCount = moduleIndex;
+            dto.graphNodeCount = moduleIndex;
+            PopulateGraphEdges(ref dto, moduleIndex);
         }
 
         /// <summary>
@@ -522,11 +534,15 @@ namespace Hecton8.Construction
 
             ConstructionDTO dto = data.construction;
             ItemCatalog itemCatalog = PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null;
+            bool hasGraphTopology = data.version >= 47 &&
+                                    dto.graphNodes != null &&
+                                    dto.graphNodeCount > 0;
 
             // â”€â”€ 1. Ð£Ð´Ð°Ð»ÑÐµÐ¼ Ñ‚ÐµÐºÑƒÑ‰ÑƒÑŽ Ð±Ð°Ð·Ñƒ â”€â”€
 
             // â”€â”€ Guard: Ð¿ÑƒÑÑ‚Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ â”€â”€
-            if (dto.modules == null || dto.moduleCount <= 0)
+            if ((!hasGraphTopology && (dto.modules == null || dto.moduleCount <= 0)) ||
+                (hasGraphTopology && dto.graphNodeCount <= 0))
             {
                 ClearAllModules();
                 Debug.Log("[ConstructionManager] No construction data to load.");
@@ -535,53 +551,53 @@ namespace Hecton8.Construction
 
             // â”€â”€ 2. Ð ÐµÑÐ¿Ð°Ð²Ð½ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð¸Ð· ÑÐµÐ¹Ð²Ð° â”€â”€
             ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool == null)
-            {
-                Debug.LogError(
-                    "[ConstructionManager] ObjectPoolManager unavailable. " +
-                    "Construction load aborted before world teardown.");
-                return;
-            }
-
             ClearAllModules();
-            int count = Mathf.Min(dto.moduleCount, dto.modules.Length);
+            int count = hasGraphTopology
+                ? Mathf.Min(dto.graphNodeCount, dto.graphNodes.Length)
+                : Mathf.Min(dto.moduleCount, dto.modules.Length);
             int loadedCount   = 0;
             int skippedCount  = 0;
 
             for (int i = 0; i < count; i++)
             {
-                ModuleDTO moduleDto = dto.modules[i];
+                ModuleGraphNodeDTO graphNodeDto = hasGraphTopology ? dto.graphNodes[i] : default;
+                bool hasLegacyModuleState = dto.modules != null && i >= 0 && i < dto.moduleCount && i < dto.modules.Length;
+                ModuleDTO moduleDto = hasLegacyModuleState ? dto.modules[i] : default;
 
                 // â”€â”€ ÐŸÐ¾Ð¸ÑÐº Ð¿Ñ€ÐµÑ„Ð°Ð±Ð° â”€â”€
-                if (string.IsNullOrEmpty(moduleDto.prefabId))
+                string prefabId = hasGraphTopology && !string.IsNullOrEmpty(graphNodeDto.prefabId)
+                    ? graphNodeDto.prefabId
+                    : moduleDto.prefabId;
+
+                if (string.IsNullOrEmpty(prefabId) && (!hasGraphTopology || graphNodeDto.moduleHashId == 0))
                 {
                     skippedCount++;
                     continue;
                 }
 
-                BuildableData buildData = catalog.FindDataById(moduleDto.prefabId);
+                BuildableData buildData = !string.IsNullOrEmpty(prefabId)
+                    ? catalog.FindDataById(prefabId)
+                    : null;
+
+                if (buildData == null && hasGraphTopology && graphNodeDto.moduleHashId != 0)
+                    buildData = catalog.FindDataByHashId(graphNodeDto.moduleHashId);
+
                 if (buildData == null)
                 {
                     Debug.LogWarning(
-                        $"[ConstructionManager] Module '{moduleDto.prefabId}' " +
+                        $"[ConstructionManager] Module '{prefabId}' " +
                         "not found in catalog. Skipping.");
                     skippedCount++;
                     continue;
                 }
 
-                GameObject prefab = buildData.finalPrefab;
-                if (prefab == null)
-                {
-                    Debug.LogWarning(
-                        $"[ConstructionManager] Module '{moduleDto.prefabId}' " +
-                        "has no finalPrefab. Skipping.");
-                    skippedCount++;
-                    continue;
-                }
-
                 // â”€â”€ Ð’Ð°Ð»Ð¸Ð´Ð°Ñ†Ð¸Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ â”€â”€
-                Vector3    pos = moduleDto.GetPosition();
-                Quaternion rot = moduleDto.GetRotation();
+                Vector3 pos = hasGraphTopology
+                    ? graphNodeDto.GetAup().ToRuntimeFloat3()
+                    : moduleDto.GetPosition();
+                Quaternion rot = hasGraphTopology
+                    ? graphNodeDto.GetRotation()
+                    : moduleDto.GetRotation();
 
                 if (float.IsNaN(pos.x) || float.IsInfinity(pos.x) ||
                     float.IsNaN(pos.y) || float.IsInfinity(pos.y) ||
@@ -601,12 +617,31 @@ namespace Hecton8.Construction
                     rot.Normalize();
 
                 // â”€â”€ Spawn â”€â”€
-                GameObject module = pool.Spawn(prefab, pos, rot);
+                GameObject module;
+                if (buildData.finalPrefab != null)
+                {
+                    if (pool == null)
+                    {
+                        Debug.LogWarning(
+                            $"[ConstructionManager] ObjectPoolManager unavailable while loading '{prefabId}'. Skipping pooled prefab.");
+                        skippedCount++;
+                        continue;
+                    }
+
+                    module = pool.Spawn(buildData.finalPrefab, pos, rot);
+                }
+                else if (!ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(buildData, pos, rot, out module))
+                {
+                    Debug.LogWarning(
+                        $"[ConstructionManager] Module '{prefabId}' has no finalPrefab and proxy generation failed. Skipping.");
+                    skippedCount++;
+                    continue;
+                }
 
                 if (module == null)
                 {
                     Debug.LogWarning(
-                        $"[ConstructionManager] Failed to spawn '{moduleDto.prefabId}'.");
+                        $"[ConstructionManager] Failed to spawn '{prefabId}'.");
                     skippedCount++;
                     continue;
                 }
@@ -618,6 +653,8 @@ namespace Hecton8.Construction
                 // Ðš ÑÑ‚Ð¾Ð¼Ñƒ Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ñƒ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ ÑƒÐ¶Ðµ Ð±ÑƒÐ´ÐµÑ‚ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ð¾.
                 if (module.TryGetComponent(out BaseModule baseModule))
                 {
+                    baseModule.ApplyBuildableTemplate(buildData);
+
                     // ÐœÐ¸Ð³Ñ€Ð°Ñ†Ð¸Ñ v1 â†’ v2: integrity == 0f Ð¾Ð·Ð½Ð°Ñ‡Ð°ÐµÑ‚,
                     // Ñ‡Ñ‚Ð¾ Ð¿Ð¾Ð»Ðµ Ð½Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾Ð²Ð°Ð»Ð¾ Ð² ÑÑ‚Ð°Ñ€Ð¾Ð¼ ÑÐµÐ¹Ð²Ðµ.
                     // Ð¢Ñ€Ð°ÐºÑ‚ÑƒÐµÐ¼ ÐºÐ°Ðº Â«Ð¿Ð¾Ð»Ð½Ð¾Ðµ Ð·Ð´Ð¾Ñ€Ð¾Ð²ÑŒÐµÂ».
@@ -645,7 +682,8 @@ namespace Hecton8.Construction
                         loadedCo2Normalized);
                 }
 
-                if (data.version >= 35 &&
+                if (hasLegacyModuleState &&
+                    data.version >= 35 &&
                     itemCatalog != null &&
                     !string.IsNullOrWhiteSpace(moduleDto.slottedToolItemId) &&
                     module.TryGetComponent(out MaintenanceStationModule maintenanceStation))
@@ -656,7 +694,7 @@ namespace Hecton8.Construction
                 }
 
                 // â”€â”€ Register Ñ Ð¿Ñ€Ð¸Ð²ÑÐ·ÐºÐ¾Ð¹ Ðº BuildableData â”€â”€
-                if (data.version >= 36 && itemCatalog != null)
+                if (hasLegacyModuleState && data.version >= 36 && itemCatalog != null)
                 {
                     if (module.TryGetComponent(out LogisticsSorterModule logisticsSorter))
                         logisticsSorter.RestoreFromSaveData(moduleDto, itemCatalog);
@@ -687,6 +725,63 @@ namespace Hecton8.Construction
         /// ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÑ‚ Ð½Ð°Ð»Ð¸Ñ‡Ð¸Ðµ Ð¼Ð¾Ð´ÑƒÐ»Ñ Ð¿Ð¾ ÑÑÑ‹Ð»ÐºÐµ. O(n), Ð½Ð¾ Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ
         /// Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿Ñ€Ð¸ Register (Ñ€ÐµÐ´ÐºÐ¾). Zero GC.
         /// </summary>
+        private void PopulateGraphEdges(ref ConstructionDTO dto, int savedNodeCount)
+        {
+            dto.graphEdgeCount = 0;
+            if (_habitatGraphManager == null || savedNodeCount <= 0 || _habitatGraphManager.NodeCount != savedNodeCount)
+                return;
+
+            NativeArray<int> edgeOffsets = _habitatGraphManager.EdgeOffsets;
+            NativeArray<int> edgeDestinations = _habitatGraphManager.EdgeDestinations;
+            int edgeWriteIndex = 0;
+
+            for (int sourceIndex = 0; sourceIndex < savedNodeCount; sourceIndex++)
+            {
+                int edgeStart = edgeOffsets[sourceIndex];
+                int edgeEnd = edgeOffsets[sourceIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int destinationIndex = edgeDestinations[edgeIndex];
+                    if (destinationIndex <= sourceIndex || destinationIndex >= savedNodeCount)
+                        continue;
+
+                    if (edgeWriteIndex >= ConstructionDTO.MaxGraphEdges)
+                    {
+                        Debug.LogWarning(
+                            $"[ConstructionManager] Habitat graph edge budget ({ConstructionDTO.MaxGraphEdges}) exceeded during save. Truncating persisted topology.");
+                        dto.graphEdgeCount = edgeWriteIndex;
+                        return;
+                    }
+
+                    dto.graphEdges[edgeWriteIndex] = new ModuleGraphEdgeDTO
+                    {
+                        sourceNodeIndex = sourceIndex,
+                        destinationNodeIndex = destinationIndex
+                    };
+                    edgeWriteIndex++;
+                }
+            }
+
+            dto.graphEdgeCount = edgeWriteIndex;
+        }
+
+        private static void DespawnOrDestroyModuleInstance(GameObject module, ObjectPoolManager pool)
+        {
+            if (module == null)
+                return;
+
+            if (module.TryGetComponent(out ConstructionRuntimeProxyTag _))
+            {
+                Destroy(module);
+                return;
+            }
+
+            if (pool != null)
+                pool.Despawn(module);
+            else
+                Destroy(module);
+        }
+
         private bool ContainsRef(GameObject module)
         {
             int count = _spawnedModules.Count;
@@ -766,6 +861,31 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.Save;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.Save;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         private void TryUnregisterLogisticsService()

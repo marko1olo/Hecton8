@@ -15,6 +15,7 @@ MonoBehaviour:
   stableId: flora.blood_kelp
   displayName: Blood Kelp
   vegetationType: 1
+  category: 1
   semanticType: 1
   biomeLayer: 0
   harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
@@ -22,6 +23,24 @@ MonoBehaviour:
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
+  maxHealth: 8
+  growthTimeSeconds: 540
   attachmentSurface: 1
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 517298682884889049, guid: fcc83a95794301a42a2c0dd1047c98be, type: 3}
+  proxyShape: 3
+  boundingBoxCenter: {x: 0, y: 1.9, z: 0}
+  boundingBoxSize: {x: 0.9, y: 3.8, z: 0.9}
+  cutVfxSocketLocal: {x: 0, y: 1.3299999, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 2.584, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.608, z: 0}
   bioluminescenceColor: {r: 0.82, g: 0.18, b: 0.26, a: 0.78}
   pulseFrequency: 0.42
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

@@ -79,7 +79,7 @@ namespace Hecton8.Items
         [Tooltip("Stable world-physics material family used to select a shared PhysicMaterial on dropped items.")]
         [SerializeField] private ItemPhysicsMaterialTag physicsMaterialTag = ItemPhysicsMaterialTag.Default;
         [Tooltip("Optional shared PhysicMaterial override applied to world colliders. Leave null to preserve the prefab default.")]
-        [SerializeField] private PhysicMaterial worldPhysicMaterial;
+        [SerializeField] private PhysicsMaterial worldPhysicMaterial;
 
         [Header("Classification")]
         [Tooltip("Category used by UI filters and fabrication rules.")]
@@ -236,7 +236,7 @@ namespace Hecton8.Items
         public ItemPhysicsMaterialTag PhysicsMaterialTag => autoResolvePhysicalMetadata
             ? ItemPhysicalMetadataUtility.ResolveDefaultPhysicsMaterialTag(category, resourceFamily, PersistentId)
             : physicsMaterialTag;
-        public PhysicMaterial WorldPhysicMaterial => worldPhysicMaterial;
+        public PhysicsMaterial WorldPhysicMaterial => worldPhysicMaterial;
 
         public int CellArea => width * height;
 

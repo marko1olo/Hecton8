@@ -14,22 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
   stableId: flora.rust_moss
   displayName: Rust Moss
-  vegetationType: 1
-  semanticType: 3
+  vegetationType: 0
+  category: 0
+  semanticType: 4
   biomeLayer: 1
-  harvestTemplate: {fileID: 11400000, guid: 2971cc2971e94534b9fb360aa24e88e6, type: 2}
-  lootItem: {fileID: 11400000, guid: 91d1c706ac87dda4c939dcef146bcbd1, type: 2}
+  harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
+  lootItem: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
+  maxHealth: 3.4
+  growthTimeSeconds: 420
   attachmentSurface: 3
-  bioluminescenceColor: {r: 0.22, g: 0.86, b: 0.34, a: 0.26}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 3212276865040810705, guid: 8cf8c233885328a4f91bb4d40080b0f1, type: 3}
+  proxyShape: 4
+  boundingBoxCenter: {x: 0, y: 0.13, z: 0}
+  boundingBoxSize: {x: 1.3, y: 0.26, z: 1.3}
+  cutVfxSocketLocal: {x: 0, y: 0.091, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.1768, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.041599996, z: 0}
+  bioluminescenceColor: {r: 0.58, g: 0.42, b: 0.16, a: 0.28}
   pulseFrequency: 0.24
   parasiticToModules: 1
-  modulePowerDrainWatts: 12
-  moduleInfectionStrength: 0.72
-  moduleInfectionRadiusMeters: 2.6
-  moduleInfectionPulseFrequency: 0.28
+  modulePowerDrainWatts: 8
+  moduleInfectionStrength: 0.22
+  moduleInfectionRadiusMeters: 1.6
+  moduleInfectionPulseFrequency: 0.3
   thermophilicModuleGrowth: 0
   thermalActivationTemperatureCelsius: 100
   thermalActivationDwellSeconds: 300

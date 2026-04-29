@@ -15,31 +15,31 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureRuntimeRequirements()
         {
-            EnsureActiveUrpRequirements();
+            ValidateActiveUrpRequirements();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
         }
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            EnsureActiveUrpRequirements();
+            ValidateActiveUrpRequirements();
             EnsureSceneCameraRequirements();
         }
 
-        private static void EnsureActiveUrpRequirements()
+        private static void ValidateActiveUrpRequirements()
         {
             UniversalRenderPipelineAsset urpAsset = ResolveActiveUrpAsset();
             if (urpAsset == null)
                 return;
 
             if (!urpAsset.supportsCameraDepthTexture)
-                urpAsset.supportsCameraDepthTexture = true;
+                ReportRuntimeRequirementViolation("Active URP asset has Camera Depth Texture disabled.");
 
             if (!urpAsset.supportsCameraOpaqueTexture)
-                urpAsset.supportsCameraOpaqueTexture = true;
+                ReportRuntimeRequirementViolation("Active URP asset has Camera Opaque Texture disabled.");
 
             if (urpAsset.msaaSampleCount != 1)
-                urpAsset.msaaSampleCount = 1;
+                ReportRuntimeRequirementViolation($"Active URP asset uses MSAA {urpAsset.msaaSampleCount}. Crest parity path expects MSAA disabled.");
 
             ReadOnlySpan<ScriptableRendererData> rendererDataList = urpAsset.rendererDataList;
             for (int rendererIndex = 0; rendererIndex < rendererDataList.Length; rendererIndex++)
@@ -48,7 +48,8 @@ namespace Hecton8.Core
                     continue;
 
                 if (rendererData.depthPrimingMode != DepthPrimingMode.Disabled)
-                    rendererData.depthPrimingMode = DepthPrimingMode.Disabled;
+                    ReportRuntimeRequirementViolation(
+                        $"Renderer '{rendererData.name}' has Depth Priming enabled. Crest parity path expects it disabled.");
             }
         }
 
@@ -103,6 +104,13 @@ namespace Hecton8.Core
                 return defaultUrpAsset;
 
             return UniversalRenderPipeline.asset;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void ReportRuntimeRequirementViolation(string message)
+        {
+            Debug.LogWarning($"[HectonUrpTextureRequirementsGuard] {message}");
         }
     }
 }

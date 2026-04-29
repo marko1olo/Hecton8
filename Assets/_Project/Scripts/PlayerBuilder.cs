@@ -148,6 +148,7 @@ namespace Hecton8.Building
 
         private GameObject _currentGhostObj;
         private PlacementGhost _currentGhost;
+        private bool _currentGhostUsesRuntimeProxy;
         private RaycastHit _hit;
         private readonly RaycastHit[] _buildHits = new RaycastHit[1]; // COLD ALLOC: single surface probe for build targeting.
         private float _ghostYawOffset;
@@ -612,7 +613,7 @@ namespace Hecton8.Building
 
         private void SpawnGhost()
         {
-            if (activeBuildable == null || activeBuildable.ghostPrefab == null)
+            if (activeBuildable == null)
             {
                 Debug.LogWarning("[PlayerBuilder] No buildable module assigned!");
                 return;
@@ -633,14 +634,33 @@ namespace Hecton8.Building
                 spawnPos = transform.position + Vector3.forward * buildDistance;
             }
 
-            if (!TryGetObjectPool(out ObjectPoolManager pool))
+            if (activeBuildable.ghostPrefab == null)
             {
-                NotifyBuildBlocked("OBJECT POOL OFFLINE");
-                return;
-            }
+                if (!ConstructionRuntimeProxyFactory.TryCreateGhostProxy(
+                        activeBuildable,
+                        spawnPos,
+                        Quaternion.identity,
+                        surfaceMask,
+                        out _currentGhostObj))
+                {
+                    NotifyBuildBlocked("GHOST PROXY MISSING");
+                    return;
+                }
 
-            _currentGhostObj = pool.Spawn(
-                activeBuildable.ghostPrefab, spawnPos, Quaternion.identity);
+                _currentGhostUsesRuntimeProxy = true;
+            }
+            else
+            {
+                if (!TryGetObjectPool(out ObjectPoolManager pool))
+                {
+                    NotifyBuildBlocked("OBJECT POOL OFFLINE");
+                    return;
+                }
+
+                _currentGhostObj = pool.Spawn(
+                    activeBuildable.ghostPrefab, spawnPos, Quaternion.identity);
+                _currentGhostUsesRuntimeProxy = false;
+            }
 
             if (_currentGhostObj != null)
             {
@@ -659,18 +679,22 @@ namespace Hecton8.Building
         {
             if (_currentGhostObj == null) return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool != null)
+            if (_currentGhostUsesRuntimeProxy)
             {
-                pool.Despawn(_currentGhostObj);
+                Object.Destroy(_currentGhostObj);
             }
             else
             {
-                Object.Destroy(_currentGhostObj);
+                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                if (pool != null)
+                    pool.Despawn(_currentGhostObj);
+                else
+                    Object.Destroy(_currentGhostObj);
             }
 
             _currentGhostObj = null;
             _currentGhost    = null;
+            _currentGhostUsesRuntimeProxy = false;
             _ghostSocketBuffer.Clear();
             _semanticPlacementValid = true;
             _semanticPlacementBlockReason = string.Empty;
@@ -1194,12 +1218,26 @@ namespace Hecton8.Building
 
         private GameObject SpawnPlacedModule(BuildableData data, Vector3 placePos, Quaternion placeRot, ObjectPoolManager pool)
         {
-            if (data == null || data.finalPrefab == null || pool == null)
+            if (data == null)
                 return null;
 
-            LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab={data.finalPrefab.name}");
-            LogBuilderDebug("SpawnPlacedModule using pool.");
-            GameObject placedModule = pool.Spawn(data.finalPrefab, placePos, placeRot);
+            GameObject placedModule;
+            if (data.finalPrefab == null)
+            {
+                if (!ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(data, placePos, placeRot, out placedModule))
+                    return null;
+
+                LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab=RUNTIME_PROXY");
+            }
+            else
+            {
+                if (pool == null)
+                    return null;
+
+                LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab={data.finalPrefab.name}");
+                LogBuilderDebug("SpawnPlacedModule using pool.");
+                placedModule = pool.Spawn(data.finalPrefab, placePos, placeRot);
+            }
 
             if (placedModule != null)
             {

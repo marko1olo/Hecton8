@@ -22,7 +22,7 @@ namespace Hecton8.Interaction
         private const int MinCommandsPerJob = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
-        private const float AttachedFloraArbitrationRadiusMeters = 1.35f;
+        private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
         private static readonly int BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
 
         private static EquipmentInteractionHandler _instance;

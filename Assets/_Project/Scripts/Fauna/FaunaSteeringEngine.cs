@@ -1,3 +1,4 @@
+using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -34,6 +35,7 @@ namespace Hecton8.AI
         private Transform _selfTransform;
         private FaunaSpeciesProfile _speciesProfile;
         private float _lastBankingRoll;
+        private Vector3 _smoothedSteerDirection;
 
         public void Init(Rigidbody rb, Transform self, FaunaSpeciesProfile profile = null)
         {
@@ -41,6 +43,7 @@ namespace Hecton8.AI
             _selfTransform = self;
             _speciesProfile = profile;
             currentDirection = self.forward;
+            _smoothedSteerDirection = currentDirection.sqrMagnitude > 0.0001f ? currentDirection.normalized : Vector3.forward;
             velocity = rb != null ? rb.linearVelocity : Vector3.zero;
             currentSpeed = velocity.magnitude;
         }
@@ -60,22 +63,39 @@ namespace Hecton8.AI
             // TACTICAL DIRECTION: Predator Retreat (User REQ: Flee strictly from threat)
             if (isRetreating && threatPos != default)
             {
-                Vector3 retreatDirection = _selfTransform.position - threatPos;
+                Vector3 retreatDirection = _body.position - threatPos;
                 if (retreatDirection.sqrMagnitude > 0.0001f)
                     desiredDirection = retreatDirection.normalized;
             }
+
+            Vector3 fallbackForward = _smoothedSteerDirection.sqrMagnitude > 0.0001f
+                ? _smoothedSteerDirection
+                : (_body.rotation * Vector3.forward);
+            if (fallbackForward.sqrMagnitude <= 0.0001f)
+                fallbackForward = Vector3.forward;
+
+            Vector3 steeringTarget = desiredDirection.sqrMagnitude > 0.0001f
+                ? desiredDirection.normalized
+                : fallbackForward.normalized;
+            float steeringSharpness = Mathf.Max(0.01f, turnSpeed * Mathf.Max(0.1f, turnMult) * resolvedForceMultiplier);
+            _smoothedSteerDirection = (Vector3)HectonContactJob.ResolveSteeringArc(
+                fallbackForward,
+                steeringTarget,
+                fdt,
+                steeringSharpness);
 
             // 1. TACTICAL SPEED: Predator Retreat (User REQ: 1.5x speed)
             float stateMod = isRetreating ? (_speciesProfile != null ? _speciesProfile.retreatSpeedMultiplier : 1.5f) : 1f;
             float targetMaxSpeed = Mathf.Max(0.1f, maxSpeed * speedMult * stateMod);
 
             // 2. ACCELERATION / DECELERATION
-            float speedTarget = desiredDirection.sqrMagnitude > 0.01f ? targetMaxSpeed : 0f;
+            float speedTarget = steeringTarget.sqrMagnitude > 0.01f ? targetMaxSpeed : 0f;
 
             // [REQ] Centripetal Force Limiter: Reduce speed when turning sharply
-            if (desiredDirection.sqrMagnitude > 0.01f && _speciesProfile != null && _speciesProfile.centripetalLimit > 0.01f)
+            if (steeringTarget.sqrMagnitude > 0.01f && _speciesProfile != null && _speciesProfile.centripetalLimit > 0.01f)
             {
-                float turnSharpness = 1.0f - Vector3.Dot(_selfTransform.forward, desiredDirection.normalized);
+                Vector3 currentForward = _body.rotation * Vector3.forward;
+                float turnSharpness = 1.0f - Vector3.Dot(currentForward, steeringTarget);
                 // 0 = straight, 1 = 90 deg, 2 = 180 deg. Reduce speed target by up to 60% based on limit.
                 float drag = Mathf.Clamp01(turnSharpness * _speciesProfile.centripetalLimit * 0.3f);
                 speedTarget *= (1.0f - drag);
@@ -83,9 +103,9 @@ namespace Hecton8.AI
 
             Vector3 currentVelocity = _body.linearVelocity;
             float maxVelocityDelta = Mathf.Max(0.01f, swimForce * resolvedForceMultiplier * fdt);
-            if (desiredDirection.sqrMagnitude > 0.01f)
+            if (_smoothedSteerDirection.sqrMagnitude > 0.01f)
             {
-                Vector3 desiredVelocity = desiredDirection.normalized * speedTarget;
+                Vector3 desiredVelocity = _smoothedSteerDirection.normalized * speedTarget;
                 currentVelocity = Vector3.MoveTowards(currentVelocity, desiredVelocity, maxVelocityDelta);
             }
             else
@@ -135,6 +155,7 @@ namespace Hecton8.AI
             currentSpeed = 0f;
             velocity = Vector3.zero;
             desiredDirection = Vector3.zero;
+            _smoothedSteerDirection = currentDirection.sqrMagnitude > 0.0001f ? currentDirection : Vector3.forward;
         }
     }
 }

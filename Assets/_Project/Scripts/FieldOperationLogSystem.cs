@@ -38,6 +38,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool verboseLogging;
 
         private readonly List<FieldOperationRecord> _recent = new List<FieldOperationRecord>(12);
+        private bool _saveRegistered;
 
         public static FieldOperationLogSystem Instance { get; private set; }
 
@@ -69,17 +70,17 @@ namespace Hecton8.Gameplay
             if (Instance == null)
                 Instance = this;
 
-            SaveManager.Instance?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void Start()
         {
-            SaveManager.Instance?.Register(this);
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            TryUnregisterSaveParticipant();
         }
 
         private void OnDestroy()
@@ -101,6 +102,31 @@ namespace Hecton8.Gameplay
         public static void RecordOperation(string source, FixedCharBuffer titleBuffer, FixedCharBuffer summaryBuffer, string severity = "INFO")
         {
             Instance?.Push(source, titleBuffer.ToString(), summaryBuffer.ToString(), severity);
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.Save;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.Save;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         public int CopyRecentEntries(FieldOperationSnapshot[] buffer)

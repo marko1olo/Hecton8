@@ -14,14 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
   stableId: flora.beam_anemone
   displayName: Beam Anemone
-  vegetationType: 1
+  vegetationType: 0
+  category: 2
   semanticType: 5
   biomeLayer: 1
   harvestTemplate: {fileID: 11400000, guid: 2971cc2971e94534b9fb360aa24e88e6, type: 2}
-  lootItem: {fileID: 11400000, guid: 91d1c706ac87dda4c939dcef146bcbd1, type: 2}
+  lootItem: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
   lootHashId: 0
   vulnerabilityMask: 2
   audioMaterialId: 2
+  maxHealth: 5.2
+  growthTimeSeconds: 780
   attachmentSurface: 3
-  bioluminescenceColor: {r: 0.88, g: 0.68, b: 0.30, a: 0.52}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 6204816032728742976, guid: 4c6ce423963f60a41bff79e8330ab15e, type: 3}
+  proxyShape: 2
+  boundingBoxCenter: {x: 0, y: 0.55, z: 0}
+  boundingBoxSize: {x: 0.95, y: 1.1, z: 0.95}
+  cutVfxSocketLocal: {x: 0, y: 0.385, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.748, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.176, z: 0}
+  bioluminescenceColor: {r: 0.22, g: 0.74, b: 0.96, a: 0.6}
   pulseFrequency: 0.22
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

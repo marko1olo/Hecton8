@@ -17,6 +17,7 @@ namespace Hecton8.EditorTools
                 return;
 
             director.BuildScatterPreviewGizmoSnapshot(_records);
+
             int count = _records.Count;
             for (int i = 0; i < count; i++)
             {

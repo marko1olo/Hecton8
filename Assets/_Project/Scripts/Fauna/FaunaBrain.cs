@@ -104,6 +104,12 @@ namespace Hecton8.AI
         private const float DynamicDodgeForceMultiplier = 2.75f;
         private const float DynamicDodgeSpeedMultiplier = 1.3f;
         private const float DynamicDodgeTurnMultiplier = 3.25f;
+        private const float WallSlideTurnMultiplier = 2.1f;
+        private const float WallSlideSpeedMultiplier = 1.1f;
+        private const float DamageFearPheromoneFloor = 0.85f;
+        private const float DamageFearPheromoneBoost = 1.35f;
+        private const float DamageFlinchVelocityFloor = 6f;
+        private const float DamageFlinchVelocityCeiling = 18f;
         private const float HerbivoreSatedDurationSeconds = 16f;
         private const float CleanerFormationMinRadius = 1.6f;
         private const float CleanerFormationMaxRadius = 4.1f;
@@ -1180,6 +1186,13 @@ namespace Hecton8.AI
                 speedMultiplier = Mathf.Max(speedMultiplier, DynamicDodgeSpeedMultiplier);
                 turnMultiplier = Mathf.Max(turnMultiplier, DynamicDodgeTurnMultiplier);
             }
+
+            if (TryResolveWallSlideDirection(desiredDirection, out Vector3 slideDirection))
+            {
+                desiredDirection = slideDirection;
+                speedMultiplier = Mathf.Max(speedMultiplier, WallSlideSpeedMultiplier);
+                turnMultiplier = Mathf.Max(turnMultiplier, WallSlideTurnMultiplier);
+            }
             
             _steeringEngine.FixedTick(
                 fdt, 
@@ -1433,7 +1446,7 @@ namespace Hecton8.AI
                 // Despawn/Pool the prey
                 if (target.TryGetComponent<FaunaBrain>(out var preyBrain))
                 {
-                    preyBrain.TakeDamage(damage * 10f); // Massive damage to ensure kill
+                    preyBrain.TakeDamageFromSource(damage * 10f, transform.position); // Massive damage to ensure kill
                 }
                 else
                 {
@@ -1505,7 +1518,7 @@ namespace Hecton8.AI
             }
             else if (target.TryGetComponent(out FaunaBrain otherBrain))
             {
-                otherBrain.TakeDamage(damage);
+                otherBrain.TakeDamageFromSource(damage, transform.position);
                 if (IsApexPredator() && otherBrain.IsApexPredator())
                 {
                     if (otherBrain.HealthNormalized <= 0.3f)
@@ -1523,10 +1536,34 @@ namespace Hecton8.AI
 
         public void TakeDamage(float amount)
         {
-            if (_isDead) return;
-            float normalizedDamage = _maxHealth > 0.001f ? Mathf.Max(0f, amount) / _maxHealth : 0f;
-            _currentHealth = Mathf.Max(0f, _currentHealth - amount);
-            EmitParentalDefenseSignal(transform.position, normalizedDamage);
+            TakeDamageInternal(amount, default, false);
+        }
+
+        private void TakeDamageFromSource(float amount, Vector3 damageSourcePosition)
+        {
+            TakeDamageInternal(amount, damageSourcePosition, true);
+        }
+
+        private void TakeDamageInternal(float amount, Vector3 damageSourcePosition, bool hasDamageSource)
+        {
+            if (_isDead)
+                return;
+
+            float clampedDamage = Mathf.Max(0f, amount);
+            if (clampedDamage <= 0f)
+                return;
+
+            float normalizedDamage = _maxHealth > 0.001f ? clampedDamage / _maxHealth : 0f;
+            _currentHealth = Mathf.Max(0f, _currentHealth - clampedDamage);
+
+            Vector3 resolvedSourcePosition = hasDamageSource
+                ? damageSourcePosition
+                : ResolveFallbackDamageSourcePosition();
+
+            if (_currentHealth > 0.001f)
+                ApplyImmediateHitReaction(resolvedSourcePosition, normalizedDamage);
+
+            EmitParentalDefenseSignal(resolvedSourcePosition, normalizedDamage);
             if (_utilityBrain.UsesPredatorRole && normalizedDamage >= 0.3f)
             {
                 HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
@@ -1534,7 +1571,8 @@ namespace Hecton8.AI
                 if (vegetationBridge != null && speciesId != 0)
                     vegetationBridge.RegisterPredatorFearNode(speciesId, transform.position, normalizedDamage);
             }
-            if (_currentHealth <= 0.001f) Die();
+            if (_currentHealth <= 0.001f)
+                Die();
         }
 
         /// <summary>
@@ -1545,7 +1583,7 @@ namespace Hecton8.AI
             if (_isDead)
                 return;
 
-            TakeDamage(damage);
+            TakeDamageFromSource(damage, hitPoint);
             ApplyFaunaInteraction(FaunaInteractionKind.Cut, hitPoint, damage);
             if (TryGetComponent(out CreatureDamageManager damageManager))
                 damageManager.RegisterWoundWS(hitPoint, damage);
@@ -1800,6 +1838,85 @@ namespace Hecton8.AI
             return dodgeDirection.sqrMagnitude > 0.0001f;
         }
 
+        private bool TryResolveWallSlideDirection(Vector3 desiredDirection, out Vector3 slideDirection)
+        {
+            slideDirection = default;
+            if (_rb == null || !_sensorSuite.TryGetForwardObstacleSurface(out Vector3 obstacleNormal, out float obstaclePressure01))
+                return false;
+
+            Vector3 referenceVelocity = _rb.linearVelocity.sqrMagnitude > 0.0001f
+                ? _rb.linearVelocity
+                : desiredDirection;
+            if (referenceVelocity.sqrMagnitude <= 0.0001f)
+                referenceVelocity = transform.forward;
+
+            float3 projectedVelocity = HectonContactJob.ProjectVelocityAlongSurface(referenceVelocity, obstacleNormal);
+            if (math.lengthsq(projectedVelocity) <= 0.0001f)
+                return false;
+
+            float3 incoming = math.normalizesafe((float3)desiredDirection, math.normalizesafe((float3)referenceVelocity, (float3)transform.forward));
+            float3 slide = math.normalizesafe(projectedVelocity, incoming);
+            float blend = math.max(0.5f, math.saturate(obstaclePressure01));
+            slideDirection = (Vector3)math.normalizesafe(math.lerp(incoming, slide, blend), slide);
+            return slideDirection.sqrMagnitude > 0.0001f;
+        }
+
+        private void ApplyImmediateHitReaction(Vector3 damageSourcePosition, float normalizedDamage)
+        {
+            if (_rb == null)
+                return;
+
+            Vector3 awayDirection = ResolveDamageEscapeDirection(damageSourcePosition);
+            float retreatDuration = _speciesProfile != null
+                ? Mathf.Max(1f, _speciesProfile.retreatDuration)
+                : 6f;
+
+            _utilityBrain.ForceRetreat(damageSourcePosition, _cognitionTimeSeconds, retreatDuration);
+            _utilityBrain.ApplyExternalState(AIState.Retreat, _cognitionTimeSeconds);
+            _stateMachine.currentState = AIState.Retreat;
+            _currentStateCache = AIState.Retreat;
+            _cachedDesiredDirection = awayDirection;
+            _sensorSuite.isScattering = true;
+            _sensorSuite.scatterDirection = awayDirection;
+
+            float targetFlinchVelocity = Mathf.Lerp(
+                Mathf.Max(DamageFlinchVelocityFloor, _steeringEngine.maxSpeed),
+                Mathf.Max(DamageFlinchVelocityCeiling, _steeringEngine.maxSpeed * 2.25f),
+                Mathf.Clamp01(normalizedDamage));
+            Vector3 targetVelocity = awayDirection * targetFlinchVelocity;
+            Vector3 velocityChange = targetVelocity - _rb.linearVelocity;
+            PhysicsForceRouter.QueueForce(_rb, velocityChange, ForceMode.VelocityChange);
+
+            float fearIntensity = Mathf.Clamp01(Mathf.Max(DamageFearPheromoneFloor, normalizedDamage * DamageFearPheromoneBoost));
+            ChemicalInfluenceGrid.QueueFearPheromone(transform.position, fearIntensity);
+        }
+
+        private Vector3 ResolveDamageEscapeDirection(Vector3 damageSourcePosition)
+        {
+            Vector3 awayDirection = transform.position - damageSourcePosition;
+            if (awayDirection.sqrMagnitude > 0.0001f)
+                return awayDirection.normalized;
+
+            if (_rb != null && _rb.linearVelocity.sqrMagnitude > 0.0001f)
+                return (-_rb.linearVelocity).normalized;
+
+            if (_cachedDesiredDirection.sqrMagnitude > 0.0001f)
+                return (-_cachedDesiredDirection).normalized;
+
+            return -transform.forward;
+        }
+
+        private Vector3 ResolveFallbackDamageSourcePosition()
+        {
+            if (_rb != null && _rb.linearVelocity.sqrMagnitude > 0.0001f)
+                return transform.position + _rb.linearVelocity.normalized;
+
+            if (_cachedDesiredDirection.sqrMagnitude > 0.0001f)
+                return transform.position + _cachedDesiredDirection.normalized;
+
+            return transform.position + transform.forward;
+        }
+
         private AIState ResolveInitialState()
         {
             if (_speciesProfile != null && _speciesProfile.isAmbusher)
@@ -1825,7 +1942,11 @@ namespace Hecton8.AI
         private void ApplyFaunaDataTemplate(FaunaDataTemplate faunaDataTemplate)
         {
             if (ReferenceEquals(_faunaDataTemplate, faunaDataTemplate))
+            {
+                ApplyTemplateRuntimeTuning();
+                ConfigureFaunaScanMetadata();
                 return;
+            }
 
             _faunaDataTemplate = faunaDataTemplate;
             ApplyTemplateRuntimeTuning();

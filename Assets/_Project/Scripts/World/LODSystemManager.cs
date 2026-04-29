@@ -211,14 +211,11 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterLateFrame();
 
-            // Complete any pending jobs
-            if (_jobScheduled)
-            {
-                _distanceJobHandle.Complete();
-                _jobScheduled = false;
-            }
+            JobHandle disposeDependency = _jobScheduled ? _distanceJobHandle : default;
+            _jobScheduled = false;
+            _distanceJobHandle = default;
 
-            ReleaseNativeBuffers();
+            ReleaseNativeBuffers(disposeDependency);
         }
 
         private void OnDestroy()
@@ -226,14 +223,11 @@ namespace Hecton8.World
             // Unregister from the authoritative save service.
             GlobalRegistry.Save?.Unregister(this);
 
-            // Complete any pending jobs BEFORE disposing NativeArrays
-            if (_jobScheduled)
-            {
-                _distanceJobHandle.Complete();
-                _jobScheduled = false;
-            }
+            JobHandle disposeDependency = _jobScheduled ? _distanceJobHandle : default;
+            _jobScheduled = false;
+            _distanceJobHandle = default;
 
-            ReleaseNativeBuffers();
+            ReleaseNativeBuffers(disposeDependency);
 
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
@@ -260,13 +254,27 @@ namespace Hecton8.World
             }
         }
 
-        private void ReleaseNativeBuffers()
+        private void ReleaseNativeBuffers(JobHandle disposeDependency = default)
         {
             if (_lodGroupPositions.IsCreated)
-                _lodGroupPositions.Dispose();
+            {
+                if (!disposeDependency.Equals(default))
+                    disposeDependency = _lodGroupPositions.Dispose(disposeDependency);
+                else
+                    _lodGroupPositions.Dispose();
+
+                _lodGroupPositions = default;
+            }
 
             if (_lodGroupSquaredDistances.IsCreated)
-                _lodGroupSquaredDistances.Dispose();
+            {
+                if (!disposeDependency.Equals(default))
+                    disposeDependency = _lodGroupSquaredDistances.Dispose(disposeDependency);
+                else
+                    _lodGroupSquaredDistances.Dispose();
+
+                _lodGroupSquaredDistances = default;
+            }
         }
 
         private void TryRegister()

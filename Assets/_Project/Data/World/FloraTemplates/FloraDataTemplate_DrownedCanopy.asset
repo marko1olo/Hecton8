@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_DrownedCanopy
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
+  stableId: flora.drowned_canopy
+  displayName: Drowned Canopy
+  vegetationType: 2
+  category: 3
+  semanticType: 2
+  biomeLayer: 0
+  harvestTemplate: {fileID: 11400000, guid: 49a0645a7fdaba84ab5b0c1551b39c90, type: 2}
+  lootItem: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 17
+  audioMaterialId: 1
+  maxHealth: 6.8
+  growthTimeSeconds: 760
+  attachmentSurface: 0
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 1095345984299715168, guid: 4e12d6ddf7b7e3141b4aa9066f58b53b, type: 3}
+  proxyShape: 4
+  boundingBoxCenter: {x: 0, y: 1.3, z: 0}
+  boundingBoxSize: {x: 3.2, y: 2.6, z: 3.2}
+  cutVfxSocketLocal: {x: 0, y: 0.90999997, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 1.768, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.41599998, z: 0}
+  bioluminescenceColor: {r: 0.22, g: 0.58, b: 0.72, a: 0.38}
+  pulseFrequency: 0.52
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

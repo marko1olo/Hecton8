@@ -15,14 +15,11 @@ MonoBehaviour:
   moduleName: Foundation Platform
   stableId: Build_Foundation_Platform
   icon: {fileID: 0}
-  description: Primary structural plate for early habitat expansion.
+  description: Seafloor anchor platform for structural support.
   family: 0
-  ghostPrefab: {fileID: 2131711338715611294, guid: 6142b2af4ab564442876fb6809e6d33f, type: 3}
-  finalPrefab: {fileID: 5760737024609812604, guid: 3fd47dbaa6552004b99e7b71e2a866d0, type: 3}
-  buildCost:
-  - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}
-    amount: 2
-  - item: {fileID: 11400000, guid: ae02bcd19d7e28b44a03544b03dc399a, type: 2}
-    amount: 1
+  ghostPrefab: {fileID: 0}
+  finalPrefab: {fileID: 0}
+  moduleTemplate: {fileID: 11400000, guid: 2e8d4136e2284fb429f682e6da6d6ccd, type: 2}
+  buildCost: []
   powerRating: 0
-  powerPriority: 25
+  powerPriority: 10

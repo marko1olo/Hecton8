@@ -15,13 +15,32 @@ MonoBehaviour:
   stableId: flora.nerve_vine
   displayName: Nerve Vine
   vegetationType: 1
+  category: 1
   semanticType: 1
   biomeLayer: 0
   harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
-  lootItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  lootItem: {fileID: 11400000, guid: 9396a932269079a46ae6e81cfc90e58b, type: 2}
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
+  maxHealth: 7
+  growthTimeSeconds: 620
   attachmentSurface: 1
-  bioluminescenceColor: {r: 0.16, g: 0.98, b: 0.92, a: 0.9}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 1080594257209905712, guid: c060cf0a05d1c724ba8731ed3031081e, type: 3}
+  proxyShape: 3
+  boundingBoxCenter: {x: 0, y: 1.7, z: 0}
+  boundingBoxSize: {x: 0.72, y: 3.4, z: 0.72}
+  cutVfxSocketLocal: {x: 0, y: 1.19, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 2.312, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.544, z: 0}
+  bioluminescenceColor: {r: 0.48, g: 0.96, b: 0.58, a: 0.86}
   pulseFrequency: 1.24
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_AnchorCoral
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
+  stableId: flora.anchor_coral
+  displayName: Anchor Coral
+  vegetationType: 0
+  category: 2
+  semanticType: 0
+  biomeLayer: 1
+  harvestTemplate: {fileID: 11400000, guid: 2971cc2971e94534b9fb360aa24e88e6, type: 2}
+  lootItem: {fileID: 11400000, guid: 91d1c706ac87dda4c939dcef146bcbd1, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 2
+  audioMaterialId: 2
+  maxHealth: 8.6
+  growthTimeSeconds: 860
+  attachmentSurface: 2
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 3950869373329838178, guid: 8aa8e1bedf398cc42a4d09568afe514e, type: 3}
+  proxyShape: 2
+  boundingBoxCenter: {x: 0, y: 0.64, z: 0}
+  boundingBoxSize: {x: 1.14, y: 1.28, z: 1.14}
+  cutVfxSocketLocal: {x: 0, y: 0.44799998, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.8704, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.2048, z: 0}
+  bioluminescenceColor: {r: 0.94, g: 0.28, b: 0.18, a: 0.32}
+  pulseFrequency: 0.18
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

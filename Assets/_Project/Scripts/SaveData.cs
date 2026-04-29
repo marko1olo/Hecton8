@@ -45,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 46; // v46: fauna hibernation delta persistence
+        public const int CurrentVersion = 47; // v47: habitat graph topology persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -578,12 +578,23 @@ namespace Hecton8.SaveSystem
     {
         public int moduleCount;
         public ModuleDTO[] modules;
+        public int graphNodeCount;
+        public ModuleGraphNodeDTO[] graphNodes;
+        public int graphEdgeCount;
+        public ModuleGraphEdgeDTO[] graphEdges;
         public const int MaxModules = 256;
+        public const int MaxGraphEdges = MaxModules * 6;
 
         public void EnsureCapacity()
         {
             if (modules == null || modules.Length < MaxModules)
                 modules = new ModuleDTO[MaxModules];
+
+            if (graphNodes == null || graphNodes.Length < MaxModules)
+                graphNodes = new ModuleGraphNodeDTO[MaxModules];
+
+            if (graphEdges == null || graphEdges.Length < MaxGraphEdges)
+                graphEdges = new ModuleGraphEdgeDTO[MaxGraphEdges];
         }
     }
 
@@ -1018,5 +1029,62 @@ namespace Hecton8.SaveSystem
         {
             rotX = rot.x; rotY = rot.y; rotZ = rot.z; rotW = rot.w;
         }
+    }
+
+    [Serializable]
+    public struct ModuleGraphNodeDTO
+    {
+        public string prefabId;
+        public int moduleHashId;
+        public long aupGridX;
+        public long aupGridY;
+        public long aupGridZ;
+        public float aupLocalX;
+        public float aupLocalY;
+        public float aupLocalZ;
+        public float rotX;
+        public float rotY;
+        public float rotZ;
+        public float rotW;
+
+        internal AbsoluteUniversePosition GetAup()
+        {
+            return new AbsoluteUniversePosition
+            {
+                GridX = aupGridX,
+                GridY = aupGridY,
+                GridZ = aupGridZ,
+                LocalX = aupLocalX,
+                LocalY = aupLocalY,
+                LocalZ = aupLocalZ
+            };
+        }
+
+        public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);
+
+        internal void SetAup(in AbsoluteUniversePosition aup)
+        {
+            aupGridX = aup.GridX;
+            aupGridY = aup.GridY;
+            aupGridZ = aup.GridZ;
+            aupLocalX = aup.LocalX;
+            aupLocalY = aup.LocalY;
+            aupLocalZ = aup.LocalZ;
+        }
+
+        public void SetRotation(Quaternion rot)
+        {
+            rotX = rot.x;
+            rotY = rot.y;
+            rotZ = rot.z;
+            rotW = rot.w;
+        }
+    }
+
+    [Serializable]
+    public struct ModuleGraphEdgeDTO
+    {
+        public int sourceNodeIndex;
+        public int destinationNodeIndex;
     }
 }

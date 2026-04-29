@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
   stableId: flora.iron_coral
   displayName: Iron Coral
-  vegetationType: 1
+  vegetationType: 0
+  category: 2
   semanticType: 4
   biomeLayer: 1
   harvestTemplate: {fileID: 11400000, guid: 9af0b05bea86403d962510ddad3aacb2, type: 2}
@@ -22,6 +23,24 @@ MonoBehaviour:
   lootHashId: 0
   vulnerabilityMask: 2
   audioMaterialId: 3
+  maxHealth: 9.8
+  growthTimeSeconds: 920
   attachmentSurface: 3
-  bioluminescenceColor: {r: 0.74, g: 0.46, b: 0.18, a: 0.48}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 145364938461558373, guid: 165feb4498c18c340b5b83f6cd166af4, type: 3}
+  proxyShape: 2
+  boundingBoxCenter: {x: 0, y: 0.675, z: 0}
+  boundingBoxSize: {x: 1.22, y: 1.35, z: 1.22}
+  cutVfxSocketLocal: {x: 0, y: 0.4725, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.91800004, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.216, z: 0}
+  bioluminescenceColor: {r: 0.24, g: 0.64, b: 0.76, a: 0.36}
   pulseFrequency: 0.26
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

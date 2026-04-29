@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Unity.Mathematics;
 
 namespace Hecton8.Physics
@@ -19,6 +20,7 @@ namespace Hecton8.Physics
             public float3 TangentialVelocity;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static InelasticImpactResult ResolveInelasticImpact(
             float dominantMassKilograms,
             float3 dominantVelocity,
@@ -62,6 +64,7 @@ namespace Hecton8.Physics
             return result;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float ResolveReducedMass(
             float anchorMassKilograms,
             float payloadMassKilograms,
@@ -75,6 +78,7 @@ namespace Hecton8.Physics
             return (safeAnchorMass * safePayloadMass) / math.max(safeAnchorMass + safePayloadMass, 0.0001f);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float ResolveCriticalDamping(
             float springStiffness,
             float reducedMassKilograms,
@@ -84,6 +88,7 @@ namespace Hecton8.Physics
             return criticalDamping * math.max(1f, overDampingMultiplier);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float ResolveProjectedPdAcceleration(
             float3 anchorPosition,
             float3 payloadPosition,
@@ -100,6 +105,40 @@ namespace Hecton8.Physics
             return math.max(0f, requestedAcceleration);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float ResolveExponentialBlendAlpha(float deltaTime, float sharpness)
+        {
+            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeSharpness = math.max(0f, sharpness);
+            return math.saturate(1f - math.exp(-(safeDeltaTime * safeSharpness)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ResolveSteeringArc(
+            float3 currentSteer,
+            float3 desiredSteer,
+            float deltaTime,
+            float turnRate)
+        {
+            float3 up = new float3(0f, 1f, 0f);
+            float3 currentDirection = SafeNormal(currentSteer, new float3(0f, 0f, 1f));
+            float3 desiredDirection = SafeNormal(desiredSteer, currentDirection);
+            float alpha = ResolveExponentialBlendAlpha(deltaTime, turnRate);
+            quaternion currentRotation = quaternion.LookRotationSafe(currentDirection, up);
+            quaternion desiredRotation = quaternion.LookRotationSafe(desiredDirection, up);
+            quaternion smoothedRotation = math.slerp(currentRotation, desiredRotation, alpha);
+            return SafeNormal(math.mul(smoothedRotation, new float3(0f, 0f, 1f)), desiredDirection);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ProjectVelocityAlongSurface(float3 velocity, float3 surfaceNormal)
+        {
+            float3 safeVelocity = math.select(float3.zero, velocity, math.all(math.isfinite(velocity)));
+            float3 safeNormal = SafeNormal(surfaceNormal, new float3(0f, 1f, 0f));
+            return safeVelocity - (safeNormal * math.dot(safeVelocity, safeNormal));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 SafeNormal(float3 value, float3 fallback)
         {
             float magnitudeSq = math.lengthsq(value);

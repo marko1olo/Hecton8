@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4e7ab5be4213e44495d56080f5e9d67, type: 3}
+  m_Name: FaunaDataTemplate_KelpRaylet
+  m_EditorClassIdentifier: 
+  speciesId: 1281088008
+  speciesProfile: {fileID: 0}
+  archetype: {fileID: 11400000, guid: 864bc2869d2304a42af456331b207425, type: 2}
+  massKg: 22.4
+  bodyRadiusMeters: 0.55
+  cruiseSpeedMetersPerSecond: 4.2
+  maxSpeedMetersPerSecond: 6.8
+  steeringResponse: 0.96
+  vatPositionScaleBias: {x: 1, y: 1, z: 0, w: 0}
+  vatNormalScaleBias: {x: 1, y: 1, z: 0, w: 0}
+  vatPhaseOffsetScale: {x: 1, y: 0, z: 0, w: 0}
+  defaultBoidStateMask: 3
+  spawnFlags: 0
+  maxSchoolCount: 12
+  swimSpeed: 4.2
+  turnRate: 4.8
+  visionConeAngle: 115
+  aggroRadius: 0
+  fleeHealthThreshold: 0.36
+  foodChainTier: 2
+  dietMask: 1
+  preyMask: 4
+  driveWeights:
+  - 0.7
+  - 1.2
+  - 1.15
+  interactionMatrix:
+  - interactionKind: 1
+    damageMultiplier: 1
+    retreatDurationSeconds: 4.5
+    fearImpulse01: 0.65
+    forceRetreat: 1
+  - interactionKind: 2
+    damageMultiplier: 1.2
+    retreatDurationSeconds: 7
+    fearImpulse01: 0.9
+    forceRetreat: 1
+  scanEntryId: creature.ambient.kelp_raylet
+  scanEntryTitle: Kelp Raylet
+  scanEntryCategory: Ambient
+  scanEntrySummary: "\u041C\u0438\u0440\u043D\u0430\u044F \u0448\u0438\u0440\u043E\u043A\u0430\u044F
+  loreUnlockHashes:
+  - 2526596926
+  - 2813781332
+  fullLoreHash: 2526596926
+  attackPatterns:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  canBurrowAmbush: 0
+  burrowSeabedTriggerDistanceMeters: 8
+  burrowBreachDistanceMeters: 3
+  burrowPullAcceleration: 18
+  burrowLockDurationSeconds: 2.5
+  canDazzleHypnotize: 0
+  dazzleRangeMeters: 14
+  dazzleLookDotThreshold: 0.82
+  dazzlePullAcceleration: 6
+  emitsParentalDefenseSignal: 0
+  respondsToParentalDefenseSignal: 0
+  parentalDefenseRadiusMeters: 200
+  parentalDefenseHuntDurationSeconds: 18
+  empBlindDurationSeconds: 15
+  empClaritySuppression01: 1

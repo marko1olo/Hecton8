@@ -135,17 +135,20 @@ namespace Hecton8.Construction
             float dt,
             bool dryCompartment,
             bool hasOperationalPower,
+            float powerSupplyRatio,
             HectonSurvivalSystem trackedPlayerSurvival)
         {
             ModuleLifeSupportSignals signals = default;
+            float sanitizedSupplyRatio = hasOperationalPower ? Mathf.Clamp01(powerSupplyRatio) : 0f;
 
             if (dryCompartment &&
                 hasOperationalPower &&
                 !IsCo2Critical &&
                 _airRecycleRate > 0f &&
-                _breathableReserve < _breathableReserveCapacity)
+                _breathableReserve < _breathableReserveCapacity &&
+                sanitizedSupplyRatio > 0f)
             {
-                _breathableReserve += _airRecycleRate * dt;
+                _breathableReserve += _airRecycleRate * sanitizedSupplyRatio * dt;
                 if (_breathableReserve > _breathableReserveCapacity)
                     _breathableReserve = _breathableReserveCapacity;
             }
@@ -180,7 +183,7 @@ namespace Hecton8.Construction
                 {
                     float refillScale = ResolveAirRefillScale();
                     if (refillScale > 0f && _oxygenRefillRate > 0f)
-                        trackedPlayerSurvival.RefillOxygen(_oxygenRefillRate * refillScale * dt);
+                        trackedPlayerSurvival.RefillOxygen(_oxygenRefillRate * refillScale * sanitizedSupplyRatio * dt);
                 }
                 else if (_staleAirSuitDrainRate > 0f)
                 {

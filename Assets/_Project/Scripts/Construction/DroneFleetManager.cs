@@ -77,8 +77,8 @@ namespace Hecton8.Construction
         private const float AirReserveCriticalityScale = 1.5f;
         private const float EmergencyCriticalityScale = 1.35f;
         private const float SeparationDistanceEpsilon = 0.0001f;
-        private const float PlayerAvoidanceWeight = 1.4f;
         private const float DroneAvoidanceWeight = 1.9f;
+        private const float PlayerAvoidanceWeight = DroneAvoidanceWeight * 3f;
         private const float EmergencyThrusterSpeedMultiplier = 3f;
         private const float EmergencyBatteryDrainMultiplier = 5f;
 
@@ -370,13 +370,13 @@ namespace Hecton8.Construction
             if (!belowThreshold && !module.IsFlooded && !module.HasCascadeFailure && !graphRuptured)
                 return false;
 
-            if (_IsDifferentGrid(hubGrid, module))
+            if (IsDifferentGrid(hubGrid, module))
                 return false;
 
             return module.CurrentIntegrity < recoverableIntegrity || module.IsFlooded || module.HasCascadeFailure || graphRuptured;
         }
 
-        private static bool _IsDifferentGrid(PowerGrid hubGrid, BaseModule module)
+        private static bool IsDifferentGrid(PowerGrid hubGrid, BaseModule module)
         {
             if (hubGrid == null || module == null)
                 return false;

@@ -7,7 +7,7 @@ namespace Hecton8.AI.Editor
     public static class FaunaDataTemplateAuthoring
     {
         private const string ArchetypeRoot = "Assets/_Project/Data/AI/CreatureArchetypes";
-        private const string TemplateRoot = "Assets/_Project/Data/AI/FaunaTemplates";
+        private const string TemplateRoot = "Assets/_Project/Data/Fauna";
 
         [MenuItem("Hecton/Authoring/Build Fauna Data Templates", priority = 183)]
         public static void BuildFaunaDataTemplates()
@@ -60,6 +60,14 @@ namespace Hecton8.AI.Editor
             SetFloat(serializedTemplate, "cruiseSpeedMetersPerSecond", Mathf.Max(0.1f, archetype.cruiseSpeed));
             SetFloat(serializedTemplate, "maxSpeedMetersPerSecond", Mathf.Max(archetype.cruiseSpeed, archetype.burstSpeed));
             SetFloat(serializedTemplate, "steeringResponse", steeringResponse);
+            SetFloat(serializedTemplate, "swimSpeed", Mathf.Max(0.1f, archetype.cruiseSpeed));
+            SetFloat(serializedTemplate, "turnRate", Mathf.Max(0.1f, archetype.turnSpeed));
+            SetFloat(serializedTemplate, "visionConeAngle", ResolveVisionConeAngle(archetype));
+            SetFloat(serializedTemplate, "aggroRadius", Mathf.Max(0f, archetype.baseAggroDistance));
+            SetFloat(serializedTemplate, "fleeHealthThreshold", ResolveFleeHealthThreshold(archetype));
+            SetEnum(serializedTemplate, "foodChainTier", (int)ResolveFoodChainTier(archetype));
+            SetInt(serializedTemplate, "dietMask", (int)ResolveDietMask(archetype));
+            SetInt(serializedTemplate, "preyMask", (int)ResolvePreyMask(archetype));
             SetInt(serializedTemplate, "maxSchoolCount", ResolveSchoolCount(archetype));
             SetString(serializedTemplate, "scanEntryId", archetype.creatureId);
             SetString(serializedTemplate, "scanEntryTitle", string.IsNullOrWhiteSpace(archetype.displayName) ? "UNIDENTIFIED BIOFORM" : archetype.displayName);
@@ -116,6 +124,88 @@ namespace Hecton8.AI.Editor
         {
             float normalizedTurn = Mathf.Clamp(archetype.turnSpeed / 5f, 0.35f, 1.8f);
             return Mathf.Max(0.5f, normalizedTurn);
+        }
+
+        private static float ResolveVisionConeAngle(CreatureArchetypeData archetype)
+        {
+            switch (archetype.roleType)
+            {
+                case CreatureRoleType.Leviathan:
+                    return 155f;
+                case CreatureRoleType.Hunter:
+                    return 145f;
+                case CreatureRoleType.Territorial:
+                    return 125f;
+                default:
+                    return 115f;
+            }
+        }
+
+        private static float ResolveFleeHealthThreshold(CreatureArchetypeData archetype)
+        {
+            switch (archetype.roleType)
+            {
+                case CreatureRoleType.Leviathan:
+                    return 0.12f;
+                case CreatureRoleType.Hunter:
+                    return archetype.usePackHunt ? 0.18f : 0.24f;
+                case CreatureRoleType.Territorial:
+                    return 0.28f;
+                default:
+                    return 0.36f;
+            }
+        }
+
+        private static FaunaFoodChainTier ResolveFoodChainTier(CreatureArchetypeData archetype)
+        {
+            switch (archetype.roleType)
+            {
+                case CreatureRoleType.Leviathan:
+                    return FaunaFoodChainTier.Leviathan;
+                case CreatureRoleType.Hunter:
+                    return archetype.maxHealth >= 120f ? FaunaFoodChainTier.LargePredator : FaunaFoodChainTier.MediumPredator;
+                case CreatureRoleType.Territorial:
+                    return FaunaFoodChainTier.SmallPredator;
+                default:
+                    return archetype.spawnWeight >= 14 ? FaunaFoodChainTier.SwarmPassive : FaunaFoodChainTier.SmallHerbivore;
+            }
+        }
+
+        private static FaunaDietMask ResolveDietMask(CreatureArchetypeData archetype)
+        {
+            switch (ResolveFoodChainTier(archetype))
+            {
+                case FaunaFoodChainTier.Leviathan:
+                    return FaunaDietMask.LargeFauna | FaunaDietMask.MediumFauna | FaunaDietMask.Player | FaunaDietMask.Machine;
+                case FaunaFoodChainTier.LargePredator:
+                    return FaunaDietMask.MediumFauna | FaunaDietMask.SmallFauna | FaunaDietMask.Carcass;
+                case FaunaFoodChainTier.MediumPredator:
+                case FaunaFoodChainTier.SmallPredator:
+                    return FaunaDietMask.SmallFauna | FaunaDietMask.Plankton | FaunaDietMask.Carcass;
+                case FaunaFoodChainTier.SwarmPassive:
+                    return FaunaDietMask.Plankton;
+                default:
+                    return FaunaDietMask.Plankton | FaunaDietMask.Flora;
+            }
+        }
+
+        private static FaunaDietMask ResolvePreyMask(CreatureArchetypeData archetype)
+        {
+            switch (ResolveFoodChainTier(archetype))
+            {
+                case FaunaFoodChainTier.Leviathan:
+                    return FaunaDietMask.LargeFauna;
+                case FaunaFoodChainTier.LargePredator:
+                    return FaunaDietMask.LargeFauna;
+                case FaunaFoodChainTier.MediumPredator:
+                    return FaunaDietMask.MediumFauna;
+                case FaunaFoodChainTier.SmallPredator:
+                    return FaunaDietMask.SmallFauna;
+                case FaunaFoodChainTier.SwarmPassive:
+                    return FaunaDietMask.SmallFauna;
+                default:
+                    return FaunaDietMask.SmallFauna;
+            }
         }
 
         private static int ResolveSchoolCount(CreatureArchetypeData archetype)
@@ -222,6 +312,11 @@ namespace Hecton8.AI.Editor
         private static void SetFloat(SerializedObject serializedObject, string propertyName, float value)
         {
             serializedObject.FindProperty(propertyName).floatValue = value;
+        }
+
+        private static void SetEnum(SerializedObject serializedObject, string propertyName, int value)
+        {
+            serializedObject.FindProperty(propertyName).enumValueIndex = value;
         }
 
         private static void SetString(SerializedObject serializedObject, string propertyName, string value)

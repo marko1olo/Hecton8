@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_CrownSargassum
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
+  stableId: flora.crown_sargassum
+  displayName: Crown Sargassum
+  vegetationType: 2
+  category: 3
+  semanticType: 2
+  biomeLayer: 0
+  harvestTemplate: {fileID: 11400000, guid: 49a0645a7fdaba84ab5b0c1551b39c90, type: 2}
+  lootItem: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 17
+  audioMaterialId: 1
+  maxHealth: 5.8
+  growthTimeSeconds: 660
+  attachmentSurface: 0
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 6150745198742646543, guid: 44f3f709e86271648954497204cbb393, type: 3}
+  proxyShape: 4
+  boundingBoxCenter: {x: 0, y: 1.05, z: 0}
+  boundingBoxSize: {x: 2.4, y: 2.1, z: 2.4}
+  cutVfxSocketLocal: {x: 0, y: 0.73499995, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 1.428, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.33599997, z: 0}
+  bioluminescenceColor: {r: 0.32, g: 0.82, b: 0.46, a: 0.56}
+  pulseFrequency: 0.84
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

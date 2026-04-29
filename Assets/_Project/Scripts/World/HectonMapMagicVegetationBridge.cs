@@ -7181,7 +7181,11 @@ namespace Hecton8.World
                         floraDescriptor.BioluminescenceColor.x,
                         floraDescriptor.BioluminescenceColor.y,
                         floraDescriptor.BioluminescenceColor.z,
-                        floraDescriptor.BioluminescenceColor.w));
+                        floraDescriptor.BioluminescenceColor.w),
+                    floraDescriptor.SwaySpeed,
+                    floraDescriptor.BendAmplitude,
+                    1f,
+                    0f);
                 pool.Types[writeIndex] = record.Type;
                 pool.SemanticTypes[writeIndex] = record.SemanticType;
                 pool.BiomeLayers[writeIndex] = record.BiomeLayer;
@@ -7292,6 +7296,8 @@ namespace Hecton8.World
                 PulseFrequency = 0.55f,
                 HarvestTemplateStableHashId = 0,
                 AttachmentSurface = (uint)FloraDataTemplate.AttachmentSurface.Any,
+                SwaySpeed = type == (int)HectonVegetationInstanceType.Grass ? 1.35f : (type == (int)HectonVegetationInstanceType.GiantKelp ? 0.62f : 0.78f),
+                BendAmplitude = type == (int)HectonVegetationInstanceType.Grass ? 0.72f : (type == (int)HectonVegetationInstanceType.GiantKelp ? 1.18f : 0.94f),
                 Reserved0 = 0u
             };
         }
@@ -11566,7 +11572,7 @@ namespace Hecton8.World
                 commands[0] = new RaycastCommand(
                     origin,
                     Vector3.down,
-                    new QueryParameters(Physics.DefaultRaycastLayers, false, QueryTriggerInteraction.Ignore),
+                    new QueryParameters(UnityEngine.Physics.DefaultRaycastLayers, false, QueryTriggerInteraction.Ignore),
                     distance);
                 // COLD SYNC JOB: scatter preview/runtime-state snapping is rebuilt episodically, not per-frame gameplay cadence.
                 JobHandle handle = RaycastCommand.ScheduleBatch(commands, hits, 1, default);

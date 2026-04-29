@@ -74,7 +74,7 @@ namespace Hecton8.Items
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
         private Collider _collider;
-        private PhysicMaterial _defaultColliderMaterial;
+        private PhysicsMaterial _defaultColliderMaterial;
         private string _cachedInteractText = "???";
         private int _cachedItemHashId;
         private PersistentWorldRegistry _persistentWorldRegistry;

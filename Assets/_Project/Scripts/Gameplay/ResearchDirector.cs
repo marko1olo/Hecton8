@@ -1,5 +1,3 @@
-using Hecton8.AI;
-using Hecton8.Modding;
 using Hecton8.Narrative;
 using Hecton8.Quest;
 using UnityEngine;
@@ -20,8 +18,6 @@ namespace Hecton8.Gameplay
         private XenoBiologyTree.Node[] _nodes;
         private uint[] _requiredEntryHashes;
         private ushort[] _scanCounts;
-        // COLD ALLOC: System.Collections.Generic.HashSet<uint>[64] - dedupe fauna scan lore dispatch so scanner pulses do not spam quest/lore events - owner: ResearchDirector
-        private readonly System.Collections.Generic.HashSet<uint> _resolvedFaunaLoreHashes = new System.Collections.Generic.HashSet<uint>(64);
         private ulong _resolvedNodeBits;
         private bool _registered;
 
@@ -58,12 +54,8 @@ namespace Hecton8.Gameplay
                 _nodes == null ||
                 _nodes.Length == 0)
             {
-                if ((ScanEventType)payload.EventType == ScanEventType.EntryDiscovered && payload.EntryHash != 0u)
-                    ResolveFaunaScanUnlocks(payload.EntryHash);
                 return;
             }
-
-            ResolveFaunaScanUnlocks(payload.EntryHash);
 
             bool countsChanged = false;
             for (int i = 0; i < _requiredEntryHashes.Length; i++)
@@ -136,29 +128,6 @@ namespace Hecton8.Gameplay
 
             if (!string.IsNullOrWhiteSpace(node.UnlockQuestId) && QuestManager.Instance != null)
                 QuestManager.Instance.ActivateQuest(node.UnlockQuestId);
-        }
-
-        private void ResolveFaunaScanUnlocks(uint entryHash)
-        {
-            if (!FaunaScanRuntimeRegistry.TryGetLoreUnlocks(entryHash, out uint[] loreHashes) ||
-                loreHashes == null ||
-                loreHashes.Length == 0)
-            {
-                return;
-            }
-
-            LoreDatabaseManager loreDatabase = LoreDatabaseManager.Instance;
-            for (int i = 0; i < loreHashes.Length; i++)
-            {
-                uint loreHash = loreHashes[i];
-                if (loreHash == 0u || !_resolvedFaunaLoreHashes.Add(loreHash))
-                    continue;
-
-                if (loreDatabase != null && loreDatabase.TryUnlockByHash(loreHash))
-                    continue;
-
-                HectonEventBus.Publish(new LoreAcquiredEvent(loreHash));
-            }
         }
 
         private void RegisterScanListener()

@@ -23,7 +23,7 @@ namespace Hecton8.Gameplay
             public Vector3 Size;
 
             [Tooltip("Optional physic material applied to this generated collider.")]
-            public PhysicMaterial Material;
+            public PhysicsMaterial Material;
 
             [Tooltip("Whether the generated collider should be a trigger.")]
             public bool IsTrigger;
@@ -48,7 +48,7 @@ namespace Hecton8.Gameplay
             [Range(0, 2)] public int Direction;
 
             [Tooltip("Optional physic material applied to this generated collider.")]
-            public PhysicMaterial Material;
+            public PhysicsMaterial Material;
 
             [Tooltip("Whether the generated collider should be a trigger.")]
             public bool IsTrigger;

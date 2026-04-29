@@ -15,6 +15,7 @@ MonoBehaviour:
   stableId: flora.rift_ribbon
   displayName: Rift Ribbon
   vegetationType: 1
+  category: 1
   semanticType: 1
   biomeLayer: 0
   harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
@@ -22,6 +23,24 @@ MonoBehaviour:
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
+  maxHealth: 6.4
+  growthTimeSeconds: 520
   attachmentSurface: 1
-  bioluminescenceColor: {r: 0.10, g: 0.82, b: 0.86, a: 0.74}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 548622601731581001, guid: 8be98698f78c99a4aba2f90ab52c95b7, type: 3}
+  proxyShape: 3
+  boundingBoxCenter: {x: 0, y: 1.8, z: 0}
+  boundingBoxSize: {x: 0.62, y: 3.6, z: 0.62}
+  cutVfxSocketLocal: {x: 0, y: 1.26, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 2.448, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.576, z: 0}
+  bioluminescenceColor: {r: 0.18, g: 0.78, b: 0.96, a: 0.66}
   pulseFrequency: 0.66
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

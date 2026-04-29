@@ -185,21 +185,37 @@ namespace Hecton8.UI
                 _hologramMatrices = default;
             }
 
-            if (_recipePointerScheduled)
+            bool hadScheduledRecipePointerJob = _recipePointerScheduled;
+            JobHandle recipePointerDisposeHandle = default;
+            if (hadScheduledRecipePointerJob)
             {
-                _recipePointerHandle.Complete();
+                recipePointerDisposeHandle = _recipePointerHandle;
                 _recipePointerScheduled = false;
             }
 
             if (_recipePointerCommands.IsCreated)
             {
-                _recipePointerCommands.Dispose();
+                if (hadScheduledRecipePointerJob)
+                {
+                    recipePointerDisposeHandle = _recipePointerCommands.Dispose(recipePointerDisposeHandle);
+                }
+                else
+                {
+                    _recipePointerCommands.Dispose();
+                }
                 _recipePointerCommands = default;
             }
 
             if (_recipePointerHits.IsCreated)
             {
-                _recipePointerHits.Dispose();
+                if (hadScheduledRecipePointerJob)
+                {
+                    recipePointerDisposeHandle = _recipePointerHits.Dispose(recipePointerDisposeHandle);
+                }
+                else
+                {
+                    _recipePointerHits.Dispose();
+                }
                 _recipePointerHits = default;
             }
 

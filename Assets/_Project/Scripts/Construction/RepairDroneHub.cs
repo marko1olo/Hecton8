@@ -106,7 +106,7 @@ namespace Hecton8.Construction
         private int _launchCountTotal;
 
         /// <summary>Hub power draw scales with the number of active sorties.</summary>
-        public float PowerRating => -(standbyPowerDraw + ResolveActiveDroneCount() * activeDronePowerDraw);
+        public float PowerRating => -(standbyPowerDraw + CountActiveDronesInternal() * activeDronePowerDraw);
 
         /// <summary>Priority used during power shedding.</summary>
         public int PowerPriority => powerPriority;
@@ -115,9 +115,10 @@ namespace Hecton8.Construction
         public bool HasPower => _hasPower;
 
         internal static List<RepairDroneHub> ActiveHubs => s_ActiveHubs;
-        internal int ActiveDroneCount => ResolveActiveDroneCount();
+        internal int ActiveDroneCount => CountActiveDronesInternal();
         internal int TotalLaunchCount => _launchCountTotal;
-        internal Vector3 DockPosition => ResolveLaunchPosition();
+        internal Vector3 DockPosition => ResolveDockSocketPositionInternal();
+        internal Quaternion DockRotation => ResolveDockSocketRotationInternal();
         internal PowerGrid CurrentGrid => _powerNode != null ? _powerNode.Grid : null;
         internal int ActiveSlotCapacity => _activeDrones != null ? _activeDrones.Length : Mathf.Max(1, maxConcurrentDrones);
         internal bool HasOperationalPower => _hasPower && _powerNode != null && _powerNode.Grid != null;
@@ -345,7 +346,7 @@ namespace Hecton8.Construction
             if (pool == null)
                 return;
 
-            Vector3 launchPosition = ResolveLaunchPosition();
+            Vector3 launchPosition = ResolveDockSocketPositionInternal();
             GameObject droneObject = pool.Spawn(dronePrefab, launchPosition, _cachedTransform.rotation, true);
             if (droneObject == null || !droneObject.TryGetComponent(out RepairDroneEntity drone))
             {
@@ -569,14 +570,19 @@ namespace Hecton8.Construction
                 : unchecked((int)EntityId.ToULong(module.GetEntityId()));
         }
 
-        private Vector3 ResolveLaunchPosition()
+        private Vector3 ResolveDockSocketPositionInternal()
         {
             return launchPoint != null ? launchPoint.position : _cachedTransform.position;
         }
 
+        private Quaternion ResolveDockSocketRotationInternal()
+        {
+            return launchPoint != null ? launchPoint.rotation : _cachedTransform.rotation;
+        }
+
         private void RefreshDiagnostics()
         {
-            _debugActiveDroneCount = ResolveActiveDroneCount();
+            _debugActiveDroneCount = CountActiveDronesInternal();
             _debugCurrentTargetName = string.Empty;
 
             if (_activeDrones != null)
@@ -598,7 +604,7 @@ namespace Hecton8.Construction
 
         internal int ResolveDockedStasisSlotCount()
         {
-            int availableDockSlots = Mathf.Max(0, ActiveSlotCapacity - ResolveActiveDroneCount());
+            int availableDockSlots = Mathf.Max(0, ActiveSlotCapacity - CountActiveDronesInternal());
             if (availableDockSlots <= 0)
                 return 0;
 
@@ -607,7 +613,7 @@ namespace Hecton8.Construction
                 : 0;
         }
 
-        private int ResolveActiveDroneCount()
+        private int CountActiveDronesInternal()
         {
             if (_activeDrones == null)
                 return 0;

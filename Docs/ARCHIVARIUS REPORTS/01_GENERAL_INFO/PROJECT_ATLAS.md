@@ -121,9 +121,9 @@ This atlas is specifically aligned with:
 Coverage snapshot from current reverification pass:
 
 - `01_GENERAL_INFO` markdown files: `22`
-- `02_ACTUAL_REPORTS` markdown files: `43`
+- `02_ACTUAL_REPORTS` markdown files: `46`
 - `02_ACTUAL_REPORTS` csv files: `1`
-- total audited files in folders `01` and `02`: `66`
+- total audited files in folders `01` and `02`: `69`
 
 Canonical entry files inside this bundle:
 
@@ -142,6 +142,9 @@ Canonical entry files inside this bundle:
 - `EVENT_BUS_MAP.md`
 - `EVENT_FLOW_MAP.md`
 - `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`
+- `2026-04-30_EDITOR_RUNTIME_FORENSICS.md`
+- `2026-04-30_SERVICE_AUTHORITY_DRIFT.md`
+- `2026-04-30_PERSISTENCE_AND_SCENE_SEARCH_DRIFT.md`
 - `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md`
 - `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md`
 - `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`
@@ -149,6 +152,20 @@ Canonical entry files inside this bundle:
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md`
  - `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`
  - `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+
+### 6.3 Current Live Console Truth
+
+Current reachable Unity console state is not clean.
+
+This pass confirmed repeated editor-side `NullReferenceException` spam through:
+
+- `WorldProceduralScatterDirector.get__desiredPlacements()`
+- `WorldProceduralScatterDirector.BuildScatterPreviewGizmoSnapshot(...)`
+- `Editor/WorldProceduralScatterPreviewGizmoDrawer.DrawScatterPreviewGizmos(...)`
+
+Authority file for this snapshot:
+
+- `02_ACTUAL_REPORTS/2026-04-30_EDITOR_RUNTIME_FORENSICS.md`
 
 ## 7. Architecture Signals Rechecked Against Source
 
@@ -268,7 +285,9 @@ Current evidence-backed deltas from this pass:
 - `GameBootstrapper` contains a real Kahn-style cycle validator, but bootstrap execution is still manual and registry-safe order is not guaranteed.
 - `RenderDispatcher` and `GlobalPhysicsStateManager` still self-register in `Awake()` instead of explicit bootstrap-owned initialization.
 - `PlayerRuntimeContextService` reads `GlobalRegistry.PlayerInventory` and `GlobalRegistry.PlayerSensory` before those owners are initialized in the player layer.
-- current changed-file native audit found one hard strict-criterion failure: `VoxelDynamicNavGridRuntime.cs` owns persistent arrays without an `OnDisable` or `OnDestroy` disposal path.
+- reread of `VoxelDynamicNavGridRuntime.cs` now contradicts an older strict-criterion accusation: current source contains `ResetRuntime() -> DisposeAll()` plus per-record disposal, so that specific native-lifetime claim is stale.
+- active service owners such as `InputDispatcher`, `SceneRuntimeService`, `PlayerRuntimeContextService`, `EnvironmentRuntimeContextService`, `ConstructionManager`, `AbyssalThermalManager`, and `QuestManager` still live in a mixed authority mode: singleton ownership plus registry publication, and in some cases `DontDestroyOnLoad`.
+- runtime persistence is broader than the slot-save stack alone: `RebindingManager` persists input overrides separately, `GlobalProfileManager` persists a separate meta profile, and `HectonCaveVoxelAmbientOcclusionController` still keeps slow-tick fallback scene scans for cameras and voxel volumes.
 - current `Assets/_Project` path sweep found `0` Cyrillic file paths, but Cyrillic comments remain widespread in source and shader files.
 - a clean "20 agents reported zero console errors" proof surface was not found in the current docs corpus.
 

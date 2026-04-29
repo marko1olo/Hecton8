@@ -14,14 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
   stableId: flora.lumen_frond
   displayName: Lumen Frond
-  vegetationType: 1
-  semanticType: 1
+  vegetationType: 0
+  category: 0
+  semanticType: 0
   biomeLayer: 0
   harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
-  lootItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  lootItem: {fileID: 11400000, guid: 32a9672f690416b4fb198838e2b2ff35, type: 2}
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
+  maxHealth: 2.6
+  growthTimeSeconds: 240
   attachmentSurface: 1
-  bioluminescenceColor: {r: 0.32, g: 0.94, b: 0.72, a: 0.82}
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 2101953011385746680, guid: 02428a479929b654fa6ca31fd7e46551, type: 3}
+  proxyShape: 4
+  boundingBoxCenter: {x: 0, y: 0.55, z: 0}
+  boundingBoxSize: {x: 0.85, y: 1.1, z: 0.62}
+  cutVfxSocketLocal: {x: 0, y: 0.385, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.748, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.176, z: 0}
+  bioluminescenceColor: {r: 0.34, g: 0.92, b: 0.96, a: 0.88}
   pulseFrequency: 0.88
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

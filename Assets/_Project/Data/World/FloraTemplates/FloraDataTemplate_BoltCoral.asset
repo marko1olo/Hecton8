@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_BoltCoral
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.World.FloraDataTemplate
+  stableId: flora.bolt_coral
+  displayName: Bolt Coral
+  vegetationType: 0
+  category: 2
+  semanticType: 6
+  biomeLayer: 2
+  harvestTemplate: {fileID: 11400000, guid: 9af0b05bea86403d962510ddad3aacb2, type: 2}
+  lootItem: {fileID: 11400000, guid: f10189c61e17ea748bb6fc943e14d2ff, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 2
+  audioMaterialId: 3
+  maxHealth: 9.2
+  growthTimeSeconds: 880
+  attachmentSurface: 2
+  mesh: {fileID: 0}
+  proxyPrefab: {fileID: 1339713251746970109, guid: 83166269d50775a449d4599ebe66ab7b, type: 3}
+  proxyShape: 2
+  boundingBoxCenter: {x: 0, y: 0.61, z: 0}
+  boundingBoxSize: {x: 1.08, y: 1.22, z: 1.08}
+  cutVfxSocketLocal: {x: 0, y: 0.42700002, z: 0}
+  bleedVfxSocketLocal: {x: 0, y: 0.82960004, z: 0}
+  breakVfxSocketLocal: {x: 0, y: 0.1952, z: 0}
+  bioluminescenceColor: {r: 0.76, g: 0.62, b: 0.18, a: 0.28}
+  pulseFrequency: 0.2
+  parasiticToModules: 0
+  modulePowerDrainWatts: 0
+  moduleInfectionStrength: 0
+  moduleInfectionRadiusMeters: 1.5
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

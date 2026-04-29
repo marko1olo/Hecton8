@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4e7ab5be4213e44495d56080f5e9d67, type: 3}
+  m_Name: FaunaDataTemplate_RidgePackCutter
+  m_EditorClassIdentifier: 
+  speciesId: 1882038303
+  speciesProfile: {fileID: 0}
+  archetype: {fileID: 11400000, guid: a200003bb890c0a46bc48f66f828a03c, type: 2}
+  massKg: 65.6
+  bodyRadiusMeters: 0.7
+  cruiseSpeedMetersPerSecond: 5.1
+  maxSpeedMetersPerSecond: 8.9
+  steeringResponse: 0.86
+  vatPositionScaleBias: {x: 1, y: 1, z: 0, w: 0}
+  vatNormalScaleBias: {x: 1, y: 1, z: 0, w: 0}
+  vatPhaseOffsetScale: {x: 1, y: 0, z: 0, w: 0}
+  defaultBoidStateMask: 3
+  spawnFlags: 0
+  maxSchoolCount: 6
+  swimSpeed: 5.1
+  turnRate: 4.3
+  visionConeAngle: 145
+  aggroRadius: 18
+  fleeHealthThreshold: 0.18
+  foodChainTier: 4
+  dietMask: 37
+  preyMask: 8
+  driveWeights:
+  - 1.25
+  - 0.9
+  - 0.65
+  interactionMatrix:
+  - interactionKind: 1
+    damageMultiplier: 1
+    retreatDurationSeconds: 4.5
+    fearImpulse01: 0.65
+    forceRetreat: 1
+  - interactionKind: 2
+    damageMultiplier: 1.2
+    retreatDurationSeconds: 7
+    fearImpulse01: 0.9
+    forceRetreat: 1
+  scanEntryId: creature.hunter.ridge_pack_cutter
+  scanEntryTitle: Ridge Pack Cutter
+  scanEntryCategory: Hunter
+  scanEntrySummary: "\u0421\u0442\u0430\u0439\u043D\u044B\u0439 \u0445\u0438\u0449\u043D\u0438\u043A
+  loreUnlockHashes:
+  - 1374881277
+  - 3664972747
+  fullLoreHash: 1374881277
+  attackPatterns:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  canBurrowAmbush: 0
+  burrowSeabedTriggerDistanceMeters: 8
+  burrowBreachDistanceMeters: 3
+  burrowPullAcceleration: 18
+  burrowLockDurationSeconds: 2.5
+  canDazzleHypnotize: 0
+  dazzleRangeMeters: 14
+  dazzleLookDotThreshold: 0.82
+  dazzlePullAcceleration: 6
+  emitsParentalDefenseSignal: 0
+  respondsToParentalDefenseSignal: 0
+  parentalDefenseRadiusMeters: 200
+  parentalDefenseHuntDurationSeconds: 18
+  empBlindDurationSeconds: 15
+  empClaritySuppression01: 1

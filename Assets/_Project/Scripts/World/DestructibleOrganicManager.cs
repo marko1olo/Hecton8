@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System;
+using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -120,6 +121,27 @@ namespace Hecton8.World
         [Tooltip("Normalized kelp occupancy threshold above which competing coral in the same cell is forced into decomposition.")]
         private float allelopathicThreshold01 = 0.95f;
 
+        [Header("Harvest Audio")]
+        [SerializeField]
+        [Tooltip("Organic-impact clip used when a soft flora harvest transition occurs.")]
+        private AudioClip organicHarvestClip;
+
+        [SerializeField]
+        [Tooltip("Brittle snap/crack clip used when coral-like flora changes harvest state.")]
+        private AudioClip brittleHarvestClip;
+
+        [SerializeField]
+        [Tooltip("Fibrous tear clip used when kelp- or vine-like flora changes harvest state.")]
+        private AudioClip fibrousHarvestClip;
+
+        [SerializeField]
+        [Tooltip("Metallic fallback clip used when a flora template routes through the metallic acoustic lane.")]
+        private AudioClip metallicHarvestClip;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Base harvest audio volume applied to partial state changes before state-specific scaling.")]
+        private float harvestAudioBaseVolume = 0.72f;
+
         private NativeArray<uint> _surfaceInstanceUids;
         private NativeArray<uint> _underwaterInstanceUids;
         private NativeArray<byte> _surfaceMaterialClasses;
@@ -133,6 +155,7 @@ namespace Hecton8.World
         private NativeHashMap<uint, float> _decompositionStartTimeByInstanceUid;
         private NativeHashMap<uint, float> _regrowthProgressByInstanceUid;
         private NativeHashMap<uint, float3> _regrowthPositionByInstanceUid;
+        private NativeHashMap<uint, Unity.Mathematics.half> _maturationScaleByInstanceUid;
         private NativeHashMap<uint, float2> _baseScaleByInstanceUid;
         private NativeHashMap<uint, byte> _runtimeFlagsByInstanceUid;
         private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
@@ -169,6 +192,7 @@ namespace Hecton8.World
         private int[] _harvestDescriptorIndexByFloraTemplateIndex = Array.Empty<int>();
         private HarvestableTemplate[] _descriptorHarvestTemplates = Array.Empty<HarvestableTemplate>();
         private byte[] _floraCategoryByDescriptorIndex = Array.Empty<byte>();
+        private byte[] _audioMaterialByDescriptorIndex = Array.Empty<byte>();
         private float[] _growthTimeSecondsByDescriptorIndex = Array.Empty<float>();
         // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
         private CorpseResourceNodeRecord[] _corpseResourceNodes = Array.Empty<CorpseResourceNodeRecord>();
@@ -288,6 +312,7 @@ namespace Hecton8.World
             allelopathicCellRadius = Mathf.Max(1f, allelopathicCellRadius);
             allelopathicKelpCapacity = Mathf.Max(1, allelopathicKelpCapacity);
             allelopathicThreshold01 = Mathf.Clamp(allelopathicThreshold01, 0.5f, 1f);
+            harvestAudioBaseVolume = Mathf.Clamp01(harvestAudioBaseVolume);
 
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - persistent per-instance harvest health state keyed by deterministic flora uid - owner: DestructibleOrganicManager
             _healthByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
@@ -303,6 +328,8 @@ namespace Hecton8.World
             _regrowthProgressByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,float3>[2048] - flora regrowth position overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
             _regrowthPositionByInstanceUid = new NativeHashMap<uint, float3>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,half>[4096] - live flora maturation scale multipliers keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _maturationScaleByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,float2>[4096] - baseline height/width scales keyed by deterministic flora uid - owner: DestructibleOrganicManager
             _baseScaleByInstanceUid = new NativeHashMap<uint, float2>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,byte>[4096] - runtime flora bit-mask flags keyed by deterministic flora uid - owner: DestructibleOrganicManager
@@ -407,6 +434,9 @@ namespace Hecton8.World
             if (_damageVisualProgressByInstanceUid.IsCreated)
                 _damageVisualProgressByInstanceUid.Dispose();
 
+            if (_maturationScaleByInstanceUid.IsCreated)
+                _maturationScaleByInstanceUid.Dispose();
+
             if (_decompositionStartTimeByInstanceUid.IsCreated)
                 _decompositionStartTimeByInstanceUid.Dispose();
 
@@ -496,8 +526,9 @@ namespace Hecton8.World
                 return false;
 
             float baseHealth = Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth);
+            float currentHealth = GetLaneHealth(underwater, activeIndex);
             float toolResistance = math.max(0.01f, _templateDescriptors[templateIndex].ToolResistance);
-            float nextHealth = Mathf.Max(0f, GetLaneHealth(underwater, activeIndex) - (deliveredDamage / toolResistance));
+            float nextHealth = Mathf.Max(0f, currentHealth - (deliveredDamage / toolResistance));
             if (ShouldDetonateDefensiveSporeBurst(templateIndex, toolCapabilityMask))
             {
                 floraInteractionManager?.RegisterDefensiveSporeBurst(instancePosition, Mathf.Max(0.35f, normalizedPower));
@@ -510,6 +541,7 @@ namespace Hecton8.World
 
             PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
             ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, Time.time);
+            DispatchHarvestAudioTransition(instanceUid, templateIndex, baseHealth, currentHealth, nextHealth, underwater, activeIndex, instancePosition);
             if (nextHealth > 0.0001f)
             {
                 PersistFloraStateOverride(instanceUid, templateIndex, instancePosition, underwater, activeIndex, baseHealth, nextHealth);
@@ -727,6 +759,7 @@ namespace Hecton8.World
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: LootRuntimeEntry[totalLootEntries] - flattened harvest loot runtime table - owner: DestructibleOrganicManager
             _descriptorHarvestTemplates = new HarvestableTemplate[math.max(1, validTemplateCount)]; // COLD ALLOC: HarvestableTemplate[templateCount] - descriptor-to-authoring lookup for flora template harvest routing - owner: DestructibleOrganicManager
             _floraCategoryByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora-category cache used by harvest-state thresholds - owner: DestructibleOrganicManager
+            _audioMaterialByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora audio-material routing cache used by harvest-state audio dispatch - owner: DestructibleOrganicManager
             _growthTimeSecondsByDescriptorIndex = new float[math.max(1, validTemplateCount)]; // COLD ALLOC: float[templateCount] - authored flora growth durations - owner: DestructibleOrganicManager
             _harvestDescriptorIndexByFloraTemplateIndex = hasFloraTemplates
                 ? new int[floraTemplates.Length]
@@ -775,6 +808,7 @@ namespace Hecton8.World
                         _templateDescriptors[descriptorWriteIndex] = descriptor;
                         _descriptorHarvestTemplates[descriptorWriteIndex] = template;
                         _floraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)floraTemplate.Category;
+                        _audioMaterialByDescriptorIndex[descriptorWriteIndex] = floraTemplate.AudioMaterialID;
                         _growthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = floraTemplate.GrowthTimeSeconds;
                         _harvestDescriptorIndexByFloraTemplateIndex[i] = descriptorWriteIndex;
 
@@ -1109,11 +1143,18 @@ namespace Hecton8.World
                     float normalizedHeightScale = hasPersistedFloraState
                         ? Mathf.Clamp01(persistedHeightScale01)
                         : ResolveNormalizedHeightScale(templateIndex, defaultHealth, resolvedHealth);
-                    ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, templateIndex, normalizedHeightScale, damage01, currentTime);
+                    ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, templateIndex, persistedHealth01, normalizedHeightScale, damage01, currentTime);
                 }
                 else if (_damageVisualProgressByInstanceUid.IsCreated)
                 {
                     _damageVisualProgressByInstanceUid.Remove(instanceUid);
+                }
+
+                if (!isRegrowing && !isDestroyed && resolvedHealth > 0.0001f)
+                {
+                    float maturationScale = ResolveMaturationScaleMultiplier(instanceUid);
+                    if (maturationScale < 0.9999f)
+                        ApplyMaturationVisualToLaneInstance(underwater, i, instanceUid, maturationScale);
                 }
             }
 
@@ -1189,9 +1230,14 @@ namespace Hecton8.World
                     continue;
                 }
 
-                PersistentWorldRegistry.UnpackFloraStateOverride(record.Quantity, out float persistedHealth01, out float persistedHeightScale01);
-                _persistedHealth01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)Mathf.Clamp01(persistedHealth01));
-                _persistedHeightScale01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)Mathf.Clamp01(persistedHeightScale01));
+                PersistentWorldRegistry.UnpackFloraStateOverride(record.Quantity, out float persistedHealth01, out byte persistedHarvestState);
+                float normalizedHealth = Mathf.Clamp01(persistedHealth01);
+                float normalizedHeightScale = ResolveNormalizedHeightScaleFromHarvestState(
+                    ResolveDescriptorIndexByPersistentIdHash(record.ItemPersistentIdHash),
+                    normalizedHealth,
+                    ResolvePersistedHarvestState(persistedHarvestState));
+                _persistedHealth01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)normalizedHealth);
+                _persistedHeightScale01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)Mathf.Clamp01(normalizedHeightScale));
             }
         }
 
@@ -2086,8 +2132,9 @@ namespace Hecton8.World
             if (damage01 <= 0.0001f)
                 return;
 
+            float normalizedHealth = Mathf.Clamp01(currentHealth / math.max(0.0001f, baseHealth));
             float normalizedHeightScale = ResolveNormalizedHeightScale(templateIndex, baseHealth, currentHealth);
-            ApplyDamageToLaneInstance(underwater, activeIndex, instanceUid, templateIndex, damage01, normalizedHeightScale, currentTime);
+            ApplyDamageToLaneInstance(underwater, activeIndex, instanceUid, templateIndex, normalizedHealth, damage01, normalizedHeightScale, currentTime);
         }
 
         private void UpdateDamageProgressCache(uint instanceUid, float damage01)
@@ -2206,6 +2253,124 @@ namespace Hecton8.World
             }
         }
 
+        private byte ResolveDescriptorAudioMaterialId(int templateIndex)
+        {
+            if (_audioMaterialByDescriptorIndex == null || templateIndex < 0 || templateIndex >= _audioMaterialByDescriptorIndex.Length)
+                return (byte)FloraDataTemplate.AudioMaterialId.Organic;
+
+            return _audioMaterialByDescriptorIndex[templateIndex];
+        }
+
+        private float ResolveNormalizedHeightScaleFromHarvestState(int templateIndex, float normalizedHealth, HarvestState harvestState)
+        {
+            normalizedHealth = Mathf.Clamp01(normalizedHealth);
+            switch (harvestState)
+            {
+                case HarvestState.Pristine:
+                    return 1f;
+                case HarvestState.PartiallyHarvested:
+                    return Mathf.Clamp(Mathf.Min(normalizedHealth, ResolvePartialHeightCeiling01(templateIndex)), MinimumDecomposedHeightScale, 1f);
+                case HarvestState.Bare:
+                    return Mathf.Clamp(Mathf.Min(normalizedHealth, ResolveBareHeightCeiling01(templateIndex)), SoftBareHealthFloor01, 1f);
+                default:
+                    return MinimumDecomposedHeightScale;
+            }
+        }
+
+        internal bool IsBareHarvestState(byte packedHarvestState)
+        {
+            return packedHarvestState == (byte)HarvestState.Bare;
+        }
+
+        private void DispatchHarvestAudioTransition(
+            uint instanceUid,
+            int templateIndex,
+            float baseHealth,
+            float previousHealth,
+            float nextHealth,
+            bool underwater,
+            int activeIndex,
+            Vector3 instancePosition)
+        {
+            if (templateIndex < 0 || templateIndex >= _templateDescriptors.Length || previousHealth <= 0.0001f)
+                return;
+
+            float previousHeightScale = ResolveCurrentNormalizedHeightScale(
+                underwater,
+                activeIndex,
+                instanceUid,
+                Mathf.Clamp01(previousHealth / Mathf.Max(0.0001f, baseHealth)));
+            HarvestState previousState = ResolveHarvestState(templateIndex, baseHealth, previousHealth, previousHeightScale);
+            HarvestState nextState = nextHealth > 0.0001f
+                ? ResolveHarvestState(
+                    templateIndex,
+                    baseHealth,
+                    nextHealth,
+                    ResolveNormalizedHeightScale(templateIndex, baseHealth, nextHealth))
+                : HarvestState.Dead;
+
+            if (previousState == nextState)
+                return;
+
+            AudioClip clip = ResolveHarvestAudioClip(ResolveDescriptorAudioMaterialId(templateIndex), nextState);
+            if (clip == null)
+                return;
+
+            float volume = ResolveHarvestAudioVolume(nextState);
+            float pitch = ResolveHarvestAudioPitch(nextState);
+            AbsoluteUniversePosition soundAup = AbsoluteUniversePosition.FromRuntimePosition(instancePosition);
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            {
+                spatialAudioManager.PlayHarvestAtAup(soundAup, clip, volume, pitch);
+                return;
+            }
+
+            GlobalRegistry.Audio?.PlayAtPoint(clip, instancePosition, volume, pitch);
+        }
+
+        private AudioClip ResolveHarvestAudioClip(byte audioMaterialId, HarvestState harvestState)
+        {
+            switch ((FloraDataTemplate.AudioMaterialId)audioMaterialId)
+            {
+                case FloraDataTemplate.AudioMaterialId.Brittle:
+                    return brittleHarvestClip;
+                case FloraDataTemplate.AudioMaterialId.Fibrous:
+                    return fibrousHarvestClip != null ? fibrousHarvestClip : organicHarvestClip;
+                case FloraDataTemplate.AudioMaterialId.Metallic:
+                    return metallicHarvestClip != null ? metallicHarvestClip : brittleHarvestClip;
+                default:
+                    return harvestState == HarvestState.PartiallyHarvested && fibrousHarvestClip != null
+                        ? fibrousHarvestClip
+                        : organicHarvestClip;
+            }
+        }
+
+        private float ResolveHarvestAudioVolume(HarvestState harvestState)
+        {
+            switch (harvestState)
+            {
+                case HarvestState.Bare:
+                    return Mathf.Clamp01(harvestAudioBaseVolume * 1.15f);
+                case HarvestState.Dead:
+                    return Mathf.Clamp01(harvestAudioBaseVolume * 1.25f);
+                default:
+                    return harvestAudioBaseVolume;
+            }
+        }
+
+        private static float ResolveHarvestAudioPitch(HarvestState harvestState)
+        {
+            switch (harvestState)
+            {
+                case HarvestState.Bare:
+                    return 0.9f;
+                case HarvestState.Dead:
+                    return 0.82f;
+                default:
+                    return 1f;
+            }
+        }
+
         private bool TryResolvePersistedFloraState(uint instanceUid, out float normalizedHealth, out float normalizedHeightScale)
         {
             normalizedHealth = 1f;
@@ -2270,6 +2435,7 @@ namespace Hecton8.World
 
             float normalizedHealth = Mathf.Clamp01(currentHealth / math.max(0.0001f, baseHealth));
             float normalizedHeightScale = ResolveCurrentNormalizedHeightScale(underwater, activeIndex, instanceUid, normalizedHealth);
+            HarvestState harvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, normalizedHeightScale);
             if (PersistentWorldRegistry.IsPristineFloraState(normalizedHealth, normalizedHeightScale))
             {
                 PersistentWorldRegistry.Instance?.TryClearFloraStateOverride(instanceUid);
@@ -2298,7 +2464,7 @@ namespace Hecton8.World
                 instanceUid,
                 instancePosition,
                 normalizedHealth,
-                normalizedHeightScale);
+                (byte)harvestState);
         }
 
         private float ResolveCurrentNormalizedHeightScale(
@@ -2351,14 +2517,15 @@ namespace Hecton8.World
             int activeIndex,
             uint instanceUid,
             int templateIndex,
+            float normalizedHealth,
             float damage01,
             float normalizedHeightScale,
             float currentTime)
         {
             if (underwater)
-                ApplyPersistedDamageMetadata(ref _underwaterMetadata, activeIndex, instanceUid, templateIndex, normalizedHeightScale, damage01, currentTime);
+                ApplyPersistedDamageMetadata(ref _underwaterMetadata, activeIndex, instanceUid, templateIndex, normalizedHealth, normalizedHeightScale, damage01, currentTime);
             else
-                ApplyPersistedDamageMetadata(ref _surfaceMetadata, activeIndex, instanceUid, templateIndex, normalizedHeightScale, damage01, currentTime);
+                ApplyPersistedDamageMetadata(ref _surfaceMetadata, activeIndex, instanceUid, templateIndex, normalizedHealth, normalizedHeightScale, damage01, currentTime);
         }
 
         private void UpdateRegrowthVisuals()
@@ -2455,7 +2622,13 @@ namespace Hecton8.World
                     normalizedHeightScale = ResolveRuntimeNormalizedHeightScale(instanceUid, metadata[i]);
 
                 int templateIndex = ResolveTemplateIndex(metadata[i], (HarvestableTemplate.MaterialClass)materialClasses[i]);
-                ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, templateIndex, normalizedHeightScale, damage01, currentTime);
+                float baseHealth = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
+                    ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
+                    : 1f;
+                float normalizedHealth = _healthByInstanceUid.IsCreated && _healthByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half trackedHealth)
+                    ? Mathf.Clamp01((float)trackedHealth / baseHealth)
+                    : Mathf.Clamp01(1f - (damage01 * 0.5f));
+                ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, templateIndex, normalizedHealth, normalizedHeightScale, damage01, currentTime);
             }
         }
 
@@ -2513,6 +2686,7 @@ namespace Hecton8.World
             hiddenMetadata.WidthScale = 0f;
             hiddenMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateIdle;
             hiddenMetadata.RuntimeFlags = 0f;
+            hiddenMetadata.HealthNormalized = 0f;
             metadata[activeIndex] = hiddenMetadata;
         }
 
@@ -2528,6 +2702,7 @@ namespace Hecton8.World
             wiltMetadata.HeightScale = -Mathf.Max(0.05f, Mathf.Abs(wiltMetadata.HeightScale));
             wiltMetadata.WidthScale = Mathf.Max(0.001f, wiltStartTime);
             wiltMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateDying;
+            wiltMetadata.HealthNormalized = 0f;
             metadata[activeIndex] = wiltMetadata;
         }
 
@@ -2552,6 +2727,7 @@ namespace Hecton8.World
             decompositionMetadata.HeightScale = -Mathf.Lerp(baseScale.x, MinimumDecomposedHeightScale, smoothEntropy);
             decompositionMetadata.WidthScale = -Mathf.Max(0.001f, decompositionStartTime);
             decompositionMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateDying;
+            decompositionMetadata.HealthNormalized = Mathf.Lerp(1f, 0f, smoothEntropy);
             metadata[activeIndex] = decompositionMetadata;
         }
 
@@ -2568,6 +2744,7 @@ namespace Hecton8.World
             damageMetadata.HeightScale = -Mathf.Max(0.05f, Mathf.Abs(damageMetadata.HeightScale));
             damageMetadata.WidthScale = currentTime - (Mathf.Clamp01(damage01) * OrganicWiltDurationSeconds);
             damageMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateAgitated;
+            damageMetadata.HealthNormalized = Mathf.Clamp01(1f - damage01);
             metadata[activeIndex] = damageMetadata;
         }
 
@@ -2576,6 +2753,7 @@ namespace Hecton8.World
             int activeIndex,
             uint instanceUid,
             int templateIndex,
+            float normalizedHealth,
             float normalizedHeightScale,
             float damage01,
             float currentTime)
@@ -2597,6 +2775,7 @@ namespace Hecton8.World
                 damageMetadata.HeightScale = -Mathf.Max(MinimumDecomposedHeightScale, baseScale.x * clampedHeight01);
                 damageMetadata.WidthScale = currentTime - (Mathf.Clamp01(damage01) * OrganicWiltDurationSeconds);
                 damageMetadata.RuntimeState = ResolveHarvestStateRuntimeState(harvestState);
+                damageMetadata.HealthNormalized = Mathf.Clamp01(normalizedHealth);
                 metadata[activeIndex] = damageMetadata;
                 return;
             }
@@ -2604,6 +2783,7 @@ namespace Hecton8.World
             ApplyDamageMetadata(ref metadata, activeIndex, damage01, currentTime);
             HectonVegetationInstanceData fallbackMetadata = metadata[activeIndex];
             fallbackMetadata.RuntimeState = ResolveHarvestStateRuntimeState(harvestState);
+            fallbackMetadata.HealthNormalized = Mathf.Clamp01(normalizedHealth);
             metadata[activeIndex] = fallbackMetadata;
         }
 
@@ -2669,6 +2849,25 @@ namespace Hecton8.World
             }
 
             return 480f;
+        }
+
+        private int ResolveDescriptorIndexByPersistentIdHash(ulong floraPersistentIdHash)
+        {
+            for (int i = 0; i < _templateDescriptors.Length; i++)
+            {
+                if ((ulong)(uint)_templateDescriptors[i].StableHashId == floraPersistentIdHash)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static HarvestState ResolvePersistedHarvestState(byte packedHarvestState)
+        {
+            if (packedHarvestState > (byte)HarvestState.Dead)
+                return HarvestState.PartiallyHarvested;
+
+            return (HarvestState)packedHarvestState;
         }
 
         internal bool IsTemplateMaterialClass(ulong floraPersistentIdHash, HarvestableTemplate.MaterialClass materialClass)
@@ -2810,6 +3009,7 @@ namespace Hecton8.World
             regrowthMetadata.RuntimeState = progress01 >= 0.995f
                 ? HectonVegetationInstanceData.RuntimeStateIdle
                 : HectonVegetationInstanceData.RuntimeStateAgitated;
+            regrowthMetadata.HealthNormalized = Mathf.Clamp01(progress01);
             metadata[activeIndex] = regrowthMetadata;
         }
 

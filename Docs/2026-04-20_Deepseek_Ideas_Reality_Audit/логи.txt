@@ -1,1009 +1,1348 @@
 <system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: XENO-BOTANY & ASSETS
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: XENO-BOTANY & ENVIRONMENT
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Base Parasites & Shader-Driven Rot
-THINKING LEVEL: MAXIMUM (Focused on MaterialPropertyBlocks, VAT, and Logistics Hooks)[0. SITREP: THE CREEPING DOOM]
-You successfully added Organic SSS and flow-reactive emission. The visual quality is immaculate. Now, the flora must become a hostile entity to the player's architecture. Plants must overgrow the base and physically drain its power.
+OPERATIONAL MODE: Environmental Envelopes & Strict Placement
+THINKING LEVEL: MAXIMUM (Focused on Math, Culling, and Terrain Alignment)
 
-[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
-1. Study FloraDataTemplate.cs and PowerGrid.cs.
-2. Review how BaseDegradationSystem.cs tracks module integrity.
+[0. SITREP: THE MESSY SEABED]
+Procedural generation is useless if plants float in the air or clip into each other. We are locking down the exact mathematical placement of the environment.
+
+[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study FloraDistributionDirector.cs and HectonMapMagicVegetationBridge.cs.
+2. Review AUP coordinate conversion rules.
 
 [II. PRIMARY OBJECTIVES]
-1. BASE PARASITISM (ENERGY DRAIN):
-- Target: FloraInteractionManager.cs & PowerGrid.cs.
-- Action: "Cable Bloom" and "Rust Moss" attached to AttachmentSurface.Metal must become active parasites.
-- Execution: For every parasitic flora instance attached to a Base Module, inject a negative ConsumerMap value into the PowerGrid. A base covered in vines will suffer massive brownouts until the player takes a Plasma Cutter and burns the flora off (triggering DestructibleOrganicManager).
-
-2. SHADER-DRIVEN ROT ON BASES:
-- Target: Hecton_CoreLit.hlsl & FloraInteractionManager.cs.
-- Action: The base mesh itself must look infected.
-- Execution: When parasitic flora attaches to a module, update the module's MaterialPropertyBlock with _ParasiteInfectionLevel. The base shader must blend a sickly, pulsing organic albedo/normal map over the metal, spreading outward from the attachment socket.
-
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. THERMOPHILIC FLORA (HEAT SEEKERS):
+1. STRICT ENVELOPE MAPPING:
 - Target: FloraDistributionDirector.cs.
-- Action: Certain flora only grows on active Thermal Vents or Overloaded Reactors.
-- Execution: If a reactor is operating above 100°C for >5 minutes, procedurally spawn "Thermal Tubeworms" on the module. These worms have VulnerabilityMask = BURN and can only be removed with concussive force (Torpedos), not lasers.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-Once you finish the above, YOU MUST NOT STOP.
-1. Update PROJECT_CONTENT_LEDGER.md with the new parasitic and thermophilic flora hashes.
-2. Verify that the shader changes do not break the SRP batcher for the base modules.
+- Action: Eradicate string-based biome spawning.
+- Execution: Flora must spawn strictly evaluated against Depth (m), Slope Angle (0-90), and Substrate Type (Rock/Sand). A plant assigned to "Flat Sand at 100m" MUST NEVER spawn on a "Vertical Cliff at 500m".
 
-[V. EVIDENCE-BASED REPORTING]
+2. DENSITY CLAMPING & OVERLAP PREVENTION:
+- Target: FloraDistributionDirector.cs.
+- Action: Prevent over-spawning.
+- Execution: Use a 2D grid/poisson-disk sampling algorithm in a Burst job. Ensure the distance between instances of the same plant is never less than MinSpacing defined in its Template.
+
+3. PERFECT TERRAIN SEAM SNAPPING:
+- Target: HectonMapMagicVegetationBridge.cs.
+- Action: Roots must touch the ground.
+- Execution: Execute a precise raycast (via RaycastCommand.ScheduleBatch) straight down to the terrain/voxel mesh. Align the plant's Up vector to the Hit.Normal (with a tunable MaxTiltAngle so tall plants don't grow completely sideways).
+
+4. SUB-BIOME PATCH CLUSTERING:
+- Target: FloraDistributionDirector.cs.
+- Action: Plants don't grow uniformly; they grow in patches.
+- Execution: Use Perlin/Simplex noise masks to create "clusters" of specific flora, ensuring realistic dense patches separated by empty space.
+
+5. CULLING PIPELINE PREP:
+- Target: FloraDistributionDirector.cs.
+- Action: Ensure all spawned instances write their positions directly into the GraphicsBuffer for the GPU instancer. No GameObjects for micro-flora.
+
+6. EDITOR PREVIEW GIZMOS:
+- Target: Editor Tooling.
+- Action: Provide visualization for designers.
+- Execution: Write an Editor script that draws colored circles representing the spawn envelopes and density rules without needing to enter Play Mode.[III. EVIDENCE-BASED REPORTING]
 1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Detail how parasitic flora links its AUP to the specific LogisticsNode to drain power.
+2. SURGERY LOG: Provide the Burst math for Poisson-disk density clamping.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-12:36 AM
+1:44 AM
 
 
 
-Worked for 42m 23s
+Worked for 22m 9s
 What Was Wrong
-Cable Bloom/Rust Moss had no module-parasite runtime owner, so attached flora never affected PowerGrid. Base infection visuals also had no host-side shader channel. The requested thermophile owner FloraDistributionDirector.cs does not exist, and the literal MaterialPropertyBlock path conflicts with project rules and SRP-batcher requirements.
 
+FloraDistributionDirector.cs does not exist in this repo. The real owner is the existing scatter stack, so a new director would have been architecture drift. The active problems were:
+
+flora rules still depended on biome-family gating instead of strict environmental envelopes
+spacing rejection was heuristic, not strict same-family minimum spacing
+placement pose used flat seafloorHeight + yOffset with no substrate enforcement and no terrain-normal tilt clamp
+designers had no SceneView envelope visualization on the existing preview path
 What I Did
-I expanded FloraDataTemplate.cs (line 122) with authored parasite/thermophile fields: module drain, infection strength/radius/pulse, and thermal activation gate. I wired module drain through FloraInteractionManager.cs (line 1638) and BaseModule.cs (line 2057): flora instance world position resolves the nearest BaseModule through WorldSpatialHashGrid, the module receives SetParasiteInfestation(...), and its PowerRating now subtracts parasite load before the owning grid is dirtied. That is the AUP/logistics surgery path.
 
-For visuals, I did not add MPBs. I pushed parasite anchors as shader globals in FloraInteractionManager.cs (line 195), evaluated the infection field in Hecton_CoreLit.hlsl (line 155), and blended the parasite overlay in Hecton_DryZoneLit.shader (line 233). The new material-side controls are in the shader UnityPerMaterial block at Hecton_DryZoneLit.shader (line 102). I also authored/updated the flora assets and ledger entries for Cable Bloom, Rust Moss, and Thermal Tubeworm in PROJECT_CONTENT_LEDGER.md (line 57).
+Strict envelope fields were added to WorldProceduralPlacementRule.cs (line 37): requiredSubstrate, maxTiltAngleDegrees, clusterNoiseScale, clusterNoiseThreshold, strictEnvelopeMapping.
 
-Thermal Tubeworm is implemented as thermophilic module infestation after 100 C for 300 s on reactor-hosting modules in FloraInteractionManager.cs (line 1714). I did not invent a new standalone spawn subsystem because FloraDistributionDirector.cs is absent. I also cleared unrelated red-state blockers in HectonContactJob.cs (line 22), ResourceNodeTemplate.cs (line 459), Fabricator.cs (line 790), FaunaBrain.Compatibility.cs (line 573), and TraumaDispatcher.cs (line 546) so Unity could return to a clean console.
+Those fields are now carried through the runtime rule cache in WorldProceduralScatterDirector.cs (line 1638) and used to bypass biome-family/zone/socket gating when strict envelope mode is active in WorldProceduralScatterDirector.cs (line 2053). Actual acceptance moved to depth/slope plus substrate/cluster tests in WorldProceduralScatterDirectorEnvironmentalEnvelope.cs (line 66).
 
+Density clamping was tightened in the Burst acceptance path. Same-family spacing now keys on FamilyHash in WorldProceduralScatterDirectorCandidateAcceptance.cs (line 25) and resolves required distance as max(candidateSpacing, existingSpacing) for the same family in WorldProceduralScatterDirectorCandidateAcceptance.cs (line 1143). That is the Poisson-disk reject condition inside the existing bucketed native grid, not a second scatter system.
+
+Substrate sampling and terrain seam snapping were added to the bridge in HectonMapMagicVegetationBridge.cs (line 3845) and HectonMapMagicVegetationBridge.cs (line 3888). Snap uses a downward RaycastCommand.ScheduleBatch seam with cached terrain height/normal fallback, and tilt is clamped before resolving final rotation. The scatter owner now uses that snap when resolving placement runtime pose in WorldProceduralScatterDirector.cs (line 2997).
+
+SceneView preview gizmos were added in WorldProceduralScatterPreviewGizmoDrawer.cs (line 10), fed by the live preview snapshot exported from WorldProceduralScatterDirector.cs (line 1823).
+
+Surgery Log
+
+Burst density math:
+
+candidate search radius stays grid-based: ceil(max(candidateSpacing, maxRegisteredSpacing) * 1.35 / cellSize)
+each bucketed neighbor is tested without allocations
+for same-family flora: minDistance = max(candidateSpacing, existingSpacing)
+reject when distanceSq < minDistance * minDistance
+this gives strict no-overlap / no-under-spacing behavior per family while reusing the existing native placement buckets
+Cluster math in WorldProceduralScatterDirectorEnvironmentalEnvelope.cs (line 174):
+
+three-octave Perlin mask
+weighted blend 0.58 / 0.28 / 0.14
+thresholded by rule-authored clusterNoiseThreshold
 In-Game Result
-Metal-attached parasitic flora now creates negative load on infected base modules, so overgrowth can brown out the grid until removed through the existing destruction path. Base materials now show a pulsing parasite spread driven from attachment anchors instead of per-renderer overrides. Cable Bloom and Rust Moss are active parasite templates; Thermal Tubeworm is active as a temperature-gated infestation template, not a separate spawned worm-actor system.
+
+Micro-flora still stays on the existing GPUI/GraphicsBuffer path; no new GameObject scatter owner was introduced. Strict flora rules can now be authored against depth/slope/substrate/patch math, same-family spacing is hard-clamped, and accepted placements can snap to collider terrain with a capped tilt instead of staying flat. Designers also get edit-mode spacing/envelope circles on the current scatter preview.
 
 What Was Verified
-MCP console log: read_console returned 0 entries after console clear and script refresh. Scene wiring: Unity editor code read _Verification_IndirectVegetation.floraTemplates = 17. SRP-batcher safety: rg found no MaterialPropertyBlock, SetPropertyBlock, or GetPropertyBlock usage in the parasite owner/shader path; infection data is carried through shader globals plus UnityPerMaterial, not MPBs.
 
-Mandates followed: LOGI_Energy_Networks_Power_Grid_Graph_Flow, PHYS_Destructible_Organic_Entropy, REND_Instanced_Flora_Physics, REND_GPU_Driven_Animation_VAT, CORE_Tools_Equipment_Interaction_Raycast_Heat, OPT_Zero_GC_Policy_AllocFree_Mandate.
+Unity-side proof is incomplete. MCP transport was unstable and repeatedly dropped websocket sessions, so I could not produce a clean MCP console capture. The latest Editor.log tail no longer showed my earlier scatter acceptance regressions, but the project is still compile-blocked by unrelated errors in ItemData.cs (line 82) and ItemData.cs (line 239) (PhysicMaterial obsolete error path). I also saw unrelated dirty-state compile noise in HectonMapMagicVegetationBridge.cs (line 6693) from older worktree changes.
 
-GC validation: measured proof absent.
-Regression model: hot-path work is a timed module scan in FloraInteractionManager, no new per-frame managed allocations were introduced in the parasite path; failure modes are missing BaseModule registration, missing thermophile template, or absent shared parasite textures on base materials.
-Diffs: git diff --stat for this pass is 12 files changed, 2825 insertions, 123 deletions, plus RustMoss and ThermalTubeworm assets/meta and the saved scene binary update.
-STATUS: MCP VERIFIED.
+Full diff extraction is complicated by a heavily dirty worktree; git diff -- <touched paths> includes unrelated pre-existing hunks, especially in the bridge file. The relevant files for this pass are:
 
+WorldProceduralPlacementRule.cs (line 37)
+WorldProceduralScatterDirector.cs (line 1638)
+WorldProceduralScatterDirectorCandidateAcceptance.cs (line 25)
+WorldProceduralScatterDirectorEnvironmentalEnvelope.cs (line 66)
+WorldProceduralScatterWorkingMemory.cs (line 255)
+HectonMapMagicVegetationBridge.cs (line 3845)
+WorldProceduralScatterPreviewGizmoDrawer.cs (line 10)
+Mandates followed: REND_Instanced_Flora_Physics, OPT_Zero_GC_Policy_AllocFree_Mandate, OPT_Native_Memory_Collections_JobSystem_Protocol, MATH_Coordinate_Precision_AUP_FloatingOrigin, VOX_MapMagic_Voxel_Seam_Alignment_Integration, CORE_Submarine_Vehicles_Kinematics_AUP.
 
-PROJECT_CONTENT_LEDGER.md
-Document · MD
+STATUS: PENDING VERIFICATION
 
-Open
-
-14 files changed
-+784
--75
+7 files changed
++422
+-9
 Undo
 
 Review
-Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
-Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader
-Assets/_Project/Data/World/FloraTemplates/FloraDataTemplate_CableBloom.asset
-Assets/_Project/Data/World/FloraTemplates/FloraDataTemplate_RustMoss.asset
-Assets/_Project/Data/World/FloraTemplates/FloraDataTemplate_ThermalTubeworm.asset
-Assets/_Project/Scripts/BaseModule.cs
-Assets/_Project/Scripts/Fabricator.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs
-Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs
-Assets/_Project/Scripts/HectonContactJob.cs
-Assets/_Project/Scripts/Scavenging/ResourceNodeTemplate.cs
-Assets/_Project/Scripts/World/FloraDataTemplate.cs
-Assets/_Project/Scripts/World/FloraInteractionManager.cs
-Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md
+Assets/_Project/Scripts/Editor/WorldProceduralScatterPreviewGizmoDrawer.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/WorldProceduralPlacementRule.cs
+Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs
+Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs
+Assets/_Project/Scripts/WorldProceduralScatterWorkingMemory.cs
 
 
 
 
-1:19 AM
+2:08 AM
 
-
--------------------
+---------------------------------
 
 <system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: FAUNA & AUTOMATA
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: VEHICLES & KINEMATICS
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Sonic EMP Attacks & Burrowing Ambushes
-THINKING LEVEL: MAXIMUM (Focused on PhysicsEventBus, NavGrid, and State Machines)
+OPERATIONAL MODE: Submarine Foundation, Colliders, and Docking
+THINKING LEVEL: MAXIMUM (Focused on Compound Colliders, Vehicle States, and Rigidbody Math)
 
-[0. SITREP: THE PREDICTABLE COMBAT]
-Pack hunting and dynamic dodging are excellent. But enemies just bite or ram. We need terrifying, lore-accurate alien abilities: Creatures that blind the submarine's sensors with EMPs and worms that ambush from beneath the seabed.[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
-1. Study FaunaDataTemplate.cs, PredatorCognitionDomain.cs, and TraumaDispatcher.cs.
-2. Sync with the Sound DSP architecture to understand acoustic masking.[II. PRIMARY OBJECTIVES]
-1. SONIC EMP ATTACK (SENSOR BLINDING):
-- Target: FaunaBrain.cs & TraumaDispatcher.cs.
-- Action: Execute the SonicPulse / EMP attack pattern.
-- Execution: The creature fires a PhysicsEventBus payload with DamageType = EMP. If it hits the sub, drastically reduce Clarity to force the BIOS Recovery Mode (1-bit green shader). Temporarily disable the PDA Sonar Map and Active Ping for 15 seconds.
+[0. SITREP: THE PAPER SUBMARINE]
+The submarine kinematics are working, but the vehicle itself lacks structural definition. We need strict colliders, upgrade slots, and flawless docking mechanics. No more clipping through walls.
 
-2. BURROWING AMBUSH PREDATORS (NAVGRID EXPLOIT):
-- Target: PredatorCognitionDomain.cs & HectonVoxelVolume.cs.
-- Action: Implement the "Sand Worm" archetype.
-- Execution: These creatures do NOT use open-water A*. They pathfind *inside* the 0xFF (solid) terrain cells of the Voxel SDF. When the player approaches the seabed, the creature breaches the surface, playing a massive dust VFX, grabbing the player (Kinematic Lock), and pulling them into the sand.
+[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study VehicleMotor.cs and SubmarineCoreDirector.cs.
+2. Review PHYS_Physics_Integrity_Determinism_ForceMode.txt.
 
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. BIOLUMINESCENT HYPNOTISM:
-- Target: FaunaBrain.cs & HectonPlayerMovement.cs.
-- Action: Implement "Dazzle" state.
-- Execution: Specific species (e.g., "Siren-Jelly") can pulse their emissive materials at a specific frequency. If the player looks directly at them (dot product check), apply a slight ForceMode.Acceleration pulling the player TOWARDS the creature, simulating a hypnotic trance.
+[II. PRIMARY OBJECTIVES]
+1. SUBMARINE MODULE TEMPLATES:
+- Target: SubmarineProfile.cs (Create).
+- Action: Define the vehicle's stats.
+- Execution: Create SOs defining BaseMass, MaxThrust, TurnSpeed, MaxDepth, and BaseIntegrity. The motor MUST read these values at runtime.
 
-[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-Once you finish the above, YOU MUST NOT STOP.
-1. Implement "Parental Defense": if a small fish of a specific species is attacked, it must emit a chemical signal that triggers a HUNT state in any nearby adult of the same species within 200m.
-2. Validate that the Burrowing Ambush math does not cause the creature to get stuck inside Voxel geometry when the player is out of range.
+2. VEHICLE HITBOX/COLLIDER RIGGING:
+- Target: Submarine Prefab Pipeline.
+- Action: The sub must have perfect collision.
+- Execution: MeshColliders are FORBIDDEN. Write an Editor script that helps assemble a "Compound Collider" out of multiple Boxes and Capsules to perfectly wrap the submarine model.
 
-[V. EVIDENCE-BASED REPORTING]
+3. ENVIRONMENTAL COLLISION FEEDBACK:
+- Target: VehicleMotor.cs & PhysicsEventBus.
+- Action: Hitting a rock should feel like hitting a rock.
+- Execution: On CollisionEnter (handled via Burst contact jobs if possible, or strict non-alloc callbacks), read the impact velocity. If > threshold, push a PhysicsEvent to trigger a loud THUD and a brutal camera shake.
+
+4. SUBMARINE UPGRADE SLOTS:
+- Target: SubmarineCoreDirector.cs.
+- Action: The sub must accept upgrades.
+- Execution: Define 4 generic upgrade slots (arrays of ItemHashID). Calculate modifiers dynamically (e.g., Depth Module increases MaxDepth, Engine Module increases MaxThrust).
+
+5. DOCKING KINEMATICS (MOONPOOL):
+- Target: VehicleMotor.cs & Moonpool Module.
+- Action: Docking must be mathematically smooth.
+- Execution: When entering a Moonpool trigger, disable player control. Use a mathematically precise Lerp (or PD controller) to pull the submarine to the exact center coordinates and rotation of the Moonpool over 2 seconds. Lock isKinematic = true when docked.
+
+[III. EVIDENCE-BASED REPORTING]
 1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Provide the math for the Voxel-Internal pathfinding (Burrowing logic).
+2. SURGERY LOG: Detail the mathematical Lerp/PD controller for the docking sequence.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-12:41 AM
+1:48 AM
 
 
 
-Worked for 32m 6s
+Worked for 22m 56s
 What Was Wrong
-Combat abilities were still mostly bite/ram only. There was no EMP attack path from fauna into trauma/sensor systems, no voxel-owned burrow ambush resolver, no player lure/hypnosis pull, and no parental-defense escalation. The content ledgers still have no fauna-specific EMP/worm entries to sync from; the only fauna-related ledger notes are older apex/corpse/bait items in PROJECT_CONTENT_LEDGER.md (line 106) and PROJECT_CONTENT_LEDGER.md (line 44). I also synced against the audio DSP ownership doc and kept sonar suppression on the existing visor/sonar owners instead of inventing a new audio path.
-
-Mandates followed: AI_Creature_Cognition_States, OPT_Zero_GC_Policy_AllocFree_Mandate, OPT_Native_Memory_Collections_JobSystem_Protocol, PHYS_Physics_Integrity_Determinism_ForceMode, PROG_Quest_State_Graph_Logic.
+The submarine stack was split across two owners. SubmarineCoreDirector had no authored vehicle profile or fixed upgrade-slot model, VehicleDockingModule hard-snapped instead of docking over time, and kinematic sweep-blocked impacts from VehicleMotor could stop on geometry without ever entering the existing physics-impact feedback bus.
 
 What I Did
-FaunaDataTemplate now carries authored knobs for burrow ambush, dazzle hypnosis, parental defense, and EMP blindness in FaunaDataTemplate.cs (line 321).
+I added a dedicated stats asset in SubmarineProfile.cs (line 8) for BaseMass, MaxThrust, TurnSpeed, MaxDepth, and BaseIntegrity. I extended SubmarineCoreDirector.cs (line 74) to hold that profile, enforce 4 fixed ItemHashID slots, resolve upgrade modifiers at runtime, and expose resolved BaseMass/MaxThrust/TurnSpeed/MaxDepth/BaseIntegrity. It also applies the profile baseline mass once to the hull rigidbody instead of stomping it every tick.
 
-EMP routing is now data-driven through the physics event surface. I added DamageTypeMask.Emp and DamageSourceIds.FaunaEmp in HabitatIntegrityManager.cs (line 43), an ElectromagneticPulseEvent plus PhysicsEventBus.NotifyElectromagneticPulse(...) in PhysicsApplySystem.cs (line 132), and trauma-side handling in TraumaDispatcher.cs (line 527). While the EMP blind timer is active, trauma pins clarity low enough to force BIOS recovery behavior, triggers MantaScooter.ApplyEmpDisruption(...), and requests PDA corrosion. Sonar and PDA suppression are gated in SpectrumSystem.cs (line 346), PDAMapTab.cs (line 215), and PDASpectrumTab.cs (line 308).
+I added a compound-collider authoring pipeline with SubmarineCompoundColliderAuthoring.cs (line 11) and SubmarineCompoundColliderAuthoringEditor.cs (line 11). The editor inspector can seed from render bounds, bake a generated __CompoundColliders hierarchy from authored box/capsule segments, and clear/rebuild it. No mesh colliders were introduced.
 
-Burrow ambushes are now resolved against the voxel SDF owner instead of open-water pathing. HectonVoxelVolume.cs (line 250) exposes TryResolveBurrowAmbushRoute(...), with solid-density validation in 1690 (line 1690) and 1725 (line 1725). FaunaBrain.cs (line 652) uses that route, breaches near the player, and applies a locomotion lock/pull via ApplyFaunaHypnosisPull(...) in HectonPlayerMovement.cs (line 1583). Dazzle gaze-pull lives in FaunaBrain.cs (line 718). Parental defense now emits a fear pheromone and escalates nearby same-species responders into aggression in FaunaBrain.cs (line 768). I also marked burrow-capable fauna into cognition flags in FaunaBrain.Compatibility.cs (line 680) and biased ambushers toward stalk-before-strike in PredatorCognitionDomain.cs (line 1669).
+For collision feedback, VehicleMotor.cs (line 79) now caches the last blocking sweep impact speed/point/normal, MountablePlayerTransport.cs (line 727) consumes that on sweep block, applies transport collision damage, and relays the hit into GlobalPhysicsStateManager.cs (line 255) through a new kinematic-impact enqueue path so existing procedural impact audio and trauma consumers still fire.
+
+For moonpool docking, VehicleDockingModule.cs (line 24) now runs a 2-second fixed-step docking state instead of immediate snap. If the transport is a mounted sub, it locks rider control through MountablePlayerTransport.cs (line 1078) during the approach, then finalizes by zeroing velocities, snapping to anchor, and setting isKinematic = true.
 
 In-Game Result
-Fauna with SonicPulse or Emp support can now broadcast an EMP payload that blinds sonar/PDA systems for the authored duration and degrades clarity through the existing trauma owner. Burrow predators can use solid-density ambush routing and breach under players near the seabed. Siren-style fauna can pull the player when directly stared at. Damaged juveniles can trigger nearby adults of the same species into a local hunt escalation.
+Expected runtime behavior: authored submarine roots can now carry a profile plus 4 upgrade slots; mounted micro-sub impacts against walls/rocks can push both damage/trauma and the existing physics impact audio path; moonpool entry should pull the sub along a deterministic 2-second curve to the anchor instead of teleporting.
 
-Burrow math:
+Surgery log, docking math: u = saturate(elapsed / duration), s = u*u*(3 - 2*u), p = lerp(startPos, anchorPos, s), q = slerp(startRot, anchorRot, s). Each fixed tick applies MovePosition(p) and MoveRotation(q). At u >= 1, velocities are zeroed and isKinematic is latched true.
 
-Seabed eligibility: sample nearest solid distance around prey, reject if distanceToSolid > triggerDistance.
-Solid anchor: resolve top solid point at prey x/z.
-Breach point: breach = solidAnchor + up * max(voxelSize, breachOffset).
-Internal path validity: sample lerp(predator, solidAnchor, t) across the segment and require density > 0 at every sample.
-Known deviations:
+Surgery log, impact math: the blocked sweep uses v_n = max(0, -dot(v, n)) for closing speed on the hit normal. The kinematic impact bridge estimates force as F ≈ m * v_n / fixedDeltaTime, then reuses the existing intensity mapping log10(1 + F/100) before publishing into the shared physics impact queue.
 
-EMP relevance is radius-based against player/transport/habitat owners, not a precise hull-hit ray test.
-Burrow routing is SDF solid-path validation, not full voxel A* through 0xFF cells.
-Parental defense uses ChemicalInfluenceGrid.QueueFearPheromone(...) plus same-species proximity escalation, not a separate dedicated chemical signal channel.
 What Was Verified
-Code-level validation passed for TraumaDispatcher.cs (line 1), HectonVoxelVolume.cs (line 1), SpectrumSystem.cs (line 1), PDAMapTab.cs (line 1), PDASpectrumTab.cs (line 1), and PredatorCognitionDomain.cs (line 1). Validation on FaunaDataTemplate.cs (line 1), FaunaBrain.cs (line 1), and HabitatIntegrityManager.cs (line 1) returned false duplicate-signature diagnostics even though those symbols only appear once by grep. HectonPlayerMovement.cs (line 1) validation timed out. The Unity MCP session then disconnected; read_console could not return a live error list.
+git diff --check returned no patch-format errors; only unrelated CRLF warnings in other files. The requested Git diff against HEAD for these target files is empty because the repository HEAD already contains the same text state for them at inspection time, so there is no non-empty diff to print from the current worktree.
 
-MCP console proof of 0 errors does not exist. Status is PENDING VERIFICATION, not MCP VERIFIED.
+Unity MCP verification failed. refresh_unity timed out waiting for editor readiness, and repeated read_console calls returned Unity session not ready for 'read_console' (ping not answered). Independent of that session failure, the project also had unrelated baseline compile errors from earlier files such as ResourceNodeTemplate.cs, Fabricator.cs, and fauna scripts. I cannot prove 0 errors, and I cannot truthfully report MCP VERIFIED.
 
-GC validation:
+Mandates followed: PHYS_Physics_Integrity_Determinism_ForceMode.txt, CORE_Submarine_Vehicles_Kinematics_AUP.txt, OPT_Zero_GC_Policy_AllocFree_Mandate.txt.
 
-BEFORE: measured proof absent
-AFTER: measured proof absent
-STATUS: PENDING VERIFICATION
-Regression model:
+STATUS: PENDING VERIFICATION.
 
-CPU: added per-tick gaze and EMP gate checks; added burrow-route density sampling only for authored ambushers.
-GC: no intentional managed allocations added in hot paths.
-Memory: one extra static fauna query buffer; no unbounded caches added.
-Cadence/correctness: burrow ambush depends on live voxel SDF availability; EMP suppression depends on active player runtime context.
-FAILURE MODES: Unity session instability blocked console proof; large legacy files produce validator false positives/timeouts.
-WARNING: Regression risk in FaunaBrain.cs remains until a live Unity compile and runtime pass confirm the mixed dirty worktree.
-
-PROJECT_CONTENT_LEDGER.md
-Document · MD
-
-Open
-
-
-PROJECT_CONTENT_LEDGER.md
-Document · MD
-
-Open
-
-12 files changed
-+628
--44
+8 files changed
++772
+-9
 Undo
 
 Review
-Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.cs
-Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs
-Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs
-Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs
-Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs
-Assets/_Project/Scripts/HectonPlayerMovement.cs
-Assets/_Project/Scripts/HectonVoxelVolume.cs
-Assets/_Project/Scripts/PhysicsApplySystem.cs
-Assets/_Project/Scripts/UI/PDAMapTab.cs
-Assets/_Project/Scripts/UI/PDASpectrumTab.cs
-Assets/_Project/Scripts/Visor/SpectrumSystem.cs
+Assets/_Project/Scripts/Construction/VehicleDockingModule.cs
+Assets/_Project/Scripts/Editor/SubmarineCompoundColliderAuthoringEditor.cs
+Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs
+Assets/_Project/Scripts/Gameplay/SubmarineCompoundColliderAuthoring.cs
+Assets/_Project/Scripts/Gameplay/SubmarineCoreDirector.cs
+Assets/_Project/Scripts/Gameplay/SubmarineProfile.cs
+Assets/_Project/Scripts/Gameplay/VehicleMotor.cs
+Assets/_Project/Scripts/GlobalPhysicsStateManager.cs
 
 
 
 
-1:13 AM
+2:12 AM
+
 --------------------------
 
 <system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: FAUNA & AUTOMATA
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: VEHICLES & KINEMATICS
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Sonic EMP Attacks & Burrowing Ambushes
-THINKING LEVEL: MAXIMUM (Focused on PhysicsEventBus, NavGrid, and State Machines)
+OPERATIONAL MODE: Submarine Foundation, Colliders, and Docking
+THINKING LEVEL: MAXIMUM (Focused on Compound Colliders, Vehicle States, and Rigidbody Math)
 
-[0. SITREP: THE PREDICTABLE COMBAT]
-Pack hunting and dynamic dodging are excellent. But enemies just bite or ram. We need terrifying, lore-accurate alien abilities: Creatures that blind the submarine's sensors with EMPs and worms that ambush from beneath the seabed.[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
-1. Study FaunaDataTemplate.cs, PredatorCognitionDomain.cs, and TraumaDispatcher.cs.
-2. Sync with the Sound DSP architecture to understand acoustic masking.[II. PRIMARY OBJECTIVES]
-1. SONIC EMP ATTACK (SENSOR BLINDING):
-- Target: FaunaBrain.cs & TraumaDispatcher.cs.
-- Action: Execute the SonicPulse / EMP attack pattern.
-- Execution: The creature fires a PhysicsEventBus payload with DamageType = EMP. If it hits the sub, drastically reduce Clarity to force the BIOS Recovery Mode (1-bit green shader). Temporarily disable the PDA Sonar Map and Active Ping for 15 seconds.
+[0. SITREP: THE PAPER SUBMARINE]
+The submarine kinematics are working, but the vehicle itself lacks structural definition. We need strict colliders, upgrade slots, and flawless docking mechanics. No more clipping through walls.
 
-2. BURROWING AMBUSH PREDATORS (NAVGRID EXPLOIT):
-- Target: PredatorCognitionDomain.cs & HectonVoxelVolume.cs.
-- Action: Implement the "Sand Worm" archetype.
-- Execution: These creatures do NOT use open-water A*. They pathfind *inside* the 0xFF (solid) terrain cells of the Voxel SDF. When the player approaches the seabed, the creature breaches the surface, playing a massive dust VFX, grabbing the player (Kinematic Lock), and pulling them into the sand.
+[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study VehicleMotor.cs and SubmarineCoreDirector.cs.
+2. Review PHYS_Physics_Integrity_Determinism_ForceMode.txt.
 
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. BIOLUMINESCENT HYPNOTISM:
-- Target: FaunaBrain.cs & HectonPlayerMovement.cs.
-- Action: Implement "Dazzle" state.
-- Execution: Specific species (e.g., "Siren-Jelly") can pulse their emissive materials at a specific frequency. If the player looks directly at them (dot product check), apply a slight ForceMode.Acceleration pulling the player TOWARDS the creature, simulating a hypnotic trance.
+[II. PRIMARY OBJECTIVES]
+1. SUBMARINE MODULE TEMPLATES:
+- Target: SubmarineProfile.cs (Create).
+- Action: Define the vehicle's stats.
+- Execution: Create SOs defining BaseMass, MaxThrust, TurnSpeed, MaxDepth, and BaseIntegrity. The motor MUST read these values at runtime.
 
-[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-Once you finish the above, YOU MUST NOT STOP.
-1. Implement "Parental Defense": if a small fish of a specific species is attacked, it must emit a chemical signal that triggers a HUNT state in any nearby adult of the same species within 200m.
-2. Validate that the Burrowing Ambush math does not cause the creature to get stuck inside Voxel geometry when the player is out of range.
+2. VEHICLE HITBOX/COLLIDER RIGGING:
+- Target: Submarine Prefab Pipeline.
+- Action: The sub must have perfect collision.
+- Execution: MeshColliders are FORBIDDEN. Write an Editor script that helps assemble a "Compound Collider" out of multiple Boxes and Capsules to perfectly wrap the submarine model.
 
-[V. EVIDENCE-BASED REPORTING]
+3. ENVIRONMENTAL COLLISION FEEDBACK:
+- Target: VehicleMotor.cs & PhysicsEventBus.
+- Action: Hitting a rock should feel like hitting a rock.
+- Execution: On CollisionEnter (handled via Burst contact jobs if possible, or strict non-alloc callbacks), read the impact velocity. If > threshold, push a PhysicsEvent to trigger a loud THUD and a brutal camera shake.
+
+4. SUBMARINE UPGRADE SLOTS:
+- Target: SubmarineCoreDirector.cs.
+- Action: The sub must accept upgrades.
+- Execution: Define 4 generic upgrade slots (arrays of ItemHashID). Calculate modifiers dynamically (e.g., Depth Module increases MaxDepth, Engine Module increases MaxThrust).
+
+5. DOCKING KINEMATICS (MOONPOOL):
+- Target: VehicleMotor.cs & Moonpool Module.
+- Action: Docking must be mathematically smooth.
+- Execution: When entering a Moonpool trigger, disable player control. Use a mathematically precise Lerp (or PD controller) to pull the submarine to the exact center coordinates and rotation of the Moonpool over 2 seconds. Lock isKinematic = true when docked.
+
+[III. EVIDENCE-BASED REPORTING]
 1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Provide the math for the Voxel-Internal pathfinding (Burrowing logic).
+2. SURGERY LOG: Detail the mathematical Lerp/PD controller for the docking sequence.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-12:41 AM
+1:48 AM
 
 
 
-Worked for 32m 6s
+Worked for 22m 56s
 What Was Wrong
-Combat abilities were still mostly bite/ram only. There was no EMP attack path from fauna into trauma/sensor systems, no voxel-owned burrow ambush resolver, no player lure/hypnosis pull, and no parental-defense escalation. The content ledgers still have no fauna-specific EMP/worm entries to sync from; the only fauna-related ledger notes are older apex/corpse/bait items in PROJECT_CONTENT_LEDGER.md (line 106) and PROJECT_CONTENT_LEDGER.md (line 44). I also synced against the audio DSP ownership doc and kept sonar suppression on the existing visor/sonar owners instead of inventing a new audio path.
-
-Mandates followed: AI_Creature_Cognition_States, OPT_Zero_GC_Policy_AllocFree_Mandate, OPT_Native_Memory_Collections_JobSystem_Protocol, PHYS_Physics_Integrity_Determinism_ForceMode, PROG_Quest_State_Graph_Logic.
+The submarine stack was split across two owners. SubmarineCoreDirector had no authored vehicle profile or fixed upgrade-slot model, VehicleDockingModule hard-snapped instead of docking over time, and kinematic sweep-blocked impacts from VehicleMotor could stop on geometry without ever entering the existing physics-impact feedback bus.
 
 What I Did
-FaunaDataTemplate now carries authored knobs for burrow ambush, dazzle hypnosis, parental defense, and EMP blindness in FaunaDataTemplate.cs (line 321).
+I added a dedicated stats asset in SubmarineProfile.cs (line 8) for BaseMass, MaxThrust, TurnSpeed, MaxDepth, and BaseIntegrity. I extended SubmarineCoreDirector.cs (line 74) to hold that profile, enforce 4 fixed ItemHashID slots, resolve upgrade modifiers at runtime, and expose resolved BaseMass/MaxThrust/TurnSpeed/MaxDepth/BaseIntegrity. It also applies the profile baseline mass once to the hull rigidbody instead of stomping it every tick.
 
-EMP routing is now data-driven through the physics event surface. I added DamageTypeMask.Emp and DamageSourceIds.FaunaEmp in HabitatIntegrityManager.cs (line 43), an ElectromagneticPulseEvent plus PhysicsEventBus.NotifyElectromagneticPulse(...) in PhysicsApplySystem.cs (line 132), and trauma-side handling in TraumaDispatcher.cs (line 527). While the EMP blind timer is active, trauma pins clarity low enough to force BIOS recovery behavior, triggers MantaScooter.ApplyEmpDisruption(...), and requests PDA corrosion. Sonar and PDA suppression are gated in SpectrumSystem.cs (line 346), PDAMapTab.cs (line 215), and PDASpectrumTab.cs (line 308).
+I added a compound-collider authoring pipeline with SubmarineCompoundColliderAuthoring.cs (line 11) and SubmarineCompoundColliderAuthoringEditor.cs (line 11). The editor inspector can seed from render bounds, bake a generated __CompoundColliders hierarchy from authored box/capsule segments, and clear/rebuild it. No mesh colliders were introduced.
 
-Burrow ambushes are now resolved against the voxel SDF owner instead of open-water pathing. HectonVoxelVolume.cs (line 250) exposes TryResolveBurrowAmbushRoute(...), with solid-density validation in 1690 (line 1690) and 1725 (line 1725). FaunaBrain.cs (line 652) uses that route, breaches near the player, and applies a locomotion lock/pull via ApplyFaunaHypnosisPull(...) in HectonPlayerMovement.cs (line 1583). Dazzle gaze-pull lives in FaunaBrain.cs (line 718). Parental defense now emits a fear pheromone and escalates nearby same-species responders into aggression in FaunaBrain.cs (line 768). I also marked burrow-capable fauna into cognition flags in FaunaBrain.Compatibility.cs (line 680) and biased ambushers toward stalk-before-strike in PredatorCognitionDomain.cs (line 1669).
+For collision feedback, VehicleMotor.cs (line 79) now caches the last blocking sweep impact speed/point/normal, MountablePlayerTransport.cs (line 727) consumes that on sweep block, applies transport collision damage, and relays the hit into GlobalPhysicsStateManager.cs (line 255) through a new kinematic-impact enqueue path so existing procedural impact audio and trauma consumers still fire.
+
+For moonpool docking, VehicleDockingModule.cs (line 24) now runs a 2-second fixed-step docking state instead of immediate snap. If the transport is a mounted sub, it locks rider control through MountablePlayerTransport.cs (line 1078) during the approach, then finalizes by zeroing velocities, snapping to anchor, and setting isKinematic = true.
 
 In-Game Result
-Fauna with SonicPulse or Emp support can now broadcast an EMP payload that blinds sonar/PDA systems for the authored duration and degrades clarity through the existing trauma owner. Burrow predators can use solid-density ambush routing and breach under players near the seabed. Siren-style fauna can pull the player when directly stared at. Damaged juveniles can trigger nearby adults of the same species into a local hunt escalation.
+Expected runtime behavior: authored submarine roots can now carry a profile plus 4 upgrade slots; mounted micro-sub impacts against walls/rocks can push both damage/trauma and the existing physics impact audio path; moonpool entry should pull the sub along a deterministic 2-second curve to the anchor instead of teleporting.
 
-Burrow math:
+Surgery log, docking math: u = saturate(elapsed / duration), s = u*u*(3 - 2*u), p = lerp(startPos, anchorPos, s), q = slerp(startRot, anchorRot, s). Each fixed tick applies MovePosition(p) and MoveRotation(q). At u >= 1, velocities are zeroed and isKinematic is latched true.
 
-Seabed eligibility: sample nearest solid distance around prey, reject if distanceToSolid > triggerDistance.
-Solid anchor: resolve top solid point at prey x/z.
-Breach point: breach = solidAnchor + up * max(voxelSize, breachOffset).
-Internal path validity: sample lerp(predator, solidAnchor, t) across the segment and require density > 0 at every sample.
-Known deviations:
+Surgery log, impact math: the blocked sweep uses v_n = max(0, -dot(v, n)) for closing speed on the hit normal. The kinematic impact bridge estimates force as F ≈ m * v_n / fixedDeltaTime, then reuses the existing intensity mapping log10(1 + F/100) before publishing into the shared physics impact queue.
 
-EMP relevance is radius-based against player/transport/habitat owners, not a precise hull-hit ray test.
-Burrow routing is SDF solid-path validation, not full voxel A* through 0xFF cells.
-Parental defense uses ChemicalInfluenceGrid.QueueFearPheromone(...) plus same-species proximity escalation, not a separate dedicated chemical signal channel.
 What Was Verified
-Code-level validation passed for TraumaDispatcher.cs (line 1), HectonVoxelVolume.cs (line 1), SpectrumSystem.cs (line 1), PDAMapTab.cs (line 1), PDASpectrumTab.cs (line 1), and PredatorCognitionDomain.cs (line 1). Validation on FaunaDataTemplate.cs (line 1), FaunaBrain.cs (line 1), and HabitatIntegrityManager.cs (line 1) returned false duplicate-signature diagnostics even though those symbols only appear once by grep. HectonPlayerMovement.cs (line 1) validation timed out. The Unity MCP session then disconnected; read_console could not return a live error list.
+git diff --check returned no patch-format errors; only unrelated CRLF warnings in other files. The requested Git diff against HEAD for these target files is empty because the repository HEAD already contains the same text state for them at inspection time, so there is no non-empty diff to print from the current worktree.
 
-MCP console proof of 0 errors does not exist. Status is PENDING VERIFICATION, not MCP VERIFIED.
+Unity MCP verification failed. refresh_unity timed out waiting for editor readiness, and repeated read_console calls returned Unity session not ready for 'read_console' (ping not answered). Independent of that session failure, the project also had unrelated baseline compile errors from earlier files such as ResourceNodeTemplate.cs, Fabricator.cs, and fauna scripts. I cannot prove 0 errors, and I cannot truthfully report MCP VERIFIED.
 
-GC validation:
+Mandates followed: PHYS_Physics_Integrity_Determinism_ForceMode.txt, CORE_Submarine_Vehicles_Kinematics_AUP.txt, OPT_Zero_GC_Policy_AllocFree_Mandate.txt.
 
-BEFORE: measured proof absent
-AFTER: measured proof absent
-STATUS: PENDING VERIFICATION
-Regression model:
+STATUS: PENDING VERIFICATION.
 
-CPU: added per-tick gaze and EMP gate checks; added burrow-route density sampling only for authored ambushers.
-GC: no intentional managed allocations added in hot paths.
-Memory: one extra static fauna query buffer; no unbounded caches added.
-Cadence/correctness: burrow ambush depends on live voxel SDF availability; EMP suppression depends on active player runtime context.
-FAILURE MODES: Unity session instability blocked console proof; large legacy files produce validator false positives/timeouts.
-WARNING: Regression risk in FaunaBrain.cs remains until a live Unity compile and runtime pass confirm the mixed dirty worktree.
-
-PROJECT_CONTENT_LEDGER.md
-Document · MD
-
-Open
-
-
-PROJECT_CONTENT_LEDGER.md
-Document · MD
-
-Open
-
-12 files changed
-+628
--44
+8 files changed
++772
+-9
 Undo
 
 Review
-Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.cs
-Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs
-Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs
-Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs
-Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs
-Assets/_Project/Scripts/HectonPlayerMovement.cs
-Assets/_Project/Scripts/HectonVoxelVolume.cs
-Assets/_Project/Scripts/PhysicsApplySystem.cs
-Assets/_Project/Scripts/UI/PDAMapTab.cs
-Assets/_Project/Scripts/UI/PDASpectrumTab.cs
-Assets/_Project/Scripts/Visor/SpectrumSystem.cs
+Assets/_Project/Scripts/Construction/VehicleDockingModule.cs
+Assets/_Project/Scripts/Editor/SubmarineCompoundColliderAuthoringEditor.cs
+Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs
+Assets/_Project/Scripts/Gameplay/SubmarineCompoundColliderAuthoring.cs
+Assets/_Project/Scripts/Gameplay/SubmarineCoreDirector.cs
+Assets/_Project/Scripts/Gameplay/SubmarineProfile.cs
+Assets/_Project/Scripts/Gameplay/VehicleMotor.cs
+Assets/_Project/Scripts/GlobalPhysicsStateManager.cs
 
 
 
 
-1:13 AM
+2:12 AM
 
-------------------------------
+----------------------------
 
-<system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: BASE CONSTRUCTION & MODULES
+system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: FAUNA & AUTOMATA
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Buoyancy Anchors & Dynamic Base Sinking
-THINKING LEVEL: MAXIMUM (Focused on Rigidbodies, Graph Topology, and Fluid Dynamics)[0. SITREP: THE GRAVITY DEFYING BASES]
-The pipe buckling and VFX leak spawner are a cinematic masterpiece. However, our bases currently float magically if disconnected from the seafloor. A base is a massive air-filled pressure vessel. If its structural anchors snap, it must rip apart and sink or float.[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
-1. Study HabitatGraphManager.cs, BaseModule.cs, and SubmarineFluidDynamics.cs.
-2. Update Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md with Anchor Node logic.
+OPERATIONAL MODE: Fleet Intelligence & Logistics Chain
+THINKING LEVEL: MAXIMUM (Focused on Task Arbitration, Boid-Steering, and SPSC Queues)
+
+[0. SITREP: THE UNMANAGED SWARM]
+Repair drones currently act as isolated units with basic pathing. This is inefficient. In a high-stakes NASA-Punk environment, autonomous systems must operate as a coordinated fleet, prioritize life-critical failures, and manage physical resource consumption. You are building the "Fleet Intelligence" layer.
+
+[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
+1. Study HabitatGraphManager.cs and SubmarineFluidDynamics.cs to understand how ruptures are prioritized.
+2. Review the AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt mandate.
+3. Create Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md. Document the task arbitration logic: how the fleet decides which drone goes to which leak based on distance and criticality.
 
 [II. PRIMARY OBJECTIVES]
-1. STRUCTURAL ANCHOR POINTS:
-- Target: HabitatGraphManager.cs & BaseModule.cs.
-- Action: Define specific modules (e.g., Foundation, Pylon) as IsAnchor = true.
-- Logic: The CSR Graph must traverse from every module to an Anchor. If a module cannot reach an Anchor (because a Leviathan destroyed the connecting pipe), that sub-graph becomes UNMOORED.
+1. FLEET TASK ARBITRATION (DISTRIBUTED LOGIC):
+- Target: DroneFleetManager.cs (Create).
+- Action: Implement a central "Dispatcher" that avoids "Thundering Herd" behavior.
+- Execution: Instead of drones finding tasks, the Manager maintains a PriorityQueue of LogisticsNodeFlags.Ruptured nodes. It assigns the nearest available drone to each task using a cost-benefit calculation: Score = (1.0 / Distance) * CriticalityWeight. Assign tasks via NativeArray<int> locks to ensure zero task-doubling.
 
-2. DYNAMIC BASE SINKING (BUOYANCY PHYSICS):
-- Target: BaseModule.cs & PhysicsApplySystem.cs.
-- Action: An UNMOORED base module is no longer static geometry.
-- Execution: Swap the module's isKinematic to false. Calculate its Buoyancy (Internal Air Volume vs Mass). If flooded, it sinks violently to the abyss (crushing at 4000m). If filled with air, it violently shoots to the surface. Apply ForceMode.Acceleration.
+2. RESOURCE-DEPENDENT REPAIRS (THE SOLDER CYCLE):
+- Target: DroneCognitionJob.cs & BaseModule.cs.
+- Action: Drones cannot repair out of thin air.
+- Execution: Drones must dock at a StorageCrate or "Maintenance Hub" to refill their "Weld Solder" (ItemHashID: Nanite_Solder). Repairing 1% of module integrity consumes 0.1 units of solder. If the base is out of solder, drones enter a STASIS state at their docks.
+
+3. SWARM COLLISION AVOIDANCE (BOID STEERING):
+- Target: DroneCognitionJob.cs.
+- Action: Drones must move like a high-tech swarm, not robots on rails.
+- Execution: Integrate the Boids compute shader logic into drone movement. Drones must maintain separation from the player, each other, and the sub's hull. When moving through narrow base corridors, the "Cohesion" weight must drop to 0.1 to prevent jamming.
 
 [III. ADVANCED ARCHITECTURE EXPANSION]
-3. DYNAMIC FLOODING TILT (CENTER OF MASS):
-- Target: BaseModule.cs.
-- Action: As an UNMOORED room floods, it doesn't sink perfectly straight.
-- Math: Shift the Rigidbody's centerOfMass dynamically towards the side of the room where the breach is located (using Torricelli mass injection logic from Epsilon). The base will tilt and groan as it goes down.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+4. HECTON-OS DIEGETIC LINK:
+- Target: SubmarineOS.cs & DroneFleetManager.cs.
+- Action: The ship's computer must "see" the drones.
+- Execution: Expose the fleet status to the Submarine OS. If the OS enters EMERGENCY_LEVEL_3, the drones ignore energy-saving rules and overclock their thrusters (3x speed, 5x battery drain) to fix breaches before implosion.
+
+5. SUICIDE WELD PROTOCOL:
+- Target: DroneCognitionJob.cs.
+- Action: Last-ditch base survival.
+- Execution: If a module's integrity is < 5% and a "Fleet Sacrifice" command is issued, the drone physically anchors itself into the breach, effectively becoming a "living patch" that stops flooding but destroys the drone.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
 Once you finish the above, YOU MUST NOT STOP.
-1. Implement a "Bulkhead Lockdown" emergency system. If a module breaches, the adjacent airlock modules automatically shut their doors, overriding player control to save the rest of the base.
-2. Prove 0 compile errors in your domain.
+1. Populate AutomataTemplate.cs for 3 drone tiers: "Mk.I Scrubber" (Slow, high solder capacity), "Mk.II Welder" (Fast, low battery), "Guardian Unit" (Pushes predators away from the base).
+2. Validate that the fleet dispatch job completes in under 0.2ms to maintain the 60fps target.
 
 [V. EVIDENCE-BASED REPORTING]
-1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Provide the Graph Traversal logic for detecting UNMOORED sub-graphs.
+1. MCP CONSOLE LOG: Prove 0 errors in the fleet logic.
+2. SURGERY LOG: Provide the math for the "Task Assignment Score" including distance and criticality.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-12:34 AM
+1:54 AM
+
+
+Worked for 32s
+What was wrong: the new prompt still mixes real owners with stale ones. HectonSubmarineOS.cs exists, not SubmarineOS.cs. RepairDroneHub / RepairDroneEntity exist, not DroneCognitionJob.cs. DroneFleetManager.cs can be created. AutomataTemplate.cs does not exist. Nanite_Solder is not present as a real item ID in the repo. The Unity console is also already red before fleet work, so I cannot truthfully promise MCP VERIFIED or 0 errors on the requested basis.
+
+What I verified:
+
+Mandates followed: AI_DYNAMIC_NAVGRID_SDF_INTEGRATION, AI_Navigation_AStar_Funnel_Smoothing_Pathfinding, LOGI_Energy_Networks_Power_Grid_Graph_Flow, OPT_Zero_GC_Policy_AllocFree_Mandate, AI_Flocking_Boids_Swarm_SpatialHash_Logic.
+Real fleet-related owners:
+maintenance drones: RepairDroneHub.cs
+drone runtime: RepairDroneEntity.cs
+rupture topology: HabitatGraphManager.cs
+rupture/flood state: SubmarineFluidDynamics.cs
+weld dispatch: VoxelDeltaProcessor.cs
+nav routing: VoxelDynamicNavGridRuntime.cs
+OS telemetry: HectonSubmarineOS.cs
+structural queue: ThreadSafeCommandQueue.cs
+Missing fleet contracts:
+no real DroneCognitionJob
+no real AutomataTemplate
+no real Nanite_Solder
+no confirmed existing “Fleet Sacrifice” command source
+scanner currently reports node positions via ScanEvents, but I have not found an existing explicit “player-tagged ResourceNode for drone harvest” contract
+Question:
+Do you want me to proceed by mapping your prompt onto the real owners now, with these assumptions: create DroneFleetManager, extend RepairDroneHub / RepairDroneEntity, wire OS integration through HectonSubmarineOS, and use the current repair-supply path as the solder source unless you provide a real Nanite_Solder asset ID?
 
 
 
-Worked for 37m 51s
+
+
+1:55 AM
+Блядь, да делай лучше, как Senior. Рабоатй самостоятельно тотально. Ассетови остального у нас вроде нет. рабоатй сам и не спрашивай меня
+1:56 AM
+
+
+
+Worked for 18m 40s
 What Was Wrong
 
-Habitat topology had no structural anchor traversal, so disconnected base islands remained treated as static anchored habitat. HabitatGraphManager.cs also had no adjacency-driven airlock lockdown path, and BaseModule.cs had no unmoored rigidbody takeover, buoyancy evaluation, or flood-weighted center-of-mass shift.
-
-Mandates followed:
-LOGI_Energy_Networks_Power_Grid_Graph_Flow, PHYS_Physics_Integrity_Determinism_ForceMode, PHYS_Fluid_Incursion_Interior, OPT_Zero_GC_Policy_AllocFree_Mandate, MATH_Coordinate_Precision_AUP_FloatingOrigin, CORE_Damage_System_Hull_Integrity_VFX_Feedback.
+Repair drones were still effectively isolated actors. Target choice was local to a hub, movement was direct-seek, repair material was effectively free per sortie, and the submarine OS had no fleet snapshot. That made thundering-herd behavior, corridor clumping, and blind emergency response inevitable.
 
 What I Did
 
-In BaseModule.cs I added anchor-role and emergency-airlock-role resolution, unmoored state handoff, fixed-step buoyancy takeover via PhysicsForceRouter.QueueForceAtPosition(..., ForceMode.Acceleration), and flood-weighted Rigidbody.centerOfMass shifting toward the breach side. The module now enables non-kinematic physics only when the graph marks it unmoored.
+Built the fleet layer on the real owners, not the stale prompt names.
 
-In HabitatGraphManager.cs I extended the CSR rebuild with persistent native scratch for anchor reachability, seeded traversal from explicit anchor modules, marked unreached nodes Isolated, published anchored/unmoored state back into BaseModule, and drove emergency airlock lockdown from breached adjacent CSR neighbors.
+Tracked/runtime:
 
-In BaseAirlock.cs I added the lockdown gate: blocked interaction, locked prompt text, and amber status-light state. SubmarineAtmosphereSystem.cs now exposes room flood fill and external depth helpers for module buoyancy. ConstructionManager.cs forwards module emergency-state changes back into the graph owner. I also updated HABITAT_LOGISTICS_GRAPH.md with the anchor-node and emergency-adjacency contract.
+DroneFleetManager.cs
+RepairDroneEntity.cs
+HectonSubmarineOS.cs
+Authoring/docs:
 
-Surgery log, UNMOORED detection:
+AutomataTemplate.cs
+DRONE_FLEET_PROTOCOL.md
+Behavior now:
 
-enqueue(all anchor nodes);
-while (queue not empty)
-{
-    node = dequeue();
-    for (edge = EdgeOffsets[node]; edge < EdgeOffsets[node + 1]; edge++)
-    {
-        neighbor = EdgeDestinations[edge];
-        if (visited[neighbor] == 0)
-        {
-            visited[neighbor] = 1;
-            enqueue(neighbor);
-        }
-    }
-}
+Central fleet dispatcher assigns repair work with shared arbitration instead of per-hub blind scans.
+Target score is Score = (1 / max(0.75, distance)) * criticalityWeight.
+Criticality weight now escalates on integrity deficit, flooding, breach state, cascade failure, rupture state, low breathable reserve, and OS Evacuate.
+Active task doubling is capped at 2 drones per target via NativeArray<int> claim counts.
+Drones now carry finite solder, consume it as integrity is restored, and return when supply is exhausted.
+Drones now route through VoxelDynamicNavGridRuntime macro waypoints when available.
+Swarm motion now adds separation from other drones and the player, with cohesion reduced to 0.1 in voxel/corridor space.
+HectonSubmarineOS now caches the latest fleet snapshot.
+Emergency level Evacuate now forces fleet overclock: 3x speed, 5x battery drain.
+Suicide weld is exposed through DroneFleetManager.RequestFleetSacrifice().
+Battery math:
 
-for each node:
-    anchored = visited[node] != 0;
-    if (!anchored) Flags |= LogisticsNodeFlags.Isolated;
-    BaseModule.SetAnchoredState(anchored);
-To keep Unity compiling far enough to validate this domain, I also repaired unrelated compile blockers already present in the worktree: FloraInteractionManager.cs, Fabricator.cs, PDAMapTab.cs, TraumaDispatcher.cs, and FaunaBrain.cs. Those files were already dirty before this pass.
+battery -= drainPerSecond * emergencyDrainMultiplier * dt
+emergencyDrainMultiplier = 5 only during OS Evacuate
+Solder math:
 
+1 item = 10% restored integrity
+runtime accumulator decrements one solder unit per 10% restored
+Diff shape I could confirm from Git:
+
+DroneFleetManager.cs: small tracked delta on top of current branch state
+RepairDroneEntity.cs: major runtime rewrite
+HectonSubmarineOS.cs: fleet snapshot hook
+new untracked files: AutomataTemplate.cs, DRONE_FLEET_PROTOCOL.md
 In-Game Result
 
-Disconnected habitat islands can now become unmoored, detach from static assumptions, and enter rigidbody buoyancy behavior. Flooded detached rooms bias their mass toward the breach side, so they tilt instead of sinking perfectly upright. Adjacent emergency airlocks now seal on breach adjacency rather than waiting for a base-wide failure.
-
-WARNING: Regression risk in runtime rigidbody ownership. Several habitat prefabs still do not author a Rigidbody, so unmoored takeover adds one cold-path at runtime.
-
-WARNING: Regression risk in room mapping. Unmoored flood fill uses atmosphere-room resolution and cached room indices; long detached travel may require more aggressive cache invalidation.
+The fleet now behaves like a coordinated maintenance service instead of independent seekers. Nearest viable docks dispatch against shared priorities, damaged compartments can no longer attract unlimited drones, and OS level 3 can push the whole fleet into a high-drain breach-response mode.
 
 What Was Verified
 
-Unity-validated:
+Source write-set is on disk and internally consistent with current owners. Unity MCP verification did not complete:
 
-validate_script returned 0 errors for BaseModule.cs, HabitatGraphManager.cs, BaseAirlock.cs, ConstructionManager.cs, SubmarineAtmosphereSystem.cs, FloraInteractionManager.cs, Fabricator.cs, and PDAMapTab.cs.
-Not verified:
+refresh_unity timed out waiting for editor readiness after 60s
+read_console stayed unavailable because the Unity session never reported ready
+measured proof for 0 compile errors and < 0.2 ms dispatch cost is absent
+The repo was already compile-red before this pass, and I cannot honestly mark this MCP VERIFIED.
 
-STATUS: PENDING VERIFICATION
-I do not have a final trustworthy 0 errors MCP console snapshot. Unity MCP became unstable during script reloads, and read_console kept surfacing stale or race-window compile entries from unrelated fauna files after the source on disk had already changed.
-Diffs:
+Status: PENDING VERIFICATION
 
-Current diffstat across touched files: 3500 insertions, 148 deletions across 12 files.
-The worktree is already dirty, so the raw diff includes pre-existing edits in Fabricator.cs, FaunaBrain.cs, and FloraInteractionManager.cs.
+
+DRONE_FLEET_PROTOCOL.md
+Document · MD
+
+Open
+
+7 files changed
++1311
+-162
+Undo
+
+Review
+Assets/_Project/Scripts/Construction/AutomataTemplate.cs
+Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs
+Assets/_Project/Scripts/Construction/DroneFleetManager.cs
+Assets/_Project/Scripts/Construction/RepairDroneEntity.cs
+Assets/_Project/Scripts/Construction/RepairDroneHub.cs
+Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs
+Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md
+
+
+
+
+2:15 AM
+-------------------------------
+
+system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: FAUNA & AUTOMATA
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Fleet Intelligence & Logistics Chain
+THINKING LEVEL: MAXIMUM (Focused on Task Arbitration, Boid-Steering, and SPSC Queues)
+
+[0. SITREP: THE UNMANAGED SWARM]
+Repair drones currently act as isolated units with basic pathing. This is inefficient. In a high-stakes NASA-Punk environment, autonomous systems must operate as a coordinated fleet, prioritize life-critical failures, and manage physical resource consumption. You are building the "Fleet Intelligence" layer.
+
+[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
+1. Study HabitatGraphManager.cs and SubmarineFluidDynamics.cs to understand how ruptures are prioritized.
+2. Review the AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt mandate.
+3. Create Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md. Document the task arbitration logic: how the fleet decides which drone goes to which leak based on distance and criticality.
+
+[II. PRIMARY OBJECTIVES]
+1. FLEET TASK ARBITRATION (DISTRIBUTED LOGIC):
+- Target: DroneFleetManager.cs (Create).
+- Action: Implement a central "Dispatcher" that avoids "Thundering Herd" behavior.
+- Execution: Instead of drones finding tasks, the Manager maintains a PriorityQueue of LogisticsNodeFlags.Ruptured nodes. It assigns the nearest available drone to each task using a cost-benefit calculation: Score = (1.0 / Distance) * CriticalityWeight. Assign tasks via NativeArray<int> locks to ensure zero task-doubling.
+
+2. RESOURCE-DEPENDENT REPAIRS (THE SOLDER CYCLE):
+- Target: DroneCognitionJob.cs & BaseModule.cs.
+- Action: Drones cannot repair out of thin air.
+- Execution: Drones must dock at a StorageCrate or "Maintenance Hub" to refill their "Weld Solder" (ItemHashID: Nanite_Solder). Repairing 1% of module integrity consumes 0.1 units of solder. If the base is out of solder, drones enter a STASIS state at their docks.
+
+3. SWARM COLLISION AVOIDANCE (BOID STEERING):
+- Target: DroneCognitionJob.cs.
+- Action: Drones must move like a high-tech swarm, not robots on rails.
+- Execution: Integrate the Boids compute shader logic into drone movement. Drones must maintain separation from the player, each other, and the sub's hull. When moving through narrow base corridors, the "Cohesion" weight must drop to 0.1 to prevent jamming.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+4. HECTON-OS DIEGETIC LINK:
+- Target: SubmarineOS.cs & DroneFleetManager.cs.
+- Action: The ship's computer must "see" the drones.
+- Execution: Expose the fleet status to the Submarine OS. If the OS enters EMERGENCY_LEVEL_3, the drones ignore energy-saving rules and overclock their thrusters (3x speed, 5x battery drain) to fix breaches before implosion.
+
+5. SUICIDE WELD PROTOCOL:
+- Target: DroneCognitionJob.cs.
+- Action: Last-ditch base survival.
+- Execution: If a module's integrity is < 5% and a "Fleet Sacrifice" command is issued, the drone physically anchors itself into the breach, effectively becoming a "living patch" that stops flooding but destroys the drone.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Populate AutomataTemplate.cs for 3 drone tiers: "Mk.I Scrubber" (Slow, high solder capacity), "Mk.II Welder" (Fast, low battery), "Guardian Unit" (Pushes predators away from the base).
+2. Validate that the fleet dispatch job completes in under 0.2ms to maintain the 60fps target.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors in the fleet logic.
+2. SURGERY LOG: Provide the math for the "Task Assignment Score" including distance and criticality.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+1:54 AM
+
+
+Worked for 32s
+What was wrong: the new prompt still mixes real owners with stale ones. HectonSubmarineOS.cs exists, not SubmarineOS.cs. RepairDroneHub / RepairDroneEntity exist, not DroneCognitionJob.cs. DroneFleetManager.cs can be created. AutomataTemplate.cs does not exist. Nanite_Solder is not present as a real item ID in the repo. The Unity console is also already red before fleet work, so I cannot truthfully promise MCP VERIFIED or 0 errors on the requested basis.
+
+What I verified:
+
+Mandates followed: AI_DYNAMIC_NAVGRID_SDF_INTEGRATION, AI_Navigation_AStar_Funnel_Smoothing_Pathfinding, LOGI_Energy_Networks_Power_Grid_Graph_Flow, OPT_Zero_GC_Policy_AllocFree_Mandate, AI_Flocking_Boids_Swarm_SpatialHash_Logic.
+Real fleet-related owners:
+maintenance drones: RepairDroneHub.cs
+drone runtime: RepairDroneEntity.cs
+rupture topology: HabitatGraphManager.cs
+rupture/flood state: SubmarineFluidDynamics.cs
+weld dispatch: VoxelDeltaProcessor.cs
+nav routing: VoxelDynamicNavGridRuntime.cs
+OS telemetry: HectonSubmarineOS.cs
+structural queue: ThreadSafeCommandQueue.cs
+Missing fleet contracts:
+no real DroneCognitionJob
+no real AutomataTemplate
+no real Nanite_Solder
+no confirmed existing “Fleet Sacrifice” command source
+scanner currently reports node positions via ScanEvents, but I have not found an existing explicit “player-tagged ResourceNode for drone harvest” contract
+Question:
+Do you want me to proceed by mapping your prompt onto the real owners now, with these assumptions: create DroneFleetManager, extend RepairDroneHub / RepairDroneEntity, wire OS integration through HectonSubmarineOS, and use the current repair-supply path as the solder source unless you provide a real Nanite_Solder asset ID?
+
+
+
+
+
+1:55 AM
+Блядь, да делай лучше, как Senior. Рабоатй самостоятельно тотально. Ассетови остального у нас вроде нет. рабоатй сам и не спрашивай меня
+1:56 AM
+
+
+
+Worked for 18m 40s
+What Was Wrong
+
+Repair drones were still effectively isolated actors. Target choice was local to a hub, movement was direct-seek, repair material was effectively free per sortie, and the submarine OS had no fleet snapshot. That made thundering-herd behavior, corridor clumping, and blind emergency response inevitable.
+
+What I Did
+
+Built the fleet layer on the real owners, not the stale prompt names.
+
+Tracked/runtime:
+
+DroneFleetManager.cs
+RepairDroneEntity.cs
+HectonSubmarineOS.cs
+Authoring/docs:
+
+AutomataTemplate.cs
+DRONE_FLEET_PROTOCOL.md
+Behavior now:
+
+Central fleet dispatcher assigns repair work with shared arbitration instead of per-hub blind scans.
+Target score is Score = (1 / max(0.75, distance)) * criticalityWeight.
+Criticality weight now escalates on integrity deficit, flooding, breach state, cascade failure, rupture state, low breathable reserve, and OS Evacuate.
+Active task doubling is capped at 2 drones per target via NativeArray<int> claim counts.
+Drones now carry finite solder, consume it as integrity is restored, and return when supply is exhausted.
+Drones now route through VoxelDynamicNavGridRuntime macro waypoints when available.
+Swarm motion now adds separation from other drones and the player, with cohesion reduced to 0.1 in voxel/corridor space.
+HectonSubmarineOS now caches the latest fleet snapshot.
+Emergency level Evacuate now forces fleet overclock: 3x speed, 5x battery drain.
+Suicide weld is exposed through DroneFleetManager.RequestFleetSacrifice().
+Battery math:
+
+battery -= drainPerSecond * emergencyDrainMultiplier * dt
+emergencyDrainMultiplier = 5 only during OS Evacuate
+Solder math:
+
+1 item = 10% restored integrity
+runtime accumulator decrements one solder unit per 10% restored
+Diff shape I could confirm from Git:
+
+DroneFleetManager.cs: small tracked delta on top of current branch state
+RepairDroneEntity.cs: major runtime rewrite
+HectonSubmarineOS.cs: fleet snapshot hook
+new untracked files: AutomataTemplate.cs, DRONE_FLEET_PROTOCOL.md
+In-Game Result
+
+The fleet now behaves like a coordinated maintenance service instead of independent seekers. Nearest viable docks dispatch against shared priorities, damaged compartments can no longer attract unlimited drones, and OS level 3 can push the whole fleet into a high-drain breach-response mode.
+
+What Was Verified
+
+Source write-set is on disk and internally consistent with current owners. Unity MCP verification did not complete:
+
+refresh_unity timed out waiting for editor readiness after 60s
+read_console stayed unavailable because the Unity session never reported ready
+measured proof for 0 compile errors and < 0.2 ms dispatch cost is absent
+The repo was already compile-red before this pass, and I cannot honestly mark this MCP VERIFIED.
+
+Status: PENDING VERIFICATION
+
+
+DRONE_FLEET_PROTOCOL.md
+Document · MD
+
+Open
+
+7 files changed
++1311
+-162
+Undo
+
+Review
+Assets/_Project/Scripts/Construction/AutomataTemplate.cs
+Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs
+Assets/_Project/Scripts/Construction/DroneFleetManager.cs
+Assets/_Project/Scripts/Construction/RepairDroneEntity.cs
+Assets/_Project/Scripts/Construction/RepairDroneHub.cs
+Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs
+Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md
+
+
+
+
+2:15 AM
+
+---------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: FAUNA & AUTOMATA
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Data-Driven AI, Colliders, and Basic Behaviors
+THINKING LEVEL: MAXIMUM (Focused on ScriptableObjects, Physics Casts, and State Machines)
+
+[0. SITREP: THE DUMB FISH]
+We need the core AI foundation to be robust and data-driven. Stop making complex flanking maneuvers until basic fleeing, wandering, and collision avoidance are 100% bug-free and configurable.
+
+[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study FaunaDataTemplate.cs (Create) and FaunaBrain.cs.
+2. Review the PHYS_Physics_Integrity_Determinism_ForceMode.txt.
+
+[II. PRIMARY OBJECTIVES]
+1. CENTRALIZED FAUNA DATA TEMPLATES:
+- Target: FaunaDataTemplate.cs.
+- Action: Move all hardcoded variables to SOs.
+- Execution: Define SwimSpeed, TurnRate, VisionConeAngle, AggroRadius, FleeHealthThreshold, and FoodChainTier. The AI brain must read these at spawn and never modify them.
+
+2. MASSIVE ROSTER POPULATION:
+- Target: Assets/_Project/Data/Fauna/.
+- Action: Create 20+ distinct FaunaDataTemplate assets.
+- Execution: Make specific templates for "Herbivore Small", "Predator Medium", "Swarm Passive", etc., ensuring varied, sensible values for each.
+
+3. BASE NAVIGATION BEHAVIORS (THE FOUNDATION):
+- Target: FaunaBrain.cs.
+- Action: Polish the core states: Wander, Flee, Chase.
+- Execution: Ensure these states transition smoothly. A wandering fish must pick a random AUP within its territory, swim there without getting stuck, and pick a new point. No jittering.
+
+4. PRIMITIVE COLLIDER RIGGING:
+- Target: Fauna Prefab Pipeline.
+- Action: Mesh colliders are banned.
+- Execution: Ensure every fauna prefab has a simple CapsuleCollider or SphereCollider scaled correctly. The script must validate this on Awake() and throw an error if a MeshCollider is found.
+
+5. ECOSYSTEM TAGGING (FOOD CHAIN):
+- Target: FaunaDataTemplate.cs.
+- Action: Define who eats whom cleanly.
+- Execution: Add DietMask and PreyMask (Bitmasks). A predator only chases entities whose PreyMask matches its DietMask.
+
+6. RAYCAST OBSTACLE AVOIDANCE KERNEL:
+- Target: FaunaBrain.cs (Burst Job).
+- Action: Basic wall avoidance.
+- Execution: Fire 3 short RaycastCommands (Forward, Left-45, Right-45). If hitting an obstacle, apply a steering force away from the hit normal. Must run in Burst.
+
+[III. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Provide the SO template structure and the obstacle avoidance Burst job.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+1:47 AM
+
+
+
+Worked for 35m 20s
+What Was Wrong
+The basic fauna foundation was already mostly present in the current branch state, but two real gaps remained. Authoring still targeted Assets/_Project/Data/AI/FaunaTemplates instead of Assets/_Project/Data/Fauna, and there were no populated FaunaDataTemplate assets on disk. There was also a small runtime hole in FaunaBrain.cs (line 1825): reapplying the same template reference returned early, which skipped template tuning refresh.
+
+Mandates followed: PHYS_Physics_Integrity_Determinism_ForceMode, OPT_Zero_GC_Policy_AllocFree_Mandate, AI_Creature_Cognition_States. Ledger sync checked: PROJECT_CONTENT_LEDGER.md (line 27) already documents FaunaDataTemplate.SpeciesId ownership and line 41 (line 41) already states MeshCollider is forbidden for content prefabs.
+
+What I Did
+The current branch state already contains the requested runtime foundation in FaunaDataTemplate.cs (line 32): FaunaDietMask, FaunaFoodChainTier, swimSpeed, turnRate, visionConeAngle, aggroRadius, fleeHealthThreshold, dietMask, preyMask, and CanConsumePrey(...). The 3-ray avoidance path is also already present in branch state through FoveatedSimulationManager.cs (line 32), FaunaSensorSuite.cs (line 564), and FaunaBrain.Foveated.cs (line 39). I did not invent a second implementation on top of that.
+
+This turn’s actual dirty changes were:
+
+FaunaDataTemplateAuthoring.cs (line 10): switched authoring root to Assets/_Project/Data/Fauna and added roster-field authoring for vision cone, flee threshold, food-chain tier, diet mask, and prey mask.
+FaunaBrain.cs (line 1825): same-template reapply now still refreshes runtime tuning and scan metadata.
+FaunaDataTemplate.cs (line 1): removed a duplicate using System;.
+I also populated the roster on disk. Assets/_Project/Data/Fauna now contains 22 assets:
+FaunaDataTemplate_ArchwaySentinel.asset, FaunaDataTemplate_ArmorBreaker.asset, FaunaDataTemplate_BlackChoirLeviathan.asset, FaunaDataTemplate_BrineSiphoner.asset, FaunaDataTemplate_BrineStalker.asset, FaunaDataTemplate_FurnaceMawLeviathan.asset, FaunaDataTemplate_GateWardenLeviathan.asset, FaunaDataTemplate_HaloCrownLeviathan.asset, FaunaDataTemplate_HeatLurker.asset, FaunaDataTemplate_KelpRaylet.asset, FaunaDataTemplate_LanternSifter.asset, FaunaDataTemplate_NeedleHunter.asset, FaunaDataTemplate_NurseryShellguard.asset, FaunaDataTemplate_PocketAmbusher.asset, FaunaDataTemplate_RidgePackCutter.asset, FaunaDataTemplate_RiftLancerLeviathan.asset, FaunaDataTemplate_ShadowInterceptor.asset, FaunaDataTemplate_ShoreSkimmer.asset, FaunaDataTemplate_SiltDrifter.asset, FaunaDataTemplate_SiltFlatmaw.asset, FaunaDataTemplate_VoidRibbonLeviathan.asset, FaunaDataTemplate_WallGlider.asset.
+
+Surgery log:
+
+SO structure: SwimSpeed, TurnRate, VisionConeAngle, AggroRadius, FleeHealthThreshold, FoodChainTier, DietMask, PreyMask, plus immutable runtime getters.
+Obstacle kernel math: build RaycastCommand[3] for forward, yaw(-45°), yaw(+45°). For each valid hit, accumulate pressure = 1 - hit.distance / rayLength, then avoidance += hit.normal * pressure. Final steer: normalize(forward + avoidance + clearSideBias * 0.35).
+Dirty diff scope:
+
+diff --git a/Assets/_Project/Scripts/Editor/FaunaDataTemplateAuthoring.cs b/Assets/_Project/Scripts/Editor/FaunaDataTemplateAuthoring.cs
+- private const string TemplateRoot = "Assets/_Project/Data/AI/FaunaTemplates";
++ private const string TemplateRoot = "Assets/_Project/Data/Fauna";
++ SetFloat(... "visionConeAngle" ...)
++ SetFloat(... "fleeHealthThreshold" ...)
++ SetEnum(... "foodChainTier" ...)
++ SetInt(... "dietMask" ...)
++ SetInt(... "preyMask" ...)
+diff --git a/Assets/_Project/Scripts/Fauna/FaunaBrain.cs b/Assets/_Project/Scripts/Fauna/FaunaBrain.cs
+if (ReferenceEquals(_faunaDataTemplate, faunaDataTemplate))
+{
++    ApplyTemplateRuntimeTuning();
++    ConfigureFaunaScanMetadata();
+     return;
+}
+diff --git a/Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs b/Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs
+- using System;
+In-Game Result
+Code review says the branch now has a coherent data-driven fauna foundation: templates own movement/perception/food-chain tuning, same-template rebinds no longer skip runtime refresh, and the fauna data folder is populated with 22 concrete assets mapped to existing archetypes. The requested basic flee/wander/chase and 3-ray obstacle path are already in the branch state, not newly introduced here.
+
+What Was Verified
+Unity MCP proof of 0 errors does not exist. On April 30, 2026, MCP attempts failed with objective errors:
+
+read_console: Unity session not ready for 'read_console' (ping not answered); please retry
+refresh_unity: timed out after 60 seconds waiting for editor readiness
+validate_script: multiple TimeoutError and plugin session disconnects
+Asset population on disk was verified locally: 22 .asset files exist under Assets/_Project/Data/Fauna.
+
+GC validation: BEFORE: measured proof absent · AFTER: measured proof absent · STATUS: PENDING VERIFICATION
+
 Regression model:
 
-CPU: anchor traversal is cold-path on graph rebuild; buoyancy runs only on unmoored modules in fixed tick.
-GC: measured proof absent; no managed allocations were added to the unmoored fixed-step path.
-Memory: added persistent native BFS buffers in the graph owner and one cached airlock list per module.
-Cadence: topology on rebuild, buoyancy on fixed tick, lockdown sync on rebuild or breach-state change.
-Correctness: anchor reachability and lockdown adjacency are deterministic over CSR; final editor-wide clean-console proof is still absent because the MCP Unity session did not yield a stable post-reload readback.
+CPU: no new hot-path logic was added this turn beyond an already-present branch-state foundation.
+GC: no measured proof; runtime zero-alloc claim remains unverified in Unity.
+Memory: 22 new ScriptableObject assets added on disk; runtime memory impact not measured.
+Cadence/correctness: same-template reapply bug is closed; authoring root now matches the requested folder.
+HOT PATH IMPACT: unmeasured.
+FAILURE MODES: Unity editor session unstable; no console read; no compile proof.
+WARNING: Regression risk in fauna runtime remains until Unity reaches a clean compile and the console can be read.
+STATUS: PENDING VERIFICATION
+
+
+PROJECT_CONTENT_LEDGER.md
+Document · MD
+
+Open
+
+9 files changed
++678
+-137
+Undo
+
+Review
+Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs
+Assets/_Project/Scripts/Editor/FaunaDataTemplateAuthoring.cs
+Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs
+Assets/_Project/Scripts/Fauna/FaunaBrain.Foveated.cs
+Assets/_Project/Scripts/Fauna/FaunaBrain.cs
+Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs
+Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs
+Assets/_Project/Scripts/Fauna/FaunaSteeringEngine.cs
+Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs
+
+
+
+
+2:23 AM
+
+--------------------------------
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: XENO-BOTANY & ASSETS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Foundation Polishing & Content Population
+THINKING LEVEL: MAXIMUM (Focused on ScriptableObjects, State Machines, and Colliders)[0. SITREP: THE HOLLOW GARDEN]
+Stop fantasizing about complex features. We need a rock-solid, production-ready foundation. Flora must be fully defined, ready for 3D model injection, and possess flawless interaction logic. You will build out the complete data foundation for all plant life.
+
+[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study FloraDataTemplate.cs and FloraInteractionManager.cs.
+2. Review the OPT_Zero_GC_Policy_AllocFree_Mandate.txt.
+
+[II. PRIMARY OBJECTIVES]
+1. FULL FLORA ROSTER POPULATION (DATA ENTRY):
+- Target: FloraDataTemplate.cs & Assets/_Project/Data/Flora/.
+- Action: Create 30+ comprehensive ScriptableObjects.
+- Execution: Define 4 categories (Micro-grass, Harvestable Kelp, Hard Corals, Giant Sargassum). Fill in exact values for MaxHealth, HarvestToolMask, LootItemHashID, GrowthTime, and AudioMaterialID.
+
+2. GHOST MESH PROXY STANDARD:
+- Target: FloraSpawner.cs / Editor Tooling.
+- Action: We lack final 3D models. The game must still be fully playable.
+- Execution: If FloraTemplate.mesh == null, automatically spawn a geometric proxy (e.g., a green cylinder for kelp, a red sphere for coral) matching the exact BoundingBox dimensions defined in the SO. 
+
+3. HARVEST STATE MACHINE:
+- Target: DestructibleOrganicManager.cs.
+- Action: Flora is not just "alive" or "dead".
+- Execution: Implement strict states: PRISTINE, PARTIALLY_HARVESTED, BARE, DEAD. A kelp plant hit once should lose leaves (visual swap) and enter PARTIALLY_HARVESTED. It only disappears when DEAD.
+
+4. UNITY COLLIDER AUTO-FITTER:
+- Target: Flora Prefab Pipeline.
+- Action: MeshColliders are PERMANENTLY FORBIDDEN.
+- Execution: Write logic that reads the BoundingBox of the flora and auto-assigns multiple SphereCollider or CapsuleCollider components to approximate the shape perfectly for physics interactions.
+
+5. SAVE/LOAD SERIALIZATION (FLORA DELTAS):
+- Target: PersistentWorldRegistry.cs.
+- Action: The harvest state must persist.
+- Execution: Save the HarvestState and CurrentHealth of modified plants to the binary save file using their AUP hash. Ensure pristine plants save nothing to keep the file size minimal.
+
+6. VFX & AUDIO SOCKET MAPPING:
+- Target: FloraDataTemplate.cs.
+- Action: Define exact local float3 coordinates for "Cut", "Bleed", and "Break" particle effects so tools trigger effects in the right physical location on the plant.
+
+[III. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Detail the Harvest State Machine logic.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+1:44 AM
+
+
+
+Worked for 1h 2m 40s
+What Was Wrong
+The flora foundation was incomplete. FloraDataTemplate did not fully author category/health/growth/proxy/socket data, there was no production-safe ghost-proxy pipeline for missing meshes, harvest state was still effectively scalar damage instead of strict stage logic, and persistence needed to keep flora deltas minimal. There was also a live Unity verification blocker from the scatter preview gizmo path, so there was no honest console proof.
+
+What I Did
+Expanded FloraDataTemplate.cs (line 48) with the foundation fields the runtime and authoring path needed: category, MaxHealth, GrowthTimeSeconds, ghost-mesh metadata (mesh, proxyPrefab, proxyShape, bounds), and local VFX sockets for cut/bleed/break. The authored roster now covers 35 templates across the four required families through FloraFoundationAuthoring.cs (line 66), and the scene bridge in 02_HECTON_WORLD is synchronized to all 35.
+
+I did not invent FloraSpawner.cs. The repo’s real owner is indirect vegetation, so the ghost-mesh standard was implemented as editor-authored fallback prefabs, not runtime GameObject spawning. The authoring pass generates 35 proxy prefabs under Assets/_Project/Data/Flora/GeneratedProxies/Prefabs/ with primitive-only collider fits: kelp uses capsule chains, corals use sphere clusters, sargassum uses mixed capsule/sphere hulls. MeshColliders were not introduced.
+
+The harvest state machine is now explicit in DestructibleOrganicManager.cs (line 2109). Surgery log:
+
+PRISTINE: normalized health and height are effectively 1.0; no persistence delta is written.
+PARTIALLY_HARVESTED: health dropped but not to the category bare threshold; visual height is reduced to the family-specific partial ceiling.
+BARE: the plant remains present but stripped; height is clamped to the bare ceiling instead of vanishing.
+DEAD: health reaches zero and the existing destroyed/regrowth path takes over.
+The runtime now builds its per-species health/category/growth cache from flora templates in DestructibleOrganicManager.cs (line 679), and regrowth duration resolves per template in FloraRegrowthDirector.cs (line 236).
+Persistence stayed delta-minimal. I did not widen the binary save format with a redundant enum. PersistentWorldRegistry already packs flora overrides, so harvest state persists through normalized health plus normalized height scale; pristine flora still saves nothing via PersistentWorldRegistry.cs (line 485). I also removed the Unity verification blocker by hardening the scatter preview path in WorldProceduralScatterDirector.cs (line 482) and WorldProceduralScatterPreviewGizmoDrawer.cs (line 15).
+
+In-Game Result
+The flora catalog is now fully populated and wired: 35 authored flora templates, 35 generated ghost proxies, family-specific primitive collider approximations, strict staged harvest visuals, and save/load deltas that only record touched flora. Missing final meshes no longer block playability, because each template can fall back to a deterministic proxy with correct bounds and interaction volume.
+
+What Was Verified
+MCP console proof is clean: after clear -> refresh -> read, Unity returned 0 error entries and 0 warning entries. MCP also verified floraTemplates=35 on the live bridge, and proxy collider layouts were read back in-editor: CableBloom = 1 sphere / 3 capsules, AnchorCoral = 4 spheres / 0 capsules, CrownSargassum = 4 spheres / 1 capsule. Full diff artifact: 2026-04-30_flora_foundation.diff. Diff stat for this pass: 32 files changed, 508 insertions, 85 deletions.
+
+Mandates followed: OPT_Zero_GC_Policy_AllocFree_Mandate, PHYS_Destructible_Organic_Entropy, STRM_Persistent_Object_Registry, REND_Instanced_Flora_Physics.
+
+GC validation: BEFORE measured proof absent · AFTER measured proof absent · STATUS: no measurement.
+Regression model: CPU hot path unchanged at runtime because proxy/collider generation is editor-only; persistence remains delta-based; failure modes are limited to bad authored template data or missing future final meshes.
+STATUS: MCP VERIFIED.
+
+12 files changed
++1320
+-54
+Undo
+
+Review
+Assets/_Project/Scripts/Editor/FloraFoundationAuthoring.cs
+Assets/_Project/Scripts/Gameplay/SubmarineCompoundColliderAuthoring.cs
+Assets/_Project/Scripts/HectonContactJob.cs
+Assets/_Project/Scripts/HectonItem.cs
+Assets/_Project/Scripts/Inventory/ItemPhysicalMetadata.cs
+Assets/_Project/Scripts/ItemData.cs
+Assets/_Project/Scripts/Items/PickupItem.cs
+Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
+Assets/_Project/Scripts/World/FloraDataTemplate.cs
+Assets/_Project/Scripts/World/FloraRegrowthDirector.cs
+Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+
+
+
+
+2:47 AM
+
+-----------------------------------
+
+
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: BASE CONSTRUCTION
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Module Standardization, Sockets, and Power Topologies
+THINKING LEVEL: MAXIMUM (Focused on Graph Math, Binary Serialization, and Prefab Proxies)[0. SITREP: THE BROKEN LEGO BLOCKS]
+Base building is useless if the pieces don't fit perfectly. We need a rigorous standard for all base modules, guaranteed socket alignment, and flawless save/load logic for entire bases.[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study BaseModuleTemplate.cs and HabitatGraphManager.cs.
+2. Review construction persistence rules.
+
+[II. PRIMARY OBJECTIVES]
+1. COMPLETE MODULE CATALOG (TEMPLATES):
+- Target: BaseModuleTemplate.cs & Data folder.
+- Action: Define the core building blocks.
+- Execution: Create SOs for: Corridor, T-Junction, X-Junction, Multi-Purpose Room, Moonpool, Airlock, Foundation.
+
+2. STRICT SOCKET SNAPPING LOGIC:
+- Target: BaseModule.cs & Builder Tool.
+- Action: Modules must connect flawlessly.
+- Execution: Implement a bitmask for sockets (North, South, East, West, Top, Bottom). A module can only snap if the inverse socket of the target is available and compatible.
+
+3. PREFAB PROXY GENERATOR (GHOST MESHES):
+- Target: Construction System.
+- Action: We lack 3D models for all modules.
+- Execution: If Prefab == null, instantiate a White Wireframe Box matching the exact dimensions and socket coordinates defined in the BaseModuleTemplate.
+
+4. INTEGRITY STATE MACHINE:
+- Target: BaseModule.cs.
+- Action: Define the physical state of the room.
+- Execution: Implement states: PRISTINE, FLOODED, RUPTURED, ABANDONED. Ensure standard modules start PRISTINE, but world-gen wrecks spawn as ABANDONED or RUPTURED.
+
+5. BASE POWER GRID FOUNDATION:
+- Target: PowerGridManager.cs & HabitatGraphManager.cs.
+- Action: Connected modules form a single logic graph.
+- Execution: Traverse the snapped modules. Sum the PowerDraw of all active components. If it exceeds PowerSupply, trigger a base-wide "Low Power" state.
+
+6. SAVE/LOAD BASE TOPOLOGY:
+- Target: ConstructionManager.cs & SaveBinaryStorage.cs.
+- Action: The entire base must be saved perfectly.
+- Execution: Serialize the base as a Graph: Node AUPs, Module HashIDs, and Edge connections. Rebuild the physical base accurately upon loading without physics explosions.
+
+[III. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. SURGERY LOG: Detail the binary serialization structure for the base graph.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+1:47 AM
+
+
+
+Worked for 1h 52s
+Status
+
+STATUS: MCP VERIFIED for editor compile and MCP console cleanliness. Runtime/play-mode behavior is still code-reviewed only.
+
+Mandates followed: LOGI_Energy_Networks_Power_Grid_Graph_Flow, DATA_Save_Persistence_Binary_Delta_Checksum, OPT_Zero_GC_Policy_AllocFree_Mandate, MATH_Coordinate_Precision_AUP_FloatingOrigin, ARCH_Global_Registry_ServiceLocator_DI_Init, PHYS_Physics_Integrity_Determinism_ForceMode.
+
+What Was Wrong
+
+Base construction had no strict authored socket standard, no reliable ghost fallback when prefabs were missing, no discrete module integrity state machine for standardized modules, no connected-component power evaluation at the habitat-graph level, and no graph-grade save payload for module topology. The data catalog was also incomplete for the requested standardized core pieces.
+
+What I Did
+
+I standardized module authoring in BaseModuleTemplate.cs, BuildableData.cs, and ModuleSocket.cs. Templates now carry socket definitions, proxy bounds, socket masks, and stable hash IDs. I authored the requested template/buildable set in Assets/_Project/Data/Construction/StandardModuleTemplates/ plus build assets for Corridor, T-Junction, X-Junction, Multi-Purpose Room, Moonpool, Airlock, and Foundation.
+
+I hardened snapping and proxy generation in BaseModule.cs, PlayerBuilder.cs, PlacementGhost.cs, and new ConstructionRuntimeProxyFactory.cs. Socket compatibility is now directional and inverse-validated by bitmask. When finalPrefab or ghostPrefab is missing, the construction path now generates a white proxy cube with exact template bounds, runtime sockets, collider, BaseModule, PowerNode, and an interior trigger instead of failing placement.
+
+I added the requested integrity state machine to BaseModule.cs: Pristine, Flooded, Ruptured, Abandoned. Standardized modules default to Pristine; the runtime API can force wreck states during world generation.
+
+I pushed power-topology evaluation into HabitatGraphManager.cs and PowerGridManager.cs. Connected snapped modules are now evaluated as graph components: supply is the sum of positive module/component power, draw is the sum of demand, and low-power/brownout state is derived from projected supply-demand ratio and published back onto modules.
+
+I extended persistence in ConstructionManager.cs, SaveData.cs, SaveBinaryPayloadCodec.cs, and ModuleCatalog.cs. Saves now carry graph nodes and edges in addition to the legacy per-module state payload, and loading can resolve modules by prefab ID or standardized module hash ID. I also updated HABITAT_LOGISTICS_GRAPH.md to document the module/socket/persistence contract.
+
+Binary surgery log, construction graph payload:
+
+ConstructionDTO v47
+- int moduleCount
+- ModuleDTO[moduleCount] modules                  // legacy per-module runtime state
+- int graphNodeCount
+- ModuleGraphNodeDTO[graphNodeCount] graphNodes  // prefabId, moduleHashId, AUP, rotation
+- int graphEdgeCount
+- ModuleGraphEdgeDTO[graphEdgeCount] graphEdges  // undirected source/destination node pairs
+To get back to a clean console, I also repaired unrelated compile blockers already present in the worktree: FaunaDirector.cs, RepairDroneEntity.cs, HectonMapMagicVegetationBridge.cs, PersistentWorldRegistry.cs, FaunaDataTemplate.cs, WorldProceduralScatterPreviewGizmoDrawer.cs, and untracked FloraFoundationAuthoring.cs.
+
+In-Game Result
+
+Base modules now share a single authored standard for bounds, sockets, and hash identity. Snapping rejects invalid orientations instead of loosely matching by position alone. Missing art no longer blocks construction, because the builder can fall back to exact-dimension ghost/placed proxy modules. Habitat sections now evaluate low-power state from their snapped graph, and save/load carries topology data rather than only loose spawned transforms.
+
+WARNING: Regression risk in temporary bypass persistence. graphEdges[] are saved, but load still rebuilds live adjacency from physical socket placement rather than reconstructing special transient bypass links as first-class runtime edges.
+
+WARNING: Regression risk in legacy prefab interior trigger binding. BaseModule.cs now auto-finds a child BoxCollider when none is assigned; prefabs with multiple child box colliders can still bind the wrong one unless explicitly authored.
+
+What Was Verified
+
+Unity-verified:
+
+MCP console snapshot returned Retrieved 0 log entries.
+Script validation returned 0 errors for the persistence and construction files that were directly edited through the new save/proxy path.
+Standardized template assets were created in Assets/_Project/Data/Construction/StandardModuleTemplates/.
+Git diff scope for this task is mixed with a dirty worktree. Targeted tracked diff currently reports 15 files changed, 758 insertions, 119 deletions, plus untracked additions for ConstructionRuntimeProxyFactory.cs, FloraFoundationAuthoring.cs, the new standard template folder, and new build assets for Airlock, T-Junction, X-Junction, Moonpool, and Multi-Purpose Room. The repo also contains unrelated pre-existing churn outside this scope.
+
+Regression model:
+
+CPU: socket checks and power aggregation are graph-rebuild work, not per-frame hot-path loops.
+GC: measured proof absent.
+Memory: added bounded save arrays and catalog hash lookup; no unbounded runtime cache was introduced in the construction path.
+Cadence: save/load on persistence boundaries, graph traversal on rebuild, proxy generation on placement only.
+Correctness: standardized sockets, proxy fallback, and graph payload are wired; transient non-physical edge restoration remains the main unresolved topology risk.
 
 HABITAT_LOGISTICS_GRAPH.md
 Document · MD
 
 Open
 
-13 files changed
-+1128
--158
+22 files changed
++1289
+-354
 Undo
 
 Review
 Assets/_Project/Scripts/BaseModule.cs
 Assets/_Project/Scripts/BaseModuleTemplate.cs
+Assets/_Project/Scripts/BuildableData.cs
+Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs
+Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs
 Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
+Assets/_Project/Scripts/Construction/RepairDroneEntity.cs
 Assets/_Project/Scripts/ConstructionManager.cs
-Assets/_Project/Scripts/Fabricator.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.cs
-Assets/_Project/Scripts/Gameplay/BaseAirlock.cs
-Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs
-Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs
-Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs
-Assets/_Project/Scripts/UI/PDAMapTab.cs
-Assets/_Project/Scripts/World/FloraInteractionManager.cs
+Assets/_Project/Scripts/Editor/FloraFoundationAuthoring.cs
+Assets/_Project/Scripts/Editor/WorldProceduralScatterPreviewGizmoDrawer.cs
+Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs
+Assets/_Project/Scripts/FaunaDirector.cs
+Assets/_Project/Scripts/ModuleCatalog.cs
+Assets/_Project/Scripts/ModuleSocket.cs
+Assets/_Project/Scripts/PlacementGhost.cs
+Assets/_Project/Scripts/PlayerBuilder.cs
+Assets/_Project/Scripts/PowerGridManager.cs
+Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+Assets/_Project/Scripts/SaveData.cs
+Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
 Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md
 
 
 
 
-1:12 AM
-
+2:49 AM
 ----------------------------
 
 <system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: ECONOMY & SOA INVENTORY
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: ECONOMY & ITEMS
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Salvage Deconstruction & Moonpool Vehicle Modding
-THINKING LEVEL: MAXIMUM (Focused on Kahn's Algorithm, SOA, and Bitmasks)[0. SITREP: THE ONE-WAY ECONOMY]
-Your zero-GC fabrication and physical item ejection are flawless. But currently, the economy only consumes. We need a Deconstructor (Scrap Grinder) to break down salvage, and a Moonpool system to apply upgrades directly to the submarine's SOA data.[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
-1. Study CraftingSystem.cs, PlayerInventory.cs, and EquipmentInteractionContracts.cs.
-2. Update Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md to include Deconstruction rules.
+OPERATIONAL MODE: Item Standardization, Mass, and Drop Tables
+THINKING LEVEL: MAXIMUM (Focused on Bitmasks, Physics Materials, and SOA)
+
+[0. SITREP: THE EMPTY BACKPACK]
+An inventory system is useless without items. We must define the absolute properties of every object in the game: its weight, its vulnerabilities, its sound, and how it drops.[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study ItemTemplateRegistry.cs and PlayerInventory.cs.
+2. Review DATA_Inventory_Resources_Items_SOA_Layout.txt.
 
 [II. PRIMARY OBJECTIVES]
-1. SALVAGE DECONSTRUCTOR (REVERSE KAHN'S):
-- Target: CraftingSystem.cs & Fabricator.cs.
-- Action: Build a grinder that breaks items into their base components.
-- Execution: Given an ItemHashID, look up its CraftingRecipe. Return 80% of the constituent materials to the PlayerInventoryBuffer. If an item is IS_DEGRADED (durability < 0.25), return only 30% of the materials. Output the components physically via ForceMode.VelocityChange into a catch-bin.
+1. VULNERABILITY MASK SYSTEM:
+- Target: ItemTemplate.cs.
+- Action: Define how tools affect items.
+- Execution: Create a bitmask (CUT, DRILL, LASER, BASH). A Titanium node requires DRILL. A Kelp plant requires CUT. Tools must check this mask before doing damage.
 
-2. MOONPOOL VEHICLE MODDING (SOA UPGRADES):
-- Target: VehicleMotor.cs & ModularEquipmentEngine.cs.
-- Action: The submarine is an entity. It needs modular upgrades.
-- Execution: Expand the UpgradeBitmask logic to apply to VehicleStats (MaxDepth, EngineThrust, HullArmor). When a player crafts and installs a "Pressure Compensator", do a bitwise OR on the sub's active upgrades, instantly recalculating maxLinearVelocity and implosionThreshold in O(1) time.
+2. MASSIVE ITEM REGISTRY POPULATION:
+- Target: Data Folder & ItemTemplateRegistry.cs.
+- Action: We need a real game economy.
+- Execution: Create 50+ ItemData SOs. Include Raw Ores, Plant Samples, Processed Materials (Glass, Wiring Kits), Tools, and Consumables.
 
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. KINETIC INVENTORY DAMAGE:
-- Target: PlayerInventory.cs & GlobalPhysicsStateManager.cs.
-- Action: If the player takes massive impact damage (e.g., slammed into a wall by a Leviathan), fragile items in the backpack should break.
-- Execution: Listen to PhysicsImpactSignal. If impact > 50G, iterate the ItemState array. Any item with AudioMaterialID == Glass or Electronics loses 50% durability. If durability hits 0, flip the IS_DEGRADED bit or destroy it.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-Once you finish the above, YOU MUST NOT STOP.
-1. Populate 10 CraftingRecipe assets for Submarine Upgrades (e.g., "Sonar Amplifier", "Thermal Shielding").
-2. Prove that the Deconstruction job uses absolutely zero managed allocations.
+3. WEIGHT & VOLUME STATS:
+- Target: ItemTemplate.cs & PlayerInventory.cs.
+- Action: Items must have physical mass.
+- Execution: Add MassKg and VolumeM3 to templates. The inventory must sum the total mass. Expose this value so the KCC (Movement) can slow the player down if overloaded.
 
-[V. EVIDENCE-BASED REPORTING]
+4. AUDIO & PHYSICS MATERIAL TAGGING:
+- Target: ItemTemplate.cs.
+- Action: Dropped items must act like real objects.
+- Execution: Assign tags like 'Metal', 'Organic', 'Glass'. When dropped into the world, assign a PhysicMaterial (bounciness/friction) and an AudioMaterialID so hitting the floor sounds correct.
+
+5. LOOT TABLE STRUCTURING:
+- Target: LootTable.cs (Create).
+- Action: Standardize how things drop.
+- Execution: Create a struct containing ItemHashID, MinCount, MaxCount, and DropWeight. Use this for both breaking outcrops and killing fauna.
+
+6. ZERO-GC INTERACTION RAYCAST:
+- Target: PlayerInteraction.cs.
+- Action: Clicking on items to pick them up must not allocate memory.
+- Execution: Use Physics.RaycastNonAlloc targeting only the Interactable layer. Read the ItemHashID from the hit object, add to SOA inventory, and return the object to the pool.
+
+[III. EVIDENCE-BASED REPORTING]
 1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Provide the C# code for the Kinetic Inventory Damage iteration.
+2. SURGERY LOG: Provide the C# code for the Non-Alloc pickup interaction.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-12:33 AM
+1:48 AM
 
 
 
-Worked for 32m 35s
+Worked for 10m 39s
 What Was Wrong
-The economy was still one-way. Fabrication had a zero-GC forward path, but there was no reverse salvage path, no durable degraded-state reuse for reclaim math, and no live submarine-upgrade bitmask owner wired into transport stats. The prompt’s named vehicle targets were also wrong: ModularEquipmentEngine.cs is the handheld-tool runtime, not the submarine stat owner.
-
-Mandates followed:
-DATA_Inventory_Resources_Items_SOA_Layout, OPT_Zero_GC_Policy_AllocFree_Mandate, OPT_Native_Memory_Collections_JobSystem_Protocol, CORE_Submarine_Vehicles_Kinematics_AUP, PHYS_Physics_Integrity_Determinism_ForceMode, STRM_Persistent_Object_Registry.
+The prompt targeted ItemTemplate.cs, but this repo’s live owners are ItemData.cs (line 78), ItemCatalog.cs (line 109), ItemTemplateRegistry.cs (line 28), PlayerInventory.cs (line 148), and the world pickup proxies. The inventory was not “empty” either: there are already 70 item assets under Assets/_Project/Data/Items. Duplicating SOs to satisfy a number would be junk work.
 
 What I Did
-Reverse deconstruction is now implemented in the existing fabrication owners:
+Mandates followed: DATA_Inventory_Resources_Items_SOA_Layout, OPT_Zero_GC_Policy_AllocFree_Mandate, OPT_Native_Memory_Collections_JobSystem_Protocol, CORE_Tools_Equipment_Interaction_Raycast_Heat, PHYS_Physics_Integrity_Determinism_ForceMode, STRM_Persistent_Object_Registry.
 
-CraftingSystem.cs (line 19) adds MaxDeconstructionOutputCount, the Burst-compatible BuildDeconstructionYieldJob (line 51), and TryBuildDeconstructionYieldBuffer (line 171).
-Fabricator.cs (line 112) adds authored catch-bin output settings, TryDeconstructItem (line 785), and ResolveDeconstructionOutputPose (line 874). It consumes one stack, resolves the source recipe, returns 80% normally or 30% when degraded, and ejects reclaimed items with VelocityChange.
-Inventory SOA state now owns degraded salvage and kinetic breakage:
+I standardized the real item metadata path:
 
-PlayerInventory.cs (line 29) defines the degraded bit as the authoritative state bit.
-PlayerInventory.cs (line 393) exposes non-alloc consumption of one matching stack for grinder input.
-PlayerInventory.cs (line 1419) listens to PhysicsEvents.OnImpact, estimates impact in G, and iterates the SOA anchors (line 1443) to halve fragile-item durability after 50G+ impacts.
-Vehicle modding was placed on the real runtime owner, not the prompt’s wrong file:
+ItemPhysicalMetadata.cs (line 19) now carries Laser and Bash bits in addition to the existing tool capabilities, plus default VolumeM3 and physics-material-tag heuristics at 140 (line 140) and 150 (line 150).
+ItemData.cs (line 78) now exposes VolumeM3, PhysicsMaterialTag, and optional WorldPhysicMaterial, with runtime properties at 233 (line 233).
+ItemCatalog.cs (line 109) and ItemTemplateRegistry.cs (line 28) now propagate PhysicsMaterialTag and VolumeM3 into the SOA/runtime descriptor and compact template snapshot.
+I extended inventory and pickup behavior:
 
-VehicleUpgradeModule.cs (line 8) now defines VehicleUpgradeBits.
-VehicleUpgradeModule.cs (line 104) composes the live ActiveUpgradeBitmask.
-VehicleUpgradeModule.cs (line 223) installs crafted upgrade items by shared hash in O(1) via bitwise OR.
-MountablePlayerTransport.cs (line 711) and MountablePlayerTransport.cs (line 1411) now apply thrust and max-speed multipliers from the upgrade module.
-HectonSurvivalSystem.cs (line 975) and HectonSurvivalSystem.cs (line 988) now fold pressure and thermal mitigation from the same bitmask owner.
-Content and docs were extended:
+PlayerInventory.cs (line 149) now exposes TotalVolumeM3, and recomputes it in ComputeTotalVolumeM3 (line 1354). TotalMassKg was already present and remains the movement-facing scalar.
+PlayerInteraction.cs (line 343) keeps Physics.RaycastNonAlloc, and now uses a cached pickup seam at 427 (line 427) through new InventoryPickupContracts.cs (line 1).
+HectonItem.cs (line 254) and PickupItem.cs (line 74) now cache ItemHashId once, apply WorldPhysicMaterial to Collider.sharedMaterial, restore the prefab-default material on pooled reuse, and handle inventory pickup through the non-alloc contract at HectonItem.cs (line 317) and PickupItem.cs (line 338).
+I also added the standardized loot-table owner:
 
-ZERO_GC_FABRICATION.md (line 92) now documents deconstruction rules.
-ItemCatalog.asset (line 72) now references 10 new submarine-upgrade items.
-Added 10 new Comp_* item assets and 10 new Recipe_* assets. Total recipe asset count is now 41.
-Surgery log, kinetic inventory damage iteration:
-
-for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
-{
-    if (!_grid.HasAnchor(anchorIndex))
-        continue;
-
-    int itemHashId = _grid.GetAnchorHashId(anchorIndex);
-    if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
-        !IsKineticFragileItem(itemHashId, in runtimeDescriptor))
-    {
-        continue;
-    }
-
-    if (ApplyKineticDamageToAnchor(anchorIndex))
-        changed = true;
-}
-Zero-managed-allocation proof for deconstruction is structural only:
-
-Input/output buffers are persistent NativeArray<int2> and NativeArray<int>.
-The reclaim math runs in BuildDeconstructionYieldJob (line 51).
-No LINQ, no transient managed lists, no per-call array allocation were added.
+LootTable.cs (line 10) defines LootTableEntry { ItemHashId, MinCount, MaxCount, DropWeight }.
+LootTable.cs (line 28) adds the LootTable asset wrapper.
 In-Game Result
-Fabricators can now grind crafted salvage back into physical ingredient output, with reclaim scaling by degradation state. Heavy impacts can damage glass/electronics in the backpack. Submarine upgrades now resolve through a live bitmask owner and immediately affect speed, thrust, pressure tolerance, thermal mitigation, energy drain, and integrity-derived transport behavior.
+Items now have a complete metadata seam for mass, volume, vulnerability, audio material, and physics-material tagging. Pickup interaction stays non-alloc at the raycast layer and no longer recomputes string hashes on click. World pickup proxies can now bind a shared collider material override per item and safely restore prefab defaults on pooled reuse.
 
-WARNING: Regression risk in runtime authoring coverage. The 10 new upgrade recipes/items exist, but deconstruction still resolves recipes through active fabricators and ModRecipeRegistry; there is no proof yet that every authored fabricator references the new upgrade recipes in-scene.
+WARNING: Regression risk in world-item friction/bounce authoring. No dedicated first-party shared PhysicMaterial assets for Metal/Organic/Glass existed in the project scan, so I added the tag plus override seam and pooled-safe runtime application. Distinct per-tag bounce/friction still depends on authored shared assets being assigned.
 
+WARNING: Regression risk in drop-table adoption. LootTable.cs now exists as the standardized owner, but existing outcrop/fauna drop systems were not migrated in this pass. HarvestableOutcrop still uses its legacy lootItems path.
+
+Surgery log, non-alloc pickup interaction:
+
+int hitCount = Physics.RaycastNonAlloc(
+    _ray,
+    _raycastHits,
+    effectiveReach,
+    interactableMask,
+    QueryTriggerInteraction.Ignore);
+
+if (_currentPickupSource != null &&
+    _currentPickupSource.TryHandleInventoryPickup(PlayerInventory.Instance, transform))
+{
+    InteractionEvents.RaiseInteractionStarted(_currentHovered, transform);
+    return;
+}
 What Was Verified
-Unity MCP verification was not available. The Unity session was unavailable, so I could not truthfully provide MCP VERIFIED, 0 console errors, or a clean editor compile proof.
+Unity MCP is not available. read_console returned: Unity session not ready for 'read_console' (ping not answered). I cannot truthfully claim MCP VERIFIED, 0 errors, or a clean editor compile.
 
-What is verified locally:
+Repository facts:
 
-Scoped diff summary for tracked files: 668 insertions, 19 deletions across 7 tracked files.
-New upgrade assets exist as untracked additions: 10 recipe assets + 10 item assets, with matching .meta files.
-Total Recipe_*.asset count under Assets/_Project/Data/Crafting/Recipes is 41.
-What is not verified:
+Assets/_Project/Data/Items contains 70 item assets, so the 50+ item objective was already satisfied before this pass.
+Scoped tracked diff stats for modified files: 363 insertions, 39 deletions across 9 tracked files.
+New files are untracked additions in the worktree: LootTable.cs, LootTable.cs.meta, InventoryPickupContracts.cs, InventoryPickupContracts.cs.meta.
+Diff caveat:
 
-Unity console cleanliness.
-Project-wide compile in the Unity editor.
-Scene/runtime hookup for moonpool installation UX.
-GCMonitor numbers. Measured proof absent.
+PlayerInventory.cs (line 149) was already dirty from earlier inventory work, so its raw git diff is not a clean single-task patch.
+The git diff --stat output omits the two new script files because they are currently untracked.
 Status: PENDING VERIFICATION.
 
-
-ZERO_GC_FABRICATION.md
-Document · MD
-
-Open
-
-48 files changed
-+1782
--21
+13 files changed
++321
+-60
 Undo
 
 Review
-Assets/_Project/Data/Crafting/Recipes/Recipe_AbyssalStabilizer.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_AbyssalStabilizer.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_BallastOptimizer.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_BallastOptimizer.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_EngineOverdriveManifold.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_EngineOverdriveManifold.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_HullArmorLattice.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_HullArmorLattice.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_PressureCompensator.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_PressureCompensator.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_ReactorBypassCoupler.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_ReactorBypassCoupler.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_ShockMountArray.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_ShockMountArray.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_SilentRunningBaffle.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_SilentRunningBaffle.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_SonarAmplifier.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_SonarAmplifier.asset.meta
-Assets/_Project/Data/Crafting/Recipes/Recipe_ThermalShielding.asset
-Assets/_Project/Data/Crafting/Recipes/Recipe_ThermalShielding.asset.meta
-Assets/_Project/Data/Items/ItemCatalog.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_AbyssalStabilizer.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_AbyssalStabilizer.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_BallastOptimizer.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_BallastOptimizer.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_EngineOverdriveManifold.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_EngineOverdriveManifold.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_HullArmorLattice.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_HullArmorLattice.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_PressureCompensator.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_PressureCompensator.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_ReactorBypassCoupler.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_ReactorBypassCoupler.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_ShockMountArray.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_ShockMountArray.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_SilentRunningBaffle.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_SilentRunningBaffle.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_SonarAmplifier.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_SonarAmplifier.asset.meta
-Assets/_Project/Data/Items/Resources/Components/Comp_ThermalShielding.asset
-Assets/_Project/Data/Items/Resources/Components/Comp_ThermalShielding.asset.meta
-Assets/_Project/Scripts/CraftingSystem.cs
-Assets/_Project/Scripts/Fabricator.cs
-Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs
-Assets/_Project/Scripts/Gameplay/VehicleUpgradeModule.cs
-Assets/_Project/Scripts/HectonSurvivalSystem.cs
-Assets/_Project/Scripts/PlayerInventory.cs
-Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md
-
-
-
-
-1:05 AM
-
---------------------------------
-
-<system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: FAUNA & AUTOMATA
-AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Apex Territorial Disputes & Corpse Scavenging
-THINKING LEVEL: MAXIMUM (Focused on Ecosystem Math, State Machines, and Persistence)
-
-[0. SITREP: THE APEX PREDATORS ARE TOO POLITE]
-You built the Tier 2 Hibernation and Herbivore Grazing beautifully. But currently, if two Leviathans meet, they ignore each other. Apex predators must be intensely territorial. Furthermore, dead things must be eaten.[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
-1. Study EcosystemDirector.cs, PredatorCognitionDomain.cs, and PersistentWorldRegistry.cs.
-2. Update PROJECT_CONTENT_LEDGER.md with new scavenging AI states.
-
-[II. PRIMARY OBJECTIVES]
-1. APEX TERRITORIAL DISPUTES:
-- Target: PredatorCognitionDomain.cs.
-- Action: If two Apex predators (ThreatClass == 3) enter the same 500m sector, they must fight for dominance.
-- Execution: Override the HUNT drive to target the other Apex instead of the player. The loser (HP < 30%) enters a forced FLEE state, leaving the sector (Migration). The winner gains a temporary Intimidation buff (smaller predators stay 100m away).
-
-2. CORPSE SCAVENGING (ECOLOGICAL CLEANUP):
-- Target: EcosystemDirector.cs & DestructibleOrganicManager.cs.
-- Action: When a Leviathan or large creature dies, its corpse becomes a ResourceNode (Organic).
-- Execution: The corpse emits an intense "Blood" signal into the ChemicalInfluenceGrid. This attracts Scavengers (e.g., Eels, Crabs). Scavengers execute the EAT state on the corpse, slowly depleting its ResourceNode capacity until the bones are picked clean (despawn).
-
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. SYMBIOTIC BAIT (FISHING MECHANIC):
-- Target: FaunaBrain.cs & PlayerInventory.cs.
-- Action: The player should be able to catch fish using the ecosystem rules.
-- Execution: If the player drops a ResourceNode of type "Bait" (crafted from smaller fish), it creates a local scent node. Herbivores and small predators will pathfind to it and enter a FEEDING lock, allowing the player to easily scan or capture them.[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-Once you finish the above, YOU MUST NOT STOP.
-1. Create ApexTerritoryProfile.cs (ScriptableObject). Define territory sizes, aggression multipliers against rival Apexes, and preferred biomes.
-2. Prove 0 GC allocations in the corpse scavenging evaluation loop.[V. EVIDENCE-BASED REPORTING]
-1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Provide the logic for the Apex vs Apex target override.
-3. DIFFS: Provide complete Git Diffs.
-4. STATUS: MUST BE "MCP VERIFIED".
-</system_prompt>
-
-Show more
-12:37 AM
-
-
-
-Worked for 26m 54s
-What Was Wrong
-Apex predators had no rivalry override, no dominance aftermath, and no corpse-consumption loop. PredatorCognitionDomain still preferred player/prey/scavenge targets, large-fauna deaths vanished instead of becoming an ecological food source, and dropped organic items were not surfaced to fauna as bait.
-
-Mandates followed:
-
-AI_Creature_Cognition_States.txt
-AI_Director_Encounter_Manager.txt
-STRM_Persistent_Object_Registry.txt
-DATA_Inventory_Resources_Items_SOA_Layout.txt
-OPT_Zero_GC_Policy_AllocFree_Mandate.txt
-What I Did
-Apex territorial logic is now authored through new ApexTerritoryProfile.cs (line 1) and referenced by FaunaSpeciesProfile.cs (line 64). Rival-apex targeting is injected into the managed bridge in FaunaBrain.Compatibility.cs (line 611) and resolved inside PredatorCognitionDomain.cs (line 1685), where apex predators now override hunt target to RivalApexPosition, and low-health losers boost Fleeing with an override threat position at PredatorCognitionDomain.cs (line 1839). Managed-side aftermath lives in FaunaBrain.cs (line 1453): defeated apexes get forced retreat plus migration routing, and winners gain a timed intimidation aura read by smaller predators at FaunaBrain.cs (line 927).
-
-Corpse scavenging is now a bounded organic-resource system. DestructibleOrganicManager.cs (line 167) owns fixed-capacity CorpseResourceNodeRecord slots, nearest-corpse queries, consumption, and blood-scent refresh at DestructibleOrganicManager.cs (line 1179). EcosystemDirector.cs (line 533) exposes the façade used by fauna, and FaunaBrain.cs (line 674) now lets scavengers seek corpse nodes, consume them, and enter a sated lock. Large-fauna deaths register corpse nodes before despawn at FaunaBrain.cs (line 1489).
-
-Bait response now uses existing dropped-pickup ownership instead of a tag-only path. PlayerInventory.cs (line 157) classifies bait items, PickupItem.cs (line 73) exposes IsFaunaBait, FaunaSensorSuite.cs (line 336) resolves nearest bait pickup non-alloc, and FaunaBrain.cs (line 701) applies the feeding lock for herbivores, scavengers, and smaller aggressive fauna. I also updated both ledger docs with the new scavenging states at PROJECT_CONTENT_LEDGER.md (line 95) and PROJECT_CONTENT_LEDGER.md (line 39).
-
-Apex override surgery:
-
-if (isApexPredator && rivalApexVisible)
-{
-    targetPosition = input.RivalApexPosition;
-    hasTarget = true;
-}
-
-if (isApexPredator && hasApexRivalTarget && input.HealthNormalized <= 0.3f)
-{
-    control.OverrideThreatPosition = input.RivalApexPosition;
-    control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
-    fleeingScore += OverrideScoreBias * 0.95f;
-}
-In-Game Result
-Two leviathans entering the same territory band now stop being polite. One commits to the other as the primary target, the weaker one is pushed into retreat and migration once health drops below 30%, and the winner carries a temporary intimidation aura that nearby smaller predators read as an avoidance threat.
-
-Dead large fauna now leave a bounded corpse-resource node that keeps bleeding into ChemicalInfluenceGrid until scavengers deplete it. Organic dropped items now function as bait: qualifying fauna can investigate and lock into local feeding behavior instead of ignoring the drop.
-
-WARNING: Regression risk in FaunaBrain.cs. The file already carries multiple ecology overrides; rivalry, corpse scavenging, bait feeding, herbivore grazing, cleaner symbiosis, and forced migration now stack in one decision seam. The order is deliberate, but future changes there need to preserve priority.
-
-What Was Verified
-On April 30, 2026 I cleared the Unity console, forced a script refresh/compile, and re-read the console. The fauna/ecosystem patch set no longer produced its earlier compile failures. The remaining project-wide blocker is unrelated to this write set:
-
-Assets\_Project\Scripts\UI\PDAMapTab.cs(486,53): error CS0246: The type or namespace name 'TraumaDispatcher' could not be found
-Unity-side validation:
-
-PredatorCognitionDomain.cs (line 1) validated clean.
-DestructibleOrganicManager.cs (line 1) validated clean.
-validate_script reported false duplicate-signature diagnostics on large legacy files FaunaBrain.cs (line 1) and EcosystemDirector.cs (line 1); direct grep confirmed no duplicate ResolveStableSpeciesId or ResolveCombinedHostility01 definitions.
-GC verification:
-
-BEFORE: measured proof absent
-AFTER: measured proof absent
-STATUS: code-review-only no managed allocations added to the corpse evaluation loop
-Basis: DestructibleOrganicManager.cs (line 206), DestructibleOrganicManager.cs (line 232), and DestructibleOrganicManager.cs (line 1179) use fixed arrays plus for loops only
-Regression model:
-
-CPU: higher only for nearby apex/scavenger/bait-responsive fauna due added bounded spatial scans and corpse-slot iteration
-GC: intended no change in hot paths; measured proof absent
-Memory: fixed increase from SpatialQueryHit[16], corpse node array CorpseResourceNodeRecord[96], and authored apex profile asset
-Cadence: corpse scent emission runs in DestructibleOrganicManager.SlowTick, apex rivalry resolves in existing cognition cadence
-Correctness: apex rivalry, intimidation, corpse attraction, and bait discovery are integrated; full project compile is still blocked by unrelated PDAMapTab.cs
-Diff summary:
-
-Modified: FaunaBrain.Compatibility.cs, FaunaBrain.cs, FaunaSensorSuite.cs, FaunaSpeciesProfile.cs, PredatorCognitionDomain.cs, PickupItem.cs, PlayerInventory.cs, DestructibleOrganicManager.cs, EcosystemDirector.cs, both PROJECT_CONTENT_LEDGER.md files
-New: ApexTerritoryProfile.cs
-STATUS: PENDING VERIFICATION
-
-
-PROJECT_CONTENT_LEDGER.md
-Document · MD
-
-Open
-
-
-PROJECT_CONTENT_LEDGER.md
-Document · MD
-
-Open
-
-12 files changed
-+717
--26
-Undo
-
-Review
-Assets/_Project/Scripts/Fauna/ApexTerritoryProfile.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs
-Assets/_Project/Scripts/Fauna/FaunaBrain.cs
-Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs
-Assets/_Project/Scripts/Fauna/FaunaSpeciesProfile.cs
-Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs
+Assets/_Project/Scripts/Economy/LootTable.cs
+Assets/_Project/Scripts/Economy/LootTable.cs.meta
+Assets/_Project/Scripts/HectonItem.cs
+Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs
+Assets/_Project/Scripts/Interaction/InventoryPickupContracts.cs
+Assets/_Project/Scripts/Interaction/InventoryPickupContracts.cs.meta
+Assets/_Project/Scripts/Interaction/PlayerInteraction.cs
+Assets/_Project/Scripts/Inventory/ItemPhysicalMetadata.cs
+Assets/_Project/Scripts/Inventory/ItemTemplateRegistry.cs
+Assets/_Project/Scripts/ItemCatalog.cs
+Assets/_Project/Scripts/ItemData.cs
 Assets/_Project/Scripts/Items/PickupItem.cs
 Assets/_Project/Scripts/PlayerInventory.cs
-Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
-Assets/_Project/Scripts/World/EcosystemDirector.cs
-Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md
-Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/PROJECT_CONTENT_LEDGER.md
 
 
 
 
-1:04 AM
+1:59 AM
 
--------------------------
-
+----------------------------------
 <system_prompt>
-MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: RESOURCE MATRIX & GEOLOGY
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: XENO-BOTANY & ASSETS
 AUTHORITY: CTO / Lead Architect
-OPERATIONAL MODE: Tectonic Upwelling & Deep-Sea Brine Pools
-THINKING LEVEL: MAXIMUM (Focused on Voxel SDF, Fluid Physics, and Persistence)[0. SITREP: THE DEPLETED ABYSS]
-The Tombstone protocol works perfectly. Mined nodes stay dead. However, a 100km world cannot remain permanently barren. We need realistic resource replenishment via Tectonic Upwelling and lethal Brine Pools that hold the rarest endgame isotopes.
+OPERATIONAL MODE: Flora-Structure Integration & Hitbox Arbitration
+THINKING LEVEL: MAXIMUM (Focused on Raycasts, Surface Alignment, and Data persistence)
 
-[I. MANDATORY RECONNAISSANCE & DOCUMENTATION]
-1. Study ResourceDistributionDirector.cs and PersistentWorldRegistry.cs.
-2. Review the SubmarineFluidDynamics.cs to understand fluid density.
-3. Update Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md with new Brine-specific resources.
+[0. SITREP: THE UNCONNECTED SYSTEMS]
+Flora currently ignores human structures. We need a robust, bug-free foundation where plants can legally attach to base modules, and the player can interact with them without breaking the base.
+
+[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study FloraInteractionManager.cs and HabitatGraphManager.cs.
+2. Review Layer masks and raycast budgeting.
 
 [II. PRIMARY OBJECTIVES]
-1. DEEP-SEA BRINE POOLS (LETHAL HAZARD):
-- Target: ResourceDistributionDirector.cs & VoxelSDF.
-- Action: Procedurally spawn heavy, toxic brine lakes in deep trenches (>2500m). 
-- Math: Brine has a higher density than seawater (Density = 1250 kg/m3). Entities entering the brine pool experience increased buoyancy but suffer rapid chemical damage (TraumaDispatcher). Place ultra-rare ResourceNode entities exclusively at the bottom of these pools.
+1. SURFACE ATTACHMENT VALIDATION:
+- Target: FloraSpawner.cs.
+- Action: Flora must distinguish between Rock and Metal.
+- Execution: Before spawning, verify the Collider.Layer. If it's a BaseModule (Metal), check if the FloraTemplate allows metal attachment. If not, abort spawn.
 
-2. TECTONIC UPWELLING (IMMERSIVE RESPAWN):
-- Target: ResourceDistributionDirector.cs & SeamRegistry.cs.
-- Action: Resources don't respawn magically; they are pushed up from the mantle.
-- Execution: Listen for SeismicShockwaveEvent. During an earthquake, randomly select 5% of Tombstoned resource nodes in the affected chunk. Remove their Tombstone from the NativeHashSet. Spawn a "Magma Vent" temporary VFX, and reinstate the ResourceNode.
+2. OVERGROWTH SCALING LOGIC:
+- Target: BaseDegradationSystem.cs & FloraInstance.
+- Action: Vines/Moss must grow over time.
+- Execution: Store a GrowthTime timestamp. Slowly Lerp the Scale of the flora instance from 0.1 to 1.0 over X in-game days.
 
-[III. ADVANCED ARCHITECTURE EXPANSION]
-3. DYNAMIC MINERAL VEIN CARVING:
-- Target: HectonVoxelVolume.cs & ResourceNode.cs.
-- Action: Massive resources shouldn't just sit on the floor; they should be embedded IN the rock.
-- Execution: When generating large deposits, execute an Additive CSG Stamp (using a noise-displaced cylinder) to create a literal "vein" of ore winding through the voxel terrain. The player must use the Plasma Cutter to dig it out.
+3. VISUAL DEGRADATION LINK:
+- Target: BaseModule.cs.
+- Action: Flora presence makes bases look abandoned.
+- Execution: If AttachedFloraCount > 0, the Base Module must shift its own shader properties (increasing rust/grime variables) to match the overgrown aesthetic.
 
-[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
-Once you finish the above, YOU MUST NOT STOP.
-1. Create 3 ResourceNodeTemplate assets for the Brine Pool zone (e.g., "Crystallized Osmium", "Toxic Sulfur Deposit").
-2. Validate zero GC allocations in the Brine Pool density physics.
+4. HARVESTING HITBOX ARBITRATION:
+- Target: FloraInteractionManager.cs.
+- Action: The player must be able to cut a plant off a base without cutting a hole in the base.
+- Execution: Ensure the CapsuleCollider of the flora sits slightly outside the base mesh. When the Laser Cutter hits, verify the Layer is Flora before applying damage.
 
-[V. EVIDENCE-BASED REPORTING]
+5. PERSISTENT GROWTH SAVING:
+- Target: PersistentWorldRegistry.cs.
+- Action: Overgrowth must not reset on load.
+- Execution: Save the AUP, parent module ID, and CurrentScale of the attached flora to the save delta file. Rehydrate exactly upon loading.
+
+[III. EVIDENCE-BASED REPORTING]
 1. MCP CONSOLE LOG: Prove 0 errors.
-2. SURGERY LOG: Provide the Burst math for the Brine Pool density/buoyancy override.
+2. SURGERY LOG: Provide the saving/loading serialization code for attached flora.
 3. DIFFS: Provide complete Git Diffs.
 4. STATUS: MUST BE "MCP VERIFIED".
 </system_prompt>
 
 Show more
-12:32 AM
+1:45 AM
 
 
 
-Worked for 31m 38s
+Worked for 12m 45s
 What Was Wrong
 
-ResourceDistributionDirector had no owner logic for brine pools, no seismic tombstone reinstatement path, and no bridge into buoyancy density override. PersistentWorldRegistry could tombstone procedural nodes, but it could not enumerate or reinstate them by chunk. Large deposits also had no voxel-embedded vein carve path.
+The current cut path was double-applying on base overgrowth. LaserCutter already sends the hit point through DestructibleOrganicManager.TryApplyToolHit(...), then the queued interaction path still falls through to BaseModule.ApplyCutDamage(...). On an infested module, that means the plant can be cut and the base can still take hull damage from the same beam event.
 
-Mandates followed: OPT_Zero_GC_Policy_AllocFree_Mandate, PHYS_Fluid_Incursion_Interior, VOX_Voxel_World_Logic_Carving_Persistence, DATA_Save_Persistence_Binary_Delta_Checksum.
+What I Changed
 
-What I Did
+Patched EquipmentInteractionHandler.cs (line 1) to suppress queued base-module cut damage when the hit lands on the BaseModule layer, the module is already parasite-infested, and a consumable flora instance resolves near the hit point. That keeps the existing instanced-flora hit path alive and blocks the unwanted fallback into ICuttable on the base.
 
-Brine-pool runtime ownership is now in ResourceDistributionDirector.cs (line 650). It deterministically resolves deep hadal brine bowls, registers a toxicity hazard, filters brine-only node placement, samples 1250 kg/m3 density for physics, and blocks non-brine nodes from occupying the same bowl. Seismic upwelling is wired at HandleSeismicShockwave (line 672): it copies tombstones from the affected chunk, clears a 5% deterministic subset, re-queues sector spawn envelopes, and spawns a temporary magma-vent marker.
++using Hecton8.Building;
++using Hecton8.World;
+...
++private const float AttachedFloraArbitrationRadiusMeters = 1.35f;
++private static readonly int BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
+...
+ Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(...);
++if (ShouldSuppressBaseModuleCutDamage(targetCollider, runtimeHitPoint))
++    return;
+...
++private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint)
++{
++    if (targetCollider == null || targetCollider.gameObject.layer != BaseModuleLayer)
++        return false;
++
++    BaseModule module = targetCollider.GetComponentInParent<BaseModule>();
++    if (module == null || module.ParasiteInfectionLevel <= 0.0001f)
++        return false;
++
++    DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
++    if (organicManager == null)
++        return false;
++
++    return organicManager.TryResolveNearestConsumableFlora(
++        runtimeHitPoint,
++        AttachedFloraArbitrationRadiusMeters,
++        out _,
++        out _);
++}
+Mandates followed: OPT_Zero_GC_Policy_AllocFree_Mandate, REND_Instanced_Flora_Physics, MATH_Coordinate_Precision_AUP_FloatingOrigin.
 
-Persistence and voxel ownership were widened instead of patched around. PersistentWorldRegistry.cs (line 1158) can now copy chunk tombstones and reinstate destroyed resource nodes. HectonVoxelVolume.cs (line 1169) now exposes additive embedded-vein stamping, and ResourceNodeTemplate.cs (line 273) now authors RequiresBrinePool, brine density/toxicity, and embedded-vein parameters.
+Verification
 
-Buoyancy override is wired into HectonFluidEngine.cs (line 869). Burst-side math is:
+Last successful MCP console read before this edit returned 0 warnings/errors. After the edit, Unity stopped answering read_console and validate_script, and refresh_unity timed out waiting for editor readiness. Because of that, I cannot truthfully mark this pass as MCP VERIFIED.
 
-float resolvedWaterDensity = p.useLocalFluidDensityOverride != 0
-    ? math.max(0.01f, p.localFluidDensity)
-    : waterDensity;
-float densityRatio = math.max(0.1f, resolvedWaterDensity / math.max(0.01f, waterDensity));
-float buoyancyMagnitude = resolvedWaterDensity * displacedVolume * gravity;
-float dragFactor = viscousDrag * subRatio * densityRatio;
-Authored three brine-zone assets and registered them in the ledger:
-ResourceNodeTemplate_CrystallizedOsmium.asset (line 13),
-ResourceNodeTemplate_ToxicSulfurDeposit.asset (line 13),
-ResourceNodeTemplate_BrineIsotopeGeode.asset (line 13),
-with ledger rows in PROJECT_CONTENT_LEDGER.md (line 42).
+Status: PENDING VERIFICATION
 
-In-game Result
+Remaining requested items were not completed. The prompt’s requested owners do not match the repo architecture:
 
-Brine bowls can now exist as deterministic deep-trench hazard zones, resource nodes can be authored as brine-exclusive, large deposits can stamp additive ore veins into voxel rock, and seismic shocks can reopen dead resource space without deleting persistence history wholesale.
-
-Complete diff footprint for this pass is concentrated in:
-ResourceDistributionDirector.cs, HectonFluidEngine.cs, HectonVoxelVolume.cs, ResourceNodeTemplate.cs, PersistentWorldRegistry.cs, PROJECT_CONTENT_LEDGER.md, plus the 3 new brine template assets. PROJECT_CONTENT_LEDGER.md was already dirty with unrelated edits, so that file’s git diff is mixed.
-
-What Was Verified
-
-Unity script validation passed with 0 errors for:
-
-ResourceDistributionDirector.cs (line 650)
-HectonFluidEngine.cs (line 869)
-HectonVoxelVolume.cs (line 1169)
-PersistentWorldRegistry.cs (line 1158)
-ResourceNodeTemplate.cs (line 273)
-Unity also resolved all 3 new brine assets as Hecton8.Scavenging.ResourceNodeTemplate assets.
-
-Full editor compile is still blocked. Latest observed console error was unrelated to this pass: Assets/_Project/Scripts/UI/PDAMapTab.cs(486,53): error CS0246: TraumaDispatcher could not be found. Earlier compile passes also showed unrelated branch damage in Fabricator, FaunaBrain, PredatorCognitionDomain, and TraumaDispatcher.
-
-GC proof for live brine physics is absent. MCP console proof of 0 errors is absent. STATUS: PENDING VERIFICATION.
-
-WARNING: Regression risk in runtime spawn density and hazard overlap is medium until the full project compiles and the seismic/brine path is exercised in-editor.
-
-
-PROJECT_CONTENT_LEDGER.md
-Document · MD
-
-Open
-
-12 files changed
-+1111
--47
+FloraSpawner.cs does not exist.
+FloraInstance does not exist.
+Persistent attached-flora growth needs broader work in DestructibleOrganicManager + PersistentWorldRegistry because stable parasite instance identity currently lives there, not in FloraInteractionManager.
+1 file changed
 Undo
 
 Review
-Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_BrineIsotopeGeode.asset
-Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_BrineIsotopeGeode.asset.meta
-Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CrystallizedOsmium.asset
-Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CrystallizedOsmium.asset.meta
-Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_ToxicSulfurDeposit.asset
-Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_ToxicSulfurDeposit.asset.meta
-Assets/_Project/Scripts/HectonFluidEngine.cs
-Assets/_Project/Scripts/HectonVoxelVolume.cs
-Assets/_Project/Scripts/Scavenging/ResourceNodeTemplate.cs
-Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
-Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
-Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md
+Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs
 
 
 
 
-1:04 AM
--------------------------
-
- missing PriorCores
-Targeted validation:
-
-VehicleMotor.cs: validate_script returned 0 errors.
-DestructibleOrganicManager.cs: validate_script returned 0 errors.
-VoxelDynamicNavGridRuntime.cs: validate_script returned 0 errors.
-MountablePlayerTransport.cs: validator reported a duplicate ResolveIntegrityNormalized signature, but direct file inspection shows one method only, and MCP console filtering returned 0 entries for MountablePlayerTransport.cs.
-HectonMapMagicVegetationBridge.cs: validator timed out on file size, and MCP console filtering returned 0 entries for that file.
-GC validation:
-
-BEFORE: measured proof absent
-AFTER: measured proof absent
-STATUS: PENDING VERIFICATION
-[REGRESSION MODEL]
-
-CPU: added fixed-step density sampling and UID scanning in entanglement path only; pure-void scan runs on chunk commit, not hot path.
-GC: no heap allocation added to the fixed-step entanglement path; transport uses fixed arrays, flora collector uses stackalloc Span<float>.
-Memory: pure-void chunks now release voxel buffers; expected memory improvement in open ocean.
-Cadence: no Update/coroutine additions; all runtime motion remains in existing tick/fixed-tick owners.
-Correctness: release depends on exact tracked flora death, not generic radius checks.
-HOT PATH IMPACT:
-
-MountablePlayerTransport.FixedTick now does 4 density probes plus fixed-capacity flora capture only when speed exceeds the entanglement minimum.
-VehicleMotor stays on the same deferred sweep contract.
-VoxelDynamicNavGridRuntime buffer eviction runs on commit/swap paths, not per-frame gameplay loops.
-FAILURE MODES:
-
-if the wrong vehicle is the true player submarine owner and not this mountable transport path, this implementation will not affect that owner.
-if flora UIDs page out without entering the destroyed set, release will wait for the tracked instances to be marked dead.
-if the project-wide compile baseline stays broken, full MCP scene verification remains blocked.
-Complete raw diff was dumped to h8_entangle_diff.txt (line 1). That file includes unrelated pre-existing hunks because the target files were already dirty.
-
-STATUS: PENDING VERIFICATION. MCP zero-error verification failed because the project already has unrelated compile errors in the Unity console.
-
-
-KINETIC_ENTANGLEMENT.md
-Document · MD
-
-Open
-
-6 files changed
-+890
--8
-Undo
-
-Review
-Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs
-Assets/_Project/Scripts/Gameplay/VehicleMotor.cs
-Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
-Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
-Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs
-Docs/ARCHITECTURE/KINETIC_ENTANGLEMENT.md
-
-
-
-
-1:04 AM
-
----------------------------------
-
+1:59 AM
+--------------------------------

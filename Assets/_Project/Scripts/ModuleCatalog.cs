@@ -38,6 +38,7 @@ namespace Hecton8.Construction
         /// stable ID / legacy asset name → BuildableData. Строится один раз в OnEnable.
         /// </summary>
         private Dictionary<string, BuildableData> _lookup;
+        private Dictionary<int, BuildableData> _hashLookup;
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary;
         private List<BuildableData> _runtimeModules;
@@ -114,6 +115,18 @@ namespace Hecton8.Construction
         {
             BuildableData data = FindDataById(prefabId);
             return data != null ? data.finalPrefab : null;
+        }
+
+        public BuildableData FindDataByHashId(int moduleHashId)
+        {
+            if (moduleHashId == 0)
+                return null;
+
+            if (_hashLookup == null)
+                RebuildLookup();
+
+            _hashLookup.TryGetValue(moduleHashId, out BuildableData result);
+            return result;
         }
 
         /// <summary>Количество зарегистрированных модулей.</summary>
@@ -274,6 +287,7 @@ namespace Hecton8.Construction
             int authoredCount = allModules != null ? allModules.Count : 0;
             int runtimeCount = _runtimeModules != null ? _runtimeModules.Count : 0;
             _lookup = new Dictionary<string, BuildableData>((authoredCount + runtimeCount) * 2);
+            _hashLookup = new Dictionary<int, BuildableData>(authoredCount + runtimeCount);
             _hasLookupAmbiguity = false;
             _lookupAmbiguitySummary = string.Empty;
             _combinedModulesDirty = true;
@@ -286,6 +300,7 @@ namespace Hecton8.Construction
 
                 AddLookupAlias(data.PersistentId, data);
                 AddLookupAlias(data.name, data);
+                AddHashAlias(data.ModuleHashId, data);
             }
 
             if (_runtimeModules == null)
@@ -299,6 +314,7 @@ namespace Hecton8.Construction
 
                 AddLookupAlias(runtimeModule.PersistentId, runtimeModule);
                 AddLookupAlias(runtimeModule.name, runtimeModule);
+                AddHashAlias(runtimeModule.ModuleHashId, runtimeModule);
             }
         }
 
@@ -332,6 +348,26 @@ namespace Hecton8.Construction
             string incomingName = incoming != null ? incoming.name : "null";
             _lookupAmbiguitySummary =
                 $"Alias '{alias}' resolves to both '{existingName}' and '{incomingName}'.";
+        }
+
+        private void AddHashAlias(int moduleHashId, BuildableData data)
+        {
+            if (moduleHashId == 0 || data == null)
+                return;
+
+            if (_hashLookup.TryGetValue(moduleHashId, out BuildableData existing))
+            {
+                if (!ReferenceEquals(existing, data))
+                {
+                    _hasLookupAmbiguity = true;
+                    if (string.IsNullOrEmpty(_lookupAmbiguitySummary))
+                        _lookupAmbiguitySummary = $"Module hash '{moduleHashId}' resolves to both '{existing.name}' and '{data.name}'.";
+                }
+
+                return;
+            }
+
+            _hashLookup.Add(moduleHashId, data);
         }
 
         private void EnsureCombinedModulesView()
