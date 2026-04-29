@@ -22,6 +22,12 @@ namespace Hecton8.UI
         [SerializeField, Range(0.5f, 1.5f)] private float minimumScale = 0.72f;
         [Tooltip("Upper clamp for the matrix scale so HUD chrome does not bloat on larger displays.")]
         [SerializeField, Range(0.75f, 2f)] private float maximumScale = 1.35f;
+        [Tooltip("Aspect ratio where ultrawide compensation begins pulling edge-anchored HUD clusters inward.")]
+        [SerializeField, Range(1.6f, 2.4f)] private float ultrawideAspectThreshold = 1.8f;
+        [Tooltip("Maximum horizontal inset applied to the content root on very wide displays.")]
+        [SerializeField, Range(0f, 320f)] private float ultrawideHorizontalInset = 128f;
+        [Tooltip("Mild X-axis matrix correction applied on ultrawide displays so the HUD does not feel stretched.")]
+        [SerializeField, Range(0.8f, 1f)] private float ultrawideScaleX = 0.94f;
 
         private Canvas _targetCanvas;
         private RectTransform _contentRoot;
@@ -120,6 +126,9 @@ namespace Hecton8.UI
             matchWidthOrHeight = Mathf.Clamp01(matchWidthOrHeight);
             minimumScale = Mathf.Max(0.1f, minimumScale);
             maximumScale = Mathf.Max(minimumScale, maximumScale);
+            ultrawideAspectThreshold = Mathf.Clamp(ultrawideAspectThreshold, 1.1f, 3f);
+            ultrawideHorizontalInset = Mathf.Max(0f, ultrawideHorizontalInset);
+            ultrawideScaleX = Mathf.Clamp(ultrawideScaleX, 0.1f, 1f);
         }
 
         [ContextMenu("Rebuild UI")]
@@ -271,23 +280,24 @@ namespace Hecton8.UI
                 _targetCanvas != null &&
                 _targetCanvas.renderMode == RenderMode.WorldSpace;
             float scale = isPhysicalWorldSpaceCanvas ? 1f : ComputeScale(screenWidth, screenHeight);
+            ResolveUltrawideAdjustments(screenWidth, screenHeight, isPhysicalWorldSpaceCanvas, out float aspectScaleX, out float horizontalInset);
+            Vector2 resolvedContentSize = new Vector2(
+                Mathf.Max(1f, referenceResolution.x - (horizontalInset * 2f)),
+                referenceResolution.y);
             if (!force &&
                 Mathf.Approximately(scale, _lastAppliedScale) &&
-                contentRoot.sizeDelta == referenceResolution)
+                contentRoot.sizeDelta == resolvedContentSize)
             {
                 _lastScreenWidth = screenWidth;
                 _lastScreenHeight = screenHeight;
                 return;
             }
 
-            _uiMatrix = Matrix4x4.TRS(
-                Vector3.zero,
-                Quaternion.identity,
-                new Vector3(scale, scale, 1f));
+            _uiMatrix = Matrix4x4.Scale(new Vector3(scale * aspectScaleX, scale, 1f));
 
-            contentRoot.sizeDelta = referenceResolution;
+            contentRoot.sizeDelta = resolvedContentSize;
             contentRoot.anchoredPosition = Vector2.zero;
-            contentRoot.localScale = new Vector3(scale, scale, 1f);
+            contentRoot.localScale = new Vector3(scale * aspectScaleX, scale, 1f);
             if (_targetCanvas != null && !Mathf.Approximately(_targetCanvas.scaleFactor, 1f))
                 _targetCanvas.scaleFactor = 1f;
 
@@ -324,6 +334,27 @@ namespace Hecton8.UI
             float logHeight = Mathf.Log(Mathf.Max(0.0001f, scaleY), 2f);
             float blendedScale = Mathf.Pow(2f, Mathf.Lerp(logWidth, logHeight, matchWidthOrHeight));
             return Mathf.Clamp(blendedScale, minimumScale, maximumScale);
+        }
+
+        private void ResolveUltrawideAdjustments(
+            int screenWidth,
+            int screenHeight,
+            bool isPhysicalWorldSpaceCanvas,
+            out float aspectScaleX,
+            out float horizontalInset)
+        {
+            aspectScaleX = 1f;
+            horizontalInset = 0f;
+            if (isPhysicalWorldSpaceCanvas)
+                return;
+
+            float aspect = screenHeight > 0 ? screenWidth / (float)screenHeight : 1f;
+            if (aspect <= ultrawideAspectThreshold)
+                return;
+
+            float normalizedWide = Mathf.Clamp01((aspect - ultrawideAspectThreshold) / Mathf.Max(0.01f, 2.4f - ultrawideAspectThreshold));
+            aspectScaleX = Mathf.Lerp(1f, ultrawideScaleX, normalizedWide);
+            horizontalInset = ultrawideHorizontalInset * normalizedWide;
         }
 
         private void RegisterToTickManager()

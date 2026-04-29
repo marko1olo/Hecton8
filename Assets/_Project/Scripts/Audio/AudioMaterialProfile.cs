@@ -92,6 +92,28 @@ namespace Hecton8.Audio
             },
             new AcousticLayerTemplate
             {
+                Label = "METAL",
+                LayerId = 0,
+                Transmission01 = 0.96f,
+                LowBandAbsorption01 = 0.06f,
+                MidBandAbsorption01 = 0.12f,
+                HighBandAbsorption01 = 0.18f,
+                ReflectionLowPassCutoffHertz = 8200f,
+                EchoSemanticClass = AcousticEchoSemanticClass.Metallic
+            },
+            new AcousticLayerTemplate
+            {
+                Label = "CORAL",
+                LayerId = 0,
+                Transmission01 = 0.54f,
+                LowBandAbsorption01 = 0.18f,
+                MidBandAbsorption01 = 0.42f,
+                HighBandAbsorption01 = 0.68f,
+                ReflectionLowPassCutoffHertz = 2400f,
+                EchoSemanticClass = AcousticEchoSemanticClass.Biological
+            },
+            new AcousticLayerTemplate
+            {
                 Label = "KELP",
                 LayerId = 0,
                 Transmission01 = 0.30f,

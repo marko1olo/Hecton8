@@ -40,7 +40,7 @@ namespace Hecton8.Gameplay
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
-        private readonly Vector3[] _hydrodynamicGhostVelocityHistory = new Vector3[4]; // COLD ALLOC: Vector3[4] — 3-frame added-mass inertial ghost history for vehicle KCC sweeps — owner: VehicleMotor
+        private NativeArray<float3> _hydrodynamicGhostVelocityHistory;
         private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
         private NativeArray<RaycastHit> _scheduledSweepResults;
         private JobHandle _scheduledSweepHandle;
@@ -70,17 +70,20 @@ namespace Hecton8.Gameplay
         {
             _body = body;
             _capsule = capsule;
+            EnsureHydrodynamicGhostState();
             ResetRuntimeState();
         }
 
         private void OnDisable()
         {
             DisposeScheduledSweepState();
+            DisposeHydrodynamicGhostState();
         }
 
         private void OnDestroy()
         {
             DisposeScheduledSweepState();
+            DisposeHydrodynamicGhostState();
         }
 
         /// <summary>Clears all accumulated transport motion state.</summary>
@@ -369,10 +372,10 @@ namespace Hecton8.Gameplay
             if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
                 return safeActualVelocity;
 
-            Vector3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
+            float3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
             Vector3 perceivedVelocity = (Vector3)math.lerp(
                 new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z),
-                new float3(oldestVelocity.x, oldestVelocity.y, oldestVelocity.z),
+                oldestVelocity,
                 ghostBlend);
             return HectonPlayerMotor.SafeVelocity(perceivedVelocity, safeActualVelocity);
         }
@@ -403,7 +406,9 @@ namespace Hecton8.Gameplay
 
         private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
         {
-            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = HectonPlayerMotor.SafeVelocity(velocity);
+            EnsureHydrodynamicGhostState();
+            Vector3 safeVelocity = HectonPlayerMotor.SafeVelocity(velocity);
+            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
             _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
             if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
                 _hydrodynamicGhostSampleCount++;
@@ -411,10 +416,31 @@ namespace Hecton8.Gameplay
 
         private void ResetHydrodynamicGhostState()
         {
+            EnsureHydrodynamicGhostState();
             _hydrodynamicGhostWriteIndex = 0;
             _hydrodynamicGhostSampleCount = 0;
             for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
-                _hydrodynamicGhostVelocityHistory[i] = Vector3.zero;
+                _hydrodynamicGhostVelocityHistory[i] = float3.zero;
+        }
+
+        private void EnsureHydrodynamicGhostState()
+        {
+            if (_hydrodynamicGhostVelocityHistory.IsCreated)
+                return;
+
+            // COLD ALLOC: NativeArray<float3>[4] — 3-frame added-mass inertial ghost history for vehicle KCC sweeps — owner: VehicleMotor
+            _hydrodynamicGhostVelocityHistory = new NativeArray<float3>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void DisposeHydrodynamicGhostState()
+        {
+            if (!_hydrodynamicGhostVelocityHistory.IsCreated)
+                return;
+
+            _hydrodynamicGhostVelocityHistory.Dispose();
+            _hydrodynamicGhostVelocityHistory = default;
+            _hydrodynamicGhostWriteIndex = 0;
+            _hydrodynamicGhostSampleCount = 0;
         }
 
         private static void ResolveCapsulePoints(Rigidbody body, CapsuleCollider capsule, out Vector3 point1, out Vector3 point2, out float radius)
@@ -430,12 +456,10 @@ namespace Hecton8.Gameplay
             point2 = center - (axis * hemisphereOffset);
         }
 
-#pragma warning disable CS0618
         private static int GetHitColliderInstanceId(in RaycastHit hit)
         {
-            return hit.colliderInstanceID;
+            return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
         }
-#pragma warning restore CS0618
 
         private void EnsureScheduledSweepState()
         {

@@ -89,7 +89,6 @@ namespace Hecton8.Core
         private bool _physicsPauseActive;
         private bool _shiftDeadzoneArmed = true;
         private bool _hasPreviousAnchorPosition;
-        private bool _physicsAutoSimulationBeforeShift = true;
         private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
         private bool _driftCheckScheduled;
         private int _physicsResumeFrame = -1;
@@ -304,9 +303,6 @@ namespace Hecton8.Core
             {
                 if (_physicsPauseActive)
                 {
-#pragma warning disable CS0618
-                    UnityEngine.Physics.autoSimulation = _physicsAutoSimulationBeforeShift;
-#pragma warning restore CS0618
                     UnityEngine.Physics.simulationMode = _physicsSimulationModeBeforeShift;
                 }
 
@@ -381,9 +377,7 @@ namespace Hecton8.Core
 
             _isShiftInProgress = true;
             bool trackedBodiesPrepared = false;
-            bool trackedBodiesCommitted = false;
             bool trackedBodiesFinalized = false;
-            bool physicsTransformsSynced = false;
             PausePhysicsForShift();
             try
             {
@@ -405,7 +399,6 @@ namespace Hecton8.Core
                 }
 
                 PhysicsApplySystem.CommitTrackedBodiesForOriginShift(shiftOffset);
-                trackedBodiesCommitted = true;
 
                 Vector3 previousTotalOffset = TotalOffset;
                 TotalOffset += shiftOffset;
@@ -414,8 +407,6 @@ namespace Hecton8.Core
 
                 PublishGlobalOffsets();
                 ResyncCriticalEntityTrackersAfterShift();
-                UnityEngine.Physics.SyncTransforms();
-                physicsTransformsSynced = true;
                 PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
                 trackedBodiesFinalized = true;
                 WorldSpatialHashGrid.HandleOriginShift(_lastShiftEvent);
@@ -424,12 +415,6 @@ namespace Hecton8.Core
             }
             finally
             {
-                if (trackedBodiesCommitted && !physicsTransformsSynced)
-                {
-                    UnityEngine.Physics.SyncTransforms();
-                    physicsTransformsSynced = true;
-                }
-
                 if (trackedBodiesPrepared && !trackedBodiesFinalized)
                     PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
 
@@ -443,10 +428,6 @@ namespace Hecton8.Core
 
         private void PausePhysicsForShift()
         {
-#pragma warning disable CS0618
-            _physicsAutoSimulationBeforeShift = UnityEngine.Physics.autoSimulation;
-            UnityEngine.Physics.autoSimulation = false;
-#pragma warning restore CS0618
             _physicsSimulationModeBeforeShift = UnityEngine.Physics.simulationMode;
             UnityEngine.Physics.simulationMode = SimulationMode.Script;
             _physicsPauseActive = true;
@@ -458,9 +439,6 @@ namespace Hecton8.Core
             if (!_physicsPauseActive)
                 return;
 
-#pragma warning disable CS0618
-            UnityEngine.Physics.autoSimulation = _physicsAutoSimulationBeforeShift;
-#pragma warning restore CS0618
             UnityEngine.Physics.simulationMode = _physicsSimulationModeBeforeShift;
             _physicsPauseActive = false;
             _physicsResumeFrame = -1;

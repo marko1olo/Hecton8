@@ -1,47 +1,100 @@
-// ============================================================================
-// HECTON-8 — ToolDurabilitySystem.cs  v1.0 ENTERPRISE
-// Система износа и ремонта инструментов.
-// Singleton — управляет durability всех инструментов в игре.
-//
-// v1.0 ENTERPRISE FEATURES:
-//   [ADD] Runtime durability tracking — словарь toolID → current durability
-//   [ADD] Durability drain — автоматический износ при использовании
-//   [ADD] Repair system — ремонт за ресурсы
-//   [ADD] Durability events — OnDurabilityChanged, OnToolBroken
-//   [ADD] Save/Load integration — сохранение состояния инструментов
-//   [ADD] Zero GC — pre-allocated dictionaries, cached references
-//
-// АРХИТЕКТУРА:
-//   • Singleton pattern (Instance)
-//   • ISaveable — сохраняет durability в SaveData
-//   • Читается PlayerTool при UsePrimary/UseSecondary
-//   • Отображается в HUD и PDA
-//
-// ZERO GC:
-//   • Dictionary<string, float> — pre-allocated capacity
-//   • Events — cached delegates, no boxing
-//   • No string allocations in hot paths
-// ============================================================================
-
 using System;
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.SaveSystem;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Tools
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Tools/Tool Durability System")]
-    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable
     {
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        private const int MaxTrackedTools = 32;
+        private const float SlowTickDeltaTime = 0.5f;
+        private const float UnderwaterDepthThreshold = 0.5f;
+        private const float ActiveUseWindowSeconds = 0.7f;
+        private const float DegradedThreshold = 0.25f;
+        private const ushort DegradedFlag = 1 << 0;
+        private const ushort BrokenFlag = 1 << 1;
 
         public static ToolDurabilitySystem Instance { get; private set; }
+
+        [Header("── Settings ────────────────────────────────")]
+        [Tooltip("Enable runtime tool wear processing.")]
+        [SerializeField] private bool enableDurabilityDrain = true;
+
+        [Tooltip("Global multiplier applied after authored and template wear.")]
+        [Range(0.1f, 2f)]
+        [SerializeField] private float globalDurabilityMultiplier = 1f;
+
+        [Tooltip("Automatically mark the tool broken once durability reaches zero.")]
+        [SerializeField] private bool autoBreakOnZero = true;
+
+        [Tooltip("Passive corrosion on the currently held tool while the player stays underwater.")]
+        [SerializeField] private bool enableEnvironmentalCorrosion = true;
+
+        [Tooltip("Base corrosion per second for a held underwater tool.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float heldUnderwaterCorrosionPerSecond = 0.04f;
+
+        [Tooltip("Extra corrosion per second when the held underwater tool was used recently.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float activeUseCorrosionPerSecond = 0.12f;
+
+        [Tooltip("Extra corrosion multiplier applied during cold stress.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float coldStressCorrosionMultiplier = 0.55f;
+
+        [Tooltip("Extra corrosion multiplier applied during heat stress.")]
+        [Range(0f, 2f)]
+        [SerializeField] private float heatStressCorrosionMultiplier = 0.35f;
+
+        // COLD ALLOC: Dictionary<string,float>[32] — compatibility durability mirror for UI/save callers — owner: ToolDurabilitySystem
+        private readonly Dictionary<string, float> _durabilityMap = new Dictionary<string, float>(MaxTrackedTools);
+        // COLD ALLOC: Dictionary<string,bool>[32] — compatibility broken-state mirror for UI/save callers — owner: ToolDurabilitySystem
+        private readonly Dictionary<string, bool> _brokenMap = new Dictionary<string, bool>(MaxTrackedTools);
+        // COLD ALLOC: Dictionary<string,int>[32] — tool-id to native durability slot mapping — owner: ToolDurabilitySystem
+        private readonly Dictionary<string, int> _slotByToolId = new Dictionary<string, int>(MaxTrackedTools);
+        // COLD ALLOC: string[32] — native-slot tool-id mirror for event/save fanout — owner: ToolDurabilitySystem
+        private readonly string[] _toolIdBySlot = new string[MaxTrackedTools];
+        // COLD ALLOC: float[32] — authored max durability mirror aligned to slot state — owner: ToolDurabilitySystem
+        private readonly float[] _maxDurabilityBySlot = new float[MaxTrackedTools];
+        // COLD ALLOC: uint[32] — item-hash mirror aligned to slot state — owner: ToolDurabilitySystem
+        private readonly uint[] _itemHashBySlot = new uint[MaxTrackedTools];
+        // COLD ALLOC: bool[32] — managed slot occupancy mirror — owner: ToolDurabilitySystem
+        private readonly bool[] _slotUsed = new bool[MaxTrackedTools];
+
+        private NativeArray<ItemState> _itemStates;
+        private NativeArray<float> _pendingDecayDt;
+        private NativeArray<float> _wearMultipliers;
+        private NativeArray<byte> _slotActive;
+        private NativeQueue<BreakdownEvent> _breakdownEvents;
+        private JobHandle _scheduledDecayHandle;
+        private bool _decayScheduled;
+
+        private HectonSurvivalSystem _playerSurvivalSystem;
+        private PlayerToolManager _playerToolManager;
+        private Transform _playerRoot;
+        private bool _registeredSlowTick;
+        private bool _registeredUpdate;
+        private bool _registeredLateFrame;
+        private bool _saveRegistered;
+
+        public event Action<string, float, float> OnDurabilityChanged;
+        public event Action<string> OnToolBroken;
+        public event Action<string, float> OnToolRepaired;
+
+        public int SavePriority => 20;
+        public int LoadPriority => 20;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -49,151 +102,179 @@ namespace Hecton8.Tools
             Instance = null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  INSPECTOR — SETTINGS
-        // ══════════════════════════════════════════════════════════
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct DurabilityDecayJob : IJobParallelFor
+        {
+            public NativeArray<ItemState> States;
+            public NativeArray<float> PendingDecayDt;
+            [ReadOnly] public NativeArray<float> WearMultipliers;
+            [ReadOnly] public NativeArray<byte> SlotActive;
+            public NativeQueue<BreakdownEvent>.ParallelWriter BreakdownWriter;
 
-        [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Включить автоматический износ инструментов.")]
-        [SerializeField] private bool enableDurabilityDrain = true;
+            public void Execute(int index)
+            {
+                if (SlotActive[index] == 0)
+                {
+                    PendingDecayDt[index] = 0f;
+                    return;
+                }
 
-        [Tooltip("Глобальный множитель износа (1.0 = 100%).")]
-        [Range(0.1f, 2f)]
-        [SerializeField] private float globalDurabilityMultiplier = 1f;
+                float dt = PendingDecayDt[index];
+                PendingDecayDt[index] = 0f;
+                if (dt <= 0f)
+                    return;
 
-        [Tooltip("Автоматически ломать инструмент при durability = 0.")]
-        [SerializeField] private bool autoBreakOnZero = true;
-        [Tooltip("Passive corrosion on the currently held tool while the player stays underwater.")]
-        [SerializeField] private bool enableEnvironmentalCorrosion = true;
-        [Tooltip("Base corrosion per second for a held underwater tool.")]
-        [Range(0f, 1f)]
-        [SerializeField] private float heldUnderwaterCorrosionPerSecond = 0.04f;
-        [Tooltip("Extra corrosion per second when the held underwater tool was used recently.")]
-        [Range(0f, 2f)]
-        [SerializeField] private float activeUseCorrosionPerSecond = 0.12f;
-        [Tooltip("Extra corrosion multiplier applied during cold stress.")]
-        [Range(0f, 2f)]
-        [SerializeField] private float coldStressCorrosionMultiplier = 0.55f;
-        [Tooltip("Extra corrosion multiplier applied during heat stress.")]
-        [Range(0f, 2f)]
-        [SerializeField] private float heatStressCorrosionMultiplier = 0.35f;
+                ItemState state = States[index];
+                DURABILITY_DECAY(ref state, dt, state.hashID, WearMultipliers[index], BreakdownWriter, index);
+                States[index] = state;
+            }
 
-        // ══════════════════════════════════════════════════════════
-        //  RUNTIME STATE
-        // ══════════════════════════════════════════════════════════
+            private static void DURABILITY_DECAY(
+                ref ItemState state,
+                float dt,
+                uint hashID,
+                float wearMultiplier,
+                NativeQueue<BreakdownEvent>.ParallelWriter breakdownWriter,
+                int slotIndex)
+            {
+                float decay = math.max(0f, dt) * math.max(0f, wearMultiplier);
+                state.durability = math.saturate(state.durability - decay);
 
-        /// <summary>
-        /// Словарь: toolID → текущая прочность.
-        /// Pre-allocated capacity 32 (типичное количество инструментов).
-        /// </summary>
-        private readonly Dictionary<string, float> _durabilityMap = new Dictionary<string, float>(32);
+                if (state.durability < DegradedThreshold)
+                    state.flags |= DegradedFlag;
+                else
+                    state.flags &= unchecked((ushort)~DegradedFlag);
 
-        /// <summary>
-        /// Словарь: toolID → сломан ли инструмент.
-        /// </summary>
-        private readonly Dictionary<string, bool> _brokenMap = new Dictionary<string, bool>(32);
-        private HectonSurvivalSystem _playerSurvivalSystem;
-        private PlayerToolManager _playerToolManager;
-        private Transform _playerRoot;
-        private bool _registeredToTick;
-        private const float SlowTickDeltaTime = 0.5f;
-        private const float UnderwaterDepthThreshold = 0.5f;
-        private const float ActiveUseWindowSeconds = 0.7f;
+                if (state.durability <= 0f)
+                {
+                    if ((state.flags & BrokenFlag) == 0)
+                    {
+                        state.flags |= BrokenFlag;
+                        breakdownWriter.Enqueue(new BreakdownEvent
+                        {
+                            SlotIndex = slotIndex,
+                            HashId = hashID
+                        });
+                    }
+                }
+                else
+                {
+                    state.flags &= unchecked((ushort)~BrokenFlag);
+                }
+            }
+        }
 
-        // ══════════════════════════════════════════════════════════
-        //  EVENTS
-        // ══════════════════════════════════════════════════════════
+        private struct BreakdownEvent
+        {
+            public int SlotIndex;
+            public uint HashId;
+        }
 
-        /// <summary>
-        /// Fired when tool durability changes.
-        /// Parameters: (toolID, currentDurability, maxDurability).
-        /// </summary>
-        public event Action<string, float, float> OnDurabilityChanged;
-
-        /// <summary>
-        /// Fired when tool breaks (durability reaches 0).
-        /// Parameter: toolID.
-        /// </summary>
-        public event Action<string> OnToolBroken;
-
-        /// <summary>
-        /// Fired when tool is repaired.
-        /// Parameters: (toolID, newDurability).
-        /// </summary>
-        public event Action<string, float> OnToolRepaired;
-
-        // ══════════════════════════════════════════════════════════
-        //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        private struct ItemState
+        {
+            public float durability;
+            public uint hashID;
+            public ushort flags;
+            public ushort reserved;
+        }
 
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                Debug.LogWarning("[ToolDurabilitySystem] Duplicate instance detected. Destroying.");
                 Destroy(gameObject);
                 return;
             }
 
             Instance = this;
+            EnsureNativeState();
         }
 
         private void OnEnable()
         {
-            TryRegisterWithTickManager();
-            SaveManager.Instance?.Register(this);
+            TryRegisterSlowTick();
+            TryRegisterUpdate();
+            TryRegisterLateFrame();
+            TryRegisterSaveService();
         }
 
         private void Start()
         {
-            TryRegisterWithTickManager();
+            TryRegisterSlowTick();
+            TryRegisterUpdate();
+            TryRegisterLateFrame();
+            TryRegisterSaveService();
         }
 
         private void OnDisable()
         {
-            UnregisterFromTickManager();
-            SaveManager.Instance?.Unregister(this);
+            TryUnregisterLateFrame();
+            TryUnregisterUpdate();
+            TryUnregisterSlowTick();
+            TryUnregisterSaveService();
         }
 
         private void OnDestroy()
         {
+            DisposeNativeState();
+
             if (Instance == this)
                 Instance = null;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API — DURABILITY
-        // ══════════════════════════════════════════════════════════
+        public void Tick(float deltaTime)
+        {
+            TryRegisterSaveService();
+            if (!enableDurabilityDrain || !_itemStates.IsCreated || _decayScheduled || !HasPendingDecay())
+                return;
 
-        /// <summary>
-        /// Возвращает текущую прочность инструмента.
-        /// Если инструмент не зарегистрирован — возвращает maxDurability.
-        /// </summary>
+            DurabilityDecayJob decayJob = new DurabilityDecayJob
+            {
+                States = _itemStates,
+                PendingDecayDt = _pendingDecayDt,
+                WearMultipliers = _wearMultipliers,
+                SlotActive = _slotActive,
+                BreakdownWriter = _breakdownEvents.AsParallelWriter()
+            };
+
+            _scheduledDecayHandle = decayJob.Schedule(MaxTrackedTools, 8);
+            _decayScheduled = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_decayScheduled)
+                return;
+
+            _scheduledDecayHandle.Complete();
+            _decayScheduled = false;
+            SyncManagedMirrorsFromNative();
+            FlushBreakdownEvents();
+        }
+
+        public void SlowTick()
+        {
+            ApplyEnvironmentalCorrosion();
+        }
+
         public float GetDurability(string toolID, float maxDurability)
         {
             if (string.IsNullOrEmpty(toolID))
-                return maxDurability;
+                return Mathf.Max(0f, maxDurability);
 
             if (_durabilityMap.TryGetValue(toolID, out float current))
                 return current;
 
-            // Первое обращение — инициализируем полной прочностью
-            _durabilityMap[toolID] = maxDurability;
-            return maxDurability;
+            EnsureToolRegistered(toolID, unchecked((uint)Animator.StringToHash(toolID)), maxDurability);
+            return Mathf.Max(0f, maxDurability);
         }
 
-        /// <summary>
-        /// Возвращает нормализованную прочность (0-1).
-        /// </summary>
         public float GetDurabilityNormalized(string toolID, float maxDurability)
         {
             float current = GetDurability(toolID, maxDurability);
             return Mathf.Clamp01(current / Mathf.Max(1f, maxDurability));
         }
 
-        /// <summary>
-        /// Проверяет, сломан ли инструмент.
-        /// </summary>
         public bool IsBroken(string toolID)
         {
             if (string.IsNullOrEmpty(toolID))
@@ -202,178 +283,209 @@ namespace Hecton8.Tools
             return _brokenMap.TryGetValue(toolID, out bool broken) && broken;
         }
 
-        /// <summary>
-        /// Уменьшает прочность инструмента.
-        /// Вызывается из PlayerTool.UsePrimary/UseSecondary.
-        /// </summary>
-        /// <param name="toolID">ID инструмента.</param>
-        /// <param name="amount">Количество износа.</param>
-        /// <param name="maxDurability">Максимальная прочность.</param>
+        public bool IsDegraded(string toolID)
+        {
+            if (string.IsNullOrEmpty(toolID))
+                return false;
+
+            int slotIndex = ResolveSlot(toolID);
+            if (slotIndex < 0 || !_itemStates.IsCreated)
+                return false;
+
+            return (_itemStates[slotIndex].flags & DegradedFlag) != 0;
+        }
+
         public void DrainDurability(string toolID, float amount, float maxDurability)
         {
-            if (!enableDurabilityDrain)
+            if (!enableDurabilityDrain || amount <= 0f)
                 return;
 
-            if (string.IsNullOrEmpty(toolID))
+            int slotIndex = EnsureToolRegistered(toolID, unchecked((uint)Animator.StringToHash(toolID)), maxDurability);
+            if (slotIndex < 0)
                 return;
 
-            if (IsBroken(toolID))
-                return; // сломанный инструмент не изнашивается дальше
-
-            float current = GetDurability(toolID, maxDurability);
-            float drain = amount * globalDurabilityMultiplier;
-
-            current = Mathf.Max(0f, current - drain);
-            _durabilityMap[toolID] = current;
-
-            OnDurabilityChanged?.Invoke(toolID, current, maxDurability);
-
-            // Проверка на поломку
-            if (current <= 0f && autoBreakOnZero)
-            {
-                BreakTool(toolID);
-            }
+            _pendingDecayDt[slotIndex] += (amount / Mathf.Max(1f, maxDurability)) * Mathf.Max(0.1f, globalDurabilityMultiplier);
         }
 
-        /// <summary>
-        /// Ремонтирует инструмент на указанное количество.
-        /// </summary>
-        /// <param name="toolID">ID инструмента.</param>
-        /// <param name="amount">Количество восстановления.</param>
-        /// <param name="maxDurability">Максимальная прочность.</param>
+        public void DrainDurabilityByTime(string toolID, uint itemHashId, float scaledDeltaTime, float maxDurability)
+        {
+            if (!enableDurabilityDrain || scaledDeltaTime <= 0f)
+                return;
+
+            int slotIndex = EnsureToolRegistered(toolID, itemHashId, maxDurability);
+            if (slotIndex < 0)
+                return;
+
+            _pendingDecayDt[slotIndex] += scaledDeltaTime * Mathf.Max(0.1f, globalDurabilityMultiplier);
+        }
+
         public void RepairTool(string toolID, float amount, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID))
+            if (string.IsNullOrEmpty(toolID) || amount <= 0f)
                 return;
 
-            float current = GetDurability(toolID, maxDurability);
-            current = Mathf.Min(maxDurability, current + amount);
-            _durabilityMap[toolID] = current;
+            CompleteDecayJobIfScheduled();
 
-            // Если был сломан — чиним
-            if (_brokenMap.ContainsKey(toolID))
-                _brokenMap[toolID] = false;
+            int existingSlot = ResolveSlot(toolID);
+            uint hashId = existingSlot >= 0 ? _itemHashBySlot[existingSlot] : unchecked((uint)Animator.StringToHash(toolID));
+            int slotIndex = EnsureToolRegistered(toolID, hashId, maxDurability);
+            if (slotIndex < 0)
+                return;
 
-            OnToolRepaired?.Invoke(toolID, current);
-            OnDurabilityChanged?.Invoke(toolID, current, maxDurability);
+            ItemState state = _itemStates[slotIndex];
+            state.durability = math.saturate(state.durability + (amount / Mathf.Max(1f, maxDurability)));
+            if (state.durability >= DegradedThreshold)
+                state.flags &= unchecked((ushort)~DegradedFlag);
+
+            state.flags &= unchecked((ushort)~BrokenFlag);
+            _itemStates[slotIndex] = state;
+            _pendingDecayDt[slotIndex] = 0f;
+
+            float repairedDurability = state.durability * Mathf.Max(1f, maxDurability);
+            _durabilityMap[toolID] = repairedDurability;
+            _brokenMap[toolID] = false;
+            OnToolRepaired?.Invoke(toolID, repairedDurability);
+            OnDurabilityChanged?.Invoke(toolID, repairedDurability, Mathf.Max(1f, maxDurability));
         }
 
-        /// <summary>
-        /// Полностью ремонтирует инструмент.
-        /// </summary>
         public void RepairToolFull(string toolID, float maxDurability)
         {
-            RepairTool(toolID, maxDurability, maxDurability);
+            RepairTool(toolID, Mathf.Max(1f, maxDurability), maxDurability);
         }
 
-        /// <summary>
-        /// Ломает инструмент (устанавливает broken flag).
-        /// </summary>
         public void BreakTool(string toolID)
         {
             if (string.IsNullOrEmpty(toolID))
                 return;
 
-            if (IsBroken(toolID))
-                return; // уже сломан
+            CompleteDecayJobIfScheduled();
 
+            int existingSlot = ResolveSlot(toolID);
+            uint hashId = existingSlot >= 0 ? _itemHashBySlot[existingSlot] : unchecked((uint)Animator.StringToHash(toolID));
+            int slotIndex = EnsureToolRegistered(toolID, hashId, 1f);
+            if (slotIndex < 0)
+                return;
+
+            if ((_itemStates[slotIndex].flags & BrokenFlag) != 0)
+                return;
+
+            ItemState state = _itemStates[slotIndex];
+            state.durability = 0f;
+            state.flags |= (ushort)(BrokenFlag | DegradedFlag);
+            _itemStates[slotIndex] = state;
+            _durabilityMap[toolID] = 0f;
             _brokenMap[toolID] = true;
+            OnDurabilityChanged?.Invoke(toolID, 0f, Mathf.Max(1f, _maxDurabilityBySlot[slotIndex]));
             OnToolBroken?.Invoke(toolID);
         }
 
-        /// <summary>
-        /// Сбрасывает прочность инструмента к максимальной.
-        /// Используется при создании нового инструмента.
-        /// </summary>
         public void ResetDurability(string toolID, float maxDurability)
         {
             if (string.IsNullOrEmpty(toolID))
                 return;
 
-            _durabilityMap[toolID] = maxDurability;
+            CompleteDecayJobIfScheduled();
 
-            if (_brokenMap.ContainsKey(toolID))
-                _brokenMap[toolID] = false;
+            int existingSlot = ResolveSlot(toolID);
+            uint hashId = existingSlot >= 0 ? _itemHashBySlot[existingSlot] : unchecked((uint)Animator.StringToHash(toolID));
+            int slotIndex = EnsureToolRegistered(toolID, hashId, maxDurability);
+            if (slotIndex < 0)
+                return;
 
-            OnDurabilityChanged?.Invoke(toolID, maxDurability, maxDurability);
+            ItemState state = _itemStates[slotIndex];
+            state.durability = 1f;
+            state.flags = 0;
+            _itemStates[slotIndex] = state;
+            _pendingDecayDt[slotIndex] = 0f;
+
+            float resolvedMax = Mathf.Max(1f, maxDurability);
+            _durabilityMap[toolID] = resolvedMax;
+            _brokenMap[toolID] = false;
+            OnDurabilityChanged?.Invoke(toolID, resolvedMax, resolvedMax);
         }
-
-        // ══════════════════════════════════════════════════════════
-        //  ISaveable — SAVE / LOAD
-        // ══════════════════════════════════════════════════════════
-
-        public int SavePriority => 20; // после игрока (10)
-        public int LoadPriority => 20;
 
         public void PopulateSaveData(SaveData data)
         {
-            // Сохраняем durability map
+            if (data == null)
+                return;
+
+            CompleteDecayJobIfScheduled();
+
             data.toolDurabilityMap.Clear();
-            foreach (var kvp in _durabilityMap)
+            data.toolBrokenMap.Clear();
+
+            Dictionary<string, float>.Enumerator durabilityEnumerator = _durabilityMap.GetEnumerator();
+            while (durabilityEnumerator.MoveNext())
             {
-                data.toolDurabilityMap[kvp.Key] = kvp.Value;
+                KeyValuePair<string, float> pair = durabilityEnumerator.Current;
+                data.toolDurabilityMap[pair.Key] = pair.Value;
             }
 
-            // Сохраняем broken map
-            data.toolBrokenMap.Clear();
-            foreach (var kvp in _brokenMap)
+            Dictionary<string, bool>.Enumerator brokenEnumerator = _brokenMap.GetEnumerator();
+            while (brokenEnumerator.MoveNext())
             {
-                if (kvp.Value) // сохраняем только сломанные
-                    data.toolBrokenMap[kvp.Key] = true;
+                KeyValuePair<string, bool> pair = brokenEnumerator.Current;
+                if (pair.Value)
+                    data.toolBrokenMap[pair.Key] = true;
             }
         }
 
         public void LoadFromSaveData(SaveData data)
         {
-            // Загружаем durability map
-            _durabilityMap.Clear();
-            foreach (var kvp in data.toolDurabilityMap)
-            {
-                _durabilityMap[kvp.Key] = kvp.Value;
-            }
+            CompleteDecayJobIfScheduled();
+            ClearRuntimeState();
 
-            // Загружаем broken map
-            _brokenMap.Clear();
-            foreach (var kvp in data.toolBrokenMap)
-            {
-                _brokenMap[kvp.Key] = kvp.Value;
-            }
-        }
-        public void SlowTick()
-        {
-            ApplyEnvironmentalCorrosion();
-        }
-
-        private void TryRegisterWithTickManager()
-        {
-            if (_registeredToTick)
+            if (data == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredToTick = true;
-        }
+            Dictionary<string, float>.Enumerator durabilityEnumerator = data.toolDurabilityMap.GetEnumerator();
+            while (durabilityEnumerator.MoveNext())
+            {
+                KeyValuePair<string, float> pair = durabilityEnumerator.Current;
+                float resolvedMaxDurability = Mathf.Max(1f, pair.Value);
+                int slotIndex = EnsureToolRegistered(pair.Key, unchecked((uint)Animator.StringToHash(pair.Key)), resolvedMaxDurability);
+                if (slotIndex < 0)
+                    continue;
 
-        private void UnregisterFromTickManager()
-        {
-            if (!_registeredToTick)
-                return;
+                float normalized = Mathf.Clamp01(pair.Value / resolvedMaxDurability);
+                ItemState state = _itemStates[slotIndex];
+                state.durability = normalized;
+                state.flags = normalized < DegradedThreshold ? DegradedFlag : (ushort)0;
+                _itemStates[slotIndex] = state;
+                _durabilityMap[pair.Key] = pair.Value;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-            _registeredToTick = false;
+            Dictionary<string, bool>.Enumerator brokenEnumerator = data.toolBrokenMap.GetEnumerator();
+            while (brokenEnumerator.MoveNext())
+            {
+                KeyValuePair<string, bool> pair = brokenEnumerator.Current;
+                if (!pair.Value)
+                    continue;
+
+                int slotIndex = ResolveSlot(pair.Key);
+                if (slotIndex < 0)
+                    slotIndex = EnsureToolRegistered(pair.Key, unchecked((uint)Animator.StringToHash(pair.Key)), 1f);
+
+                if (slotIndex < 0)
+                    continue;
+
+                ItemState state = _itemStates[slotIndex];
+                state.flags |= (ushort)(BrokenFlag | DegradedFlag);
+                state.durability = 0f;
+                _itemStates[slotIndex] = state;
+                _durabilityMap[pair.Key] = 0f;
+                _brokenMap[pair.Key] = true;
+            }
+
+            SyncManagedMirrorsFromNative();
         }
 
         private void ApplyEnvironmentalCorrosion()
         {
-            if (!enableEnvironmentalCorrosion)
+            if (!enableEnvironmentalCorrosion || !ResolvePlayerOwners())
                 return;
 
-            if (!ResolvePlayerOwners())
-                return;
-
-            if (_playerSurvivalSystem == null || _playerToolManager == null)
-                return;
-
-            if (_playerSurvivalSystem.Depth <= UnderwaterDepthThreshold)
+            if (_playerSurvivalSystem == null || _playerToolManager == null || _playerSurvivalSystem.Depth <= UnderwaterDepthThreshold)
                 return;
 
             PlayerTool currentTool = _playerToolManager.CurrentTool;
@@ -384,20 +496,23 @@ namespace Hecton8.Tools
             if (metadata == null || string.IsNullOrEmpty(metadata.toolID))
                 return;
 
-            float drain = heldUnderwaterCorrosionPerSecond * SlowTickDeltaTime;
+            float scaledDeltaTime = heldUnderwaterCorrosionPerSecond * SlowTickDeltaTime;
             if (currentTool.WasRecentlyUsed(ActiveUseWindowSeconds))
-                drain += activeUseCorrosionPerSecond * SlowTickDeltaTime;
+                scaledDeltaTime += activeUseCorrosionPerSecond * SlowTickDeltaTime;
 
             if (_playerSurvivalSystem.IsInColdStress)
-                drain *= 1f + (_playerSurvivalSystem.ColdStressSeverity01 * coldStressCorrosionMultiplier);
+                scaledDeltaTime *= 1f + (_playerSurvivalSystem.ColdStressSeverity01 * coldStressCorrosionMultiplier);
 
             if (_playerSurvivalSystem.IsInHeatStress)
-                drain *= 1f + (_playerSurvivalSystem.HeatStressSeverity01 * heatStressCorrosionMultiplier);
+                scaledDeltaTime *= 1f + (_playerSurvivalSystem.HeatStressSeverity01 * heatStressCorrosionMultiplier);
 
-            if (drain <= 0.0001f)
+            if (scaledDeltaTime <= 0.0001f)
                 return;
 
-            DrainDurability(metadata.toolID, drain, metadata.maxDurability);
+            uint itemHashId = currentTool.ToolData != null
+                ? unchecked((uint)LocHash.Compute(currentTool.ToolData.PersistentId))
+                : unchecked((uint)Animator.StringToHash(metadata.toolID));
+            DrainDurabilityByTime(metadata.toolID, itemHashId, scaledDeltaTime, metadata.maxDurability);
         }
 
         private bool ResolvePlayerOwners()
@@ -412,9 +527,314 @@ namespace Hecton8.Tools
                 _playerRoot.TryGetComponent(out _playerSurvivalSystem);
 
             if (_playerToolManager == null)
-                _playerToolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : _playerRoot.GetComponent<PlayerToolManager>());
+                _playerToolManager = GlobalRegistry.Player != null && GlobalRegistry.Player.ToolManager != null
+                    ? GlobalRegistry.Player.ToolManager
+                    : _playerRoot.GetComponent<PlayerToolManager>();
 
             return _playerSurvivalSystem != null && _playerToolManager != null;
+        }
+
+        private void EnsureNativeState()
+        {
+            if (!_itemStates.IsCreated)
+                _itemStates = new NativeArray<ItemState>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ItemState>[32] — authoritative tool durability slots — owner: ToolDurabilitySystem
+
+            if (!_pendingDecayDt.IsCreated)
+                _pendingDecayDt = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] — pending scaled durability-decay dt per slot — owner: ToolDurabilitySystem
+
+            if (!_wearMultipliers.IsCreated)
+                _wearMultipliers = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] — compiled ItemTemplate wear multipliers per slot — owner: ToolDurabilitySystem
+
+            if (!_slotActive.IsCreated)
+                _slotActive = new NativeArray<byte>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[32] — native slot occupancy mask for durability jobs — owner: ToolDurabilitySystem
+
+            if (!_breakdownEvents.IsCreated)
+                _breakdownEvents = new NativeQueue<BreakdownEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BreakdownEvent>(Persistent) — deferred tool-breakdown event lane — owner: ToolDurabilitySystem
+        }
+
+        private void DisposeNativeState()
+        {
+            if (_decayScheduled)
+            {
+                JobHandle disposeHandle = _scheduledDecayHandle;
+
+                if (_itemStates.IsCreated)
+                    disposeHandle = _itemStates.Dispose(disposeHandle);
+
+                if (_pendingDecayDt.IsCreated)
+                    disposeHandle = _pendingDecayDt.Dispose(disposeHandle);
+
+                if (_wearMultipliers.IsCreated)
+                    disposeHandle = _wearMultipliers.Dispose(disposeHandle);
+
+                if (_slotActive.IsCreated)
+                    disposeHandle = _slotActive.Dispose(disposeHandle);
+
+                if (_breakdownEvents.IsCreated)
+                    disposeHandle = _breakdownEvents.Dispose(disposeHandle);
+            }
+            else
+            {
+                if (_itemStates.IsCreated)
+                    _itemStates.Dispose();
+
+                if (_pendingDecayDt.IsCreated)
+                    _pendingDecayDt.Dispose();
+
+                if (_wearMultipliers.IsCreated)
+                    _wearMultipliers.Dispose();
+
+                if (_slotActive.IsCreated)
+                    _slotActive.Dispose();
+
+                if (_breakdownEvents.IsCreated)
+                    _breakdownEvents.Dispose();
+            }
+
+            _itemStates = default;
+            _pendingDecayDt = default;
+            _wearMultipliers = default;
+            _slotActive = default;
+            _breakdownEvents = default;
+            _scheduledDecayHandle = default;
+            _decayScheduled = false;
+        }
+
+        private void ClearRuntimeState()
+        {
+            EnsureNativeState();
+
+            _durabilityMap.Clear();
+            _brokenMap.Clear();
+            _slotByToolId.Clear();
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                _toolIdBySlot[i] = null;
+                _maxDurabilityBySlot[i] = 0f;
+                _itemHashBySlot[i] = 0u;
+                _slotUsed[i] = false;
+                _itemStates[i] = default;
+                _pendingDecayDt[i] = 0f;
+                _wearMultipliers[i] = 0f;
+                _slotActive[i] = 0;
+            }
+
+            while (_breakdownEvents.IsCreated && _breakdownEvents.TryDequeue(out _))
+            {
+            }
+        }
+
+        private int EnsureToolRegistered(string toolID, uint itemHashId, float maxDurability)
+        {
+            if (string.IsNullOrEmpty(toolID))
+                return -1;
+
+            EnsureNativeState();
+
+            if (_slotByToolId.TryGetValue(toolID, out int existingSlot))
+            {
+                UpdateSlotMetadata(existingSlot, toolID, itemHashId, maxDurability);
+                return existingSlot;
+            }
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (_slotUsed[i])
+                    continue;
+
+                _slotUsed[i] = true;
+                _slotByToolId[toolID] = i;
+                _toolIdBySlot[i] = toolID;
+                UpdateSlotMetadata(i, toolID, itemHashId, maxDurability);
+
+                ItemState state = new ItemState
+                {
+                    durability = 1f,
+                    hashID = itemHashId
+                };
+                _itemStates[i] = state;
+                _durabilityMap[toolID] = Mathf.Max(1f, maxDurability);
+                _brokenMap[toolID] = false;
+                return i;
+            }
+
+            return -1;
+        }
+
+        private void UpdateSlotMetadata(int slotIndex, string toolID, uint itemHashId, float maxDurability)
+        {
+            float resolvedMaxDurability = Mathf.Max(1f, maxDurability);
+            _toolIdBySlot[slotIndex] = toolID;
+            _maxDurabilityBySlot[slotIndex] = resolvedMaxDurability;
+            _itemHashBySlot[slotIndex] = itemHashId;
+            _wearMultipliers[slotIndex] = ResolveWearMultiplier(itemHashId);
+            _slotActive[slotIndex] = 1;
+
+            ItemState state = _itemStates[slotIndex];
+            state.hashID = itemHashId;
+            _itemStates[slotIndex] = state;
+
+            if (!_durabilityMap.ContainsKey(toolID))
+                _durabilityMap[toolID] = resolvedMaxDurability;
+
+            if (!_brokenMap.ContainsKey(toolID))
+                _brokenMap[toolID] = false;
+        }
+
+        private static float ResolveWearMultiplier(uint itemHashId)
+        {
+            if (itemHashId != 0u && ItemTemplateRegistry.TryGetTemplate(itemHashId, out ItemTemplate template))
+                return Mathf.Max(0f, template.WearMultiplier);
+
+            return 1f;
+        }
+
+        private int ResolveSlot(string toolID)
+        {
+            return !string.IsNullOrEmpty(toolID) && _slotByToolId.TryGetValue(toolID, out int slotIndex)
+                ? slotIndex
+                : -1;
+        }
+
+        private bool HasPendingDecay()
+        {
+            if (!_pendingDecayDt.IsCreated)
+                return false;
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (_slotUsed[i] && _pendingDecayDt[i] > 0f)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void SyncManagedMirrorsFromNative()
+        {
+            if (!_itemStates.IsCreated)
+                return;
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (!_slotUsed[i])
+                    continue;
+
+                string toolId = _toolIdBySlot[i];
+                if (string.IsNullOrEmpty(toolId))
+                    continue;
+
+                ItemState state = _itemStates[i];
+                float maxDurability = Mathf.Max(1f, _maxDurabilityBySlot[i]);
+                float currentDurability = math.saturate(state.durability) * maxDurability;
+                bool broken = autoBreakOnZero && (state.flags & BrokenFlag) != 0;
+
+                _durabilityMap.TryGetValue(toolId, out float previousDurability);
+                _brokenMap.TryGetValue(toolId, out bool previousBroken);
+
+                _durabilityMap[toolId] = currentDurability;
+                _brokenMap[toolId] = broken;
+
+                if (math.abs(previousDurability - currentDurability) > 0.0001f || previousBroken != broken)
+                    OnDurabilityChanged?.Invoke(toolId, currentDurability, maxDurability);
+            }
+        }
+
+        private void FlushBreakdownEvents()
+        {
+            while (_breakdownEvents.IsCreated && _breakdownEvents.TryDequeue(out BreakdownEvent breakdown))
+            {
+                if ((uint)breakdown.SlotIndex >= (uint)_toolIdBySlot.Length)
+                    continue;
+
+                string toolId = _toolIdBySlot[breakdown.SlotIndex];
+                if (!string.IsNullOrEmpty(toolId))
+                    OnToolBroken?.Invoke(toolId);
+            }
+        }
+
+        private void CompleteDecayJobIfScheduled()
+        {
+            if (!_decayScheduled)
+                return;
+
+            _scheduledDecayHandle.Complete();
+            _decayScheduled = false;
+            SyncManagedMirrorsFromNative();
+            FlushBreakdownEvents();
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
+            _registeredSlowTick = true;
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            _registeredSlowTick = false;
+        }
+
+        private void TryRegisterUpdate()
+        {
+            if (_registeredUpdate)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+            _registeredUpdate = true;
+        }
+
+        private void TryUnregisterUpdate()
+        {
+            if (!_registeredUpdate)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registeredUpdate = false;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = true;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
+        }
+
+        private void TryRegisterSaveService()
+        {
+            if (_saveRegistered || GlobalRegistry.Save == null)
+                return;
+
+            GlobalRegistry.Save.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveService()
+        {
+            if (!_saveRegistered || GlobalRegistry.Save == null)
+                return;
+
+            GlobalRegistry.Save.Unregister(this);
+            _saveRegistered = false;
         }
     }
 }

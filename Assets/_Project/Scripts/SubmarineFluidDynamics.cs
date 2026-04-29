@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -44,7 +45,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Submarine Fluid Dynamics")]
-    public sealed class SubmarineFluidDynamics : MonoBehaviour, IFixedTickable, IOriginShiftListener
+    public sealed class SubmarineFluidDynamics : MonoBehaviour, IFixedTickable, IPostFixedTickable, IOriginShiftListener
     {
         private const int CompartmentCapacity = 8;
         private const int BulkheadCapacity = 7;
@@ -78,6 +79,19 @@ namespace Hecton8.Physics
         private const float DefaultRigidbodyMassUpdateThresholdKg = 5f;
         private const float CriticalFloodAddedMassLinearBoost = 2f;
         private const float CriticalFloodAddedMassAngularBoost = 8f;
+        private const float DefaultHullImplosionDepthThresholdMeters = 4000f;
+        private const float DefaultHullPressureRatingKPa = 40000f;
+        private const float DefaultHullImplosionBreachAreaNormalized = 0.6f;
+        private const float DefaultImplosionDragBonus = 50f;
+        private const float DefaultDeepFreezeDepthThresholdMeters = 3000f;
+        private const float DefaultDeepFreezeSupplyRatioThreshold = 0.1f;
+        private const float IceExpansionVolumeScale = 1.09f;
+        private const float DefaultMaximumCompressionNormalized = 0.15f;
+        private const int EngineCompartmentIndex = 3;
+        private const float DefaultHydraulicLeakRateCubicMetersPerSecond = 0.006f;
+        private const float DefaultMaximumHydraulicViscosity = 1f;
+        private const float DefaultViscositySloshDampingScale = 0.85f;
+        private const float DefaultSludgePlayerDragMultiplier = 3.2f;
         private const float DefaultExteriorBuoyancyForceClampScale = 1.15f;
         private const float DefaultExteriorBuoyancyTorqueClampScale = 1.25f;
         private const int ExteriorBuoyancySampleCount = 8;
@@ -103,7 +117,9 @@ namespace Hecton8.Physics
         private const uint FlagTransferSource = 1u << 5;
         private const uint FlagTransferDestination = 1u << 6;
         private const uint FlagOverflow = 1u << 7;
-        private const uint PersistentFlagsMask = FlagBreached | FlagPurging | FlagFrozen;
+        private const uint FlagRuptured = 1u << 8;
+        private const uint FlagIceExpanded = 1u << 9;
+        private const uint PersistentFlagsMask = FlagBreached | FlagPurging | FlagFrozen | FlagRuptured | FlagIceExpanded;
 
         // Inspector-authored DTO. Unity serialization populates these fields outside constructor flow.
 #pragma warning disable CS0649
@@ -199,6 +215,25 @@ namespace Hecton8.Physics
 
         [Tooltip("Safety limiter for ingress. 0.25 means at most 25% of a compartment volume can enter per second.")]
         [SerializeField, Range(0.01f, 1f)] private float maximumIngressPerSecondNormalized = DefaultMaximumIngressPerSecondNormalized;
+
+        [Header("── Phase Change ──────────────────")]
+        [Tooltip("Below this global supply ratio, deep flooded compartments start freezing instead of merely cooling.")]
+        [SerializeField, Range(0f, 1f)] private float deepFreezeSupplyRatioThreshold = DefaultDeepFreezeSupplyRatioThreshold;
+
+        [Tooltip("Below this depth, power-loss freezing logic stays inactive.")]
+        [SerializeField, Min(0f)] private float deepFreezeDepthThresholdMeters = DefaultDeepFreezeDepthThresholdMeters;
+
+        [Tooltip("Maximum fraction of authored compartment capacity lost to abyssal crush compression.")]
+        [SerializeField, Range(0f, 0.5f)] private float maximumCompressionNormalized = DefaultMaximumCompressionNormalized;
+        [Header("Sludge Viscosity")]
+        [Tooltip("Hydraulic-fluid leak rate in cubic meters per second once the engine room is damaged and flooded.")]
+        [SerializeField, Min(0f)] private float hydraulicLeakRateCubicMetersPerSecond = DefaultHydraulicLeakRateCubicMetersPerSecond;
+        [Tooltip("Maximum normalized sludge viscosity injected into a flooded damaged engine compartment.")]
+        [SerializeField, Range(0f, 1f)] private float maximumHydraulicViscosity = DefaultMaximumHydraulicViscosity;
+        [Tooltip("How strongly sludge viscosity damps delayed slosh torque. Higher values make oily water behave more like syrup.")]
+        [SerializeField, Min(0f)] private float viscositySloshDampingScale = DefaultViscositySloshDampingScale;
+        [Tooltip("Extra environmental drag multiplier applied to the player while walking through sludge-filled flooded rooms.")]
+        [SerializeField, Min(0f)] private float sludgePlayerDragMultiplier = DefaultSludgePlayerDragMultiplier;
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Depressurization Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("Reference exterior pressure used when a breached room vents directly into the ocean or a low-pressure zone.")]
         [SerializeField, Min(1f)] private float externalReferencePressureKPa = DefaultExternalReferencePressureKPa;
@@ -236,6 +271,19 @@ namespace Hecton8.Physics
         [Tooltip("Fallback or manual external depth when atmospheric sea level sampling is disabled.")]
         [SerializeField, Min(0f)] private float manualExternalDepthMeters;
 
+        [Header("── Hull Implosion ──────────────────")]
+        [Tooltip("Below this external depth, implosion escalation never triggers.")]
+        [SerializeField, Min(0f)] private float hullImplosionDepthThresholdMeters = DefaultHullImplosionDepthThresholdMeters;
+
+        [Tooltip("Hydrostatic pressure threshold in kilopascals above which the hull is considered structurally lost.")]
+        [SerializeField, Min(1f)] private float hullPressureRatingKPa = DefaultHullPressureRatingKPa;
+
+        [Tooltip("Maximum fraction of the estimated hull surface that can become open breach area during catastrophic implosion.")]
+        [SerializeField, Range(0f, 1f)] private float hullImplosionBreachAreaNormalized = DefaultHullImplosionBreachAreaNormalized;
+
+        [Tooltip("Extra linear damping applied once the hull enters catastrophic implosion drag.")]
+        [SerializeField, Min(0f)] private float implosionDragBonus = DefaultImplosionDragBonus;
+
         [Header("â”€â”€ Exterior Buoyancy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional explicit collider used to derive exterior buoyancy sample points. Falls back to the first owned collider.")]
         [SerializeField] private Collider exteriorHullCollider;
@@ -268,6 +316,9 @@ namespace Hecton8.Physics
         [SerializeField] private float _debugAppliedLinearDamping;
         [SerializeField] private float _debugAppliedAngularDamping;
         [SerializeField] private float _debugSubmersionFactor;
+        [SerializeField] private bool _debugHullImplosionActive;
+        [SerializeField] private float _debugExternalPressureKPa;
+        [SerializeField] private float _debugCompressionScale = 1f;
         [SerializeField] private Vector3 _debugLastThermalAnomalyCenter;
         [SerializeField] private float _debugLastThermalAnomalyTemperature;
         [SerializeField] private float _debugLastThermalAnomalyDepth;
@@ -296,6 +347,7 @@ namespace Hecton8.Physics
         private float _baseAngularDamping;
         private float _dryRigidbodyMass;
         private float _lastAppliedRigidbodyMass;
+        private float _dynamicCompressionScale = 1f;
         private float _lastAppliedLinearDamping;
         private float _lastAppliedAngularDamping;
         private float _externalSubmergedVolumeCubicMeters;
@@ -318,12 +370,14 @@ namespace Hecton8.Physics
         private bool _baselineDampingCached;
         private bool _baselineMassCached;
         private bool _massPropertiesJobRunning;
+        private bool _hullImplosionActive;
         private int _queuedSplashEventCount;
         private CompartmentState[] _compartmentStates;
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private ISubmarineHullBreachReadModel _structuralBreachReadModel;
         private IHectonOceanKinematics _oceanKinematics;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only structural breach wiring â€” owner: SubmarineFluidDynamics
+        private readonly List<LogisticsPipeNode> _pipeBindingBuffer = new List<LogisticsPipeNode>(16); // COLD ALLOC: List<LogisticsPipeNode>(16) — rare cold-path pipe rupture propagation cache — owner: SubmarineFluidDynamics
         // COLD ALLOC: Vector3[8] â€” cached local buoyancy sample points for exterior waterline force distribution â€” owner: SubmarineFluidDynamics
         private readonly Vector3[] _exteriorBuoyancySampleLocalPoints = new Vector3[ExteriorBuoyancySampleCount];
         // COLD ALLOC: SpatialQueryHit[16] â€” breach depressurization loose-body query scratch â€” owner: SubmarineFluidDynamics
@@ -342,6 +396,8 @@ namespace Hecton8.Physics
         private readonly Collider[] _exteriorThermalContacts = new Collider[ExteriorThermalContactCapacity];
 
         private NativeArray<float> _compartmentFloodVolumes;
+        private NativeArray<float> _compartmentViscosity01;
+        private NativeArray<float> _compartmentBaseMaxVolumes;
         private NativeArray<float> _compartmentMaxVolumes;
         private NativeArray<float> _compartmentBreachAreas;
         private NativeArray<float3> _compartmentLocalCentroids;
@@ -693,8 +749,17 @@ namespace Hecton8.Physics
             RefreshResolvedInertiaTensors();
             SeedNativeStateFromAuthoring();
             RefreshDerivedConstants(DefaultFixedStepSeconds);
-            TryRegister();
-            TryRegisterOriginShiftListener();
+            if (HasActiveHydrodynamicsConfiguration())
+            {
+                TryRegister();
+                TryRegisterOriginShiftListener();
+            }
+            else
+            {
+                TryUnregisterOriginShiftListener();
+                TryUnregister();
+            }
+
             RefreshDebugState();
         }
 
@@ -725,17 +790,23 @@ namespace Hecton8.Physics
             if (!_compartmentFloodVolumes.IsCreated || _rigidbody == null || fixedDeltaTime <= 0f)
                 return;
 
+            if (!HasActiveHydrodynamicsConfiguration())
+                return;
+
             _skipHydrodynamicsForCurrentFixedTick = false;
             _currentFixedDeltaTime = fixedDeltaTime;
             float depthMeters = ResolveExternalDepthMeters();
-            ConsumeCompletedFluidTransfer();
-            ConsumeCompletedFloodMassProperties();
             if (ShouldAbortHydrodynamicsFixedTick())
                 return;
 
             RefreshDerivedConstants(fixedDeltaTime);
             SyncBulkheadSealedFlags();
             SyncStructuralBreachIngress();
+            ApplyDynamicCompressionToCompartments();
+            ApplyIceExpansionPhaseChange();
+            ApplyHydraulicLeakViscosity(fixedDeltaTime);
+            ApplyOverflowSpillover();
+            EvaluateHullImplosion(depthMeters);
             FinalizeCompartmentState();
             if (ShouldAbortHydrodynamicsFixedTick())
                 return;
@@ -773,6 +844,10 @@ namespace Hecton8.Physics
             if (ShouldAbortHydrodynamicsFixedTick())
                 return;
 
+            ApplySludgePlayerDrag();
+            if (ShouldAbortHydrodynamicsFixedTick())
+                return;
+
             ApplyDelayedSloshTorque();
             if (ShouldAbortHydrodynamicsFixedTick())
                 return;
@@ -780,6 +855,13 @@ namespace Hecton8.Physics
             ScheduleFloodMassPropertiesJob();
             ScheduleFluidTransferJob(depthMeters, fixedDeltaTime);
             RefreshDebugState();
+        }
+
+        /// <inheritdoc />
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            CompleteFluidTransferInPostFixedSwapWindow();
+            CompleteFloodMassPropertiesInPostFixedSwapWindow();
         }
 
         /// <summary>
@@ -792,6 +874,16 @@ namespace Hecton8.Physics
             _externalDepthMeters = manualExternalDepthMeters;
             RefreshDebugState();
         }
+
+        /// <summary>
+        /// Sets the current depth-driven compartment compression scale applied to authored flood capacities.
+        /// </summary>
+        public void SetCompartmentCompressionScale(float compressionScale)
+        {
+            _dynamicCompressionScale = math.clamp(compressionScale, 1f - math.saturate(maximumCompressionNormalized), 1f);
+        }
+
+        internal float HullPressureRatingKPa => math.max(1f, hullPressureRatingKPa);
 
         /// <summary>
         /// Enables or resizes a compartment breach opening in square meters.
@@ -865,6 +957,23 @@ namespace Hecton8.Physics
             RefreshDebugState();
         }
 
+        internal void AddCompartmentFloodVolumeDelta(int compartmentIndex, float deltaVolumeCubicMeters)
+        {
+            if (!IsCompartmentIndexValid(compartmentIndex) || !_compartmentFloodVolumes.IsCreated || deltaVolumeCubicMeters == 0f)
+                return;
+
+            CompletePendingFluidTransferForAuthoritativeWrite();
+            CompletePendingFloodMassPropertiesForAuthoritativeWrite();
+            float nextVolume = math.max(0f, _compartmentFloodVolumes[compartmentIndex] + deltaVolumeCubicMeters);
+            _compartmentFloodVolumes[compartmentIndex] = nextVolume;
+
+            float maxVolume = _compartmentMaxVolumes.IsCreated ? math.max(0f, _compartmentMaxVolumes[compartmentIndex]) : 0f;
+            if (maxVolume > Epsilon && nextVolume > maxVolume + Epsilon)
+                _compartmentFlags[compartmentIndex] |= FlagOverflow;
+            else
+                _compartmentFlags[compartmentIndex] &= ~FlagOverflow;
+        }
+
         /// <summary>
         /// Returns normalized flood fill for a compartment. Invalid indices return zero.
         /// </summary>
@@ -896,6 +1005,14 @@ namespace Hecton8.Physics
                 return 0f;
 
             return _compartmentMaxVolumes[compartmentIndex];
+        }
+
+        internal float GetCompartmentViscosity01(int compartmentIndex)
+        {
+            if (!IsCompartmentIndexValid(compartmentIndex) || !_compartmentViscosity01.IsCreated)
+                return 0f;
+
+            return math.saturate(_compartmentViscosity01[compartmentIndex]);
         }
 
         internal bool TryGetBulkheadDefinition(int bulkheadIndex, out int compartmentA, out int compartmentB, out bool isSealed)
@@ -971,6 +1088,40 @@ namespace Hecton8.Physics
             if (_cachedTransform == null || cutStrength <= 0f || normalizedPower <= MinEffectiveBeamPowerForThermalAnomaly())
                 return;
 
+            float heatEnergyJoules = cutStrength * math.saturate(normalizedPower);
+            if (heatEnergyJoules <= 0f)
+                return;
+
+            InjectLocalizedWaterHeatJoulesInternal(runtimePoint, heatEnergyJoules);
+        }
+
+        /// <summary>
+        /// Injects localized heat directly into the exterior water anomaly field using submarine-local coordinates and explicit joules.
+        /// </summary>
+        /// <param name="localPos">Local-space sample point relative to the submarine transform.</param>
+        /// <param name="joules">Absolute heat energy added to the quantized fluid cell.</param>
+        public void InjectLocalizedWaterHeat(float3 localPos, float joules)
+        {
+            if (_cachedTransform == null || joules <= 0f)
+                return;
+
+            Vector3 runtimePoint = _cachedTransform.TransformPoint(new Vector3(localPos.x, localPos.y, localPos.z));
+            InjectLocalizedWaterHeatJoulesInternal(runtimePoint, joules);
+        }
+
+        /// <summary>
+        /// Injects localized heat directly into the exterior water anomaly field using a runtime-space sample point.
+        /// </summary>
+        public void InjectLocalizedWaterHeat(Vector3 runtimePoint, float joules)
+        {
+            InjectLocalizedWaterHeatJoulesInternal(runtimePoint, joules);
+        }
+
+        private void InjectLocalizedWaterHeatJoulesInternal(Vector3 runtimePoint, float heatEnergyJoules)
+        {
+            if (_cachedTransform == null || heatEnergyJoules <= 0f)
+                return;
+
             float surfaceY = ResolveSurfaceHeightAtSample(runtimePoint, runtimePoint.y);
             float depthMeters = math.max(0f, surfaceY - runtimePoint.y);
             if (depthMeters <= 0.01f)
@@ -991,8 +1142,7 @@ namespace Hecton8.Physics
 
             float cellVolume = ExteriorThermalCellSizeMeters * ExteriorThermalCellSizeMeters * ExteriorThermalCellSizeMeters;
             float cellMass = cellVolume * WaterDensityKgPerCubicMeter;
-            float heatEnergy = cutStrength * math.saturate(normalizedPower);
-            float deltaTemperature = heatEnergy / math.max(1f, cellMass * ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius);
+            float deltaTemperature = heatEnergyJoules / math.max(1f, cellMass * ExteriorWaterSpecificHeatCapacityJoulesPerKilogramCelsius);
             if (!math.isfinite(deltaTemperature) || deltaTemperature <= 0f)
                 return;
 
@@ -1101,6 +1251,10 @@ namespace Hecton8.Physics
 
             // COLD ALLOC: NativeArray<float>[8] â€” compartment flood volume storage â€” owner: SubmarineFluidDynamics
             _compartmentFloodVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] — per-compartment normalized sludge viscosity state — owner: SubmarineFluidDynamics
+            _compartmentViscosity01 = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] — authored compartment capacities preserved for dynamic crush compression — owner: SubmarineFluidDynamics
+            _compartmentBaseMaxVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] â€” compartment capacity storage â€” owner: SubmarineFluidDynamics
             _compartmentMaxVolumes = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] â€” active breach area storage â€” owner: SubmarineFluidDynamics
@@ -1142,27 +1296,45 @@ namespace Hecton8.Physics
             if (!_compartmentFloodVolumes.IsCreated)
                 return;
 
-            _configuredCompartmentCount = math.clamp(compartments != null ? compartments.Length : 0, 0, CompartmentCapacity);
+            int highestConfiguredCompartmentIndex = -1;
+            int authoredCompartmentCount = math.clamp(compartments != null ? compartments.Length : 0, 0, CompartmentCapacity);
+            for (int i = 0; i < authoredCompartmentCount; i++)
+            {
+                CompartmentDefinition definition = compartments[i];
+                if (math.isfinite(definition.maxFloodVolumeCubicMeters) && definition.maxFloodVolumeCubicMeters > Epsilon)
+                    highestConfiguredCompartmentIndex = i;
+            }
+
+            _configuredCompartmentCount = highestConfiguredCompartmentIndex + 1;
             for (int i = 0; i < CompartmentCapacity; i++)
             {
                 if (i < _configuredCompartmentCount)
                 {
                     CompartmentDefinition definition = compartments[i];
-                    float maxVolume = math.max(0f, definition.maxFloodVolumeCubicMeters);
-                    float fillVolume = math.saturate(definition.initialFillNormalized) * maxVolume;
-                    float breachArea = math.max(0f, definition.breachAreaSquareMeters);
+                    float maxVolume = math.isfinite(definition.maxFloodVolumeCubicMeters)
+                        ? math.max(0f, definition.maxFloodVolumeCubicMeters)
+                        : 0f;
+                    float initialFillNormalized = math.isfinite(definition.initialFillNormalized)
+                        ? math.saturate(definition.initialFillNormalized)
+                        : 0f;
+                    float fillVolume = initialFillNormalized * maxVolume;
+                    float breachArea = math.isfinite(definition.breachAreaSquareMeters)
+                        ? math.max(0f, definition.breachAreaSquareMeters)
+                        : 0f;
 
+                    _compartmentBaseMaxVolumes[i] = maxVolume;
                     _compartmentMaxVolumes[i] = maxVolume;
                     _compartmentFloodVolumes[i] = fillVolume;
                     _compartmentBreachAreas[i] = breachArea;
                     _compartmentLocalCentroids[i] = new float3(
-                        definition.localCentroid.x,
-                        definition.localCentroid.y,
-                        definition.localCentroid.z);
+                        math.isfinite(definition.localCentroid.x) ? definition.localCentroid.x : 0f,
+                        math.isfinite(definition.localCentroid.y) ? definition.localCentroid.y : 0f,
+                        math.isfinite(definition.localCentroid.z) ? definition.localCentroid.z : 0f);
                     _compartmentFlags[i] = breachArea > Epsilon ? FlagBreached : 0u;
                 }
                 else
                 {
+                    _compartmentBaseMaxVolumes[i] = 0f;
                     _compartmentMaxVolumes[i] = 0f;
                     _compartmentFloodVolumes[i] = 0f;
                     _compartmentBreachAreas[i] = 0f;
@@ -1172,6 +1344,8 @@ namespace Hecton8.Physics
 
                 _comAccumulatorFront[i] = float3.zero;
                 _comAccumulatorBack[i] = float3.zero;
+                if (_compartmentViscosity01.IsCreated)
+                    _compartmentViscosity01[i] = 0f;
             }
 
             if (_massPropertiesFront.IsCreated)
@@ -1180,7 +1354,11 @@ namespace Hecton8.Physics
             if (_massPropertiesBack.IsCreated)
                 _massPropertiesBack[0] = default;
 
-            if (bulkheads != null && bulkheads.Length > 0)
+            if (_configuredCompartmentCount <= 0)
+            {
+                _configuredBulkheadCount = 0;
+            }
+            else if (bulkheads != null && bulkheads.Length > 0)
             {
                 _configuredBulkheadCount = math.clamp(bulkheads.Length, 0, BulkheadCapacity);
                 for (int i = 0; i < _configuredBulkheadCount; i++)
@@ -1226,6 +1404,7 @@ namespace Hecton8.Physics
             }
 
             _ringHead = 0;
+            _dynamicCompressionScale = 1f;
             _fluidJobHandle = default;
             _fluidJobRunning = false;
             _massPropertiesJobHandle = default;
@@ -1264,6 +1443,8 @@ namespace Hecton8.Physics
             }
 
             DisposeDeferred(ref _compartmentFloodVolumes);
+            DisposeDeferred(ref _compartmentViscosity01);
+            DisposeDeferred(ref _compartmentBaseMaxVolumes);
             DisposeDeferred(ref _compartmentMaxVolumes);
             DisposeDeferred(ref _compartmentBreachAreas);
             DisposeDeferred(ref _compartmentLocalCentroids);
@@ -1311,6 +1492,7 @@ namespace Hecton8.Physics
             _lastAppliedAngularDamping = safeAngularDamping;
             _externalSubmergedVolumeCubicMeters = 0f;
             _submersionFactor = 0f;
+            _hullImplosionActive = false;
             _lastExternalBuoyancyForce = Vector3.zero;
             _lastExternalBuoyancyTorque = Vector3.zero;
         }
@@ -1321,6 +1503,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -1339,6 +1522,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -1387,7 +1571,7 @@ namespace Hecton8.Physics
 
             // COLD SYNC JOB: authoritative state writes must not race a pending fluid transfer.
             _fluidJobHandle.Complete();
-            ConsumeCompletedFluidTransfer();
+            ApplyCompletedFluidTransfer();
         }
 
         private void CompletePendingFloodMassPropertiesForAuthoritativeWrite()
@@ -1397,15 +1581,23 @@ namespace Hecton8.Physics
 
             // COLD SYNC JOB: authoritative compartment writes must not race a pending flood mass-properties job.
             _massPropertiesJobHandle.Complete();
-            ConsumeCompletedFloodMassProperties();
+            ApplyCompletedFloodMassProperties();
         }
 
-        private void ConsumeCompletedFluidTransfer()
+        private void CompleteFluidTransferInPostFixedSwapWindow()
         {
             if (!_fluidJobRunning || !_fluidJobHandle.IsCompleted || !_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated)
                 return;
 
             _fluidJobHandle.Complete();
+            ApplyCompletedFluidTransfer();
+        }
+
+        private void ApplyCompletedFluidTransfer()
+        {
+            if (!_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated)
+                return;
+
             _fluidJobHandle = default;
             _fluidJobRunning = false;
 
@@ -1418,12 +1610,20 @@ namespace Hecton8.Physics
             _jobCompartmentFlags = flagFrontBuffer;
         }
 
-        private void ConsumeCompletedFloodMassProperties()
+        private void CompleteFloodMassPropertiesInPostFixedSwapWindow()
         {
             if (!_massPropertiesJobRunning || !_massPropertiesJobHandle.IsCompleted || !_massPropertiesBack.IsCreated)
                 return;
 
             _massPropertiesJobHandle.Complete();
+            ApplyCompletedFloodMassProperties();
+        }
+
+        private void ApplyCompletedFloodMassProperties()
+        {
+            if (!_massPropertiesBack.IsCreated)
+                return;
+
             _massPropertiesJobHandle = default;
             _massPropertiesJobRunning = false;
 
@@ -1556,6 +1756,329 @@ namespace Hecton8.Physics
                 else
                     _compartmentFlags[i] &= ~FlagBreached;
             }
+        }
+
+        private void EvaluateHullImplosion(float depthMeters)
+        {
+            if (!_compartmentBreachAreas.IsCreated || !_compartmentFlags.IsCreated || _configuredCompartmentCount <= 0)
+                return;
+
+            if (_hullImplosionActive)
+            {
+                ApplyCatastrophicImplosionBreaches();
+                return;
+            }
+
+            float safeDepthMeters = math.max(0f, depthMeters);
+            if (safeDepthMeters < math.max(0f, hullImplosionDepthThresholdMeters))
+                return;
+
+            float externalPressureKPa = ResolveExternalPressureKPa(safeDepthMeters);
+            if (!math.isfinite(externalPressureKPa) || externalPressureKPa <= math.max(1f, hullPressureRatingKPa))
+                return;
+
+            _hullImplosionActive = true;
+            ApplyCatastrophicImplosionBreaches();
+        }
+
+        private void ApplyCatastrophicImplosionBreaches()
+        {
+            float totalCapacity = ResolveTotalCapacityCubicMeters();
+            if (!math.isfinite(totalCapacity) || totalCapacity <= Epsilon)
+                return;
+
+            float estimatedHullAreaSquareMeters = ResolveEstimatedHullSurfaceAreaSquareMeters();
+            float clampedBreachAreaSquareMeters = math.max(0f, estimatedHullAreaSquareMeters) *
+                math.saturate(hullImplosionBreachAreaNormalized);
+            if (!math.isfinite(clampedBreachAreaSquareMeters) || clampedBreachAreaSquareMeters <= Epsilon)
+                return;
+
+            for (int i = 0; i < CompartmentCapacity; i++)
+            {
+                if (i >= _configuredCompartmentCount)
+                {
+                    if (_compartmentBreachAreas.IsCreated && i < _compartmentBreachAreas.Length)
+                        _compartmentBreachAreas[i] = 0f;
+
+                    if (_compartmentFlags.IsCreated && i < _compartmentFlags.Length)
+                        _compartmentFlags[i] &= ~FlagBreached;
+
+                    continue;
+                }
+
+                float compartmentCapacity = math.max(0f, _compartmentMaxVolumes[i]);
+                float compartmentWeight = compartmentCapacity > Epsilon
+                    ? compartmentCapacity / totalCapacity
+                    : 0f;
+                float catastrophicBreachArea = clampedBreachAreaSquareMeters * compartmentWeight;
+                _compartmentBreachAreas[i] = catastrophicBreachArea;
+                _compartmentFlags[i] |= FlagBreached;
+            }
+        }
+
+        private void ApplyDynamicCompressionToCompartments()
+        {
+            if (!_compartmentMaxVolumes.IsCreated || !_compartmentBaseMaxVolumes.IsCreated)
+                return;
+
+            float minimumCompressionScale = 1f - math.saturate(maximumCompressionNormalized);
+            float appliedCompressionScale = math.clamp(_dynamicCompressionScale, minimumCompressionScale, 1f);
+            _debugCompressionScale = appliedCompressionScale;
+
+            for (int i = 0; i < CompartmentCapacity; i++)
+            {
+                float authoredCapacity = _compartmentBaseMaxVolumes[i];
+                _compartmentMaxVolumes[i] = authoredCapacity > Epsilon
+                    ? authoredCapacity * appliedCompressionScale
+                    : 0f;
+            }
+        }
+
+        private void ApplyIceExpansionPhaseChange()
+        {
+            if (_atmosphereSystem == null || !_compartmentFloodVolumes.IsCreated || !_compartmentMaxVolumes.IsCreated || _configuredCompartmentCount <= 0)
+                return;
+
+            float externalDepthMeters = math.max(0f, _externalDepthMeters);
+            if (externalDepthMeters < math.max(0f, deepFreezeDepthThresholdMeters))
+            {
+                ClearIceExpansionFlagsIfWarmed();
+                return;
+            }
+
+            float supplyRatio = ResolveAggregatePowerSupplyRatio();
+            if (supplyRatio >= math.saturate(deepFreezeSupplyRatioThreshold))
+            {
+                ClearIceExpansionFlagsIfWarmed();
+                return;
+            }
+
+            for (int compartmentIndex = 0; compartmentIndex < _configuredCompartmentCount; compartmentIndex++)
+            {
+                float currentVolume = _compartmentFloodVolumes[compartmentIndex];
+                if (currentVolume <= Epsilon)
+                {
+                    _compartmentFlags[compartmentIndex] &= ~FlagIceExpanded;
+                    continue;
+                }
+
+                float roomTemperature = _atmosphereSystem.GetRoomTemperatureCelsius(compartmentIndex);
+                if (roomTemperature >= 0f)
+                {
+                    if ((_compartmentFlags[compartmentIndex] & FlagIceExpanded) != 0u)
+                    {
+                        _compartmentFloodVolumes[compartmentIndex] = math.max(0f, currentVolume / IceExpansionVolumeScale);
+                        _compartmentFlags[compartmentIndex] &= ~FlagIceExpanded;
+                    }
+
+                    continue;
+                }
+
+                if ((_compartmentFlags[compartmentIndex] & FlagIceExpanded) != 0u)
+                    continue;
+
+                float expandedVolume = currentVolume * IceExpansionVolumeScale;
+                if (!math.isfinite(expandedVolume))
+                    expandedVolume = currentVolume;
+
+                _compartmentFloodVolumes[compartmentIndex] = expandedVolume;
+                _compartmentFlags[compartmentIndex] |= FlagIceExpanded;
+
+                float compressedCapacity = math.max(0f, _compartmentMaxVolumes[compartmentIndex]);
+                if (expandedVolume <= compressedCapacity + Epsilon)
+                    continue;
+
+                TriggerInternalIceRupture(compartmentIndex, expandedVolume - compressedCapacity);
+            }
+        }
+
+        private void ClearIceExpansionFlagsIfWarmed()
+        {
+            if (_atmosphereSystem == null || !_compartmentFlags.IsCreated || !_compartmentFloodVolumes.IsCreated)
+                return;
+
+            for (int compartmentIndex = 0; compartmentIndex < _configuredCompartmentCount; compartmentIndex++)
+            {
+                if ((_compartmentFlags[compartmentIndex] & FlagIceExpanded) == 0u)
+                    continue;
+
+                if (_atmosphereSystem.GetRoomTemperatureCelsius(compartmentIndex) < 0f)
+                    continue;
+
+                _compartmentFloodVolumes[compartmentIndex] = math.max(0f, _compartmentFloodVolumes[compartmentIndex] / IceExpansionVolumeScale);
+                _compartmentFlags[compartmentIndex] &= ~FlagIceExpanded;
+            }
+        }
+
+        private void ApplyHydraulicLeakViscosity(float fixedDeltaTime)
+        {
+            if (!_compartmentViscosity01.IsCreated || !_compartmentFloodVolumes.IsCreated || _configuredCompartmentCount <= EngineCompartmentIndex)
+                return;
+
+            for (int compartmentIndex = 0; compartmentIndex < _configuredCompartmentCount; compartmentIndex++)
+                _compartmentViscosity01[compartmentIndex] = compartmentIndex == EngineCompartmentIndex
+                    ? _compartmentViscosity01[compartmentIndex]
+                    : math.max(0f, _compartmentViscosity01[compartmentIndex] - (fixedDeltaTime * 0.02f));
+
+            uint engineFlags = _compartmentFlags[EngineCompartmentIndex];
+            float engineVolume = _compartmentFloodVolumes[EngineCompartmentIndex];
+            bool leakingHydraulicFluid = (engineFlags & (FlagBreached | FlagRuptured)) != 0u && engineVolume > Epsilon;
+            if (!leakingHydraulicFluid)
+                return;
+
+            float viscosityGain = math.max(0f, hydraulicLeakRateCubicMetersPerSecond) * math.max(0f, fixedDeltaTime);
+            if (viscosityGain <= 0f)
+                return;
+
+            _compartmentViscosity01[EngineCompartmentIndex] = math.saturate(
+                math.min(
+                    math.max(0f, maximumHydraulicViscosity),
+                    _compartmentViscosity01[EngineCompartmentIndex] + viscosityGain));
+        }
+
+        private void TriggerInternalIceRupture(int compartmentIndex, float overflowVolume)
+        {
+            if (!IsCompartmentIndexValid(compartmentIndex))
+                return;
+
+            float compressedCapacity = math.max(Epsilon, _compartmentMaxVolumes[compartmentIndex]);
+            float authoredCapacity = _compartmentBaseMaxVolumes.IsCreated
+                ? math.max(compressedCapacity, _compartmentBaseMaxVolumes[compartmentIndex])
+                : compressedCapacity;
+            float ruptureArea = math.max(
+                _compartmentBreachAreas[compartmentIndex],
+                math.max(Epsilon, authoredCapacity * 0.08f));
+
+            _compartmentBreachAreas[compartmentIndex] = ruptureArea;
+            _compartmentFlags[compartmentIndex] |= FlagBreached | FlagRuptured | FlagOverflow;
+            PropagateRuptureToConnectedPipes(compartmentIndex);
+        }
+
+        private void ApplySludgePlayerDrag()
+        {
+            if (_cachedPlayerMovement == null || _cachedPlayerTransform == null || !_compartmentViscosity01.IsCreated || !_compartmentFloodVolumes.IsCreated)
+                return;
+
+            Vector3 playerLocalPosition = _cachedTransform != null
+                ? _cachedTransform.InverseTransformPoint(_cachedPlayerTransform.position)
+                : _cachedPlayerTransform.position;
+            int compartmentIndex = ResolveNearestCompartmentIndex(playerLocalPosition);
+            if (compartmentIndex < 0)
+                return;
+
+            float viscosity01 = math.saturate(_compartmentViscosity01[compartmentIndex]);
+            if (viscosity01 <= Epsilon)
+                return;
+
+            float maxVolume = math.max(Epsilon, _compartmentMaxVolumes[compartmentIndex]);
+            float fillRatio = math.saturate(_compartmentFloodVolumes[compartmentIndex] / maxVolume);
+            if (fillRatio <= 0.1f)
+                return;
+
+            float dragMultiplier = 1f + (viscosity01 * math.max(0f, sludgePlayerDragMultiplier) * fillRatio);
+            _cachedPlayerMovement.ApplyEnvironmentalDrag(dragMultiplier);
+        }
+
+        private void ApplyOverflowSpillover()
+        {
+            if (!_compartmentFloodVolumes.IsCreated || !_compartmentMaxVolumes.IsCreated || !_bulkheadPairs.IsCreated)
+                return;
+
+            for (int bulkheadIndex = 0; bulkheadIndex < _configuredBulkheadCount; bulkheadIndex++)
+            {
+                if (_bulkheadSealed[bulkheadIndex] != 0)
+                    continue;
+
+                int2 pair = _bulkheadPairs[bulkheadIndex];
+                SpillOverflowIntoAdjacentCompartment(pair.x, pair.y);
+                SpillOverflowIntoAdjacentCompartment(pair.y, pair.x);
+            }
+        }
+
+        private void SpillOverflowIntoAdjacentCompartment(int sourceIndex, int destinationIndex)
+        {
+            if (!IsCompartmentIndexValid(sourceIndex) || !IsCompartmentIndexValid(destinationIndex))
+                return;
+
+            float sourceMaxVolume = math.max(0f, _compartmentMaxVolumes[sourceIndex]);
+            float destinationMaxVolume = math.max(0f, _compartmentMaxVolumes[destinationIndex]);
+            if (sourceMaxVolume <= Epsilon || destinationMaxVolume <= Epsilon)
+                return;
+
+            float overflowVolume = _compartmentFloodVolumes[sourceIndex] - sourceMaxVolume;
+            if (overflowVolume <= Epsilon)
+                return;
+
+            float availableDestinationCapacity = destinationMaxVolume - _compartmentFloodVolumes[destinationIndex];
+            if (availableDestinationCapacity <= Epsilon)
+                return;
+
+            float transferredVolume = math.min(overflowVolume, availableDestinationCapacity);
+            _compartmentFloodVolumes[sourceIndex] -= transferredVolume;
+            _compartmentFloodVolumes[destinationIndex] += transferredVolume;
+            _compartmentFlags[sourceIndex] |= FlagTransferSource | FlagOverflow;
+            _compartmentFlags[destinationIndex] |= FlagTransferDestination;
+        }
+
+        private void PropagateRuptureToConnectedPipes(int compartmentIndex)
+        {
+            if (_atmosphereSystem == null)
+                return;
+
+            RefreshPipeBindingsCold();
+            int pipeCount = _pipeBindingBuffer.Count;
+            for (int pipeIndex = 0; pipeIndex < pipeCount; pipeIndex++)
+            {
+                LogisticsPipeNode pipe = _pipeBindingBuffer[pipeIndex];
+                if (pipe == null)
+                    continue;
+
+                if (pipe.ResolveAmbientRoomIndex() != compartmentIndex)
+                    continue;
+
+                pipe.TriggerExternalRupture();
+            }
+        }
+
+        private void RefreshPipeBindingsCold()
+        {
+            _pipeBindingBuffer.Clear();
+            GetComponentsInChildren(includeInactive: true, result: _pipeBindingBuffer);
+        }
+
+        private static float ResolveAggregatePowerSupplyRatio()
+        {
+            IPowerGridService powerGridService = GlobalRegistry.PowerGrid;
+            if (powerGridService == null)
+                return 1f;
+
+            float totalConsumption = math.max(0f, powerGridService.TotalConsumption);
+            if (totalConsumption <= Epsilon)
+                return 1f;
+
+            float totalGeneration = math.max(0f, powerGridService.TotalGeneration);
+            return math.saturate(totalGeneration / totalConsumption);
+        }
+
+        private int ResolveNearestCompartmentIndex(Vector3 localPosition)
+        {
+            if (!_compartmentLocalCentroids.IsCreated || _configuredCompartmentCount <= 0)
+                return -1;
+
+            int bestIndex = -1;
+            float bestDistanceSq = float.MaxValue;
+            for (int compartmentIndex = 0; compartmentIndex < _configuredCompartmentCount; compartmentIndex++)
+            {
+                float3 centroid = _compartmentLocalCentroids[compartmentIndex];
+                float distanceSq = math.lengthsq(new float3(localPosition.x, localPosition.y, localPosition.z) - centroid);
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                bestIndex = compartmentIndex;
+            }
+
+            return bestIndex;
         }
 
         private void SimulateIngress(float depthMeters, float fixedDeltaTime)
@@ -1884,6 +2407,20 @@ namespace Hecton8.Physics
 
         private void FinalizeCompartmentState()
         {
+            if (_configuredCompartmentCount <= 0)
+            {
+                _totalFloodVolumeCubicMeters = 0f;
+                _floodFillRatio = 0f;
+
+                if (_compartmentStates != null)
+                {
+                    for (int i = 0; i < CompartmentCapacity; i++)
+                        _compartmentStates[i] = default;
+                }
+
+                return;
+            }
+
             float totalFloodVolume = 0f;
             for (int i = 0; i < CompartmentCapacity; i++)
             {
@@ -1975,7 +2512,8 @@ namespace Hecton8.Physics
             float floodMass = _massPropertiesFront.IsCreated && _massPropertiesFront.Length > 0
                 ? math.max(0f, _massPropertiesFront[0].FloodMassKilograms)
                 : math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
-            float targetMass = dryMass + floodMass;
+            float maxFloodMass = math.max(0f, ResolveTotalCapacityCubicMeters()) * WaterDensityKgPerCubicMeter;
+            float targetMass = math.clamp(dryMass + floodMass, dryMass, dryMass + maxFloodMass);
             if (!math.isfinite(targetMass))
             {
                 EmergencyResetHydrodynamics("ApplyFloodMassPropertiesToRigidbody.TargetMass");
@@ -2449,6 +2987,9 @@ namespace Hecton8.Physics
 
             float targetLinearDamping = _baseLinearDamping * (1f + (linearScale * dampingSubmersion));
             float targetAngularDamping = _baseAngularDamping * (1f + (angularScale * dampingSubmersion));
+            if (_hullImplosionActive)
+                targetLinearDamping += math.max(0f, implosionDragBonus);
+
             if (!float.IsFinite(targetLinearDamping) || !float.IsFinite(targetAngularDamping))
             {
                 EmergencyResetHydrodynamics("ApplyAddedMassDamping.Result");
@@ -2732,7 +3273,9 @@ namespace Hecton8.Physics
                     return;
                 }
 
-                totalSloshTorque += -delayedAngularVelocity * (fillRatio * torqueScale * sloshMass * freesurf);
+                float viscosity01 = _compartmentViscosity01.IsCreated ? math.saturate(_compartmentViscosity01[i]) : 0f;
+                float viscosityDamping = 1f / (1f + (viscosity01 * math.max(0f, viscositySloshDampingScale)));
+                totalSloshTorque += -delayedAngularVelocity * (fillRatio * torqueScale * sloshMass * freesurf * viscosityDamping);
                 if (math.any(math.isnan(totalSloshTorque)) || !math.all(math.isfinite(totalSloshTorque)))
                 {
                     EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Accumulate");
@@ -3139,6 +3682,8 @@ namespace Hecton8.Physics
             _debugAppliedLinearDamping = _lastAppliedLinearDamping;
             _debugAppliedAngularDamping = _lastAppliedAngularDamping;
             _debugSubmersionFactor = _submersionFactor;
+            _debugHullImplosionActive = _hullImplosionActive;
+            _debugExternalPressureKPa = ResolveExternalPressureKPa(_externalDepthMeters);
         }
 
         private void SeedFloodMassPropertiesBuffers(float3 targetFloodCenter, float floodMassRatio)
@@ -3169,9 +3714,58 @@ namespace Hecton8.Physics
 
             float totalCapacity = 0f;
             for (int i = 0; i < _configuredCompartmentCount; i++)
-                totalCapacity += _compartmentMaxVolumes[i];
+            {
+                float compartmentCapacity = _compartmentMaxVolumes[i];
+                if (!math.isfinite(compartmentCapacity) || compartmentCapacity <= 0f)
+                    continue;
+
+                totalCapacity += compartmentCapacity;
+            }
 
             return totalCapacity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasActiveHydrodynamicsConfiguration()
+        {
+            return _configuredCompartmentCount > 0 ||
+                   exteriorHullCollider != null ||
+                   (math.isfinite(exteriorDisplacementVolumeCubicMeters) && exteriorDisplacementVolumeCubicMeters > Epsilon);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveExternalPressureKPa(float depthMeters)
+        {
+            float hydrostaticPressureKPa = math.max(0f, depthMeters) *
+                WaterDensityKgPerCubicMeter *
+                GravityMetersPerSecondSquared *
+                0.001f;
+            float pressureKPa = math.max(1f, externalReferencePressureKPa) + hydrostaticPressureKPa;
+            return math.isfinite(pressureKPa) ? pressureKPa : math.max(1f, externalReferencePressureKPa);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveEstimatedHullSurfaceAreaSquareMeters()
+        {
+            if (exteriorHullCollider != null)
+            {
+                Bounds hullBounds = exteriorHullCollider.bounds;
+                Vector3 hullSize = hullBounds.size;
+                if (IsFiniteVector(hullSize))
+                {
+                    float x = math.max(Epsilon, hullSize.x);
+                    float y = math.max(Epsilon, hullSize.y);
+                    float z = math.max(Epsilon, hullSize.z);
+                    return 2f * ((x * y) + (x * z) + (y * z));
+                }
+            }
+
+            float displacementVolume = ResolveExteriorDisplacementVolumeCubicMeters();
+            if (!math.isfinite(displacementVolume) || displacementVolume <= Epsilon)
+                displacementVolume = math.max(Epsilon, ResolveTotalCapacityCubicMeters());
+
+            float characteristicLength = math.max(Epsilon, SafeCubeRoot(displacementVolume));
+            return 6f * characteristicLength * characteristicLength;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3247,6 +3841,11 @@ namespace Hecton8.Physics
             exteriorDisplacementVolumeCubicMeters = math.max(0f, exteriorDisplacementVolumeCubicMeters);
             exteriorBuoyancyForceClampScale = math.clamp(exteriorBuoyancyForceClampScale, 1f, 2f);
             exteriorBuoyancyTorqueClampScale = math.clamp(exteriorBuoyancyTorqueClampScale, 1f, 3f);
+            hullImplosionDepthThresholdMeters = math.max(0f, hullImplosionDepthThresholdMeters);
+            hullPressureRatingKPa = math.max(1f, hullPressureRatingKPa);
+            hullImplosionBreachAreaNormalized = math.saturate(hullImplosionBreachAreaNormalized);
+            implosionDragBonus = math.max(0f, implosionDragBonus);
+            addedMassLinearDampingScale = math.saturate(addedMassLinearDampingScale);
             addedMassAngularDampingScale = math.saturate(addedMassAngularDampingScale);
 
             if (!UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode &&

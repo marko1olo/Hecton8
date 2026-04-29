@@ -103,8 +103,6 @@ namespace Hecton8.Narrative
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
-
-            NarrativeEvents.OnDiscoveryMade += HandleNarrativeDiscovery;
         }
 
         private void OnDisable()
@@ -113,8 +111,6 @@ namespace Hecton8.Narrative
 
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
-
-            NarrativeEvents.OnDiscoveryMade -= HandleNarrativeDiscovery;
 
             if (_isPlaying)
                 StopPlayback();
@@ -262,11 +258,6 @@ namespace Hecton8.Narrative
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
-
-        private void HandleNarrativeDiscovery(string discoveryId)
-        {
-            // NarrativeDirector уже обработал — ничего дополнительного не нужно
-        }
 
         private void TryRegister()
         {

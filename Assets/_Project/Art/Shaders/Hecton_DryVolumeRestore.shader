@@ -46,6 +46,9 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
 
         TEXTURE3D(_HectonBiolumVolumeTex);
         SAMPLER(sampler_HectonBiolumVolumeTex);
+        Texture2D<int> _HectonMarineSnowSonarGlowTex;
+        float4 _HectonMarineSnowSonarGlowTexelSize;
+        float4 _HectonMarineSnowSonarGlowParams;
 
         struct Attributes
         {
@@ -143,6 +146,20 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0);
         }
 
+        float3 SampleMarineSnowSonarGlow(float2 screenUV)
+        {
+            if (_HectonMarineSnowSonarGlowParams.y <= 0.0001 || _HectonMarineSnowSonarGlowTexelSize.z < 1.0 || _HectonMarineSnowSonarGlowTexelSize.w < 1.0)
+                return 0.0;
+
+            int2 pixel = int2(
+                saturate(screenUV.x) * (_HectonMarineSnowSonarGlowTexelSize.z - 1.0) + 0.5,
+                saturate(screenUV.y) * (_HectonMarineSnowSonarGlowTexelSize.w - 1.0) + 0.5);
+            int rawGlow = _HectonMarineSnowSonarGlowTex.Load(int3(pixel, 0)).r;
+            float decodedGlow = saturate(rawGlow / max(_HectonMarineSnowSonarGlowParams.z, 1.0));
+            float intensity = decodedGlow * _HectonMarineSnowSonarGlowParams.y;
+            return float3(0.12, 0.42, 0.58) * intensity;
+        }
+
         half4 FragRestore(Varyings input) : SV_Target
         {
             return SAMPLE_TEXTURE2D_X(_Crest_CameraColorTexture, sampler_LinearClamp, input.screenUV);
@@ -166,6 +183,8 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
                 float depthBiolumScale = saturate(1.0 - (linearEyeDepth * 0.0125));
                 resolvedColor += (half3)(SampleBiolumVolumeRadiance(absolutePositionWS) * depthBiolumScale * 0.22);
             }
+
+            resolvedColor += (half3)SampleMarineSnowSonarGlow(input.screenUV);
 
             half dither = (half)(ResolveBlueNoise(input.screenUV) - 0.5) * (half)(_HectonNoirResolveSettings.y / 255.0);
             return half4(max(resolvedColor + dither.xxx, 0.0h), sourceColor.a);

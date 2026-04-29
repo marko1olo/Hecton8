@@ -703,7 +703,7 @@ namespace Hecton8.UI
                 GameObject indicator = row.selectedIndicator;
                 if (indicator != null)
                 {
-                    indicator.SetActive(i == _selectedIndex);
+                    SetIndicatorVisible(indicator, i == _selectedIndex);
                 }
 
                 if (_rowBackgrounds != null && i < _rowBackgrounds.Length && _rowBackgrounds[i] != null)
@@ -727,6 +727,20 @@ namespace Hecton8.UI
                         : BindingBg;
                 }
             }
+        }
+
+        private static void SetIndicatorVisible(GameObject indicator, bool visible)
+        {
+            if (indicator == null)
+                return;
+
+            CanvasGroup canvasGroup = indicator.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = indicator.AddComponent<CanvasGroup>();
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
         }
 
         private void UpdateStatusForSelected()

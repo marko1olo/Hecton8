@@ -17,6 +17,7 @@ Shader "NASAPunk/SuitVisor"
         _HUD_Scale ("HUD Scale", Range(0.4, 1.2)) = 0.68
         _HUD_EdgeFade ("HUD Edge Fade", Range(0.01, 0.5)) = 0.25
         _HUD_Offset ("HUD Offset", Vector) = (0, 0, 0, 0)
+        _ToolBatteryNormalized ("Tool Battery Normalized", Range(0, 1)) = 0
 
         [Header(Imperfections)]
         _ScratchNormalMap ("Scratch Normal Map", 2D) = "bump" {}
@@ -112,6 +113,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _HUD_Scale;
                 float  _HUD_EdgeFade;
                 float4 _HUD_Offset;
+                float  _ToolBatteryNormalized;
 
                 float4 _ScratchNormalMap_ST;
                 float  _ScratchNormalStrength;
@@ -207,6 +209,65 @@ Shader "NASAPunk/SuitVisor"
             {
                 float2 centered = uv * 2.0 - 1.0;
                 return pow(saturate(length(centered)), falloff);
+            }
+
+            float Bayer4x4(float2 pixelCoord)
+            {
+                float2 cell = floor(frac(pixelCoord * 0.25) * 4.0);
+
+                if (cell.y < 0.5)
+                {
+                    if (cell.x < 0.5) return 0.0 / 16.0;
+                    if (cell.x < 1.5) return 8.0 / 16.0;
+                    if (cell.x < 2.5) return 2.0 / 16.0;
+                    return 10.0 / 16.0;
+                }
+
+                if (cell.y < 1.5)
+                {
+                    if (cell.x < 0.5) return 12.0 / 16.0;
+                    if (cell.x < 1.5) return 4.0 / 16.0;
+                    if (cell.x < 2.5) return 14.0 / 16.0;
+                    return 6.0 / 16.0;
+                }
+
+                if (cell.y < 2.5)
+                {
+                    if (cell.x < 0.5) return 3.0 / 16.0;
+                    if (cell.x < 1.5) return 11.0 / 16.0;
+                    if (cell.x < 2.5) return 1.0 / 16.0;
+                    return 9.0 / 16.0;
+                }
+
+                if (cell.x < 0.5) return 15.0 / 16.0;
+                if (cell.x < 1.5) return 7.0 / 16.0;
+                if (cell.x < 2.5) return 13.0 / 16.0;
+                return 5.0 / 16.0;
+            }
+
+            float ComputeToolBatteryLedMask(float2 hudUv, float battery01, out float activeMask)
+            {
+                float2 localUv = (hudUv - float2(0.765, 0.845)) / float2(0.17, 0.055);
+                float activeSegmentCount = ceil(saturate(battery01) * 4.0 - 0.0001);
+                float mask = 0.0;
+                activeMask = 0.0;
+
+                [unroll(4)]
+                for (int segmentIndex = 0; segmentIndex < 4; segmentIndex++)
+                {
+                    float segmentMin = 0.08 + (segmentIndex * 0.22);
+                    float segmentMax = segmentMin + 0.14;
+                    float segmentMask =
+                        step(segmentMin, localUv.x) *
+                        step(localUv.x, segmentMax) *
+                        step(0.18, localUv.y) *
+                        step(localUv.y, 0.82);
+                    float segmentActive = step((float)segmentIndex + 0.5, activeSegmentCount);
+                    mask += segmentMask;
+                    activeMask += segmentMask * segmentActive;
+                }
+
+                return mask;
             }
 
             float Hash21(float2 p)
@@ -558,6 +619,13 @@ Shader "NASAPunk/SuitVisor"
                 float hudAlpha = hudSample.a * hudEdgeFade * rtMask;
                 float hudTintStrength = saturate(_HUD_Color.a);
                 float3 hudColor = lerp(hudSample.rgb, hudSample.rgb * _HUD_Color.rgb, hudTintStrength) * _HUD_Intensity;
+                float batteryActiveMask;
+                float batteryLedMask = ComputeToolBatteryLedMask(hudDistortedUV, _ToolBatteryNormalized, batteryActiveMask);
+                float batteryInactiveMask = saturate(batteryLedMask - batteryActiveMask);
+                float3 batteryActiveColor = _HUD_Color.rgb * (_HUD_Intensity * 1.35);
+                float3 batteryInactiveColor = _HUD_Color.rgb * (_HUD_Intensity * 0.18);
+                hudColor += (batteryActiveColor * batteryActiveMask) + (batteryInactiveColor * batteryInactiveMask);
+                hudAlpha = saturate(hudAlpha + (batteryLedMask * 0.9));
                 float hudLuminance = dot(hudColor, float3(0.2126, 0.7152, 0.0722));
                 hudColor = lerp(hudColor, hudLuminance.xxx, hypoxiaLevel * 0.78);
                 float decayNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * (0.16 + hazardGlitch * 0.24)) + float2(floor(_Time.y * 26.0), tearBands));
@@ -570,7 +638,8 @@ Shader "NASAPunk/SuitVisor"
                 float hypoxiaAlphaNoise = frac(sin(dot(hudDistortedUV * _ScreenParams.xy, float2(12.9898, 78.233)) + (_Time.y * 43.0)) * 43758.5453);
                 float hypoxiaAlphaDissolve = saturate((hypoxiaAlphaNoise - 0.45) * 1.9) * hypoxiaStaticStrength;
                 hudAlpha *= 1.0 - (hypoxiaAlphaDissolve * 0.68);
-                if (biosRecoveryMode > 0.001)
+                float biosRecoverySwitch = step(0.5, biosRecoveryMode);
+                if (biosRecoverySwitch > 0.5)
                 {
                     float2 phosphorTrailOffset = float2(-(0.0015 + hazardRadiation * 0.004 + hazardGlitch * 0.002), 0.0);
                     float trailLuminanceA = dot(
@@ -583,15 +652,34 @@ Shader "NASAPunk/SuitVisor"
                     float trailLuminance = max(rawHudLuminance, max(trailLuminanceA * 0.72, trailLuminanceB * 0.46));
                     float biosNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.11) + float2(tearBands, floor(_Time.y * 14.0)));
                     float biosScan = abs(frac(hudDistortedUV.y * _ScreenParams.y * 0.28 + _Time.y * 16.0) - 0.5);
+                    float phosphorLineMask = step(0.24, frac(hudDistortedUV.y * _ScreenParams.y * 0.32));
                     float biosThreshold = 0.38 + biosNoise * 0.16 + biosScan * 0.12;
                     float biosPrimaryBit = step(biosThreshold, trailLuminance);
                     float biosTrailBit = step(biosThreshold + 0.08, max(trailLuminanceA * 0.82, trailLuminanceB * 0.64));
                     float phosphorPulse = 0.82 + sin(_Time.y * 2.1) * 0.06;
-                    float phosphorScanGlow = (1.0 - smoothstep(0.0, 0.5, biosScan)) * 0.18;
-                    float phosphorLevel = saturate(biosPrimaryBit + biosTrailBit * 0.45);
-                    float3 biosColor = float3(0.0, (phosphorLevel * phosphorPulse) + phosphorScanGlow, 0.0) * _HUD_Intensity;
-                    hudColor = lerp(hudColor, biosColor, biosRecoveryMode);
-                    hudAlpha = lerp(hudAlpha, saturate(max(hudAlpha * 0.25, phosphorLevel * rtMask * hudEdgeFade)), biosRecoveryMode);
+                    float phosphorScanGlow = (1.0 - smoothstep(0.0, 0.5, biosScan)) * 0.16;
+                    float phosphorCore = biosPrimaryBit * phosphorLineMask;
+                    float phosphorTrail = biosTrailBit * (1.0 - phosphorLineMask) * 0.55;
+                    float phosphorLevel = saturate(phosphorCore + phosphorTrail + phosphorScanGlow);
+                    float3 biosColor = float3(0.0, phosphorLevel * phosphorPulse, 0.0) * _HUD_Intensity;
+                    hudColor = biosColor;
+                    hudAlpha = saturate(max(hudBaseSample.a * hudEdgeFade * rtMask * 0.3, phosphorLevel * rtMask * hudEdgeFade));
+                }
+
+                float fragRawDepth = saturate(IN.positionCS.z / IN.positionCS.w);
+                float sceneRawDepth = SampleSceneDepth(screenUV);
+#if UNITY_REVERSED_Z
+                float sceneDepthValid = step(0.0001, sceneRawDepth);
+#else
+                float sceneDepthValid = step(sceneRawDepth, 0.9999);
+#endif
+                float linearSceneDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
+                float linearFragDepth = LinearEyeDepth(fragRawDepth, _ZBufferParams);
+                float hudOccluded = sceneDepthValid * step(linearSceneDepth + 0.002, linearFragDepth) * step(0.001, hudAlpha);
+                if (hudOccluded > 0.5)
+                {
+                    float bayer = Bayer4x4(screenUV * _ScaledScreenParams.xy);
+                    clip((hudAlpha * 0.2) - bayer);
                 }
 
                 float wetImperfectionBoost = 1.0 + runoffMask * 0.9;

@@ -1,0 +1,1197 @@
+diff --git a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
+index 39919507..e01cf323 100644
+--- a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
++++ b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
+@@ -84,10 +84,12 @@ namespace Hecton8.Construction
+             _socketLookup.Clear();
+             _nodeCount = 0;
+             _edgeCount = 0;
++            BaseDegradationSystem.BeginRuptureSync();
+ 
+             if (modules == null || modules.Count <= 0)
+             {
+                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
++                BaseDegradationSystem.EndRuptureSync();
+                 return;
+             }
+ 
+@@ -96,6 +98,7 @@ namespace Hecton8.Construction
+             if (_nodeCount <= 0)
+             {
+                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
++                BaseDegradationSystem.EndRuptureSync();
+                 return;
+             }
+ 
+@@ -103,8 +106,10 @@ namespace Hecton8.Construction
+             BuildSocketAdjacency();
+             BuildNodeRecords();
+             BuildEdgeRecords();
++            PublishDegradationState();
+             PublishGraphKernel();
+             PublishVisualLinks();
++            BaseDegradationSystem.EndRuptureSync();
+         }
+ 
+         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
+@@ -206,8 +211,9 @@ namespace Hecton8.Construction
+ 
+         private void BuildEdgeRecords()
+         {
+-            int directedEdgeCount = _edgeBuffer.Count * 2;
+-            EnsureEdgeCapacity(directedEdgeCount);
++            int reservedDirectedEdgeCapacity = math.max(1, _edgeBuffer.Count * 2);
++            EnsureEdgeCapacity(reservedDirectedEdgeCapacity);
++            int logicalDirectedEdgeCount = 0;
+ 
+             for (int nodeIndex = 0; nodeIndex <= _nodeCount; nodeIndex++)
+                 _edgeOffsets[nodeIndex] = 0;
+@@ -222,6 +228,7 @@ namespace Hecton8.Construction
+                 if (unsupported)
+                 {
+                     edge.Flags |= PipeRenderFlags.MaskRuptured;
++                    edge.Severed = true;
+                     LogisticsNetworkGraph.LogisticsNode sourceNode = _nodes[edge.SourceIndex];
+                     sourceNode.Flags |= LogisticsNodeFlags.Ruptured;
+                     _nodes[edge.SourceIndex] = sourceNode;
+@@ -234,8 +241,12 @@ namespace Hecton8.Construction
+                 edge.Resistance = math.max(MinimumEdgeResistance, distance * EdgeResistancePerMeter);
+                 _edgeBuffer[edgeIndex] = edge;
+ 
++                if (edge.Severed)
++                    continue;
++
+                 _edgeOffsets[edge.SourceIndex + 1] = _edgeOffsets[edge.SourceIndex + 1] + 1;
+                 _edgeOffsets[edge.DestinationIndex + 1] = _edgeOffsets[edge.DestinationIndex + 1] + 1;
++                logicalDirectedEdgeCount += 2;
+             }
+ 
+             for (int nodeIndex = 1; nodeIndex <= _nodeCount; nodeIndex++)
+@@ -247,6 +258,8 @@ namespace Hecton8.Construction
+             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+             {
+                 EdgeRecord edge = _edgeBuffer[edgeIndex];
++                if (edge.Severed)
++                    continue;
+ 
+                 int forwardWriteIndex = _edgeWriteCursor[edge.SourceIndex];
+                 _edgeWriteCursor[edge.SourceIndex] = forwardWriteIndex + 1;
+@@ -259,7 +272,23 @@ namespace Hecton8.Construction
+                 _edgeResistance[reverseWriteIndex] = edge.Resistance;
+             }
+ 
+-            _edgeCount = directedEdgeCount;
++            _edgeCount = logicalDirectedEdgeCount;
++        }
++
++        private void PublishDegradationState()
++        {
++            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
++            {
++                ModuleRecord module = _moduleBuffer[nodeIndex];
++                if (module.ModuleObject == null)
++                    continue;
++
++                BaseDegradationSystem.SynchronizeNode(
++                    module.ModuleObject,
++                    module.NodeId,
++                    _nodes[nodeIndex].Flags,
++                    ResolveNodeRuptureWorldPoint(nodeIndex));
++            }
+         }
+ 
+         private void PublishGraphKernel()
+@@ -275,6 +304,9 @@ namespace Hecton8.Construction
+             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+             {
+                 EdgeRecord edge = _edgeBuffer[edgeIndex];
++                if (edge.Severed)
++                    continue;
++
+                 _graph.AddEdge(edge.SourceIndex, edge.DestinationIndex, edge.Resistance);
+                 _graph.AddEdge(edge.DestinationIndex, edge.SourceIndex, edge.Resistance);
+             }
+@@ -313,6 +345,24 @@ namespace Hecton8.Construction
+             _submittedLinkIds.Clear();
+         }
+ 
++        private Vector3 ResolveNodeRuptureWorldPoint(int nodeIndex)
++        {
++            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
++            {
++                EdgeRecord edge = _edgeBuffer[edgeIndex];
++                if (!LogisticsPipeBuilder.HasRupturedMask(edge.Flags))
++                    continue;
++
++                if (edge.SourceIndex == nodeIndex)
++                    return edge.StartSocketPosition;
++
++                if (edge.DestinationIndex == nodeIndex)
++                    return edge.EndSocketPosition;
++            }
++
++            return _moduleBuffer[nodeIndex].Position;
++        }
++
+         private bool HasIntermediateSupport(int sourceIndex, int destinationIndex, float3 start, float3 end)
+         {
+             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
+@@ -551,6 +601,7 @@ namespace Hecton8.Construction
+             public float3 EndForward;
+             public float Resistance;
+             public PipeRenderFlags Flags;
++            public bool Severed;
+         }
+ 
+         private readonly struct SocketKey : IEquatable<SocketKey>
+diff --git a/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs b/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
+index 38e8edc6..71490b1c 100644
+--- a/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
++++ b/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
+@@ -28,6 +28,8 @@ namespace Hecton8.Core
+         private const float PipeLodRefreshThresholdMetersSq = 1f;
+         private const float RelayRadiusMeters = 0.028f;
+         private const float TwoPi = math.PI * 2f;
++        private const float RuptureBucklingFrequency = 15f;
++        private const float RuptureBucklingAmplitude = 0.15f;
+ 
+         private enum BatchKind : byte
+         {
+@@ -102,6 +104,7 @@ namespace Hecton8.Core
+         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+         private struct BuildTubeVerticesJob : IJobParallelFor
+         {
++            [ReadOnly] public NativeArray<SplineDescriptor> Descriptors;
+             [ReadOnly] public NativeArray<float3> SampleCenters;
+             [ReadOnly] public NativeArray<float3> SampleNormals;
+             [ReadOnly] public NativeArray<float3> SampleBinormals;
+@@ -125,13 +128,26 @@ namespace Hecton8.Core
+                 float angle = radialIndex * (TwoPi / RadialSegments);
+                 math.sincos(angle, out float sinAngle, out float cosAngle);
+                 float3 radialDirection = (normal * cosAngle) + (binormal * sinAngle);
++                float3 position = center + radialDirection * Radius;
++
++                if (LogisticsPipeBuilder.HasRupturedMask(Descriptors[linkIndex].Flags))
++                {
++                    float ruptureHash = ResolveRuptureHash(linkIndex);
++                    position += radialDirection * math.sin(position.z * RuptureBucklingFrequency + ruptureHash) * RuptureBucklingAmplitude;
++                }
+ 
+                 Vertices[index] = new TubeVertex
+                 {
+-                    Position = center + radialDirection * Radius,
++                    Position = position,
+                     Normal = radialDirection
+                 };
+             }
++
++            private static float ResolveRuptureHash(int linkIndex)
++            {
++                float phase = (linkIndex + 1) * 12.9898f;
++                return math.frac(math.sin(phase) * 43758.5453f) * TwoPi;
++            }
+         }
+ 
+         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+@@ -212,6 +228,8 @@ namespace Hecton8.Core
+         private readonly BatchState[] _batches = new BatchState[5];
+         // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] — master logistics-pipe registry for distance-based batch reassignment — owner: ConnectionSplineBatchRenderer
+         private readonly Dictionary<long, SplineDescriptor> _pipeRegistrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
++        private readonly HashSet<uint> _rupturedPipeNodes = new HashSet<uint>();
++        private readonly List<long> _pipeRuptureUpdateScratch = new List<long>(DefaultBatchCapacity);
+ 
+         private bool _pipeLodDirty = true;
+         private float3 _lastPipeObserverPosition;
+@@ -246,6 +264,14 @@ namespace Hecton8.Core
+             _instance._pipeLodDirty = true;
+         }
+ 
++        internal static void SetPipeNodeRuptured(uint nodeId, bool ruptured)
++        {
++            if (_instance == null)
++                return;
++
++            _instance.SetPipeNodeRupturedInternal(nodeId, ruptured);
++        }
++
+         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
+         {
+             ConnectionSplineBatchRenderer instance = ResolveInstance();
+@@ -471,10 +497,62 @@ namespace Hecton8.Core
+             _batches[(int)BatchKind.PipesNear].Color = color;
+             _batches[(int)BatchKind.PipesFar].Color = color;
+             _batches[(int)BatchKind.PipesLine].Color = color;
++            ApplyPipeRuptureFlags(linkId, ref descriptor);
+             _pipeRegistrations[linkId] = descriptor;
+             _pipeLodDirty = true;
+         }
+ 
++        private void SetPipeNodeRupturedInternal(uint nodeId, bool ruptured)
++        {
++            bool changed = ruptured
++                ? _rupturedPipeNodes.Add(nodeId)
++                : _rupturedPipeNodes.Remove(nodeId);
++
++            if (!changed)
++                return;
++
++            _pipeRuptureUpdateScratch.Clear();
++            Dictionary<long, SplineDescriptor>.Enumerator enumerator = _pipeRegistrations.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                if (PipeLinkContainsNode(enumerator.Current.Key, nodeId))
++                    _pipeRuptureUpdateScratch.Add(enumerator.Current.Key);
++            }
++
++            int updateCount = _pipeRuptureUpdateScratch.Count;
++            for (int i = 0; i < updateCount; i++)
++            {
++                long linkId = _pipeRuptureUpdateScratch[i];
++                if (!_pipeRegistrations.TryGetValue(linkId, out SplineDescriptor descriptor))
++                    continue;
++
++                ApplyPipeRuptureFlags(linkId, ref descriptor);
++                _pipeRegistrations[linkId] = descriptor;
++            }
++
++            _pipeLodDirty = true;
++        }
++
++        private void ApplyPipeRuptureFlags(long linkId, ref SplineDescriptor descriptor)
++        {
++            descriptor.Flags &= ~PipeRenderFlags.MaskRuptured;
++            DecodePipeLinkId(linkId, out uint leftNodeId, out uint rightNodeId);
++            if (_rupturedPipeNodes.Contains(leftNodeId) || _rupturedPipeNodes.Contains(rightNodeId))
++                descriptor.Flags |= PipeRenderFlags.MaskRuptured;
++        }
++
++        private static bool PipeLinkContainsNode(long linkId, uint nodeId)
++        {
++            DecodePipeLinkId(linkId, out uint leftNodeId, out uint rightNodeId);
++            return leftNodeId == nodeId || rightNodeId == nodeId;
++        }
++
++        private static void DecodePipeLinkId(long linkId, out uint leftNodeId, out uint rightNodeId)
++        {
++            leftNodeId = (uint)(linkId >> 32);
++            rightNodeId = unchecked((uint)linkId);
++        }
++
+         private void UpsertLink(BatchState batch, long linkId, SplineDescriptor descriptor)
+         {
+             if (batch == null)
+@@ -568,6 +646,7 @@ namespace Hecton8.Core
+ 
+             BuildTubeVerticesJob vertexJob = new BuildTubeVerticesJob
+             {
++                Descriptors = batch.Descriptors,
+                 SampleCenters = batch.SampleCenters,
+                 SampleNormals = batch.SampleNormals,
+                 SampleBinormals = batch.SampleBinormals,
+diff --git a/Docs/README.md b/Docs/README.md
+index 7f2387c2..5a3a37d1 100644
+--- a/Docs/README.md
++++ b/Docs/README.md
+@@ -36,6 +36,13 @@ Purpose: active documentation entry point after workspace cleanup.
+ - `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
+ - `QUALITY_GATES.md`
+ 
++## Architecture
++
++- `ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md`
++- `ARCHITECTURE/AUDIO_DSP_PIPELINE.md`
++- `ARCHITECTURE/DISPATCH_PIPELINE.md`
++- `ARCHITECTURE/ZERO_GC_UI_PIPELINE.md`
++
+ ## Scatter / DOTS
+ 
+ - `Scatter_Runtime/README.md`
+diff --git a/Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs b/Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs
+new file mode 100644
+index 00000000..ec7087c2
+--- /dev/null
++++ b/Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs
+@@ -0,0 +1,201 @@
++using System.Collections.Generic;
++using Hecton8.Core;
++using Hecton8.Gameplay;
++using Hecton8.Power;
++using Hecton8.World;
++using UnityEngine;
++
++namespace Hecton8.Construction
++{
++    /// <summary>
++    /// Cold-path degradation bridge for habitat-graph rupture state.
++    /// Consumes graph snapshots, propagates pipe-deformation flags, and fans rupture entries into existing module VFX and decal owners.
++    /// </summary>
++    internal static class BaseDegradationSystem
++    {
++        private const float DefaultPressureDelta = 4f;
++        private const float DefaultFluidRadiusScale = 0.75f;
++        private const float DefaultDecalScaleMeters = 0.72f;
++        private const string LeakStripeDecalChildName = "LeakStripeDecal";
++        private const string LeakScuffDecalChildName = "LeakScuffDecal";
++        private const string LeakWetSheenChildName = "LeakWetSheen";
++
++        private struct RuptureNodeState
++        {
++            public bool IsRuptured;
++            public Vector3 AbsoluteUniversePosition;
++            public Matrix4x4 DecalMatrix;
++            public int DecalAtlasIndex;
++        }
++
++        // COLD ALLOC: Dictionary<UInt32,RuptureNodeState>[64] - last-known rupture state per habitat graph node - owner: BaseDegradationSystem
++        private static readonly Dictionary<uint, RuptureNodeState> _ruptureStates = new Dictionary<uint, RuptureNodeState>(64);
++        // COLD ALLOC: List<UInt32>[64] - seen-node scratch for one habitat graph synchronization pass - owner: BaseDegradationSystem
++        private static readonly List<uint> _seenNodeIds = new List<uint>(64);
++        // COLD ALLOC: List<UInt32>[16] - stale-node scratch for rupture-state eviction after graph synchronization - owner: BaseDegradationSystem
++        private static readonly List<uint> _staleNodeIds = new List<uint>(16);
++        // COLD ALLOC: List<Matrix4x4>[64] - global crack decal matrix cache for downstream decal render owners - owner: BaseDegradationSystem
++        private static readonly List<Matrix4x4> _globalCrackDecalMatrices = new List<Matrix4x4>(64);
++        // COLD ALLOC: List<Int32>[64] - global crack decal atlas index cache aligned with matrix cache - owner: BaseDegradationSystem
++        private static readonly List<int> _globalCrackDecalAtlasIndices = new List<int>(64);
++
++        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
++        private static void ResetStaticState()
++        {
++            _ruptureStates.Clear();
++            _seenNodeIds.Clear();
++            _staleNodeIds.Clear();
++            _globalCrackDecalMatrices.Clear();
++            _globalCrackDecalAtlasIndices.Clear();
++        }
++
++        internal static IReadOnlyList<Matrix4x4> GlobalCrackDecalMatrices => _globalCrackDecalMatrices;
++        internal static IReadOnlyList<int> GlobalCrackDecalAtlasIndices => _globalCrackDecalAtlasIndices;
++
++        internal static void BeginRuptureSync()
++        {
++            _seenNodeIds.Clear();
++        }
++
++        internal static void SynchronizeNode(GameObject moduleObject, uint nodeId, LogisticsNodeFlags flags, Vector3 ruptureWorldPosition)
++        {
++            _seenNodeIds.Add(nodeId);
++
++            bool isRuptured = (flags & LogisticsNodeFlags.Ruptured) != 0;
++            bool hadPreviousState = _ruptureStates.TryGetValue(nodeId, out RuptureNodeState previousState);
++
++            if (!isRuptured)
++            {
++                if (hadPreviousState && previousState.IsRuptured)
++                    ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
++
++                _ruptureStates.Remove(nodeId);
++                return;
++            }
++
++            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(ruptureWorldPosition);
++            Matrix4x4 decalMatrix = BuildCrackDecalMatrix(moduleObject, ruptureWorldPosition);
++
++            _ruptureStates[nodeId] = new RuptureNodeState
++            {
++                IsRuptured = true,
++                AbsoluteUniversePosition = absoluteUniversePosition,
++                DecalMatrix = decalMatrix,
++                DecalAtlasIndex = StructuralIntegrityProfile.DefaultRuptureDecalAtlasIndex
++            };
++
++            ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, true);
++
++            if (!hadPreviousState || !previousState.IsRuptured)
++                DispatchRuptureEffects(moduleObject, ruptureWorldPosition, decalMatrix);
++        }
++
++        internal static void EndRuptureSync()
++        {
++            _staleNodeIds.Clear();
++            Dictionary<uint, RuptureNodeState>.Enumerator enumerator = _ruptureStates.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                if (!_seenNodeIds.Contains(enumerator.Current.Key))
++                    _staleNodeIds.Add(enumerator.Current.Key);
++            }
++
++            int staleCount = _staleNodeIds.Count;
++            for (int i = 0; i < staleCount; i++)
++            {
++                uint nodeId = _staleNodeIds[i];
++                ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
++                _ruptureStates.Remove(nodeId);
++            }
++
++            RebuildGlobalDecalBuffer();
++        }
++
++        private static void DispatchRuptureEffects(GameObject moduleObject, Vector3 ruptureWorldPosition, Matrix4x4 decalMatrix)
++        {
++            if (moduleObject != null && moduleObject.TryGetComponent(out BaseModule baseModule))
++            {
++                Vector3 localRupturePoint = baseModule.transform.InverseTransformPoint(ruptureWorldPosition);
++                baseModule.EmitHullBreachJet(localRupturePoint, DefaultPressureDelta);
++            }
++
++            if (AbyssalFluidDecalManager.Instance != null)
++                AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(ruptureWorldPosition, DefaultFluidRadiusScale);
++
++            ApplyAuthoringDecal(moduleObject, ruptureWorldPosition, decalMatrix, LeakStripeDecalChildName);
++            ApplyAuthoringDecal(moduleObject, ruptureWorldPosition, decalMatrix, LeakScuffDecalChildName);
++            ApplyAuthoringDecal(moduleObject, ruptureWorldPosition, decalMatrix, LeakWetSheenChildName);
++        }
++
++        private static void RebuildGlobalDecalBuffer()
++        {
++            _globalCrackDecalMatrices.Clear();
++            _globalCrackDecalAtlasIndices.Clear();
++
++            Dictionary<uint, RuptureNodeState>.Enumerator enumerator = _ruptureStates.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                RuptureNodeState state = enumerator.Current.Value;
++                if (!state.IsRuptured)
++                    continue;
++
++                _globalCrackDecalMatrices.Add(state.DecalMatrix);
++                _globalCrackDecalAtlasIndices.Add(state.DecalAtlasIndex);
++            }
++        }
++
++        private static Matrix4x4 BuildCrackDecalMatrix(GameObject moduleObject, Vector3 ruptureWorldPosition)
++        {
++            Vector3 outward = moduleObject != null
++                ? ruptureWorldPosition - moduleObject.transform.position
++                : Vector3.forward;
++
++            if (outward.sqrMagnitude <= 0.0001f)
++                outward = moduleObject != null ? moduleObject.transform.forward : Vector3.forward;
++
++            Quaternion rotation = Quaternion.LookRotation(outward.normalized, Vector3.up);
++            Vector3 scale = Vector3.one * DefaultDecalScaleMeters;
++            return Matrix4x4.TRS(ruptureWorldPosition, rotation, scale);
++        }
++
++        private static void ApplyAuthoringDecal(GameObject moduleObject, Vector3 ruptureWorldPosition, Matrix4x4 decalMatrix, string childName)
++        {
++            if (moduleObject == null)
++                return;
++
++            Transform decalTransform = ResolveDecalTransform(moduleObject.transform, childName);
++            if (decalTransform == null)
++                return;
++
++            Vector4 forwardColumn = decalMatrix.GetColumn(2);
++            Vector3 forward = new Vector3(forwardColumn.x, forwardColumn.y, forwardColumn.z);
++            if (forward.sqrMagnitude <= 0.0001f)
++                forward = moduleObject.transform.forward;
++
++            decalTransform.gameObject.SetActive(true);
++            decalTransform.SetPositionAndRotation(
++                ruptureWorldPosition,
++                Quaternion.LookRotation(forward.normalized, Vector3.up));
++            decalTransform.localScale = Vector3.one * DefaultDecalScaleMeters;
++
++            if (decalTransform.TryGetComponent(out Renderer renderer))
++                renderer.enabled = true;
++        }
++
++        private static Transform ResolveDecalTransform(Transform root, string childName)
++        {
++            if (root == null)
++                return null;
++
++            Transform decalTransform = root.Find(childName);
++            if (decalTransform != null)
++                return decalTransform;
++
++            Transform lod0Transform = root.Find("LOD0");
++            if (lod0Transform == null)
++                return null;
++
++            return lod0Transform.Find(childName);
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Construction/StructuralIntegrityProfile.cs b/Assets/_Project/Scripts/Construction/StructuralIntegrityProfile.cs
+new file mode 100644
+index 00000000..8fa2a8f7
+--- /dev/null
++++ b/Assets/_Project/Scripts/Construction/StructuralIntegrityProfile.cs
+@@ -0,0 +1,54 @@
++using System;
++using UnityEngine;
++
++namespace Hecton8.Construction
++{
++    /// <summary>
++    /// Authoring profile for structural rupture thresholds across supported habitat pipe materials.
++    /// </summary>
++    [CreateAssetMenu(fileName = "StructuralIntegrityProfile_", menuName = "Hecton8/Construction/Structural Integrity Profile", order = 22)]
++    public sealed class StructuralIntegrityProfile : ScriptableObject
++    {
++        public const int DefaultRuptureDecalAtlasIndex = 1;
++
++        public enum PipeMaterialVariant : byte
++        {
++            Glass = 0,
++            Titanium = 1,
++            Plasteel = 2
++        }
++
++        [Serializable]
++        public struct VariantIntegrity
++        {
++            [SerializeField] private PipeMaterialVariant variant;
++            [SerializeField, Min(0.1f)] private float maxUnsupportedSpan;
++            [SerializeField, Min(1f)] private float baseHP;
++            [SerializeField, Min(0)] private int ruptureDecalAtlasIndex;
++
++            public VariantIntegrity(PipeMaterialVariant variant, float maxUnsupportedSpan, float baseHP, int ruptureDecalAtlasIndex)
++            {
++                this.variant = variant;
++                this.maxUnsupportedSpan = maxUnsupportedSpan;
++                this.baseHP = baseHP;
++                this.ruptureDecalAtlasIndex = ruptureDecalAtlasIndex;
++            }
++
++            public PipeMaterialVariant Variant => variant;
++            public float MaxUnsupportedSpan => maxUnsupportedSpan;
++            public float BaseHP => baseHP;
++            public int RuptureDecalAtlasIndex => ruptureDecalAtlasIndex;
++        }
++
++        [Header("-- Material Variants ------------------")]
++        [Tooltip("Per-material structural thresholds and rupture decal atlas entries.")]
++        [SerializeField] private VariantIntegrity[] variants =
++        {
++            new VariantIntegrity(PipeMaterialVariant.Glass, 8f, 45f, 0),
++            new VariantIntegrity(PipeMaterialVariant.Titanium, 15f, 120f, 1),
++            new VariantIntegrity(PipeMaterialVariant.Plasteel, 22f, 240f, 2)
++        };
++
++        public VariantIntegrity[] Variants => variants;
++    }
++}
+diff --git a/Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs b/Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs
+new file mode 100644
+index 00000000..c183fa36
+--- /dev/null
++++ b/Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs
+@@ -0,0 +1,409 @@
++using System;
++using Hecton8.VFX;
++using UnityEngine;
++using UnityEngine.Experimental.Rendering;
++using UnityEngine.Rendering;
++using UnityEngine.Rendering.RenderGraphModule;
++using UnityEngine.Rendering.Universal;
++
++#if UNITY_EDITOR
++using UnityEditor;
++#endif
++
++namespace Hecton8.Visor
++{
++    /// <summary>
++    /// Half-resolution compute-driven god ray solve with bilateral depth-aware composite.
++    /// </summary>
++    public sealed class VolumetricLightFeature : ScriptableRendererFeature
++    {
++        private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute";
++
++        [Serializable]
++        private sealed class FeatureSettings
++        {
++            [Tooltip("Compute shader that owns both the half-res raymarch and full-res bilateral composite.")]
++            public ComputeShader computeShader = null;
++
++            [Tooltip("Optional shared VFX profile that defines god ray step budgets by hardware tier.")]
++            public VFXEmissionProfile emissionProfile = null;
++
++            [Tooltip("Hardware tier used to resolve god ray step budgets from the emission profile.")]
++            public VFXEmissionProfile.HardwareTier hardwareTier = VFXEmissionProfile.HardwareTier.Medium;
++
++            [Tooltip("Where the volumetric pass is injected into URP.")]
++            public RenderPassEvent injectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
++
++            [Tooltip("Internal render scale for the raymarch target. MX350 path must stay half-res or lower.")]
++            [Range(0.25f, 1f)] public float renderScale = 0.5f;
++
++            [Tooltip("Fallback medium-tier step count used when no emission profile is assigned.")]
++            [Range(8, 32)] public int fallbackSteps = 16;
++
++            [Tooltip("Base participating media density used by the god ray solve.")]
++            [Range(0f, 4f)] public float density = 1.05f;
++
++            [Tooltip("Scattering coefficient applied to the volumetric density sample.")]
++            [Range(0f, 4f)] public float scatterCoefficient = 0.85f;
++
++            [Tooltip("Henyey-Greenstein anisotropy applied to main-light forward scattering.")]
++            [Range(-0.95f, 0.95f)] public float anisotropy = 0.68f;
++
++            [Tooltip("Maximum world-space march distance in meters.")]
++            [Range(4f, 96f)] public float maxRayDistance = 48f;
++
++            [Tooltip("Blue-noise style jitter strength applied to the raymarch start position.")]
++            [Range(0f, 1f)] public float jitterStrength = 0.8f;
++
++            [Tooltip("Early-out threshold for accumulated transmittance.")]
++            [Range(0f, 1f)] public float minimumTransmittance = 0.03f;
++
++            [Tooltip("Depth-aware rejection scale used during the 3x3 bilateral upsample.")]
++            [Range(0.1f, 128f)] public float bilateralDepthScale = 24f;
++
++            [Tooltip("Final additive intensity for the resolved volumetric light.")]
++            [Range(0f, 4f)] public float intensity = 1.0f;
++
++            internal int ResolveRaymarchSteps()
++            {
++                if (emissionProfile != null)
++                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), 8, 32);
++
++                return Mathf.Clamp(fallbackSteps, 8, 32);
++            }
++        }
++
++        private sealed class VolumetricLightPass : ScriptableRenderPass, IDisposable
++        {
++            private const int RenderTextureBucketSize = 64;
++
++            private sealed class RaymarchPassData
++            {
++                internal ComputeShader computeShader;
++                internal int kernelIndex;
++                internal uint threadGroupSizeX;
++                internal uint threadGroupSizeY;
++                internal TextureHandle depth;
++                internal TextureHandle result;
++                internal Vector4 fullSize;
++                internal Vector4 halfSize;
++                internal Matrix4x4 inverseViewProjection;
++                internal Vector4 mainLightDirection;
++                internal Vector4 mainLightColor;
++                internal Vector4 scatteringParams;
++                internal Vector4 marchParams;
++            }
++
++            private sealed class CompositePassData
++            {
++                internal ComputeShader computeShader;
++                internal int kernelIndex;
++                internal uint threadGroupSizeX;
++                internal uint threadGroupSizeY;
++                internal TextureHandle source;
++                internal TextureHandle depth;
++                internal TextureHandle halfInput;
++                internal TextureHandle destination;
++                internal Vector4 fullSize;
++                internal Vector4 halfSize;
++                internal Matrix4x4 inverseViewProjection;
++                internal Vector4 mainLightDirection;
++                internal Vector4 compositeParams;
++            }
++
++            private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Volumetric Light");
++            private FeatureSettings _settings;
++            private ComputeShader _computeShader;
++            private RTHandle _halfTexture;
++            private RTHandle _compositeTexture;
++            private int _raymarchKernel = -1;
++            private int _compositeKernel = -1;
++            private uint _raymarchThreadGroupSizeX = 8;
++            private uint _raymarchThreadGroupSizeY = 8;
++            private uint _compositeThreadGroupSizeX = 8;
++            private uint _compositeThreadGroupSizeY = 8;
++            private Vector4 _mainLightDirection;
++            private Vector4 _mainLightColor;
++
++            public VolumetricLightPass()
++            {
++                profilingSampler = _profilingSampler;
++                requiresIntermediateTexture = true;
++            }
++
++            public void Setup(
++                FeatureSettings settings,
++                ComputeShader computeShader,
++                in Vector4 mainLightDirection,
++                in Vector4 mainLightColor)
++            {
++                _settings = settings;
++                _computeShader = computeShader;
++                _mainLightDirection = mainLightDirection;
++                _mainLightColor = mainLightColor;
++                renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
++                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
++                requiresIntermediateTexture = true;
++
++                if (_computeShader != null && (_raymarchKernel < 0 || _compositeKernel < 0))
++                {
++                    _raymarchKernel = _computeShader.FindKernel("RaymarchVolumetricLight");
++                    _compositeKernel = _computeShader.FindKernel("CompositeVolumetricLight");
++                    _computeShader.GetKernelThreadGroupSizes(_raymarchKernel, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY, out _);
++                    _computeShader.GetKernelThreadGroupSizes(_compositeKernel, out _compositeThreadGroupSizeX, out _compositeThreadGroupSizeY, out _);
++                }
++            }
++
++            public void Dispose()
++            {
++                _halfTexture?.Release();
++                _compositeTexture?.Release();
++                _halfTexture = null;
++                _compositeTexture = null;
++                _raymarchKernel = -1;
++                _compositeKernel = -1;
++            }
++
++            public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
++            {
++                if (_settings == null ||
++                    _computeShader == null ||
++                    _raymarchKernel < 0 ||
++                    _compositeKernel < 0 ||
++                    _mainLightDirection.w <= 0.5f)
++                {
++                    return;
++                }
++
++                UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
++                if (resourceData.isActiveTargetBackBuffer)
++                    return;
++
++                UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
++                if (cameraData.cameraType == CameraType.Preview || cameraData.cameraType == CameraType.Reflection)
++                    return;
++
++                TextureHandle sourceTexture = resourceData.activeColorTexture;
++                TextureHandle depthTexture = resourceData.cameraDepthTexture;
++                if (!sourceTexture.IsValid() || !depthTexture.IsValid())
++                    return;
++
++                TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
++                int fullWidth = QuantizeDimension(Mathf.Max(1, sourceDesc.width));
++                int fullHeight = QuantizeDimension(Mathf.Max(1, sourceDesc.height));
++                int halfWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
++                int halfHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
++                EnsureRenderTargets(halfWidth, halfHeight, fullWidth, fullHeight);
++
++                TextureHandle halfTexture = renderGraph.ImportTexture(_halfTexture);
++                TextureHandle compositeTexture = renderGraph.ImportTexture(_compositeTexture);
++                Camera camera = cameraData.camera;
++                Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
++                Matrix4x4 viewProjection = projectionMatrix * camera.worldToCameraMatrix;
++                Matrix4x4 inverseViewProjection = viewProjection.inverse;
++                Vector4 fullSize = new Vector4(sourceDesc.width, sourceDesc.height, 1f / Mathf.Max(1, sourceDesc.width), 1f / Mathf.Max(1, sourceDesc.height));
++                Vector4 halfSize = new Vector4(halfWidth, halfHeight, 1f / Mathf.Max(1, halfWidth), 1f / Mathf.Max(1, halfHeight));
++                Vector4 scatteringParams = new Vector4(
++                    Mathf.Max(0f, _settings.density),
++                    Mathf.Max(0f, _settings.scatterCoefficient),
++                    Mathf.Clamp(_settings.anisotropy, -0.95f, 0.95f),
++                    Mathf.Max(0f, _settings.intensity));
++                Vector4 marchParams = new Vector4(
++                    Mathf.Max(0.1f, _settings.maxRayDistance),
++                    _settings.ResolveRaymarchSteps(),
++                    Mathf.Clamp01(_settings.jitterStrength),
++                    Mathf.Clamp01(_settings.minimumTransmittance));
++                Vector4 compositeParams = new Vector4(Mathf.Max(0.01f, _settings.bilateralDepthScale), 0f, 0f, 0f);
++
++                using (var builder = renderGraph.AddComputePass("Hecton Volumetric Light Raymarch", out RaymarchPassData passData, _profilingSampler))
++                {
++                    passData.computeShader = _computeShader;
++                    passData.kernelIndex = _raymarchKernel;
++                    passData.threadGroupSizeX = _raymarchThreadGroupSizeX;
++                    passData.threadGroupSizeY = _raymarchThreadGroupSizeY;
++                    passData.depth = depthTexture;
++                    passData.result = halfTexture;
++                    passData.fullSize = fullSize;
++                    passData.halfSize = halfSize;
++                    passData.inverseViewProjection = inverseViewProjection;
++                    passData.mainLightDirection = _mainLightDirection;
++                    passData.mainLightColor = _mainLightColor;
++                    passData.scatteringParams = scatteringParams;
++                    passData.marchParams = marchParams;
++
++                    builder.UseTexture(depthTexture, AccessFlags.Read);
++                    builder.UseTexture(halfTexture, AccessFlags.Write);
++
++                    builder.SetRenderFunc(static (RaymarchPassData data, ComputeGraphContext context) =>
++                    {
++                        int dispatchX = Mathf.CeilToInt(data.halfSize.x / Mathf.Max(1u, data.threadGroupSizeX));
++                        int dispatchY = Mathf.CeilToInt(data.halfSize.y / Mathf.Max(1u, data.threadGroupSizeY));
++                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
++                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfResultId, data.result);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FullSizeId, data.fullSize);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HalfSizeId, data.halfSize);
++                        context.cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.InverseViewProjectionId, data.inverseViewProjection);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightDirectionId, data.mainLightDirection);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightColorId, data.mainLightColor);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ScatteringParamsId, data.scatteringParams);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MarchParamsId, data.marchParams);
++                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
++                    });
++                }
++
++                using (var builder = renderGraph.AddComputePass("Hecton Volumetric Light Composite", out CompositePassData passData, _profilingSampler))
++                {
++                    passData.computeShader = _computeShader;
++                    passData.kernelIndex = _compositeKernel;
++                    passData.threadGroupSizeX = _compositeThreadGroupSizeX;
++                    passData.threadGroupSizeY = _compositeThreadGroupSizeY;
++                    passData.source = sourceTexture;
++                    passData.depth = depthTexture;
++                    passData.halfInput = halfTexture;
++                    passData.destination = compositeTexture;
++                    passData.fullSize = fullSize;
++                    passData.halfSize = halfSize;
++                    passData.inverseViewProjection = inverseViewProjection;
++                    passData.mainLightDirection = _mainLightDirection;
++                    passData.compositeParams = compositeParams;
++
++                    builder.UseTexture(sourceTexture, AccessFlags.Read);
++                    builder.UseTexture(depthTexture, AccessFlags.Read);
++                    builder.UseTexture(halfTexture, AccessFlags.Read);
++                    builder.UseTexture(compositeTexture, AccessFlags.Write);
++
++                    builder.SetRenderFunc(static (CompositePassData data, ComputeGraphContext context) =>
++                    {
++                        int dispatchX = Mathf.CeilToInt(data.fullSize.x / Mathf.Max(1u, data.threadGroupSizeX));
++                        int dispatchY = Mathf.CeilToInt(data.fullSize.y / Mathf.Max(1u, data.threadGroupSizeY));
++                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceColorId, data.source);
++                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
++                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfInputId, data.halfInput);
++                        context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.CompositeResultId, data.destination);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FullSizeId, data.fullSize);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HalfSizeId, data.halfSize);
++                        context.cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.InverseViewProjectionId, data.inverseViewProjection);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightDirectionId, data.mainLightDirection);
++                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.CompositeParamsId, data.compositeParams);
++                        context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
++                    });
++                }
++
++                resourceData.cameraColor = compositeTexture;
++            }
++
++            private void EnsureRenderTargets(int halfWidth, int halfHeight, int fullWidth, int fullHeight)
++            {
++                if ((_halfTexture == null || _halfTexture.rt == null || _halfTexture.rt.width != halfWidth || _halfTexture.rt.height != halfHeight) ||
++                    (_compositeTexture == null || _compositeTexture.rt == null || _compositeTexture.rt.width != fullWidth || _compositeTexture.rt.height != fullHeight))
++                {
++                    _halfTexture?.Release();
++                    _compositeTexture?.Release();
++
++                    // COLD ALLOC: RTHandle[1] — persistent half-resolution volumetric lighting buffer — owner: VolumetricLightFeature
++                    _halfTexture = RTHandles.Alloc(
++                        halfWidth,
++                        halfHeight,
++                        1,
++                        DepthBits.None,
++                        GraphicsFormat.R16G16B16A16_SFloat,
++                        FilterMode.Bilinear,
++                        TextureWrapMode.Clamp,
++                        TextureDimension.Tex2D,
++                        true,
++                        name: "_HectonVolumetricLightHalf");
++
++                    // COLD ALLOC: RTHandle[1] — persistent full-resolution volumetric composite buffer — owner: VolumetricLightFeature
++                    _compositeTexture = RTHandles.Alloc(
++                        fullWidth,
++                        fullHeight,
++                        1,
++                        DepthBits.None,
++                        GraphicsFormat.R16G16B16A16_SFloat,
++                        FilterMode.Bilinear,
++                        TextureWrapMode.Clamp,
++                        TextureDimension.Tex2D,
++                        true,
++                        name: "_HectonVolumetricLightComposite");
++                }
++            }
++
++            private static int QuantizeDimension(int dimension)
++            {
++                int safeDimension = Mathf.Max(1, dimension);
++                return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
++            }
++        }
++
++        private static class ShaderConstants
++        {
++            internal static readonly int SourceColorId = Shader.PropertyToID("_HectonVolumetricSourceColor");
++            internal static readonly int SourceDepthId = Shader.PropertyToID("_HectonVolumetricSourceDepth");
++            internal static readonly int HalfInputId = Shader.PropertyToID("_HectonVolumetricHalfInput");
++            internal static readonly int HalfResultId = Shader.PropertyToID("_HectonVolumetricHalfResult");
++            internal static readonly int CompositeResultId = Shader.PropertyToID("_HectonVolumetricCompositeResult");
++            internal static readonly int FullSizeId = Shader.PropertyToID("_HectonVolumetricFullSize");
++            internal static readonly int HalfSizeId = Shader.PropertyToID("_HectonVolumetricHalfSize");
++            internal static readonly int InverseViewProjectionId = Shader.PropertyToID("_HectonVolumetricInverseViewProjection");
++            internal static readonly int MainLightDirectionId = Shader.PropertyToID("_HectonVolumetricMainLightDirection");
++            internal static readonly int MainLightColorId = Shader.PropertyToID("_HectonVolumetricMainLightColor");
++            internal static readonly int ScatteringParamsId = Shader.PropertyToID("_HectonVolumetricScatteringParams");
++            internal static readonly int MarchParamsId = Shader.PropertyToID("_HectonVolumetricMarchParams");
++            internal static readonly int CompositeParamsId = Shader.PropertyToID("_HectonVolumetricCompositeParams");
++        }
++
++        [SerializeField] private FeatureSettings settings = new FeatureSettings();
++
++        private VolumetricLightPass _pass;
++
++        /// <inheritdoc />
++        public override void Create()
++        {
++#if UNITY_EDITOR
++            if (settings != null && settings.computeShader == null)
++                settings.computeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeShaderAssetPath);
++#endif
++
++            _pass ??= new VolumetricLightPass();
++        }
++
++        /// <inheritdoc />
++        public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
++        {
++            if (settings == null || settings.computeShader == null || _pass == null || !SystemInfo.supportsComputeShaders)
++                return;
++
++            CameraType cameraType = renderingData.cameraData.cameraType;
++            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
++                return;
++
++            Vector4 mainLightDirection = Vector4.zero;
++            Vector4 mainLightColor = Vector4.zero;
++
++            int mainLightIndex = renderingData.lightData.mainLightIndex;
++            if (mainLightIndex >= 0 && mainLightIndex < renderingData.lightData.visibleLights.Length)
++            {
++                VisibleLight visibleLight = renderingData.lightData.visibleLights[mainLightIndex];
++                if (visibleLight.lightType == LightType.Directional)
++                {
++                    Vector3 directionWS = -visibleLight.localToWorldMatrix.GetColumn(2);
++                    Color color = visibleLight.finalColor;
++                    mainLightDirection = new Vector4(directionWS.x, directionWS.y, directionWS.z, 1f);
++                    mainLightColor = new Vector4(color.r, color.g, color.b, 1f);
++                }
++            }
++
++            if (mainLightDirection.w <= 0.5f)
++                return;
++
++            _pass.Setup(settings, settings.computeShader, mainLightDirection, mainLightColor);
++            renderer.EnqueuePass(_pass);
++        }
++
++        /// <inheritdoc />
++        protected override void Dispose(bool disposing)
++        {
++            _pass?.Dispose();
++        }
++    }
++}
+diff --git a/Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md b/Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md
+new file mode 100644
+index 00000000..23d610d7
+--- /dev/null
++++ b/Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md
+@@ -0,0 +1,201 @@
++# Habitat Logistics Graph
++
++Date: `2026-04-29`  
++Status: `PENDING VERIFICATION`
++
++Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
++
++Supersedes: transient construction notes spread across dated audit bundles. Older one-shot construction writeups remain historical material, not architecture authority.
++
++## Scope
++
++- habitat module adjacency
++- logistics pipe visual generation
++- rupture propagation and visual aftermath
++- support-loss cascade behavior
++
++Out of scope:
++
++- per-tick resource flow solve implementation details beyond the graph contract
++- module authoring UX
++- editor bootstrap tooling
++
++## Owners
++
++- `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs`
++  - authoritative habitat topology snapshot
++  - CSR adjacency build
++  - support-loss rupture detection
++  - logical edge severing on unsupported spans
++- `Assets/_Project/Scripts/Core/LogisticsPipeBuilder.cs`
++  - spline descriptor math
++  - Bishop / rotation-minimizing frame transport
++  - visual LOD selection
++- `Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs`
++  - batched runtime mesh build for pipe proxies
++  - Burst jobs for sample frames, tube vertices, and indices
++  - line fallback for distant pipes
++- `Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs`
++  - rupture state bridge from graph flags into visuals and downstream VFX/decal owners
++- `Assets/_Project/Scripts/Construction/StructuralIntegrityProfile.cs`
++  - authored rupture thresholds and decal atlas indices per material variant
++
++## Graph Contract
++
++Habitat topology is stored as a CSR snapshot:
++
++```csharp
++NativeArray<LogisticsNetworkGraph.LogisticsNode> Nodes;
++NativeArray<int> EdgeOffsets;      // len = NodeCount + 1
++NativeArray<int> EdgeDestinations; // contiguous adjacency
++NativeArray<float> EdgeResistance; // aligned with EdgeDestinations
++```
++
++Mutation source is module/socket discovery. Runtime traversal reads CSR only.
++
++Rebuild sequence:
++
++1. Clear previous visual links.
++2. Re-index placed modules into `ModuleRecord`.
++3. Quantize sockets and assemble provisional undirected edges.
++4. Build node records.
++5. Build edge records, evaluate unsupported spans, and mark ruptures.
++6. Publish degradation state.
++7. Publish the logical `LogisticsNetworkGraph`.
++8. Publish visual spline links.
++
++Unsupported span rule:
++
++- if link length `> 15m`
++- and no intermediate support module is inferred near the segment
++- then both endpoint nodes inherit `LogisticsNodeFlags.Ruptured`
++- and the edge is marked `Severed`
++- and the edge is excluded from CSR publication
++
++Result: structural breakage visually persists, but the power / atmosphere graph splits into isolated islands immediately on rebuild.
++
++## Bishop Frame Spline Contract
++
++Pipe visuals use a cubic Bezier derived from the two socket positions and their forward vectors.
++
++Control point resolution:
++
++```csharp
++p0 = start;
++p1 = start + startForward * handleLength;
++p2 = end   - endForward   * handleLength;
++p3 = end;
++```
++
++Sampling uses a Bishop / rotation-minimizing frame, not Frenet frames. That avoids flips at zero-curvature intervals and at hard direction changes.
++
++Frame propagation:
++
++```csharp
++center  = EvaluateSpline(p0, p1, p2, p3, t);
++tangent = normalize(EvaluateTangent(p0, p1, p2, p3, t));
++
++if first sample:
++    ResolveInitialFrame(tangent, out normal, out binormal);
++else:
++    TransportFrame(prevTangent, tangent, prevNormal, prevBinormal, out normal, out binormal);
++```
++
++The renderer samples `8` spline points per link and extrudes either:
++
++- `8` radial segments for near tubes
++- `4` radial segments for mid-distance tubes
++- `2` vertices plus `MeshTopology.Lines` for far links
++
++LOD thresholds:
++
++- `< 40m`: `Tube8`
++- `>= 40m` and `< 100m`: `Tube4`
++- `>= 100m`: `Line`
++
++## Rupture Buckling Contract
++
++Rupture is a visual modifier layered onto the existing spline tube build. It does not own flow math.
++
++Inside `BuildTubeVerticesJob`:
++
++```csharp
++float3 position = center + radialDirection * Radius;
++
++if (HasRupturedMask(descriptor.Flags))
++{
++    float ruptureHash = ResolveRuptureHash(linkIndex);
++    position += radialDirection * math.sin(position.z * 15f + ruptureHash) * 0.15f;
++}
++```
++
++This executes inside Burst on native arrays only. No managed allocations, no `SetVertices`, no mesh CPU copies through managed containers.
++
++## Mesh Upload Contract
++
++`ConnectionSplineBatchRenderer` uploads generated geometry through `Mesh.AllocateWritableMeshData` and `UnsafeUtility.MemCpy`.
++
++```csharp
++void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
++void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
++UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)count * UnsafeUtility.SizeOf<T>());
++```
++
++Rules:
++
++- no managed vertex arrays
++- no `Mesh.SetVertices`
++- no `mesh.vertices` copies
++- no `CopyFrom` staging on hot path
++
++## Rupture Aftermath Contract
++
++`BaseDegradationSystem` is cold-path only. It is entered during habitat graph rebuild, not polled every frame.
++
++On node transition into `Ruptured`:
++
++1. Compute rupture world position from a ruptured edge or module origin.
++2. Convert that point to AUP via `HectonFloatingOrigin`.
++3. Mark connected pipe links ruptured in `ConnectionSplineBatchRenderer`.
++4. Dispatch leak VFX through `BaseModule.EmitHullBreachJet(...)`.
++5. Dispatch fluid aftermath through `AbyssalFluidDecalManager.RegisterRuptureFluid(...)`.
++6. Rebuild the crack decal matrix cache for downstream decal consumers.
++
++Current limitation:
++
++- there is no existing first-party global crack-decal renderer owner in this slice
++- the canonical output is therefore:
++  - existing leak VFX
++  - existing fluid decal owner
++  - exposed crack-decal matrix cache for future renderer consumption
++
++## Structural Integrity Profile
++
++`StructuralIntegrityProfile` defines per-material rupture authoring:
++
++- `MaxUnsupportedSpan`
++- `BaseHP`
++- `RuptureDecalAtlasIndex`
++
++Current material variants:
++
++- Glass
++- Titanium
++- Plasteel
++
++## Failure Modes
++
++- socket forward authoring can still produce ugly handles if prefab sockets are misoriented
++- rupture buckling uses `position.z` phase, so world orientation affects crush wave pattern
++- support inference is proximity-based, not explicit “support pylon” taxonomy
++- if rebuild cadence lags, visual rupture onset lags with it
++- if no downstream crack renderer binds the matrix cache, only authored decals / fluid aftermath appear
++
++## Verification Checklist
++
++- Unity compile: whole-project console must be `0` errors
++- touched scripts validate individually
++- far-pipe LOD falls back to `MeshTopology.Lines`
++- unsupported span rebuild removes severed edges from CSR
++- ruptured links show visible radial buckling
++- rupture event emits leak jet and fluid decal without managed allocations in hot path

@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Ecosystem;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -533,6 +534,13 @@ namespace Hecton8.AI
                 chemicalSignal01 = math.saturate(1f / (1f + (scavengeDistanceSq / (28f * 28f))));
             }
 
+            ResolveSpeciesGenetics(
+                out float chemicalSensitivity,
+                out float packCoordinationRadius,
+                out float packFlankDistance,
+                out float packCommitDistance,
+                out float aggressionMultiplier);
+
             Hecton8.World.HectonMapMagicVegetationBridge vegetationBridge = Hecton8.World.HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (vegetationBridge != null && vegetationBridge.HasPermanentThreatEcho(context.SelfPosition))
                 chemicalSignal01 = math.max(chemicalSignal01, 0.35f);
@@ -565,14 +573,18 @@ namespace Hecton8.AI
             input.AcousticPingStrength01 = acousticPingStrength01;
             input.AcousticTransmission01 = acousticTransmission01;
             input.ChemicalSignal01 = chemicalSignal01;
+            input.ChemicalSensitivity = chemicalSensitivity;
             input.HungerWeight = 1f;
-            input.ThreatWeight = 1f + (ResolveAggressionWeight() * 0.45f);
+            input.ThreatWeight = 1f + (ResolveAggressionWeight(aggressionMultiplier) * 0.45f);
             input.FearWeight = ResolveFearWeight();
-            input.AggressionWeight = ResolveAttackSpeedWeight();
+            input.AggressionWeight = ResolveAttackSpeedWeight(aggressionMultiplier);
             input.EscapeDistance = math.max(0f, context.EscapeDistance);
             input.EscapeSafeDistance = math.max(input.EscapeDistance, context.EscapeSafeDistance);
             input.WanderRadius = math.max(1f, context.WanderRadius);
             input.PatrolRadius = math.max(1f, context.PatrolRadius);
+            input.PackCoordinationRadius = packCoordinationRadius;
+            input.PackFlankDistance = packFlankDistance;
+            input.PackCommitDistance = packCommitDistance;
             input.ImportanceScore = math.saturate(context.FoveatedImportanceScore);
             input.SpeciesId = ResolveSpeciesId();
             input.ClaimedBoidIndex = -1;
@@ -671,11 +683,41 @@ namespace Hecton8.AI
             return speciesProfile != null && speciesProfile.isLeviathan;
         }
 
-        private float ResolveAggressionWeight()
+        private void ResolveSpeciesGenetics(
+            out float chemicalSensitivity,
+            out float packCoordinationRadius,
+            out float packFlankDistance,
+            out float packCommitDistance,
+            out float aggressionMultiplier)
+        {
+            chemicalSensitivity = 1f;
+            packCoordinationRadius = _archetype != null ? math.max(0f, _archetype.packSupportRadius) : 0f;
+            packFlankDistance = _archetype != null ? math.max(0f, _archetype.packFlankDistance) : 0f;
+            packCommitDistance = _archetype != null ? math.max(0f, _archetype.packCommitDistance) : 0f;
+            aggressionMultiplier = 1f;
+
+            CreatureGeneticsProfile geneticsProfile = _speciesProfile != null ? _speciesProfile.geneticsProfile : null;
+            if (geneticsProfile == null || !geneticsProfile.TryResolveSpeciesTuning(ResolveSpeciesId(), out CreatureGeneticsProfile.SpeciesGeneticsTuning tuning))
+                return;
+
+            if (tuning.scentSensitivity > 0f)
+                chemicalSensitivity = tuning.scentSensitivity;
+
+            if (tuning.packHuntingRadius > 0f)
+                packCoordinationRadius = tuning.packHuntingRadius;
+
+            if (tuning.packFlankOffset > 0f)
+                packFlankDistance = tuning.packFlankOffset;
+
+            if (tuning.baseAggressionMultiplier > 0f)
+                aggressionMultiplier = tuning.baseAggressionMultiplier;
+        }
+
+        private float ResolveAggressionWeight(float aggressionMultiplier)
         {
             float aggression = _speciesProfile != null ? math.max(0.1f, _speciesProfile.baseAggro) : 0.55f;
             if (_archetype == null)
-                return aggression;
+                return aggression * math.max(0f, aggressionMultiplier);
 
             switch (_archetype.roleType)
             {
@@ -690,7 +732,7 @@ namespace Hecton8.AI
             if (_archetype.isAggressive)
                 aggression *= 1.1f;
 
-            return aggression;
+            return aggression * math.max(0f, aggressionMultiplier);
         }
 
         private float ResolveFearWeight()
@@ -701,12 +743,12 @@ namespace Hecton8.AI
             return math.max(_speciesProfile.retreatSpeedMultiplier, _speciesProfile.escapeSpeedMultiplier);
         }
 
-        private float ResolveAttackSpeedWeight()
+        private float ResolveAttackSpeedWeight(float aggressionMultiplier)
         {
             if (_speciesProfile == null)
-                return 1.35f;
+                return 1.35f * math.max(0f, aggressionMultiplier);
 
-            return math.max(1.15f, _speciesProfile.aggressiveSpeedMultiplier);
+            return math.max(1.15f, _speciesProfile.aggressiveSpeedMultiplier * math.max(0f, aggressionMultiplier));
         }
 
         private int ResolveSpeciesId()

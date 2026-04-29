@@ -383,6 +383,42 @@ namespace Hecton8.Crafting
             return count;
         }
 
+        internal int GetAdjustedIngredientAmount(InventoryCost cost)
+        {
+            if (cost == null || cost.item == null || cost.amount <= 0)
+                return 0;
+
+            int itemHashId = ComputeItemHash(cost.item);
+            ResourceScarcityDirector scarcityDirector = ResourceScarcityDirector.Instance;
+            return scarcityDirector != null
+                ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, transform.position)
+                : cost.amount;
+        }
+
+        internal float GetRecipeInflationMultiplier(RecipeData recipe)
+        {
+            if (recipe == null || recipe.ingredients == null || recipe.ingredients.Count <= 0)
+                return 1f;
+
+            float maxMultiplier = 1f;
+            for (int i = 0; i < recipe.ingredients.Count; i++)
+            {
+                InventoryCost cost = recipe.ingredients[i];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                int adjustedAmount = GetAdjustedIngredientAmount(cost);
+                if (adjustedAmount <= cost.amount)
+                    continue;
+
+                float multiplier = (float)adjustedAmount / cost.amount;
+                if (multiplier > maxMultiplier)
+                    maxMultiplier = multiplier;
+            }
+
+            return maxMultiplier;
+        }
+
         /// <summary>
         /// Запускает процесс крафта.
         /// После смены _isCrafting → PowerRating меняется с 0 на -craftPowerDraw.
@@ -400,7 +436,7 @@ namespace Hecton8.Crafting
                 return false;
             }
 
-            _activeCraftPowerMultiplier = ResolveCraftPowerMultiplier(recipe);
+            _activeCraftPowerMultiplier = ResolveCraftPowerMultiplier(this, recipe);
             _craftTimer   = 0f;
             _isCrafting   = true;
             _lastPublishedProgress = -1f;
@@ -629,7 +665,11 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null)
                     continue;
 
-                if (CountAccessibleItem(cost.item) >= cost.amount)
+                int requiredAmount = GetAdjustedIngredientAmount(cost);
+                if (requiredAmount <= 0)
+                    continue;
+
+                if (CountAccessibleItem(cost.item) >= requiredAmount)
                 {
                     if (maskBit < 64)
                         satisfiedMask |= 1UL << maskBit;
@@ -702,7 +742,8 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null) continue;
 
                 int localAvailable = CountAvailableItemInInventory(_playerInventory, cost.item);
-                int removableCount = localAvailable < cost.amount ? localAvailable : cost.amount;
+                int requiredAmount = GetAdjustedIngredientAmount(cost);
+                int removableCount = localAvailable < requiredAmount ? localAvailable : requiredAmount;
                 total += cost.item.CellArea * removableCount;
             }
 
@@ -729,7 +770,10 @@ namespace Hecton8.Crafting
                 InventoryCost cost = costs[c];
                 if (cost == null || cost.item == null) continue;
 
-                int remaining = cost.amount;
+                int remaining = GetAdjustedIngredientAmount(cost);
+                if (remaining <= 0)
+                    continue;
+
                 int localAvailable = CountAvailableItemInInventory(_playerInventory, cost.item);
                 int localTake = localAvailable < remaining ? localAvailable : remaining;
                 if (localTake > 0)
@@ -994,9 +1038,11 @@ namespace Hecton8.Crafting
             }
         }
 
-        private static float ResolveCraftPowerMultiplier(RecipeData recipe)
+        private static float ResolveCraftPowerMultiplier(Fabricator owner, RecipeData recipe)
         {
-            return Mathf.Max(1f, ResourceScarcityDirector.ResolveCraftPowerMultiplier(recipe));
+            return owner != null
+                ? Mathf.Max(1f, owner.GetRecipeInflationMultiplier(recipe))
+                : Mathf.Max(1f, ResourceScarcityDirector.ResolveCraftPowerMultiplier(recipe));
         }
 
         private float ResolveCraftPowerCost(RecipeData recipe)

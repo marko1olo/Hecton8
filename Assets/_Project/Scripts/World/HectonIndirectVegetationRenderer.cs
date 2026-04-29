@@ -485,22 +485,24 @@ namespace Hecton8.World
             private static void ResolveInstanceShape(HectonVegetationInstanceData instanceData, out float instanceHeight, out float instanceWidth)
             {
                 float instanceType = math.clamp(math.round(instanceData.Type), 0f, 2f);
+                float encodedHeightScale = math.saturate(math.abs(instanceData.HeightScale));
+                float encodedWidthScale = instanceData.WidthScale < 0f ? 1f : math.saturate(instanceData.WidthScale);
                 if (instanceType < 0.5f)
                 {
-                    instanceHeight = math.lerp(0.35f, 1.4f, instanceData.HeightScale);
-                    instanceWidth = math.lerp(0.65f, 1.25f, math.saturate(instanceData.WidthScale));
+                    instanceHeight = math.lerp(0.35f, 1.4f, encodedHeightScale);
+                    instanceWidth = math.lerp(0.65f, 1.25f, encodedWidthScale);
                     return;
                 }
 
                 if (instanceType < 1.5f)
                 {
-                    instanceHeight = math.lerp(10f, 20f, instanceData.HeightScale);
-                    instanceWidth = math.lerp(0.55f, 1.6f, math.saturate(instanceData.WidthScale));
+                    instanceHeight = math.lerp(10f, 20f, encodedHeightScale);
+                    instanceWidth = math.lerp(0.55f, 1.6f, encodedWidthScale);
                     return;
                 }
 
-                instanceHeight = math.lerp(0.75f, 2.4f, instanceData.HeightScale);
-                instanceWidth = math.lerp(0.75f, 1.35f, math.saturate(instanceData.WidthScale));
+                instanceHeight = math.lerp(0.75f, 2.4f, encodedHeightScale);
+                instanceWidth = math.lerp(0.75f, 1.35f, encodedWidthScale);
             }
 
             private static float3 TransformPoint(Matrix4x4 matrixValue, float x, float y, float z)
@@ -1906,22 +1908,24 @@ namespace Hecton8.World
             out float instanceWidth)
         {
             float instanceType = Mathf.Clamp(Mathf.Round(instanceData.Type), 0f, 2f);
+            float encodedHeightScale = Mathf.Clamp01(Mathf.Abs(instanceData.HeightScale));
+            float encodedWidthScale = instanceData.WidthScale < 0f ? 1f : Mathf.Clamp01(instanceData.WidthScale);
             if (instanceType < 0.5f)
             {
-                instanceHeight = Mathf.Lerp(0.35f, 1.4f, instanceData.HeightScale);
-                instanceWidth = Mathf.Lerp(0.65f, 1.25f, Mathf.Clamp01(instanceData.WidthScale));
+                instanceHeight = Mathf.Lerp(0.35f, 1.4f, encodedHeightScale);
+                instanceWidth = Mathf.Lerp(0.65f, 1.25f, encodedWidthScale);
                 return;
             }
 
             if (instanceType < 1.5f)
             {
-                instanceHeight = Mathf.Lerp(10f, 20f, instanceData.HeightScale);
-                instanceWidth = Mathf.Lerp(0.55f, 1.6f, Mathf.Clamp01(instanceData.WidthScale));
+                instanceHeight = Mathf.Lerp(10f, 20f, encodedHeightScale);
+                instanceWidth = Mathf.Lerp(0.55f, 1.6f, encodedWidthScale);
                 return;
             }
 
-            instanceHeight = Mathf.Lerp(0.75f, 2.4f, instanceData.HeightScale);
-            instanceWidth = Mathf.Lerp(0.75f, 1.35f, Mathf.Clamp01(instanceData.WidthScale));
+            instanceHeight = Mathf.Lerp(0.75f, 2.4f, encodedHeightScale);
+            instanceWidth = Mathf.Lerp(0.75f, 1.35f, encodedWidthScale);
         }
 
         private static Vector3 TransformPoint(Matrix4x4 matrixValue, float x, float y, float z)

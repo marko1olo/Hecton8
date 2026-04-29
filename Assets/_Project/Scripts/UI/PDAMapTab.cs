@@ -24,6 +24,7 @@ namespace Hecton8.UI
         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
         private static readonly int GridDimensionsId = Shader.PropertyToID("_GridDimensions");
+        private static readonly int VolumeHalfExtentId = Shader.PropertyToID("_VolumeHalfExtent");
         private static readonly int ThreatPingCountId = Shader.PropertyToID("_ThreatPingCount");
         private static readonly int ThreatPingsId = Shader.PropertyToID("_ThreatPings");
         private static readonly int TimePhaseId = Shader.PropertyToID("_TimePhase");
@@ -251,6 +252,7 @@ namespace Hecton8.UI
                     _runtimeMapMaterial.SetVector(
                         GridDimensionsId,
                         new Vector4(gridDimensions.x, gridDimensions.y, gridDimensions.z, 0f));
+                    _runtimeMapMaterial.SetVector(VolumeHalfExtentId, ResolveLocalVolumeHalfExtent(gridDimensions, voxelCellSize));
                 }
             }
 
@@ -397,7 +399,7 @@ namespace Hecton8.UI
                 return;
 
             char[] buffer = _statusBufferLease.Buffer;
-            int length = CopyLiteral(buffer, 0, "SONAR MAP // OFFLINE");
+            int length = CopyLiteral(buffer, 0, "SONAR WIRE // OFFLINE");
             statusLabel.SetCharArray(buffer, 0, length);
         }
 
@@ -408,7 +410,7 @@ namespace Hecton8.UI
 
             Span<char> span = _statusBufferLease.Buffer.AsSpan();
             int cursor = 0;
-            cursor += CopyLiteral(span, cursor, "SONAR ");
+            cursor += CopyLiteral(span, cursor, "SONAR WIRE ");
             cursor += CopyInt(span, cursor, gridDimensions.x);
             cursor += CopyLiteral(span, cursor, "x");
             cursor += CopyInt(span, cursor, gridDimensions.y);
@@ -445,6 +447,18 @@ namespace Hecton8.UI
                 return 0;
 
             return value.TryFormat(buffer.Slice(offset), out int written) ? written : 0;
+        }
+
+        private static Vector4 ResolveLocalVolumeHalfExtent(Vector3Int gridDimensions, Vector3 voxelCellSize)
+        {
+            float worldSizeX = Mathf.Max(1, gridDimensions.x - 1) * Mathf.Max(0.0001f, voxelCellSize.x);
+            float worldSizeY = Mathf.Max(1, gridDimensions.y - 1) * Mathf.Max(0.0001f, voxelCellSize.y);
+            float worldSizeZ = Mathf.Max(1, gridDimensions.z - 1) * Mathf.Max(0.0001f, voxelCellSize.z);
+            Vector3 worldHalfExtent = new Vector3(worldSizeX, worldSizeY, worldSizeZ) * 0.5f;
+            float dominantHalfExtent = Mathf.Max(0.0001f, Mathf.Max(worldHalfExtent.x, Mathf.Max(worldHalfExtent.y, worldHalfExtent.z)));
+            float localScale = 0.55f / dominantHalfExtent;
+            Vector3 localHalfExtent = worldHalfExtent * localScale;
+            return new Vector4(localHalfExtent.x, localHalfExtent.y, localHalfExtent.z, 0f);
         }
 
         private void ReleaseResources()

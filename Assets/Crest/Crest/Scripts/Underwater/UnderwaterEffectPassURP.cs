@@ -9,6 +9,7 @@ namespace Crest
     using Crest.Internal;
     using System.Collections.Generic;
     using UnityEngine;
+    using UnityEngine.Experimental.Rendering;
     using UnityEngine.Rendering;
     using UnityEngine.Rendering.Universal;
 
@@ -157,6 +158,9 @@ namespace Crest
 #if UNITY_2023_3_OR_NEWER
             _colorTarget = renderingData.colorTargetHandle.RT;
             _depthTarget = renderingData.depthTargetHandle.RT;
+#elif UNITY_6000_0_OR_NEWER
+            _colorTarget = renderingData.cameraData.renderer.cameraColorTarget;
+            _depthTarget = renderingData.cameraData.renderer.cameraDepthTarget;
 #elif UNITY_2022_3_OR_NEWER
             _colorTarget = renderingData.cameraData.renderer.cameraColorTargetHandle;
             _depthTarget = renderingData.cameraData.renderer.cameraDepthTargetHandle;
@@ -197,6 +201,8 @@ namespace Crest
             {
                 var descriptor = cameraDescriptor;
                 descriptor.msaaSamples = 1;
+                descriptor.depthBufferBits = 0;
+                descriptor.depthStencilFormat = GraphicsFormat.None;
 
 #if UNITY_6000_0_OR_NEWER
                 var size = renderingData.colorTargetHandle.RT.GetScaledSize();
@@ -214,8 +220,14 @@ namespace Crest
             if (_underwaterRenderer.UseStencilBufferOnEffect)
             {
                 var descriptor = cameraDescriptor;
-                descriptor.colorFormat = RenderTextureFormat.Depth;
-                descriptor.depthBufferBits = 24;
+                descriptor.graphicsFormat = GraphicsFormat.None;
+                descriptor.depthStencilFormat = cameraDescriptor.depthStencilFormat;
+                if (descriptor.depthStencilFormat == GraphicsFormat.None)
+                {
+                    descriptor.depthStencilFormat = SystemInfo.GetGraphicsFormat(DefaultFormat.DepthStencil);
+                }
+
+                descriptor.depthBufferBits = 0;
                 descriptor.SetMSAASamples(_camera);
                 descriptor.bindMS = descriptor.msaaSamples > 1;
 
@@ -268,7 +280,7 @@ namespace Crest
                 Helpers.Blit(commandBuffer, _depthStencilTarget, Helpers.UtilityMaterial, (int)Helpers.UtilityPass.CopyDepth);
             }
 
-#if UNITY_2022_3
+#if UNITY_2022_3 && !UNITY_6000_0_OR_NEWER
             // Manual resolve required for some reason.
             commandBuffer.ResolveAntiAliasedSurface(renderingData.cameraData.renderer.cameraColorTargetHandle);
 #endif
@@ -359,21 +371,12 @@ namespace Crest
         }
 
 #if UNITY_6000_0_OR_NEWER && UNITY_2023_3_OR_NEWER
-        void EnsureRenderGraphTemporaryTargets(UniversalCameraData cameraData, RenderGraphHelper.Handle colorTargetHandle, RenderGraphHelper.Handle depthTargetHandle)
+        void EnsureRenderGraphTemporaryTargets(UniversalCameraData cameraData)
         {
             var descriptor = cameraData.cameraTargetDescriptor;
             descriptor.msaaSamples = 1;
-
-            RTHandle colorHandle = colorTargetHandle.RT;
-            if (colorHandle != null)
-            {
-                Vector2Int size = colorHandle.GetScaledSize();
-                if (size.x > 0 && size.y > 0)
-                {
-                    descriptor.width = size.x;
-                    descriptor.height = size.y;
-                }
-            }
+            descriptor.depthBufferBits = 0;
+            descriptor.depthStencilFormat = GraphicsFormat.None;
 
             _temporaryColorHandle ??= RTHandles.Alloc(descriptor);
             RenderingUtils.ReAllocateHandleIfNeeded(ref _temporaryColorHandle, descriptor);
@@ -383,21 +386,16 @@ namespace Crest
                 return;
 
             descriptor = cameraData.cameraTargetDescriptor;
-            descriptor.colorFormat = RenderTextureFormat.Depth;
-            descriptor.depthBufferBits = 24;
+            descriptor.graphicsFormat = GraphicsFormat.None;
+            descriptor.depthStencilFormat = cameraData.cameraTargetDescriptor.depthStencilFormat;
+            if (descriptor.depthStencilFormat == GraphicsFormat.None)
+            {
+                descriptor.depthStencilFormat = SystemInfo.GetGraphicsFormat(DefaultFormat.DepthStencil);
+            }
+
+            descriptor.depthBufferBits = 0;
             descriptor.SetMSAASamples(cameraData.camera);
             descriptor.bindMS = descriptor.msaaSamples > 1;
-
-            RTHandle depthHandle = depthTargetHandle.RT;
-            if (depthHandle != null)
-            {
-                Vector2Int size = depthHandle.GetScaledSize();
-                if (size.x > 0 && size.y > 0)
-                {
-                    descriptor.width = size.x;
-                    descriptor.height = size.y;
-                }
-            }
 
             _depthStencilHandle ??= RTHandles.Alloc(descriptor);
             RenderingUtils.ReAllocateHandleIfNeeded(ref _depthStencilHandle, descriptor);

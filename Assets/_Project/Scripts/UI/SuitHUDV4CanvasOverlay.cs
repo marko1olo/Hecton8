@@ -28,7 +28,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener, IUIService
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener
     {
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
@@ -102,6 +102,8 @@ namespace Hecton8.UI
         private static readonly int _ThreatChevronFillAlphaId = Shader.PropertyToID("_FillAlpha");
         private static readonly int _ScannerHologramBaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ScannerHologramColorId = Shader.PropertyToID("_Color");
+        private static readonly int _ScannerHologramScanProgressId = Shader.PropertyToID("_ScanProgress");
+        private static readonly int _ScannerHologramGlitchAmountId = Shader.PropertyToID("_GlitchAmount");
         private static readonly int _AcousticRadarTexId = Shader.PropertyToID("_AcousticRadarTex");
         private static readonly int _AcousticRadarPrimaryColorId = Shader.PropertyToID("_PrimaryColor");
         private static readonly int _AcousticRadarWarningColorId = Shader.PropertyToID("_WarningColor");
@@ -282,6 +284,15 @@ namespace Hecton8.UI
         [SerializeField] private Vector2 gaugeClusterSize = new Vector2(300f, 128f);
         [SerializeField] private Vector2 statusOffset = new Vector2(0f, 50f);
         [SerializeField] private Vector2 reticleOffset = Vector2.zero;
+
+        [Header("Reticle Dynamics")]
+        [SerializeField, Range(0f, 24f)] private float reticleBaseSpread = 16f;
+        [SerializeField, Range(0f, 8f)] private float reticleVelocityFactor = 1.65f;
+        [SerializeField, Range(0f, 24f)] private float reticleHeatSpread = 12f;
+        [SerializeField, Range(0.25f, 24f)] private float reticleSpreadBlendSpeed = 8f;
+        [SerializeField, Range(8f, 36f)] private float reticleLineLength = 22f;
+        [SerializeField, Range(1f, 6f)] private float reticleLineThickness = 2f;
+        [SerializeField, Range(4f, 24f)] private float reticleBracketLength = 10f;
 
         [Header("Gauge Ring Controls")]
         [SerializeField] private float gaugeColumnSpacing = 82f;
@@ -477,9 +488,10 @@ namespace Hecton8.UI
         private float _displayOxygen01 = 1f;
         private float _displayHealth01 = 1f;
         private float _displayPower01 = 1f;
+        private float _reticleSpreadPixels;
+        private float _appliedReticleSpreadPixels = float.NaN;
         private float _lastDepth;
         private float _depthMeters;
-        private int _uiCadenceFrame;
         private float _lastStreamedOxygen01 = float.NaN;
         private float _lastStreamedPower01 = float.NaN;
         private float _lastStreamedHealth01 = float.NaN;
@@ -606,6 +618,8 @@ namespace Hecton8.UI
         private int _threatChevronVisibleCount;
         // COLD ALLOC: Matrix4x4[1] — scanner visor hologram draw buffer — owner: SuitHUDV4CanvasOverlay
         private readonly Matrix4x4[] _scannerHologramMatrices = new Matrix4x4[1];
+        // COLD ALLOC: MaterialPropertyBlock[1] — scanner visor hologram per-draw properties — owner: SuitHUDV4CanvasOverlay
+        private MaterialPropertyBlock _scannerHologramPropertyBlock;
         private Material _scannerHologramMaterial;
         private Mesh _scannerHologramFallbackMesh;
         private float _scannerHologramAnimationTime;
@@ -632,6 +646,7 @@ namespace Hecton8.UI
         {
             public RectTransform Root;
             public CanvasGroup CanvasGroup;
+            public CanvasGroup SubCanvasGroup;
             public Image Icon;
             public Image RingBack;
             public Image RingFill;
@@ -694,12 +709,17 @@ namespace Hecton8.UI
 
         private bool _ownsGlobalUiSlot;
 
+        private void Awake()
+        {
+            _scannerHologramPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — scanner visor hologram per-draw properties — owner: SuitHUDV4CanvasOverlay
+        }
+
         private void OnEnable()
         {
             EnsureLayerCache();
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             LocalizationManager.OnCorruptionVisualStateChanged += HandleCorruptionVisualStateChanged;
-            SceneBootstrap.OnGameReady += HandleSceneBootstrapReady;
+            SceneBootstrap.Register(this);
             PlayerSignalEvents.OnTraumaHudSignal += HandleTraumaHudSignal;
             PlayerSignalEvents.OnToolDepletedSignal += HandleToolDepletedSignal;
             RegisterActiveOverlay();
@@ -738,7 +758,7 @@ namespace Hecton8.UI
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             LocalizationManager.OnCorruptionVisualStateChanged -= HandleCorruptionVisualStateChanged;
-            SceneBootstrap.OnGameReady -= HandleSceneBootstrapReady;
+            SceneBootstrap.Unregister(this);
             PlayerSignalEvents.OnTraumaHudSignal -= HandleTraumaHudSignal;
             PlayerSignalEvents.OnToolDepletedSignal -= HandleToolDepletedSignal;
             HectonFloatingOrigin.UnregisterListener(this);
@@ -989,7 +1009,7 @@ namespace Hecton8.UI
             if (!_layoutBuilt || _root == null || targetCanvas == null)
                 return;
 
-            int cadenceFrame = unchecked(++_uiCadenceFrame);
+            int cadenceFrame = Time.frameCount;
             bool refreshMediumCadence = cadenceFrame % MediumCadenceFrameModulo == 0;
             bool refreshSlowCadence = cadenceFrame % SlowCadenceFrameModulo == 0;
             RefreshAcousticRadarPayload();
@@ -1064,6 +1084,12 @@ namespace Hecton8.UI
                 Mathf.Sin(_jitterTime * JitterFrequencyRadians) * amplitude,
                 Mathf.Sin(_jitterTime * (JitterFrequencyRadians * 0.73f)) * amplitude * 0.58f);
             _root.anchoredPosition = _rootBaseAnchoredPosition + jitterOffset;
+        }
+
+        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        {
+            if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
+                HandleSceneBootstrapReady();
         }
 
         private void HandleSceneBootstrapReady()
@@ -1900,6 +1926,9 @@ namespace Hecton8.UI
             if (_scannerHologramMaterial == null)
                 return;
 
+            if (snapshot.Fragment == null && snapshot.ProxyMeshIndex < 0)
+                return;
+
             Mesh mesh = ResolveScannerHologramMesh(snapshot.ProxyMeshIndex);
             if (mesh == null)
                 return;
@@ -1920,10 +1949,16 @@ namespace Hecton8.UI
             _scannerHologramMatrices[0] = Matrix4x4.TRS(worldPosition, rotation, scale);
 
             Color hologramColor = Color.Lerp(scannerHologramScanStartColor, scannerHologramScanCompleteColor, Mathf.Clamp01(snapshot.Progress01));
+            float glitchAmount = Mathf.Clamp01((_stressPulseIntensity * 0.45f) + (_traumaGlitchIntensity * 0.55f));
+            _scannerHologramPropertyBlock.Clear();
             if (_scannerHologramMaterial.HasProperty(_ScannerHologramBaseColorId))
-                _scannerHologramMaterial.SetColor(_ScannerHologramBaseColorId, hologramColor);
-            else if (_scannerHologramMaterial.HasProperty(_ScannerHologramColorId))
-                _scannerHologramMaterial.SetColor(_ScannerHologramColorId, hologramColor);
+                _scannerHologramPropertyBlock.SetColor(_ScannerHologramBaseColorId, hologramColor);
+
+            if (_scannerHologramMaterial.HasProperty(_ScannerHologramColorId))
+                _scannerHologramPropertyBlock.SetColor(_ScannerHologramColorId, hologramColor);
+
+            _scannerHologramPropertyBlock.SetFloat(_ScannerHologramScanProgressId, Mathf.Clamp01(snapshot.Progress01));
+            _scannerHologramPropertyBlock.SetFloat(_ScannerHologramGlitchAmountId, glitchAmount);
 
             Graphics.DrawMeshInstanced(
                 mesh,
@@ -1931,7 +1966,7 @@ namespace Hecton8.UI
                 _scannerHologramMaterial,
                 _scannerHologramMatrices,
                 1,
-                null,
+                _scannerHologramPropertyBlock,
                 ShadowCastingMode.Off,
                 false,
                 HudInternalLayerIndex,
@@ -1950,6 +1985,12 @@ namespace Hecton8.UI
             }
 
             return _scannerHologramFallbackMesh;
+        }
+
+        internal bool TryResolveSharedProxyHologramMesh(int proxyMeshIndex, out Mesh mesh)
+        {
+            mesh = ResolveScannerHologramMesh(proxyMeshIndex);
+            return mesh != null;
         }
 
         private void RenderThreatChevrons()
@@ -2420,7 +2461,7 @@ namespace Hecton8.UI
             BuildQuickbarHierarchy(_quickbarRoot);
 
             EnsureIsolatedDynamicCanvas(_reticleRoot, DynamicCanvasCadenceBucket.HighCadence);
-            EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform, DynamicCanvasCadenceBucket.HighCadence);
+            EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform, DynamicCanvasCadenceBucket.LowCadence);
             EnsureIsolatedDynamicCanvas(_telemetrySupplementRoot, DynamicCanvasCadenceBucket.LowCadence);
             EnsureIsolatedDynamicCanvas(_statusLabel.rectTransform, DynamicCanvasCadenceBucket.HighCadence);
             EnsureIsolatedDynamicCanvas(_oxygenGauge.Root, DynamicCanvasCadenceBucket.HighCadence);
@@ -2442,9 +2483,6 @@ namespace Hecton8.UI
         {
             if (_root == null)
                 return;
-
-            if (!_root.gameObject.activeSelf)
-                _root.gameObject.SetActive(true);
 
             if (_rootCanvasGroup == null)
             {
@@ -2665,6 +2703,7 @@ namespace Hecton8.UI
             ApplyAcousticRadarVisuals(pulsedPrimary, pulsedWarning, displayCorruptionIntensity);
             ApplyStaticStyleIfNeeded(primary, secondary, dim, warning);
             ApplyStressPulseStyle(primary, warning, _biosRecoveryMode ? 0f : stressPulse);
+            UpdateReticleSpread(dt);
 
             float localizedDepth = LocalizedMeasurementFormatter.ConvertDistanceMeters(depth, _localizedMeasurementLanguage);
             float localizedTemperature = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(_displayTemperature, _localizedMeasurementLanguage);
@@ -3280,7 +3319,7 @@ namespace Hecton8.UI
                 }
             }
 
-            if (gauge.Sub != null && gauge.Sub.gameObject.activeSelf)
+            if (gauge.Sub != null)
                 SetLocalizedRtlState(gauge.Sub, localizedRtl);
         }
 
@@ -3349,7 +3388,8 @@ namespace Hecton8.UI
 
             refs.Sub = CreateText(name + "_Sub", refs.Root, 10f, FontStyles.Normal, TextAlignmentOptions.Center, 0.52f, ResolveLabelFontAsset());
             Anchor(refs.Sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -48f), new Vector2(86f, 12f));
-            refs.Sub.gameObject.SetActive(false);
+            refs.SubCanvasGroup = EnsureCanvasGroup(refs.Sub.rectTransform);
+            SetCanvasGroupVisible(refs.SubCanvasGroup, false);
 
             return refs;
         }
@@ -3992,16 +4032,24 @@ namespace Hecton8.UI
             int cursor = 0;
             int progressPercent = Mathf.Clamp(Mathf.RoundToInt(snapshot.Progress01 * 100f), 0, 100);
             int purityPercent = Mathf.Clamp(Mathf.RoundToInt(snapshot.Purity01 * 100f), 0, 100);
+            int temperatureRounded = Mathf.RoundToInt(snapshot.TemperatureC);
+            int toxicityPercent = Mathf.Clamp(Mathf.RoundToInt(snapshot.Toxicity01 * 100f), 0, 100);
 
             cursor = AppendLiteral("SCAN ", buffer, cursor);
             cursor = AppendInt(progressPercent, buffer, cursor);
             cursor = AppendLiteral("% // ", buffer, cursor);
-            cursor = AppendScientificMaterial(snapshot.MaterialClass, buffer, cursor);
+            cursor = AppendScientificTarget(snapshot, buffer, cursor);
             cursor = AppendLiteral(" // P ", buffer, cursor);
             cursor = AppendInt(purityPercent, buffer, cursor);
+            cursor = AppendLiteral(" // T ", buffer, cursor);
+            cursor = AppendInt(temperatureRounded, buffer, cursor);
+            cursor = AppendLiteral("C // X ", buffer, cursor);
+            cursor = AppendInt(toxicityPercent, buffer, cursor);
+            if (snapshot.OrganicBlood01 > 0.1f)
+                cursor = AppendLiteral(" // BLOOD TRACE", buffer, cursor);
 
             length = Mathf.Clamp(cursor, 0, buffer.Length);
-            version = unchecked((progressPercent * 397) ^ (purityPercent * 17) ^ ((int)snapshot.MaterialClass * 13));
+            version = unchecked((progressPercent * 397) ^ (purityPercent * 17) ^ ((int)snapshot.MaterialClass * 13) ^ (temperatureRounded * 31) ^ (toxicityPercent * 19) ^ (snapshot.OrganicBlood01 > 0.1f ? 251 : 0));
             return true;
         }
 
@@ -4019,6 +4067,16 @@ namespace Hecton8.UI
                 default:
                     return AppendLiteral("UNKNOWN", buffer, cursor);
             }
+        }
+
+        private static int AppendScientificTarget(
+            ScannerTool.ScientificScanSnapshot snapshot,
+            char[] buffer,
+            int cursor)
+        {
+            return snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None
+                ? AppendScientificMaterial(snapshot.MaterialClass, buffer, cursor)
+                : AppendLiteral("WATER", buffer, cursor);
         }
 
         private static int AppendLiteral(string value, char[] buffer, int cursor)
@@ -4505,9 +4563,47 @@ namespace Hecton8.UI
             _appliedStressPulseStrength = stressPulse;
         }
 
+        private void UpdateReticleSpread(float dt)
+        {
+            if (_reticleRoot == null || _reticleH == null || _reticleV == null || _reticleBracketLeft == null || _reticleBracketRight == null)
+                return;
+
+            float movementSpeed = playerMovement != null
+                ? playerMovement.InterpolatedLinearVelocity.magnitude
+                : 0f;
+            float velocityContribution = Mathf.Clamp(movementSpeed * reticleVelocityFactor, 0f, 36f);
+            float heatContribution = ResolveReticleHeat01() * reticleHeatSpread;
+            float targetSpread = Mathf.Max(0f, reticleBaseSpread + velocityContribution + heatContribution);
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, reticleSpreadBlendSpeed) * Mathf.Max(dt, 0.016f));
+            _reticleSpreadPixels = Mathf.Lerp(_reticleSpreadPixels, targetSpread, blendT);
+
+            if (Mathf.Abs(_appliedReticleSpreadPixels - _reticleSpreadPixels) <= 0.05f)
+                return;
+
+            float horizontalHalfSpan = Mathf.Max(0f, _reticleSpreadPixels);
+            _reticleRoot.sizeDelta = new Vector2(64f + horizontalHalfSpan * 2f, 64f + horizontalHalfSpan * 2f);
+            _reticleH.rectTransform.sizeDelta = new Vector2(reticleLineLength, reticleLineThickness);
+            _reticleV.rectTransform.sizeDelta = new Vector2(reticleLineThickness, reticleLineLength);
+            _reticleBracketLeft.rectTransform.sizeDelta = new Vector2(reticleBracketLength, reticleLineThickness);
+            _reticleBracketRight.rectTransform.sizeDelta = new Vector2(reticleBracketLength, reticleLineThickness);
+            _reticleBracketLeft.rectTransform.anchoredPosition = new Vector2(-horizontalHalfSpan, 0f);
+            _reticleBracketRight.rectTransform.anchoredPosition = new Vector2(horizontalHalfSpan, 0f);
+            _appliedReticleSpreadPixels = _reticleSpreadPixels;
+        }
+
+        private float ResolveReticleHeat01()
+        {
+            if (_toolManager != null && _toolManager.CurrentTool is LaserCutter cutter)
+                return Mathf.Clamp01(cutter.HeatLevel);
+
+            if (flashlight != null && flashlight.IsOverheated)
+                return 1f;
+
+            return 0f;
+        }
+
         private void InvalidateVisualCaches()
         {
-            _uiCadenceFrame = 0;
             _quickbarVisualsInitialized = false;
             _lastStreamedOxygen01 = float.NaN;
             _lastStreamedPower01 = float.NaN;
@@ -4536,6 +4632,8 @@ namespace Hecton8.UI
             _hasAppliedPressureTenths = false;
             _appliedPressureWhisperVersion = int.MinValue;
             _appliedPressureColor = default;
+            _reticleSpreadPixels = reticleBaseSpread;
+            _appliedReticleSpreadPixels = float.NaN;
             _appliedStressPulseStrength = -1f;
             _styleApplied = false;
             _appliedOverallScale = 0f;

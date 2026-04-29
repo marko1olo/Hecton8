@@ -79,10 +79,11 @@ namespace Hecton8.UI
                 _canvasRect = _canvas.GetComponent<RectTransform>();
 
             if (tooltipCanvasGroup != null)
+            {
                 tooltipCanvasGroup.alpha = 0f;
-
-            if (tooltipPanel != null)
-                tooltipPanel.gameObject.SetActive(false);
+                tooltipCanvasGroup.interactable = false;
+                tooltipCanvasGroup.blocksRaycasts = false;
+            }
         }
 
         private void OnEnable()
@@ -201,7 +202,6 @@ namespace Hecton8.UI
                 return;
 
             tooltipText.SetText(_currentText);
-            tooltipPanel.gameObject.SetActive(true);
 
             // Force layout rebuild to get correct size
             LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipPanel);
@@ -220,6 +220,8 @@ namespace Hecton8.UI
             _isFading = true;
             _fadeTimer = 0f;
             tooltipCanvasGroup.alpha = 0f;
+            tooltipCanvasGroup.interactable = false;
+            tooltipCanvasGroup.blocksRaycasts = false;
         }
 
         private void HideInternal()
@@ -230,10 +232,11 @@ namespace Hecton8.UI
             _currentText = null;
 
             if (tooltipCanvasGroup != null)
+            {
                 tooltipCanvasGroup.alpha = 0f;
-
-            if (tooltipPanel != null)
-                tooltipPanel.gameObject.SetActive(false);
+                tooltipCanvasGroup.interactable = false;
+                tooltipCanvasGroup.blocksRaycasts = false;
+            }
         }
 
         private void UpdatePosition()

@@ -70,14 +70,11 @@ namespace Hecton8.Visor
 
         private sealed class AbyssalSsdoPass : ScriptableRenderPass
         {
-            private sealed class OcclusionPassData
+            private sealed class FullscreenPassData
             {
                 internal TextureHandle source;
-                internal TextureHandle occlusion;
-                internal TextureHandle blur;
-                internal Material occlusionMaterial;
-                internal Material blurHorizontalMaterial;
-                internal Material blurVerticalMaterial;
+                internal TextureHandle destination;
+                internal Material material;
             }
 
             private sealed class CompositePassData
@@ -189,32 +186,66 @@ namespace Hecton8.Visor
                 UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
                 UpdateMaterialParameters(_compositeMaterial, _settings, 3f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
 
-                using (var builder = renderGraph.AddUnsafePass<OcclusionPassData>("Hecton Abyssal SSDO", out var passData, _profilingSampler))
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Abyssal SSDO Gather", out var passData, _profilingSampler))
                 {
                     passData.source = sourceTexture;
-                    passData.occlusion = occlusionTexture;
-                    passData.blur = blurTexture;
-                    passData.occlusionMaterial = _occlusionMaterial;
-                    passData.blurHorizontalMaterial = _blurHorizontalMaterial;
-                    passData.blurVerticalMaterial = _blurVerticalMaterial;
+                    passData.destination = occlusionTexture;
+                    passData.material = _occlusionMaterial;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(normalsTexture, AccessFlags.Read);
-                    builder.UseTexture(occlusionTexture, AccessFlags.ReadWrite);
-                    builder.UseTexture(blurTexture, AccessFlags.ReadWrite);
+                    builder.UseTexture(occlusionTexture, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
-                    builder.SetGlobalTextureAfterPass(occlusionTexture, ShaderConstants.SsdoTextureId);
 
-                    builder.SetRenderFunc(static (OcclusionPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        Blitter.BlitCameraTexture(cmd, data.source, data.occlusion, LoadAction, StoreAction, data.occlusionMaterial, 0);
-                        Blitter.BlitCameraTexture(cmd, data.occlusion, data.blur, LoadAction, StoreAction, data.blurHorizontalMaterial, 1);
-                        Blitter.BlitCameraTexture(cmd, data.blur, data.occlusion, LoadAction, StoreAction, data.blurVerticalMaterial, 2);
+                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 0);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Abyssal SSDO Blur Horizontal", out var passData, _profilingSampler))
+                {
+                    passData.source = occlusionTexture;
+                    passData.destination = blurTexture;
+                    passData.material = _blurHorizontalMaterial;
+
+                    builder.UseTexture(occlusionTexture, AccessFlags.Read);
+                    builder.UseTexture(blurTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 1);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Abyssal SSDO Blur Vertical", out var passData, _profilingSampler))
+                {
+                    passData.source = blurTexture;
+                    passData.destination = occlusionTexture;
+                    passData.material = _blurVerticalMaterial;
+
+                    builder.UseTexture(blurTexture, AccessFlags.Read);
+                    builder.UseTexture(occlusionTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(occlusionTexture, ShaderConstants.SsdoTextureId);
+
+                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 2);
                     });
                 }
 

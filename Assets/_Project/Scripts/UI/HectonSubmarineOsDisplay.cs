@@ -14,15 +14,15 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Hecton Submarine OS Display")]
     public sealed class HectonSubmarineOsDisplay : MonoBehaviour, IUpdatable
     {
-        private const int HistoryLineCount = 6;
+        private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
         private const int PendingEntryCapacity = 12;
         private const int MetricBufferLength = 64;
         private const int StatusBufferLength = 48;
-        private const int RenderBufferLength = (HistoryLineCount * (HistoryLineCapacity + 1)) + 2;
+        private const int RenderBufferLength = (HistoryLineCount * (HistoryLineCapacity + 1)) + HistoryLineCapacity;
         private const float CharactersPerSecond = 42f;
         private const float RootWidth = 520f;
-        private const float RootHeight = 188f;
+        private const float RootHeight = 372f;
         private const float IconWidth = 72f;
         private const float IconHeight = 28f;
         private const string RootName = "HectonSubmarineOsDisplay";
@@ -34,6 +34,9 @@ namespace Hecton8.UI
         private static readonly char[] s_statusCaution = "LVL 1 // CAUTION".ToCharArray();
         private static readonly char[] s_statusDanger = "LVL 2 // DANGER".ToCharArray();
         private static readonly char[] s_statusEvacuate = "LVL 3 // EVACUATE".ToCharArray();
+        private static readonly char[] s_logPrefixOk = "[OK] ".ToCharArray();
+        private static readonly char[] s_logPrefixWarn = "[WARN] ".ToCharArray();
+        private static readonly char[] s_logPrefixCrit = "[CRIT] ".ToCharArray();
         private static readonly char[] s_iconEngines = "ENG".ToCharArray();
         private static readonly char[] s_iconLifeSupport = "AIR".ToCharArray();
         private static readonly char[] s_iconLights = "LGT".ToCharArray();
@@ -53,6 +56,10 @@ namespace Hecton8.UI
         private static readonly char[] s_logLevelEvacuate = "[CRIT] EMERGENCY LEVEL EVACUATE".ToCharArray();
         private static readonly char[] s_logStationKeepingArmed = "[OK] STATION KEEPING ARMED".ToCharArray();
         private static readonly char[] s_logStationKeepingReleased = "[OK] STATION KEEPING RELEASED".ToCharArray();
+        private static readonly char[] s_logBusPower = "BUS POWER ".ToCharArray();
+        private static readonly char[] s_logOxygen = "OXYGEN ".ToCharArray();
+        private static readonly char[] s_logHullPressure = "HULL PRESSURE ".ToCharArray();
+        private static readonly char[] s_logKpaSuffix = "KPA".ToCharArray();
 
         private struct PendingEntry
         {
@@ -63,12 +70,12 @@ namespace Hecton8.UI
         private static HectonSubmarineOsDisplay s_instance;
 
         private readonly PendingEntry[] _pendingEntries = new PendingEntry[PendingEntryCapacity]; // COLD ALLOC: PendingEntry[12] — submarine OS log typing queue — owner: HectonSubmarineOsDisplay
-        private readonly int[] _historyLineLengths = new int[HistoryLineCount]; // COLD ALLOC: int[6] — committed log line lengths — owner: HectonSubmarineOsDisplay
-        private readonly char[] _historyLineStorage = new char[HistoryLineCount * HistoryLineCapacity]; // COLD ALLOC: char[384] — committed submarine OS log storage — owner: HectonSubmarineOsDisplay
+        private readonly int[] _historyLineLengths = new int[HistoryLineCount]; // COLD ALLOC: int[16] — committed log line lengths — owner: HectonSubmarineOsDisplay
+        private readonly char[][] _historyLineStorage = new char[HistoryLineCount][]; // COLD ALLOC: char[][16] — committed submarine OS log ring — owner: HectonSubmarineOsDisplay
         private readonly char[] _typingBuffer = new char[HistoryLineCapacity]; // COLD ALLOC: char[64] — active typed line staging buffer — owner: HectonSubmarineOsDisplay
         private readonly char[] _metricBuffer = new char[MetricBufferLength]; // COLD ALLOC: char[64] — metrics render buffer — owner: HectonSubmarineOsDisplay
         private readonly char[] _statusBuffer = new char[StatusBufferLength]; // COLD ALLOC: char[48] — status render buffer — owner: HectonSubmarineOsDisplay
-        private readonly char[] _renderBuffer = new char[RenderBufferLength]; // COLD ALLOC: char[392] — multiline log render buffer — owner: HectonSubmarineOsDisplay
+        private readonly char[] _renderBuffer = new char[RenderBufferLength]; // COLD ALLOC: char[1104] — multiline log render buffer — owner: HectonSubmarineOsDisplay
 
         private RectTransform _root;
         private TMP_Text _statusLabel;
@@ -82,7 +89,7 @@ namespace Hecton8.UI
         private int _typingVisibleLength;
         private int _typingSourceLength;
         private float _typingAccumulator;
-        private HectonSubmarineOsLogCode _typingCode;
+
         private bool _typingActive;
         private bool _registeredUpdatable;
         private HectonSubmarineOsSnapshot _snapshot;
@@ -108,6 +115,16 @@ namespace Hecton8.UI
             s_instance = display;
             return display;
         }
+
+        private void Awake()
+        {
+            for (int i = 0; i < HistoryLineCount; i++)
+            {
+                if (_historyLineStorage[i] == null)
+                    _historyLineStorage[i] = new char[HistoryLineCapacity]; // COLD ALLOC: char[64] — committed submarine OS log line — owner: HectonSubmarineOsDisplay
+            }
+        }
+
 
         private void OnEnable()
         {
@@ -235,15 +252,12 @@ namespace Hecton8.UI
                 _pendingEntries[i - 1] = _pendingEntries[i];
 
             _pendingEntryCount--;
-            if (!TryResolveLogChars(nextEntry.Code, out char[] source, out int sourceLength))
+            System.Array.Clear(_typingBuffer, 0, _typingBuffer.Length);
+            int safeLength = BuildLogLine(nextEntry.Code, _typingBuffer);
+            if (safeLength <= 0)
                 return;
 
-            int safeLength = Mathf.Min(sourceLength, _typingBuffer.Length);
-            for (int i = 0; i < safeLength; i++)
-                _typingBuffer[i] = source[i];
-
-            _typingCode = nextEntry.Code;
-            _typingActive = safeLength > 0;
+            _typingActive = true;
             _typingAccumulator = 0f;
             _typingVisibleLength = 0;
             _typingSourceLength = safeLength;
@@ -253,10 +267,11 @@ namespace Hecton8.UI
         private void CommitTypedLine()
         {
             int writeIndex = _historyLineWriteIndex;
-            int baseOffset = writeIndex * HistoryLineCapacity;
+            char[] historyLine = _historyLineStorage[writeIndex];
             int safeLength = Mathf.Min(_typingSourceLength, HistoryLineCapacity);
+            System.Array.Clear(historyLine, 0, historyLine.Length);
             for (int i = 0; i < safeLength; i++)
-                _historyLineStorage[baseOffset + i] = _typingBuffer[i];
+                historyLine[i] = _typingBuffer[i];
 
             _historyLineLengths[writeIndex] = safeLength;
             _historyLineWriteIndex = (_historyLineWriteIndex + 1) % HistoryLineCount;
@@ -311,8 +326,7 @@ namespace Hecton8.UI
                     ? (oldestIndex + i) % HistoryLineCount
                     : i);
                 int lineLength = _historyLineLengths[historyIndex];
-                int historyOffset = historyIndex * HistoryLineCapacity;
-                cursor = AppendRange(_renderBuffer, cursor, _historyLineStorage, historyOffset, lineLength);
+                cursor = AppendRange(_renderBuffer, cursor, _historyLineStorage[historyIndex], 0, lineLength);
                 if (cursor < _renderBuffer.Length)
                     _renderBuffer[cursor++] = '\n';
             }
@@ -369,7 +383,7 @@ namespace Hecton8.UI
 
             _statusLabel = CreateText("Status", _root, new Vector2(14f, -12f), new Vector2(280f, 24f), 19f);
             _metricLabel = CreateText("Metrics", _root, new Vector2(14f, -38f), new Vector2(320f, 20f), 16f);
-            _logLabel = CreateText("Log", _root, new Vector2(14f, -70f), new Vector2(356f, 108f), 15f);
+            _logLabel = CreateText("Log", _root, new Vector2(14f, -70f), new Vector2(356f, 286f), 15f);
             _logLabel.alignment = TextAlignmentOptions.TopLeft;
             _logLabel.textWrappingMode = TextWrappingModes.NoWrap;
             _logLabel.overflowMode = TextOverflowModes.Overflow;
@@ -463,6 +477,35 @@ namespace Hecton8.UI
             return chars != null && length > 0;
         }
 
+        private int BuildLogLine(HectonSubmarineOsLogCode code, char[] destination)
+        {
+            int cursor = 0;
+            switch (code)
+            {
+                case HectonSubmarineOsLogCode.LowPowerModeEngaged:
+                    cursor = AppendChars(destination, cursor, s_logPrefixWarn);
+                    cursor = AppendChars(destination, cursor, s_logBusPower);
+                    return AppendPercent(destination, cursor, _snapshot.PowerNormalized);
+
+                case HectonSubmarineOsLogCode.LifeSupportCritical:
+                    cursor = AppendChars(destination, cursor, s_logPrefixCrit);
+                    cursor = AppendChars(destination, cursor, s_logOxygen);
+                    return AppendPercent(destination, cursor, _snapshot.OxygenNormalized);
+
+                case HectonSubmarineOsLogCode.HullPressureHigh:
+                    cursor = AppendChars(destination, cursor, s_logPrefixWarn);
+                    cursor = AppendChars(destination, cursor, s_logHullPressure);
+                    cursor = AppendInt(destination, cursor, Mathf.RoundToInt(_snapshot.MaxPressureKPa));
+                    return AppendChars(destination, cursor, s_logKpaSuffix);
+
+                default:
+                    if (!TryResolveLogChars(code, out char[] chars, out int length))
+                        return 0;
+
+                    return AppendRange(destination, cursor, chars, 0, length);
+            }
+        }
+
         private static char[] ResolveLogChars(HectonSubmarineOsLogCode code)
         {
             switch (code)
@@ -512,6 +555,11 @@ namespace Hecton8.UI
                 destination[safeCursor + i] = literal[i];
 
             return safeCursor + safeLength;
+        }
+
+        private static int AppendChars(char[] destination, int cursor, char[] source)
+        {
+            return AppendRange(destination, cursor, source, 0, source != null ? source.Length : 0);
         }
 
         private static int AppendPercent(char[] destination, int cursor, float normalizedValue)

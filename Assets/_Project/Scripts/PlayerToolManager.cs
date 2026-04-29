@@ -371,6 +371,72 @@ namespace Hecton8.Gameplay
                 : "NO TOOL ARMED";
         }
 
+        public bool TryWriteCurrentToolOperationalSummary(Span<char> destination, out int length)
+        {
+            length = 0;
+            if (destination.Length == 0)
+                return false;
+
+            if (_currentTool == null)
+            {
+                length = AppendLiteral(destination, 0, "NO TOOL ARMED");
+                return length > 0;
+            }
+
+            if (_currentTool is ScannerTool scanner &&
+                scanner.TryGetScientificScanSnapshot(out ScannerTool.ScientificScanSnapshot snapshot) &&
+                snapshot.IsActive)
+            {
+                int cursor = 0;
+                cursor = AppendLiteral(destination, cursor, "SCANNER // ");
+                cursor = AppendLiteral(destination, cursor, DescribeScientificTarget(snapshot));
+                cursor = AppendLiteral(destination, cursor, " // ");
+                cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(snapshot.Progress01 * 100f), 0, 100));
+                cursor = AppendLiteral(destination, cursor, "% // TEMP ");
+                cursor = AppendInt(destination, cursor, Mathf.RoundToInt(snapshot.TemperatureC));
+                cursor = AppendLiteral(destination, cursor, "C // SAL ");
+                cursor = AppendInt(destination, cursor, Mathf.RoundToInt(snapshot.SalinityPpt));
+                cursor = AppendLiteral(destination, cursor, " // TOX ");
+                cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(snapshot.Toxicity01 * 100f), 0, 100));
+                cursor = AppendLiteral(destination, cursor, "%");
+                if (snapshot.OrganicBlood01 > 0.1f)
+                    cursor = AppendLiteral(destination, cursor, " // TRACES OF ORGANIC BLOOD DETECTED");
+                length = cursor;
+                return cursor > 0;
+            }
+
+            int toolCursor = 0;
+            toolCursor = AppendUpper(destination, toolCursor, ResolveOperationalToolName(_currentTool));
+            if (!_currentTool.IsEquipped)
+            {
+                toolCursor = AppendLiteral(destination, toolCursor, " // STANDBY");
+                length = toolCursor;
+                return true;
+            }
+
+            if (_currentTool.IsBroken)
+            {
+                toolCursor = AppendLiteral(destination, toolCursor, " // BROKEN");
+                length = toolCursor;
+                return true;
+            }
+
+            ToolMetadata metadata = _currentTool.Metadata;
+            if (metadata != null)
+            {
+                toolCursor = AppendLiteral(destination, toolCursor, " // DUR ");
+                toolCursor = AppendInt(destination, toolCursor, Mathf.Max(0, Mathf.RoundToInt(_currentTool.CurrentDurability)));
+                toolCursor = AppendLiteral(destination, toolCursor, "/");
+                toolCursor = AppendInt(destination, toolCursor, Mathf.Max(0, Mathf.RoundToInt(metadata.maxDurability)));
+                length = toolCursor;
+                return true;
+            }
+
+            toolCursor = AppendLiteral(destination, toolCursor, " // READY");
+            length = toolCursor;
+            return true;
+        }
+
         public string GetCurrentToolOperationalDirective()
         {
             if (IsSwapping)
@@ -470,6 +536,76 @@ namespace Hecton8.Gameplay
             }
 
             return null;
+        }
+
+        private static string ResolveOperationalToolName(PlayerTool tool)
+        {
+            if (tool == null)
+                return "TOOL";
+
+            ItemData toolData = tool.ToolData;
+            if (toolData != null && !string.IsNullOrWhiteSpace(toolData.itemName))
+                return toolData.itemName;
+
+            ToolMetadata metadata = tool.Metadata;
+            if (metadata != null && !string.IsNullOrWhiteSpace(metadata.toolID))
+                return metadata.toolID;
+
+            return "TOOL";
+        }
+
+        private static string DescribeScientificMaterial(ScannerTool.ScientificMaterialClass materialClass)
+        {
+            switch (materialClass)
+            {
+                case ScannerTool.ScientificMaterialClass.Basalt:
+                    return "BASALT";
+                case ScannerTool.ScientificMaterialClass.Sediment:
+                    return "SEDIMENT";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
+        private static string DescribeScientificTarget(ScannerTool.ScientificScanSnapshot snapshot)
+        {
+            return snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None
+                ? DescribeScientificMaterial(snapshot.MaterialClass)
+                : "WATER";
+        }
+
+        private static int AppendLiteral(Span<char> destination, int cursor, string literal)
+        {
+            if (string.IsNullOrEmpty(literal) || cursor >= destination.Length)
+                return cursor;
+
+            int safeLength = Mathf.Min(literal.Length, destination.Length - cursor);
+            literal.AsSpan(0, safeLength).CopyTo(destination.Slice(cursor, safeLength));
+            return cursor + safeLength;
+        }
+
+        private static int AppendUpper(Span<char> destination, int cursor, string value)
+        {
+            if (string.IsNullOrEmpty(value) || cursor >= destination.Length)
+                return cursor;
+
+            ReadOnlySpan<char> source = value.AsSpan();
+            int safeLength = Mathf.Min(source.Length, destination.Length - cursor);
+            Span<char> target = destination.Slice(cursor, safeLength);
+            for (int i = 0; i < safeLength; i++)
+                target[i] = char.ToUpperInvariant(source[i] == '_' ? ' ' : source[i]);
+
+            return cursor + safeLength;
+        }
+
+        private static int AppendInt(Span<char> destination, int cursor, int value)
+        {
+            if (cursor >= destination.Length)
+                return cursor;
+
+            return value.TryFormat(destination.Slice(cursor), out int charsWritten)
+                ? cursor + charsWritten
+                : cursor;
         }
 
         public int FindAssignedSlotForToolType<TTool>() where TTool : PlayerTool

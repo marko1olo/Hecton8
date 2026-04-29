@@ -762,6 +762,166 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Resolves ceiling-adjacent crater anchors around the supplied epicenter and pushes them
+        /// through the authoritative crater/delta pipeline.
+        /// </summary>
+        /// <param name="runtimeEpicenter">Runtime-space event epicenter near the player.</param>
+        /// <param name="stampCount">Number of collapse stamps to attempt.</param>
+        /// <param name="scatterRadius">Horizontal scatter radius around the epicenter.</param>
+        /// <param name="ceilingSearchDepth">Vertical search window from the top of the volume downward.</param>
+        /// <param name="craterRadiusMin">Minimum crater radius in meters.</param>
+        /// <param name="craterRadiusMax">Maximum crater radius in meters.</param>
+        /// <param name="stableSeed">Deterministic seed used for stamp jitter.</param>
+        /// <param name="appliedStampCount">Count of crater stamps accepted by the volume.</param>
+        /// <returns>True when at least one ceiling stamp was applied.</returns>
+        public bool TryApplySeismicShockwave(
+            Vector3 runtimeEpicenter,
+            int stampCount,
+            float scatterRadius,
+            float ceilingSearchDepth,
+            float craterRadiusMin,
+            float craterRadiusMax,
+            uint stableSeed,
+            out int appliedStampCount)
+        {
+            appliedStampCount = 0;
+            if (!_runtimeDataReady || _bakeState != VoxelBakeState.Complete || _gridDimension <= 0 || _voxelSize <= 0f)
+                return false;
+
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+                return false;
+
+            Transform cachedTransform = transform;
+            Vector3 localEpicenter = cachedTransform.InverseTransformPoint(runtimeEpicenter);
+            int clampedStampCount = Mathf.Clamp(stampCount, 1, 8);
+            float clampedScatterRadius = Mathf.Max(_voxelSize, scatterRadius);
+            float clampedSearchDepth = Mathf.Max(_voxelSize * 2f, ceilingSearchDepth);
+            float minRadius = Mathf.Max(_voxelSize * 0.9f, craterRadiusMin);
+            float maxRadius = Mathf.Max(minRadius, craterRadiusMax);
+
+            for (int stampIndex = 0; stampIndex < clampedStampCount; stampIndex++)
+            {
+                float angle = Hash01(stableSeed, stampIndex, 3) * Mathf.PI * 2f;
+                float radialDistance = Mathf.Sqrt(Hash01(stableSeed, stampIndex, 11)) * clampedScatterRadius;
+                float localX = Mathf.Clamp(
+                    localEpicenter.x + Mathf.Cos(angle) * radialDistance,
+                    localBounds.min.x + _voxelSize,
+                    localBounds.max.x - _voxelSize);
+                float localZ = Mathf.Clamp(
+                    localEpicenter.z + Mathf.Sin(angle) * radialDistance,
+                    localBounds.min.z + _voxelSize,
+                    localBounds.max.z - _voxelSize);
+                float craterRadius = Mathf.Lerp(minRadius, maxRadius, Hash01(stableSeed, stampIndex, 23));
+
+                if (!TryResolveSeismicCollapseAnchor(
+                        cachedTransform,
+                        localBounds,
+                        localX,
+                        localZ,
+                        clampedSearchDepth,
+                        craterRadius,
+                        out Vector3 localAnchor))
+                {
+                    continue;
+                }
+
+                CarveCrater(cachedTransform.TransformPoint(localAnchor), craterRadius);
+                appliedStampCount++;
+            }
+
+            return appliedStampCount > 0;
+        }
+
+        /// <summary>
+        /// Samples a trench line in absolute-universe space and converts each intersecting column into subtractive
+        /// crater stamps owned by the authoritative voxel delta pipeline.
+        /// </summary>
+        /// <param name="absoluteStart">Absolute-universe trench start position.</param>
+        /// <param name="absoluteEnd">Absolute-universe trench end position.</param>
+        /// <param name="trenchDepth">Peak trench depth at the center line.</param>
+        /// <param name="trenchSlope">Meters of depth loss per meter away from the center line.</param>
+        /// <param name="sampleSpacing">Meters between longitudinal trench samples.</param>
+        /// <param name="appliedStampCount">Count of accepted crater stamps.</param>
+        /// <returns>True when at least one trench stamp was applied to this volume.</returns>
+        public bool TryApplySeismicTrench(
+            Vector3 absoluteStart,
+            Vector3 absoluteEnd,
+            float trenchDepth,
+            float trenchSlope,
+            float sampleSpacing,
+            out int appliedStampCount)
+        {
+            appliedStampCount = 0;
+            if (!_runtimeDataReady || _bakeState != VoxelBakeState.Complete || _gridDimension <= 0 || _voxelSize <= 0f)
+                return false;
+
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+                return false;
+
+            Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(absoluteStart);
+            Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(absoluteEnd);
+            Vector3 line = runtimeEnd - runtimeStart;
+            float lineLength = line.magnitude;
+            if (lineLength <= 0.001f)
+                return false;
+
+            Transform cachedTransform = transform;
+            Vector3 forward = line / lineLength;
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+            if (right.sqrMagnitude <= 0.0001f)
+                right = Vector3.right;
+            else
+                right.Normalize();
+
+            float clampedDepth = Mathf.Max(_voxelSize, trenchDepth);
+            float clampedSlope = Mathf.Max(0.05f, trenchSlope);
+            float influenceRadius = clampedDepth / clampedSlope;
+            float longitudinalStep = Mathf.Max(_voxelSize, sampleSpacing);
+            float lateralStep = Mathf.Max(_voxelSize * 0.85f, longitudinalStep * 0.5f);
+            int longitudinalCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / longitudinalStep) + 1, 2, 64);
+
+            for (int sampleIndex = 0; sampleIndex < longitudinalCount; sampleIndex++)
+            {
+                float sampleT = longitudinalCount <= 1 ? 0f : sampleIndex / (float)(longitudinalCount - 1);
+                Vector3 runtimeCenter = Vector3.Lerp(runtimeStart, runtimeEnd, sampleT);
+
+                for (float lateral = -influenceRadius; lateral <= influenceRadius + 0.001f; lateral += lateralStep)
+                {
+                    float cutDepth = Mathf.Max(0f, clampedDepth - Mathf.Abs(lateral) * clampedSlope);
+                    if (cutDepth <= 0.0001f)
+                        continue;
+
+                    Vector3 runtimeColumn = runtimeCenter + right * lateral;
+                    Vector3 localColumn = cachedTransform.InverseTransformPoint(runtimeColumn);
+                    if (localColumn.x < localBounds.min.x ||
+                        localColumn.x > localBounds.max.x ||
+                        localColumn.z < localBounds.min.z ||
+                        localColumn.z > localBounds.max.z)
+                    {
+                        continue;
+                    }
+
+                    float craterRadius = Mathf.Max(_voxelSize * 0.85f, cutDepth * 0.55f);
+                    if (!TryResolveTopSolidAnchor(
+                            cachedTransform,
+                            localBounds,
+                            localColumn.x,
+                            localColumn.z,
+                            cutDepth,
+                            out Vector3 localAnchor))
+                    {
+                        continue;
+                    }
+
+                    CarveCrater(cachedTransform.TransformPoint(localAnchor), craterRadius);
+                    appliedStampCount++;
+                }
+            }
+
+            return appliedStampCount > 0;
+        }
+
+        /// <summary>
         /// Marches a bounded DDA cut path through the runtime voxel volume and converts the traversed cells
         /// into subtractive crater stamps owned by the authoritative rebuild pipeline.
         /// </summary>
@@ -880,6 +1040,124 @@ namespace Hecton8.Caves
 
             if (modified && _deltaProcessor == null)
                 QueueRebuild();
+
+            return modified;
+        }
+
+        /// <summary>
+        /// Marches a bounded DDA repair path through the runtime voxel volume and deposits additive weld deltas
+        /// into the authoritative persistent delta pipeline.
+        /// </summary>
+        /// <param name="absoluteHitPoint">Absolute-universe entry point on the volume surface.</param>
+        /// <param name="direction">Runtime beam direction.</param>
+        /// <param name="normalizedPower">Normalized repair power [0..1].</param>
+        /// <param name="maxDistance">Maximum authored beam range.</param>
+        /// <returns>True when at least one voxel cell was converted into an additive weld stamp.</returns>
+        public bool ApplyRepairWeldDda(
+            Vector3 absoluteHitPoint,
+            Vector3 direction,
+            float normalizedPower,
+            float maxDistance)
+        {
+            if (_deltaProcessor == null || !_runtimeDataReady || _gridDimension <= 0 || _voxelSize <= 0f || _bakeState != VoxelBakeState.Complete)
+                return false;
+
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+                return false;
+
+            float clampedPower = math.saturate(normalizedPower);
+            if (clampedPower < MinPlasmaCutPower)
+                return false;
+
+            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(absoluteHitPoint);
+            Transform cachedTransform = transform;
+            Vector3 localDirection = cachedTransform.InverseTransformDirection(direction);
+            if (localDirection.sqrMagnitude < 0.0001f)
+                return false;
+
+            localDirection.Normalize();
+
+            Vector3 localStart = cachedTransform.InverseTransformPoint(runtimeHitPoint) + localDirection * (_voxelSize * 0.55f);
+            if (!localBounds.Contains(localStart))
+            {
+                localStart += localDirection * (_voxelSize * 0.55f);
+                if (!localBounds.Contains(localStart))
+                    return false;
+            }
+
+            Vector3 relative = localStart - localBounds.min;
+            int3 voxel = (int3)math.floor(new float3(relative.x, relative.y, relative.z) / _voxelSize);
+            if (!IsVoxelIndexInBounds(voxel))
+                return false;
+
+            int3 step = new int3(
+                ResolveStep(localDirection.x),
+                ResolveStep(localDirection.y),
+                ResolveStep(localDirection.z));
+            float3 start = new float3(localStart.x, localStart.y, localStart.z);
+            float3 dir = new float3(localDirection.x, localDirection.y, localDirection.z);
+            float3 tMax = new float3(
+                ResolveBoundaryDistance(localBounds.min.x, start.x, dir.x, voxel.x, step.x, _voxelSize),
+                ResolveBoundaryDistance(localBounds.min.y, start.y, dir.y, voxel.y, step.y, _voxelSize),
+                ResolveBoundaryDistance(localBounds.min.z, start.z, dir.z, voxel.z, step.z, _voxelSize));
+            float3 tDelta = new float3(
+                ResolveDeltaDistance(dir.x, _voxelSize),
+                ResolveDeltaDistance(dir.y, _voxelSize),
+                ResolveDeltaDistance(dir.z, _voxelSize));
+
+            float travel = 0f;
+            float maxTravel = math.max(_voxelSize, math.min(maxDistance, _voxelSize * MaxPlasmaCutSteps));
+            float remainingPower = clampedPower;
+            float stampRadius = math.max(_voxelSize * 0.55f, _voxelSize * math.lerp(0.65f, 1f, clampedPower));
+            float stampStrength = math.max(_voxelSize, stampRadius * 0.45f);
+            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            bool modified = false;
+
+            SetBakeState(VoxelBakeState.Pending);
+
+            for (int stepIndex = 0; stepIndex < MaxPlasmaCutSteps; stepIndex++)
+            {
+                if (!IsVoxelIndexInBounds(voxel) || remainingPower < MinPlasmaCutPower || travel > maxTravel)
+                    break;
+
+                Vector3 localCenter = localBounds.min + new Vector3(
+                    (voxel.x + 0.5f) * _voxelSize,
+                    (voxel.y + 0.5f) * _voxelSize,
+                    (voxel.z + 0.5f) * _voxelSize);
+                Vector3 worldCenter = cachedTransform.TransformPoint(localCenter);
+                Vector3 absoluteCenter = worldCenter + committedOffset;
+                _deltaProcessor.ApplyImmediateAbsoluteWeld(
+                    this,
+                    absoluteCenter,
+                    stampRadius * remainingPower,
+                    stampStrength * remainingPower,
+                    DefaultDeltaMaterialId);
+                modified = true;
+
+                float nextTravel;
+                int axis = ResolveMarchAxis(tMax, out nextTravel);
+                float segmentLength = math.max(_voxelSize * 0.25f, nextTravel - travel);
+                remainingPower *= math.exp(-segmentLength * PlasmaCutAttenuationPerMeter);
+                travel = nextTravel;
+                if (travel > maxTravel)
+                    break;
+
+                switch (axis)
+                {
+                    case 0:
+                        voxel.x += step.x;
+                        tMax.x += tDelta.x;
+                        break;
+                    case 1:
+                        voxel.y += step.y;
+                        tMax.y += tDelta.y;
+                        break;
+                    default:
+                        voxel.z += step.z;
+                        tMax.z += tDelta.z;
+                        break;
+                }
+            }
 
             return modified;
         }
@@ -1227,6 +1505,93 @@ namespace Hecton8.Caves
                 QueueRebuild();
 
             return true;
+        }
+
+        private bool TryResolveSeismicCollapseAnchor(
+            Transform cachedTransform,
+            Bounds localBounds,
+            float localX,
+            float localZ,
+            float ceilingSearchDepth,
+            float craterRadius,
+            out Vector3 localAnchor)
+        {
+            localAnchor = default;
+            float sampleStep = Mathf.Max(_voxelSize * 0.75f, 0.5f);
+            float startY = localBounds.max.y - _voxelSize;
+            float minY = Mathf.Max(localBounds.min.y + _voxelSize, startY - ceilingSearchDepth);
+            bool hasPreviousSample = false;
+            bool previousSolid = false;
+
+            for (float sampleY = startY; sampleY >= minY; sampleY -= sampleStep)
+            {
+                Vector3 worldSample = cachedTransform.TransformPoint(new Vector3(localX, sampleY, localZ));
+                if (!TrySampleDensity(worldSample, out float density, out _))
+                    continue;
+
+                bool currentSolid = density > 0f;
+                if (hasPreviousSample && previousSolid && !currentSolid)
+                {
+                    float anchorY = Mathf.Clamp(
+                        sampleY + sampleStep * 0.35f + craterRadius * 0.15f,
+                        localBounds.min.y + _voxelSize,
+                        localBounds.max.y - _voxelSize * 0.5f);
+                    localAnchor = new Vector3(localX, anchorY, localZ);
+                    return true;
+                }
+
+                previousSolid = currentSolid;
+                hasPreviousSample = true;
+            }
+
+            return false;
+        }
+
+        private bool TryResolveTopSolidAnchor(
+            Transform cachedTransform,
+            Bounds localBounds,
+            float localX,
+            float localZ,
+            float cutDepth,
+            out Vector3 localAnchor)
+        {
+            localAnchor = default;
+            float sampleStep = Mathf.Max(_voxelSize * 0.75f, 0.5f);
+            float startY = localBounds.max.y - _voxelSize * 0.5f;
+            float minY = localBounds.min.y + _voxelSize * 0.5f;
+
+            for (float sampleY = startY; sampleY >= minY; sampleY -= sampleStep)
+            {
+                Vector3 worldSample = cachedTransform.TransformPoint(new Vector3(localX, sampleY, localZ));
+                if (!TrySampleDensity(worldSample, out float density, out _))
+                    continue;
+
+                if (density <= 0f)
+                    continue;
+
+                float anchorY = Mathf.Clamp(
+                    sampleY - cutDepth * 0.5f,
+                    localBounds.min.y + _voxelSize,
+                    localBounds.max.y - _voxelSize * 0.5f);
+                localAnchor = new Vector3(localX, anchorY, localZ);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static float Hash01(uint seed, int index, int salt)
+        {
+            unchecked
+            {
+                uint hash = seed;
+                hash ^= (uint)index * 2246822519u;
+                hash ^= (uint)salt * 3266489917u;
+                hash ^= hash >> 15;
+                hash *= 2246822519u;
+                hash ^= hash >> 13;
+                return (hash & 0x00FFFFFFu) / 16777215f;
+            }
         }
     }
 }

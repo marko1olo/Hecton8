@@ -53,6 +53,7 @@ namespace Hecton8.World
         private const float CacheValidationInterval = 0.5f;
         private const int CacheValidationTileBudget = 2;
         private const int StartupBootstrapTileBatchSize = 2;
+        private const int TerrainHoleJobBatchSize = 64;
         private const int DefaultJobBatchSize = 32;
         private const int InitialTileCapacity = 32;
         private const int TileCacheLruCapacity = 64;
@@ -952,6 +953,12 @@ namespace Hecton8.World
             public bool HeightReadbackPending;
             public bool PendingRemoval;
             public AsyncGPUReadbackRequest HeightReadbackRequest;
+            public int HolesResolution;
+            public bool TerrainHolesDirty;
+            public bool TerrainHolesJobScheduled;
+            public JobHandle TerrainHolesJobHandle;
+            public NativeArray<bool> TerrainHoleMaskNative;
+            public bool[,] TerrainHoleMaskManaged;
             public TileNativeCacheBuffer PrimaryCacheBuffer;
             public TileNativeCacheBuffer SecondaryCacheBuffer;
         }
@@ -1140,6 +1147,50 @@ namespace Hecton8.World
             public float Radius;
             public float RadiusSq;
             public TerrainHoleSourceType SourceType;
+        }
+
+        [BurstCompile]
+        private struct TerrainHoleMaskBuildJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
+            public int TerrainHoleCount;
+            public int Resolution;
+            public float TerrainOriginX;
+            public float TerrainOriginZ;
+            public float TerrainSizeX;
+            public float TerrainSizeZ;
+            public NativeArray<bool> Output;
+
+            public void Execute(int index)
+            {
+                if (!Output.IsCreated || Resolution <= 0)
+                    return;
+
+                int x = index % Resolution;
+                int y = index / Resolution;
+                float normalizedX = Resolution > 1 ? (float)x / (Resolution - 1) : 0f;
+                float normalizedZ = Resolution > 1 ? (float)y / (Resolution - 1) : 0f;
+                float worldX = TerrainOriginX + (normalizedX * TerrainSizeX);
+                float worldZ = TerrainOriginZ + (normalizedZ * TerrainSizeZ);
+                bool hasTerrain = true;
+                int holeCount = math.min(TerrainHoleCount, TerrainHoles.Length);
+                for (int i = 0; i < holeCount; i++)
+                {
+                    TerrainHoleRecord hole = TerrainHoles[i];
+                    if (hole.SourceType != TerrainHoleSourceType.CaveEntrance)
+                        continue;
+
+                    float dx = worldX - hole.X;
+                    float dz = worldZ - hole.Z;
+                    if ((dx * dx) + (dz * dz) > hole.RadiusSq)
+                        continue;
+
+                    hasTerrain = false;
+                    break;
+                }
+
+                Output[index] = hasTerrain;
+            }
         }
 
         private struct ChunkSliceMoveRecord
@@ -2052,6 +2103,8 @@ namespace Hecton8.World
             RefreshResidency();
             SyncMegaWreckInteriorTerrainHoles();
             EvictDistantTerrainHoles();
+            FinalizeCompletedTerrainHoleJobs();
+            TryScheduleTerrainHoleJobs();
             CompleteThreatPropagationJob(forceComplete: false);
             CompleteFlowFieldJob(forceComplete: false);
             CompleteThermalGridJob(forceComplete: false);
@@ -3605,6 +3658,86 @@ namespace Hecton8.World
             }
 
             return TrySampleCachedTerrainHeight(state, heightSamples, worldX, worldZ, out terrainHeight);
+        }
+
+        /// <summary>
+        /// Samples the current abyssal flow volume at a world-space position without allocations.
+        /// </summary>
+        public bool TrySampleAbyssalFlow(Vector3 position, out Vector3 flowVector)
+        {
+            flowVector = Vector3.zero;
+            if (!_abyssalFlowVolumeInitialized ||
+                !_abyssalFlowVolumeCurrentNative.IsCreated ||
+                _abyssalThermalGridResolutionXZ <= 0 ||
+                _abyssalThermalGridResolutionY <= 0 ||
+                thermalGridHorizontalCellSize <= 0f ||
+                thermalGridVerticalCellSize <= 0f)
+            {
+                return false;
+            }
+
+            float halfExtent = (_abyssalThermalGridResolutionXZ - 1) * 0.5f * thermalGridHorizontalCellSize;
+            float minX = _abyssalThermalGridCenter.x - halfExtent;
+            float minZ = _abyssalThermalGridCenter.z - halfExtent;
+            float maxY = waterLevel;
+            float minY = waterLevel - thermalGridDepthMeters;
+            if (position.x < minX || position.z < minZ || position.x > minX + (halfExtent * 2f) || position.z > minZ + (halfExtent * 2f))
+                return false;
+
+            float clampedY = Mathf.Clamp(position.y, minY, maxY);
+            float normalizedX = Mathf.Clamp((position.x - minX) / thermalGridHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
+            float normalizedZ = Mathf.Clamp((position.z - minZ) / thermalGridHorizontalCellSize, 0f, _abyssalThermalGridResolutionXZ - 1);
+            float normalizedY = Mathf.Clamp((maxY - clampedY) / thermalGridVerticalCellSize, 0f, _abyssalThermalGridResolutionY - 1);
+            int x0 = Mathf.Clamp(Mathf.FloorToInt(normalizedX), 0, _abyssalThermalGridResolutionXZ - 1);
+            int z0 = Mathf.Clamp(Mathf.FloorToInt(normalizedZ), 0, _abyssalThermalGridResolutionXZ - 1);
+            int y0 = Mathf.Clamp(Mathf.FloorToInt(normalizedY), 0, _abyssalThermalGridResolutionY - 1);
+            int x1 = Mathf.Min(x0 + 1, _abyssalThermalGridResolutionXZ - 1);
+            int z1 = Mathf.Min(z0 + 1, _abyssalThermalGridResolutionXZ - 1);
+            int y1 = Mathf.Min(y0 + 1, _abyssalThermalGridResolutionY - 1);
+            float fracX = normalizedX - x0;
+            float fracZ = normalizedZ - z0;
+            float fracY = normalizedY - y0;
+
+            float3 sample000 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x0, y0, z0)];
+            float3 sample100 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x1, y0, z0)];
+            float3 sample010 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x0, y0, z1)];
+            float3 sample110 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x1, y0, z1)];
+            float3 sample001 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x0, y1, z0)];
+            float3 sample101 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x1, y1, z0)];
+            float3 sample011 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x0, y1, z1)];
+            float3 sample111 = _abyssalFlowVolumeCurrentNative[GetThermalGridPhysicalIndex(x1, y1, z1)];
+            float3 sampleX00 = math.lerp(sample000, sample100, fracX);
+            float3 sampleX10 = math.lerp(sample010, sample110, fracX);
+            float3 sampleX01 = math.lerp(sample001, sample101, fracX);
+            float3 sampleX11 = math.lerp(sample011, sample111, fracX);
+            float3 sampleZ0 = math.lerp(sampleX00, sampleX10, fracZ);
+            float3 sampleZ1 = math.lerp(sampleX01, sampleX11, fracZ);
+            float3 sampledFlow = math.lerp(sampleZ0, sampleZ1, fracY);
+            flowVector = new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z);
+            return true;
+        }
+
+        /// <summary>
+        /// Approximates terrain slope in degrees from cached terrain heights without allocations.
+        /// </summary>
+        public bool TrySampleTerrainSlopeDegrees(Vector3 position, float sampleDistance, out float slopeDegrees)
+        {
+            slopeDegrees = 0f;
+            float resolvedSampleDistance = Mathf.Max(0.5f, sampleDistance);
+            if (!TryGetCachedTerrainHeight(position.x, position.z, out float centerHeight) ||
+                !TryGetCachedTerrainHeight(position.x + resolvedSampleDistance, position.z, out float heightPosX) ||
+                !TryGetCachedTerrainHeight(position.x - resolvedSampleDistance, position.z, out float heightNegX) ||
+                !TryGetCachedTerrainHeight(position.x, position.z + resolvedSampleDistance, out float heightPosZ) ||
+                !TryGetCachedTerrainHeight(position.x, position.z - resolvedSampleDistance, out float heightNegZ))
+            {
+                return false;
+            }
+
+            float gradientX = (heightPosX - heightNegX) / (resolvedSampleDistance * 2f);
+            float gradientZ = (heightPosZ - heightNegZ) / (resolvedSampleDistance * 2f);
+            float gradientMagnitude = Mathf.Sqrt((gradientX * gradientX) + (gradientZ * gradientZ));
+            slopeDegrees = Mathf.Atan(gradientMagnitude) * Mathf.Rad2Deg;
+            return true;
         }
 
         /// <summary>
@@ -7109,12 +7242,13 @@ namespace Hecton8.World
                 return;
 
             Vector3 viewerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+            AbsoluteUniversePosition viewerAup = ResolveViewerAup(viewerPosition);
             int registryCount = 0;
             if (megaWreckDefinitions != null)
             {
                 for (int i = 0; i < megaWreckDefinitions.Length; i++)
                 {
-                    if (ShouldRegisterHLOD(megaWreckDefinitions[i].Center, megaWreckDefinitions[i].Size, viewerPosition))
+                    if (ShouldRegisterHLOD(megaWreckDefinitions[i].Center, megaWreckDefinitions[i].Size, in viewerAup))
                         registryCount++;
                 }
             }
@@ -7122,7 +7256,7 @@ namespace Hecton8.World
             for (int i = 0; i < _persistentArtificialStructures.Count; i++)
             {
                 PersistentArtificialStructureRecord structure = _persistentArtificialStructures[i];
-                if (ShouldRegisterHLOD(structure.Bounds.center, structure.Bounds.size, viewerPosition))
+                if (ShouldRegisterHLOD(structure.Bounds.center, structure.Bounds.size, in viewerAup))
                     registryCount++;
             }
 
@@ -7142,7 +7276,7 @@ namespace Hecton8.World
                 for (int i = 0; i < megaWreckDefinitions.Length; i++)
                 {
                     MegaWreckDefinition definition = megaWreckDefinitions[i];
-                    if (!ShouldRegisterHLOD(definition.Center, definition.Size, viewerPosition))
+                    if (!ShouldRegisterHLOD(definition.Center, definition.Size, in viewerAup))
                         continue;
 
                     HLODData entry = new HLODData
@@ -7162,7 +7296,7 @@ namespace Hecton8.World
             for (int i = 0; i < _persistentArtificialStructures.Count; i++)
             {
                 PersistentArtificialStructureRecord structure = _persistentArtificialStructures[i];
-                if (!ShouldRegisterHLOD(structure.Bounds.center, structure.Bounds.size, viewerPosition))
+                if (!ShouldRegisterHLOD(structure.Bounds.center, structure.Bounds.size, in viewerAup))
                     continue;
 
                 HLODData entry = new HLODData
@@ -7179,13 +7313,14 @@ namespace Hecton8.World
             }
         }
 
-        private bool ShouldRegisterHLOD(Vector3 center, Vector3 size, Vector3 viewerPosition)
+        private bool ShouldRegisterHLOD(Vector3 center, Vector3 size, in AbsoluteUniversePosition viewerAup)
         {
             float largestAxis = Mathf.Max(size.x, Mathf.Max(size.y, size.z));
             if (largestAxis < hlodMinimumStructureSize)
                 return false;
 
-            double distanceSq = ComputeAupDistanceSq(center, viewerPosition);
+            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in centerAup, in viewerAup);
             float maxDistance = hlodMaximumDistance + (largestAxis * 0.5f);
             double maxDistanceSq = maxDistance * maxDistance;
             return distanceSq <= maxDistanceSq;
@@ -7213,11 +7348,13 @@ namespace Hecton8.World
 
             EnsureByteNativeCapacity(ref _hlodVisibleFlagsNative, _hlodRegistryCount);
             Vector3 viewerPosition = playerTransform != null ? playerTransform.position : activeViewCamera.transform.position;
+            AbsoluteUniversePosition viewerAup = ResolveViewerAup(activeViewCamera.transform.position);
             float fullyVisibleDistance = Mathf.Max(hlodMinimumDistance, residentRadius + 1f);
             for (int i = 0; i < _hlodRegistryCount; i++)
             {
                 HLODData entry = _hlodRegistrySnapshotNative[i];
-                double distanceSq = ComputeAupDistanceSq(viewerPosition, entry.Center);
+                AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(entry.Center);
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in viewerAup, in entryAup);
                 float distance = distanceSq > 0d ? (float)math.sqrt(distanceSq) : 0f;
                 entry.Fade01 = ComputeHLODFade01(distance, residentRadius, fullyVisibleDistance);
                 _hlodRegistrySnapshot[i] = entry;
@@ -7288,6 +7425,12 @@ namespace Hecton8.World
             AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);
             AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);
             return AbsoluteUniversePosition.DistanceSq(in a, in b);
+        }
+
+        private AbsoluteUniversePosition ResolveViewerAup(Vector3 fallbackRuntimePosition)
+        {
+            Vector3 viewerRuntimePosition = playerTransform != null ? playerTransform.position : fallbackRuntimePosition;
+            return AbsoluteUniversePosition.FromRuntimePosition(viewerRuntimePosition);
         }
 
         private void RebuildCanopyHeightGrid()
@@ -12626,9 +12769,12 @@ namespace Hecton8.World
             state.TerrainSize = terrainData.size;
             state.AlphamapResolution = terrainData.alphamapResolution;
             state.HeightmapResolution = terrainData.heightmapResolution;
+            state.HolesResolution = terrainData.holesResolution;
             state.ChunkCountX = Mathf.Max(1, Mathf.CeilToInt(state.TerrainSize.x / DefaultVirtualChunkSize));
             state.ChunkCountZ = Mathf.Max(1, Mathf.CeilToInt(state.TerrainSize.z / DefaultVirtualChunkSize));
             state.LayerIndices = indices;
+            EnsureTileTerrainHoleMaskCapacity(state);
+            MarkTileTerrainHolesDirty(state);
 
             InvalidateTileChunks(tile.coord.x, tile.coord.z, Mathf.Max(oldChunkCountX, state.ChunkCountX), Mathf.Max(oldChunkCountZ, state.ChunkCountZ));
             CacheTileMasks(state, terrainData);
@@ -12962,6 +13108,7 @@ namespace Hecton8.World
 
                 // COLD ALLOC: NativeArray<TerrainHoleStreamingRecord>[0] - keeps terrain-hole streaming payload valid when no holes are registered - owner: HectonMapMagicVegetationBridge
                 _terrainHoleStreamingRecordsNative = new NativeArray<TerrainHoleStreamingRecord>(0, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                MarkAllTileTerrainHolesDirty();
                 return;
             }
 
@@ -12982,6 +13129,8 @@ namespace Hecton8.World
                 _terrainHoleStreamingRecords[i] = streamingRecord;
                 _terrainHoleStreamingRecordsNative[i] = streamingRecord;
             }
+
+            MarkAllTileTerrainHolesDirty();
         }
 
         private void InvalidateChunksIntersectingHole(Vector3 position, float radius)
@@ -13291,10 +13440,18 @@ namespace Hecton8.World
 
             DisposeTileNativeCacheBuffer(ref state.PrimaryCacheBuffer);
             DisposeTileNativeCacheBuffer(ref state.SecondaryCacheBuffer);
+            DisposeNativeArray(
+                ref state.TerrainHoleMaskNative,
+                state.TerrainHolesJobScheduled ? state.TerrainHolesJobHandle : default);
             state.ActiveCacheBufferIndex = 0;
             state.PendingCacheBufferIndex = 0;
             state.HeightReadbackPending = false;
             state.HeightReadbackRequest = default;
+            state.HolesResolution = 0;
+            state.TerrainHolesDirty = false;
+            state.TerrainHolesJobScheduled = false;
+            state.TerrainHolesJobHandle = default;
+            state.TerrainHoleMaskManaged = null;
         }
 
         private static void QueueDeferredTileCacheDisposal(TileRuntimeState state)
@@ -13342,6 +13499,157 @@ namespace Hecton8.World
             DisposeNativeArray(ref buffer.SandMaskNative);
             DisposeNativeArray(ref buffer.RockMaskNative);
             DisposeNativeArray(ref buffer.HeightSamplesNative);
+        }
+
+        private void MarkAllTileTerrainHolesDirty()
+        {
+            if (_tileStates.Count <= 0)
+                return;
+
+            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            while (enumerator.MoveNext())
+                MarkTileTerrainHolesDirty(enumerator.Current.Value);
+
+            enumerator.Dispose();
+        }
+
+        private static void MarkTileTerrainHolesDirty(TileRuntimeState state)
+        {
+            if (state == null)
+                return;
+
+            state.TerrainHolesDirty = true;
+        }
+
+        private static void EnsureTileTerrainHoleMaskCapacity(TileRuntimeState state)
+        {
+            if (state == null)
+                return;
+
+            int safeResolution = Mathf.Max(0, state.HolesResolution);
+            int safeLength = safeResolution > 0 ? safeResolution * safeResolution : 0;
+            if (safeLength <= 0)
+            {
+                DisposeNativeArray(
+                    ref state.TerrainHoleMaskNative,
+                    state.TerrainHolesJobScheduled ? state.TerrainHolesJobHandle : default);
+                state.TerrainHoleMaskManaged = null;
+                return;
+            }
+
+            if (!state.TerrainHoleMaskNative.IsCreated || state.TerrainHoleMaskNative.Length != safeLength)
+            {
+                DisposeNativeArray(
+                    ref state.TerrainHoleMaskNative,
+                    state.TerrainHolesJobScheduled ? state.TerrainHolesJobHandle : default);
+                // COLD ALLOC: NativeArray<bool>[safeLength] - deferred terrain-hole mask build output for one MapMagic tile - owner: HectonMapMagicVegetationBridge
+                state.TerrainHoleMaskNative = new NativeArray<bool>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (state.TerrainHoleMaskManaged == null ||
+                state.TerrainHoleMaskManaged.GetLength(0) != safeResolution ||
+                state.TerrainHoleMaskManaged.GetLength(1) != safeResolution)
+            {
+                // COLD ALLOC: bool[safeResolution,safeResolution] - reusable TerrainData.SetHolesDelayLOD staging buffer for one MapMagic tile - owner: HectonMapMagicVegetationBridge
+                state.TerrainHoleMaskManaged = new bool[safeResolution, safeResolution];
+            }
+        }
+
+        private void TryScheduleTerrainHoleJobs()
+        {
+            if (_tileStates.Count <= 0)
+                return;
+
+            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                TileRuntimeState state = enumerator.Current.Value;
+                if (state == null ||
+                    state.Terrain == null ||
+                    state.TerrainData == null ||
+                    state.TerrainHolesJobScheduled ||
+                    !state.TerrainHolesDirty)
+                {
+                    continue;
+                }
+
+                state.HolesResolution = state.TerrainData.holesResolution;
+                EnsureTileTerrainHoleMaskCapacity(state);
+                if (!state.TerrainHoleMaskNative.IsCreated || state.HolesResolution <= 0)
+                {
+                    state.TerrainHolesDirty = false;
+                    continue;
+                }
+
+                state.TerrainHolesDirty = false;
+                state.TerrainHolesJobScheduled = true;
+                state.TerrainHolesJobHandle = new TerrainHoleMaskBuildJob
+                {
+                    TerrainHoles = _terrainHoleRecordsNative,
+                    TerrainHoleCount = _terrainHoleCount,
+                    Resolution = state.HolesResolution,
+                    TerrainOriginX = state.TerrainPosition.x,
+                    TerrainOriginZ = state.TerrainPosition.z,
+                    TerrainSizeX = state.TerrainSize.x,
+                    TerrainSizeZ = state.TerrainSize.z,
+                    Output = state.TerrainHoleMaskNative
+                }.Schedule(state.TerrainHoleMaskNative.Length, TerrainHoleJobBatchSize);
+            }
+
+            enumerator.Dispose();
+        }
+
+        private void FinalizeCompletedTerrainHoleJobs()
+        {
+            if (_tileStates.Count <= 0)
+                return;
+
+            Dictionary<long, TileRuntimeState>.Enumerator enumerator = _tileStates.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                TileRuntimeState state = enumerator.Current.Value;
+                if (state == null || !state.TerrainHolesJobScheduled)
+                    continue;
+
+                if (!state.TerrainHolesJobHandle.IsCompleted)
+                    continue;
+
+                state.TerrainHolesJobHandle.Complete();
+                state.TerrainHolesJobScheduled = false;
+                state.TerrainHolesJobHandle = default;
+                ApplyTerrainHoleMask(state);
+            }
+
+            enumerator.Dispose();
+        }
+
+        private static void ApplyTerrainHoleMask(TileRuntimeState state)
+        {
+            if (state == null ||
+                state.TerrainData == null ||
+                state.HolesResolution <= 0 ||
+                !state.TerrainHoleMaskNative.IsCreated ||
+                state.TerrainHoleMaskManaged == null)
+            {
+                return;
+            }
+
+            int resolution = state.HolesResolution;
+            int length = state.TerrainHoleMaskNative.Length;
+            for (int y = 0; y < resolution; y++)
+            {
+                int rowOffset = y * resolution;
+                for (int x = 0; x < resolution; x++)
+                {
+                    int flatIndex = rowOffset + x;
+                    if ((uint)flatIndex >= (uint)length)
+                        break;
+
+                    state.TerrainHoleMaskManaged[y, x] = state.TerrainHoleMaskNative[flatIndex];
+                }
+            }
+
+            state.TerrainData.SetHolesDelayLOD(0, 0, state.TerrainHoleMaskManaged);
         }
 
         private static void EnsureTileNativeCacheBufferCapacity(

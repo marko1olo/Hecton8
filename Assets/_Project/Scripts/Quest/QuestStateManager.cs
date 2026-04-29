@@ -11,6 +11,7 @@ namespace Hecton8.Quest
 {
     internal sealed class QuestStateManager : IDisposable
     {
+        private const int ProceduralQuestCapacity = 8;
         private const int WordCapacity = 320;
         private const int WordStride = 32;
         private const int QuestWordStart = 0;
@@ -37,7 +38,6 @@ namespace Hecton8.Quest
         private const uint DeadlockFlagSalt = 0xDEAD10CCu;
         private static readonly uint _abyssalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.abyssal");
         private static readonly uint _thermalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.thermal");
-        private static readonly uint _deepAbyssZoneHash = QuestFlagHashKernel.ComputeStableHash("zone_deep_abyss");
 
         // COLD ALLOC: List<QuestRuntimeResult>[32] - transition handoff from packed runtime to facade - owner: QuestStateManager
         private readonly List<QuestRuntimeResult> _runtimeResults = new List<QuestRuntimeResult>(32);
@@ -52,7 +52,14 @@ namespace Hecton8.Quest
         private Dictionary<uint, int> _revertDescriptorIndexByItemHash;
         private QuestBitAddress[] _activeAddressesByQuestIndex;
         private QuestBitAddress[] _completedAddressesByQuestIndex;
+        private uint[] _phaseGateMasksByQuestIndex;
         private uint[] _questHashesByQuestIndex;
+        private uint[] _markerTargetHashesByQuestIndex;
+        private Vector3[] _markerWorldPositionsByQuestIndex;
+        private float[] _markerHeightOffsetsByQuestIndex;
+        private string[] _questTitlesByQuestIndex;
+        private string[] _questDescriptionsByQuestIndex;
+        private int[] _proceduralNodeIndexByQuestIndex;
         private QuestRevertDescriptor[] _revertDescriptors;
         private QuestBitAddress _abyssalPhaseAddress;
         private QuestBitAddress _thermalPhaseAddress;
@@ -61,6 +68,7 @@ namespace Hecton8.Quest
         private NativeArray<uint> _transitionHistoryWords;
         private int _transitionHistoryWriteIndex;
         private int _transitionHistoryCount;
+        private int _authoredQuestCount;
         private string _compileErrorSummary = string.Empty;
         private uint _stateVersion;
         private uint _stateChecksum;
@@ -109,13 +117,21 @@ namespace Hecton8.Quest
             _revertDescriptorIndexByItemHash = null;
             _activeAddressesByQuestIndex = null;
             _completedAddressesByQuestIndex = null;
+            _phaseGateMasksByQuestIndex = null;
             _questHashesByQuestIndex = null;
+            _markerTargetHashesByQuestIndex = null;
+            _markerWorldPositionsByQuestIndex = null;
+            _markerHeightOffsetsByQuestIndex = null;
+            _questTitlesByQuestIndex = null;
+            _questDescriptionsByQuestIndex = null;
+            _proceduralNodeIndexByQuestIndex = null;
             _revertDescriptors = null;
             _abyssalPhaseAddress = default;
             _thermalPhaseAddress = default;
             _depthThresholdFlags = null;
             _transitionHistoryWriteIndex = 0;
             _transitionHistoryCount = 0;
+            _authoredQuestCount = 0;
             _compileErrorSummary = string.Empty;
             _stateVersion = 0u;
             _stateChecksum = 0u;
@@ -126,14 +142,22 @@ namespace Hecton8.Quest
         {
             Dispose();
 
-            int questArrayLength = allQuests != null ? allQuests.Length : 0;
+            _authoredQuestCount = allQuests != null ? allQuests.Length : 0;
+            int questArrayLength = _authoredQuestCount + ProceduralQuestCapacity;
             _globalPrerequisites = new NativeArray<uint>(WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _bitAddressByHash = new Dictionary<uint, QuestBitAddress>(Math.Max(questArrayLength * 6, 16)); // COLD ALLOC: Dictionary<uint,QuestBitAddress>[questArrayLength*6] - compiled flag lookup - owner: QuestStateManager
             _questIndexByHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 16)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - quest hash to source index mapping - owner: QuestStateManager
             _revertDescriptorIndexByItemHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 8)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - critical item revert lookup - owner: QuestStateManager
             _activeAddressesByQuestIndex = new QuestBitAddress[questArrayLength]; // COLD ALLOC: QuestBitAddress[questArrayLength] - quest active bit cache - owner: QuestStateManager
             _completedAddressesByQuestIndex = new QuestBitAddress[questArrayLength]; // COLD ALLOC: QuestBitAddress[questArrayLength] - quest completed bit cache - owner: QuestStateManager
+            _phaseGateMasksByQuestIndex = new uint[questArrayLength]; // COLD ALLOC: uint[questArrayLength] - authored phase gate bitmask cache for O(1) manual activation guards - owner: QuestStateManager
             _questHashesByQuestIndex = new uint[questArrayLength]; // COLD ALLOC: uint[questArrayLength] - quest hash cache - owner: QuestStateManager
+            _markerTargetHashesByQuestIndex = new uint[questArrayLength]; // COLD ALLOC: uint[questArrayLength] - quest marker target hash cache for authored and procedural directives - owner: QuestStateManager
+            _markerWorldPositionsByQuestIndex = new Vector3[questArrayLength]; // COLD ALLOC: Vector3[questArrayLength] - quest marker fallback positions - owner: QuestStateManager
+            _markerHeightOffsetsByQuestIndex = new float[questArrayLength]; // COLD ALLOC: float[questArrayLength] - quest marker height offsets - owner: QuestStateManager
+            _questTitlesByQuestIndex = new string[questArrayLength]; // COLD ALLOC: string[questArrayLength] - quest title cache for authored and procedural presentation - owner: QuestStateManager
+            _questDescriptionsByQuestIndex = new string[questArrayLength]; // COLD ALLOC: string[questArrayLength] - quest description cache for authored and procedural presentation - owner: QuestStateManager
+            _proceduralNodeIndexByQuestIndex = new int[questArrayLength]; // COLD ALLOC: int[questArrayLength] - procedural completion-node slot mapping - owner: QuestStateManager
 
             // COLD ALLOC: List<QuestNodeDescriptor>[questArrayLength*2] - compiled quest DAG nodes - owner: QuestStateManager
             List<QuestNodeDescriptor> nodeBuilder = new List<QuestNodeDescriptor>(Math.Max(questArrayLength * 2, 8));
@@ -147,7 +171,9 @@ namespace Hecton8.Quest
             Dictionary<uint, string> hashLabels = new Dictionary<uint, string>(Math.Max(questArrayLength * 6, 16));
             Span<int> bandBitUsage = stackalloc int[7];
 
-            for (int questIndex = 0; questIndex < questArrayLength; questIndex++)
+            EnsurePhaseGateAddressesRegistered(hashLabels, bandBitUsage);
+
+            for (int questIndex = 0; questIndex < _authoredQuestCount; questIndex++)
             {
                 QuestData questData = allQuests[questIndex];
                 if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
@@ -169,6 +195,12 @@ namespace Hecton8.Quest
 
                 _questIndexByHash[questHash] = questIndex;
                 _questHashesByQuestIndex[questIndex] = questHash;
+                _phaseGateMasksByQuestIndex[questIndex] = ResolvePhaseGateMask(questData.phaseGate);
+                _questTitlesByQuestIndex[questIndex] = questData.DisplayTitleOrFallback;
+                _questDescriptionsByQuestIndex[questIndex] = questData.DescriptionOrFallback;
+                _markerTargetHashesByQuestIndex[questIndex] = QuestFlagHashKernel.ComputeStableHash(questData.markerTargetId);
+                _markerWorldPositionsByQuestIndex[questIndex] = questData.markerWorldPosition;
+                _markerHeightOffsetsByQuestIndex[questIndex] = math.max(0f, questData.markerHeightOffset);
                 _activeAddressesByQuestIndex[questIndex] = RegisterStateBit(
                     MixHash(questHash, ActiveFlagSalt),
                     QuestStateBand.Quest,
@@ -183,7 +215,7 @@ namespace Hecton8.Quest
                     bandBitUsage);
             }
 
-            for (int questIndex = 0; questIndex < questArrayLength; questIndex++)
+            for (int questIndex = 0; questIndex < _authoredQuestCount; questIndex++)
             {
                 QuestData questData = allQuests[questIndex];
                 if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
@@ -304,7 +336,27 @@ namespace Hecton8.Quest
                 revertBuilder.Add(descriptor);
             }
 
-            _nodes = new NativeArray<QuestNodeDescriptor>(nodeBuilder.Count, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            for (int proceduralOffset = 0; proceduralOffset < ProceduralQuestCapacity; proceduralOffset++)
+            {
+                int questIndex = _authoredQuestCount + proceduralOffset;
+                uint slotSeed = 0x5100F000u + (uint)proceduralOffset;
+                _activeAddressesByQuestIndex[questIndex] = RegisterStateBit(
+                    MixHash(slotSeed, ActiveFlagSalt),
+                    QuestStateBand.Quest,
+                    $"quest-active:procedural:{proceduralOffset}",
+                    hashLabels,
+                    bandBitUsage);
+                _completedAddressesByQuestIndex[questIndex] = RegisterStateBit(
+                    MixHash(slotSeed, CompletedFlagSalt),
+                    QuestStateBand.Quest,
+                    $"quest-complete:procedural:{proceduralOffset}",
+                    hashLabels,
+                    bandBitUsage);
+                _proceduralNodeIndexByQuestIndex[questIndex] = nodeBuilder.Count + proceduralOffset;
+            }
+
+            int nodeCapacity = nodeBuilder.Count + ProceduralQuestCapacity;
+            _nodes = new NativeArray<QuestNodeDescriptor>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             for (int i = 0; i < nodeBuilder.Count; i++)
                 _nodes[i] = nodeBuilder[i];
 
@@ -312,11 +364,11 @@ namespace Hecton8.Quest
             for (int i = 0; i < prerequisiteBuilder.Count; i++)
                 _prerequisites[i] = prerequisiteBuilder[i];
 
-            if (_runtimeResults.Capacity < nodeBuilder.Count + revertBuilder.Count)
-                _runtimeResults.Capacity = nodeBuilder.Count + revertBuilder.Count;
+            if (_runtimeResults.Capacity < nodeCapacity + revertBuilder.Count)
+                _runtimeResults.Capacity = nodeCapacity + revertBuilder.Count;
 
-            _activatedQuestIndices = new NativeList<int>(Math.Max(nodeBuilder.Count, 1), Allocator.Persistent);
-            _completedQuestIndices = new NativeList<int>(Math.Max(nodeBuilder.Count, 1), Allocator.Persistent);
+            _activatedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
+            _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
             _transitionHistory = new NativeArray<QuestTransitionHistoryEntry>(TransitionHistoryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _transitionHistoryWords = new NativeArray<uint>(TransitionHistoryCapacity * WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _revertDescriptors = revertBuilder.ToArray();
@@ -324,6 +376,117 @@ namespace Hecton8.Quest
             _isInitialized = true;
             RefreshStateMetadata(resetVersion: true);
             return !HasCompileErrors;
+        }
+
+        public bool TryUpsertProceduralDirective(
+            uint questHash,
+            uint completionItemHash,
+            string title,
+            string description,
+            uint markerTargetHash,
+            Vector3 markerWorldPosition,
+            float markerHeightOffset,
+            QuestPhaseGateType phaseGate,
+            float requiredQuantity,
+            bool activateWhenAllowed,
+            out int questIndex,
+            out bool activatedNow)
+        {
+            questIndex = -1;
+            activatedNow = false;
+            if (!_isInitialized ||
+                questHash == 0u ||
+                completionItemHash == 0u ||
+                _questIndexByHash == null ||
+                _questHashesByQuestIndex == null ||
+                _proceduralNodeIndexByQuestIndex == null)
+            {
+                return false;
+            }
+
+            if (!TryGetQuestIndex(questHash, out questIndex))
+            {
+                questIndex = AllocateProceduralQuestSlot(questHash);
+                if (questIndex < _authoredQuestCount)
+                    return false;
+            }
+
+            if (questIndex < _authoredQuestCount)
+                return false;
+
+            _questHashesByQuestIndex[questIndex] = questHash;
+            _phaseGateMasksByQuestIndex[questIndex] = ResolvePhaseGateMask(phaseGate);
+            _questTitlesByQuestIndex[questIndex] = string.IsNullOrWhiteSpace(title) ? "ATLAS-6 DIRECTIVE" : title;
+            _questDescriptionsByQuestIndex[questIndex] = description ?? string.Empty;
+            _markerTargetHashesByQuestIndex[questIndex] = markerTargetHash;
+            _markerWorldPositionsByQuestIndex[questIndex] = markerWorldPosition;
+            _markerHeightOffsetsByQuestIndex[questIndex] = math.max(0f, markerHeightOffset);
+            ConfigureProceduralCompletionNode(questIndex, questHash, completionItemHash, phaseGate, requiredQuantity);
+
+            bool mutated = false;
+            if (activateWhenAllowed && IsBitSet(_completedAddressesByQuestIndex[questIndex]))
+                mutated |= ClearBit(_completedAddressesByQuestIndex[questIndex]);
+
+            if (activateWhenAllowed &&
+                !IsBitSet(_activeAddressesByQuestIndex[questIndex]) &&
+                !IsBitSet(_completedAddressesByQuestIndex[questIndex]) &&
+                PhaseGateSatisfied(questIndex) &&
+                SetBit(_activeAddressesByQuestIndex[questIndex]))
+            {
+                mutated = true;
+                activatedNow = true;
+                _runtimeResults.Add(new QuestRuntimeResult(questIndex, completed: false, QuestTransitionType.Activate));
+                AppendTransitionHistory(questIndex, completed: false, QuestTransitionType.Activate, default);
+            }
+
+            if (mutated)
+                RefreshStateMetadata(resetVersion: false);
+
+            return true;
+        }
+
+        public bool TryGetQuestPresentation(
+            uint questHash,
+            out string title,
+            out string description,
+            out uint markerTargetHash,
+            out Vector3 markerWorldPosition,
+            out float markerHeightOffset)
+        {
+            title = string.Empty;
+            description = string.Empty;
+            markerTargetHash = 0u;
+            markerWorldPosition = default;
+            markerHeightOffset = 0f;
+
+            if (!TryGetQuestIndex(questHash, out int questIndex))
+                return false;
+
+            title = _questTitlesByQuestIndex != null && questIndex < _questTitlesByQuestIndex.Length
+                ? _questTitlesByQuestIndex[questIndex]
+                : string.Empty;
+            description = _questDescriptionsByQuestIndex != null && questIndex < _questDescriptionsByQuestIndex.Length
+                ? _questDescriptionsByQuestIndex[questIndex]
+                : string.Empty;
+            markerTargetHash = _markerTargetHashesByQuestIndex != null && questIndex < _markerTargetHashesByQuestIndex.Length
+                ? _markerTargetHashesByQuestIndex[questIndex]
+                : 0u;
+            markerWorldPosition = _markerWorldPositionsByQuestIndex != null && questIndex < _markerWorldPositionsByQuestIndex.Length
+                ? _markerWorldPositionsByQuestIndex[questIndex]
+                : default;
+            markerHeightOffset = _markerHeightOffsetsByQuestIndex != null && questIndex < _markerHeightOffsetsByQuestIndex.Length
+                ? _markerHeightOffsetsByQuestIndex[questIndex]
+                : 0f;
+            return !string.IsNullOrWhiteSpace(title) || markerTargetHash != 0u || markerWorldPosition.sqrMagnitude > 0.0001f;
+        }
+
+        public bool TryGetQuestHash(int questIndex, out uint questHash)
+        {
+            questHash = 0u;
+            return _questHashesByQuestIndex != null &&
+                   questIndex >= 0 &&
+                   questIndex < _questHashesByQuestIndex.Length &&
+                   (questHash = _questHashesByQuestIndex[questIndex]) != 0u;
         }
 
         public bool IsQuestActive(uint questHash)
@@ -383,6 +546,9 @@ namespace Hecton8.Quest
             QuestBitAddress activeAddress = _activeAddressesByQuestIndex[questIndex];
             QuestBitAddress completedAddress = _completedAddressesByQuestIndex[questIndex];
             if (IsBitSet(activeAddress) || IsBitSet(completedAddress))
+                return false;
+
+            if (!PhaseGateSatisfied(questIndex))
                 return false;
 
             if (!SetBit(activeAddress))
@@ -527,6 +693,36 @@ namespace Hecton8.Quest
         }
 
         public QuestRuntimeResult GetResult(int index) => _runtimeResults[index];
+
+        public int CopyActiveQuestHashes(uint[] destination)
+        {
+            if (destination == null ||
+                destination.Length <= 0 ||
+                _questHashesByQuestIndex == null ||
+                _activeAddressesByQuestIndex == null ||
+                _completedAddressesByQuestIndex == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int questIndex = 0; questIndex < _questHashesByQuestIndex.Length && count < destination.Length; questIndex++)
+            {
+                uint questHash = _questHashesByQuestIndex[questIndex];
+                if (questHash == 0u)
+                    continue;
+
+                if (!IsBitSet(_activeAddressesByQuestIndex[questIndex]))
+                    continue;
+
+                if (IsBitSet(_completedAddressesByQuestIndex[questIndex]))
+                    continue;
+
+                destination[count++] = questHash;
+            }
+
+            return count;
+        }
 
         public bool TryGetTransitionHistory(int newestHistoryOffset, out QuestTransitionHistoryEntry entry)
         {
@@ -805,6 +1001,14 @@ namespace Hecton8.Quest
             }
         }
 
+        private void EnsurePhaseGateAddressesRegistered(
+            Dictionary<uint, string> hashLabels,
+            Span<int> bandBitUsage)
+        {
+            ResolvePhaseGateAddress(QuestPhaseGateType.Abyssal, hashLabels, bandBitUsage);
+            ResolvePhaseGateAddress(QuestPhaseGateType.Thermal, hashLabels, bandBitUsage);
+        }
+
         private uint ResolvePhaseGateFlagId(QuestPhaseGateType phaseGateType)
         {
             switch (phaseGateType)
@@ -814,6 +1018,21 @@ namespace Hecton8.Quest
 
                 case QuestPhaseGateType.Thermal:
                     return _thermalPhaseFlagHash;
+
+                default:
+                    return 0u;
+            }
+        }
+
+        private uint ResolvePhaseGateMask(QuestPhaseGateType phaseGateType)
+        {
+            switch (phaseGateType)
+            {
+                case QuestPhaseGateType.Abyssal:
+                    return _abyssalPhaseAddress.BitMask;
+
+                case QuestPhaseGateType.Thermal:
+                    return _thermalPhaseAddress.BitMask;
 
                 default:
                     return 0u;
@@ -1073,6 +1292,21 @@ namespace Hecton8.Quest
             activeAddress = _activeAddressesByQuestIndex[questIndex];
             completedAddress = _completedAddressesByQuestIndex[questIndex];
             return true;
+        }
+
+        private bool PhaseGateSatisfied(int questIndex)
+        {
+            if (_phaseGateMasksByQuestIndex == null ||
+                questIndex < 0 ||
+                questIndex >= _phaseGateMasksByQuestIndex.Length ||
+                !_globalPrerequisites.IsCreated)
+            {
+                return true;
+            }
+
+            uint requiredPhaseMask = _phaseGateMasksByQuestIndex[questIndex];
+            return requiredPhaseMask == 0u ||
+                   (_globalPrerequisites[PhaseWordStart] & requiredPhaseMask) != 0u;
         }
 
         private bool IsBitSet(QuestBitAddress address)
@@ -1364,6 +1598,65 @@ namespace Hecton8.Quest
         {
             public float Threshold;
             public QuestBitAddress Address;
+        }
+
+        private int AllocateProceduralQuestSlot(uint questHash)
+        {
+            for (int questIndex = _authoredQuestCount; questIndex < _questHashesByQuestIndex.Length; questIndex++)
+            {
+                if (_questHashesByQuestIndex[questIndex] != 0u)
+                    continue;
+
+                _questHashesByQuestIndex[questIndex] = questHash;
+                _questIndexByHash[questHash] = questIndex;
+                return questIndex;
+            }
+
+            return -1;
+        }
+
+        private void ConfigureProceduralCompletionNode(
+            int questIndex,
+            uint questHash,
+            uint completionItemHash,
+            QuestPhaseGateType phaseGate,
+            float requiredQuantity)
+        {
+            int nodeIndex = _proceduralNodeIndexByQuestIndex[questIndex];
+            if (!_nodes.IsCreated || nodeIndex < 0 || nodeIndex >= _nodes.Length)
+                return;
+
+            QuestBitAddress activeAddress = _activeAddressesByQuestIndex[questIndex];
+            QuestBitAddress completedAddress = _completedAddressesByQuestIndex[questIndex];
+            _nodes[nodeIndex] = new QuestNodeDescriptor
+            {
+                QuestHash = questHash,
+                PayloadHash = completionItemHash,
+                PrereqMask = 0u,
+                CompletionFlagID = completedAddress.FlagId,
+                FailureFlagID = 0u,
+                RevertFlagID = 0u,
+                PhaseGate = ResolvePhaseGateFlagId(phaseGate),
+                ActiveFlagID = activeAddress.FlagId,
+                CriticalItemHash = 0u,
+                PrereqStartIndex = 0,
+                PrereqWordIndex = ushort.MaxValue,
+                ReservedWordIndex = 0,
+                RequiredValue = math.max(1f, requiredQuantity),
+                ActiveMask = activeAddress.BitMask,
+                CompletedMask = completedAddress.BitMask,
+                SetMask = completedAddress.BitMask,
+                ClearMask = activeAddress.BitMask,
+                PrereqCount = 0,
+                SignalKind = (byte)QuestSignalKind.ItemCollected,
+                TransitionType = (byte)QuestTransitionType.Complete,
+                Reserved = 0,
+                QuestIndex = questIndex,
+                ActiveWordIndex = activeAddress.WordIndex,
+                CompletedWordIndex = completedAddress.WordIndex,
+                SetWordIndex = completedAddress.WordIndex,
+                ClearWordIndex = activeAddress.WordIndex
+            };
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast)]

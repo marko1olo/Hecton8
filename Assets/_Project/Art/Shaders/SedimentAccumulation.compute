@@ -1,0 +1,43 @@
+#pragma kernel AccumulateSediment
+
+Texture2D<float4> _HectonSedimentCaptureTex;
+Texture2D<float4> _HectonSedimentMaskRead;
+RWTexture2D<float4> _HectonSedimentMaskWrite;
+
+float4 _HectonSedimentComputeParamsA;
+float4 _HectonSedimentComputeParamsB;
+
+[numthreads(8, 8, 1)]
+void AccumulateSediment(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _HectonSedimentCaptureTex.GetDimensions(width, height);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    const uint2 pixel = dispatchThreadId.xy;
+    float4 captureSample = _HectonSedimentCaptureTex[pixel];
+    float4 previousSample = _HectonSedimentMaskRead[pixel];
+
+    float deltaTime = max(_HectonSedimentComputeParamsA.x, 0.0);
+    float depositionRate = max(_HectonSedimentComputeParamsA.y, 0.0);
+    float erosionRate = max(_HectonSedimentComputeParamsA.z, 0.0);
+    float heightMatchScale = max(_HectonSedimentComputeParamsA.w, 0.0);
+    float geometryShiftLoss = max(_HectonSedimentComputeParamsB.x, 0.0);
+
+    float valid = saturate(captureSample.a);
+    float exposed = saturate(captureSample.g) * valid;
+    float observedHeight = saturate(captureSample.r);
+    float previousHeight = saturate(previousSample.g);
+    float heightMatch = 1.0 - saturate(abs(observedHeight - previousHeight) * heightMatchScale);
+
+    float deposition = exposed * lerp(0.35, 1.0, heightMatch) * depositionRate * deltaTime;
+    float erosion = (1.0 - exposed) * erosionRate * deltaTime;
+    float shiftPenalty = (1.0 - heightMatch) * geometryShiftLoss * deltaTime;
+
+    float sediment = saturate(previousSample.r + deposition - erosion - shiftPenalty);
+    float storedHeight = valid > 0.5 ? observedHeight : max(previousHeight - erosionRate * deltaTime, 0.0);
+
+    _HectonSedimentMaskWrite[pixel] = float4(sediment, storedHeight, exposed, 1.0);
+}

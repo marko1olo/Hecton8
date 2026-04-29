@@ -29,5 +29,9 @@ MonoBehaviour:
   completionType: 3
   completionId: atlas6_signal_fully_decoded
   completionValue: 0
+  phaseGate: 1
+  markerTargetId: atlas6_core
+  markerWorldPosition: {x: 0, y: 0, z: 0}
+  markerHeightOffset: 18
   autoActivateOnStart: 0
   oneTimeOnly: 1

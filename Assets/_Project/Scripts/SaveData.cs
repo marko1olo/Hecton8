@@ -44,7 +44,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 44; // v44: procedural geology seam registry persistence
+        public const int CurrentVersion = 45; // v45: procedural geology cave entrance persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -493,6 +493,21 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    public struct ProceduralGeologyCaveEntranceDTO
+    {
+        public long runtimeKey;
+        public float surfacePositionX;
+        public float surfacePositionY;
+        public float surfacePositionZ;
+        public float inwardDirectionX;
+        public float inwardDirectionY;
+        public float inwardDirectionZ;
+        public float radius;
+        public float funnelLength;
+        public float innerRadius;
+    }
+
+    [Serializable]
     public struct ProceduralWorldStateDTO
     {
         public int suppressedPlacementCount;
@@ -501,10 +516,13 @@ namespace Hecton8.SaveSystem
         public ProceduralFaunaStateDTO[] faunaStates;
         public int geologySeamStateCount;
         public ProceduralGeologySeamStateDTO[] geologySeamStates;
+        public int geologyCaveEntranceCount;
+        public ProceduralGeologyCaveEntranceDTO[] geologyCaveEntrances;
 
         public const int MaxSuppressedPlacements = 8192;
         public const int MaxFaunaStates = 4096;
         public const int MaxGeologySeamStates = 512;
+        public const int MaxGeologyCaveEntrances = 512;
 
         public void EnsureCapacity()
         {
@@ -516,6 +534,9 @@ namespace Hecton8.SaveSystem
 
             if (geologySeamStates == null || geologySeamStates.Length < MaxGeologySeamStates)
                 geologySeamStates = new ProceduralGeologySeamStateDTO[MaxGeologySeamStates];
+
+            if (geologyCaveEntrances == null || geologyCaveEntrances.Length < MaxGeologyCaveEntrances)
+                geologyCaveEntrances = new ProceduralGeologyCaveEntranceDTO[MaxGeologyCaveEntrances];
         }
     }
 

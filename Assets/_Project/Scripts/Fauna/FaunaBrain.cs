@@ -666,6 +666,11 @@ namespace Hecton8.AI
                 _proceduralLeviathanSpineIk = gameObject.AddComponent<ProceduralLeviathanSpineIK>();
 
             _proceduralLeviathanSpineIk.BindFromFauna(this, _rb, _animator);
+
+            if (!TryGetComponent(out Hecton8.AI.CreatureDamageManager creatureDamageManager))
+                creatureDamageManager = gameObject.AddComponent<Hecton8.AI.CreatureDamageManager>();
+
+            creatureDamageManager.BindFromFauna(this);
         }
 
         private void UpdateProceduralStrikeIntent(AIState resolvedState, Transform strikeTarget)
@@ -800,6 +805,24 @@ namespace Hecton8.AI
                     }
 
                     neighborBrain.TriggerPanicPulse(transform.position);
+                }
+
+                Vector3 preyPosition = target.position;
+                Vector3 fearBurstDirection = preyPosition - transform.position;
+                if (fearBurstDirection.sqrMagnitude <= 0.0001f)
+                    fearBurstDirection = transform.forward;
+
+                ChemicalInfluenceGrid.QueueFearPheromone(preyPosition, 1f);
+
+                SargassumMicroFaunaBoids microFaunaBoids = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+                if (microFaunaBoids != null)
+                {
+                    microFaunaBoids.RegisterPredatorFearBurst(
+                        preyPosition,
+                        fearBurstDirection,
+                        10f,
+                        0.45f,
+                        0.85f);
                 }
 
                 // Despawn/Pool the prey
@@ -941,10 +964,35 @@ namespace Hecton8.AI
         private void Die()
         {
             _isDead = true;
+            ReportApexPredatorKill();
             if (ObjectPoolManager.Instance != null)
                 ObjectPoolManager.Instance.Despawn(gameObject);
             else
                 gameObject.SetActive(false);
+        }
+
+        private void ReportApexPredatorKill()
+        {
+            if (!_utilityBrain.IsActivePredator)
+                return;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null || (playerTransform.position - transform.position).sqrMagnitude > 22500f)
+                return;
+
+            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            if (ecosystemDirector == null || !ecosystemDirector.IsInitialized)
+                return;
+
+            float hostilityDelta = 0.22f;
+            if ((_speciesProfile != null && _speciesProfile.isLeviathan) ||
+                (_archetype != null && _archetype.roleType == CreatureRoleType.Leviathan))
+            {
+                hostilityDelta = 0.35f;
+            }
+
+            ecosystemDirector.ReportApexPredatorKilled(transform.position, hostilityDelta);
         }
 
         private void ApplyCognitionEvaluation(in CreatureUtilityEvaluation evaluation)

@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Systems.AI;
+using Hecton8.UI;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -29,6 +31,7 @@ namespace Hecton8.World
         private const float SectorEdgeLengthMeters = 1000f;
         private const int MinimumSectorCapacity = 16;
         private const int MinimumPredationEventCapacity = 32;
+        private const float DefaultHostilityPeakHoldSeconds = 18f;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct SectorPopulationState
@@ -313,6 +316,22 @@ namespace Hecton8.World
         [Tooltip("Maximum camouflage bias produced by sector adaptation.")]
         [SerializeField, Range(0f, 1f)] private float maximumCamouflageIndex = 0.9f;
 
+        [Header("Biome Hostility")]
+        [Tooltip("Normalized hostility applied when the player kills one standard apex predator.")]
+        [SerializeField, Range(0.01f, 1f)] private float hostilityPerApexKill = 0.22f;
+        [Tooltip("Normalized hostility removed per SlowTick while the biome is calming down.")]
+        [SerializeField, Range(0.001f, 0.2f)] private float hostilityDecayPerSlowTick = 0.015f;
+        [Tooltip("Minimum director peak-hold duration injected when hostility is elevated.")]
+        [SerializeField, Min(0f)] private float hostilityPeakHoldSeconds = DefaultHostilityPeakHoldSeconds;
+
+        [Header("Predator Starvation")]
+        [Tooltip("Comfort prey-per-predator ratio. Values below this drive desperation pressure upward.")]
+        [SerializeField, Min(1f)] private float starvationComfortPreyPerPredator = 12f;
+        [Tooltip("Additional starvation pressure sourced from elevated sector harvest pressure.")]
+        [SerializeField, Min(0f)] private float starvationHarvestWeight = 0.65f;
+        [Tooltip("Scale applied when converting starvation pressure into director hostility.")]
+        [SerializeField, Range(0f, 1f)] private float starvationHostilityWeight = 0.85f;
+
         private NativeArray<SectorPopulationState> _sectorFrontStates;
         private NativeArray<SectorPopulationState> _sectorBackStates;
         private NativeHashMap<long, int> _sectorIndexByKey;
@@ -328,11 +347,19 @@ namespace Hecton8.World
         private bool _registeredSlowTickable;
         private bool _diffusionScheduled;
         private bool _solveScheduled;
+        private float _biomeHostility01;
+        private float _starvationAggressionPressure01;
+        private int _hostilityTier;
 
         /// <summary>
         /// True once the runtime-native state is allocated and registered.
         /// </summary>
         public bool IsInitialized => _sectorFrontStates.IsCreated && _sectorBackStates.IsCreated && _sectorIndexByKey.IsCreated;
+
+        /// <summary>
+        /// Normalized biome hostility score exposed to UI and pacing systems.
+        /// </summary>
+        public float BiomeHostility01 => ResolveCombinedHostility01();
 
         internal void CaptureSaveSnapshot()
         {
@@ -450,6 +477,7 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return;
 
+            DecayBiomeHostility();
             CompleteScheduledSimulation(forceComplete: false);
             EnsurePlayerSectorRegistered();
             EnsureMigrationNeighborSectorsRegistered();
@@ -512,6 +540,8 @@ namespace Hecton8.World
             if (!IsInitialized || preyConsumed <= 0)
                 return;
 
+            EnvironmentalStrainManager.Instance?.AccumulatePredationStrain(worldPosition, preyConsumed);
+
             int2 sectorCoord = QuantizeSector(worldPosition);
             long packedSectorKey = PackSectorKey(sectorCoord);
             int slotIndex;
@@ -537,6 +567,33 @@ namespace Hecton8.World
             _pendingPredationEventCount++;
         }
 
+        /// <summary>
+        /// Registers one player-attributed apex predator kill and escalates biome hostility.
+        /// </summary>
+        public void ReportApexPredatorKilled(Vector3 worldPosition, float hostilityDelta)
+        {
+            if (!IsInitialized)
+                return;
+
+            float appliedDelta = math.max(hostilityPerApexKill, hostilityDelta);
+            int2 sectorCoord = QuantizeSector(worldPosition);
+            if (!HasPendingSimulationJob())
+            {
+                int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
+                if (slotIndex >= 0)
+                {
+                    SectorPopulationState state = _sectorFrontStates[slotIndex];
+                    state.PredatorPopulation = math.max(0f, state.PredatorPopulation - 1f);
+                    state.PredatorPopulationRounded = (int)math.round(state.PredatorPopulation);
+                    _sectorFrontStates[slotIndex] = state;
+                    _sectorBackStates[slotIndex] = state;
+                }
+            }
+
+            SetBiomeHostility(_biomeHostility01 + appliedDelta);
+            ApplyDirectorHostilityPressure();
+        }
+
         private void SanitizeSettings()
         {
             maxTrackedSectors = math.max(MinimumSectorCapacity, maxTrackedSectors);
@@ -556,6 +613,117 @@ namespace Hecton8.World
             baselineFitness = math.clamp(baselineFitness, 0f, 1f);
             maximumSpeedMultiplier = math.max(1f, maximumSpeedMultiplier);
             maximumCamouflageIndex = math.clamp(maximumCamouflageIndex, 0f, 1f);
+            hostilityPerApexKill = math.clamp(hostilityPerApexKill, 0.01f, 1f);
+            hostilityDecayPerSlowTick = math.clamp(hostilityDecayPerSlowTick, 0.001f, 0.2f);
+            hostilityPeakHoldSeconds = math.max(0f, hostilityPeakHoldSeconds);
+            starvationComfortPreyPerPredator = math.max(1f, starvationComfortPreyPerPredator);
+            starvationHarvestWeight = math.max(0f, starvationHarvestWeight);
+            starvationHostilityWeight = math.clamp(starvationHostilityWeight, 0f, 1f);
+        }
+
+        private void DecayBiomeHostility()
+        {
+            if (_biomeHostility01 <= 0f)
+                return;
+
+            SetBiomeHostility(math.max(0f, _biomeHostility01 - hostilityDecayPerSlowTick));
+            if (_biomeHostility01 > 0f)
+                ApplyDirectorHostilityPressure();
+        }
+
+        private void ApplyDirectorHostilityPressure()
+        {
+            HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;
+            float combinedHostility01 = ResolveCombinedHostility01();
+            if (director == null || combinedHostility01 <= 0f)
+                return;
+
+            float holdSeconds = hostilityPeakHoldSeconds * math.saturate(combinedHostility01 + (_starvationAggressionPressure01 * 0.35f));
+            director.ApplyExternalPeakPressure(combinedHostility01, holdSeconds);
+        }
+
+        private void SetBiomeHostility(float hostility01)
+        {
+            float clamped = math.saturate(hostility01);
+            if (math.abs(clamped - _biomeHostility01) <= 0.0001f)
+                return;
+
+            _biomeHostility01 = clamped;
+            RefreshHostilityTier();
+        }
+
+        private void RefreshStarvationPressure()
+        {
+            if (!IsInitialized || _activeSectorCount <= 0)
+            {
+                _starvationAggressionPressure01 = 0f;
+                RefreshHostilityTier();
+                return;
+            }
+
+            float weightedPressureSum = 0f;
+            float totalPredatorWeight = 0f;
+            float safeComfortRatio = math.max(1f, starvationComfortPreyPerPredator);
+            float safeHarvestNormalizer = math.max(1f, preyOverflowThreshold * harvestPressurePerPrey);
+            for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
+            {
+                SectorPopulationState state = _sectorFrontStates[sectorIndex];
+                float predatorPopulation = math.max(0f, state.PredatorPopulation);
+                if (predatorPopulation <= 0f)
+                    continue;
+
+                float preyPopulation = math.max(0f, state.PreyPopulation);
+                float preyPerPredator = preyPopulation / math.max(1f, predatorPopulation);
+                float scarcity01 = math.saturate(1f - (preyPerPredator / safeComfortRatio));
+                float harvest01 = math.saturate(state.HarvestPressure / safeHarvestNormalizer);
+                float sectorPressure01 = math.saturate(scarcity01 + (harvest01 * starvationHarvestWeight));
+                weightedPressureSum += sectorPressure01 * predatorPopulation;
+                totalPredatorWeight += predatorPopulation;
+            }
+
+            _starvationAggressionPressure01 = totalPredatorWeight > 0f
+                ? math.saturate((weightedPressureSum / totalPredatorWeight) * starvationHostilityWeight)
+                : 0f;
+            RefreshHostilityTier();
+        }
+
+        private void RefreshHostilityTier()
+        {
+            int tier = ResolveHostilityTier(ResolveCombinedHostility01());
+            if (tier == _hostilityTier)
+                return;
+
+            _hostilityTier = tier;
+            switch (tier)
+            {
+                case 3:
+                    NotificationEvents.PushCritical("BIOME HOSTILITY: EXTREME. THE ABYSS HATES YOU.");
+                    break;
+
+                case 2:
+                    NotificationEvents.PushWarning("BIOME HOSTILITY: ELEVATED. PREDATOR PEAK EXTENDED.");
+                    break;
+
+                case 1:
+                    NotificationEvents.PushInfo("BIOME HOSTILITY: RISING.");
+                    break;
+            }
+        }
+
+        private float ResolveCombinedHostility01()
+        {
+            return math.saturate(math.max(_biomeHostility01, _starvationAggressionPressure01));
+        }
+
+        private static int ResolveHostilityTier(float hostility01)
+        {
+            if (hostility01 >= 0.75f)
+                return 3;
+
+            if (hostility01 >= 0.4f)
+                return 2;
+
+            return hostility01 >= 0.15f ? 1 : 0;
         }
 
         private void AllocateRuntimeState()
@@ -581,6 +749,9 @@ namespace Hecton8.World
             _scheduledSolveHandle = default;
             _diffusionScheduled = false;
             _solveScheduled = false;
+            _biomeHostility01 = 0f;
+            _starvationAggressionPressure01 = 0f;
+            _hostilityTier = 0;
         }
 
         private void DisposeRuntimeState()
@@ -617,6 +788,9 @@ namespace Hecton8.World
             _scheduledSolveHandle = default;
             _diffusionScheduled = false;
             _solveScheduled = false;
+            _biomeHostility01 = 0f;
+            _starvationAggressionPressure01 = 0f;
+            _hostilityTier = 0;
         }
 
         private void TryRegisterService()
@@ -724,6 +898,7 @@ namespace Hecton8.World
             }
 
             _pendingPredationEventCount = 0;
+            RefreshStarvationPressure();
         }
 
         private void ScheduleSectorSolve()
@@ -819,6 +994,7 @@ namespace Hecton8.World
             _sectorBackStates = swap;
             _scheduledDiffusionHandle = default;
             _diffusionScheduled = false;
+            RefreshStarvationPressure();
         }
 
         private void CompleteScheduledSolve(bool forceComplete)
@@ -835,6 +1011,7 @@ namespace Hecton8.World
             _sectorBackStates = swap;
             _scheduledSolveHandle = default;
             _solveScheduled = false;
+            RefreshStarvationPressure();
         }
 
         private int ResolveOrCreateSectorSlot(int2 sectorCoord, bool seedWithBaseline = true)

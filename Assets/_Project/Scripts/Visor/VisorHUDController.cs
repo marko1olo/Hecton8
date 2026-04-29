@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Physics;
+using Hecton8.Tools;
 using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
@@ -22,6 +23,7 @@ namespace NASAPunk.Visor
     [ExecuteAlways]
     public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable
     {
+        private const float BiosRecoveryClarityThreshold = 0.1f;
         private static readonly List<VisorHUDController> s_activeControllers = new List<VisorHUDController>(2);
 
         public enum ProjectionMode
@@ -162,6 +164,11 @@ namespace NASAPunk.Visor
         private float _interferenceDistortionRecoverySpeed;
         private bool _runtimeTickRegistered;
         private bool _editorPreviewSuspended;
+        private bool _editorReferencePoseCached;
+        private Camera _editorLastReferenceCamera;
+        private Vector3 _editorLastReferencePosition;
+        private Quaternion _editorLastReferenceRotation;
+        private float _editorLastReferenceNearClip;
         private HectonSurvivalSystem _survivalSystem;
         private TraumaDispatcher _traumaDispatcher;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
@@ -205,6 +212,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_HazardToxicLevel = Shader.PropertyToID("_HazardToxicLevel");
         private static readonly int ID_HazardGlitchLevel = Shader.PropertyToID("_HazardGlitchLevel");
         private static readonly int ID_BiosRecoveryMode = Shader.PropertyToID("_BiosRecoveryMode");
+        private static readonly int ID_ToolBatteryNormalized = Shader.PropertyToID("_ToolBatteryNormalized");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -331,6 +339,9 @@ namespace NASAPunk.Visor
                 return;
             }
 
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+                return;
+
             if (_editorPreviewSuspended)
                 ResumeEditModeProjection();
 
@@ -341,6 +352,7 @@ namespace NASAPunk.Visor
             }
 
             RefreshRuntimeState(forceResolve: false);
+            CacheEditorReferencePose();
         }
 #endif
 
@@ -534,14 +546,16 @@ namespace NASAPunk.Visor
             float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
             float hazardChromaticAberration = (_hazardRadiationLevel * 0.010f) + (_hazardGlitchLevel * 0.006f);
             float hazardStaticNoise = (_hazardGlitchLevel * 0.28f) + (_hazardToxicLevel * 0.18f);
-            float biosRecoveryBlend = Mathf.Clamp01(_biosRecoveryModeBlend);
-            float compositeHudIntensity = Mathf.Lerp(_hudIntensity, _biosRecoveryHudIntensity, biosRecoveryBlend);
-            Color compositeHudTint = Color.Lerp(_hudTint, _biosRecoveryHudTint, biosRecoveryBlend);
-            float compositeChromaticAberration = Mathf.Max(_structuralFatigueChromaticAberration, hazardChromaticAberration) * (1f - biosRecoveryBlend);
-            float compositeStaticNoise = Mathf.Lerp(
-                Mathf.Max(_structuralFatigueStaticNoise, hazardStaticNoise),
-                hazardStaticNoise * 0.12f,
-                biosRecoveryBlend);
+            float biosRecoverySwitch = _biosRecoveryModeBlend >= 0.5f ? 1f : 0f;
+            float compositeHudIntensity = biosRecoverySwitch > 0.5f ? _biosRecoveryHudIntensity : _hudIntensity;
+            Color compositeHudTint = biosRecoverySwitch > 0.5f ? _biosRecoveryHudTint : _hudTint;
+            float compositeChromaticAberration = biosRecoverySwitch > 0.5f
+                ? 0f
+                : Mathf.Max(_structuralFatigueChromaticAberration, hazardChromaticAberration);
+            float compositeStaticNoise = biosRecoverySwitch > 0.5f
+                ? hazardStaticNoise * 0.08f
+                : Mathf.Max(_structuralFatigueStaticNoise, hazardStaticNoise);
+            float activeToolBatteryNormalized = ResolveActiveToolBatteryNormalized();
 
             _visorRenderer.GetPropertyBlock(_mpb);
             _mpb.SetFloat(ID_HUDIntensity, compositeHudIntensity);
@@ -565,9 +579,23 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_HazardThermalLevel, _hazardThermalLevel);
             _mpb.SetFloat(ID_HazardToxicLevel, _hazardToxicLevel);
             _mpb.SetFloat(ID_HazardGlitchLevel, _hazardGlitchLevel);
-            _mpb.SetFloat(ID_BiosRecoveryMode, _biosRecoveryModeBlend);
+            _mpb.SetFloat(ID_BiosRecoveryMode, biosRecoverySwitch);
+            _mpb.SetFloat(ID_ToolBatteryNormalized, activeToolBatteryNormalized);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
+        }
+
+        private static float ResolveActiveToolBatteryNormalized()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
+            if (toolManager == null)
+                return 0f;
+
+            if (!(toolManager.CurrentTool is IBatteryTool batteryTool) || !batteryTool.HasBattery)
+                return 0f;
+
+            return Mathf.Clamp01(batteryTool.BatteryCharge);
         }
 
         private void UpdateGlitchState(float deltaTime)
@@ -867,7 +895,8 @@ namespace NASAPunk.Visor
                 targetRadiation = Mathf.Clamp01(_traumaDispatcher.HazardRadiationSignal01);
                 targetThermal = Mathf.Clamp01(_traumaDispatcher.HazardThermalSignal01);
                 targetToxic = Mathf.Clamp01(_traumaDispatcher.HazardToxicSignal01);
-                targetBiosRecovery = _traumaDispatcher.BiosRecoveryModeActive ? 1f : 0f;
+                float clarityRemaining01 = 1f - Mathf.Clamp01(_traumaDispatcher.ClarityChannel01);
+                targetBiosRecovery = clarityRemaining01 < BiosRecoveryClarityThreshold ? 1f : 0f;
             }
 
             float targetGlitch = Mathf.Clamp01(Mathf.Max(
@@ -887,8 +916,11 @@ namespace NASAPunk.Visor
             if (UpdateSmoothedVisualChannel(ref _hazardGlitchLevel, targetGlitch, blendT))
                 _materialPropertiesDirty = true;
 
-            if (UpdateSmoothedVisualChannel(ref _biosRecoveryModeBlend, targetBiosRecovery, blendT))
+            if (!Mathf.Approximately(_biosRecoveryModeBlend, targetBiosRecovery))
+            {
+                _biosRecoveryModeBlend = targetBiosRecovery;
                 _materialPropertiesDirty = true;
+            }
         }
 
         private void UpdateHypoxiaState(float deltaTime)
@@ -1451,6 +1483,11 @@ namespace NASAPunk.Visor
             _cachedVisorOffsetRotation = Quaternion.identity;
             _cachedHudEulerOffset = default;
             _cachedHudOffsetRotation = Quaternion.identity;
+            _editorReferencePoseCached = false;
+            _editorLastReferenceCamera = null;
+            _editorLastReferencePosition = default;
+            _editorLastReferenceRotation = default;
+            _editorLastReferenceNearClip = 0f;
         }
 
         private Quaternion GetCachedVisorOffsetRotation()
@@ -1595,10 +1632,52 @@ namespace NASAPunk.Visor
             if (_materialPropertiesDirty)
                 return true;
 
-            if (_syncToReferenceCamera && _syncPoseInEditMode)
+            if (HasEditorReferencePoseChanged())
                 return true;
 
             return NeedsAutoResolve();
+        }
+
+        private bool HasEditorReferencePoseChanged()
+        {
+            if (!_syncToReferenceCamera || !_syncPoseInEditMode)
+                return false;
+
+            if (_referenceCamera == null)
+                return false;
+
+            Transform referenceTransform = _referenceCamera.transform;
+            Vector3 referencePosition = referenceTransform.position;
+            Quaternion referenceRotation = referenceTransform.rotation;
+            float nearClipPlane = _referenceCamera.nearClipPlane;
+
+            if (!_editorReferencePoseCached)
+                return true;
+
+            return !ReferenceEquals(_editorLastReferenceCamera, _referenceCamera)
+                || _editorLastReferencePosition != referencePosition
+                || _editorLastReferenceRotation != referenceRotation
+                || !Mathf.Approximately(_editorLastReferenceNearClip, nearClipPlane);
+        }
+
+        private void CacheEditorReferencePose()
+        {
+            if (!_syncToReferenceCamera || !_syncPoseInEditMode || _referenceCamera == null)
+            {
+                _editorReferencePoseCached = false;
+                _editorLastReferenceCamera = null;
+                _editorLastReferencePosition = default;
+                _editorLastReferenceRotation = default;
+                _editorLastReferenceNearClip = 0f;
+                return;
+            }
+
+            Transform referenceTransform = _referenceCamera.transform;
+            _editorLastReferenceCamera = _referenceCamera;
+            _editorLastReferencePosition = referenceTransform.position;
+            _editorLastReferenceRotation = referenceTransform.rotation;
+            _editorLastReferenceNearClip = _referenceCamera.nearClipPlane;
+            _editorReferencePoseCached = true;
         }
 
         private void EvaluateEditorTickRegistration()

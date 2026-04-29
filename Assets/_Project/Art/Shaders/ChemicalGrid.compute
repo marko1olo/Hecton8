@@ -1,0 +1,52 @@
+#pragma kernel DiffuseChemicalGrid
+
+#define THREAD_GROUP_SIZE 64
+
+StructuredBuffer<float4> _ChemicalGridSource;
+RWStructuredBuffer<float4> _ChemicalGridTarget;
+
+int3 _ChemicalGridDimensions;
+float4 _ChemicalGridDecayRates;
+float4 _ChemicalGridDiffusionRates;
+float _ChemicalGridMaxIntensity;
+
+int FlattenChemicalCell(int3 cell, int3 dimensions)
+{
+    return cell.x + (cell.y * dimensions.x) + (cell.z * dimensions.x * dimensions.y);
+}
+
+float4 SampleChemicalCellClamped(int3 cell, int3 dimensions)
+{
+    int3 clampedCell = clamp(cell, int3(0, 0, 0), dimensions - 1);
+    return _ChemicalGridSource[FlattenChemicalCell(clampedCell, dimensions)];
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void DiffuseChemicalGrid(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadID.x;
+    int cellCount = _ChemicalGridDimensions.x * _ChemicalGridDimensions.y * _ChemicalGridDimensions.z;
+    if (index >= (uint)cellCount)
+        return;
+
+    int width = _ChemicalGridDimensions.x;
+    int height = _ChemicalGridDimensions.y;
+    int slice = width * height;
+    int z = (int)(index / (uint)slice);
+    int y = ((int)index - (z * slice)) / width;
+    int x = (int)index - (z * slice) - (y * width);
+
+    int3 cell = int3(x, y, z);
+    float4 selfValue = _ChemicalGridSource[index];
+    float4 neighborAverage =
+        (SampleChemicalCellClamped(cell + int3(-1, 0, 0), _ChemicalGridDimensions) +
+         SampleChemicalCellClamped(cell + int3(1, 0, 0), _ChemicalGridDimensions) +
+         SampleChemicalCellClamped(cell + int3(0, -1, 0), _ChemicalGridDimensions) +
+         SampleChemicalCellClamped(cell + int3(0, 1, 0), _ChemicalGridDimensions) +
+         SampleChemicalCellClamped(cell + int3(0, 0, -1), _ChemicalGridDimensions) +
+         SampleChemicalCellClamped(cell + int3(0, 0, 1), _ChemicalGridDimensions)) / 6.0;
+
+    float4 retained = selfValue * (1.0 - _ChemicalGridDecayRates);
+    float4 diffused = neighborAverage * _ChemicalGridDiffusionRates;
+    _ChemicalGridTarget[index] = min(max(retained + diffused, 0.0), _ChemicalGridMaxIntensity.xxxx);
+}

@@ -183,16 +183,12 @@ namespace Hecton8.Visor
                 internal float maxDeltaPerFrame;
             }
 
-            private sealed class ShaftsPassData
+            private sealed class FullscreenPassData
             {
                 internal TextureHandle source;
-                internal TextureHandle depth;
-                internal TextureHandle shafts;
-                internal TextureHandle blur;
+                internal TextureHandle destination;
                 internal BufferHandle exposureState;
-                internal Material raymarchMaterial;
-                internal Material blurHorizontalMaterial;
-                internal Material blurVerticalMaterial;
+                internal Material material;
             }
 
             private sealed class CompositePassData
@@ -364,7 +360,7 @@ namespace Hecton8.Visor
                         passData.maxEv = Mathf.Max(_settings.maxEv, passData.minEv + 0.01f);
 
                         builder.UseTexture(sourceTexture, AccessFlags.Read);
-                        builder.UseBuffer(histogramHandle, AccessFlags.ReadWrite);
+                        builder.UseBuffer(histogramHandle, AccessFlags.Read | AccessFlags.Write);
                         builder.SetRenderFunc(static (ExposureBuildPassData data, ComputeGraphContext context) =>
                         {
                             int dispatchX = Mathf.CeilToInt(data.inputSize.x / Mathf.Max(1u, data.threadGroupSizeX));
@@ -391,7 +387,7 @@ namespace Hecton8.Visor
                         passData.maxDeltaPerFrame = Mathf.Clamp(_settings.evMaxDeltaPerFrame, 0.05f, 0.5f);
 
                         builder.UseBuffer(histogramHandle, AccessFlags.Read);
-                        builder.UseBuffer(exposureStateHandle, AccessFlags.ReadWrite);
+                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read | AccessFlags.Write);
                         builder.SetRenderFunc(static (ExposureResolvePassData data, ComputeGraphContext context) =>
                         {
                             context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.HistogramBufferId, data.histogram);
@@ -411,36 +407,75 @@ namespace Hecton8.Visor
                 UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, exposureAvailable);
                 UpdateMaterialParameters(_compositeMaterial, _settings, 3f, exposureAvailable);
 
-                using (var builder = renderGraph.AddUnsafePass<ShaftsPassData>("Hecton Underwater Noir Shafts", out var passData, _profilingSampler))
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Raymarch", out var passData, _profilingSampler))
                 {
                     passData.source = sourceTexture;
-                    passData.depth = depthTexture;
-                    passData.shafts = shaftsTexture;
-                    passData.blur = blurTexture;
+                    passData.destination = shaftsTexture;
                     passData.exposureState = exposureStateHandle;
-                    passData.raymarchMaterial = _raymarchMaterial;
-                    passData.blurHorizontalMaterial = _blurHorizontalMaterial;
-                    passData.blurVerticalMaterial = _blurVerticalMaterial;
+                    passData.material = _raymarchMaterial;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(shaftsTexture, AccessFlags.ReadWrite);
-                    builder.UseTexture(blurTexture, AccessFlags.ReadWrite);
+                    builder.UseTexture(shaftsTexture, AccessFlags.Write);
+                    if (exposureAvailable)
+                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 0);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Blur Horizontal", out var passData, _profilingSampler))
+                {
+                    passData.source = shaftsTexture;
+                    passData.destination = blurTexture;
+                    passData.exposureState = exposureStateHandle;
+                    passData.material = _blurHorizontalMaterial;
+
+                    builder.UseTexture(shaftsTexture, AccessFlags.Read);
+                    builder.UseTexture(blurTexture, AccessFlags.Write);
+                    if (exposureAvailable)
+                        builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+
+                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 1);
+                    });
+                }
+
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Blur Vertical", out var passData, _profilingSampler))
+                {
+                    passData.source = blurTexture;
+                    passData.destination = shaftsTexture;
+                    passData.exposureState = exposureStateHandle;
+                    passData.material = _blurVerticalMaterial;
+
+                    builder.UseTexture(blurTexture, AccessFlags.Read);
+                    builder.UseTexture(shaftsTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
                     builder.AllowGlobalStateModification(true);
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.ShaftTextureId);
                     builder.SetGlobalTextureAfterPass(shaftsTexture, ShaderConstants.HeadlightVolumetricsTextureId);
 
-                    builder.SetRenderFunc(static (ShaftsPassData data, UnsafeGraphContext context) =>
+                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
                     {
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
-                        Blitter.BlitCameraTexture(cmd, data.source, data.shafts, LoadAction, StoreAction, data.raymarchMaterial, 0);
-                        Blitter.BlitCameraTexture(cmd, data.shafts, data.blur, LoadAction, StoreAction, data.blurHorizontalMaterial, 1);
-                        Blitter.BlitCameraTexture(cmd, data.blur, data.shafts, LoadAction, StoreAction, data.blurVerticalMaterial, 2);
+                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, 2);
                     });
                 }
 

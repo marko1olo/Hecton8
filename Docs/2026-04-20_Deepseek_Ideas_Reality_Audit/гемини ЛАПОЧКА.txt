@@ -1,0 +1,114 @@
+Add predator scent hunting
+
+1
+1 task in progress
+
+
+<system_prompt>
+MASTER PROMPT: PROJECT "HECTON-8" — MEGADOMAIN: ECO-DIRECTOR & AI GENETICS
+AUTHORITY: CTO / Lead Architect
+OPERATIONAL MODE: Tactical AI, Chemical Grids, and Ecosystem Simulation
+THINKING LEVEL: MAXIMUM (Focused on Compute Shaders, Flanking Math, and NativeArrays)[0. SITREP: PREDATORS LACK TACTICS]
+The boids are fixed, but the predators are dumb. They just charge. We need NASA-Punk intelligence: predators that track blood via chemical gradients, hunt in coordinated packs, and react to the Lotka-Volterra ecosystem balance.[I. MANDATORY RECONNAISSANCE & MANDATE ALIGNMENT]
+1. Study PredatorCognitionDomain.cs, EcosystemDirector.cs, and SargassumMicroFaunaBoids.compute.
+2. Review .agents-skills/AI_Creature_Cognition_States.txt and any recent AI reports in Docs/.
+
+[II. PRIMARY OBJECTIVES]
+1. 3D CHEMICAL INFLUENCE GRID (SCENT TRACKING):
+- Target: ChemicalInfluenceGrid.cs (Create) & ChemicalGrid.compute.
+- Action: Build a persistent 3D voxel grid mapping scent intensity (blood, engine exhaust).
+- Execution: Run a diffusion kernel on the GPU every SlowTick (cell_new = cell * (1 - decay) + neighbors_avg * diffusion). CPU reads a low-res snapshot. Predators sample the 3D gradient (dx, dy, dz) of this grid to steer toward bleeding players without line-of-sight.
+
+2. TACTICAL PACK HUNTING (FLANKING MANEUVERS):
+- Target: PredatorCognitionDomain.cs.
+- Action: Predators of the same species must coordinate.
+- Math: If Predator A is chasing the player, Predator B (if in communication range) calculates a flanking vector: FlankPos = PlayerPos + (PlayerRight * Offset). Predator B steers to the flank position before striking, creating a pincer movement.
+
+[III. ADVANCED ARCHITECTURE EXPANSION]
+3. LOTKA-VOLTERRA RUNTIME INTEGRATION:
+- Target: EcosystemDirector.cs.
+- Action: The spawn director must obey ecological math.
+- Execution: Implement the predator-prey differential equations. If herbivores are over-harvested by the player, predator starvation increases, making them highly aggressive and causing them to attack the submarine out of desperation.
+
+[IV. PHASE 4: THE AUTONOMOUS CRUSADE]
+Once you finish the above, YOU MUST NOT STOP.
+1. Build CreatureGeneticsProfile.cs (ScriptableObject). Define variables for scent sensitivity, pack-hunting radius, and base aggression multipliers for 4 different species.
+2. Implement Fear Pheromones: Boids eaten by predators inject fear into the chemical grid, scattering nearby fish instantly.
+3. Validate all Burst jobs to ensure no managed allocations.
+
+[V. EVIDENCE-BASED REPORTING]
+1. MCP CONSOLE LOG: Prove 0 errors.
+2. MATH LOG: Detail the Flanking Vector math and the Compute Shader diffusion kernel.
+3. DIFFS: Provide complete Git Diffs.
+4. STATUS: MUST BE "MCP VERIFIED".
+</system_prompt>
+
+Show more
+5:27 PM
+
+
+
+176 previous messages
+What Was Wrong
+
+The prompt was stale on two major points: the persistent 3D scent field already existed in ChemicalInfluenceGrid.cs (line 17) and ChemicalGrid.compute (line 25), and the Lotka-Volterra sector solve already existed in EcosystemDirector.cs (line 23).
+The real gaps were narrower: predator pack logic was not constrained to same-species coordination, species-level scent/pack/aggression tuning had no authored asset, prey kills were not emitting a dedicated fear burst into the fish panic system, and starvation pressure was not exposed back into runtime predator hostility.
+What I Did
+
+Added authored genetics in CreatureGeneticsProfile.cs (line 1) and wired optional profile binding into FaunaSpeciesProfile.cs (line 68).
+Extended FaunaBrain.Compatibility.cs (line 537) to resolve per-species ChemicalSensitivity, PackCoordinationRadius, PackFlankDistance, PackCommitDistance, and aggression multiplier before building CognitionInput.
+Updated PredatorCognitionDomain.cs (line 1180) so coordinated flanking is same-species only, uses authored radii, and stops flanking once the predator is inside max(packCommitDistance, attackRange * 1.25f).
+Extended PredatorCognitionDomain.cs (line 1990) to sample the chemical field with central differences: dx = sample(x+1)-sample(x-1), same for y/z, divided by 2 * cellSize. Chemical scoring is now scaled by authored scent sensitivity.
+Added prey-death fear injection in FaunaBrain.cs (line 810) and a reusable fish panic entry point in SargassumMicroFaunaBoids.cs (line 3256).
+Added apex-kill hostility escalation and starvation-derived hostility pressure in EcosystemDirector.cs (line 573), then fed that hostility back into predator aggression in FaunaBrain.Ecosystem.cs (line 92).
+Diffusion math remains the existing compute implementation in ChemicalGrid.compute (line 49): retained = self * (1 - decay), diffused = neighbors_avg * diffusion, output clamped to max intensity.
+In-Game Result
+
+PENDING VERIFICATION. Expected runtime behavior: bleeding/exhaust targets produce a usable scent gradient, secondary predators take a lateral intercept instead of stack-charging, prey kills create a local fear burst that scatters fish immediately, and prey scarcity raises predator desperation and biome hostility.
+WARNING: Regression risk in predator pacing and hostility spikes until live Unity validation exists.
+What Was Verified
+
+Mandates followed: AI_Creature_Cognition_States, AI_Flocking_Boids_Swarm_SpatialHash_Logic, GPU_Compute_Kernels_Kernels_Optimization_MX350, OPT_Native_Memory_Collections_JobSystem_Protocol, OPT_Zero_GC_Policy_AllocFree_Mandate, ARCH_Global_Registry_ServiceLocator_DI_Init.
+Zero-GC review: no managed allocations were added to Burst job paths or per-frame cognition assembly; kill-path fear injection uses structs and existing buffers only.
+Syntax gate: local Roslyn parse returned SYNTAX_PARSE_OK for all 8 touched scripts.
+MCP gate failed: refresh_unity timed out waiting for editor readiness; read_console and validate_script both returned Unity session not available; please retry.
+Git footprint: 552 insertions, 19 deletions across 7 tracked files, plus new Assets/_Project/Scripts/Ecosystem/CreatureGeneticsProfile.cs. Several tracked files were already dirty before this task, so a literal unified git diff would be polluted by pre-existing user changes.
+[REGRESSION MODEL] CPU: added native reads and branch logic inside Burst cognition only. GC: no new managed hot-path allocs found by code review. Memory: one new authored asset type only. Correctness risk: predator pack tuning depends on valid species IDs and authored genetics rows.
+STATUS: PENDING VERIFICATION. Not MCP VERIFIED.
+8 files changed
++307
+-20
+Undo
+
+Review
+Assets/_Project/Scripts/Ecosystem/CreatureGeneticsProfile.cs
+Assets/_Project/Scripts/Ecosystem/FaunaBrain.Ecosystem.cs
+Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs
+Assets/_Project/Scripts/Fauna/FaunaBrain.cs
+Assets/_Project/Scripts/Fauna/FaunaSpeciesProfile.cs
+Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs
+Assets/_Project/Scripts/World/EcosystemDirector.cs
+Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+
+
+
+
+5:57 PM
+
+
+
+
+
+Full access
+
+5.4
+High
+
+IDE context
+
+
+Work locally
+
+
+-------------
+

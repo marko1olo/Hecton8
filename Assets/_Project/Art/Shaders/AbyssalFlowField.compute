@@ -1,0 +1,195 @@
+#pragma kernel ResetAbyssalFlowAggregate
+#pragma kernel UpdateAbyssalFlowField
+#pragma kernel DetectBiolumeSurge
+
+#define HECTON_THREADS_PER_GROUP 64
+
+struct GpuHeatSourceData
+{
+    float3 PositionWS;
+    float Intensity;
+    float Radius;
+    float3 Padding;
+};
+
+StructuredBuffer<GpuHeatSourceData> _AbyssalHeatSources;
+RWStructuredBuffer<float4> _AbyssalFlowFieldResult;
+RWByteAddressBuffer _AbyssalAggregateMask;
+
+int4 _AbyssalGridResolution;
+float4 _AbyssalFlowCenter;
+float4 _AbyssalFlowSpacing;
+float4 _AbyssalFlowWeatherCurrent;
+float4 _AbyssalFlowWeatherWind;
+float4 _AbyssalFlowWeatherParams;
+float _AbyssalFlowSurfaceY;
+float _AbyssalFlowThermoclineY;
+int _AbyssalFlowHeatSourceCount;
+int _AbyssalFlowWeatherStateMask;
+
+static const uint WeatherStateStorm = 1u << 1;
+static const uint WeatherStateThermoclineActive = 1u << 3;
+static const uint WeatherStateHaloclineActive = 1u << 4;
+static const uint WeatherStateBiolumeSurge = 1u << 5;
+static const float Epsilon = 0.0001;
+static const float ThermoclineHalfBandMeters = 8.0;
+static const float ThermoclineVerticalAttenuation = 0.1;
+static const float SurfaceStormDepthMeters = 200.0;
+static const float SurfaceStormTurbulenceBoost = 0.4;
+static const float DeepStormTurbulenceBoost = 0.1;
+static const float PressureWaveSpatialFrequency = 0.035;
+static const float PressureWaveTemporalBaseSpeed = 0.35;
+static const float PressureWaveWaveHeightAmplitude = 0.18;
+static const float PressureWaveWindAmplitude = 0.035;
+static const float StormWindBiasScale = 0.05;
+static const float PressureWaveVelocityThreshold = 8.0;
+static const float PressureWaveVelocityThresholdSq = PressureWaveVelocityThreshold * PressureWaveVelocityThreshold;
+
+float3 SafeNormalize(float3 value, float3 fallbackValue)
+{
+    float lengthSq = dot(value, value);
+    return lengthSq > Epsilon ? value * rsqrt(lengthSq) : fallbackValue;
+}
+
+int3 ResolveGridCoord(uint nodeIndex)
+{
+    int resolutionX = max(_AbyssalGridResolution.x, 1);
+    int resolutionZ = max(_AbyssalGridResolution.z, 1);
+    int cellsPerLayer = resolutionX * resolutionZ;
+    int layer = (int)(nodeIndex / (uint)cellsPerLayer);
+    int rem = (int)(nodeIndex - (uint)(layer * cellsPerLayer));
+    int cellZ = rem / resolutionX;
+    int cellX = rem - (cellZ * resolutionX);
+    return int3(cellX, layer, cellZ);
+}
+
+uint ResolveFlatIndex(int3 coord)
+{
+    return (uint)((coord.y * _AbyssalGridResolution.x * _AbyssalGridResolution.z) +
+        (coord.z * _AbyssalGridResolution.x) +
+        coord.x);
+}
+
+float3 ResolveNodeWorldPosition(int3 coord)
+{
+    int3 halfExtent = int3(_AbyssalGridResolution.x / 2, _AbyssalGridResolution.y / 2, _AbyssalGridResolution.z / 2);
+    float3 offset = float3(
+        (coord.x - halfExtent.x) * _AbyssalFlowSpacing.x,
+        (coord.y - halfExtent.y) * _AbyssalFlowSpacing.y,
+        (coord.z - halfExtent.z) * _AbyssalFlowSpacing.x);
+    return _AbyssalFlowCenter.xyz + offset;
+}
+
+[numthreads(1, 1, 1)]
+void ResetAbyssalFlowAggregate(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    _AbyssalAggregateMask.Store(0, 0u);
+}
+
+[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
+void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint nodeIndex = dispatchThreadId.x;
+    if (nodeIndex >= (uint)_AbyssalGridResolution.w)
+        return;
+
+    int3 coord = ResolveGridCoord(nodeIndex);
+    float3 nodeWorldPos = ResolveNodeWorldPosition(coord);
+    float3 flow = _AbyssalFlowWeatherCurrent.xyz;
+    float thermalIntensity = max(_AbyssalFlowWeatherParams.x, 0.0);
+    float windIntensity = max(_AbyssalFlowWeatherParams.y, 0.0);
+    float waveHeight = max(_AbyssalFlowWeatherParams.z, 0.0);
+    float timeSeconds = max(_AbyssalFlowWeatherParams.w, 0.0);
+    float3 windDirection = SafeNormalize(_AbyssalFlowWeatherWind.xyz, float3(0.0, 0.0, 1.0));
+    uint weatherMask = (uint)_AbyssalFlowWeatherStateMask;
+    float stormBlend = ((weatherMask & WeatherStateStorm) != 0u) ? saturate(_AbyssalFlowWeatherCurrent.w) : 0.0;
+    float depthBelowSurface = max(0.0, _AbyssalFlowSurfaceY - nodeWorldPos.y);
+    float depthBoost = depthBelowSurface <= SurfaceStormDepthMeters ? SurfaceStormTurbulenceBoost : DeepStormTurbulenceBoost;
+    float turbulenceScalar = 1.0;
+
+    if (stormBlend > 0.0)
+    {
+        float stormTurbulence = 1.0 + (stormBlend * depthBoost);
+        float phase = dot(nodeWorldPos.xz - _AbyssalFlowCenter.xz, windDirection.xz) * PressureWaveSpatialFrequency;
+        phase += timeSeconds * (PressureWaveTemporalBaseSpeed + (waveHeight * 0.12));
+        float pressureWave = sin(phase) * ((waveHeight * PressureWaveWaveHeightAmplitude) + (windIntensity * PressureWaveWindAmplitude));
+        flow += windDirection * (pressureWave * stormTurbulence);
+        flow.xz += windDirection.xz * (windIntensity * StormWindBiasScale * stormBlend);
+        turbulenceScalar = stormTurbulence * (1.0 + abs(pressureWave));
+    }
+
+    [loop]
+    for (int heatIndex = 0; heatIndex < _AbyssalFlowHeatSourceCount; heatIndex++)
+    {
+        GpuHeatSourceData heat = _AbyssalHeatSources[heatIndex];
+        float3 toSourceVector = heat.PositionWS - nodeWorldPos;
+        float distSq = dot(toSourceVector, toSourceVector);
+        float radius = max(heat.Radius, Epsilon);
+        if (distSq > radius * radius * 4.0)
+            continue;
+
+        float dist = sqrt(distSq + Epsilon);
+        float verticalVelocity = min((heat.Intensity * max(1.0, thermalIntensity)) / max(dist * dist, Epsilon), 8.0);
+        flow.y += verticalVelocity;
+
+        float radialFalloff = saturate(1.0 - (dist / radius));
+        float3 toSource = SafeNormalize(toSourceVector, float3(0.0, 1.0, 0.0));
+        float3 tangent = SafeNormalize(cross(float3(0.0, 1.0, 0.0), toSource), float3(0.0, 0.0, 1.0));
+        float vortexStrength = heat.Intensity * radialFalloff * 0.4;
+        flow.xz += (toSource.xz * (vortexStrength * 0.5)) + (tangent.xz * (vortexStrength * 0.5));
+    }
+
+    if ((weatherMask & (WeatherStateThermoclineActive | WeatherStateHaloclineActive)) != 0u)
+    {
+        float thermoclineBand = 1.0 - saturate(abs(nodeWorldPos.y - _AbyssalFlowThermoclineY) / ThermoclineHalfBandMeters);
+        if (thermoclineBand > 0.0)
+            flow.y = lerp(flow.y, flow.y * ThermoclineVerticalAttenuation, thermoclineBand);
+    }
+
+    _AbyssalFlowFieldResult[nodeIndex] = float4(flow, length(flow) * turbulenceScalar);
+}
+
+[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
+void DetectBiolumeSurge(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint nodeIndex = dispatchThreadId.x;
+    if (nodeIndex >= (uint)_AbyssalGridResolution.w)
+        return;
+
+    int3 coord = ResolveGridCoord(nodeIndex);
+    float3 centerVelocity = _AbyssalFlowFieldResult[nodeIndex].xyz;
+
+    [loop]
+    for (int dz = -1; dz <= 1; dz++)
+    {
+        [loop]
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            [loop]
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                if (dx == 0 && dy == 0 && dz == 0)
+                    continue;
+
+                int3 neighborCoord = coord + int3(dx, dy, dz);
+                if (neighborCoord.x < 0 || neighborCoord.y < 0 || neighborCoord.z < 0 ||
+                    neighborCoord.x >= _AbyssalGridResolution.x ||
+                    neighborCoord.y >= _AbyssalGridResolution.y ||
+                    neighborCoord.z >= _AbyssalGridResolution.z)
+                {
+                    continue;
+                }
+
+                uint neighborIndex = ResolveFlatIndex(neighborCoord);
+                float3 neighborVelocity = _AbyssalFlowFieldResult[neighborIndex].xyz;
+                float3 deltaVelocity = neighborVelocity - centerVelocity;
+                if (dot(deltaVelocity, deltaVelocity) > PressureWaveVelocityThresholdSq)
+                {
+                    uint previousValue;
+                    _AbyssalAggregateMask.InterlockedOr(0, WeatherStateBiolumeSurge, previousValue);
+                    return;
+                }
+            }
+        }
+    }
+}

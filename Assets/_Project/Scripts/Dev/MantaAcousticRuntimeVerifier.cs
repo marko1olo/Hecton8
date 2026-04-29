@@ -327,7 +327,6 @@ namespace Hecton8.Dev
             if (stepCount <= 0)
                 return;
 
-            UnityPhysics.SyncTransforms();
             for (int i = 0; i < stepCount; i++)
             {
                 playerMovement.FixedTick(simulatedDeltaTime);

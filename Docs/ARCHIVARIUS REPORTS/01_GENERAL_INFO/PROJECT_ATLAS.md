@@ -137,6 +137,38 @@ These points were rechecked against current source, not inherited from older doc
 - `IWeatherService` is implemented by `GlobalWeatherDirector`.
 - `IUIService` is fragmented across multiple implementors rather than absent.
 - project contains both custom static buses and a separate modding `HectonEventBus` system.
+- registry coverage now includes typed slots for thermodynamics, logistics, world generation, encounter direction, and quest-system access.
+
+### 7.1 Event-Related File Paths Rechecked
+
+Current first-party event topology files now include:
+
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
+- `Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs`
+- `Assets/_Project/Scripts/NarrativeEvents.cs`
+- `Assets/_Project/Scripts/ScanEvents.cs`
+- `Assets/_Project/Scripts/SaveEvents.cs`
+- `Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs`
+- `Assets/_Project/Scripts/Quest/QuestEvents.cs`
+- `Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs`
+- `Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs`
+- `Assets/_Project/Scripts/UI/NotificationEvents.cs`
+- `Assets/_Project/Scripts/SceneBootstrap.cs`
+- `Assets/_Project/Scripts/ObjectPoolDiagnostics.cs`
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs` (modding-only managed typed bus; not the owner of first-party Save/Quest/Scan queues)
+
+### 7.2 Registry Coverage Rechecked
+
+Current registry-backed major service surfaces now include:
+
+- `GlobalRegistry.ThermodynamicsService` -> `AbyssalThermalManager`
+- `GlobalRegistry.Logistics` -> `ConstructionManager`
+- `GlobalRegistry.WorldGen` -> `WorldProceduralScatterDirector`
+- `GlobalRegistry.EncounterDirector` -> `HectonDirectorAI`
+- `GlobalRegistry.QuestSystem` -> `QuestManager`
+
+Cold-path bootstrap repair currently validates these slots after boot and after later scene loads.
+This is registry hardening, not proof that every scene-owned system was moved into `00_BOOTSTRAP`.
 
 ## 8. Known Documentation Debt Still Open
 

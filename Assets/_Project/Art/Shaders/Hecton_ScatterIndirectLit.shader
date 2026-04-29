@@ -180,7 +180,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
                 ambientOcclusion);
             half3 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask * 0.2h;
             half3 emission = _EmissionColor.rgb * emissionMask + biolum;
-            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor);
+            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }
 

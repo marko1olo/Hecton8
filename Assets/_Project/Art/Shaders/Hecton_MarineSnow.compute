@@ -1,4 +1,6 @@
 #pragma kernel CSMain
+#pragma kernel ClearSonarGlow
+#pragma kernel AccumulateSonarGlow
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -21,6 +23,7 @@ Texture2D<float4> _HectonShallowWaterFieldRT;
 SamplerState sampler_HectonShallowWaterFieldRT;
 Texture2D<float> _CameraDepthTexture;
 SamplerState sampler_CameraDepthTexture;
+RWTexture2D<int> _HectonMarineSnowSonarGlowResult;
 
 struct MarineSnowFrameData
 {
@@ -54,6 +57,12 @@ float4x4 _MarineSnowViewMatrix;
 float4 _MarineSnowZBufferParams;
 float4 _MarineSnowDepthTextureTexelSize;
 float4 _MarineSnowDepthCollisionParams;
+float4 _SonarRevealOriginWS;
+float4 _SonarRevealWaveParams;
+float _SonarWaveFront;
+float _SonarRevealExpireTime;
+float4 _HectonMarineSnowSonarGlowTexelSize;
+float4 _HectonMarineSnowSonarGlowParams;
 
 #define THREAD_GROUP_SIZE 64
 #define PI 3.14159265
@@ -226,6 +235,61 @@ float SampleSceneEyeDepth(float2 uv)
     return LinearEyeDepth(rawDepth, _MarineSnowZBufferParams);
 }
 
+float EvaluateSonarReactiveGlow(float3 positionWS)
+{
+    if (_Time.y > _SonarRevealExpireTime)
+        return 0.0;
+
+    float revealRadius = max(_SonarRevealOriginWS.w, 0.0);
+    if (revealRadius <= 0.0)
+        return 0.0;
+
+    float distanceToOrigin = distance(positionWS, _SonarRevealOriginWS.xyz);
+    if (distanceToOrigin > revealRadius)
+        return 0.0;
+
+    float sonarWaveSpeed = max(_SonarRevealWaveParams.y, 0.01);
+    float sonarFadeDuration = max(_SonarRevealWaveParams.z, 0.05);
+    float sonarPulseIntensity = saturate(_SonarRevealWaveParams.w);
+    float arrivalTime = _SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed;
+    float timeSinceArrival = _Time.y - arrivalTime;
+    float decay = 1.0 - saturate(max(timeSinceArrival, 0.0) / sonarFadeDuration);
+    float waveRadius = max(0.0, _SonarWaveFront);
+    float waveBandWidth = lerp(6.0, 2.0, sonarPulseIntensity);
+    float waveBand = 1.0 - saturate(abs(distanceToOrigin - waveRadius) / max(waveBandWidth, 0.25));
+    float active = step(_Time.y, _SonarRevealExpireTime);
+    return active * max(decay, waveBand * sonarPulseIntensity) * sonarPulseIntensity;
+}
+
+void AccumulateSonarGlowAtUv(float2 uv, float intensity, float size)
+{
+    int width = (int)round(_HectonMarineSnowSonarGlowTexelSize.z);
+    int height = (int)round(_HectonMarineSnowSonarGlowTexelSize.w);
+    if (width <= 0 || height <= 0 || intensity <= 0.0)
+        return;
+
+    int2 centerPixel = int2(saturate(uv) * float2(width - 1, height - 1) + 0.5);
+    float splatScale = max(_HectonMarineSnowSonarGlowParams.x, 0.0);
+    float encodedScale = max(_HectonMarineSnowSonarGlowParams.z, 1.0);
+    float sizeInfluence = saturate(size * max(_HectonMarineSnowSonarGlowParams.w, 1.0) * 96.0);
+
+    [unroll]
+    for (int offsetY = -1; offsetY <= 1; offsetY++)
+    {
+        [unroll]
+        for (int offsetX = -1; offsetX <= 1; offsetX++)
+        {
+            int2 pixel = clamp(centerPixel + int2(offsetX, offsetY), int2(0, 0), int2(width - 1, height - 1));
+            float distanceWeight = 1.0 - saturate(length(float2(offsetX, offsetY)) * 0.5);
+            float encoded = saturate(intensity * splatScale * lerp(0.45, 1.0, sizeInfluence) * distanceWeight) * encodedScale;
+            if (encoded <= 0.0)
+                continue;
+
+            InterlockedAdd(_HectonMarineSnowSonarGlowResult[pixel], (int)round(encoded));
+        }
+    }
+}
+
 bool ResolveDepthCollision(float3 currentPositionWS, float3 nextPositionWS, out float sceneEyeDepth)
 {
     sceneEyeDepth = -1.0;
@@ -305,6 +369,40 @@ Particle BuildRespawnParticle(uint particleIndex)
     particle.UV = float2(Hash11(particleIndex * 0.33), Hash11(particleIndex * 0.77));
     particle.Pad = float2(Hash11(particleIndex * 1.11), Hash11(particleIndex * 1.37));
     return particle;
+}
+
+[numthreads(8, 8, 1)]
+void ClearSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    int width = (int)round(_HectonMarineSnowSonarGlowTexelSize.z);
+    int height = (int)round(_HectonMarineSnowSonarGlowTexelSize.w);
+    if (dispatchThreadID.x >= (uint)width || dispatchThreadID.y >= (uint)height)
+        return;
+
+    _HectonMarineSnowSonarGlowResult[int2(dispatchThreadID.xy)] = 0;
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void AccumulateSonarGlow(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadID.x;
+    uint particleCount = (uint)round(_MarineSnowMetaParams.x);
+    if (index >= particleCount)
+        return;
+
+    Particle particle = _MarineSnowParticlesWrite[index];
+    if (particle.Life <= 0.0)
+        return;
+
+    float sonarGlow = EvaluateSonarReactiveGlow(particle.Pos);
+    if (sonarGlow <= 0.0001)
+        return;
+
+    float2 screenUv;
+    if (!TryResolveScreenUv(particle.Pos, screenUv))
+        return;
+
+    AccumulateSonarGlowAtUv(screenUv, sonarGlow, particle.Size);
 }
 
 [numthreads(THREAD_GROUP_SIZE, 1, 1)]

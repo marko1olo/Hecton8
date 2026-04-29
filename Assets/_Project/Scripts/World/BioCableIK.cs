@@ -12,12 +12,15 @@ namespace Hecton8.World
     [RequireComponent(typeof(LineRenderer))]
     public sealed class BioCableIK : MonoBehaviour
     {
-        private static Material s_FallbackCableMaterial;
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
         [Tooltip("Cached line renderer used to draw the abyssal cable.")]
         private LineRenderer lineRenderer;
+
+        [SerializeField]
+        [Tooltip("Shared authored line material used by the runtime cable renderer. Runtime fallback material creation is forbidden.")]
+        private Material cableMaterial;
 
         [Header("── Cable Shape ─────────────────────")]
         [SerializeField, Range(4, 24)]
@@ -108,6 +111,7 @@ namespace Hecton8.World
         private float _debugStretchRatio;
         private bool _initialized;
         private bool _pendingElasticRupture;
+        private bool _loggedMissingCableMaterial;
         private Vector3 _pendingElasticRuptureVelocityWS;
         private ParticleSystem _sparkParticles;
         private ParticleSystemRenderer _sparkRenderer;
@@ -358,7 +362,7 @@ namespace Hecton8.World
                 lineRenderer.alignment = LineAlignment.View;
                 lineRenderer.textureMode = LineTextureMode.Stretch;
                 if (lineRenderer.sharedMaterial == null)
-                    lineRenderer.sharedMaterial = ResolveFallbackCableMaterial();
+                    lineRenderer.sharedMaterial = ResolveCableMaterial();
             }
         }
 
@@ -515,22 +519,18 @@ namespace Hecton8.World
             lineRenderer.SetPositions(_points);
         }
 
-        private static Material ResolveFallbackCableMaterial()
+        private Material ResolveCableMaterial()
         {
-            if (s_FallbackCableMaterial != null)
-                return s_FallbackCableMaterial;
+            if (cableMaterial != null)
+                return cableMaterial;
 
-            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-                return null;
-
-            // COLD ALLOC: Material[1] - shared fallback material for abyssal cable line renderers - owner: BioCableIK
-            s_FallbackCableMaterial = new Material(shader)
+            if (!_loggedMissingCableMaterial)
             {
-                name = "MAT_Runtime_BioCableIK"
-            };
-            s_FallbackCableMaterial.SetColor("_BaseColor", new Color(0.12f, 0.52f, 0.46f, 0.92f));
-            return s_FallbackCableMaterial;
+                _loggedMissingCableMaterial = true;
+                Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
+            }
+
+            return null;
         }
 
 #if UNITY_EDITOR

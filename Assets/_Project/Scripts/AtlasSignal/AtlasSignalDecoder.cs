@@ -29,9 +29,10 @@ namespace Hecton8.AtlasSignal
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public sealed class AtlasSignalDecoder : MonoBehaviour, ISlowTickable
+    public sealed class AtlasSignalDecoder : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener
     {
         private const int MaximumSynchronizedPhase = 3;
+        private const int WaveSampleCount = 32;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -46,6 +47,12 @@ namespace Hecton8.AtlasSignal
         [Header("── First-Hour Gate ─────────────────────────")]
         [Tooltip("Do not decode or surface Atlas phases before the first-hour spine reaches module-route play.")]
         [SerializeField] private FirstHourMilestone minimumMilestoneToDecode = FirstHourMilestone.FirstModule;
+
+        [Header("── Decode Waveform ─────────────────────────")]
+        [SerializeField, Range(0.05f, 1.5f)] private float decodeTolerance = 0.42f;
+        [SerializeField, Range(0.25f, 2f)] private float targetFrequency = 0.85f;
+        [SerializeField, Range(0.25f, 2f)] private float targetAmplitude = 0.92f;
+        [SerializeField, Range(0f, 6.2831855f)] private float targetPhaseOffsetRadians = 1.15f;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -63,6 +70,13 @@ namespace Hecton8.AtlasSignal
         private int  _currentPhase = 0;
         private bool _fullyDecoded;
         private bool _registered;
+        private bool _decodeWindowOpen;
+        private float _decodeErrorSum;
+        private float _dialFrequency01 = 0.5f;
+        private float _dialAmplitude01 = 0.5f;
+        private float _dialPhase01 = 0.5f;
+        // COLD ALLOC: float[32] — atlas decoder waveform sample domain — owner: AtlasSignalDecoder
+        private readonly float[] _waveSampleDomain = new float[WaveSampleCount];
 
         // Pre-cached phase messages — zero GC
         private static readonly string[] PhaseMessages =
@@ -80,6 +94,8 @@ namespace Hecton8.AtlasSignal
 
         public int CurrentPhase => _currentPhase;
         public bool IsFullyDecoded => _fullyDecoded;
+        internal bool IsDecodeWindowOpen => _decodeWindowOpen;
+        internal float CurrentDecodeError => _decodeErrorSum;
         public string CurrentMessage => _currentPhase < PhaseMessages.Length
             ? PhaseMessages[_currentPhase]
             : string.Empty;
@@ -92,13 +108,14 @@ namespace Hecton8.AtlasSignal
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+            InitializeWaveSampleDomain();
         }
 
         private void OnEnable()
         {
             TryRegister();
 
-            AtlasSignalEvents.OnSignalPulse += HandleSignalPulse;
+            AtlasSignalEvents.Register(this);
             TrySynchronizePhaseFromSignal();
         }
 
@@ -106,7 +123,7 @@ namespace Hecton8.AtlasSignal
         {
             TryUnregister();
 
-            AtlasSignalEvents.OnSignalPulse -= HandleSignalPulse;
+            AtlasSignalEvents.Unregister(this);
         }
 
         private void OnDestroy()
@@ -133,6 +150,11 @@ namespace Hecton8.AtlasSignal
 
             float strength = sys.CurrentStrength;
             int newPhase = CalculatePhase(strength);
+            if (newPhase >= 4)
+            {
+                _decodeWindowOpen = true;
+                newPhase = 3;
+            }
 
             if (newPhase <= _currentPhase) return;
 
@@ -175,18 +197,13 @@ namespace Hecton8.AtlasSignal
         {
             string msg = phase < PhaseMessages.Length ? PhaseMessages[phase] : string.Empty;
 
-            // Полная расшифровка
-            if (phase >= 4 && !_fullyDecoded)
-            {
-                _fullyDecoded = true;
-                AtlasSignalEvents.RaiseDecoded("atlas6_core_message");
-
-                NarrativeEvents.RaiseDiscoveryMade("atlas6_signal_fully_decoded");
-
-                LogSignalFullyDecoded();
-            }
-
             LogPhaseAdvanced(phase, msg, strength);
+        }
+
+        public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
+        {
+            if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Pulse)
+                HandleSignalPulse(payload.SignalStrength);
         }
 
         private void HandleSignalPulse(float intensity)
@@ -201,6 +218,12 @@ namespace Hecton8.AtlasSignal
             SynchronizePhaseFromSignal(sys);
 
             int newPhase = CalculatePhase(sys.CurrentStrength);
+            if (newPhase >= 4)
+            {
+                _decodeWindowOpen = true;
+                newPhase = 3;
+            }
+
             if (newPhase > _currentPhase)
             {
                 _currentPhase = newPhase;
@@ -231,6 +254,7 @@ namespace Hecton8.AtlasSignal
             int synchronizedPhase = Mathf.Min(MaximumSynchronizedPhase, CalculatePhase(sys.CurrentStrength));
             if (synchronizedPhase > _currentPhase)
                 _currentPhase = synchronizedPhase;
+            _decodeWindowOpen = sys.CurrentStrength >= fullDecodeThreshold;
         }
 
         private bool CanDecodeSignal(AtlasSignalSystem sys)
@@ -243,6 +267,54 @@ namespace Hecton8.AtlasSignal
                 return true;
 
             return firstHourDirector.IsMilestoneComplete(minimumMilestoneToDecode);
+        }
+
+        internal void SetWaveDialInput(float frequency01, float amplitude01, float phase01)
+        {
+            _dialFrequency01 = Mathf.Clamp01(frequency01);
+            _dialAmplitude01 = Mathf.Clamp01(amplitude01);
+            _dialPhase01 = Mathf.Clamp01(phase01);
+            _decodeErrorSum = EvaluateDecodeError();
+        }
+
+        internal bool TrySolveDecodeWaveform()
+        {
+            if (_fullyDecoded || !_decodeWindowOpen)
+                return false;
+
+            _decodeErrorSum = EvaluateDecodeError();
+            if (_decodeErrorSum >= decodeTolerance)
+                return false;
+
+            _fullyDecoded = true;
+            _currentPhase = 4;
+            AtlasSignalEvents.RaiseDecoded("atlas6_core_message");
+            NarrativeEvents.RaiseDiscoveryMade("atlas6_signal_fully_decoded");
+            LogSignalFullyDecoded();
+            return true;
+        }
+
+        private float EvaluateDecodeError()
+        {
+            float frequency = Mathf.Lerp(0.25f, 2f, _dialFrequency01);
+            float amplitude = Mathf.Lerp(0.25f, 2f, _dialAmplitude01);
+            float phase = Mathf.Lerp(0f, Mathf.PI * 2f, _dialPhase01);
+            float errorSum = 0f;
+            for (int i = 0; i < _waveSampleDomain.Length; i++)
+            {
+                float sample = _waveSampleDomain[i];
+                float playerWave = Mathf.Sin((sample * frequency) + phase) * amplitude;
+                float targetWave = Mathf.Sin((sample * targetFrequency) + targetPhaseOffsetRadians) * targetAmplitude;
+                errorSum += Mathf.Abs(playerWave - targetWave);
+            }
+
+            return errorSum / _waveSampleDomain.Length;
+        }
+
+        private void InitializeWaveSampleDomain()
+        {
+            for (int i = 0; i < _waveSampleDomain.Length; i++)
+                _waveSampleDomain[i] = ((float)i / _waveSampleDomain.Length) * Mathf.PI * 2f;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

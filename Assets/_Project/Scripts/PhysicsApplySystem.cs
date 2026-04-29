@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -194,11 +195,13 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService, IFixedTickable
+    public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService, IFixedTickable, ILateFrameTickable
     {
         private const int MaxTrackedBodies = 64;
         private const int MaxQueuedPackets = 512;
+        private const int MaxQueuedSubmarineImpactSignals = 32;
         private const float MinMagnitudeSq = 0.000001f;
+        private const float HullYieldThresholdJoules = 225000f;
         private const string NonFiniteForceLog = "[PhysicsApplySystem] Non-finite force packet detected. Zeroing vector.";
         private const string NonFiniteTorqueLog = "[PhysicsApplySystem] Non-finite torque packet detected. Zeroing vector.";
         private const string NonFinitePointOffsetLog = "[PhysicsApplySystem] Non-finite point-offset packet detected. Zeroing offset.";
@@ -209,21 +212,37 @@ namespace Hecton8.Physics
 
         private static PhysicsApplySystem _instance;
 
+        private struct DeferredSubmarineImpactSignal
+        {
+            public float PreviousIntegrityNormalized;
+            public float NextIntegrityNormalized;
+            public DamageSignal Signal;
+            public TraumaLevel TraumaLevel;
+        }
+
         // COLD ALLOC: ForcePacket[512] — end-of-step flush buffer — owner: PhysicsApplySystem
         private ForcePacket[] _frontPackets = new ForcePacket[MaxQueuedPackets];
         // COLD ALLOC: ForcePacket[512] — current-step gather buffer — owner: PhysicsApplySystem
         private ForcePacket[] _backPackets = new ForcePacket[MaxQueuedPackets];
         // COLD ALLOC: Rigidbody[64] — active rigidbody slot map for deferred packet application — owner: PhysicsApplySystem
         private readonly Rigidbody[] _bodySlots = new Rigidbody[MaxTrackedBodies];
+        // COLD ALLOC: List<Collider>[8] â€” submarine hull collider discovery for contact-modification enablement â€” owner: PhysicsApplySystem
+        private readonly List<Collider> _submarineColliderScratch = new List<Collider>(8);
         private NativeArray<ForcePacket> _validationPackets;
         private NativeArray<byte> _validationMask;
+        private NativeQueue<DeferredSubmarineImpactSignal> _submarineImpactSignals;
 
         private int _frontCount;
         private int _backCount;
         private bool _isInitialized;
         private bool _fixedTickRegistered;
+        private bool _lateFrameTickRegistered;
+        private bool _frontBufferValidationReady;
         private bool _packetValidationScheduled;
         private JobHandle _packetValidationHandle;
+        private bool _contactModifySubscribed;
+        private bool _submarineModifiableContactsArmed;
+        private ulong _submarineHullEntityId;
 
         /// <summary>
         /// True once the service is registered into <see cref="GlobalRegistry"/>.
@@ -401,6 +420,9 @@ namespace Hecton8.Physics
             System.Array.Clear(_bodySlots, 0, _bodySlots.Length);
             _frontCount = 0;
             _backCount = 0;
+            _frontBufferValidationReady = false;
+            _packetValidationScheduled = false;
+            _packetValidationHandle = default;
         }
 
         private void Awake()
@@ -413,6 +435,11 @@ namespace Hecton8.Physics
 
             _instance = this;
             EnsureValidationBuffers();
+            if (!_submarineImpactSignals.IsCreated)
+            {
+                // COLD ALLOC: NativeQueue<DeferredSubmarineImpactSignal>(Persistent) â€” deferred submarine trauma queue flushed after contact modification â€” owner: PhysicsApplySystem
+                _submarineImpactSignals = new NativeQueue<DeferredSubmarineImpactSignal>(Allocator.Persistent);
+            }
 
             if (Application.isPlaying)
             {
@@ -431,6 +458,19 @@ namespace Hecton8.Physics
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.UI);
                 _fixedTickRegistered = true;
             }
+
+            if (Application.isPlaying && !_lateFrameTickRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameTickRegistered = true;
+            }
+
+            if (!_contactModifySubscribed)
+            {
+                UnityEngine.Physics.ContactModifyEvent += HandleContactModifyEvent;
+                UnityEngine.Physics.ContactModifyEventCCD += HandleContactModifyEvent;
+                _contactModifySubscribed = true;
+            }
         }
 
         private void OnDisable()
@@ -439,6 +479,19 @@ namespace Hecton8.Physics
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.UI);
                 _fixedTickRegistered = false;
+            }
+
+            if (_lateFrameTickRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameTickRegistered = false;
+            }
+
+            if (_contactModifySubscribed)
+            {
+                UnityEngine.Physics.ContactModifyEvent -= HandleContactModifyEvent;
+                UnityEngine.Physics.ContactModifyEventCCD -= HandleContactModifyEvent;
+                _contactModifySubscribed = false;
             }
         }
 
@@ -450,6 +503,12 @@ namespace Hecton8.Physics
                 _fixedTickRegistered = false;
             }
 
+            if (_lateFrameTickRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameTickRegistered = false;
+            }
+
             if (_isInitialized)
             {
                 GlobalRegistry.UnregisterPhysicsService(this);
@@ -457,6 +516,9 @@ namespace Hecton8.Physics
             }
 
             DisposeValidationBuffers();
+
+            if (_submarineImpactSignals.IsCreated)
+                _submarineImpactSignals.Dispose();
 
             if (_instance == this)
                 _instance = null;
@@ -466,16 +528,29 @@ namespace Hecton8.Physics
         {
             using (_fixedTickProfilerMarker.Auto())
             {
+                EnsureSubmarineModifiableContacts();
                 PhysicsFrame.Tick();
+                FlushValidatedFrontBuffer();
+                if (_packetValidationScheduled)
+                    return;
+
                 SwapBuffers();
                 ScheduleFrontPacketValidation();
-                CompleteFrontPacketValidation();
-                FlushFrontBuffer();
             }
         }
 
-        private void FlushFrontBuffer()
+        /// <inheritdoc />
+        public void LateFrameTick()
         {
+            CompleteFrontPacketValidationInLateFrameSwapWindow();
+            FlushDeferredSubmarineImpactSignals();
+        }
+
+        private void FlushValidatedFrontBuffer()
+        {
+            if (!_frontBufferValidationReady)
+                return;
+
             using (_flushFrontBufferProfilerMarker.Auto())
             {
                 for (int i = 0; i < _frontCount; i++)
@@ -526,6 +601,7 @@ namespace Hecton8.Physics
 
                 System.Array.Clear(_frontPackets, 0, _frontCount);
                 _frontCount = 0;
+                _frontBufferValidationReady = false;
             }
         }
 
@@ -553,10 +629,174 @@ namespace Hecton8.Physics
             }
         }
 
+        private void EnsureSubmarineModifiableContacts()
+        {
+            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
+            Rigidbody hullBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            ulong hullEntityId = hullBody != null ? EntityId.ToULong(hullBody.GetEntityId()) : 0ul;
+            if (hullBody == null || hullEntityId == 0ul)
+            {
+                _submarineModifiableContactsArmed = false;
+                _submarineHullEntityId = 0ul;
+                return;
+            }
+
+            if (_submarineModifiableContactsArmed && _submarineHullEntityId == hullEntityId)
+                return;
+
+            _submarineHullEntityId = hullEntityId;
+            _submarineColliderScratch.Clear();
+            hullBody.GetComponentsInChildren(true, _submarineColliderScratch);
+            for (int i = 0; i < _submarineColliderScratch.Count; i++)
+            {
+                Collider collider = _submarineColliderScratch[i];
+                if (collider == null)
+                    continue;
+
+                collider.hasModifiableContacts = true;
+            }
+
+            _submarineModifiableContactsArmed = _submarineColliderScratch.Count > 0;
+        }
+
+        private void HandleContactModifyEvent(PhysicsScene scene, NativeArray<ModifiableContactPair> pairs)
+        {
+            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
+            if (submarineContext == null || pairs.Length <= 0)
+                return;
+
+            Rigidbody hullBody = submarineContext.HullRigidbody;
+            SubmarineStructuralGrid structuralGrid = submarineContext.StructuralGrid;
+            if (hullBody == null || structuralGrid == null)
+                return;
+
+            ulong hullEntityId = EntityId.ToULong(hullBody.GetEntityId());
+            if (hullEntityId == 0ul)
+                return;
+
+            float hullMass = math.max(hullBody.mass, 0.0001f);
+            float depthMeters = submarineContext.FluidDynamics != null
+                ? math.max(0f, submarineContext.FluidDynamics.ExternalDepthMeters)
+                : 0f;
+
+            for (int pairIndex = 0; pairIndex < pairs.Length; pairIndex++)
+            {
+                ModifiableContactPair pair = pairs[pairIndex];
+                bool submarineIsBody = EntityId.ToULong(pair.bodyEntityId) == hullEntityId;
+                bool submarineIsOtherBody = EntityId.ToULong(pair.otherBodyEntityId) == hullEntityId;
+                if (!submarineIsBody && !submarineIsOtherBody)
+                    continue;
+
+                int contactCount = pair.contactCount;
+                if (contactCount <= 0)
+                    continue;
+
+                Vector3 point = pair.GetPoint(0);
+                Vector3 normal = pair.GetNormal(0);
+                if (normal.sqrMagnitude <= MinMagnitudeSq)
+                    normal = Vector3.up;
+
+                float3 hullVelocity = submarineIsBody ? (float3)pair.bodyVelocity : (float3)pair.otherBodyVelocity;
+                float3 otherVelocity = submarineIsBody ? (float3)pair.otherBodyVelocity : (float3)pair.bodyVelocity;
+                HectonContactJob.InelasticImpactResult impact = HectonContactJob.ResolveInelasticImpact(
+                    hullMass,
+                    hullVelocity,
+                    otherVelocity,
+                    normal,
+                    contactCount,
+                    HullYieldThresholdJoules);
+                if (!impact.ExceedsYield)
+                    continue;
+
+                Vector3 tangentialVelocity = new Vector3(
+                    impact.TangentialVelocity.x,
+                    impact.TangentialVelocity.y,
+                    impact.TangentialVelocity.z);
+
+                for (int contactIndex = 0; contactIndex < contactCount; contactIndex++)
+                {
+                    pair.SetBounciness(contactIndex, 0f);
+                    pair.SetMaxImpulse(contactIndex, impact.MaxImpulsePerContact);
+                    pair.SetTargetVelocity(contactIndex, tangentialVelocity);
+                }
+
+                float3 localPoint = structuralGrid.transform.InverseTransformPoint(point);
+                structuralGrid.QueueImpactLocal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.IntegrityDelta);
+                EnqueueSubmarineImpactSignal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.Severity01, impact.IntegrityDelta, depthMeters);
+            }
+        }
+
+        private void EnqueueSubmarineImpactSignal(
+            float3 localPoint,
+            float impactSpeedMetersPerSecond,
+            float severity01,
+            byte integrityDelta,
+            float depthMeters)
+        {
+            if (!_submarineImpactSignals.IsCreated || _submarineImpactSignals.Count >= MaxQueuedSubmarineImpactSignals)
+                return;
+
+            DamageSignal signal = default;
+            signal.magnitude = math.max(0f, impactSpeedMetersPerSecond);
+            signal.localPoint = localPoint;
+            signal.damageType = (uint)DamageTypeMask.Impact;
+            signal.integrityDelta = integrityDelta;
+            signal.depth = math.max(0f, depthMeters);
+            signal.sourceID = DamageSourceIds.SubmarineImpact;
+
+            _submarineImpactSignals.Enqueue(new DeferredSubmarineImpactSignal
+            {
+                PreviousIntegrityNormalized = 1f,
+                NextIntegrityNormalized = math.saturate(1f - severity01),
+                Signal = signal,
+                TraumaLevel = ResolveSubmarineTraumaLevel(severity01)
+            });
+        }
+
+        private void FlushDeferredSubmarineImpactSignals()
+        {
+            if (!_submarineImpactSignals.IsCreated)
+                return;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            TraumaDispatcher traumaDispatcher = null;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform != null)
+                playerTransform.TryGetComponent(out traumaDispatcher);
+            if (traumaDispatcher == null)
+                return;
+
+            while (_submarineImpactSignals.TryDequeue(out DeferredSubmarineImpactSignal queuedSignal))
+            {
+                traumaDispatcher.OnIntegrityChanged(
+                    queuedSignal.PreviousIntegrityNormalized,
+                    queuedSignal.NextIntegrityNormalized,
+                    queuedSignal.Signal);
+                traumaDispatcher.OnTraumaThresholdCrossed(queuedSignal.TraumaLevel);
+            }
+        }
+
+        private static TraumaLevel ResolveSubmarineTraumaLevel(float severity01)
+        {
+            if (severity01 >= 0.9f)
+                return TraumaLevel.Catastrophic;
+            if (severity01 >= 0.65f)
+                return TraumaLevel.Critical;
+            if (severity01 >= 0.4f)
+                return TraumaLevel.Significant;
+            if (severity01 >= 0.15f)
+                return TraumaLevel.Minor;
+
+            return TraumaLevel.None;
+        }
+
         private void ScheduleFrontPacketValidation()
         {
             if (_frontCount <= 0)
+            {
+                _frontBufferValidationReady = false;
                 return;
+            }
 
             EnsureValidationBuffers();
             for (int i = 0; i < _frontCount; i++)
@@ -571,9 +811,10 @@ namespace Hecton8.Physics
 
             _packetValidationHandle = validateJob.Schedule(_frontCount, 32);
             _packetValidationScheduled = true;
+            _frontBufferValidationReady = false;
         }
 
-        private void CompleteFrontPacketValidation()
+        private void CompleteFrontPacketValidationInLateFrameSwapWindow()
         {
             if (!_packetValidationScheduled)
                 return;
@@ -583,6 +824,7 @@ namespace Hecton8.Physics
                 _packetValidationHandle.Complete();
                 _packetValidationHandle = default;
                 _packetValidationScheduled = false;
+                _frontBufferValidationReady = _frontCount > 0;
             }
         }
 

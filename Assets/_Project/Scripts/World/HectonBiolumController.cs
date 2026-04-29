@@ -24,7 +24,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-85)]
-    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable
+    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -101,7 +101,7 @@ namespace Hecton8.World
             ResolveSurvivalSystem();
 
             EclipseGameplayEvents.OnEclipsePhaseChanged += HandleEclipsePhase;
-            AtlasSignalEvents.OnSignalPulse             += HandleSignalPulse;
+            AtlasSignalEvents.Register(this);
             DepthZoneEvents.OnZoneEntered               += HandleDepthZoneEntered;
             SpectrumEvents.OnSonarPulse                 += HandleSonarPulse;
 
@@ -116,7 +116,7 @@ namespace Hecton8.World
             TryUnregister();
 
             EclipseGameplayEvents.OnEclipsePhaseChanged -= HandleEclipsePhase;
-            AtlasSignalEvents.OnSignalPulse             -= HandleSignalPulse;
+            AtlasSignalEvents.Unregister(this);
             DepthZoneEvents.OnZoneEntered               -= HandleDepthZoneEntered;
             SpectrumEvents.OnSonarPulse                 -= HandleSonarPulse;
 
@@ -183,6 +183,12 @@ namespace Hecton8.World
         private void HandleEclipsePhase(bool active)
         {
             _eclipseActive = active;
+        }
+
+        public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
+        {
+            if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Pulse)
+                HandleSignalPulse(payload.SignalStrength);
         }
 
         private void HandleSignalPulse(float intensity)

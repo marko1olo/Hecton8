@@ -24,11 +24,14 @@
 //   • Нет Update().
 // ============================================================================
 
+using System;
 using Hecton.Localization;
+using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Tools;
+using Hecton8.UI;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -44,6 +47,7 @@ namespace Hecton8.Gameplay
         private const string RepairToolHeavyDamageHeadline = "HEAVY DAMAGE";
         private const string RepairToolPatchingHeadline = "PATCHING";
         private const string RepairToolCategory = "REPAIR";
+        private static readonly char[] s_integrityDiagnosticPrefixChars = "INTEGRITY ".ToCharArray();
 
         private struct ServiceDiagnosis
         {
@@ -93,6 +97,10 @@ namespace Hecton8.Gameplay
         private bool _secondaryLatched;
         private int _cachedDiagnosisFrame = -1;
         private bool _cachedDiagnosisValid;
+        private Collider _cachedServiceTargetCollider;
+        private BaseModule _cachedServiceTargetModule;
+        private HectonVoxelVolume _cachedServiceTargetVoxelVolume;
+        private readonly char[] _integrityDiagnosticBuffer = new char[24]; // COLD ALLOC: char[24] — repair-tool floating integrity diagnostic buffer — owner: RepairTool
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool STATE
@@ -128,7 +136,7 @@ namespace Hecton8.Gameplay
         public bool HasBattery => _installedBattery != null;
 
         /// <summary>Current battery charge level (0-1). Returns 0 if no battery.</summary>
-        public float BatteryCharge => _installedBattery != null ? _batteryCharge : 0f;
+        public float BatteryCharge => _installedBattery != null ? GetRuntimeBatteryNormalized(_batteryCharge) : 0f;
 
         /// <summary>The battery item currently installed (null if none).</summary>
         public ItemData BatteryItem => _installedBattery;
@@ -144,6 +152,7 @@ namespace Hecton8.Gameplay
             ItemData removed = _installedBattery;
             _installedBattery = null;
             _batteryCharge = 0f;
+            SetRuntimeBatteryNormalized(0f);
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -161,6 +170,7 @@ namespace Hecton8.Gameplay
 
             _installedBattery = battery;
             _batteryCharge = Mathf.Clamp01(charge);
+            SetRuntimeBatteryNormalized(_batteryCharge);
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -180,18 +190,22 @@ namespace Hecton8.Gameplay
                 return;
 
             _powerIndicatorRenderer.GetPropertyBlock(_mpb);
+            float currentCharge = BatteryCharge;
+            float flickerScalar = 1f;
+            if (TryGetWirelessBrownoutFlicker(out float brownoutFlicker))
+                flickerScalar = Mathf.Clamp(brownoutFlicker, 0f, 1f);
 
-            if (_installedBattery == null || _batteryCharge <= 0f)
+            if (_installedBattery == null || currentCharge <= 0f)
             {
                 _mpb.SetColor(_EmissionColorID, Color.black);
             }
-            else if (_batteryCharge <= 0.2f)
+            else if (currentCharge <= 0.2f)
             {
-                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f));
+                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f) * flickerScalar);
             }
             else
             {
-                _mpb.SetColor(_EmissionColorID, _powerOnColor);
+                _mpb.SetColor(_EmissionColorID, _powerOnColor * flickerScalar);
             }
 
             _powerIndicatorRenderer.SetPropertyBlock(_mpb);
@@ -231,6 +245,7 @@ namespace Hecton8.Gameplay
             _activeRepairReportedThisUse = false;
             _secondaryLatched = false;
             SetRepairVisuals(false);
+            ClearDiagnosticLaserTelemetry();
             base.OnDespawn();
         }
 
@@ -245,6 +260,8 @@ namespace Hecton8.Gameplay
             _activeRepairReportedThisUse = false;
             _secondaryLatched = false;
             SetRepairVisuals(false);
+            ClearDiagnosticLaserTelemetry();
+            UpdatePowerIndicator();
         }
 
         public override void OnUnequip()
@@ -257,7 +274,29 @@ namespace Hecton8.Gameplay
             _activeRepairReportedThisUse = false;
             _secondaryLatched = false;
             SetRepairVisuals(false);
+            ClearDiagnosticLaserTelemetry();
             base.OnUnequip();
+        }
+
+        internal override float ResolveModularBatteryNormalized()
+        {
+            return _installedBattery != null ? Mathf.Clamp01(_batteryCharge) : 0f;
+        }
+
+        private float ResolveRuntimeRepairRange()
+        {
+            return GetRuntimeMaxRange(repairRange);
+        }
+
+        private float ResolveRuntimeRepairPowerPerSecond()
+        {
+            float runtimePower = GetRuntimePowerScalar(1f);
+            return repairSpeed * Mathf.Max(0.1f, runtimePower);
+        }
+
+        private float ResolveRuntimeRepairPowerNormalized()
+        {
+            return Mathf.Clamp01(GetRuntimePowerScalar(1f));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -282,10 +321,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            BaseModule module =
-                _hit.collider != null
-                    ? _hit.collider.GetComponent<BaseModule>() ?? _hit.collider.GetComponentInParent<BaseModule>()
-                    : null;
+            ResolveRepairTargets(_hit.collider, out BaseModule module, out HectonVoxelVolume voxelVolume);
             if (module != null)
             {
                 float beforeIntegrity = module.CurrentIntegrity;
@@ -300,11 +336,12 @@ namespace Hecton8.Gameplay
                     }
 
                     UpdateBeamHit(_hit.point, _hit.normal);
+                    PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
                     InvalidateDiagnosisCache();
                     return;
                 }
 
-                float repairAmount = repairSpeed * deltaTime;
+                float repairAmount = ResolveRuntimeRepairPowerPerSecond() * deltaTime;
                 ToolEffectEvents.RaiseEffectApplied(
                     EffectType.Weld,
                     module,
@@ -313,6 +350,7 @@ namespace Hecton8.Gameplay
                     _hit.point);
                 module.Repair(repairAmount);
                 UpdateBeamHit(_hit.point, _hit.normal);
+                PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
 
                 if (!_activeRepairReportedThisUse)
                 {
@@ -350,12 +388,30 @@ namespace Hecton8.Gameplay
             }
             else
             {
+                if (voxelVolume != null)
+                {
+                    Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(_hit.point);
+                    if (voxelVolume.ApplyRepairWeldDda(
+                        absoluteHitPoint,
+                        _cachedTransform.forward,
+                        ResolveRuntimeRepairPowerNormalized(),
+                        ResolveRuntimeRepairRange()))
+                    {
+                        UpdateBeamHit(_hit.point, _hit.normal);
+                        ClearIntegrityDiagnostic();
+                        QueueToolHapticFeedback(ResolveRuntimeRepairPowerPerSecond(), Mathf.Max(1f, repairSpeed));
+                        InvalidateDiagnosisCache();
+                        return;
+                    }
+                }
+
                 if (!_invalidTargetReportedThisUse)
                 {
                     ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_INVALID_TARGET, "REPAIR TOOL - INVALID TARGET"));
                     _invalidTargetReportedThisUse = true;
                 }
                 UpdateBeamMiss();
+                ClearIntegrityDiagnostic();
             }
 
             InvalidateDiagnosisCache();
@@ -377,10 +433,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            BaseModule module =
-                _hit.collider != null
-                    ? _hit.collider.GetComponent<BaseModule>() ?? _hit.collider.GetComponentInParent<BaseModule>()
-                    : null;
+            ResolveRepairTargets(_hit.collider, out BaseModule module, out _);
             if (module == null)
             {
                 ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.REPAIR_TOOL_HUD_NOT_SERVICEABLE, "REPAIR TOOL - TARGET NOT SERVICEABLE"));
@@ -403,7 +456,11 @@ namespace Hecton8.Gameplay
             if (_wasRepairingLastFrame && !_isRepairing)
                 SetRepairVisuals(false);
 
+            if (_powerIndicatorRenderer != null)
+                UpdatePowerIndicator();
+
             _wasRepairingLastFrame = _isRepairing;
+            bool repairingThisFrame = _isRepairing;
             _isRepairing = false;
 
             IInputService inputService = GlobalRegistry.Input;
@@ -421,6 +478,15 @@ namespace Hecton8.Gameplay
 
             if (!inputState.HasAction(PlayerInputAction.SecondaryFire))
                 _secondaryLatched = false;
+
+            if (!IsEquipped)
+            {
+                ClearDiagnosticLaserTelemetry();
+                return;
+            }
+
+            if (!repairingThisFrame)
+                UpdateDiagnosticLaserPreview();
         }
 
         public override string GetOperationalSummary()
@@ -499,7 +565,7 @@ namespace Hecton8.Gameplay
                     repairLine.enabled = true;
 
                 repairLine.SetPosition(0, Vector3.zero);
-                repairLine.SetPosition(1, Vector3.forward * repairRange);
+                repairLine.SetPosition(1, Vector3.forward * ResolveRuntimeRepairRange());
             }
 
             if (sparksVFX != null && sparksVFX.isPlaying)
@@ -509,7 +575,7 @@ namespace Hecton8.Gameplay
 
             if (weldLight != null)
             {
-                weldLight.transform.position = _cachedTransform.position + _cachedTransform.forward * repairRange;
+                weldLight.transform.position = _cachedTransform.position + _cachedTransform.forward * ResolveRuntimeRepairRange();
             }
 
             if (repairLoopAudio != null && !repairLoopAudio.isPlaying)
@@ -536,16 +602,118 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void UpdateDiagnosticLaserPreview()
+        {
+            if (!TryGetRepairHit(out _hit))
+            {
+                if (repairLine != null)
+                    repairLine.enabled = false;
+                ClearIntegrityDiagnostic();
+                return;
+            }
+
+            if (repairLine != null)
+            {
+                repairLine.enabled = true;
+                repairLine.SetPosition(0, Vector3.zero);
+                repairLine.SetPosition(1, _cachedTransform.InverseTransformPoint(_hit.point));
+            }
+
+            ResolveRepairTargets(_hit.collider, out BaseModule module, out _);
+            if (module != null)
+                PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
+            else
+                ClearIntegrityDiagnostic();
+        }
+
+        private void ClearDiagnosticLaserTelemetry()
+        {
+            if (repairLine != null && !_isRepairing)
+                repairLine.enabled = false;
+            ClearIntegrityDiagnostic();
+        }
+
+        private void ResolveRepairTargets(Collider collider, out BaseModule module, out HectonVoxelVolume voxelVolume)
+        {
+            module = null;
+            voxelVolume = null;
+            if (collider == null)
+                return;
+
+            if (!ReferenceEquals(_cachedServiceTargetCollider, collider))
+            {
+                _cachedServiceTargetCollider = collider;
+                _cachedServiceTargetModule = null;
+                _cachedServiceTargetVoxelVolume = null;
+
+                if (!collider.TryGetComponent(out _cachedServiceTargetModule))
+                    _cachedServiceTargetModule = collider.GetComponentInParent<BaseModule>();
+
+                if (_cachedServiceTargetModule == null)
+                {
+                    if (!collider.TryGetComponent(out _cachedServiceTargetVoxelVolume))
+                        _cachedServiceTargetVoxelVolume = collider.GetComponentInParent<HectonVoxelVolume>();
+                }
+            }
+
+            module = _cachedServiceTargetModule;
+            voxelVolume = _cachedServiceTargetVoxelVolume;
+        }
+
+        private void PublishIntegrityDiagnostic(BaseModule module, Vector3 hitPoint, Vector3 hitNormal)
+        {
+            if (module == null || !TryBuildIntegrityDiagnosticBuffer(module, out int length))
+            {
+                ClearIntegrityDiagnostic();
+                return;
+            }
+
+            DiegeticTooltipSystem tooltipSystem = DiegeticTooltipSystem.ActiveRuntimeInstance;
+            if (tooltipSystem == null)
+                return;
+
+            Vector3 anchorPoint = hitPoint + (hitNormal * 0.035f);
+            tooltipSystem.ShowDiagnostic(anchorPoint, _integrityDiagnosticBuffer.AsSpan(0, length), new Color(0.46f, 0.98f, 0.94f, 0.96f));
+        }
+
+        private void ClearIntegrityDiagnostic()
+        {
+            DiegeticTooltipSystem tooltipSystem = DiegeticTooltipSystem.ActiveRuntimeInstance;
+            if (tooltipSystem != null)
+                tooltipSystem.ClearDiagnostic();
+        }
+
+        private bool TryBuildIntegrityDiagnosticBuffer(BaseModule module, out int length)
+        {
+            length = 0;
+            if (module == null)
+                return false;
+
+            int cursor = 0;
+            s_integrityDiagnosticPrefixChars.CopyTo(_integrityDiagnosticBuffer, cursor);
+            cursor += s_integrityDiagnosticPrefixChars.Length;
+            int integrityPercent = module.MaxIntegrity > 0.01f
+                ? Mathf.RoundToInt(Mathf.Clamp01(module.CurrentIntegrity / module.MaxIntegrity) * 100f)
+                : 0;
+            if (!integrityPercent.TryFormat(_integrityDiagnosticBuffer.AsSpan(cursor), out int written))
+                return false;
+
+            cursor += written;
+            if (cursor >= _integrityDiagnosticBuffer.Length)
+                return false;
+
+            _integrityDiagnosticBuffer[cursor++] = '%';
+            length = cursor;
+            return true;
+        }
+
         private bool TryReadServiceDiagnosis(out ServiceDiagnosis diagnosis)
         {
             diagnosis = default;
 
             bool didHit = TryGetRepairHit(out _hit);
 
-            BaseModule module =
-                didHit && _hit.collider != null
-                    ? _hit.collider.GetComponent<BaseModule>() ?? _hit.collider.GetComponentInParent<BaseModule>()
-                    : null;
+            ResolveRepairTargets(didHit ? _hit.collider : null, out BaseModule module, out _);
             if (module == null)
                 return false;
 
@@ -578,7 +746,7 @@ namespace Hecton8.Gameplay
 
         private bool TryGetRepairHit(out RaycastHit hit)
         {
-            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, repairRange, repairMask.value, QueryTriggerInteraction.Ignore, out hit);
+            return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, ResolveRuntimeRepairRange(), repairMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
         private static ServiceDiagnosis BuildDiagnosis(BaseModule module)

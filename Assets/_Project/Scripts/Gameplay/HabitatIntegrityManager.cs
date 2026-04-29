@@ -94,6 +94,7 @@ namespace Hecton8.Gameplay
         public const ushort MountableTransport = 2;
         public const ushort MantaScooter = 3;
         public const ushort EnvironmentHazard = 4;
+        public const ushort SubmarineImpact = 5;
     }
 
     [DisallowMultipleComponent]

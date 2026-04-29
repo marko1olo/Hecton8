@@ -20,11 +20,15 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4036)]
-    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable
+    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable, ISceneBootstrapEventListener, IWorldGenService
     {
         private const float StartupScatterStabilizationDelaySeconds = 2f;
 
         internal static WorldProceduralScatterDirector ActiveRuntimeInstance { get; private set; }
+        /// <summary>
+        /// True once the world-generation owner is registered in the global registry.
+        /// </summary>
+        public bool IsInitialized => ReferenceEquals(GlobalRegistry.WorldGen, this);
         internal float CurrentSpawnBudgetScale => Mathf.Max(0.35f, _debugPatternSpawnBudgetScale);
         internal float CurrentFaunaActivationScale
         {
@@ -636,6 +640,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            GlobalRegistry.RegisterWorldGenService(this);
             EnsureWorkingMemory();
             ResolveReferences();
             RegisterProceduralStateRegistryCallbacks();
@@ -669,6 +674,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            GlobalRegistry.UnregisterWorldGenService(this);
             UnsubscribeFromBootstrap();
             UnregisterProceduralStateRegistryCallbacks();
             CompleteSamplingJobIfNeeded();
@@ -690,6 +696,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            GlobalRegistry.UnregisterWorldGenService(this);
             if (ActiveRuntimeInstance == this)
                 ActiveRuntimeInstance = null;
             CompleteSamplingJobIfNeeded();
@@ -1042,6 +1049,27 @@ namespace Hecton8.World
 #endif
             if (Application.isPlaying && !ShouldDeferUntilBootstrapReady())
                 RebuildScatterPreview();
+        }
+
+        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        {
+            SceneBootstrapEventType eventType = (SceneBootstrapEventType)payload.EventType;
+            if (eventType == SceneBootstrapEventType.GameReady)
+            {
+                HandleSceneBootstrapReady();
+                return;
+            }
+
+            if (eventType != SceneBootstrapEventType.BootstrapFailed)
+                return;
+
+            if (payload.ErrorHash != 0u && SceneBootstrap.TryResolveBootstrapFailureReason(payload.ErrorHash, out string reason))
+            {
+                HandleSceneBootstrapFailed(reason);
+                return;
+            }
+
+            HandleSceneBootstrapFailed(string.Empty);
         }
 
         private void HandleSceneBootstrapFailed(string reason)
@@ -1748,8 +1776,7 @@ namespace Hecton8.World
             if (_lifecycleRuntimeState.SubscribedToBootstrap)
                 return;
 
-            SceneBootstrap.OnGameReady += HandleSceneBootstrapReady;
-            SceneBootstrap.OnBootstrapFailed += HandleSceneBootstrapFailed;
+            SceneBootstrap.Register(this);
             _lifecycleRuntimeState.SubscribedToBootstrap = true;
         }
 
@@ -1758,8 +1785,7 @@ namespace Hecton8.World
             if (!_lifecycleRuntimeState.SubscribedToBootstrap)
                 return;
 
-            SceneBootstrap.OnGameReady -= HandleSceneBootstrapReady;
-            SceneBootstrap.OnBootstrapFailed -= HandleSceneBootstrapFailed;
+            SceneBootstrap.Unregister(this);
             _lifecycleRuntimeState.SubscribedToBootstrap = false;
         }
 
@@ -2672,9 +2698,7 @@ namespace Hecton8.World
             if (!TryGetPrefabRegistry(out PrefabRegistry prefabRegistry))
                 return false;
 
-            #pragma warning disable CS0618
             int prefabId = prefabRegistry.GetOrRegisterPrefab(prefab);
-            #pragma warning restore CS0618
             if (_memory == null)
                 return false;
 
@@ -2701,9 +2725,7 @@ namespace Hecton8.World
             if (!TryGetPrefabRegistry(out PrefabRegistry prefabRegistry))
                 return;
 
-            #pragma warning disable CS0618
             int prefabId = prefabRegistry.GetOrRegisterPrefab(prefab);
-            #pragma warning restore CS0618
             Dictionary<int, int> prefabWarmupCounts = _memory.PrefabWarmupCounts;
             Dictionary<int, GameObject> prefabWarmupPrefabs = _memory.PrefabWarmupPrefabs;
             Dictionary<int, int> prefabWarmupFamilyHashes = _memory.PrefabWarmupFamilyHashes;
@@ -7261,7 +7283,6 @@ namespace Hecton8.World
             float angle = Mathf.Abs(stableHash % 360) * Mathf.Deg2Rad;
             int familyHash = GetPreferredFamilyInstanceId(family);
             float radiusT = StableRandom01(stableHash, stableHash >> 4, familyHash);
-#pragma warning restore CS0618
             float radius = baseRadius * Mathf.Lerp(0.18f, 1f, radiusT);
             Vector3 offset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
             return origin + offset;

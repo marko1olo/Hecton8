@@ -630,7 +630,6 @@ namespace LlockhamIndustries.Decals
         {
             if (!Application.isPlaying)
             {
-#pragma warning disable CS0618
                 if (instanceID == 0)
                 {
                     instanceID = GetInstanceID();
@@ -643,7 +642,6 @@ namespace LlockhamIndustries.Decals
                     //Clone properties
                     properties = (ProjectionProperty[])properties.Clone();
                 }
-#pragma warning restore CS0618
             }
         }
 

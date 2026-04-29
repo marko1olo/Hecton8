@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton8.AI;
 using Hecton8.Bootstrap;
+using Hecton8.Gameplay;
 using Hecton8.Narrative;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
@@ -22,12 +23,17 @@ namespace Hecton8.Core
     {
         private const int LaneCount = 4;
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
+        private const double SlowJobCompleteWarningMilliseconds = 1.0;
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
         private const int MaxQueuedDispatcherRaycasts = 256;
         private const int DispatcherRaycastMinCommandsPerJob = 1;
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
+        private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.Dispatcher.LateFrame");
+        private static readonly ProfilerMarker _postFixedProfilerMarker = new ProfilerMarker("H8.Dispatcher.PostFixed");
+        private static readonly ProfilerMarker _lateFrameCommandQueueDrainProfilerMarker = new ProfilerMarker("H8.Dispatcher.CommandQueue.Drain");
+        private static readonly ProfilerMarker _foveatedCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Foveated.Complete");
         private static readonly ProfilerMarker _dispatcherRaycastScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Schedule");
         private static readonly ProfilerMarker _dispatcherRaycastCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Complete");
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
@@ -74,6 +80,20 @@ namespace Hecton8.Core
             new RegistryBucket<ISlowTickable>(96),
             new RegistryBucket<ISlowTickable>(32),
         };
+        private static readonly RegistryBucket<ILateFrameTickable>[] _lateFramePriorityLanes =
+        {
+            new RegistryBucket<ILateFrameTickable>(128),
+            new RegistryBucket<ILateFrameTickable>(128),
+            new RegistryBucket<ILateFrameTickable>(96),
+            new RegistryBucket<ILateFrameTickable>(32),
+        };
+        private static readonly RegistryBucket<IPostFixedTickable>[] _postFixedPriorityLanes =
+        {
+            new RegistryBucket<IPostFixedTickable>(128),
+            new RegistryBucket<IPostFixedTickable>(128),
+            new RegistryBucket<IPostFixedTickable>(96),
+            new RegistryBucket<IPostFixedTickable>(32),
+        };
 
         private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
         // COLD ALLOC: IDispatcherRaycastReceiver[256] — dispatcher-owned pending raycast receivers — owner: SystemDispatcher
@@ -100,6 +120,7 @@ namespace Hecton8.Core
             _foveatedSimulationManager.Dispose();
             _foveatedSimulationManager = new FoveatedSimulationManager();
             DisposeDispatcherRaycastBuffers();
+            ThreadSafeCommandQueue.Shutdown();
             ClearAllLanes();
         }
 
@@ -154,6 +175,26 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Returns the late-frame registry lane for a fixed priority layer.
+        /// </summary>
+        /// <param name="layer">Priority lane.</param>
+        /// <returns>Dense late-frame lane bucket.</returns>
+        public static RegistryBucket<ILateFrameTickable> GetLateFrameLane(PriorityLayer layer)
+        {
+            return _lateFramePriorityLanes[GetLaneIndex(layer)];
+        }
+
+        /// <summary>
+        /// Returns the post-fixed-step registry lane for a fixed priority layer.
+        /// </summary>
+        /// <param name="layer">Priority lane.</param>
+        /// <returns>Dense post-fixed lane bucket.</returns>
+        public static RegistryBucket<IPostFixedTickable> GetPostFixedLane(PriorityLayer layer)
+        {
+            return _postFixedPriorityLanes[GetLaneIndex(layer)];
+        }
+
+        /// <summary>
         /// Registers an update owner into a fixed priority lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -193,6 +234,32 @@ namespace Hecton8.Core
                 return;
 
             GetSlowLane(layer).Register(item);
+        }
+
+        /// <summary>
+        /// Registers a late-frame owner into a fixed priority lane.
+        /// </summary>
+        /// <param name="item">Late-frame owner.</param>
+        /// <param name="layer">Priority lane.</param>
+        internal static void Register(ILateFrameTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetLateFrameLane(layer).Register(item);
+        }
+
+        /// <summary>
+        /// Registers a post-fixed-step owner into a fixed priority lane.
+        /// </summary>
+        /// <param name="item">Post-fixed owner.</param>
+        /// <param name="layer">Priority lane.</param>
+        internal static void Register(IPostFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetPostFixedLane(layer).Register(item);
         }
 
         /// <summary>
@@ -238,6 +305,32 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a late-frame owner from a fixed priority lane.
+        /// </summary>
+        /// <param name="item">Late-frame owner.</param>
+        /// <param name="layer">Priority lane.</param>
+        internal static void Unregister(ILateFrameTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetLateFrameLane(layer).Unregister(item);
+        }
+
+        /// <summary>
+        /// Unregisters a post-fixed-step owner from a fixed priority lane.
+        /// </summary>
+        /// <param name="item">Post-fixed owner.</param>
+        /// <param name="layer">Priority lane.</param>
+        internal static void Unregister(IPostFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            GetPostFixedLane(layer).Unregister(item);
+        }
+
+        /// <summary>
         /// Clears every dispatcher lane.
         /// </summary>
         public static void ClearAllLanes()
@@ -247,6 +340,8 @@ namespace Hecton8.Core
                 _priorityLanes[i].Clear();
                 _fixedPriorityLanes[i].Clear();
                 _slowPriorityLanes[i].Clear();
+                _lateFramePriorityLanes[i].Clear();
+                _postFixedPriorityLanes[i].Clear();
             }
 
             _foveatedSimulationManager.ResetRuntimeState();
@@ -262,6 +357,7 @@ namespace Hecton8.Core
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Dispatcher, this))
             {
                 DisposeDispatcherRaycastBuffers();
+                ThreadSafeCommandQueue.Shutdown();
                 GlobalRegistry.UnregisterSystemDispatcher(this);
             }
 
@@ -276,6 +372,7 @@ namespace Hecton8.Core
             if (_serviceRegistered)
                 return;
 
+            ThreadSafeCommandQueue.Initialize();
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = true;
         }
@@ -336,12 +433,38 @@ namespace Hecton8.Core
         {
             CompleteDispatcherRaycasts();
             long completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
-            _foveatedSimulationManager.CompleteFrameJobs();
+            CompleteFoveatedFrameJobs();
+            using (_lateFrameProfilerMarker.Auto())
+            {
+                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                {
+                    RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
+#endif
+                    ILateFrameTickable[] rawArray = lane.RawArray;
+                    int count = lane.Count;
+                    for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                        rawArray[itemIndex].LateFrameTick();
+                }
+            }
+            using (_lateFrameCommandQueueDrainProfilerMarker.Auto())
+            {
+                ThreadSafeCommandQueue.DrainMainThread();
+            }
+            NarrativeEvents.FlushPending();
+            ScanEvents.FlushPending();
             SaveEvents.FlushPending();
             QuestEvents.FlushPending();
             AudioLogEvents.FlushPending();
+            Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
+            Hecton8.UI.NotificationEvents.FlushPending();
+            Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
+            ObjectPoolDiagnostics.FlushPending();
+            Hecton8.AtlasSignal.Atlas6Events.FlushPending();
+            GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
             WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
-            UnsafeArenaAllocator.ResetFrame();
+            NativeArenaAllocator.Reset();
             EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
         }
 
@@ -370,6 +493,24 @@ namespace Hecton8.Core
 
                         for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
                             rawArray[itemIndex].FixedTick(fixedDeltaTime);
+                    }
+                }
+
+                using (_postFixedProfilerMarker.Auto())
+                {
+                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                    {
+                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                            continue;
+
+                        RegistryBucket<IPostFixedTickable> lane = _postFixedPriorityLanes[laneIndex];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        lane.ValidateNoDestroyedEntriesDebug(nameof(IPostFixedTickable));
+#endif
+                        IPostFixedTickable[] rawArray = lane.RawArray;
+                        int count = lane.Count;
+                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                            rawArray[itemIndex].PostFixedTick(fixedDeltaTime);
                     }
                 }
             }
@@ -472,7 +613,7 @@ namespace Hecton8.Core
 
             using (_dispatcherRaycastCompleteProfilerMarker.Auto())
             {
-                _scheduledDispatcherRaycastHandle.Complete();
+                CompleteJobHandleWithWarning(ref _scheduledDispatcherRaycastHandle, "SystemDispatcher.DispatcherRaycasts");
                 _scheduledDispatcherRaycastHandle = default;
                 _dispatcherRaycastsScheduled = false;
 
@@ -495,7 +636,7 @@ namespace Hecton8.Core
         {
             if (_dispatcherRaycastsScheduled)
             {
-                _scheduledDispatcherRaycastHandle.Complete();
+                CompleteJobHandleWithWarning(ref _scheduledDispatcherRaycastHandle, "SystemDispatcher.DispatcherRaycasts.Dispose");
                 _scheduledDispatcherRaycastHandle = default;
                 _dispatcherRaycastsScheduled = false;
             }
@@ -572,6 +713,54 @@ namespace Hecton8.Core
                 Debug.LogWarning(
                     $"[SystemDispatcher] {phaseName} exceeded {SlowDispatcherPhaseWarningMilliseconds:F0}ms ({elapsedMilliseconds:F2}ms).");
             }
+#endif
+        }
+
+        private void CompleteFoveatedFrameJobs()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            using (_foveatedCompleteProfilerMarker.Auto())
+            {
+                _foveatedSimulationManager.CompleteFrameJobs();
+            }
+
+            double elapsedMilliseconds =
+                (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
+            {
+                GlobalTelemetryBus.PublishJobBarrierStall(
+                    "FoveatedSimulationManager",
+                    "LateFrameComplete",
+                    (float)elapsedMilliseconds);
+                Debug.LogWarning(
+                    $"[SystemDispatcher] Late-frame stall: FoveatedSimulationManager.CompleteFrameJobs took {elapsedMilliseconds:F2}ms.");
+            }
+#else
+            using (_foveatedCompleteProfilerMarker.Auto())
+            {
+                _foveatedSimulationManager.CompleteFrameJobs();
+            }
+#endif
+        }
+
+        private static void CompleteJobHandleWithWarning(ref JobHandle handle, string systemName)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            handle.Complete();
+            double elapsedMilliseconds =
+                (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
+            {
+                GlobalTelemetryBus.PublishJobBarrierStall(
+                    systemName,
+                    "LateFrameComplete",
+                    (float)elapsedMilliseconds);
+                Debug.LogWarning($"[SystemDispatcher] Late-frame stall: {systemName} took {elapsedMilliseconds:F2}ms.");
+            }
+#else
+            handle.Complete();
 #endif
         }
     }

@@ -73,7 +73,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)] // Run before gameplay systems
-    public sealed class LODSystemManager : MonoBehaviour, ITickable, ISaveable
+    public sealed class LODSystemManager : MonoBehaviour, ITickable, ILateFrameTickable, ISaveable
     {
         private const float CameraResolveRetryInterval = 1f;
 
@@ -131,6 +131,7 @@ namespace Hecton8.World
         private JobHandle _distanceJobHandle;
         private bool _jobScheduled;
         private bool _registered;
+        private bool _lateFrameRegistered;
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
@@ -200,6 +201,7 @@ namespace Hecton8.World
         {
             EnsureNativeBuffersAllocated();
             TryRegister();
+            TryRegisterLateFrame();
         }
 
         private void OnDisable()
@@ -207,6 +209,7 @@ namespace Hecton8.World
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
             TryUnregister();
+            TryUnregisterLateFrame();
 
             // Complete any pending jobs
             if (_jobScheduled)
@@ -235,6 +238,7 @@ namespace Hecton8.World
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
             TryUnregister();
+            TryUnregisterLateFrame();
 
             // Clear singleton
             if (_instance == this)
@@ -285,6 +289,24 @@ namespace Hecton8.World
             _registered = false;
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = true;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ITICKABLE IMPLEMENTATION
         // ══════════════════════════════════════════════════════════
@@ -317,16 +339,8 @@ namespace Hecton8.World
             if (_enablePerformanceMonitoring)
                 startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
 
-            // Complete previous frame's job if still running
             if (_jobScheduled)
-            {
-                if (!_distanceJobHandle.IsCompleted)
-                    return;
-
-                _distanceJobHandle.Complete();
-                ApplyLODTransitions();
-                _jobScheduled = false;
-            }
+                return;
 
             // Schedule new distance calculation job
             ScheduleDistanceCalculationJob();
@@ -336,6 +350,17 @@ namespace Hecton8.World
                 long endTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 _lodSystemCPUTime = (endTicks - startTicks) / (float)System.Diagnostics.Stopwatch.Frequency * 1000f;
             }
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (!_jobScheduled || !_distanceJobHandle.IsCompleted)
+                return;
+
+            _distanceJobHandle.Complete();
+            ApplyLODTransitions();
+            _jobScheduled = false;
         }
 
         // ══════════════════════════════════════════════════════════

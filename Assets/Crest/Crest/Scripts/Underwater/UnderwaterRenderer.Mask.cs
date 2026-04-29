@@ -7,6 +7,7 @@ using Crest.Internal;
 namespace Crest
 {
     using System.Collections.Generic;
+    using UnityEngine.Experimental.Rendering;
     using UnityEngine;
     using UnityEngine.Rendering;
 
@@ -181,6 +182,7 @@ namespace Crest
             // Intel iGPU for Metal and DirectX both had issues with R16. 2021.11.18
             descriptor.colorFormat = Helpers.IsIntelGPU() ? RenderTextureFormat.RFloat : RenderTextureFormat.RHalf;
             descriptor.depthBufferBits = 0;
+            descriptor.depthStencilFormat = GraphicsFormat.None;
             descriptor.enableRandomWrite = true;
 
             return descriptor;
@@ -190,6 +192,11 @@ namespace Crest
         {
             descriptor.colorFormat = RenderTextureFormat.Depth;
             descriptor.depthBufferBits = 24;
+            descriptor.graphicsFormat = GraphicsFormat.None;
+            if (descriptor.depthStencilFormat == GraphicsFormat.None)
+            {
+                descriptor.depthStencilFormat = SystemInfo.GetGraphicsFormat(DefaultFormat.DepthStencil);
+            }
             descriptor.enableRandomWrite = false;
 
             return descriptor;
@@ -272,7 +279,9 @@ namespace Crest
             // Support RTHandle scaling.
             if (targetSize != Vector2Int.zero) buffer.SetViewport(new Rect(0f, 0f, targetSize.x, targetSize.y));
             buffer.ClearRenderTarget(true, false, Color.black);
+#if !UNITY_6000_0_OR_NEWER
             buffer.SetGlobalTexture(ShaderIDs.s_CrestWaterVolumeFrontFaceTexture, frontTarget);
+#endif
             if (_mode == Mode.Portal) buffer.SetInvertCulling(_invertCulling);
             buffer.DrawMesh
             (
@@ -297,7 +306,9 @@ namespace Crest
                 // Support RTHandle scaling.
                 if (targetSize != Vector2Int.zero) buffer.SetViewport(new Rect(0f, 0f, targetSize.x, targetSize.y));
                 buffer.ClearRenderTarget(true, false, Color.black);
+#if !UNITY_6000_0_OR_NEWER
                 buffer.SetGlobalTexture(ShaderIDs.s_CrestWaterVolumeBackFaceTexture, backTarget);
+#endif
                 buffer.DrawMesh
                 (
                     _volumeGeometry.sharedMesh,
@@ -318,8 +329,10 @@ namespace Crest
             // When using the stencil we are already clearing depth and do not want to clear the stencil too. Clear
             // color only when using the stencil as the horizon effectively clears it when not using it.
             buffer.ClearRenderTarget(!UseStencilBufferOnMask, UseStencilBufferOnMask, Color.black);
+#if !UNITY_6000_0_OR_NEWER
             buffer.SetGlobalTexture(ShaderIDs.s_CrestOceanMaskTexture, maskTarget);
             buffer.SetGlobalTexture(ShaderIDs.s_CrestOceanMaskDepthTexture, depthTarget);
+#endif
         }
 
         internal void FixMaskArtefacts(CommandBuffer buffer, RenderTextureDescriptor descriptor, RenderTargetIdentifier target)

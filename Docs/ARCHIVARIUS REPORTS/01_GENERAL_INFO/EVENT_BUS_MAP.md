@@ -16,12 +16,38 @@ For the larger static readout, use:
 
 - `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
 
-## Buses In Scope
+## Active Topology
 
-| Bus family | Notes |
-|---|---|
-| `HectonEventBus` typed events | Generic event-bus layer used by first-party and mod-facing systems |
-| Static zero-alloc buses | `InteractionEvents`, `CraftingEvents`, `SaveEvents`, `FlashlightEvents`, `PDAEvents`, `ModuleStatusEvents`, `ScanEvents` |
+The first-party queue-backed pattern now used by the migrated buses is:
+
+1. Publisher computes stable `uint` FNV-1a hashes for authored string IDs.
+2. Publisher enqueues a blittable payload struct into a bus-local `NativeQueue<TPayload>`.
+3. `SystemDispatcher.LateUpdate()` flushes each queue on the main thread.
+4. Listeners are explicit interfaces registered into `RegistryBucket<TListener>`.
+5. Cold-path string recovery, when still required for UI/save compatibility, uses hash-to-string dictionaries outside hot paths.
+
+This removes direct managed string-delegate fanout from the migrated buses and moves runtime dispatch into deterministic late-frame drains.
+
+## Queue-Backed Buses Verified In Code
+
+| Bus | Payload | Listener interface | Flush owner |
+|---|---|---|---|
+| `NarrativeEvents` | `NarrativeEventPayload` | `INarrativeEventListener` | `SystemDispatcher.LateUpdate()` |
+| `ScanEvents` | `ScanEventPayload` | `IScanEventListener` | `SystemDispatcher.LateUpdate()` |
+| `SaveEvents` | `SaveEventPayload` | `ISaveEventListener` | `SystemDispatcher.LateUpdate()` |
+| `AudioLogEvents` | `AudioLogEventPayload` | `IAudioLogEventListener` | `SystemDispatcher.LateUpdate()` |
+| `QuestEvents` | `QuestEventPayload` | `IQuestEventListener` | `SystemDispatcher.LateUpdate()` |
+| `AtlasSignalEvents` | `AtlasSignalEventPayload` | `IAtlasSignalEventListener` | `SystemDispatcher.LateUpdate()` |
+| `NotificationEvents` | `NotificationEventPayload` | `INotificationEventListener` | `SystemDispatcher.LateUpdate()` |
+| `SceneBootstrap` event lane | `SceneBootstrapEventPayload` | `ISceneBootstrapEventListener` | `SystemDispatcher.LateUpdate()` |
+| `Atlas6Events` | `Atlas6EventPayload` | `IAtlas6EventListener` | `SystemDispatcher.LateUpdate()` |
+| `ObjectPoolDiagnostics` | `PoolDiagnosticsEventPayload` | `IObjectPoolDiagnosticsListener` | `SystemDispatcher.LateUpdate()` |
+
+## Modding Bus Boundary
+
+`HectonEventBus` is still a separate managed typed bus for moddable runtime events.
+It is not the owner of `SaveEvents`, `QuestEvents`, or `ScanEvents`.
+Those first-party buses remain `NativeQueue<TPayload>` lanes flushed by `SystemDispatcher.LateUpdate()`.
 
 ## Current Documentation Boundary
 
@@ -33,6 +59,24 @@ The present workspace contains two event-mapping documents:
 The detailed routing document is the better source for raw mappings.  
 This file should remain a short orientation page, not a second large truth table.
 
+## File Map
+
+Primary first-party event files currently tied to this topology:
+
+- `Assets/_Project/Scripts/NarrativeEvents.cs`
+- `Assets/_Project/Scripts/ScanEvents.cs`
+- `Assets/_Project/Scripts/SaveEvents.cs`
+- `Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs`
+- `Assets/_Project/Scripts/Quest/QuestEvents.cs`
+- `Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs`
+- `Assets/_Project/Scripts/UI/NotificationEvents.cs`
+- `Assets/_Project/Scripts/SceneBootstrap.cs`
+- `Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs`
+- `Assets/_Project/Scripts/ObjectPoolDiagnostics.cs`
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
+- `Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs`
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs`
+
 ## Verified Constraints From Project Instructions
 
 | Constraint | Source |
@@ -43,5 +87,6 @@ This file should remain a short orientation page, not a second large truth table
 
 ## Open Risk
 
-No live event replay or Unity runtime trace was executed in this documentation-only pass.  
-Publisher/subscriber truth therefore remains `PENDING VERIFICATION`.
+- `HectonEventBus` remains a separate managed typed bus and is not replaced by these queue lanes.
+- Multiple older static `Action<T>` buses still exist outside this migrated set.
+- Global compile verification is currently blocked by unrelated Crest package errors, so this topology remains `PENDING VERIFICATION`.

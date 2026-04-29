@@ -1,6 +1,7 @@
 using Hecton8.Gameplay;
 using Hecton8.Ecosystem;
 using Hecton8.Meta;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -85,7 +86,12 @@ namespace Hecton8.AI
                 return;
             }
 
-            float nextAggressionScale = isAggressive ? DynamicDifficultyDirector.Current.PredatorAggressionScale : 1f;
+            float ecosystemHostilityScale = 1f;
+            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
+                ecosystemHostilityScale = Mathf.Lerp(1f, 1.35f, ecosystemDirector.BiomeHostility01);
+
+            float nextAggressionScale = isAggressive ? DynamicDifficultyDirector.Current.PredatorAggressionScale * ecosystemHostilityScale : 1f;
             if (Mathf.Abs(nextAggressionScale - _runtimeAggressionScale) > 0.001f)
             {
                 _runtimeAggressionScale = nextAggressionScale;

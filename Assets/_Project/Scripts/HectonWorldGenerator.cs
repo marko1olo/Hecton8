@@ -474,13 +474,11 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     struct HectonPhysicsBakeJob : IJob
     {
-        public int MeshInstanceId;
+        public EntityId MeshEntityId;
 
         public void Execute()
         {
-#pragma warning disable CS0618
-            Physics.BakeMesh(MeshInstanceId, false);
-#pragma warning restore CS0618
+            Physics.BakeMesh(MeshEntityId, false);
         }
     }
 
@@ -1340,7 +1338,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
     {
         return new HectonPhysicsBakeJob
         {
-            MeshInstanceId = unchecked((int)EntityId.ToULong(mesh.GetEntityId()))
+            MeshEntityId = mesh.GetEntityId()
         }.Schedule();
     }
 

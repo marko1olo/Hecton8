@@ -1,7 +1,6 @@
-using System.Collections.Generic;
+using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
-using Hecton8.Core;
 
 namespace Hecton8.Physics
 {
@@ -20,18 +19,15 @@ namespace Hecton8.Physics
         private static readonly int _foamScaleId = Shader.PropertyToID("_FoamScale");
 
         [Header("References")]
-        [Tooltip("Optional explicit Crest ocean owner. Leave empty to resolve OceanRenderer.Instance or scan the scene.")]
+        [Tooltip("Explicit Crest ocean owner. Assign this directly or colocate the OceanRenderer on the same GameObject.")]
         [SerializeField] private Crest.OceanRenderer crestOceanRenderer;
-
-        [Header("Fallback / Resolve")]
-        [Tooltip("Retry cadence for one-shot scene searches when OceanRenderer.Instance is not ready yet.")]
-        [SerializeField, Range(0.1f, 5f)] private float sceneSearchRetryInterval = 1f;
 
         private int _heightQueryOwnerHash;
         private int _waveQueryOwnerHash;
         private int _displacementQueryOwnerHash;
         private int _flowQueryOwnerHash;
-        private float _nextResolveTime = float.NegativeInfinity;
+        private bool _loggedMissingOceanRenderer;
+        private bool _loggedMissingCollisionProvider;
         // COLD ALLOC: Vector3[5] - native-to-managed Crest position bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
         private readonly Vector3[] _samplePositionScratch = new Vector3[MaxBatchSampleCount];
         // COLD ALLOC: Vector3[5] - native-to-managed Crest flow bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
@@ -42,10 +38,8 @@ namespace Hecton8.Physics
         private readonly Vector3[] _surfaceVelocityScratch = new Vector3[MaxBatchSampleCount];
         // COLD ALLOC: Vector3[5] - native-to-managed Crest displacement bridge scratch for Crest 4 runtime fallback - owner: Crest4KinematicsAdapter
         private readonly Vector3[] _displacementScratch = new Vector3[MaxBatchSampleCount];
-        private readonly List<GameObject> _sceneRootBuffer =
-            new List<GameObject>(16); // COLD ALLOC: List<GameObject>(16) — reusable scene root scan buffer for delayed Crest owner recovery — owner: Crest4KinematicsAdapter
         private readonly float[] _heightScratch =
-            new float[MaxBatchSampleCount]; // COLD ALLOC: float[5] — temporary Crest height scratch buffer for wave-only queries — owner: Crest4KinematicsAdapter
+            new float[MaxBatchSampleCount]; // COLD ALLOC: float[5] - temporary Crest height scratch buffer for wave-only queries - owner: Crest4KinematicsAdapter
 
         /// <inheritdoc />
         public override int Priority => ProviderPriority;
@@ -55,19 +49,19 @@ namespace Hecton8.Physics
         {
             get
             {
-                Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: false);
+                Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
                 return oceanRenderer != null && oceanRenderer.CollisionProvider != null;
             }
         }
 
         /// <inheritdoc />
-        public override float SeaLevel => ResolveSeaLevel(ResolveOceanRenderer(forceSceneSearch: false));
+        public override float SeaLevel => ResolveSeaLevel(ResolveOceanRenderer());
 
         /// <inheritdoc />
         public override bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
         {
             state = default;
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
             if (oceanRenderer == null)
                 return false;
 
@@ -103,7 +97,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public override bool ApplySurfaceWeatherState(in HectonOceanSurfaceWeatherState state)
         {
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
             if (oceanRenderer == null)
                 return false;
 
@@ -139,7 +133,7 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public override bool TryAssignPrimaryLight(Light primaryLight)
         {
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
             if (oceanRenderer == null || primaryLight == null)
                 return false;
 
@@ -151,6 +145,7 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
+            TryResolveLocalOceanRendererBinding();
             int ownerHash = unchecked((int)EntityId.ToULong(GetEntityId()));
             _heightQueryOwnerHash = ownerHash;
             _waveQueryOwnerHash = ownerHash ^ 0x2F31;
@@ -205,7 +200,7 @@ namespace Hecton8.Physics
             if (!ValidateVectorRequest(samplePositions, sampleCount, surfaceFlows))
                 return false;
 
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
             if (oceanRenderer == null || oceanRenderer.FlowProvider == null)
                 return false;
 
@@ -301,45 +296,36 @@ namespace Hecton8.Physics
 
         private bool TryResolveCollisionProvider(out Crest.ICollProvider collisionProvider)
         {
-            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer(forceSceneSearch: true);
+            Crest.OceanRenderer oceanRenderer = ResolveOceanRenderer();
             collisionProvider = oceanRenderer != null ? oceanRenderer.CollisionProvider : null;
+            if (collisionProvider == null && oceanRenderer != null && !_loggedMissingCollisionProvider)
+            {
+                _loggedMissingCollisionProvider = true;
+                Debug.LogError("[Crest4KinematicsAdapter] Crest OceanRenderer is bound but CollisionProvider is unavailable. Ocean sampling disabled.");
+            }
+
             return collisionProvider != null;
         }
 
-        private Crest.OceanRenderer ResolveOceanRenderer(bool forceSceneSearch)
+        private void TryResolveLocalOceanRendererBinding()
+        {
+            if (crestOceanRenderer == null)
+                TryGetComponent(out crestOceanRenderer);
+        }
+
+        private Crest.OceanRenderer ResolveOceanRenderer()
         {
             if (crestOceanRenderer != null)
                 return crestOceanRenderer;
 
-            Crest.OceanRenderer instance = Crest.OceanRenderer.Instance;
-            if (instance != null)
-            {
-                crestOceanRenderer = instance;
+            TryResolveLocalOceanRendererBinding();
+            if (crestOceanRenderer != null)
                 return crestOceanRenderer;
-            }
 
-            if (!forceSceneSearch || !Application.isPlaying)
-                return null;
-
-            float now = Time.unscaledTime;
-            if (now < _nextResolveTime)
-                return null;
-
-            _nextResolveTime = now + Mathf.Max(0.1f, sceneSearchRetryInterval);
-            _sceneRootBuffer.Clear();
-            gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
-            for (int i = 0; i < _sceneRootBuffer.Count; i++)
+            if (!_loggedMissingOceanRenderer)
             {
-                GameObject rootObject = _sceneRootBuffer[i];
-                if (rootObject == null)
-                    continue;
-
-                Crest.OceanRenderer candidate = rootObject.GetComponent<Crest.OceanRenderer>();
-                if (candidate == null)
-                    continue;
-
-                crestOceanRenderer = candidate;
-                return crestOceanRenderer;
+                _loggedMissingOceanRenderer = true;
+                Debug.LogError("[Crest4KinematicsAdapter] Missing Crest OceanRenderer binding. Assign crestOceanRenderer explicitly or colocate the OceanRenderer component.");
             }
 
             return null;

@@ -84,7 +84,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-50)]
-    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -152,7 +152,7 @@ namespace Hecton8.Gameplay
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
 
-            AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
+            AtlasSignalEvents.Register(this);
 
             ResolveSurvivalSystem();
         }
@@ -164,7 +164,7 @@ namespace Hecton8.Gameplay
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
 
-            AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
+            AtlasSignalEvents.Unregister(this);
         }
 
         private void OnDestroy()
@@ -357,6 +357,12 @@ namespace Hecton8.Gameplay
         private static void LogEndingConditionMet()
         {
             Debug.Log("[Ending] Condition met — player at Atlas-6 core.");
+        }
+
+        public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
+        {
+            if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Decoded)
+                HandleSignalDecoded(string.Empty);
         }
 
         private void HandleSignalDecoded(string messageId)

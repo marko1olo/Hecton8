@@ -632,21 +632,19 @@ namespace Hecton8.Physics
                 ? float.PositiveInfinity
                 : math.max(_payloadBody.mass, 0.0001f);
 
-            if (float.IsInfinity(payloadMass))
-            {
-                _reducedMass = playerMass;
-            }
-            else
-            {
-                _reducedMass = (playerMass * payloadMass) / math.max(playerMass + payloadMass, 0.0001f);
-            }
+            _reducedMass = HectonContactJob.ResolveReducedMass(
+                playerMass,
+                payloadMass,
+                float.IsInfinity(payloadMass));
 
             float requestedMultiplier = ResolveTowOverDampingMultiplier();
             float overDampingMultiplier = _tetherClass == TetherClass.TowCable
                 ? math.max(TowCableOverDampingMinimum, requestedMultiplier)
                 : math.max(1f, requestedMultiplier);
-            float criticalDamping = 2f * math.sqrt(math.max(_springStiffness, 0f) * math.max(_reducedMass, 0f));
-            _dampingCoefficient = criticalDamping * overDampingMultiplier;
+            _dampingCoefficient = HectonContactJob.ResolveCriticalDamping(
+                _springStiffness,
+                _reducedMass,
+                overDampingMultiplier);
             RefreshPrimaryConstraintDrive();
         }
 
@@ -1373,8 +1371,14 @@ namespace Hecton8.Physics
                 ? Vector3.zero
                 : _playerRigidbody.GetPointVelocity(anchorPositionWS);
             Vector3 payloadVelocity = _payloadBody.GetPointVelocity(payloadPositionWS);
-            float separationSpeed = Vector3.Dot(payloadVelocity - anchorVelocity, directionAwayFromAnchor);
-            float requestedAcceleration = (extension * math.max(0f, _springStiffness)) + (separationSpeed * math.max(0f, _dampingCoefficient));
+            float requestedAcceleration = HectonContactJob.ResolveProjectedPdAcceleration(
+                constraintAnchorPosition,
+                payloadPositionWS,
+                anchorVelocity,
+                payloadVelocity,
+                directionTowardAnchor,
+                _springStiffness,
+                _dampingCoefficient);
             if (requestedAcceleration <= 0f)
             {
                 _primaryConstraintForceMagnitude = 0f;

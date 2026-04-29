@@ -83,6 +83,7 @@ namespace Hecton8.Systems.AI
         public int SpawnThreatClass;
         public float3 SpawnPosition;
         public uint SpawnVariantSeed;
+        public int ForcedSpawnConsumed;
         public int DespawnRequestCount;
         public int DespawnEntityId0;
         public int DespawnEntityId1;
@@ -167,6 +168,8 @@ namespace Hecton8.Systems.AI
         private readonly int _candidateCount;
         private int _pendingPhaseOverride = -1;
         private bool _pendingReset;
+        private int _pendingForcedThreatClass = -1;
+        private int _pendingForcedThreatCount;
 
         internal EncounterDirector()
         {
@@ -231,6 +234,8 @@ namespace Hecton8.Systems.AI
             _frameIndex = 0;
             _pendingPhaseOverride = -1;
             _pendingReset = false;
+            _pendingForcedThreatClass = -1;
+            _pendingForcedThreatCount = 0;
             if (_debugEventHead.IsCreated && _debugEventHead.Length > 0)
                 _debugEventHead[0] = 0;
 
@@ -246,6 +251,15 @@ namespace Hecton8.Systems.AI
         internal void RequestReset()
         {
             _pendingReset = true;
+        }
+
+        internal void RequestForcedSquad(EncounterThreatClass threatClass, int count)
+        {
+            if (count <= 0)
+                return;
+
+            _pendingForcedThreatClass = (int)threatClass;
+            _pendingForcedThreatCount = math.max(_pendingForcedThreatCount, count);
         }
 
         internal void CopyFrustumPlanes(Plane[] planes)
@@ -406,6 +420,8 @@ namespace Hecton8.Systems.AI
                 AcousticThreatLevel = math.clamp(frameContext.AcousticThreatLevel, 0f, 1f),
                 AvgFrameTimeMs = math.max(0f, frameContext.AvgFrameTimeMs),
                 SurfaceWorldY = frameContext.SurfaceWorldY,
+                ForcedThreatClass = _pendingForcedThreatClass,
+                ForcedThreatCount = _pendingForcedThreatCount,
                 ThreatAuthoring = _threatAuthoring,
                 Output = _jobOutput
             };
@@ -429,21 +445,30 @@ namespace Hecton8.Systems.AI
             if (output.DespawnRequestCount > 0 && faunaDirector != null)
                 ApplyDespawnRequests(output, faunaDirector);
 
+            bool forcedSpawnSucceeded = false;
             if (output.SpawnRequestCount > 0 && faunaDirector != null)
-                ApplySpawnRequest(output, faunaDirector, bridge);
+                forcedSpawnSucceeded = ApplySpawnRequest(output, faunaDirector, bridge);
+
+            if (forcedSpawnSucceeded && output.ForcedSpawnConsumed != 0 && _pendingForcedThreatCount > 0)
+            {
+                _pendingForcedThreatCount = math.max(0, _pendingForcedThreatCount - output.ForcedSpawnConsumed);
+                if (_pendingForcedThreatCount <= 0)
+                    _pendingForcedThreatClass = -1;
+            }
         }
 
-        private void ApplySpawnRequest(EncounterJobOutput output, FaunaDirector faunaDirector, HectonDirectorAI bridge)
+        private bool ApplySpawnRequest(EncounterJobOutput output, FaunaDirector faunaDirector, HectonDirectorAI bridge)
         {
             EncounterThreatClass threatClass = (EncounterThreatClass)output.SpawnThreatClass;
             if (!faunaDirector.TrySpawnEncounterThreat(threatClass, output.SpawnPosition, output.SpawnVariantSeed, out GameObject spawnedInstance))
             {
                 RefundFailedSpawn(threatClass);
-                return;
+                return false;
             }
 
             RegisterTrackedEntity(spawnedInstance, threatClass);
             bridge.HandleThreatSpawned(threatClass, output.SpawnPosition);
+            return true;
         }
 
         private void ApplyDespawnRequests(EncounterJobOutput output, FaunaDirector faunaDirector)
@@ -770,6 +795,8 @@ namespace Hecton8.Systems.AI
         public float AcousticThreatLevel;
         public float AvgFrameTimeMs;
         public float SurfaceWorldY;
+        public int ForcedThreatClass;
+        public int ForcedThreatCount;
         public EncounterThreatAuthoringSnapshot ThreatAuthoring;
         public NativeArray<EncounterJobOutput> Output;
 
@@ -957,20 +984,26 @@ namespace Hecton8.Systems.AI
                 }
             }
 
-            bool spawnCadenceOpen = !criticalHealthSuppressed || ((((int)state.PacingPhaseTimer) & 0x3) == 0);
-            if ((EncounterPhase)state.ActivePhase != EncounterPhase.Relax &&
+            bool forceSpawn = ForcedThreatCount > 0 && ForcedThreatClass >= 0;
+            bool spawnCadenceOpen = forceSpawn || !criticalHealthSuppressed || ((((int)state.PacingPhaseTimer) & 0x3) == 0);
+            if ((forceSpawn || (EncounterPhase)state.ActivePhase != EncounterPhase.Relax) &&
                 ((EncounterBudgetFlags)state.BudgetFlags & (EncounterBudgetFlags.LoadSheddingActive | EncounterBudgetFlags.SpawnSuspended)) == 0 &&
                 activeEnemyCount < 32 &&
                 spawnCadenceOpen)
             {
-                if (TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring, out EncounterThreatClass threatClass) &&
-                    TryResolveSpawnCandidate(playerPosition, playerForward, out float3 spawnPosition))
+                EncounterThreatClass threatClass;
+                bool resolvedThreatClass = forceSpawn
+                    ? TryResolveForcedThreatClass(ForcedThreatClass, threatClassCounts, ThreatAuthoring, out threatClass)
+                    : TryResolveDesiredThreatClass(state.IntensityLevel, state.TokenBudget, criticalHealthSuppressed, threatClassCounts, ThreatAuthoring, out threatClass);
+                if (resolvedThreatClass &&
+                    TryResolveSpawnCandidate(playerPosition, playerForward, forceSpawn, out float3 spawnPosition))
                 {
                     float spawnCost = ResolveTokenCost(threatClass, ThreatAuthoring);
                     uint spawnSequence = state.SpawnSequence + 1u;
                     output.SpawnRequestCount = 1;
                     output.SpawnThreatClass = (int)threatClass;
                     output.SpawnPosition = spawnPosition;
+                    output.ForcedSpawnConsumed = forceSpawn ? 1 : 0;
                     output.SpawnVariantSeed = EncounterDirector.BuildDeterministicSeed(
                         new Vector3(playerPosition.x, playerPosition.y, playerPosition.z),
                         unchecked((int)spawnSequence),
@@ -990,7 +1023,7 @@ namespace Hecton8.Systems.AI
             Output[0] = output;
         }
 
-        private bool TryResolveSpawnCandidate(float3 playerPosition, float3 playerForward, out float3 spawnPosition)
+        private bool TryResolveSpawnCandidate(float3 playerPosition, float3 playerForward, bool preferFarEdge, out float3 spawnPosition)
         {
             spawnPosition = float3.zero;
             float bestScore = float.MinValue;
@@ -1000,6 +1033,9 @@ namespace Hecton8.Systems.AI
             for (int i = 0; i < directionCount; i++)
             {
                 float normalizedIndex = directionCount > 1 ? (float)i / (directionCount - 1) : 0f;
+                if (preferFarEdge && normalizedIndex < 0.65f)
+                    continue;
+
                 float radius = math.lerp(MinSpawnRadius, MaxSpawnRadius, normalizedIndex);
                 float3 candidate = playerPosition + CandidateDirections[i] * radius;
 
@@ -1024,6 +1060,19 @@ namespace Hecton8.Systems.AI
             }
 
             return found;
+        }
+
+        private static bool TryResolveForcedThreatClass(
+            int forcedThreatClass,
+            int4 threatClassCounts,
+            EncounterThreatAuthoringSnapshot authoring,
+            out EncounterThreatClass threatClass)
+        {
+            threatClass = (EncounterThreatClass)forcedThreatClass;
+            if (forcedThreatClass < 0)
+                return false;
+
+            return ResolveThreatClassCount(threatClass, threatClassCounts) < ResolveMaxSimultaneous(threatClass, authoring);
         }
 
         private bool HasEnemyClearance(float3 candidate)

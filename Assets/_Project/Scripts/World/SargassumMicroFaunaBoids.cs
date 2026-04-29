@@ -3253,6 +3253,65 @@ namespace Hecton8.World
                 GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
         }
 
+        internal void RegisterPredatorFearBurst(
+            Vector3 positionWS,
+            Vector3 directionWS,
+            float panicRadiusWS,
+            float durationSeconds,
+            float strength01)
+        {
+            if (_massiveThreats == null || _massiveThreats.Length == 0)
+                return;
+
+            float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            int targetIndex = -1;
+            float weakestEndTime = float.MaxValue;
+            for (int i = 0; i < _massiveThreats.Length; i++)
+            {
+                MassiveThreatData threat = _massiveThreats[i];
+                if (threat.EndTime <= absoluteSimulationTime)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                if ((threat.ThreatFlags & (uint)MassiveThreatFlags.LeviathanHuntPulse) != 0u)
+                    continue;
+
+                float mergeDistance = Mathf.Max(threat.PanicRadius, panicRadiusWS) * 0.45f;
+                if ((threat.Position - positionWS).sqrMagnitude <= mergeDistance * mergeDistance)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                if (threat.EndTime < weakestEndTime)
+                {
+                    weakestEndTime = threat.EndTime;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex < 0)
+                targetIndex = 0;
+
+            Vector3 resolvedDirection = directionWS.sqrMagnitude > 0.0001f ? directionWS.normalized : Vector3.forward;
+            _massiveThreats[targetIndex] = new MassiveThreatData
+            {
+                Position = positionWS,
+                InnerRadius = Mathf.Max(0.5f, boidBodyRadius * 1.5f),
+                PanicRadius = Mathf.Max(3f, panicRadiusWS),
+                Strength = Mathf.Clamp01(strength01),
+                EndTime = absoluteSimulationTime + Mathf.Max(0.15f, durationSeconds),
+                DirectionWS = resolvedDirection,
+                ThreatFlags = 0u
+            };
+
+            RecalculateMassiveThreatCount();
+            if (_massiveThreatBuffer != null)
+                GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
+        }
+
         private void UpdateFragmentationState(
             Vector3 playerPosition,
             Vector3 playerVelocity,

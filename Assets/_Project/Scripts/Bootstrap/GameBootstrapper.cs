@@ -2,13 +2,17 @@ using System;
 using System.IO;
 using System.Text;
 using Hecton8.Audio;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Input;
 using Hecton8.Optimization;
 using Hecton8.Physics;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
+using Hecton8.Systems.AI;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -32,6 +36,84 @@ namespace Hecton8.Bootstrap
         private const string BiosErrorMessageTemplate =
             "BIOS ERROR 0xBOOT\nEXPECTED: 00_BOOTSTRAP [0]\nDETECTED: {0} [{1}]\nACTION: FORCED RECOVERY";
         private static readonly UTF8Encoding _fatalBootCrashEncoding = new UTF8Encoding(false);
+        private enum BootstrapDependencyNode : byte
+        {
+            SystemDispatcher = 0,
+            GameTickManager = 1,
+            SaveManager = 2,
+            ObjectPoolManager = 3,
+            RenderDispatcher = 4,
+            SceneRuntimeService = 5,
+            EquipmentInteractionHandler = 6,
+            GlobalPhysicsStateManager = 7,
+            PhysicsApplySystem = 8,
+            DebrisManager = 9,
+            EnvironmentRuntimeContextService = 10,
+            OceanKinematicsRuntimeService = 11,
+            SpatialAudioManager = 12,
+            InputDispatcher = 13,
+            PlayerRuntimeContextService = 14,
+            PlayerInventoryManager = 15,
+            PlayerSensoryManager = 16,
+            Count = 17,
+        }
+
+        private readonly struct BootstrapDependencyEdge
+        {
+            public readonly BootstrapDependencyNode Source;
+            public readonly BootstrapDependencyNode Dependency;
+
+            public BootstrapDependencyEdge(BootstrapDependencyNode source, BootstrapDependencyNode dependency)
+            {
+                Source = source;
+                Dependency = dependency;
+            }
+        }
+
+        private static readonly string[] _bootstrapDependencyNodeNames =
+        {
+            "SystemDispatcher",
+            "GameTickManager",
+            "SaveManager",
+            "ObjectPoolManager",
+            "RenderDispatcher",
+            "SceneRuntimeService",
+            "EquipmentInteractionHandler",
+            "GlobalPhysicsStateManager",
+            "PhysicsApplySystem",
+            "DebrisManager",
+            "EnvironmentRuntimeContextService",
+            "OceanKinematicsRuntimeService",
+            "SpatialAudioManager",
+            "InputDispatcher",
+            "PlayerRuntimeContextService",
+            "PlayerInventoryManager",
+            "PlayerSensoryManager",
+        };
+
+        private static readonly BootstrapDependencyEdge[] _bootstrapDependencyEdges =
+        {
+            new BootstrapDependencyEdge(BootstrapDependencyNode.GameTickManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.SaveManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.ObjectPoolManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.RenderDispatcher, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.SceneRuntimeService, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.EquipmentInteractionHandler, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.GlobalPhysicsStateManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.PhysicsApplySystem, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.PhysicsApplySystem, BootstrapDependencyNode.GlobalPhysicsStateManager),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.DebrisManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.DebrisManager, BootstrapDependencyNode.ObjectPoolManager),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.DebrisManager, BootstrapDependencyNode.PhysicsApplySystem),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.EnvironmentRuntimeContextService, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.OceanKinematicsRuntimeService, BootstrapDependencyNode.EnvironmentRuntimeContextService),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.SpatialAudioManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.InputDispatcher, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerRuntimeContextService, BootstrapDependencyNode.InputDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerInventoryManager, BootstrapDependencyNode.PlayerRuntimeContextService),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerInventoryManager, BootstrapDependencyNode.ObjectPoolManager),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerSensoryManager, BootstrapDependencyNode.PlayerRuntimeContextService),
+        };
 
         private static GameBootstrapper _instance;
         private static bool _isBootstrapComplete;
@@ -109,6 +191,9 @@ namespace Hecton8.Bootstrap
 
                 RegisterSceneLoadGuard();
 
+                if (!ValidateBootstrapDependencyGraph())
+                    return false;
+
                 if (!TryRunBootstrapStep(BootstrapStepToken.Core, "Core", InitializeCoreLayer))
                     return false;
 
@@ -121,6 +206,7 @@ namespace Hecton8.Bootstrap
                 if (!TryRunBootstrapStep(BootstrapStepToken.UI, "UI", InitializeUILayer))
                     return false;
 
+                EnsureExtendedRegistryCoverageForActiveScene();
                 _isBootstrapComplete = true;
                 BootstrapBiosErrorOverlay.Hide();
                 return true;
@@ -151,6 +237,7 @@ namespace Hecton8.Bootstrap
 
         private void InitializeCoreLayer()
         {
+            NativeArenaAllocator.Initialize();
             EnsureSystemDispatcherRegistered();
             EnsureGameTickManagerRegistered();
             EnsureSaveServiceRegistered();
@@ -378,6 +465,77 @@ namespace Hecton8.Bootstrap
             _sceneGuardRegistered = true;
         }
 
+        private static bool ValidateBootstrapDependencyGraph()
+        {
+            const int nodeCount = (int)BootstrapDependencyNode.Count;
+            Span<int> inDegree = stackalloc int[nodeCount];
+            Span<BootstrapDependencyNode> queue = stackalloc BootstrapDependencyNode[nodeCount];
+
+            for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
+            {
+                BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
+                inDegree[(int)edge.Source]++;
+            }
+
+            int queueTail = 0;
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                if (inDegree[nodeIndex] == 0)
+                    queue[queueTail++] = (BootstrapDependencyNode)nodeIndex;
+            }
+
+            int processedCount = 0;
+            while (processedCount < queueTail)
+            {
+                BootstrapDependencyNode dependencyNode = queue[processedCount++];
+                for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
+                {
+                    BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
+                    if (edge.Dependency != dependencyNode)
+                        continue;
+
+                    int sourceIndex = (int)edge.Source;
+                    inDegree[sourceIndex]--;
+                    if (inDegree[sourceIndex] == 0)
+                        queue[queueTail++] = edge.Source;
+                }
+            }
+
+            if (processedCount == nodeCount)
+                return true;
+
+            StringBuilder cycleReport = new StringBuilder(512); // COLD ALLOC: StringBuilder[512] - bootstrap dependency-cycle fatal report - owner: GameBootstrapper
+            cycleReport.AppendLine("[GameBootstrapper] Circular dependency detected in bootstrap registration graph.");
+
+            for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
+            {
+                BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
+                if (inDegree[(int)edge.Source] <= 0 || inDegree[(int)edge.Dependency] <= 0)
+                    continue;
+
+                string sourceName = ResolveBootstrapDependencyNodeName(edge.Source);
+                string dependencyName = ResolveBootstrapDependencyNodeName(edge.Dependency);
+                cycleReport.Append(" - ");
+                cycleReport.Append(sourceName);
+                cycleReport.Append(" -> ");
+                cycleReport.Append(dependencyName);
+                cycleReport.AppendLine();
+                GlobalTelemetryBus.PublishBootstrapDependencyCycle(sourceName, dependencyName);
+            }
+
+            Debug.LogError(cycleReport.ToString());
+            BootstrapBiosErrorOverlay.Show("BIOS ERROR 0xBOOT_CYCLE\nACTION: SEE CONSOLE / TELEMETRY");
+            return false;
+        }
+
+        private static string ResolveBootstrapDependencyNodeName(BootstrapDependencyNode node)
+        {
+            int index = (int)node;
+            return index >= 0 && index < _bootstrapDependencyNodeNames.Length
+                ? _bootstrapDependencyNodeNames[index]
+                : node.ToString();
+        }
+
         private static void HandleSceneLoadedGuard(Scene scene, LoadSceneMode mode)
         {
             if (!Application.isPlaying)
@@ -385,6 +543,7 @@ namespace Hecton8.Bootstrap
 
             if (_isBootstrapComplete)
             {
+                EnsureExtendedRegistryCoverageForActiveScene();
                 BootstrapBiosErrorOverlay.Hide();
                 return;
             }
@@ -415,6 +574,65 @@ namespace Hecton8.Bootstrap
             GameStartContextHolder.Reset();
             SceneManager.LoadScene(BootstrapSceneName);
             return false;
+        }
+
+        private static void EnsureExtendedRegistryCoverageForActiveScene()
+        {
+            TryEnsureThermodynamicsRegistryCoverage();
+            TryEnsureLogisticsRegistryCoverage();
+            TryEnsureWorldGenRegistryCoverage();
+            TryEnsureEncounterDirectorRegistryCoverage();
+            TryEnsureQuestRegistryCoverage();
+        }
+
+        private static void TryEnsureThermodynamicsRegistryCoverage()
+        {
+            if (GlobalRegistry.ThermodynamicsService != null)
+                return;
+
+            AbyssalThermalManager manager = UnityEngine.Object.FindAnyObjectByType<AbyssalThermalManager>();
+            if (manager != null)
+                GlobalRegistry.RegisterThermodynamicsRuntime(manager);
+        }
+
+        private static void TryEnsureLogisticsRegistryCoverage()
+        {
+            if (GlobalRegistry.Logistics != null)
+                return;
+
+            ConstructionManager manager = UnityEngine.Object.FindAnyObjectByType<ConstructionManager>();
+            if (manager != null)
+                GlobalRegistry.RegisterLogisticsService(manager);
+        }
+
+        private static void TryEnsureWorldGenRegistryCoverage()
+        {
+            if (GlobalRegistry.WorldGen != null)
+                return;
+
+            WorldProceduralScatterDirector director = UnityEngine.Object.FindAnyObjectByType<WorldProceduralScatterDirector>();
+            if (director != null)
+                GlobalRegistry.RegisterWorldGenService(director);
+        }
+
+        private static void TryEnsureEncounterDirectorRegistryCoverage()
+        {
+            if (GlobalRegistry.EncounterDirector != null)
+                return;
+
+            HectonDirectorAI director = UnityEngine.Object.FindAnyObjectByType<HectonDirectorAI>();
+            if (director != null)
+                GlobalRegistry.RegisterEncounterDirectorService(director);
+        }
+
+        private static void TryEnsureQuestRegistryCoverage()
+        {
+            if (GlobalRegistry.QuestSystem != null)
+                return;
+
+            QuestManager questManager = UnityEngine.Object.FindAnyObjectByType<QuestManager>();
+            if (questManager != null)
+                GlobalRegistry.RegisterQuestRuntime(questManager);
         }
 
         private static void HandleFatalBootstrapException(string phaseName, Exception exception)

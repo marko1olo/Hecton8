@@ -283,8 +283,11 @@ namespace Hecton8.UI
             CanvasGroup canvasGroup = display.canvasGroup;
             if (canvasGroup == null)
             {
-                display.gameObject.SetActive(visible);
-                return;
+                canvasGroup = display.gameObject.GetComponent<CanvasGroup>();
+                if (canvasGroup == null)
+                    canvasGroup = display.gameObject.AddComponent<CanvasGroup>();
+
+                display.canvasGroup = canvasGroup;
             }
 
             canvasGroup.alpha = visible ? Mathf.Clamp01(alpha) : 0f;

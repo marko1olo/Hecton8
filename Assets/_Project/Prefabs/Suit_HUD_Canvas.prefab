@@ -2345,7 +2345,6 @@ GameObject:
   - component: {fileID: 6203717398458511907}
   - component: {fileID: 7915165240633007945}
   - component: {fileID: 918044680547512795}
-  - component: {fileID: 8109131789165046890}
   - component: {fileID: 5920354388807484853}
   - component: {fileID: 3896178095003698194}
   m_Layer: 5
@@ -2427,23 +2426,6 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
---- !u!114 &8109131789165046890
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2631486575886313125}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
-  m_IgnoreReversedGraphics: 1
-  m_BlockingObjects: 0
-  m_BlockingMask:
-    serializedVersion: 2
-    m_Bits: 255
 --- !u!114 &5920354388807484853
 MonoBehaviour:
   m_ObjectHideFlags: 0

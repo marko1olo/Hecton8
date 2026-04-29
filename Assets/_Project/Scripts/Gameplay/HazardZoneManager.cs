@@ -189,7 +189,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5695)]
-    public sealed class HazardZoneManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HazardZoneManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable
     {
         private const int HazardTypeCount = 4;
         private const int DefaultMaxZoneCount = 512;
@@ -514,10 +514,15 @@ namespace Hecton8.Gameplay
         private void AdvanceHazardStep(float dt)
         {
             ResolvePlayerContext();
-            ConsumeCompletedJob();
             ApplyToxicityDose(dt);
             ScheduleExposureJob();
             UpdateDiagnostics();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            ConsumeCompletedJob();
         }
 
         private void AllocateNativeState()
@@ -1230,6 +1235,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -1239,6 +1245,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

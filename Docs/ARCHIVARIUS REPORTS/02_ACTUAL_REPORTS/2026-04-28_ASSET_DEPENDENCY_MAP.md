@@ -86,10 +86,13 @@ public sealed class ContextualPhysicalIkRig : MonoBehaviour {}
 
 // HectonPlayerMovement.cs
 [RequireComponent(typeof(Rigidbody))]
-[RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(CapsuleCollider))]
 public sealed class HectonPlayerMovement : MonoBehaviour {}
 ```
+
+Obsolete note:
+- The Unity `CharacterController` requirement is incorrect and has been removed from the canonical kinematics documentation.
+- Current locomotion ownership is `Rigidbody + CapsuleCollider + HectonPlayerMovement + HectonPlayerMotor`.
 
 ---
 

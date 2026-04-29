@@ -16,7 +16,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
+    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IThermodynamicsService
     {
         public struct ThermalFlowSample
         {
@@ -42,6 +42,19 @@ namespace Hecton8.World
             public float SmokeDensity;
             public float CableRadiusWS;
             public int HazardSourceId;
+        }
+
+        private struct RuntimeVentRegistration
+        {
+            public long RuntimeKey;
+            public Vector3 PositionWS;
+            public Vector3 CableAnchorWS;
+            public float RadiusWS;
+            public float HeightWS;
+            public float UpdraftVelocity;
+            public float HeatIntensity;
+            public float SmokeDensity;
+            public float CableRadiusWS;
         }
 
         private struct ThermalVentGpuData
@@ -184,6 +197,26 @@ namespace Hecton8.World
         [SerializeField, Range(0.25f, 2f)]
         [Tooltip("Multiplier that expands the heat-hazard radius beyond the raw updraft radius.")]
         private float ventHeatRadiusMultiplier = 1.2f;
+
+        [SerializeField, Range(0.5f, 18f)]
+        [Tooltip("Seconds that all active hydrothermal vents stay in an eruptive state after a seismic trench opens.")]
+        private float seismicEruptionDuration = 7f;
+
+        [SerializeField, Range(1f, 4f)]
+        [Tooltip("Multiplier applied to vent updraft velocity while the seismic eruption window is active.")]
+        private float seismicEruptionUpdraftMultiplier = 2.2f;
+
+        [SerializeField, Range(1f, 6f)]
+        [Tooltip("Multiplier applied to vent heat intensity while the seismic eruption window is active.")]
+        private float seismicEruptionHeatMultiplier = 3.25f;
+
+        [SerializeField, Range(1f, 4f)]
+        [Tooltip("Multiplier applied to vent smoke density while the seismic eruption window is active.")]
+        private float seismicEruptionSmokeMultiplier = 2.4f;
+
+        [SerializeField, Range(1f, 4f)]
+        [Tooltip("Multiplier applied to vent pillar height while the seismic eruption window is active.")]
+        private float seismicEruptionHeightMultiplier = 1.75f;
 
         [Header("── Bio-Cable Zones ─────────────────")]
         [SerializeField, Range(0.5f, 1.5f)]
@@ -378,8 +411,14 @@ namespace Hecton8.World
         [Tooltip("Highest EMP nest charge currently active in the local abyssal field.")]
         private float _debugEmpCharge01;
 
+        [SerializeField]
+        [Tooltip("Seconds remaining on the current seismic vent-eruption window.")]
+        private float _debugSeismicEruptionSeconds;
+
         // COLD ALLOC: List<WorldZoneAnchor>[32] - reusable runtime cartographer anchor scratch list for abyssal vent selection - owner: AbyssalThermalManager
         private readonly List<WorldZoneAnchor> _zoneAnchors = new List<WorldZoneAnchor>(MaxAnchorScanCapacity);
+        // COLD ALLOC: List<RuntimeVentRegistration>[16] - bounded runtime hydrothermal vent registry injected by geology bridge - owner: AbyssalThermalManager
+        private readonly List<RuntimeVentRegistration> _runtimeVentRegistrations = new List<RuntimeVentRegistration>(MaxVentCapacity);
         // COLD ALLOC: Plane[6] - frustum planes for smoke visibility checks - owner: AbyssalThermalManager
         private readonly Plane[] _frustumPlanes = new Plane[6];
 
@@ -429,8 +468,87 @@ namespace Hecton8.World
         private bool _supportsGraphicsFence;
         private bool _smokeDispatchFenceArmed;
         private GraphicsFence _smokeDispatchFence;
+        private float _seismicEruptionTimer;
+        private float _seismicEruptionStrength01;
 
         public static AbyssalThermalManager Instance => _instance;
+
+        /// <summary>
+        /// True once the thermodynamics owner is registered in the global registry.
+        /// </summary>
+        public bool IsInitialized => ReferenceEquals(GlobalRegistry.ThermodynamicsService, this) &&
+                                     ReferenceEquals(GlobalRegistry.Thermodynamics, this);
+
+        internal static bool IsThermalBiomeFamilyId(string familyId)
+        {
+            if (string.IsNullOrWhiteSpace(familyId))
+                return false;
+
+            return string.Equals(familyId, "biome.family.tectonic_spine", System.StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(familyId, "biome.family.chemosynthetic_brine", System.StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(familyId, "biome.family.metallic_hadal", System.StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(familyId, "biome.family.rift_spine", System.StringComparison.OrdinalIgnoreCase)
+                   || string.Equals(familyId, "biome.family.volcanic_hadal", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        public void RegisterRuntimeVent(
+            long runtimeKey,
+            Vector3 positionWS,
+            float radiusWS,
+            float heightWS,
+            float updraftVelocity,
+            float heatIntensity,
+            float smokeDensity,
+            float cableRadiusWS)
+        {
+            if (runtimeKey == 0L)
+                return;
+
+            RuntimeVentRegistration registration = new RuntimeVentRegistration
+            {
+                RuntimeKey = runtimeKey,
+                PositionWS = positionWS,
+                CableAnchorWS = positionWS,
+                RadiusWS = Mathf.Max(2f, radiusWS),
+                HeightWS = Mathf.Max(4f, heightWS),
+                UpdraftVelocity = Mathf.Max(0.5f, updraftVelocity),
+                HeatIntensity = Mathf.Max(0.5f, heatIntensity),
+                SmokeDensity = Mathf.Max(0.1f, smokeDensity),
+                CableRadiusWS = Mathf.Max(2f, cableRadiusWS)
+            };
+
+            for (int i = 0; i < _runtimeVentRegistrations.Count; i++)
+            {
+                if (_runtimeVentRegistrations[i].RuntimeKey != runtimeKey)
+                    continue;
+
+                _runtimeVentRegistrations[i] = registration;
+                RebuildVentField();
+                return;
+            }
+
+            if (_runtimeVentRegistrations.Count >= MaxVentCapacity)
+                return;
+
+            _runtimeVentRegistrations.Add(registration);
+            RebuildVentField();
+        }
+
+        public void UnregisterRuntimeVent(long runtimeKey)
+        {
+            if (runtimeKey == 0L || _runtimeVentRegistrations.Count <= 0)
+                return;
+
+            for (int i = 0; i < _runtimeVentRegistrations.Count; i++)
+            {
+                if (_runtimeVentRegistrations[i].RuntimeKey != runtimeKey)
+                    continue;
+
+                _runtimeVentRegistrations.RemoveAt(i);
+                RebuildVentField();
+                return;
+            }
+        }
 
         private void Awake()
         {
@@ -456,6 +574,8 @@ namespace Hecton8.World
         private void OnEnable()
         {
             LaserCutter.OnBeamStateChanged += HandleCutterBeamStateChanged;
+            RandomEventEvents.OnSeismicShockwave += HandleSeismicShockwave;
+            RandomEventEvents.OnEventStarted += HandleRandomEventStarted;
             HectonFloatingOrigin.RegisterListener(this);
             ResolveDependencies();
             EnsureStorage();
@@ -468,10 +588,15 @@ namespace Hecton8.World
         private void OnDisable()
         {
             LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
+            RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
+            RandomEventEvents.OnEventStarted -= HandleRandomEventStarted;
             HectonFloatingOrigin.UnregisterListener(this);
             _cutterBeamActive = false;
             _activeCutterTransform = null;
             _debugCutterSeveringCable = false;
+            _seismicEruptionTimer = 0f;
+            _seismicEruptionStrength01 = 0f;
+            _debugSeismicEruptionSeconds = 0f;
             _hasSmokeData = false;
             _frameParity = 0;
             ClearHazardSources();
@@ -482,6 +607,8 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
+            RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
+            RandomEventEvents.OnEventStarted -= HandleRandomEventStarted;
             HectonFloatingOrigin.UnregisterListener(this);
             ClearHazardSources();
             ReleaseBuffers();
@@ -500,6 +627,14 @@ namespace Hecton8.World
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
         {
+            for (int i = 0; i < _runtimeVentRegistrations.Count; i++)
+            {
+                RuntimeVentRegistration registration = _runtimeVentRegistrations[i];
+                registration.PositionWS += runtimeOffset;
+                registration.CableAnchorWS += runtimeOffset;
+                _runtimeVentRegistrations[i] = registration;
+            }
+
             if (_ventStates != null)
             {
                 for (int i = 0; i < _ventStates.Length; i++)
@@ -581,6 +716,7 @@ namespace Hecton8.World
         {
             ResolveDependencies();
             float deltaTime = Mathf.Max(0f, dt);
+            UpdateSeismicEruption(deltaTime);
             if (_debugCutterSeveringCable && !_cutterBeamActive)
                 _debugCutterSeveringCable = false;
             if (_cableFluidDecalCooldown > 0f)
@@ -646,9 +782,12 @@ namespace Hecton8.World
             for (int i = 0; i < _activeVentCount; i++)
             {
                 ThermalVentState vent = _ventStates[i];
+                float eruptionBlend = ResolveSeismicEruptionBlend();
+                float eruptiveHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
+                float eruptiveUpdraftScale = Mathf.Lerp(1f, seismicEruptionUpdraftMultiplier, eruptionBlend);
                 float ventRadius = Mathf.Max(0.1f, vent.RadiusWS + effectiveRadius);
                 Vector2 planarDelta = new Vector2(positionWS.x - vent.PositionWS.x, positionWS.z - vent.PositionWS.z);
-                float planarDistance = planarDelta.magnitude;
+                float planarDistance = ComputeAupPlanarDistance(positionWS, vent.PositionWS);
                 if (planarDistance <= ventRadius)
                 {
                     float radialFalloff = 1f - planarDistance / Mathf.Max(ventRadius, 0.001f);
@@ -661,16 +800,16 @@ namespace Hecton8.World
                             ? new Vector3(-planarDelta.y / planarDistance, 0f, planarDelta.x / planarDistance)
                             : Vector3.zero;
                         sample.HasFlow = true;
-                        sample.Heat01 = Mathf.Max(sample.Heat01, vent.HeatIntensity * ventWeight);
+                        sample.Heat01 = Mathf.Max(sample.Heat01, vent.HeatIntensity * eruptiveHeatScale * ventWeight);
                         sample.DragMultiplier = Mathf.Max(sample.DragMultiplier, Mathf.Lerp(1f, ventDragMultiplier, ventWeight));
-                        sample.FlowVelocityWS += Vector3.up * (vent.UpdraftVelocity * ventWeight);
+                        sample.FlowVelocityWS += Vector3.up * (vent.UpdraftVelocity * eruptiveUpdraftScale * ventWeight);
                         sample.FlowVelocityWS += swirlDirection * (vent.UpdraftVelocity * 0.12f * ventWeight);
                     }
                 }
 
                 float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS + effectiveRadius);
                 Vector2 cableDelta = new Vector2(positionWS.x - vent.CableAnchorWS.x, positionWS.z - vent.CableAnchorWS.z);
-                float cableDistance = cableDelta.magnitude;
+                float cableDistance = ComputeAupPlanarDistance(positionWS, vent.CableAnchorWS);
                 if (cableDistance > cableRadius)
                     continue;
 
@@ -1034,14 +1173,14 @@ namespace Hecton8.World
             }
 
             WorldZoneAnchor.CopyActiveAnchorsTo(_zoneAnchors);
-            Vector3 playerPosition = playerTransform != null ? playerTransform.position : transform.position;
+            AbsoluteUniversePosition playerAup = ResolveAup(playerTransform != null ? playerTransform.position : transform.position);
             for (int i = 0; i < _zoneAnchors.Count && _activeVentCount < maxActiveVentCount; i++)
             {
                 WorldZoneAnchor anchor = _zoneAnchors[i];
                 if (!IsThermalAnchor(anchor))
                     continue;
 
-                float holdWeight = Mathf.Max(anchor.EvaluateHoldWeight(playerPosition), anchor.EvaluateActivationWeight(playerPosition));
+                float holdWeight = Mathf.Max(anchor.EvaluateHoldWeight(in playerAup), anchor.EvaluateActivationWeight(in playerAup));
                 if (holdWeight <= 0.01f)
                     continue;
 
@@ -1053,6 +1192,8 @@ namespace Hecton8.World
 
                 _activeCableZoneCount++;
             }
+
+            AppendRuntimeVentRegistrations();
 
             _debugActiveVentCount = _activeVentCount;
             _debugCableZoneCount = _activeCableZoneCount;
@@ -1097,6 +1238,31 @@ namespace Hecton8.World
             };
 
             _activeVentCount++;
+        }
+
+        private void AppendRuntimeVentRegistrations()
+        {
+            if (_runtimeVentRegistrations.Count <= 0)
+                return;
+
+            for (int i = 0; i < _runtimeVentRegistrations.Count && _activeVentCount < maxActiveVentCount; i++)
+            {
+                RuntimeVentRegistration registration = _runtimeVentRegistrations[i];
+                _ventStates[_activeVentCount] = new ThermalVentState
+                {
+                    PositionWS = registration.PositionWS,
+                    CableAnchorWS = registration.CableAnchorWS,
+                    RadiusWS = registration.RadiusWS,
+                    HeightWS = registration.HeightWS,
+                    UpdraftVelocity = registration.UpdraftVelocity,
+                    HeatIntensity = registration.HeatIntensity,
+                    SmokeDensity = registration.SmokeDensity,
+                    CableRadiusWS = registration.CableRadiusWS,
+                    HazardSourceId = BuildHazardSourceId(_activeVentCount)
+                };
+
+                _activeVentCount++;
+            }
         }
 
         private void RebuildEmpNestField()
@@ -1156,13 +1322,20 @@ namespace Hecton8.World
 
         private void UpdateHazardSources()
         {
+            float eruptionBlend = ResolveSeismicEruptionBlend();
+            float eruptiveHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
             for (int i = 0; i < MaxVentCapacity; i++)
             {
                 if (i < _activeVentCount)
                 {
                     ThermalVentState vent = _ventStates[i];
                     float hazardRadius = Mathf.Max(vent.RadiusWS, vent.RadiusWS * ventHeatRadiusMultiplier);
-                    HectonHazardManager.Register(vent.HazardSourceId, vent.PositionWS, vent.HeatIntensity, hazardRadius, HazardType.Heat);
+                    HectonHazardManager.Register(
+                        vent.HazardSourceId,
+                        vent.PositionWS,
+                        vent.HeatIntensity * eruptiveHeatScale,
+                        hazardRadius * Mathf.Lerp(1f, 1.45f, eruptionBlend),
+                        HazardType.Heat);
                 }
                 else
                 {
@@ -1179,6 +1352,11 @@ namespace Hecton8.World
 
         private void BuildVentGpuUploadData()
         {
+            float eruptionBlend = ResolveSeismicEruptionBlend();
+            float eruptiveUpdraftScale = Mathf.Lerp(1f, seismicEruptionUpdraftMultiplier, eruptionBlend);
+            float eruptiveHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
+            float eruptiveSmokeScale = Mathf.Lerp(1f, seismicEruptionSmokeMultiplier, eruptionBlend);
+            float eruptiveHeightScale = Mathf.Lerp(1f, seismicEruptionHeightMultiplier, eruptionBlend);
             for (int i = 0; i < MaxVentCapacity; i++)
             {
                 if (i < _activeVentCount)
@@ -1188,10 +1366,10 @@ namespace Hecton8.World
                     {
                         PositionWS = vent.PositionWS,
                         RadiusWS = vent.RadiusWS,
-                        HeightWS = vent.HeightWS,
-                        UpdraftVelocity = vent.UpdraftVelocity,
-                        HeatIntensity = vent.HeatIntensity,
-                        SmokeDensity = vent.SmokeDensity,
+                        HeightWS = vent.HeightWS * eruptiveHeightScale,
+                        UpdraftVelocity = vent.UpdraftVelocity * eruptiveUpdraftScale,
+                        HeatIntensity = vent.HeatIntensity * eruptiveHeatScale,
+                        SmokeDensity = vent.SmokeDensity * eruptiveSmokeScale,
                         Padding = Vector2.zero
                     };
                 }
@@ -1523,6 +1701,8 @@ namespace Hecton8.World
 
         private void UpdateSmokeBounds()
         {
+            float eruptionBlend = ResolveSeismicEruptionBlend();
+            float eruptiveHeightScale = Mathf.Lerp(1f, seismicEruptionHeightMultiplier, eruptionBlend);
             if (_activeVentCount <= 0)
             {
                 _smokeBounds = new Bounds(transform.position, Vector3.one * 4f);
@@ -1535,7 +1715,7 @@ namespace Hecton8.World
             for (int i = 0; i < _activeVentCount; i++)
             {
                 ThermalVentState vent = _ventStates[i];
-                Vector3 extents = new Vector3(vent.RadiusWS * 1.6f, vent.HeightWS, vent.RadiusWS * 1.6f);
+                Vector3 extents = new Vector3(vent.RadiusWS * 1.6f, vent.HeightWS * eruptiveHeightScale, vent.RadiusWS * 1.6f);
                 Vector3 ventMin = vent.PositionWS - extents;
                 Vector3 ventMax = vent.PositionWS + extents;
                 min = Vector3.Min(min, ventMin);
@@ -1774,6 +1954,28 @@ namespace Hecton8.World
             return AbsoluteUniversePosition.DistanceSq(in a, in b);
         }
 
+        private static float ComputeAupPlanarDistance(Vector3 runtimePositionA, Vector3 runtimePositionB)
+        {
+            AbsoluteUniversePosition a = ResolveAup(runtimePositionA);
+            return ComputeAupPlanarDistance(in a, runtimePositionB);
+        }
+
+        private static float ComputeAupPlanarDistance(in AbsoluteUniversePosition originAup, Vector3 runtimePositionB)
+        {
+            AbsoluteUniversePosition targetAup = ResolveAup(runtimePositionB);
+            double3 originAbsolute = originAup.ToAbsoluteDouble3();
+            double3 targetAbsolute = targetAup.ToAbsoluteDouble3();
+            double deltaX = targetAbsolute.x - originAbsolute.x;
+            double deltaZ = targetAbsolute.z - originAbsolute.z;
+            double planarDistanceSq = (deltaX * deltaX) + (deltaZ * deltaZ);
+            return planarDistanceSq > 0d ? (float)math.sqrt(planarDistanceSq) : 0f;
+        }
+
+        private static AbsoluteUniversePosition ResolveAup(Vector3 runtimePosition)
+        {
+            return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+        }
+
         private void UpdateCableVisuals(float dt)
         {
             if (_bioCableVisuals == null)
@@ -1782,6 +1984,7 @@ namespace Hecton8.World
             bool hasPlayer = playerTransform != null;
             bool transportActive = _playerTransportCoordinator != null && _playerTransportCoordinator.IsTransportActive();
             Vector3 playerPosition = hasPlayer ? playerTransform.position : transform.position;
+            AbsoluteUniversePosition playerAup = ResolveAup(playerPosition);
             Vector3 playerVelocity = hasPlayer && _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
 
             float hullRadius = Mathf.Max(0.1f, cableVisualHullRadius);
@@ -1816,7 +2019,7 @@ namespace Hecton8.World
                 float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS);
                 float activationDistance = Mathf.Min(cableRadius, cableVisualActivationDistance);
                 Vector2 planarDelta = new Vector2(playerPosition.x - cableAnchor.x, playerPosition.z - cableAnchor.z);
-                float planarDistance = planarDelta.magnitude;
+                float planarDistance = ComputeAupPlanarDistance(in playerAup, cableAnchor);
                 float chainCharge01 = ResolveEmpChainChargeForVent(i);
                 float empCharge01 = Mathf.Max(ResolveEmpChargeForVent(i), chainCharge01);
                 bool keepVisualAliveForEmp = empCharge01 > 0.0001f;
@@ -1962,7 +2165,7 @@ namespace Hecton8.World
                 ThermalVentState vent = _ventStates[i];
                 float cableRadius = Mathf.Max(0.1f, vent.CableRadiusWS);
                 Vector2 planarDelta = new Vector2(positionWS.x - vent.CableAnchorWS.x, positionWS.z - vent.CableAnchorWS.z);
-                float planarDistance = planarDelta.magnitude;
+                float planarDistance = ComputeAupPlanarDistance(positionWS, vent.CableAnchorWS);
                 if (planarDistance > cableRadius)
                     continue;
 
@@ -2030,17 +2233,75 @@ namespace Hecton8.World
             return IsThermalBiomeFamily(family);
         }
 
+        private void HandleRandomEventStarted(RandomEventType type, float intensity)
+        {
+            if (type != RandomEventType.ThermalEruption)
+                return;
+
+            TriggerSeismicEruption(Mathf.Clamp01(intensity), ventHeatIntensity * Mathf.Max(1f, intensity));
+        }
+
+        private void HandleSeismicShockwave(SeismicShockwaveEvent payload)
+        {
+            if (_runtimeVentRegistrations.Count <= 0 && _activeVentCount <= 0)
+                return;
+
+            float strength = Mathf.Clamp01(payload.ImpulseMagnitude / 20f);
+            TriggerSeismicEruption(strength, payload.ImpulseMagnitude);
+        }
+
+        private void TriggerSeismicEruption(float strength01, float impulseMagnitude)
+        {
+            if (_activeVentCount <= 0 && _runtimeVentRegistrations.Count <= 0)
+                return;
+
+            _seismicEruptionTimer = Mathf.Max(_seismicEruptionTimer, seismicEruptionDuration + Mathf.Clamp01(impulseMagnitude / 20f) * 2f);
+            _seismicEruptionStrength01 = Mathf.Max(_seismicEruptionStrength01, Mathf.Clamp01(strength01));
+            _debugSeismicEruptionSeconds = _seismicEruptionTimer;
+            MarkThermalGpuStateDirty();
+            UpdateHazardSources();
+            UpdateSmokeBounds();
+        }
+
+        private void UpdateSeismicEruption(float deltaTime)
+        {
+            if (_seismicEruptionTimer <= 0f)
+            {
+                _debugSeismicEruptionSeconds = 0f;
+                _seismicEruptionStrength01 = 0f;
+                return;
+            }
+
+            _seismicEruptionTimer = Mathf.Max(0f, _seismicEruptionTimer - deltaTime);
+            _debugSeismicEruptionSeconds = _seismicEruptionTimer;
+            if (_seismicEruptionTimer <= 0f)
+            {
+                _seismicEruptionStrength01 = 0f;
+                MarkThermalGpuStateDirty();
+                UpdateHazardSources();
+                UpdateSmokeBounds();
+            }
+            else
+            {
+                _forceVentBufferUpload = true;
+            }
+        }
+
+        private float ResolveSeismicEruptionBlend()
+        {
+            if (_seismicEruptionTimer <= 0f)
+                return 0f;
+
+            float normalizedTime = Mathf.Clamp01(_seismicEruptionTimer / Mathf.Max(0.25f, seismicEruptionDuration));
+            return Mathf.Clamp01(_seismicEruptionStrength01 * Mathf.SmoothStep(0f, 1f, normalizedTime));
+        }
+
         private static bool IsThermalBiomeFamily(HectonBiomeFamilyProfile family)
         {
             if (family == null || string.IsNullOrWhiteSpace(family.familyId))
                 return false;
 
-            string familyId = family.familyId;
-            return string.Equals(familyId, "biome.family.tectonic_spine", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(familyId, "biome.family.chemosynthetic_brine", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(familyId, "biome.family.metallic_hadal", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(familyId, "biome.family.rift_spine", System.StringComparison.OrdinalIgnoreCase)
-                   || string.Equals(familyId, "biome.family.volcanic_hadal", System.StringComparison.OrdinalIgnoreCase);
+            return IsThermalBiomeFamilyId(family.familyId);
         }
 
         private int BuildHazardSourceId(int ventIndex)
@@ -2050,6 +2311,7 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
+            GlobalRegistry.RegisterThermodynamicsRuntime(this);
 
             if (!_registeredTick)
             {
@@ -2066,6 +2328,7 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
+            GlobalRegistry.UnregisterThermodynamicsRuntime(this);
 
             if (_registeredTick)
             {

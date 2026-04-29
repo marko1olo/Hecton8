@@ -145,6 +145,7 @@ namespace Crest
 
                 if (_underwaterRenderer._mode != UnderwaterRenderer.Mode.FullScreen && _underwaterRenderer._volumeGeometry != null)
                 {
+                    descriptor = _underwaterRenderer.GetMaskDepthRTD(descriptor);
                     _volumeFrontFaceRT ??= RTHandles.Alloc(descriptor);
                     RenderingUtils.ReAllocateHandleIfNeeded(ref _volumeFrontFaceRT, descriptor);
                     _underwaterRenderer._volumeFrontFaceTarget = new(_volumeFrontFaceRT, mipLevel: 0, CubemapFace.Unknown, depthSlice: -1);
@@ -257,10 +258,7 @@ namespace Crest
             if (_underwaterRenderer._mode == UnderwaterRenderer.Mode.FullScreen || _underwaterRenderer._volumeGeometry == null)
                 return;
 
-            descriptor = cameraData.cameraTargetDescriptor;
-            descriptor.msaaSamples = 1;
-            descriptor.colorFormat = RenderTextureFormat.Depth;
-            descriptor.depthBufferBits = 24;
+            descriptor = _underwaterRenderer.GetMaskDepthRTD(cameraData.cameraTargetDescriptor);
 
             _volumeFrontFaceRT ??= RTHandles.Alloc(descriptor);
             RenderingUtils.ReAllocateHandleIfNeeded(ref _volumeFrontFaceRT, descriptor);

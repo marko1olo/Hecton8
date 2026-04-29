@@ -5,6 +5,7 @@
 #if CREST_URP
 #if UNITY_2023_3_OR_NEWER
 
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine.Rendering;
@@ -20,7 +21,26 @@ namespace Crest
             RTHandle rtHandle;
             TextureHandle textureHandle;
 
-            public readonly RTHandle RT { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => rtHandle ?? textureHandle; }
+            public readonly RTHandle RT
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get
+                {
+                    if (rtHandle != null)
+                    {
+                        return rtHandle;
+                    }
+
+                    try
+                    {
+                        return textureHandle;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        return null;
+                    }
+                }
+            }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static implicit operator Handle(RTHandle handle) => new() { rtHandle = handle };

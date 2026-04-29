@@ -2,7 +2,7 @@
 
 # Archive Index
 
-Date: `2026-04-17`
+Date: `2026-04-29`
 Status: `PENDING VERIFICATION`
 
 Purpose: top-level index for documentation bundles removed from active workspace use.
@@ -10,6 +10,7 @@ Purpose: top-level index for documentation bundles removed from active workspace
 ## Bundles
 
 - `2026-04-16_Workspace_Cleanup/` - large workspace cleanup pass covering root noise, old agent drops, stale audits, shell completion reports, and document reclassification.
+- `2026-04-29_Two_Day_Stale_Active_Docs/` - active `Docs/` items older than two days archived during the forensic compliance pass.
 
 ## Archive Rules
 

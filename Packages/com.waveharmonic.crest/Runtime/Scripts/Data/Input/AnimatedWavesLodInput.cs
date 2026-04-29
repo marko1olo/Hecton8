@@ -116,8 +116,6 @@ namespace WaveHarmonic.Crest
             _DisplacementPass = current ? DisplacementPass.LodIndependent : DisplacementPass.LodDependent;
         }
 
-#pragma warning disable CS0618 // Type or member is obsolete
-
         /// <inheritdoc/>
         void ISerializationCallbackReceiver.OnAfterDeserialize()
         {
@@ -127,8 +125,6 @@ namespace WaveHarmonic.Crest
                 _Version = 1;
             }
         }
-
-#pragma warning restore CS0618 // Type or member is obsolete
 
         /// <inheritdoc/>
         void ISerializationCallbackReceiver.OnBeforeSerialize()

@@ -370,6 +370,18 @@ namespace Hecton8.SaveSystem
                     changed = true;
                 }
 
+                if (hasDenseStorage &&
+                    (chunk.cellFlags == null || chunk.cellFlags.Length != VoxelDeltaChunkDTO.CellCount))
+                {
+                    chunk.cellFlags = new byte[VoxelDeltaChunkDTO.CellCount];
+                    changed = true;
+                }
+                else if (chunk.cellFlags == null)
+                {
+                    chunk.cellFlags = Array.Empty<byte>();
+                    changed = true;
+                }
+
                 int cellCapacity = chunk.cells != null ? chunk.cells.Length : 0;
                 int legacyCellCount = math.clamp(chunk.cellCount, 0, cellCapacity);
                 int denseCellCount = hasDenseStorage ? CountDirtyMaskBits(chunk.dirtyMaskWords) : 0;
@@ -862,7 +874,8 @@ namespace Hecton8.SaveSystem
             bool changed = false;
             if (dto.suppressedPlacementKeys == null || dto.suppressedPlacementKeys.Length < ProceduralWorldStateDTO.MaxSuppressedPlacements ||
                 dto.faunaStates == null || dto.faunaStates.Length < ProceduralWorldStateDTO.MaxFaunaStates ||
-                dto.geologySeamStates == null || dto.geologySeamStates.Length < ProceduralWorldStateDTO.MaxGeologySeamStates)
+                dto.geologySeamStates == null || dto.geologySeamStates.Length < ProceduralWorldStateDTO.MaxGeologySeamStates ||
+                dto.geologyCaveEntrances == null || dto.geologyCaveEntrances.Length < ProceduralWorldStateDTO.MaxGeologyCaveEntrances)
             {
                 dto.EnsureCapacity();
                 changed = true;
@@ -891,6 +904,14 @@ namespace Hecton8.SaveSystem
                 dto.geologySeamStateCount = clampedSeamStates;
                 changed = true;
                 steps.Add("procedural geology seam count clamped");
+            }
+
+            int clampedCaveEntrances = math.clamp(dto.geologyCaveEntranceCount, 0, dto.geologyCaveEntrances != null ? dto.geologyCaveEntrances.Length : 0);
+            if (clampedCaveEntrances != dto.geologyCaveEntranceCount)
+            {
+                dto.geologyCaveEntranceCount = clampedCaveEntrances;
+                changed = true;
+                steps.Add("procedural geology cave entrance count clamped");
             }
 
             return changed;

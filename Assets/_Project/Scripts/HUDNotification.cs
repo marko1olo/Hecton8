@@ -16,7 +16,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
-    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, INotificationEventListener
     {
         private static HUDNotification _ActiveInstance;
 
@@ -102,7 +102,7 @@ namespace Hecton8.UI
             if (font == null) font = TMP_Settings.defaultFontAsset;
 
             InventoryEvents.OnInventoryFull += OnInventoryFull;
-            NotificationEvents.OnPushNotification += OnPushNotification;
+            NotificationEvents.Register(this);
 
             EnsureBuilt();
             RegisterToTickManager();
@@ -115,7 +115,7 @@ namespace Hecton8.UI
 
             UnregisterFromTickManager();
             InventoryEvents.OnInventoryFull -= OnInventoryFull;
-            NotificationEvents.OnPushNotification -= OnPushNotification;
+            NotificationEvents.Unregister(this);
         }
 
         public void Tick(float deltaTime)
@@ -290,7 +290,15 @@ namespace Hecton8.UI
                 _notifText.text = displayMessage;
         }
 
-        private void OnPushNotification(string message, int severity)
+        public void OnNotificationEvent(in NotificationEventPayload payload)
+        {
+            if (!NotificationEvents.TryResolveMessage(payload.MessageHash, out string message))
+                return;
+
+            OnPushNotification(message, payload.Severity);
+        }
+
+        private void OnPushNotification(string message, ushort severity)
         {
             Enqueue(message, (NotificationSeverity)severity);
         }

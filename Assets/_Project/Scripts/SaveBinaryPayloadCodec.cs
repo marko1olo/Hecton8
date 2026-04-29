@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 
 namespace Hecton8.SaveSystem
 {
@@ -15,6 +17,8 @@ namespace Hecton8.SaveSystem
         private static readonly byte[] s_lz4CompressionDictionary = SaveCompressionDictionary.Bytes;
 
         internal static int Lz4CompressionDictionaryLength => s_lz4CompressionDictionary.Length;
+        internal static bool HasLz4CompressionDictionary => s_lz4CompressionDictionary != null &&
+                                                           s_lz4CompressionDictionary.Length == 64 * 1024;
 
         internal static void CopyLz4CompressionDictionary(byte* destinationPtr, int destinationCapacity)
         {
@@ -25,6 +29,42 @@ namespace Hecton8.SaveSystem
             {
                 UnsafeUtility.MemCpy(destinationPtr, sourcePtr, s_lz4CompressionDictionary.Length);
             }
+        }
+
+        internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
+        {
+            int safeChunkSize = math.max(1, chunkSizeMeters);
+            double chunkSize = safeChunkSize;
+            int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, safeChunkSize);
+            double3 absolute = position.ToAbsoluteDouble3();
+            double chunkOriginX = chunkId.x * chunkSize;
+            double chunkOriginY = chunkId.y * chunkSize;
+            double chunkOriginZ = chunkId.z * chunkSize;
+
+            ushort chunkKey = FoldSpatialChunkId(chunkId);
+            ushort quantizedY = QuantizeSpatialAxis(absolute.y - chunkOriginY, chunkSize);
+            ushort quantizedX = QuantizeSpatialAxis(absolute.x - chunkOriginX, chunkSize);
+            ushort quantizedZ = QuantizeSpatialAxis(absolute.z - chunkOriginZ, chunkSize);
+            return ((ulong)chunkKey << 48) |
+                   ((ulong)quantizedY << 32) |
+                   ((ulong)quantizedX << 16) |
+                   quantizedZ;
+        }
+
+        private static ushort FoldSpatialChunkId(int3 chunkId)
+        {
+            uint hash = unchecked((uint)((chunkId.x * 73856093) ^ (chunkId.y * 19349663) ^ (chunkId.z * 83492791)));
+            hash ^= hash >> 16;
+            return (ushort)hash;
+        }
+
+        private static ushort QuantizeSpatialAxis(double localMeters, double chunkSizeMeters)
+        {
+            if (chunkSizeMeters <= 0d)
+                return 0;
+
+            double normalized = math.clamp(localMeters / chunkSizeMeters, 0d, 1d);
+            return (ushort)math.clamp((int)math.round(normalized * ushort.MaxValue), 0, ushort.MaxValue);
         }
 
         internal static bool TryWrite(SaveData data, byte* destination, int capacity, out int bytesWritten, out string error)
@@ -523,7 +563,9 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.faunaStateCount)
                 && writer.WriteStructArray(value.faunaStates)
                 && writer.WriteInt(value.geologySeamStateCount)
-                && writer.WriteStructArray(value.geologySeamStates);
+                && writer.WriteStructArray(value.geologySeamStates)
+                && writer.WriteInt(value.geologyCaveEntranceCount)
+                && writer.WriteStructArray(value.geologyCaveEntrances);
         }
 
         private static bool ReadProceduralWorldState(ref BufferReader reader, int version, out ProceduralWorldStateDTO value)
@@ -540,8 +582,17 @@ namespace Hecton8.SaveSystem
             if (version < 44)
                 return true;
 
-            return reader.ReadInt(out value.geologySeamStateCount)
-                && reader.ReadStructArray(out value.geologySeamStates);
+            if (!reader.ReadInt(out value.geologySeamStateCount)
+                || !reader.ReadStructArray(out value.geologySeamStates))
+            {
+                return false;
+            }
+
+            if (version < 45)
+                return true;
+
+            return reader.ReadInt(out value.geologyCaveEntranceCount)
+                && reader.ReadStructArray(out value.geologyCaveEntrances);
         }
 
         private static bool WriteConstruction(ref BufferWriter writer, ConstructionDTO value)

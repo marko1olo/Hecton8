@@ -1244,9 +1244,7 @@ namespace DarkTonic.MasterAudio {
         public int InstanceId {
             get {
                 if (_instanceId < 0) {
-#pragma warning disable CS0618
                     _instanceId = GetInstanceID();
-#pragma warning restore CS0618
                 }
 
                 return _instanceId;

@@ -12,6 +12,15 @@ namespace Hecton8.Modding
 {
     internal static class ModLoader
     {
+        private sealed class BootstrapEventListener : ISceneBootstrapEventListener
+        {
+            public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+            {
+                if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
+                    HandleGameReady();
+            }
+        }
+
         private sealed class SaveEventListener : ISaveEventListener
         {
             public void OnSaveEvent(in SaveEventPayload payload)
@@ -36,6 +45,7 @@ namespace Hecton8.Modding
             new Dictionary<string, Func<IHectonMod>>(16);
         // COLD ALLOC: SaveEventListener[1] — static save-event bridge for mod runtime hooks — owner: ModLoader
         private static readonly SaveEventListener _saveEventListener = new SaveEventListener();
+        private static readonly BootstrapEventListener _bootstrapEventListener = new BootstrapEventListener();
 
         private static bool _bootstrapped;
         private static bool _modsInitialized;
@@ -116,7 +126,7 @@ namespace Hecton8.Modding
 
             SaveEvents.Register(_saveEventListener);
             CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
-            SceneBootstrap.OnGameReady += HandleGameReady;
+            SceneBootstrap.Register(_bootstrapEventListener);
             Application.quitting += HandleApplicationQuitting;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             _hooksInstalled = true;
@@ -129,7 +139,7 @@ namespace Hecton8.Modding
 
             SaveEvents.Unregister(_saveEventListener);
             CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
-            SceneBootstrap.OnGameReady -= HandleGameReady;
+            SceneBootstrap.Unregister(_bootstrapEventListener);
             Application.quitting -= HandleApplicationQuitting;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             _hooksInstalled = false;

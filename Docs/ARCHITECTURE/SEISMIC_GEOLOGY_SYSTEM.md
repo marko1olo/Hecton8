@@ -1,0 +1,83 @@
+# Seismic Geology System
+
+## Owners
+- `RandomEventSystem`: emits `SeismicShockwaveEvent`.
+- `WorldGenerativeGeologyVoxelBridgeDirector`: converts the shockwave payload into a deterministic trench line in runtime AUP.
+- `WorldGenerativeGeologyTerrainSeamApplier`: applies terrain deformation against the real MapMagic-owned terrain tiles through `TerrainData.SetHeightsDelayLOD`.
+- `HectonVoxelVolume`: applies the matching trench cut through the existing crater/delta path.
+- `AbyssalThermalManager`: amplifies registered runtime vents into eruption state when the seismic event fires.
+- `SedimentAccumulationManager`: captures exposed surfaces from above and accumulates a global sediment mask for lit shaders.
+
+## Runtime Trench Math
+The seismic trench is defined as one AUP line segment:
+
+`L = (AupStart, AupEnd)`
+
+For any terrain sample or voxel column at world position `P`, the cut amount is:
+
+`distanceToLine = distance(P.xz, segment(AupStart.xz, AupEnd.xz))`
+
+`cutDepth = max(0, TrenchDepth - distanceToLine * TrenchSlope)`
+
+This yields a V-profile because cut depth is maximal on the trench centerline and collapses linearly toward zero at the influence radius.
+
+## Terrain Path
+`WorldGenerativeGeologyTerrainSeamApplier` owns runtime terrain edits. During reconcile:
+- Start from the cached terrain baseline.
+- Union the dirty rect from seam plans and active seismic trenches.
+- For each heightmap sample in that rect, convert sample XZ to runtime world space.
+- Evaluate `cutDepth`.
+- Convert meters to normalized terrain height.
+- Apply `height -= cutDepthNormalized`.
+- Commit through `SetHeightsDelayLOD` and `SyncHeightmap`.
+
+This keeps terrain trenching inside the existing seam-authority owner instead of patching MapMagic core.
+
+## Voxel Path
+`WorldGenerativeGeologyVoxelBridgeDirector` broadcasts the same trench line to active `HectonVoxelVolume` instances.
+
+Each volume:
+- Converts the AUP trench line into the current runtime frame.
+- Samples along the line and laterally across the trench half-width.
+- Resolves the first solid ceiling/floor anchor in the SDF column.
+- Applies `CarveCrater(...)` subtractive stamps whose radius is derived from `cutDepth`.
+
+The real mutation path remains:
+
+`TryApplySeismicTrench -> CarveCrater -> VoxelDeltaProcessor -> mesh rebuild`
+
+No parallel voxel mutation path is introduced.
+
+## Vent Eruption Coupling
+`AbyssalThermalManager` listens to `RandomEventEvents.OnSeismicShockwave`.
+
+During the eruption window:
+- Runtime vents multiply heat, updraft, smoke density, and plume height.
+- Hazard radius and heat intensity scale with the same eruption blend.
+- The same GPU vent upload path publishes the stronger plume state to the existing smoke/VFX buffers.
+
+## Sediment Overlay
+The sediment system is a separate runtime owner because no existing geology owner publishes a reusable top-down exposure mask.
+
+Pipeline:
+1. A hidden orthographic camera captures visible surface height and up-facing normal data into `__HectonSedimentCapture`.
+2. `SedimentAccumulation.compute` accumulates a mask over time:
+   - exposed, upward-facing surfaces gain sediment
+   - occluded or changed surfaces lose sediment
+   - large height shifts decay old sediment to avoid trench ghosts
+3. `Hecton_CoreLit.hlsl` samples the global sediment mask by world XZ and blends procedural sand/silt tint plus dune normal into wreck, dry-zone, and voxel-rock shading.
+
+The accumulation kernel stores:
+- `R`: sediment amount
+- `G`: last observed normalized height
+- `B`: current exposure
+
+Height stability term:
+
+`heightMatch = 1 - saturate(abs(currentHeight - previousHeight) * invTolerance)`
+
+Accumulation term:
+
+`sedimentNext = saturate(sedimentPrev + exposed * deposition * heightMatch - erosion - geometryShiftPenalty)`
+
+This keeps the mask stable during slow buildup and sheds it when trenches or cave-ins reconfigure the surface.

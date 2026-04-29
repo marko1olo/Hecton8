@@ -25,12 +25,15 @@ namespace Hecton8.Construction
         private const int InitialSocketCapacity = 32;
         private const int InitialNodeCapacity = 64;
         private const int InitialEdgeCapacity = 128;
+        private const int InitialTemporaryBypassCapacity = 16;
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
 
         private readonly List<ModuleSocket> _socketBuffer;
         private readonly List<ModuleRecord> _moduleBuffer;
         private readonly List<EdgeRecord> _edgeBuffer;
+        private readonly List<TemporaryBypassRecord> _temporaryBypassBuffer;
         private readonly List<long> _submittedLinkIds;
+        private readonly Dictionary<uint, int> _moduleIndexByNodeId;
         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
 
         private NativeArray<LogisticsNetworkGraph.LogisticsNode> _nodes;
@@ -52,8 +55,12 @@ namespace Hecton8.Construction
             _moduleBuffer = new List<ModuleRecord>(safeModuleCapacity);
             // COLD ALLOC: List<EdgeRecord>[128] — reusable undirected base-link staging buffer for CSR rebuilds — owner: HabitatGraphManager
             _edgeBuffer = new List<EdgeRecord>(InitialEdgeCapacity);
+            // COLD ALLOC: List<TemporaryBypassRecord>[16] — authored runtime bypass links appended into habitat CSR rebuilds — owner: HabitatGraphManager
+            _temporaryBypassBuffer = new List<TemporaryBypassRecord>(InitialTemporaryBypassCapacity);
             // COLD ALLOC: List<Int64>[128] — submitted visual spline link ids for removal during rebuild — owner: HabitatGraphManager
             _submittedLinkIds = new List<long>(InitialEdgeCapacity);
+            // COLD ALLOC: Dictionary<UInt32,Int32>[64] — node-id to module-index lookup for temporary bypass stitching — owner: HabitatGraphManager
+            _moduleIndexByNodeId = new Dictionary<uint, int>(safeModuleCapacity);
             // COLD ALLOC: Dictionary<SocketKey,SocketMatchEntry>[128] — quantized socket lookup for zero-GC adjacency assembly — owner: HabitatGraphManager
             _socketLookup = new Dictionary<SocketKey, SocketMatchEntry>(InitialEdgeCapacity);
 
@@ -76,18 +83,23 @@ namespace Hecton8.Construction
             _graph.Dispose();
         }
 
+        internal int TemporaryBypassCount => _temporaryBypassBuffer.Count;
+
         internal void Rebuild(IReadOnlyList<GameObject> modules)
         {
             ClearVisualLinks();
             _moduleBuffer.Clear();
             _edgeBuffer.Clear();
+            _moduleIndexByNodeId.Clear();
             _socketLookup.Clear();
             _nodeCount = 0;
             _edgeCount = 0;
+            BaseDegradationSystem.BeginRuptureSync();
 
             if (modules == null || modules.Count <= 0)
             {
                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
+                BaseDegradationSystem.EndRuptureSync();
                 return;
             }
 
@@ -96,15 +108,19 @@ namespace Hecton8.Construction
             if (_nodeCount <= 0)
             {
                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
+                BaseDegradationSystem.EndRuptureSync();
                 return;
             }
 
             EnsureNodeCapacity(_nodeCount);
             BuildSocketAdjacency();
+            AppendTemporaryBypassEdges();
             BuildNodeRecords();
             BuildEdgeRecords();
+            PublishDegradationState();
             PublishGraphKernel();
             PublishVisualLinks();
+            BaseDegradationSystem.EndRuptureSync();
         }
 
         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
@@ -129,6 +145,71 @@ namespace Hecton8.Construction
                     BaseModule = baseModule,
                     Position = moduleObject.transform.position,
                     NodeId = unchecked((uint)EntityId.ToULong(moduleObject.GetEntityId()))
+                });
+
+                _moduleIndexByNodeId[unchecked((uint)EntityId.ToULong(moduleObject.GetEntityId()))] = _moduleBuffer.Count - 1;
+            }
+        }
+
+        internal bool TryAddTemporaryBypass(GameObject sourceModule, GameObject destinationModule)
+        {
+            if (sourceModule == null || destinationModule == null || ReferenceEquals(sourceModule, destinationModule))
+                return false;
+
+            uint sourceNodeId = unchecked((uint)EntityId.ToULong(sourceModule.GetEntityId()));
+            uint destinationNodeId = unchecked((uint)EntityId.ToULong(destinationModule.GetEntityId()));
+            if (sourceNodeId == 0u || destinationNodeId == 0u || sourceNodeId == destinationNodeId)
+                return false;
+
+            uint lowNodeId = math.min(sourceNodeId, destinationNodeId);
+            uint highNodeId = math.max(sourceNodeId, destinationNodeId);
+            for (int i = 0; i < _temporaryBypassBuffer.Count; i++)
+            {
+                TemporaryBypassRecord existing = _temporaryBypassBuffer[i];
+                if (existing.LowNodeId == lowNodeId && existing.HighNodeId == highNodeId)
+                    return false;
+            }
+
+            Vector3 sourcePosition = sourceModule.transform.position;
+            Vector3 destinationPosition = destinationModule.transform.position;
+            _temporaryBypassBuffer.Add(new TemporaryBypassRecord
+            {
+                LowNodeId = lowNodeId,
+                HighNodeId = highNodeId,
+                SourcePosition = sourceNodeId == lowNodeId ? sourcePosition : destinationPosition,
+                DestinationPosition = sourceNodeId == lowNodeId ? destinationPosition : sourcePosition
+            });
+            return true;
+        }
+
+        private void AppendTemporaryBypassEdges()
+        {
+            for (int bypassIndex = 0; bypassIndex < _temporaryBypassBuffer.Count; bypassIndex++)
+            {
+                TemporaryBypassRecord bypass = _temporaryBypassBuffer[bypassIndex];
+                if (!_moduleIndexByNodeId.TryGetValue(bypass.LowNodeId, out int lowIndex) ||
+                    !_moduleIndexByNodeId.TryGetValue(bypass.HighNodeId, out int highIndex) ||
+                    lowIndex == highIndex)
+                {
+                    continue;
+                }
+
+                Vector3 sourcePosition = _moduleBuffer[lowIndex].Position;
+                Vector3 destinationPosition = _moduleBuffer[highIndex].Position;
+                Vector3 direction = destinationPosition - sourcePosition;
+                float sqrMagnitude = direction.sqrMagnitude;
+                Vector3 forward = sqrMagnitude > 0.0001f ? direction / math.sqrt(sqrMagnitude) : Vector3.up;
+
+                _edgeBuffer.Add(new EdgeRecord
+                {
+                    SourceIndex = lowIndex,
+                    DestinationIndex = highIndex,
+                    StartSocketPosition = sourcePosition,
+                    EndSocketPosition = destinationPosition,
+                    StartForward = forward,
+                    EndForward = -forward,
+                    Flags = PipeRenderFlags.None,
+                    Severed = false
                 });
             }
         }
@@ -206,8 +287,9 @@ namespace Hecton8.Construction
 
         private void BuildEdgeRecords()
         {
-            int directedEdgeCount = _edgeBuffer.Count * 2;
-            EnsureEdgeCapacity(directedEdgeCount);
+            int reservedDirectedEdgeCapacity = math.max(1, _edgeBuffer.Count * 2);
+            EnsureEdgeCapacity(reservedDirectedEdgeCapacity);
+            int logicalDirectedEdgeCount = 0;
 
             for (int nodeIndex = 0; nodeIndex <= _nodeCount; nodeIndex++)
                 _edgeOffsets[nodeIndex] = 0;
@@ -222,6 +304,7 @@ namespace Hecton8.Construction
                 if (unsupported)
                 {
                     edge.Flags |= PipeRenderFlags.MaskRuptured;
+                    edge.Severed = true;
                     LogisticsNetworkGraph.LogisticsNode sourceNode = _nodes[edge.SourceIndex];
                     sourceNode.Flags |= LogisticsNodeFlags.Ruptured;
                     _nodes[edge.SourceIndex] = sourceNode;
@@ -234,8 +317,12 @@ namespace Hecton8.Construction
                 edge.Resistance = math.max(MinimumEdgeResistance, distance * EdgeResistancePerMeter);
                 _edgeBuffer[edgeIndex] = edge;
 
+                if (edge.Severed)
+                    continue;
+
                 _edgeOffsets[edge.SourceIndex + 1] = _edgeOffsets[edge.SourceIndex + 1] + 1;
                 _edgeOffsets[edge.DestinationIndex + 1] = _edgeOffsets[edge.DestinationIndex + 1] + 1;
+                logicalDirectedEdgeCount += 2;
             }
 
             for (int nodeIndex = 1; nodeIndex <= _nodeCount; nodeIndex++)
@@ -247,6 +334,8 @@ namespace Hecton8.Construction
             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
             {
                 EdgeRecord edge = _edgeBuffer[edgeIndex];
+                if (edge.Severed)
+                    continue;
 
                 int forwardWriteIndex = _edgeWriteCursor[edge.SourceIndex];
                 _edgeWriteCursor[edge.SourceIndex] = forwardWriteIndex + 1;
@@ -259,7 +348,23 @@ namespace Hecton8.Construction
                 _edgeResistance[reverseWriteIndex] = edge.Resistance;
             }
 
-            _edgeCount = directedEdgeCount;
+            _edgeCount = logicalDirectedEdgeCount;
+        }
+
+        private void PublishDegradationState()
+        {
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[nodeIndex];
+                if (module.ModuleObject == null)
+                    continue;
+
+                BaseDegradationSystem.SynchronizeNode(
+                    module.ModuleObject,
+                    module.NodeId,
+                    _nodes[nodeIndex].Flags,
+                    ResolveNodeRuptureWorldPoint(nodeIndex));
+            }
         }
 
         private void PublishGraphKernel()
@@ -275,6 +380,9 @@ namespace Hecton8.Construction
             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
             {
                 EdgeRecord edge = _edgeBuffer[edgeIndex];
+                if (edge.Severed)
+                    continue;
+
                 _graph.AddEdge(edge.SourceIndex, edge.DestinationIndex, edge.Resistance);
                 _graph.AddEdge(edge.DestinationIndex, edge.SourceIndex, edge.Resistance);
             }
@@ -311,6 +419,24 @@ namespace Hecton8.Construction
                 ConnectionSplineBatchRenderer.RemovePipeLink(_submittedLinkIds[i]);
 
             _submittedLinkIds.Clear();
+        }
+
+        private Vector3 ResolveNodeRuptureWorldPoint(int nodeIndex)
+        {
+            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+            {
+                EdgeRecord edge = _edgeBuffer[edgeIndex];
+                if (!LogisticsPipeBuilder.HasRupturedMask(edge.Flags))
+                    continue;
+
+                if (edge.SourceIndex == nodeIndex)
+                    return edge.StartSocketPosition;
+
+                if (edge.DestinationIndex == nodeIndex)
+                    return edge.EndSocketPosition;
+            }
+
+            return _moduleBuffer[nodeIndex].Position;
         }
 
         private bool HasIntermediateSupport(int sourceIndex, int destinationIndex, float3 start, float3 end)
@@ -551,6 +677,15 @@ namespace Hecton8.Construction
             public float3 EndForward;
             public float Resistance;
             public PipeRenderFlags Flags;
+            public bool Severed;
+        }
+
+        private struct TemporaryBypassRecord
+        {
+            public uint LowNodeId;
+            public uint HighNodeId;
+            public float3 SourcePosition;
+            public float3 DestinationPosition;
         }
 
         private readonly struct SocketKey : IEquatable<SocketKey>

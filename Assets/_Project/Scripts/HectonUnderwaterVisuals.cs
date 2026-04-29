@@ -773,7 +773,6 @@ namespace Hecton8.Environment
 #endif
 
         private float _editorSlowTickAccum;
-        private Material _runtimeSkyboxMaterial;
         private readonly RaycastHit[] _bottomSiltProbeHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] Ã¢â‚¬â€ reused seafloor probe buffer for underwater bottom-silt gating Ã¢â‚¬â€ owner: HectonUnderwaterVisuals
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -1202,13 +1201,31 @@ namespace Hecton8.Environment
                 return;
             }
 
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+            {
+                SuspendEditorWaterRendering();
+                DisableEditorSceneViewUnderwaterRenderer();
+                _editorSlowTickAccum = 0f;
+                return;
+            }
+
             if (!IsEditorPreviewActive())
             {
                 SuspendEditorWaterRendering();
+                DisableEditorSceneViewUnderwaterRenderer();
+                _editorSlowTickAccum = 0f;
                 return;
             }
 
             ResolveEditorCamera();
+
+            if (!ShouldRunEditorPreviewTick())
+            {
+                SuspendEditorWaterRendering();
+                DisableEditorSceneViewUnderwaterRenderer();
+                _editorSlowTickAccum = 0f;
+                return;
+            }
 
             if (ShouldSuppressEditorGameplayCrest())
             {
@@ -1238,6 +1255,15 @@ namespace Hecton8.Environment
         {
             return !EditorApplication.isCompiling &&
                    !EditorApplication.isUpdating;
+        }
+
+        private bool ShouldRunEditorPreviewTick()
+        {
+            float cameraDepth = ResolveActiveVisualCameraDepth();
+            if (cameraDepth <= VisualExitUnderwaterDepth)
+                return false;
+
+            return ResolveUnderwaterVisualStateForCameraDepth(cameraDepth, cameraDepth);
         }
 
         private void ResolveEditorCamera()
@@ -1820,22 +1846,11 @@ namespace Hecton8.Environment
             return skyMaterial;
         }
 
-        private void EnsureRuntimeSkyboxMaterial()
-        {
-            if (_runtimeSkyboxMaterial == skyMaterial || _runtimeSkyboxMaterial != skyMaterial)
-                return;
-
-            _runtimeSkyboxMaterial = new Material(skyMaterial); // COLD ALLOC: Material[1] â€” runtime underwater skybox clone for isolated RenderSettings ownership â€” owner: HectonUnderwaterVisuals
-            _runtimeSkyboxMaterial.name = $"{skyMaterial.name} (Runtime)";
-            _runtimeSkyboxMaterial.hideFlags = HideFlags.DontSave;
-        }
-
         private void ApplyRuntimeSkyboxOwnership()
         {
             if (!Application.isPlaying || skyMaterial == null)
                 return;
 
-            EnsureRuntimeSkyboxMaterial();
             if (ReferenceEquals(RenderSettings.skybox, skyMaterial))
                 return;
 
@@ -1844,26 +1859,8 @@ namespace Hecton8.Environment
 
         private void ReleaseRuntimeSkyboxMaterial()
         {
-            if (_runtimeSkyboxMaterial == skyMaterial || _runtimeSkyboxMaterial != skyMaterial)
-            {
-                if (skyMaterial != null && RenderSettings.skybox == null)
-                    RenderSettings.skybox = skyMaterial;
-
-                return;
-            }
-
-            if (_runtimeSkyboxMaterial == null)
-                return;
-
-            if (ReferenceEquals(RenderSettings.skybox, _runtimeSkyboxMaterial))
+            if (skyMaterial != null && RenderSettings.skybox == null)
                 RenderSettings.skybox = skyMaterial;
-
-            if (Application.isPlaying)
-                Destroy(_runtimeSkyboxMaterial);
-            else
-                DestroyImmediate(_runtimeSkyboxMaterial);
-
-            _runtimeSkyboxMaterial = null;
         }
 
         private void CacheRuntimeSkyMaterialReference()

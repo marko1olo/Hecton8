@@ -59,6 +59,8 @@ namespace Hecton8.Gameplay
         private const byte QuarterLoreStageBit = 1 << 0;
         private const byte HalfLoreStageBit = 1 << 1;
         private const byte FinalLoreStageBit = 1 << 2;
+        private const string DefaultResearchCategory = "Research";
+        private const string DefaultResearchSummary = "Scientific scan archived to the suit research ledger.";
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SCANNING
@@ -397,6 +399,7 @@ namespace Hecton8.Gameplay
 
             // Fire completion event with unlock ID
             OnScanComplete?.Invoke(unlockId);
+            EmitResearchDiscoveryEvent();
 
             // Fire final progress event
             OnProgressChanged?.Invoke(1f);
@@ -541,6 +544,28 @@ namespace Hecton8.Gameplay
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private void EmitResearchDiscoveryEvent()
+        {
+            string entryId = !string.IsNullOrWhiteSpace(unlockId)
+                ? unlockId.Trim()
+                : researchData != null && researchData.RewardItemHash != 0
+                    ? "research." + researchData.RewardItemHash
+                    : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(entryId))
+                return;
+
+            string title = HasCustomInteractText()
+                ? interactText.Trim().ToUpperInvariant()
+                : ResolveLocalized(LocalizationKeys.INTERACT_SCAN_FRAGMENT, DefaultInteractText).ToUpperInvariant();
+            ScanEvents.RaiseEntryDiscovered(
+                entryId,
+                title,
+                DefaultResearchCategory,
+                DefaultResearchSummary,
+                ScanEntryKind.Scannable);
         }
 
         private float ResolveScanDuration()

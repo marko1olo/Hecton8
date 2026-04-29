@@ -68,6 +68,10 @@ namespace Hecton8.Environment
             internal static readonly int DepthCollisionParamsId = Shader.PropertyToID("_MarineSnowDepthCollisionParams");
             internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
             internal static readonly int GlobalZBufferParamsId = Shader.PropertyToID("_ZBufferParams");
+            internal static readonly int SonarGlowTextureId = Shader.PropertyToID("_HectonMarineSnowSonarGlowTex");
+            internal static readonly int SonarGlowResultId = Shader.PropertyToID("_HectonMarineSnowSonarGlowResult");
+            internal static readonly int SonarGlowTexelSizeId = Shader.PropertyToID("_HectonMarineSnowSonarGlowTexelSize");
+            internal static readonly int SonarGlowParamsId = Shader.PropertyToID("_HectonMarineSnowSonarGlowParams");
         }
 
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -136,6 +140,14 @@ namespace Hecton8.Environment
         [Tooltip("Temporary turbulence multiplier applied while the global biolume surge bit remains active.")]
         [SerializeField, Range(1f, 4f)] private float biolumeSurgeTurbulenceMultiplier = 2f;
 
+        [Header("Sonar Glow")]
+        [Tooltip("Screen-space render-scale used by the low-resolution sonar-reactive plankton glow splatmap.")]
+        [SerializeField, Range(0.1f, 0.75f)] private float sonarGlowRenderScale = 0.35f;
+        [Tooltip("Simulation-side intensity scale used when particles intersect the active sonar pulse.")]
+        [SerializeField, Range(0f, 8f)] private float sonarGlowIntensity = 2.2f;
+        [Tooltip("Final underwater composite strength for sonar-reactive plankton glow.")]
+        [SerializeField, Range(0f, 4f)] private float sonarGlowCompositeStrength = 1.15f;
+
         private readonly FrameConstantsData[] _frameConstantsUpload = new FrameConstantsData[1]; // COLD ALLOC: FrameConstantsData[1] â€” reusable per-frame constant-buffer upload cache â€” owner: HectonMarineSnowRenderer
 
         private ParticleGpuData[] _bootstrapParticles;
@@ -146,6 +158,8 @@ namespace Hecton8.Environment
         private Camera _targetCameraComponent;
         private Bounds _drawBounds;
         private int _kernelIndex = -1;
+        private int _sonarGlowClearKernel = -1;
+        private int _sonarGlowAccumulateKernel = -1;
         private int _frameParity;
         private int _flowFieldResolution;
         private float _flowFieldCellSize;
@@ -163,6 +177,9 @@ namespace Hecton8.Environment
         private float _lastSubmergeImpulse;
         private Vector3 _flowFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
+        private RenderTexture _sonarGlowTexture;
+        private int _sonarGlowWidth;
+        private int _sonarGlowHeight;
         [SerializeField] private int _debugActiveParticleCount;
         [SerializeField] private float _debugAdaptiveRenderScale = 1f;
         [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
@@ -274,6 +291,7 @@ namespace Hecton8.Environment
             ApplyStaticBindingsIfNeeded();
             UpdateFrameConstants(math.max(0f, dt));
             DispatchSimulation();
+            DispatchSonarGlow();
             RenderMarineSnow();
             _frameParity ^= 1;
         }
@@ -334,6 +352,15 @@ namespace Hecton8.Environment
                 return;
             }
 
+            _sonarGlowClearKernel = marineSnowCompute.FindKernel("ClearSonarGlow");
+            _sonarGlowAccumulateKernel = marineSnowCompute.FindKernel("AccumulateSonarGlow");
+            if (_sonarGlowClearKernel < 0 || _sonarGlowAccumulateKernel < 0)
+            {
+                Debug.LogError("HectonMarineSnowRenderer: sonar glow kernels not found. Disabling compute marine snow.");
+                enabled = false;
+                return;
+            }
+
             // COLD ALLOC: ParticleGpuData[maxParticles] â€” maxParticles * 64B bootstrap upload cache, required to seed both GPU ping-pong buffers without runtime allocations â€” owner: HectonMarineSnowRenderer
             _bootstrapParticles = new ParticleGpuData[clampedParticleCount];
             // COLD ALLOC: GraphicsBuffer[maxParticles] â€” persistent marine-snow particle state ping-pong buffer A â€” owner: HectonMarineSnowRenderer
@@ -347,6 +374,7 @@ namespace Hecton8.Environment
             GraphicsBufferUploadUtility.UploadArray(_particleBufferA, _bootstrapParticles, clampedParticleCount);
             GraphicsBufferUploadUtility.UploadArray(_particleBufferB, _bootstrapParticles, clampedParticleCount);
             _frameParity = 0;
+            EnsureSonarGlowTexture();
             _buffersReady = true;
             _staticBindingsDirty = true;
         }
@@ -580,6 +608,22 @@ namespace Hecton8.Environment
                         _targetCameraComponent.pixelHeight));
                 marineSnowCompute.SetVector(ShaderIds.DepthCollisionParamsId, new Vector4(15f, 0.25f, 0.5f, 0f));
             }
+
+            Vector4 sonarGlowTexelSize = _sonarGlowTexture != null
+                ? new Vector4(1f / math.max(1, _sonarGlowWidth), 1f / math.max(1, _sonarGlowHeight), _sonarGlowWidth, _sonarGlowHeight)
+                : Vector4.zero;
+            Vector4 sonarGlowParams = new Vector4(
+                math.max(0f, sonarGlowIntensity),
+                math.max(0f, sonarGlowCompositeStrength),
+                65535f,
+                1f);
+
+            marineSnowCompute.SetVector(ShaderIds.SonarGlowTexelSizeId, sonarGlowTexelSize);
+            marineSnowCompute.SetVector(ShaderIds.SonarGlowParamsId, sonarGlowParams);
+            Shader.SetGlobalVector(ShaderIds.SonarGlowTexelSizeId, sonarGlowTexelSize);
+            Shader.SetGlobalVector(ShaderIds.SonarGlowParamsId, sonarGlowParams);
+            if (_sonarGlowTexture != null)
+                Shader.SetGlobalTexture(ShaderIds.SonarGlowTextureId, _sonarGlowTexture);
         }
 
         private static Vector4 ResolveFlowSynchronyParams()
@@ -604,6 +648,65 @@ namespace Hecton8.Environment
             marineSnowCompute.Dispatch(_kernelIndex, groupCount, 1, 1);
 
             marineSnowMaterial.SetBuffer(ShaderIds.ParticlesRenderId, writeBuffer);
+        }
+
+        private void DispatchSonarGlow()
+        {
+            EnsureSonarGlowTexture();
+            if (_sonarGlowTexture == null)
+                return;
+
+            marineSnowCompute.SetTexture(_sonarGlowClearKernel, ShaderIds.SonarGlowResultId, _sonarGlowTexture);
+            marineSnowCompute.SetTexture(_sonarGlowAccumulateKernel, ShaderIds.SonarGlowResultId, _sonarGlowTexture);
+            marineSnowCompute.SetBuffer(_sonarGlowAccumulateKernel, ShaderIds.ParticlesWriteId, _frameParity == 0 ? _particleBufferB : _particleBufferA);
+
+            int clearGroupsX = (_sonarGlowWidth + 7) / 8;
+            int clearGroupsY = (_sonarGlowHeight + 7) / 8;
+            marineSnowCompute.Dispatch(_sonarGlowClearKernel, clearGroupsX, clearGroupsY, 1);
+
+            int particleGroups = (_activeParticleCount + ThreadGroupSize - 1) / ThreadGroupSize;
+            marineSnowCompute.Dispatch(_sonarGlowAccumulateKernel, particleGroups, 1, 1);
+        }
+
+        private void EnsureSonarGlowTexture()
+        {
+            if (_targetCameraComponent == null)
+                return;
+
+            float renderScale = math.clamp(sonarGlowRenderScale, 0.1f, 1f);
+            int targetWidth = math.max(8, (int)math.ceil(_targetCameraComponent.pixelWidth * renderScale));
+            int targetHeight = math.max(8, (int)math.ceil(_targetCameraComponent.pixelHeight * renderScale));
+            if (_sonarGlowTexture != null && _sonarGlowWidth == targetWidth && _sonarGlowHeight == targetHeight)
+                return;
+
+            ReleaseSonarGlowTexture();
+
+            // COLD ALLOC: RenderTexture[sonarGlowWidth*sonarGlowHeight] — persistent sonar-reactive plankton splatmap — owner: HectonMarineSnowRenderer
+            _sonarGlowTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RInt, RenderTextureReadWrite.Linear)
+            {
+                name = "HectonMarineSnowSonarGlow",
+                enableRandomWrite = true,
+                useMipMap = false,
+                autoGenerateMips = false,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Point
+            };
+            _sonarGlowTexture.Create();
+            _sonarGlowWidth = targetWidth;
+            _sonarGlowHeight = targetHeight;
+            Shader.SetGlobalTexture(ShaderIds.SonarGlowTextureId, _sonarGlowTexture);
+        }
+
+        private void ReleaseSonarGlowTexture()
+        {
+            if (_sonarGlowTexture == null)
+                return;
+
+            _sonarGlowTexture.Release();
+            Destroy(_sonarGlowTexture);
+            _sonarGlowTexture = null;
+            _sonarGlowWidth = 0;
+            _sonarGlowHeight = 0;
         }
 
         private void RenderMarineSnow()
@@ -635,8 +738,13 @@ namespace Hecton8.Environment
             ReleaseBuffer(ref _particleBufferB);
             ReleaseBuffer(ref _flowFieldBuffer);
             ReleaseBuffer(ref _frameConstantsBuffer);
+            ReleaseSonarGlowTexture();
+            Shader.SetGlobalVector(ShaderIds.SonarGlowTexelSizeId, Vector4.zero);
+            Shader.SetGlobalVector(ShaderIds.SonarGlowParamsId, Vector4.zero);
             _buffersReady = false;
             _kernelIndex = -1;
+            _sonarGlowClearKernel = -1;
+            _sonarGlowAccumulateKernel = -1;
             _bootstrapParticles = null;
         }
 

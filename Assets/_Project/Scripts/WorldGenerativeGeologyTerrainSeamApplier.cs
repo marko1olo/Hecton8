@@ -8,6 +8,16 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4029)]
     public sealed class WorldGenerativeGeologyTerrainSeamApplier : MonoBehaviour, ISlowTickable
     {
+        private struct SeismicTrenchState
+        {
+            public long TrenchId;
+            public Vector3 AbsoluteStart;
+            public Vector3 AbsoluteEnd;
+            public float DepthMeters;
+            public float Slope;
+            public float InfluenceRadius;
+        }
+
         internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -38,6 +48,9 @@ namespace Hecton8.World
         [SerializeField] private float raiseStrength = 0.9f;
         [SerializeField] private float cutStrength = 0.8f;
         [SerializeField] private float rimSmoothing = 0.35f;
+        [SerializeField] private int maxActiveTrenches = 8;
+        [SerializeField] private float trenchRadiusPaddingMeters = 3f;
+        [SerializeField] private float trenchRimBlendStrength = 0.55f;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -48,8 +61,11 @@ namespace Hecton8.World
 
         private readonly Dictionary<int, TerrainApplyState> _terrainStates = new Dictionary<int, TerrainApplyState>(8);
         private readonly Dictionary<int, List<WorldGenerativeGeologySeamPlan>> _plansByTerrain = new Dictionary<int, List<WorldGenerativeGeologySeamPlan>>(8);
+        private readonly Dictionary<int, List<SeismicTrenchState>> _trenchesByTerrain = new Dictionary<int, List<SeismicTrenchState>>(8);
         private readonly HashSet<int> _touchedTerrainIds = new HashSet<int>();
         private readonly List<int> _knownTerrainIds = new List<int>(8);
+        private readonly List<SeismicTrenchState> _activeTrenches = new List<SeismicTrenchState>(8);
+        private readonly List<int> _terrainBucketScratch = new List<int>(8);
         private bool _registeredToTickManager;
 
         private void Awake()
@@ -100,11 +116,47 @@ namespace Hecton8.World
             integrationDirector = director;
         }
 
+        public void RegisterSeismicTrench(
+            long trenchId,
+            Vector3 absoluteStart,
+            Vector3 absoluteEnd,
+            float trenchDepth,
+            float trenchSlope,
+            float influenceRadius)
+        {
+            if (trenchId == 0L)
+                return;
+
+            SeismicTrenchState trench = new SeismicTrenchState
+            {
+                TrenchId = trenchId,
+                AbsoluteStart = absoluteStart,
+                AbsoluteEnd = absoluteEnd,
+                DepthMeters = Mathf.Max(1f, trenchDepth),
+                Slope = Mathf.Max(0.05f, trenchSlope),
+                InfluenceRadius = Mathf.Max(2f, influenceRadius)
+            };
+
+            for (int i = 0; i < _activeTrenches.Count; i++)
+            {
+                if (_activeTrenches[i].TrenchId != trenchId)
+                    continue;
+
+                _activeTrenches[i] = trench;
+                return;
+            }
+
+            if (_activeTrenches.Count >= Mathf.Max(1, maxActiveTrenches))
+                _activeTrenches.RemoveAt(0);
+
+            _activeTrenches.Add(trench);
+        }
+
         public void ReconcileTerrainSeams()
         {
             ResolveReferences();
 
-            ClearPlanBuckets();
+            ClearBuckets();
             _touchedTerrainIds.Clear();
             _debugAppliedTerrains = 0;
             _debugAppliedPlans = 0;
@@ -143,12 +195,22 @@ namespace Hecton8.World
                 acceptedPlans++;
             }
 
+            BucketActiveTrenches();
+
             for (int i = 0; i < _knownTerrainIds.Count; i++)
             {
                 int terrainId = _knownTerrainIds[i];
-                if (!_plansByTerrain.TryGetValue(terrainId, out List<WorldGenerativeGeologySeamPlan> terrainPlans) ||
-                    terrainPlans == null ||
-                    terrainPlans.Count == 0)
+                int terrainPlanCount = 0;
+                int trenchCount = 0;
+                List<WorldGenerativeGeologySeamPlan> terrainPlans = null;
+                List<SeismicTrenchState> terrainTrenches = null;
+                if (_plansByTerrain.TryGetValue(terrainId, out terrainPlans) && terrainPlans != null)
+                    terrainPlanCount = terrainPlans.Count;
+
+                if (_trenchesByTerrain.TryGetValue(terrainId, out terrainTrenches) && terrainTrenches != null)
+                    trenchCount = terrainTrenches.Count;
+
+                if (terrainPlanCount <= 0 && trenchCount <= 0)
                 {
                     continue;
                 }
@@ -156,9 +218,9 @@ namespace Hecton8.World
                 if (!_terrainStates.TryGetValue(terrainId, out TerrainApplyState state) || state == null || state.terrain == null)
                     continue;
 
-                ApplyTerrainPlans(state, terrainPlans);
+                ApplyTerrainPlans(state, terrainPlans, terrainTrenches);
                 _debugAppliedTerrains++;
-                _debugAppliedPlans += terrainPlans.Count;
+                _debugAppliedPlans += terrainPlanCount + trenchCount;
                 if (_debugTopTerrainId == 0)
                     _debugTopTerrainId = terrainId;
             }
@@ -187,7 +249,10 @@ namespace Hecton8.World
             _registeredToTickManager = false;
         }
 
-        private void ApplyTerrainPlans(TerrainApplyState state, List<WorldGenerativeGeologySeamPlan> plans)
+        private void ApplyTerrainPlans(
+            TerrainApplyState state,
+            List<WorldGenerativeGeologySeamPlan> plans,
+            List<SeismicTrenchState> trenches)
         {
             Terrain terrain = state.terrain;
             TerrainData terrainData = terrain.terrainData;
@@ -196,14 +261,30 @@ namespace Hecton8.World
 
             RectInt currentRect = default;
             bool hasCurrentRect = false;
-            for (int i = 0; i < plans.Count; i++)
+            if (plans != null)
             {
-                RectInt planRect = BuildPlanRect(terrain, plans[i]);
-                if (planRect.width <= 0 || planRect.height <= 0)
-                    continue;
+                for (int i = 0; i < plans.Count; i++)
+                {
+                    RectInt planRect = BuildPlanRect(terrain, plans[i]);
+                    if (planRect.width <= 0 || planRect.height <= 0)
+                        continue;
 
-                currentRect = hasCurrentRect ? UnionRect(currentRect, planRect) : planRect;
-                hasCurrentRect = true;
+                    currentRect = hasCurrentRect ? UnionRect(currentRect, planRect) : planRect;
+                    hasCurrentRect = true;
+                }
+            }
+
+            if (trenches != null)
+            {
+                for (int i = 0; i < trenches.Count; i++)
+                {
+                    RectInt trenchRect = BuildTrenchRect(terrain, trenches[i]);
+                    if (trenchRect.width <= 0 || trenchRect.height <= 0)
+                        continue;
+
+                    currentRect = hasCurrentRect ? UnionRect(currentRect, trenchRect) : trenchRect;
+                    hasCurrentRect = true;
+                }
             }
 
             if (!hasCurrentRect)
@@ -218,8 +299,17 @@ namespace Hecton8.World
                 return;
 
             float[,] patch = PreparePatchBuffer(state, applyRect);
-            for (int i = 0; i < plans.Count; i++)
-                ApplyPlanToPatch(terrain, applyRect, patch, plans[i]);
+            if (plans != null)
+            {
+                for (int i = 0; i < plans.Count; i++)
+                    ApplyPlanToPatch(terrain, applyRect, patch, plans[i]);
+            }
+
+            if (trenches != null)
+            {
+                for (int i = 0; i < trenches.Count; i++)
+                    ApplyTrenchToPatch(terrain, applyRect, patch, trenches[i]);
+            }
 
             terrainData.SetHeightsDelayLOD(applyRect.x, applyRect.y, patch);
             terrainData.SyncHeightmap();
@@ -284,6 +374,58 @@ namespace Hecton8.World
             float raise = upward * raiseStrength * Mathf.Clamp01(plan.terrainBlendWeight + plan.ridgeSignal * 0.25f);
             float cut = downward * cutStrength * Mathf.Clamp01(plan.terrainBlendWeight + plan.canyonSignal * 0.3f);
             return raise - cut;
+        }
+
+        private void ApplyTrenchToPatch(
+            Terrain terrain,
+            RectInt patchRect,
+            float[,] patch,
+            in SeismicTrenchState trench)
+        {
+            TerrainData terrainData = terrain.terrainData;
+            if (terrainData == null)
+                return;
+
+            Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
+            Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
+            Vector2 start = new Vector2(runtimeStart.x, runtimeStart.z);
+            Vector2 end = new Vector2(runtimeEnd.x, runtimeEnd.z);
+            Vector2 segment = end - start;
+            float segmentLengthSq = segment.sqrMagnitude;
+            if (segmentLengthSq <= 0.0001f)
+                return;
+
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrainData.size;
+            float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
+            float safeSlope = Mathf.Max(0.05f, trench.Slope);
+            float influenceRadius = Mathf.Max(trench.InfluenceRadius, trench.DepthMeters / safeSlope) + Mathf.Max(0f, trenchRadiusPaddingMeters);
+            float rimBlend = Mathf.Clamp01(trenchRimBlendStrength);
+
+            for (int patchZ = 0; patchZ < patchRect.height; patchZ++)
+            {
+                int heightmapZ = patchRect.y + patchZ;
+                float worldZ = terrainPosition.z + (heightmapZ / (float)(terrainData.heightmapResolution - 1)) * terrainSize.z;
+
+                for (int patchX = 0; patchX < patchRect.width; patchX++)
+                {
+                    int heightmapX = patchRect.x + patchX;
+                    float worldX = terrainPosition.x + (heightmapX / (float)(terrainData.heightmapResolution - 1)) * terrainSize.x;
+                    Vector2 point = new Vector2(worldX, worldZ);
+                    float distanceToLine = DistancePointToSegment(point, start, end, segment, segmentLengthSq);
+                    if (distanceToLine > influenceRadius)
+                        continue;
+
+                    float cutDepth = Mathf.Max(0f, trench.DepthMeters - distanceToLine * safeSlope);
+                    if (cutDepth <= 0.0001f)
+                        continue;
+
+                    float radial = 1f - Mathf.Clamp01(distanceToLine / influenceRadius);
+                    float rim = Mathf.Lerp(1f, Mathf.SmoothStep(0f, 1f, radial * radial), rimBlend);
+                    float normalizedDelta = -(cutDepth * cutStrength * rim * Mathf.SmoothStep(0f, 1f, radial)) * invHeight;
+                    patch[patchZ, patchX] = Mathf.Clamp01(patch[patchZ, patchX] + normalizedDelta);
+                }
+            }
         }
 
         private void RestoreUntouchedTerrains()
@@ -378,6 +520,12 @@ namespace Hecton8.World
                 // COLD ALLOC: one reusable plan bucket per touched terrain.
                 _plansByTerrain.Add(terrainId, new List<WorldGenerativeGeologySeamPlan>(8));
             }
+
+            if (!_trenchesByTerrain.ContainsKey(terrainId))
+            {
+                // COLD ALLOC: one reusable trench bucket per touched terrain.
+                _trenchesByTerrain.Add(terrainId, new List<SeismicTrenchState>(4));
+            }
         }
 
         private float[,] PreparePatchBuffer(TerrainApplyState state, RectInt rect)
@@ -424,7 +572,7 @@ namespace Hecton8.World
             }
         }
 
-        private void ClearPlanBuckets()
+        private void ClearBuckets()
         {
             for (int i = 0; i < _knownTerrainIds.Count; i++)
             {
@@ -434,6 +582,54 @@ namespace Hecton8.World
                     terrainPlans.Count > 0)
                 {
                     terrainPlans.Clear();
+                }
+
+                if (_trenchesByTerrain.TryGetValue(terrainId, out List<SeismicTrenchState> terrainTrenches) &&
+                    terrainTrenches != null &&
+                    terrainTrenches.Count > 0)
+                {
+                    terrainTrenches.Clear();
+                }
+            }
+        }
+
+        private void BucketActiveTrenches()
+        {
+            for (int trenchIndex = 0; trenchIndex < _activeTrenches.Count; trenchIndex++)
+            {
+                SeismicTrenchState trench = _activeTrenches[trenchIndex];
+                Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
+                Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
+                float lineLength = Vector3.Distance(runtimeStart, runtimeEnd);
+                int sampleCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / 48f) + 1, 2, 8);
+                _terrainBucketScratch.Clear();
+
+                for (int sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+                {
+                    float sampleT = sampleCount <= 1 ? 0f : sampleIndex / (float)(sampleCount - 1);
+                    Vector3 samplePosition = Vector3.Lerp(runtimeStart, runtimeEnd, sampleT);
+                    Terrain terrain = ResolveTerrainAt(samplePosition.x, samplePosition.z);
+                    if (terrain == null || terrain.terrainData == null)
+                        continue;
+
+                    int terrainId = unchecked((int)EntityId.ToULong(terrain.GetEntityId()));
+                    bool duplicate = false;
+                    for (int i = 0; i < _terrainBucketScratch.Count; i++)
+                    {
+                        if (_terrainBucketScratch[i] != terrainId)
+                            continue;
+
+                        duplicate = true;
+                        break;
+                    }
+
+                    if (duplicate)
+                        continue;
+
+                    _terrainBucketScratch.Add(terrainId);
+                    EnsureTerrainState(terrain, terrainId);
+                    _trenchesByTerrain[terrainId].Add(trench);
+                    _touchedTerrainIds.Add(terrainId);
                 }
             }
         }
@@ -464,6 +660,37 @@ namespace Hecton8.World
             return ClampRect(new RectInt(minX, minZ, maxX - minX + 1, maxZ - minZ + 1), maxIndex, maxIndex);
         }
 
+        private static RectInt BuildTrenchRect(Terrain terrain, in SeismicTrenchState trench)
+        {
+            TerrainData terrainData = terrain.terrainData;
+            if (terrainData == null || terrainData.heightmapResolution < 2)
+                return default;
+
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrainData.size;
+            if (terrainSize.x <= 0.001f || terrainSize.z <= 0.001f)
+                return default;
+
+            Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
+            Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
+            float radius = Mathf.Max(1f, trench.InfluenceRadius);
+            float minWorldX = Mathf.Min(runtimeStart.x, runtimeEnd.x) - radius;
+            float maxWorldX = Mathf.Max(runtimeStart.x, runtimeEnd.x) + radius;
+            float minWorldZ = Mathf.Min(runtimeStart.z, runtimeEnd.z) - radius;
+            float maxWorldZ = Mathf.Max(runtimeStart.z, runtimeEnd.z) + radius;
+
+            int maxIndex = terrainData.heightmapResolution - 1;
+            float minX01 = Mathf.Clamp01((minWorldX - terrainPosition.x) / terrainSize.x);
+            float maxX01 = Mathf.Clamp01((maxWorldX - terrainPosition.x) / terrainSize.x);
+            float minZ01 = Mathf.Clamp01((minWorldZ - terrainPosition.z) / terrainSize.z);
+            float maxZ01 = Mathf.Clamp01((maxWorldZ - terrainPosition.z) / terrainSize.z);
+            int minX = Mathf.FloorToInt(minX01 * maxIndex);
+            int maxX = Mathf.CeilToInt(maxX01 * maxIndex);
+            int minZ = Mathf.FloorToInt(minZ01 * maxIndex);
+            int maxZ = Mathf.CeilToInt(maxZ01 * maxIndex);
+            return ClampRect(new RectInt(minX, minZ, maxX - minX + 1, maxZ - minZ + 1), maxIndex, maxIndex);
+        }
+
         private static RectInt UnionRect(RectInt a, RectInt b)
         {
             int minX = Mathf.Min(a.xMin, b.xMin);
@@ -480,6 +707,21 @@ namespace Hecton8.World
             int xMax = Mathf.Clamp(rect.xMax, 0, maxX + 1);
             int yMax = Mathf.Clamp(rect.yMax, 0, maxY + 1);
             return new RectInt(xMin, yMin, Mathf.Max(0, xMax - xMin), Mathf.Max(0, yMax - yMin));
+        }
+
+        private static float DistancePointToSegment(
+            Vector2 point,
+            Vector2 start,
+            Vector2 end,
+            Vector2 segment,
+            float segmentLengthSq)
+        {
+            if (segmentLengthSq <= 0.0001f)
+                return Vector2.Distance(point, start);
+
+            float projected = Mathf.Clamp01(Vector2.Dot(point - start, segment) / segmentLengthSq);
+            Vector2 closest = start + segment * projected;
+            return Vector2.Distance(point, closest);
         }
 
         private Terrain ResolveTerrainAt(float x, float z)

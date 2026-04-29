@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08bf591172857124b9c2b86356d84407, type: 3}
+  m_Name: ToolMetadata_LogicSpanner
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Tools.ToolMetadata
+  toolID: tool_logic_spanner
+  tier: 1
+  category: 3
+  maxDurability: 950
+  durabilityDrainRate: 0.55
+  durabilityDrainRateSecondary: 0.12
+  criticalDurabilityThreshold: 20
+  efficiency: 1
+  speed: 1
+  energyConsumptionRate: 0.75
+  maxUpgradeSlots: 2
+  installedUpgrades:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  defaultModules:
+  - {fileID: 11400000, guid: 4addd39e796324343a05e87e6e1c71f5, type: 2}
+  - {fileID: 11400000, guid: c0125e190fe44b719ba77b8a649a60a2, type: 2}
+  - {fileID: 0}
+  authoredHeatGenerationRate: 0.12
+  authoredCooldownRate: 0.45
+  authoredRecoilImpulse: 0.35
+  repairCostFull: 8
+  repairResourceID: titanium
+  nameLocKey: TOOL_LOGIC_SPANNER_NAME
+  descriptionLocKey: TOOL_LOGIC_SPANNER_DESC

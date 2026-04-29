@@ -52,6 +52,9 @@ namespace Hecton8.Physics
         private const float DefaultIntegrityByteToCellDamageScale = 1.15f;
         private const float DefaultFatiguePressureThresholdKPa = 150f;
         private const byte DefaultFatigueIntegrityLossPerCycle = 4;
+        private const float DefaultCompressionDepthThresholdMeters = 4000f;
+        private const float DefaultCompressionFullPressureKPa = 60000f;
+        private const float DefaultMaximumVolumeCompressionNormalized = 0.15f;
         private const float RecentImpactSeverityDecayPerSecond = 2.8f;
         private const float Epsilon = 0.0001f;
 
@@ -207,6 +210,14 @@ namespace Hecton8.Physics
         [Tooltip("Permanent integrity bytes lost each time a compartment crosses into the high-pressure band.")]
         [SerializeField, Range(1, 32)] private byte fatigueIntegrityLossPerCycle = DefaultFatigueIntegrityLossPerCycle;
 
+        [Header("── Abyssal Compression ──────────────────")]
+        [Tooltip("Depth threshold in meters where ambient pressure starts compressing compartment volume.")]
+        [SerializeField, Min(0f)] private float compressionDepthThresholdMeters = DefaultCompressionDepthThresholdMeters;
+        [Tooltip("Hydrostatic pressure in kPa where maximum hull-volume compression is reached.")]
+        [SerializeField, Min(1f)] private float compressionFullPressureKPa = DefaultCompressionFullPressureKPa;
+        [Tooltip("Maximum normalized compartment-volume loss applied at full crush pressure.")]
+        [SerializeField, Range(0f, 0.5f)] private float maximumVolumeCompressionNormalized = DefaultMaximumVolumeCompressionNormalized;
+
         private bool _registered;
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
@@ -218,6 +229,7 @@ namespace Hecton8.Physics
         private float _cellBreachAreaSquareMeters;
         private float _fatiguePeakNormalized;
         private float _recentImpactSeverityNormalized;
+        private float _debugCompressionScale = 1f;
         private JobHandle _damageJobHandle;
         private IDamageSignalEmitter _damageEmitter;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only wiring â€” owner: SubmarineStructuralGrid
@@ -294,6 +306,7 @@ namespace Hecton8.Physics
                     _recentImpactSeverityNormalized - math.max(0f, fixedDeltaTime) * RecentImpactSeverityDecayPerSecond);
                 ConsumeCompletedDamageJob();
                 RefreshCompartmentMapping();
+                ApplyAbyssalCompression();
                 ApplyPressureCycleFatigue();
 
                 if (_damageJobRunning || _queuedImpactCount <= 0)
@@ -395,6 +408,30 @@ namespace Hecton8.Physics
                     }
                 }
             }
+        }
+
+        private void ApplyAbyssalCompression()
+        {
+            if (fluidDynamics == null)
+                return;
+
+            float depthMeters = math.max(0f, fluidDynamics.ExternalDepthMeters);
+            if (depthMeters <= math.max(0f, compressionDepthThresholdMeters))
+            {
+                _debugCompressionScale = 1f;
+                fluidDynamics.SetCompartmentCompressionScale(1f);
+                return;
+            }
+
+            float hydrostaticPressureKPa =
+                (depthMeters * 1025f * 9.80665f * 0.001f) + 101.325f;
+            float startPressureKPa =
+                (math.max(0f, compressionDepthThresholdMeters) * 1025f * 9.80665f * 0.001f) + 101.325f;
+            float pressureRangeKPa = math.max(1f, compressionFullPressureKPa - startPressureKPa);
+            float compression01 = math.saturate((hydrostaticPressureKPa - startPressureKPa) / pressureRangeKPa);
+            float compressionScale = 1f - (compression01 * math.saturate(maximumVolumeCompressionNormalized));
+            _debugCompressionScale = compressionScale;
+            fluidDynamics.SetCompartmentCompressionScale(compressionScale);
         }
 
         private void ResolveGridBounds()

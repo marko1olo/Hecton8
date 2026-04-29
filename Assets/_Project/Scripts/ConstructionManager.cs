@@ -35,7 +35,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ISaveable, ISlowTickable
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ISaveable, ISlowTickable, ILogisticsService
     {
         private const float SlowTickDeltaTime = 0.5f;
 
@@ -134,6 +134,11 @@ namespace Hecton8.Construction
 
         /// <summary>Read-only Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ñƒ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð´Ð»Ñ build tools/UI.</summary>
         public ModuleCatalog Catalog => catalog;
+
+        /// <summary>
+        /// True once the logistics owner is registered in the global registry.
+        /// </summary>
+        public bool IsInitialized => ReferenceEquals(GlobalRegistry.Logistics, this);
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
@@ -303,6 +308,21 @@ namespace Hecton8.Construction
                 pool.Despawn(module);
             else
                 Destroy(module);
+        }
+
+        /// <summary>
+        /// Inserts a temporary external bypass cable between two placed habitat modules and rebuilds the runtime graph.
+        /// </summary>
+        public bool TryCreateTemporaryBypass(BaseModule sourceModule, BaseModule destinationModule)
+        {
+            if (_habitatGraphManager == null || sourceModule == null || destinationModule == null)
+                return false;
+
+            if (!_habitatGraphManager.TryAddTemporaryBypass(sourceModule.gameObject, destinationModule.gameObject))
+                return false;
+
+            RefreshHabitatGraph();
+            return true;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -714,6 +734,7 @@ namespace Hecton8.Construction
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
+            GlobalRegistry.RegisterLogisticsService(this);
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
@@ -724,6 +745,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterLogisticsService(this);
             _tickRegistered = false;
         }
 

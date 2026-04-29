@@ -14,6 +14,13 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-6900)] // After MapMagicBridge (-7000) so water level exists before the first cache populate.
     public sealed class HectonCrestOceanDepthCacheBootstrap : MonoBehaviour, ISlowTickable, IOriginShiftListener
     {
+        private enum DepthCacheOwnershipMode
+        {
+            None = 0,
+            AuthoredLocal = 1,
+            GlobalFallback = 2
+        }
+
         private struct TerrainCoverage
         {
             public Bounds RuntimeBounds;
@@ -45,7 +52,7 @@ namespace Hecton8.World
         private const float MinimumCameraHeightAboveSeaLevel = 8f;
         private const float MinimumCoverageMeters = 256f;
         private const int DefaultDepthCacheResolution = 512;
-        private const int DefaultCaptureLayerMask = 1;
+        private const int DefaultCaptureLayerMask = 0;
         private const int RuntimeCameraBufferSize = 8;
         private const string DepthDebugOutputPath = "C:/hades/Hecton8/Temp/depth_debug.png";
         private static int TerrainLayer = int.MinValue;
@@ -90,6 +97,7 @@ namespace Hecton8.World
         [SerializeField] private Vector3 _debugCacheBoundsMinAUP;
         [SerializeField] private Vector3 _debugCacheBoundsMaxAUP;
         [SerializeField] private int _debugLastPopulateFrame = -1;
+        [SerializeField] private DepthCacheOwnershipMode _debugOwnershipMode;
         [SerializeField] private Vector3 _debugCaptureCameraPositionWS;
         [SerializeField] private float _debugCaptureCameraNear;
         [SerializeField] private float _debugCaptureCameraFar;
@@ -227,6 +235,11 @@ namespace Hecton8.World
 
         private void BootstrapDepthCache()
         {
+            EnsureRuntimeOceanViewOwnership();
+
+            if (TryUseAuthoredLocalDepthCaches(forcePopulate: true))
+                return;
+
             PurgeLegacyDepthCaches();
             EnsureDepthCacheComponent();
             ApplyDepthCacheSettings();
@@ -262,8 +275,12 @@ namespace Hecton8.World
                 return false;
             }
 
-            PurgeLegacyDepthCaches();
             EnsureRuntimeOceanViewOwnership();
+
+            if (TryUseAuthoredLocalDepthCaches(forcePopulate))
+                return true;
+
+            PurgeLegacyDepthCaches();
             OceanDepthCache depthCache = EnsureDepthCacheComponent();
             if (depthCache == null)
             {
@@ -338,6 +355,50 @@ namespace Hecton8.World
             oceanDepthCache = ResolvePreferredDepthCache();
 
             return oceanRenderer != null;
+        }
+
+        private bool TryUseAuthoredLocalDepthCaches(bool forcePopulate)
+        {
+            _depthCacheScratch.Clear();
+            GetComponentsInChildren(true, _depthCacheScratch);
+
+            bool foundAuthoredLocalDepthCache = false;
+            bool anyLocalCacheReady = false;
+            int activeAuthoredLocalDepthCacheCount = 0;
+
+            for (int depthCacheIndex = 0; depthCacheIndex < _depthCacheScratch.Count; depthCacheIndex++)
+            {
+                OceanDepthCache candidate = _depthCacheScratch[depthCacheIndex];
+                if (candidate == null)
+                    continue;
+
+                if (IsAuthoredLocalDepthCache(candidate))
+                {
+                    foundAuthoredLocalDepthCache = true;
+                    activeAuthoredLocalDepthCacheCount++;
+                    EnableDepthCache(candidate);
+
+                    if (forcePopulate || candidate.CacheTexture == null)
+                        candidate.PopulateCache(updateComponents: true);
+
+                    anyLocalCacheReady |= candidate.CacheTexture != null;
+                    continue;
+                }
+
+                DisableLegacyDepthCache(candidate);
+            }
+
+            if (!foundAuthoredLocalDepthCache)
+                return false;
+
+            oceanDepthCache = null;
+            _captureLayerMask = 0;
+            _hasConfiguredBounds = false;
+            _lastTerrainCount = activeAuthoredLocalDepthCacheCount;
+            _lastAppliedCameraMaxTerrainHeight = MinimumCameraHeightAboveSeaLevel;
+            _debugLastPopulateFrame = Time.frameCount;
+            UpdateDiagnosticsForAuthoredLocalDepthCaches(anyLocalCacheReady, activeAuthoredLocalDepthCacheCount, ResolveWaterLevel());
+            return true;
         }
 
         private void EnsureRuntimeOceanViewOwnership()
@@ -591,6 +652,25 @@ namespace Hecton8.World
                 legacyDepthCacheObject.SetActive(false);
         }
 
+        private bool IsAuthoredLocalDepthCache(OceanDepthCache candidate)
+        {
+            return candidate != null &&
+                   !(candidate.transform.parent == transform && candidate.name == DepthCacheChildName);
+        }
+
+        private void EnableDepthCache(OceanDepthCache depthCache)
+        {
+            if (depthCache == null)
+                return;
+
+            GameObject depthCacheObject = depthCache.gameObject;
+            if (!depthCacheObject.activeSelf)
+                depthCacheObject.SetActive(true);
+
+            if (!depthCache.enabled)
+                depthCache.enabled = true;
+        }
+
         private float ResolveFallbackWaterLevel()
         {
             if (mapMagicBridge == null)
@@ -689,6 +769,9 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics(bool cacheReady, int terrainCount, float waterLevel)
         {
+            _debugOwnershipMode = cacheReady && oceanDepthCache != null
+                ? DepthCacheOwnershipMode.GlobalFallback
+                : DepthCacheOwnershipMode.None;
             _debugCacheReady = cacheReady;
             _debugTerrainCount = terrainCount;
             _debugWaterLevel = waterLevel;
@@ -723,6 +806,9 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics(bool cacheReady, in DepthCacheAlignment alignment)
         {
+            _debugOwnershipMode = cacheReady && oceanDepthCache != null
+                ? DepthCacheOwnershipMode.GlobalFallback
+                : DepthCacheOwnershipMode.None;
             _debugCacheReady = cacheReady;
             _debugTerrainCount = alignment.TerrainCoverage.TerrainCount;
             _debugWaterLevel = alignment.RuntimeWaterLevel;
@@ -749,6 +835,33 @@ namespace Hecton8.World
             _debugLastCacheCenterWS = depthCacheTransform.position;
             _debugLastCacheScaleWS = depthCacheTransform.lossyScale;
             _debugCameraMaxTerrainHeight = alignment.CameraMaxTerrainHeight;
+        }
+
+        private void UpdateDiagnosticsForAuthoredLocalDepthCaches(bool cacheReady, int localDepthCacheCount, float waterLevel)
+        {
+            _debugOwnershipMode = cacheReady
+                ? DepthCacheOwnershipMode.AuthoredLocal
+                : DepthCacheOwnershipMode.None;
+            _debugCacheReady = cacheReady;
+            _debugTerrainCount = localDepthCacheCount;
+            _debugWaterLevel = waterLevel;
+            _debugAbsoluteWaterLevel = ResolveAbsoluteUniverseY(waterLevel);
+            _debugCaptureLayerMask = 0;
+            _debugTerrainBoundsMinWS = Vector3.zero;
+            _debugTerrainBoundsMaxWS = Vector3.zero;
+            _debugTerrainBoundsMinAUP = Vector3.zero;
+            _debugTerrainBoundsMaxAUP = Vector3.zero;
+            _debugCacheBoundsMinWS = Vector3.zero;
+            _debugCacheBoundsMaxWS = Vector3.zero;
+            _debugCacheBoundsMinAUP = Vector3.zero;
+            _debugCacheBoundsMaxAUP = Vector3.zero;
+            _debugLastCacheCenterWS = Vector3.zero;
+            _debugLastCacheScaleWS = Vector3.zero;
+            _debugCameraMaxTerrainHeight = 0f;
+            _debugCaptureCameraPositionWS = Vector3.zero;
+            _debugCaptureCameraNear = 0f;
+            _debugCaptureCameraFar = 0f;
+            _debugCaptureCameraOrthoSize = 0f;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -780,7 +893,7 @@ namespace Hecton8.World
 
         private static int ResolveCaptureLayerMask()
         {
-            int resolvedMask = LayerMask.GetMask("Default", "Terrain", "Terrain ");
+            int resolvedMask = LayerMask.GetMask("Terrain", "Terrain ");
             if (resolvedMask != 0)
                 return resolvedMask;
 

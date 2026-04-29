@@ -1267,20 +1267,18 @@ namespace Hecton8.Gameplay
         private void ApplyRecoilImpulse(Vector3 direction, float normalizedPower)
         {
             EnsurePlayerBindings();
-            if (_cachedPlayerRigidbody == null || normalizedPower <= 0f)
+            if (normalizedPower <= 0f)
                 return;
 
-            float mass = Mathf.Max(_cachedPlayerRigidbody.mass, 0.1f);
+            float mass = _cachedPlayerRigidbody != null ? Mathf.Max(_cachedPlayerRigidbody.mass, 0.1f) : 1f;
             float recoilScale = _cachedPlayerMovement != null && _cachedPlayerMovement.IsPlayerSubmerged ? submergedRecoilScale : 1f;
             float runtimeRecoil = GetRuntimeRecoilImpulse(recoilImpulseBase);
             float impulseMagnitude = Mathf.Min(MaxRecoilImpulse, (runtimeRecoil * normalizedPower * recoilScale) / mass);
             if (impulseMagnitude <= 0.0001f)
                 return;
 
-            if (ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, impulseMagnitude))
-                return;
-
-            PhysicsForceRouter.QueueForce(_cachedPlayerRigidbody, -direction * impulseMagnitude, ForceMode.Impulse);
+            TryQueuePlayerToolRecoil(direction, impulseMagnitude);
+            QueueToolHapticFeedback(normalizedPower, 1f);
         }
 
         private float ResolvePassiveCoolingBonus()

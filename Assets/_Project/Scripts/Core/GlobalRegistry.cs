@@ -1,9 +1,13 @@
 using System;
+using Hecton8.Construction;
+using Hecton8.Quest;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
+using Hecton8.Systems.AI;
 using Hecton8.Tools;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -40,6 +44,15 @@ namespace Hecton8.Core
         private static IInteractionSignalService _interactionSignals;
         private static IDebrisService _debris;
         private static IEcosystemDirectorService _ecosystemDirector;
+        private static IThermodynamicsService _thermodynamicsService;
+        private static ILogisticsService _logistics;
+        private static IWorldGenService _worldGen;
+        private static IEncounterDirectorService _encounterDirector;
+        private static IQuestSystem _questSystem;
+        private static HectonFluidEngine _fluidRuntime;
+        private static AbyssalThermalManager _thermodynamicsRuntime;
+        private static HectonNarrativeDirector _narrativeDirectorRuntime;
+        private static QuestManager _questRuntime;
         private static GameTickManager _tickManager;
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
@@ -153,6 +166,51 @@ namespace Hecton8.Core
         public static IEcosystemDirectorService EcosystemDirector => _ecosystemDirector;
 
         /// <summary>
+        /// Registered thermodynamics service slot.
+        /// </summary>
+        public static IThermodynamicsService ThermodynamicsService => _thermodynamicsService;
+
+        /// <summary>
+        /// Registered logistics/build-network service slot.
+        /// </summary>
+        public static ILogisticsService Logistics => _logistics;
+
+        /// <summary>
+        /// Registered world-generation service slot.
+        /// </summary>
+        public static IWorldGenService WorldGen => _worldGen;
+
+        /// <summary>
+        /// Registered encounter-direction service slot.
+        /// </summary>
+        public static IEncounterDirectorService EncounterDirector => _encounterDirector;
+
+        /// <summary>
+        /// Registered quest-system service slot.
+        /// </summary>
+        public static IQuestSystem QuestSystem => _questSystem;
+
+        /// <summary>
+        /// Registered fluid simulation runtime owner.
+        /// </summary>
+        public static HectonFluidEngine Fluid => _fluidRuntime;
+
+        /// <summary>
+        /// Registered thermodynamic simulation runtime owner.
+        /// </summary>
+        public static AbyssalThermalManager Thermodynamics => _thermodynamicsRuntime;
+
+        /// <summary>
+        /// Registered narrative director runtime owner.
+        /// </summary>
+        public static HectonNarrativeDirector NarrativeDirector => _narrativeDirectorRuntime;
+
+        /// <summary>
+        /// Registered quest runtime owner.
+        /// </summary>
+        public static QuestManager Quest => _questRuntime;
+
+        /// <summary>
         /// Registered tick-manager owner.
         /// </summary>
         public static GameTickManager TickManager => _tickManager;
@@ -215,6 +273,15 @@ namespace Hecton8.Core
             _interactionSignals = null;
             _debris = null;
             _ecosystemDirector = null;
+            _thermodynamicsService = null;
+            _logistics = null;
+            _worldGen = null;
+            _encounterDirector = null;
+            _questSystem = null;
+            _fluidRuntime = null;
+            _thermodynamicsRuntime = null;
+            _narrativeDirectorRuntime = null;
+            _questRuntime = null;
             _tickManager = null;
             _dispatcher = null;
             _renderDispatcher = null;
@@ -443,6 +510,89 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative thermodynamics service.
+        /// </summary>
+        /// <param name="instance">Thermodynamics service instance.</param>
+        public static void RegisterThermodynamicsService(IThermodynamicsService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _thermodynamicsService, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative logistics/build-network service.
+        /// </summary>
+        /// <param name="instance">Logistics service instance.</param>
+        public static void RegisterLogisticsService(ILogisticsService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _logistics, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative world-generation service.
+        /// </summary>
+        /// <param name="instance">World-generation service instance.</param>
+        public static void RegisterWorldGenService(IWorldGenService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _worldGen, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative encounter-direction service.
+        /// </summary>
+        /// <param name="instance">Encounter-direction service instance.</param>
+        public static void RegisterEncounterDirectorService(IEncounterDirectorService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _encounterDirector, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative quest-system service.
+        /// </summary>
+        /// <param name="instance">Quest-system service instance.</param>
+        public static void RegisterQuestSystem(IQuestSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _questSystem, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative fluid simulation runtime owner.
+        /// </summary>
+        public static void RegisterFluidRuntime(HectonFluidEngine instance)
+        {
+            RegisterService(ref _fluidRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative thermodynamic simulation runtime owner.
+        /// </summary>
+        public static void RegisterThermodynamicsRuntime(AbyssalThermalManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _thermodynamicsRuntime, instance);
+
+            if (instance is IThermodynamicsService thermodynamicsService)
+                RegisterThermodynamicsService(thermodynamicsService);
+        }
+
+        /// <summary>
+        /// Registers the authoritative narrative runtime owner.
+        /// </summary>
+        public static void RegisterNarrativeDirectorRuntime(HectonNarrativeDirector instance)
+        {
+            RegisterService(ref _narrativeDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative quest runtime owner.
+        /// </summary>
+        public static void RegisterQuestRuntime(QuestManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _questRuntime, instance);
+
+            if (instance is IQuestSystem questSystem)
+                RegisterQuestSystem(questSystem);
+        }
+
+        /// <summary>
         /// Unregisters the current input service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -622,6 +772,89 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current thermodynamics service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterThermodynamicsService(IThermodynamicsService instance)
+        {
+            UnregisterService(ref _thermodynamicsService, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current logistics/build-network service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterLogisticsService(ILogisticsService instance)
+        {
+            UnregisterService(ref _logistics, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current world-generation service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterWorldGenService(IWorldGenService instance)
+        {
+            UnregisterService(ref _worldGen, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current encounter-direction service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterEncounterDirectorService(IEncounterDirectorService instance)
+        {
+            UnregisterService(ref _encounterDirector, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current quest-system service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterQuestSystem(IQuestSystem instance)
+        {
+            UnregisterService(ref _questSystem, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current fluid simulation runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterFluidRuntime(HectonFluidEngine instance)
+        {
+            UnregisterService(ref _fluidRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current thermodynamic simulation runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterThermodynamicsRuntime(AbyssalThermalManager instance)
+        {
+            UnregisterService(ref _thermodynamicsRuntime, instance);
+
+            if (instance is IThermodynamicsService thermodynamicsService)
+                UnregisterThermodynamicsService(thermodynamicsService);
+        }
+
+        /// <summary>
+        /// Unregisters the current narrative runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterNarrativeDirectorRuntime(HectonNarrativeDirector instance)
+        {
+            UnregisterService(ref _narrativeDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current quest runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterQuestRuntime(QuestManager instance)
+        {
+            UnregisterService(ref _questRuntime, instance);
+
+            if (instance is IQuestSystem questSystem)
+                UnregisterQuestSystem(questSystem);
+        }
+
+        /// <summary>
         /// Unregisters the current tick-manager owner if the owner matches.
         /// </summary>
         /// <param name="instance">Tick-manager owner requesting unregistration.</param>
@@ -715,6 +948,44 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers an end-of-frame owner into its dispatcher late-frame lane.
+        /// </summary>
+        /// <param name="item">Late-frame owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void RegisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            if (!Application.isPlaying)
+                return;
+
+            if (!TryEnsureDispatcherRegistration())
+                return;
+
+            SystemDispatcher.Register(item, layer);
+        }
+
+        /// <summary>
+        /// Registers a post-fixed-step owner into its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Post-fixed owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void RegisterPostFixedTickable(IPostFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            if (!Application.isPlaying)
+                return;
+
+            if (!TryEnsureDispatcherRegistration())
+                return;
+
+            SystemDispatcher.Register(item, layer);
+        }
+
+        /// <summary>
         /// Unregisters an update owner from both the global bucket and its dispatcher lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -753,6 +1024,32 @@ namespace Hecton8.Core
                 return;
 
             _slowTickables.Unregister(item);
+            SystemDispatcher.Unregister(item, layer);
+        }
+
+        /// <summary>
+        /// Unregisters an end-of-frame owner from its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Late-frame owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void UnregisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
+            SystemDispatcher.Unregister(item, layer);
+        }
+
+        /// <summary>
+        /// Unregisters a post-fixed-step owner from its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Post-fixed owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        public static void UnregisterPostFixedTickable(IPostFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return;
+
             SystemDispatcher.Unregister(item, layer);
         }
 
@@ -800,6 +1097,14 @@ namespace Hecton8.Core
             }
 #endif
             slot = instance;
+        }
+
+        private static void RegisterServiceAllowSameInstance<T>(ref T slot, T instance) where T : class
+        {
+            if (ReferenceEquals(slot, instance))
+                return;
+
+            RegisterService(ref slot, instance);
         }
 
         private static void UnregisterService<T>(ref T slot, T instance) where T : class

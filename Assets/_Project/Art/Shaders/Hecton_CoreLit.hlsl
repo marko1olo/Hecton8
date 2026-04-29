@@ -31,12 +31,16 @@ float4 _HectonProjectedCausticsColor;
 float4 _HectonCausticsSimulationParamsA;
 float4 _HectonCausticsSimulationParamsB;
 float4 _HectonCausticsSimulationParamsC;
+float4 _SonarRevealOriginWS;
+float4 _SonarRevealWaveParams;
 float _HectonContactShadowStrength;
 float _HectonContactShadowSteps;
 float _HectonContactShadowBias;
 float _HectonContactShadowMaxDistance;
 float _HectonCaveVoxelActive;
 float _HectonBiolumVolumeActive;
+float _SonarWaveFront;
+float _SonarRevealExpireTime;
 float4x4 _HectonBiolumVolumeWorldToLocal;
 
 TEXTURE3D(_VoxelDensityTex);
@@ -45,6 +49,19 @@ TEXTURE3D(_HectonCaveVoxelSdfTex);
 SAMPLER(sampler_HectonCaveVoxelSdfTex);
 TEXTURE3D(_HectonBiolumVolumeTex);
 SAMPLER(sampler_HectonBiolumVolumeTex);
+TEXTURE2D(_NoirFogLUT);
+SAMPLER(sampler_NoirFogLUT);
+TEXTURE2D(_HectonSedimentMaskTex);
+SAMPLER(sampler_HectonSedimentMaskTex);
+float4 _HectonNoirFogLutParams;
+float _HectonNoirFogLutBlend;
+float4 _HectonNoirFogStratification;
+float4 _HectonSedimentWorldRect;
+float4 _HectonSedimentOverlayParamsA;
+float4 _HectonSedimentOverlayParamsB;
+float4 _HectonSedimentTintA;
+float4 _HectonSedimentTintB;
+
 float3 HectonCoreLitSafeNormalize(float3 value)
 {
     float lenSq = dot(value, value);
@@ -71,6 +88,61 @@ float2 HectonCoreLitHash22(float2 p)
     float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
     p3 += dot(p3, p3.yzx + 33.33);
     return frac((p3.xx + p3.yz) * p3.zy);
+}
+
+float HectonCoreLitSedimentRippleHeight(float2 uv)
+{
+    float layerA = sin(uv.x * 1.73 + uv.y * 0.47);
+    float layerB = cos(uv.y * 1.91 - uv.x * 0.29);
+    float layerC = sin((uv.x + uv.y) * 0.63 + 1.7);
+    return layerA * 0.5 + layerB * 0.35 + layerC * 0.15;
+}
+
+float HectonCoreLitSampleSedimentMask(float3 positionWS)
+{
+    if (_HectonSedimentOverlayParamsA.x <= 0.5)
+        return 0.0;
+
+    float2 uv = float2(
+        (positionWS.x - _HectonSedimentWorldRect.x) * _HectonSedimentWorldRect.z,
+        (positionWS.z - _HectonSedimentWorldRect.y) * _HectonSedimentWorldRect.w);
+    if (any(uv < 0.0) || any(uv > 1.0))
+        return 0.0;
+
+    return SAMPLE_TEXTURE2D_LOD(_HectonSedimentMaskTex, sampler_HectonSedimentMaskTex, uv, 0).r * _HectonSedimentOverlayParamsB.w;
+}
+
+void HectonCoreLitApplySedimentOverlay(
+    float3 positionWS,
+    inout half3 normalWS,
+    inout half3 albedo,
+    inout half metallic,
+    inout half smoothness)
+{
+    float sedimentMask = HectonCoreLitSampleSedimentMask(positionWS);
+    float upFacing = saturate((normalWS.y - _HectonSedimentOverlayParamsA.y) * _HectonSedimentOverlayParamsA.z);
+    float strength = saturate(sedimentMask * upFacing);
+    if (strength <= 0.0001)
+        return;
+
+    float2 rippleUv = positionWS.xz * _HectonSedimentOverlayParamsA.w;
+    float baseHeight = HectonCoreLitSedimentRippleHeight(rippleUv);
+    float heightDx = HectonCoreLitSedimentRippleHeight(rippleUv + float2(0.09, 0.0));
+    float heightDy = HectonCoreLitSedimentRippleHeight(rippleUv + float2(0.0, 0.09));
+    float2 gradient = float2(heightDx - baseHeight, heightDy - baseHeight) * _HectonSedimentOverlayParamsB.x;
+
+    float3 baseNormal = HectonCoreLitSafeNormalize(normalWS);
+    float3 tangentWS = abs(baseNormal.y) < 0.999 ? HectonCoreLitSafeNormalize(cross(float3(0.0, 1.0, 0.0), baseNormal)) : float3(1.0, 0.0, 0.0);
+    float3 bitangentWS = HectonCoreLitSafeNormalize(cross(baseNormal, tangentWS));
+    float3 sedimentNormal = HectonCoreLitSafeNormalize(baseNormal - tangentWS * gradient.x - bitangentWS * gradient.y);
+    sedimentNormal = HectonCoreLitSafeNormalize(lerp(sedimentNormal, float3(0.0, 1.0, 0.0), strength * 0.25));
+
+    float rippleBlend = saturate(baseHeight * 0.5 + 0.5);
+    half3 sedimentColor = (half3)lerp(_HectonSedimentTintA.rgb, _HectonSedimentTintB.rgb, rippleBlend);
+    albedo = lerp(albedo, sedimentColor, (half)strength);
+    normalWS = (half3)HectonCoreLitSafeNormalize(lerp(baseNormal, sedimentNormal, strength));
+    metallic = lerp(metallic, (half)_HectonSedimentOverlayParamsB.y, (half)strength);
+    smoothness = lerp(smoothness, (half)_HectonSedimentOverlayParamsB.z, (half)strength);
 }
 
 float HectonCoreLitVoronoiRidge(float2 uv, float cellDensity, float timePhase)
@@ -184,9 +256,101 @@ half HectonCoreLitEvaluateNoirFog(half fogRaw)
     return pow(saturate(fogRaw), 2.2h);
 }
 
-half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw)
+float3 HectonCoreLitSampleNoirFogLutRow(float rowIndex, float sample01)
 {
-    return MixFog(color, HectonCoreLitEvaluateNoirFog(fogRaw));
+    if (_HectonNoirFogLutParams.w <= 0.5)
+        return 0.0;
+
+    float rowCount = max(_HectonNoirFogLutParams.y, 1.0);
+    float2 uv = float2(
+        saturate(sample01),
+        (rowIndex + 0.5) / rowCount);
+    return SAMPLE_TEXTURE2D_LOD(_NoirFogLUT, sampler_NoirFogLUT, uv, 0).rgb;
+}
+
+float HectonCoreLitEvaluateThermoclineFogMultiplier(float3 positionWS)
+{
+    float thermoclineY = _HectonNoirFogStratification.x;
+    float halfSpan = max(_HectonNoirFogStratification.y, 0.001);
+    float abyssalBoost = max(_HectonNoirFogStratification.z, 0.0);
+    float fogDensity = max(_HectonNoirFogStratification.w, 0.0001);
+    float thermoclineMask = 1.0 - smoothstep(thermoclineY - halfSpan, thermoclineY + halfSpan, positionWS.y);
+    float densityPx = fogDensity * (1.0 + thermoclineMask * abyssalBoost);
+    return densityPx / fogDensity;
+}
+
+half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw, float3 positionWS)
+{
+    half fogFactor = HectonCoreLitEvaluateNoirFog(fogRaw);
+    float densityMultiplier = HectonCoreLitEvaluateThermoclineFogMultiplier(positionWS);
+    float lutSample = saturate(fogFactor * densityMultiplier);
+    float lutBlend = saturate(_HectonNoirFogLutBlend);
+
+    float3 sourceFog = HectonCoreLitSampleNoirFogLutRow(0.0, lutSample);
+    float3 sourceAbsorption = HectonCoreLitSampleNoirFogLutRow(1.0, lutSample);
+    float3 sourceAmbient = HectonCoreLitSampleNoirFogLutRow(2.0, lutSample);
+    float3 targetFog = HectonCoreLitSampleNoirFogLutRow(3.0, lutSample);
+    float3 targetAbsorption = HectonCoreLitSampleNoirFogLutRow(4.0, lutSample);
+    float3 targetAmbient = HectonCoreLitSampleNoirFogLutRow(5.0, lutSample);
+
+    float3 fogColor = lerp(sourceFog, targetFog, lutBlend);
+    float3 absorption = max(lerp(sourceAbsorption, targetAbsorption, lutBlend), float3(0.0, 0.0, 0.0));
+    float3 ambientTint = lerp(sourceAmbient, targetAmbient, lutBlend);
+    float3 attenuatedColor = color * exp(-absorption * lutSample);
+    float3 fogTarget = fogColor + ambientTint * 0.35;
+    return (half3)lerp(attenuatedColor, fogTarget, saturate(lutSample));
+}
+
+half HectonCoreLitEvaluateOrganicSssScalar(
+    float3 viewDirWS,
+    float3 lightDirWS,
+    float3 normalWS,
+    half distortion,
+    half power,
+    half scale)
+{
+    float3 distortedLight = -(HectonCoreLitSafeNormalize(lightDirWS) + HectonCoreLitSafeNormalize(normalWS) * distortion);
+    float3 sssDirection = HectonCoreLitSafeNormalize(distortedLight);
+    float viewAlignment = saturate(dot(HectonCoreLitSafeNormalize(viewDirWS), sssDirection));
+    return (half)(pow(viewAlignment, max((float)power, 0.001)) * max((float)scale, 0.0));
+}
+
+half3 HectonCoreLitEvaluateOrganicSss(
+    float3 viewDirWS,
+    float3 lightDirWS,
+    float3 normalWS,
+    half3 sssColor,
+    half distortion,
+    half power,
+    half scale)
+{
+    return sssColor * HectonCoreLitEvaluateOrganicSssScalar(viewDirWS, lightDirWS, normalWS, distortion, power, scale);
+}
+
+float HectonCoreLitEvaluateSonarReactiveBiolumBoost(float3 positionWS)
+{
+    if (_Time.y > _SonarRevealExpireTime)
+        return 0.0;
+
+    float revealRadius = max(_SonarRevealOriginWS.w, 0.0);
+    if (revealRadius <= 0.0)
+        return 0.0;
+
+    float distanceToOrigin = distance(positionWS, _SonarRevealOriginWS.xyz);
+    if (distanceToOrigin > revealRadius)
+        return 0.0;
+
+    float sonarWaveSpeed = max(_SonarRevealWaveParams.y, 0.01);
+    float sonarFadeDuration = max(_SonarRevealWaveParams.z, 0.05);
+    float sonarPulseIntensity = saturate(_SonarRevealWaveParams.w);
+    float arrivalTime = _SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed;
+    float timeSinceArrival = _Time.y - arrivalTime;
+    float decay = 1.0 - saturate(max(timeSinceArrival, 0.0) / sonarFadeDuration);
+    float waveRadius = max(0.0, _SonarWaveFront);
+    float waveBandWidth = lerp(6.0, 2.0, sonarPulseIntensity);
+    float waveBand = 1.0 - saturate(abs(distanceToOrigin - waveRadius) / max(waveBandWidth, 0.25));
+    float active = step(_Time.y, _SonarRevealExpireTime);
+    return active * max(decay, waveBand * sonarPulseIntensity) * sonarPulseIntensity;
 }
 
 float HectonCoreLitSampleCaveVoxelSignedDistance(float3 positionWS)
@@ -282,7 +446,8 @@ float3 HectonCoreLitSampleBiolumVolumeRadiance(float3 positionWS)
         return 0.0;
 
     float4 volumeSample = SAMPLE_TEXTURE3D_LOD(_HectonBiolumVolumeTex, sampler_HectonBiolumVolumeTex, sampleUv, 0);
-    return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0);
+    float sonarReactiveBoost = HectonCoreLitEvaluateSonarReactiveBiolumBoost(positionWS);
+    return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0) * (1.0 + sonarReactiveBoost * 2.5);
 }
 
 bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon)

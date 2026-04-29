@@ -39,13 +39,13 @@ namespace Crest
                     return;
 
                 if (owner._maskRT != null)
-                    builder.UseTexture(maskTexture, AccessFlags.ReadWrite);
+                    builder.UseTexture(maskTexture, AccessFlags.Write);
                 if (owner._depthRT != null)
-                    builder.UseTexture(depthTexture, AccessFlags.ReadWrite);
+                    builder.UseTexture(depthTexture, AccessFlags.Write);
                 if (owner._volumeFrontFaceRT != null)
-                    builder.UseTexture(volumeFrontFaceTexture, AccessFlags.ReadWrite);
+                    builder.UseTexture(volumeFrontFaceTexture, AccessFlags.Write);
                 if (owner._volumeBackFaceRT != null)
-                    builder.UseTexture(volumeBackFaceTexture, AccessFlags.ReadWrite);
+                    builder.UseTexture(volumeBackFaceTexture, AccessFlags.Write);
 
                 if (owner._maskRT != null)
                     builder.SetGlobalTextureAfterPass(maskTexture, UnderwaterRenderer.ShaderIDs.s_CrestOceanMaskTexture);

@@ -79,6 +79,8 @@ namespace Hecton8.Quest
 
         public static void FlushPending()
         {
+            QuestGraphEvaluator.FlushPendingSignals();
+
             if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
             {
                 DrainWithoutDispatch();

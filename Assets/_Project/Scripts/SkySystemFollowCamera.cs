@@ -37,6 +37,9 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
     private Camera _cachedResolvedCamera;
     private float _fixedYPosition;
     private bool _fixedYCaptured;
+    private Camera _editorLastTargetCamera;
+    private Vector3 _editorLastAppliedPosition;
+    private bool _editorPositionCached;
 
     private void OnEnable()
     {
@@ -45,7 +48,10 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         ApplyFollowImmediately();
 
 #if UNITY_EDITOR
-        if (!Application.isPlaying)
+        _editorPositionCached = false;
+        _editorLastTargetCamera = null;
+
+        if (!Application.isPlaying && followInEditMode)
         {
             EditorApplication.update -= EditorTick;
             EditorApplication.update += EditorTick;
@@ -128,7 +134,29 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         if (Application.isPlaying || !followInEditMode || this == null)
             return;
 
-        ApplyFollow();
+        if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+            return;
+
+        Camera target = ResolveTargetCamera();
+        if (target == null)
+            return;
+
+        Vector3 targetPosition = target.transform.position + positionOffset;
+        if (!ShouldFollowVerticalPosition())
+            targetPosition.y = ResolveLockedY();
+
+        if (_editorPositionCached &&
+            ReferenceEquals(_editorLastTargetCamera, target) &&
+            (targetPosition - _editorLastAppliedPosition).sqrMagnitude <= 0.0001f &&
+            (transform.position - targetPosition).sqrMagnitude <= 0.0001f)
+        {
+            return;
+        }
+
+        transform.position = targetPosition;
+        _editorLastTargetCamera = target;
+        _editorLastAppliedPosition = targetPosition;
+        _editorPositionCached = true;
     }
 #endif
 

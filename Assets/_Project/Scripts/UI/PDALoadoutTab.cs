@@ -4,6 +4,7 @@
 // durability, energy profile, and cargo linkage to the real tool backend.
 // ============================================================================
 
+using System;
 using Hecton8.Gameplay;
 using Hecton8.Bootstrap;
 using Hecton8.Inventory;
@@ -21,7 +22,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Loadout Tab")]
-    public sealed class PDALoadoutTab : MonoBehaviour
+    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -61,7 +62,8 @@ namespace Hecton8.UI
         private readonly System.Text.StringBuilder _summaryBuilder = new System.Text.StringBuilder(512);
 
         /// <summary>Кэшированный StringBuilder для сборки preset текста (избегает аллокаций в RefreshPresets)</summary>
-        private readonly System.Text.StringBuilder _presetBuilder = new System.Text.StringBuilder(128);
+        // COLD ALLOC: char[1024] — PDA loadout summary composition buffer — owner: PDALoadoutTab
+        private readonly char[] _summaryCharBuffer = new char[1024];
         private readonly System.Collections.Generic.Dictionary<ulong, PlayerTool> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, PlayerTool>(32); // COLD ALLOC: Dictionary<ulong, PlayerTool>(32) — caches prefab PlayerTool owners for repeated loadout refreshes — owner: PDALoadoutTab
 
         /// <summary>Кэшированные строки для ToUpperInvariant (избегает повторных аллокаций)</summary>
@@ -112,6 +114,13 @@ namespace Hecton8.UI
         private Image _recommendedActionBg;
         private TextMeshProUGUI _recommendedActionLabel;
         private ToolDurabilitySystem _subscribedDurabilitySystem;
+        private PlayerInventoryManager _inventoryManager;
+        private bool _registeredToDispatcher;
+        private bool _inventoryMassOverCapacity;
+        private int _summaryMassCharStart = -1;
+        private int _summaryMassCharLength;
+        private float _massPulsePhase;
+        private Color32 _appliedSummaryMassColor = new Color32(0, 0, 0, 0);
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -146,6 +155,7 @@ namespace Hecton8.UI
             AutoResolve();
             EnsureBuilt();
             Subscribe();
+            RegisterToTickManager();
             RefreshDurabilityBindings();
             _refreshDirty = true;
             RefreshAll();
@@ -154,6 +164,13 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             Unsubscribe();
+            UnregisterFromTickManager();
+        }
+
+        /// <inheritdoc />
+        public void Tick(float deltaTime)
+        {
+            UpdateSummaryMassPulse(deltaTime);
         }
 
         // ════════════════════════════════════════════════════════════
@@ -185,6 +202,8 @@ namespace Hecton8.UI
         private void AutoResolve()
         {
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (_inventoryManager == null)
+                _inventoryManager = GlobalRegistry.PlayerInventory as PlayerInventoryManager;
             if (playerInventory == null && playerContext != null)
                 playerInventory = playerContext.Inventory;
             if (toolManager == null && playerContext != null)
@@ -383,13 +402,13 @@ namespace Hecton8.UI
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(18f, -18f), new Vector2(-18f, 24f));
             title.color = Primary;
-            title.SetText("LOADOUT MATRIX");
+            SetLiteralText(title, "LOADOUT MATRIX".AsSpan());
 
             TextMeshProUGUI sub = CreateText(self, "Subtitle", labelFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Right);
             Anchor(sub.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(18f, -18f), new Vector2(-18f, 24f));
             sub.color = DimLow;
-            sub.SetText("quick-slot readiness, durability state, and expedition utility profile");
+            SetLiteralText(sub, "quick-slot readiness, durability state, and expedition utility profile".AsSpan());
 
             CreateRule(self, -52f);
 
@@ -460,7 +479,7 @@ namespace Hecton8.UI
                 Anchor(slotHdr.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                     new Vector2(14f, -10f), new Vector2(-14f, 16f));
                 slotHdr.color = DimLow;
-                slotHdr.SetText($"SLOT {i + 1}");
+                SetSlotHeaderText(slotHdr, i + 1);
 
                 TextMeshProUGUI titleText = CreateText(card, "ToolName", labelFont, 16f, FontStyles.Bold, TextAlignmentOptions.Left);
                 Anchor(titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
@@ -538,7 +557,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI clearLabel = CreateText(clearRoot, "ClearLabel", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(clearLabel.rectTransform, 0f, 0f, 0f, 0f);
                 clearLabel.color = new Color(1f, 0.82f, 0.78f, 0.94f);
-                clearLabel.SetText("CLEAR");
+                SetLiteralText(clearLabel, "CLEAR".AsSpan());
                 _slotClearRoots[i] = clearRoot;
                 _slotClearCanvasGroups[i] = EnsureCanvasGroup(clearRoot);
                 _slotClearBgs[i] = clearBg;
@@ -568,7 +587,7 @@ namespace Hecton8.UI
             _identityActionLabel = CreateText(_identityActionRoot, "IdentityActionLabel", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_identityActionLabel.rectTransform, 0f, 0f, 0f, 0f);
             _identityActionLabel.color = Primary;
-            _identityActionLabel.SetText("CYCLE SUIT IDENTITY");
+            SetLiteralText(_identityActionLabel, "CYCLE SUIT IDENTITY".AsSpan());
             _identityActionCanvasGroup = EnsureCanvasGroup(_identityActionRoot);
             PDALoadoutIdentityButton identityButton = _identityActionRoot.gameObject.AddComponent<PDALoadoutIdentityButton>();
             identityButton.Init(
@@ -590,7 +609,7 @@ namespace Hecton8.UI
             _recommendedActionLabel = CreateText(_recommendedActionRoot, "RecommendedActionLabel", labelFont, 10.5f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_recommendedActionLabel.rectTransform, 0f, 0f, 0f, 0f);
             _recommendedActionLabel.color = Primary;
-            _recommendedActionLabel.SetText("APPLY SUGGESTED");
+            SetLiteralText(_recommendedActionLabel, "APPLY SUGGESTED".AsSpan());
             _recommendedActionCanvasGroup = EnsureCanvasGroup(_recommendedActionRoot);
             PDALoadoutRecommendedButton recommendedButton = _recommendedActionRoot.gameObject.AddComponent<PDALoadoutRecommendedButton>();
             recommendedButton.Init(
@@ -604,7 +623,7 @@ namespace Hecton8.UI
             Anchor(_hintText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
                 new Vector2(20f, 18f), new Vector2(-214f, 46f));
             _hintText.color = DimLow;
-            _hintText.SetText("Assign tools from Inventory details. Hotbar mirrors this matrix live.");
+            SetLiteralText(_hintText, "Assign tools from Inventory details. Hotbar mirrors this matrix live.".AsSpan());
 
             _built = true;
         }
@@ -650,11 +669,11 @@ namespace Hecton8.UI
                         _slotAccents[i].color = new Color(0.42f, 0.36f, 0.14f, 0.86f);
                     if (_slotStatusBgs[i] != null)
                         _slotStatusBgs[i].color = new Color(0.28f, 0.2f, 0.06f, 0.76f);
-                    _slotTitles[i].SetText("UNASSIGNED");
+                    SetLiteralText(_slotTitles[i], "UNASSIGNED".AsSpan());
                     _slotStatuses[i].color = Missing;
-                    _slotStatuses[i].SetText("EMPTY");
-                    _slotBodies[i].SetText("No held-tool prefab is mapped to this quick slot.\nAssign a tool from Inventory to arm the slot.");
-                    if (_slotActionLabels[i] != null) _slotActionLabels[i].SetText("UNASSIGNED");
+                    SetLiteralText(_slotStatuses[i], "EMPTY".AsSpan());
+                    SetLiteralText(_slotBodies[i], "No held-tool prefab is mapped to this quick slot.\nAssign a tool from Inventory to arm the slot.".AsSpan());
+                    if (_slotActionLabels[i] != null) SetLiteralText(_slotActionLabels[i], "UNASSIGNED".AsSpan());
                     SetCanvasGroupVisible(_slotActionCanvasGroups[i], false);
                     SetCanvasGroupVisible(_slotClearCanvasGroups[i], false);
                     continue;
@@ -663,7 +682,7 @@ namespace Hecton8.UI
                 SetCanvasGroupVisible(_slotActionCanvasGroups[i], true);
                 SetCanvasGroupVisible(_slotClearCanvasGroups[i], true);
 
-                _slotTitles[i].SetText(item != null ? CachedToUpperInvariant(item.itemName) : CachedToUpperInvariant(prefab.name));
+                SetUpperText(_slotTitles[i], item != null ? item.itemName : prefab.name, false);
 
                 if (broken)
                 {
@@ -672,7 +691,7 @@ namespace Hecton8.UI
                     if (_slotStatusBgs[i] != null)
                         _slotStatusBgs[i].color = new Color(0.34f, 0.12f, 0.12f, 0.84f);
                     _slotStatuses[i].color = Broken;
-                    _slotStatuses[i].SetText(active ? "BROKEN / ACTIVE" : "BROKEN");
+                    SetLiteralText(_slotStatuses[i], active ? "BROKEN / ACTIVE".AsSpan() : "BROKEN".AsSpan());
                 }
                 else if (!available)
                 {
@@ -681,7 +700,7 @@ namespace Hecton8.UI
                     if (_slotStatusBgs[i] != null)
                         _slotStatusBgs[i].color = new Color(0.3f, 0.2f, 0.06f, 0.82f);
                     _slotStatuses[i].color = Missing;
-                    _slotStatuses[i].SetText(active ? "MISSING / ACTIVE" : "MISSING");
+                    SetLiteralText(_slotStatuses[i], active ? "MISSING / ACTIVE".AsSpan() : "MISSING".AsSpan());
                 }
                 else
                 {
@@ -694,7 +713,7 @@ namespace Hecton8.UI
                             ? new Color(0.1f, 0.3f, 0.3f, 0.86f)
                             : new Color(0.08f, 0.2f, 0.22f, 0.76f);
                     _slotStatuses[i].color = Ready;
-                    _slotStatuses[i].SetText(active ? "READY / ACTIVE" : "READY");
+                    SetLiteralText(_slotStatuses[i], active ? "READY / ACTIVE".AsSpan() : "READY".AsSpan());
                 }
 
                 string category = item != null && (int)item.category >= 0 && (int)item.category < _cachedCategoryStrings.Length
@@ -709,28 +728,26 @@ namespace Hecton8.UI
                     : 1f;
 
                 // Используем кэшированный StringBuilder для сборки текста слота (zero-GC)
-                _slotBodyBuilder.Clear();
-                _slotBodyBuilder.Append("CLASS    ").Append(category).Append('\n');
-                _slotBodyBuilder.Append("IN CARGO  ").Append(
+                SetSlotBodyText(
+                    _slotBodies[i],
+                    category,
                     item != null && playerInventory != null
                         ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(item.PersistentId))
-                        : 0).Append('\n');
-                _slotBodyBuilder.Append("MASS     ").Append(weight.ToString("0.0")).Append(" kg\n");
-                _slotBodyBuilder.Append("DURAB.   ").Append(normalized.ToString("0%")).Append('\n');
-                _slotBodyBuilder.Append("ENERGY   ").Append((meta != null ? Mathf.Max(0f, meta.energyConsumptionRate) : 0f).ToString("0.0")).Append("/s");
-
-                _slotBodies[i].SetText(_slotBodyBuilder);
+                        : 0,
+                    weight,
+                    normalized,
+                    meta != null ? Mathf.Max(0f, meta.energyConsumptionRate) : 0f);
 
                 if (_slotActionLabels[i] != null)
                 {
                     if (active)
-                        _slotActionLabels[i].SetText("HOLSTER");
+                        SetLiteralText(_slotActionLabels[i], "HOLSTER".AsSpan());
                     else if (broken)
-                        _slotActionLabels[i].SetText("BROKEN");
+                        SetLiteralText(_slotActionLabels[i], "BROKEN".AsSpan());
                     else if (!available)
-                        _slotActionLabels[i].SetText("MISSING");
+                        SetLiteralText(_slotActionLabels[i], "MISSING".AsSpan());
                     else
-                        _slotActionLabels[i].SetText("ACTIVATE");
+                        SetLiteralText(_slotActionLabels[i], "ACTIVATE".AsSpan());
                 }
             }
         }
@@ -745,6 +762,8 @@ namespace Hecton8.UI
             int missing = 0;
             int broken = 0;
             float totalWeight = 0f;
+            float inventoryMass = playerInventory != null ? Mathf.Max(0f, playerInventory.TotalWeight) : 0f;
+            float carryCapacity = _inventoryManager != null ? _inventoryManager.CarryCapacityKilograms : 200f;
             string recommendedPresetName = "GENERAL";
             string recommendedPresetDirective = "No authored target in front of the diver. General-purpose expedition loadout remains valid.";
 
@@ -777,48 +796,56 @@ namespace Hecton8.UI
             }
 
             // Используем кэшированный StringBuilder для сборки summary текста (zero-GC)
-            _summaryBuilder.Clear();
-            _summaryBuilder.Append("LOADOUT: ").Append(assigned).Append("/4 assigned | READY ").Append(ready);
-            _summaryBuilder.Append(" | MISSING ").Append(missing).Append(" | BROKEN ").Append(broken);
-            _summaryBuilder.Append(" | ACTIVE SLOT ").Append(toolManager.CurrentSlotIndex >= 0 ? (toolManager.CurrentSlotIndex + 1).ToString() : "--");
-            _summaryBuilder.Append(" | KIT MASS ").Append(totalWeight.ToString("0.0")).Append(" kg");
-            _summaryBuilder.Append(" | PRESET ").Append(GetMatchedPresetName());
-            _summaryBuilder.Append(" | IDENTITY ").Append(GetActiveExpressionName());
+            Span<char> summaryDestination = _summaryCharBuffer.AsSpan();
+            int summaryIndex = 0;
+            _summaryMassCharStart = summaryIndex;
+            Append(summaryDestination, ref summaryIndex, "MASS: ".AsSpan());
+            AppendFloat(summaryDestination, ref summaryIndex, inventoryMass, "0.0".AsSpan());
+            Append(summaryDestination, ref summaryIndex, "/".AsSpan());
+            AppendFloat(summaryDestination, ref summaryIndex, carryCapacity, "0.0".AsSpan());
+            Append(summaryDestination, ref summaryIndex, " KG | LOADOUT: ".AsSpan());
+            _summaryMassCharLength = summaryIndex - _summaryMassCharStart - " | LOADOUT: ".Length;
+            _inventoryMassOverCapacity = inventoryMass > carryCapacity + 0.001f;
+            AppendInt(summaryDestination, ref summaryIndex, assigned);
+            Append(summaryDestination, ref summaryIndex, "/4 assigned | READY ".AsSpan());
+            AppendInt(summaryDestination, ref summaryIndex, ready);
+            Append(summaryDestination, ref summaryIndex, " | MISSING ".AsSpan());
+            AppendInt(summaryDestination, ref summaryIndex, missing);
+            Append(summaryDestination, ref summaryIndex, " | BROKEN ".AsSpan());
+            AppendInt(summaryDestination, ref summaryIndex, broken);
+            Append(summaryDestination, ref summaryIndex, " | ACTIVE SLOT ".AsSpan());
+            if (toolManager.CurrentSlotIndex >= 0)
+                AppendInt(summaryDestination, ref summaryIndex, toolManager.CurrentSlotIndex + 1);
+            else
+                Append(summaryDestination, ref summaryIndex, "--".AsSpan());
+            Append(summaryDestination, ref summaryIndex, " | KIT MASS ".AsSpan());
+            AppendFloat(summaryDestination, ref summaryIndex, totalWeight, "0.0".AsSpan());
+            Append(summaryDestination, ref summaryIndex, " kg | PRESET ".AsSpan());
+            Append(summaryDestination, ref summaryIndex, GetMatchedPresetName());
+            Append(summaryDestination, ref summaryIndex, " | IDENTITY ".AsSpan());
+            Append(summaryDestination, ref summaryIndex, GetActiveExpressionName());
+
             string liveSuitName = GetLiveExpressionSuitName();
             if (!string.IsNullOrWhiteSpace(liveSuitName))
-                _summaryBuilder.Append(" | SHELL ").Append(CachedToUpperInvariant(liveSuitName));
-            _summaryBuilder.Append(" | SUGGESTED ").Append(recommendedPresetName);
-            _summaryBuilder.Append('\n');
-            _summaryBuilder.Append("ACTIVE TOOL: ").Append(toolManager.GetCurrentToolOperationalSummary());
+            {
+                Append(summaryDestination, ref summaryIndex, " | SHELL ".AsSpan());
+                Append(summaryDestination, ref summaryIndex, CachedToUpperInvariant(liveSuitName));
+            }
 
-            _summaryText.SetText(_summaryBuilder);
+            Append(summaryDestination, ref summaryIndex, " | SUGGESTED ".AsSpan());
+            Append(summaryDestination, ref summaryIndex, recommendedPresetName);
+            Append(summaryDestination, ref summaryIndex, "\nACTIVE TOOL: ".AsSpan());
+            if (!toolManager.TryWriteCurrentToolOperationalSummary(summaryDestination.Slice(summaryIndex), out int toolSummaryLength))
+                Append(summaryDestination, ref summaryIndex, "NO TOOL ARMED".AsSpan());
+            else
+                summaryIndex += toolSummaryLength;
+
+            _summaryText.SetCharArray(_summaryCharBuffer, 0, summaryIndex);
+            _summaryText.ForceMeshUpdate(false, false);
+            ApplySummaryMassVertexColor(_inventoryMassOverCapacity ? ResolvePulsedMassColor(0f) : (Color32)Dim);
 
             // Оптимизируем hint текст через StringBuilder
-            using (var scope = StringBuilderScope.Get())
-            {
-                var sb = scope.Value;
-                sb.Append(GetLoadoutDirective(assigned, ready, missing, broken));
-                sb.Append("  LIVE: ").Append(toolManager.GetCurrentToolOperationalDirective());
-                sb.Append("  IDENTITY: ").Append(GetActiveExpressionSummary());
-
-                string identityLoadout = GetActiveExpressionLoadoutName();
-                if (!string.IsNullOrWhiteSpace(identityLoadout))
-                    sb.Append("  IDENTITY KIT: ").Append(CachedToUpperInvariant(identityLoadout));
-
-                string identitySuit = GetActiveExpressionSuitName();
-                if (!string.IsNullOrWhiteSpace(identitySuit))
-                {
-                    sb.Append("  IDENTITY SHELL: ").Append(CachedToUpperInvariant(identitySuit));
-
-                    if (!IsExpressionSuitApplied())
-                        sb.Append(" (PENDING SYNC)");
-                }
-
-                sb.Append("  FIELD: ").Append(recommendedPresetDirective);
-
-                if (_hintText != null)
-                    _hintText.SetText(sb);
-            }
+            SetHintText(assigned, ready, missing, broken, recommendedPresetDirective);
 
             RefreshRecommendedAction();
         }
@@ -846,7 +873,7 @@ namespace Hecton8.UI
             }
 
             SetCanvasGroupVisible(_identityActionCanvasGroup, true);
-            _identityActionLabel.SetText($"NEXT IDENTITY - {CachedToUpperInvariant(nextProfile.DisplayName)}");
+            SetPrefixedUpperText(_identityActionLabel, "NEXT IDENTITY - ".AsSpan(), nextProfile.DisplayName);
             _identityActionBg.color = new Color(0.08f, 0.18f, 0.2f, 0.82f);
         }
 
@@ -919,20 +946,14 @@ namespace Hecton8.UI
                 }
 
                 if (_presetTitles[i] != null)
-                    _presetTitles[i].SetText(CachedToUpperInvariant(preset.presetName));
+                    SetUpperText(_presetTitles[i], preset.presetName, false);
 
                 if (_presetBodies[i] != null)
                 {
                     int ready = CountReadyToolsInPreset(preset);
 
                     // Используем кэшированный StringBuilder для сборки preset текста (zero-GC)
-                    _presetBuilder.Clear();
-                    _presetBuilder.Append(GetPresetBrief(preset)).Append('\n');
-                    _presetBuilder.Append("READY NOW ").Append(ready).Append("/4");
-                    if (matched)
-                        _presetBuilder.Append(" | ACTIVE");
-
-                    _presetBodies[i].SetText(_presetBuilder);
+                    SetPresetBodyText(_presetBodies[i], preset, ready, matched);
                 }
             }
         }
@@ -1088,7 +1109,7 @@ namespace Hecton8.UI
             Anchor(hdr.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
                 new Vector2(20f, 58f), new Vector2(-20f, 80f));
             hdr.color = DimLow;
-            hdr.SetText("MISSION PRESETS");
+            SetLiteralText(hdr, "MISSION PRESETS".AsSpan());
 
             float gap = 10f;
             float width = (1320f - 40f - gap * (_presetRoots.Length - 1)) / Mathf.Max(1, _presetRoots.Length);
@@ -1169,9 +1190,10 @@ namespace Hecton8.UI
                 ? loadoutPresets[presetIndex]
                 : null;
             bool matched = preset != null && MatchesPreset(preset);
-            _recommendedActionLabel.SetText(matched
-                ? $"SUGGESTED ACTIVE - {CachedToUpperInvariant(preset.presetName)}"
-                : $"APPLY SUGGESTED - {CachedToUpperInvariant(preset.presetName)}");
+            SetPrefixedUpperText(
+                _recommendedActionLabel,
+                matched ? "SUGGESTED ACTIVE - ".AsSpan() : "APPLY SUGGESTED - ".AsSpan(),
+                preset != null ? preset.presetName : string.Empty);
             _recommendedActionBg.color = matched
                 ? new Color(0.1f, 0.3f, 0.3f, 0.9f)
                 : new Color(0.08f, 0.18f, 0.2f, 0.82f);
@@ -1365,6 +1387,83 @@ namespace Hecton8.UI
             group.blocksRaycasts = visible;
         }
 
+        private void RegisterToTickManager()
+        {
+            if (_registeredToDispatcher)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registeredToDispatcher = true;
+        }
+
+        private void UnregisterFromTickManager()
+        {
+            if (!_registeredToDispatcher)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registeredToDispatcher = false;
+        }
+
+        private void UpdateSummaryMassPulse(float deltaTime)
+        {
+            if (_summaryText == null || _summaryMassCharStart < 0 || _summaryMassCharLength <= 0 || !IsTabActive)
+                return;
+
+            if (_inventoryMassOverCapacity)
+            {
+                _massPulsePhase += Mathf.Max(0f, deltaTime) * 4.2f;
+                if (_massPulsePhase >= Mathf.PI * 2f)
+                    _massPulsePhase -= Mathf.PI * 2f;
+
+                ApplySummaryMassVertexColor(ResolvePulsedMassColor(_massPulsePhase));
+                return;
+            }
+
+            _massPulsePhase = 0f;
+            ApplySummaryMassVertexColor((Color32)Dim);
+        }
+
+        private Color32 ResolvePulsedMassColor(float phase)
+        {
+            float pulse = 0.5f + 0.5f * Mathf.Sin(phase);
+            Color blended = Color.Lerp(Broken, Missing, pulse * 0.35f);
+            blended.a = 0.98f;
+            return blended;
+        }
+
+        private void ApplySummaryMassVertexColor(Color32 color)
+        {
+            if (_summaryText == null || _summaryMassCharStart < 0 || _summaryMassCharLength <= 0)
+                return;
+
+            if (_appliedSummaryMassColor.Equals(color))
+                return;
+
+            TMP_TextInfo textInfo = _summaryText.textInfo;
+            if (textInfo == null || textInfo.characterCount <= 0 || _summaryMassCharStart >= textInfo.characterCount)
+                return;
+
+            int end = Mathf.Min(textInfo.characterCount, _summaryMassCharStart + _summaryMassCharLength);
+            for (int i = _summaryMassCharStart; i < end; i++)
+            {
+                TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
+                if (!characterInfo.isVisible)
+                    continue;
+
+                int meshIndex = characterInfo.materialReferenceIndex;
+                int vertexIndex = characterInfo.vertexIndex;
+                Color32[] colors = textInfo.meshInfo[meshIndex].colors32;
+                colors[vertexIndex] = color;
+                colors[vertexIndex + 1] = color;
+                colors[vertexIndex + 2] = color;
+                colors[vertexIndex + 3] = color;
+            }
+
+            _summaryText.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
+            _appliedSummaryMassColor = color;
+        }
+
         private static RectTransform CreateRect(Transform parent, string name)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -1443,6 +1542,249 @@ namespace Hecton8.UI
             Image image = EnsureImage(rect.gameObject);
             image.color = Rule;
             image.raycastTarget = false;
+        }
+
+        private static void SetLiteralText(TMP_Text text, ReadOnlySpan<char> value)
+        {
+            if (text == null)
+                return;
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                if (value.Length > lease.Buffer.Length)
+                    return;
+
+                value.CopyTo(lease.Buffer.AsSpan());
+                text.SetCharArray(lease.Buffer, 0, value.Length);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void SetUpperText(TMP_Text text, string value, bool replaceUnderscores)
+        {
+            if (text == null || string.IsNullOrEmpty(value))
+                return;
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                ReadOnlySpan<char> source = value.AsSpan();
+                if (source.Length > lease.Buffer.Length)
+                    return;
+
+                Span<char> destination = lease.Buffer.AsSpan(0, source.Length);
+                for (int i = 0; i < source.Length; i++)
+                {
+                    char character = source[i];
+                    destination[i] = replaceUnderscores && character == '_' ? ' ' : char.ToUpperInvariant(character);
+                }
+
+                text.SetCharArray(lease.Buffer, 0, source.Length);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void SetPrefixedUpperText(TMP_Text text, ReadOnlySpan<char> prefix, string value)
+        {
+            if (text == null)
+                return;
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                ReadOnlySpan<char> source = string.IsNullOrEmpty(value) ? ReadOnlySpan<char>.Empty : value.AsSpan();
+                int totalLength = prefix.Length + source.Length;
+                if (totalLength > lease.Buffer.Length)
+                    return;
+
+                Span<char> destination = lease.Buffer.AsSpan();
+                prefix.CopyTo(destination);
+                for (int i = 0; i < source.Length; i++)
+                    destination[prefix.Length + i] = char.ToUpperInvariant(source[i]);
+
+                text.SetCharArray(lease.Buffer, 0, totalLength);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private void SetHintText(int assigned, int ready, int missing, int broken, string recommendedPresetDirective)
+        {
+            if (_hintText == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> destination = lease.Buffer.AsSpan();
+                int index = 0;
+                Append(destination, ref index, GetLoadoutDirective(assigned, ready, missing, broken));
+                Append(destination, ref index, "  LIVE: ".AsSpan());
+                Append(destination, ref index, toolManager != null ? toolManager.GetCurrentToolOperationalDirective() : string.Empty);
+                Append(destination, ref index, "  IDENTITY: ".AsSpan());
+                Append(destination, ref index, GetActiveExpressionSummary());
+
+                string identityLoadout = GetActiveExpressionLoadoutName();
+                if (!string.IsNullOrWhiteSpace(identityLoadout))
+                {
+                    Append(destination, ref index, "  IDENTITY KIT: ".AsSpan());
+                    Append(destination, ref index, CachedToUpperInvariant(identityLoadout));
+                }
+
+                string identitySuit = GetActiveExpressionSuitName();
+                if (!string.IsNullOrWhiteSpace(identitySuit))
+                {
+                    Append(destination, ref index, "  IDENTITY SHELL: ".AsSpan());
+                    Append(destination, ref index, CachedToUpperInvariant(identitySuit));
+
+                    if (!IsExpressionSuitApplied())
+                        Append(destination, ref index, " (PENDING SYNC)".AsSpan());
+                }
+
+                Append(destination, ref index, "  FIELD: ".AsSpan());
+                Append(destination, ref index, recommendedPresetDirective);
+                _hintText.SetCharArray(lease.Buffer, 0, index);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void SetPresetBodyText(TMP_Text text, ToolLoadoutPreset preset, int readyCount, bool matched)
+        {
+            if (text == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> destination = lease.Buffer.AsSpan();
+                int index = 0;
+                Append(destination, ref index, GetPresetBrief(preset));
+                Append(destination, ref index, "\nREADY NOW ".AsSpan());
+                AppendInt(destination, ref index, readyCount);
+                Append(destination, ref index, "/4".AsSpan());
+                if (matched)
+                    Append(destination, ref index, " | ACTIVE".AsSpan());
+
+                text.SetCharArray(lease.Buffer, 0, index);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void SetSlotHeaderText(TMP_Text text, int slotNumber)
+        {
+            if (text == null)
+                return;
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> destination = lease.Buffer.AsSpan();
+                "SLOT ".AsSpan().CopyTo(destination);
+                if (!slotNumber.TryFormat(destination.Slice(5), out int charsWritten))
+                    return;
+
+                text.SetCharArray(lease.Buffer, 0, 5 + charsWritten);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void SetSlotBodyText(TMP_Text text, string category, int cargoCount, float weight, float normalizedDurability, float energyPerSecond)
+        {
+            if (text == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> destination = lease.Buffer.AsSpan();
+                int index = 0;
+                Append(destination, ref index, "CLASS    ".AsSpan());
+                Append(destination, ref index, string.IsNullOrEmpty(category) ? "TOOL".AsSpan() : category.AsSpan());
+                Append(destination, ref index, "\nIN CARGO  ".AsSpan());
+                AppendInt(destination, ref index, cargoCount);
+                Append(destination, ref index, "\nMASS     ".AsSpan());
+                AppendFloat(destination, ref index, weight, "0.0".AsSpan());
+                Append(destination, ref index, " kg\nDURAB.   ".AsSpan());
+                AppendInt(destination, ref index, Mathf.RoundToInt(Mathf.Clamp01(normalizedDurability) * 100f));
+                Append(destination, ref index, "%\nENERGY   ".AsSpan());
+                AppendFloat(destination, ref index, energyPerSecond, "0.0".AsSpan());
+                Append(destination, ref index, "/s".AsSpan());
+                text.SetCharArray(lease.Buffer, 0, index);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void Append(Span<char> destination, ref int index, ReadOnlySpan<char> value)
+        {
+            if (index >= destination.Length)
+                return;
+
+            int copyLength = Mathf.Min(value.Length, destination.Length - index);
+            value.Slice(0, copyLength).CopyTo(destination.Slice(index));
+            index += copyLength;
+        }
+
+        private static void Append(Span<char> destination, ref int index, string value)
+        {
+            if (string.IsNullOrEmpty(value) || index >= destination.Length)
+                return;
+
+            ReadOnlySpan<char> source = value.AsSpan();
+            int copyLength = Mathf.Min(source.Length, destination.Length - index);
+            source.Slice(0, copyLength).CopyTo(destination.Slice(index));
+            index += copyLength;
+        }
+
+        private static void AppendUpper(Span<char> destination, ref int index, string value)
+        {
+            if (string.IsNullOrEmpty(value) || index >= destination.Length)
+                return;
+
+            ReadOnlySpan<char> source = value.AsSpan();
+            int copyLength = Mathf.Min(source.Length, destination.Length - index);
+            Span<char> target = destination.Slice(index, copyLength);
+            for (int i = 0; i < copyLength; i++)
+                target[i] = char.ToUpperInvariant(source[i]);
+
+            index += copyLength;
+        }
+
+        private static void AppendInt(Span<char> destination, ref int index, int value)
+        {
+            if (index < destination.Length && value.TryFormat(destination.Slice(index), out int charsWritten))
+                index += charsWritten;
+        }
+
+        private static void AppendFloat(Span<char> destination, ref int index, float value, ReadOnlySpan<char> format)
+        {
+            if (index < destination.Length && value.TryFormat(destination.Slice(index), out int charsWritten, format))
+                index += charsWritten;
         }
     }
 

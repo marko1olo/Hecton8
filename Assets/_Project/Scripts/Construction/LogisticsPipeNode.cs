@@ -89,6 +89,7 @@ namespace Hecton8.Construction
         [SerializeField] private float _debugOverpressureStress;
         [SerializeField] private bool _debugRuptured;
         [SerializeField] private byte _debugPayloadIntegrity = MaxPayloadIntegrity;
+        [SerializeField] private int _debugEncodedFlowRate;
 
         private PowerNode _powerNode;
         private SubmarineAtmosphereSystem _atmosphereSystem;
@@ -118,6 +119,9 @@ namespace Hecton8.Construction
         public bool HasPower => _hasPower;
         internal StorageCrate SourceCrate => sourceCrate;
         internal StorageCrate DestinationCrate => destinationCrate;
+        internal sbyte EncodedFlowRate => EncodeFlowRate(ResolveCurrentFlowUnitsPerSecond(), maxCapacityUnits);
+        internal int AmbientRoomIndex => _cachedRoomIndex;
+        internal bool CanEmergencyVent => !IsRuptured() && _cachedRoomIndex >= 0;
         internal bool ParticipatesInSchedulerDag => !IsRuptured() &&
                                                     sourceCrate != null &&
                                                     destinationCrate != null &&
@@ -172,6 +176,7 @@ namespace Hecton8.Construction
             _debugInFlightItemHashId = 0;
             _payloadIntegrity = MaxPayloadIntegrity;
             _debugPayloadIntegrity = MaxPayloadIntegrity;
+            _debugEncodedFlowRate = 0;
             if (_powerNode != null)
             {
                 _powerNode.SetRuptured(false);
@@ -196,6 +201,7 @@ namespace Hecton8.Construction
             _debugInFlightItemHashId = 0;
             _payloadIntegrity = MaxPayloadIntegrity;
             _debugPayloadIntegrity = MaxPayloadIntegrity;
+            _debugEncodedFlowRate = 0;
             if (_powerNode != null)
             {
                 _powerNode.SetRuptured(false);
@@ -373,6 +379,7 @@ namespace Hecton8.Construction
             _debugTransitRemaining = 0f;
             _debugReservationId = 0;
             _debugPayloadIntegrity = MaxPayloadIntegrity;
+            RefreshEncodedFlowRateDebug();
         }
 
         internal void SchedulerRefresh()
@@ -380,12 +387,16 @@ namespace Hecton8.Construction
             RefreshEndpointCache(false);
             RefreshCableVisuals(false);
             RefreshAmbientRoomIndex();
+            RefreshEncodedFlowRateDebug();
         }
 
         internal void ExecuteCoordinatedSlowTick()
         {
             if (IsRuptured())
+            {
+                RefreshEncodedFlowRateDebug();
                 return;
+            }
 
             RecoverOverpressureStress(blockageResolved: false);
 
@@ -393,21 +404,32 @@ namespace Hecton8.Construction
             {
                 ApplyInFlightThermalDamage();
                 if (_inFlightItem == null)
+                {
+                    RefreshEncodedFlowRateDebug();
                     return;
+                }
 
                 AdvanceInFlightTransfer();
+                RefreshEncodedFlowRateDebug();
                 return;
             }
 
             if (!_hasPower || sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
+            {
+                RefreshEncodedFlowRateDebug();
                 return;
+            }
 
             _exportTimer += SlowTickDeltaTime;
             if (_exportTimer < exportIntervalSeconds)
+            {
+                RefreshEncodedFlowRateDebug();
                 return;
+            }
 
             _exportTimer = 0f;
             TryStageTransfer();
+            RefreshEncodedFlowRateDebug();
         }
 
         private float ResolveTransitDuration()
@@ -464,6 +486,13 @@ namespace Hecton8.Construction
 
             Vector3 midpoint = (_cachedSourcePosition + _cachedDestinationPosition) * 0.5f;
             _cachedRoomIndex = _atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(midpoint);
+        }
+
+        internal int ResolveAmbientRoomIndex()
+        {
+            RefreshEndpointCache(force: false);
+            RefreshAmbientRoomIndex();
+            return _cachedRoomIndex;
         }
 
         private void ApplyInFlightThermalDamage()
@@ -579,6 +608,36 @@ namespace Hecton8.Construction
             NotifyGridBalanceChanged();
         }
 
+        internal void TriggerExternalRupture()
+        {
+            TriggerOverpressureRupture();
+        }
+
+        internal Vector3 ResolveVentRuntimePosition()
+        {
+            RefreshEndpointCache(force: false);
+            return (_cachedSourcePosition + _cachedDestinationPosition) * 0.5f;
+        }
+
+        internal Vector3 ResolveVentDirection(Vector3 vesselCenter)
+        {
+            Vector3 ventPosition = ResolveVentRuntimePosition();
+            Vector3 outward = ventPosition - vesselCenter;
+            if (outward.sqrMagnitude <= 0.0001f)
+                outward = _cachedTransform != null ? _cachedTransform.right : Vector3.right;
+
+            return outward.normalized;
+        }
+
+        internal void RegisterEmergencyVentVisual(float normalizedIntensity)
+        {
+            if (AbyssalFluidDecalManager.Instance == null)
+                return;
+
+            float radiusScale = math.clamp(normalizedIntensity, 0.1f, 1f);
+            AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(ResolveVentRuntimePosition(), radiusScale);
+        }
+
         private void ResolveInFlightLossToWorldOrRollback(Vector3 spillPosition)
         {
             if (TrySpillInFlightItemToWorld(spillPosition))
@@ -614,6 +673,28 @@ namespace Hecton8.Construction
 
             s_NextReservationId = 1;
             return s_NextReservationId++;
+        }
+
+        private float ResolveCurrentFlowUnitsPerSecond()
+        {
+            if (IsRuptured() || _inFlightItem == null)
+                return 0f;
+
+            return 1f / math.max(SlowTickDeltaTime, ResolveTransitDuration());
+        }
+
+        private void RefreshEncodedFlowRateDebug()
+        {
+            _debugEncodedFlowRate = EncodedFlowRate;
+        }
+
+        internal static sbyte EncodeFlowRate(float flowUnitsPerSecond, int capacityUnits)
+        {
+            float safeCapacity = math.max(1f, capacityUnits);
+            float normalizedFlow = math.clamp(flowUnitsPerSecond / safeCapacity, -1f, 1f);
+            int encodedFlow = (int)math.round(normalizedFlow * 127f);
+            encodedFlow = math.clamp(encodedFlow, -127, 127);
+            return (sbyte)encodedFlow;
         }
     }
 }

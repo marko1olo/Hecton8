@@ -332,7 +332,7 @@ namespace Hecton8.UI
             for (int i = 0; i < _cardRoots.Length; i++)
             {
                 bool visible = i < count && _snapshotBuffer[i].Offer != null;
-                _cardRoots[i].gameObject.SetActive(visible);
+                SetCanvasGroupVisible(_cardRoots[i], visible);
                 if (!visible)
                     continue;
 
@@ -361,6 +361,20 @@ namespace Hecton8.UI
                 if (button != null)
                     button.SetVisualState(_cardButtonBgs[i].color);
             }
+        }
+
+        private static void SetCanvasGroupVisible(RectTransform root, bool visible)
+        {
+            if (root == null)
+                return;
+
+            CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.interactable = visible;
+            canvasGroup.blocksRaycasts = visible;
         }
 
         internal void InvokeOffer(int index)

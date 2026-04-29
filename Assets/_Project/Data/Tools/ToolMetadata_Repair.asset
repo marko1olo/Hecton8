@@ -27,6 +27,13 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  defaultModules:
+  - {fileID: 11400000, guid: 4addd39e796324343a05e87e6e1c71f5, type: 2}
+  - {fileID: 11400000, guid: 40e49accd17e21142af2a7d776a6af32, type: 2}
+  - {fileID: 0}
+  authoredHeatGenerationRate: 0.08
+  authoredCooldownRate: 0.22
+  authoredRecoilImpulse: 0.6
   repairCostFull: 10
   repairResourceID: titanium
   nameLocKey: TOOL_REPAIR_NAME

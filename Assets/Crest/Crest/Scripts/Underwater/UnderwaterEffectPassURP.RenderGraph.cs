@@ -18,8 +18,6 @@ namespace Crest
             public UniversalCameraData cameraData;
             public RenderGraphHelper.Handle colorTargetHandle;
             public RenderGraphHelper.Handle depthTargetHandle;
-            public RenderGraphHelper.Handle temporaryColorHandle;
-            public RenderGraphHelper.Handle depthStencilHandle;
 
             public void Init(UnderwaterEffectPassURP owner, RenderGraph graph, ContextContainer frameData, IUnsafeRenderGraphBuilder builder = null)
             {
@@ -28,22 +26,11 @@ namespace Crest
 
                 colorTargetHandle = resources.activeColorTexture;
                 depthTargetHandle = resources.activeDepthTexture;
-                owner.EnsureRenderGraphTemporaryTargets(cameraData, colorTargetHandle, depthTargetHandle);
-
-                if (graph != null && owner._temporaryColorHandle != null)
-                    temporaryColorHandle = graph.ImportTexture(owner._temporaryColorHandle);
-
-                if (graph != null && owner._underwaterRenderer.UseStencilBufferOnEffect && owner._depthStencilHandle != null)
-                    depthStencilHandle = graph.ImportTexture(owner._depthStencilHandle);
 
                 if (builder != null)
                 {
                     builder.UseTexture(colorTargetHandle, AccessFlags.ReadWrite);
-                    builder.UseTexture(depthTargetHandle, AccessFlags.ReadWrite);
-                    if (owner._temporaryColorHandle != null)
-                        builder.UseTexture(temporaryColorHandle, AccessFlags.ReadWrite);
-                    if (owner._underwaterRenderer.UseStencilBufferOnEffect && owner._depthStencilHandle != null)
-                        builder.UseTexture(depthStencilHandle, AccessFlags.ReadWrite);
+                    builder.UseTexture(depthTargetHandle, AccessFlags.Read);
                 }
             }
         }

@@ -1,3 +1,4 @@
+using Hecton8.Ecosystem;
 using Hecton8.VFX;
 using UnityEngine;
 
@@ -62,6 +63,9 @@ namespace Hecton8.AI
         [Header("Ecology")]
         [Tooltip("Unique species identifier used for AI recognition.")]
         public int speciesID = 0;
+
+        [Tooltip("Optional species genetics asset that injects scent sensitivity and pack-hunt tuning into the Burst cognition path.")]
+        public CreatureGeneticsProfile geneticsProfile;
 
         [Tooltip("If true, this creature can be hunted by predators.")]
         public bool isPrey = false;

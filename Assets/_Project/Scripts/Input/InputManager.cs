@@ -1044,6 +1044,38 @@ namespace Hecton8.Input
             return TryGetBindingGlyphMarkup(action, bindingIndex, out markup);
         }
 
+        public bool TryGetPreferredBindingPath(string actionName, string actionMap, out string bindingPath)
+        {
+            bindingPath = string.Empty;
+            InputAction action = GetAction(actionName, actionMap);
+            if (action == null)
+                return false;
+
+            int bindingIndex = GetPreferredBindingIndex(action, CurrentDisplayStyle);
+            if (bindingIndex < 0 || bindingIndex >= action.bindings.Count)
+                return false;
+
+            InputBinding binding;
+            try
+            {
+                binding = action.bindings[bindingIndex];
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            string path = binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path))
+                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
+
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
+
+            bindingPath = path;
+            return true;
+        }
+
         public static bool TryGetBindingDisplayStringSafe(InputAction action, int bindingIndex, out string display)
         {
             display = string.Empty;
@@ -2237,6 +2269,37 @@ namespace Hecton8.Input
                 "<voffset=-0.08em><sprite name=\"pad_right\"></voffset>"
             };
 
+            // COLD ALLOC: string[26] — cached TMP sprite names indexed by GlyphId — owner: InputManager.GlyphProvider
+            private static readonly string[] SpriteNames =
+            {
+                string.Empty,
+                "kbd_e",
+                "kbd_f",
+                "kbd_m",
+                "kbd_q",
+                "kbd_r",
+                "kbd_tab",
+                "kbd_space",
+                "kbd_enter",
+                "kbd_escape",
+                "mouse_left",
+                "mouse_right",
+                "pad_south",
+                "pad_east",
+                "pad_west",
+                "pad_north",
+                "pad_lb",
+                "pad_rb",
+                "pad_lt",
+                "pad_rt",
+                "pad_start",
+                "pad_select",
+                "pad_up",
+                "pad_down",
+                "pad_left",
+                "pad_right"
+            };
+
             /// <summary>
             /// Attempts to resolve TMP sprite markup for a binding path.
             /// </summary>
@@ -2252,6 +2315,20 @@ namespace Hecton8.Input
 
                 markup = SpriteMarkups[(int)glyphId];
                 return !string.IsNullOrEmpty(markup);
+            }
+
+            public static bool TryGetBindingSpriteName(string bindingPath, out string spriteName)
+            {
+                spriteName = string.Empty;
+                if (string.IsNullOrWhiteSpace(bindingPath))
+                    return false;
+
+                GlyphId glyphId = ResolveGlyphId(bindingPath);
+                if (glyphId == GlyphId.None)
+                    return false;
+
+                spriteName = SpriteNames[(int)glyphId];
+                return !string.IsNullOrEmpty(spriteName);
             }
 
             private static GlyphId ResolveGlyphId(string bindingPath)

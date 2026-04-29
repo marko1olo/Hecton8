@@ -1,0 +1,130 @@
+#pragma kernel SimulateBloodDispersion
+#pragma target 5.0
+
+struct Particle
+{
+    float3 Pos;
+    float Life;
+    float3 Vel;
+    float Size;
+    float3 PrevPos;
+    uint Flags;
+    float2 UV;
+    float2 Pad;
+};
+
+StructuredBuffer<Particle> _ParticlesRead;
+RWStructuredBuffer<Particle> _ParticlesWrite;
+StructuredBuffer<float3> _AbyssalFlowField;
+
+float4 _FieldOriginCellSize;
+float4 _FieldParams;
+float4 _BloodParams0;
+float4 _BloodParams1;
+
+#define THREAD_GROUP_SIZE 64
+#define EPSILON 0.0001
+
+float3 SafeNormalize(float3 value)
+{
+    float lenSq = dot(value, value);
+    return lenSq > EPSILON ? value * rsqrt(lenSq) : 0.0.xxx;
+}
+
+float SafeRcp(float value)
+{
+    return abs(value) > EPSILON ? rcp(value) : 0.0;
+}
+
+float3 SampleFlowField(float3 positionWS)
+{
+    int resolution = max((int)round(_FieldParams.x), 1);
+    float cellSize = max(_FieldOriginCellSize.w, 0.001);
+    if (resolution <= 1)
+        return 0.0.xxx;
+
+    float3 gridPosition = (positionWS - _FieldOriginCellSize.xyz) / cellSize;
+    gridPosition = clamp(gridPosition, 0.0.xxx, (resolution - 1).xxx);
+
+    int3 baseCell = (int3)floor(gridPosition);
+    int3 nextCell = min(baseCell + 1, int3(resolution - 1, resolution - 1, resolution - 1));
+    float3 fracValue = frac(gridPosition);
+
+    uint stride = (uint)resolution;
+    uint layerStride = stride * stride;
+    uint index000 = (uint)baseCell.x + (uint)baseCell.z * stride + (uint)baseCell.y * layerStride;
+    uint index100 = (uint)nextCell.x + (uint)baseCell.z * stride + (uint)baseCell.y * layerStride;
+    uint index010 = (uint)baseCell.x + (uint)nextCell.z * stride + (uint)baseCell.y * layerStride;
+    uint index110 = (uint)nextCell.x + (uint)nextCell.z * stride + (uint)baseCell.y * layerStride;
+    uint index001 = (uint)baseCell.x + (uint)baseCell.z * stride + (uint)nextCell.y * layerStride;
+    uint index101 = (uint)nextCell.x + (uint)baseCell.z * stride + (uint)nextCell.y * layerStride;
+    uint index011 = (uint)baseCell.x + (uint)nextCell.z * stride + (uint)nextCell.y * layerStride;
+    uint index111 = (uint)nextCell.x + (uint)nextCell.z * stride + (uint)nextCell.y * layerStride;
+
+    float3 sample000 = _AbyssalFlowField[index000];
+    float3 sample100 = _AbyssalFlowField[index100];
+    float3 sample010 = _AbyssalFlowField[index010];
+    float3 sample110 = _AbyssalFlowField[index110];
+    float3 sample001 = _AbyssalFlowField[index001];
+    float3 sample101 = _AbyssalFlowField[index101];
+    float3 sample011 = _AbyssalFlowField[index011];
+    float3 sample111 = _AbyssalFlowField[index111];
+
+    float3 sampleX00 = lerp(sample000, sample100, fracValue.x);
+    float3 sampleX10 = lerp(sample010, sample110, fracValue.x);
+    float3 sampleX01 = lerp(sample001, sample101, fracValue.x);
+    float3 sampleX11 = lerp(sample011, sample111, fracValue.x);
+    float3 sampleY0 = lerp(sampleX00, sampleX10, fracValue.z);
+    float3 sampleY1 = lerp(sampleX01, sampleX11, fracValue.z);
+    return lerp(sampleY0, sampleY1, fracValue.y);
+}
+
+[numthreads(THREAD_GROUP_SIZE, 1, 1)]
+void SimulateBloodDispersion(uint3 dispatchThreadID : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadID.x;
+    uint particleCount = (uint)round(_FieldParams.y);
+    if (index >= particleCount)
+        return;
+
+    Particle particle = _ParticlesRead[index];
+    if (particle.Life <= 0.0)
+    {
+        _ParticlesWrite[index] = particle;
+        return;
+    }
+
+    float dt = max(_BloodParams0.x, 0.0);
+    float flowBlend = saturate(_BloodParams0.y);
+    float baseDragCoeff = max(_BloodParams0.z, 0.0);
+    float turbulenceScale = max(_BloodParams0.w, 0.0);
+    float sizeGrowRate = max(_BloodParams1.x, 0.0);
+    float fadeRate = max(_BloodParams1.y, 0.0);
+    float maxSize = max(_BloodParams1.z, particle.Size);
+    float buoyancy = _BloodParams1.w;
+
+    particle.PrevPos = particle.Pos;
+    float3 flowSample = SampleFlowField(particle.Pos);
+    particle.Vel += (flowSample - particle.Vel) * flowBlend * dt;
+
+    float3 flowDirN = SafeNormalize(flowSample);
+    float3 particleDirN = SafeNormalize(particle.Vel);
+    float alignment = dot(particleDirN, flowDirN);
+    float alignmentN = saturate((alignment + 1.0) * 0.5);
+    float dragMultiplier = lerp(1.0, 0.1, alignmentN);
+    float dragAttenuation = pow(saturate(1.0 - dragMultiplier * baseDragCoeff), dt * 60.0);
+    particle.Vel *= dragAttenuation;
+
+    float turbulencePhase = particle.Pad.x * 6.2831853 + _FieldParams.z;
+    float3 turbulence = float3(
+        sin(turbulencePhase + particle.Pos.y * 0.13),
+        cos(turbulencePhase * 0.83 + particle.Pos.x * 0.09),
+        sin(turbulencePhase * 1.17 + particle.Pos.z * 0.11));
+    particle.Vel += turbulence * (turbulenceScale * dt);
+    particle.Vel.y += buoyancy * dt;
+
+    particle.Pos += particle.Vel * dt;
+    particle.Size = min(maxSize, particle.Size + sizeGrowRate * dt);
+    particle.Life = max(0.0, particle.Life - fadeRate * dt);
+    _ParticlesWrite[index] = particle;
+}

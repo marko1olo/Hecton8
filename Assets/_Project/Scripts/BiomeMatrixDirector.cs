@@ -121,6 +121,10 @@ namespace Hecton8.Environment
         private HectonFluidEngine _resolvedFluidEngine;
         private MapMagicBridge _resolvedMapMagicBridge;
         private HectonAtmosphereManager _resolvedAtmosphereManager;
+        private bool _editorPreviewDirty = true;
+        private Transform _editorLastEvaluationTransform;
+        private Vector3 _editorLastEvaluationPosition;
+        private float _editorLastSurfaceLevelY = float.NaN;
 
         internal static BiomeMatrixDirector ActiveRuntimeInstance { get; private set; }
 
@@ -142,6 +146,7 @@ namespace Hecton8.Environment
         {
             TryRegister();
 #if UNITY_EDITOR
+            _editorPreviewDirty = true;
             EditorApplication.update -= EditorUpdate;
             EditorApplication.update += EditorUpdate;
 #endif
@@ -179,7 +184,47 @@ namespace Hecton8.Environment
             if (Application.isPlaying)
                 return;
 
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+                return;
+
+            if (!ShouldEvaluateEditorPreview())
+                return;
+
             EvaluateMatrix(forcePublish: false);
+            CacheEditorPreviewState();
+            _editorPreviewDirty = false;
+        }
+
+        private bool ShouldEvaluateEditorPreview()
+        {
+            if (_editorPreviewDirty)
+                return true;
+
+            Transform evaluationTransform = ResolveEvaluationTransform();
+            if (!ReferenceEquals(_editorLastEvaluationTransform, evaluationTransform))
+                return true;
+
+            if (evaluationTransform == null || !HasCatalog)
+                return false;
+
+            Vector3 evaluationPosition = evaluationTransform.position;
+            if ((evaluationPosition - _editorLastEvaluationPosition).sqrMagnitude > 0.0001f)
+                return true;
+
+            float surfaceLevelY = ResolveSurfaceLevelY();
+            return !Mathf.Approximately(surfaceLevelY, _editorLastSurfaceLevelY);
+        }
+
+        private void CacheEditorPreviewState()
+        {
+            Transform evaluationTransform = ResolveEvaluationTransform();
+            _editorLastEvaluationTransform = evaluationTransform;
+            _editorLastEvaluationPosition = evaluationTransform != null
+                ? evaluationTransform.position
+                : Vector3.zero;
+            _editorLastSurfaceLevelY = evaluationTransform != null && HasCatalog
+                ? ResolveSurfaceLevelY()
+                : float.NaN;
         }
 #endif
 
@@ -218,7 +263,17 @@ namespace Hecton8.Environment
         public void SetMatrixCatalog(HectonBiomeMatrixCatalog catalog)
         {
             matrixCatalog = catalog;
+#if UNITY_EDITOR
+            _editorPreviewDirty = true;
+#endif
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            _editorPreviewDirty = true;
+        }
+#endif
 
         private void EvaluateMatrix(bool forcePublish)
         {
@@ -257,6 +312,7 @@ namespace Hecton8.Environment
             if (forcePublish || next != _currentProfile)
             {
                 _currentProfile = next;
+                GlobalTelemetryBus.PublishBiomeVisited(next != null ? next.biomeName : string.Empty, tier, depth);
                 OnMatrixBiomeChanged?.Invoke(_currentProfile);
             }
 

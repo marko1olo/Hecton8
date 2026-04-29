@@ -10,11 +10,14 @@
 namespace Hecton8.Gameplay
 {
     using System;
+    using Hecton.Localization;
     using UnityEngine;
     using Hecton8.Bootstrap;
     using Hecton8.Core;
+    using Hecton8.Inventory;
     using Hecton8.Interaction;
     using Hecton8.Items;
+    using Hecton8.Physics;
     using Hecton8.Tools;
 
     /// <summary>
@@ -127,6 +130,7 @@ namespace Hecton8.Gameplay
         private float _lastUseTime = float.NegativeInfinity;
         private ulong _queuedRaycastRequesterId;
         private uint _runtimeToolId;
+        private uint _cachedToolItemHashId;
         private bool _runtimeToolRegistered;
 
         // ══════════════════════════════════════════════════════════
@@ -141,6 +145,7 @@ namespace Hecton8.Gameplay
             _lastUseTime = float.NegativeInfinity;
             RefreshQueuedRaycastRequesterId();
             RefreshOperationalToolNameCache();
+            CacheToolItemHash();
             ResolveSwimContract();
             ResolveTransportFeelContract();
 
@@ -167,6 +172,7 @@ namespace Hecton8.Gameplay
             _cachedOperationalToolName = null;
             _queuedRaycastRequesterId = 0UL;
             _runtimeToolId = 0u;
+            _cachedToolItemHashId = 0u;
             _runtimeToolRegistered = false;
         }
 
@@ -214,32 +220,12 @@ namespace Hecton8.Gameplay
 
         public virtual void UsePrimary(float deltaTime)
         {
-            if (IsBroken) { OnToolBrokenWhileUsing(); return; }
-            if (enableEnergyConsumption && _toolMetadata != null)
-            {
-                if (!HasToolEnergyOrWirelessPath() || !TryConsumeRuntimeEnergy(deltaTime))
-                    return;
-            }
-
-            if (enableDurabilityDrain && _toolMetadata != null) ApplyDurabilityDrain(deltaTime, true);
-            _lastUseTime = Time.time;
-            OnToolUsed?.Invoke(true);
-            CheckLowDurability();
+            TryBeginToolUse(deltaTime, true);
         }
 
         public virtual void UseSecondary(float deltaTime)
         {
-            if (IsBroken) { OnToolBrokenWhileUsing(); return; }
-            if (enableEnergyConsumption && _toolMetadata != null)
-            {
-                if (!HasToolEnergyOrWirelessPath() || !TryConsumeRuntimeEnergy(deltaTime * 0.5f))
-                    return;
-            }
-
-            if (enableDurabilityDrain && _toolMetadata != null) ApplyDurabilityDrain(deltaTime, false);
-            _lastUseTime = Time.time;
-            OnToolUsed?.Invoke(false);
-            CheckLowDurability();
+            TryBeginToolUse(deltaTime, false);
         }
 
         public virtual void ToolTick(float deltaTime) { }
@@ -370,6 +356,15 @@ namespace Hecton8.Gameplay
                    service.HasUpgrade(_runtimeToolId, flag);
         }
 
+        protected bool TryGetWirelessBrownoutFlicker(out float flickerScalar)
+        {
+            flickerScalar = 0f;
+            if (!_runtimeToolRegistered || !(GlobalRegistry.ModularEquipment is ModularEquipmentEngine runtime))
+                return false;
+
+            return runtime.TryGetWirelessBrownoutFeedback(_runtimeToolId, out flickerScalar);
+        }
+
         protected bool HasToolEnergyOrWirelessPath()
         {
             if (GetRuntimeBatteryNormalized(0f) > 0.0001f)
@@ -401,7 +396,7 @@ namespace Hecton8.Gameplay
             float multiplier = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetDurabilityDrainMultiplier(_runtimeToolId, 1f)
                 : 1f;
-            system.DrainDurability(_toolMetadata.toolID, drainRate * multiplier * deltaTime, _toolMetadata.maxDurability);
+            system.DrainDurabilityByTime(_toolMetadata.toolID, ResolveToolItemHash(), drainRate * multiplier * deltaTime, _toolMetadata.maxDurability);
             SyncModularDurability();
         }
 
@@ -523,6 +518,81 @@ namespace Hecton8.Gameplay
                 service.SetDurability(_runtimeToolId, DurabilityNormalized);
         }
 
+        protected bool TryQueuePlayerToolRecoil(Vector3 usageDirection, float impulseMagnitude)
+        {
+            if (impulseMagnitude <= 0.0001f)
+                return false;
+
+            Vector3 safeDirection = usageDirection.sqrMagnitude > 0.0001f ? usageDirection.normalized : transform.forward;
+            if (ToolHitUtility.TryApplyRelativeCarrierImpulse(safeDirection, impulseMagnitude))
+                return true;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            if (playerBody == null)
+                return false;
+
+            return PhysicsForceRouter.QueueForce(playerBody, -safeDirection * impulseMagnitude, ForceMode.Impulse);
+        }
+
+        protected void QueueToolHapticFeedback(float powerDelivered, float ratedPower, byte priority = 1)
+        {
+            ToolHapticsRuntime.EnqueueToolFeedback(powerDelivered, ratedPower, priority);
+        }
+
+        protected bool TryBeginToolUse(float deltaTime, bool isPrimary)
+        {
+            if (IsBroken)
+            {
+                OnToolBrokenWhileUsing();
+                return false;
+            }
+
+            if (enableEnergyConsumption && _toolMetadata != null)
+            {
+                float energyDeltaTime = isPrimary ? deltaTime : deltaTime * 0.5f;
+                if (!HasToolEnergyOrWirelessPath() || !TryConsumeRuntimeEnergy(energyDeltaTime))
+                    return false;
+            }
+
+            if (enableDurabilityDrain && _toolMetadata != null)
+                ApplyDurabilityDrain(deltaTime, isPrimary);
+
+            _lastUseTime = Time.time;
+            OnToolUsed?.Invoke(isPrimary);
+            CheckLowDurability();
+            return true;
+        }
+
+        internal bool IsRuntimeOverchargeRequested()
+        {
+            IInputService inputService = GlobalRegistry.Input;
+            if (inputService == null || !inputService.IsPlayerInputEnabled || !IsEquipped)
+                return false;
+
+            PlayerInputState inputState = inputService.GetState();
+            return inputState.HasAction(PlayerInputAction.PrimaryFire) &&
+                   inputState.HasAction(PlayerInputAction.Sprint);
+        }
+
+        internal void HandleRuntimeOverchargeFailure(float playerDamage)
+        {
+            if (_toolData != null)
+            {
+                int toolHashId = LocHash.Compute(_toolData.PersistentId);
+                if (toolHashId != 0)
+                    PlayerInventory.Instance?.TryRemoveFirstMatchingItemByHash(toolHashId);
+            }
+
+            HectonPlayerHealth playerHealth = null;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerTransform != null)
+                playerHealth = playerContext.PlayerTransform.GetComponent<HectonPlayerHealth>();
+
+            if (playerHealth != null)
+                playerHealth.TakeDamage(Mathf.Max(0f, playerDamage), true);
+        }
+
         private uint ResolveRuntimeToolId()
         {
             if (_runtimeToolId != 0u)
@@ -568,7 +638,26 @@ namespace Hecton8.Gameplay
         }
 
         internal ToolMetadata RuntimeMetadata => _toolMetadata;
+        internal uint RuntimeToolId => _runtimeToolId;
         internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= Mathf.Max(0.05f, maxIdleSeconds));
         private void LogLifecycleDebug(string message) { if (lifecycleDebugLogging) Debug.Log("[ToolLifecycle] " + message); }
+
+        private void CacheToolItemHash()
+        {
+            _cachedToolItemHashId = _toolData != null
+                ? unchecked((uint)LocHash.Compute(_toolData.PersistentId))
+                : 0u;
+        }
+
+        private uint ResolveToolItemHash()
+        {
+            if (_cachedToolItemHashId != 0u)
+                return _cachedToolItemHashId;
+
+            CacheToolItemHash();
+            return _cachedToolItemHashId != 0u
+                ? _cachedToolItemHashId
+                : unchecked((uint)Animator.StringToHash(_toolMetadata != null ? _toolMetadata.toolID : GetType().Name));
+        }
     }
 }

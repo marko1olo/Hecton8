@@ -186,13 +186,18 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 #endif
 
                 half occlusion = lerp(1.0h, SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).g, _OcclusionStrength);
+                half metallic = saturate(_Metallic);
+                half smoothness = saturate(_Smoothness);
+                half3 normalWS = SafeNormalize3(input.normalWS);
+                half3 albedo = albedoSample.rgb;
+                HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
                 half3 litColor = EvaluateLighting(
                     input.positionWS,
-                    SafeNormalize3(input.normalWS),
+                    normalWS,
                     SafeNormalize3(input.viewDirWS),
-                    albedoSample.rgb,
-                    saturate(_Metallic),
-                    saturate(_Smoothness),
+                    albedo,
+                    metallic,
+                    smoothness,
                     saturate(occlusion));
                 half3 emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, input.uv).rgb * _EmissionColor.rgb;
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);

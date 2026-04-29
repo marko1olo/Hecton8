@@ -52,6 +52,12 @@ namespace Hecton8.Gameplay
         }
 #endif
 
+        private void OnEnable()
+        {
+            EnsureLutStorage();
+            BakeIntensityCurveLut();
+        }
+
         private void EnsureLutStorage()
         {
             if (bakedIntensityLut == null || bakedIntensityLut.Length != IntensityLutSampleCount)

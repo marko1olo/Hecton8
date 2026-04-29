@@ -95,6 +95,7 @@ namespace Hecton8.AI
         public float AcousticPingStrength01;
         public float AcousticTransmission01;
         public float ChemicalSignal01;
+        public float ChemicalSensitivity;
         public float HungerWeight;
         public float ThreatWeight;
         public float FearWeight;
@@ -103,6 +104,9 @@ namespace Hecton8.AI
         public float EscapeSafeDistance;
         public float WanderRadius;
         public float PatrolRadius;
+        public float PackCoordinationRadius;
+        public float PackFlankDistance;
+        public float PackCommitDistance;
         public float ImportanceScore;
         public int SpeciesId;
         public int ClaimedBoidIndex;
@@ -226,14 +230,15 @@ namespace Hecton8.AI
         private const float AcousticStimulusThreshold = 0.015f;
         private const float ChemicalStimulusThreshold = 0.015f;
         private const float ChemicalSignalRangeMeters = 28f;
+        private const float PredatorScentFollowThreshold = 0.1f;
+        private const float FearPheromoneContagionShare = 0.3f;
+        private const float FearPheromoneInjectionThreshold = 0.1f;
         private const float MinimumDetailedThreatImportanceScore = 0.2f;
         private const float CenterEvaluationIntervalSeconds = 1.0f / 60.0f;
         private const float FocusEvaluationIntervalSeconds = 1.0f / 30.0f;
         private const float PeripheryEvaluationIntervalSeconds = 1.0f / 20.0f;
         private const float FarEvaluationIntervalSeconds = 1.0f / 10.0f;
         private const float RearEvaluationIntervalSeconds = 1.0f / 5.0f;
-        private const float PredatorPackFlankDistanceMeters = 20f;
-        private const float PredatorPackCoordinationRadiusMeters = 48f;
         private const float HighImportanceThreshold = 0.75f;
         private const float FocusImportanceThreshold = 0.50f;
         private const float MidImportanceThreshold = 0.30f;
@@ -285,12 +290,18 @@ namespace Hecton8.AI
         private static float3 _threatVoxelCellSize;
         private static byte _threatVoxelSolidThreshold = SolidThreatVoxel;
         private static bool _threatVoxelUsesSignedDistanceEncoding;
+        private static NativeArray<float4> _chemicalGrid;
+        private static NativeArray<float4> _chemicalOverlayGrid;
+        private static int3 _chemicalGridDimensions;
+        private static float3 _chemicalGridOrigin;
+        private static float3 _chemicalGridCellSize;
         private static JobHandle _scheduledSwarmHandle;
         private static JobHandle _scheduledEvaluationHandle;
         private static bool _evaluationScheduled;
         private static int _lastEvaluatedFrame = -1;
         private static int _lastScheduledFrame = -1;
         private static int _lastThreatVoxelBindFrame = -1;
+        private static int _lastChemicalGridBindFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
@@ -563,7 +574,10 @@ namespace Hecton8.AI
             if (!_activeSlots.IsCreated)
                 return;
 
+            EmitFearPheromones();
+            ChemicalInfluenceGrid.BeginAiFrame(frameId);
             RefreshThreatVoxelSnapshot(frameId);
+            RefreshChemicalGridSnapshot(frameId);
         }
 
         internal static void ScheduleFrameEvaluation(int frameId)
@@ -632,7 +646,12 @@ namespace Hecton8.AI
                 ThreatVoxelOrigin = _threatVoxelOrigin,
                 ThreatVoxelCellSize = _threatVoxelCellSize,
                 ThreatVoxelSolidThreshold = _threatVoxelSolidThreshold,
-                ThreatVoxelUsesSignedDistanceEncoding = _threatVoxelUsesSignedDistanceEncoding ? 1 : 0
+                ThreatVoxelUsesSignedDistanceEncoding = _threatVoxelUsesSignedDistanceEncoding ? 1 : 0,
+                ChemicalGrid = _chemicalGrid,
+                ChemicalOverlayGrid = _chemicalOverlayGrid,
+                ChemicalGridDimensions = _chemicalGridDimensions,
+                ChemicalGridOrigin = _chemicalGridOrigin,
+                ChemicalGridCellSize = _chemicalGridCellSize
             };
 
             _scheduledEvaluationHandle = job.Schedule(_activeSlots.Length, EvaluationJobBatchSize, _scheduledSwarmHandle);
@@ -716,12 +735,18 @@ namespace Hecton8.AI
             _threatVoxelCellSize = new float3(1f, 1f, 1f);
             _threatVoxelSolidThreshold = SolidThreatVoxel;
             _threatVoxelUsesSignedDistanceEncoding = false;
+            _chemicalGrid = default;
+            _chemicalOverlayGrid = default;
+            _chemicalGridDimensions = int3.zero;
+            _chemicalGridOrigin = float3.zero;
+            _chemicalGridCellSize = new float3(1f, 1f, 1f);
             _scheduledSwarmHandle = default;
             _scheduledEvaluationHandle = default;
             _evaluationScheduled = false;
             _lastEvaluatedFrame = -1;
             _lastScheduledFrame = -1;
             _lastThreatVoxelBindFrame = -1;
+            _lastChemicalGridBindFrame = -1;
         }
 
         private static void EnsureInitialized()
@@ -846,6 +871,63 @@ namespace Hecton8.AI
             _threatVoxelCellSize = new float3(1f, 1f, 1f);
             _threatVoxelSolidThreshold = SolidThreatVoxel;
             _threatVoxelUsesSignedDistanceEncoding = false;
+        }
+
+        private static void RefreshChemicalGridSnapshot(int frameId)
+        {
+            if (_lastChemicalGridBindFrame == frameId)
+                return;
+
+            _lastChemicalGridBindFrame = frameId;
+            if (ChemicalInfluenceGrid.TryGetPublishedSnapshot(out NativeArray<float4> grid, out NativeArray<float4> overlayGrid, out int3 dimensions, out float3 origin, out float3 cellSize))
+            {
+                _chemicalGrid = grid;
+                _chemicalOverlayGrid = overlayGrid;
+                _chemicalGridDimensions = dimensions;
+                _chemicalGridOrigin = origin;
+                _chemicalGridCellSize = cellSize;
+                return;
+            }
+
+            _chemicalGrid = default;
+            _chemicalOverlayGrid = default;
+            _chemicalGridDimensions = int3.zero;
+            _chemicalGridOrigin = float3.zero;
+            _chemicalGridCellSize = new float3(1f, 1f, 1f);
+        }
+
+        private static void EmitFearPheromones()
+        {
+            if (!_activeSlots.IsCreated || !_cores.IsCreated || !_inputs.IsCreated || !_outputs.IsCreated)
+                return;
+
+            for (int i = 0; i < _activeSlots.Length; i++)
+            {
+                int slot = _activeSlots[i];
+                if (slot < 0 || slot >= Capacity)
+                    continue;
+
+                bool predatorRole = (_inputs[slot].Flags & (int)CognitionInputFlags.PredatorRole) != 0;
+                int chosenState = _chosenStates.IsCreated ? _chosenStates[slot] : 0;
+                bool fleeing = predatorRole
+                    ? chosenState == (int)PredatorUtilityState.Fleeing
+                    : IsPassiveFleeState((FaunaBrain.AIState)_outputs[slot].LegacyState);
+                if (!fleeing)
+                    continue;
+
+                UnpackDriveChannels(_cores[slot].QuantizedDrives, out _, out _, out float fear, out _);
+                if (fear < FearPheromoneInjectionThreshold)
+                    continue;
+
+                float3 position = _cores[slot].Position;
+                ChemicalInfluenceGrid.QueueFearPheromone(new Vector3(position.x, position.y, position.z), fear);
+            }
+        }
+
+        private static bool IsPassiveFleeState(FaunaBrain.AIState state)
+        {
+            return state == FaunaBrain.AIState.Escape ||
+                   state == FaunaBrain.AIState.Retreat;
         }
 
         private static bool ContainsActiveSlot(int slot)
@@ -1095,7 +1177,12 @@ namespace Hecton8.AI
                 float3 claimedPosition = float3.zero;
                 float bestClaimDistanceSq = float.MaxValue;
                 bool canClaimBoid = (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0;
-                bool canCoordinatePack = canClaimBoid && (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0;
+                float packCoordinationRadius = math.max(0f, input.PackCoordinationRadius);
+                float packFlankDistance = math.max(0f, input.PackFlankDistance);
+                bool canCoordinatePack = canClaimBoid &&
+                                         (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0 &&
+                                         packCoordinationRadius > DdaEpsilon &&
+                                         packFlankDistance > DdaEpsilon;
                 float3 predatorPackTarget = input.PlayerPosition;
                 float predatorPackWeight = 0f;
                 float perceptionRadiusSq = SwarmPerceptionRadius * SwarmPerceptionRadius;
@@ -1147,12 +1234,13 @@ namespace Hecton8.AI
                     }
 
                     if (canCoordinatePack &&
+                        sameSpecies &&
                         (otherInput.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
                         (otherInput.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0 &&
                         (PriorCores[otherSlot].StateFlags & (uint)FaunaWorldStateFlags.Hunting) != 0u)
                     {
                         float coordinationDistance = distSq * invDist;
-                        float coordinationWeight = 1f - math.saturate(coordinationDistance / PredatorPackCoordinationRadiusMeters);
+                        float coordinationWeight = 1f - math.saturate(coordinationDistance / packCoordinationRadius);
                         if (coordinationWeight > predatorPackWeight)
                         {
                             float3 packForward = math.normalizesafe(
@@ -1164,7 +1252,7 @@ namespace Hecton8.AI
                             if (math.lengthsq(packRight) > DdaEpsilon)
                             {
                                 float sideSign = math.select(-1f, 1f, math.dot(input.Position - otherInput.PlayerPosition, packRight) >= 0f);
-                                predatorPackTarget = otherInput.PlayerPosition + (packRight * (PredatorPackFlankDistanceMeters * sideSign));
+                                predatorPackTarget = otherInput.PlayerPosition + (packRight * (packFlankDistance * sideSign));
                                 predatorPackWeight = coordinationWeight;
                             }
                         }
@@ -1246,6 +1334,11 @@ namespace Hecton8.AI
             public float3 ThreatVoxelCellSize;
             public byte ThreatVoxelSolidThreshold;
             public int ThreatVoxelUsesSignedDistanceEncoding;
+            [ReadOnly] public NativeArray<float4> ChemicalGrid;
+            [ReadOnly] public NativeArray<float4> ChemicalOverlayGrid;
+            public int3 ChemicalGridDimensions;
+            public float3 ChemicalGridOrigin;
+            public float3 ChemicalGridCellSize;
 
             public void Execute(int index)
             {
@@ -1311,8 +1404,9 @@ namespace Hecton8.AI
                 if (playerVisible)
                     control.LastVisualContactTime = input.CurrentTime;
 
+                TryResolveChemicalGradient(resolvedInput.Position, out _, out float fearPheromoneSignal, out _);
                 float rawFear = math.saturate((1f - math.saturate(input.HealthNormalized)) + input.FearPressure01);
-                fear = math.max(fear, rawFear);
+                fear = math.max(fear, math.max(rawFear, fearPheromoneSignal * FearPheromoneContagionShare));
 
                 PackedCognitionOutput output = isPredator
                     ? EvaluatePredator(slot, ref core, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, preyVisible, scavengeVisible, aggression, ref hunger, ref fatigue, ref fear, ref threatLevel)
@@ -1358,13 +1452,17 @@ namespace Hecton8.AI
                 bool hasAcousticMemory = TryResolveStrongestAcousticMemory(slot, input.Position, input.CurrentTime, out float3 acousticMemoryPosition, out float acousticMemoryScore);
                 float acousticScore = math.max(directAcousticScore, acousticMemoryScore);
                 bool hasScavengeTarget = (input.Flags & (int)CognitionInputFlags.HasScavengeTarget) != 0;
+                bool hasChemicalTrail = TryResolveChemicalGradient(input.Position, out float attractantSignal, out float fearPheromoneSignal, out float3 scentGradient);
                 float chemicalScore = ComputeChemicalScore(
                     slot,
                     input.Position,
                     input.ScavengePosition,
                     hasScavengeTarget,
                     input.ChemicalSignal01,
+                    input.ChemicalSensitivity,
                     input.CurrentTime);
+                chemicalScore = math.max(chemicalScore, attractantSignal);
+                fear = math.max(fear, fearPheromoneSignal * FearPheromoneContagionShare);
 
                 float3 targetPosition = input.Position + (fallbackForward * 4f);
                 bool hasTarget = false;
@@ -1394,6 +1492,12 @@ namespace Hecton8.AI
                     hasTarget = true;
                     threatLevel = math.max(threatLevel, acousticMemoryScore);
                 }
+                else if (hasChemicalTrail && chemicalScore > PredatorScentFollowThreshold && math.lengthsq(scentGradient) > DdaEpsilon)
+                {
+                    targetPosition = input.Position + (math.normalizesafe(scentGradient, fallbackForward) * math.cmax(ChemicalGridCellSize));
+                    hasTarget = true;
+                    threatLevel = math.max(threatLevel, chemicalScore * 0.65f);
+                }
                 else if (hasScavengeTarget && chemicalScore > ChemicalStimulusThreshold)
                 {
                     targetPosition = input.ScavengePosition;
@@ -1419,8 +1523,10 @@ namespace Hecton8.AI
                     }
                 }
 
+                float packCommitDistance = math.max(input.PackCommitDistance, input.AttackRange * 1.25f);
                 bool usePackFlank = hasPlayerTarget &&
                                     packFlankWeight > DdaEpsilon &&
+                                    math.lengthsq(predictedPlayerPosition - input.Position) > packCommitDistance * packCommitDistance &&
                                     !scavengeVisible &&
                                     !resolvedPreyVisible;
                 if (usePackFlank)
@@ -1607,6 +1713,7 @@ namespace Hecton8.AI
                     : 0f;
                 bool hasAcousticMemory = TryResolveStrongestAcousticMemory(slot, input.Position, input.CurrentTime, out float3 acousticMemoryPosition, out float acousticMemoryScore);
                 float acousticScore = math.max(directAcousticScore, acousticMemoryScore);
+                TryResolveChemicalGradient(input.Position, out _, out float fearPheromoneSignal, out _);
                 float threatVisual = playerVisible
                     ? ComputeThreatVisual(input.Position, input.PlayerPosition, fallbackForward, math.max(input.EscapeSafeDistance, 1f))
                     : 0f;
@@ -1614,10 +1721,10 @@ namespace Hecton8.AI
                     threatVisual = math.max(threatVisual, ComputeThreatVisual(input.Position, input.ThreatPosition, fallbackForward, math.max(input.EscapeSafeDistance, 1f)));
 
                 float threatBlend = 1f - math.exp(-ThreatSmoothingK * math.max(0f, input.DeltaTime));
-                float threatRaw = math.max(math.max(threatVisual, playerThreat), acousticScore);
+                float threatRaw = math.max(math.max(math.max(threatVisual, playerThreat), acousticScore), fearPheromoneSignal * FearPheromoneContagionShare);
                 threatLevel = math.lerp(threatLevel, threatRaw, threatBlend);
                 threatLevel = math.clamp(threatLevel, 0f, 1f);
-                fear = math.max(fear, ScoreThreat(threatRaw) * 0.45f);
+                fear = math.max(fear, math.max(ScoreThreat(threatRaw) * 0.45f, fearPheromoneSignal * FearPheromoneContagionShare));
 
                 bool retreatForced = control.OverrideUntilTime > input.CurrentTime;
                 bool scatterActive = isFlocking && control.ScatterUntilTime > input.CurrentTime;
@@ -1863,6 +1970,7 @@ namespace Hecton8.AI
                 float3 scavengePosition,
                 bool hasScavengeTarget,
                 float directChemicalSignal01,
+                float chemicalSensitivity,
                 float currentTime)
             {
                 float directScore = 0f;
@@ -1876,7 +1984,101 @@ namespace Hecton8.AI
                 if (TryResolveStrongestMemory(slot, selfPosition, currentTime, (int)CognitionStimulusType.Chemical, out _, out float memoryScore))
                     directScore = math.max(directScore, memoryScore);
 
-                return math.saturate(directScore);
+                return math.saturate(directScore * math.max(0f, chemicalSensitivity));
+            }
+
+            private bool TryResolveChemicalGradient(float3 worldPosition, out float attractantSignal, out float fearSignal, out float3 gradient)
+            {
+                attractantSignal = 0f;
+                fearSignal = 0f;
+                gradient = float3.zero;
+                if (!ChemicalGrid.IsCreated ||
+                    ChemicalGrid.Length <= 0 ||
+                    ChemicalGridDimensions.x <= 0 ||
+                    ChemicalGridDimensions.y <= 0 ||
+                    ChemicalGridDimensions.z <= 0 ||
+                    !TryWorldToChemicalCell(worldPosition, out int3 cell))
+                {
+                    return false;
+                }
+
+                attractantSignal = SampleChemicalAttractant(cell);
+                fearSignal = SampleChemicalFear(cell);
+
+                float gradientX = SampleChemicalAttractant(cell + new int3(1, 0, 0)) - SampleChemicalAttractant(cell + new int3(-1, 0, 0));
+                float gradientY = SampleChemicalAttractant(cell + new int3(0, 1, 0)) - SampleChemicalAttractant(cell + new int3(0, -1, 0));
+                float gradientZ = SampleChemicalAttractant(cell + new int3(0, 0, 1)) - SampleChemicalAttractant(cell + new int3(0, 0, -1));
+                float3 safeCellSize = math.max(ChemicalGridCellSize, new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
+                gradient = new float3(
+                    gradientX / (safeCellSize.x * 2f),
+                    gradientY / (safeCellSize.y * 2f),
+                    gradientZ / (safeCellSize.z * 2f));
+                return attractantSignal > DdaEpsilon || fearSignal > DdaEpsilon || math.lengthsq(gradient) > DdaEpsilon;
+            }
+
+            private float SampleChemicalAttractant(int3 cell)
+            {
+                float4 sample = SampleChemicalCell(cell);
+                return math.saturate(sample.x + sample.y);
+            }
+
+            private float SampleChemicalFear(int3 cell)
+            {
+                return math.saturate(SampleChemicalCell(cell).z);
+            }
+
+            private float4 SampleChemicalCell(int3 cell)
+            {
+                if (!IsChemicalCellInside(cell))
+                    return float4.zero;
+
+                int flatIndex = FlattenChemicalCellIndex(cell, ChemicalGridDimensions);
+                if (flatIndex < 0 || flatIndex >= ChemicalGrid.Length)
+                    return float4.zero;
+
+                float4 sample = ChemicalGrid[flatIndex];
+                if (ChemicalOverlayGrid.IsCreated && flatIndex < ChemicalOverlayGrid.Length)
+                    sample += ChemicalOverlayGrid[flatIndex];
+                return sample;
+            }
+
+            private bool TryWorldToChemicalCell(float3 worldPosition, out int3 cell)
+            {
+                float3 local = worldPosition - ChemicalGridOrigin;
+                if (local.x < 0f || local.y < 0f || local.z < 0f)
+                {
+                    cell = int3.zero;
+                    return false;
+                }
+
+                float3 safeCellSize = math.max(ChemicalGridCellSize, new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
+                int3 candidate = new int3(
+                    (int)math.floor(local.x / safeCellSize.x),
+                    (int)math.floor(local.y / safeCellSize.y),
+                    (int)math.floor(local.z / safeCellSize.z));
+                if (!IsChemicalCellInside(candidate))
+                {
+                    cell = int3.zero;
+                    return false;
+                }
+
+                cell = candidate;
+                return true;
+            }
+
+            private bool IsChemicalCellInside(int3 cell)
+            {
+                return cell.x >= 0 &&
+                       cell.y >= 0 &&
+                       cell.z >= 0 &&
+                       cell.x < ChemicalGridDimensions.x &&
+                       cell.y < ChemicalGridDimensions.y &&
+                       cell.z < ChemicalGridDimensions.z;
+            }
+
+            private static int FlattenChemicalCellIndex(int3 cell, int3 dimensions)
+            {
+                return cell.x + (cell.y * dimensions.x) + (cell.z * dimensions.x * dimensions.y);
             }
 
             private static float Pow01(float value, float exponent)

@@ -14,12 +14,15 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8920)]
-    public sealed class DebrisManager : MonoBehaviour, IUpdatable, IDebrisService, IOriginShiftListener
+    public sealed class DebrisManager : MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener
     {
         private const int MaxActiveChunks = 192;
         private const int MaxPendingBursts = 24;
         private const int MatrixStrideBytes = sizeof(float) * 16;
-        private const float CollisionDisableDelay = 5f;
+        private const float PhysicsPhaseDuration = 3f;
+        private const float SinkPhaseDuration = 2f;
+        private const float PoolReturnDelay = PhysicsPhaseDuration + SinkPhaseDuration;
+        private const float SinkDepthMeters = 0.25f;
         private const float UnderwaterGravity = 2.9f;
         private const float NoiseStrength = 0.42f;
         private const float MinimumPower = 0.05f;
@@ -67,6 +70,7 @@ namespace Hecton8.Gameplay
         private int _pendingBurstCount;
         private bool _simulationScheduled;
         private bool _dispatcherRegistered;
+        private bool _lateFrameRegistered;
         private bool _originShiftRegistered;
         private bool _clearRequested;
         private bool _isInitialized;
@@ -152,6 +156,12 @@ namespace Hecton8.Gameplay
                 _dispatcherRegistered = true;
             }
 
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = true;
+            }
+
             if (!_originShiftRegistered)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -165,6 +175,12 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _dispatcherRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
             }
 
             if (_originShiftRegistered)
@@ -197,6 +213,12 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _dispatcherRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
             }
 
             ReleaseNativeState();
@@ -245,13 +267,6 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            if (_simulationScheduled && _simulationHandle.IsCompleted)
-            {
-                _simulationHandle.Complete();
-                _simulationScheduled = false;
-                SwapStateBuffers();
-            }
-
             if (_clearRequested && !_simulationScheduled)
             {
                 ResetActiveState();
@@ -274,7 +289,9 @@ namespace Hecton8.Gameplay
                     ReadStates = _frontStates,
                     WriteStates = _backStates,
                     DeltaTime = math.max(0.0001f, deltaTime),
-                    CollisionDisableDelay = CollisionDisableDelay,
+                    PhysicsPhaseDuration = PhysicsPhaseDuration,
+                    PoolReturnDelay = PoolReturnDelay,
+                    SinkDepthMeters = SinkDepthMeters,
                     Gravity = UnderwaterGravity,
                     NoiseStrength = NoiseStrength,
                     MaximumLifetime = MaximumChunkLifetime,
@@ -284,6 +301,17 @@ namespace Hecton8.Gameplay
                 _simulationHandle = job.Schedule();
                 _simulationScheduled = true;
             }
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (!_simulationScheduled || !_simulationHandle.IsCompleted)
+                return;
+
+            _simulationHandle.Complete();
+            _simulationScheduled = false;
+            SwapStateBuffers();
         }
 
         /// <inheritdoc />
@@ -360,14 +388,16 @@ namespace Hecton8.Gameplay
                         AngularVelocity = angularVelocity,
                         Age = 0f,
                         GroundY = request.RuntimeOrigin.y - request.Definition.GroundPlaneOffset,
-                        SinkTargetY = (request.RuntimeOrigin.y - request.Definition.GroundPlaneOffset) - request.Definition.SinkDistance,
-                        SinkDuration = math.max(0.1f, request.Definition.SinkDuration),
+                        SinkStartY = runtimePosition.y,
+                        SinkTargetY = runtimePosition.y - SinkDepthMeters,
+                        SinkDuration = SinkPhaseDuration,
                         LinearDamping = math.max(0.05f, request.Definition.LinearDamping),
                         AngularDamping = math.max(0.05f, request.Definition.AngularDamping),
                         BounceDamping = math.clamp(request.Definition.BounceDamping, 0f, 1f),
                         MassScale = massScale,
                         Active = 1,
-                        CollisionEnabled = 1
+                        CollisionEnabled = 1,
+                        Kinematic = 0
                     };
 
                     _frontStates[slotIndex] = state;
@@ -692,6 +722,7 @@ namespace Hecton8.Gameplay
             public float3 AngularVelocity;
             public float Age;
             public float GroundY;
+            public float SinkStartY;
             public float SinkTargetY;
             public float SinkDuration;
             public float LinearDamping;
@@ -700,6 +731,7 @@ namespace Hecton8.Gameplay
             public float MassScale;
             public byte Active;
             public byte CollisionEnabled;
+            public byte Kinematic;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast)]
@@ -708,7 +740,9 @@ namespace Hecton8.Gameplay
             [ReadOnly] public NativeArray<DebrisChunkState> ReadStates;
             public NativeArray<DebrisChunkState> WriteStates;
             public float DeltaTime;
-            public float CollisionDisableDelay;
+            public float PhysicsPhaseDuration;
+            public float PoolReturnDelay;
+            public float SinkDepthMeters;
             public float Gravity;
             public float NoiseStrength;
             public float MaximumLifetime;
@@ -757,23 +791,36 @@ namespace Hecton8.Gameplay
                             state.Velocity.z *= lateralDamping;
                         }
 
-                        if (state.Age >= CollisionDisableDelay)
+                        if (state.Age >= PhysicsPhaseDuration)
+                        {
                             state.CollisionEnabled = 0;
+                            state.Kinematic = 1;
+                            state.SinkStartY = state.Position.y;
+                            state.SinkTargetY = state.SinkStartY - SinkDepthMeters;
+                            state.Velocity = float3.zero;
+                            state.AngularVelocity = float3.zero;
+                        }
                     }
                     else
                     {
-                        state.Velocity *= math.saturate(1f - ((state.LinearDamping * 2f) * dt));
-                        state.Position += state.Velocity * dt;
-                        float sink01 = math.saturate((state.Age - CollisionDisableDelay) / math.max(0.1f, state.SinkDuration));
-                        state.Position.y = math.lerp(state.GroundY, state.SinkTargetY, sink01);
-                        if (sink01 >= 1f)
+                        float sink01 = math.saturate((state.Age - PhysicsPhaseDuration) / math.max(0.0001f, PoolReturnDelay - PhysicsPhaseDuration));
+                        float sinkSmooth = sink01 * sink01 * (3f - (2f * sink01));
+                        state.Position.y = math.lerp(state.SinkStartY, state.SinkTargetY, sinkSmooth);
+                        if (state.Age >= PoolReturnDelay)
                             state.Active = 0;
                     }
 
-                    state.AngularVelocity += randomDrift * 0.45f;
-                    state.AngularVelocity *= math.saturate(1f - (state.AngularDamping * dt));
-                    quaternion deltaRotation = quaternion.Euler(state.AngularVelocity * dt);
-                    state.Rotation = math.normalize(math.mul(state.Rotation, deltaRotation));
+                    if (state.Kinematic == 0)
+                    {
+                        state.AngularVelocity += randomDrift * 0.45f;
+                        state.AngularVelocity *= math.saturate(1f - (state.AngularDamping * dt));
+                        quaternion deltaRotation = quaternion.Euler(state.AngularVelocity * dt);
+                        state.Rotation = math.normalize(math.mul(state.Rotation, deltaRotation));
+                    }
+                    else
+                    {
+                        state.AngularVelocity = float3.zero;
+                    }
 
                     WriteStates[i] = state;
                 }

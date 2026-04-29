@@ -653,7 +653,7 @@ namespace Hecton8.UI
             {
                 // Deselect previous
                 if (_rows[_previousSelectedIndex].selectedIndicator != null)
-                    _rows[_previousSelectedIndex].selectedIndicator.SetActive(false);
+                    SetIndicatorVisible(_rows[_previousSelectedIndex].selectedIndicator, false);
 
                 if (_rowBackgrounds[_previousSelectedIndex] != null)
                     _rowBackgrounds[_previousSelectedIndex].color = RowBg;
@@ -669,7 +669,7 @@ namespace Hecton8.UI
             {
                 // Select current
                 if (_rows[_selectedIndex].selectedIndicator != null)
-                    _rows[_selectedIndex].selectedIndicator.SetActive(true);
+                    SetIndicatorVisible(_rows[_selectedIndex].selectedIndicator, true);
 
                 if (_rowBackgrounds[_selectedIndex] != null)
                     _rowBackgrounds[_selectedIndex].color = RowBgSelected; // FIXED: cached color
@@ -682,6 +682,20 @@ namespace Hecton8.UI
             }
 
             _previousSelectedIndex = _selectedIndex;
+        }
+
+        private static void SetIndicatorVisible(GameObject indicator, bool visible)
+        {
+            if (indicator == null)
+                return;
+
+            CanvasGroup canvasGroup = indicator.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = indicator.AddComponent<CanvasGroup>();
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
         }
 
         private void UpdateStatusForSelected()

@@ -441,7 +441,7 @@ public struct VoxelDensityJob : IJobParallelFor
     [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
     [ReadOnly] public NativeArray<CaveStructure> caveStructures;
     [ReadOnly] public NativeArray<VoxelCraterStamp> craterStamps;
-    [ReadOnly] public NativeParallelHashMap<int3, half> modifiedCells;
+    [ReadOnly] public NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells;
     [ReadOnly] public NativeArray<int> nodeBucketOffsets;
     [ReadOnly] public NativeArray<int> nodeBucketIndices;
     [ReadOnly] public NativeArray<int> tunnelBucketOffsets;
@@ -535,11 +535,19 @@ public struct VoxelDensityJob : IJobParallelFor
         if (modifiedCells.IsCreated)
         {
             int3 absoluteCell = ResolveAbsoluteCell(wp + absoluteNoiseOffset);
-            if (modifiedCells.TryGetValue(absoluteCell, out half storedDensity))
+            if (modifiedCells.TryGetValue(absoluteCell, out VoxelModifiedCell storedCell))
             {
-                float deltaDensity = (float)storedDensity;
-                smoothDensityValue = math.min(smoothDensityValue, deltaDensity);
-                finalDensityValue = math.min(finalDensityValue, deltaDensity);
+                float deltaDensity = (float)storedCell.Density;
+                if ((storedCell.Flags & 0x01) != 0)
+                {
+                    smoothDensityValue = math.max(smoothDensityValue, deltaDensity);
+                    finalDensityValue = math.max(finalDensityValue, deltaDensity);
+                }
+                else
+                {
+                    smoothDensityValue = math.min(smoothDensityValue, deltaDensity);
+                    finalDensityValue = math.min(finalDensityValue, deltaDensity);
+                }
             }
         }
 
@@ -2523,7 +2531,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<CaveEntrance> Entrances;
         public NativeArray<CaveStructure> Structures;
         public NativeArray<VoxelCraterStamp> CraterStamps;
-        public NativeParallelHashMap<int3, half> ModifiedCells;
+        public NativeParallelHashMap<int3, VoxelModifiedCell> ModifiedCells;
         public NativeArray<MCRawVertex> RawVertices;
         public NativeArray<float3> WeldedPositions;
         public NativeArray<int> TriangleIndices;
@@ -3072,7 +3080,7 @@ public class HectonVoxelEngine : MonoBehaviour
             if (mapMagicBridge.TryGetHeight(worldCenter.x, worldCenter.z, out float sampledHeight))
                 terrainHeightCenter = sampledHeight;
 
-            NativeParallelHashMap<int3, half> modifiedCells = default;
+            NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells = default;
             if (_deltaProcessor != null)
                 _deltaProcessor.TryBuildDeltaMapForVolume(volume, out modifiedCells);
 

@@ -74,6 +74,20 @@ namespace Hecton8.World
         }
     }
 
+    internal struct AcousticSurfaceResponse
+    {
+        public float Absorption01;
+        public float Transmission01;
+        public float LowPassCutoffHz;
+
+        public AcousticSurfaceResponse(float absorption01, float transmission01, float lowPassCutoffHz)
+        {
+            Absorption01 = absorption01;
+            Transmission01 = transmission01;
+            LowPassCutoffHz = lowPassCutoffHz;
+        }
+    }
+
     /// <summary>
     /// Shared zero-GC acoustic occlusion evaluation for sonar, hearing, and world-geometry filtering.
     /// </summary>
@@ -1349,6 +1363,17 @@ namespace Hecton8.World
                 return RockAbsorption01;
 
             return DefaultAbsorption01;
+        }
+
+        internal static AcousticSurfaceResponse ResolveSurfaceResponse(Collider collider)
+        {
+            float absorption01 = math.clamp(ResolveAbsorption01(collider), 0f, 1f);
+            float transmission01 = math.clamp(1f - absorption01, 0f, 1f);
+            float lowPassCutoffHz = math.lerp(
+                MinimumLowPassCutoffHertz,
+                OpenLowPassCutoffHertz,
+                transmission01);
+            return new AcousticSurfaceResponse(absorption01, transmission01, lowPassCutoffHz);
         }
 
         private static ulong ResolveEntityId(Transform target)

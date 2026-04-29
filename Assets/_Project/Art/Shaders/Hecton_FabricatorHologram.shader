@@ -3,6 +3,8 @@ Shader "HECTON/UI/FabricatorHologram"
     Properties
     {
         _BaseColor ("Base Color", Color) = (0.08, 0.88, 1.0, 0.42)
+        _ScanProgress ("Scan Progress", Range(0, 1)) = 0
+        _GlitchAmount ("Glitch Amount", Range(0, 1)) = 0
         _ScanlineDensity ("Scanline Density", Range(1, 64)) = 18
         _ScanlineSpeed ("Scanline Speed", Range(0, 16)) = 4
         _ScanlineEmission ("Scanline Emission", Range(0, 4)) = 1.15
@@ -51,6 +53,8 @@ Shader "HECTON/UI/FabricatorHologram"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
+                float _ScanProgress;
+                float _GlitchAmount;
                 float _ScanlineDensity;
                 float _ScanlineSpeed;
                 float _ScanlineEmission;
@@ -62,26 +66,39 @@ Shader "HECTON/UI/FabricatorHologram"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
 
-                VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+                float3 positionOS = input.positionOS.xyz;
+                float glitchSlice = step(0.58, frac((positionOS.y * 2.7) + (_Time.y * 1.6)));
+                float glitchWave = sin((_Time.y * 22.0) + (positionOS.y * 34.0) + (positionOS.z * 19.0));
+                float glitchOffsetX = glitchWave * 0.028 * _GlitchAmount * glitchSlice;
+                float glitchOffsetZ = cos((_Time.y * 17.0) + (positionOS.x * 21.0)) * 0.014 * _GlitchAmount;
+                positionOS.x += glitchOffsetX;
+                positionOS.z += glitchOffsetZ;
+
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(positionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
 
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = normalInputs.normalWS;
-                output.positionOS = input.positionOS.xyz;
+                output.positionOS = positionOS;
                 return output;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
+                float revealBand = saturate((input.positionOS.y * 0.5) + 0.5);
+                float reveal = saturate((_ScanProgress * 1.2) - revealBand + 0.18);
+                clip(reveal - 0.02);
+
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
                 float fresnel = pow(1.0 - saturate(dot(normalize(input.normalWS), viewDirection)), 2.4);
                 float pulse = 0.7 + 0.3 * sin(_Time.y * 6.0 + input.positionWS.y * 8.0);
                 float scanline = frac(input.positionOS.y * _ScanlineDensity + _Time.y * _ScanlineSpeed);
                 float scanlineBand = 1.0 - abs(scanline * 2.0 - 1.0);
                 float scanlineGlow = pow(saturate(scanlineBand), 6.0) * _ScanlineEmission;
-                half alpha = saturate(_BaseColor.a + fresnel * 0.45 + scanlineGlow * 0.18) * pulse;
-                half3 color = (_BaseColor.rgb * (0.85 + fresnel * 0.75)) + (_BaseColor.rgb * scanlineGlow);
+                float revealEdge = saturate(1.0 - abs(reveal - 0.08) * 12.0);
+                half alpha = saturate((_BaseColor.a + fresnel * 0.45 + scanlineGlow * 0.18 + revealEdge * 0.24) * pulse * (0.35 + reveal * 0.65));
+                half3 color = (_BaseColor.rgb * (0.85 + fresnel * 0.75)) + (_BaseColor.rgb * scanlineGlow) + (_BaseColor.rgb * revealEdge * (1.2 + (_GlitchAmount * 0.4)));
                 return half4(color, alpha);
             }
             ENDHLSL

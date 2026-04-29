@@ -201,6 +201,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half edgeMask : TEXCOORD8;
                 half curvatureMask : TEXCOORD9;
                 half entropyProgress : TEXCOORD10;
+                half parasiteMask : TEXCOORD11;
             };
 
             float Hash21(float2 value)
@@ -766,7 +767,23 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (encodedHeightScale >= 0.0)
                     return 0.0;
 
-                return saturate((timeValue - max(0.0, encodedWidthScale)) / 0.85);
+                float entropyDuration = encodedWidthScale < 0.0 ? 600.0 : 0.85;
+                float entropyStartTime = encodedWidthScale < 0.0 ? abs(encodedWidthScale) : max(0.0, encodedWidthScale);
+                return saturate((timeValue - entropyStartTime) / entropyDuration);
+            }
+
+            float ResolveOrganicWidthScale(float encodedWidthScale, float entropyProgress)
+            {
+                if (encodedWidthScale < 0.0)
+                    return lerp(1.0, 0.12, entropyProgress);
+
+                return max(0.2, encodedWidthScale);
+            }
+
+            float ResolveParasiteMask(float encodedVariation)
+            {
+                float variationFlags = floor(max(encodedVariation, 0.0));
+                return step(0.5, fmod(variationFlags, 2.0));
             }
 
             Varyings Vert(Attributes input, uint instanceID : SV_InstanceID)
@@ -790,8 +807,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float encodedWidthScale = instanceData.z;
                 float timeValue = _Time.y;
                 float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
+                float parasiteMask = ResolveParasiteMask(instanceData.w);
+                float wiltSuppression = lerp(1.0, 0.18, entropyProgress);
                 float heightScale = saturate(abs(encodedHeightScale));
-                float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
+                float widthScale = ResolveOrganicWidthScale(encodedWidthScale, entropyProgress);
                 float variation = frac(instanceData.w);
                 float heightMask = saturate(input.uv.y);
                 float bendMask = heightMask * heightMask;
@@ -841,7 +860,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                 if (_HectonLodPassMode < 0.5)
                 {
-                    float detailAmplitude = saturate(lodAlpha + 0.2);
+                    float detailAmplitude = saturate(lodAlpha + 0.2) * wiltSuppression;
                     float currentTorsion;
                     float3 currentOffset = CalculateUnderwaterCurrents(
                         renderOriginWS,
@@ -938,7 +957,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     animatedPositionWS = ResolveBillboardPositionWS(renderOriginWS, localPosition, instanceHeight, instanceWidth, heightMask);
 
                     float2 farFlow = ResolvePlanarOceanFlowDirection(currentVector + float2(sin(farPhase), cos(farPhase * 0.83)) * currentStrength);
-                    float farSwayStrength = instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42;
+                    float farSwayStrength = (instanceType < 0.5 ? _GrassWindAmplitude * 0.55 : _KelpCurrentAmplitude * 0.42) * wiltSuppression;
                     animatedPositionWS += wakeTrailOffset * 0.8;
                     animatedPositionWS += flowSynchronyOffset * 0.85;
                     animatedPositionWS.xz += farFlow * (farSwayStrength * bendMask * lodAlpha);
@@ -969,7 +988,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 {
                     float entropyWeight = saturate(entropyProgress * lerp(0.22, 1.0, heightMask) * lerp(0.35, 1.0, curvatureMask));
                     animatedPositionWS = lerp(animatedPositionWS, renderOriginWS, entropyWeight * 0.72);
-                    animatedPositionWS.y -= entropyWeight * instanceHeight * lerp(0.08, 0.42, heightMask);
+                    animatedPositionWS.y -= entropyWeight * instanceHeight * lerp(0.12, 0.58, heightMask);
+                    animatedPositionWS.xz = lerp(animatedPositionWS.xz, renderOriginWS.xz, entropyWeight * heightMask * 0.28);
+                    animatedPositionWS.xz += currentDirection * (-entropyWeight * instanceHeight * 0.03 * heightMask);
                 }
 
                 float3 swayOffset = animatedPositionWS - basePositionWS;
@@ -997,6 +1018,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.edgeMask = saturate(abs(input.uv.x * 2.0 - 1.0));
                 output.curvatureMask = curvatureMask;
                 output.entropyProgress = entropyProgress;
+                output.parasiteMask = parasiteMask;
                 return output;
             }
 
@@ -1044,7 +1066,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 }
 
                 half3 gradientColor = lerp(baseColor, tipColor, input.heightMask);
-                gradientColor = lerp(gradientColor, gradientColor * half3(0.55h, 0.48h, 0.42h), input.entropyProgress * 0.75h);
+                half gradientLuma = dot(gradientColor, half3(0.299h, 0.587h, 0.114h));
+                half3 decayColor = lerp(half3(gradientLuma, gradientLuma, gradientLuma), half3(0.32h, 0.29h, 0.24h), 0.55h);
+                gradientColor = lerp(gradientColor, decayColor, input.entropyProgress * 0.92h);
+                half3 parasiteGlowTint = input.instanceType < 1.5h
+                    ? half3(0.18h, 0.95h, 0.72h)
+                    : half3(0.14h, 0.78h, 1.00h);
+                gradientColor = lerp(gradientColor, gradientColor + parasiteGlowTint * 0.38h, input.parasiteMask * saturate(1.0h - input.entropyProgress * 0.65h));
 
                 if (input.instanceType > 0.5h && input.instanceType < 1.5h)
                 {

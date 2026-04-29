@@ -21,7 +21,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Surface Weather Director")]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener
+    public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
     {
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ResolveRetryInterval = 2f;
@@ -404,7 +404,6 @@ namespace Hecton8.Atmosphere
             if (!_runtimeStateInitialized)
                 return;
 
-            TryCompleteWeatherMathJob();
             UpdateExecutionMode(deltaTime);
             UpdateWeatherSelection(deltaTime);
             ApplyWeatherBindings(deltaTime);
@@ -419,8 +418,13 @@ namespace Hecton8.Atmosphere
             CacheOceanDefaults();
             InitializeRuntimeStateIfNeeded();
             SampleLocalRainExposure();
-            TryCompleteWeatherMathJob();
             UpdateDiagnostics();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            TryCompleteWeatherMathJob();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -436,6 +440,7 @@ namespace Hecton8.Atmosphere
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredTick = true;
             }
 
@@ -451,6 +456,7 @@ namespace Hecton8.Atmosphere
             if (_registeredTick)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredTick = false;
             }
 

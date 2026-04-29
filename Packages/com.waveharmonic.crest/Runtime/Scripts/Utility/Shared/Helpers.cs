@@ -807,9 +807,7 @@ namespace WaveHarmonic.Crest
                 // TODO: pass destination texture and slice instead of copying later.
                 UnityEngine.Rendering.RenderPipeline.SubmitRenderRequest(camera, s_RenderSingleCameraRequest);
 #else
-#pragma warning disable CS0618 // Type or member is obsolete
                 UniversalRenderPipeline.RenderSingleCamera(context, camera);
-#pragma warning restore CS0618 // Type or member is obsolete
 #endif
                 return;
             }

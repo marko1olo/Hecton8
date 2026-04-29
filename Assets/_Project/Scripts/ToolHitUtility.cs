@@ -43,6 +43,8 @@ namespace Hecton8.Gameplay
             else if (hitCollider.TryGetComponent(out FaunaBrain ai))
             {
                 ai.TakeDamage(damage);
+                if (ai.TryGetComponent(out Hecton8.AI.CreatureDamageManager damageManager))
+                    damageManager.RegisterWoundWS(hitPoint, damage);
                 applied = true;
             }
             else if (hitCollider.TryGetComponent(out HectonSurvivalSystem survival))
@@ -56,6 +58,8 @@ namespace Hecton8.Gameplay
                 if (aiParent != null)
                 {
                     aiParent.TakeDamage(damage);
+                    if (aiParent.TryGetComponent(out Hecton8.AI.CreatureDamageManager damageManager))
+                        damageManager.RegisterWoundWS(hitPoint, damage);
                     applied = true;
                 }
             }

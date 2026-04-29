@@ -1790,12 +1790,10 @@ namespace Hecton8.Gameplay
             return movedWithoutBlock;
         }
 
-#pragma warning disable CS0618
         private static int GetHitColliderInstanceId(in RaycastHit hit)
         {
-            return hit.colliderInstanceID;
+            return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
         }
-#pragma warning restore CS0618
 
         private void BuildFixedFrameSweepCapsule(out Vector3 point1, out Vector3 point2, out float radius)
         {
@@ -2943,6 +2941,21 @@ namespace Hecton8.Gameplay
             return HectonPlayerMotor.SafeVelocity(worldDirection, rawInputWorld);
         }
 
+        private Vector3 ResolveTransportPlatformRelativeWalkInputWorldDirection(float inputH, float inputV)
+        {
+            Vector3 rawInputWorld = ResolveWorldYawRotation(_bodyYaw) * new Vector3(inputH, 0f, inputV);
+            if (_activeTransportPlatform == null)
+                return rawInputWorld;
+
+            Vector3 inputLocal = TransformTransportPlatformDirectionToLocal(rawInputWorld);
+            float magnitude = rawInputWorld.magnitude;
+            if (inputLocal.sqrMagnitude > 0.0001f)
+                inputLocal = inputLocal.normalized * magnitude;
+
+            Vector3 worldDirection = TransformTransportPlatformDirectionToWorld(inputLocal);
+            return HectonPlayerMotor.SafeVelocity(worldDirection, rawInputWorld);
+        }
+
         private Quaternion ResolveTransportPlatformBasisRotation()
         {
             if (!TryGetActiveTransportPlatformTransform(out Transform platformTransform))
@@ -2976,8 +2989,9 @@ namespace Hecton8.Gameplay
             Vector3 platformVelocityAtTarget = HectonPlayerMotor.SafeVelocity(
                 _activeTransportPlatform.GetPlatformPointVelocity(targetPosition),
                 platformVelocityAtSource);
-            Vector3 targetVelocity = HectonPlayerMotor.SafeVelocity(
-                platformVelocityAtTarget + (_transportPlatformDeltaRotation * localVelocity),
+            Vector3 targetVelocity = ResolveSyncAttachedVelocity(
+                platformVelocityAtTarget,
+                _transportPlatformDeltaRotation * localVelocity,
                 bodyVelocity);
             ApplyMotorLinearVelocity(targetVelocity);
             if (_activeTransportPlatform.InheritPlatformRotation)
@@ -2986,6 +3000,11 @@ namespace Hecton8.Gameplay
             _lastTransportPlatformPosition = _currentTransportPlatformPosition;
             _lastTransportPlatformRotation = _currentTransportPlatformRotation;
             _transportPlatformDeltaRotation = Quaternion.identity;
+        }
+
+        private static Vector3 ResolveSyncAttachedVelocity(Vector3 platformPointVelocity, Vector3 playerRelativeVelocity, Vector3 fallbackVelocity)
+        {
+            return HectonPlayerMotor.SafeVelocity(platformPointVelocity + playerRelativeVelocity, fallbackVelocity);
         }
 
         private void ExecuteTransportEvaHandoff(ITransportPlatform previousPlatform, Transform previousPlatformTransform)
@@ -4814,8 +4833,14 @@ namespace Hecton8.Gameplay
                 safeActualVelocity);
             RecordTransportFeedbackGhostVelocity(platformVelocity);
             Vector3 ghostVelocity = ResolveTransportFeedbackGhostVelocity(platformVelocity);
-            Vector3 perceivedTransportVelocity = Vector3.Lerp(platformVelocity, ghostVelocity, FeedbackInertialGhostBlend);
-            Vector3 perceivedFeedbackVelocity = Vector3.Lerp(safeActualVelocity, perceivedTransportVelocity, FeedbackInertialGhostBlend);
+            Vector3 perceivedTransportVelocity = (Vector3)math.lerp(
+                new float3(platformVelocity.x, platformVelocity.y, platformVelocity.z),
+                new float3(ghostVelocity.x, ghostVelocity.y, ghostVelocity.z),
+                FeedbackInertialGhostBlend);
+            Vector3 perceivedFeedbackVelocity = (Vector3)math.lerp(
+                new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z),
+                new float3(perceivedTransportVelocity.x, perceivedTransportVelocity.y, perceivedTransportVelocity.z),
+                FeedbackInertialGhostBlend);
             return HectonPlayerMotor.SafeVelocity(perceivedFeedbackVelocity, safeActualVelocity);
         }
 
@@ -8110,27 +8135,27 @@ namespace Hecton8.Gameplay
             bool exosuitActive = _currentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
             bool dryInteriorActive = _currentLocomotionMode == PlayerLocomotionMode.DryInteriorWalk;
 
-            float resolvedBodyYaw = TryGetActiveTransportPlatformTransform(out _)
-                ? ResolveYawRelativeToTransportPlatform(_bodyYaw)
-                : _bodyYaw;
-            float yawRad = resolvedBodyYaw * DEG_TO_RAD;
-            float sinYaw = math.sin(yawRad);
-            float cosYaw = math.cos(yawRad);
-
-            _moveDirection.x = sinYaw * _inputV + cosYaw * _inputH;
-            _moveDirection.y = 0f;
-            _moveDirection.z = cosYaw * _inputV - sinYaw * _inputH;
             if (_activeTransportPlatformTransform != null)
             {
-                Vector3 rawInputWorld = TransformTransportPlatformDirectionToWorld(_moveDirection);
-                _moveDirection = ResolveTransportPlatformRelativeWorldDirection(rawInputWorld);
+                _moveDirection = ResolveTransportPlatformRelativeWalkInputWorldDirection(_inputH, _inputV);
+            }
+            else
+            {
+                float yawRad = _bodyYaw * DEG_TO_RAD;
+                float sinYaw = math.sin(yawRad);
+                float cosYaw = math.cos(yawRad);
+
+                _moveDirection.x = sinYaw * _inputV + cosYaw * _inputH;
+                _moveDirection.y = 0f;
+                _moveDirection.z = cosYaw * _inputV - sinYaw * _inputH;
             }
 
-            float sqrMag = _moveDirection.x * _moveDirection.x + _moveDirection.z * _moveDirection.z;
+            float sqrMag = _moveDirection.sqrMagnitude;
             if (sqrMag > 1.0001f)
             {
                 float invMag = 1f / math.sqrt(sqrMag);
                 _moveDirection.x *= invMag;
+                _moveDirection.y *= invMag;
                 _moveDirection.z *= invMag;
             }
 

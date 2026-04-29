@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.Construction;
@@ -7,8 +8,10 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Physics;
+using Hecton8.Systems.AI;
 using Hecton8.Tools;
 using Hecton8.UI;
+using Hecton8.World;
 using NASAPunk.Visor;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -39,6 +42,31 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="deltaTime">Scaled frame delta supplied by the dispatcher.</param>
         void Tick(float deltaTime);
+    }
+
+    /// <summary>
+    /// End-of-frame callback executed by <see cref="SystemDispatcher"/> after the main update lanes.
+    /// Intended for deferred job ownership recovery and readback commits that must stay out of hot-path ticks.
+    /// </summary>
+    public interface ILateFrameTickable
+    {
+        /// <summary>
+        /// Executes the owner's end-of-frame swap-window work.
+        /// </summary>
+        void LateFrameTick();
+    }
+
+    /// <summary>
+    /// Post-fixed callback executed by <see cref="SystemDispatcher"/> after the fixed lanes complete.
+    /// Intended for deferred job ownership recovery that must stay out of hot-path fixed ticks.
+    /// </summary>
+    public interface IPostFixedTickable
+    {
+        /// <summary>
+        /// Executes the owner's post-fixed-step swap-window work.
+        /// </summary>
+        /// <param name="fixedDeltaTime">Fixed delta supplied by the dispatcher.</param>
+        void PostFixedTick(float fixedDeltaTime);
     }
 
     /// <summary>
@@ -546,6 +574,12 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="sceneName">Build-settings scene name.</param>
         void LoadScene(string sceneName);
+
+        /// <summary>
+        /// Performs a guarded asynchronous scene transition with activation gating.
+        /// </summary>
+        /// <param name="sceneName">Build-settings scene name.</param>
+        Awaitable LoadSceneAsync(string sceneName);
     }
 
     /// <summary>
@@ -895,6 +929,171 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Authoritative thermodynamics service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IThermodynamicsService
+    {
+        /// <summary>
+        /// True once the thermodynamics owner is registered and participating in runtime dispatch.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Samples hydrothermal flow and cable entanglement without allocating.
+        /// </summary>
+        /// <param name="positionWS">World-space sample point.</param>
+        /// <param name="radiusWS">Additional sample radius.</param>
+        /// <param name="sample">Resolved flow and cable payload.</param>
+        /// <returns>True when any updraft or cable influence is active at the sample point.</returns>
+        bool SampleThermalFlow(Vector3 positionWS, float radiusWS, out AbyssalThermalManager.ThermalFlowSample sample);
+    }
+
+    /// <summary>
+    /// Authoritative logistics/build-network service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface ILogisticsService
+    {
+        /// <summary>
+        /// True once the logistics owner is registered and participating in runtime dispatch.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Total number of runtime modules tracked by the logistics owner.
+        /// </summary>
+        int ModuleCount { get; }
+
+        /// <summary>
+        /// Authoritative buildable catalog used for module restoration and placement.
+        /// </summary>
+        ModuleCatalog Catalog { get; }
+
+        /// <summary>
+        /// Read-only live module registry.
+        /// </summary>
+        IReadOnlyList<GameObject> SpawnedModules { get; }
+
+        /// <summary>
+        /// Creates a temporary bypass edge between two placed base modules when permitted.
+        /// </summary>
+        /// <param name="sourceModule">Source base module.</param>
+        /// <param name="destinationModule">Destination base module.</param>
+        /// <returns>True when a bypass edge was added.</returns>
+        bool TryCreateTemporaryBypass(BaseModule sourceModule, BaseModule destinationModule);
+    }
+
+    /// <summary>
+    /// Authoritative world-generation service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IWorldGenService
+    {
+        /// <summary>
+        /// True once the world-generation owner is registered and ready to process bootstrap/world refresh work.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Primes the cold bootstrap scatter pass when the world scene is ready.
+        /// </summary>
+        /// <returns>True when the pass was accepted.</returns>
+        bool TryPrimeBootstrapScatterPass();
+
+        /// <summary>
+        /// Rebuilds the current scatter preview.
+        /// </summary>
+        void RebuildScatterPreview();
+
+        /// <summary>
+        /// Clears the current scatter preview.
+        /// </summary>
+        void ClearScatterPreview();
+    }
+
+    /// <summary>
+    /// Authoritative encounter-direction service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IEncounterDirectorService
+    {
+        /// <summary>
+        /// True once the encounter director is registered and participating in runtime dispatch.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Current normalized tension score in the legacy 0..100 presentation range.
+        /// </summary>
+        float TensionScore { get; }
+
+        /// <summary>
+        /// True while predator pressure is allowed to escalate.
+        /// </summary>
+        bool IsPredatorPressureEnabled { get; }
+
+        /// <summary>
+        /// Human-readable current phase name for diagnostics consumers.
+        /// </summary>
+        string CurrentPhaseName { get; }
+
+        /// <summary>
+        /// Forces the next completed encounter tick into the peak phase.
+        /// </summary>
+        void ForcePeak();
+
+        /// <summary>
+        /// Forces the next completed encounter tick into the relax phase.
+        /// </summary>
+        void ForceRelax();
+
+        /// <summary>
+        /// Resets the runtime encounter state.
+        /// </summary>
+        void ResetDirector();
+    }
+
+    /// <summary>
+    /// Authoritative quest-system service exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IQuestSystem
+    {
+        /// <summary>
+        /// True once the quest runtime owner is registered and available for gameplay queries.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Activates the authored quest when it exists in the registry.
+        /// </summary>
+        /// <param name="questId">Stable quest identifier.</param>
+        void ActivateQuest(string questId);
+
+        /// <summary>
+        /// Completes the authored quest when it exists in the registry.
+        /// </summary>
+        /// <param name="questId">Stable quest identifier.</param>
+        void CompleteQuest(string questId);
+
+        /// <summary>
+        /// Returns true when the quest is currently active.
+        /// </summary>
+        /// <param name="questId">Stable quest identifier.</param>
+        bool IsActive(string questId);
+
+        /// <summary>
+        /// Returns true when the quest is currently completed.
+        /// </summary>
+        /// <param name="questId">Stable quest identifier.</param>
+        bool IsCompleted(string questId);
+
+        /// <summary>
+        /// Resolves the authored quest identifier from a stable quest hash.
+        /// </summary>
+        /// <param name="questHash">Stable quest hash.</param>
+        /// <param name="questId">Resolved authored quest identifier.</param>
+        /// <returns>True when the hash maps to an authored quest.</returns>
+        bool TryGetQuestIdByHash(uint questHash, out string questId);
+    }
+
+    /// <summary>
     /// Registry-backed ocean provider selector published through <see cref="GlobalRegistry"/>.
     /// Gameplay systems must query this service instead of talking to Crest-adapter singletons directly.
     /// </summary>
@@ -1036,6 +1235,11 @@ namespace Hecton8.Core
         bool IsInitialized { get; }
 
         /// <summary>
+        /// Normalized hostility score representing how aggressively the biome is responding to player ecological damage.
+        /// </summary>
+        float BiomeHostility01 { get; }
+
+        /// <summary>
         /// Resolves the sector population sample for the supplied world position.
         /// </summary>
         /// <param name="worldPosition">Runtime-space world position to classify into a 1 km sector.</param>
@@ -1049,6 +1253,13 @@ namespace Hecton8.Core
         /// <param name="worldPosition">Runtime-space world position where predation occurred.</param>
         /// <param name="preyConsumed">Number of prey removed from the sector population.</param>
         void ReportPredation(Vector3 worldPosition, int preyConsumed);
+
+        /// <summary>
+        /// Registers one player-attributed apex predator kill and escalates the biome hostility response.
+        /// </summary>
+        /// <param name="worldPosition">Runtime-space world position where the apex predator was killed.</param>
+        /// <param name="hostilityDelta">Hostility increase applied before clamping.</param>
+        void ReportApexPredatorKilled(Vector3 worldPosition, float hostilityDelta);
     }
 
     /// <summary>

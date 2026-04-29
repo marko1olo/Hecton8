@@ -15,6 +15,10 @@ namespace Hecton8.Core
     {
         private static PlayerInventoryManager _instance;
 
+        [Header("── Inventory Capacity ──────────────────")]
+        [Tooltip("Authoritative player carry-capacity ceiling used by UI/readiness systems. Current inventory mass above this value is treated as encumbered.")]
+        [SerializeField, Min(1f)] private float carryCapacityKilograms = 200f;
+
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
@@ -25,6 +29,7 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+        internal float CarryCapacityKilograms => Mathf.Max(1f, carryCapacityKilograms);
 
         /// <inheritdoc />
         public PlayerToolManager ToolManager

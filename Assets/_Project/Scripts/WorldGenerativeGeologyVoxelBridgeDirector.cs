@@ -4,6 +4,7 @@ using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Dev;
+using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -151,6 +152,14 @@ namespace Hecton8.World
         [SerializeField] private int maxRuntimeGridDimension = 56;
         [SerializeField] private float resolutionBandHysteresis = 12f;
 
+        [Header("Seismic Trench")]
+        [SerializeField] private float seismicTrenchLengthMin = 28f;
+        [SerializeField] private float seismicTrenchLengthMax = 96f;
+        [SerializeField] private float seismicTrenchDepthScale = 2.6f;
+        [SerializeField] private float seismicTrenchDepthBias = 6f;
+        [SerializeField] private float seismicTrenchSlope = 0.85f;
+        [SerializeField] private float seismicTrenchSampleSpacing = 3.5f;
+
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
         [SerializeField] private int _debugActiveVolumes;
@@ -184,6 +193,7 @@ namespace Hecton8.World
         private bool _startupReconcilePending = true;
         private int _estimatedWarmedPoolCount;
         private CancellationTokenSource _lifetimeCancellation;
+        private bool _randomEventHooksRegistered;
 
         private void Awake()
         {
@@ -197,6 +207,7 @@ namespace Hecton8.World
             ActiveRuntimeInstance = this;
             ResolveReferences();
             EnsureLifetimeCancellation();
+            RegisterRandomEventHooks();
             QueueStartupReconcile();
             if (!_registeredToFrameTickManager)
             {
@@ -228,6 +239,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            UnregisterRandomEventHooks();
             if (_registeredToFrameTickManager)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -276,6 +288,117 @@ namespace Hecton8.World
         public void SetVoxelEngine(HectonVoxelEngine engine)
         {
             voxelEngine = engine;
+        }
+
+        private void RegisterRandomEventHooks()
+        {
+            if (_randomEventHooksRegistered)
+                return;
+
+            RandomEventEvents.OnSeismicShockwave += HandleSeismicShockwave;
+            _randomEventHooksRegistered = true;
+        }
+
+        private void UnregisterRandomEventHooks()
+        {
+            if (!_randomEventHooksRegistered)
+                return;
+
+            RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
+            _randomEventHooksRegistered = false;
+        }
+
+        private void HandleSeismicShockwave(SeismicShockwaveEvent payload)
+        {
+            ResolveReferences();
+            TryApplySeismicTrench(in payload);
+        }
+
+        private void TryApplySeismicTrench(in SeismicShockwaveEvent payload)
+        {
+            if (voxelEngine == null)
+                return;
+
+            WorldGenerativeGeologyTerrainSeamApplier terrainApplier = WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance;
+            Vector3 epicenterAbsolute = HectonFloatingOrigin.ToAbsoluteUniversePosition(payload.EpicenterWS);
+            float trenchLength = Mathf.Clamp(
+                payload.ImpulseRadiusMeters * 1.35f,
+                Mathf.Max(4f, seismicTrenchLengthMin),
+                Mathf.Max(seismicTrenchLengthMin, seismicTrenchLengthMax));
+            float trenchDepth = Mathf.Max(
+                2f,
+                payload.ImpulseMagnitude * Mathf.Max(0.1f, seismicTrenchDepthScale) + Mathf.Max(0f, seismicTrenchDepthBias));
+            float trenchSlope = Mathf.Max(0.05f, seismicTrenchSlope);
+            float trenchRadius = trenchDepth / trenchSlope;
+            float halfLength = trenchLength * 0.5f;
+            Vector3 trenchDirection = ResolveSeismicTrenchDirection(epicenterAbsolute);
+            Vector3 absoluteStart = epicenterAbsolute - trenchDirection * halfLength;
+            Vector3 absoluteEnd = epicenterAbsolute + trenchDirection * halfLength;
+            long trenchId = BuildSeismicTrenchId(epicenterAbsolute, trenchLength, trenchDepth);
+
+            if (terrainApplier != null)
+            {
+                terrainApplier.RegisterSeismicTrench(
+                    trenchId,
+                    absoluteStart,
+                    absoluteEnd,
+                    trenchDepth,
+                    trenchSlope,
+                    trenchRadius);
+                terrainApplier.ReconcileTerrainSeams();
+            }
+
+            Dictionary<long, GameObject>.Enumerator volumeEnumerator = _activeVolumes.GetEnumerator();
+            while (volumeEnumerator.MoveNext())
+            {
+                GameObject activeVolume = volumeEnumerator.Current.Value;
+                if (activeVolume == null ||
+                    !activeVolume.TryGetComponent(out HectonVoxelVolume volume) ||
+                    volume == null)
+                {
+                    continue;
+                }
+
+                volume.TryApplySeismicTrench(
+                    absoluteStart,
+                    absoluteEnd,
+                    trenchDepth,
+                    trenchSlope,
+                    Mathf.Max(1f, seismicTrenchSampleSpacing),
+                    out _);
+            }
+        }
+
+        private Vector3 ResolveSeismicTrenchDirection(Vector3 absoluteEpicenter)
+        {
+            uint seedA = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.x * 0.25f));
+            uint seedB = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.z * 0.25f));
+            float angle = HashToFloat01(seedA, seedB, 0x93D765A1u) * Mathf.PI * 2f;
+            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            if (direction.sqrMagnitude <= 0.0001f)
+                direction = Vector3.forward;
+
+            return direction.normalized;
+        }
+
+        private static long BuildSeismicTrenchId(Vector3 absoluteEpicenter, float trenchLength, float trenchDepth)
+        {
+            long x = Mathf.RoundToInt(absoluteEpicenter.x * 10f);
+            long z = Mathf.RoundToInt(absoluteEpicenter.z * 10f);
+            long length = Mathf.RoundToInt(trenchLength * 10f);
+            long depth = Mathf.RoundToInt(trenchDepth * 10f);
+            return unchecked((x << 32) ^ (z << 8) ^ length ^ (depth << 40));
+        }
+
+        private static float HashToFloat01(uint a, uint b, uint salt)
+        {
+            uint state = a * 747796405u + b * 2891336453u + salt;
+            state ^= state >> 16;
+            state *= 2246822519u;
+            state ^= state >> 13;
+            state *= 3266489917u;
+            state ^= state >> 16;
+            return (state & 0x00FFFFFFu) / 16777215f;
         }
 
         private void QueueStartupReconcile()
@@ -659,6 +782,7 @@ namespace Hecton8.World
                         request.familyId,
                         request.geologyProfileId,
                         buildCollider);
+                    RegisterHydrothermalVent(request);
 
                     if (_activeVolumes.TryGetValue(request.runtimeKey, out GameObject previousVolume) &&
                         previousVolume != null &&
@@ -1014,6 +1138,51 @@ namespace Hecton8.World
             return entrances;
         }
 
+        private void RegisterHydrothermalVent(in WorldGenerativeGeologyVoxelBlendRequest request)
+        {
+            if (!ShouldRegisterHydrothermalVent(request))
+                return;
+
+            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            if (thermalManager == null)
+                return;
+
+            Vector3 ventPosition = request.hasTerrainSample
+                ? request.RuntimeTerrainContactPosition
+                : request.RuntimeCenter;
+            ventPosition.y -= Mathf.Min(2.5f, request.size.y * 0.08f);
+
+            float radius = Mathf.Clamp(Mathf.Min(request.size.x, request.size.z) * 0.12f, 3f, 10f);
+            float height = Mathf.Clamp(request.size.y * 0.62f, 8f, 26f);
+            float updraft = Mathf.Lerp(8f, 18f, Mathf.Clamp01(request.weight));
+            float heat = Mathf.Lerp(12f, 24f, Mathf.Clamp01(request.weight));
+            float smokeDensity = Mathf.Lerp(0.75f, 1.35f, Mathf.Clamp01(request.planWeight));
+            float cableRadius = Mathf.Max(radius * 1.8f, request.size.x * 0.22f);
+
+            thermalManager.RegisterRuntimeVent(
+                request.runtimeKey,
+                ventPosition,
+                radius,
+                height,
+                updraft,
+                heat,
+                smokeDensity,
+                cableRadius);
+        }
+
+        private static bool ShouldRegisterHydrothermalVent(in WorldGenerativeGeologyVoxelBlendRequest request)
+        {
+            if (!request.hasTerrainSample)
+                return false;
+
+            if (!AbyssalThermalManager.IsThermalBiomeFamilyId(request.familyId))
+                return false;
+
+            return request.slopeDegrees <= 18f &&
+                   request.weight >= 0.42f &&
+                   Mathf.Max(request.size.x, request.size.z) >= 18f;
+        }
+
         private void ResolveRequestBuildSettings(
             in WorldGenerativeGeologyVoxelBlendRequest request,
             out int resolvedResolution,
@@ -1192,6 +1361,10 @@ namespace Hecton8.World
 
         private void RemoveVolume(long runtimeKey, bool despawnOwnedVolume)
         {
+            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            if (thermalManager != null)
+                thermalManager.UnregisterRuntimeVent(runtimeKey);
+
             if (!_activeVolumes.TryGetValue(runtimeKey, out GameObject volume))
             {
                 _activeRuntimes.Remove(runtimeKey);

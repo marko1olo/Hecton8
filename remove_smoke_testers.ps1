@@ -1,1 +1,0 @@
-PS> powershell -ExecutionPolicy Bypass -File remove_smoke_testers.ps1

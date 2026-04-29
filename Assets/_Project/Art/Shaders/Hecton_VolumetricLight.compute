@@ -1,0 +1,284 @@
+#pragma kernel RaymarchVolumetricLight
+#pragma kernel CompositeVolumetricLight
+#pragma target 5.0
+#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+TEXTURE2D_X(_HectonVolumetricSourceColor);
+TEXTURE2D_X(_HectonVolumetricSourceDepth);
+TEXTURE2D_X(_HectonVolumetricHalfInput);
+RW_TEXTURE2D(float4, _HectonVolumetricHalfResult);
+RW_TEXTURE2D(float4, _HectonVolumetricCompositeResult);
+
+CBUFFER_START(HectonVolumetricLightParams)
+    float4 _HectonVolumetricFullSize;
+    float4 _HectonVolumetricHalfSize;
+    float4 _HectonVolumetricMainLightDirection;
+    float4 _HectonVolumetricMainLightColor;
+    float4 _HectonVolumetricScatteringParams;
+    float4 _HectonVolumetricMarchParams;
+    float4 _HectonVolumetricCompositeParams;
+    float4x4 _HectonVolumetricInverseViewProjection;
+    float4x4 _HectonVolumetricViewProjection;
+CBUFFER_END
+
+float SafeRcp(float value)
+{
+    return abs(value) > 1e-5 ? rcp(value) : 0.0;
+}
+
+float3 SafeNormalize3(float3 value)
+{
+    float lenSq = dot(value, value);
+    return lenSq > 1e-5 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+}
+
+float ResolveFarRawDepth()
+{
+#if UNITY_REVERSED_Z
+    return 0.0;
+#else
+    return 1.0;
+#endif
+}
+
+void ResolveDepthData(float2 screenUv, out float rawDepth, out float validMask, out float linearEyeDepth, out float3 positionWS)
+{
+    rawDepth = SampleSceneDepth(screenUv);
+#if UNITY_REVERSED_Z
+    validMask = step(0.0001, rawDepth);
+#else
+    validMask = step(rawDepth, 0.9999);
+#endif
+
+    float resolvedRawDepth = validMask > 0.5 ? rawDepth : ResolveFarRawDepth();
+    positionWS = ComputeWorldSpacePosition(screenUv, resolvedRawDepth, _HectonVolumetricInverseViewProjection);
+    linearEyeDepth = LinearEyeDepth(resolvedRawDepth, _ZBufferParams);
+
+    if (!isfinite(linearEyeDepth) || linearEyeDepth < 0.0)
+    {
+        validMask = 0.0;
+        linearEyeDepth = 0.0;
+    }
+}
+
+float Hash31(float3 value)
+{
+    return frac(sin(dot(value, float3(127.1, 311.7, 74.7))) * 43758.5453);
+}
+
+float ValueNoise3(float3 samplePosition)
+{
+    float3 cell = floor(samplePosition);
+    float3 fracPart = frac(samplePosition);
+    float3 smoothFrac = fracPart * fracPart * (3.0 - 2.0 * fracPart);
+
+    float n000 = Hash31(cell + float3(0.0, 0.0, 0.0));
+    float n100 = Hash31(cell + float3(1.0, 0.0, 0.0));
+    float n010 = Hash31(cell + float3(0.0, 1.0, 0.0));
+    float n110 = Hash31(cell + float3(1.0, 1.0, 0.0));
+    float n001 = Hash31(cell + float3(0.0, 0.0, 1.0));
+    float n101 = Hash31(cell + float3(1.0, 0.0, 1.0));
+    float n011 = Hash31(cell + float3(0.0, 1.0, 1.0));
+    float n111 = Hash31(cell + float3(1.0, 1.0, 1.0));
+
+    float nx00 = lerp(n000, n100, smoothFrac.x);
+    float nx10 = lerp(n010, n110, smoothFrac.x);
+    float nx01 = lerp(n001, n101, smoothFrac.x);
+    float nx11 = lerp(n011, n111, smoothFrac.x);
+    float nxy0 = lerp(nx00, nx10, smoothFrac.y);
+    float nxy1 = lerp(nx01, nx11, smoothFrac.y);
+    return lerp(nxy0, nxy1, smoothFrac.z);
+}
+
+float Fbm3(float3 samplePosition)
+{
+    float amplitude = 0.5;
+    float frequency = 1.0;
+    float sum = 0.0;
+
+    [unroll]
+    for (int octave = 0; octave < 3; octave++)
+    {
+        sum += ValueNoise3(samplePosition * frequency) * amplitude;
+        frequency *= 2.13;
+        amplitude *= 0.48;
+    }
+
+    return sum;
+}
+
+float ResolveBlueNoise(float2 screenUv)
+{
+    float2 pixel = floor(screenUv * _HectonVolumetricFullSize.xy);
+    return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+}
+
+float PhaseHG(float cosTheta, float anisotropy)
+{
+    float g = clamp(anisotropy, -0.95, 0.95);
+    float gSq = g * g;
+    float denominator = max(1.0 + gSq - 2.0 * g * cosTheta, 1e-4);
+    return (1.0 - gSq) / (4.0 * PI * pow(denominator, 1.5));
+}
+
+float SampleFogDensity(float3 samplePositionWS, float normalizedTravel)
+{
+    float density = max(_HectonVolumetricScatteringParams.x, 0.0);
+    float timePhase = _Time.y * 0.12;
+    float3 noisePosition = samplePositionWS * 0.045;
+    noisePosition += float3(timePhase, -timePhase * 0.73, timePhase * 0.51);
+    float coarse = Fbm3(noisePosition);
+    float fine = Fbm3(noisePosition * 1.87 + 13.0);
+    float stratification = lerp(1.0, 0.32, saturate(normalizedTravel));
+    float noiseValue = saturate(coarse * 0.68 + fine * 0.32);
+    return density * noiseValue * stratification;
+}
+
+float ResolveMainLightShadow(float3 samplePositionWS)
+{
+#if defined(_MAIN_LIGHT_SHADOWS) || defined(_MAIN_LIGHT_SHADOWS_CASCADE)
+    float4 shadowCoord = TransformWorldToShadowCoord(samplePositionWS);
+    return MainLightRealtimeShadow(shadowCoord);
+#else
+    return 1.0;
+#endif
+}
+
+[numthreads(8, 8, 1)]
+void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 pixel = dispatchThreadId.xy;
+    uint2 halfResolution = (uint2)_HectonVolumetricHalfSize.xy;
+    if (pixel.x >= halfResolution.x || pixel.y >= halfResolution.y)
+        return;
+
+    if (_HectonVolumetricMainLightDirection.w <= 0.5)
+    {
+        _HectonVolumetricHalfResult[pixel] = 0.0;
+        return;
+    }
+
+    float2 screenUv = (pixel + 0.5) * _HectonVolumetricHalfSize.zw;
+    float rawDepth;
+    float validMask;
+    float linearEyeDepth;
+    float3 scenePositionWS;
+    ResolveDepthData(screenUv, rawDepth, validMask, linearEyeDepth, scenePositionWS);
+    if (validMask <= 0.5 || linearEyeDepth <= 0.0001)
+    {
+        _HectonVolumetricHalfResult[pixel] = 0.0;
+        return;
+    }
+
+    float3 cameraPositionWS = _WorldSpaceCameraPos;
+    float3 rayVectorWS = cameraPositionWS - scenePositionWS;
+    float rayLength = min(length(rayVectorWS), max(_HectonVolumetricMarchParams.x, 0.1));
+    if (rayLength <= 0.0001)
+    {
+        _HectonVolumetricHalfResult[pixel] = 0.0;
+        return;
+    }
+
+    int stepCount = max((int)round(_HectonVolumetricMarchParams.y), 1);
+    float stepSize = rayLength * SafeRcp((float)stepCount);
+    float jitter = ResolveBlueNoise(screenUv) * stepSize * saturate(_HectonVolumetricMarchParams.z);
+    float3 rayDirectionWS = rayVectorWS * SafeRcp(rayLength);
+    float3 lightDirectionWS = SafeNormalize3(_HectonVolumetricMainLightDirection.xyz);
+    float3 lightColor = _HectonVolumetricMainLightColor.rgb;
+    float scatterCoeff = max(_HectonVolumetricScatteringParams.y, 0.0);
+    float anisotropy = _HectonVolumetricScatteringParams.z;
+    float intensity = max(_HectonVolumetricScatteringParams.w, 0.0);
+    float minTransmittance = saturate(_HectonVolumetricMarchParams.w);
+    float transmittance = 1.0;
+    float3 accumulatedLight = 0.0;
+
+    [loop]
+    for (int stepIndex = 0; stepIndex < 32; stepIndex++)
+    {
+        if (stepIndex >= stepCount)
+            break;
+
+        float travelDistance = min(rayLength, jitter + (stepIndex + 0.5) * stepSize);
+        float normalizedTravel = saturate(travelDistance * SafeRcp(max(rayLength, 0.0001)));
+        float3 samplePositionWS = scenePositionWS + rayDirectionWS * travelDistance;
+        float density = SampleFogDensity(samplePositionWS, normalizedTravel);
+        if (density <= 0.0001)
+            continue;
+
+        float extinction = density * max(scatterCoeff, 0.0001);
+        float cosTheta = saturate(dot(rayDirectionWS, lightDirectionWS));
+        float phase = PhaseHG(cosTheta, anisotropy);
+        float shadowTerm = ResolveMainLightShadow(samplePositionWS);
+        transmittance *= exp(-extinction * stepSize);
+        accumulatedLight += density * scatterCoeff * phase * shadowTerm * transmittance * stepSize;
+
+        if (transmittance <= minTransmittance)
+            break;
+    }
+
+    _HectonVolumetricHalfResult[pixel] = float4(accumulatedLight * lightColor * intensity, 1.0 - transmittance);
+}
+
+[numthreads(8, 8, 1)]
+void CompositeVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint2 pixel = dispatchThreadId.xy;
+    uint2 fullResolution = (uint2)_HectonVolumetricFullSize.xy;
+    if (pixel.x >= fullResolution.x || pixel.y >= fullResolution.y)
+        return;
+
+    float2 centerUv = (pixel + 0.5) * _HectonVolumetricFullSize.zw;
+    float rawDepth;
+    float validMask;
+    float linearEyeDepth;
+    float3 positionWS;
+    ResolveDepthData(centerUv, rawDepth, validMask, linearEyeDepth, positionWS);
+
+    float4 sourceColor = LOAD_TEXTURE2D_X(_HectonVolumetricSourceColor, pixel);
+    if (_HectonVolumetricMainLightDirection.w <= 0.5 || validMask <= 0.5)
+    {
+        _HectonVolumetricCompositeResult[pixel] = sourceColor;
+        return;
+    }
+
+    float2 halfPixel = centerUv * _HectonVolumetricHalfSize.xy - 0.5;
+    float2 basePixel = floor(halfPixel);
+    float4 accumulated = 0.0;
+    float weightSum = 0.0;
+    float depthScale = max(_HectonVolumetricCompositeParams.x, 0.01);
+
+    [unroll]
+    for (int tapY = -1; tapY <= 1; tapY++)
+    {
+        [unroll]
+        for (int tapX = -1; tapX <= 1; tapX++)
+        {
+            float2 samplePixel = clamp(
+                basePixel + float2(tapX, tapY) + 0.5,
+                float2(0.5, 0.5),
+                _HectonVolumetricHalfSize.xy - 0.5);
+            float2 sampleUv = samplePixel * _HectonVolumetricHalfSize.zw;
+            float tapRawDepth;
+            float tapValidMask;
+            float tapLinearEyeDepth;
+            float3 tapPositionWS;
+            ResolveDepthData(sampleUv, tapRawDepth, tapValidMask, tapLinearEyeDepth, tapPositionWS);
+            float depthWeight = tapValidMask > 0.5
+                ? exp(-abs(tapLinearEyeDepth - linearEyeDepth) * depthScale)
+                : 0.0;
+            float2 offset = samplePixel - halfPixel;
+            float spatialWeight = exp(-dot(offset, offset) * 0.9);
+            float weight = spatialWeight * depthWeight;
+            accumulated += SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricHalfInput, sampler_LinearClamp, saturate(sampleUv), 0) * weight;
+            weightSum += weight;
+        }
+    }
+
+    float4 volumetric = weightSum > 1e-5 ? accumulated * SafeRcp(weightSum) : 0.0;
+    _HectonVolumetricCompositeResult[pixel] = float4(sourceColor.rgb + volumetric.rgb, sourceColor.a);
+}

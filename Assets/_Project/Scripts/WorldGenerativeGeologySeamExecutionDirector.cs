@@ -126,9 +126,9 @@ namespace Hecton8.World
         private readonly List<long> _runtimeCacheTrimBuffer = new List<long>(128);
         private readonly Dictionary<long, WorldGenerativeGeologySeamRuntime> _runtimeCacheByKey = new Dictionary<long, WorldGenerativeGeologySeamRuntime>(128);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
-        private Material _runtimeGapDitherMaterial;
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
+        private bool _loggedMissingGapDitherMaterial;
 
         internal static WorldGenerativeGeologySeamExecutionDirector ActiveRuntimeInstance { get; private set; }
 
@@ -488,32 +488,17 @@ namespace Hecton8.World
             if (gapDitherMaterial != null)
                 return gapDitherMaterial;
 
-            if (_runtimeGapDitherMaterial != null)
-                return _runtimeGapDitherMaterial;
-
-            Shader additiveShader = Shader.Find("Legacy Shaders/Particles/Additive");
-            if (additiveShader == null)
-                additiveShader = Shader.Find("Particles/Additive");
-
-            if (additiveShader == null)
-                return null;
-
-            // COLD ALLOC: Material[1] - shared additive seam dither particle material - owner: WorldGenerativeGeologySeamExecutionDirector
-            _runtimeGapDitherMaterial = new Material(additiveShader)
+            if (!_loggedMissingGapDitherMaterial)
             {
-                name = "MAT_GeologySeamDither_Runtime"
-            };
-            _runtimeGapDitherMaterial.hideFlags = HideFlags.HideAndDontSave;
-            return _runtimeGapDitherMaterial;
+                _loggedMissingGapDitherMaterial = true;
+                Debug.LogError("[WorldGenerativeGeologySeamExecutionDirector] Missing gapDitherMaterial asset. Runtime material creation is forbidden for seam dither particles.", this);
+            }
+
+            return null;
         }
 
         private void ReleaseGapDitherMaterial()
         {
-            if (_runtimeGapDitherMaterial == null)
-                return;
-
-            Destroy(_runtimeGapDitherMaterial);
-            _runtimeGapDitherMaterial = null;
         }
 
         private void BuildTerrainSkirt(Transform root, Material seamMaterial, in WorldGenerativeGeologySeamPlan plan, ref int primitiveIndex)

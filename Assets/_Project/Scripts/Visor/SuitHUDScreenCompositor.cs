@@ -47,6 +47,7 @@ namespace NASAPunk.Visor
 
         private RawImage _overlayImage;
         private RectTransform _overlayRect;
+        private CanvasGroup _overlayCanvasGroup;
         private float _nextAutoResolveAt;
         private bool _tickRegistered;
         private bool _pendingRefresh = true;
@@ -97,8 +98,7 @@ namespace NASAPunk.Visor
             if (_overlayImage != null)
                 _overlayImage.enabled = false;
 
-            if (_overlayRect != null)
-                _overlayRect.gameObject.SetActive(false);
+            SetOverlayVisible(false);
         }
 
 #if UNITY_EDITOR
@@ -109,6 +109,9 @@ namespace NASAPunk.Visor
                 UnregisterEditorTick();
                 return;
             }
+
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+                return;
 
             RefreshCompositor();
             _pendingRefresh = false;
@@ -237,8 +240,8 @@ namespace NASAPunk.Visor
             if (targetCanvas == null)
                 return;
 
-            if (forceCanvasActive && !targetCanvas.gameObject.activeSelf)
-                targetCanvas.gameObject.SetActive(true);
+            if (forceCanvasActive && !targetCanvas.enabled)
+                targetCanvas.enabled = true;
 
             RectTransform rect = targetCanvas.transform as RectTransform;
             if (rect != null && rect.localScale == Vector3.zero)
@@ -282,8 +285,8 @@ namespace NASAPunk.Visor
             if (_overlayRect == null || _overlayImage == null)
                 return;
 
-            if (!_overlayRect.gameObject.activeSelf)
-                _overlayRect.gameObject.SetActive(true);
+            _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect);
+            SetOverlayVisible(true);
 
             if (showAsInsetPreview)
             {
@@ -329,6 +332,32 @@ namespace NASAPunk.Visor
             _overlayImage.texture = sharedProjectionTexture;
             debugTextureAssigned = sharedProjectionTexture != null;
             _overlayImage.enabled = !hideWhenTextureMissing || sharedProjectionTexture != null;
+            SetOverlayVisible(!hideWhenTextureMissing || sharedProjectionTexture != null);
+        }
+
+        private void SetOverlayVisible(bool visible)
+        {
+            if (_overlayCanvasGroup == null && _overlayRect != null)
+                _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect);
+
+            if (_overlayCanvasGroup == null)
+                return;
+
+            _overlayCanvasGroup.alpha = visible ? 1f : 0f;
+            _overlayCanvasGroup.interactable = false;
+            _overlayCanvasGroup.blocksRaycasts = false;
+        }
+
+        private static CanvasGroup EnsureCanvasGroup(RectTransform rect)
+        {
+            if (rect == null)
+                return null;
+
+            CanvasGroup canvasGroup = rect.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = rect.gameObject.AddComponent<CanvasGroup>();
+
+            return canvasGroup;
         }
 
         private void TryRegisterRuntimeTick()

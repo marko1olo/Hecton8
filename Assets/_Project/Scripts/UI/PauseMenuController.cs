@@ -670,7 +670,7 @@ namespace Hecton8.UI
             _saveStatus = CreateText(panel, "SaveStatus", numericFont, 11f, FontStyles.Normal, TextAlignmentOptions.Center);
             Anchor(_saveStatus.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(22f, 66f), new Vector2(-22f, 22f));
             _saveStatus.color = Dim;
-            _saveStatus.SetText(_cachedAwaitingSaveCommand);
+            ApplySaveStatusLiteral(_cachedAwaitingSaveCommand);
 
             _savesBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
             RefreshSaveSectionState();
@@ -896,6 +896,16 @@ namespace Hecton8.UI
             return safeLength;
         }
 
+        private static int CopySpanToBuffer(ReadOnlySpan<char> value, char[] buffer, int offset)
+        {
+            if (value.Length == 0 || buffer == null || offset >= buffer.Length)
+                return 0;
+
+            int safeLength = Mathf.Min(value.Length, buffer.Length - offset);
+            value.Slice(0, safeLength).CopyTo(buffer.AsSpan(offset, safeLength));
+            return safeLength;
+        }
+
         private void ExitToMainMenu()
         {
             if (_exitToMainMenuInFlight)
@@ -1005,7 +1015,7 @@ namespace Hecton8.UI
                 _footerHint.SetText("ESC = back / resume  |  SETTINGS hosts controls and rebinds");
 
             if (_saveStatus != null)
-                _saveStatus.SetText(message);
+                ApplySaveStatusLiteral(message);
 
 #if UNITY_EDITOR
             Debug.LogError($"[PauseMenuController] {message}");
@@ -1511,9 +1521,13 @@ namespace Hecton8.UI
             }
 
             ReadOnlySpan<char> templateSpan = template.AsSpan();
-            string prefix = templateSpan.Slice(0, placeholderIndex).ToString();
-            string suffix = templateSpan.Slice(placeholderIndex + 3).ToString();
-            ApplyTemplatedText(_settingsLanguageStatus, prefix, replacement, suffix, _settingsLanguageBuffer);
+            ReadOnlySpan<char> prefix = placeholderIndex > 0
+                ? templateSpan.Slice(0, placeholderIndex)
+                : ReadOnlySpan<char>.Empty;
+            ReadOnlySpan<char> suffix = placeholderIndex + 3 < templateSpan.Length
+                ? templateSpan.Slice(placeholderIndex + 3)
+                : ReadOnlySpan<char>.Empty;
+            ApplyTemplatedText(_settingsLanguageStatus, prefix, replacement.AsSpan(), suffix, _settingsLanguageBuffer);
         }
 
         private static string GetLanguageDisplayName(GameLanguage language)
@@ -1568,13 +1582,23 @@ namespace Hecton8.UI
 
         private static void ApplyTemplatedText(TMP_Text label, string prefix, string value, string suffix, char[] buffer)
         {
+            ApplyTemplatedText(
+                label,
+                string.IsNullOrEmpty(prefix) ? ReadOnlySpan<char>.Empty : prefix.AsSpan(),
+                string.IsNullOrEmpty(value) ? ReadOnlySpan<char>.Empty : value.AsSpan(),
+                string.IsNullOrEmpty(suffix) ? ReadOnlySpan<char>.Empty : suffix.AsSpan(),
+                buffer);
+        }
+
+        private static void ApplyTemplatedText(TMP_Text label, ReadOnlySpan<char> prefix, ReadOnlySpan<char> value, ReadOnlySpan<char> suffix, char[] buffer)
+        {
             if (label == null || buffer == null || buffer.Length == 0)
                 return;
 
             int cursor = 0;
-            cursor += CopyStringToBuffer(prefix, buffer, cursor);
-            cursor += CopyStringToBuffer(value, buffer, cursor);
-            cursor += CopyStringToBuffer(suffix, buffer, cursor);
+            cursor += CopySpanToBuffer(prefix, buffer, cursor);
+            cursor += CopySpanToBuffer(value, buffer, cursor);
+            cursor += CopySpanToBuffer(suffix, buffer, cursor);
             label.SetCharArray(buffer, 0, cursor);
         }
 

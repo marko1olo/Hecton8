@@ -10,6 +10,7 @@ using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Narrative
@@ -52,6 +53,7 @@ namespace Hecton8.Narrative
         public const int RecordCount = 50;
         public const int PaddedBitCount = 64;
         public const int WordCount = 1;
+        public const int RuntimeWordCount = 2;
 
         public static bool IsValidIndex(int index)
         {
@@ -216,7 +218,7 @@ namespace Hecton8.Narrative
         // COLD ALLOC: Dictionary<uint,int>[64] — hash-to-record lookup for industrial lore — owner: LoreDatabaseManager
         private readonly Dictionary<uint, int> _recordIndexByHash = new Dictionary<uint, int>(64);
 
-        private NativeBitArray _unlockedBits;
+        private NativeArray<uint> _unlockedWords;
         private JobHandle _disposeHandle;
         private HectonEventSubscription _loreAcquiredSubscription;
 
@@ -249,7 +251,20 @@ namespace Hecton8.Narrative
         /// <summary>
         /// Current number of unlocked industrial lore records.
         /// </summary>
-        public int UnlockedCount => _unlockedBits.IsCreated ? _unlockedBits.CountBits(0, IndustrialLoreBitMask.RecordCount) : 0;
+        public int UnlockedCount
+        {
+            get
+            {
+                if (!_unlockedWords.IsCreated)
+                    return 0;
+
+                int count = 0;
+                for (int i = 0; i < _unlockedWords.Length; i++)
+                    count += math.countbits(_unlockedWords[i]);
+
+                return Mathf.Min(count, IndustrialLoreBitMask.RecordCount);
+            }
+        }
 
         private void Awake()
         {
@@ -288,10 +303,10 @@ namespace Hecton8.Narrative
             _loreAcquiredSubscription?.Dispose();
             _loreAcquiredSubscription = null;
 
-            if (_unlockedBits.IsCreated)
+            if (_unlockedWords.IsCreated)
             {
-                _disposeHandle = _unlockedBits.Dispose(_disposeHandle);
-                _unlockedBits = default;
+                _disposeHandle = _unlockedWords.Dispose(_disposeHandle);
+                _unlockedWords = default;
             }
         }
 
@@ -360,9 +375,10 @@ namespace Hecton8.Narrative
         /// <returns>True when the record is unlocked.</returns>
         public bool IsUnlocked(int index)
         {
-            return _unlockedBits.IsCreated &&
-                   IndustrialLoreBitMask.IsValidIndex(index) &&
-                   _unlockedBits.IsSet(index);
+            return TryGetWordAndMask(index, out int wordIndex, out uint bitMask) &&
+                   _unlockedWords.IsCreated &&
+                   (uint)wordIndex < (uint)_unlockedWords.Length &&
+                   (_unlockedWords[wordIndex] & bitMask) != 0u;
         }
 
         /// <summary>
@@ -393,21 +409,21 @@ namespace Hecton8.Narrative
         public int UnlockByPackedBits(ulong packedBits)
         {
             EnsureUnlockStorage();
-            if (!_unlockedBits.IsCreated || packedBits == 0UL)
+            if (!_unlockedWords.IsCreated || packedBits == 0UL)
                 return 0;
 
-            int unlockedCount = 0;
-            for (int index = 0; index < IndustrialLoreBitMask.RecordCount; index++)
-            {
-                ulong bit = 1UL << index;
-                if ((packedBits & bit) == 0UL || _unlockedBits.IsSet(index))
-                    continue;
+            return ApplyPackedWordMask(0, (uint)packedBits) +
+                   ApplyPackedWordMask(1, (uint)(packedBits >> 32));
+        }
 
-                _unlockedBits.Set(index, true);
-                unlockedCount++;
-            }
-
-            return unlockedCount;
+        /// <summary>
+        /// Exposes the packed runtime lore words for zero-GC readers that need direct bit tests.
+        /// </summary>
+        public bool TryGetPackedUnlockWords(out NativeArray<uint> words)
+        {
+            EnsureUnlockStorage();
+            words = _unlockedWords;
+            return words.IsCreated;
         }
 
         /// <summary>
@@ -488,27 +504,33 @@ namespace Hecton8.Narrative
                 return;
 
             IndustrialLoreBitMask.EnsureCapacity(ref data.industrialLoreUnlockWords);
-            if (!_unlockedBits.IsCreated)
+            if (!_unlockedWords.IsCreated)
             {
                 data.industrialLoreUnlockWords[0] = 0L;
                 return;
             }
 
-            NativeArray<ulong> words = _unlockedBits.AsNativeArray<ulong>();
-            data.industrialLoreUnlockWords[0] = unchecked((long)words[0]);
+            ulong packed = _unlockedWords[0];
+            if (_unlockedWords.Length > 1)
+                packed |= (ulong)_unlockedWords[1] << 32;
+
+            data.industrialLoreUnlockWords[0] = unchecked((long)packed);
         }
 
         public void LoadFromSaveData(SaveData data)
         {
             EnsureUnlockStorage();
-            _unlockedBits.Clear();
+            ClearUnlockWords();
 
             bool loadedPackedWords = false;
             if (data != null &&
                 data.industrialLoreUnlockWords != null &&
                 data.industrialLoreUnlockWords.Length >= IndustrialLoreBitMask.WordCount)
             {
-                _unlockedBits.SetBits(0, unchecked((ulong)data.industrialLoreUnlockWords[0]), 64);
+                ulong packed = unchecked((ulong)data.industrialLoreUnlockWords[0]);
+                _unlockedWords[0] = (uint)packed;
+                if (_unlockedWords.Length > 1)
+                    _unlockedWords[1] = (uint)(packed >> 32);
                 loadedPackedWords = true;
             }
 
@@ -616,11 +638,63 @@ namespace Hecton8.Narrative
             if (!_recordIndexByHash.TryGetValue(logHash, out int index))
                 return false;
 
-            if (_unlockedBits.IsSet(index))
+            int wordIndex = index >> 5;
+            uint bitMask = 1u << (index & 31);
+            uint currentWord = _unlockedWords[wordIndex];
+            if ((currentWord & bitMask) != 0u)
                 return false;
 
-            _unlockedBits.Set(index, true);
+            _unlockedWords[wordIndex] = currentWord | bitMask;
             return true;
+        }
+
+        private static bool TryGetWordAndMask(int index, out int wordIndex, out uint bitMask)
+        {
+            if (!IndustrialLoreBitMask.IsValidIndex(index))
+            {
+                wordIndex = -1;
+                bitMask = 0u;
+                return false;
+            }
+
+            wordIndex = index >> 5;
+            bitMask = 1u << (index & 31);
+            return true;
+        }
+
+        private int ApplyPackedWordMask(int wordIndex, uint packedWord)
+        {
+            if (!_unlockedWords.IsCreated || packedWord == 0u || (uint)wordIndex >= (uint)_unlockedWords.Length)
+                return 0;
+
+            int bitStart = wordIndex * 32;
+            int remainingBits = IndustrialLoreBitMask.RecordCount - bitStart;
+            if (remainingBits <= 0)
+                return 0;
+
+            uint validMask = remainingBits >= 32
+                ? uint.MaxValue
+                : ((1u << remainingBits) - 1u);
+            packedWord &= validMask;
+            if (packedWord == 0u)
+                return 0;
+
+            uint currentWord = _unlockedWords[wordIndex];
+            uint newBits = packedWord & ~currentWord;
+            if (newBits == 0u)
+                return 0;
+
+            _unlockedWords[wordIndex] = currentWord | packedWord;
+            return math.countbits(newBits);
+        }
+
+        private void ClearUnlockWords()
+        {
+            if (!_unlockedWords.IsCreated)
+                return;
+
+            for (int i = 0; i < _unlockedWords.Length; i++)
+                _unlockedWords[i] = 0u;
         }
 
         private void BuildLookupIfNeeded()
@@ -635,13 +709,13 @@ namespace Hecton8.Narrative
 
         private void EnsureUnlockStorage()
         {
-            if (_unlockedBits.IsCreated)
+            if (_unlockedWords.IsCreated)
                 return;
 
-            _unlockedBits = new NativeBitArray(
-                IndustrialLoreBitMask.PaddedBitCount,
+            _unlockedWords = new NativeArray<uint>(
+                IndustrialLoreBitMask.RuntimeWordCount,
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeBitArray[64 bits] — industrial lore unlock mask — owner: LoreDatabaseManager
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[2] — industrial lore unlock words — owner: LoreDatabaseManager
         }
 
 #if UNITY_EDITOR

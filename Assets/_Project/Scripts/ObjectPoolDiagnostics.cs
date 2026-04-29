@@ -37,10 +37,34 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Hecton.Localization;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Core
 {
+    public enum PoolDiagnosticsEventType : byte
+    {
+        Warning = 0,
+        Exhausted = 1,
+        SpawnRateAlert = 2
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PoolDiagnosticsEventPayload
+    {
+        public uint PoolHash;
+        public float MetricValue;
+        public ushort EventType;
+        public ushort FlagValue;
+    }
+
+    public interface IObjectPoolDiagnosticsListener
+    {
+        void OnPoolDiagnosticsEvent(in PoolDiagnosticsEventPayload payload);
+    }
+
     /// <summary>
     /// Snapshot of a pool's current statistics.
     /// Struct-based, zero-heap allocation.
@@ -106,22 +130,11 @@ namespace Hecton8.Core
         //  EVENTS
         // ════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Fire when a pool reaches high utilization (>80%).
-        /// Called once per poll cycle, not every spawn.
-        /// </summary>
-        public static event Action<string, float> OnPoolWarning;
-
-        /// <summary>
-        /// Fire when pool is exhausted (no available instances).
-        /// </summary>
-        public static event Action<string> OnPoolExhausted;
-
-        /// <summary>
-        /// Fire on predictive alert: spawn rate is increasing.
-        /// Indicates pool undersizing.
-        /// </summary>
-        public static event Action<string, bool> OnSpawnRateAlert; // (poolName, isAccelerating)
+        // COLD ALLOC: RegistryBucket<IObjectPoolDiagnosticsListener>[4] - pool diagnostics listeners drained on dispatcher LateUpdate - owner: ObjectPoolDiagnostics
+        private static readonly RegistryBucket<IObjectPoolDiagnosticsListener> _listeners = new RegistryBucket<IObjectPoolDiagnosticsListener>(4);
+        // COLD ALLOC: Dictionary<uint,string>[32] - pool names keyed by FNV-1a hash for cold-path diagnostics resolution - owner: ObjectPoolDiagnostics
+        private static readonly Dictionary<uint, string> _poolNamesByHash = new Dictionary<uint, string>(32);
+        private static NativeQueue<PoolDiagnosticsEventPayload> _pendingEvents;
 
         // ════════════════════════════════════════════════════════════
         //  INTERNAL STATE
@@ -150,9 +163,14 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnPoolWarning = null;
-            OnPoolExhausted = null;
-            OnSpawnRateAlert = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _poolNamesByHash.Clear();
             _poolMetrics.Clear();
             _lastDiagnosticsFrame = -1;
         }
@@ -160,6 +178,45 @@ namespace Hecton8.Core
         // ════════════════════════════════════════════════════════════
         //  PUBLIC API
         // ════════════════════════════════════════════════════════════
+
+        public static void Register(IObjectPoolDiagnosticsListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            _listeners.Register(listener);
+        }
+
+        public static void Unregister(IObjectPoolDiagnosticsListener listener)
+        {
+            if (listener == null)
+                return;
+
+            _listeners.Unregister(listener);
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out PoolDiagnosticsEventPayload payload))
+            {
+                IObjectPoolDiagnosticsListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnPoolDiagnosticsEvent(in payload);
+            }
+        }
+
+        public static bool TryResolvePoolName(uint poolHash, out string poolName)
+        {
+            return _poolNamesByHash.TryGetValue(poolHash, out poolName);
+        }
 
         /// <summary>
         /// Register a pool for diagnostics tracking.
@@ -169,6 +226,7 @@ namespace Hecton8.Core
         {
             if (!_poolMetrics.ContainsKey(poolName))
             {
+                RegisterPoolName(poolName);
                 _poolMetrics[poolName] = new PoolMetrics
                 {
                     lastMeasurementFrame = Time.frameCount
@@ -244,11 +302,11 @@ namespace Hecton8.Core
                 {
                     float utilization = (currentActive / (float)capacity) * 100f;
                     if (utilization > 80f)
-                        OnPoolWarning?.Invoke(poolName, utilization);
+                        Publish(poolName, PoolDiagnosticsEventType.Warning, utilization, 0u);
 
                     // Alert if exhausted
                     if (currentActive >= capacity)
-                        OnPoolExhausted?.Invoke(poolName);
+                        Publish(poolName, PoolDiagnosticsEventType.Exhausted, utilization, 0u);
                 }
 
                 // Spawn rate acceleration detection
@@ -258,7 +316,7 @@ namespace Hecton8.Core
                     bool isAccelerating = !metrics.wasAccelerating;
                     if (isAccelerating)
                     {
-                        OnSpawnRateAlert?.Invoke(poolName, true);
+                        Publish(poolName, PoolDiagnosticsEventType.SpawnRateAlert, spawnsSinceLastFrame, 1u);
                         metrics.wasAccelerating = true;
                     }
                 }
@@ -318,6 +376,55 @@ namespace Hecton8.Core
             finally
             {
                 scope.Dispose();
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<PoolDiagnosticsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - deferred pool diagnostics lane flushed by SystemDispatcher LateUpdate - owner: ObjectPoolDiagnostics
+            }
+        }
+
+        private static void RegisterPoolName(string poolName)
+        {
+            uint poolHash = ComputePoolHash(poolName);
+            if (poolHash != 0u && !_poolNamesByHash.ContainsKey(poolHash))
+                _poolNamesByHash.Add(poolHash, poolName);
+        }
+
+        private static uint ComputePoolHash(string poolName)
+        {
+            return string.IsNullOrWhiteSpace(poolName)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(poolName));
+        }
+
+        private static void Publish(string poolName, PoolDiagnosticsEventType type, float metricValue, uint flagValue)
+        {
+            uint poolHash = ComputePoolHash(poolName);
+            if (poolHash == 0u)
+                return;
+
+            RegisterPoolName(poolName);
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new PoolDiagnosticsEventPayload
+            {
+                PoolHash = poolHash,
+                MetricValue = metricValue,
+                EventType = (ushort)type,
+                FlagValue = (ushort)flagValue
+            });
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
             }
         }
 

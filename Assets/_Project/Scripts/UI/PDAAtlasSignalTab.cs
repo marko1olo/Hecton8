@@ -31,7 +31,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Atlas Signal Tab")]
-    public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable, IUpdatable, IAtlasSignalEventListener
     {
         private const float MainCameraResolveRetryInterval = 1f;
         private const string StrengthPercentTemplate = "{0}%";
@@ -164,9 +164,7 @@ namespace Hecton8.UI
 
             TryRegister();
 
-            AtlasSignalEvents.OnSignalStrengthChanged += HandleStrengthChanged;
-            AtlasSignalEvents.OnSignalPulse += HandleSignalPulse;
-            AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
+            AtlasSignalEvents.Register(this);
             PDAEvents.OnOpened += HandlePDAOpened;
 
             _dirty = true;
@@ -176,9 +174,7 @@ namespace Hecton8.UI
         {
             TryUnregister();
 
-            AtlasSignalEvents.OnSignalStrengthChanged -= HandleStrengthChanged;
-            AtlasSignalEvents.OnSignalPulse -= HandleSignalPulse;
-            AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
+            AtlasSignalEvents.Unregister(this);
             PDAEvents.OnOpened -= HandlePDAOpened;
         }
 
@@ -214,6 +210,22 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  EVENT HANDLERS
         // ══════════════════════════════════════════════════════════
+
+        public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
+        {
+            switch ((AtlasSignalEventType)payload.EventType)
+            {
+                case AtlasSignalEventType.StrengthChanged:
+                    HandleStrengthChanged(payload.SignalStrength);
+                    break;
+                case AtlasSignalEventType.Pulse:
+                    HandleSignalPulse(payload.SignalStrength);
+                    break;
+                case AtlasSignalEventType.Decoded:
+                    HandleSignalDecoded(string.Empty);
+                    break;
+            }
+        }
 
         private void HandleStrengthChanged(float strength)
         {

@@ -564,7 +564,6 @@ namespace Hecton8.Gameplay
             if (trackedPlayerExited)
                 _trackedPlayerSurvival = null;
             // ── Interior Zone: BuoyancyObject tracking ──
-            #pragma warning disable CS0618
             int key = unchecked((int)EntityId.ToULong(other.GetEntityId()));
 
             if (_trackedObjects.TryGetValue(key, out BuoyancyObject buoyancy))
@@ -1479,7 +1478,6 @@ namespace Hecton8.Gameplay
 
         private void TrackBuoyancyObject(Collider other, BuoyancyObject buoyancy)
         {
-            #pragma warning disable CS0618
             int key = unchecked((int)EntityId.ToULong(other.GetEntityId()));
 
             if (_trackedObjects.ContainsKey(key))

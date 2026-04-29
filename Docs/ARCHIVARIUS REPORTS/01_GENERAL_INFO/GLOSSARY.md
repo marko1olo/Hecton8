@@ -142,7 +142,7 @@ public class HectonCrestOceanKinematics : IHectonOceanKinematics {
 // ✅ Gameplay-код использует только интерфейс
 public class PlayerMovement : MonoBehaviour {
     private IHectonOceanKinematics _ocean;
-    void Awake() => _ocean = GlobalRegistry.OceanKinematics;
+    void Awake() => _ocean = GlobalRegistry.OceanKinematics.ActiveProvider;
 }
 ```
 

@@ -75,6 +75,16 @@ namespace Hecton8.Quest
         [Tooltip("Optional phase gate that must already be unlocked before this quest may activate.")]
         [SerializeField] public QuestPhaseGateType phaseGate = QuestPhaseGateType.None;
 
+        [Header("── Marker ───────────────────────────")]
+        [Tooltip("Stable world marker target ID resolved through the quest marker runtime. Leave empty to use markerWorldPosition.")]
+        [SerializeField] public string markerTargetId;
+
+        [Tooltip("Fallback world-space marker position used when markerTargetId is empty or unresolved.")]
+        [SerializeField] public Vector3 markerWorldPosition;
+
+        [Tooltip("Vertical marker lift above the resolved world-space position.")]
+        [SerializeField, Min(0f)] public float markerHeightOffset = 6f;
+
         [Header("── Flags ────────────────────────────────")]
         [SerializeField] public bool autoActivateOnStart;
         [SerializeField] public bool oneTimeOnly = true;

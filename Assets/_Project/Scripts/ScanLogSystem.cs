@@ -8,7 +8,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Scan Log System")]
-    public sealed class ScanLogSystem : MonoBehaviour, ISaveable
+    public sealed class ScanLogSystem : MonoBehaviour, ISaveable, IScanEventListener
     {
         public readonly struct ScanEntrySnapshot
         {
@@ -84,8 +84,7 @@ namespace Hecton8.Gameplay
                 Instance = this;
 
             SaveManager.Instance?.Register(this);
-            ScanEvents.OnEntryDiscovered += HandleEntryDiscovered;
-            ScanEvents.OnNodeFound += HandleNodeFound;
+            ScanEvents.Register(this);
         }
 
         private void Start()
@@ -96,8 +95,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             SaveManager.Instance?.Unregister(this);
-            ScanEvents.OnEntryDiscovered -= HandleEntryDiscovered;
-            ScanEvents.OnNodeFound -= HandleNodeFound;
+            ScanEvents.Unregister(this);
         }
 
         private void OnDestroy()
@@ -215,6 +213,23 @@ namespace Hecton8.Gameplay
             }
 
             ScanLogChanged?.Invoke();
+        }
+
+        public void OnScanEvent(in ScanEventPayload payload)
+        {
+            switch ((ScanEventType)payload.EventType)
+            {
+                case ScanEventType.EntryDiscovered:
+                    if (ScanEvents.TryResolveEntryMetadata(payload.EntryHash, out ScanEntryMetadata metadata))
+                    {
+                        HandleEntryDiscovered(metadata.EntryId, metadata.Title, metadata.Category, metadata.Summary);
+                    }
+                    break;
+
+                case ScanEventType.NodeFound:
+                    HandleNodeFound(payload.Position);
+                    break;
+            }
         }
 
         private void HandleEntryDiscovered(string entryId, string title, string category, string summary)

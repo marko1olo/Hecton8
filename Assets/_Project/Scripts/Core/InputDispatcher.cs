@@ -1,5 +1,8 @@
 using Hecton8.Input;
+using Hecton8.Tools;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Hecton8.Core
 {
@@ -23,13 +26,17 @@ namespace Hecton8.Core
         private static InputDispatcher _instance;
 
         private InputManager _nativeInputManager;
+        private Gamepad _cachedGamepad;
         private bool _registeredUpdatable;
         private bool _isInitialized;
         private bool _subscribedToNativeInput;
+        private bool _subscribedToDeviceChanges;
         private int _lastCapturedFrame = -1;
         private int _bufferWriteIndex;
         private Vector2 _pendingLookDelta;
         private uint _latchedActionBits;
+        private float _appliedLowMotorSpeed;
+        private float _appliedHighMotorSpeed;
         private PlayerInputState _currentState;
 
         // COLD ALLOC: BufferedActionEntry[15] - fixed player action buffering ring for pre-commit intent capture - owner: InputDispatcher
@@ -116,6 +123,7 @@ namespace Hecton8.Core
             }
 
             EnsureInputBinding();
+            EnsureHapticDeviceBinding();
             TryRegisterToDispatcher();
             GlobalRegistry.RegisterInputService(this);
             _isInitialized = true;
@@ -130,6 +138,7 @@ namespace Hecton8.Core
         private void OnEnable()
         {
             EnsureInputBinding();
+            EnsureHapticDeviceBinding();
 
             if (_isInitialized)
             {
@@ -142,6 +151,8 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             UnsubscribeFromNativeInput();
+            ResetGamepadHaptics();
+            UnsubscribeFromDeviceChanges();
             TryUnregisterFromDispatcher();
 
             if (_isInitialized)
@@ -153,6 +164,8 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             UnsubscribeFromNativeInput();
+            ResetGamepadHaptics();
+            UnsubscribeFromDeviceChanges();
             TryUnregisterFromDispatcher();
 
             if (_isInitialized)
@@ -169,6 +182,7 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             CaptureState();
+            DrainToolHaptics();
         }
 
         /// <summary>
@@ -257,6 +271,12 @@ namespace Hecton8.Core
             SubscribeToNativeInput();
         }
 
+        private void EnsureHapticDeviceBinding()
+        {
+            SubscribeToDeviceChanges();
+            ResolveCachedGamepad();
+        }
+
         private void SubscribeToNativeInput()
         {
             if (_subscribedToNativeInput || _nativeInputManager == null)
@@ -295,6 +315,71 @@ namespace Hecton8.Core
             _nativeInputManager.OnTabPrevious -= HandleTabPreviousPressed;
             _nativeInputManager.OnSprint -= HandleSprintPressed;
             _subscribedToNativeInput = false;
+        }
+
+        private void SubscribeToDeviceChanges()
+        {
+            if (_subscribedToDeviceChanges)
+                return;
+
+            InputSystem.onDeviceChange += HandleDeviceChange;
+            _subscribedToDeviceChanges = true;
+        }
+
+        private void UnsubscribeFromDeviceChanges()
+        {
+            if (!_subscribedToDeviceChanges)
+                return;
+
+            InputSystem.onDeviceChange -= HandleDeviceChange;
+            _subscribedToDeviceChanges = false;
+        }
+
+        private void HandleDeviceChange(InputDevice device, InputDeviceChange change)
+        {
+            if (!(device is Gamepad gamepad))
+                return;
+
+            switch (change)
+            {
+                case InputDeviceChange.Added:
+                case InputDeviceChange.Reconnected:
+                case InputDeviceChange.Enabled:
+                case InputDeviceChange.ConfigurationChanged:
+                case InputDeviceChange.UsageChanged:
+                    if (_cachedGamepad == null)
+                        _cachedGamepad = gamepad;
+                    break;
+
+                case InputDeviceChange.Removed:
+                case InputDeviceChange.Disconnected:
+                case InputDeviceChange.Disabled:
+                    if (ReferenceEquals(_cachedGamepad, gamepad))
+                    {
+                        ResetGamepadHaptics();
+                        _cachedGamepad = null;
+                        ResolveCachedGamepad();
+                    }
+                    break;
+            }
+        }
+
+        private void ResolveCachedGamepad()
+        {
+            if (_cachedGamepad != null && _cachedGamepad.added)
+                return;
+
+            _cachedGamepad = null;
+            var gamepads = Gamepad.all;
+            for (int i = 0; i < gamepads.Count; i++)
+            {
+                Gamepad gamepad = gamepads[i];
+                if (gamepad == null || !gamepad.added)
+                    continue;
+
+                _cachedGamepad = gamepad;
+                break;
+            }
         }
 
         private void TryRegisterToDispatcher()
@@ -414,12 +499,88 @@ namespace Hecton8.Core
             _latchedActionBits |= (uint)PlayerInputAction.Sprint;
         }
 
+        private void DrainToolHaptics()
+        {
+            if (!ToolHapticsRuntime.TryGetRuntime(out ToolHapticsRuntime runtime) || runtime.FrontCount <= 0)
+            {
+                ApplyGamepadHaptics(0f, 0f);
+                return;
+            }
+
+            var commandBuffer = runtime.GetFrontBuffer();
+            float lowMotor = 0f;
+            float highMotor = 0f;
+            int commandCount = runtime.FrontCount;
+            for (int i = 0; i < commandCount; i++)
+            {
+                ToolHapticsRuntime.HapticCommand command = commandBuffer[i];
+                if (command.DurationRemaining <= 0f)
+                    continue;
+
+                float lowContribution = (command.MotorMask & 0b0001) != 0
+                    ? math.saturate(command.LowFreqIntensity)
+                    : 0f;
+                float highContribution = (command.MotorMask & 0b0010) != 0
+                    ? math.saturate(command.HighFreqIntensity)
+                    : 0f;
+
+                switch (command.BlendMode)
+                {
+                    case 0:
+                        lowMotor = lowContribution;
+                        highMotor = highContribution;
+                        break;
+
+                    case 1:
+                        lowMotor = math.saturate(lowMotor + lowContribution);
+                        highMotor = math.saturate(highMotor + highContribution);
+                        break;
+
+                    default:
+                        lowMotor = math.max(lowMotor, lowContribution);
+                        highMotor = math.max(highMotor, highContribution);
+                        break;
+                }
+            }
+
+            ApplyGamepadHaptics(lowMotor, highMotor);
+        }
+
+        private void ApplyGamepadHaptics(float lowMotor, float highMotor)
+        {
+            lowMotor = math.saturate(lowMotor);
+            highMotor = math.saturate(highMotor);
+            if (math.abs(lowMotor - _appliedLowMotorSpeed) <= 0.001f &&
+                math.abs(highMotor - _appliedHighMotorSpeed) <= 0.001f)
+            {
+                return;
+            }
+
+            ResolveCachedGamepad();
+            if (_cachedGamepad != null)
+                _cachedGamepad.SetMotorSpeeds(lowMotor, highMotor);
+
+            _appliedLowMotorSpeed = lowMotor;
+            _appliedHighMotorSpeed = highMotor;
+        }
+
+        private void ResetGamepadHaptics()
+        {
+            if (_cachedGamepad != null)
+                _cachedGamepad.SetMotorSpeeds(0f, 0f);
+
+            _appliedLowMotorSpeed = 0f;
+            _appliedHighMotorSpeed = 0f;
+        }
+
         private void ClearFrameState()
         {
             _lastCapturedFrame = -1;
             _bufferWriteIndex = 0;
             _pendingLookDelta = Vector2.zero;
             _latchedActionBits = 0u;
+            _appliedLowMotorSpeed = 0f;
+            _appliedHighMotorSpeed = 0f;
             _currentState = default;
 
             for (int i = 0; i < BufferedActionCapacity; i++)

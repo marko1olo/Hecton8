@@ -127,11 +127,27 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Compatibility warmup overload for systems that still pass a Component instead of its root GameObject.
+        /// </summary>
+        public void Warmup(Component prefab, int count)
+        {
+            Warmup(prefab != null ? prefab.gameObject : null, count);
+        }
+
+        /// <summary>
         /// Spawns an instance from the pool using the provided transform.
         /// </summary>
         public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation)
         {
             return Spawn(prefab, position, rotation, false);
+        }
+
+        /// <summary>
+        /// Compatibility spawn overload for systems that still pass a Component instead of its root GameObject.
+        /// </summary>
+        public GameObject Spawn(Component prefab, Vector3 position, Quaternion rotation)
+        {
+            return Spawn(prefab != null ? prefab.gameObject : null, position, rotation, false);
         }
 
         /// <summary>
@@ -178,11 +194,27 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Compatibility spawn overload for systems that still pass a Component instead of its root GameObject.
+        /// </summary>
+        public GameObject Spawn(Component prefab, Vector3 position, Quaternion rotation, bool allowExpand)
+        {
+            return Spawn(prefab != null ? prefab.gameObject : null, position, rotation, allowExpand);
+        }
+
+        /// <summary>
         /// Convenience overload that uses identity rotation.
         /// </summary>
         public GameObject Spawn(GameObject prefab, Vector3 position)
         {
             return Spawn(prefab, position, Quaternion.identity);
+        }
+
+        /// <summary>
+        /// Compatibility spawn overload that uses identity rotation for Component-prefab callers.
+        /// </summary>
+        public GameObject Spawn(Component prefab, Vector3 position)
+        {
+            return Spawn(prefab != null ? prefab.gameObject : null, position, Quaternion.identity, false);
         }
 
         /// <summary>
@@ -222,6 +254,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Compatibility despawn overload for systems that still pass a Component instead of its owning GameObject.
+        /// </summary>
+        public void Despawn(Component instance)
+        {
+            Despawn(instance != null ? instance.gameObject : null);
+        }
+
+        /// <summary>
         /// Returns an instance to its pool after a delay.
         /// </summary>
         public void Despawn(GameObject instance, float delaySeconds)
@@ -247,6 +287,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Compatibility delayed-despawn overload for systems that still pass a Component instead of its owning GameObject.
+        /// </summary>
+        public void Despawn(Component instance, float delaySeconds)
+        {
+            Despawn(instance != null ? instance.gameObject : null, delaySeconds);
+        }
+
+        /// <summary>
         /// Returns the number of available inactive instances for a prefab.
         /// </summary>
         public int GetAvailableCount(GameObject prefab)
@@ -259,6 +307,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Compatibility query overload for systems that still pass a Component instead of its root GameObject.
+        /// </summary>
+        public int GetAvailableCount(Component prefab)
+        {
+            return GetAvailableCount(prefab != null ? prefab.gameObject : null);
+        }
+
+        /// <summary>
         /// Returns whether a pool already exists for the given prefab.
         /// </summary>
         public bool HasPool(GameObject prefab)
@@ -268,6 +324,14 @@ namespace Hecton8.Core
 
             int prefabId = registry.GetPrefabId(prefab);
             return prefabId != 0 && _pools.ContainsKey(prefabId);
+        }
+
+        /// <summary>
+        /// Compatibility query overload for systems that still pass a Component instead of its root GameObject.
+        /// </summary>
+        public bool HasPool(Component prefab)
+        {
+            return HasPool(prefab != null ? prefab.gameObject : null);
         }
 
         /// <summary>
@@ -294,6 +358,14 @@ namespace Hecton8.Core
 
             _pools.Remove(prefabId);
             UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Compatibility clear overload for systems that still pass a Component instead of its root GameObject.
+        /// </summary>
+        public void ClearPool(Component prefab)
+        {
+            ClearPool(prefab != null ? prefab.gameObject : null);
         }
 
         /// <summary>

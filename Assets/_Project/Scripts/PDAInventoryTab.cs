@@ -18,6 +18,7 @@ using TMPro;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -33,7 +34,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
-    public sealed class PDAInventoryTab : MonoBehaviour
+    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable
     {
         private static readonly char[] StackCountTemplateChars = "×{0}".ToCharArray();
         private static readonly char[] DetailWeightStackTemplateChars = "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".ToCharArray();
@@ -83,6 +84,21 @@ namespace Hecton8.UI
         private const int MaxItems = 48;
         private const int MaxVisibleBlocks = 32;
         private const int ToolSlotCount = 4;
+
+        private const string InventoryHologramShaderName = "HECTON/UI/FabricatorHologram";
+        private const float InventoryHologramSurfaceLiftMeters = 0.05f;
+        private const float InventoryHologramBobFrequency = 1.65f;
+        private const float InventoryHologramBobAmplitudeMeters = 0.004f;
+        private const float InventoryHologramFootprintScale = 0.58f;
+        private const float InventoryHologramThicknessMeters = 0.006f;
+        private const float InventoryHologramSpinDegreesPerSecond = 42f;
+        private const float InventoryHologramScanProgress = 0.86f;
+        private const float InventoryHologramGlitchAmount = 0.14f;
+
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ScanProgressId = Shader.PropertyToID("_ScanProgress");
+        private static readonly int GlitchAmountId = Shader.PropertyToID("_GlitchAmount");
+        private static readonly Color InventoryHologramColor = new Color(0.08f, 0.88f, 1f, 0.42f);
         private const int InventoryTabIndex = 0;
 
         // Grid area pixel dimensions
@@ -233,6 +249,26 @@ namespace Hecton8.UI
         private bool _gridDirty;
         private bool _detailsDirty;
         private bool _toolStripDirty;
+
+        private bool _registeredToUpdateLoop;
+        private float _inventoryHologramAnimationTime;
+        private DiegeticPanelController _diegeticPanel;
+        private Material _runtimeHologramMaterial;
+        private InventoryHologramEntry[] _inventoryHologramEntries;
+        private Matrix4x4[] _inventoryHologramMatrices;
+        private Matrix4x4[] _inventoryHologramDrawBuffer;
+        private int[] _inventoryHologramMeshIndices;
+        private bool[] _inventoryHologramMeshVisited;
+
+        private struct InventoryHologramEntry
+        {
+            public bool Active;
+            public int ProxyMeshIndex;
+            public Vector2 CanvasPosition;
+            public float FootprintPixels;
+            public float Phase;
+        }
+
         private Transform _dropOrigin;
 
         private bool IsTabActive =>
@@ -252,13 +288,20 @@ namespace Hecton8.UI
             _filterSummaryBuffer = new char[80]; // COLD ALLOC: char[80] - filter digest staging buffer - owner: PDAInventoryTab
             _pageSummaryBuffer = new char[32]; // COLD ALLOC: char[32] - page digest staging buffer - owner: PDAInventoryTab
             _filteredAnchorIndices = new int[MaxItems]; // COLD ALLOC: int[MaxItems] - filtered anchor page index buffer - owner: PDAInventoryTab
+            _inventoryHologramEntries = new InventoryHologramEntry[MaxVisibleBlocks]; // COLD ALLOC: InventoryHologramEntry[MaxVisibleBlocks] - diegetic inventory hologram descriptors - owner: PDAInventoryTab
+            _inventoryHologramMatrices = new Matrix4x4[MaxVisibleBlocks]; // COLD ALLOC: Matrix4x4[MaxVisibleBlocks] - visible hologram transforms - owner: PDAInventoryTab
+            _inventoryHologramDrawBuffer = new Matrix4x4[MaxVisibleBlocks]; // COLD ALLOC: Matrix4x4[MaxVisibleBlocks] - grouped instanced draw buffer - owner: PDAInventoryTab
+            _inventoryHologramMeshIndices = new int[MaxVisibleBlocks]; // COLD ALLOC: int[MaxVisibleBlocks] - proxy mesh grouping buffer - owner: PDAInventoryTab
+            _inventoryHologramMeshVisited = new bool[MaxVisibleBlocks]; // COLD ALLOC: bool[MaxVisibleBlocks] - draw grouping visitation mask - owner: PDAInventoryTab
         }
 
         private void OnEnable()
         {
             AutoResolve();
+            ResolveDiegeticPanel();
             EnsureBuilt();
             Subscribe();
+            TryRegisterTick();
             MarkAllDirty();
             RefreshAll();
         }
@@ -266,6 +309,53 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             Unsubscribe();
+            TryUnregisterTick();
+            ClearInventoryHologramEntries();
+        }
+
+        private void OnDestroy()
+        {
+            if (_runtimeHologramMaterial != null)
+            {
+                Destroy(_runtimeHologramMaterial);
+                _runtimeHologramMaterial = null;
+            }
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsTabActive)
+                return;
+
+            _inventoryHologramAnimationTime = Mathf.Repeat(_inventoryHologramAnimationTime + Mathf.Max(0f, deltaTime), 4096f);
+            RenderInventoryHolograms();
+        }
+
+        private void TryRegisterTick()
+        {
+            if (_registeredToUpdateLoop || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registeredToUpdateLoop = true;
+        }
+
+        private void TryUnregisterTick()
+        {
+            if (!_registeredToUpdateLoop)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registeredToUpdateLoop = false;
+        }
+
+        private void ClearInventoryHologramEntries()
+        {
+            if (_inventoryHologramEntries == null)
+                return;
+
+            for (int i = 0; i < _inventoryHologramEntries.Length; i++)
+                _inventoryHologramEntries[i].Active = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -316,6 +406,18 @@ namespace Hecton8.UI
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
                 numericFont = labelFont;
+
+            ResolveDiegeticPanel();
+        }
+
+        private void ResolveDiegeticPanel()
+        {
+            if (_diegeticPanel != null)
+                return;
+
+            _diegeticPanel = GetComponentInParent<DiegeticPanelController>();
+            if (_diegeticPanel == null && playerPDA != null)
+                _diegeticPanel = playerPDA.GetComponentInChildren<DiegeticPanelController>(true);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1185,10 +1287,12 @@ namespace Hecton8.UI
 
         private void RefreshGrid()
         {
-            if (playerInventory == null || _cellImages == null) return;
+            if (playerInventory == null || _cellImages == null)
+                return;
 
             InventoryGrid grid = playerInventory.Grid;
-            if (grid == null) return;
+            if (grid == null)
+                return;
 
             NativeArray<int>.ReadOnly anchorHashIds = grid.AnchorHashIds;
             NativeArray<byte>.ReadOnly anchorWidths = grid.AnchorWidths;
@@ -1200,13 +1304,14 @@ namespace Hecton8.UI
 
             ValidateSelectionAgainstGrid(grid);
 
-            // Update cell tints
             for (int y = 0; y < GridRows; y++)
             {
                 for (int x = 0; x < GridCols; x++)
                 {
                     int idx = y * GridCols + x;
-                    if (idx >= _cellImages.Length) continue;
+                    if (idx >= _cellImages.Length)
+                        continue;
+
                     _cellImages[idx].color = grid.IsCellOccupied(x, y) ? CellOccupied : CellEmpty;
                 }
             }
@@ -1218,10 +1323,13 @@ namespace Hecton8.UI
             int pageStartIndex = _currentPageIndex * MaxVisibleBlocks;
             int pageItemCount = Mathf.Max(0, Mathf.Min(MaxVisibleBlocks, _filteredAnchorCount - pageStartIndex));
             bool selectionHiddenByFilter = _selectedItem != null && !MatchesFilter(_selectedItem);
+            RectTransform rootRect = transform as RectTransform;
+            bool canProjectHolograms = rootRect != null && IsInventoryHologramProjectionAvailable();
 
-            // Activate/position blocks
             for (int i = 0; i < MaxVisibleBlocks; i++)
             {
+                _inventoryHologramEntries[i].Active = false;
+
                 if (i < pageItemCount)
                 {
                     int anchorIndex = _filteredAnchorIndices[pageStartIndex + i];
@@ -1237,7 +1345,20 @@ namespace Hecton8.UI
 
                     _blockBgs[i].color = ItemBlock;
 
-                    if (item != null && item.icon != null)
+                    bool projectedHologram = false;
+                    if (canProjectHolograms &&
+                        TryResolveInventoryProxyMeshIndex(itemHashId, out int proxyMeshIndex) &&
+                        TryResolveInventoryProxyMesh(proxyMeshIndex, out Mesh _))
+                    {
+                        _inventoryHologramEntries[i] = BuildInventoryHologramEntry(rootRect, _blockRects[i], proxyMeshIndex, i);
+                        projectedHologram = _inventoryHologramEntries[i].Active;
+                    }
+
+                    if (projectedHologram)
+                    {
+                        SetGraphicVisible(_blockIcons[i], false);
+                    }
+                    else if (item != null && item.icon != null)
                     {
                         _blockIcons[i].sprite = item.icon;
                         SetGraphicVisible(_blockIcons[i], true);
@@ -1247,7 +1368,6 @@ namespace Hecton8.UI
                         SetGraphicVisible(_blockIcons[i], false);
                     }
 
-                    // Stack count badge
                     if (_blockCounts != null && i < _blockCounts.Length && _blockCounts[i] != null)
                     {
                         int stackCount = Mathf.Max(1, stackCounts[anchorIndex]);
@@ -1279,6 +1399,156 @@ namespace Hecton8.UI
             RefreshPageButtons();
             RefreshWeight();
             RefreshCargoDigest();
+        }
+
+        private bool IsInventoryHologramProjectionAvailable()
+        {
+            ResolveDiegeticPanel();
+            return _diegeticPanel != null && SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null;
+        }
+
+        private InventoryHologramEntry BuildInventoryHologramEntry(RectTransform rootRect, RectTransform blockRect, int proxyMeshIndex, int visibleIndex)
+        {
+            InventoryHologramEntry entry = default;
+            if (rootRect == null || blockRect == null || _gridArea == null)
+                return entry;
+
+            Vector2 rootSize = rootRect.rect.size;
+            if (rootSize.x <= 0.01f || rootSize.y <= 0.01f)
+                return entry;
+
+            Vector2Int referenceResolution = _diegeticPanel != null
+                ? _diegeticPanel.ReferenceResolutionPixels
+                : new Vector2Int(Mathf.Max(1, Mathf.RoundToInt(rootSize.x)), Mathf.Max(1, Mathf.RoundToInt(rootSize.y)));
+
+            float centerXFromLeft = _gridArea.anchoredPosition.x + blockRect.anchoredPosition.x + (blockRect.sizeDelta.x * 0.5f);
+            float centerYFromTop = -_gridArea.anchoredPosition.y - blockRect.anchoredPosition.y + (blockRect.sizeDelta.y * 0.5f);
+            float normalizedX = Mathf.Clamp01(centerXFromLeft / rootSize.x);
+            float normalizedY = Mathf.Clamp01(1f - (centerYFromTop / rootSize.y));
+
+            entry.Active = true;
+            entry.ProxyMeshIndex = proxyMeshIndex;
+            entry.CanvasPosition = new Vector2(normalizedX * referenceResolution.x, normalizedY * referenceResolution.y);
+            entry.FootprintPixels = Mathf.Max(8f, Mathf.Min(blockRect.sizeDelta.x, blockRect.sizeDelta.y));
+            entry.Phase = visibleIndex * 0.37f;
+            return entry;
+        }
+
+        private bool TryResolveInventoryProxyMeshIndex(int itemHashId, out int proxyMeshIndex)
+        {
+            proxyMeshIndex = -1;
+            if (itemHashId == 0 || !ItemTemplateRegistry.TryGetTemplate(itemHashId, out ItemTemplate template))
+                return false;
+
+            proxyMeshIndex = template.ProxyMeshIndex;
+            return proxyMeshIndex >= 0;
+        }
+
+        private bool TryResolveInventoryProxyMesh(int proxyMeshIndex, out Mesh mesh)
+        {
+            mesh = null;
+            SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
+            return overlay != null && overlay.TryResolveSharedProxyHologramMesh(proxyMeshIndex, out mesh);
+        }
+
+        private void EnsureInventoryHologramMaterial()
+        {
+            if (_runtimeHologramMaterial != null)
+                return;
+
+            Shader hologramShader = Shader.Find(InventoryHologramShaderName);
+#if UNITY_EDITOR
+            if (hologramShader == null)
+                hologramShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader");
+#endif
+            if (hologramShader == null)
+                return;
+
+            _runtimeHologramMaterial = new Material(hologramShader)
+            {
+                enableInstancing = true,
+                hideFlags = HideFlags.DontSave
+            };
+        }
+
+        private void RenderInventoryHolograms()
+        {
+            if (!IsInventoryHologramProjectionAvailable())
+                return;
+
+            EnsureInventoryHologramMaterial();
+            if (_runtimeHologramMaterial == null ||
+                !_diegeticPanel.TryGetPanelRotation(out Quaternion panelRotation) ||
+                !_diegeticPanel.TryGetCanvasPixelBasis(out Vector3 worldRightPerPixel, out Vector3 worldUpPerPixel))
+            {
+                return;
+            }
+
+            float pixelScaleMeters = Mathf.Max(0.0001f, Mathf.Min(worldRightPerPixel.magnitude, worldUpPerPixel.magnitude));
+            _runtimeHologramMaterial.SetColor(BaseColorId, InventoryHologramColor);
+            if (_runtimeHologramMaterial.HasProperty(ScanProgressId))
+                _runtimeHologramMaterial.SetFloat(ScanProgressId, InventoryHologramScanProgress);
+            if (_runtimeHologramMaterial.HasProperty(GlitchAmountId))
+                _runtimeHologramMaterial.SetFloat(GlitchAmountId, InventoryHologramGlitchAmount);
+
+            int visibleCount = 0;
+            for (int i = 0; i < _activeBlockCount && i < _inventoryHologramEntries.Length; i++)
+            {
+                InventoryHologramEntry entry = _inventoryHologramEntries[i];
+                if (!entry.Active || !TryResolveInventoryProxyMesh(entry.ProxyMeshIndex, out Mesh _))
+                    continue;
+
+                float bobOffset = Mathf.Sin((_inventoryHologramAnimationTime * InventoryHologramBobFrequency) + entry.Phase) * InventoryHologramBobAmplitudeMeters;
+                if (!_diegeticPanel.TryProjectCanvasPointToWorld(entry.CanvasPosition, InventoryHologramSurfaceLiftMeters + bobOffset, out Vector3 worldPosition))
+                    continue;
+
+                float yaw = (_inventoryHologramAnimationTime * InventoryHologramSpinDegreesPerSecond) + (entry.Phase * 57f);
+                Quaternion worldRotation = panelRotation * Quaternion.Euler(0f, yaw, 0f);
+                float footprintMeters = Mathf.Max(0.008f, entry.FootprintPixels * pixelScaleMeters * InventoryHologramFootprintScale);
+                Vector3 worldScale = new Vector3(footprintMeters, footprintMeters, Mathf.Max(InventoryHologramThicknessMeters, footprintMeters * 0.16f));
+
+                _inventoryHologramMatrices[visibleCount] = Matrix4x4.TRS(worldPosition, worldRotation, worldScale);
+                _inventoryHologramMeshIndices[visibleCount] = entry.ProxyMeshIndex;
+                _inventoryHologramMeshVisited[visibleCount] = false;
+                visibleCount++;
+            }
+
+            for (int i = visibleCount; i < _inventoryHologramMeshVisited.Length; i++)
+                _inventoryHologramMeshVisited[i] = false;
+
+            for (int i = 0; i < visibleCount; i++)
+            {
+                if (_inventoryHologramMeshVisited[i])
+                    continue;
+
+                int proxyMeshIndex = _inventoryHologramMeshIndices[i];
+                int drawCount = 0;
+                for (int j = i; j < visibleCount; j++)
+                {
+                    if (_inventoryHologramMeshVisited[j] || _inventoryHologramMeshIndices[j] != proxyMeshIndex)
+                        continue;
+
+                    _inventoryHologramMeshVisited[j] = true;
+                    _inventoryHologramDrawBuffer[drawCount++] = _inventoryHologramMatrices[j];
+                }
+
+                if (drawCount <= 0 || !TryResolveInventoryProxyMesh(proxyMeshIndex, out Mesh mesh))
+                    continue;
+
+                Graphics.DrawMeshInstanced(
+                    mesh,
+                    0,
+                    _runtimeHologramMaterial,
+                    _inventoryHologramDrawBuffer,
+                    drawCount,
+                    null,
+                    ShadowCastingMode.Off,
+                    false,
+                    0,
+                    null,
+                    LightProbeUsage.Off,
+                    null);
+            }
         }
 
         private void ValidateSelectionAgainstGrid(InventoryGrid grid)

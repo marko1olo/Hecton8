@@ -8,7 +8,6 @@ using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using Hecton8.Systems.AI;
 using Hecton8.Interaction;
@@ -17,8 +16,15 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)]
-    public sealed class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, INarrativePointOfInterestListener
     {
+        private struct NarrativeNode
+        {
+            public uint DiscoveryHash;
+            public ushort Reserved0;
+            public ushort Reserved1;
+        }
+
         private static HectonNarrativeDirector _instance;
 
         [Header("Settings")]
@@ -27,13 +33,15 @@ namespace Hecton8.Gameplay
 #pragma warning restore CS0414
 
         [Header("State")]
-        [SerializeField, ReadOnly] private List<string> discoveredIds = new List<string>(); // COLD ALLOC: 64 for [N] discoveries (reasonable number of narrative discoveries)
-        [SerializeField, ReadOnly] private int currentDepthTier;
+        [SerializeField, Sirenix.OdinInspector.ReadOnly] private List<string> discoveredIds = new List<string>(); // COLD ALLOC: 64 for [N] discoveries (reasonable number of narrative discoveries)
+        [SerializeField, Sirenix.OdinInspector.ReadOnly] private int currentDepthTier;
 
         // Runtime-only collection for active POIs in the world.
         // COLD ALLOC: 64 for initial capacity (reasonable number of POIs per scene).
         private readonly List<NarrativeDiscovery> _activePOIs = new List<NarrativeDiscovery>(64);
         private readonly HashSet<string> _discoveredIdLookup = new HashSet<string>(64, System.StringComparer.Ordinal);
+        private readonly HashSet<uint> _discoveredHashLookup = new HashSet<uint>(64);
+        private Unity.Collections.NativeHashMap<uint, NarrativeNode> _narrativeNodesByHash;
 
         private Transform _playerTransform;
         private bool _registered;
@@ -71,7 +79,6 @@ namespace Hecton8.Gameplay
         {
             currentDepthTier = data.narrativeDepthTier;
             discoveredIds.Clear();
-            _discoveredIdLookup.Clear();
 
             if (data.narrativeDiscoveryIds != null)
             {
@@ -79,13 +86,12 @@ namespace Hecton8.Gameplay
                 for (int i = 0; i < count; i++)
                 {
                     string discoveryId = data.narrativeDiscoveryIds[i];
-                    if (!string.IsNullOrWhiteSpace(discoveryId) &&
-                        _discoveredIdLookup.Add(discoveryId))
-                    {
+                    if (!string.IsNullOrWhiteSpace(discoveryId))
                         discoveredIds.Add(discoveryId);
-                    }
                 }
             }
+
+            RebuildDiscoveryLookup();
             
             // Re-sync world state from loaded data
             NarrativeEvents.RaiseDepthTierReached(currentDepthTier);
@@ -100,6 +106,7 @@ namespace Hecton8.Gameplay
             }
 
             _instance = this;
+            _narrativeNodesByHash = new Unity.Collections.NativeHashMap<uint, NarrativeNode>(128, Unity.Collections.Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,NarrativeNode>[128] - narrative hash lookup for discovery routing - owner: HectonNarrativeDirector
             RebuildDiscoveryLookup();
         }
 
@@ -110,9 +117,8 @@ namespace Hecton8.Gameplay
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
 
-            NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
-            NarrativeEvents.OnNarrativePOIRegistered += HandlePOIRegistered;
-            NarrativeEvents.OnNarrativePOIDisposed += HandlePOIDisposed;
+            NarrativeEvents.Register(this);
+            NarrativeEvents.RegisterPointOfInterestListener(this);
             HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequest;
 
             ResolvePlayerTransform();
@@ -125,15 +131,17 @@ namespace Hecton8.Gameplay
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
 
-            NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
-            NarrativeEvents.OnNarrativePOIRegistered -= HandlePOIRegistered;
-            NarrativeEvents.OnNarrativePOIDisposed -= HandlePOIDisposed;
+            NarrativeEvents.Unregister(this);
+            NarrativeEvents.UnregisterPointOfInterestListener(this);
             HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequest;
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+
+            if (_narrativeNodesByHash.IsCreated)
+                _narrativeNodesByHash.Dispose();
 
             if (_instance == this)
                 _instance = null;
@@ -144,6 +152,7 @@ namespace Hecton8.Gameplay
             if (_registered)
                 return;
 
+            GlobalRegistry.RegisterNarrativeDirectorRuntime(this);
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registered = true;
         }
@@ -153,6 +162,7 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
+            GlobalRegistry.UnregisterNarrativeDirectorRuntime(this);
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
         }
@@ -168,7 +178,9 @@ namespace Hecton8.Gameplay
                 if (poi == null) continue;
 
                 // Check if already discovered
-                if (HasDiscovery(poi.DiscoveryId)) continue;
+                uint discoveryHash = NarrativeEvents.ComputeDiscoveryHash(poi.DiscoveryId);
+                if (discoveryHash != 0u && _discoveredHashLookup.Contains(discoveryHash))
+                    continue;
 
                 float sqrDist = (poi.transform.position - center).sqrMagnitude;
                 if (sqrDist < minSqrDist)
@@ -202,7 +214,38 @@ namespace Hecton8.Gameplay
 
         public bool HasDiscovery(string id)
         {
+            uint discoveryHash = NarrativeEvents.ComputeDiscoveryHash(id);
+            if (discoveryHash != 0u)
+                return _discoveredHashLookup.Contains(discoveryHash);
+
             return !string.IsNullOrWhiteSpace(id) && _discoveredIdLookup.Contains(id);
+        }
+
+        public void OnNarrativeEvent(in NarrativeEventPayload payload)
+        {
+            if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade)
+                return;
+
+            HandleDiscovery(payload.DiscoveryHash);
+        }
+
+        public void OnNarrativePointOfInterestRegistered(NarrativeDiscovery poi)
+        {
+            if (poi == null)
+                return;
+
+            if (!_activePOIs.Contains(poi))
+                _activePOIs.Add(poi);
+
+            RegisterNarrativeNode(poi.DiscoveryId);
+        }
+
+        public void OnNarrativePointOfInterestDisposed(NarrativeDiscovery poi)
+        {
+            if (poi == null)
+                return;
+
+            _activePOIs.Remove(poi);
         }
 
         private int CalculateDepthTier(float depth)
@@ -222,10 +265,26 @@ namespace Hecton8.Gameplay
             return 0;
         }
 
-        private void HandleDiscovery(string id)
+        private void HandleDiscovery(uint discoveryHash)
         {
-            if (string.IsNullOrWhiteSpace(id) || !_discoveredIdLookup.Add(id))
+            if (discoveryHash == 0u)
                 return;
+
+            if (_narrativeNodesByHash.IsCreated && !_narrativeNodesByHash.ContainsKey(discoveryHash))
+            {
+                if (NarrativeEvents.TryResolveDiscoveryId(discoveryHash, out string unresolvedId))
+                    RegisterNarrativeNode(unresolvedId);
+            }
+
+            if (!_discoveredHashLookup.Add(discoveryHash))
+                return;
+
+            if (!NarrativeEvents.TryResolveDiscoveryId(discoveryHash, out string id) ||
+                string.IsNullOrWhiteSpace(id) ||
+                !_discoveredIdLookup.Add(id))
+            {
+                return;
+            }
 
             discoveredIds.Add(id);
 
@@ -279,24 +338,12 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private void HandlePOIRegistered(NarrativeDiscovery poi)
-        {
-            if (poi == null) return;
-            if (!_activePOIs.Contains(poi))
-            {
-                _activePOIs.Add(poi);
-            }
-        }
-
-        private void HandlePOIDisposed(NarrativeDiscovery poi)
-        {
-            if (poi == null) return;
-            _activePOIs.Remove(poi);
-        }
-
         private void RebuildDiscoveryLookup()
         {
             _discoveredIdLookup.Clear();
+            _discoveredHashLookup.Clear();
+            if (_narrativeNodesByHash.IsCreated)
+                _narrativeNodesByHash.Clear();
             if (discoveredIds == null)
                 return;
 
@@ -307,6 +354,13 @@ namespace Hecton8.Gameplay
                 if (string.IsNullOrWhiteSpace(discoveryId) || !_discoveredIdLookup.Add(discoveryId))
                     continue;
 
+                uint discoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
+                if (discoveryHash != 0u)
+                {
+                    _discoveredHashLookup.Add(discoveryHash);
+                    RegisterNarrativeNode(discoveryId);
+                }
+
                 if (writeIndex != i)
                     discoveredIds[writeIndex] = discoveryId;
 
@@ -315,6 +369,23 @@ namespace Hecton8.Gameplay
 
             if (writeIndex < discoveredIds.Count)
                 discoveredIds.RemoveRange(writeIndex, discoveredIds.Count - writeIndex);
+        }
+
+        private void RegisterNarrativeNode(string discoveryId)
+        {
+            if (!_narrativeNodesByHash.IsCreated)
+                return;
+
+            uint discoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
+            if (discoveryHash == 0u || _narrativeNodesByHash.ContainsKey(discoveryHash))
+                return;
+
+            _narrativeNodesByHash.TryAdd(discoveryHash, new NarrativeNode
+            {
+                DiscoveryHash = discoveryHash,
+                Reserved0 = 0,
+                Reserved1 = 0
+            });
         }
     }
 }

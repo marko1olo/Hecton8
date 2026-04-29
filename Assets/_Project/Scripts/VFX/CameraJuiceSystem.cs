@@ -142,7 +142,7 @@ namespace Hecton8.VFX
         private float _worldFocusDistance = 20f;
 
         [SerializeField, Tooltip("Maximum center-ray hit distance treated as a PDA focus lock.")]
-        private float _pdaFocusThreshold = 0.15f;
+        private float _pdaFocusThreshold = 0.2f;
 
         [SerializeField, Range(0.1f, 1f), Tooltip("Smoothing duration for center-eye focus-distance convergence between near-field UI focus and far-field ocean focus.")]
         private float _focusTransitionDuration = 0.5f;

@@ -1,5 +1,7 @@
+using System;
 using Hecton8.Bootstrap;
 using Hecton8.Physics;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,6 +19,9 @@ namespace Hecton8.Core
         private bool _registeredSceneService;
         private bool _registeredSceneCallbacks;
         private bool _registeredUpdatable;
+        private bool _sceneLoadInFlight;
+        private string _pendingSceneName;
+        private AsyncOperation _pendingSceneLoadOperation;
 
         /// <summary>
         /// True once the service has registered itself into <see cref="GlobalRegistry"/>.
@@ -73,14 +78,63 @@ namespace Hecton8.Core
         /// <param name="sceneName">Build-settings scene name.</param>
         public void LoadScene(string sceneName)
         {
+            if (_sceneLoadInFlight)
+            {
+                Debug.LogWarning($"[SceneRuntimeService] Scene load '{sceneName}' rejected because '{_pendingSceneName}' is already in flight.");
+                return;
+            }
+
+            _ = LoadSceneAsync(sceneName);
+        }
+
+        /// <inheritdoc />
+        public async Awaitable LoadSceneAsync(string sceneName)
+        {
             if (!CanLoadScene)
             {
                 Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' rejected while bootstrap is incomplete.");
                 return;
             }
 
-            ClearRuntimeState();
-            SceneManager.LoadScene(sceneName);
+            if (_sceneLoadInFlight)
+            {
+                Debug.LogWarning($"[SceneRuntimeService] Scene load '{sceneName}' rejected because '{_pendingSceneName}' is already in flight.");
+                return;
+            }
+
+            try
+            {
+                _sceneLoadInFlight = true;
+                _pendingSceneName = sceneName;
+                ClearRuntimeState();
+
+                AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+                if (loadOperation == null)
+                {
+                    Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' failed to create an AsyncOperation.");
+                    return;
+                }
+
+                _pendingSceneLoadOperation = loadOperation;
+                _pendingSceneLoadOperation.allowSceneActivation = false;
+
+                while (Application.isPlaying && ReferenceEquals(_instance, this) && !_pendingSceneLoadOperation.isDone)
+                {
+                    if (_pendingSceneLoadOperation.progress >= 0.9f && ArePersistentWorldPoolsReadyForSceneActivation())
+                        _pendingSceneLoadOperation.allowSceneActivation = true;
+
+                    await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                _sceneLoadInFlight = false;
+                _pendingSceneName = null;
+                _pendingSceneLoadOperation = null;
+            }
         }
 
         /// <summary>
@@ -146,6 +200,7 @@ namespace Hecton8.Core
         private static void ClearRuntimeState()
         {
             GlobalRegistry.ClearRuntimeBuckets();
+            ThreadSafeCommandQueue.Clear();
 
             if (GlobalRegistry.Physics != null)
                 GlobalRegistry.Physics.ClearQueuedPackets();
@@ -159,6 +214,15 @@ namespace Hecton8.Core
                 GlobalRegistry.Debris.ClearActiveDebris();
 
             GlobalPhysicsStateManager.ClearRuntimeStateStatic();
+        }
+
+        private static bool ArePersistentWorldPoolsReadyForSceneActivation()
+        {
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return true;
+
+            return registry.AreResidentWorldPrefabPoolsReady();
         }
 
         private void TryRegisterUpdatable()

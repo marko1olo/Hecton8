@@ -10,13 +10,14 @@ using UnityEngine;
 
 namespace Hecton8.Quest
 {
-    internal sealed class QuestGraphEvaluator : IDisposable
+    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener
     {
         private const string EventSubscriberId = "quest.graph.evaluator";
         private const float DepthTierTwoMeters = 100f;
         private const float DepthTierThreeMeters = 300f;
         private const float DepthTierFourMeters = 1000f;
         private static readonly uint _deepAbyssZoneHash = QuestFlagHashKernel.ComputeStableHash("zone_deep_abyss");
+        private static readonly RegistryBucket<QuestGraphEvaluator> _activeEvaluators = new RegistryBucket<QuestGraphEvaluator>(4);
 
         private readonly QuestStateManager _stateManager;
         private readonly Action _onResultsAvailable;
@@ -53,9 +54,10 @@ namespace Hecton8.Quest
             _itemDiscardedSubscription = HectonEventBus.Subscribe<ItemDiscardedEvent>(HandleItemDiscarded, EventSubscriberId);
             _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
             _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
-            NarrativeEvents.OnDepthTierReached += HandleDepthTierReached;
+            NarrativeEvents.Register(this);
             HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDecoded += HandleSignalDecoded;
+            AtlasSignalEvents.Register(this);
+            _activeEvaluators.Register(this);
             _isBound = true;
         }
 
@@ -72,9 +74,10 @@ namespace Hecton8.Quest
             _biomeDiscoveredSubscription = null;
             _loreAcquiredSubscription?.Dispose();
             _loreAcquiredSubscription = null;
-            NarrativeEvents.OnDepthTierReached -= HandleDepthTierReached;
+            NarrativeEvents.Unregister(this);
             HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
-            AtlasSignalEvents.OnSignalDecoded -= HandleSignalDecoded;
+            AtlasSignalEvents.Unregister(this);
+            _activeEvaluators.Unregister(this);
             _isBound = false;
 
             while (_pendingSignals.IsCreated && _pendingSignals.TryDequeue(out _))
@@ -179,9 +182,12 @@ namespace Hecton8.Quest
             });
         }
 
-        private void HandleDepthTierReached(int tier)
+        public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
-            UpdateDepth(MapDepthTierToMeters(tier));
+            if ((NarrativeEventType)payload.EventType != NarrativeEventType.DepthTierReached)
+                return;
+
+            UpdateDepth(MapDepthTierToMeters(payload.DepthTier));
         }
 
         private void HandleEclipseStart()
@@ -189,6 +195,19 @@ namespace Hecton8.Quest
             EnqueueSignal(new QuestSignalPayload
             {
                 EventType = (ushort)QuestSignalKind.EclipseStarted,
+                Timestamp = Time.timeAsDouble
+            });
+        }
+
+        public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
+        {
+            if ((AtlasSignalEventType)payload.EventType != AtlasSignalEventType.Decoded)
+                return;
+
+            EnqueueSignal(new QuestSignalPayload
+            {
+                EntityHash = payload.MessageHash,
+                EventType = (ushort)QuestSignalKind.SignalDecoded,
                 Timestamp = Time.timeAsDouble
             });
         }
@@ -212,7 +231,6 @@ namespace Hecton8.Quest
                 return;
 
             _pendingSignals.Enqueue(payload);
-            DrainPendingSignals();
         }
 
         private void DrainPendingSignals()
@@ -233,6 +251,14 @@ namespace Hecton8.Quest
             {
                 _isDrainingSignals = false;
             }
+        }
+
+        internal static void FlushPendingSignals()
+        {
+            QuestGraphEvaluator[] rawArray = _activeEvaluators.RawArray;
+            int count = _activeEvaluators.Count;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].DrainPendingSignals();
         }
 
         private static float MapDepthTierToMeters(int tier)

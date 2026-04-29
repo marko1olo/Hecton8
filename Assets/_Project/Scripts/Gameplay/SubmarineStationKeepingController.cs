@@ -89,14 +89,16 @@ namespace Hecton8.Gameplay
             if (!_stationKeepingEnabled || _hullRigidbody == null || fixedDeltaTime <= 0f)
                 return;
 
-            float3 positionError = (float3)(_targetAbsolutePosition - AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3());
+            double3 currentAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();
+            float3 positionError = (float3)(_targetAbsolutePosition - currentAbsolutePosition);
             _integralError += positionError * fixedDeltaTime;
             _integralError = math.clamp(_integralError, new float3(-integralClampMeters), new float3(integralClampMeters));
 
             float3 linearVelocity = _hullRigidbody.linearVelocity;
-            float3 commandedAcceleration = (positionError * proportionalGain) +
-                                           (_integralError * integralGain) +
-                                           ((-linearVelocity) * derivativeGain);
+            float3 proportionalTerm = positionError * proportionalGain;
+            float3 integralTerm = _integralError * integralGain;
+            float3 derivativeTerm = (-linearVelocity) * derivativeGain;
+            float3 feedForwardTerm = float3.zero;
 
             IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
             IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
@@ -104,8 +106,10 @@ namespace Hecton8.Gameplay
                 oceanKinematics.IsAvailable &&
                 oceanKinematics.TrySampleWaterVelocity(_hullRigidbody.worldCenterOfMass, DefaultMinSpatialLengthMeters, out float3 waterVelocity))
             {
-                commandedAcceleration += (-waterVelocity) * currentCompensationGain;
+                feedForwardTerm = (-waterVelocity) * currentCompensationGain;
             }
+
+            float3 commandedAcceleration = proportionalTerm + integralTerm + derivativeTerm + feedForwardTerm;
 
             float accelerationMagnitude = math.length(commandedAcceleration);
             if (accelerationMagnitude > maxLinearAcceleration && accelerationMagnitude > 0.0001f)

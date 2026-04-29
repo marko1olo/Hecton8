@@ -9,6 +9,7 @@ using Hecton8.Atmosphere;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -35,6 +36,14 @@ namespace Hecton8.Power
         private const float OverloadMeltdownTemperatureCelsius = 150f;
         private const float CableThermalConductivityWattsPerCelsius = 140f;
         private const float MinimumCableThermalDeltaCelsius = 0.5f;
+        private const int CableThermalRelaxationMaxIterations = 8;
+        private const float CableThermalConvergenceDeltaCelsius = 0.05f;
+        private const double CableThermalFrameBudgetMilliseconds = 1.0;
+        private const float MinimumSubmergedFloodFillRatio = 0.05f;
+        private const float SubmergedOverloadHeatJoulesMultiplier = 4.0f;
+        private const float MinimumSubmergedOverloadHeatJoules = 3200f;
+        private const float HydrogenPocketUnitsPerMegajoule = 0.04f;
+        private const float OxygenPocketUnitsPerMegajoule = 0.02f;
 
         private enum BatteryDispatchMode : byte
         {
@@ -63,6 +72,7 @@ namespace Hecton8.Power
         {
             public BaseModule BaseModule;
             public SubmarineAtmosphereSystem Atmosphere;
+            public SubmarineFluidDynamics FluidDynamics;
             public IDamageReceiver DamageReceiver;
             public int RoomIndex;
         }
@@ -167,6 +177,7 @@ namespace Hecton8.Power
         private int _islandCount = 1;
         private int _cycleCount;
         private int _graphBuildVersion;
+        private int _cableThermalIterationBudget = CableThermalRelaxationMaxIterations;
         private bool _isDirty = true;
         private bool _hasEvaluatedAtLeastOnce;
         private bool _slowTickEvaluationPending;
@@ -616,6 +627,7 @@ namespace Hecton8.Power
                             {
                                 BaseModule = baseModule,
                                 Atmosphere = atmosphere,
+                                FluidDynamics = baseModule.GetComponentInParent<SubmarineFluidDynamics>(),
                                 DamageReceiver = baseModule.GetComponent<IDamageReceiver>(),
                                 RoomIndex = atmosphere != null
                                     ? atmosphere.ResolveNearestRoomIndexForWorldPosition(baseModule.transform.position)
@@ -731,6 +743,7 @@ namespace Hecton8.Power
 
                 float overloadHeatWatts = math.max(MinimumOverloadHeatWatts, ResolveNodeCapacity(node) * OverloadHeatWattsScale);
                 binding.Atmosphere.InjectRoomHeatEnergyJoules(binding.RoomIndex, overloadHeatWatts * BatteryDispatchDeltaTimeSeconds);
+                ApplySubmergedOverloadFluidHeating(binding, overloadHeatWatts);
                 node.SetShortCircuited(true);
 
                 float accumulatedThermalDamage = 0f;
@@ -739,105 +752,216 @@ namespace Hecton8.Power
                 _overloadThermalDamageByNode[node] = accumulatedThermalDamage;
 
                 float roomTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
-                if (roomTemperature < OverloadMeltdownTemperatureCelsius || node.IsRuptured)
-                    continue;
-
-                node.SetRuptured(true);
-                FatalPressureImplosionEvent implosionEvent = new FatalPressureImplosionEvent(
-                    nodeId,
-                    binding.RoomIndex,
+                TryTriggerThermalMeltdown(
+                    node,
+                    binding,
                     roomTemperature,
-                    binding.BaseModule.transform.position);
-                FatalPressureImplosionEvents.Notify(in implosionEvent);
-
-                if (binding.DamageReceiver != null)
-                {
-                    float previousIntegrity = binding.BaseModule.MaxRecoverableIntegrity > 0.01f
-                        ? math.saturate(binding.BaseModule.CurrentIntegrity / binding.BaseModule.MaxRecoverableIntegrity)
-                        : 0f;
-                    DamagePacket packet = new DamagePacket
-                    {
-                        Channel = DamageChannel.HullBreach,
-                        PreviousValue = previousIntegrity,
-                        NextValue = 0f,
-                        Magnitude = math.max(accumulatedThermalDamage, roomTemperature),
-                        LocalPoint = float3.zero,
-                        DamageType = 0u,
-                        IntegrityDelta = byte.MaxValue,
-                        Depth = 0f,
-                        SourceId = 0,
-                        TraumaLevel = 0
-                    };
-                    binding.DamageReceiver.ReceiveDamage(in packet);
-                }
+                    math.max(accumulatedThermalDamage, roomTemperature));
             }
+        }
+
+        private static void ApplySubmergedOverloadFluidHeating(in OverloadThermalBinding binding, float overloadHeatWatts)
+        {
+            if (binding.BaseModule == null ||
+                binding.Atmosphere == null ||
+                binding.FluidDynamics == null ||
+                binding.RoomIndex < 0)
+            {
+                return;
+            }
+
+            float floodFillRatio = binding.Atmosphere.GetRoomFloodFillRatio(binding.RoomIndex);
+            if (!binding.BaseModule.IsFlooded && floodFillRatio < MinimumSubmergedFloodFillRatio)
+                return;
+
+            float submergedHeatJoules = math.max(
+                MinimumSubmergedOverloadHeatJoules,
+                overloadHeatWatts * BatteryDispatchDeltaTimeSeconds * SubmergedOverloadHeatJoulesMultiplier);
+            Vector3 runtimePoint = binding.BaseModule.transform.position;
+            binding.FluidDynamics.InjectLocalizedWaterHeat(runtimePoint, submergedHeatJoules);
+
+            float heatMegajoules = submergedHeatJoules / 1_000_000f;
+            float hydrogenUnits = heatMegajoules * HydrogenPocketUnitsPerMegajoule;
+            float oxygenUnits = heatMegajoules * OxygenPocketUnitsPerMegajoule;
+            if (hydrogenUnits <= 0f && oxygenUnits <= 0f)
+                return;
+
+            binding.Atmosphere.InjectElectrolysisGasPocket(
+                binding.RoomIndex,
+                hydrogenUnits,
+                oxygenUnits,
+                0f);
         }
 
         private void ApplyCableThermalSharing()
         {
             int nodeCount = math.min(_topologyNodes.Count, _overloadThermalBindings.Count);
-            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            if (nodeCount <= 1)
+                return;
+
+            int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, CableThermalRelaxationMaxIterations);
+            float iterationDeltaSeconds = BatteryDispatchDeltaTimeSeconds / iterationBudget;
+            double startTimeSeconds = Time.realtimeSinceStartupAsDouble;
+            bool budgetExceeded = false;
+            int completedIterations = 0;
+
+            for (int iteration = 0; iteration < iterationBudget; iteration++)
             {
-                PowerNode sourceNode = _topologyNodes[nodeIndex];
-                if (sourceNode == null)
-                    continue;
+                float maxObservedDelta = 0f;
+                bool transferApplied = false;
 
-                OverloadThermalBinding sourceBinding = _overloadThermalBindings[nodeIndex];
-                if (sourceBinding.Atmosphere == null || sourceBinding.RoomIndex < 0)
-                    continue;
-
-                List<PowerNode> neighbors = sourceNode.Neighbors;
-                if (neighbors == null)
-                    continue;
-
-                float sourceTemperature = sourceBinding.Atmosphere.GetRoomTemperatureCelsius(sourceBinding.RoomIndex);
-                int neighborCount = neighbors.Count;
-                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
+                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
                 {
-                    PowerNode destinationNode = neighbors[neighborIndex];
-                    if (destinationNode == null ||
-                        !ReferenceEquals(destinationNode.Grid, this) ||
-                        destinationNode.GraphScratchVersion != _graphBuildVersion ||
-                        destinationNode.GraphScratchIndex <= nodeIndex ||
-                        destinationNode.GraphScratchIndex >= nodeCount)
+                    if (((Time.realtimeSinceStartupAsDouble - startTimeSeconds) * 1000.0) >= CableThermalFrameBudgetMilliseconds)
                     {
-                        continue;
+                        budgetExceeded = true;
+                        break;
                     }
 
-                    OverloadThermalBinding destinationBinding = _overloadThermalBindings[destinationNode.GraphScratchIndex];
-                    if (destinationBinding.Atmosphere == null ||
-                        destinationBinding.RoomIndex < 0 ||
-                        destinationBinding.RoomIndex == sourceBinding.RoomIndex ||
-                        !ReferenceEquals(destinationBinding.Atmosphere, sourceBinding.Atmosphere))
-                    {
-                        continue;
-                    }
-
-                    float destinationTemperature = destinationBinding.Atmosphere.GetRoomTemperatureCelsius(destinationBinding.RoomIndex);
-                    float deltaTemperature = sourceTemperature - destinationTemperature;
-                    if (math.abs(deltaTemperature) < MinimumCableThermalDeltaCelsius)
+                    PowerNode sourceNode = _topologyNodes[nodeIndex];
+                    if (sourceNode == null)
                         continue;
 
-                    float transferredHeatJoules = math.abs(deltaTemperature) * CableThermalConductivityWattsPerCelsius * BatteryDispatchDeltaTimeSeconds;
-                    if (transferredHeatJoules <= 0f)
+                    OverloadThermalBinding sourceBinding = _overloadThermalBindings[nodeIndex];
+                    if (sourceBinding.Atmosphere == null || sourceBinding.RoomIndex < 0)
                         continue;
 
-                    if (deltaTemperature > 0f)
+                    List<PowerNode> neighbors = sourceNode.Neighbors;
+                    if (neighbors == null)
+                        continue;
+
+                    int neighborCount = neighbors.Count;
+                    for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
                     {
-                        sourceBinding.Atmosphere.TransferRoomHeatEnergyJoules(
-                            sourceBinding.RoomIndex,
-                            destinationBinding.RoomIndex,
-                            transferredHeatJoules);
-                    }
-                    else
-                    {
-                        destinationBinding.Atmosphere.TransferRoomHeatEnergyJoules(
-                            destinationBinding.RoomIndex,
-                            sourceBinding.RoomIndex,
-                            transferredHeatJoules);
+                        PowerNode destinationNode = neighbors[neighborIndex];
+                        if (destinationNode == null ||
+                            !ReferenceEquals(destinationNode.Grid, this) ||
+                            destinationNode.GraphScratchVersion != _graphBuildVersion ||
+                            destinationNode.GraphScratchIndex <= nodeIndex ||
+                            destinationNode.GraphScratchIndex >= nodeCount)
+                        {
+                            continue;
+                        }
+
+                        OverloadThermalBinding destinationBinding = _overloadThermalBindings[destinationNode.GraphScratchIndex];
+                        if (destinationBinding.Atmosphere == null ||
+                            destinationBinding.RoomIndex < 0 ||
+                            destinationBinding.RoomIndex == sourceBinding.RoomIndex ||
+                            !ReferenceEquals(destinationBinding.Atmosphere, sourceBinding.Atmosphere))
+                        {
+                            continue;
+                        }
+
+                        float sourceTemperature = sourceBinding.Atmosphere.GetRoomTemperatureCelsius(sourceBinding.RoomIndex);
+                        float destinationTemperature = destinationBinding.Atmosphere.GetRoomTemperatureCelsius(destinationBinding.RoomIndex);
+                        float deltaTemperature = sourceTemperature - destinationTemperature;
+                        float absoluteDeltaTemperature = math.abs(deltaTemperature);
+                        maxObservedDelta = math.max(maxObservedDelta, absoluteDeltaTemperature);
+                        if (absoluteDeltaTemperature < MinimumCableThermalDeltaCelsius)
+                            continue;
+
+                        float transferredHeatJoules = absoluteDeltaTemperature * CableThermalConductivityWattsPerCelsius * iterationDeltaSeconds;
+                        if (transferredHeatJoules <= 0f)
+                            continue;
+
+                        if (deltaTemperature > 0f)
+                        {
+                            sourceBinding.Atmosphere.TransferRoomHeatEnergyJoules(
+                                sourceBinding.RoomIndex,
+                                destinationBinding.RoomIndex,
+                                transferredHeatJoules);
+                        }
+                        else
+                        {
+                            destinationBinding.Atmosphere.TransferRoomHeatEnergyJoules(
+                                destinationBinding.RoomIndex,
+                                sourceBinding.RoomIndex,
+                                transferredHeatJoules);
+                        }
+
+                        transferApplied = true;
                     }
                 }
+
+                completedIterations++;
+                if (budgetExceeded || !transferApplied || maxObservedDelta < CableThermalConvergenceDeltaCelsius)
+                    break;
             }
+
+            AdaptCableThermalIterationBudget(budgetExceeded, completedIterations, iterationBudget);
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                PowerNode node = _topologyNodes[nodeIndex];
+                if (node == null)
+                    continue;
+
+                OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
+                if (binding.BaseModule == null || binding.Atmosphere == null || binding.RoomIndex < 0)
+                    continue;
+
+                float roomTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
+                TryTriggerThermalMeltdown(node, binding, roomTemperature, roomTemperature);
+            }
+        }
+
+        private void AdaptCableThermalIterationBudget(bool budgetExceeded, int completedIterations, int requestedIterations)
+        {
+            if (budgetExceeded)
+            {
+                _cableThermalIterationBudget = math.max(1, requestedIterations - 1);
+                return;
+            }
+
+            if (completedIterations >= requestedIterations && requestedIterations < CableThermalRelaxationMaxIterations)
+                _cableThermalIterationBudget = requestedIterations + 1;
+        }
+
+        private void TryTriggerThermalMeltdown(
+            PowerNode node,
+            OverloadThermalBinding binding,
+            float roomTemperature,
+            float damageMagnitude)
+        {
+            if (node == null ||
+                binding.BaseModule == null ||
+                binding.Atmosphere == null ||
+                binding.RoomIndex < 0 ||
+                roomTemperature < OverloadMeltdownTemperatureCelsius ||
+                node.IsRuptured)
+            {
+                return;
+            }
+
+            uint nodeId = unchecked((uint)EntityId.ToULong(node.GetEntityId()));
+            node.SetRuptured(true);
+            FatalPressureImplosionEvent implosionEvent = new FatalPressureImplosionEvent(
+                nodeId,
+                binding.RoomIndex,
+                roomTemperature,
+                binding.BaseModule.transform.position);
+            FatalPressureImplosionEvents.Notify(in implosionEvent);
+
+            if (binding.DamageReceiver == null)
+                return;
+
+            float previousIntegrity = binding.BaseModule.MaxRecoverableIntegrity > 0.01f
+                ? math.saturate(binding.BaseModule.CurrentIntegrity / binding.BaseModule.MaxRecoverableIntegrity)
+                : 0f;
+            DamagePacket packet = new DamagePacket
+            {
+                Channel = DamageChannel.HullBreach,
+                PreviousValue = previousIntegrity,
+                NextValue = 0f,
+                Magnitude = math.max(damageMagnitude, roomTemperature),
+                LocalPoint = float3.zero,
+                DamageType = 0u,
+                IntegrityDelta = byte.MaxValue,
+                Depth = 0f,
+                SourceId = 0,
+                TraumaLevel = 0
+            };
+            binding.DamageReceiver.ReceiveDamage(in packet);
         }
 
         private static float ResolveNodeCapacity(PowerNode node)

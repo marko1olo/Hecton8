@@ -264,8 +264,8 @@ namespace Crest
             if (RenderPipelineHelper.IsUniversal)
             {
 #if CREST_URP
-                _urpMaskPass.Disable();
-                _urpEffectPass.Disable();
+                _urpMaskPass?.Disable();
+                _urpEffectPass?.Disable();
 #endif
             }
             else if (RenderPipelineHelper.IsHighDefinition)

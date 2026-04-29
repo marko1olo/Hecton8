@@ -720,7 +720,20 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            Instantiate(sceneConfig.RuntimeDirectorPrefab);
+            ObjectPoolManager pool = Hecton8.Core.ObjectPoolManager.Instance;
+            if (pool == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[HectonMusicDirector] ObjectPoolManager is unavailable. Runtime director spawn aborted.");
+#endif
+                return false;
+            }
+
+            GameObject runtimeDirectorPrefab = sceneConfig.RuntimeDirectorPrefab.gameObject;
+            if (pool.GetAvailableCount(runtimeDirectorPrefab) <= 0)
+                pool.Warmup(runtimeDirectorPrefab, 1);
+
+            pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity);
             return _instance != null;
         }
 

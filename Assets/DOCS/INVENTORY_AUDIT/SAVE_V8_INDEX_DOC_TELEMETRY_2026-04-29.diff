@@ -1,0 +1,928 @@
+﻿diff --git a/Assets/_Project/Scripts/Editor/SaveSystemTelemetry.cs b/Assets/_Project/Scripts/Editor/SaveSystemTelemetry.cs
+index e88b7947..9b4aa9d0 100644
+--- a/Assets/_Project/Scripts/Editor/SaveSystemTelemetry.cs
++++ b/Assets/_Project/Scripts/Editor/SaveSystemTelemetry.cs
+@@ -66,6 +66,7 @@ namespace Hecton8.Editor
+             EditorGUILayout.Space(6f);
+             EditorGUILayout.LabelField($"Chunk Size: {_chunkSizeMeters} m");
+             EditorGUILayout.LabelField($"Sector Blocks: {_sortedRows.Count}");
++            EditorGUILayout.LabelField($"Directory Capacity: {SaveBinaryStorage.IndexedSectorDirectoryCapacity} slots");
+             EditorGUILayout.LabelField($"Total File Size: {FormatBytes(_totalFileBytes)}");
+             EditorGUILayout.LabelField($"Used Space: {FormatBytes(_usedFileBytes)}");
+             EditorGUILayout.LabelField($"Fragmentation: {FormatBytes(_fragmentationBytes)}");
+diff --git a/Assets/_Project/Scripts/SaveBinaryStorage.cs b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+index 92c5e1c9..3e5e920a 100644
+--- a/Assets/_Project/Scripts/SaveBinaryStorage.cs
++++ b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+@@ -266,6 +266,8 @@ namespace Hecton8.SaveSystem
+         private const byte TokenEscapeMarker = 0xFF;
+         private const int IndexedSectorDirectoryHeaderSize = 16;
+         private const int IndexedSectorBlockHeaderSize = 8;
++        private const int IndexedSectorDirectorySlotCount = 4096;
++        internal const int IndexedSectorDirectoryCapacity = IndexedSectorDirectorySlotCount;
+         internal const long IndexedSectorDefragSlackThresholdBytes = 50L * 1024L * 1024L;
+         private const int PersistentWorldSectorEdgeLengthMeters = 1000;
+         private const int DefaultIndexedPersistentWorldChunkSizeMeters = 64;
+@@ -346,19 +348,10 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
+-        private struct SectorEntityStateSortEntry : IComparable<SectorEntityStateSortEntry>
++        private struct SectorEntityStateSortEntry
+         {
+             public ulong SortKey;
+             public EntityDataRecord Record;
+-
+-            public int CompareTo(SectorEntityStateSortEntry other)
+-            {
+-                int keyCompare = SortKey.CompareTo(other.SortKey);
+-                if (keyCompare != 0)
+-                    return keyCompare;
+-
+-                return Record.InstanceUid.CompareTo(other.Record.InstanceUid);
+-            }
+         }
+ 
+         [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+@@ -384,56 +377,63 @@ namespace Hecton8.SaveSystem
+ 
+                 Entries[index] = new SectorEntityStateSortEntry
+                 {
+-                    SortKey = BuildSpatialSortKey(in position, ChunkSizeMeters),
++                    SortKey = SaveBinaryPayloadCodec.BuildSectorEntitySpatialSortKey(in position, ChunkSizeMeters),
+                     Record = record
+                 };
+             }
++        }
+ 
+-            private static ulong BuildSpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
+-            {
+-                int safeChunkSize = math.max(1, chunkSizeMeters);
+-                double chunkSize = safeChunkSize;
+-                int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, safeChunkSize);
+-                double3 absolute = position.ToAbsoluteDouble3();
+-                double chunkOriginX = chunkId.x * chunkSize;
+-                double chunkOriginY = chunkId.y * chunkSize;
+-                double chunkOriginZ = chunkId.z * chunkSize;
+-
+-                ushort chunkKey = FoldChunkId(chunkId);
+-                ushort quantizedY = QuantizeAxis(absolute.y - chunkOriginY, chunkSize);
+-                ushort quantizedX = QuantizeAxis(absolute.x - chunkOriginX, chunkSize);
+-                ushort quantizedZ = QuantizeAxis(absolute.z - chunkOriginZ, chunkSize);
+-                return ((ulong)chunkKey << 48) |
+-                       ((ulong)quantizedY << 32) |
+-                       ((ulong)quantizedX << 16) |
+-                       quantizedZ;
+-            }
++        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
++        private struct RadixSortSectorEntityStateEntriesJob : IJob
++        {
++            public NativeArray<SectorEntityStateSortEntry> Entries;
++            public NativeArray<SectorEntityStateSortEntry> Scratch;
++            public NativeArray<int> Counts;
++            public NativeArray<int> Offsets;
+ 
+-            private static ushort FoldChunkId(int3 chunkId)
++            public void Execute()
+             {
+-                uint hash = unchecked((uint)((chunkId.x * 73856093) ^ (chunkId.y * 19349663) ^ (chunkId.z * 83492791)));
+-                hash ^= hash >> 16;
+-                return (ushort)hash;
++                int entryCount = Entries.Length;
++                if (entryCount <= 1)
++                    return;
++
++                RadixPass(Entries, Scratch, 0);
++                RadixPass(Scratch, Entries, 16);
++                RadixPass(Entries, Scratch, 32);
++                RadixPass(Scratch, Entries, 48);
+             }
+ 
+-            private static ushort QuantizeAxis(double localMeters, double chunkSizeMeters)
++            private void RadixPass(
++                NativeArray<SectorEntityStateSortEntry> source,
++                NativeArray<SectorEntityStateSortEntry> destination,
++                int shift)
+             {
+-                if (chunkSizeMeters <= 0d)
+-                    return 0;
++                for (int i = 0; i < Counts.Length; i++)
++                {
++                    Counts[i] = 0;
++                    Offsets[i] = 0;
++                }
+ 
+-                double normalized = math.clamp(localMeters / chunkSizeMeters, 0d, 1d);
+-                return (ushort)math.clamp((int)math.round(normalized * ushort.MaxValue), 0, ushort.MaxValue);
+-            }
+-        }
++                for (int i = 0; i < source.Length; i++)
++                {
++                    int bucket = (int)((source[i].SortKey >> shift) & 0xFFFFUL);
++                    Counts[bucket]++;
++                }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+-        private struct SortSectorEntityStateEntriesJob : IJob
+-        {
+-            public NativeArray<SectorEntityStateSortEntry> Entries;
++                int cursor = 0;
++                for (int i = 0; i < Counts.Length; i++)
++                {
++                    Offsets[i] = cursor;
++                    cursor += Counts[i];
++                }
+ 
+-            public void Execute()
+-            {
+-                NativeSortExtension.Sort(Entries);
++                for (int i = 0; i < source.Length; i++)
++                {
++                    SectorEntityStateSortEntry entry = source[i];
++                    int bucket = (int)((entry.SortKey >> shift) & 0xFFFFUL);
++                    int destinationIndex = Offsets[bucket]++;
++                    destination[destinationIndex] = entry;
++                }
+             }
+         }
+ 
+@@ -909,7 +909,13 @@ namespace Hecton8.SaveSystem
+ 
+             List<IndexedSectorGroup> sectorGroups = BuildIndexedSectorGroups(persistentWorldDeltas, chunkSizeMeters);
+             int sectorCount = sectorGroups.Count;
+-            int directoryBytes = IndexedSectorDirectoryHeaderSize + (sectorCount * UnsafeUtility.SizeOf<SectorEntry>());
++            if (sectorCount > IndexedSectorDirectorySlotCount)
++            {
++                error = $"Indexed sector count {sectorCount} exceeded directory capacity {IndexedSectorDirectorySlotCount}.";
++                return false;
++            }
++
++            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+             int metadataBlockOffset = CurrentHeaderSize + directoryBytes;
+             int fileCursor = metadataBlockOffset;
+ 
+@@ -932,7 +938,7 @@ namespace Hecton8.SaveSystem
+             anyTokenSubstitution |= (metadataBlockFlags & FlagTokenSubstitution) != 0;
+             anyStaticDictionary |= (metadataBlockFlags & FlagStaticDictionary) != 0;
+ 
+-            SectorEntry[] sectorEntries = sectorCount > 0 ? new SectorEntry[sectorCount] : Array.Empty<SectorEntry>();
++            SectorEntry[] sectorEntries = new SectorEntry[IndexedSectorDirectorySlotCount];
+             int totalEntityCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
+             NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
+             NativeList<int3> persistentWorldChunkTable = default;
+@@ -948,7 +954,6 @@ namespace Hecton8.SaveSystem
+                     int recordCount = group.Records != null ? group.Records.Count : 0;
+                     if (recordCount <= 0)
+                     {
+-                        sectorEntries[sectorIndex] = default;
+                         continue;
+                     }
+ 
+@@ -994,14 +999,17 @@ namespace Hecton8.SaveSystem
+ 
+                     anyTokenSubstitution |= (sectorBlockFlags & FlagTokenSubstitution) != 0;
+                     anyStaticDictionary |= (sectorBlockFlags & FlagStaticDictionary) != 0;
+-                    sectorEntries[sectorIndex] = new SectorEntry
++                    if (!TryAssignIndexedSectorEntry(sectorEntries, group.SectorHash, new SectorEntry
+                     {
+                         SectorHash = group.SectorHash,
+                         ByteOffset = sectorByteOffset,
+                         CompressedSize = sectorCompressedSize,
+                         DecompressedSize = sectorRawLength,
+                         Checksum = sectorChecksum
+-                    };
++                    }, out error))
++                    {
++                        return false;
++                    }
+ 
+                     if (persistentWorldItemHashTable.IsCreated)
+                         persistentWorldItemHashTable.Dispose();
+@@ -1051,9 +1059,7 @@ namespace Hecton8.SaveSystem
+                 directoryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+             }
+ 
+-            ulong directoryHash64 = sectorCount > 0
+-                ? Hash64(filePtr + CurrentHeaderSize, directoryBytes)
+-                : Hash64(filePtr + CurrentHeaderSize, IndexedSectorDirectoryHeaderSize);
++            ulong directoryHash64 = Hash64(filePtr + CurrentHeaderSize, directoryBytes);
+             payloadHash64 = metadataHash64 ^ directoryHash64;
+             rawPayloadLength = metadataRawLength;
+ 
+@@ -1176,9 +1182,8 @@ namespace Hecton8.SaveSystem
+             sectorEntries = null;
+             error = string.Empty;
+ 
+-            if ((header.Flags & FlagIndexedSectorBlocks) == 0 || header.Version < IndexedBlockStorageVersion)
++            if (!TryValidateIndexedBlockStorageHeader(in header, out error))
+             {
+-                error = "Save header is not an indexed sector container.";
+                 return false;
+             }
+ 
+@@ -1195,7 +1200,13 @@ namespace Hecton8.SaveSystem
+             int safeChunkSizeMeters = math.max(1, directoryHeader.ChunkSizeMeters);
+             directoryHeader.ChunkSizeMeters = safeChunkSizeMeters;
+ 
+-            int directoryBytes = IndexedSectorDirectoryHeaderSize + (sectorCount * UnsafeUtility.SizeOf<SectorEntry>());
++            if (sectorCount < 0 || sectorCount > IndexedSectorDirectorySlotCount)
++            {
++                error = $"Indexed sector directory count {sectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.";
++                return false;
++            }
++
++            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+             if ((long)directoryOffset + directoryBytes > mapping.Length)
+             {
+                 error = "Indexed sector directory exceeds the file bounds.";
+@@ -1209,25 +1220,115 @@ namespace Hecton8.SaveSystem
+                 return false;
+             }
+ 
+-            sectorEntries = sectorCount > 0 ? new SectorEntry[sectorCount] : Array.Empty<SectorEntry>();
++            sectorEntries = new SectorEntry[IndexedSectorDirectorySlotCount];
+             int entryCursor = directoryOffset + IndexedSectorDirectoryHeaderSize;
+-            for (int i = 0; i < sectorCount; i++)
++            int populatedCount = 0;
++            for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
+             {
+                 SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+-                if (entry.ByteOffset < metadataOffset + directoryHeader.MetadataCompressedSize ||
+-                    entry.ByteOffset + entry.CompressedSize > mapping.Length)
++                if (IsIndexedSectorEntryPopulated(in entry) &&
++                    (entry.ByteOffset < metadataOffset + directoryHeader.MetadataCompressedSize ||
++                     entry.ByteOffset + entry.CompressedSize > mapping.Length))
+                 {
+                     error = $"Indexed sector entry {i} exceeded the file bounds.";
+                     return false;
+                 }
+ 
+                 sectorEntries[i] = entry;
++                if (IsIndexedSectorEntryPopulated(in entry))
++                    populatedCount++;
+                 entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+             }
+ 
++            if (populatedCount != sectorCount)
++            {
++                error = $"Indexed sector directory count mismatch. Header={sectorCount}, Populated={populatedCount}.";
++                return false;
++            }
++
+             return true;
+         }
+ 
++        private static bool TryValidateIndexedBlockStorageHeader(in SaveFileHeader header, out string error)
++        {
++            error = string.Empty;
++            if ((header.Flags & FlagIndexedSectorBlocks) == 0)
++            {
++                error = "Save header is not an indexed sector container.";
++                return false;
++            }
++
++            if (header.Version != IndexedBlockStorageVersion)
++            {
++                error = $"Indexed sector block decompression requires save header version 0x{IndexedBlockStorageVersion:X4}. Found 0x{header.Version:X4}.";
++                return false;
++            }
++
++            return true;
++        }
++
++        private static bool IsIndexedSectorEntryPopulated(in SectorEntry entry)
++        {
++            return entry.CompressedSize > 0 && entry.ByteOffset >= CurrentHeaderSize;
++        }
++
++        private static int ResolveIndexedSectorDirectorySlot(long sectorHash)
++        {
++            ulong hash = unchecked((ulong)sectorHash);
++            hash ^= hash >> 33;
++            hash *= 0xff51afd7ed558ccdUL;
++            hash ^= hash >> 33;
++            return (int)(hash & (IndexedSectorDirectorySlotCount - 1));
++        }
++
++        private static bool TryAssignIndexedSectorEntry(SectorEntry[] sectorEntries, long sectorHash, in SectorEntry entry, out string error)
++        {
++            error = string.Empty;
++            if (sectorEntries == null || sectorEntries.Length != IndexedSectorDirectorySlotCount)
++            {
++                error = "Indexed sector directory slot buffer is invalid.";
++                return false;
++            }
++
++            int startSlot = ResolveIndexedSectorDirectorySlot(sectorHash);
++            for (int probe = 0; probe < IndexedSectorDirectorySlotCount; probe++)
++            {
++                int slot = (startSlot + probe) & (IndexedSectorDirectorySlotCount - 1);
++                if (!IsIndexedSectorEntryPopulated(in sectorEntries[slot]) || sectorEntries[slot].SectorHash == sectorHash)
++                {
++                    sectorEntries[slot] = entry;
++                    return true;
++                }
++            }
++
++            error = $"Indexed sector directory is full while assigning sector 0x{sectorHash:X16}.";
++            return false;
++        }
++
++        private static bool TryFindIndexedSectorEntryIndex(SectorEntry[] sectorEntries, long sectorHash, out int slotIndex)
++        {
++            slotIndex = -1;
++            if (sectorEntries == null || sectorEntries.Length != IndexedSectorDirectorySlotCount)
++                return false;
++
++            int startSlot = ResolveIndexedSectorDirectorySlot(sectorHash);
++            for (int probe = 0; probe < IndexedSectorDirectorySlotCount; probe++)
++            {
++                int slot = (startSlot + probe) & (IndexedSectorDirectorySlotCount - 1);
++                SectorEntry entry = sectorEntries[slot];
++                if (!IsIndexedSectorEntryPopulated(in entry))
++                    return false;
++
++                if (entry.SectorHash == sectorHash)
++                {
++                    slotIndex = slot;
++                    return true;
++                }
++            }
++
++            return false;
++        }
++
+         private static bool TryReadIndexedCompressedBlock(
+             ref AsyncWriteManager.ReadOnlyMapping mapping,
+             long blockOffset,
+@@ -1626,6 +1727,9 @@ namespace Hecton8.SaveSystem
+                 for (int i = 0; i < sectorEntries.Length; i++)
+                 {
+                     SectorEntry entry = sectorEntries[i];
++                    if (!IsIndexedSectorEntryPopulated(in entry))
++                        continue;
++
+                     results.Add(new IndexedSectorEntryInfo(entry.SectorHash, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, entry.Checksum));
+                 }
+ 
+@@ -1662,80 +1766,76 @@ namespace Hecton8.SaveSystem
+                 for (int requestedIndex = 0; requestedIndex < desiredSectorHashes.Length; requestedIndex++)
+                 {
+                     long desiredSectorHash = desiredSectorHashes[requestedIndex];
+-                    for (int i = 0; i < sectorEntries.Length; i++)
+-                    {
+-                        SectorEntry entry = sectorEntries[i];
+-                        if (entry.SectorHash != desiredSectorHash)
+-                            continue;
++                    if (!TryFindIndexedSectorEntryIndex(sectorEntries, desiredSectorHash, out int sectorEntryIndex))
++                        continue;
+ 
+-                        using MemoryMappedViewStream viewStream = mapping.FileMapping.CreateViewStream(entry.ByteOffset, entry.CompressedSize, MemoryMappedFileAccess.Read);
+-                        using NativeArray<byte> sectorBytes = new NativeArray<byte>(entry.CompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+-                        byte* sectorBytesPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorBytes);
+-                        int totalRead = 0;
+-                        Span<byte> sectorSpan = new Span<byte>(sectorBytesPtr, entry.CompressedSize);
+-                        while (totalRead < entry.CompressedSize)
+-                        {
+-                            int bytesRead = viewStream.Read(sectorSpan.Slice(totalRead));
+-                            if (bytesRead <= 0)
+-                            {
+-                                error = $"Indexed sector block read truncated for sector 0x{entry.SectorHash:X16}.";
+-                                return false;
+-                            }
+-
+-                            totalRead += bytesRead;
+-                        }
++                    SectorEntry entry = sectorEntries[sectorEntryIndex];
+ 
+-                        if (entry.CompressedSize <= IndexedSectorBlockHeaderSize)
++                    using MemoryMappedViewStream viewStream = mapping.FileMapping.CreateViewStream(entry.ByteOffset, entry.CompressedSize, MemoryMappedFileAccess.Read);
++                    using NativeArray<byte> sectorBytes = new NativeArray<byte>(entry.CompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
++                    byte* sectorBytesPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorBytes);
++                    int totalRead = 0;
++                    Span<byte> sectorSpan = new Span<byte>(sectorBytesPtr, entry.CompressedSize);
++                    while (totalRead < entry.CompressedSize)
++                    {
++                        int bytesRead = viewStream.Read(sectorSpan.Slice(totalRead));
++                        if (bytesRead <= 0)
+                         {
+-                            error = $"Indexed sector block for 0x{entry.SectorHash:X16} is smaller than the block header.";
++                            error = $"Indexed sector block read truncated for sector 0x{entry.SectorHash:X16}.";
+                             return false;
+                         }
+ 
+-                        IndexedSectorBlockHeader blockHeader = UnsafeUtility.ReadArrayElement<IndexedSectorBlockHeader>(sectorBytesPtr, 0);
+-                        using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+-                        using NativeArray<byte> compressedPayload = new NativeArray<byte>(entry.CompressedSize - IndexedSectorBlockHeaderSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+-                        using NativeArray<int> resultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+-                        byte* compressedPayloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedPayload);
+-                        UnsafeUtility.MemCpy(compressedPayloadPtr, sectorBytesPtr + IndexedSectorBlockHeaderSize, entry.CompressedSize - IndexedSectorBlockHeaderSize);
++                        totalRead += bytesRead;
++                    }
+ 
+-                        IndexedBlockDecompressJob decompressJob = new IndexedBlockDecompressJob
+-                        {
+-                            CompressedPayload = compressedPayload,
+-                            DecompressedPayload = sectorRaw,
+-                            ResultLength = resultLength,
+-                            BlockFlags = blockHeader.Flags
+-                        };
+-
+-                        JobHandle decompressHandle = decompressJob.Schedule();
+-                        decompressHandle.Complete();
+-                        byte* sectorRawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorRaw);
+-                        int decompressedLength = resultLength[0];
+-                        if (decompressedLength <= 0)
+-                        {
+-                            error = $"Indexed sector decompression failed for sector 0x{entry.SectorHash:X16}.";
+-                            return false;
+-                        }
++                    if (entry.CompressedSize <= IndexedSectorBlockHeaderSize)
++                    {
++                        error = $"Indexed sector block for 0x{entry.SectorHash:X16} is smaller than the block header.";
++                        return false;
++                    }
+ 
+-                        if (decompressedLength != entry.DecompressedSize)
+-                        {
+-                            error = $"Indexed sector length mismatch for sector 0x{entry.SectorHash:X16}.";
+-                            return false;
+-                        }
++                    IndexedSectorBlockHeader blockHeader = UnsafeUtility.ReadArrayElement<IndexedSectorBlockHeader>(sectorBytesPtr, 0);
++                    using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
++                    using NativeArray<byte> compressedPayload = new NativeArray<byte>(entry.CompressedSize - IndexedSectorBlockHeaderSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                    using NativeArray<int> resultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                    byte* compressedPayloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedPayload);
++                    UnsafeUtility.MemCpy(compressedPayloadPtr, sectorBytesPtr + IndexedSectorBlockHeaderSize, entry.CompressedSize - IndexedSectorBlockHeaderSize);
+ 
+-                        if (ComputeIndexedSectorChecksum(sectorRawPtr, entry.DecompressedSize) != entry.Checksum)
+-                        {
+-                            error = $"Indexed sector checksum mismatch for sector 0x{entry.SectorHash:X16}.";
+-                            return false;
+-                        }
++                    IndexedBlockDecompressJob decompressJob = new IndexedBlockDecompressJob
++                    {
++                        CompressedPayload = compressedPayload,
++                        DecompressedPayload = sectorRaw,
++                        ResultLength = resultLength,
++                        BlockFlags = blockHeader.Flags
++                    };
+ 
+-                        if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
+-                            return false;
++                    JobHandle decompressHandle = decompressJob.Schedule();
++                    decompressHandle.Complete();
++                    byte* sectorRawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorRaw);
++                    int decompressedLength = resultLength[0];
++                    if (decompressedLength <= 0)
++                    {
++                        error = $"Indexed sector decompression failed for sector 0x{entry.SectorHash:X16}.";
++                        return false;
++                    }
+ 
+-                        for (int recordIndex = 0; recordIndex < sectorRecords.Length; recordIndex++)
+-                            destination.Add(sectorRecords[recordIndex]);
++                    if (decompressedLength != entry.DecompressedSize)
++                    {
++                        error = $"Indexed sector length mismatch for sector 0x{entry.SectorHash:X16}.";
++                        return false;
++                    }
+ 
+-                        break;
++                    if (ComputeIndexedSectorChecksum(sectorRawPtr, entry.DecompressedSize) != entry.Checksum)
++                    {
++                        error = $"Indexed sector checksum mismatch for sector 0x{entry.SectorHash:X16}.";
++                        return false;
+                     }
++
++                    if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
++                        return false;
++
++                    for (int recordIndex = 0; recordIndex < sectorRecords.Length; recordIndex++)
++                        destination.Add(sectorRecords[recordIndex]);
+                 }
+ 
+                 return true;
+@@ -1928,9 +2028,12 @@ namespace Hecton8.SaveSystem
+             int fileCapacity = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedCapacity;
+ 
+             using NativeArray<SectorEntityStateSortEntry> sortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++            using NativeArray<SectorEntityStateSortEntry> radixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             using NativeArray<EntityDataRecord> sortedEntityStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             using NativeArray<byte> compressedBytes = new NativeArray<byte>(fileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             using NativeArray<int> resultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++            using NativeArray<int> radixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++            using NativeArray<int> radixOffsets = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+ 
+             BuildSectorEntityStateSortEntriesJob buildJob = new BuildSectorEntityStateSortEntriesJob
+             {
+@@ -1938,9 +2041,12 @@ namespace Hecton8.SaveSystem
+                 Entries = sortEntries,
+                 ChunkSizeMeters = math.max(1, chunkSizeMeters)
+             };
+-            SortSectorEntityStateEntriesJob sortJob = new SortSectorEntityStateEntriesJob
++            RadixSortSectorEntityStateEntriesJob sortJob = new RadixSortSectorEntityStateEntriesJob
+             {
+-                Entries = sortEntries
++                Entries = sortEntries,
++                Scratch = radixScratch,
++                Counts = radixCounts,
++                Offsets = radixOffsets
+             };
+             ExtractSortedSectorEntityStatesJob extractJob = new ExtractSortedSectorEntityStatesJob
+             {
+@@ -2126,14 +2232,8 @@ namespace Hecton8.SaveSystem
+                     : 0UL;
+                 metadataHash64 = saveHeader.HashPayload64 ^ directoryHash64;
+ 
+-                for (int i = 0; i < sectorEntries.Length; i++)
+-                {
+-                    if (sectorEntries[i].SectorHash == sectorHash)
+-                    {
+-                        targetSectorIndex = i;
+-                        break;
+-                    }
+-                }
++                if (!TryFindIndexedSectorEntryIndex(sectorEntries, sectorHash, out targetSectorIndex))
++                    targetSectorIndex = -1;
+             }
+             finally
+             {
+@@ -2238,11 +2338,16 @@ namespace Hecton8.SaveSystem
+                 if (sectorEntries == null || sectorEntries.Length <= 0)
+                     return true;
+ 
+-                directoryBytes = IndexedSectorDirectoryHeaderSize + (sectorEntries.Length * UnsafeUtility.SizeOf<SectorEntry>());
++                directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+                 metadataEndOffset = header.PlayerOffset + directoryHeader.MetadataCompressedSize;
+                 long totalSectorBytes = 0L;
+                 for (int i = 0; i < sectorEntries.Length; i++)
++                {
++                    if (!IsIndexedSectorEntryPopulated(in sectorEntries[i]))
++                        continue;
++
+                     totalSectorBytes += math.max(0, sectorEntries[i].CompressedSize);
++                }
+ 
+                 compactLength = metadataEndOffset + totalSectorBytes;
+                 reclaimedBytes = math.max(0L, originalLength - compactLength);
+@@ -2265,12 +2370,14 @@ namespace Hecton8.SaveSystem
+ 
+             try
+             {
+-                int sectorCount = sectorEntries.Length;
+-                int[] sortedIndices = new int[sectorCount];
+-                for (int i = 0; i < sectorCount; i++)
+-                    sortedIndices[i] = i;
++                List<int> sortedIndices = new List<int>(checked((int)directoryHeader.SectorCount));
++                for (int i = 0; i < sectorEntries.Length; i++)
++                {
++                    if (IsIndexedSectorEntryPopulated(in sectorEntries[i]))
++                        sortedIndices.Add(i);
++                }
+ 
+-                Array.Sort(sortedIndices, (left, right) => sectorEntries[left].ByteOffset.CompareTo(sectorEntries[right].ByteOffset));
++                sortedIndices.Sort((left, right) => sectorEntries[left].ByteOffset.CompareTo(sectorEntries[right].ByteOffset));
+ 
+                 FileStream sourceStream = null;
+                 MemoryMappedFile sourceMapping = null;
+@@ -2300,8 +2407,8 @@ namespace Hecton8.SaveSystem
+                     UnsafeUtility.MemCpy(targetFilePtr, sourceFilePtr, metadataEndOffset);
+ 
+                     long writeCursor = metadataEndOffset;
+-                    SectorEntry[] rewrittenEntries = new SectorEntry[sectorCount];
+-                    for (int i = 0; i < sectorCount; i++)
++                    SectorEntry[] rewrittenEntries = new SectorEntry[sectorEntries.Length];
++                    for (int i = 0; i < sortedIndices.Count; i++)
+                     {
+                         int sourceIndex = sortedIndices[i];
+                         SectorEntry entry = sectorEntries[sourceIndex];
+diff --git a/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheRuntimeBridge.cs b/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheRuntimeBridge.cs
+index 5c717a26..9e48703a 100644
+--- a/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheRuntimeBridge.cs
++++ b/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheRuntimeBridge.cs
+@@ -1,6 +1,7 @@
+ using System;
+ using System.IO;
+ using Crest;
++using Hecton8.SaveSystem;
+ using UnityEngine;
+ 
+ namespace Hecton8.World
+@@ -8,7 +9,7 @@ namespace Hecton8.World
+     /// <summary>
+     /// Cold-path typed bridge for the Crest depth-cache runtime API.
+     /// </summary>
+-    internal static class HectonCrestOceanDepthCacheRuntimeBridge
++    internal static unsafe class HectonCrestOceanDepthCacheRuntimeBridge
+     {
+         private const float HectonMinimumCameraHeightAboveSeaLevel = 8f;
+ 
+@@ -85,7 +86,16 @@ namespace Hecton8.World
+                 }; // COLD ALLOC: Texture2D[1] — one-shot depth-cache forensic readback for PNG dump — owner: HectonCrestOceanDepthCacheRuntimeBridge
+                 readbackTexture.ReadPixels(new Rect(0f, 0f, cacheTexture.width, cacheTexture.height), 0, 0, false);
+                 readbackTexture.Apply(false, false);
+-                File.WriteAllBytes(absolutePath, readbackTexture.EncodeToPNG());
++                byte[] pngBytes = readbackTexture.EncodeToPNG();
++                if (pngBytes == null || pngBytes.Length <= 0)
++                    return false;
++
++                fixed (byte* pngPtr = pngBytes)
++                {
++                    if (!AsyncWriteManager.WriteAll(absolutePath, pngPtr, pngBytes.Length, out _))
++                        return false;
++                }
++
+                 return true;
+             }
+             finally
+
+*** Added File: Docs/ARCHITECTURE/SAVE_V8_BINARY_SPEC.md
+
+# SAVE_V8_BINARY_SPEC
+
+## Scope
+
+HECTON-8 save container `0x0008` (`SaveBinaryStorage.CurrentVersion`).
+Owner: `Assets/_Project/Scripts/SaveBinaryStorage.cs`.
+
+This document describes the indexed-block storage container used for MMF-backed random access to persistent-world sectors.
+
+## Top-Level Layout
+
+File order:
+
+1. `SaveFileHeader` (`52` bytes)
+2. `IndexedSectorDirectoryHeader` (`16` bytes)
+3. `SectorEntry[4096]` fixed slot directory
+4. compressed metadata block
+5. compressed sector blocks
+
+The file is memory-mapped and treated as:
+
+```text
+[SaveFileHeader]
+[IndexedSectorDirectoryHeader]
+[SectorEntry slot 0]
+...
+[SectorEntry slot 4095]
+[Metadata Block]
+[Sector Block A]
+[Sector Block B]
+...
+```
+
+## Header Structures
+
+### SaveFileHeader
+
+The validated file header sits at offset `0`.
+
+Important fields for indexed paging:
+
+- `MagicValue`
+- `Version`
+- `Flags`
+- `PlayerOffset`
+- `HashPayload64`
+- `HashHeader64`
+
+Validation rules:
+
+- `MagicValue == 0x48454354`
+- `Version == 0x0008` for indexed block reads
+- `Flags` must contain `FlagIndexedSectorBlocks`
+- `HashHeader64` must match recomputed header hash
+- future versions (`> 0x0008`) are rejected by `TryValidateHeader(...)`
+
+### IndexedSectorDirectoryHeader
+
+```csharp
+[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+struct IndexedSectorDirectoryHeader
+{
+    public uint SectorCount;
+    public int ChunkSizeMeters;
+    public int MetadataCompressedSize;
+    public int MetadataDecompressedSize;
+}
+```
+
+Semantics:
+
+- `SectorCount`: number of populated sector slots
+- `ChunkSizeMeters`: chunk size used for persistent-world packing
+- `MetadataCompressedSize`: byte length of metadata block on disk
+- `MetadataDecompressedSize`: raw metadata payload size after LZ4/token expansion
+
+## Fixed Master Index
+
+Directory capacity is fixed at `4096` slots.
+
+```csharp
+[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
+struct SectorEntry
+{
+    public long SectorHash;
+    public long ByteOffset;
+    public int CompressedSize;
+    public int DecompressedSize;
+    public uint Checksum;
+}
+```
+
+Slot semantics:
+
+- empty slot: `CompressedSize <= 0`
+- populated slot: valid `ByteOffset`, `CompressedSize`, `DecompressedSize`, `Checksum`
+
+### Slot Address Math
+
+Constants:
+
+- `CurrentHeaderSize = 52`
+- `IndexedSectorDirectoryHeaderSize = 16`
+- `SectorEntrySize = 28`
+- `IndexedSectorDirectoryCapacity = 4096`
+
+Directory byte span:
+
+```text
+directoryBytes = 16 + (4096 * 28) = 114704 bytes
+```
+
+Metadata block offset:
+
+```text
+metadataBlockOffset = CurrentHeaderSize + directoryBytes
+                    = 52 + 114704
+                    = 114756
+```
+
+Entry pointer for slot `i`:
+
+```text
+entryOffset = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize + (i * sizeof(SectorEntry))
+```
+
+### Slot Resolution
+
+Sector hashes are placed with open addressing over the fixed slot array.
+
+Probe start:
+
+```csharp
+ulong hash = unchecked((ulong)sectorHash);
+hash ^= hash >> 33;
+hash *= 0xff51afd7ed558ccdUL;
+hash ^= hash >> 33;
+slot = (int)(hash & (4096 - 1));
+```
+
+Collision policy:
+
+- linear probe
+- insert into first empty slot
+- lookup stops at first empty slot or exact `SectorHash`
+
+## Block Format
+
+Each metadata or sector block is written as:
+
+1. `IndexedSectorBlockHeader` (`8` bytes)
+2. compressed payload bytes
+
+```csharp
+[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+struct IndexedSectorBlockHeader
+{
+    public uint Flags;
+    public uint Reserved;
+}
+```
+
+Flags:
+
+- `FlagLz4Blocks`
+- `FlagTokenSubstitution`
+- `FlagStaticDictionary`
+
+## Random Access Paging Protocol
+
+To page a sector:
+
+1. memory-map the file
+2. validate `SaveFileHeader`
+3. validate indexed v8 requirement:
+   - `Flags & FlagIndexedSectorBlocks`
+   - `Version == 0x0008`
+4. read `IndexedSectorDirectoryHeader`
+5. hash-probe `SectorEntry[4096]` by `SectorHash`
+6. create `MemoryMappedViewStream(ByteOffset, CompressedSize)`
+7. read only that block
+8. decompress block
+9. verify sector checksum
+10. hydrate records
+
+No full-file sequential scan is required for sector paging.
+
+## Compression Protocol
+
+The block writer evaluates:
+
+1. plain LZ4
+2. static-dictionary LZ4
+3. token-substituted LZ4
+4. token-substituted + static-dictionary LZ4
+
+Smallest block wins.
+
+Static dictionary owner:
+
+- `Assets/_Project/Scripts/SaveCompressionDictionary.cs`
+- dictionary size: `64 KB`
+
+Dictionary seeds include:
+
+- zeroed quest words
+- repeated inventory coordinates
+- repeated hash/state patterns
+- chunk word patterns
+- common UTF-16 metadata strings
+
+## Integrity Protocol
+
+### Header Integrity
+
+`HashHeader64` is recomputed from the header with `HashHeader64 = 0` during hashing.
+
+### Directory Integrity
+
+The payload hash for v8 is:
+
+```text
+HashPayload64 = metadataHash64 ^ directoryHash64
+```
+
+Where:
+
+- `metadataHash64 = XXHash3-64(raw metadata payload)`
+- `directoryHash64 = XXHash3-64(directory header + all 4096 slots)`
+
+### Sector Block Integrity
+
+Each populated `SectorEntry.Checksum` stores:
+
+```text
+uint sectorChecksum = low32(XXHash3-64(raw sector payload))
+```
+
+Read path:
+
+1. decompress sector block
+2. verify `decompressedLength == SectorEntry.DecompressedSize`
+3. recompute `low32(XXHash3-64(raw sector payload))`
+4. compare with `SectorEntry.Checksum`
+5. reject hydration on mismatch
+
+## Defragmentation
+
+Defrag operates only on indexed sector blocks.
+
+Slack threshold:
+
+```text
+IndexedSectorDefragSlackThresholdBytes = 50 MB
+```
+
+Compaction rules:
+
+1. preserve header + full fixed directory + metadata block
+2. rewrite populated sector blocks contiguously after metadata
+3. patch `SectorEntry.ByteOffset`
+4. recompute directory hash
+5. recompute `HashPayload64`
+6. recompute `HashHeader64`
+7. truncate file to compact length
+
+## Rejection Rules
+
+Indexed sector paging must reject:
+
+- missing indexed flag
+- header version not equal to `0x0008`
+- future save version
+- directory count > `4096`
+- directory/file bound overruns
+- checksum mismatch
+- decompressed size mismatch
+
+## Evidence Points In Code
+
+- `SaveBinaryStorage.CurrentVersion`
+- `TryValidateHeader(...)`
+- `TryValidateIndexedBlockStorageHeader(...)`
+- `TryReadIndexedDirectory(...)`
+- `TryReadIndexedPersistentWorldDirectory(...)`
+- `TryLoadIndexedPersistentWorldSectors(...)`
+- `TryDefragmentIndexedPersistentWorldSectors(...)`

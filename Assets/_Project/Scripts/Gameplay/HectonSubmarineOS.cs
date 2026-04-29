@@ -5,6 +5,7 @@ using Hecton8.Crafting;
 using Hecton8.Power;
 using Hecton8.UI;
 using Hecton8.Visor;
+using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -126,11 +127,12 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineCoreDirector))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Hecton Submarine OS")]
-    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable
+    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable
     {
         private const float DefaultReferencePressureKPa = 101.325f;
         private const float LowPowerThreshold01 = 0.20f;
         private const float LowPowerReleaseThreshold01 = 0.24f;
+        private const float CascadingBrownoutThreshold01 = 0.40f;
         private const float DangerPowerThreshold01 = 0.10f;
         private const float LifeSupportCriticalThreshold01 = 0.10f;
         private const float LifeSupportReleaseThreshold01 = 0.12f;
@@ -138,14 +140,31 @@ namespace Hecton8.Gameplay
         private const float PressureHighThresholdKPa = 150f;
         private const float PressureDangerThresholdKPa = 220f;
         private const float PressureReleaseThresholdKPa = 140f;
+        private const float BrownoutLightIntensityScale = 0.15f;
+        private const float BrownoutBlinkFrequency = 8f;
         private const byte LogPriorityNormal = 1;
         private const byte LogPriorityWarning = 2;
         private const byte LogPriorityCritical = 3;
+        private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly Color BrownoutEmissiveColor = new Color(1f, 0.12f, 0.08f, 1f);
         private static readonly char[] s_lowPowerCaption = "SUBMARINE LOW POWER".ToCharArray();
         private static readonly char[] s_lifeSupportCaption = "LIFE SUPPORT CRITICAL".ToCharArray();
         private static readonly char[] s_multiFailureCaption = "MULTIPLE SYSTEM FAILURES".ToCharArray();
         private static readonly char[] s_emergencyDangerCaption = "EMERGENCY LEVEL DANGER".ToCharArray();
-        private static readonly char[] s_emergencyEvacuateCaption = "EMERGENCY LEVEL EVACUATE".ToCharArray();
+        private static readonly char[] s_abandonShipCaption = "ABANDON SHIP".ToCharArray();
+
+        private struct BrownoutLightBinding
+        {
+            public Light Light;
+            public float BaseIntensity;
+            public Color BaseColor;
+        }
+
+        private struct BrownoutMaterialBinding
+        {
+            public Material Material;
+            public Color BaseEmissionColor;
+        }
 
         [Header("Audio")]
         [Tooltip("Optional helmet warning for low-power transition events.")]
@@ -157,24 +176,35 @@ namespace Hecton8.Gameplay
         [Tooltip("Optional helmet warning for simultaneous multi-system failures.")]
         [SerializeField] private AudioClip multiSystemFailureClip;
 
+        [Tooltip("Optional abandon-ship alarm routed directly through GlobalRegistry.Audio.")]
+        [SerializeField] private AudioClip abandonShipAlarmClip;
+
         [Tooltip("UI mixer volume for diegetic submarine OS warnings.")]
         [SerializeField, Range(0f, 1f)] private float warningVolume = 0.55f;
 
         private SubmarineCoreDirector _submarineCore;
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private SubmarineStationKeepingController _stationKeepingController;
+        private BrownoutLightBinding[] _brownoutLights;
+        private BrownoutMaterialBinding[] _brownoutMaterials;
         private HectonSubmarineOsSnapshot _lastPublishedSnapshot;
         private SubsystemStatus _subsystemStatus;
         private SubmarineEmergencyLevel _emergencyLevel;
         private float _powerNormalized = 1f;
+        private float _powerSupplyRatio = 1f;
         private float _oxygenNormalized = 1f;
         private float _maxPressureKPa = DefaultReferencePressureKPa;
+        private LogisticsBrownoutTier _highestBrownoutTier;
         private bool _lowPowerModeActive;
+        private bool _cascadingBrownoutActive;
         private bool _lifeSupportCriticalActive;
         private bool _pressureHighActive;
         private bool _fatalImplosionLatched;
         private bool _multiSystemFailureLatched;
+        private bool _brownoutCachesBuilt;
+        private bool _brownoutVisualStateApplied;
         private bool _registeredUpdatable;
+        private bool _registeredRenderable;
         private bool _registeredSlowTick;
         private bool _stationKeepingStateCached;
 
@@ -223,6 +253,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CacheReferences();
+            RebuildBrownoutCaches();
             Subscribe();
             TryRegister();
             PublishLog(HectonSubmarineOsLogCode.ReactorStable, LogPriorityNormal);
@@ -236,12 +267,14 @@ namespace Hecton8.Gameplay
             Unsubscribe();
             TryUnregister();
             SetLowPowerMode(false);
+            SetCascadingBrownout(false);
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
             TryUnregister();
+            RestoreBrownoutVisuals();
         }
 
         /// <inheritdoc />
@@ -257,6 +290,24 @@ namespace Hecton8.Gameplay
             CacheReferences();
             RefreshTelemetryFromServices();
             EvaluateStateMachine(false);
+        }
+
+        /// <inheritdoc />
+        public void Render(float deltaTime)
+        {
+            if (!_cascadingBrownoutActive || _lowPowerModeActive)
+            {
+                if (_brownoutVisualStateApplied)
+                    RestoreBrownoutVisuals();
+
+                return;
+            }
+
+            if (!_brownoutCachesBuilt)
+                RebuildBrownoutCaches();
+
+            float pulse = 0.5f + (0.5f * Mathf.Sin(Time.time * BrownoutBlinkFrequency));
+            ApplyBrownoutVisuals(pulse);
         }
 
         private void CacheReferences()
@@ -304,6 +355,12 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
+
+            if (!_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Register(this);
+                _registeredRenderable = true;
+            }
         }
 
         private void TryUnregister()
@@ -319,6 +376,12 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+
+            if (_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderable = false;
+            }
         }
 
         private void RefreshTelemetryFromServices()
@@ -327,9 +390,10 @@ namespace Hecton8.Gameplay
             if (powerGridService != null)
             {
                 BatteryRuntimeSnapshot batterySnapshot = powerGridService.BatterySnapshot;
+                _powerSupplyRatio = ResolveSupplyRatio(powerGridService.TotalGeneration, powerGridService.TotalConsumption);
                 _powerNormalized = batterySnapshot.TotalCapacityWattSeconds > 0.0001f
                     ? math.saturate(batterySnapshot.ChargeNormalized)
-                    : ResolveSupplyRatio(powerGridService.TotalGeneration, powerGridService.TotalConsumption);
+                    : _powerSupplyRatio;
             }
 
             RefreshAtmosphereTelemetry();
@@ -422,6 +486,8 @@ namespace Hecton8.Gameplay
                     nextPressureHighActive ? HectonSubmarineOsLogCode.HullPressureHigh : HectonSubmarineOsLogCode.HullPressureStabilized,
                     nextPressureHighActive ? LogPriorityWarning : LogPriorityNormal);
             }
+
+            SetCascadingBrownout(ResolveCascadingBrownoutActive());
 
             RefreshSubsystemStatus();
 
@@ -523,6 +589,9 @@ namespace Hecton8.Gameplay
         private void HandlePowerTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
         {
             _powerNormalized = math.saturate(snapshot.AvailablePowerNormalized);
+            _powerSupplyRatio = math.saturate(snapshot.SupplyRatio);
+            _highestBrownoutTier = snapshot.HighestBrownoutTier;
+            SetCascadingBrownout(ResolveCascadingBrownoutActive());
         }
 
         private void HandleHighPressure(in HighPressureEvent pressureEvent)
@@ -546,9 +615,12 @@ namespace Hecton8.Gameplay
             {
                 case SubmarineEmergencyLevel.Evacuate:
                     PlayVoiceAlarm(
-                        lifeSupportCriticalClip != null ? lifeSupportCriticalClip : multiSystemFailureClip,
-                        s_emergencyEvacuateCaption,
-                        1f);
+                        abandonShipAlarmClip != null
+                            ? abandonShipAlarmClip
+                            : (lifeSupportCriticalClip != null ? lifeSupportCriticalClip : multiSystemFailureClip),
+                        s_abandonShipCaption,
+                        1f,
+                        true);
                     break;
 
                 case SubmarineEmergencyLevel.Danger:
@@ -560,15 +632,182 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void PlayVoiceAlarm(AudioClip clip, char[] captionChars, float intensity)
+        private void SetCascadingBrownout(bool active)
+        {
+            if (_cascadingBrownoutActive == active)
+                return;
+
+            _cascadingBrownoutActive = active;
+            if (!active)
+                RestoreBrownoutVisuals();
+        }
+
+        private bool ResolveCascadingBrownoutActive()
+        {
+            if (_powerSupplyRatio >= CascadingBrownoutThreshold01)
+                return false;
+
+            return _highestBrownoutTier >= LogisticsBrownoutTier.EssentialOnly || _powerNormalized < CascadingBrownoutThreshold01;
+        }
+
+        private void RebuildBrownoutCaches()
+        {
+            BaseModule[] modules = Object.FindObjectsByType<BaseModule>(FindObjectsInactive.Exclude);
+            if (modules == null || modules.Length == 0)
+            {
+                _brownoutLights = System.Array.Empty<BrownoutLightBinding>();
+                _brownoutMaterials = System.Array.Empty<BrownoutMaterialBinding>();
+                _brownoutCachesBuilt = true;
+                return;
+            }
+
+            List<BrownoutLightBinding> lightBindings = new List<BrownoutLightBinding>(32); // COLD ALLOC: List<BrownoutLightBinding>[32] — brownout light cache staging — owner: HectonSubmarineOS
+            List<BrownoutMaterialBinding> materialBindings = new List<BrownoutMaterialBinding>(48); // COLD ALLOC: List<BrownoutMaterialBinding>[48] — brownout emissive cache staging — owner: HectonSubmarineOS
+
+            for (int moduleIndex = 0; moduleIndex < modules.Length; moduleIndex++)
+            {
+                BaseModule module = modules[moduleIndex];
+                if (module == null)
+                    continue;
+
+                Light[] lights = module.GetComponentsInChildren<Light>(true); // COLD ALLOC: Light[][module child count] — module light scan for brownout cache — owner: HectonSubmarineOS
+                for (int lightIndex = 0; lightIndex < lights.Length; lightIndex++)
+                {
+                    Light light = lights[lightIndex];
+                    if (light == null || light.type != LightType.Point)
+                        continue;
+
+                    lightBindings.Add(new BrownoutLightBinding
+                    {
+                        Light = light,
+                        BaseIntensity = light.intensity,
+                        BaseColor = light.color
+                    });
+                }
+
+                Renderer[] renderers = module.GetComponentsInChildren<Renderer>(true); // COLD ALLOC: Renderer[][module child count] — module renderer scan for brownout cache — owner: HectonSubmarineOS
+                for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                {
+                    Renderer renderer = renderers[rendererIndex];
+                    if (renderer == null)
+                        continue;
+
+                    Material[] sharedMaterials = renderer.sharedMaterials; // COLD ALLOC: Material[][renderer material count] — emissive material discovery — owner: HectonSubmarineOS
+                    for (int materialIndex = 0; materialIndex < sharedMaterials.Length; materialIndex++)
+                    {
+                        Material material = sharedMaterials[materialIndex];
+                        if (material == null || !material.HasProperty(_EmissionColorId) || ContainsMaterial(materialBindings, material))
+                            continue;
+
+                        materialBindings.Add(new BrownoutMaterialBinding
+                        {
+                            Material = material,
+                            BaseEmissionColor = material.GetColor(_EmissionColorId)
+                        });
+                    }
+                }
+            }
+
+            _brownoutLights = lightBindings.ToArray(); // COLD ALLOC: BrownoutLightBinding[][#lights] — persistent point-light brownout cache — owner: HectonSubmarineOS
+            _brownoutMaterials = materialBindings.ToArray(); // COLD ALLOC: BrownoutMaterialBinding[][#materials] — persistent emissive brownout cache — owner: HectonSubmarineOS
+            _brownoutCachesBuilt = true;
+        }
+
+        private static bool ContainsMaterial(List<BrownoutMaterialBinding> bindings, Material material)
+        {
+            for (int i = 0; i < bindings.Count; i++)
+            {
+                if (ReferenceEquals(bindings[i].Material, material))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void ApplyBrownoutVisuals(float pulse)
+        {
+            if (_brownoutLights != null)
+            {
+                for (int i = 0; i < _brownoutLights.Length; i++)
+                {
+                    BrownoutLightBinding binding = _brownoutLights[i];
+                    if (binding.Light == null)
+                        continue;
+
+                    binding.Light.intensity = binding.BaseIntensity * BrownoutLightIntensityScale;
+                    binding.Light.color = binding.BaseColor;
+                }
+            }
+
+            if (_brownoutMaterials != null)
+            {
+                for (int i = 0; i < _brownoutMaterials.Length; i++)
+                {
+                    BrownoutMaterialBinding binding = _brownoutMaterials[i];
+                    if (binding.Material == null)
+                        continue;
+
+                    binding.Material.SetColor(
+                        _EmissionColorId,
+                        Color.Lerp(binding.BaseEmissionColor, BrownoutEmissiveColor, pulse));
+                }
+            }
+
+            _brownoutVisualStateApplied = true;
+        }
+
+        private void RestoreBrownoutVisuals()
+        {
+            if (!_brownoutVisualStateApplied)
+                return;
+
+            if (_brownoutLights != null)
+            {
+                for (int i = 0; i < _brownoutLights.Length; i++)
+                {
+                    BrownoutLightBinding binding = _brownoutLights[i];
+                    if (binding.Light == null)
+                        continue;
+
+                    binding.Light.intensity = binding.BaseIntensity;
+                    binding.Light.color = binding.BaseColor;
+                }
+            }
+
+            if (_brownoutMaterials != null)
+            {
+                for (int i = 0; i < _brownoutMaterials.Length; i++)
+                {
+                    BrownoutMaterialBinding binding = _brownoutMaterials[i];
+                    if (binding.Material == null)
+                        continue;
+
+                    binding.Material.SetColor(_EmissionColorId, binding.BaseEmissionColor);
+                }
+            }
+
+            _brownoutVisualStateApplied = false;
+        }
+
+        private void PlayVoiceAlarm(AudioClip clip, char[] captionChars, float intensity, bool requireRegistryAudioRoute = false)
         {
             IAudioService audioService = GlobalRegistry.Audio;
+            bool played = false;
             if (clip != null)
             {
                 if (audioService != null && audioService.IsInitialized)
                 {
                     audioService.PlayStatic2D(clip, warningVolume);
+                    played = true;
                 }
+            }
+
+            if (!played &&
+                !requireRegistryAudioRoute &&
+                clip != null &&
+                GlobalRegistry.Audio is SpatialAudioManager audioManager)
+            {
+                audioManager.PlayStatic2D(clip, warningVolume, audioManager.InterfaceGroup);
             }
 
             if (captionChars == null || captionChars.Length <= 0)

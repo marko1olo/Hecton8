@@ -14,7 +14,7 @@ namespace Hecton8.Meta
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6340)]
     [AddComponentMenu("Hecton8/Meta/Meta Buff Injector")]
-    public sealed class MetaBuffInjector : MonoBehaviour
+    public sealed class MetaBuffInjector : MonoBehaviour, ISceneBootstrapEventListener
     {
         private const string StarterStructuralMetalId = "Data_TitaniumScrap";
         private const string StarterElectronicsMetalId = "Data_Copper";
@@ -28,17 +28,23 @@ namespace Hecton8.Meta
 
         private void OnEnable()
         {
-            SceneBootstrap.OnGameReady += HandleGameReady;
+            SceneBootstrap.Register(this);
         }
 
         private void OnDisable()
         {
-            SceneBootstrap.OnGameReady -= HandleGameReady;
+            SceneBootstrap.Unregister(this);
             _survivalSystem = null;
             _playerMovement = null;
             _inventory = null;
             _runtimeBuffsApplied = false;
             _starterResourcesApplied = false;
+        }
+
+        public void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload)
+        {
+            if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
+                HandleGameReady();
         }
 
         private void HandleGameReady()

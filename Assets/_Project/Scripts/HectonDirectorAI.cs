@@ -13,7 +13,7 @@ namespace Hecton8.Systems.AI
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable
+    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, IEncounterDirectorService
     {
         public static event Action<Vector3> OnRequestSpawnHorde;
         public static event Action<float> OnRequestEquipmentGlitch;
@@ -65,11 +65,17 @@ namespace Hecton8.Systems.AI
         private HectonPlayerMovement _playerMovement;
         private bool _dispatcherRegistered;
         private float _resolveRetryTimer;
+        private float _hunterSquadCooldown;
         private int _frameTimeHistoryCount;
         private int _frameTimeHistoryIndex;
         private Vector3 _previousPlayerPosition;
         private bool _hasPreviousPlayerPosition;
         private float _recentSonarStress;
+        private float _externalPeakPressure01;
+        private float _externalPeakHoldSeconds;
+        private const float HunterSquadHostilityThreshold = 0.8f;
+        private const float HunterSquadCooldownSeconds = 9f;
+        private const int HunterSquadSize = 2;
 
         /// <summary>
         /// Current normalized director tension score in the legacy 0..100 presentation range.
@@ -95,6 +101,11 @@ namespace Hecton8.Systems.AI
         /// </summary>
         public string CurrentPhaseName => _encounterDirector.CurrentPhaseName;
 
+        /// <summary>
+        /// True once the encounter director is registered in the global registry.
+        /// </summary>
+        public bool IsInitialized => ReferenceEquals(GlobalRegistry.EncounterDirector, this);
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -113,6 +124,8 @@ namespace Hecton8.Systems.AI
             if (!Application.isPlaying)
                 return;
 
+            GlobalRegistry.RegisterEncounterDirectorService(this);
+
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
@@ -122,6 +135,9 @@ namespace Hecton8.Systems.AI
             _encounterDirector.Reset();
             _hasPreviousPlayerPosition = false;
             _recentSonarStress = 0f;
+            _externalPeakPressure01 = 0f;
+            _externalPeakHoldSeconds = 0f;
+            _hunterSquadCooldown = 0f;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             PublishPredatorPressure(true);
         }
@@ -131,6 +147,8 @@ namespace Hecton8.Systems.AI
             if (!Application.isPlaying)
                 return;
 
+            GlobalRegistry.UnregisterEncounterDirectorService(this);
+
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
@@ -139,6 +157,9 @@ namespace Hecton8.Systems.AI
 
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             _recentSonarStress = 0f;
+            _externalPeakPressure01 = 0f;
+            _externalPeakHoldSeconds = 0f;
+            _hunterSquadCooldown = 0f;
         }
 
 #if UNITY_EDITOR
@@ -150,6 +171,8 @@ namespace Hecton8.Systems.AI
 
         private void OnDestroy()
         {
+            GlobalRegistry.UnregisterEncounterDirectorService(this);
+
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
@@ -185,6 +208,8 @@ namespace Hecton8.Systems.AI
             if (vegetationBridge != null)
                 acousticThreatLevel = Mathf.Clamp01(vegetationBridge.GetThreatLevel(playerPosition));
             acousticThreatLevel = Mathf.Max(acousticThreatLevel, sonarStress);
+            ApplyExternalPeakPressure(deltaTime, ref internalStress, ref acousticThreatLevel);
+            UpdateHunterSquadPressure(deltaTime);
 
             if (playerCamera != null)
                 GeometryUtility.CalculateFrustumPlanes(playerCamera, _frustumPlaneScratch);
@@ -242,6 +267,19 @@ namespace Hecton8.Systems.AI
         public void ForceRelax()
         {
             _encounterDirector.RequestPhaseOverride(EncounterPhase.Relax);
+        }
+
+        /// <summary>
+        /// Applies external hostility pressure that extends Peak pacing without allocating auxiliary state machines.
+        /// </summary>
+        public void ApplyExternalPeakPressure(float pressure01, float holdSeconds)
+        {
+            float clampedPressure = Mathf.Clamp01(pressure01);
+            if (clampedPressure <= 0f || holdSeconds <= 0f)
+                return;
+
+            _externalPeakPressure01 = Mathf.Max(_externalPeakPressure01, clampedPressure);
+            _externalPeakHoldSeconds = Mathf.Max(_externalPeakHoldSeconds, holdSeconds);
         }
 
         /// <summary>
@@ -433,6 +471,41 @@ namespace Hecton8.Systems.AI
                 return;
 
             _recentSonarStress = Mathf.Max(_recentSonarStress, clampedIntensity);
+        }
+
+        private void ApplyExternalPeakPressure(float deltaTime, ref float internalStress, ref float acousticThreatLevel)
+        {
+            if (_externalPeakHoldSeconds <= 0f || _externalPeakPressure01 <= 0f)
+                return;
+
+            _externalPeakHoldSeconds = Mathf.Max(0f, _externalPeakHoldSeconds - deltaTime);
+            internalStress = Mathf.Max(internalStress, _externalPeakPressure01);
+            acousticThreatLevel = Mathf.Max(acousticThreatLevel, _externalPeakPressure01);
+
+            if (_encounterDirector.CurrentPhase != EncounterPhase.Peak)
+                _encounterDirector.RequestPhaseOverride(EncounterPhase.Peak);
+
+            if (_externalPeakHoldSeconds > 0f)
+                return;
+
+            _externalPeakPressure01 = 0f;
+        }
+
+        private void UpdateHunterSquadPressure(float deltaTime)
+        {
+            if (_hunterSquadCooldown > 0f)
+                _hunterSquadCooldown = Mathf.Max(0f, _hunterSquadCooldown - deltaTime);
+
+            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            if (ecosystemDirector == null || ecosystemDirector.BiomeHostility01 < HunterSquadHostilityThreshold)
+                return;
+
+            if (_hunterSquadCooldown > 0f)
+                return;
+
+            _encounterDirector.RequestPhaseOverride(EncounterPhase.Peak);
+            _encounterDirector.RequestForcedSquad(EncounterThreatClass.Stalker, HunterSquadSize);
+            _hunterSquadCooldown = HunterSquadCooldownSeconds;
         }
 
         private void PublishPredatorPressure(bool enabled)

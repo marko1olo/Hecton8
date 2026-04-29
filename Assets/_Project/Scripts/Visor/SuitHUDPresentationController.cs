@@ -63,6 +63,9 @@ namespace NASAPunk.Visor
         private Transform _cachedHudRtCompositorTransform;
         private bool _fallbackToOverlayActive;
         private SuitHUDV4CanvasOverlay _normalizedProjectionSourceOverlay;
+        private bool _editorPresentationStateCached;
+        private bool _editorLastProjectedPresentationAvailable;
+        private bool _editorLastProjectedOutputSurfaceAvailable;
         private const string ProjectionSourceCanvasName = "Suit_HUD_ProjectionSource";
         private const int ProjectionSourceLayer = 17;
 
@@ -70,7 +73,12 @@ namespace NASAPunk.Visor
         {
             _pendingApply = true;
             if (!Application.isPlaying)
+            {
+#if UNITY_EDITOR
+                EvaluateEditorTickRegistration();
+#endif
                 return;
+            }
 
             AutoResolveReferences(true);
             ApplyPresentation(force: true);
@@ -94,6 +102,10 @@ namespace NASAPunk.Visor
         private void OnValidate()
         {
             _pendingApply = true;
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                EvaluateEditorTickRegistration();
+#endif
         }
 
 #if UNITY_EDITOR
@@ -105,9 +117,13 @@ namespace NASAPunk.Visor
                 return;
             }
 
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+                return;
+
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply);
             _pendingApply = false;
+            CacheEditorPresentationState();
             if (!ShouldTickInEditMode())
                 UnregisterEditorTick();
         }
@@ -316,8 +332,7 @@ namespace NASAPunk.Visor
                 screenCompositor.enabled = showProjectionPreview;
 
             Transform compositorTransform = ResolveHudRtCompositorTransform();
-            if (compositorTransform != null && compositorTransform.gameObject.activeSelf != showProjectionPreview)
-                compositorTransform.gameObject.SetActive(showProjectionPreview);
+            SetTransformCanvasVisible(compositorTransform, showProjectionPreview);
 
             debugOverlaysSuppressed = suppress && !showProjectionPreview;
         }
@@ -365,7 +380,7 @@ namespace NASAPunk.Visor
             if (!projectedMode)
             {
                 if (projectionSourceOverlay != null)
-                    projectionSourceOverlay.gameObject.SetActive(false);
+                    SetOverlayCanvasVisible(projectionSourceOverlay, false);
 
                 return;
             }
@@ -383,8 +398,7 @@ namespace NASAPunk.Visor
             if (projectionSourceOverlay == null)
                 return;
 
-            if (!projectionSourceOverlay.gameObject.activeSelf)
-                projectionSourceOverlay.gameObject.SetActive(true);
+            SetOverlayCanvasVisible(projectionSourceOverlay, true);
 
             if (!ReferenceEquals(_normalizedProjectionSourceOverlay, projectionSourceOverlay))
             {
@@ -440,6 +454,37 @@ namespace NASAPunk.Visor
 
             if (!overlay.TryGetComponent(out HectonUIScaler _))
                 overlayObject.AddComponent<HectonUIScaler>();
+        }
+
+        private static void SetTransformCanvasVisible(Transform target, bool visible)
+        {
+            if (!(target is RectTransform rect))
+                return;
+
+            CanvasGroup canvasGroup = rect.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = rect.gameObject.AddComponent<CanvasGroup>();
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
+
+        private static void SetOverlayCanvasVisible(SuitHUDV4CanvasOverlay overlay, bool visible)
+        {
+            if (overlay == null)
+                return;
+
+            if (!visible && overlay.isActiveAndEnabled)
+                overlay.SetRenderPathProjectionSource(false);
+
+            overlay.enabled = visible;
+
+            Canvas overlayCanvas = overlay.TargetCanvas;
+            RectTransform rect = overlayCanvas != null
+                ? overlayCanvas.transform as RectTransform
+                : overlay.transform as RectTransform;
+            SetTransformCanvasVisible(rect, visible);
         }
 
         private static SuitHUDV4CanvasOverlay FindOverlayByName(
@@ -589,6 +634,10 @@ namespace NASAPunk.Visor
             _pendingApply = true;
             if (Application.isPlaying)
                 EvaluateTickRegistration();
+#if UNITY_EDITOR
+            else
+                EvaluateEditorTickRegistration();
+#endif
         }
 
 #if UNITY_EDITOR
@@ -608,7 +657,37 @@ namespace NASAPunk.Visor
 
         private bool ShouldTickInEditMode()
         {
-            return isActiveAndEnabled && (_pendingApply || NeedsAutoResolve() || RequiresRuntimePresentationMonitoring());
+            return isActiveAndEnabled && (_pendingApply || NeedsAutoResolve() || HasEditorPresentationStateChanged());
+        }
+
+        private bool HasEditorPresentationStateChanged()
+        {
+            if (!RequiresRuntimePresentationMonitoring())
+                return false;
+
+            bool projectedAvailable = IsProjectedPresentationAvailable();
+            bool projectedOutputSurfaceAvailable = HasProjectedOutputSurface();
+
+            if (!_editorPresentationStateCached)
+                return true;
+
+            return _editorLastProjectedPresentationAvailable != projectedAvailable
+                || _editorLastProjectedOutputSurfaceAvailable != projectedOutputSurfaceAvailable;
+        }
+
+        private void CacheEditorPresentationState()
+        {
+            if (!RequiresRuntimePresentationMonitoring())
+            {
+                _editorPresentationStateCached = false;
+                _editorLastProjectedPresentationAvailable = false;
+                _editorLastProjectedOutputSurfaceAvailable = false;
+                return;
+            }
+
+            _editorLastProjectedPresentationAvailable = IsProjectedPresentationAvailable();
+            _editorLastProjectedOutputSurfaceAvailable = HasProjectedOutputSurface();
+            _editorPresentationStateCached = true;
         }
 
         private bool RequiresRuntimePresentationMonitoring()

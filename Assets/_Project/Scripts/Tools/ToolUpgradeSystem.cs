@@ -1,6 +1,7 @@
 namespace Hecton8.Tools
 {
     using System.Runtime.InteropServices;
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -23,7 +24,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Mutable per-tool runtime state stored in contiguous native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 16)]
     public struct ToolState
     {
         public float CurrentBattery;
@@ -87,6 +88,15 @@ namespace Hecton8.Tools
         public static bool HasHighCapacityCell(uint mask) => (mask & (uint)ToolUpgradeBits.HighCapacityCell) != 0u;
         public static bool HasCoolingSink(uint mask) => (mask & (uint)ToolUpgradeBits.CoolingSink) != 0u;
         public static bool HasKineticAccelerator(uint mask) => (mask & (uint)ToolUpgradeBits.KineticAccelerator) != 0u;
+
+        /// <summary>
+        /// Applies a branchless upgrade bonus to one compiled stat.
+        /// </summary>
+        public static float ApplyBitBonus(float baseRate, uint upgradeMask, ToolUpgradeBits bit, float bonus)
+        {
+            float enabled = math.select(0f, 1f, (upgradeMask & (uint)bit) != 0u);
+            return baseRate * (1f + bonus * enabled);
+        }
 
         public static bool TryInsertModule(ToolModuleData[] modules, int slotCount, ToolModuleData module)
         {
@@ -175,25 +185,36 @@ namespace Hecton8.Tools
 
             int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
             uint mask = 0u;
+            float coolingSinkBonus = 0f;
             for (int i = 0; i < safeSlotCount; i++)
             {
                 ToolModuleData module = modules[i];
                 if (module == null)
                     continue;
 
-                mask |= (uint)module.UpgradeBits;
+                ToolUpgradeBits moduleBits = module.UpgradeBits;
+                mask |= (uint)moduleBits;
                 stats.MaxRange *= Mathf.Max(0.1f, module.RangeMultiplier);
                 stats.PowerScalar *= Mathf.Max(0.1f, module.PowerMultiplier);
                 stats.EfficiencyScalar *= Mathf.Max(0.1f, module.EfficiencyMultiplier);
                 stats.SpeedScalar *= Mathf.Max(0.1f, module.SpeedMultiplier);
                 stats.HeatGenerationRate *= Mathf.Max(0.1f, module.HeatGenerationMultiplier);
-                stats.CooldownRate *= Mathf.Max(0.1f, module.CooldownMultiplier);
                 stats.BatteryCapacity *= Mathf.Max(0.1f, module.BatteryCapacityMultiplier);
                 stats.BatteryDrainPerSecond *= Mathf.Max(0.1f, module.BatteryDrainMultiplier);
                 stats.DurabilityDrainMultiplier *= Mathf.Max(0.1f, module.DurabilityDrainMultiplier);
                 stats.RecoilImpulse *= Mathf.Max(0.1f, module.RecoilMultiplier);
+
+                if ((moduleBits & ToolUpgradeBits.CoolingSink) != 0)
+                {
+                    coolingSinkBonus = Mathf.Max(coolingSinkBonus, Mathf.Max(0f, module.CooldownMultiplier - 1f));
+                }
+                else
+                {
+                    stats.CooldownRate *= Mathf.Max(0.1f, module.CooldownMultiplier);
+                }
             }
 
+            stats.CooldownRate = ApplyBitBonus(stats.CooldownRate, mask, ToolUpgradeBits.CoolingSink, coolingSinkBonus);
             upgradeMask = mask;
             return stats;
         }

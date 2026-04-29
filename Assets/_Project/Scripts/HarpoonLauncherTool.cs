@@ -624,20 +624,15 @@ namespace Hecton8.Gameplay
         private void ApplyLaunchRecoil(Vector3 direction, float runtimeDamage)
         {
             ResolvePlayerMovement();
-            if (_playerRigidbody == null)
-                return;
-
             Vector3 safeDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : _cachedTransform.forward;
-            float mass = Mathf.Max(_playerRigidbody.mass, 0.1f);
+            float mass = _playerRigidbody != null ? Mathf.Max(_playerRigidbody.mass, 0.1f) : 1f;
             float runtimeRecoil = GetRuntimeRecoilImpulse(impulse);
             float impulseMagnitude = Mathf.Min(12f, (runtimeRecoil * Mathf.Max(0.1f, runtimeDamage / Mathf.Max(damage, 0.1f))) / mass);
             if (impulseMagnitude <= 0.0001f)
                 return;
 
-            if (ToolHitUtility.TryApplyRelativeCarrierImpulse(safeDirection, impulseMagnitude))
-                return;
-
-            PhysicsForceRouter.QueueForce(_playerRigidbody, -safeDirection * impulseMagnitude, ForceMode.Impulse);
+            TryQueuePlayerToolRecoil(safeDirection, impulseMagnitude);
+            QueueToolHapticFeedback(runtimeDamage, Mathf.Max(damage, 0.1f));
         }
 
         private bool TryGetAssessmentCached(out HarpoonAssessment assessment)

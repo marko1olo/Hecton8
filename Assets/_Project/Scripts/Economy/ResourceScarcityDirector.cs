@@ -1,34 +1,109 @@
+using System;
 using System.Collections.Generic;
+using Hecton8.AtlasSignal;
 using Hecton8.Building;
-using Hecton8.Crafting;
 using Hecton8.Core;
+using Hecton8.Crafting;
+using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Modding;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Economy
 {
     /// <summary>
-    /// Tracks cumulative resource extraction and exposes runtime fabrication power multipliers based on scarcity.
+    /// Tracks cumulative resource extraction, issues scarcity directives, and exposes sector-local deflation scalars.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6250)]
     [AddComponentMenu("Hecton8/Economy/Resource Scarcity Director")]
-    public sealed class ResourceScarcityDirector : MonoBehaviour, ISaveable
+    public sealed class ResourceScarcityDirector : MonoBehaviour, ISaveable, ISlowTickable
     {
         private const int InitialTrackedCapacity = 64;
         private const int UnitsPerScarcityStep = 100;
         private const float ScarcityStepMultiplier = 0.04f;
         private const float MaxIngredientMultiplier = 1.80f;
+        private const int MaxDirectiveResources = 8;
+        private const int KnownClustersPerResource = 4;
+        private const int MaxSectorExtractionRecords = 64;
+        private const float SectorEdgeLengthMeters = 1000f;
+
+        [Serializable]
+        private struct DirectiveResourceDefinition
+        {
+            [Tooltip("Essential resource monitored by the Atlas scarcity directive owner.")]
+            public ItemData item;
+
+            [Tooltip("Quest activates when the player's carried quantity falls below this threshold.")]
+            [Min(0)] public int criticalThreshold;
+
+            [Tooltip("Minimum harvest quantity required to complete the directive once active.")]
+            [Min(1)] public int directiveHarvestUnits;
+
+            [Tooltip("Optional explicit directive title. Falls back to a generated Atlas-6 title when left empty.")]
+            public string directiveTitle;
+
+            [Tooltip("Optional explicit directive description. Falls back to a generated scarcity description when left empty.")]
+            [TextArea(2, 4)] public string directiveDescription;
+
+            [Tooltip("Optional stable marker target ID. Leave empty to use the nearest remembered cluster position.")]
+            public string markerTargetId;
+
+            [Tooltip("Vertical marker offset above the resolved remembered cluster.")]
+            [Min(0f)] public float markerHeightOffset;
+
+            [Tooltip("Optional narrative phase gate applied to the generated directive.")]
+            public QuestPhaseGateType phaseGate;
+        }
+
+        private struct ResourceClusterRecord
+        {
+            public int ItemHashId;
+            public int ObservationCount;
+            public Vector3 Position;
+        }
+
+        private struct SectorExtractionRecord
+        {
+            public int ItemHashId;
+            public int SectorKey;
+            public int ExtractedUnits;
+        }
 
         private static ResourceScarcityDirector _instance;
 
-        // COLD ALLOC: Dictionary<string,int>[64] - cumulative collected raw-resource counts by stable item ID - owner: ResourceScarcityDirector
-        private readonly Dictionary<string, int> _collectedByItemId =
-            new Dictionary<string, int>(InitialTrackedCapacity, System.StringComparer.Ordinal);
+        [Header("── Scarcity Curve ──────────────────")]
+        [Tooltip("Optional sector-local inflation profile that lowers value and spawn-rate after repeated extraction from one sector.")]
+        [SerializeField] private EconomyInflationProfile inflationProfile;
+
+        [Header("── Atlas Directives ─────────────────")]
+        [Tooltip("Essential resources that spawn procedural Atlas-6 scarcity directives when the player's stock falls too low.")]
+        [SerializeField] private DirectiveResourceDefinition[] directiveResources = Array.Empty<DirectiveResourceDefinition>();
+
+        // COLD ALLOC: Dictionary<int,int>[64] - cumulative collected raw-resource counts by stable item hash - owner: ResourceScarcityDirector
+        private readonly Dictionary<int, int> _collectedByItemHash = new Dictionary<int, int>(InitialTrackedCapacity);
+        // COLD ALLOC: Dictionary<int,string>[64] - stable item ID lookup for save serialization and diagnostics - owner: ResourceScarcityDirector
+        private readonly Dictionary<int, string> _itemIdsByHash = new Dictionary<int, string>(InitialTrackedCapacity);
+        // COLD ALLOC: ResourceClusterRecord[32] - remembered harvest clusters grouped by directive resource slice - owner: ResourceScarcityDirector
+        private readonly ResourceClusterRecord[] _knownClusters = new ResourceClusterRecord[MaxDirectiveResources * KnownClustersPerResource];
+        // COLD ALLOC: SectorExtractionRecord[64] - sector-local extraction totals used by inflation lookups - owner: ResourceScarcityDirector
+        private readonly SectorExtractionRecord[] _sectorExtractionRecords = new SectorExtractionRecord[MaxSectorExtractionRecords];
+        // COLD ALLOC: int[8] - cached directive resource item hashes - owner: ResourceScarcityDirector
+        private readonly int[] _directiveItemHashes = new int[MaxDirectiveResources];
+        // COLD ALLOC: uint[8] - cached scarcity directive quest hashes - owner: ResourceScarcityDirector
+        private readonly uint[] _directiveQuestHashes = new uint[MaxDirectiveResources];
+        // COLD ALLOC: uint[8] - cached directive marker target hashes - owner: ResourceScarcityDirector
+        private readonly uint[] _directiveMarkerTargetHashes = new uint[MaxDirectiveResources];
+        // COLD ALLOC: string[8] - cached directive titles - owner: ResourceScarcityDirector
+        private readonly string[] _directiveTitles = new string[MaxDirectiveResources];
+        // COLD ALLOC: string[8] - cached directive descriptions - owner: ResourceScarcityDirector
+        private readonly string[] _directiveDescriptions = new string[MaxDirectiveResources];
 
         private HectonEventSubscription _itemCollectedSubscription;
+        private bool _registeredSlowTickable;
 
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
@@ -54,11 +129,14 @@ namespace Hecton8.Economy
             }
 
             _instance = this;
+            CacheDirectiveDefinitions();
         }
 
         private void OnEnable()
         {
             SaveManager.Instance?.Register(this);
+            TryRegisterSlowTickable();
+            CacheDirectiveDefinitions();
 
             if (_itemCollectedSubscription == null)
                 _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, "economy.scarcity");
@@ -67,6 +145,7 @@ namespace Hecton8.Economy
         private void OnDisable()
         {
             SaveManager.Instance?.Unregister(this);
+            TryUnregisterSlowTickable();
             _itemCollectedSubscription?.Dispose();
             _itemCollectedSubscription = null;
         }
@@ -74,11 +153,20 @@ namespace Hecton8.Economy
         private void OnDestroy()
         {
             SaveManager.Instance?.Unregister(this);
+            TryUnregisterSlowTickable();
             _itemCollectedSubscription?.Dispose();
             _itemCollectedSubscription = null;
 
             if (_instance == this)
                 _instance = null;
+        }
+
+        /// <summary>
+        /// Evaluates the scarcity-driven directive table against current carried inventory.
+        /// </summary>
+        public void SlowTick()
+        {
+            EvaluateScarcityDirectives();
         }
 
         /// <summary>
@@ -125,7 +213,8 @@ namespace Hecton8.Economy
             if (string.IsNullOrWhiteSpace(itemId))
                 return 1f;
 
-            if (!_collectedByItemId.TryGetValue(itemId, out int collectedCount) || collectedCount <= 0)
+            int itemHashId = LocHash.Compute(itemId);
+            if (!_collectedByItemHash.TryGetValue(itemHashId, out int collectedCount) || collectedCount <= 0)
                 return 1f;
 
             int scarcitySteps = collectedCount / UnitsPerScarcityStep;
@@ -133,6 +222,51 @@ namespace Hecton8.Economy
                 return 1f;
 
             return Mathf.Clamp(1f + scarcitySteps * ScarcityStepMultiplier, 1f, MaxIngredientMultiplier);
+        }
+
+        /// <summary>
+        /// Returns the sector-local spawn-rate scalar for one resource.
+        /// </summary>
+        public float GetSectorSpawnRateScalar(int itemHashId, Vector3 worldPosition)
+        {
+            if (inflationProfile == null || itemHashId == 0)
+                return 1f;
+
+            return inflationProfile.EvaluateSpawnRateScalar(itemHashId, GetSectorExtractedUnits(itemHashId, worldPosition));
+        }
+
+        /// <summary>
+        /// Returns the sector-local value scalar for one resource.
+        /// </summary>
+        public float GetSectorValueScalar(int itemHashId, Vector3 worldPosition)
+        {
+            if (inflationProfile == null || itemHashId == 0)
+                return 1f;
+
+            return inflationProfile.EvaluateValueScalar(itemHashId, GetSectorExtractedUnits(itemHashId, worldPosition));
+        }
+
+        /// <summary>
+        /// Returns the sector-local crafting surcharge ratio for one resource.
+        /// </summary>
+        public float GetSectorCraftInflationScalar(int itemHashId, Vector3 worldPosition)
+        {
+            if (inflationProfile == null || itemHashId == 0)
+                return 0f;
+
+            return inflationProfile.EvaluateCraftInflationScalar(itemHashId, GetSectorExtractedUnits(itemHashId, worldPosition));
+        }
+
+        /// <summary>
+        /// Resolves the inflated ingredient amount for the supplied sector.
+        /// </summary>
+        public int ResolveInflatedIngredientAmount(int itemHashId, int baseAmount, Vector3 worldPosition)
+        {
+            if (itemHashId == 0 || baseAmount <= 0)
+                return Mathf.Max(0, baseAmount);
+
+            float multiplier = 1f + GetSectorCraftInflationScalar(itemHashId, worldPosition);
+            return Mathf.Max(baseAmount, Mathf.CeilToInt(baseAmount * multiplier));
         }
 
         private void HandleItemCollected(ItemCollectedEvent itemCollectedEvent)
@@ -144,14 +278,27 @@ namespace Hecton8.Economy
             if (!item.isRawResource && item.category != ItemCategory.Material)
                 return;
 
-            string itemId = item.PersistentId;
-            if (string.IsNullOrWhiteSpace(itemId))
+            int itemHashId = itemCollectedEvent.ItemHashId != 0
+                ? itemCollectedEvent.ItemHashId
+                : LocHash.Compute(item.PersistentId);
+            if (itemHashId == 0)
                 return;
 
-            if (_collectedByItemId.TryGetValue(itemId, out int currentCount))
-                _collectedByItemId[itemId] = currentCount + itemCollectedEvent.Quantity;
+            if (_collectedByItemHash.TryGetValue(itemHashId, out int currentCount))
+                _collectedByItemHash[itemHashId] = currentCount + itemCollectedEvent.Quantity;
             else
-                _collectedByItemId[itemId] = itemCollectedEvent.Quantity;
+                _collectedByItemHash[itemHashId] = itemCollectedEvent.Quantity;
+
+            _itemIdsByHash[itemHashId] = item.PersistentId;
+
+            if (itemCollectedEvent.Interactor != null)
+            {
+                Vector3 position = itemCollectedEvent.Interactor.position;
+                TrackKnownCluster(itemHashId, position);
+                AccumulateSectorExtraction(itemHashId, position, itemCollectedEvent.Quantity);
+            }
+
+            EvaluateScarcityDirectives();
         }
 
         /// <inheritdoc />
@@ -164,13 +311,17 @@ namespace Hecton8.Economy
             dto.EnsureCapacity();
             dto.entryCount = 0;
 
-            Dictionary<string, int>.Enumerator enumerator = _collectedByItemId.GetEnumerator();
+            Dictionary<int, int>.Enumerator enumerator = _collectedByItemHash.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 if (dto.entryCount >= ResourceScarcityDTO.MaxTrackedResources)
                     break;
 
-                dto.itemIds[dto.entryCount] = enumerator.Current.Key;
+                int itemHashId = enumerator.Current.Key;
+                if (!_itemIdsByHash.TryGetValue(itemHashId, out string itemId) || string.IsNullOrWhiteSpace(itemId))
+                    continue;
+
+                dto.itemIds[dto.entryCount] = itemId;
                 dto.collectedCounts[dto.entryCount] = Mathf.Max(0, enumerator.Current.Value);
                 dto.entryCount++;
             }
@@ -179,7 +330,10 @@ namespace Hecton8.Economy
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
-            _collectedByItemId.Clear();
+            _collectedByItemHash.Clear();
+            _itemIdsByHash.Clear();
+            Array.Clear(_knownClusters, 0, _knownClusters.Length);
+            Array.Clear(_sectorExtractionRecords, 0, _sectorExtractionRecords.Length);
 
             if (data == null)
                 return;
@@ -195,11 +349,310 @@ namespace Hecton8.Economy
                 if (string.IsNullOrWhiteSpace(itemId))
                     continue;
 
+                int itemHashId = LocHash.Compute(itemId);
+                if (itemHashId == 0)
+                    continue;
+
                 int collectedCount = Mathf.Max(0, dto.collectedCounts[i]);
                 if (collectedCount <= 0)
                     continue;
 
-                _collectedByItemId[itemId] = collectedCount;
+                _collectedByItemHash[itemHashId] = collectedCount;
+                _itemIdsByHash[itemHashId] = itemId;
+            }
+        }
+
+        private void EvaluateScarcityDirectives()
+        {
+            if (directiveResources == null || directiveResources.Length <= 0)
+                return;
+
+            QuestManager questManager = QuestManager.Instance;
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
+            if (questManager == null || inventory == null)
+                return;
+
+            Transform playerTransform = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerTransform : null;
+            Vector3 playerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+            int definitionCount = Mathf.Min(directiveResources.Length, MaxDirectiveResources);
+            for (int definitionIndex = 0; definitionIndex < definitionCount; definitionIndex++)
+            {
+                DirectiveResourceDefinition definition = directiveResources[definitionIndex];
+                int itemHashId = _directiveItemHashes[definitionIndex];
+                if (itemHashId == 0)
+                    continue;
+
+                uint questHash = _directiveQuestHashes[definitionIndex];
+                uint markerTargetHash = _directiveMarkerTargetHashes[definitionIndex];
+                Vector3 markerWorldPosition = default;
+                if (markerTargetHash == 0u)
+                    TryResolveNearestKnownCluster(itemHashId, playerPosition, out markerWorldPosition);
+
+                bool shouldActivate = inventory.CountTotal(itemHashId) < Mathf.Max(0, definition.criticalThreshold);
+                if (!questManager.UpsertProceduralDirective(
+                        questHash,
+                        (uint)itemHashId,
+                        _directiveTitles[definitionIndex],
+                        _directiveDescriptions[definitionIndex],
+                        markerTargetHash,
+                        markerWorldPosition,
+                        Mathf.Max(0f, definition.markerHeightOffset),
+                        definition.phaseGate,
+                        Mathf.Max(1, definition.directiveHarvestUnits),
+                        shouldActivate,
+                        out bool activatedNow))
+                {
+                    continue;
+                }
+
+                if (activatedNow)
+                    Atlas6Events.RaiseScarcityDirective(questHash, unchecked((uint)itemHashId));
+            }
+        }
+
+        private int ResolveDirectiveItemHash(DirectiveResourceDefinition definition)
+        {
+            return definition.item != null && !string.IsNullOrWhiteSpace(definition.item.PersistentId)
+                ? LocHash.Compute(definition.item.PersistentId)
+                : 0;
+        }
+
+        private string ResolveDirectiveTitle(DirectiveResourceDefinition definition)
+        {
+            if (!string.IsNullOrWhiteSpace(definition.directiveTitle))
+                return definition.directiveTitle;
+
+            string itemName = definition.item != null ? definition.item.itemName : "RESOURCE";
+            return $"ATLAS-6 DIRECTIVE: RESTOCK {itemName.ToUpperInvariant()}";
+        }
+
+        private string ResolveDirectiveDescription(DirectiveResourceDefinition definition)
+        {
+            if (!string.IsNullOrWhiteSpace(definition.directiveDescription))
+                return definition.directiveDescription;
+
+            string itemName = definition.item != null ? definition.item.itemName : "critical structural stock";
+            return $"Recovered stock is below Atlas-6 operating threshold. Harvest additional {itemName} to stabilize fabrication reserves.";
+        }
+
+        private void TrackKnownCluster(int itemHashId, Vector3 worldPosition)
+        {
+            int definitionIndex = FindDirectiveDefinitionIndex(itemHashId);
+            if (definitionIndex < 0)
+                return;
+
+            int sliceStart = definitionIndex * KnownClustersPerResource;
+            int bestSlot = -1;
+            float bestDistanceSq = float.MaxValue;
+            for (int i = 0; i < KnownClustersPerResource; i++)
+            {
+                int slot = sliceStart + i;
+                ResourceClusterRecord record = _knownClusters[slot];
+                if (record.ItemHashId == 0)
+                {
+                    bestSlot = slot;
+                    break;
+                }
+
+                if (record.ItemHashId != itemHashId)
+                    continue;
+
+                float distanceSq = (record.Position - worldPosition).sqrMagnitude;
+                if (distanceSq < 64f)
+                {
+                    record.ObservationCount++;
+                    record.Position = Vector3.Lerp(record.Position, worldPosition, 1f / Mathf.Max(1, record.ObservationCount));
+                    _knownClusters[slot] = record;
+                    return;
+                }
+
+                if (distanceSq < bestDistanceSq)
+                {
+                    bestDistanceSq = distanceSq;
+                    bestSlot = slot;
+                }
+            }
+
+            if (bestSlot < 0)
+                return;
+
+            _knownClusters[bestSlot] = new ResourceClusterRecord
+            {
+                ItemHashId = itemHashId,
+                ObservationCount = 1,
+                Position = worldPosition
+            };
+        }
+
+        private bool TryResolveNearestKnownCluster(int itemHashId, Vector3 origin, out Vector3 clusterPosition)
+        {
+            clusterPosition = default;
+            int definitionIndex = FindDirectiveDefinitionIndex(itemHashId);
+            if (definitionIndex < 0)
+                return false;
+
+            int sliceStart = definitionIndex * KnownClustersPerResource;
+            int bestSlot = -1;
+            float bestDistanceSq = float.MaxValue;
+            for (int i = 0; i < KnownClustersPerResource; i++)
+            {
+                int slot = sliceStart + i;
+                ResourceClusterRecord record = _knownClusters[slot];
+                if (record.ItemHashId != itemHashId)
+                    continue;
+
+                float distanceSq = (record.Position - origin).sqrMagnitude;
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                bestSlot = slot;
+            }
+
+            if (bestSlot < 0)
+                return false;
+
+            clusterPosition = _knownClusters[bestSlot].Position;
+            return true;
+        }
+
+        private int FindDirectiveDefinitionIndex(int itemHashId)
+        {
+            if (itemHashId == 0 || directiveResources == null)
+                return -1;
+
+            int count = Mathf.Min(directiveResources.Length, MaxDirectiveResources);
+            for (int i = 0; i < count; i++)
+            {
+                if (ResolveDirectiveItemHash(directiveResources[i]) == itemHashId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void AccumulateSectorExtraction(int itemHashId, Vector3 worldPosition, int quantity)
+        {
+            if (itemHashId == 0 || quantity <= 0)
+                return;
+
+            int sectorKey = PackSectorKey(worldPosition);
+            int firstFreeSlot = -1;
+            for (int i = 0; i < _sectorExtractionRecords.Length; i++)
+            {
+                SectorExtractionRecord record = _sectorExtractionRecords[i];
+                if (record.ItemHashId == 0)
+                {
+                    if (firstFreeSlot < 0)
+                        firstFreeSlot = i;
+                    continue;
+                }
+
+                if (record.ItemHashId != itemHashId || record.SectorKey != sectorKey)
+                    continue;
+
+                record.ExtractedUnits += quantity;
+                _sectorExtractionRecords[i] = record;
+                return;
+            }
+
+            if (firstFreeSlot < 0)
+                return;
+
+            _sectorExtractionRecords[firstFreeSlot] = new SectorExtractionRecord
+            {
+                ItemHashId = itemHashId,
+                SectorKey = sectorKey,
+                ExtractedUnits = quantity
+            };
+        }
+
+        private int GetSectorExtractedUnits(int itemHashId, Vector3 worldPosition)
+        {
+            if (itemHashId == 0)
+                return 0;
+
+            int sectorKey = PackSectorKey(worldPosition);
+            for (int i = 0; i < _sectorExtractionRecords.Length; i++)
+            {
+                SectorExtractionRecord record = _sectorExtractionRecords[i];
+                if (record.ItemHashId == itemHashId && record.SectorKey == sectorKey)
+                    return record.ExtractedUnits;
+            }
+
+            return 0;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTickable)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTickable = true;
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTickable)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTickable = false;
+        }
+
+        private static uint BuildDirectiveQuestHash(int itemHashId)
+        {
+            unchecked
+            {
+                uint hash = QuestFlagHashKernel.ComputeStableHash("atlas.directive.scarcity");
+                uint value = (uint)itemHashId;
+                hash ^= value & 0xFFu;
+                hash *= LocHash.FnvPrime;
+                hash ^= (value >> 8) & 0xFFu;
+                hash *= LocHash.FnvPrime;
+                hash ^= (value >> 16) & 0xFFu;
+                hash *= LocHash.FnvPrime;
+                hash ^= (value >> 24) & 0xFFu;
+                hash *= LocHash.FnvPrime;
+                return hash;
+            }
+        }
+
+        private static int PackSectorKey(Vector3 worldPosition)
+        {
+            int sectorX = Mathf.FloorToInt(worldPosition.x / SectorEdgeLengthMeters);
+            int sectorZ = Mathf.FloorToInt(worldPosition.z / SectorEdgeLengthMeters);
+            unchecked
+            {
+                return (sectorX * 73856093) ^ (sectorZ * 19349663);
+            }
+        }
+
+        private void CacheDirectiveDefinitions()
+        {
+            Array.Clear(_directiveItemHashes, 0, _directiveItemHashes.Length);
+            Array.Clear(_directiveQuestHashes, 0, _directiveQuestHashes.Length);
+            Array.Clear(_directiveMarkerTargetHashes, 0, _directiveMarkerTargetHashes.Length);
+            Array.Clear(_directiveTitles, 0, _directiveTitles.Length);
+            Array.Clear(_directiveDescriptions, 0, _directiveDescriptions.Length);
+
+            if (directiveResources == null)
+                return;
+
+            int count = Mathf.Min(directiveResources.Length, MaxDirectiveResources);
+            for (int i = 0; i < count; i++)
+            {
+                DirectiveResourceDefinition definition = directiveResources[i];
+                int itemHashId = ResolveDirectiveItemHash(definition);
+                _directiveItemHashes[i] = itemHashId;
+                _directiveQuestHashes[i] = itemHashId != 0 ? BuildDirectiveQuestHash(itemHashId) : 0u;
+                _directiveMarkerTargetHashes[i] = QuestFlagHashKernel.ComputeStableHash(definition.markerTargetId);
+                _directiveTitles[i] = ResolveDirectiveTitle(definition);
+                _directiveDescriptions[i] = ResolveDirectiveDescription(definition);
             }
         }
     }

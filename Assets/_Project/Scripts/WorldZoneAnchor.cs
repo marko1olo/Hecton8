@@ -1,5 +1,6 @@
 using Hecton8.Environment;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -158,30 +159,52 @@ namespace Hecton8.World
 
         public float GetFlatDistance(Vector3 playerPosition)
         {
-            Vector3 delta = transform.position - playerPosition;
-            delta.y = 0f;
-            return delta.magnitude;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return GetFlatDistance(in playerAup);
         }
 
         public float GetFlatDistanceSquared(Vector3 playerPosition)
         {
-            Vector3 delta = transform.position - playerPosition;
-            delta.y = 0f;
-            return delta.sqrMagnitude;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return GetFlatDistanceSquared(in playerAup);
+        }
+
+        internal float GetFlatDistance(in AbsoluteUniversePosition playerPosition)
+        {
+            double flatDistanceSq = GetFlatDistanceSquaredInternal(in playerPosition);
+            return flatDistanceSq > 0d ? (float)System.Math.Sqrt(flatDistanceSq) : 0f;
+        }
+
+        internal float GetFlatDistanceSquared(in AbsoluteUniversePosition playerPosition)
+        {
+            double flatDistanceSq = GetFlatDistanceSquaredInternal(in playerPosition);
+            return flatDistanceSq > float.MaxValue ? float.MaxValue : (float)flatDistanceSq;
         }
 
         public float EvaluateActivationWeight(Vector3 playerPosition)
         {
-            float distance = GetFlatDistance(playerPosition);
-            float noisyRadius = activationRadius * EvaluateNoiseRadiusMultiplier(playerPosition);
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return EvaluateActivationWeight(in playerAup);
+        }
+
+        internal float EvaluateActivationWeight(in AbsoluteUniversePosition playerPosition)
+        {
+            float distance = GetFlatDistance(in playerPosition);
+            float noisyRadius = activationRadius * EvaluateNoiseRadiusMultiplier(in playerPosition);
             float blend = Mathf.Max(4f, edgeBlendDistance);
             return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
         }
 
         public float EvaluateHoldWeight(Vector3 playerPosition)
         {
-            float distance = GetFlatDistance(playerPosition);
-            float noisyRadius = holdRadius * EvaluateNoiseRadiusMultiplier(playerPosition);
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return EvaluateHoldWeight(in playerAup);
+        }
+
+        internal float EvaluateHoldWeight(in AbsoluteUniversePosition playerPosition)
+        {
+            float distance = GetFlatDistance(in playerPosition);
+            float noisyRadius = holdRadius * EvaluateNoiseRadiusMultiplier(in playerPosition);
             float blend = Mathf.Max(4f, edgeBlendDistance);
             return EvaluateRadiusWeightFromDistance(distance, noisyRadius, blend);
         }
@@ -237,11 +260,28 @@ namespace Hecton8.World
 
         private float EvaluateNoiseRadiusMultiplier(Vector3 playerPosition)
         {
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return EvaluateNoiseRadiusMultiplier(in playerAup);
+        }
+
+        private float EvaluateNoiseRadiusMultiplier(in AbsoluteUniversePosition playerPosition)
+        {
+            double3 absolutePosition = playerPosition.ToAbsoluteDouble3();
             float scale = Mathf.Max(0.0001f, edgeNoiseScale);
-            Vector2 sample = new Vector2(playerPosition.x, playerPosition.z) * scale + edgeNoiseOffset;
+            Vector2 sample = new Vector2((float)absolutePosition.x, (float)absolutePosition.z) * scale + edgeNoiseOffset;
             float noise = Mathf.PerlinNoise(sample.x, sample.y);
             float centered = (noise - 0.5f) * 2f;
             return Mathf.Clamp(1f + centered * edgeNoiseStrength, 0.75f, 1.35f);
+        }
+
+        private double GetFlatDistanceSquaredInternal(in AbsoluteUniversePosition playerPosition)
+        {
+            AbsoluteUniversePosition anchorPosition = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            double3 anchorAbsolute = anchorPosition.ToAbsoluteDouble3();
+            double3 playerAbsolute = playerPosition.ToAbsoluteDouble3();
+            double deltaX = anchorAbsolute.x - playerAbsolute.x;
+            double deltaZ = anchorAbsolute.z - playerAbsolute.z;
+            return (deltaX * deltaX) + (deltaZ * deltaZ);
         }
 
         private static void RegisterActiveAnchor(WorldZoneAnchor anchor)

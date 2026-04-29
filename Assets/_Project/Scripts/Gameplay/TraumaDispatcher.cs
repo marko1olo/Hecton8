@@ -22,11 +22,6 @@ namespace Hecton8.Gameplay
         private const float VehicleLeakOxygenDrainMultiplier = 1.25f;
         private const float FloodThermalThreshold = 0.3f;
         private const float FloodedInsulationFactor = 0.2f;
-        private const float RadiationFatigueExposureThresholdSeconds = 60f;
-        private const float RadiationFatigueFullDoseWindowSeconds = 90f;
-        private const float RadiationFatigueExposureDecayPerSecond = 0.5f;
-        private const float RadiationFatigueMinimumMaxHealthScale = 0.65f;
-        private const float RadiationFatigueBlendSharpness = 2.4f;
         private const float RadiationFatigueSignalThreshold = 0.05f;
 
         private HectonSurvivalSystem _survivalSystem;
@@ -51,7 +46,6 @@ namespace Hecton8.Gameplay
         private int _lastPublishedTraumaSignature = int.MinValue;
         private int _lastPublishedInteractionSignature = int.MinValue;
         private float _radiationExposureSeconds;
-        private float _radiationFatigueMaxHealthScale = 1f;
 
         /// <summary>Current integrity trauma channel intensity.</summary>
         public float IntegrityChannel01 => _integrityChannel01;
@@ -182,7 +176,8 @@ namespace Hecton8.Gameplay
             PromoteChannel(ref _integrityChannel01, Mathf.Max(Mathf.Abs(next - prev), src.integrityDelta / (float)byte.MaxValue));
 
             if (src.sourceID == DamageSourceIds.MountableTransport ||
-                src.sourceID == DamageSourceIds.MantaScooter)
+                src.sourceID == DamageSourceIds.MantaScooter ||
+                src.sourceID == DamageSourceIds.SubmarineImpact)
             {
                 _activeTransportIntegrityNormalized = Mathf.Clamp01(next);
                 if ((src.damageType & (uint)DamageTypeMask.Impact) != 0u)
@@ -376,9 +371,8 @@ namespace Hecton8.Gameplay
         private void ResetRadiationFatigue()
         {
             _radiationExposureSeconds = 0f;
-            _radiationFatigueMaxHealthScale = 1f;
             if (_playerHealth != null)
-                _playerHealth.SetRuntimeMaxHealthScale(1f);
+                _playerHealth.ClearRadiationFatigue();
         }
 
         private void PublishSignals(bool force)
@@ -481,34 +475,11 @@ namespace Hecton8.Gameplay
                 return;
 
             float radiationSignal = Mathf.Clamp01(_hazardRadiationSignal01);
-            if (radiationSignal > RadiationFatigueSignalThreshold)
-            {
-                _radiationExposureSeconds += deltaTime * Mathf.Lerp(0.35f, 1f, radiationSignal);
-            }
-            else
-            {
-                _radiationExposureSeconds = Mathf.Max(
-                    0f,
-                    _radiationExposureSeconds - (RadiationFatigueExposureDecayPerSecond * Mathf.Max(0f, deltaTime)));
-            }
-
-            float targetMaxHealthScale = 1f;
-            if (_radiationExposureSeconds > RadiationFatigueExposureThresholdSeconds)
-            {
-                float fatigueT = Mathf.InverseLerp(
-                    RadiationFatigueExposureThresholdSeconds,
-                    RadiationFatigueExposureThresholdSeconds + RadiationFatigueFullDoseWindowSeconds,
-                    _radiationExposureSeconds);
-                targetMaxHealthScale = Mathf.Lerp(1f, RadiationFatigueMinimumMaxHealthScale, fatigueT);
-            }
-
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, RadiationFatigueBlendSharpness) * Mathf.Max(0f, deltaTime));
-            float nextScale = Mathf.Lerp(_radiationFatigueMaxHealthScale, targetMaxHealthScale, blendT);
-            if (Mathf.Approximately(nextScale, _radiationFatigueMaxHealthScale))
+            if (radiationSignal <= RadiationFatigueSignalThreshold)
                 return;
 
-            _radiationFatigueMaxHealthScale = nextScale;
-            _playerHealth.SetRuntimeMaxHealthScale(_radiationFatigueMaxHealthScale);
+            _radiationExposureSeconds += Mathf.Max(0f, deltaTime) * radiationSignal;
+            _playerHealth.ApplyRadiationExposure(_radiationExposureSeconds);
         }
 
         private static float ResolveTraumaImpulse(TraumaLevel level)

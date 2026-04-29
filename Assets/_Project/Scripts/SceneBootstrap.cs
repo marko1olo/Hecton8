@@ -45,21 +45,48 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Optimization;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using Unity.Collections;
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Hecton8.Bootstrap
 {
+    public enum SceneBootstrapEventType : byte
+    {
+        GameReady = 0,
+        BootstrapFailed = 1
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SceneBootstrapEventPayload
+    {
+        public uint ErrorHash;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    public interface ISceneBootstrapEventListener
+    {
+        void OnSceneBootstrapEvent(in SceneBootstrapEventPayload payload);
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-20000)] // Раньше ВСЕХ игровых систем
     public sealed class SceneBootstrap : MonoBehaviour
     {
+        // COLD ALLOC: RegistryBucket<ISceneBootstrapEventListener>[12] - bootstrap listeners drained on dispatcher LateUpdate - owner: SceneBootstrap
+        private static readonly RegistryBucket<ISceneBootstrapEventListener> _listeners = new RegistryBucket<ISceneBootstrapEventListener>(12);
+        // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: SceneBootstrap
+        private static readonly Dictionary<uint, string> _failureReasonsByHash = new Dictionary<uint, string>(8);
+        private static NativeQueue<SceneBootstrapEventPayload> _pendingEvents;
+
         // ══════════════════════════════════════════════════════════
         //  STATIC EVENTS
         // ══════════════════════════════════════════════════════════
@@ -74,8 +101,6 @@ namespace Hecton8.Bootstrap
         ///   • Tutorial — показать первую подсказку
         ///   • Input System — разблокировать управление
         /// </summary>
-        public static event Action OnGameReady;
-
         /// <summary>
         /// Indicates that bootstrap fully completed and heavyweight runtime world
         /// systems may start reacting to the final player state.
@@ -106,15 +131,104 @@ namespace Hecton8.Bootstrap
         /// или при превышении таймаута.
         /// Param: описание ошибки.
         /// </summary>
-        public static event Action<string> OnBootstrapFailed;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnGameReady = null;
-            OnBootstrapFailed = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _failureReasonsByHash.Clear();
             BootstrapState.Reset();
             ActiveInstance = null;
+        }
+
+        public static void Register(ISceneBootstrapEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureEventQueueInitialized();
+            _listeners.Register(listener);
+        }
+
+        public static void Unregister(ISceneBootstrapEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            _listeners.Unregister(listener);
+        }
+
+        public static void FlushPendingEvents()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainPendingEventsWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out SceneBootstrapEventPayload payload))
+            {
+                ISceneBootstrapEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnSceneBootstrapEvent(in payload);
+            }
+        }
+
+        public static bool TryResolveBootstrapFailureReason(uint errorHash, out string reason)
+        {
+            return _failureReasonsByHash.TryGetValue(errorHash, out reason);
+        }
+
+        private static void EnsureEventQueueInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<SceneBootstrapEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SceneBootstrapEventPayload>[12] - deferred bootstrap event lane flushed by SystemDispatcher LateUpdate - owner: SceneBootstrap
+            }
+        }
+
+        private static void RaiseGameReadyEvent()
+        {
+            EnsureEventQueueInitialized();
+            _pendingEvents.Enqueue(new SceneBootstrapEventPayload
+            {
+                ErrorHash = 0u,
+                EventType = (ushort)SceneBootstrapEventType.GameReady,
+                Reserved = 0
+            });
+        }
+
+        private static void RaiseBootstrapFailedEvent(string error)
+        {
+            uint errorHash = string.IsNullOrWhiteSpace(error)
+                ? 0u
+                : unchecked((uint)Hecton.Localization.LocHash.Compute(error));
+            if (errorHash != 0u && !_failureReasonsByHash.ContainsKey(errorHash))
+                _failureReasonsByHash.Add(errorHash, error);
+
+            EnsureEventQueueInitialized();
+            _pendingEvents.Enqueue(new SceneBootstrapEventPayload
+            {
+                ErrorHash = errorHash,
+                EventType = (ushort)SceneBootstrapEventType.BootstrapFailed,
+                Reserved = 0
+            });
+        }
+
+        private static void DrainPendingEventsWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -402,7 +516,7 @@ namespace Hecton8.Bootstrap
                 Log("═══════════════════════════════════════════════");
 
                 BootstrapState.PublishGameReady(true);
-                OnGameReady?.Invoke();
+                RaiseGameReadyEvent();
             }
             catch (OperationCanceledException)
             {
@@ -1383,7 +1497,7 @@ namespace Hecton8.Bootstrap
         private void Fail(string error)
         {
             Debug.LogError($"[SceneBootstrap] {error}");
-            OnBootstrapFailed?.Invoke(error);
+            RaiseBootstrapFailedEvent(error);
         }
 
         /// <summary>

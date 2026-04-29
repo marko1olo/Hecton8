@@ -533,6 +533,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
                 half ambientOcclusion = saturate(maskSample.g * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
+                HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
 
                 half3 litColor = EvaluateLighting(input.positionWS, normalWS, SafeNormalize3(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);
                 half thermalEmission = _CutScarEmission * recentHeatMask * lerp(0.22h, 1.0h, saturate(1.0h - recentHeatAge01));

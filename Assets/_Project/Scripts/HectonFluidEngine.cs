@@ -39,6 +39,8 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Bootstrap;
+using Hecton8.Environment;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -54,12 +56,16 @@ namespace Hecton8.Physics
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable
+    public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable
     {
 #if UNITY_EDITOR
         private const string GpuBuoyancyComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_GpuBuoyancy.compute";
+        private const string AbyssalFlowFieldComputeAssetPath = "Assets/_Project/Art/Shaders/AbyssalFlowField.compute";
 #endif
+        private const float AbyssalFlowThermoclineDepthMeters = 120f;
         private const int GpuReadbackRingSize = 3;
+        private const int MaxAbyssalHeatSourceCount = 8;
+        private const float AbyssalBiolumeSurgeHoldSeconds = 4f;
         private const string NonFiniteBuoyancyForceLog = "[HectonFluidEngine] Non-finite buoyancy force output detected. Zeroing packet.";
         private const string NonFiniteBuoyancyTorqueLog = "[HectonFluidEngine] Non-finite buoyancy torque output detected. Zeroing packet.";
 
@@ -70,6 +76,15 @@ namespace Hecton8.Physics
             public float Height;
             public float IsInAir;
             public float SimplifiedSubmersion;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct GpuHeatSourceData
+        {
+            public float3 PositionWS;
+            public float Intensity;
+            public float Radius;
+            public float3 Padding;
         }
 
         private static readonly int _GpuBuoyancyPositionsId = Shader.PropertyToID("_GpuBuoyancyPositions");
@@ -83,10 +98,24 @@ namespace Hecton8.Physics
         private static readonly int _GpuBuoyancyWave1BId = Shader.PropertyToID("_GpuBuoyancyWave1B");
         private static readonly int _GpuBuoyancyWave2AId = Shader.PropertyToID("_GpuBuoyancyWave2A");
         private static readonly int _GpuBuoyancyWave2BId = Shader.PropertyToID("_GpuBuoyancyWave2B");
+        private static readonly int _AbyssalFlowFieldResultId = Shader.PropertyToID("_AbyssalFlowFieldResult");
+        private static readonly int _AbyssalHeatSourcesId = Shader.PropertyToID("_AbyssalHeatSources");
+        private static readonly int _AbyssalAggregateMaskId = Shader.PropertyToID("_AbyssalAggregateMask");
+        private static readonly int _AbyssalGridResolutionId = Shader.PropertyToID("_AbyssalGridResolution");
+        private static readonly int _AbyssalFlowCenterId = Shader.PropertyToID("_AbyssalFlowCenter");
+        private static readonly int _AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
+        private static readonly int _AbyssalFlowWeatherCurrentId = Shader.PropertyToID("_AbyssalFlowWeatherCurrent");
+        private static readonly int _AbyssalFlowWeatherWindId = Shader.PropertyToID("_AbyssalFlowWeatherWind");
+        private static readonly int _AbyssalFlowWeatherParamsId = Shader.PropertyToID("_AbyssalFlowWeatherParams");
+        private static readonly int _AbyssalFlowSurfaceYId = Shader.PropertyToID("_AbyssalFlowSurfaceY");
+        private static readonly int _AbyssalFlowThermoclineYId = Shader.PropertyToID("_AbyssalFlowThermoclineY");
+        private static readonly int _AbyssalFlowHeatSourceCountId = Shader.PropertyToID("_AbyssalFlowHeatSourceCount");
+        private static readonly int _AbyssalFlowWeatherStateMaskId = Shader.PropertyToID("_AbyssalFlowWeatherStateMask");
         private static readonly ProfilerMarker _gatherDataProfilerMarker = new ProfilerMarker("H8.Fluid.GatherData");
         private static readonly ProfilerMarker _jobScheduleProfilerMarker = new ProfilerMarker("H8.Fluid.ScheduleBuoyancyJob");
         private static readonly ProfilerMarker _scheduledApplyProfilerMarker = new ProfilerMarker("H8.Fluid.ApplyScheduledForces");
         private static readonly ProfilerMarker _gpuReadbackProfilerMarker = new ProfilerMarker("H8.Fluid.ConsumeGpuReadback");
+        private static readonly ProfilerMarker _gpuAbyssalReadbackProfilerMarker = new ProfilerMarker("H8.Fluid.ConsumeAbyssalReadback");
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -175,11 +204,21 @@ namespace Hecton8.Physics
         [SerializeField] private bool drawLodGizmos = true;
         [SerializeField] private bool drawCurrentVectors = true;
         [SerializeField] private float gizmoCurrentVectorScale = 4f;
+        [SerializeField] private uint _debugAbyssalAggregateMask;
+        [SerializeField] private int _debugAbyssalHeatSourceCount;
 
         [Header("â”€â”€ GPU Buoyancy Offload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private bool enableGpuBuoyancySampling = true;
         [SerializeField] private ComputeShader gpuBuoyancyCompute;
         [SerializeField, Range(64, 1024)] private int gpuBuoyancyActivationThreshold = 256;
+        [SerializeField] private bool enableGpuAbyssalFlowField = true;
+        [SerializeField] private ComputeShader abyssalFlowFieldCompute;
+        [SerializeField, Range(8, 32)] private int abyssalFlowHorizontalResolution = 16;
+        [SerializeField, Range(4, 24)] private int abyssalFlowVerticalResolution = 12;
+        [SerializeField, Range(4f, 32f)] private float abyssalFlowHorizontalCellSize = 12f;
+        [SerializeField, Range(4f, 24f)] private float abyssalFlowVerticalCellSize = 10f;
+        [SerializeField, Range(4f, 40f)] private float abyssalHeatProbeRadius = 16f;
+        [SerializeField, Range(0.1f, 64f)] private float abyssalHeatIntensityNormalization = 18f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
@@ -330,6 +369,7 @@ namespace Hecton8.Physics
         private NativeArray<float3>         _resultTorques;
         private NativeArray<GpuBuoyancyObjectData> _gpuBuoyancyObjectDataUpload;
         private NativeArray<float4> _gpuBuoyancyReadback;
+        private NativeArray<GpuHeatSourceData> _gpuAbyssalHeatSourceUpload;
         // COLD ALLOC: Rigidbody[capacity] — schedule-time rigidbody snapshot for deferred force application — owner: HectonFluidEngine
         private Rigidbody[] _scheduledBodies;
         private JobHandle _scheduledBuoyancyHandle;
@@ -351,6 +391,16 @@ namespace Hecton8.Physics
         private int _gpuReadbackWriteIndex;
         private bool _hasGpuBuoyancyData;
         private int _gpuBuoyancyKernel = -1;
+        private GraphicsBuffer _gpuAbyssalFlowResultBuffer;
+        private GraphicsBuffer _gpuAbyssalHeatSourceBuffer;
+        private GraphicsBuffer _gpuAbyssalAggregateBuffer;
+        private AsyncGPUReadbackRequest[] _gpuAbyssalReadbackRequests;
+        private bool[] _gpuAbyssalReadbackActive;
+        private int _gpuAbyssalReadbackWriteIndex;
+        private int _gpuAbyssalResetKernel = -1;
+        private int _gpuAbyssalUpdateKernel = -1;
+        private int _gpuAbyssalSurgeKernel = -1;
+        private bool _postFixedRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -386,23 +436,46 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR
             if (gpuBuoyancyCompute == null)
                 gpuBuoyancyCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(GpuBuoyancyComputeAssetPath);
+
+            if (abyssalFlowFieldCompute == null)
+                abyssalFlowFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(AbyssalFlowFieldComputeAssetPath);
 #endif
             if (gpuBuoyancyCompute != null)
                 _gpuBuoyancyKernel = gpuBuoyancyCompute.FindKernel("EvaluateBuoyancy");
+            if (abyssalFlowFieldCompute != null)
+            {
+                _gpuAbyssalResetKernel = abyssalFlowFieldCompute.FindKernel("ResetAbyssalFlowAggregate");
+                _gpuAbyssalUpdateKernel = abyssalFlowFieldCompute.FindKernel("UpdateAbyssalFlowField");
+                _gpuAbyssalSurgeKernel = abyssalFlowFieldCompute.FindKernel("DetectBiolumeSurge");
+            }
 
             _gpuReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] - fixed GPU buoyancy readback ring state - owner: HectonFluidEngine
             _gpuReadbackCounts = new int[GpuReadbackRingSize]; // COLD ALLOC: int[3] - GPU buoyancy readback element counts - owner: HectonFluidEngine
             _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] - GPU buoyancy readback slot activity - owner: HectonFluidEngine
+            _gpuAbyssalReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] - fixed GPU abyssal-flow readback ring state - owner: HectonFluidEngine
+            _gpuAbyssalReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] - GPU abyssal-flow readback slot activity - owner: HectonFluidEngine
         }
 
         private void OnEnable()
         {
+            GlobalRegistry.RegisterFluidRuntime(this);
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            if (!_postFixedRegistered)
+            {
+                GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
+                _postFixedRegistered = true;
+            }
         }
 
         private void OnDisable()
         {
+            GlobalRegistry.UnregisterFluidRuntime(this);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (_postFixedRegistered)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                _postFixedRegistered = false;
+            }
 
             // Release runtime job buffers before editor domain/play-mode teardown.
             // In-editor play transitions do not always guarantee a clean OnDestroy path
@@ -412,6 +485,12 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
+            GlobalRegistry.UnregisterFluidRuntime(this);
+            if (_postFixedRegistered)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                _postFixedRegistered = false;
+            }
             DisposeNativeArrays();
 
             if (_instance == this)
@@ -501,12 +580,6 @@ namespace Hecton8.Physics
             {
                 if (!_scheduledBuoyancyHandle.IsCompleted)
                     return;
-
-                _scheduledBuoyancyHandle.Complete();
-                ApplyScheduledForces();
-                _scheduledBuoyancyHandle = default;
-                _scheduledBuoyancyJobActive = false;
-                _scheduledForceCount = 0;
             }
 
             int count = _objects.Count;
@@ -552,7 +625,9 @@ namespace Hecton8.Physics
                 _scheduledBodies[i] = _bodies[i];
 
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            ConsumeGpuAbyssalFlowReadbacks();
             ConsumeGpuBuoyancyReadbacks();
+            TryDispatchGpuAbyssalFlowField(weatherSnapshot);
             TryDispatchGpuBuoyancySampling(weatherSnapshot, count);
 
             JobHandle waveHandle = default;
@@ -618,6 +693,19 @@ namespace Hecton8.Physics
             _scheduledBuoyancyJobActive = true;
             _scheduledForceCount = count;
             }
+        }
+
+        /// <inheritdoc />
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            if (!_scheduledBuoyancyJobActive || !_scheduledBuoyancyHandle.IsCompleted)
+                return;
+
+            _scheduledBuoyancyHandle.Complete();
+            ApplyScheduledForces();
+            _scheduledBuoyancyHandle = default;
+            _scheduledBuoyancyJobActive = false;
+            _scheduledForceCount = 0;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -842,8 +930,11 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.UninitializedMemory);
             _gpuBuoyancyReadback = new NativeArray<float4>(newCapacity, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            _gpuAbyssalHeatSourceUpload = new NativeArray<GpuHeatSourceData>(MaxAbyssalHeatSourceCount, Allocator.Persistent,
+                                 NativeArrayOptions.ClearMemory);
             _scheduledBodies = new Rigidbody[newCapacity];
             EnsureGpuBuoyancyBuffers(newCapacity);
+            EnsureGpuAbyssalFlowBuffers();
 
             _nativeCapacity = newCapacity;
         }
@@ -865,11 +956,13 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _resultTorques, dependency);
             DisposeNativeArray(ref _gpuBuoyancyObjectDataUpload, dependency);
             DisposeNativeArray(ref _gpuBuoyancyReadback, dependency);
+            DisposeNativeArray(ref _gpuAbyssalHeatSourceUpload, dependency);
             _scheduledBodies = null;
             _scheduledBuoyancyHandle = default;
             _scheduledBuoyancyJobActive = false;
             _scheduledForceCount = 0;
             ReleaseGpuBuoyancyBuffers();
+            ReleaseGpuAbyssalFlowBuffers();
             _hasGpuBuoyancyData = false;
 
             _nativeCapacity = 0;
@@ -958,6 +1051,246 @@ namespace Hecton8.Physics
             {
                 _gpuBuoyancyResultBuffer.Release();
                 _gpuBuoyancyResultBuffer = null;
+            }
+        }
+
+        private void EnsureGpuAbyssalFlowBuffers()
+        {
+            int nodeCount = GetAbyssalFlowNodeCount();
+            if (nodeCount <= 0)
+                return;
+
+            if (_gpuAbyssalFlowResultBuffer == null || _gpuAbyssalFlowResultBuffer.count != nodeCount)
+            {
+                ReleaseGpuAbyssalFlowBuffers();
+                _gpuAbyssalFlowResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] - GPU abyssal flow-vector field storage - owner: HectonFluidEngine
+                _gpuAbyssalHeatSourceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<GpuHeatSourceData>(MaxAbyssalHeatSourceCount); // COLD ALLOC: GraphicsBuffer[8] - inferred hydrothermal heat-source upload staging - owner: HectonFluidEngine
+                _gpuAbyssalAggregateBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Raw, 1, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[1] - GPU abyssal aggregate surge bitmask readback - owner: HectonFluidEngine
+            }
+        }
+
+        private void ReleaseGpuAbyssalFlowBuffers()
+        {
+            if (_gpuAbyssalFlowResultBuffer != null)
+            {
+                _gpuAbyssalFlowResultBuffer.Release();
+                _gpuAbyssalFlowResultBuffer = null;
+            }
+
+            if (_gpuAbyssalHeatSourceBuffer != null)
+            {
+                _gpuAbyssalHeatSourceBuffer.Release();
+                _gpuAbyssalHeatSourceBuffer = null;
+            }
+
+            if (_gpuAbyssalAggregateBuffer != null)
+            {
+                _gpuAbyssalAggregateBuffer.Release();
+                _gpuAbyssalAggregateBuffer = null;
+            }
+
+            _gpuAbyssalReadbackWriteIndex = 0;
+            if (_gpuAbyssalReadbackActive != null)
+            {
+                for (int i = 0; i < _gpuAbyssalReadbackActive.Length; i++)
+                    _gpuAbyssalReadbackActive[i] = false;
+            }
+        }
+
+        private void ConsumeGpuAbyssalFlowReadbacks()
+        {
+            using (_gpuAbyssalReadbackProfilerMarker.Auto())
+            {
+                if (_gpuAbyssalReadbackRequests == null || _gpuAbyssalReadbackActive == null)
+                    return;
+
+                for (int requestIndex = 0; requestIndex < GpuReadbackRingSize; requestIndex++)
+                {
+                    if (!_gpuAbyssalReadbackActive[requestIndex])
+                        continue;
+
+                    AsyncGPUReadbackRequest request = _gpuAbyssalReadbackRequests[requestIndex];
+                    if (!request.done)
+                        continue;
+
+                    _gpuAbyssalReadbackActive[requestIndex] = false;
+                    if (request.hasError)
+                        continue;
+
+                    NativeArray<uint> aggregateData = request.GetData<uint>();
+                    if (aggregateData.Length <= 0)
+                        continue;
+
+                    uint aggregateMask = aggregateData[0];
+                    _debugAbyssalAggregateMask = aggregateMask;
+                    if ((aggregateMask & (uint)WeatherState.BiolumeSurge) != 0u &&
+                        GlobalRegistry.Weather is GlobalWeatherDirector weatherDirector)
+                    {
+                        weatherDirector.RegisterBiolumeSurge(AbyssalBiolumeSurgeHoldSeconds);
+                    }
+                }
+            }
+        }
+
+        private void TryDispatchGpuAbyssalFlowField(in WeatherRuntimeSnapshot weatherSnapshot)
+        {
+            if (!enableGpuAbyssalFlowField ||
+                abyssalFlowFieldCompute == null ||
+                _gpuAbyssalResetKernel < 0 ||
+                _gpuAbyssalUpdateKernel < 0 ||
+                _gpuAbyssalSurgeKernel < 0 ||
+                lodObserver == null ||
+                !_gpuAbyssalHeatSourceUpload.IsCreated)
+            {
+                return;
+            }
+
+            EnsureGpuAbyssalFlowBuffers();
+            if (_gpuAbyssalFlowResultBuffer == null || _gpuAbyssalHeatSourceBuffer == null || _gpuAbyssalAggregateBuffer == null)
+                return;
+
+            int slot = _gpuAbyssalReadbackWriteIndex;
+            if (_gpuAbyssalReadbackActive != null && _gpuAbyssalReadbackActive[slot])
+                return;
+
+            float3 flowCenter = ResolveAbyssalFlowCenter();
+            int heatSourceCount = CaptureAbyssalHeatSources(flowCenter);
+            _debugAbyssalHeatSourceCount = heatSourceCount;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_gpuAbyssalHeatSourceBuffer, _gpuAbyssalHeatSourceUpload, MaxAbyssalHeatSourceCount);
+
+            int nodeCount = GetAbyssalFlowNodeCount();
+            int groupCount = math.max(1, (nodeCount + 63) / 64);
+
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalResetKernel, _AbyssalAggregateMaskId, _gpuAbyssalAggregateBuffer);
+            abyssalFlowFieldCompute.Dispatch(_gpuAbyssalResetKernel, 1, 1, 1);
+
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalFlowFieldResultId, _gpuAbyssalFlowResultBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalHeatSourcesId, _gpuAbyssalHeatSourceBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalUpdateKernel, _AbyssalAggregateMaskId, _gpuAbyssalAggregateBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalSurgeKernel, _AbyssalFlowFieldResultId, _gpuAbyssalFlowResultBuffer);
+            abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalSurgeKernel, _AbyssalAggregateMaskId, _gpuAbyssalAggregateBuffer);
+
+            Vector3 centerManaged = new Vector3(flowCenter.x, flowCenter.y, flowCenter.z);
+            Vector3 weatherCurrentManaged = new Vector3(
+                weatherSnapshot.CurrentMeta.GlobalBaseVector.x * weatherSnapshot.CurrentMeta.GlobalScale,
+                weatherSnapshot.CurrentMeta.GlobalBaseVector.y * weatherSnapshot.CurrentMeta.GlobalScale,
+                weatherSnapshot.CurrentMeta.GlobalBaseVector.z * weatherSnapshot.CurrentMeta.GlobalScale);
+            Vector3 weatherWindManaged = new Vector3(
+                weatherSnapshot.GlobalWindVector.x,
+                weatherSnapshot.GlobalWindVector.y,
+                weatherSnapshot.GlobalWindVector.z);
+            Vector3 horizontalResolutionVector = new Vector3(abyssalFlowHorizontalResolution, abyssalFlowVerticalResolution, abyssalFlowHorizontalResolution);
+            float resolvedWaveHeight = math.max(
+                0f,
+                math.max(0f, weatherSnapshot.Wave0.Amplitude) +
+                math.max(0f, weatherSnapshot.Wave1.Amplitude) +
+                math.max(0f, weatherSnapshot.Wave2.Amplitude));
+
+            abyssalFlowFieldCompute.SetVector(_AbyssalGridResolutionId, new Vector4(horizontalResolutionVector.x, horizontalResolutionVector.y, horizontalResolutionVector.z, nodeCount));
+            abyssalFlowFieldCompute.SetVector(_AbyssalFlowCenterId, new Vector4(centerManaged.x, centerManaged.y, centerManaged.z, 0f));
+            abyssalFlowFieldCompute.SetVector(_AbyssalFlowSpacingId, new Vector4(abyssalFlowHorizontalCellSize, abyssalFlowVerticalCellSize, 0f, 0f));
+            abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherCurrentId, new Vector4(weatherCurrentManaged.x, weatherCurrentManaged.y, weatherCurrentManaged.z, weatherSnapshot.WeatherIntensity));
+            abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherWindId, new Vector4(weatherWindManaged.x, weatherWindManaged.y, weatherWindManaged.z, 0f));
+            abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherParamsId, new Vector4(
+                weatherSnapshot.CurrentMeta.ThermalIntensity,
+                math.length(weatherWindManaged),
+                resolvedWaveHeight,
+                weatherSnapshot.CurrentMeta.TimeAccumulator));
+            abyssalFlowFieldCompute.SetFloat(_AbyssalFlowSurfaceYId, waterLevel);
+            abyssalFlowFieldCompute.SetFloat(_AbyssalFlowThermoclineYId, waterLevel - AbyssalFlowThermoclineDepthMeters);
+            abyssalFlowFieldCompute.SetInt(_AbyssalFlowHeatSourceCountId, heatSourceCount);
+            abyssalFlowFieldCompute.SetInt(_AbyssalFlowWeatherStateMaskId, (int)weatherSnapshot.StateMask);
+
+            abyssalFlowFieldCompute.Dispatch(_gpuAbyssalUpdateKernel, groupCount, 1, 1);
+            abyssalFlowFieldCompute.Dispatch(_gpuAbyssalSurgeKernel, groupCount, 1, 1);
+
+            _gpuAbyssalReadbackRequests[slot] = AsyncGPUReadback.Request(_gpuAbyssalAggregateBuffer);
+            _gpuAbyssalReadbackActive[slot] = true;
+            _gpuAbyssalReadbackWriteIndex = (_gpuAbyssalReadbackWriteIndex + 1) % GpuReadbackRingSize;
+        }
+
+        private int CaptureAbyssalHeatSources(float3 flowCenter)
+        {
+            if (!_gpuAbyssalHeatSourceUpload.IsCreated)
+                return 0;
+
+            for (int i = 0; i < MaxAbyssalHeatSourceCount; i++)
+                _gpuAbyssalHeatSourceUpload[i] = default;
+
+            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            if (thermalManager == null)
+                return 0;
+
+            float horizontalProbeOffset = math.max(abyssalHeatProbeRadius, abyssalFlowHorizontalCellSize * 1.5f);
+            float verticalProbeOffset = math.max(abyssalHeatProbeRadius * 0.5f, abyssalFlowVerticalCellSize);
+            float sampleRadius = math.max(1f, abyssalFlowHorizontalCellSize * 0.5f);
+            int sourceCount = 0;
+
+            for (int probeIndex = 0; probeIndex < MaxAbyssalHeatSourceCount; probeIndex++)
+            {
+                float3 sampleOffset = ResolveHeatProbeOffset(probeIndex, horizontalProbeOffset, verticalProbeOffset);
+                Vector3 samplePosition = new Vector3(
+                    flowCenter.x + sampleOffset.x,
+                    flowCenter.y + sampleOffset.y,
+                    flowCenter.z + sampleOffset.z);
+
+                if (!thermalManager.SampleThermalFlow(samplePosition, sampleRadius, out AbyssalThermalManager.ThermalFlowSample sample) ||
+                    !sample.HasFlow)
+                {
+                    continue;
+                }
+
+                float intensity = math.saturate(math.max(
+                    sample.Heat01 / math.max(0.1f, abyssalHeatIntensityNormalization),
+                    sample.FlowVelocityWS.y / 8f));
+                if (intensity <= 0.0001f)
+                    continue;
+
+                _gpuAbyssalHeatSourceUpload[sourceCount] = new GpuHeatSourceData
+                {
+                    PositionWS = new float3(samplePosition.x, samplePosition.y, samplePosition.z),
+                    Intensity = intensity,
+                    Radius = abyssalHeatProbeRadius,
+                    Padding = float3.zero,
+                };
+
+                sourceCount++;
+                if (sourceCount >= MaxAbyssalHeatSourceCount)
+                    break;
+            }
+
+            return sourceCount;
+        }
+
+        private float3 ResolveAbyssalFlowCenter()
+        {
+            Vector3 observerPosition = lodObserver.position;
+            return new float3(
+                observerPosition.x,
+                math.min(observerPosition.y, waterLevel - 32f),
+                observerPosition.z);
+        }
+
+        private int GetAbyssalFlowNodeCount()
+        {
+            return math.max(1, abyssalFlowHorizontalResolution) *
+                   math.max(1, abyssalFlowVerticalResolution) *
+                   math.max(1, abyssalFlowHorizontalResolution);
+        }
+
+        private static float3 ResolveHeatProbeOffset(int probeIndex, float horizontalProbeOffset, float verticalProbeOffset)
+        {
+            switch (probeIndex)
+            {
+                case 0: return float3.zero;
+                case 1: return new float3(horizontalProbeOffset, 0f, 0f);
+                case 2: return new float3(-horizontalProbeOffset, 0f, 0f);
+                case 3: return new float3(0f, 0f, horizontalProbeOffset);
+                case 4: return new float3(0f, 0f, -horizontalProbeOffset);
+                case 5: return new float3(0f, verticalProbeOffset, 0f);
+                case 6: return new float3(0f, -verticalProbeOffset, 0f);
+                default: return new float3(horizontalProbeOffset * 0.70710677f, 0f, horizontalProbeOffset * 0.70710677f);
             }
         }
 
@@ -1124,6 +1457,20 @@ namespace Hecton8.Physics
             if (farLodDistance < mediumLodDistance) farLodDistance = mediumLodDistance;
             if (cullLodDistance < farLodDistance) cullLodDistance = farLodDistance;
             if (gizmoCurrentVectorScale < 0f) gizmoCurrentVectorScale = 0f;
+            if (abyssalFlowHorizontalResolution < 8) abyssalFlowHorizontalResolution = 8;
+            if (abyssalFlowVerticalResolution < 4) abyssalFlowVerticalResolution = 4;
+            if (abyssalFlowHorizontalCellSize < 4f) abyssalFlowHorizontalCellSize = 4f;
+            if (abyssalFlowVerticalCellSize < 4f) abyssalFlowVerticalCellSize = 4f;
+            if (abyssalHeatProbeRadius < 4f) abyssalHeatProbeRadius = 4f;
+            if (abyssalHeatIntensityNormalization < 0.1f) abyssalHeatIntensityNormalization = 0.1f;
+
+#if UNITY_EDITOR
+            if (gpuBuoyancyCompute == null)
+                gpuBuoyancyCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(GpuBuoyancyComputeAssetPath);
+
+            if (abyssalFlowFieldCompute == null)
+                abyssalFlowFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(AbyssalFlowFieldComputeAssetPath);
+#endif
             
             // Update LOD cache when parameters change
             UpdateCachedLodDistances();

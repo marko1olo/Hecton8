@@ -88,6 +88,9 @@ namespace Hecton8.Crafting
         /// <summary>Крафт завершён успешно, предмет добавлен в инвентарь.</summary>
         public static void RaiseCraftCompleted(ItemData resultItem)
         {
+            if (resultItem != null)
+                Hecton8.Core.GlobalTelemetryBus.PublishItemCrafted(resultItem.PersistentId);
+
             var handler = OnCraftCompleted;
             handler?.Invoke(resultItem);
         }

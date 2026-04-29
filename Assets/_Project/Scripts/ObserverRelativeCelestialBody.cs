@@ -110,6 +110,11 @@ namespace Hecton8.Celestial
         private bool _hasCapturedDirection;
         private bool _registeredToTickManager;
         private ObserverRelativeCelestialBody _parentObserverRelativeBody;
+        private bool _editorPreviewDirty = true;
+        private Vector3 _editorLastObserverPosition;
+        private Vector3 _editorLastParentPosition;
+        private Quaternion _editorLastParentRotation = Quaternion.identity;
+        private bool _editorPreviewCached;
 
         /// <summary>
         /// Current normalized sky direction solved by this body.
@@ -139,6 +144,8 @@ namespace Hecton8.Celestial
 #if UNITY_EDITOR
             else
             {
+                _editorPreviewDirty = true;
+                _editorPreviewCached = false;
                 EditorApplication.update -= HandleEditorUpdate;
                 EditorApplication.update += HandleEditorUpdate;
             }
@@ -574,17 +581,62 @@ namespace Hecton8.Celestial
             if (Application.isPlaying || this == null)
                 return;
 
+            if (!UnityEditorInternal.InternalEditorUtility.isApplicationActive)
+                return;
+
+            if (!ShouldRefreshEditorPreview())
+                return;
+
             ApplyPlacement();
+            CacheEditorPreviewState();
+            _editorPreviewDirty = false;
         }
 
         private void OnValidate()
         {
             _registeredToTickManager = false;
             _parentObserverRelativeBody = null;
+            _editorPreviewDirty = true;
+            _editorPreviewCached = false;
             CacheAuthoringReferences();
             if (!_hasCapturedDirection && fixedDirection.sqrMagnitude > DirectionEpsilon)
                 fixedDirection = fixedDirection.normalized;
             ApplyPlacement();
+        }
+
+        private bool ShouldRefreshEditorPreview()
+        {
+            if (_editorPreviewDirty || !_editorPreviewCached)
+                return true;
+
+            Vector3 observerPosition = ResolveObserverWorldPosition();
+            if ((observerPosition - _editorLastObserverPosition).sqrMagnitude > DirectionEpsilon)
+                return true;
+
+            if (parentBodyTransform == null)
+                return false;
+
+            if ((parentBodyTransform.position - _editorLastParentPosition).sqrMagnitude > DirectionEpsilon)
+                return true;
+
+            return parentBodyTransform.rotation != _editorLastParentRotation;
+        }
+
+        private void CacheEditorPreviewState()
+        {
+            _editorLastObserverPosition = ResolveObserverWorldPosition();
+            if (parentBodyTransform != null)
+            {
+                _editorLastParentPosition = parentBodyTransform.position;
+                _editorLastParentRotation = parentBodyTransform.rotation;
+            }
+            else
+            {
+                _editorLastParentPosition = Vector3.zero;
+                _editorLastParentRotation = Quaternion.identity;
+            }
+
+            _editorPreviewCached = true;
         }
 #endif
     }

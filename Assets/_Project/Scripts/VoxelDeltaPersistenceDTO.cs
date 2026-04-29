@@ -29,6 +29,7 @@ namespace Hecton8.SaveSystem
         public uint[] dirtyMaskWords;
         public ushort[] sdfValueBits;
         public byte[] materialIds;
+        public byte[] cellFlags;
         public VoxelDeltaCellDTO[] cells;
 
         public void EnsureCapacity(int requiredCellCount)
@@ -43,6 +44,9 @@ namespace Hecton8.SaveSystem
 
                 if (materialIds == null)
                     materialIds = Array.Empty<byte>();
+
+                if (cellFlags == null)
+                    cellFlags = Array.Empty<byte>();
 
                 if (cells == null)
                     cells = Array.Empty<VoxelDeltaCellDTO>();
@@ -59,6 +63,9 @@ namespace Hecton8.SaveSystem
 
             if (materialIds == null || materialIds.Length != CellCount)
                 materialIds = new byte[CellCount];
+
+            if (cellFlags == null || cellFlags.Length != CellCount)
+                cellFlags = new byte[CellCount];
 
             if (cells == null)
                 cells = Array.Empty<VoxelDeltaCellDTO>();

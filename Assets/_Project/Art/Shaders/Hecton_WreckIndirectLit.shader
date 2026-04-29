@@ -153,16 +153,18 @@ Shader "Hecton8/World/WreckIndirectLit"
 
             half3 normalWS = SafeNormalize3(input.normalWS);
             half3 viewDirWS = SafeNormalize3(input.viewDirWS);
+            half3 albedo = surface.rgb;
+            HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
             half3 litColor = EvaluateWreckLighting(
                 input.positionWS,
                 normalWS,
                 viewDirWS,
-                surface.rgb,
+                albedo,
                 metallic,
                 smoothness,
                 ambientOcclusion);
             half3 emission = _EmissionColor.rgb * emissionMask;
-            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor);
+            half3 finalColor = HectonCoreLitApplyNoirFog(litColor + emission, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }
 

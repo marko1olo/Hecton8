@@ -384,6 +384,78 @@ namespace Hecton8.UI
             EnsureRenderTexture(forceRefresh: true);
         }
 
+        /// <summary>
+        /// Projects one canvas-space reference-resolution pixel coordinate onto the physical panel plane.
+        /// </summary>
+        /// <param name="canvasPosition">Canvas-space pixel coordinate in reference-resolution units.</param>
+        /// <param name="surfaceOffset">Positive offset applied along the panel normal in meters.</param>
+        /// <param name="worldPosition">Projected world-space position.</param>
+        /// <returns>True when the panel basis is valid.</returns>
+        public bool TryProjectCanvasPointToWorld(float2 canvasPosition, float surfaceOffset, out Vector3 worldPosition)
+        {
+            RefreshPanelData(forceRefresh: false);
+
+            float referenceWidth = math.max(1, _panelData.ReferenceWidth);
+            float referenceHeight = math.max(1, _panelData.ReferenceHeight);
+            float2 uv = new float2(
+                math.clamp(canvasPosition.x / referenceWidth, 0f, 1f),
+                math.clamp(canvasPosition.y / referenceHeight, 0f, 1f));
+
+            float2 localXY = new float2(
+                (uv.x * _panelData.CanvasSize.x) - _panelData.HalfSize.x,
+                (uv.y * _panelData.CanvasSize.y) - _panelData.HalfSize.y);
+
+            float3 localPoint = new float3(localXY.x, localXY.y, surfaceOffset);
+            worldPosition = math.transform(_panelData.LocalToWorld, localPoint);
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the current physical panel orientation used by diegetic projections.
+        /// </summary>
+        /// <param name="rotation">Panel-space rotation with forward along the panel normal and up along the panel vertical axis.</param>
+        /// <returns>True when the panel basis is valid.</returns>
+        public bool TryGetPanelRotation(out Quaternion rotation)
+        {
+            RefreshPanelData(forceRefresh: false);
+
+            float3 panelNormal = math.normalizesafe(_panelData.LocalToWorld.c2.xyz, new float3(0f, 0f, 1f));
+            float3 panelUp = math.normalizesafe(_panelData.LocalToWorld.c1.xyz, new float3(0f, 1f, 0f));
+            if (math.lengthsq(panelNormal) <= 0.0001f || math.lengthsq(panelUp) <= 0.0001f)
+            {
+                rotation = Quaternion.identity;
+                return false;
+            }
+
+            quaternion panelRotation = quaternion.LookRotationSafe(panelNormal, panelUp);
+            rotation = new Quaternion(panelRotation.value.x, panelRotation.value.y, panelRotation.value.z, panelRotation.value.w);
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the world-space basis vectors that correspond to one canvas pixel along the panel axes.
+        /// </summary>
+        /// <param name="worldRightPerPixel">World-space delta for +1 canvas pixel on the panel X axis.</param>
+        /// <param name="worldUpPerPixel">World-space delta for +1 canvas pixel on the panel Y axis.</param>
+        /// <returns>True when the panel basis is valid.</returns>
+        public bool TryGetCanvasPixelBasis(out Vector3 worldRightPerPixel, out Vector3 worldUpPerPixel)
+        {
+            RefreshPanelData(forceRefresh: false);
+
+            float xStep = _panelData.ReferenceWidth > 0 ? _panelData.CanvasSize.x / _panelData.ReferenceWidth : 0f;
+            float yStep = _panelData.ReferenceHeight > 0 ? _panelData.CanvasSize.y / _panelData.ReferenceHeight : 0f;
+            worldRightPerPixel = (Vector3)(_panelData.LocalToWorld.c0.xyz * xStep);
+            worldUpPerPixel = (Vector3)(_panelData.LocalToWorld.c1.xyz * yStep);
+            return xStep > 0f && yStep > 0f;
+        }
+
+        /// <summary>
+        /// Returns the active reference resolution used by the panel projection path.
+        /// </summary>
+        public Vector2Int ReferenceResolutionPixels => new Vector2Int(
+            math.max(1, _panelData.ReferenceWidth),
+            math.max(1, _panelData.ReferenceHeight));
+
         internal void OverrideFixedRenderTextureResolution(Vector2Int resolution, bool retainOnDisable)
         {
             int2 sanitizedResolution = new int2(math.max(1, resolution.x), math.max(1, resolution.y));

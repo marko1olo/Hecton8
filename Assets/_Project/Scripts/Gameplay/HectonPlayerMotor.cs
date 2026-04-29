@@ -14,7 +14,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
-    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces
+    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable
     {
         private struct ScheduledSweepState
         {
@@ -43,14 +43,20 @@ namespace Hecton8.Gameplay
         private CapsuleCollider _capsule;
         private bool _isGrounded;
         private readonly RaycastHit[] _sweepHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — motor-owned sweep/collision query buffer for kinematic isolation — owner: HectonPlayerMotor
-        private readonly Vector3[] _hydrodynamicGhostVelocityHistory = new Vector3[4]; // COLD ALLOC: Vector3[4] — 3-frame added-mass inertial ghost history for underwater locomotion perception — owner: HectonPlayerMotor
+        private NativeArray<float3> _hydrodynamicGhostVelocityHistory;
         private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
         private NativeArray<RaycastHit> _scheduledSweepResults;
         private JobHandle _scheduledSweepHandle;
         private bool _scheduledSweepPending;
+        private bool _scheduledSweepResultReady;
+        private bool _scheduledSweepWasBlocked;
         private ScheduledSweepState _scheduledSweepState;
+        private RaycastHit _scheduledSweepBlockingHit;
+        private Vector3 _scheduledSweepResolvedPosition;
+        private float _scheduledSweepBlockedSpeed;
         private int _hydrodynamicGhostWriteIndex;
         private int _hydrodynamicGhostSampleCount;
+        private bool _registeredPostFixedTick;
 
         /// <inheritdoc />
         public Rigidbody Body => _body;
@@ -69,17 +75,27 @@ namespace Hecton8.Gameplay
         {
             _body = body;
             _capsule = capsule;
+            EnsureHydrodynamicGhostState();
             ResetHydrodynamicAddedMassState();
+        }
+
+        private void OnEnable()
+        {
+            TryRegisterPostFixedTick();
         }
 
         private void OnDisable()
         {
+            TryUnregisterPostFixedTick();
             DisposeScheduledSweepState();
+            DisposeHydrodynamicGhostState();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterPostFixedTick();
             DisposeScheduledSweepState();
+            DisposeHydrodynamicGhostState();
         }
 
         /// <summary>Updates grounded state mirror for external systems.</summary>
@@ -337,7 +353,10 @@ namespace Hecton8.Gameplay
                     currentPosition += depenetration;
                 }
 
-                Vector3 slideDisplacement = Vector3.ProjectOnPlane(remainingDisplacement - advance, nearestHit.normal);
+                Vector3 remainingAfterAdvance = remainingDisplacement - advance;
+                Vector3 safeNormal = SafeNormal(nearestHit.normal, Vector3.up);
+                float displacementIntoWall = Vector3.Dot(remainingAfterAdvance, safeNormal);
+                Vector3 slideDisplacement = remainingAfterAdvance - (safeNormal * displacementIntoWall);
                 if (slideDisplacement.sqrMagnitude <= MinVectorMagnitudeSq)
                     break;
 
@@ -433,19 +452,21 @@ namespace Hecton8.Gameplay
                 if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
                     return safeActualVelocity;
 
-                Vector3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
-                Vector3 perceivedVelocity = Vector3.Lerp(safeActualVelocity, oldestVelocity, ghostBlend);
-                return SafeVelocity(perceivedVelocity, safeActualVelocity);
+                float3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
+                float3 currentVelocity = new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z);
+                float3 perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
+                return SafeVelocity(new Vector3(perceivedVelocity.x, perceivedVelocity.y, perceivedVelocity.z), safeActualVelocity);
             }
         }
 
         /// <summary>Clears the persistent underwater added-mass history.</summary>
         public void ResetHydrodynamicAddedMassState()
         {
+            EnsureHydrodynamicGhostState();
             _hydrodynamicGhostWriteIndex = 0;
             _hydrodynamicGhostSampleCount = 0;
             for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
-                _hydrodynamicGhostVelocityHistory[i] = Vector3.zero;
+                _hydrodynamicGhostVelocityHistory[i] = float3.zero;
         }
 
         /// <summary>
@@ -515,54 +536,24 @@ namespace Hecton8.Gameplay
             blockingHit = default;
             resolvedPosition = _body != null ? _body.position : Vector3.zero;
             blockedSpeed = 0f;
-            if (!_scheduledSweepPending || !_scheduledSweepHandle.IsCompleted)
+            if (!_scheduledSweepResultReady)
                 return false;
 
             using (_scheduledSweepConsumeProfilerMarker.Auto())
             {
-                _scheduledSweepHandle.Complete();
-                _scheduledSweepPending = false;
-                _scheduledSweepHandle = default;
-
-                float nearestDistance = float.MaxValue;
-                int nearestIndex = -1;
-                for (int i = 0; i < ScheduledSweepMaxHits; i++)
-                {
-                    RaycastHit hit = _scheduledSweepResults[i];
-                    int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
-                    if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
-                        continue;
-
-                    if (hit.distance < nearestDistance)
-                    {
-                        nearestDistance = hit.distance;
-                        nearestIndex = i;
-                    }
-                }
-
-                Vector3 startPosition = _scheduledSweepState.StartPosition;
-                if (nearestIndex < 0)
-                {
-                    resolvedPosition = _body != null ? _body.position : startPosition;
-                    return true;
-                }
-
-                wasBlocked = true;
-                blockingHit = _scheduledSweepResults[nearestIndex];
-                float safeDistance = math.max(0f, blockingHit.distance - _scheduledSweepState.SkinWidth);
-                float penetrationDepth = math.max(0f, _scheduledSweepState.SkinWidth - blockingHit.distance);
-                resolvedPosition = startPosition +
-                    (_scheduledSweepState.Direction * safeDistance) +
-                    (blockingHit.normal * penetrationDepth);
-
-                Vector3 previousVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
-                Vector3 projectedVelocity = Vector3.ProjectOnPlane(previousVelocity, blockingHit.normal);
-                blockedSpeed = (previousVelocity - projectedVelocity).magnitude;
-
-                MovePosition(resolvedPosition);
-                SetLinearVelocity(projectedVelocity);
+                _scheduledSweepResultReady = false;
+                wasBlocked = _scheduledSweepWasBlocked;
+                blockingHit = _scheduledSweepBlockingHit;
+                resolvedPosition = _scheduledSweepResolvedPosition;
+                blockedSpeed = _scheduledSweepBlockedSpeed;
                 return true;
             }
+        }
+
+        /// <inheritdoc />
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            CompleteScheduledSweepInPostFixedSwapWindow();
         }
 
         private static bool IsFiniteNonZero(Vector3 value)
@@ -571,12 +562,10 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinVectorMagnitudeSq;
         }
 
-#pragma warning disable CS0618
         private static int GetHitColliderInstanceId(in RaycastHit hit)
         {
-            return hit.colliderInstanceID;
+            return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
         }
-#pragma warning restore CS0618
 
         private bool TryFindNearestBlockingHit(
             Vector3 capsulePoint1,
@@ -628,6 +617,17 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(velocity3)) ? velocity : fallback;
         }
 
+        private static Vector3 SafeNormal(Vector3 value, Vector3 fallback)
+        {
+            float sqrMagnitude = value.sqrMagnitude;
+            if (sqrMagnitude <= MinVectorMagnitudeSq)
+                return fallback;
+
+            float inverseMagnitude = 1f / math.sqrt(sqrMagnitude);
+            Vector3 normalized = value * inverseMagnitude;
+            return SafeVelocity(normalized, fallback);
+        }
+
         private void EnsureScheduledSweepState()
         {
             if (!_scheduledSweepCommands.IsCreated)
@@ -661,14 +661,109 @@ namespace Hecton8.Gameplay
 
             _scheduledSweepPending = false;
             _scheduledSweepHandle = default;
+            _scheduledSweepResultReady = false;
+            _scheduledSweepWasBlocked = false;
+            _scheduledSweepBlockingHit = default;
+            _scheduledSweepResolvedPosition = _body != null ? _body.position : Vector3.zero;
+            _scheduledSweepBlockedSpeed = 0f;
+        }
+
+        private void TryRegisterPostFixedTick()
+        {
+            if (_registeredPostFixedTick || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Player);
+            _registeredPostFixedTick = true;
+        }
+
+        private void TryUnregisterPostFixedTick()
+        {
+            if (!_registeredPostFixedTick)
+                return;
+
+            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Player);
+            _registeredPostFixedTick = false;
+        }
+
+        private void CompleteScheduledSweepInPostFixedSwapWindow()
+        {
+            if (!_scheduledSweepPending || !_scheduledSweepHandle.IsCompleted)
+                return;
+
+            _scheduledSweepHandle.Complete();
+            _scheduledSweepPending = false;
+            _scheduledSweepHandle = default;
+            _scheduledSweepResultReady = true;
+            _scheduledSweepWasBlocked = false;
+            _scheduledSweepBlockingHit = default;
+            _scheduledSweepBlockedSpeed = 0f;
+            _scheduledSweepResolvedPosition = _body != null ? _body.position : _scheduledSweepState.StartPosition;
+
+            float nearestDistance = float.MaxValue;
+            int nearestIndex = -1;
+            for (int i = 0; i < ScheduledSweepMaxHits; i++)
+            {
+                RaycastHit hit = _scheduledSweepResults[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                    continue;
+
+                if (hit.distance < nearestDistance)
+                {
+                    nearestDistance = hit.distance;
+                    nearestIndex = i;
+                }
+            }
+
+            if (nearestIndex < 0)
+                return;
+
+            _scheduledSweepWasBlocked = true;
+            _scheduledSweepBlockingHit = _scheduledSweepResults[nearestIndex];
+            float safeDistance = math.max(0f, _scheduledSweepBlockingHit.distance - _scheduledSweepState.SkinWidth);
+            float penetrationDepth = math.max(0f, _scheduledSweepState.SkinWidth - _scheduledSweepBlockingHit.distance);
+            _scheduledSweepResolvedPosition = _scheduledSweepState.StartPosition +
+                (_scheduledSweepState.Direction * safeDistance) +
+                (_scheduledSweepBlockingHit.normal * penetrationDepth);
+
+            Vector3 previousVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
+            Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
+            Vector3 projectedVelocity = previousVelocity - (safeNormal * Vector3.Dot(previousVelocity, safeNormal));
+            _scheduledSweepBlockedSpeed = (previousVelocity - projectedVelocity).magnitude;
+
+            MovePosition(_scheduledSweepResolvedPosition);
+            SetLinearVelocity(projectedVelocity);
         }
 
         private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
         {
-            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = SafeVelocity(velocity);
+            EnsureHydrodynamicGhostState();
+            Vector3 safeVelocity = SafeVelocity(velocity);
+            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
             _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
             if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
                 _hydrodynamicGhostSampleCount++;
+        }
+
+        private void EnsureHydrodynamicGhostState()
+        {
+            if (_hydrodynamicGhostVelocityHistory.IsCreated)
+                return;
+
+            // COLD ALLOC: NativeArray<float3>[4] — 3-frame added-mass inertial ghost history for underwater locomotion perception — owner: HectonPlayerMotor
+            _hydrodynamicGhostVelocityHistory = new NativeArray<float3>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void DisposeHydrodynamicGhostState()
+        {
+            if (!_hydrodynamicGhostVelocityHistory.IsCreated)
+                return;
+
+            _hydrodynamicGhostVelocityHistory.Dispose();
+            _hydrodynamicGhostVelocityHistory = default;
+            _hydrodynamicGhostWriteIndex = 0;
+            _hydrodynamicGhostSampleCount = 0;
         }
 
         private int ResolveSelfColliderInstanceId()

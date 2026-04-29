@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Crest;
+using Hecton8.SaveSystem;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -8,7 +9,7 @@ namespace Hecton8.World
     /// <summary>
     /// Cold-path typed bridge for the Crest depth-cache runtime API.
     /// </summary>
-    internal static class HectonCrestOceanDepthCacheRuntimeBridge
+    internal static unsafe class HectonCrestOceanDepthCacheRuntimeBridge
     {
         private const float HectonMinimumCameraHeightAboveSeaLevel = 8f;
 
@@ -85,7 +86,16 @@ namespace Hecton8.World
                 }; // COLD ALLOC: Texture2D[1] — one-shot depth-cache forensic readback for PNG dump — owner: HectonCrestOceanDepthCacheRuntimeBridge
                 readbackTexture.ReadPixels(new Rect(0f, 0f, cacheTexture.width, cacheTexture.height), 0, 0, false);
                 readbackTexture.Apply(false, false);
-                File.WriteAllBytes(absolutePath, readbackTexture.EncodeToPNG());
+                byte[] pngBytes = readbackTexture.EncodeToPNG();
+                if (pngBytes == null || pngBytes.Length <= 0)
+                    return false;
+
+                fixed (byte* pngPtr = pngBytes)
+                {
+                    if (!AsyncWriteManager.WriteAll(absolutePath, pngPtr, pngBytes.Length, out _))
+                        return false;
+                }
+
                 return true;
             }
             finally

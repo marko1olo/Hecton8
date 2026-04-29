@@ -1,8 +1,12 @@
 namespace Hecton8.Tools
 {
+    using System.Runtime.CompilerServices;
+    using System.Threading;
     using Hecton8.Core;
     using Hecton8.Gameplay;
+    using Hecton8.Power;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.SceneManagement;
@@ -16,6 +20,11 @@ namespace Hecton8.Tools
     public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable
     {
         private const int MaxTrackedTools = 16;
+        private const float OverchargePowerMultiplier = 3f;
+        private const float OverchargeHeatExponent = 1.35f;
+        private const float OverchargeHeatScale = 1.75f;
+        private const float OverchargeExplosionHeatThreshold = 1.5f;
+        private const float OverchargeExplosionPlayerDamage = 45f;
 
         private static ModularEquipmentEngine _instance;
 
@@ -34,6 +43,10 @@ namespace Hecton8.Tools
         private bool _isInitialized;
         private bool _registeredService;
         private bool _registeredUpdatable;
+        private bool _telemetrySubscribed;
+        private float _latestSupplyRatio = 1f;
+        private bool _wirelessBrownoutActive;
+        private float _brownoutPulseTime;
 
         public bool IsInitialized => _isInitialized;
 
@@ -96,6 +109,9 @@ namespace Hecton8.Tools
             if (!_isInitialized)
                 return;
 
+            if (_wirelessBrownoutActive)
+                _brownoutPulseTime += math.max(0f, deltaTime);
+
             for (int i = 0; i < MaxTrackedTools; i++)
             {
                 if (!_slotUsed[i] || _toolOwners[i] == null)
@@ -103,6 +119,19 @@ namespace Hecton8.Tools
 
                 ToolState state = _toolStates[i];
                 state.Durability = math.saturate(_toolOwners[i].DurabilityNormalized);
+                if (IsOverchargeRequested(i))
+                {
+                    float runtimeHeatRate = math.max(0.05f, _toolStats[i].HeatGenerationRate);
+                    float heatGrowth = math.exp(math.max(0f, state.InternalHeat) * OverchargeHeatExponent);
+                    state.InternalHeat = math.max(0f, state.InternalHeat + (runtimeHeatRate * OverchargeHeatScale * heatGrowth * math.max(0f, deltaTime)));
+                    if (state.InternalHeat > OverchargeExplosionHeatThreshold)
+                    {
+                        _toolStates[i] = state;
+                        TriggerOverchargeExplosion(i);
+                        continue;
+                    }
+                }
+
                 _toolStates[i] = state;
             }
         }
@@ -134,7 +163,7 @@ namespace Hecton8.Tools
 
             ToolState nextState = _toolStates[slotIndex];
             nextState.CurrentBattery = math.saturate(tool.ResolveModularBatteryNormalized()) * math.max(0.1f, compiledStats.BatteryCapacity);
-            nextState.InternalHeat = math.saturate(tool.ResolveModularHeatNormalized());
+            nextState.InternalHeat = math.max(0f, tool.ResolveModularHeatNormalized());
             nextState.Durability = math.saturate(tool.DurabilityNormalized);
             nextState.UpgradeBitmask = upgradeMask;
 
@@ -144,6 +173,7 @@ namespace Hecton8.Tools
             _toolStats[slotIndex] = compiledStats;
             _toolIndexById[profile.ToolId] = slotIndex;
             WriteModuleMirror(slotIndex, _registrationModules, moduleSlotCount);
+            SetBatteryAbsolute(slotIndex, nextState.CurrentBattery);
             return profile.ToolId;
         }
 
@@ -173,6 +203,7 @@ namespace Hecton8.Tools
                 return false;
 
             state = _toolStates[slotIndex];
+            state.CurrentBattery = ReadBatteryAbsolute(slotIndex);
             return true;
         }
 
@@ -240,12 +271,28 @@ namespace Hecton8.Tools
 
         public float GetPowerScalar(uint toolId, float fallback)
         {
-            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.PowerScalar : fallback;
+            if (!TryGetToolStats(toolId, out ToolRuntimeStats stats))
+                return fallback;
+
+            if (!_toolIndexById.TryGetValue(toolId, out int slotIndex))
+                return stats.PowerScalar;
+
+            return IsOverchargeRequested(slotIndex)
+                ? stats.PowerScalar * OverchargePowerMultiplier
+                : stats.PowerScalar;
         }
 
         public float GetEfficiencyScalar(uint toolId, float fallback)
         {
-            return TryGetToolStats(toolId, out ToolRuntimeStats stats) ? stats.EfficiencyScalar : fallback;
+            if (!TryGetToolStats(toolId, out ToolRuntimeStats stats))
+                return fallback;
+
+            if (!_wirelessBrownoutActive || !TryGetToolState(toolId, out ToolState state))
+                return stats.EfficiencyScalar;
+
+            return (state.UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) != 0u
+                ? stats.EfficiencyScalar * 0.5f
+                : stats.EfficiencyScalar;
         }
 
         public float GetSpeedScalar(uint toolId, float fallback)
@@ -283,10 +330,8 @@ namespace Hecton8.Tools
             if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
                 return;
 
-            ToolState state = _toolStates[slotIndex];
             float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
-            state.CurrentBattery = math.saturate(normalizedBattery) * capacity;
-            _toolStates[slotIndex] = state;
+            SetBatteryAbsolute(slotIndex, math.saturate(normalizedBattery) * capacity);
         }
 
         public float GetBatteryNormalized(uint toolId, float fallback)
@@ -295,7 +340,7 @@ namespace Hecton8.Tools
                 return fallback;
 
             float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
-            return math.saturate(_toolStates[slotIndex].CurrentBattery / capacity);
+            return math.saturate(ReadBatteryAbsolute(slotIndex) / capacity);
         }
 
         public void ConsumeBattery(uint toolId, float normalizedBatteryDelta)
@@ -303,10 +348,8 @@ namespace Hecton8.Tools
             if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
                 return;
 
-            ToolState state = _toolStates[slotIndex];
             float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
-            state.CurrentBattery = math.max(0f, state.CurrentBattery - math.max(0f, normalizedBatteryDelta) * capacity);
-            _toolStates[slotIndex] = state;
+            ConsumeBatteryAbsolute(slotIndex, math.max(0f, normalizedBatteryDelta) * capacity);
         }
 
         public void SetHeat(uint toolId, float normalizedHeat)
@@ -315,7 +358,10 @@ namespace Hecton8.Tools
                 return;
 
             ToolState state = _toolStates[slotIndex];
-            state.InternalHeat = math.saturate(normalizedHeat);
+            float sanitizedHeat = math.max(0f, normalizedHeat);
+            state.InternalHeat = IsOverchargeRequested(slotIndex)
+                ? math.max(state.InternalHeat, sanitizedHeat)
+                : sanitizedHeat;
             _toolStates[slotIndex] = state;
         }
 
@@ -337,6 +383,7 @@ namespace Hecton8.Tools
         private void OnEnable()
         {
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            TryRegisterTelemetry();
 
             if (_isInitialized)
             {
@@ -348,6 +395,7 @@ namespace Hecton8.Tools
         private void OnDisable()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            TryUnregisterTelemetry();
             TryUnregisterService();
             TryUnregisterUpdatable();
         }
@@ -355,6 +403,7 @@ namespace Hecton8.Tools
         private void OnDestroy()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            TryUnregisterTelemetry();
             TryUnregisterService();
             TryUnregisterUpdatable();
             DisposeNativeState();
@@ -417,6 +466,45 @@ namespace Hecton8.Tools
             return Mathf.Clamp(owner.RuntimeMetadata.maxUpgradeSlots, 0, ToolUpgradeSystem.MaxModuleSlots);
         }
 
+        private unsafe float ReadBatteryAbsolute(int slotIndex)
+        {
+            ref int batteryBits = ref GetBatteryBitsRef(slotIndex);
+            return math.max(0f, math.asfloat(Volatile.Read(ref batteryBits)));
+        }
+
+        private unsafe void SetBatteryAbsolute(int slotIndex, float absoluteBattery)
+        {
+            ref int batteryBits = ref GetBatteryBitsRef(slotIndex);
+            Interlocked.Exchange(ref batteryBits, math.asint(math.max(0f, absoluteBattery)));
+        }
+
+        private unsafe void ConsumeBatteryAbsolute(int slotIndex, float absoluteBatteryDelta)
+        {
+            if (absoluteBatteryDelta <= 0f)
+                return;
+
+            ref int batteryBits = ref GetBatteryBitsRef(slotIndex);
+            int observedBits = Volatile.Read(ref batteryBits);
+            while (true)
+            {
+                float currentBattery = math.max(0f, math.asfloat(observedBits));
+                float nextBattery = math.max(0f, currentBattery - absoluteBatteryDelta);
+                int nextBits = math.asint(nextBattery);
+                int originalBits = Interlocked.CompareExchange(ref batteryBits, nextBits, observedBits);
+                if (originalBits == observedBits)
+                    return;
+
+                observedBits = originalBits;
+            }
+        }
+
+        private unsafe ref int GetBatteryBitsRef(int slotIndex)
+        {
+            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(_toolStates);
+            ToolState* statePtr = ((ToolState*)basePtr) + slotIndex;
+            return ref Unsafe.AsRef<int>((void*)(&statePtr->CurrentBattery));
+        }
+
         private void RebuildCompiledState(int slotIndex, PlayerTool owner, uint toolId)
         {
             if (owner == null)
@@ -436,6 +524,7 @@ namespace Hecton8.Tools
             state.UpgradeBitmask = upgradeMask;
             _toolStats[slotIndex] = compiledStats;
             _toolStates[slotIndex] = state;
+            SetBatteryAbsolute(slotIndex, state.CurrentBattery);
         }
 
         private void TryRegisterService()
@@ -447,6 +536,20 @@ namespace Hecton8.Tools
             _registeredService = true;
         }
 
+        internal bool TryGetWirelessBrownoutFeedback(uint toolId, out float flickerScalar)
+        {
+            flickerScalar = 0f;
+            if (!_wirelessBrownoutActive || !_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+                return false;
+
+            if ((_toolStates[slotIndex].UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) == 0u)
+                return false;
+
+            float pulse = 0.35f + (0.65f * math.abs(math.sin(_brownoutPulseTime * 18f)));
+            flickerScalar = pulse;
+            return true;
+        }
+
         private void TryUnregisterService()
         {
             if (!_registeredService)
@@ -454,6 +557,25 @@ namespace Hecton8.Tools
 
             GlobalRegistry.UnregisterModularEquipmentService(this);
             _registeredService = false;
+        }
+
+        private void TryRegisterTelemetry()
+        {
+            if (_telemetrySubscribed)
+                return;
+
+            PowerGridTelemetryEvents.OnTelemetryUpdated -= HandlePowerTelemetryUpdated;
+            PowerGridTelemetryEvents.OnTelemetryUpdated += HandlePowerTelemetryUpdated;
+            _telemetrySubscribed = true;
+        }
+
+        private void TryUnregisterTelemetry()
+        {
+            if (!_telemetrySubscribed)
+                return;
+
+            PowerGridTelemetryEvents.OnTelemetryUpdated -= HandlePowerTelemetryUpdated;
+            _telemetrySubscribed = false;
         }
 
         private void TryRegisterUpdatable()
@@ -482,6 +604,42 @@ namespace Hecton8.Tools
             DisposeNativeState();
         }
 
+        private void HandlePowerTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
+        {
+            _latestSupplyRatio = math.saturate(snapshot.SupplyRatio);
+            _wirelessBrownoutActive = _latestSupplyRatio < 0.40f;
+            if (!_wirelessBrownoutActive)
+                _brownoutPulseTime = 0f;
+        }
+
+        private bool IsOverchargeRequested(int slotIndex)
+        {
+            PlayerTool owner = slotIndex >= 0 && slotIndex < MaxTrackedTools ? _toolOwners[slotIndex] : null;
+            return owner != null && owner.IsRuntimeOverchargeRequested();
+        }
+
+        private void TriggerOverchargeExplosion(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= MaxTrackedTools)
+                return;
+
+            PlayerTool owner = _toolOwners[slotIndex];
+            if (owner == null)
+                return;
+
+            owner.HandleRuntimeOverchargeFailure(OverchargeExplosionPlayerDamage);
+
+            uint runtimeToolId = owner.RuntimeToolId;
+            if (runtimeToolId != 0u && _toolIndexById.IsCreated)
+                _toolIndexById.Remove(runtimeToolId);
+
+            _toolOwners[slotIndex] = null;
+            _slotUsed[slotIndex] = false;
+            _toolStates[slotIndex] = default;
+            _toolStats[slotIndex] = default;
+            ClearModuleMirror(slotIndex);
+        }
+
         private void DisposeNativeState()
         {
             for (int i = 0; i < MaxTrackedTools; i++)
@@ -503,6 +661,9 @@ namespace Hecton8.Tools
                 _toolIndexById.Dispose();
 
             _isInitialized = false;
+            _toolStates = default;
+            _toolStats = default;
+            _toolIndexById = default;
         }
     }
 }

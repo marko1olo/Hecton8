@@ -26,6 +26,7 @@ namespace Hecton8.UI
         private const int MaxVisibleHologramInstances = 16;
         private const int MaxVisibleRecipeEntries = 8;
         private const int RecipeLabelBufferCapacity = 128;
+        private const int InflationLabelBufferCapacity = 24;
         private const float RecipePointerDistanceMeters = 6f;
         private const float HologramBaseDistanceMeters = 1f;
         private const float HologramSpinDegreesPerSecond = 36f;
@@ -35,8 +36,10 @@ namespace Hecton8.UI
         {
             public Transform Root;
             public TextMeshPro Label;
+            public TextMeshPro InflationLabel;
             public BoxCollider Collider;
             public WorldSpaceTMPSharpnessController Sharpness;
+            public WorldSpaceTMPSharpnessController InflationSharpness;
             public int RecipeIndex;
         }
 
@@ -73,6 +76,7 @@ namespace Hecton8.UI
         [SerializeField] private Color recipeIdleColor = new Color(0.42f, 0.9f, 1f, 0.85f);
         [SerializeField] private Color recipeSelectedColor = new Color(1f, 0.97f, 0.72f, 1f);
         [SerializeField] private Color recipeUnavailableColor = new Color(1f, 0.52f, 0.32f, 0.92f);
+        [SerializeField] private Color inflationColor = new Color(1f, 0.28f, 0.22f, 1f);
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugIsOpen;
@@ -89,6 +93,7 @@ namespace Hecton8.UI
         private readonly Matrix4x4[] _selectedRecipeHologramBuffer = new Matrix4x4[1];
         private readonly RecipeListEntry[] _recipeEntries = new RecipeListEntry[MaxVisibleRecipeEntries];
         private readonly char[] _recipeLabelBuffer = new char[RecipeLabelBufferCapacity];
+        private readonly char[] _inflationLabelBuffer = new char[InflationLabelBufferCapacity];
 
         private NativeArray<Matrix4x4> _hologramMatrices;
         private NativeArray<RaycastCommand> _recipePointerCommands;
@@ -654,7 +659,10 @@ namespace Hecton8.UI
                 if (ingredient == null || ingredient.item == null || ingredient.amount <= 0)
                     continue;
 
-                int unitCount = Mathf.Clamp(ingredient.amount, 1, MaxVisibleHologramInstances - instanceCount);
+                int adjustedAmount = _currentFabricator != null
+                    ? _currentFabricator.GetAdjustedIngredientAmount(ingredient)
+                    : ingredient.amount;
+                int unitCount = Mathf.Clamp(adjustedAmount, 1, MaxVisibleHologramInstances - instanceCount);
                 for (int unitIndex = 0; unitIndex < unitCount && instanceCount < MaxVisibleHologramInstances; unitIndex++)
                 {
                     int gridColumn = instanceCount % 4;
@@ -770,7 +778,19 @@ namespace Hecton8.UI
                 label.alignment = TextAlignmentOptions.Center;
                 label.color = recipeIdleColor;
                 label.textWrappingMode = TextWrappingModes.NoWrap;
-                label.text = string.Empty;
+                label.SetCharArray(Array.Empty<char>(), 0, 0);
+
+                GameObject inflationObject = new GameObject($"RecipeInflation_{i}"); // COLD ALLOC: GameObject[8] — diegetic inflation label pool — owner: HectonFabricatorUI
+                inflationObject.hideFlags = HideFlags.DontSave;
+                inflationObject.transform.SetParent(entryObject.transform, false);
+                inflationObject.transform.localPosition = new Vector3(1.38f, 0f, 0f);
+
+                TextMeshPro inflationLabel = inflationObject.AddComponent<TextMeshPro>();
+                inflationLabel.fontSize = 3.3f;
+                inflationLabel.alignment = TextAlignmentOptions.Right;
+                inflationLabel.color = inflationColor;
+                inflationLabel.textWrappingMode = TextWrappingModes.NoWrap;
+                inflationLabel.SetCharArray(Array.Empty<char>(), 0, 0);
 
                 BoxCollider collider = entryObject.AddComponent<BoxCollider>();
                 collider.size = new Vector3(2.2f, 0.52f, 0.04f);
@@ -778,13 +798,17 @@ namespace Hecton8.UI
 
                 WorldSpaceTMPSharpnessController sharpness = entryObject.AddComponent<WorldSpaceTMPSharpnessController>();
                 sharpness.Bind(label, hudCamera);
+                WorldSpaceTMPSharpnessController inflationSharpness = inflationObject.AddComponent<WorldSpaceTMPSharpnessController>();
+                inflationSharpness.Bind(inflationLabel, hudCamera);
 
                 _recipeEntries[i] = new RecipeListEntry
                 {
                     Root = entryObject.transform,
                     Label = label,
+                    InflationLabel = inflationLabel,
                     Collider = collider,
                     Sharpness = sharpness,
+                    InflationSharpness = inflationSharpness,
                     RecipeIndex = -1
                 };
             }
@@ -854,6 +878,10 @@ namespace Hecton8.UI
                     RecipeData recipe = _recipes[i];
                     bool selected = i == _selectedIndex;
                     bool craftable = CanCraftRecipe(recipe);
+                    float inflationMultiplier = _currentFabricator != null
+                        ? _currentFabricator.GetRecipeInflationMultiplier(recipe)
+                        : 1f;
+                    bool inflated = inflationMultiplier > 1.001f;
                     entry.RecipeIndex = i;
                     entry.Root.localPosition = new Vector3(0f, -i * recipeEntrySpacing, 0f);
                     entry.Root.localRotation = Quaternion.identity;
@@ -866,9 +894,12 @@ namespace Hecton8.UI
                             : recipeIdleColor;
                     if (entry.Sharpness != null)
                         entry.Sharpness.Bind(entry.Label, hudCamera);
+                    if (entry.InflationSharpness != null)
+                        entry.InflationSharpness.Bind(entry.InflationLabel, hudCamera);
 
                     int length = BuildRecipeLabel(entry.Label, recipe, selected, craftable);
                     entry.Label.SetCharArray(_recipeLabelBuffer, 0, length);
+                    ApplyInflationLabel(entry, inflated, inflationMultiplier);
                     _recipeEntries[i] = entry;
                 }
                 else
@@ -878,6 +909,26 @@ namespace Hecton8.UI
                     _recipeEntries[i] = entry;
                 }
             }
+        }
+
+        private void ApplyInflationLabel(RecipeListEntry entry, bool inflated, float multiplier)
+        {
+            if (entry.InflationLabel == null)
+                return;
+
+            if (!inflated)
+            {
+                entry.InflationLabel.SetCharArray(Array.Empty<char>(), 0, 0);
+                return;
+            }
+
+            int cursor = 0;
+            cursor = AppendLiteral('x', _inflationLabelBuffer, cursor);
+            if (multiplier.TryFormat(_inflationLabelBuffer.AsSpan(cursor), out int written, "0.00"))
+                cursor += written;
+
+            entry.InflationLabel.color = inflationColor;
+            entry.InflationLabel.SetCharArray(_inflationLabelBuffer, 0, Mathf.Clamp(cursor, 0, _inflationLabelBuffer.Length));
         }
 
         private int BuildRecipeLabel(TMP_Text label, RecipeData recipe, bool selected, bool craftable)
@@ -957,6 +1008,9 @@ namespace Hecton8.UI
             if (recipe == null || recipe.ingredients == null || playerInventory == null)
                 return false;
 
+            if (_currentFabricator != null)
+                return _currentFabricator.CanCraft(recipe);
+
             InventoryGrid grid = playerInventory.Grid;
             NativeArray<int>.ReadOnly anchorHashIds = grid != null ? grid.AnchorHashIds : default;
             NativeArray<ushort>.ReadOnly stackCounts = playerInventory.GetStackCountsReadOnly();
@@ -975,17 +1029,20 @@ namespace Hecton8.UI
 
                 int availableCount = 0;
                 int anchorCount = Mathf.Min(anchorHashIds.Length, stackCounts.Length);
+                int requiredAmount = _currentFabricator != null
+                    ? _currentFabricator.GetAdjustedIngredientAmount(ingredient)
+                    : ingredient.amount;
                 for (int anchorIndex = 0; anchorIndex < anchorCount; anchorIndex++)
                 {
                     if (anchorHashIds[anchorIndex] != itemHashId)
                         continue;
 
                     availableCount += stackCounts[anchorIndex];
-                    if (availableCount >= ingredient.amount)
+                    if (availableCount >= requiredAmount)
                         break;
                 }
 
-                if (availableCount < ingredient.amount)
+                if (availableCount < requiredAmount)
                     return false;
             }
 

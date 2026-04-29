@@ -1,0 +1,304 @@
+﻿diff --git a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+index ee47d35e..62a2193a 100644
+--- a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
++++ b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+@@ -1,7 +1,9 @@
+ using System;
+ using System.Collections.Generic;
++using Hecton8.World;
+ using Hecton.Localization;
+ using Unity.Collections.LowLevel.Unsafe;
++using Unity.Mathematics;
+ 
+ namespace Hecton8.SaveSystem
+ {
+@@ -27,6 +29,42 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
++        internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
++        {
++            int safeChunkSize = math.max(1, chunkSizeMeters);
++            double chunkSize = safeChunkSize;
++            int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, safeChunkSize);
++            double3 absolute = position.ToAbsoluteDouble3();
++            double chunkOriginX = chunkId.x * chunkSize;
++            double chunkOriginY = chunkId.y * chunkSize;
++            double chunkOriginZ = chunkId.z * chunkSize;
++
++            ushort chunkKey = FoldSpatialChunkId(chunkId);
++            ushort quantizedY = QuantizeSpatialAxis(absolute.y - chunkOriginY, chunkSize);
++            ushort quantizedX = QuantizeSpatialAxis(absolute.x - chunkOriginX, chunkSize);
++            ushort quantizedZ = QuantizeSpatialAxis(absolute.z - chunkOriginZ, chunkSize);
++            return ((ulong)chunkKey << 48) |
++                   ((ulong)quantizedY << 32) |
++                   ((ulong)quantizedX << 16) |
++                   quantizedZ;
++        }
++
++        private static ushort FoldSpatialChunkId(int3 chunkId)
++        {
++            uint hash = unchecked((uint)((chunkId.x * 73856093) ^ (chunkId.y * 19349663) ^ (chunkId.z * 83492791)));
++            hash ^= hash >> 16;
++            return (ushort)hash;
++        }
++
++        private static ushort QuantizeSpatialAxis(double localMeters, double chunkSizeMeters)
++        {
++            if (chunkSizeMeters <= 0d)
++                return 0;
++
++            double normalized = math.clamp(localMeters / chunkSizeMeters, 0d, 1d);
++            return (ushort)math.clamp((int)math.round(normalized * ushort.MaxValue), 0, ushort.MaxValue);
++        }
++
+         internal static bool TryWrite(SaveData data, byte* destination, int capacity, out int bytesWritten, out string error)
+         {
+             bytesWritten = 0;
+diff --git a/Assets/_Project/Scripts/SaveBinaryStorage.cs b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+index 92c5e1c9..0fcd04c1 100644
+--- a/Assets/_Project/Scripts/SaveBinaryStorage.cs
++++ b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+@@ -346,19 +346,10 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
+-        private struct SectorEntityStateSortEntry : IComparable<SectorEntityStateSortEntry>
++        private struct SectorEntityStateSortEntry
+         {
+             public ulong SortKey;
+             public EntityDataRecord Record;
+-
+-            public int CompareTo(SectorEntityStateSortEntry other)
+-            {
+-                int keyCompare = SortKey.CompareTo(other.SortKey);
+-                if (keyCompare != 0)
+-                    return keyCompare;
+-
+-                return Record.InstanceUid.CompareTo(other.Record.InstanceUid);
+-            }
+         }
+ 
+         [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+@@ -384,56 +375,63 @@ namespace Hecton8.SaveSystem
+ 
+                 Entries[index] = new SectorEntityStateSortEntry
+                 {
+-                    SortKey = BuildSpatialSortKey(in position, ChunkSizeMeters),
++                    SortKey = SaveBinaryPayloadCodec.BuildSectorEntitySpatialSortKey(in position, ChunkSizeMeters),
+                     Record = record
+                 };
+             }
++        }
+ 
+-            private static ulong BuildSpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
+-            {
+-                int safeChunkSize = math.max(1, chunkSizeMeters);
+-                double chunkSize = safeChunkSize;
+-                int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, safeChunkSize);
+-                double3 absolute = position.ToAbsoluteDouble3();
+-                double chunkOriginX = chunkId.x * chunkSize;
+-                double chunkOriginY = chunkId.y * chunkSize;
+-                double chunkOriginZ = chunkId.z * chunkSize;
+-
+-                ushort chunkKey = FoldChunkId(chunkId);
+-                ushort quantizedY = QuantizeAxis(absolute.y - chunkOriginY, chunkSize);
+-                ushort quantizedX = QuantizeAxis(absolute.x - chunkOriginX, chunkSize);
+-                ushort quantizedZ = QuantizeAxis(absolute.z - chunkOriginZ, chunkSize);
+-                return ((ulong)chunkKey << 48) |
+-                       ((ulong)quantizedY << 32) |
+-                       ((ulong)quantizedX << 16) |
+-                       quantizedZ;
+-            }
++        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
++        private struct RadixSortSectorEntityStateEntriesJob : IJob
++        {
++            public NativeArray<SectorEntityStateSortEntry> Entries;
++            public NativeArray<SectorEntityStateSortEntry> Scratch;
++            public NativeArray<int> Counts;
++            public NativeArray<int> Offsets;
+ 
+-            private static ushort FoldChunkId(int3 chunkId)
++            public void Execute()
+             {
+-                uint hash = unchecked((uint)((chunkId.x * 73856093) ^ (chunkId.y * 19349663) ^ (chunkId.z * 83492791)));
+-                hash ^= hash >> 16;
+-                return (ushort)hash;
++                int entryCount = Entries.Length;
++                if (entryCount <= 1)
++                    return;
++
++                RadixPass(Entries, Scratch, 0);
++                RadixPass(Scratch, Entries, 16);
++                RadixPass(Entries, Scratch, 32);
++                RadixPass(Scratch, Entries, 48);
+             }
+ 
+-            private static ushort QuantizeAxis(double localMeters, double chunkSizeMeters)
++            private void RadixPass(
++                NativeArray<SectorEntityStateSortEntry> source,
++                NativeArray<SectorEntityStateSortEntry> destination,
++                int shift)
+             {
+-                if (chunkSizeMeters <= 0d)
+-                    return 0;
++                for (int i = 0; i < Counts.Length; i++)
++                {
++                    Counts[i] = 0;
++                    Offsets[i] = 0;
++                }
+ 
+-                double normalized = math.clamp(localMeters / chunkSizeMeters, 0d, 1d);
+-                return (ushort)math.clamp((int)math.round(normalized * ushort.MaxValue), 0, ushort.MaxValue);
+-            }
+-        }
++                for (int i = 0; i < source.Length; i++)
++                {
++                    int bucket = (int)((source[i].SortKey >> shift) & 0xFFFFUL);
++                    Counts[bucket]++;
++                }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+-        private struct SortSectorEntityStateEntriesJob : IJob
+-        {
+-            public NativeArray<SectorEntityStateSortEntry> Entries;
++                int cursor = 0;
++                for (int i = 0; i < Counts.Length; i++)
++                {
++                    Offsets[i] = cursor;
++                    cursor += Counts[i];
++                }
+ 
+-            public void Execute()
+-            {
+-                NativeSortExtension.Sort(Entries);
++                for (int i = 0; i < source.Length; i++)
++                {
++                    SectorEntityStateSortEntry entry = source[i];
++                    int bucket = (int)((entry.SortKey >> shift) & 0xFFFFUL);
++                    int destinationIndex = Offsets[bucket]++;
++                    destination[destinationIndex] = entry;
++                }
+             }
+         }
+ 
+@@ -1176,9 +1174,8 @@ namespace Hecton8.SaveSystem
+             sectorEntries = null;
+             error = string.Empty;
+ 
+-            if ((header.Flags & FlagIndexedSectorBlocks) == 0 || header.Version < IndexedBlockStorageVersion)
++            if (!TryValidateIndexedBlockStorageHeader(in header, out error))
+             {
+-                error = "Save header is not an indexed sector container.";
+                 return false;
+             }
+ 
+@@ -1228,6 +1225,24 @@ namespace Hecton8.SaveSystem
+             return true;
+         }
+ 
++        private static bool TryValidateIndexedBlockStorageHeader(in SaveFileHeader header, out string error)
++        {
++            error = string.Empty;
++            if ((header.Flags & FlagIndexedSectorBlocks) == 0)
++            {
++                error = "Save header is not an indexed sector container.";
++                return false;
++            }
++
++            if (header.Version != IndexedBlockStorageVersion)
++            {
++                error = $"Indexed sector block decompression requires save header version 0x{IndexedBlockStorageVersion:X4}. Found 0x{header.Version:X4}.";
++                return false;
++            }
++
++            return true;
++        }
++
+         private static bool TryReadIndexedCompressedBlock(
+             ref AsyncWriteManager.ReadOnlyMapping mapping,
+             long blockOffset,
+@@ -1928,9 +1943,12 @@ namespace Hecton8.SaveSystem
+             int fileCapacity = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedCapacity;
+ 
+             using NativeArray<SectorEntityStateSortEntry> sortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++            using NativeArray<SectorEntityStateSortEntry> radixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             using NativeArray<EntityDataRecord> sortedEntityStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             using NativeArray<byte> compressedBytes = new NativeArray<byte>(fileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             using NativeArray<int> resultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++            using NativeArray<int> radixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++            using NativeArray<int> radixOffsets = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+ 
+             BuildSectorEntityStateSortEntriesJob buildJob = new BuildSectorEntityStateSortEntriesJob
+             {
+@@ -1938,9 +1956,12 @@ namespace Hecton8.SaveSystem
+                 Entries = sortEntries,
+                 ChunkSizeMeters = math.max(1, chunkSizeMeters)
+             };
+-            SortSectorEntityStateEntriesJob sortJob = new SortSectorEntityStateEntriesJob
++            RadixSortSectorEntityStateEntriesJob sortJob = new RadixSortSectorEntityStateEntriesJob
+             {
+-                Entries = sortEntries
++                Entries = sortEntries,
++                Scratch = radixScratch,
++                Counts = radixCounts,
++                Offsets = radixOffsets
+             };
+             ExtractSortedSectorEntityStatesJob extractJob = new ExtractSortedSectorEntityStatesJob
+             {
+diff --git a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+index f7bf1885..f0443ada 100644
+--- a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
++++ b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+@@ -1535,6 +1535,17 @@ namespace Hecton8.World
+             return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
+         }
+ 
++        private static bool IsDesiredPagedSector(NativeArray<long> desiredSectorHashes, long sectorHash)
++        {
++            for (int i = 0; i < desiredSectorHashes.Length; i++)
++            {
++                if (desiredSectorHashes[i] == sectorHash)
++                    return true;
++            }
++
++            return false;
++        }
++
+         private async Awaitable<bool> SnapshotResidentSectorOverridesAsync(NativeArray<long> desiredSectorHashes)
+         {
+             if (!_indexedSectorPagingEnabled ||
+@@ -1556,6 +1567,9 @@ namespace Hecton8.World
+                     continue;
+ 
+                 long sectorHash = ComputeSectorHash(in record.Position);
++                if (IsDesiredPagedSector(desiredSectorHashes, sectorHash))
++                    continue;
++
+                 if (!sectors.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> bucket))
+                 {
+                     // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] â€” one resident sector override record bucket â€” owner: PersistentWorldRegistry
+@@ -1586,7 +1600,7 @@ namespace Hecton8.World
+                 foreach (KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair in sectors)
+                 {
+                     List<PersistentWorldDeltaRecord> bucket = pair.Value;
+-                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
++                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                     try
+                     {
+                         for (int i = 0; i < bucket.Count; i++)
+@@ -1604,10 +1618,12 @@ namespace Hecton8.World
+                             entityStateBucket != null &&
+                             entityStateBucket.Count > 0)
+                         {
+-                            EntityDataRecord[] sectorStateArray = entityStateBucket.ToArray();
+-                            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(sectorStateArray, Allocator.Temp);
++                            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStateBucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                             try
+                             {
++                                for (int stateIndex = 0; stateIndex < entityStateBucket.Count; stateIndex++)
++                                    sectorStates[stateIndex] = entityStateBucket[stateIndex];
++
+                                 entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
+                                 if (!SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, pair.Key, sectorStates, chunkSizeMeters, out string entityStateError))
+                                 {

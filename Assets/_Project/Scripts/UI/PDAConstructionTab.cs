@@ -1221,7 +1221,7 @@ namespace Hecton8.UI
             if (root == null || _cardVisibility[index] == visible)
                 return;
 
-            root.gameObject.SetActive(visible);
+            SetCanvasGroupVisible(root, visible);
             _cardVisibility[index] = visible;
         }
 
@@ -1230,8 +1230,22 @@ namespace Hecton8.UI
             if (root == null || currentVisible == visible)
                 return;
 
-            root.gameObject.SetActive(visible);
+            SetCanvasGroupVisible(root, visible);
             currentVisible = visible;
+        }
+
+        private static void SetCanvasGroupVisible(RectTransform root, bool visible)
+        {
+            if (root == null)
+                return;
+
+            CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
+
+            canvasGroup.alpha = visible ? 1f : 0f;
+            canvasGroup.interactable = visible;
+            canvasGroup.blocksRaycasts = visible;
         }
 
         private static string TrimForCard(string text, int maxChars)

@@ -28,6 +28,8 @@ namespace Hecton8.Core
         private const float PipeLodRefreshThresholdMetersSq = 1f;
         private const float RelayRadiusMeters = 0.028f;
         private const float TwoPi = math.PI * 2f;
+        private const float RuptureBucklingFrequency = 15f;
+        private const float RuptureBucklingAmplitude = 0.15f;
 
         private enum BatchKind : byte
         {
@@ -102,6 +104,7 @@ namespace Hecton8.Core
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
         private struct BuildTubeVerticesJob : IJobParallelFor
         {
+            [ReadOnly] public NativeArray<SplineDescriptor> Descriptors;
             [ReadOnly] public NativeArray<float3> SampleCenters;
             [ReadOnly] public NativeArray<float3> SampleNormals;
             [ReadOnly] public NativeArray<float3> SampleBinormals;
@@ -125,12 +128,25 @@ namespace Hecton8.Core
                 float angle = radialIndex * (TwoPi / RadialSegments);
                 math.sincos(angle, out float sinAngle, out float cosAngle);
                 float3 radialDirection = (normal * cosAngle) + (binormal * sinAngle);
+                float3 position = center + radialDirection * Radius;
+
+                if (LogisticsPipeBuilder.HasRupturedMask(Descriptors[linkIndex].Flags))
+                {
+                    float ruptureHash = ResolveRuptureHash(linkIndex);
+                    position += radialDirection * math.sin(position.z * RuptureBucklingFrequency + ruptureHash) * RuptureBucklingAmplitude;
+                }
 
                 Vertices[index] = new TubeVertex
                 {
-                    Position = center + radialDirection * Radius,
+                    Position = position,
                     Normal = radialDirection
                 };
+            }
+
+            private static float ResolveRuptureHash(int linkIndex)
+            {
+                float phase = (linkIndex + 1) * 12.9898f;
+                return math.frac(math.sin(phase) * 43758.5453f) * TwoPi;
             }
         }
 
@@ -212,6 +228,8 @@ namespace Hecton8.Core
         private readonly BatchState[] _batches = new BatchState[5];
         // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] — master logistics-pipe registry for distance-based batch reassignment — owner: ConnectionSplineBatchRenderer
         private readonly Dictionary<long, SplineDescriptor> _pipeRegistrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
+        private readonly HashSet<uint> _rupturedPipeNodes = new HashSet<uint>();
+        private readonly List<long> _pipeRuptureUpdateScratch = new List<long>(DefaultBatchCapacity);
 
         private bool _pipeLodDirty = true;
         private float3 _lastPipeObserverPosition;
@@ -244,6 +262,14 @@ namespace Hecton8.Core
             _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesFar], linkId);
             _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesLine], linkId);
             _instance._pipeLodDirty = true;
+        }
+
+        internal static void SetPipeNodeRuptured(uint nodeId, bool ruptured)
+        {
+            if (_instance == null)
+                return;
+
+            _instance.SetPipeNodeRupturedInternal(nodeId, ruptured);
         }
 
         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
@@ -471,8 +497,60 @@ namespace Hecton8.Core
             _batches[(int)BatchKind.PipesNear].Color = color;
             _batches[(int)BatchKind.PipesFar].Color = color;
             _batches[(int)BatchKind.PipesLine].Color = color;
+            ApplyPipeRuptureFlags(linkId, ref descriptor);
             _pipeRegistrations[linkId] = descriptor;
             _pipeLodDirty = true;
+        }
+
+        private void SetPipeNodeRupturedInternal(uint nodeId, bool ruptured)
+        {
+            bool changed = ruptured
+                ? _rupturedPipeNodes.Add(nodeId)
+                : _rupturedPipeNodes.Remove(nodeId);
+
+            if (!changed)
+                return;
+
+            _pipeRuptureUpdateScratch.Clear();
+            Dictionary<long, SplineDescriptor>.Enumerator enumerator = _pipeRegistrations.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                if (PipeLinkContainsNode(enumerator.Current.Key, nodeId))
+                    _pipeRuptureUpdateScratch.Add(enumerator.Current.Key);
+            }
+
+            int updateCount = _pipeRuptureUpdateScratch.Count;
+            for (int i = 0; i < updateCount; i++)
+            {
+                long linkId = _pipeRuptureUpdateScratch[i];
+                if (!_pipeRegistrations.TryGetValue(linkId, out SplineDescriptor descriptor))
+                    continue;
+
+                ApplyPipeRuptureFlags(linkId, ref descriptor);
+                _pipeRegistrations[linkId] = descriptor;
+            }
+
+            _pipeLodDirty = true;
+        }
+
+        private void ApplyPipeRuptureFlags(long linkId, ref SplineDescriptor descriptor)
+        {
+            descriptor.Flags &= ~PipeRenderFlags.MaskRuptured;
+            DecodePipeLinkId(linkId, out uint leftNodeId, out uint rightNodeId);
+            if (_rupturedPipeNodes.Contains(leftNodeId) || _rupturedPipeNodes.Contains(rightNodeId))
+                descriptor.Flags |= PipeRenderFlags.MaskRuptured;
+        }
+
+        private static bool PipeLinkContainsNode(long linkId, uint nodeId)
+        {
+            DecodePipeLinkId(linkId, out uint leftNodeId, out uint rightNodeId);
+            return leftNodeId == nodeId || rightNodeId == nodeId;
+        }
+
+        private static void DecodePipeLinkId(long linkId, out uint leftNodeId, out uint rightNodeId)
+        {
+            leftNodeId = (uint)(linkId >> 32);
+            rightNodeId = unchecked((uint)linkId);
         }
 
         private void UpsertLink(BatchState batch, long linkId, SplineDescriptor descriptor)
@@ -568,6 +646,7 @@ namespace Hecton8.Core
 
             BuildTubeVerticesJob vertexJob = new BuildTubeVerticesJob
             {
+                Descriptors = batch.Descriptors,
                 SampleCenters = batch.SampleCenters,
                 SampleNormals = batch.SampleNormals,
                 SampleBinormals = batch.SampleBinormals,

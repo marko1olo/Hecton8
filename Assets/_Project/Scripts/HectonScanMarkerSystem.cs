@@ -13,7 +13,7 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, IScanEventListener
     {
         private const string MarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int MaxMarkers = 64;
@@ -75,13 +75,13 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            ScanEvents.OnNodeFound += HandleNodeFound;
+            ScanEvents.Register(this);
             RegisterTick();
         }
 
         private void OnDisable()
         {
-            ScanEvents.OnNodeFound -= HandleNodeFound;
+            ScanEvents.Unregister(this);
             UnregisterTick();
         }
 
@@ -116,6 +116,14 @@ namespace Hecton8.Gameplay
             EnsureMatrixBuffer();
             UpdateMarkerTimers(deltaTime);
             RenderMarkers();
+        }
+
+        public void OnScanEvent(in ScanEventPayload payload)
+        {
+            if ((ScanEventType)payload.EventType != ScanEventType.NodeFound)
+                return;
+
+            HandleNodeFound(payload.Position);
         }
 
         private void HandleNodeFound(float3 worldPos)

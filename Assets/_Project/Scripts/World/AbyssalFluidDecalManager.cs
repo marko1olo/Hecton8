@@ -103,10 +103,10 @@ namespace Hecton8.World
         private FluidDecalState[] _decalStates;
         private Mesh _quadMesh;
         private Material _runtimeMaterial;
-        private MaterialPropertyBlock _materialPropertyBlock;
+        private MaterialPropertyBlock _drawPropertyBlock;
         private Vector3 _previousGlobalDriftOffset;
-        private bool _ownsRuntimeMaterial;
         private bool _registeredTick;
+        private bool _loggedMissingDecalMaterial;
 
         /// <summary>
         /// Active singleton instance used by abyssal rupture and cable-cut aftermath systems.
@@ -126,6 +126,7 @@ namespace Hecton8.World
             SanitizeSettings();
             EnsureStorage();
             EnsureRenderingResources();
+            _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             _previousGlobalDriftOffset = ResolveGlobalDriftOffset();
         }
 
@@ -133,6 +134,7 @@ namespace Hecton8.World
         {
             EnsureStorage();
             EnsureRenderingResources();
+            _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
@@ -147,12 +149,9 @@ namespace Hecton8.World
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
-            if (_ownsRuntimeMaterial && _runtimeMaterial != null)
-            {
-                Destroy(_runtimeMaterial);
-            }
             _runtimeMaterial = null;
-            _ownsRuntimeMaterial = false;
+            _drawPropertyBlock = null;
+            MaterialPropertyBlockRegistry.ReleaseLegacyBlock(this);
 
             if (_quadMesh != null)
             {
@@ -266,6 +265,11 @@ namespace Hecton8.World
 
         private void DrawDecal(in FluidDecalState decal)
         {
+            if (_drawPropertyBlock == null)
+                _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
+            if (_drawPropertyBlock == null)
+                return;
+
             float alphaT = decal.TotalLifetime > 0.0001f ? Mathf.Clamp01(decal.RemainingLifetime / decal.TotalLifetime) : 0f;
             Color drawColor = decal.Color;
             drawColor.a *= alphaT;
@@ -278,13 +282,13 @@ namespace Hecton8.World
                 rotation,
                 new Vector3(decal.Radius * 2f, decal.Radius * 2f, 1f));
 
-            _materialPropertyBlock.Clear();
-            _materialPropertyBlock.SetColor(_TintColorId, drawColor);
-            _materialPropertyBlock.SetFloat(_RadiusId, decal.Radius);
-            _materialPropertyBlock.SetFloat(_SoftnessId, edgeSoftness);
-            _materialPropertyBlock.SetFloat(_WakeDistortionId, wakeDistortion);
-            _materialPropertyBlock.SetFloat(_WakeTearStrengthId, wakeTearStrength);
-            _materialPropertyBlock.SetFloat(_WakeThresholdId, wakeThreshold);
+            _drawPropertyBlock.Clear();
+            _drawPropertyBlock.SetColor(_TintColorId, drawColor);
+            _drawPropertyBlock.SetFloat(_RadiusId, decal.Radius);
+            _drawPropertyBlock.SetFloat(_SoftnessId, edgeSoftness);
+            _drawPropertyBlock.SetFloat(_WakeDistortionId, wakeDistortion);
+            _drawPropertyBlock.SetFloat(_WakeTearStrengthId, wakeTearStrength);
+            _drawPropertyBlock.SetFloat(_WakeThresholdId, wakeThreshold);
 
             Graphics.DrawMesh(
                 _quadMesh,
@@ -293,7 +297,7 @@ namespace Hecton8.World
                 gameObject.layer,
                 null,
                 0,
-                _materialPropertyBlock,
+                _drawPropertyBlock,
                 ShadowCastingMode.Off,
                 false,
                 null,
@@ -308,8 +312,6 @@ namespace Hecton8.World
                 // COLD ALLOC: FluidDecalState[32] - capped abyssal aftermath decal registry - owner: AbyssalFluidDecalManager
                 _decalStates = new FluidDecalState[maxDecalCount];
             }
-
-            _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - abyssal fluid decal draw properties - owner: AbyssalFluidDecalManager
         }
 
         private void EnsureRenderingResources()
@@ -322,20 +324,14 @@ namespace Hecton8.World
                 if (decalMaterial != null)
                 {
                     _runtimeMaterial = decalMaterial;
-                    _ownsRuntimeMaterial = false;
                     return;
                 }
 
-                Shader shader = Shader.Find("HECTON/World/AbyssalFluidDecal");
-                if (shader == null)
-                    return;
-
-                // COLD ALLOC: Material[1] - dedicated abyssal fluid decal runtime material - owner: AbyssalFluidDecalManager
-                _runtimeMaterial = new Material(shader)
+                if (!_loggedMissingDecalMaterial)
                 {
-                    name = "MAT_Runtime_AbyssalFluidDecal"
-                };
-                _ownsRuntimeMaterial = true;
+                    _loggedMissingDecalMaterial = true;
+                    Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
+                }
             }
         }
 

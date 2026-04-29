@@ -92,6 +92,7 @@ namespace Hecton8.Modding
 
     /// <summary>
     /// Global typed event bus for moddable runtime systems.
+    /// First-party gameplay queues such as Save/Quest/Scan are owned separately by their NativeQueue-backed static buses.
     /// Unlike raw C# events, every handler invocation is isolated behind try/catch so one broken mod cannot break the chain.
     /// </summary>
     public static class HectonEventBus

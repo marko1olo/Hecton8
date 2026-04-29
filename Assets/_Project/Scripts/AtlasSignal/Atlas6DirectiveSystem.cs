@@ -29,13 +29,18 @@
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
+using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton.Localization;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
@@ -53,41 +58,185 @@ namespace Hecton8.AtlasSignal
         Anomaly         = 5    // Аномалия — живой человек вне колонии
     }
 
+    public enum Atlas6EventType : byte
+    {
+        PlayerStatusChanged = 0,
+        DirectiveConflict = 1,
+        BarterAccepted = 2,
+        ScarcityDirectiveIssued = 3
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Atlas6EventPayload
+    {
+        public int TransactionCount;
+        public uint ConflictHash;
+        public uint DirectiveQuestHash;
+        public uint ResourceHash;
+        public ushort EventType;
+        public ushort StatusValue;
+    }
+
+    public interface IAtlas6EventListener
+    {
+        void OnAtlas6Event(in Atlas6EventPayload payload);
+    }
+
     public static class Atlas6Events
     {
+        // COLD ALLOC: RegistryBucket<IAtlas6EventListener>[4] - Atlas-6 directive listeners drained on dispatcher LateUpdate - owner: Atlas6Events
+        private static readonly RegistryBucket<IAtlas6EventListener> _listeners = new RegistryBucket<IAtlas6EventListener>(4);
+        // COLD ALLOC: Dictionary<uint,string>[8] - hashed directive conflict IDs for cold-path resolution - owner: Atlas6Events
+        private static readonly Dictionary<uint, string> _conflictIdsByHash = new Dictionary<uint, string>(8);
+        private static NativeQueue<Atlas6EventPayload> _pendingEvents;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnPlayerStatusChanged = null;
-            OnDirectiveConflict = null;
-            OnBarterAccepted = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _conflictIdsByHash.Clear();
         }
 
         /// <summary>Статус игрока изменился.</summary>
-        public static event Action<Atlas6PlayerStatus> OnPlayerStatusChanged;
+        public static void Register(IAtlas6EventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            _listeners.Register(listener);
+        }
 
         /// <summary>Конфликт директив — Атлас-6 не может выполнить приказ.</summary>
-        public static event Action<string> OnDirectiveConflict;
+        public static void Unregister(IAtlas6EventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            _listeners.Unregister(listener);
+        }
 
         /// <summary>Бартер принят — Атлас-6 получил ресурсы.</summary>
-        public static event Action<int> OnBarterAccepted;
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out Atlas6EventPayload payload))
+            {
+                IAtlas6EventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnAtlas6Event(in payload);
+            }
+        }
+
+        public static bool TryResolveDirectiveConflict(uint conflictHash, out string conflictId)
+        {
+            return _conflictIdsByHash.TryGetValue(conflictHash, out conflictId);
+        }
 
         public static void RaisePlayerStatusChanged(Atlas6PlayerStatus status)
-            => OnPlayerStatusChanged?.Invoke(status);
+        {
+            Enqueue(new Atlas6EventPayload
+            {
+                TransactionCount = 0,
+                ConflictHash = 0u,
+                DirectiveQuestHash = 0u,
+                ResourceHash = 0u,
+                EventType = (ushort)Atlas6EventType.PlayerStatusChanged,
+                StatusValue = (ushort)status
+            });
+        }
 
         public static void RaiseDirectiveConflict(string conflictId)
         {
-            if (!string.IsNullOrEmpty(conflictId))
-                OnDirectiveConflict?.Invoke(conflictId);
+            uint conflictHash = string.IsNullOrWhiteSpace(conflictId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(conflictId));
+            if (conflictHash == 0u)
+                return;
+
+            if (!_conflictIdsByHash.ContainsKey(conflictHash))
+                _conflictIdsByHash.Add(conflictHash, conflictId);
+
+            Enqueue(new Atlas6EventPayload
+            {
+                TransactionCount = 0,
+                ConflictHash = conflictHash,
+                DirectiveQuestHash = 0u,
+                ResourceHash = 0u,
+                EventType = (ushort)Atlas6EventType.DirectiveConflict,
+                StatusValue = 0
+            });
         }
 
         public static void RaiseBarterAccepted(int transactionCount)
-            => OnBarterAccepted?.Invoke(transactionCount);
+        {
+            Enqueue(new Atlas6EventPayload
+            {
+                TransactionCount = transactionCount,
+                ConflictHash = 0u,
+                DirectiveQuestHash = 0u,
+                ResourceHash = 0u,
+                EventType = (ushort)Atlas6EventType.BarterAccepted,
+                StatusValue = 0
+            });
+        }
+
+        public static void RaiseScarcityDirective(uint questHash, uint resourceHash)
+        {
+            if (questHash == 0u || resourceHash == 0u)
+                return;
+
+            Enqueue(new Atlas6EventPayload
+            {
+                TransactionCount = 0,
+                ConflictHash = 0u,
+                DirectiveQuestHash = questHash,
+                ResourceHash = resourceHash,
+                EventType = (ushort)Atlas6EventType.ScarcityDirectiveIssued,
+                StatusValue = 0
+            });
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
+            }
+        }
+
+        private static void Enqueue(in Atlas6EventPayload payload)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
+        }
     }
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
-    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, IAtlas6EventListener
     {
         private const int MinimumRevealStageForDirectiveIdentity = 3;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
@@ -95,6 +244,11 @@ namespace Hecton8.AtlasSignal
         private const string TerminalSectorDiscoveryId = "atlas6_terminal_sector3";
         private const string CoreReachedDiscoveryId = "atlas6_core_reached";
         private const string CoreDataAccessedDiscoveryId = "atlas6_core_data_accessed";
+        private static readonly uint _signalIdentityDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalIdentityDiscoveryId);
+        private static readonly uint _signalFullyDecodedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalFullyDecodedDiscoveryId);
+        private static readonly uint _terminalSectorDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(TerminalSectorDiscoveryId);
+        private static readonly uint _coreReachedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(CoreReachedDiscoveryId);
+        private static readonly uint _coreDataAccessedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(CoreDataAccessedDiscoveryId);
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -183,8 +337,8 @@ namespace Hecton8.AtlasSignal
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
 
-            NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
-            Atlas6Events.OnBarterAccepted   += HandleBarterAccepted;
+            NarrativeEvents.Register(this);
+            Atlas6Events.Register(this);
             ResolvePlayer();
         }
 
@@ -195,8 +349,8 @@ namespace Hecton8.AtlasSignal
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
 
-            NarrativeEvents.OnDiscoveryMade    -= HandleDiscovery;
-            Atlas6Events.OnBarterAccepted      -= HandleBarterAccepted;
+            NarrativeEvents.Unregister(this);
+            Atlas6Events.Unregister(this);
         }
 
         private void OnDestroy()
@@ -300,11 +454,26 @@ namespace Hecton8.AtlasSignal
             LogPlayerStatus(newStatus);
         }
 
-        private void HandleDiscovery(string discoveryId)
+        public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
-            // Обнаружение терминала Атлас-6 → Detected
-            if (CanAdoptAtlasStatusFromDiscovery(discoveryId))
+            if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade)
+                return;
+
+            if (CanAdoptAtlasStatusFromDiscovery(payload.DiscoveryHash))
                 SetStatus(Atlas6PlayerStatus.Detected);
+        }
+
+        public void OnAtlas6Event(in Atlas6EventPayload payload)
+        {
+            Atlas6EventType eventType = (Atlas6EventType)payload.EventType;
+            if (eventType == Atlas6EventType.BarterAccepted)
+            {
+                HandleBarterAccepted(payload.TransactionCount);
+                return;
+            }
+
+            if (eventType == Atlas6EventType.ScarcityDirectiveIssued)
+                HandleScarcityDirective(payload.ResourceHash);
         }
 
         private void HandleBarterAccepted(int count)
@@ -315,12 +484,27 @@ namespace Hecton8.AtlasSignal
                 SetStatus(Atlas6PlayerStatus.Neutral);
         }
 
-        private bool CanAdoptAtlasStatusFromDiscovery(string discoveryId)
+        private void HandleScarcityDirective(uint resourceHash)
+        {
+            string resourceName = "ESSENTIAL RESOURCE";
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
+            ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
+            ItemData item = catalog != null ? catalog.FindByHash(unchecked((int)resourceHash)) : null;
+            if (item != null)
+                resourceName = item.itemName.ToUpperInvariant();
+
+            NotificationEvents.PushWarning($"ATLAS-6 DIRECTIVE: RESTOCK {resourceName}.");
+        }
+
+        private bool CanAdoptAtlasStatusFromDiscovery(uint discoveryHash)
         {
             if (_playerStatus != Atlas6PlayerStatus.Unknown)
                 return false;
 
-            if (!IsDirectiveIdentityDiscovery(discoveryId))
+            if (!IsDirectiveIdentityDiscovery(discoveryHash))
                 return false;
 
             AtlasSignalSystem signal = AtlasSignalSystem.Instance;
@@ -334,13 +518,13 @@ namespace Hecton8.AtlasSignal
             return true;
         }
 
-        private static bool IsDirectiveIdentityDiscovery(string discoveryId)
+        private static bool IsDirectiveIdentityDiscovery(uint discoveryHash)
         {
-            return discoveryId == SignalIdentityDiscoveryId ||
-                   discoveryId == SignalFullyDecodedDiscoveryId ||
-                   discoveryId == TerminalSectorDiscoveryId ||
-                   discoveryId == CoreReachedDiscoveryId ||
-                   discoveryId == CoreDataAccessedDiscoveryId;
+            return discoveryHash == _signalIdentityDiscoveryHash ||
+                   discoveryHash == _signalFullyDecodedDiscoveryHash ||
+                   discoveryHash == _terminalSectorDiscoveryHash ||
+                   discoveryHash == _coreReachedDiscoveryHash ||
+                   discoveryHash == _coreDataAccessedDiscoveryHash;
         }
 
         private void ResolvePlayer()

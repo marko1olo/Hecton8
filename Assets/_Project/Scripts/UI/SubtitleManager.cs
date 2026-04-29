@@ -88,7 +88,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Subtitle Manager")]
-    public sealed class SubtitleManager : MonoBehaviour, ITickable
+    public sealed class SubtitleManager : MonoBehaviour, ITickable, INotificationEventListener
     {
         private enum SubtitleSource
         {
@@ -255,14 +255,14 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             font = LocalizedFontResolver.ResolveReadableFont(font);
-            NotificationEvents.OnPushNotification += HandleNotificationPushed;
+            NotificationEvents.Register(this);
             SubtitleEventBus.OnPlaybackEvent += HandleSubtitlePlaybackEvent;
             EnsureBuilt();
         }
 
         private void OnDisable()
         {
-            NotificationEvents.OnPushNotification -= HandleNotificationPushed;
+            NotificationEvents.Unregister(this);
             SubtitleEventBus.OnPlaybackEvent -= HandleSubtitlePlaybackEvent;
             UnregisterFromTickManager();
 
@@ -329,7 +329,15 @@ namespace Hecton8.UI
                 _audioCueGroup.alpha = _currentSource == SubtitleSource.AudioLog ? _currentAlpha : 0f;
         }
 
-        private void HandleNotificationPushed(string message, int severity)
+        public void OnNotificationEvent(in NotificationEventPayload payload)
+        {
+            if (!NotificationEvents.TryResolveMessage(payload.MessageHash, out string message))
+                return;
+
+            HandleNotificationPushed(message, payload.Severity);
+        }
+
+        private void HandleNotificationPushed(string message, ushort severity)
         {
             Enqueue(message, defaultDuration, SubtitleSource.Notification, false);
         }

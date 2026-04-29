@@ -16,11 +16,18 @@ namespace Hecton8.Environment
         private const float ExponentialBlendCompletion = 0.99f;
         private const float TransitionCompletionThreshold = 0.999f;
         private const float CurrentSyncEpsilonSq = 0.000025f;
+        private const float BiomeBlendChangeEpsilon = 0.0001f;
+        private const float WeatherLutChangeEpsilon = 0.01f;
         private const float VectorNormalizeEpsilon = 0.0001f;
+        private const int NoirFogLutRowCount = 6;
+        private const int NoirFogLutSliceCount = 3;
 #if UNITY_EDITOR
         private const string CalmWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_DeepStillness.asset";
         private const string StormWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_CyclonicSurge.asset";
         private const string SurgeWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_BiolumeBloom.asset";
+        private const string ShallowBiomeWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_ShallowLight.asset";
+        private const string MidnightBiomeWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_MidnightStillness.asset";
+        private const string HadalBiomeWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_HadalsSurge.asset";
 #endif
 
         private enum WeatherPhase : byte
@@ -77,6 +84,11 @@ namespace Hecton8.Environment
         private static readonly int _GlobalCurrentVectorId = Shader.PropertyToID("_HectonGlobalCurrentVector");
         private static readonly int _GlobalWindVectorId = Shader.PropertyToID("_HectonGlobalWindVector");
         private static readonly int _WeatherIntensityId = Shader.PropertyToID("_HectonWeatherIntensity");
+        private static readonly int _NoirFogLutId = Shader.PropertyToID("_NoirFogLUT");
+        private static readonly int _NoirFogLutParamsId = Shader.PropertyToID("_HectonNoirFogLutParams");
+        private static readonly int _NoirFogLutBlendId = Shader.PropertyToID("_HectonNoirFogLutBlend");
+        private static readonly int _NoirFogStratificationId = Shader.PropertyToID("_HectonNoirFogStratification");
+        private static readonly int _BiolumeSurgeThresholdId = Shader.PropertyToID("_HectonBiolumeSurgeThreshold");
 
         [Header("References")]
         [Tooltip("Optional explicit fluid-engine reference. If empty, the runtime singleton is used.")]
@@ -93,6 +105,12 @@ namespace Hecton8.Environment
         [SerializeField] private WeatherProfile stormWeatherProfile;
         [Tooltip("Optional authored surge-weather profile used to override wind and wave-height targets.")]
         [SerializeField] private WeatherProfile surgeWeatherProfile;
+        [Tooltip("Authoring profile for the shallow-light biome LUT contribution.")]
+        [SerializeField] private WeatherProfile shallowLightBiomeProfile;
+        [Tooltip("Authoring profile for the midnight-stillness biome LUT contribution.")]
+        [SerializeField] private WeatherProfile midnightStillnessBiomeProfile;
+        [Tooltip("Authoring profile for the hadal-surge biome LUT contribution.")]
+        [SerializeField] private WeatherProfile hadalsSurgeBiomeProfile;
         [Tooltip("Calm-state current, wind, and wave response profile.")]
         [SerializeField] private PhaseProfile calmProfile = new PhaseProfile
         {
@@ -171,6 +189,18 @@ namespace Hecton8.Environment
             speedMultiplier = 1.15f,
         };
 
+        [Header("Noir Fog LUT")]
+        [Tooltip("Width of the runtime 1D noir fog LUT. The texture is authored as 6 rows: source and target slices for fog, absorption, and ambient tint.")]
+        [SerializeField, Min(8)] private int noirFogLutResolution = 32;
+        [Tooltip("Seconds used to exponentially settle the biome LUT blend factor.")]
+        [SerializeField, Min(0.25f)] private float biomeBlendDurationSeconds = 8f;
+        [Tooltip("World-space Y depth for the thermocline band passed into noir fog shading.")]
+        [SerializeField] private float thermoclineY = -120f;
+        [Tooltip("Half-width in meters for the visible thermocline fog band.")]
+        [SerializeField, Min(0.1f)] private float thermoclineHalfSpanMeters = 10f;
+        [Tooltip("Additional density multiplier applied inside the thermocline band.")]
+        [SerializeField, Min(0f)] private float thermoclineAbyssalBoost = 0.8f;
+
         [Header("Diagnostics")]
         [SerializeField] private WeatherPhase _debugActivePhase = WeatherPhase.Calm;
         [SerializeField] private WeatherPhase _debugTargetPhase = WeatherPhase.Calm;
@@ -193,6 +223,15 @@ namespace Hecton8.Environment
         private WeatherRuntimeSnapshot _runtimeSnapshot;
         private float3 _lastAppliedCurrentVector;
         private Unity.Mathematics.Random _weatherRandom;
+        private Texture2D _noirFogLutTexture;
+        private Color[] _noirFogLutPixels;
+        private WeatherProfile _activeBiomeLutSourceProfile;
+        private WeatherProfile _activeBiomeLutTargetProfile;
+        private WeatherProfile _activeWeatherLutSourceProfile;
+        private WeatherProfile _activeWeatherLutTargetProfile;
+        private float _activeWeatherLutInfluence;
+        private float _biomeLutBlend;
+        private float _publishedBiolumeSurgeThreshold = 8f;
 
         /// <summary>
         /// True once the director has seeded its state and registered through <see cref="GlobalRegistry"/>.
@@ -230,6 +269,7 @@ namespace Hecton8.Environment
             SeedRandom();
             ResolveDependencies();
             InitializeRuntimeStateIfNeeded();
+            UpdateBiomeLutState(transitionDurationSeconds, true);
             PublishSnapshot();
         }
 
@@ -238,6 +278,7 @@ namespace Hecton8.Environment
             TryRegisterTickManager();
             ResolveDependencies();
             InitializeRuntimeStateIfNeeded();
+            UpdateBiomeLutState(transitionDurationSeconds, true);
             GlobalRegistry.RegisterWeatherService(this);
             PublishSnapshot();
         }
@@ -256,6 +297,11 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_GlobalCurrentVectorId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalWindVectorId, Vector4.zero);
             Shader.SetGlobalFloat(_WeatherIntensityId, 0f);
+            Shader.SetGlobalTexture(_NoirFogLutId, Texture2D.blackTexture);
+            Shader.SetGlobalVector(_NoirFogLutParamsId, Vector4.zero);
+            Shader.SetGlobalFloat(_NoirFogLutBlendId, 0f);
+            Shader.SetGlobalVector(_NoirFogStratificationId, Vector4.zero);
+            Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, 0f);
         }
 
         private void OnDestroy()
@@ -263,6 +309,7 @@ namespace Hecton8.Environment
             TryUnregisterTickManager();
             if (ReferenceEquals(GlobalRegistry.Weather, this))
                 GlobalRegistry.UnregisterWeatherService(this);
+            ReleaseNoirFogLutResources();
         }
 
         /// <summary>
@@ -281,6 +328,7 @@ namespace Hecton8.Environment
             _runtimeSnapshot.CurrentMeta.TimeAccumulator += math.max(0f, deltaTime);
             _biolumeSurgeTimer = math.max(0f, _biolumeSurgeTimer - math.max(0f, deltaTime));
             AdvanceTransition(deltaTime);
+            UpdateBiomeLutState(deltaTime, false);
             PublishSnapshot();
         }
 
@@ -378,6 +426,12 @@ namespace Hecton8.Environment
             _weatherIntensity = 1f;
             _phaseHoldTimer = ResolveHoldDuration(GetProfile(_activePhase));
             _runtimeSnapshot = default;
+            _biomeLutBlend = 0f;
+            _activeBiomeLutSourceProfile = null;
+            _activeBiomeLutTargetProfile = null;
+            _activeWeatherLutSourceProfile = null;
+            _activeWeatherLutTargetProfile = null;
+            _activeWeatherLutInfluence = 0f;
             _initialized = true;
         }
 
@@ -485,6 +539,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));
             Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));
             Shader.SetGlobalFloat(_WeatherIntensityId, _weatherIntensity);
+            PublishNoirFogShaderState();
 
             if (fluidEngine != null && math.lengthsq(currentVector - _lastAppliedCurrentVector) > CurrentSyncEpsilonSq)
             {
@@ -500,6 +555,242 @@ namespace Hecton8.Environment
             _debugCurrentVector = currentVectorManaged;
             _debugWindVector = windVectorManaged;
             _debugPhaseHoldTimer = _phaseHoldTimer;
+        }
+
+        private void UpdateBiomeLutState(float deltaTime, bool forceImmediate)
+        {
+            EnsureNoirFogLutResources();
+            if (_noirFogLutTexture == null || _noirFogLutPixels == null)
+                return;
+
+            ResolveBiomeLutProfiles(out WeatherProfile sourceProfile, out WeatherProfile targetProfile, out float targetBlend);
+            ResolveWeatherLutProfiles(out WeatherProfile weatherSourceProfile, out WeatherProfile weatherTargetProfile, out float weatherInfluence);
+            bool sourceChanged = !ReferenceEquals(sourceProfile, _activeBiomeLutSourceProfile);
+            bool targetChanged = !ReferenceEquals(targetProfile, _activeBiomeLutTargetProfile);
+            bool weatherSourceChanged = !ReferenceEquals(weatherSourceProfile, _activeWeatherLutSourceProfile);
+            bool weatherTargetChanged = !ReferenceEquals(weatherTargetProfile, _activeWeatherLutTargetProfile);
+            bool weatherInfluenceChanged = math.abs(weatherInfluence - _activeWeatherLutInfluence) > WeatherLutChangeEpsilon;
+            if (sourceChanged || targetChanged || weatherSourceChanged || weatherTargetChanged || weatherInfluenceChanged)
+            {
+                _activeBiomeLutSourceProfile = sourceProfile;
+                _activeBiomeLutTargetProfile = targetProfile;
+                _activeWeatherLutSourceProfile = weatherSourceProfile;
+                _activeWeatherLutTargetProfile = weatherTargetProfile;
+                _activeWeatherLutInfluence = weatherInfluence;
+                RebuildNoirFogLutTexture(sourceProfile, targetProfile, weatherSourceProfile, weatherTargetProfile, weatherInfluence);
+            }
+
+            if (forceImmediate)
+            {
+                _biomeLutBlend = targetBlend;
+            }
+            else
+            {
+                float blendFactor = ResolveExponentialBlendFactor(deltaTime, biomeBlendDurationSeconds);
+                _biomeLutBlend = math.lerp(_biomeLutBlend, targetBlend, blendFactor);
+                if (math.abs(_biomeLutBlend - targetBlend) <= BiomeBlendChangeEpsilon)
+                    _biomeLutBlend = targetBlend;
+            }
+
+            _publishedBiolumeSurgeThreshold = math.lerp(
+                ResolveBiolumeThreshold(sourceProfile),
+                ResolveBiolumeThreshold(targetProfile),
+                _biomeLutBlend);
+        }
+
+        private void EnsureNoirFogLutResources()
+        {
+            int resolution = math.max(8, noirFogLutResolution);
+            if (_noirFogLutTexture != null &&
+                _noirFogLutTexture.width == resolution &&
+                _noirFogLutTexture.height == NoirFogLutRowCount &&
+                _noirFogLutPixels != null &&
+                _noirFogLutPixels.Length == resolution * NoirFogLutRowCount)
+            {
+                return;
+            }
+
+            ReleaseNoirFogLutResources();
+            _noirFogLutTexture = new Texture2D(resolution, NoirFogLutRowCount, TextureFormat.RGBA32, false, true)
+            {
+                name = "Runtime_NoirFogLUT",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.DontSave
+            };
+            // COLD ALLOC: Color[resolution * NoirFogLutRowCount] — runtime noir fog LUT staging buffer — owner: GlobalWeatherDirector
+            _noirFogLutPixels = new Color[resolution * NoirFogLutRowCount];
+        }
+
+        private void ReleaseNoirFogLutResources()
+        {
+            _noirFogLutPixels = null;
+            if (_noirFogLutTexture == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_noirFogLutTexture);
+            else
+                DestroyImmediate(_noirFogLutTexture);
+
+            _noirFogLutTexture = null;
+        }
+
+        private void ResolveBiomeLutProfiles(out WeatherProfile sourceProfile, out WeatherProfile targetProfile, out float blend)
+        {
+            WeatherProfile shallow = shallowLightBiomeProfile != null ? shallowLightBiomeProfile : calmWeatherProfile;
+            WeatherProfile midnight = midnightStillnessBiomeProfile != null ? midnightStillnessBiomeProfile : stormWeatherProfile;
+            WeatherProfile hadal = hadalsSurgeBiomeProfile != null ? hadalsSurgeBiomeProfile : surgeWeatherProfile;
+
+            float shallowCenter = ResolveProfileDepthCenter(shallow, 90f);
+            float midnightCenter = math.max(shallowCenter + 1f, ResolveProfileDepthCenter(midnight, 900f));
+            float hadalCenter = math.max(midnightCenter + 1f, ResolveProfileDepthCenter(hadal, 3200f));
+            float currentDepthMeters = ResolveCurrentBiomeDepthMeters();
+
+            if (currentDepthMeters <= midnightCenter)
+            {
+                sourceProfile = shallow;
+                targetProfile = midnight;
+                blend = math.saturate(math.unlerp(shallowCenter, midnightCenter, currentDepthMeters));
+                return;
+            }
+
+            sourceProfile = midnight;
+            targetProfile = hadal;
+            blend = math.saturate(math.unlerp(midnightCenter, hadalCenter, currentDepthMeters));
+        }
+
+        private float ResolveCurrentBiomeDepthMeters()
+        {
+            BiomeMatrixDirector biomeMatrix = BiomeMatrixDirector.ActiveRuntimeInstance;
+            return biomeMatrix != null ? math.max(0f, biomeMatrix.CurrentDepthMeters) : 0f;
+        }
+
+        private void ResolveWeatherLutProfiles(out WeatherProfile sourceProfile, out WeatherProfile targetProfile, out float influence)
+        {
+            PhaseProfile fromPhaseProfile = GetProfile(_transitioning ? _sourcePhase : _activePhase);
+            PhaseProfile toPhaseProfile = GetProfile(_targetPhase);
+            sourceProfile = GetWeatherProfile(_transitioning ? _sourcePhase : _activePhase);
+            targetProfile = GetWeatherProfile(_targetPhase);
+
+            float sourceStrength = ResolveWeatherLutStrength(
+                sourceProfile,
+                ResolveDirectionalVector(fromPhaseProfile.windDirection, fromPhaseProfile.windSpeed),
+                ResolveWeatherProfileWaveHeight(sourceProfile, fromPhaseProfile.waveAmplitudeScale));
+            float targetStrength = ResolveWeatherLutStrength(
+                targetProfile,
+                ResolveDirectionalVector(toPhaseProfile.windDirection, toPhaseProfile.windSpeed),
+                ResolveWeatherProfileWaveHeight(targetProfile, toPhaseProfile.waveAmplitudeScale));
+            float weatherBlend = _transitioning ? _weatherIntensity : 1f;
+            influence = math.lerp(sourceStrength, targetStrength, weatherBlend);
+        }
+
+        private void RebuildNoirFogLutTexture(
+            WeatherProfile sourceProfile,
+            WeatherProfile targetProfile,
+            WeatherProfile weatherSourceProfile,
+            WeatherProfile weatherTargetProfile,
+            float weatherInfluence)
+        {
+            int width = _noirFogLutTexture.width;
+            FillNoirFogLutRows(sourceProfile, 0, width, weatherSourceProfile, weatherInfluence);
+            FillNoirFogLutRows(targetProfile, NoirFogLutSliceCount, width, weatherTargetProfile, weatherInfluence);
+            _noirFogLutTexture.SetPixels(_noirFogLutPixels);
+            _noirFogLutTexture.Apply(false, false);
+        }
+
+        private void FillNoirFogLutRows(WeatherProfile profile, int rowStart, int width, WeatherProfile weatherProfile, float weatherInfluence)
+        {
+            Color fogNear = profile != null ? profile.FogColorNear : new Color(0.03f, 0.09f, 0.14f, 1f);
+            Color fogFar = profile != null ? profile.FogColorFar : new Color(0.01f, 0.04f, 0.08f, 1f);
+            Color absorptionNear = profile != null ? profile.AbsorptionNear : new Color(0.18f, 0.12f, 0.08f, 1f);
+            Color absorptionFar = profile != null ? profile.AbsorptionFar : new Color(0.4f, 0.24f, 0.16f, 1f);
+            Color ambientNear = profile != null ? profile.AmbientTintNear : new Color(0.03f, 0.1f, 0.12f, 1f);
+            Color ambientFar = profile != null ? profile.AmbientTintFar : new Color(0.01f, 0.05f, 0.08f, 1f);
+            Texture2D authoredFogLut = profile != null ? profile.FogColorLut : null;
+            Color weatherFogNear = weatherProfile != null ? weatherProfile.FogColorNear : fogNear;
+            Color weatherFogFar = weatherProfile != null ? weatherProfile.FogColorFar : fogFar;
+            Color weatherAbsorptionNear = weatherProfile != null ? weatherProfile.AbsorptionNear : absorptionNear;
+            Color weatherAbsorptionFar = weatherProfile != null ? weatherProfile.AbsorptionFar : absorptionFar;
+            Color weatherAmbientNear = weatherProfile != null ? weatherProfile.AmbientTintNear : ambientNear;
+            Color weatherAmbientFar = weatherProfile != null ? weatherProfile.AmbientTintFar : ambientFar;
+            float clampedWeatherInfluence = math.saturate(weatherInfluence);
+
+            for (int x = 0; x < width; x++)
+            {
+                float t = width > 1 ? (float)x / (width - 1) : 0f;
+                Color fogSample = Color.Lerp(fogNear, fogFar, t);
+                if (authoredFogLut != null && authoredFogLut.isReadable)
+                {
+                    Color authoredSample = authoredFogLut.GetPixelBilinear(t, 0.5f);
+                    authoredSample.a = 1f;
+                    fogSample = Color.Lerp(fogSample, authoredSample, 0.5f);
+                }
+
+                fogSample = Color.Lerp(fogSample, Color.Lerp(weatherFogNear, weatherFogFar, t), clampedWeatherInfluence);
+                Color absorptionSample = Color.Lerp(absorptionNear, absorptionFar, t);
+                absorptionSample = Color.Lerp(absorptionSample, Color.Lerp(weatherAbsorptionNear, weatherAbsorptionFar, t), clampedWeatherInfluence);
+                Color ambientSample = Color.Lerp(ambientNear, ambientFar, t);
+                ambientSample = Color.Lerp(ambientSample, Color.Lerp(weatherAmbientNear, weatherAmbientFar, t), clampedWeatherInfluence);
+
+                int fogIndex = rowStart * width + x;
+                int absorptionIndex = (rowStart + 1) * width + x;
+                int ambientIndex = (rowStart + 2) * width + x;
+                _noirFogLutPixels[fogIndex] = ClampOpaqueColor(fogSample);
+                _noirFogLutPixels[absorptionIndex] = ClampOpaqueColor(absorptionSample);
+                _noirFogLutPixels[ambientIndex] = ClampOpaqueColor(ambientSample);
+            }
+        }
+
+        private void PublishNoirFogShaderState()
+        {
+            Shader.SetGlobalTexture(_NoirFogLutId, _noirFogLutTexture != null ? _noirFogLutTexture : Texture2D.blackTexture);
+            Shader.SetGlobalVector(
+                _NoirFogLutParamsId,
+                new Vector4(
+                    _noirFogLutTexture != null ? _noirFogLutTexture.width : 0f,
+                    NoirFogLutRowCount,
+                    _noirFogLutTexture != null ? 1f / math.max(1f, _noirFogLutTexture.width - 1f) : 0f,
+                    _noirFogLutTexture != null ? 1f : 0f));
+            Shader.SetGlobalFloat(_NoirFogLutBlendId, _biomeLutBlend);
+            Shader.SetGlobalVector(
+                _NoirFogStratificationId,
+                new Vector4(
+                    thermoclineY,
+                    math.max(0.1f, thermoclineHalfSpanMeters),
+                    math.max(0f, thermoclineAbyssalBoost),
+                    math.max(0.0001f, RenderSettings.fogDensity)));
+            Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, _publishedBiolumeSurgeThreshold);
+        }
+
+        private static float ResolveProfileDepthCenter(WeatherProfile profile, float fallbackCenter)
+        {
+            if (profile == null)
+                return fallbackCenter;
+
+            float minDepth = math.max(0f, profile.MinDepthMeters);
+            float maxDepth = math.max(minDepth + 1f, profile.MaxDepthMeters);
+            return (minDepth + maxDepth) * 0.5f;
+        }
+
+        private static float ResolveBiolumeThreshold(WeatherProfile profile)
+        {
+            return profile != null ? math.max(0.1f, profile.BiolumeSurgeThreshold) : 8f;
+        }
+
+        private static float ResolveWeatherLutStrength(WeatherProfile profile, float3 fallbackWindVector, float resolvedWaveHeight)
+        {
+            float windMagnitude = math.length(ResolveWeatherProfileWindVector(profile, fallbackWindVector));
+            return math.saturate((windMagnitude * 0.04f) + (math.max(0f, resolvedWaveHeight) * 0.08f));
+        }
+
+        private static Color ClampOpaqueColor(Color color)
+        {
+            color.r = Mathf.Clamp01(color.r);
+            color.g = Mathf.Clamp01(color.g);
+            color.b = Mathf.Clamp01(color.b);
+            color.a = 1f;
+            return color;
         }
 
         private WeatherState ResolvePublishedMask()
@@ -671,6 +962,12 @@ namespace Hecton8.Environment
             if (transitionDurationSeconds < 1f)
                 transitionDurationSeconds = 1f;
 
+            if (biomeBlendDurationSeconds < 0.25f)
+                biomeBlendDurationSeconds = 0.25f;
+
+            if (noirFogLutResolution < 8)
+                noirFogLutResolution = 8;
+
             if (randomSeed == 0u)
                 randomSeed = 1u;
 
@@ -693,6 +990,15 @@ namespace Hecton8.Environment
 
             if (surgeWeatherProfile == null)
                 surgeWeatherProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(SurgeWeatherProfileAssetPath);
+
+            if (shallowLightBiomeProfile == null)
+                shallowLightBiomeProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(ShallowBiomeWeatherProfileAssetPath);
+
+            if (midnightStillnessBiomeProfile == null)
+                midnightStillnessBiomeProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(MidnightBiomeWeatherProfileAssetPath);
+
+            if (hadalsSurgeBiomeProfile == null)
+                hadalsSurgeBiomeProfile = AssetDatabase.LoadAssetAtPath<WeatherProfile>(HadalBiomeWeatherProfileAssetPath);
         }
 #endif
 

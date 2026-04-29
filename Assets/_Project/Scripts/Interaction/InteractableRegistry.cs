@@ -12,8 +12,8 @@ namespace Hecton8.Interaction
     /// </summary>
     internal static class InteractableRegistry
     {
-        // COLD ALLOC: Dictionary<int,TargetInfo>[512] - collider to interaction target cache - owner: InteractableRegistry
-        private static readonly Dictionary<int, TargetInfo> s_targets = new Dictionary<int, TargetInfo>(512);
+        // COLD ALLOC: Dictionary<ulong,TargetInfo>[512] - collider entity id to interaction target cache - owner: InteractableRegistry
+        private static readonly Dictionary<ulong, TargetInfo> s_targets = new Dictionary<ulong, TargetInfo>(512);
         private static int s_cachedSceneHandle = -1;
 
         internal readonly struct TargetInfo
@@ -59,14 +59,14 @@ namespace Hecton8.Interaction
         internal static void WarmSceneCache()
         {
             Scene activeScene = SceneManager.GetActiveScene();
-            int sceneHandle = activeScene.handle;
+            int sceneHandle = unchecked((int)activeScene.handle.GetRawData());
             if (sceneHandle == s_cachedSceneHandle && s_targets.Count > 0)
                 return;
 
             s_targets.Clear();
             s_cachedSceneHandle = sceneHandle;
 
-            Collider[] colliders = Object.FindObjectsByType<Collider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            Collider[] colliders = Object.FindObjectsByType<Collider>(FindObjectsInactive.Exclude);
             for (int i = 0; i < colliders.Length; i++)
             {
                 Collider collider = colliders[i];
@@ -77,7 +77,7 @@ namespace Hecton8.Interaction
                 if (!info.HasAny)
                     continue;
 
-                s_targets[collider.GetInstanceID()] = info;
+                s_targets[EntityId.ToULong(collider.GetEntityId())] = info;
             }
         }
 
@@ -89,7 +89,7 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            int instanceId = collider.GetInstanceID();
+            ulong instanceId = EntityId.ToULong(collider.GetEntityId());
             if (s_targets.TryGetValue(instanceId, out info))
                 return info.HasAny;
 

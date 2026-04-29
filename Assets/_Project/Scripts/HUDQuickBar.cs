@@ -12,7 +12,7 @@ using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
 using Hecton.Localization;
-using System.Text;
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -53,7 +53,6 @@ namespace Hecton8.UI
         private static readonly Color SummaryColor = new Color(0.9f, 0.98f, 1f, 0.94f);
         private static readonly Color DirectiveColor = new Color(0.64f, 0.83f, 0.88f, 0.92f);
         // COLD ALLOC: string[4] — cached slot key labels — owner: HUDQuickBar
-        private static readonly string[] SlotKeyLabels = { "1", "2", "3", "4" };
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
         // ══════════════════════════════════════════════════════════
@@ -79,7 +78,8 @@ namespace Hecton8.UI
         private Sprite[] _slotIconSprites;
         private bool[] _slotDurVisible;
         private float[] _slotDurWidths;
-        private string _lastSummaryText;
+        private int _lastSummaryHash;
+        private int _lastSummaryLength = -1;
         private string _lastDirectiveBase;
         private string _lastDirectiveAdvicePreset;
         private bool _lastDirectiveHasAdvice;
@@ -93,7 +93,6 @@ namespace Hecton8.UI
         private readonly bool[] _slotItemHashResolved = new bool[SlotCount];
         private int _lastInventoryVersion = -1;
         private ToolDurabilitySystem _subscribedDurabilitySystem;
-        private readonly StringBuilder _statusBuilder = new StringBuilder(160);
         [SerializeField] private float fieldAdviceRange = 18f;
         [SerializeField] private LayerMask fieldAdviceMask = ~0;
 
@@ -361,7 +360,7 @@ namespace Hecton8.UI
                 keyTxt.alignment = TextAlignmentOptions.TopLeft;
                 keyTxt.textWrappingMode = TextWrappingModes.NoWrap;
                 keyTxt.raycastTarget = false;
-                keyTxt.text = SlotKeyLabels[i];
+                SetSlotKeyText(keyTxt, i);
                 keyTxt.color = KeyDim;
                 _slotKeys[i] = keyTxt;
                 // Durability bar
@@ -635,15 +634,25 @@ namespace Hecton8.UI
         {
             if (_toolSummary != null)
             {
-                string summary = toolManager.GetCurrentToolOperationalSummary();
-                if (_lastSummaryText != summary)
+                if (toolManager != null && CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
                 {
-                    _statusBuilder.Clear();
-                    if (!string.IsNullOrEmpty(summary))
-                        _statusBuilder.Append(summary);
+                    try
+                    {
+                        if (!toolManager.TryWriteCurrentToolOperationalSummary(lease.Buffer.AsSpan(), out int length))
+                            length = 0;
 
-                    _toolSummary.SetText(_statusBuilder);
-                    _lastSummaryText = summary;
+                        int hash = ComputeCharHash(lease.Buffer, length);
+                        if (_lastSummaryHash != hash || _lastSummaryLength != length)
+                        {
+                            _toolSummary.SetCharArray(lease.Buffer, 0, length);
+                            _lastSummaryHash = hash;
+                            _lastSummaryLength = length;
+                        }
+                    }
+                    finally
+                    {
+                        CharBufferPool.Release(lease);
+                    }
                 }
             }
 
@@ -657,14 +666,7 @@ namespace Hecton8.UI
                 _lastDirectiveHasAdvice != hasAdvice ||
                 _lastDirectiveAdvicePreset != advicePreset)
             {
-                _statusBuilder.Clear();
-                if (!string.IsNullOrEmpty(directive))
-                    _statusBuilder.Append(directive);
-
-                if (hasAdvice && !string.IsNullOrEmpty(advicePreset))
-                    _statusBuilder.Append("  KIT ").Append(advicePreset);
-
-                _toolDirective.SetText(_statusBuilder);
+                SetDirectiveText(_toolDirective, directive, hasAdvice ? advicePreset : null);
                 _lastDirectiveBase = directive;
                 _lastDirectiveHasAdvice = hasAdvice;
                 _lastDirectiveAdvicePreset = advicePreset;
@@ -683,6 +685,101 @@ namespace Hecton8.UI
             r.localScale = Vector3.one;
             if (parent != null) go.layer = parent.gameObject.layer;
             return r;
+        }
+
+        private static void SetSlotKeyText(TMP_Text text, int slotIndex)
+        {
+            if (text == null)
+                return;
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                lease.Buffer[0] = (char)('1' + Mathf.Clamp(slotIndex, 0, SlotCount - 1));
+                text.SetCharArray(lease.Buffer, 0, 1);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void SetPooledText(TMP_Text text, string value)
+        {
+            if (text == null)
+                return;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                text.SetCharArray(System.Array.Empty<char>(), 0, 0);
+                return;
+            }
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                int length = Mathf.Min(value.Length, lease.Buffer.Length);
+                value.CopyTo(0, lease.Buffer, 0, length);
+                text.SetCharArray(lease.Buffer, 0, length);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static int ComputeCharHash(char[] buffer, int length)
+        {
+            unchecked
+            {
+                int hash = (int)2166136261u;
+                int safeLength = Mathf.Max(0, Mathf.Min(length, buffer != null ? buffer.Length : 0));
+                for (int i = 0; i < safeLength; i++)
+                    hash = (hash ^ buffer[i]) * 16777619;
+
+                return hash ^ safeLength;
+            }
+        }
+
+        private static void SetDirectiveText(TMP_Text text, string directive, string advicePreset)
+        {
+            if (text == null)
+                return;
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                char[] destination = lease.Buffer;
+                int index = 0;
+                Append(destination, ref index, directive);
+                if (!string.IsNullOrEmpty(advicePreset))
+                {
+                    Append(destination, ref index, "  KIT ");
+                    Append(destination, ref index, advicePreset);
+                }
+
+                text.SetCharArray(lease.Buffer, 0, index);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void Append(char[] destination, ref int index, string value)
+        {
+            if (string.IsNullOrEmpty(value) || index >= destination.Length)
+                return;
+
+            int copyLength = Mathf.Min(value.Length, destination.Length - index);
+            value.CopyTo(0, destination, index, copyLength);
+            index += copyLength;
         }
     }
 }

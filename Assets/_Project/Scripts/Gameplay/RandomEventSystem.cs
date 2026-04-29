@@ -23,12 +23,35 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
+using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Physics;
 using Hecton8.UI;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
+    public readonly struct SeismicShockwaveEvent
+    {
+        public readonly Vector3 EpicenterWS;
+        public readonly float ImpulseRadiusMeters;
+        public readonly float ImpulseMagnitude;
+        public readonly int AppliedStampCount;
+
+        public SeismicShockwaveEvent(
+            Vector3 epicenterWS,
+            float impulseRadiusMeters,
+            float impulseMagnitude,
+            int appliedStampCount)
+        {
+            EpicenterWS = epicenterWS;
+            ImpulseRadiusMeters = impulseRadiusMeters;
+            ImpulseMagnitude = impulseMagnitude;
+            AppliedStampCount = appliedStampCount;
+        }
+    }
+
     public enum RandomEventType
     {
         BiolumStorm     = 0,   // Биолюминесцентный шторм
@@ -45,6 +68,7 @@ namespace Hecton8.Gameplay
         {
             OnEventStarted = null;
             OnEventEnded = null;
+            OnSeismicShockwave = null;
         }
 
         /// <summary>Случайное событие началось.</summary>
@@ -53,11 +77,17 @@ namespace Hecton8.Gameplay
         /// <summary>Случайное событие завершилось.</summary>
         public static event Action<RandomEventType> OnEventEnded;
 
+        /// <summary>Воксельное сейсмическое событие применило реальные разрушения.</summary>
+        public static event Action<SeismicShockwaveEvent> OnSeismicShockwave;
+
         public static void RaiseStarted(RandomEventType type, float intensity)
             => OnEventStarted?.Invoke(type, intensity);
 
         public static void RaiseEnded(RandomEventType type)
             => OnEventEnded?.Invoke(type);
+
+        public static void RaiseSeismicShockwave(in SeismicShockwaveEvent payload)
+            => OnSeismicShockwave?.Invoke(payload);
     }
 
     [DisallowMultipleComponent]
@@ -70,6 +100,8 @@ namespace Hecton8.Gameplay
 
         [Header("── References ──────────────────────────────")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
+        [SerializeField] private HectonVoxelEngine voxelEngine;
+        [SerializeField] private TectonicActivityProfile tectonicActivityProfile;
 
         [Header("── Event Probabilities (per SlowTick) ──────")]
         [SerializeField, Range(0f, 0.01f)] private float biolumStormChance    = 0.001f;
@@ -84,6 +116,11 @@ namespace Hecton8.Gameplay
         [SerializeField] private float faunaMigrationDuration  = 180f;
         [SerializeField] private float glitchDuration          = 15f;
         [SerializeField] private float caveCollapseDuration    = 5f;
+
+        [Header("── Seismic Collapse ───────────────────────")]
+        [SerializeField, Min(4f)] private float seismicTargetRadius = 72f;
+        [SerializeField, Range(16, 256)] private int seismicOverlapCapacity = 96;
+        [SerializeField, Range(16, 128)] private int seismicUniqueBodyCapacity = 48;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -100,6 +137,10 @@ namespace Hecton8.Gameplay
 
         // Таймеры активных событий (0 = неактивно)
         private readonly float[] _eventTimers = new float[5];
+        // COLD ALLOC: Collider[96] - reusable shockwave overlap buffer for cave-collapse rigidbody routing - owner: RandomEventSystem
+        private readonly Collider[] _seismicOverlapBuffer = new Collider[96];
+        // COLD ALLOC: Rigidbody[48] - reusable unique rigidbody buffer for cave-collapse impulse routing - owner: RandomEventSystem
+        private readonly Rigidbody[] _seismicBodyBuffer = new Rigidbody[48];
         private bool _registered;
 
         // Shader IDs
@@ -271,9 +312,21 @@ namespace Hecton8.Gameplay
         {
             if (IsEventActive(RandomEventType.CaveCollapse)) return;
             if (depth < 200f) return;
-            if (UnityEngine.Random.value > caveCollapseChance) return;
+            if (!TryResolveSeismicContext(
+                    out Vector3 playerPosition,
+                    out HectonVoxelVolume targetVolume,
+                    out TectonicActivityProfile.SeismicEventSettings settings))
+            {
+                return;
+            }
+
+            float resolvedChance = caveCollapseChance * settings.collapseChanceMultiplier;
+            if (UnityEngine.Random.value > Mathf.Clamp(resolvedChance, 0f, 1f)) return;
+            if (!TryExecuteSeismicShockwave(playerPosition, targetVolume, settings, out SeismicShockwaveEvent seismicEvent))
+                return;
 
             StartEvent(RandomEventType.CaveCollapse, caveCollapseDuration, 1f);
+            RandomEventEvents.RaiseSeismicShockwave(in seismicEvent);
             NotificationEvents.PushWarning(ResolveLocalized(
                 LocalizationKeys.RANDOM_EVENT_CAVE_COLLAPSE,
                 "CAVE COLLAPSE - ROUTE BLOCKED. POSSIBLE NEW OPENING."));
@@ -339,6 +392,156 @@ namespace Hecton8.Gameplay
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private bool TryResolveSeismicContext(
+            out Vector3 playerPosition,
+            out HectonVoxelVolume targetVolume,
+            out TectonicActivityProfile.SeismicEventSettings settings)
+        {
+            playerPosition = default;
+            targetVolume = null;
+            settings = tectonicActivityProfile != null
+                ? tectonicActivityProfile.ResolveSeismicSettings(null, null)
+                : default;
+
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+                return false;
+
+            playerPosition = playerTransform.position;
+            if (voxelEngine == null)
+                voxelEngine = HectonVoxelEngine.ActiveRuntimeInstance;
+
+            if (voxelEngine == null || !voxelEngine.TryGetNearestActiveVolume(playerPosition, out targetVolume) || targetVolume == null)
+                return false;
+
+            float maxTargetRadius = Mathf.Max(4f, seismicTargetRadius);
+            if ((targetVolume.generationPosition - playerPosition).sqrMagnitude > maxTargetRadius * maxTargetRadius)
+                return false;
+
+            string familyId = null;
+            string geologyProfileId = null;
+            if (targetVolume.TryGetComponent(out WorldGenerativeGeologyVoxelRuntime runtime))
+            {
+                familyId = runtime.FamilyId;
+                geologyProfileId = runtime.GeologyProfileId;
+            }
+
+            settings = tectonicActivityProfile != null
+                ? tectonicActivityProfile.ResolveSeismicSettings(familyId, geologyProfileId)
+                : new TectonicActivityProfile.SeismicEventSettings
+                {
+                    collapseChanceMultiplier = 1f,
+                    stampCountMin = 2,
+                    stampCountMax = 4,
+                    stampScatterRadius = 18f,
+                    ceilingSearchDepth = 18f,
+                    craterRadiusMin = 2.5f,
+                    craterRadiusMax = 6f,
+                    impulseRadius = 100f,
+                    impulseMagnitude = 14f
+                }.Sanitize();
+            return true;
+        }
+
+        private bool TryExecuteSeismicShockwave(
+            Vector3 playerPosition,
+            HectonVoxelVolume targetVolume,
+            TectonicActivityProfile.SeismicEventSettings settings,
+            out SeismicShockwaveEvent seismicEvent)
+        {
+            seismicEvent = default;
+            if (targetVolume == null)
+                return false;
+
+            int stampCount = UnityEngine.Random.Range(settings.stampCountMin, settings.stampCountMax + 1);
+            uint stableSeed = unchecked(((uint)Time.frameCount * 2654435761u) ^ (uint)targetVolume.RuntimeStamp);
+            if (!targetVolume.TryApplySeismicShockwave(
+                    playerPosition,
+                    stampCount,
+                    settings.stampScatterRadius,
+                    settings.ceilingSearchDepth,
+                    settings.craterRadiusMin,
+                    settings.craterRadiusMax,
+                    stableSeed,
+                    out int appliedStampCount))
+            {
+                return false;
+            }
+
+            ApplySeismicImpulse(playerPosition, settings.impulseRadius, settings.impulseMagnitude);
+            seismicEvent = new SeismicShockwaveEvent(
+                playerPosition,
+                settings.impulseRadius,
+                settings.impulseMagnitude,
+                appliedStampCount);
+            return true;
+        }
+
+        private void ApplySeismicImpulse(Vector3 epicenter, float radius, float impulseMagnitude)
+        {
+            int overlapCapacity = Mathf.Clamp(seismicOverlapCapacity, 16, _seismicOverlapBuffer.Length);
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                epicenter,
+                Mathf.Max(1f, radius),
+                _seismicOverlapBuffer,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+            if (hitCount <= 0)
+                return;
+
+            int uniqueCapacity = Mathf.Clamp(seismicUniqueBodyCapacity, 16, _seismicBodyBuffer.Length);
+            int uniqueBodyCount = 0;
+            for (int hitIndex = 0; hitIndex < hitCount && hitIndex < overlapCapacity; hitIndex++)
+            {
+                Collider collider = _seismicOverlapBuffer[hitIndex];
+                _seismicOverlapBuffer[hitIndex] = null;
+                if (collider == null)
+                    continue;
+
+                Rigidbody body = collider.attachedRigidbody;
+                if (body == null || body.isKinematic)
+                    continue;
+
+                bool duplicate = false;
+                for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
+                {
+                    if (_seismicBodyBuffer[bodyIndex] != body)
+                        continue;
+
+                    duplicate = true;
+                    break;
+                }
+
+                if (duplicate)
+                    continue;
+
+                _seismicBodyBuffer[uniqueBodyCount++] = body;
+                if (uniqueBodyCount >= uniqueCapacity)
+                    break;
+            }
+
+            float safeRadius = Mathf.Max(1f, radius);
+            for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
+            {
+                Rigidbody body = _seismicBodyBuffer[bodyIndex];
+                _seismicBodyBuffer[bodyIndex] = null;
+                if (body == null)
+                    continue;
+
+                Vector3 away = body.worldCenterOfMass - epicenter;
+                float distance = away.magnitude;
+                if (distance > safeRadius)
+                    continue;
+
+                Vector3 direction = distance > 0.0001f ? away / distance : Vector3.up;
+                direction.y = Mathf.Max(direction.y, 0.25f);
+                direction.Normalize();
+
+                float distance01 = 1f - Mathf.Clamp01(distance / safeRadius);
+                float resolvedImpulse = impulseMagnitude * Mathf.Pow(distance01, 0.65f);
+                PhysicsForceRouter.QueueForce(body, direction * resolvedImpulse, ForceMode.Impulse);
+            }
         }
     }
 }

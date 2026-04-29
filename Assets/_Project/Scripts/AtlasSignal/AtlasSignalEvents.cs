@@ -1,65 +1,179 @@
-// ============================================================================
-// HECTON-8 — AtlasSignalEvents.cs
-// Статическая шина событий сигнала Атлас-6.
-//
-// Лор: пульс ядра Атлас-6 повторяется каждые 11:23 (683 секунды).
-// Ритм — не случайность: время перебора всех вариантов "спасения колонии".
-// Чем ближе к ядру — тем яснее "содержание" сигнала.
-// ============================================================================
-
-using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Hecton.Localization;
+using Hecton8.Core;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
 {
+    public enum AtlasSignalEventType : byte
+    {
+        Pulse = 0,
+        Detected = 1,
+        StrengthChanged = 2,
+        Decoded = 3
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct AtlasSignalEventPayload
+    {
+        public Vector3 SourcePosition;
+        public float SignalStrength;
+        public uint MessageHash;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    public interface IAtlasSignalEventListener
+    {
+        void OnAtlasSignalEvent(in AtlasSignalEventPayload payload);
+    }
+
     public static class AtlasSignalEvents
     {
+        // COLD ALLOC: RegistryBucket<IAtlasSignalEventListener>[16] - Atlas signal listeners drained on dispatcher LateUpdate - owner: AtlasSignalEvents
+        private static readonly RegistryBucket<IAtlasSignalEventListener> _listeners = new RegistryBucket<IAtlasSignalEventListener>(16);
+        // COLD ALLOC: Dictionary<uint,string>[16] - decoded Atlas message IDs keyed by FNV-1a hash for cold-path listener resolution - owner: AtlasSignalEvents
+        private static readonly Dictionary<uint, string> _decodedMessageIdsByHash = new Dictionary<uint, string>(16);
+        private static NativeQueue<AtlasSignalEventPayload> _pendingEvents;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnSignalPulse = null;
-            OnSignalDetected = null;
-            OnSignalStrengthChanged = null;
-            OnSignalDecoded = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _decodedMessageIdsByHash.Clear();
         }
 
-        /// <summary>
-        /// Пульс сигнала. Вызывается каждые 683 секунды.
-        /// float: интенсивность [0..1] (зависит от расстояния до ядра).
-        /// </summary>
-        public static event Action<float> OnSignalPulse;
+        public static void Register(IAtlasSignalEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>
-        /// Сигнал впервые обнаружен сканером.
-        /// Vector3: мировая позиция источника (приблизительная).
-        /// </summary>
-        public static event Action<Vector3> OnSignalDetected;
+            EnsureInitialized();
+            _listeners.Register(listener);
+        }
 
-        /// <summary>
-        /// Изменилась сила сигнала (при движении игрока).
-        /// float: сила [0..1].
-        /// </summary>
-        public static event Action<float> OnSignalStrengthChanged;
+        public static void Unregister(IAtlasSignalEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>
-        /// Сигнал расшифрован (игрок достиг ядра).
-        /// string: decoded message ID.
-        /// </summary>
-        public static event Action<string> OnSignalDecoded;
+            _listeners.Unregister(listener);
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out AtlasSignalEventPayload payload))
+            {
+                IAtlasSignalEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnAtlasSignalEvent(in payload);
+            }
+        }
+
+        public static uint ComputeMessageHash(string messageId)
+        {
+            return string.IsNullOrWhiteSpace(messageId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(messageId));
+        }
+
+        public static bool TryResolveMessageId(uint messageHash, out string messageId)
+        {
+            return _decodedMessageIdsByHash.TryGetValue(messageHash, out messageId);
+        }
 
         public static void RaisePulse(float intensity)
-            => OnSignalPulse?.Invoke(intensity);
+        {
+            Enqueue(new AtlasSignalEventPayload
+            {
+                SourcePosition = default,
+                SignalStrength = intensity,
+                MessageHash = 0u,
+                EventType = (ushort)AtlasSignalEventType.Pulse,
+                Reserved = 0
+            });
+        }
 
         public static void RaiseDetected(Vector3 sourcePos)
-            => OnSignalDetected?.Invoke(sourcePos);
+        {
+            Enqueue(new AtlasSignalEventPayload
+            {
+                SourcePosition = sourcePos,
+                SignalStrength = 0f,
+                MessageHash = 0u,
+                EventType = (ushort)AtlasSignalEventType.Detected,
+                Reserved = 0
+            });
+        }
 
         public static void RaiseStrengthChanged(float strength)
-            => OnSignalStrengthChanged?.Invoke(strength);
+        {
+            Enqueue(new AtlasSignalEventPayload
+            {
+                SourcePosition = default,
+                SignalStrength = strength,
+                MessageHash = 0u,
+                EventType = (ushort)AtlasSignalEventType.StrengthChanged,
+                Reserved = 0
+            });
+        }
 
         public static void RaiseDecoded(string messageId)
         {
-            if (!string.IsNullOrEmpty(messageId))
-                OnSignalDecoded?.Invoke(messageId);
+            uint messageHash = ComputeMessageHash(messageId);
+            if (messageHash == 0u)
+                return;
+
+            if (!_decodedMessageIdsByHash.ContainsKey(messageHash))
+                _decodedMessageIdsByHash.Add(messageHash, messageId);
+
+            Enqueue(new AtlasSignalEventPayload
+            {
+                SourcePosition = default,
+                SignalStrength = 0f,
+                MessageHash = messageHash,
+                EventType = (ushort)AtlasSignalEventType.Decoded,
+                Reserved = 0
+            });
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<AtlasSignalEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - deferred Atlas signal lane flushed by SystemDispatcher LateUpdate - owner: AtlasSignalEvents
+            }
+        }
+
+        private static void Enqueue(in AtlasSignalEventPayload payload)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
         }
     }
 }

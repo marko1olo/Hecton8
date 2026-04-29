@@ -66,7 +66,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-65)]
-    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener
+    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener
     {
         [Flags]
         private enum GuidanceStateFlags
@@ -162,6 +162,7 @@ namespace Hecton8.Gameplay
         private bool _lastContextDepthCompleted;
         private bool _lastContextLoreContact;
         private HectonSurvivalSystem _survivalSystem;
+        private uint _firstModuleZoneDiscoveryHash;
 
         private const float MinEarnedOrientationTime = 75f;
         private const string MsgResourceShelfRead =
@@ -210,6 +211,7 @@ namespace Hecton8.Gameplay
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+            RefreshCachedHashes();
         }
 
         private void OnEnable()
@@ -224,9 +226,9 @@ namespace Hecton8.Gameplay
             SynchronizeContextFromRuntimeSystems();
 
             CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
-            NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
+            NarrativeEvents.Register(this);
             QuestEvents.Register(this);
-            ScanEvents.OnEntryDiscovered += HandleScanEntryDiscovered;
+            ScanEvents.Register(this);
             InteractionEvents.OnItemCollected += HandleItemCollected;
             AudioLogEvents.Register(this);
         }
@@ -239,9 +241,9 @@ namespace Hecton8.Gameplay
                 SaveManager.Instance.Unregister(this);
 
             CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
-            NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
+            NarrativeEvents.Unregister(this);
             QuestEvents.Unregister(this);
-            ScanEvents.OnEntryDiscovered -= HandleScanEntryDiscovered;
+            ScanEvents.Unregister(this);
             InteractionEvents.OnItemCollected -= HandleItemCollected;
             AudioLogEvents.Unregister(this);
 
@@ -256,6 +258,7 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
             SaveManager.Instance?.Register(this);
+            RefreshCachedHashes();
             ResolveSurvivalSystem();
             ResolveWorldContext(force: true);
             SynchronizeContextFromRuntimeSystems();
@@ -404,6 +407,36 @@ namespace Hecton8.Gameplay
             }
 
             if (entryId.StartsWith("module.", StringComparison.Ordinal))
+                CheckMilestone(FirstHourMilestone.FirstModule, true);
+        }
+
+        public void OnNarrativeEvent(in NarrativeEventPayload payload)
+        {
+            if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade)
+                return;
+
+            if (!IsMilestoneComplete(FirstHourMilestone.FirstModule) &&
+                payload.DiscoveryHash != 0u &&
+                payload.DiscoveryHash == _firstModuleZoneDiscoveryHash)
+            {
+                CheckMilestone(FirstHourMilestone.FirstModule, true);
+            }
+
+            if (!NarrativeEvents.TryResolveDiscoveryId(payload.DiscoveryHash, out string discoveryId))
+                return;
+
+            HandleDiscovery(discoveryId);
+        }
+
+        public void OnScanEvent(in ScanEventPayload payload)
+        {
+            if ((ScanEventType)payload.EventType != ScanEventType.EntryDiscovered ||
+                IsMilestoneComplete(FirstHourMilestone.FirstModule))
+            {
+                return;
+            }
+
+            if ((ScanEntryKind)payload.EntryKind == ScanEntryKind.Module)
                 CheckMilestone(FirstHourMilestone.FirstModule, true);
         }
 
@@ -1158,6 +1191,11 @@ namespace Hecton8.Gameplay
         {
             LocalizationManager localization = LocalizationManager.Instance;
             return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
+        }
+
+        private void RefreshCachedHashes()
+        {
+            _firstModuleZoneDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(firstModuleZoneDiscoveryId);
         }
     }
 }

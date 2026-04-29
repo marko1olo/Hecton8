@@ -14,7 +14,7 @@ namespace Hecton8.Quest
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)]
-    public sealed class QuestManager : MonoBehaviour, ISaveable
+    public sealed class QuestManager : MonoBehaviour, ISaveable, IQuestSystem
     {
         [Header("Quest Registry")]
         [Tooltip("All authored quest assets assigned to this runtime owner.")]
@@ -53,6 +53,12 @@ namespace Hecton8.Quest
 
         public int LoadPriority => 7;
 
+        /// <summary>
+        /// True once the quest runtime owner is registered in the global registry.
+        /// </summary>
+        public bool IsInitialized => ReferenceEquals(GlobalRegistry.QuestSystem, this) &&
+                                     ReferenceEquals(GlobalRegistry.Quest, this);
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -68,6 +74,7 @@ namespace Hecton8.Quest
 
         private void OnEnable()
         {
+            GlobalRegistry.RegisterQuestRuntime(this);
             GlobalRegistry.Save?.Register(this);
             _graphEvaluator?.Bind();
         }
@@ -76,6 +83,7 @@ namespace Hecton8.Quest
         {
             _graphEvaluator?.Unbind();
             GlobalRegistry.Save?.Unregister(this);
+            GlobalRegistry.UnregisterQuestRuntime(this);
         }
 
         private void OnDestroy()
@@ -88,6 +96,8 @@ namespace Hecton8.Quest
                 _stateManager.Dispose();
                 _stateManager = null;
             }
+
+            GlobalRegistry.UnregisterQuestRuntime(this);
 
             if (Instance == this)
                 Instance = null;
@@ -158,6 +168,13 @@ namespace Hecton8.Quest
             _graphEvaluator?.UpdateDepthContext(depthMeters, zoneHash, isThermalZone);
         }
 
+        internal int CopyActiveQuestHashes(uint[] destination)
+        {
+            return _stateManager != null
+                ? _stateManager.CopyActiveQuestHashes(destination)
+                : 0;
+        }
+
         public bool TryGetQuestIdByHash(uint questHash, out string questId)
         {
             questId = string.Empty;
@@ -172,6 +189,88 @@ namespace Hecton8.Quest
 
             questId = questData.questId;
             return true;
+        }
+
+        internal bool TryGetQuestDataByHash(uint questHash, out QuestData questData)
+        {
+            questData = null;
+            if (questHash == 0u)
+                return false;
+
+            if (_questHashLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+                BuildLookup();
+
+            return _questHashLookup.TryGetValue(questHash, out questData) && questData != null;
+        }
+
+        internal bool TryGetQuestPresentation(
+            uint questHash,
+            out string title,
+            out string description,
+            out uint markerTargetHash,
+            out Vector3 markerWorldPosition,
+            out float markerHeightOffset)
+        {
+            title = string.Empty;
+            description = string.Empty;
+            markerTargetHash = 0u;
+            markerWorldPosition = default;
+            markerHeightOffset = 0f;
+
+            if (TryGetQuestDataByHash(questHash, out QuestData questData) && questData != null)
+            {
+                title = questData.DisplayTitleOrFallback;
+                description = questData.DescriptionOrFallback;
+                markerTargetHash = QuestFlagHashKernel.ComputeStableHash(questData.markerTargetId);
+                markerWorldPosition = questData.markerWorldPosition;
+                markerHeightOffset = Mathf.Max(0f, questData.markerHeightOffset);
+                return true;
+            }
+
+            return _stateManager != null &&
+                   _stateManager.TryGetQuestPresentation(
+                       questHash,
+                       out title,
+                       out description,
+                       out markerTargetHash,
+                       out markerWorldPosition,
+                       out markerHeightOffset);
+        }
+
+        internal bool UpsertProceduralDirective(
+            uint questHash,
+            uint completionItemHash,
+            string title,
+            string description,
+            uint markerTargetHash,
+            Vector3 markerWorldPosition,
+            float markerHeightOffset,
+            QuestPhaseGateType phaseGate,
+            float requiredQuantity,
+            bool activateWhenAllowed,
+            out bool activatedNow)
+        {
+            activatedNow = false;
+            if (_stateManager == null)
+                return false;
+
+            bool updated = _stateManager.TryUpsertProceduralDirective(
+                questHash,
+                completionItemHash,
+                title,
+                description,
+                markerTargetHash,
+                markerWorldPosition,
+                markerHeightOffset,
+                phaseGate,
+                requiredQuantity,
+                activateWhenAllowed,
+                out _,
+                out activatedNow);
+            if (updated && activatedNow)
+                FlushRuntimeResults();
+
+            return updated;
         }
 
         public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
@@ -318,15 +417,22 @@ namespace Hecton8.Quest
 
         private void EmitQuestTransition(int questIndex, bool completed, QuestTransitionType transitionType)
         {
-            QuestData questData = GetQuestDataByIndex(questIndex);
-            if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
+            if (_stateManager == null ||
+                !_stateManager.TryGetQuestHash(questIndex, out uint questHash) ||
+                !TryGetQuestPresentation(
+                    questHash,
+                    out string title,
+                    out _,
+                    out _,
+                    out _,
+                    out _))
+            {
                 return;
+            }
 
-            uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
-            if (questHash == 0u)
-                return;
+            if (string.IsNullOrWhiteSpace(title))
+                title = "UNKNOWN OBJECTIVE";
 
-            string title = questData.DisplayTitleOrFallback;
             switch (transitionType)
             {
                 case QuestTransitionType.Complete:

@@ -66,6 +66,7 @@ namespace Hecton8.Editor
             EditorGUILayout.Space(6f);
             EditorGUILayout.LabelField($"Chunk Size: {_chunkSizeMeters} m");
             EditorGUILayout.LabelField($"Sector Blocks: {_sortedRows.Count}");
+            EditorGUILayout.LabelField($"Directory Capacity: {SaveBinaryStorage.IndexedSectorDirectoryCapacity} slots");
             EditorGUILayout.LabelField($"Total File Size: {FormatBytes(_totalFileBytes)}");
             EditorGUILayout.LabelField($"Used Space: {FormatBytes(_usedFileBytes)}");
             EditorGUILayout.LabelField($"Fragmentation: {FormatBytes(_fragmentationBytes)}");

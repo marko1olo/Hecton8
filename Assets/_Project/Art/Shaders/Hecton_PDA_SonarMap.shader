@@ -10,6 +10,7 @@ Shader "Hecton8/UI/PDA Sonar Map"
         _SdfVolume ("SDF Volume", 3D) = "" {}
         _SdfRange ("SDF Range", Float) = 1
         _GridDimensions ("Grid Dimensions", Vector) = (32,32,32,0)
+        _VolumeHalfExtent ("Volume Half Extent", Vector) = (0.55,0.55,0.55,0)
         _TimePhase ("Time Phase", Float) = 0
     }
 
@@ -60,6 +61,7 @@ Shader "Hecton8/UI/PDA Sonar Map"
                 float4 _EdgeTint;
                 float4 _ThreatTint;
                 float4 _GridDimensions;
+                float4 _VolumeHalfExtent;
                 float _SdfRange;
                 float _TimePhase;
                 int _ThreatPingCount;
@@ -96,28 +98,51 @@ Shader "Hecton8/UI/PDA Sonar Map"
                 return normalize(float3(dx, dy, dz) + 1e-5);
             }
 
+            bool TryIntersectVolume(float3 rayOrigin, float3 rayDirection, float3 volumeMin, float3 volumeMax, out float enterDistance, out float exitDistance)
+            {
+                float3 safeDirection = rayDirection + (abs(rayDirection) < 1e-5.xxx ? 1e-5.xxx : 0.0.xxx);
+                float3 inverseDirection = 1.0 / safeDirection;
+                float3 t0 = (volumeMin - rayOrigin) * inverseDirection;
+                float3 t1 = (volumeMax - rayOrigin) * inverseDirection;
+                float3 tMin = min(t0, t1);
+                float3 tMax = max(t0, t1);
+                enterDistance = max(max(tMin.x, tMin.y), tMin.z);
+                exitDistance = min(min(tMax.x, tMax.y), tMax.z);
+                return exitDistance > max(enterDistance, 0.0);
+            }
+
             half4 frag(v2f i) : SV_Target
             {
                 float2 centeredUv = (i.uv * 2.0) - 1.0;
-                float3 rayOrigin = float3(centeredUv * float2(0.82, 0.82), -1.2);
-                float3 rayDirection = normalize(float3(centeredUv * float2(0.24, 0.24), 1.45));
-                float marchStep = 0.03;
-                float3 position = rayOrigin;
+                float3 volumeHalfExtent = max(_VolumeHalfExtent.xyz, 0.05.xxx);
+                float3 volumeMin = -volumeHalfExtent;
+                float3 volumeMax = volumeHalfExtent;
+                float3 rayOrigin = float3(centeredUv * (volumeHalfExtent.xy * 1.75), -(volumeHalfExtent.z + 0.78));
+                float3 rayDirection = normalize(float3(centeredUv * float2(0.18, 0.21), 1.45));
+                float enterDistance;
+                float exitDistance;
+                if (!TryIntersectVolume(rayOrigin, rayDirection, volumeMin, volumeMax, enterDistance, exitDistance))
+                    return half4(0.0, 0.0, 0.0, 0.0);
+
+                float marchDistance = max(enterDistance, 0.0);
+                float marchLength = max(exitDistance - marchDistance, 0.0);
+                float marchStep = max(marchLength / 96.0, 0.008);
+                float3 position = rayOrigin + rayDirection * marchDistance;
 
                 float3 mapColor = 0.0;
                 float mapAlpha = 0.0;
                 float threatGlow = 0.0;
+                float3 invVolumeSize = 1.0 / max((volumeHalfExtent * 2.0), 0.001.xxx);
+                float3 gridScale = max(_GridDimensions.xyz - 1.0, 1.0.xxx);
 
                 [loop]
                 for (int stepIndex = 0; stepIndex < 96; stepIndex++)
                 {
-                    position += rayDirection * marchStep;
-                    if (any(abs(position) > 0.55))
-                        continue;
-
-                    float3 uvw = position + 0.5;
+                    float3 uvw = saturate((position - volumeMin) * invVolumeSize);
                     float sdf = DecodeSdf(uvw);
-                    float surfaceBand = 1.0 - saturate(abs(sdf) / max(_SdfRange * 0.1, 0.001));
+                    float surfaceBand = 1.0 - saturate(abs(sdf) / max(_SdfRange * 0.055, 0.001));
+                    float3 voxelCell = abs(frac(uvw * gridScale) - 0.5);
+                    float voxelWire = 1.0 - smoothstep(0.16, 0.34, min(voxelCell.x, min(voxelCell.y, voxelCell.z)));
 
                     [unroll]
                     for (int pingIndex = 0; pingIndex < 8; pingIndex++)
@@ -136,14 +161,17 @@ Shader "Hecton8/UI/PDA Sonar Map"
                     if (sdf < 0.0)
                     {
                         float3 normal = EstimateNormal(uvw);
-                        float fresnel = pow(1.0 - saturate(abs(dot(normal, rayDirection))), 2.0);
+                        float fresnel = pow(1.0 - saturate(abs(dot(normal, rayDirection))), 2.4);
                         float scanline = frac((position.y + 0.5) * 28.0 + (_TimePhase * 0.75));
                         float scanlineGlow = pow(saturate(1.0 - abs(scanline * 2.0 - 1.0)), 6.0);
-                        mapColor = lerp(_MapTint.rgb, _EdgeTint.rgb, saturate(surfaceBand + fresnel * 0.35));
-                        mapColor += _MapTint.rgb * scanlineGlow * 0.35;
-                        mapAlpha = saturate((_MapTint.a * 0.48) + (surfaceBand * 0.28) + (fresnel * 0.22));
+                        float wireStrength = saturate((voxelWire * 0.82) + (surfaceBand * 0.35) + (fresnel * 0.25));
+                        mapColor = lerp(_MapTint.rgb * 0.14, _EdgeTint.rgb, wireStrength);
+                        mapColor += _MapTint.rgb * scanlineGlow * 0.18;
+                        mapAlpha = saturate((_MapTint.a * 0.12) + (wireStrength * 0.62) + (surfaceBand * 0.18));
                         break;
                     }
+
+                    position += rayDirection * marchStep;
                 }
 
                 float threatAlpha = threatGlow * _ThreatTint.a;

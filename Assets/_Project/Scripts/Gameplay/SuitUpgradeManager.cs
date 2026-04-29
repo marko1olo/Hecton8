@@ -32,7 +32,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-110)]
-    public sealed class SuitUpgradeManager : MonoBehaviour, ISaveable
+    public sealed class SuitUpgradeManager : MonoBehaviour, ISaveable, INarrativeEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -134,7 +134,7 @@ namespace Hecton8.Gameplay
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Register(this);
 
-            NarrativeEvents.OnDiscoveryMade += HandleDiscovery;
+            NarrativeEvents.Register(this);
         }
 
         private void OnDisable()
@@ -142,7 +142,7 @@ namespace Hecton8.Gameplay
             if (SaveManager.Instance != null)
                 SaveManager.Instance.Unregister(this);
 
-            NarrativeEvents.OnDiscoveryMade -= HandleDiscovery;
+            NarrativeEvents.Unregister(this);
         }
 
 #if UNITY_EDITOR
@@ -321,18 +321,24 @@ namespace Hecton8.Gameplay
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
 
-        private void HandleDiscovery(string discoveryId)
+        public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
-            if (string.IsNullOrEmpty(discoveryId) || allUpgrades == null)
+            if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade ||
+                payload.DiscoveryHash == 0u ||
+                allUpgrades == null)
+            {
                 return;
+            }
 
             // Проверяем — является ли это чертежом апгрейда
             for (int i = 0; i < allUpgrades.Length; i++)
             {
                 SuitUpgradeData u = allUpgrades[i];
-                if (u != null && u.requiredBlueprintId == discoveryId)
+                if (u != null &&
+                    !string.IsNullOrEmpty(u.requiredBlueprintId) &&
+                    NarrativeEvents.ComputeDiscoveryHash(u.requiredBlueprintId) == payload.DiscoveryHash)
                 {
-                    if (_unlockedBlueprints.Add(discoveryId))
+                    if (_unlockedBlueprints.Add(u.requiredBlueprintId))
                     {
                         string displayName = u.DisplayNameOrFallback;
                         LocalizationManager localization = LocalizationManager.Instance;
@@ -340,7 +346,7 @@ namespace Hecton8.Gameplay
                             ? localization.GetFormatted(LocalizationKeys.SUIT_BLUEPRINT_UNLOCKED, displayName)
                             : "BLUEPRINT UNLOCKED: " + displayName);
 
-                        LogBlueprintUnlocked(discoveryId, displayName);
+                        LogBlueprintUnlocked(u.requiredBlueprintId, displayName);
                     }
                     break;
                 }

@@ -11,6 +11,14 @@ namespace Hecton8.VFX
         order = 141)]
     public sealed class VFXEmissionProfile : ScriptableObject
     {
+        /// <summary>Hardware-facing budget tiers used by lightweight VFX systems.</summary>
+        public enum HardwareTier
+        {
+            Low = 0,
+            Medium = 1,
+            High = 2
+        }
+
         /// <summary>Supported GPU particle-fluid classes.</summary>
         public enum FluidType
         {
@@ -37,6 +45,22 @@ namespace Hecton8.VFX
 
             [Tooltip("Optional lateral wobble scale used by bubble-like particles.")]
             [Min(0f)] public float wobbleScale;
+        }
+
+        /// <summary>
+        /// Hardware-tier raymarch step budgets for compute-driven god rays.
+        /// </summary>
+        [System.Serializable]
+        public struct VolumetricLightBudget
+        {
+            [Tooltip("Low-tier god ray step count. Mandate baseline = 8.")]
+            [Min(1)] public int lowTierSteps;
+
+            [Tooltip("Medium-tier god ray step count. Mandate baseline = 16.")]
+            [Min(1)] public int mediumTierSteps;
+
+            [Tooltip("High-tier god ray step count. Mandate baseline = 32.")]
+            [Min(1)] public int highTierSteps;
         }
 
         [Header("Fluid Presets")]
@@ -80,6 +104,16 @@ namespace Hecton8.VFX
             wobbleScale = 0.2f
         };
 
+        [Header("Volumetric Budgets")]
+        [SerializeField]
+        [Tooltip("Hardware-tier raymarch budgets for compute-driven volumetric god rays.")]
+        private VolumetricLightBudget volumetricLightBudget = new VolumetricLightBudget
+        {
+            lowTierSteps = 8,
+            mediumTierSteps = 16,
+            highTierSteps = 32
+        };
+
         /// <summary>Returns the resolved settings for the requested fluid class.</summary>
         public FluidSettings GetSettings(FluidType fluidType)
         {
@@ -96,6 +130,20 @@ namespace Hecton8.VFX
             }
         }
 
+        /// <summary>Returns the god-ray raymarch step budget for the requested hardware tier.</summary>
+        public int GetVolumetricGodRaySteps(HardwareTier hardwareTier)
+        {
+            switch (hardwareTier)
+            {
+                case HardwareTier.Low:
+                    return Mathf.Max(1, volumetricLightBudget.lowTierSteps);
+                case HardwareTier.High:
+                    return Mathf.Max(1, volumetricLightBudget.highTierSteps);
+                default:
+                    return Mathf.Max(1, volumetricLightBudget.mediumTierSteps);
+            }
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -103,6 +151,9 @@ namespace Hecton8.VFX
             ClampSettings(ref bubble);
             ClampSettings(ref debris);
             ClampSettings(ref plankton);
+            volumetricLightBudget.lowTierSteps = Mathf.Max(1, volumetricLightBudget.lowTierSteps);
+            volumetricLightBudget.mediumTierSteps = Mathf.Max(1, volumetricLightBudget.mediumTierSteps);
+            volumetricLightBudget.highTierSteps = Mathf.Max(1, volumetricLightBudget.highTierSteps);
         }
 
         private static void ClampSettings(ref FluidSettings settings)

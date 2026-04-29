@@ -97,6 +97,10 @@ namespace Hecton8.UI
         // List rows â€” pre-allocated
         private readonly List<LogRow> _rows = new List<LogRow>(32);
         private readonly string[] _localizedCategoryLabels = new string[5]; // COLD ALLOC: string[5] — localized category labels — owner: PDADataLogTab
+        // COLD ALLOC: uint[allLogs.Length] — precomputed lore hashes for direct packed-word archive reads — owner: PDADataLogTab
+        private uint[] _catalogLoreHashes = Array.Empty<uint>();
+        // COLD ALLOC: int[allLogs.Length] — precomputed lore record indices for direct packed-word archive reads — owner: PDADataLogTab
+        private int[] _catalogLoreRecordIndices = Array.Empty<int>();
         // COLD ALLOC: char[128] — uppercase title staging buffer for allocation-free TMP updates — owner: PDADataLogTab
         private char[] _detailTitleBuffer = new char[128];
         // COLD ALLOC: char[256] — general PDA archive text staging buffer — owner: PDADataLogTab
@@ -126,6 +130,7 @@ namespace Hecton8.UI
         private bool _hiddenRecordFlashActive;
         private bool _hiddenRecordFlashConsumed;
         private bool _summaryDecryptActive;
+        private bool _catalogLoreBindingsDirty = true;
         private string _activeDetailLogId = string.Empty;
         private string _pendingSummaryDecryptLogId = string.Empty;
         private string _resolvedSummaryBaseText = string.Empty;
@@ -214,6 +219,7 @@ namespace Hecton8.UI
                 _root = gameObject.AddComponent<RectTransform>();
 
             EnsureHologramMaterial();
+            RebuildLoreBindingCache();
         }
 
         private void OnEnable()
@@ -228,6 +234,7 @@ namespace Hecton8.UI
             PDAEvents.OnOpened += HandlePDAOpened;
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
+            RebuildLoreBindingCache();
             _dirty = true;
         }
 
@@ -300,7 +307,7 @@ namespace Hecton8.UI
             AudioLogData log = GetLog(_selectedIndex);
             if (log == null) return;
 
-            if (!system.IsDiscovered(log.logId)) return;
+            if (!IsCatalogLogUnlocked(_selectedIndex)) return;
             if (!log.HasPlaybackPayload) return;
 
             system.PlayLog(log);
@@ -343,7 +350,7 @@ namespace Hecton8.UI
             AudioLogData selectedLog = GetSelectedLog();
             if (selectedLog != null &&
                 logHash != 0u &&
-                LoreDatabaseManager.ComputeLoreHash(selectedLog.SafeLogId) == logHash)
+                ResolveCatalogLoreHash(_selectedIndex) == logHash)
             {
                 RefreshDetail();
                 RefreshPlayButton();
@@ -401,7 +408,7 @@ namespace Hecton8.UI
                 if (candidate == null)
                     continue;
 
-                if (LoreDatabaseManager.ComputeLoreHash(candidate.SafeLogId) == logHash)
+                if (ResolveCatalogLoreHash(i) == logHash)
                     return candidate.SafeLogId;
             }
 
@@ -640,8 +647,8 @@ namespace Hecton8.UI
 
         private void RefreshList()
         {
-            AudioLogSystem system = AudioLogSystem.Instance;
-            int discovered = system != null ? system.DiscoveredCount : 0;
+            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            int discovered = database != null ? database.UnlockedCount : 0;
             int logCount = CatalogCount;
 
             if (_countLabel != null)
@@ -664,7 +671,7 @@ namespace Hecton8.UI
             {
                 LogRow row = _rows[i];
                 AudioLogData log = GetLog(row.LogIndex);
-                bool isDiscovered = system != null && log != null && system.IsDiscovered(log.logId);
+                bool isDiscovered = log != null && IsCatalogLogUnlocked(row.LogIndex);
 
                 // Dim undiscovered entries
                 Color textColor = isDiscovered ? colorText : colorDim;
@@ -703,8 +710,7 @@ namespace Hecton8.UI
             AudioLogData log = GetLog(_selectedIndex);
             if (log == null) { SetDetailVisible(false); return; }
 
-            AudioLogSystem system = AudioLogSystem.Instance;
-            bool isDiscovered = system != null && system.IsDiscovered(log.logId);
+            bool isDiscovered = IsCatalogLogUnlocked(_selectedIndex);
 
             SetDetailVisible(true);
 
@@ -783,7 +789,7 @@ namespace Hecton8.UI
         {
             AudioLogSystem system = AudioLogSystem.Instance;
             AudioLogData selectedLog = GetSelectedLog();
-            bool isDiscovered = system != null && selectedLog != null && system.IsDiscovered(selectedLog.logId);
+            bool isDiscovered = selectedLog != null && IsCatalogLogUnlocked(_selectedIndex);
             bool isPlaying = system != null && system.IsPlaying;
             bool canStartPlayback = isDiscovered && selectedLog != null && selectedLog.HasPlaybackPayload;
             bool buttonEnabled = isPlaying || canStartPlayback;
@@ -859,6 +865,82 @@ namespace Hecton8.UI
         private AudioLogData GetSelectedLog()
         {
             return GetLog(_selectedIndex);
+        }
+
+        private void RebuildLoreBindingCache()
+        {
+            int logCount = CatalogCount;
+            if (_catalogLoreHashes.Length != logCount)
+                _catalogLoreHashes = new uint[logCount]; // COLD ALLOC: uint[allLogs.Length] — lore hash cache aligned to PDA archive catalog — owner: PDADataLogTab
+
+            if (_catalogLoreRecordIndices.Length != logCount)
+                _catalogLoreRecordIndices = new int[logCount]; // COLD ALLOC: int[allLogs.Length] — lore record index cache aligned to PDA archive catalog — owner: PDADataLogTab
+
+            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            for (int i = 0; i < logCount; i++)
+            {
+                AudioLogData log = GetLog(i);
+                if (log == null || string.IsNullOrWhiteSpace(log.SafeLogId))
+                {
+                    _catalogLoreHashes[i] = 0u;
+                    _catalogLoreRecordIndices[i] = -1;
+                    continue;
+                }
+
+                uint loreHash = LoreDatabaseManager.ComputeLoreHash(log.SafeLogId);
+                _catalogLoreHashes[i] = loreHash;
+                _catalogLoreRecordIndices[i] = database != null && database.TryGetRecordIndex(loreHash, out int recordIndex)
+                    ? recordIndex
+                    : -1;
+            }
+
+            _catalogLoreBindingsDirty = false;
+        }
+
+        private void EnsureLoreBindingCache()
+        {
+            if (_catalogLoreBindingsDirty || _catalogLoreHashes.Length != CatalogCount || _catalogLoreRecordIndices.Length != CatalogCount)
+                RebuildLoreBindingCache();
+        }
+
+        private uint ResolveCatalogLoreHash(int logIndex)
+        {
+            EnsureLoreBindingCache();
+            return (uint)logIndex < (uint)_catalogLoreHashes.Length
+                ? _catalogLoreHashes[logIndex]
+                : 0u;
+        }
+
+        private bool IsCatalogLogUnlocked(int logIndex)
+        {
+            if (logIndex < 0 || logIndex >= CatalogCount)
+                return false;
+
+            EnsureLoreBindingCache();
+            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            if (database == null || !database.TryGetPackedUnlockWords(out Unity.Collections.NativeArray<uint> words))
+                return false;
+
+            int recordIndex = _catalogLoreRecordIndices[logIndex];
+            if (recordIndex < 0)
+            {
+                uint loreHash = _catalogLoreHashes[logIndex];
+                if (loreHash != 0u && database.TryGetRecordIndex(loreHash, out int resolvedIndex))
+                {
+                    _catalogLoreRecordIndices[logIndex] = resolvedIndex;
+                    recordIndex = resolvedIndex;
+                }
+            }
+
+            if (recordIndex < 0)
+                return false;
+
+            int wordIndex = recordIndex >> 5;
+            if ((uint)wordIndex >= (uint)words.Length)
+                return false;
+
+            uint bitMask = 1u << (recordIndex & 31);
+            return (words[wordIndex] & bitMask) != 0u;
         }
 
         internal bool TryGetLogById(string logId, out AudioLogData log)
@@ -1094,11 +1176,7 @@ namespace Hecton8.UI
                 return;
 
             AudioLogData log = GetSelectedLog();
-            AudioLogSystem system = AudioLogSystem.Instance;
-            bool isDiscovered = system != null &&
-                                log != null &&
-                                !string.IsNullOrWhiteSpace(log.logId) &&
-                                system.IsDiscovered(log.logId);
+            bool isDiscovered = log != null && IsCatalogLogUnlocked(_selectedIndex);
             if (!isDiscovered)
                 return;
 

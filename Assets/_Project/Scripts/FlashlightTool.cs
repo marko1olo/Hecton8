@@ -66,6 +66,7 @@ namespace Hecton8.Gameplay
         // MaterialPropertyBlock for power indicator
         private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private static readonly int _ToolBatteryNormalizedID = Shader.PropertyToID("_ToolBatteryNormalized");
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool IMPLEMENTATION
@@ -128,17 +129,22 @@ namespace Hecton8.Gameplay
             _powerIndicatorRenderer.GetPropertyBlock(_mpb);
 
             float batteryCharge = BatteryCharge;
+            float flickerScalar = 1f;
+            if (TryGetWirelessBrownoutFlicker(out float brownoutFlicker))
+                flickerScalar = Mathf.Clamp(brownoutFlicker, 0f, 1f);
+
+            _mpb.SetFloat(_ToolBatteryNormalizedID, Mathf.Clamp01(batteryCharge));
             if (_installedBattery == null || batteryCharge <= 0f)
             {
                 _mpb.SetColor(_EmissionColorID, Color.black);
             }
             else if (batteryCharge <= 0.2f)
             {
-                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f));
+                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f) * flickerScalar);
             }
             else
             {
-                _mpb.SetColor(_EmissionColorID, _powerOnColor);
+                _mpb.SetColor(_EmissionColorID, _powerOnColor * flickerScalar);
             }
 
             _powerIndicatorRenderer.SetPropertyBlock(_mpb);
@@ -297,6 +303,8 @@ namespace Hecton8.Gameplay
 
         public override void ToolTick(float deltaTime)
         {
+            UpdatePowerIndicator();
+
             IInputService inputService = GlobalRegistry.Input;
             PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
