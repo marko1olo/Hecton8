@@ -40,7 +40,10 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (_tickRegistered)
+            if (_tickRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

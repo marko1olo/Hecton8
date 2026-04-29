@@ -1,6 +1,18 @@
 # HECTON-8 DATA DICTIONARY — DOD Struct Reference
 
-**Версия:** 2026-04-28 | **Статус:** ETA VERIFIED
+## Current-State Addendum (2026-04-29)
+
+This file is a dated structural reference snapshot, not a fresh surgery-ready authority.
+
+Important boundary:
+
+- some layout notes here are still useful as orientation
+- they were not all revalidated against a fresh full struct-by-struct source reread in this pass
+- any real struct surgery must re-read the live owner files first and verify `UnsafeUtility.SizeOf<T>()` / `AlignOf<T>()` against the current code, not against this document alone
+
+Use this file as a reference map, not as blind implementation instructions.
+
+**Версия:** 2026-04-28 | **Исторический статус на момент скана:** ETA VERIFIED
 
 ---
 
@@ -441,4 +453,4 @@ public struct WaveQueryJob : IJobParallelFor {
 
 ---
 
-**STATUS:** ETA VERIFIED — 11 critical structs documented, 6 alignment violations flagged
+**Historical Scan Status:** ETA VERIFIED — 11 critical structs documented, 6 alignment violations flagged

@@ -9,7 +9,20 @@
 #define HECTON_FRUSTUM_PLANES 6
 
 StructuredBuffer<float4x4> _HectonSourceInstanceMatrices;
-StructuredBuffer<float4> _HectonSourceVegetationInstanceData;
+struct HectonVegetationInstanceGpuData
+{
+    float Type;
+    float HeightScale;
+    float WidthScale;
+    float Variation;
+    float TemplateIndex;
+    float RuntimeState;
+    float RuntimeFlags;
+    float PulseFrequency;
+    float4 BioluminescenceColor;
+};
+
+StructuredBuffer<HectonVegetationInstanceGpuData> _HectonSourceVegetationInstanceData;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD0;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesLOD1;
 AppendStructuredBuffer<uint> _HectonVisibleInstanceIndicesShadow;
@@ -400,12 +413,12 @@ void CullFloraInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];
-    float4 instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
-    float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
+    HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
 
     float instanceHeight;
     float instanceWidth;
-    ResolveInstanceShape(instanceType, instanceData.y, instanceData.z, instanceHeight, instanceWidth);
+    ResolveInstanceShape(instanceType, instanceData.HeightScale, instanceData.WidthScale, instanceHeight, instanceWidth);
 
     float3 originWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)));
     float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));
@@ -480,12 +493,12 @@ void CullFloraShadowInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     float4x4 instanceMatrix = _HectonSourceInstanceMatrices[instanceIndex];
-    float4 instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
-    float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
+    HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
 
     float instanceHeight;
     float instanceWidth;
-    ResolveInstanceShape(instanceType, instanceData.y, instanceData.z, instanceHeight, instanceWidth);
+    ResolveInstanceShape(instanceType, instanceData.HeightScale, instanceData.WidthScale, instanceHeight, instanceWidth);
 
     float3 rootWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)));
     float3 centerWS = ResolveShiftedWorldPosition(TransformPoint(instanceMatrix, float3(0.0, instanceHeight * 0.5, 0.0)));

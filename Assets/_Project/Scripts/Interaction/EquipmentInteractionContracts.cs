@@ -47,7 +47,46 @@ namespace Hecton8.Interaction
     /// </summary>
     public static class ToolCapabilityMasks
     {
-        public const uint PlasmaCut = 1u << 0;
+        public const uint Cut = 1u << 0;
+        public const uint Drill = 1u << 1;
+        public const uint Grab = 1u << 2;
+        public const uint Stun = 1u << 3;
+        public const uint Burn = 1u << 4;
+        public const uint PlasmaCut = Cut | Burn;
+
+        public static uint ResolveCapabilityMask(InteractionEffectType effectType)
+        {
+            switch (effectType)
+            {
+                case InteractionEffectType.Drill:
+                    return Drill;
+
+                case InteractionEffectType.Harpoon:
+                    return Grab;
+
+                case InteractionEffectType.Weld:
+                case InteractionEffectType.Torch:
+                case InteractionEffectType.Boil:
+                    return Burn;
+
+                case InteractionEffectType.PlasmaCut:
+                    return PlasmaCut;
+
+                default:
+                    return 0u;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Optional physical-vulnerability contract used by tool-routing owners before applying damage.
+    /// </summary>
+    public interface IInteractionVulnerabilitySource
+    {
+        /// <summary>
+        /// Bitmask of supported tool interaction capabilities for this target.
+        /// </summary>
+        uint VulnerabilityMask { get; }
     }
 
     /// <summary>

@@ -1,5 +1,21 @@
 # DEEP FORENSIC AUDIT — HECTON-8 SYSTEM ARCHAEOLOGY & HARDWARE DICTATORSHIP
 
+## Current-State Addendum (2026-04-29)
+
+This file is a dated static snapshot, not the current source-of-truth.
+
+The following points are now known stale or materially incomplete:
+
+- script-count scale is no longer in the `514+` range; current first-party inventory is `1010` `.cs` under `Assets/_Project` and `970` under `Assets/_Project/Scripts`
+- current direct service ownership has changed or been reverified:
+  - `SpatialAudioManager -> IAudioService`
+  - `SuitHUDV4CanvasOverlay -> IUIService`
+  - `HabitatIntegrityManager -> Hecton8.Core.IDamageReceiver`
+- queue-backed first-party buses now confirmed include `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, and `AudioLogEvents`
+- latest reachable Unity console slice on `2026-04-29` is not clean proof; it shows package-side MCP `ManageAsset` conversion failures on `ResourceNodeTemplate_*`, not a proven first-party compile break
+
+Use `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`, `PROJECT_ATLAS.md`, `INTERFACE_HEALTH_DASHBOARD.md`, and `EVENT_FLOW_MAP.md` for the fresher truth layer.
+
 **Дата:** 2026-04-28 | **Режим:** Deep Static Analysis | **Автор:** Supreme Compliance Auditor
 
 ---
@@ -307,7 +323,7 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 ---
 
-## XII. STATUS: ETA VERIFIED
+## XII. Historical Scan Status: ETA VERIFIED
 
 | Category | Status |
 |----------|--------|

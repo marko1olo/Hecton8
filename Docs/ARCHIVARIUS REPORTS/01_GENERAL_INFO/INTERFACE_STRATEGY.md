@@ -1,157 +1,139 @@
-# INTERFACE STRATEGY — Ghost Interface Inquisition
+# INTERFACE STRATEGY
 
-> **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md § Architecture First · § Ownership / Ambiguity / External Patch Compliance  
+Date: 2026-04-29
+Status: PENDING VERIFICATION
+Scope: ownership strategy for `GlobalRegistryContracts.cs` after source recheck
+Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
 
----
+## 1. Current Position
 
-## 1. GHOST INTERFACE DEFINITION
+The older "ghost interface" framing is no longer accurate.
+Current source scan found a direct implementor for every interface in `GlobalRegistryContracts.cs`.
 
-A **Ghost Interface** is defined as:
-1. Declared in first-party code (`GlobalRegistryContracts.cs`), **and**
-2. Either **zero implementations** found in production runtime, **or** **multiple conflicting definitions** causing ambiguous dispatch.
+That changes the strategy.
 
----
+The problem is no longer "which contracts are dead".
+The problem is "which contracts now have real owners and must stop being documented as unresolved".
 
-## 2. INTERDICTED INTERFACES
+## 2. Confirmed Non-Ghost Contracts
 
-### 2.1 `IRenderable` — ✅ NOT A GHOST (ACTIVE)
+### 2.1 `IAudioService`
 
-**Declared:** `GlobalRegistryContracts.cs:44`
-```csharp
-public interface IRenderable
-{
-    void Render(float deltaTime);
-}
-```
+Current direct owner:
 
-**Implementations:**
-- `HectonUnderwaterVisuals.cs` — `IRenderable`
+- `SpatialAudioManager`
 
-**Consumers:**
-- `RenderDispatcher.HandleBeginCameraRendering()` iterates `GlobalRegistry.Renderables` and calls `Render(deltaTime)`.
+Implication:
 
-**Verdict:** Fully wired. SRP callback fan-out is functional.  
-**Action:** NONE. Continue using for camera-relative render callbacks that must run outside standard `Tick()` cadence.
+- future docs must stop describing `IAudioService` as a ghost slot
+- "audio extensions" should not be casually documented as alternate service owners unless code actually moves that authority
 
----
+### 2.2 `IUIService`
 
-### 2.2 `IUIService` — ❌ CONFIRMED GHOST
+Current direct owner in source scan:
 
-**Declared:** `GlobalRegistryContracts.cs:454`
-```csharp
-public interface IUIService
-{
-    bool IsInitialized { get; }
-}
-```
+- `SuitHUDV4CanvasOverlay`
 
-**Implementations:** **ZERO** in production runtime.
+Implication:
 
-**Registry Slot:** `GlobalRegistry.UI` exists and is publicly exposed, but always `null` at runtime.
+- the contract is not absent
+- the contract is not currently fragmented at class-declaration level
+- if a future bootstrap-level UI root replaces it, docs must name that new root explicitly instead of drifting back into vague "multiple owners" language
 
-**Evidence:**
-```powershell
-> grep -r "class\s+\w+\s*:\s*.*IUIService" Assets/_Project/Scripts/
-# No results
-```
+### 2.3 `IRenderable`
 
-**Impact:** Any system calling `GlobalRegistry.UI?.IsInitialized` receives `null` and may fail silently or take fallback paths that bypass intended UI initialization gates.
+Current direct owners rechecked:
 
-**Recommended Path:**
+- `HectonUnderwaterVisuals`
+- `HectonSubmarineOS`
+- `MissionMarkerSystem`
 
-| Option | Description | Effort | Risk |
-|--------|-------------|--------|------|
-| A — **Implement** | Create `HectonUIRoot : MonoBehaviour, IUIService` that tracks `Canvas` readiness and HUD controller init state. Register in bootstrap. | 2h | Low |
-| B — **Delete** | Remove `IUIService` from `GlobalRegistryContracts.cs`, remove `GlobalRegistry.UI` slot, and delete all `?.IsInitialized` checks that rely on it. | 30m | Medium — must verify no hidden consumer in third-party or uncommitted code |
-| C — **Merge into IPlayerRuntimeContext** | UI readiness is logically a player-system concern. Move `IsInitialized` to `IPlayerRuntimeContext`. | 1h | Low |
+Implication:
 
-**ARCHIVARIUS RECOMMENDATION:** Option C. UI initialization state is a player-facing readiness signal, not a standalone service. The `IPlayerRuntimeContext` already owns camera, transform, and visor state; adding a `bool IsUIReady { get; }` property keeps ownership coherent.
+- `IRenderable` is a legitimate render-dispatch hook
+- no deletion campaign is justified from the current source picture alone
 
----
+### 2.4 `IDamageReceiver`
 
-### 2.3 `IDamageReceiver` — ❌ CONFLICT / PARTIAL GHOST
+Current direct owner rechecked:
 
-**Problem:** **Two incompatible definitions** exist in the same compilation unit scope.
+- `HabitatIntegrityManager`
 
-#### Definition A — `GlobalRegistryContracts.cs:84`
-```csharp
-public interface IDamageReceiver
-{
-    void ReceiveDamage(in DamagePacket packet);
-}
-```
+Important correction:
 
-#### Definition B — `HabitatIntegrityManager.cs:59`
-```csharp
-public interface IDamageReceiver
-{
-    // Event-only damage receiver contract.
-    // Downstream systems consume damage via callbacks, not polling.
-}
-```
-*(Note: The HabitatIntegrityManager file declares its own nested/interface definition with a different semantic contract.)*
+- the older shadow-conflict story is stale
+- the file now separates habitat-specific callback contracts into:
+  - `IDamageSignalReceiver`
+  - `IDamageSignalEmitter`
+- `HabitatIntegrityManager` also implements the global `Hecton8.Core.IDamageReceiver`
 
-**Implementations of Definition A:**
-- `TraumaDispatcher.cs` — `IDamageReceiver`
-- `SubmarineStructuralGrid.cs` — `IDamageReceiver` (file uses `Hecton8.Physics` namespace; resolves to GlobalRegistryContracts version via `using Hecton8.Gameplay` implicit lookup)
+Implication:
 
-**Implementations of Definition B:**
-- `HabitatIntegrityManager.cs` — implements the locally-defined `IDamageReceiver`
+- docs must stop treating this as an unresolved ABI-level type conflict unless a new conflicting declaration appears again
 
-**Conflict Evidence:**
-```powershell
-> grep -r "class\s+\w+\s*:\s*.*IDamageReceiver" Assets/_Project/Scripts/
-HabitatIntegrityManager.cs  : public sealed class HabitatIntegrityManager : ..., IDamageReceiver, ...
-TraumaDispatcher.cs         : public sealed class TraumaDispatcher : ..., IDamageReceiver
-SubmarineStructuralGrid.cs  : public sealed class SubmarineStructuralGrid : ..., IDamageReceiver
-```
+## 3. Strategy Rules Going Forward
 
-`HabitatIntegrityManager` lives in `Hecton8.Gameplay` namespace and declares a **nested/interface at file scope** with the same simple name `IDamageReceiver`. Because it is declared in the same namespace and file, the local definition **shadows** the `GlobalRegistryContracts` version for all code inside that file. Any external caller casting `HabitatIntegrityManager` to `IDamageReceiver` will bind to the local definition, not the global one, creating a type-mismatch at the ABI level if the contracts diverge.
+### Rule 1: No New "Ghost" Label Without Fresh Source Proof
 
-**Current Runtime Behavior:**
-- `TraumaDispatcher` → uses global `ReceiveDamage(in DamagePacket)` — **functional**
-- `SubmarineStructuralGrid` → uses global `ReceiveDamage(in DamagePacket)` — **functional**
-- `HabitatIntegrityManager` → uses local event-only contract — **isolated, but ambiguous**
+Do not mark an interface as ghost unless current source scan proves:
 
-**Recommended Path:**
+- zero direct implementors
+- or a real conflicting duplicate definition still exists
 
-| Step | Action | File |
-|------|--------|------|
-| 1 | **Rename** HabitatIntegrityManager's local interface to `IHabitatIntegrityReceiver` or delete it entirely if unused. | `HabitatIntegrityManager.cs` |
-| 2 | **Unify** all damage reception under the global `IDamageReceiver` (Definition A). | `GlobalRegistryContracts.cs` |
-| 3 | **Implement** `ReceiveDamage(in DamagePacket)` on `HabitatIntegrityManager` and route it to the existing rupture-state callback system. | `HabitatIntegrityManager.cs` |
-| 4 | **Add XML docs** clarifying that `IDamageReceiver` is the single authoritative damage contract. | `GlobalRegistryContracts.cs` |
+### Rule 2: Separate Source Ownership From Runtime Proof
 
-**ARCHIVARIUS RECOMMENDATION:** Execute Steps 1–4. The local redefinition is architectural drift. Habitat integrity is a damage domain; it should speak the global protocol.
+An implementor existing in code does not prove:
 
----
+- the scene contains it
+- bootstrap registers it
+- no other scene object competes for the same slot
 
-## 3. INTERFACE HEALTH DASHBOARD
+So the correct wording is:
 
-| Interface | Implementations | Consumers | Status | Action |
-|-----------|-----------------|-----------|--------|--------|
-| `ITickable` | 100+ | `GameTickManager` | ✅ FULL | Maintain |
-| `IUpdatable` | 100+ | `SystemDispatcher` | ✅ FULL | Maintain |
-| `IFixedTickable` | 20+ | `SystemDispatcher` · `GameTickManager` | ✅ FULL | Maintain |
-| `ISlowTickable` | 40+ | `SystemDispatcher` · `GameTickManager` | ✅ FULL | Maintain |
-| `IRenderable` | 1 (`HectonUnderwaterVisuals`) | `RenderDispatcher` | ✅ ACTIVE | Maintain |
-| `IInputService` | 1 (`InputDispatcher`) | `GlobalRegistry.Input` | ✅ FULL | Maintain |
-| `IPhysicsService` | 1 (`PhysicsApplySystem`) | `GlobalRegistry.Physics` | ✅ FULL | Maintain |
-| `IAudioService` | 1 (`PlayerCriticalProceduralAudioRenderer`?) | `GlobalRegistry.Audio` | ✅ FULL | Verify owner |
-| `ISaveService` | 1 (`SaveManager`) | `GlobalRegistry.Save` | ✅ FULL | Maintain |
-| `IWeatherService` | 1 (`GlobalWeatherDirector`) | `GlobalRegistry.Weather` | ✅ FULL | Maintain |
-| `IUIService` | **0** | `GlobalRegistry.UI` | ❌ GHOST | **Delete or Merge** |
-| `IDamageReceiver` | 3 (1 using wrong def) | `TraumaDispatcher` · `HabitatIntegrityManager` · `SubmarineStructuralGrid` | ❌ CONFLICT | **Unify** |
+- source-backed owner confirmed
+- runtime registration still pending verification
 
----
+### Rule 3: Keep Single-Owner Service Contracts Explicit
 
-## 4. COMPLIANCE NOTES
+These contracts should remain documented with one named owner unless code actually changes:
 
-- **No new interfaces** should be added to `GlobalRegistryContracts.cs` without a concrete implementation in the same PR.
-- **No class** should declare a file-scoped interface that duplicates a global registry contract name.
-- **Namespace rule:** If a subsystem needs a specialized contract, use a namespaced name (e.g., `IHabitatIntegrityCallbacks`) rather than shadowing a global type.
+- `IAudioService` -> `SpatialAudioManager`
+- `IUIService` -> `SuitHUDV4CanvasOverlay`
+- `IQuestSystem` -> `QuestManager`
+- `IEncounterDirectorService` -> `HectonDirectorAI`
+- `ILogisticsService` -> `ConstructionManager`
+- `IWorldGenService` -> `WorldProceduralScatterDirector`
 
----
+### Rule 4: Do Not Inflate Narrow Usage Into Defect By Default
 
-*Report generated by ARCHIVARIUS. Interface audit must be re-run after any GlobalRegistryContracts.cs modification.*
+A contract with one or a few implementors is not automatically sick.
+It is only a defect if:
+
+- the contract owner is ambiguous
+- the contract is unused
+- the contract is contradicted by scene/bootstrap reality
+
+That proof was not established for `IRenderable`, `IAudioService`, or `IUIService` in this pass.
+
+## 4. Recommended Documentation Policy
+
+| Priority | Action | Reason |
+|---|---|---|
+| P0 | purge ghost/fragmented claims from dependent docs | current source already disproves them |
+| P1 | keep one authoritative owner named for each registry-facing service contract | prevents drift and folklore |
+| P1 | when Unity evidence exists, add runtime occupancy notes separately from source ownership | avoids mixing static facts with live-state assumptions |
+| P2 | rerun interface audit after any `GlobalRegistryContracts.cs` expansion | current file already grew from 19 to 27 interfaces |
+
+## 5. Regression Model
+
+CPU: no runtime code changed
+GC: no runtime code changed
+Memory: no runtime code changed
+Cadence: no runtime code changed
+Correctness: improved by replacing stale ghost/conflict framing with current source-backed ownership strategy
+
+## 6. Hot Path Impact
+
+None. Markdown-only change.
+
+STATUS: PENDING VERIFICATION

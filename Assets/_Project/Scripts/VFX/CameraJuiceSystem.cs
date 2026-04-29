@@ -335,7 +335,7 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
-            if (!_registered)
+            if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);

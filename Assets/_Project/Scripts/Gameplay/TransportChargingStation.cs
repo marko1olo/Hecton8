@@ -171,7 +171,10 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

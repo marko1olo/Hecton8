@@ -1,5 +1,25 @@
 # SINGLETON ELIMINATION ROADMAP — HECTON-8
 
+## Current-State Addendum (2026-04-29)
+
+This roadmap remains useful as a singleton-removal planning artifact, but some service-slot guidance inside it is too broad for the current architecture truth.
+
+Current direct ownership already rechecked in source:
+
+- `SpatialAudioManager -> IAudioService`
+- `SuitHUDV4CanvasOverlay -> IUIService`
+
+Because of that, this document should not be read as permission to turn `IAudioService` or `IUIService` into catch-all buckets for every audio-adjacent or UI-adjacent singleton.
+
+Use current direct-owner docs first:
+
+- `INTERFACE_HEALTH_DASHBOARD.md`
+- `INTERFACE_CONTRACT_TABLE.md`
+- `INTERFACE_STRATEGY.md`
+- `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
+
+Status remains `PENDING VERIFICATION`.
+
 **Status:** PENDING VERIFICATION  
 **Authority:** CTO / Lead Architect  
 **Rule Basis:** AGENTS.md § PRIME DIRECTIVES — "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."  
@@ -227,6 +247,14 @@ _gameBootstrapper.ShowFatalError(msg);
 ## TIER 3 — UI / VISUAL (Secondary Feedback)
 
 **Rationale:** These are presentation-only. Lowest blast radius. Merge or delete where possible.
+
+**Current-state safety note:** the recommendation column below is an old migration sketch, not a literal service-slot assignment contract.  
+Direct current owners already confirmed in source remain:
+
+- `SuitHUDV4CanvasOverlay -> IUIService`
+- `SpatialAudioManager -> IAudioService`
+
+Do not treat every `Register as IUIService` or `Register as IAudioService extension` line below as current approved architecture without a fresh owner-by-owner review.
 
 | # | Class | File | Recommended Action |
 |---|-------|------|-------------------|

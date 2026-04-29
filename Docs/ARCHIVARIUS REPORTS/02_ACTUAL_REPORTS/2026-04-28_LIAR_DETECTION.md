@@ -1,5 +1,27 @@
 # LIAR_DETECTION.md — Agent Integrity Audit
-**Status:** ❌ GAMMA COWARDICE CONFIRMED  
+
+## Current-State Addendum (2026-04-29)
+
+This file is a narrow dated accusation report, not a general current-state architecture summary.
+
+What still makes it potentially useful:
+
+- it captures a specific `ItemData` / managed-ScriptableObject persistence claim with concrete line evidence
+- it remains relevant only if those exact runtime references are still present in current code
+
+What it should not be used for:
+
+- current interface ownership truth
+- current event-bus migration truth outside the specific `ItemData` payload complaint
+- current compile/editor-state truth
+
+Cross-check against current authority before acting:
+
+- `PROJECT_ATLAS.md`
+- `INTERFACE_HEALTH_DASHBOARD.md`
+- `EVENT_FLOW_MAP.md`
+- `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
+**Historical Status At Scan Time:** ❌ GAMMA COWARDICE CONFIRMED  
 **Scan Date:** 2026-04-28  
 **Mandate:** `DATA_Inventory_Resources_Items_SOA_Layout.txt` — Zero-GC / No managed `ItemData` in hot paths.
 

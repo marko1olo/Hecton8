@@ -12,6 +12,12 @@ This index lists the documents that physically exist in folders `01_GENERAL_INFO
 
 It replaces stale references to renamed, moved, or obsolete reports.
 
+This index is path-accurate, not truth-uniform.
+
+- files dated `2026-04-28_*` inside `02_ACTUAL_REPORTS` still physically exist in the active folder
+- several of those dated bundles are now historical static snapshots, not the preferred current-state authority
+- for current-source corrections and current editor-state caveats, prefer `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` first
+
 ## Coverage Snapshot
 
 | Bucket | Count |
@@ -85,9 +91,9 @@ It replaces stale references to renamed, moved, or obsolete reports.
 
 | File | Role |
 |---|---|
-| `2026-04-28_SUPREME_AUDITOR_REPORT.md` | Large static audit bundle |
-| `2026-04-28_DEEP_FORENSIC_AUDIT.md` | Deep static archaeology report |
-| `2026-04-28_ETA2_SUPREME_SUMMARY.md` | ETA2 summary report |
+| `2026-04-28_SUPREME_AUDITOR_REPORT.md` | Large dated static audit bundle; historical unless revalidated against 2026-04-29 source truth |
+| `2026-04-28_DEEP_FORENSIC_AUDIT.md` | Dated deep static archaeology snapshot; contains stale counts and stale ownership conclusions |
+| `2026-04-28_ETA2_SUPREME_SUMMARY.md` | Dated ETA2 summary snapshot; partially superseded by 2026-04-29 reverification |
 | `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | This reverification pass over folders `01` and `02` |
 | `2026-04-28_LIAR_DETECTION.md` | Claim-vs-code liar detection |
 | `2026-04-28_HOT_PATH_VIOLATIONS.md` | Current-source hot-path and architecture debt snapshot |

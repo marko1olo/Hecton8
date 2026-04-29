@@ -4,6 +4,7 @@ using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
@@ -1840,6 +1841,9 @@ namespace Hecton8.Audio
             float proximity = isPlayerOwnedImpact
                 ? 1f
                 : 1f - math.saturate(distance / maxDistance);
+            byte dominantMaterialId = ResolveDominantImpactMaterialId(impactSignal.PrimaryAudioMaterialId, impactSignal.SecondaryAudioMaterialId);
+            float clangMaterialMultiplier = ResolveImpactClangMaterialMultiplier(dominantMaterialId);
+            float echoMaterialMultiplier = ResolveImpactEchoMaterialMultiplier(dominantMaterialId);
             float impactStress = math.saturate(impactSignal.Intensity * PhysicsImpactStressBoost * math.max(0.2f, proximity));
             if (impactSignal.IsHeavy)
                 impactStress = math.max(impactStress, 0.45f * math.max(0.35f, proximity));
@@ -1847,13 +1851,15 @@ namespace Hecton8.Audio
             float metallicImpulse = impactSignal.IsHeavy
                 ? math.max(impactStress, 0.55f * math.max(0.35f, proximity))
                 : impactStress * math.max(0.35f, proximity);
+            metallicImpulse = math.saturate(metallicImpulse * clangMaterialMultiplier);
             float clangExcitation = math.saturate(
                 metallicImpulse *
                 math.lerp(0.55f, 1.15f, math.saturate(impactSignal.Intensity)) *
-                math.max(0.4f, proximity));
+                math.max(0.4f, proximity) *
+                clangMaterialMultiplier);
             if (isPlayerOwnedImpact && impactSignal.IsHeavy)
                 clangExcitation = math.max(clangExcitation, 0.48f);
-            float echoExcitation = math.saturate(metallicImpulse * math.lerp(0.45f, 1f, math.saturate(impactSignal.Intensity)));
+            float echoExcitation = math.saturate(metallicImpulse * math.lerp(0.45f, 1f, math.saturate(impactSignal.Intensity)) * echoMaterialMultiplier);
             float echoDelaySeconds = 0f;
             float echoAttenuation = 0f;
             float echoLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
@@ -1878,6 +1884,47 @@ namespace Hecton8.Audio
                 echoAttenuation,
                 echoLowPassCutoffHz);
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
+        }
+
+        private static byte ResolveDominantImpactMaterialId(byte primaryMaterialId, byte secondaryMaterialId)
+        {
+            if (primaryMaterialId == (byte)ItemAudioMaterialId.Metal || primaryMaterialId == (byte)ItemAudioMaterialId.Glass)
+                return primaryMaterialId;
+
+            if (secondaryMaterialId == (byte)ItemAudioMaterialId.Metal || secondaryMaterialId == (byte)ItemAudioMaterialId.Glass)
+                return secondaryMaterialId;
+
+            return primaryMaterialId;
+        }
+
+        private static float ResolveImpactClangMaterialMultiplier(byte materialId)
+        {
+            switch ((ItemAudioMaterialId)materialId)
+            {
+                case ItemAudioMaterialId.Metal:
+                    return 1.1f;
+
+                case ItemAudioMaterialId.Glass:
+                    return 0.85f;
+
+                default:
+                    return 0.4f;
+            }
+        }
+
+        private static float ResolveImpactEchoMaterialMultiplier(byte materialId)
+        {
+            switch ((ItemAudioMaterialId)materialId)
+            {
+                case ItemAudioMaterialId.Metal:
+                    return 1f;
+
+                case ItemAudioMaterialId.Glass:
+                    return 1.15f;
+
+                default:
+                    return 0.55f;
+            }
         }
 
         private void HandleActiveTransportLifecycleChanged(IPlayerTransportLifecycleOwner lifecycleOwner)

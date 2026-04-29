@@ -203,7 +203,7 @@ namespace Hecton8.World
 
         private void RegisterTick()
         {
-            if (_isRegistered)
+            if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

@@ -31,7 +31,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable
+    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
     {
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
@@ -83,6 +83,7 @@ namespace Hecton8.Items
             _highlighter = GetComponent<InteractionHighlighter>();
             _rb = GetComponent<Rigidbody>();
             _buoyancy = GetComponent<BuoyancyObject>();
+            ApplyPhysicalMetadata();
             ConfigureWaterDynamicsFromData();
 
             if (itemData == null)
@@ -219,6 +220,7 @@ namespace Hecton8.Items
         {
             itemData = data;
             quantity = qty > 0 ? qty : 1;
+            ApplyPhysicalMetadata();
             ConfigureWaterDynamicsFromData();
             RebuildInteractTextCache();
         }
@@ -241,6 +243,8 @@ namespace Hecton8.Items
 
         /// <summary>Текущее количество (read-only).</summary>
         public int Quantity => quantity;
+        public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;
+        public byte ImpactAudioMaterialId => itemData != null ? itemData.AudioMaterialByte : (byte)ItemAudioMaterialId.Organic;
 
         internal void BindPersistentWorldRecord(PersistentWorldRegistry registry, int recordIndex)
         {
@@ -263,6 +267,12 @@ namespace Hecton8.Items
                 _buoyancy = GetComponent<BuoyancyObject>() ?? gameObject.AddComponent<BuoyancyObject>();
 
             _buoyancy.SetProfile(itemData.worldBuoyancyProfile);
+        }
+
+        private void ApplyPhysicalMetadata()
+        {
+            if (_rb != null && itemData != null)
+                _rb.mass = itemData.MassKg;
         }
 
         // ─────────────────────── IInteractable ───────────────────

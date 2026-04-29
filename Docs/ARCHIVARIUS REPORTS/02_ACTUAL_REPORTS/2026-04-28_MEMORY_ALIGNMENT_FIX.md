@@ -1,4 +1,16 @@
 # MEMORY_ALIGNMENT_FIX.md — DOD Struct Layout Surgery
+
+## Current-State Addendum (2026-04-29)
+
+This file is a dated surgery proposal, not current verified source truth.
+
+Important boundary:
+
+- multiple layouts in this document are explicitly estimated or inferred
+- no fresh same-pass struct reread validated every proposed padding/reorder step against current owner code
+- do not apply these surgeries blindly; re-read each live struct first, then verify size/alignment in code
+
+Use this file as a candidate queue for future work, not as direct implementation authority.
 **Status:** PENDING SURGERY  
 **Scan Date:** 2026-04-28  
 **Scope:** All `[StructLayout]` and `NativeArray<T>` structs in `Assets/_Project/Scripts`

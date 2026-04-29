@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_VeilFern
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
+  stableId: flora.veil_fern
+  displayName: Veil Fern
+  vegetationType: 0
+  semanticType: 0
+  biomeLayer: 0
+  harvestTemplate: {fileID: 11400000, guid: 088e984347c9401782cca62cafe8f732, type: 2}
+  lootItem: {fileID: 11400000, guid: 13ac8b419d3bf4645a9436ce66d8cedd, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 17
+  audioMaterialId: 1
+  bioluminescenceColor: {r: 0.18, g: 0.72, b: 0.94, a: 0.7}
+  pulseFrequency: 0.48

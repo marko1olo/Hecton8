@@ -271,7 +271,7 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
 
@@ -291,7 +291,7 @@ namespace Hecton8.World
 
         private void TryRegisterLateFrame()
         {
-            if (_lateFrameRegistered)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_HydrocarbonResinPod
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.hydrocarbon_resin_pod
+  displayName: Hydrocarbon Resin Pod
+  toolResistance: 0.7
+  harvestDurationSeconds: 0.95
+  requiredToolClass: 0
+  maxIntegrity: 78
+  defaultLootCount: 2
+  lootPickupPrefab: {fileID: 6629726158006509732, guid: ca5310b9106a8294181839043ff0e138, type: 3}
+  minimumDepthMeters: 120
+  maximumDepthMeters: 540
+  minimumTemperatureCelsius: 8
+  maximumTemperatureCelsius: 26
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 26
+  spawnOffsetMeters: 0.07
+  candidateBudgetPerSector: 5
+  maxInstancesPerSector: 2
+  placementProbability: 0.62
+  minimumDensity: 0.35
+  maximumDensity: 1.4
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 0.85, y: 0.75, z: 0.85}
+  harvestYield:
+  - item: {fileID: 11400000, guid: 9ae1acef760847246a6306b242e6a467, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

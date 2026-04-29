@@ -228,16 +228,28 @@ namespace Hecton8.World
 
         public static int RegisterResource(ResourceNode node)
         {
-            return Register(node, node != null ? node.transform : null, SpatialTargetKind.Resource, FieldTargetRole.ResourceNodeActive, 0);
+            return RegisterResource(node, node != null ? (float3)node.SpatialHalfExtents : float3.zero);
+        }
+
+        public static int RegisterResource(ResourceNode node, Vector3 halfExtents)
+        {
+            return RegisterResource(node, (float3)halfExtents);
+        }
+
+        public static int RegisterResource(ResourceNode node, float3 halfExtents)
+        {
+            return Register(
+                node,
+                node != null ? node.transform : null,
+                SpatialTargetKind.Resource,
+                FieldTargetRole.ResourceNodeActive,
+                0,
+                halfExtents);
         }
 
         public static int RegisterBioform(FaunaBrain brain)
         {
-            int speciesId = 0;
-            if (brain != null && brain.SpeciesProfile != null)
-                speciesId = brain.SpeciesProfile.speciesID;
-
-            return Register(brain, brain != null ? brain.transform : null, SpatialTargetKind.Bioform, FieldTargetRole.Generic, speciesId);
+            return Register(brain, brain != null ? brain.transform : null, SpatialTargetKind.Bioform, FieldTargetRole.Generic, brain != null ? brain.SpeciesId : 0);
         }
 
         public static int RegisterSignal(FieldTargetDescriptor descriptor)
@@ -315,6 +327,21 @@ namespace Hecton8.World
                 return;
             }
 
+            UpdateNativeEntry(handle, entry);
+        }
+
+        public static void SetResourceHalfExtents(int handle, Vector3 halfExtents)
+        {
+            SetResourceHalfExtents(handle, (float3)halfExtents);
+        }
+
+        public static void SetResourceHalfExtents(int handle, float3 halfExtents)
+        {
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                return;
+
+            entry.HalfExtents = math.max(halfExtents, 0f);
+            _entries[handle] = entry;
             UpdateNativeEntry(handle, entry);
         }
 
@@ -584,14 +611,16 @@ namespace Hecton8.World
             Transform targetTransform,
             SpatialTargetKind kind,
             FieldTargetRole signalRole,
-            int speciesId)
+            int speciesId,
+            float3 halfExtents = default)
         {
             if (owner == null || targetTransform == null)
                 return 0;
 
             EnsureInitialized();
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
-            int handle = _nativeHash.Register(positionAup, float3.zero, (int)kind, 0);
+            float3 safeHalfExtents = math.max(halfExtents, 0f);
+            int handle = _nativeHash.Register(positionAup, safeHalfExtents, (int)kind, 0);
             _entries[handle] = new Entry
             {
                 Transform = targetTransform,
@@ -601,7 +630,7 @@ namespace Hecton8.World
                 SignalRole = signalRole,
                 SpeciesId = speciesId,
                 Layer = targetTransform.gameObject.layer,
-                HalfExtents = float3.zero,
+                HalfExtents = safeHalfExtents,
                 PayloadId = 0,
                 IsResidentInNativeHash = true
             };
@@ -622,6 +651,7 @@ namespace Hecton8.World
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
             _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.PayloadId);
             entry.IsResidentInNativeHash = true;
+            _entries[handle] = entry;
         }
 
         private static int FindHandle(Transform targetTransform)

@@ -85,6 +85,7 @@ namespace Hecton8.Gameplay
 
                     StunAssessment assessment = BuildAssessment(ai, stunState);
                     stunState.Apply(ai, stunDuration);
+                    ai.ApplyFaunaInteraction(FaunaInteractionKind.Stun, hit.point, damage * GetEfficiency());
                     if (Time.time >= _nextFeedbackAt)
                     {
                         PublishAssessment(assessment);

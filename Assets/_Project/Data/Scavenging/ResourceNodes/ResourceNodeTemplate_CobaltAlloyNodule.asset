@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_CobaltAlloyNodule
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.cobalt_alloy_nodule
+  displayName: Cobalt Alloy Nodule
+  toolResistance: 1.12
+  harvestDurationSeconds: 1.45
+  requiredToolClass: 2
+  maxIntegrity: 118
+  defaultLootCount: 1
+  minimumDepthMeters: 260
+  maximumDepthMeters: 880
+  minimumTemperatureCelsius: 0
+  maximumTemperatureCelsius: 14
+  minimumSlopeDegrees: 10
+  maximumSlopeDegrees: 40
+  spawnOffsetMeters: 0.12
+  candidateBudgetPerSector: 4
+  maxInstancesPerSector: 1
+  placementProbability: 0.41
+  minimumDensity: 0.18
+  maximumDensity: 0.7
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 1
+  physicalSize: {x: 0.88, y: 0.88, z: 0.88}
+  harvestYield:
+  - item: {fileID: 11400000, guid: 59a14819e2557ec4a9c83015dc8dabca, type: 2}
+    minimumAmount: 1
+    maximumAmount: 1
+    weight: 1
+  rarityDrops: []

@@ -1,5 +1,21 @@
 # ETA2_SUPREME_SUMMARY — Deep Core Archaeology Final Report
-**Status:** ✅ ETA DEEP_CORE VERIFIED  
+
+## Current-State Addendum (2026-04-29)
+
+This file is a dated summary snapshot and should not be read as current verified state.
+
+Confirmed drift versus current source recheck:
+
+- `21 interfaces catalogued` is stale; current `GlobalRegistryContracts.cs` public interface count is `27`
+- ghost-interface framing is stale for at least:
+  - `IAudioService` -> direct owner `SpatialAudioManager`
+  - `IUIService` -> direct owner `SuitHUDV4CanvasOverlay`
+  - `IRenderable` -> multiple current implementors confirmed by source
+- queue-backed event migration moved further than this summary reflects
+- latest reachable Unity console slice on `2026-04-29` shows package-side MCP `ManageAsset` conversion failures on `ResourceNodeTemplate_*` assets, not a clean editor and not a proven first-party compile break
+
+Preferred current-state references: `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`, `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_HEALTH_DASHBOARD.md`, `EVENT_FLOW_MAP.md`, and `PROJECT_ATLAS.md`.
+**Historical Status At Scan Time:** ✅ ETA DEEP_CORE VERIFIED  
 **Scan Date:** 2026-04-28  
 **Agent:** koda-pro (Supreme Compliance Auditor)
 
@@ -112,5 +128,5 @@
 - **Memory Impact:** None (documentation only).
 - **Correctness Impact:** N/A.
 
-## STATUS: ✅ ETA DEEP_CORE VERIFIED
+## Historical Scan Status: ✅ ETA DEEP_CORE VERIFIED
 **Next Audit:** 2026-05-05 or on-demand.

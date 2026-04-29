@@ -88,8 +88,6 @@ namespace Hecton8.World
         private Vector3 _debugAnchorWS;
         [SerializeField, Tooltip("Current sediment world rect (x, z, invWidth, invHeight).")]
         private Vector4 _debugWorldRect;
-        [SerializeField, Tooltip("True when the sediment compute path is active and publishing shader globals.")]
-        private bool _debugActive;
         [SerializeField, Tooltip("Current normalized coverage strength used by shader overlays.")]
         private float _debugOverlayIntensity;
 
@@ -139,14 +137,12 @@ namespace Hecton8.World
         {
             if (!_computeReady)
             {
-                _debugActive = false;
                 return;
             }
 
             if (!TryResolveRuntimeReferences())
             {
                 PublishFallbackGlobals();
-                _debugActive = false;
                 return;
             }
 
@@ -418,7 +414,6 @@ namespace Hecton8.World
             if (_sedimentRead == null)
             {
                 PublishFallbackGlobals();
-                _debugActive = false;
                 return;
             }
 
@@ -440,7 +435,6 @@ namespace Hecton8.World
                     overlayIntensity));
             Shader.SetGlobalColor(_SedimentTintAId, sedimentTintA.linear);
             Shader.SetGlobalColor(_SedimentTintBId, sedimentTintB.linear);
-            _debugActive = true;
             _debugOverlayIntensity = overlayIntensity;
         }
 
@@ -466,6 +460,9 @@ namespace Hecton8.World
 
         private void TryRegisterTickHandlers()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

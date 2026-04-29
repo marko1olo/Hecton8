@@ -68,6 +68,7 @@ namespace Hecton8.World
         private static readonly int _VegetationCurrentNoiseScaleId = Shader.PropertyToID("_HectonVegetationCurrentNoiseScale");
         private static readonly int _VegetationCurrentTimeScaleId = Shader.PropertyToID("_HectonVegetationCurrentTimeScale");
         private static readonly int _VegetationCurrentVerticalFactorId = Shader.PropertyToID("_HectonVegetationCurrentVerticalFactor");
+        private static readonly int _FloraPredatorThreatParamsId = Shader.PropertyToID("_HectonFloraPredatorThreatParams");
         private static readonly int _WakeTrailTextureId = Shader.PropertyToID("_HectonVegetationWakeTrailRT");
         private static readonly int _WakeTrailWorldRectId = Shader.PropertyToID("_HectonVegetationWakeTrailWorldRect");
         private static readonly int _WakeTrailActiveId = Shader.PropertyToID("_HectonVegetationWakeTrailActive");
@@ -174,6 +175,23 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Physics layers considered for dynamic vegetation interaction queries.")]
         private LayerMask _dynamicInteractionMask = ~0;
+
+        [Header("Biolum Stealth")]
+        [SerializeField, Range(2f, 48f)]
+        [Tooltip("Search radius used to detect aggressive bioforms that should dim nearby flora emission around the player.")]
+        private float _predatorThreatQueryRadius = 18f;
+
+        [SerializeField, Range(1f, 32f)]
+        [Tooltip("World radius around the player over which nearby flora emission is dimmed when predators are close.")]
+        private float _predatorBiolumDimRadius = 10f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Global scalar applied to the predator-driven flora bioluminescence dimming effect.")]
+        private float _predatorBiolumDimStrength = 0.75f;
+
+        [SerializeField]
+        [Tooltip("Physics layers considered when querying the nearest aggressive bioform for flora stealth dimming.")]
+        private LayerMask _predatorThreatMask = ~0;
 
         [Header("Wake Trail")]
         [SerializeField, Range(64f, 192f)]
@@ -363,6 +381,9 @@ namespace Hecton8.World
             _wakeTrailWaveDamping = Mathf.Clamp(_wakeTrailWaveDamping, 0.5f, 1f);
             _denseGrassInstanceThreshold = Mathf.Max(1024, _denseGrassInstanceThreshold);
             _sedimentMaxBurstCount = Mathf.Clamp(_sedimentMaxBurstCount, 2, 32);
+            _predatorThreatQueryRadius = Mathf.Max(2f, _predatorThreatQueryRadius);
+            _predatorBiolumDimRadius = Mathf.Max(1f, _predatorBiolumDimRadius);
+            _predatorBiolumDimStrength = Mathf.Clamp01(_predatorBiolumDimStrength);
             _wakeTrailQualityLevel = QualitySettings.GetQualityLevel();
             _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQuality(_wakeTrailQualityLevel);
             _vegetationBridge = ResolveVegetationBridge();
@@ -1004,6 +1025,32 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_VegetationCurrentNoiseScaleId, currentNoiseScale);
             Shader.SetGlobalFloat(_VegetationCurrentTimeScaleId, currentTimeScale);
             Shader.SetGlobalFloat(_VegetationCurrentVerticalFactorId, currentVerticalFactor);
+            PublishPredatorThreatGlobals(samplePositionWS);
+        }
+
+        private void PublishPredatorThreatGlobals(Vector3 samplePositionWS)
+        {
+            float aggressiveBioformThreat = 0f;
+            if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
+                samplePositionWS,
+                _predatorThreatQueryRadius,
+                _predatorThreatMask.value,
+                _playerTransform,
+                out SpatialQueryHit hit))
+            {
+                float distance = Vector3.Distance(hit.Position, samplePositionWS);
+                aggressiveBioformThreat = 1f - Mathf.Clamp01(distance / Mathf.Max(_predatorThreatQueryRadius, 0.001f));
+            }
+
+            float bridgeThreat = _vegetationBridge != null ? Mathf.Clamp01(_vegetationBridge.GetThreatLevel(samplePositionWS)) : 0f;
+            float threatExposure = Mathf.Max(aggressiveBioformThreat, bridgeThreat);
+            Shader.SetGlobalVector(
+                _FloraPredatorThreatParamsId,
+                new Vector4(
+                    threatExposure,
+                    Mathf.Max(0.25f, _predatorBiolumDimRadius),
+                    _predatorBiolumDimStrength,
+                    aggressiveBioformThreat));
         }
 
         private void RefreshFlowFieldGlobals(float deltaTime)
@@ -1503,6 +1550,7 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_GlobalOceanFlowId, Vector4.zero);
             Shader.SetGlobalVector(_VegetationCurrentVectorId, Vector4.zero);
             Shader.SetGlobalFloat(_VegetationCurrentStrengthId, 0f);
+            Shader.SetGlobalVector(_FloraPredatorThreatParamsId, Vector4.zero);
             Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
             Shader.SetGlobalInt(_FloraFlowFieldResolutionId, 0);
             _lastPublishedInteractionCount = 0;
@@ -1537,9 +1585,8 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_isRegistered)
+            if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegistered = true;

@@ -2,7 +2,7 @@
 
 Status: PENDING VERIFICATION
 Author: Codex
-Scope: static audit only
+Scope: static audit plus current Unity Editor readback where reachable
 
 ## Mandates Followed
 
@@ -18,405 +18,196 @@ This audit was produced against:
 
 ## Method
 
-- Full static scan of first-party code under `Assets/_Project`.
-- Coverage: `961` C# files scanned.
-- Automated pattern scans were run for ownership, event buses, tick usage, force application, job barriers, asset streaming, forbidden scene search, and UI text mutation.
-- High-risk matches were then read directly in source.
-- No Unity runtime session, Profiler capture, GCMonitor output, or MCP execution was used here.
+- Static scan of first-party code under `Assets/_Project`
+- Coverage: `1010` C# files under `Assets/_Project`, `970` under `Assets/_Project/Scripts`
+- Pattern scans for ownership, event buses, tick usage, force application, job barriers, asset streaming, forbidden scene search, and UI text mutation
+- Direct source readback of high-risk owners
+- Current Unity MCP readback for scene/build/console state
 
 ## Executive Summary
 
-The project contains substantial architecture and compliance drift against its own mandates.
+The project still drifts against several mandates, but the drift is not the same as earlier same-day audit text claimed.
 
-The biggest objective gaps are:
+Current highest-confidence compliance picture:
 
-1. Global ownership is not actually centralized on `GlobalRegistry`; singleton + `DontDestroyOnLoad` patterns remain widespread.
-2. The mandated zero-alloc static event bus model backed by `NativeQueue<T>` is not what the project currently uses; the codebase is still dominated by static `Action` events.
-3. The intended async asset streaming stack exists only partially. Governance classes exist, but the loading path is not fully wired end-to-end.
-4. Zero-GC UI compliance is uneven. Some HUD paths are good, but many runtime UI controllers still mutate TMP `.text` with strings.
-5. Direct gameplay-side physics force application still exists, bypassing the mandated queued force packet model.
-6. The codebase has a high density of job `Complete()` barriers and native lifecycle complexity, but no proof in code that barriers are consistently confined to safe swap windows.
+1. `GlobalRegistry` is real, but not yet the sole runtime authority. Singleton-style accessors and split bootstrap ownership still remain.
+2. The mandated queue-backed event model exists in key first-party buses, but the project is still mixed rather than converged.
+3. Asset streaming governance exists and is partially wired, but project-wide heavy-asset closure is not runtime-proven.
+4. Zero-GC UI compliance is uneven. Core HUD paths are stronger than the long-tail UI layer.
+5. Direct gameplay-side `AddForce` / `AddTorque` bypass was not found in the current global scan; `PhysicsApplySystem` is the active first-party application owner.
+6. Explicit Unity loop ownership still exists outside the dispatcher ideal, and the project remains structurally oversized in world/player/UI owners.
 
-This is not a "few isolated misses" situation. The missing work is systemic.
+This is still systemic debt.
+It is simply not the same debt profile as the older broken-compile / direct-force-bypass narrative.
 
 ## Confirmed Findings
 
-### 1. GlobalRegistry architecture is not the real source of truth
+### 1. GlobalRegistry architecture is real, but not sovereign
 
-Mandate conflict:
+Mandate pressure:
 
-- `AGENTS.md`: `[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry`
-
-Evidence:
-
-- `140` shipping-script `Instance` declarations/matches were found outside `GlobalRegistry`.
-- Confirmed examples:
-  - `Assets/_Project/Scripts/SaveManager.cs`
-  - `Assets/_Project/Scripts/ObjectPoolManager.cs`
-  - `Assets/_Project/Scripts/SpatialAudioManager.cs`
-  - `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs`
-  - `Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs`
-
-Direct source evidence:
-
-- `SaveManager.cs` documents itself as `Singleton, DontDestroyOnLoad` and exposes `public static SaveManager Instance => _instance;`
-- `ObjectPoolManager.cs` documents itself as `Singleton, DontDestroyOnLoad`
-- `SpatialAudioManager.cs` documents access via `SpatialAudioManager.Instance`
-- `SystemDispatcher.cs` calls `DontDestroyOnLoad(gameObject);`
-
-What is objectively missing:
-
-- A finished ownership migration from singleton managers to one consistent bootstrap and registry path.
-- A hard rule boundary separating "temporary compatibility accessors" from actual architecture.
-
-Impact:
-
-- Initialization order remains split-brain.
-- Manager lifetime is distributed across multiple systems instead of one explicit owner.
-- Regression risk is high during scene transitions and boot flow changes.
-
-### 2. Mandated NativeQueue-backed event buses were not implemented as the dominant event model
-
-Mandate conflict:
-
-- `AGENTS.md`: `EventBus is backed by NativeQueue<T>. Publish() is O(1) and SAFE from Burst Jobs. Subscribe() is Awake-only. Main thread flushes queue in LateUpdate.`
+- `AGENTS.md`: managers should converge on `GlobalRegistry` ownership and explicit bootstrap sequencing
 
 Evidence:
 
-- `108` static `Action` event declarations were found in shipping scripts.
-- Confirmed canonical bus files still use direct delegates:
-  - `Assets/_Project/Scripts/SaveEvents.cs`
-  - `Assets/_Project/Scripts/Interaction/InteractionEvents.cs`
-  - `Assets/_Project/Scripts/CraftingEvents.cs`
-  - `Assets/_Project/Scripts/ModuleStatusEvents.cs`
-
-Further examples:
-
-- `PlayerFlashlight.cs`
-- `PlayerPDA.cs`
-- `NarrativeEvents.cs`
-- `InventoryEvents.cs`
-- `AtlasSignalEvents.cs`
-- `AudioLogEvents.cs`
-- `PerformanceMonitor.cs`
+- `Bootstrap/BootstrapController.cs`, `Bootstrap/GameBootstrapper.cs`, and `SceneBootstrap.cs` all participate in startup authority
+- singleton/DDOL style access remains visible in bootstrap- and persistence-facing systems
+- direct registry/service ownership also exists and is non-trivial
 
 What is objectively missing:
 
-- One implemented queue-backed runtime event transport for the declared bus families.
-- A migration plan off direct static delegates for gameplay-scale event traffic.
+- one uncontested startup sovereign
+- a hard rule boundary separating compatibility accessors from final architecture
 
 Impact:
 
-- Event delivery policy is inconsistent.
-- Burst-safe publish guarantees are not established.
-- Subscription lifetime rules remain manual and error-prone.
+- initialization order remains vulnerable to drift
+- lifetime ownership remains distributed across several systems
 
-### 3. Asset streaming architecture exists on paper, but the runtime load pipeline is incomplete
+### 2. Event-bus compliance is mixed, not absent
 
-Mandate conflict:
+Mandate pressure:
 
-- `AGENTS.md`: heavy assets must be `Addressables async only`
-- `AGENTS.md`: after scene unload, drain release queue
-- `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
+- `AGENTS.md`: event buses should be queue-backed, burst-safe, and flushed on the main thread
 
 Evidence:
 
-- Shipping-script Addressables references were found in only four files:
-  - `Assets/_Project/Scripts/AsyncLoadHelper.cs`
-  - `Assets/_Project/Scripts/ItemCatalog.cs`
-  - `Assets/_Project/Scripts/Compatibility/AddressablesCompatibility.cs`
-  - `Assets/_Project/Scripts/World/ImpostorSystem.cs`
-
-Direct source evidence:
-
-- `AsyncLoadHelper.cs` explicitly says runtime loading "fails immediately because runtime Resources loading is disabled."
-- `AssetLoadDispatcher.cs` defines `TryDequeueReadyTicket(...)`.
-- Search result for `TryDequeueReadyTicket(` shows no external consumer; the only hit is its own declaration in `AssetLoadDispatcher.cs`.
-- `AssetLifecycleGovernor.cs` enqueues requests into `AssetLoadDispatcher`, but the ready-ticket handoff is not proven to be consumed by any real loader in the scanned runtime.
+- `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, and `AudioLogEvents` are queue-backed with `NativeQueue<T>` payload lanes
+- direct static delegate buses still remain in `InteractionEvents`, `CraftingEvents`, `PDAEvents`, `FlashlightEvents`, `RandomEventEvents`, and `HectonSubmarineOsEvents`
+- broad static `Action` event declarations are still numerous in first-party scripts
 
 What is objectively missing:
 
-- One fully wired end-to-end async load path from priority queue -> dispatch ticket -> concrete Addressables request -> completion -> release lifecycle.
-- Proof that world-scale heavy assets are actually entering the world through this path rather than direct scene residency or ad hoc loading.
+- one converged event policy across gameplay/runtime layers
+- elimination or hard containment of direct static delegate buses in mandate-sensitive lanes
 
 Impact:
 
-- The streaming governance layer is present, but the loading backend is only partially integrated.
-- The codebase has policy objects without full operational closure.
+- publish/flush semantics remain inconsistent
+- ordering and lifetime rules are harder to reason about than the mandate intends
 
-### 4. Forbidden unload and scene-search APIs still exist in shipping code
+### 3. Asset streaming architecture is partially compliant
 
-Mandate conflict:
+Mandate pressure:
 
-- `AGENTS.md`: `[FORBID] NEVER invoke Resources.UnloadUnusedAssets()`
-- `AGENTS.md`: runtime search APIs are forbidden in gameplay architecture except cached/owned references
+- heavy assets should route through async Addressables lifecycle ownership
 
 Evidence:
 
-- `1` confirmed `Resources.UnloadUnusedAssets()` use in shipping scripts.
-- `3` confirmed `FindAnyObjectByType` / `FindFirstObjectByType` uses in shipping scripts.
-
-Direct source evidence:
-
-- `Assets/_Project/Scripts/UI/PauseMenuController.cs:1004`
-  - `AsyncOperation unloadOperation = Resources.UnloadUnusedAssets();`
-- `Assets/_Project/Scripts/World/HectonCaveVoxelAmbientOcclusionController.cs:166`
-  - `Object.FindAnyObjectByType<Camera>(...)`
-- `Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs:57`
-  - `FindAnyObjectByType<OceanRenderer>(...)`
+- `Optimization/AssetLifecycleGovernor.cs` and `Optimization/AssetLoadDispatcher.cs` are real systems
+- `ItemCatalog.cs` consumes ready tickets and calls `LoadAssetAsync<GameObject>()`
+- `Addressables.Release(...)` usage is present
+- `AsyncLoadHelper.cs` exists as a disabled/blocked legacy path rather than an active runtime loader
 
 What is objectively missing:
 
-- Enforced static checks preventing forbidden APIs from re-entering shipping code.
-- Centralized owner-provided references for camera/ocean/runtime services.
+- project-wide proof that heavy world assets consistently enter and leave through one enforced runtime path
+- runtime verification of memory/VRAM behavior under real loading pressure
 
 Impact:
 
-- Main-thread memory and scene ownership rules are not locked down.
-- The project can regress into search-driven wiring again.
+- streaming governance exists
+- end-to-end operational trust is still unproven
 
-### 5. Gameplay physics still bypasses the mandated force packet route
+### 4. Some earlier mandate violations were stale and are now removed
 
-Mandate conflict:
+Current source-backed corrections:
 
-- `AGENTS.md`: `[FORBID] Direct rb.AddForce() in gameplay code. [REQ] Write ForcePacket structs to physics NativeQueue during FixedUpdate gather phase. PhysicsApplySystem handles actual application.`
+- no current `Resources.UnloadUnusedAssets()` hit was found under `Assets/_Project/Scripts`
+- no current `DG.Tweening` / `DOTween` hit was found under `Assets/_Project/Scripts`
+- current global `.AddForce(` / `.AddTorque(` scan only found `PhysicsApplySystem.cs`
+- current reachable Unity console readback shows `15` package-side MCP `ManageAsset` errors on `ResourceNodeTemplate_*` assets and no visible first-party compile errors
+
+Meaning:
+
+- earlier same-day audit slices that still described those items as current live violations had become stale
+- current compliance reporting must not preserve them as active facts
+
+### 5. Tick/update discipline is still incomplete
+
+Mandate pressure:
+
+- gameplay ownership should converge on dispatcher/tick systems rather than scattered Unity loops
 
 Evidence:
 
-- `8` direct `.AddForce(` / `.AddTorque(` matches were found in shipping scripts.
-
-Direct source evidence:
-
-- `Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs`
-  - `_body.AddForce(..., ForceMode.Force);`
-  - `_body.AddForce(..., ForceMode.Acceleration);`
-  - `_body.AddForce(..., ForceMode.VelocityChange);`
-  - `_body.AddForce(..., ForceMode.Impulse);`
-  - `_body.AddTorque(..., ForceMode.Force);`
-  - `_body.AddTorque(..., ForceMode.VelocityChange);`
-- `Assets/_Project/Scripts/PhysicsApplySystem.cs`
-  - `body.AddForce(...)`
-  - `body.AddTorque(...)`
-
-Assessment:
-
-- `PhysicsApplySystem` is the correct application owner.
-- `HectonPlayerMotor` is not.
+- current filtered scan found `28` explicit `Update` / `LateUpdate` / `FixedUpdate` file owners outside interface noise
+- owners still include `SystemDispatcher`, `GameTickManager`, `SceneBootstrap`, `SpatialAudioManager`, `EquipmentInteractionHandler`, `SuitHUDV4CanvasOverlay`, and several gameplay/runtime helpers
 
 What is objectively missing:
 
-- Full migration of gameplay callers onto packetized physics submission.
+- a hard, enforced exception boundary for allowed Unity loop owners
+- wider convergence onto dispatcher-only cadence
 
 Impact:
 
-- Physics ownership is inconsistent.
-- Deterministic force gathering is not enforced everywhere.
+- loop ownership is more controlled than random Unity sprawl
+- it is still not mandate-clean
 
-### 6. Tick/update discipline is incomplete and exception boundaries are not enforced
+### 6. Zero-GC UI compliance remains uneven
 
-Mandate conflict:
+Mandate pressure:
 
-- `AGENTS.md`: `[FORBID] Update/LateUpdate/FixedUpdate in gameplay code`
+- UI hot paths should avoid string churn and activation churn
 
 Evidence:
 
-- `12` shipping-script direct `Update` / `LateUpdate` / `FixedUpdate` method declarations were found.
-
-Confirmed examples:
-
-- `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
-- `Assets/_Project/Scripts/GlobalPhysicsStateManager.cs`
-- `Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs`
-- `Assets/_Project/Scripts/TetherManager.cs`
-- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
-- `Assets/_Project/Scripts/UI/LocalizedTMPAutoSizer.cs`
-- `Assets/_Project/Scripts/UI/LocalizedLayoutMirror.cs`
-
-Assessment:
-
-- Some of these may fall under allowed exceptions.
-- The omission is not "any Update exists."
-- The omission is lack of a hard, enforced boundary proving which ones are exception-approved and which ones are drift.
+- strong zero-GC formatting patterns are visible in `SuitHUDV4CanvasOverlay.cs`
+- current `UI` + `Interaction` `SetActive(...)` scan is low (`2` hits), which is better than older audit slices claimed
+- direct `.text` mutation and broader UI ownership still remain in the long-tail interface layer
 
 What is objectively missing:
 
-- One auditable whitelist for allowed native Unity loop usage.
-- One enforcement pass to remove non-whitelisted loop entry points.
+- uniform adoption of the HUD-standard formatting approach across secondary UI
+- runtime profiler proof that PDA and auxiliary UI paths are allocation-clean
 
 Impact:
 
-- Tick policy is partly convention, not a sealed rule.
+- core HUD compliance is stronger than the long-tail interface layer
+- UI discipline is improving, not complete
 
-### 7. Zero-GC UI policy is only partially implemented
+## Current Unity Readback
 
-Mandate conflict:
+Current reachable editor facts:
 
-- `AGENTS.md`: `Zero-GC UI: Use Span<char> + TryFormat + TMP_Text.SetCharArray(...)`
-- `AGENTS.md`: `[FORBID] Updating Text/TMP_Text.text (allocates string)` in HUD paths
+- active scene: `02_HECTON_WORLD`
+- Build Settings scenes: `00_BOOTSTRAP`, `01_MAIN_MENU`, `02_HECTON_WORLD`
+- console: latest reachable slice is not clean; it contains package-side MCP asset-inspection errors rather than first-party compile errors
 
-Evidence of compliance:
+Current warning observed:
 
-- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` uses `TryFormat(...)` and `SetCharArray(...)`
-- `Assets/_Project/Scripts/UI/SubtitleManager.cs` uses `SetCharArray(...)`
+- `Assets/_Project/Scripts/World/SedimentAccumulationManager.cs(92,22)` warning `CS0414`
 
-Evidence of non-compliance:
+This is not runtime proof.
+It only means the older first-party broken-compile snapshot is no longer safe as the current compliance headline.
 
-- `Assets/_Project/Scripts/UI/InteractionUI.cs:430`
-  - `promptText.text = expandedPrompt;`
-- `Assets/_Project/Scripts/HUDNotification.cs:290`
-  - `_notifText.text = displayMessage;`
-- `Assets/_Project/Scripts/HUDNotification.cs:330`
-  - `_notifText.text = displayMessage;`
-- `Assets/_Project/Scripts/HUDQuickBar.cs:364`
-  - `keyTxt.text = SlotKeyLabels[i];`
-- `Assets/_Project/Scripts/PDAInventoryTab.cs`
-  - multiple live-path `.text = ...` assignments remain in detail/update code
-  - examples around lines `1325`, `1350`, `1365`, `1396`, `1401`, `1404`, `1410`, `1438`, `2483`
+## Bottom Judgment
 
-Assessment:
+Current mandate-compliance reality:
 
-- The team started the migration.
-- The migration is not finished.
-- UI policy is strongest in newer HUD code and weaker in broad UI/controller code.
+- better than the older same-day broken-compile narrative
+- still materially below the project's own declared standard
 
-What is objectively missing:
+Primary remaining debt:
 
-- A project-wide UI text mutation audit separating cold-build labels from live update paths.
-- Completion of zero-GC conversion for runtime-mutating panels outside the main suit HUD.
-
-Impact:
-
-- The UI layer is not uniformly zero-GC.
-
-### 8. Job barrier discipline is not proven
-
-Mandate conflict:
-
-- `AGENTS.md`: `[FORBID] Schedule()+Complete() in same Tick/hot path method`
-- `AGENTS.md`: `JobHandle.Complete() only permitted in designated end-of-frame swap windows`
-
-Evidence:
-
-- `121` `.Complete(` matches were found in shipping scripts.
-
-Confirmed example:
-
-- `Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs:673`
-  - `_weatherJobHandle.Complete();`
-
-Assessment:
-
-- A raw `Complete()` count is not, by itself, proof of violation.
-- It is proof that the codebase has many barrier sites and that compliance has not been mechanically sealed.
-- The missing work is verification and consolidation, not blind deletion.
-
-What is objectively missing:
-
-- One audited list of approved end-of-frame completion windows.
-- One sweep removing or relocating mid-frame barrier sites that do not belong there.
-
-Impact:
-
-- CPU cadence risk remains high.
-- Main-thread stalls can re-enter unnoticed.
-
-### 9. Dead and mixed-responsibility code remains inside production files
-
-Evidence:
-
-- `Assets/_Project/Scripts/GameTickManager.cs` still contains a disabled coroutine block:
-  - `#if false`
-  - `private System.Collections.IEnumerator SlowTickRoutine()`
-  - `yield return null;`
-
-Assessment:
-
-- This block is not active runtime behavior.
-- It is still production-file debt and contradicts the mandate direction away from coroutine gameplay flow.
-
-What is objectively missing:
-
-- Cleanup of abandoned paths after subsystem migration.
-- Stronger separation between production code, experiments, smoke tools, and dead fallback logic.
-
-Impact:
-
-- File-level clarity and maintainability are worse than they need to be.
-
-## System-Level Gap Matrix
-
-| System | Objective state |
-|---|---|
-| Bootstrap / ownership | Hybrid model. `GlobalRegistry` exists, but singleton lifetime management still dominates. |
-| Eventing | Delegate-based event topology still dominant; queue-backed contract not enforced. |
-| Physics | Central apply system exists, but gameplay bypass path remains. |
-| Asset streaming | Governance layer exists, backend integration incomplete or unproven. |
-| UI | Mixed compliance. Main HUD paths are more mature than general UI panels/controllers. |
-| Tick discipline | Policy exists, but runtime loop entry exceptions are not sealed. |
-| Jobs / Burst | Heavy job usage present, but completion-window discipline is not proven. |
-| Save/load | System exists, but still participates in singleton lifetime model. |
-| World / third-party bridges | Some direct scene-search coupling remains. |
-
-## What The Project Objectively Missed
-
-- A completed architecture convergence pass.
-- A hard compliance layer that prevents forbidden APIs and patterns from being reintroduced.
-- End-to-end closure on async heavy-asset streaming.
-- Full conversion of runtime UI mutation paths to zero-GC text updates.
-- A mandatory approval map for native Unity loop usage and job completion windows.
-- Consistent separation of runtime code from compatibility shims, dead code, and migration leftovers.
+- split bootstrap authority
+- mixed event architectures
+- oversized world/player/UI owners
+- incomplete dispatcher convergence
+- missing runtime proof for save, streaming, and UI hot paths
 
 ## Regression Model
 
-CPU:
-
-- Risk source: widespread `Complete()` barriers, singleton boot ambiguity, direct physics bypasses, runtime search APIs.
-
-GC:
-
-- Risk source: delegate event topology, string-based UI mutation outside migrated HUD code, legacy loader stubs and mixed ownership patterns.
-
-Memory:
-
-- Risk source: incomplete streaming closure, singleton persistence, and policy layers that may outlive scene ownership boundaries.
-
-Cadence:
-
-- Risk source: inconsistent tick entry points and partial dispatcher adoption.
-
-Correctness:
-
-- Risk source: architecture divergence between declared contracts and actual execution model.
+CPU: no runtime code changed  
+GC: no runtime code changed  
+Memory: no runtime code changed  
+Cadence: documentation-only correction  
+Correctness: improved because stale violation claims were removed and current source/editor evidence replaced them
 
 ## Hot Path Impact
 
-- Confirmed hot-path risk areas: UI mutation, physics submission ownership, job completion barriers.
-- No profiler-backed cost numbers were captured in this audit.
-- Measured proof absent.
+None. Markdown-only pass.
 
-## Failure Modes
+## Why This Version Was Kept
 
-- Scene transition stalls or hidden retained state because manager lifetime is spread across multiple persistent singletons.
-- Event ordering drift or missed unsubscribe failures due to direct static delegate usage.
-- Runtime hitching from barrier-heavy job completion placement.
-- Asset residency bugs because governance and loading backend are not fully closed together.
-- HUD/UI alloc spikes when non-migrated panels update frequently.
-
-## Why These Findings Were Kept
-
-- Each finding is backed by direct source matches, not inference alone.
-- Where evidence was incomplete, the wording was kept at "unproven" rather than overstated as a hard bug.
-
-## Verification Status
-
-Static verification only.
-
-Not performed:
-
-- Unity scene execution
-- GCMonitor capture
-- Profiler frame capture
-- Memory retention slope test
-- MCP automated self-test run
-
-Final status: PENDING VERIFICATION
+Kept because mandate reporting that preserves stale violations after the code moved on is itself non-compliant with the evidence standard.

@@ -87,6 +87,12 @@ namespace Hecton8.Caves
         {
             _engine = GetComponent<HectonVoxelEngine>();
 
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            {
+                TryRegisterSaveService();
+                return;
+            }
+
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

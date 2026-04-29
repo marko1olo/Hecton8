@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton.Localization;
+using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Optimization;
 #if UNITY_ADDRESSABLES_EXIST
@@ -103,6 +104,9 @@ namespace Hecton8.SaveSystem
             public readonly ushort StateFlags;
             public readonly float Weight;
             public readonly byte CategoryId;
+            public readonly uint VulnerabilityMask;
+            public readonly byte AudioMaterialId;
+            public readonly float MassKg;
             public readonly bool Stackable;
             public readonly bool IsConsumable;
             public readonly float OxygenRestore;
@@ -120,6 +124,9 @@ namespace Hecton8.SaveSystem
                 ushort stateFlags,
                 float weight,
                 byte categoryId,
+                uint vulnerabilityMask,
+                byte audioMaterialId,
+                float massKg,
                 bool stackable,
                 bool isConsumable,
                 float oxygenRestore,
@@ -136,6 +143,9 @@ namespace Hecton8.SaveSystem
                 StateFlags = stateFlags;
                 Weight = weight;
                 CategoryId = categoryId;
+                VulnerabilityMask = vulnerabilityMask;
+                AudioMaterialId = audioMaterialId;
+                MassKg = massKg;
                 Stackable = stackable;
                 IsConsumable = isConsumable;
                 OxygenRestore = oxygenRestore;
@@ -625,7 +635,10 @@ namespace Hecton8.SaveSystem
             }
 
             if (_runtimeItems == null)
+            {
+                ApplyRuntimeTemplateRegistrySnapshot();
                 return;
+            }
 
             for (int i = 0; i < _runtimeItems.Count; i++)
             {
@@ -637,6 +650,8 @@ namespace Hecton8.SaveSystem
                 AddLookupAlias(runtimeItem.name, runtimeItem);
                 AddHashLookupAlias(runtimeItem);
             }
+
+            ApplyRuntimeTemplateRegistrySnapshot();
         }
 
         private void RebuildWorldPrefabLookup()
@@ -889,6 +904,9 @@ namespace Hecton8.SaveSystem
                 BuildStateFlags(item),
                 item.weight,
                 (byte)item.category,
+                item.VulnerabilityMask,
+                item.AudioMaterialByte,
+                item.MassKg,
                 item.stackable && item.maxStack > 1,
                 item.isConsumable,
                 item.oxygenRestore,
@@ -922,6 +940,141 @@ namespace Hecton8.SaveSystem
             }
 
             return flags;
+        }
+
+        private void ApplyRuntimeTemplateRegistrySnapshot()
+        {
+            if (!Application.isPlaying)
+            {
+                ItemTemplateRegistry.Clear();
+                return;
+            }
+
+            if (_hashLookup == null || _runtimeDescriptorLookup == null || _hashLookup.Count <= 0)
+            {
+                ItemTemplateRegistry.Configure(null);
+                return;
+            }
+
+            ItemTemplate[] templates = new ItemTemplate[_hashLookup.Count]; // COLD ALLOC: ItemTemplate[_hashLookup.Count] - runtime compact item template snapshot rebuilt from ItemCatalog - owner: ItemCatalog
+            int templateCount = 0;
+            if (allItems != null)
+                templateCount = AppendTemplateSnapshotEntries(allItems, templates, templateCount);
+
+            if (_runtimeItems != null)
+                templateCount = AppendTemplateSnapshotEntries(_runtimeItems, templates, templateCount);
+
+            if (templateCount <= 0)
+            {
+                ItemTemplateRegistry.Configure(null);
+                return;
+            }
+
+            if (templateCount != templates.Length)
+            {
+                ItemTemplate[] compactTemplates = new ItemTemplate[templateCount]; // COLD ALLOC: ItemTemplate[templateCount] - trimmed compact template snapshot after dedupe - owner: ItemCatalog
+                Array.Copy(templates, compactTemplates, templateCount);
+                ItemTemplateRegistry.Configure(compactTemplates);
+                return;
+            }
+
+            ItemTemplateRegistry.Configure(templates);
+        }
+
+        private int AppendTemplateSnapshotEntries(List<ItemData> sourceItems, ItemTemplate[] destination, int writeIndex)
+        {
+            if (sourceItems == null || destination == null)
+                return writeIndex;
+
+            for (int i = 0; i < sourceItems.Count && writeIndex < destination.Length; i++)
+            {
+                ItemData item = sourceItems[i];
+                if (item == null)
+                    continue;
+
+                int hashId = LocHash.Compute(item.PersistentId);
+                if (!_runtimeDescriptorLookup.TryGetValue(hashId, out ItemRuntimeDescriptor descriptor) || !descriptor.IsValid)
+                    continue;
+
+                if (TryFindTemplateIndex(destination, writeIndex, hashId) >= 0)
+                    continue;
+
+                destination[writeIndex++] = BuildRuntimeTemplate(descriptor, item);
+            }
+
+            return writeIndex;
+        }
+
+        private static int TryFindTemplateIndex(ItemTemplate[] templates, int count, int hashId)
+        {
+            uint unsignedHashId = unchecked((uint)hashId);
+            for (int i = 0; i < count; i++)
+            {
+                if (templates[i].HashID == unsignedHashId)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static ItemTemplate BuildRuntimeTemplate(ItemRuntimeDescriptor descriptor, ItemData item)
+        {
+            ItemCategoryMask categoryMask = ResolveCategoryMask((ItemCategory)descriptor.CategoryId, item);
+            float resolvedBaseDurability = Mathf.Max(1f, descriptor.MassKg * 10f);
+            float resolvedWearMultiplier = ResolveWearMultiplier(descriptor.AudioMaterialId);
+            return new ItemTemplate(
+                unchecked((uint)descriptor.HashId),
+                categoryMask,
+                resolvedBaseDurability,
+                resolvedWearMultiplier,
+                descriptor.MaxStack,
+                0,
+                0,
+                0,
+                descriptor.VulnerabilityMask,
+                descriptor.AudioMaterialId,
+                descriptor.MassKg);
+        }
+
+        private static ItemCategoryMask ResolveCategoryMask(ItemCategory category, ItemData item)
+        {
+            switch (category)
+            {
+                case ItemCategory.Material:
+                    return item != null && item.resourceFamily == ResourceFamily.Organic
+                        ? ItemCategoryMask.Biological
+                        : ItemCategoryMask.Mineral;
+
+                case ItemCategory.Tool:
+                    return ItemCategoryMask.Tool;
+
+                case ItemCategory.Equipment:
+                case ItemCategory.Component:
+                    return ItemCategoryMask.Tech | ItemCategoryMask.Craft;
+
+                case ItemCategory.Consumable:
+                    return ItemCategoryMask.Food;
+
+                case ItemCategory.Organic:
+                    return ItemCategoryMask.Biological;
+            }
+
+            return ItemCategoryMask.Craft;
+        }
+
+        private static float ResolveWearMultiplier(byte audioMaterialId)
+        {
+            switch ((ItemAudioMaterialId)audioMaterialId)
+            {
+                case ItemAudioMaterialId.Metal:
+                    return 0.8f;
+
+                case ItemAudioMaterialId.Glass:
+                    return 1.25f;
+
+                default:
+                    return 1f;
+            }
         }
 
         private void RecordHashAmbiguity(int hashId, ItemData existing, ItemData duplicate)

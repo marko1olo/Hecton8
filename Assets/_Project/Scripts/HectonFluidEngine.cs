@@ -400,6 +400,8 @@ namespace Hecton8.Physics
         private int _gpuAbyssalResetKernel = -1;
         private int _gpuAbyssalUpdateKernel = -1;
         private int _gpuAbyssalSurgeKernel = -1;
+        private bool _fluidRuntimeRegistered;
+        private bool _fixedTickRegistered;
         private bool _postFixedRegistered;
 
         // ══════════════════════════════════════════════════════════
@@ -458,8 +460,21 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            GlobalRegistry.RegisterFluidRuntime(this);
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            if (Application.isPlaying && !_fluidRuntimeRegistered)
+            {
+                GlobalRegistry.RegisterFluidRuntime(this);
+                _fluidRuntimeRegistered = true;
+            }
+
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_fixedTickRegistered)
+            {
+                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+                _fixedTickRegistered = true;
+            }
+
             if (!_postFixedRegistered)
             {
                 GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
@@ -469,8 +484,18 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            GlobalRegistry.UnregisterFluidRuntime(this);
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (_fluidRuntimeRegistered)
+            {
+                GlobalRegistry.UnregisterFluidRuntime(this);
+                _fluidRuntimeRegistered = false;
+            }
+
+            if (_fixedTickRegistered)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _fixedTickRegistered = false;
+            }
+
             if (_postFixedRegistered)
             {
                 GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
@@ -485,7 +510,18 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
-            GlobalRegistry.UnregisterFluidRuntime(this);
+            if (_fluidRuntimeRegistered)
+            {
+                GlobalRegistry.UnregisterFluidRuntime(this);
+                _fluidRuntimeRegistered = false;
+            }
+
+            if (_fixedTickRegistered)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _fixedTickRegistered = false;
+            }
+
             if (_postFixedRegistered)
             {
                 GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);

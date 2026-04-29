@@ -80,20 +80,12 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (!_registered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
-            }
+            TryUnregister();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -130,11 +122,7 @@ namespace Hecton8.Gameplay
                 _rigidbody.angularVelocity = Vector3.zero;
             }
 
-            if (!_registered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         /// <summary>
@@ -142,11 +130,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void OnDespawn()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
-            }
+            TryUnregister();
 
             _lifetimeTimer = 0f;
             _initialized = false;
@@ -244,6 +228,27 @@ namespace Hecton8.Gameplay
         public void ResetProjectile()
         {
             OnSpawn();
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registered = false;
         }
 
 #if UNITY_EDITOR

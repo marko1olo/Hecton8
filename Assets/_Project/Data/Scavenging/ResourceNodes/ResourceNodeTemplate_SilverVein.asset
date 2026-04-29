@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_SilverVein
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.silver_vein
+  displayName: Silver Vein
+  toolResistance: 1.05
+  harvestDurationSeconds: 1.35
+  requiredToolClass: 2
+  maxIntegrity: 110
+  defaultLootCount: 2
+  lootPickupPrefab: {fileID: 6751771887998511550, guid: e268d05cac672cb43971b8eac21e7cf0, type: 3}
+  minimumDepthMeters: 180
+  maximumDepthMeters: 620
+  minimumTemperatureCelsius: 1
+  maximumTemperatureCelsius: 12
+  minimumSlopeDegrees: 8
+  maximumSlopeDegrees: 38
+  spawnOffsetMeters: 0.14
+  candidateBudgetPerSector: 5
+  maxInstancesPerSector: 2
+  placementProbability: 0.58
+  minimumDensity: 0.4
+  maximumDensity: 1.3
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 1
+  physicalSize: {x: 0.88, y: 0.88, z: 0.88}
+  harvestYield:
+  - item: {fileID: 11400000, guid: b8de736e6b1c21241acc1651212a733f, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

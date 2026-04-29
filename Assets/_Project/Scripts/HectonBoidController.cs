@@ -114,6 +114,7 @@ namespace Hecton8.AI.GPU
         [Tooltip("ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ñ€Ñ‹Ð± Ð² ÑÑ‚Ð°Ðµ. Max recommended: 5000.")]
         [Range(64, 8192)]
         [SerializeField] private int boidCount = 2000;
+        private bool _registeredToTickManager;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR â€” BOID RULES
@@ -395,7 +396,14 @@ namespace Hecton8.AI.GPU
 
         private void OnEnable()
         {
+            if (_registeredToTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredToTickManager = true;
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -403,7 +411,11 @@ namespace Hecton8.AI.GPU
 
         private void OnDisable()
         {
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            if (_registeredToTickManager)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToTickManager = false;
+            }
         }
 
         private void OnDestroy()

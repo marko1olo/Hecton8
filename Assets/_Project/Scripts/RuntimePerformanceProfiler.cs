@@ -743,6 +743,9 @@ namespace Hecton8.Dev
 
         private void RegisterWithTickManager()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);

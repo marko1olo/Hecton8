@@ -226,6 +226,9 @@ namespace Hecton8.Interaction
 
         private static void DispatchSignal(InteractionSignal signal, Collider targetCollider)
         {
+            if (!CanApplyInteraction(in signal, targetCollider))
+                return;
+
             switch ((InteractionEffectType)signal.EffectType)
             {
                 case InteractionEffectType.PlasmaCut:
@@ -294,6 +297,21 @@ namespace Hecton8.Interaction
                 cuttable.ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
         }
 
+        private static bool CanApplyInteraction(in InteractionSignal signal, Collider targetCollider)
+        {
+            if (targetCollider == null)
+                return false;
+
+            if (!TryResolveVulnerabilitySource(targetCollider, out IInteractionVulnerabilitySource vulnerabilitySource))
+                return true;
+
+            uint capabilityMask = ToolCapabilityMasks.ResolveCapabilityMask((InteractionEffectType)signal.EffectType);
+            if (capabilityMask == 0u)
+                return true;
+
+            return (vulnerabilitySource.VulnerabilityMask & capabilityMask) != 0u;
+        }
+
         private static bool TryResolveSignalConsumer(Collider targetCollider, out IInteractionSignalConsumer signalConsumer)
         {
             signalConsumer = null;
@@ -308,6 +326,22 @@ namespace Hecton8.Interaction
 
             signalConsumer = targetCollider.GetComponentInParent<IInteractionSignalConsumer>();
             return signalConsumer != null;
+        }
+
+        private static bool TryResolveVulnerabilitySource(Collider targetCollider, out IInteractionVulnerabilitySource vulnerabilitySource)
+        {
+            vulnerabilitySource = null;
+            if (targetCollider == null)
+                return false;
+
+            if (targetCollider.TryGetComponent(out IInteractionVulnerabilitySource directSource))
+            {
+                vulnerabilitySource = directSource;
+                return true;
+            }
+
+            vulnerabilitySource = targetCollider.GetComponentInParent<IInteractionVulnerabilitySource>();
+            return vulnerabilitySource != null;
         }
 
         private static bool TryResolveCuttable(Collider targetCollider, out ICuttable cuttable)

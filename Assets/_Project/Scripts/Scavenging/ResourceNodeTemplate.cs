@@ -10,7 +10,7 @@ namespace Hecton8.Scavenging
 {
     /// <summary>
     /// Authoring template for harvestable resource-node families.
-    /// Builds blittable descriptors and hash-based yield rows for SOA/runtime consumers.
+    /// Owns environmental envelopes, runtime yield tables, ghost-box dimensions, and optional presentation assets.
     /// </summary>
     [CreateAssetMenu(
         fileName = "ResourceNodeTemplate",
@@ -25,6 +25,12 @@ namespace Hecton8.Scavenging
             Drill = 2,
             Laser = 3,
             Salvage = 4
+        }
+
+        public enum ColliderShape : byte
+        {
+            Box = 0,
+            Sphere = 1
         }
 
         [Serializable]
@@ -88,7 +94,7 @@ namespace Hecton8.Scavenging
             public uint Reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
         public struct RuntimeDescriptor
         {
             public int StableHashId;
@@ -98,10 +104,15 @@ namespace Hecton8.Scavenging
             public byte RequiredToolClass;
             public byte YieldCount;
             public byte RarityDropCount;
-            public byte Reserved0;
+            public byte DefaultLootCount;
             public float MinimumDensity;
             public float MaximumDensity;
-            public float Reserved1;
+            public float MinimumDepthMeters;
+            public float MaximumDepthMeters;
+            public float MinimumTemperatureCelsius;
+            public float MaximumTemperatureCelsius;
+            public float MinimumSlopeDegrees;
+            public float MaximumSlopeDegrees;
         }
 
         [Header("Identity")]
@@ -126,6 +137,59 @@ namespace Hecton8.Scavenging
         [Tooltip("Tool family required to extract this node. Logic tier consumes the byte enum only.")]
         private HarvestToolClass requiredToolClass = HarvestToolClass.Any;
 
+        [SerializeField, Min(1f)]
+        [Tooltip("Node integrity applied to runtime ResourceNode instances built from this template.")]
+        private float maxIntegrity = 100f;
+
+        [SerializeField, Min(0)]
+        [Tooltip("Default number of pickup pieces emitted when the runtime node resolves into pooled loot.")]
+        private int defaultLootCount = 1;
+
+        [SerializeField]
+        [Tooltip("Optional pooled pickup prefab emitted by legacy ResourceNode loot spawning. Leave empty to use yield metadata only.")]
+        private GameObject lootPickupPrefab;
+
+        [Header("Placement Envelope")]
+        [SerializeField, Min(0f)]
+        [Tooltip("Minimum water depth in meters where this template is eligible.")]
+        private float minimumDepthMeters = 0f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Maximum water depth in meters where this template is eligible.")]
+        private float maximumDepthMeters = 1200f;
+
+        [SerializeField]
+        [Tooltip("Minimum ambient water temperature in Celsius where this template is eligible.")]
+        private float minimumTemperatureCelsius = 0f;
+
+        [SerializeField]
+        [Tooltip("Maximum ambient water temperature in Celsius where this template is eligible.")]
+        private float maximumTemperatureCelsius = 30f;
+
+        [SerializeField, Range(0f, 90f)]
+        [Tooltip("Minimum terrain slope angle in degrees where this template is eligible.")]
+        private float minimumSlopeDegrees = 0f;
+
+        [SerializeField, Range(0f, 90f)]
+        [Tooltip("Maximum terrain slope angle in degrees where this template is eligible.")]
+        private float maximumSlopeDegrees = 60f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Vertical offset above the sampled seabed used when placing the node root.")]
+        private float spawnOffsetMeters = 0.15f;
+
+        [SerializeField, Range(1, 16)]
+        [Tooltip("How many deterministic candidate tests this template receives per sector.")]
+        private byte candidateBudgetPerSector = 4;
+
+        [SerializeField, Range(1, 8)]
+        [Tooltip("Hard cap for live instances of this template spawned per runtime sector.")]
+        private byte maxInstancesPerSector = 2;
+
+        [SerializeField, Range(0.01f, 1f)]
+        [Tooltip("Final probability gate after the environmental envelope passes.")]
+        private float placementProbability = 1f;
+
         [Header("Scatter")]
         [SerializeField, Range(0f, 64f)]
         [Tooltip("Lower density bound exported to scatter/runtime placement lanes.")]
@@ -138,6 +202,23 @@ namespace Hecton8.Scavenging
         [SerializeField]
         [Tooltip("Terrain or biome layers allowed to host this node family.")]
         private LayerMask validLayers = ~0;
+
+        [Header("Presentation")]
+        [SerializeField]
+        [Tooltip("Optional authored mesh used by the runtime node root. If empty, the spawner applies the ghost-box standard.")]
+        private Mesh nodeMesh;
+
+        [SerializeField]
+        [Tooltip("Optional authored shared material paired with the authored mesh.")]
+        private Material nodeMaterial;
+
+        [SerializeField]
+        [Tooltip("Primitive collider family used by runtime nodes. MeshCollider is forbidden.")]
+        private ColliderShape colliderShape = ColliderShape.Box;
+
+        [SerializeField]
+        [Tooltip("Exact physical dimensions in meters for the runtime node root and ghost placeholder.")]
+        private Vector3 physicalSize = new Vector3(1f, 1f, 1f);
 
         [Header("Yield")]
         [SerializeField]
@@ -154,23 +235,105 @@ namespace Hecton8.Scavenging
         /// <summary>Artist-facing label for authoring tools.</summary>
         public string DisplayName => displayName;
 
+        /// <summary>Stable runtime hash used by scanner, save, and placement tables.</summary>
+        public int StableHashId => string.IsNullOrWhiteSpace(stableId) ? 0 : LocHash.Compute(stableId);
+
+        /// <summary>Legacy loot prefab used by pooled pickup emission.</summary>
+        public GameObject LootPickupPrefab => lootPickupPrefab;
+
+        /// <summary>Maximum node integrity seeded into pooled runtime nodes.</summary>
+        public float MaxIntegrity => math.max(1f, maxIntegrity);
+
+        /// <summary>Default pooled pickup count emitted by runtime nodes.</summary>
+        public int DefaultLootCount => math.max(0, defaultLootCount);
+
+        /// <summary>Environmental minimum depth in meters.</summary>
+        public float MinimumDepthMeters => math.max(0f, minimumDepthMeters);
+
+        /// <summary>Environmental maximum depth in meters.</summary>
+        public float MaximumDepthMeters => math.max(MinimumDepthMeters, maximumDepthMeters);
+
+        /// <summary>Environmental minimum water temperature in Celsius.</summary>
+        public float MinimumTemperatureCelsius => math.min(minimumTemperatureCelsius, maximumTemperatureCelsius);
+
+        /// <summary>Environmental maximum water temperature in Celsius.</summary>
+        public float MaximumTemperatureCelsius => math.max(minimumTemperatureCelsius, maximumTemperatureCelsius);
+
+        /// <summary>Environmental minimum slope angle in degrees.</summary>
+        public float MinimumSlopeDegrees => math.clamp(minimumSlopeDegrees, 0f, 90f);
+
+        /// <summary>Environmental maximum slope angle in degrees.</summary>
+        public float MaximumSlopeDegrees => math.clamp(math.max(minimumSlopeDegrees, maximumSlopeDegrees), 0f, 90f);
+
+        /// <summary>Vertical offset above the sampled seabed.</summary>
+        public float SpawnOffsetMeters => math.max(0f, spawnOffsetMeters);
+
+        /// <summary>Deterministic candidate count evaluated per runtime sector.</summary>
+        public int CandidateBudgetPerSector => math.max(1, candidateBudgetPerSector);
+
+        /// <summary>Hard cap for live instances of this template inside one runtime sector.</summary>
+        public int MaxInstancesPerSector => math.max(1, maxInstancesPerSector);
+
+        /// <summary>Final probability gate after the environmental envelope passes.</summary>
+        public float PlacementProbability => math.saturate(placementProbability);
+
+        /// <summary>Optional authored mesh for the runtime node root.</summary>
+        public Mesh NodeMesh => nodeMesh;
+
+        /// <summary>Optional authored shared material paired with the node mesh.</summary>
+        public Material NodeMaterial => nodeMaterial;
+
+        /// <summary>Primitive collider family used by runtime nodes.</summary>
+        public ColliderShape RuntimeColliderShape => colliderShape;
+
+        /// <summary>Exact physical extents in meters used by runtime nodes and ghost placeholders.</summary>
+        public Vector3 PhysicalSize => new Vector3(
+            math.max(0.1f, physicalSize.x),
+            math.max(0.1f, physicalSize.y),
+            math.max(0.1f, physicalSize.z));
+
+        /// <summary>Half extents in meters used by the spatial broadphase.</summary>
+        public float3 HalfExtents => (float3)(PhysicalSize * 0.5f);
+
+        /// <summary>Returns true when the template carries an authored presentation mesh.</summary>
+        public bool HasPresentationMesh => nodeMesh != null;
+
         /// <summary>Builds the blittable runtime descriptor consumed by scatter/harvest SOA lanes.</summary>
         public RuntimeDescriptor BuildRuntimeDescriptor()
         {
             return new RuntimeDescriptor
             {
-                StableHashId = string.IsNullOrWhiteSpace(stableId) ? 0 : LocHash.Compute(stableId),
+                StableHashId = StableHashId,
                 ToolResistance = math.max(0.01f, toolResistance),
                 HarvestDurationSeconds = math.max(0f, harvestDurationSeconds),
                 ValidLayerMask = validLayers.value,
                 RequiredToolClass = (byte)requiredToolClass,
                 YieldCount = (byte)math.min(byte.MaxValue, harvestYield != null ? harvestYield.Length : 0),
                 RarityDropCount = (byte)math.min(byte.MaxValue, rarityDrops != null ? rarityDrops.Length : 0),
-                Reserved0 = 0,
+                DefaultLootCount = (byte)math.min(byte.MaxValue, math.max(0, defaultLootCount)),
                 MinimumDensity = math.max(0f, minimumDensity),
                 MaximumDensity = math.max(math.max(0f, minimumDensity), maximumDensity),
-                Reserved1 = 0f
+                MinimumDepthMeters = MinimumDepthMeters,
+                MaximumDepthMeters = MaximumDepthMeters,
+                MinimumTemperatureCelsius = MinimumTemperatureCelsius,
+                MaximumTemperatureCelsius = MaximumTemperatureCelsius,
+                MinimumSlopeDegrees = MinimumSlopeDegrees,
+                MaximumSlopeDegrees = MaximumSlopeDegrees
             };
+        }
+
+        /// <summary>
+        /// Returns true when the supplied environmental sample passes this template envelope.
+        /// </summary>
+        public bool MatchesEnvelope(float depthMeters, float temperatureCelsius, float slopeDegrees)
+        {
+            if (depthMeters < MinimumDepthMeters || depthMeters > MaximumDepthMeters)
+                return false;
+
+            if (temperatureCelsius < MinimumTemperatureCelsius || temperatureCelsius > MaximumTemperatureCelsius)
+                return false;
+
+            return slopeDegrees >= MinimumSlopeDegrees && slopeDegrees <= MaximumSlopeDegrees;
         }
 
         /// <summary>
@@ -250,6 +413,17 @@ namespace Hecton8.Scavenging
             maximumDensity = math.max(minimumDensity, maximumDensity);
             toolResistance = math.max(0.01f, toolResistance);
             harvestDurationSeconds = math.max(0f, harvestDurationSeconds);
+            maxIntegrity = math.max(1f, maxIntegrity);
+            defaultLootCount = math.max(0, defaultLootCount);
+            minimumDepthMeters = math.max(0f, minimumDepthMeters);
+            maximumDepthMeters = math.max(minimumDepthMeters, maximumDepthMeters);
+            minimumSlopeDegrees = math.clamp(minimumSlopeDegrees, 0f, 90f);
+            maximumSlopeDegrees = math.clamp(math.max(minimumSlopeDegrees, maximumSlopeDegrees), 0f, 90f);
+            spawnOffsetMeters = math.max(0f, spawnOffsetMeters);
+            placementProbability = math.saturate(placementProbability);
+            physicalSize.x = math.max(0.1f, physicalSize.x);
+            physicalSize.y = math.max(0.1f, physicalSize.y);
+            physicalSize.z = math.max(0.1f, physicalSize.z);
         }
 #endif
     }

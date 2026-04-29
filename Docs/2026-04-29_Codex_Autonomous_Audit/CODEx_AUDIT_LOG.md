@@ -4,6 +4,21 @@ Date: 2026-04-29
 Scope: Active branch technical audit, console stabilization, mandate compliance tracking.
 Status: PENDING VERIFICATION
 
+## Current-State Addendum
+
+This file is now a historical session log, not the current source-of-truth status page.
+
+Later same-day recheck changed several earlier conclusions:
+
+- current reachable Unity console readback is no longer empty; latest visible slice shows package-side MCP `ManageAsset` errors on `ResourceNodeTemplate_*` assets
+- active loaded scene remains `02_HECTON_WORLD`
+- `SpatialAudioManager` directly implements `IAudioService` and calls `GlobalRegistry.RegisterAudioService(this)`
+- `SuitHUDV4CanvasOverlay` is the direct current `IUIService` implementor confirmed by source scan
+- queue-backed event buses now include `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, and `AudioLogEvents`
+
+Historical sections below are preserved as chronology.
+They still contain intermediate findings that were later invalidated by fresh source/editor rechecks, especially around audio ownership, UI ownership, and event-bus classification.
+
 ## Mandates Followed
 
 - `CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`
@@ -14,7 +29,16 @@ Status: PENDING VERIFICATION
 
 ## Current Console State
 
-Latest Unity MCP console poll: `0 entries`.
+Latest Unity MCP console poll: `15` entries.
+
+Current visible slice is not a clean first-party compile break.
+It is a package-side / tooling-side asset inspection failure:
+
+- repeated message: `Failed to convert -1 to a unsigned 32 bit int`
+- affected assets: `Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_*`
+- current evidence points to serialized `LayerMask` value `m_Bits: -1` (`Everything`) being misread by MCP asset inspection
+
+Without a package/tool fix or a separate editor-side readback path, this log cannot be used as proof of first-party compile cleanliness.
 
 Resolved in this pass:
 
@@ -138,7 +162,7 @@ Current scan snapshot:
 2. Verified visor white-screen regression is no longer reproducing as a full white frame via Unity MCP screenshots.
 3. Established this audit log for ongoing findings and fixes.
 4. Cleared active first-party console warnings/errors in `SaveBinaryStorage.cs`, `SubmarineFluidDynamics.cs`, `PersistentWorldRegistry.cs`, `Editor/GCSentinel.cs`, and `SuitHUDV4CanvasOverlay.cs`.
-5. Re-polled Unity console after compile and captured a clean `0 entries` state.
+5. Re-polled Unity console after compile and captured a historical same-day `0 entries` snapshot that was later invalidated by subsequent editor readback drift.
 6. Replaced direct `promptText.text = expandedPrompt` in `UI/InteractionUI.cs` with preallocated `char[]` staging plus `TMP_Text.SetCharArray(...)`.
 
 ## Partial Compliance Notes
@@ -174,7 +198,7 @@ Current scan snapshot:
 ### Unity Verification
 
 - Unity refresh/compile completed after one domain-reload delay.
-- Current Unity console snapshot after the above fixes: `0 entries`.
+- Historical same-day Unity console snapshot after the above fixes: `0 entries`. Later 2026-04-29 rechecks no longer preserved this clean state.
 
 ### Additional Confirmed Architecture Evidence
 
@@ -226,7 +250,7 @@ Current scan snapshot:
 
 ### Unity Verification
 
-- Current Unity console snapshot after the above fixes: `0 entries`.
+- Historical same-day Unity console snapshot after the above fixes: `0 entries`. Later 2026-04-29 rechecks no longer preserved this clean state.
 - `HabitatGraphManager.cs` validates clean via Unity script validation.
 - `HazardZoneManager.cs` validates clean via Unity script validation.
 - `PDAMarkerHUDElement.cs` compiles clean in Unity, but MCP validator still reports a false duplicate-signature error for `BuildDistanceLabelCache()`. Code inspection and project compile do not reproduce an actual duplicate method in that file.

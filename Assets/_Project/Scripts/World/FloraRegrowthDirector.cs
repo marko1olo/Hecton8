@@ -104,6 +104,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_tickRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

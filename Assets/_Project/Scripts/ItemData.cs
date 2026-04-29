@@ -1,6 +1,7 @@
 namespace Hecton8.Items
 {
     using Hecton.Localization;
+    using Hecton8.Inventory;
     using Hecton8.Physics;
     using UnityEngine;
     using UnityEngine.Serialization;
@@ -63,6 +64,16 @@ namespace Hecton8.Items
         public float weight = 1f;
         public bool stackable = true;
         public int maxStack = 64;
+
+        [Header("Physical Metadata")]
+        [Tooltip("When enabled, vulnerability, impact material, and rigidbody mass are derived from category/resource heuristics.")]
+        [SerializeField] private bool autoResolvePhysicalMetadata = true;
+        [Tooltip("Bitmask of tool capabilities that can physically affect this item in-world.")]
+        [SerializeField] private uint vulnerabilityMask;
+        [Tooltip("Procedural impact-audio family consumed by the DSP collision path.")]
+        [SerializeField] private ItemAudioMaterialId audioMaterialId = ItemAudioMaterialId.Organic;
+        [Tooltip("Exact rigidbody mass applied when the item is hydrated into world physics.")]
+        [SerializeField, Min(0.05f)] private float massKg;
 
         [Header("Classification")]
         [Tooltip("Category used by UI filters and fabrication rules.")]
@@ -203,6 +214,16 @@ namespace Hecton8.Items
         /// Stable content identifier used by persistence-facing systems.
         /// </summary>
         public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
+        public uint VulnerabilityMask => autoResolvePhysicalMetadata
+            ? ItemPhysicalMetadataUtility.ResolveDefaultVulnerabilityMask(category, resourceFamily, PersistentId)
+            : vulnerabilityMask;
+        public ItemAudioMaterialId AudioMaterialId => autoResolvePhysicalMetadata
+            ? ItemPhysicalMetadataUtility.ResolveDefaultAudioMaterialId(category, resourceFamily, PersistentId)
+            : audioMaterialId;
+        public byte AudioMaterialByte => (byte)AudioMaterialId;
+        public float MassKg => autoResolvePhysicalMetadata
+            ? ItemPhysicalMetadataUtility.ResolveDefaultMassKg(weight, width, height, category)
+            : Mathf.Max(0.05f, massKg);
 
         public int CellArea => width * height;
 
@@ -249,6 +270,9 @@ namespace Hecton8.Items
 
             if (string.IsNullOrWhiteSpace(stableId) && !string.IsNullOrWhiteSpace(name))
                 stableId = name;
+
+            if (!autoResolvePhysicalMetadata && massKg < 0.05f)
+                massKg = 0.05f;
 
             InvalidateLocalizedCache();
             EnsureLocalizedCache();

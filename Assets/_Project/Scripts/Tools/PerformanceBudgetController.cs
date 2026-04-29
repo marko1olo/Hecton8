@@ -50,6 +50,7 @@ namespace Hecton8.Tools
         private float _recentFrameSum;
         private float _currentFrameTimeAverage;
         private float _nextBudgetStatusLogTime;
+        private bool _registeredToTickManager;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private readonly StringBuilder _statusLogBuilder = new StringBuilder(256); // COLD ALLOC: reused development-only status builder
@@ -78,12 +79,20 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredToTickManager = true;
         }
 
         private void OnDisable()
         {
+            if (!_registeredToTickManager)
+                return;
+
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredToTickManager = false;
         }
 
         private void OnDestroy()

@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
@@ -17,7 +18,7 @@ namespace Hecton8.AI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IPoolable, ISerializationCallbackReceiver
+    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IPoolable, ISerializationCallbackReceiver, ICuttable
     {
         /// <summary>
         /// Global state definition for all fauna.
@@ -52,12 +53,15 @@ namespace Hecton8.AI
 
         [Header("── Subsystems ───────────────────────────────────")]
         [SerializeField] private FaunaSpeciesProfile _speciesProfile;
+        [SerializeField] private FaunaDataTemplate _faunaDataTemplate;
         [SerializeField] private FaunaSensorSuite _sensorSuite = new FaunaSensorSuite();
         [SerializeField] private FaunaSteeringEngine _steeringEngine = new FaunaSteeringEngine();
         [SerializeField] private FaunaStateMachine _stateMachine = FaunaStateMachine.CreateDefault();
 
         public AIState CurrentState => _stateMachine.currentState;
         public FaunaSpeciesProfile SpeciesProfile => _speciesProfile;
+        public FaunaDataTemplate DataTemplate => _faunaDataTemplate;
+        public int SpeciesId => ResolveStableSpeciesId();
 
         /// <summary>
         /// [REQ] Eye Tracking vector for Animator/Bones.
@@ -74,6 +78,7 @@ namespace Hecton8.AI
         private int _faunaSpatialHandle;
         private CreatureUtilityBrain _utilityBrain;
         private ProceduralLeviathanSpineIK _proceduralLeviathanSpineIk;
+        private ScannableTarget _scannableTarget;
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
@@ -95,6 +100,8 @@ namespace Hecton8.AI
         
         // --- LOD & Stagger ---
         private bool _lodDisabled;
+        private FaunaLogicalLodTier _logicalLodTier = FaunaLogicalLodTier.FullSim;
+        private uint _uniqueInstanceUid;
         private Renderer _renderer;
         private Unity.Mathematics.Random _runtimeRandom;
         private int _tickStaggerShift;
@@ -179,6 +186,7 @@ namespace Hecton8.AI
             _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             TryGetComponent(out _animator);
             TryGetComponent(out _proceduralLeviathanSpineIk);
+            TryGetComponent(out _scannableTarget);
             ResolveFoveatedBindings();
             _runtimeRandom = CreateDeterministicRandom();
             _tickStaggerShift = _runtimeRandom.NextInt(0, 10);
@@ -186,7 +194,8 @@ namespace Hecton8.AI
             // Inject profile into subsystems
             _steeringEngine.Init(_rb, transform, _speciesProfile);
             _sensorSuite.Init(transform, _speciesProfile);
-            _utilityBrain.Initialize(transform.position, _speciesProfile, _archetype);
+            _utilityBrain.Initialize(transform.position, _speciesProfile, _archetype, _faunaDataTemplate);
+            ConfigureFaunaScanMetadata();
             ResetStateCache();
             _cognitionTimeSeconds = 0f;
             EnsureLeviathanPresentationOwner();
@@ -195,6 +204,9 @@ namespace Hecton8.AI
         private void OnEnable()
         {
             if (!Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_dispatcherRegistered)
@@ -243,6 +255,7 @@ namespace Hecton8.AI
         public void OnSpawn()
         {
             _isDead = false;
+            _logicalLodTier = FaunaLogicalLodTier.FullSim;
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
             SetInfectedState(false, 0f);
@@ -251,6 +264,7 @@ namespace Hecton8.AI
             _utilityBrain.SetRuntimeActive(true);
             ResetStateCache();
             _cognitionTimeSeconds = 0f;
+            ConfigureFaunaScanMetadata();
             RefreshRuntimeEcosystemState();
             RegisterSpatialHandle();
             ResetDispatcherCadence();
@@ -260,6 +274,7 @@ namespace Hecton8.AI
         public void OnDespawn()
         {
             _isDead = true;
+            _logicalLodTier = FaunaLogicalLodTier.Hibernating;
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
             SetInfectedState(false, 0f);
@@ -286,6 +301,17 @@ namespace Hecton8.AI
 
             _cognitionTimeSeconds += dt;
             bool forceAggroTick = ShouldForceAggroCognitionTick();
+            ResolveLogicalLodTier();
+            if (_logicalLodTier != FaunaLogicalLodTier.FullSim && !forceAggroTick)
+            {
+                AdvanceSlowTickCadence(dt);
+                ClearProceduralStrikeIntent();
+                if (_logicalLodTier == FaunaLogicalLodTier.DataOnly && _rb != null && !_rb.IsSleeping())
+                    _rb.Sleep();
+
+                return;
+            }
+
             if (_foveatedTickRate == FoveatedTickRate.CulledEcosystemOnly && !forceAggroTick)
             {
                 AdvanceSlowTickCadence(dt);
@@ -406,7 +432,7 @@ namespace Hecton8.AI
                 HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
                 if (vegetationBridge != null)
                 {
-                    int speciesId = _speciesProfile != null ? _speciesProfile.speciesID : 0;
+                    int speciesId = ResolveStableSpeciesId();
                     fearPressure01 += vegetationBridge.SamplePredatorFearPressure(selfPosition, speciesId);
                 }
 
@@ -910,11 +936,61 @@ namespace Hecton8.AI
             if (_utilityBrain.UsesPredatorRole && normalizedDamage >= 0.3f)
             {
                 HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-                int speciesId = _speciesProfile != null ? _speciesProfile.speciesID : 0;
+                int speciesId = ResolveStableSpeciesId();
                 if (vegetationBridge != null && speciesId != 0)
                     vegetationBridge.RegisterPredatorFearNode(speciesId, transform.position, normalizedDamage);
             }
             if (_currentHealth <= 0.001f) Die();
+        }
+
+        /// <summary>
+        /// Applies cutter damage through the fauna interaction matrix.
+        /// </summary>
+        public void ApplyCutDamage(float damage, Vector3 hitPoint)
+        {
+            if (_isDead)
+                return;
+
+            TakeDamage(damage);
+            ApplyFaunaInteraction(FaunaInteractionKind.Cut, hitPoint, damage);
+            if (TryGetComponent(out CreatureDamageManager damageManager))
+                damageManager.RegisterWoundWS(hitPoint, damage);
+        }
+
+        /// <summary>
+        /// Applies one authored fauna interaction response.
+        /// </summary>
+        public void ApplyFaunaInteraction(FaunaInteractionKind interactionKind, Vector3 sourcePosition, float intensity)
+        {
+            if (_isDead || _faunaDataTemplate == null)
+                return;
+
+            if (!_faunaDataTemplate.TryGetInteractionResponse(interactionKind, out FaunaInteractionResponse response))
+                return;
+
+            if (response.ForceRetreat)
+            {
+                float retreatDuration = Mathf.Max(0.5f, response.RetreatDurationSeconds);
+                _utilityBrain.ForceRetreat(sourcePosition, _cognitionTimeSeconds, retreatDuration);
+                _stateMachine.currentState = AIState.Retreat;
+                _currentStateCache = AIState.Retreat;
+            }
+
+            if (response.FearImpulse01 > 0f)
+            {
+                _sensorSuite.isScattering = true;
+                Vector3 scatterDirection = transform.position - sourcePosition;
+                if (scatterDirection.sqrMagnitude <= 0.0001f)
+                    scatterDirection = transform.forward;
+                _sensorSuite.scatterDirection = scatterDirection.normalized;
+            }
+
+            if (response.DamageMultiplier > 1f && intensity > 0f)
+            {
+                float bonusDamage = intensity * (response.DamageMultiplier - 1f);
+                if (bonusDamage > 0.001f)
+                    TakeDamage(bonusDamage);
+            }
         }
 
         /// <summary>
@@ -992,7 +1068,43 @@ namespace Hecton8.AI
                 hostilityDelta = 0.35f;
             }
 
+            EcosystemDirector concreteDirector = ecosystemDirector as EcosystemDirector;
+            if (concreteDirector != null && _uniqueInstanceUid != 0u)
+            {
+                concreteDirector.RegisterApexPredatorKill(_uniqueInstanceUid, transform.position, hostilityDelta);
+                return;
+            }
+
             ecosystemDirector.ReportApexPredatorKilled(transform.position, hostilityDelta);
+        }
+
+        internal void SetLogicalIdentity(uint uniqueInstanceUid)
+        {
+            _uniqueInstanceUid = uniqueInstanceUid;
+        }
+
+        internal void SetLogicalLodTier(FaunaLogicalLodTier logicalLodTier)
+        {
+            _logicalLodTier = logicalLodTier;
+        }
+
+        private void ResolveLogicalLodTier()
+        {
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _currentCullingPlayerTransform);
+            if (_currentCullingPlayerTransform == null)
+            {
+                _logicalLodTier = FaunaLogicalLodTier.FullSim;
+                return;
+            }
+
+            EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            if (ecosystemDirector == null)
+            {
+                _logicalLodTier = FaunaLogicalLodTier.FullSim;
+                return;
+            }
+
+            _logicalLodTier = ecosystemDirector.ResolveLogicalLodTier(_currentCullingPlayerTransform.position, transform.position);
         }
 
         private void ApplyCognitionEvaluation(in CreatureUtilityEvaluation evaluation)
@@ -1022,9 +1134,62 @@ namespace Hecton8.AI
             return _stateMachine.isFlockingFish ? AIState.Flocking : AIState.Wander;
         }
 
+        private int ResolveStableSpeciesId()
+        {
+            if (_faunaDataTemplate != null && _faunaDataTemplate.SpeciesId != 0)
+                return _faunaDataTemplate.SpeciesId;
+
+            if (_speciesProfile != null && _speciesProfile.speciesID != 0)
+                return _speciesProfile.speciesID;
+
+            if (_archetype != null && !string.IsNullOrWhiteSpace(_archetype.creatureId))
+                return unchecked((int)Hecton.Localization.LocHash.Compute(_archetype.creatureId)) & int.MaxValue;
+
+            return 0;
+        }
+
+        private void ApplyFaunaDataTemplate(FaunaDataTemplate faunaDataTemplate)
+        {
+            if (ReferenceEquals(_faunaDataTemplate, faunaDataTemplate))
+                return;
+
+            _faunaDataTemplate = faunaDataTemplate;
+            _utilityBrain.BindProfile(_speciesProfile, _archetype, _faunaDataTemplate);
+            ConfigureFaunaScanMetadata();
+        }
+
+        private void ConfigureFaunaScanMetadata()
+        {
+            if (_faunaDataTemplate == null)
+                return;
+
+            if (_scannableTarget == null)
+                TryGetComponent(out _scannableTarget);
+
+            FaunaScanRuntimeRegistry.Register(_faunaDataTemplate);
+            if (_scannableTarget == null)
+                return;
+
+            string fallbackTitle = _archetype != null && !string.IsNullOrWhiteSpace(_archetype.displayName)
+                ? _archetype.displayName
+                : gameObject.name;
+            string fallbackCategory = _archetype != null
+                ? _archetype.roleType.ToString()
+                : "Fauna";
+            string fallbackSummary = _archetype != null && !string.IsNullOrWhiteSpace(_archetype.gameplayPurpose)
+                ? _archetype.gameplayPurpose
+                : "Passive fauna contact. Manual classification pending.";
+
+            _scannableTarget.Configure(
+                _faunaDataTemplate.ScanEntryId,
+                _faunaDataTemplate.ResolveScanTitle(fallbackTitle),
+                _faunaDataTemplate.ResolveScanCategory(fallbackCategory),
+                _faunaDataTemplate.ResolveScanSummary(fallbackSummary));
+        }
+
         private Unity.Mathematics.Random CreateDeterministicRandom()
         {
-            int speciesId = _speciesProfile != null ? _speciesProfile.speciesID : 0;
+            int speciesId = ResolveStableSpeciesId();
             uint ownerId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             uint seed = math.hash(new uint4(ownerId, unchecked((uint)speciesId), 0x7F4A7C15u, 0x3A9D2B71u));
             return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);

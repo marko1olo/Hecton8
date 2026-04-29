@@ -1400,7 +1400,7 @@ namespace Hecton8.World
 
         private void TryEnsureTickRegistration()
         {
-            if (_lifecycleRuntimeState.RegisteredToTickManager)
+            if (_lifecycleRuntimeState.RegisteredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -10715,6 +10715,7 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveWorldFaunaSpawnRegistry(ref faunaSpawnRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
+            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref environmentalVegetationBridge);
             if (floraGpuiManager == null &&
                 HectonRockManager.Instance != null &&
                 HectonRockManager.Instance.GpuInstancerManager != null)

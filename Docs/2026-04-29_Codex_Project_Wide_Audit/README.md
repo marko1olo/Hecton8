@@ -2,7 +2,7 @@
 
 Date: 2026-04-29  
 Status: PENDING VERIFICATION  
-Scope: first-party audit of `Assets/_Project/Scripts`, current Unity Editor compile state, and supplement pass over existing Codex audit folders
+Scope: first-party audit of `Assets/_Project/Scripts`, current Unity Editor state, and supplement pass over existing Codex audit folders
 
 Mandates followed:
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -19,71 +19,70 @@ This folder does not replace:
 - `Docs/2026-04-29_CODEX_MANDATE_AUDIT`
 - `Docs/2026-04-29_Codex_Codebase_Reality_Audit`
 
-It supplements them with three things:
+It supplements them with:
 
-1. a fresh project-wide metrics pass over current first-party scripts
-2. an explicit split between what is genuinely strong, merely survivable, and actively broken
-3. current Unity compile facts after a new compile request, including places where single-file validation and full-project compile disagree
+1. a refreshed project-wide metrics pass over current first-party scripts
+2. a blunt distinction between what is structurally strong, merely survivable, and still dangerous
+3. same-day freshness correction after the reachable Unity Editor state changed relative to earlier audit snapshots
 
 ## Coverage Snapshot
 
-- First-party scripts under `Assets/_Project/Scripts`: `948`
-- Runtime-like scripts after excluding `Editor`, `Dev`, `SmokeTester`, `Verifier`: `822`
-- First-party script lines under `Assets/_Project/Scripts`: `406783`
-- Average lines per script: `429.1`
-- Scripts larger than `2000` lines: `31`
-- Scripts larger than `4000` lines: `6`
+- First-party scripts under `Assets/_Project/Scripts`: `970`
+- First-party scripts under `Assets/_Project`: `1010`
+- First-party script lines under `Assets/_Project/Scripts`: `420468`
+- Average lines per script: `433.47`
+- Scripts larger than `2000` lines: `32`
+- Scripts larger than `4000` lines: `7`
 - First-party tests under `Assets/_Project/Tests`: `4`
 
 Largest owner files observed in this pass:
 
-- `World/HectonMapMagicVegetationBridge.cs`: `13205` lines
-- `WorldProceduralScatterDirector.cs`: `10316` lines
-- `HectonPlayerMovement.cs`: `7847` lines
+- `World/HectonMapMagicVegetationBridge.cs`: `13279` lines
+- `WorldProceduralScatterDirector.cs`: `10333` lines
+- `HectonPlayerMovement.cs`: `7851` lines
 - `HectonUnderwaterVisuals.cs`: `4826` lines
-- `UI/SuitHUDV4CanvasOverlay.cs`: `4524` lines
-- `HectonVoxelEngine.cs`: `4130` lines
+- `UI/SuitHUDV4CanvasOverlay.cs`: `4608` lines
+- `Audio/PlayerCriticalProceduralAudioRenderer.cs`: `4200` lines
+- `HectonVoxelEngine.cs`: `4138` lines
 
 ## Current High-Confidence Verdict
 
 - The codebase has real engine work in it. This is not random Unity trash.
-- The codebase is also carrying too many oversized owners, too many persistent bootstrap/lifetime paths, and a live compile break.
-- The strongest parts are the low-level contracts and some newer zero-GC paths.
-- The weakest parts are current build health, bootstrap ownership convergence, and large UI/world owners that still carry too much responsibility.
+- The codebase is also carrying too many oversized owners, too many persistent bootstrap/lifetime paths, and too much architectural overlap.
+- The strongest parts are the dispatcher spine, interaction contracts, and parts of the zero-GC HUD/event migration.
+- The weakest parts are bootstrap authority convergence, giant world/UI/player owners, and missing runtime proof.
 
-## Proven Current Editor State
+## Current Editor State
 
-- Active Unity scene during this audit: `02_HECTON_WORLD`
-- Loaded scenes: only `02_HECTON_WORLD`
+- active Unity scene during this audit: `02_HECTON_WORLD`
+- loaded scenes: only `02_HECTON_WORLD`
 - Build Settings scenes:
   - `00_BOOTSTRAP`
   - `01_MAIN_MENU`
   - `02_HECTON_WORLD`
-- Scene is dirty in editor
-- Full Unity compile request completed during this pass
+- scene is dirty in editor
+- latest console readback shows `15` errors, but all visible entries are package-side MCP `ManageAsset` conversion failures rather than first-party compile errors
 
-Current console-backed compile blockers after the compile request:
+Observed console pattern:
 
-- `Visor/VolumetricLightFeature.cs`
-  - `CS1503` on `ComputeCommandBuffer` to `UnsafeCommandBuffer` conversion
-- `FluidCompartmentTemplate.cs`
-  - `CS0122` on inaccessible `CompartmentRecord` fields
-- `Construction/BaseDegradationSystem.cs`
-  - `CS0103` on unresolved `ConnectionSplineBatchRenderer`
-  - `CS0103` on unresolved `HectonFloatingOrigin`
+- tool/package source: `./Library/PackageCache/com.coplaydev.unity-mcp.../Editor/Tools/ManageAsset.cs`
+- repeated message: `Failed to convert -1 to a unsigned 32 bit int`
+- affected assets: `Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_*`
 
 Important evidence detail:
 
-- `validate_script` returned clean results for `VolumetricLightFeature.cs`, `SeamRegistry.cs`, and `UI/PDALoadoutTab.cs`
-- the full-project compile still fails
-- conclusion: per-file validation is not sufficient proof of assembly-wide health in this workspace
+- older same-day audit slices had captured first-party compile blockers
+- the latest reachable editor state no longer reports those first-party blockers
+- this package therefore treats them as stale historical observations, while separately recording the current package-side MCP console errors
 
 ## Files In This Folder
 
 - `SYSTEM_SCORECARD.md`
-  - subsystem verdicts: good / acceptable / bad
+  subsystem verdicts: good / acceptable / bad
 - `FINDINGS_AND_EVIDENCE.md`
-  - raw counts, owner references, compile facts, and behavior risk notes
+  raw counts, owner references, and current behavior-risk notes
+- `ACTUALITY_RECHECK_2026-04-29.md`
+  same-day freshness correction against updated source/editor state
 
 ## Regression Model
 
@@ -91,7 +90,7 @@ CPU: no runtime code changed by this audit package
 GC: no gameplay-path code changed; documentation only  
 Memory: no runtime asset mutation performed by this audit package  
 Cadence: documentation only  
-Correctness: improved only in the sense that the current project state is described more precisely
+Correctness: improved only in the sense that current project state is described more precisely and older stale blockers were removed
 
 ## Hot Path Impact
 
@@ -100,17 +99,16 @@ None. Markdown-only pass.
 ## Failure Modes
 
 - counts will drift again as the codebase changes
-- current console errors may change after the next user patch or Unity reload
-- editor render-texture stats are suspicious but not yet a play-mode memory proof
+- current console state may change after the next user patch or Unity reload
 - static scans show real pressure points, but not full frame-time cost without profiler captures
 
 ## Why This Version Was Kept
 
-Kept because it corrects stale assumptions from older audit slices:
+Kept because it corrects stale assumptions from older same-day audit slices:
 
-- there is a live compile break now
+- current reachable editor state is cleaner than earlier snapshots
 - runtime `Resources.UnloadUnusedAssets()` is not present in the current first-party script pass
-- runtime `GameObject.Find` hits are editor/dev heavy and currently `0` in runtime-like code
-- packetized/queued event patterns exist in more places than older summaries implied
+- runtime `DG.Tweening` / `DOTween` hits are `0` in the current first-party script pass
+- queue-backed event patterns exist in more places than older summaries implied
 
 Anything stronger than that would be fake certainty.

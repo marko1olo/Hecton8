@@ -1,4 +1,22 @@
 # VRAM_EXECUTION_LIST.md — Top 20 VRAM Offenders
+
+## Current-State Addendum (2026-04-29)
+
+This file is a dated static estimate list, not a live measured VRAM truth page.
+
+Its most dangerous stale implication is deletion confidence:
+
+- recommendation to delete or move `Sandbox/` textures is no longer supported as a current fact
+- later filesystem recheck downgraded those candidates to `NOT PROVEN DEAD`
+
+Use this file only as a hypothesis list for follow-up profiling/import-setting review.
+Do not use it as direct deletion authority.
+
+Preferred current cross-checks:
+
+- `2026-04-28_DEAD_ASSET_SWEEP.md`
+- `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
+- current Codex audit bundles under `Docs/2026-04-29_*`
 **Status:** ⚠️ 73% BUDGET CONSUMED  
 **Scan Date:** 2026-04-28  
 **Budget:** 900 MB (Texture) / 1800 MB (Total VRAM ceiling for MX350)

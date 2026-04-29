@@ -1037,6 +1037,9 @@ namespace Hecton8.UI
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
         }

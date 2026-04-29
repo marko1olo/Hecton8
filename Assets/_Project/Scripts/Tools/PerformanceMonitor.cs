@@ -64,6 +64,7 @@ namespace Hecton8.Tools
 
         // State
         private bool _isCapturing;
+        private bool _registeredToTickManager;
         private float _captureStartTime;
         private List<float> _frameTimes;
         private float _lastLogTime;
@@ -86,12 +87,20 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredToTickManager = true;
         }
 
         private void OnDisable()
         {
+            if (!_registeredToTickManager)
+                return;
+
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredToTickManager = false;
         }
 
         private void OnDestroy()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Power;
@@ -16,6 +17,7 @@ namespace Hecton8.Construction
         private const float DefaultPressureDelta = 4f;
         private const float DefaultFluidRadiusScale = 0.75f;
         private const float DefaultDecalScaleMeters = 0.72f;
+        private const float IntegritySocketThreshold = 0.5f;
         private const string LeakStripeDecalChildName = "LeakStripeDecal";
         private const string LeakScuffDecalChildName = "LeakScuffDecal";
         private const string LeakWetSheenChildName = "LeakWetSheen";
@@ -38,6 +40,8 @@ namespace Hecton8.Construction
         private static readonly List<Matrix4x4> _globalCrackDecalMatrices = new List<Matrix4x4>(64);
         // COLD ALLOC: List<Int32>[64] - global crack decal atlas index cache aligned with matrix cache - owner: BaseDegradationSystem
         private static readonly List<int> _globalCrackDecalAtlasIndices = new List<int>(64);
+        // COLD ALLOC: Dictionary<Int32,Boolean>[64] - integrity-threshold latch per runtime module instance - owner: BaseDegradationSystem
+        private static readonly Dictionary<int, bool> _integritySocketStates = new Dictionary<int, bool>(64);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -47,6 +51,7 @@ namespace Hecton8.Construction
             _staleNodeIds.Clear();
             _globalCrackDecalMatrices.Clear();
             _globalCrackDecalAtlasIndices.Clear();
+            _integritySocketStates.Clear();
         }
 
         internal static IReadOnlyList<Matrix4x4> GlobalCrackDecalMatrices => _globalCrackDecalMatrices;
@@ -109,6 +114,44 @@ namespace Hecton8.Construction
             }
 
             RebuildGlobalDecalBuffer();
+        }
+
+        internal static void SynchronizeIntegrityState(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return;
+
+            int moduleInstanceId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
+            bool isBelowThreshold = baseModule.IntegrityStateNormalized < IntegritySocketThreshold;
+            bool hadLatchedState = _integritySocketStates.TryGetValue(moduleInstanceId, out bool wasBelowThreshold) && wasBelowThreshold;
+
+            if (!isBelowThreshold)
+            {
+                _integritySocketStates[moduleInstanceId] = false;
+                return;
+            }
+
+            if (hadLatchedState)
+                return;
+
+            _integritySocketStates[moduleInstanceId] = true;
+            if (!baseModule.TryGetDegradationSockets(out BaseModuleTemplate.VfxSocket[] sockets))
+                return;
+
+            float integrityState = baseModule.IntegrityStateNormalized;
+            for (int i = 0; i < sockets.Length; i++)
+            {
+                BaseModuleTemplate.VfxSocket socket = sockets[i];
+                baseModule.EmitIntegritySocketVfx(socket.LocalPosition, socket.SocketType, integrityState);
+            }
+        }
+
+        internal static void ClearIntegrityState(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return;
+
+            _integritySocketStates.Remove(unchecked((int)EntityId.ToULong(baseModule.GetEntityId())));
         }
 
         private static void DispatchRuptureEffects(GameObject moduleObject, Vector3 ruptureWorldPosition, Matrix4x4 decalMatrix)

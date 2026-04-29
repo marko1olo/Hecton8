@@ -437,6 +437,9 @@ namespace Hecton8.Atmosphere
 
         private void TryRegisterTickManagers()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

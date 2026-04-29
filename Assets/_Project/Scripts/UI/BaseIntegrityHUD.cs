@@ -278,7 +278,10 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);

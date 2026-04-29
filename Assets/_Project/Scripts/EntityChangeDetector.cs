@@ -354,7 +354,7 @@ namespace Hecton8.Core
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);

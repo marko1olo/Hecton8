@@ -121,9 +121,11 @@ namespace Hecton8.Narrative
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
             _registered = true;

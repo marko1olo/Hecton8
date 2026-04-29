@@ -318,7 +318,7 @@ namespace Hecton8.Biolum
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

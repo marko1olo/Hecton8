@@ -588,7 +588,10 @@ namespace Hecton8.Economy
 
         private void TryRegisterSlowTickable()
         {
-            if (_registeredSlowTickable)
+            if (_registeredSlowTickable || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);

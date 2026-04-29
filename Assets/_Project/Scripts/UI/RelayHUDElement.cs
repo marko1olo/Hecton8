@@ -83,7 +83,7 @@ namespace Hecton8.UI
         {
             TryCacheCamera();
 
-            if (!_registered)
+            if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
                 _registered = true;

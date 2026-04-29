@@ -174,6 +174,15 @@ namespace Hecton8.World
             return frontGrid.IsCreated && overlayGrid.IsCreated;
         }
 
+        internal static bool TrySampleNormalizedChannels(Vector3 worldPosition, out float4 normalizedChannels)
+        {
+            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            instance.PublishFrame(Time.frameCount);
+            return instance.TrySampleNormalizedChannelsInternal(
+                new float3(worldPosition.x, worldPosition.y, worldPosition.z),
+                out normalizedChannels);
+        }
+
         internal static void QueueBloodScent(Vector3 worldPosition, float intensity = 1f)
         {
             EnsureRuntimeInstance().Enqueue(worldPosition, new float4(math.max(0f, intensity), 0f, 0f, 0f));
@@ -531,9 +540,24 @@ namespace Hecton8.World
             return cell.x + (cell.y * dimensions.x) + (cell.z * dimensions.x * dimensions.y);
         }
 
+        private bool TrySampleNormalizedChannelsInternal(float3 worldPosition, out float4 normalizedChannels)
+        {
+            normalizedChannels = float4.zero;
+            if (!_frontGrid.IsCreated || !_overlayGrid.IsCreated)
+                return false;
+
+            if (!TryWorldToCell(worldPosition, out int3 cell))
+                return false;
+
+            float4 combinedChannels = _frontGrid[Flatten(cell)] + _overlayGrid[Flatten(cell)];
+            float inverseMaxIntensity = 1f / math.max(0.1f, maximumChannelIntensity);
+            normalizedChannels = math.saturate(combinedChannels * inverseMaxIntensity);
+            return true;
+        }
+
         private void TryRegisterSlowTick()
         {
-            if (_registeredSlowTick)
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);

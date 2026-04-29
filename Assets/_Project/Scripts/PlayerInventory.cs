@@ -21,11 +21,16 @@ namespace Hecton8.Inventory
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed class PlayerInventory : MonoBehaviour, ISaveable
+    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable
     {
         private const ushort CraftingLockedMask = 1 << 10;
         private const ushort BiologicalItemStateMask = 1 << 6;
+        private const ushort RustedItemStateMask = 1 << 8;
         private const ushort DefaultQualityMilli = 1000;
+        private const float SlowTickIntervalSeconds = 0.5f;
+        private const float OrganicDecayPerSecond = 0.00045f;
+        private const float SubmergedOrganicDecayPerSecond = 0.00075f;
+        private const float SubmergedMetalRustPerSecond = 0.00065f;
 
         private struct InventorySortEntry : IComparable<InventorySortEntry>
         {
@@ -131,6 +136,7 @@ namespace Hecton8.Inventory
         private NativeArray<byte> _simulationOccupiedCells;
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
+        private bool _registeredSlowTick;
 
         public static PlayerInventory Instance => _instance;
         public float TotalWeight { get; private set; }
@@ -177,11 +183,13 @@ namespace Hecton8.Inventory
         private void OnEnable()
         {
             GlobalRegistry.Save?.Register(this);
+            TryRegisterSlowTick();
         }
 
         private void OnDisable()
         {
             GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterSlowTick();
         }
 
         private void OnDestroy()
@@ -385,6 +393,11 @@ namespace Hecton8.Inventory
         {
             return CanAcceptQuantity(itemHashId, quantity) &&
                    TryAddItemInternal(itemHashId, quantity, out _);
+        }
+
+        public void SlowTick()
+        {
+            ApplyInventoryEnvironmentalDegradation();
         }
 
         public bool TryReserveQuantityForCraft(int itemHashId, int quantity, CraftReservation[] reservations, ref int reservationCount)
@@ -1197,6 +1210,101 @@ namespace Hecton8.Inventory
         {
             InventoryVersion++;
             InventoryChanged?.Invoke();
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
+            _registeredSlowTick = true;
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            _registeredSlowTick = false;
+        }
+
+        private void ApplyInventoryEnvironmentalDegradation()
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_qualityMilli.IsCreated)
+            {
+                return;
+            }
+
+            bool changed = false;
+            bool isSubmerged = ResolveInventoryCarrierSubmergedState();
+            float ambientTemperature = survival != null ? survival.EnvironmentTemperature : 2f;
+            float temperatureFactor = math.max(0.35f, 1f + ((ambientTemperature - 4f) * 0.05f));
+            uint nowTimestamp = ResolveCurrentUnixTimestamp();
+
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
+            {
+                if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor) ||
+                    !TryGetRuntimeDescriptor(descriptor.HashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+                {
+                    continue;
+                }
+
+                if (ApplyEnvironmentalDegradation(anchorIndex, in runtimeDescriptor, isSubmerged, temperatureFactor, nowTimestamp))
+                    changed = true;
+            }
+
+            if (changed)
+                NotifyInventoryChanged();
+        }
+
+        private bool ApplyEnvironmentalDegradation(
+            int anchorIndex,
+            in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor,
+            bool isSubmerged,
+            float temperatureFactor,
+            uint nowTimestamp)
+        {
+            ushort currentQualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
+            float currentQuality = math.clamp(currentQualityMilli / 1000f, 0f, 1f);
+            float decayPerSecond = 0f;
+
+            if (ItemPhysicalMetadataUtility.IsOrganic(runtimeDescriptor.AudioMaterialId))
+            {
+                decayPerSecond = OrganicDecayPerSecond * temperatureFactor;
+                if (isSubmerged)
+                    decayPerSecond += SubmergedOrganicDecayPerSecond * math.max(0.5f, temperatureFactor);
+            }
+            else if (isSubmerged && ItemPhysicalMetadataUtility.IsMetal(runtimeDescriptor.AudioMaterialId))
+            {
+                decayPerSecond = SubmergedMetalRustPerSecond * math.max(0.75f, temperatureFactor);
+                _itemStateFlags[anchorIndex] |= RustedItemStateMask;
+            }
+
+            if (!(decayPerSecond > 0f))
+                return false;
+
+            float nextQuality = math.clamp(currentQuality - (decayPerSecond * SlowTickIntervalSeconds), 0f, 1f);
+            ushort nextQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
+            bool changed = nextQualityMilli != currentQualityMilli;
+            if (changed)
+                _qualityMilli[anchorIndex] = nextQualityMilli;
+
+            if (nowTimestamp != 0u)
+                _lastUpdateUnixSeconds[anchorIndex] = nowTimestamp;
+
+            return changed;
+        }
+
+        private static bool ResolveInventoryCarrierSubmergedState()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
+            return movement != null && movement.CurrentDepth > 0f;
         }
 
         private bool TryGetRuntimeDescriptor(int itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)

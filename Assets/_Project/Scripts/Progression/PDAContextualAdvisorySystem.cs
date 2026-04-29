@@ -446,9 +446,8 @@ namespace Hecton8.Progression
 
         private void TryRegisterWithTickManager()
         {
-            if (_registeredToTick)
+            if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
             _registeredToTick = true;

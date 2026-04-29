@@ -35,6 +35,39 @@ namespace Hecton8.Inventory
         [SerializeField] private ushort proxyMeshIndex;
         [SerializeField] private ushort iconAtlasIndex;
         [SerializeField] private ushort hlodSilhouetteIndex;
+        [SerializeField] private uint vulnerabilityMask;
+        [SerializeField] private byte audioMaterialId;
+        [SerializeField] private byte _reserved0;
+        [SerializeField] private ushort _reserved1;
+        [SerializeField] private float massKg;
+
+        public ItemTemplate(
+            uint hashID,
+            ItemCategoryMask categoryMask,
+            float baseDurability,
+            float wearMultiplier,
+            ushort maxStackSize,
+            ushort proxyMeshIndex,
+            ushort iconAtlasIndex,
+            ushort hlodSilhouetteIndex,
+            uint vulnerabilityMask,
+            byte audioMaterialId,
+            float massKg)
+        {
+            this.hashID = hashID;
+            this.categoryMask = categoryMask;
+            this.baseDurability = baseDurability;
+            this.wearMultiplier = wearMultiplier;
+            this.maxStackSize = maxStackSize;
+            this.proxyMeshIndex = proxyMeshIndex;
+            this.iconAtlasIndex = iconAtlasIndex;
+            this.hlodSilhouetteIndex = hlodSilhouetteIndex;
+            this.vulnerabilityMask = vulnerabilityMask;
+            this.audioMaterialId = audioMaterialId;
+            _reserved0 = 0;
+            _reserved1 = 0;
+            this.massKg = massKg;
+        }
 
         public uint HashID => hashID;
         public ItemCategoryMask CategoryMask => categoryMask;
@@ -44,7 +77,15 @@ namespace Hecton8.Inventory
         public ushort ProxyMeshIndex => proxyMeshIndex;
         public ushort IconAtlasIndex => iconAtlasIndex;
         public ushort HlodSilhouetteIndex => hlodSilhouetteIndex;
+        public uint VulnerabilityMask => vulnerabilityMask;
+        public byte AudioMaterialId => audioMaterialId;
+        public float MassKg => massKg;
         public bool IsValid => hashID != 0u;
+
+        public bool SupportsCapability(uint capabilityMask)
+        {
+            return capabilityMask != 0u && (vulnerabilityMask & capabilityMask) != 0u;
+        }
     }
 
     /// <summary>

@@ -975,6 +975,9 @@ namespace Hecton8.World
                 activeFieldSample,
                 runtimeRule,
                 size);
+            if (!PassesEnvironmentalEnvelope(activeFieldSample, runtimeRule, in candidatePreview))
+                return false;
+
             float residencyRadius = 0f;
             float residencyDistanceSqr = 0f;
             if (collectDetailedDiagnostics)

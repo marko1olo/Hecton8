@@ -127,6 +127,8 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Текущая целостность модуля на старте.")]
         [SerializeField] private float currentIntegrity = 100f;
+        [Tooltip("Optional immutable template that owns abandoned-module integrity authoring and VFX socket coordinates.")]
+        [SerializeField] private BaseModuleTemplate moduleTemplate;
 
         [Tooltip("Модуль затоплен на старте? Обычно false.")]
         [SerializeField] private bool isFlooded;
@@ -339,6 +341,12 @@ namespace Hecton8.Gameplay
         public float MaxRecoverableIntegrity => _integrityComponent.MaxRecoverableIntegrity;
         /// <summary>Estimated catastrophic repair cycles remaining before the module reaches its minimum recoverable ceiling. -1 means the cap is not authored.</summary>
         public int RemainingRepairCycles => ResolveRemainingRepairCycles();
+        /// <summary>Optional immutable template that owns abandoned-module integrity authoring and VFX sockets.</summary>
+        public BaseModuleTemplate ModuleTemplate => moduleTemplate;
+        /// <summary>Normalized module integrity in the [0..1] range.</summary>
+        public float IntegrityStateNormalized => _integrityComponent.MaxIntegrity > 0.01f
+            ? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)
+            : 0f;
         /// <summary>Normalized breathable reserve available for dry-zone life support.</summary>
         public float AirReserveNormalized => _lifeSupportComponent.AirReserveNormalized;
         /// <summary>True when the player is currently inside this module's interior volume.</summary>
@@ -432,6 +440,7 @@ namespace Hecton8.Gameplay
             _integrityComponent.TryStartDrain(_hasPower);
             UpdateDrainDiagnostics();
             SyncSpatialRole();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         public void OnDespawn()
@@ -448,6 +457,7 @@ namespace Hecton8.Gameplay
             _integrityComponent.ResetForDespawn();
             _lifeSupportComponent.ResetForDespawn();
             SyncSpatialRole();
+            BaseDegradationSystem.ClearIntegrityState(this);
 
             ReleaseAllTrackedObjects();
         }
@@ -518,11 +528,13 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
             ResyncInteriorOccupants(true);
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            BaseDegradationSystem.ClearIntegrityState(this);
 
             NotifyModuleExitIfNeeded();
             ReleaseAllTrackedObjects();
@@ -649,6 +661,7 @@ namespace Hecton8.Gameplay
             _integrityComponent.StopDrain();
             UpdateDrainDiagnostics();
             RefreshVisualStateImmediate();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         /// <summary>
@@ -709,6 +722,35 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Applies a normalized integrity state authored by abandoned-module generation.
+        /// </summary>
+        public void SetIntegrityState(float integrityState)
+        {
+            ConfigureRuntimeComponentsFromSerializedState();
+
+            float normalizedIntegrity = Mathf.Clamp01(integrityState);
+            float resolvedIntegrity = normalizedIntegrity * Mathf.Max(0f, _integrityComponent.MaxIntegrity);
+            _integrityComponent.SetCurrentIntegrity(resolvedIntegrity);
+
+            if (moduleTemplate != null)
+            {
+                if (normalizedIntegrity <= moduleTemplate.FloodedBelowIntegrityState)
+                    _integrityComponent.SetFlooded(true);
+                else
+                    _integrityComponent.SetFlooded(false);
+
+                if (normalizedIntegrity <= moduleTemplate.OxygenOfflineBelowIntegrityState)
+                    _lifeSupportComponent.CollapseBreathableReserve();
+            }
+
+            UpdateDrainDiagnostics();
+            RefreshVisualStateImmediate();
+            SyncTrackedObjectsFloodState();
+            SyncSpatialRole();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
+        }
+
+        /// <summary>
         /// Полный сброс визуального состояния модуля по текущим данным.
         /// Вызывается ConstructionManager после загрузки сохранения.
         /// </summary>
@@ -720,6 +762,7 @@ namespace Hecton8.Gameplay
             ResyncInteriorOccupants(true);
             _integrityComponent.TryStartDrain(_hasPower);
             UpdateDrainDiagnostics();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         /// <summary>
@@ -764,7 +807,9 @@ namespace Hecton8.Gameplay
             _integrityComponent.RestoreState(integrity, flooded, cascadeFailure, repairIntegrityCap);
             _lifeSupportComponent.RestoreState(airReserveNormalized, co2Normalized);
             RefreshVisualStateImmediate();
+            SyncTrackedObjectsFloodState();
             SyncSpatialRole();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1587,6 +1632,31 @@ namespace Hecton8.Gameplay
         internal bool RestoreRepairIntegrityCap(float amount)
         {
             return _integrityComponent.RestoreRepairIntegrityCap(amount);
+        }
+
+        internal bool TryGetDegradationSockets(out BaseModuleTemplate.VfxSocket[] sockets)
+        {
+            if (moduleTemplate == null)
+            {
+                sockets = null;
+                return false;
+            }
+
+            sockets = moduleTemplate.VfxSockets;
+            return sockets != null && sockets.Length > 0;
+        }
+
+        internal void EmitIntegritySocketVfx(Unity.Mathematics.float3 localPoint, BaseModuleVfxSocketType socketType, float integrityState)
+        {
+            float integrityDeficit = 1f - Mathf.Clamp01(integrityState);
+            float pressureDelta = socketType switch
+            {
+                BaseModuleVfxSocketType.Spark => Mathf.Lerp(1.5f, 3.5f, integrityDeficit),
+                BaseModuleVfxSocketType.Vent => Mathf.Lerp(2.5f, 5.5f, integrityDeficit),
+                _ => Mathf.Lerp(3f, 6f, integrityDeficit)
+            };
+
+            EmitHullBreachJet(new Vector3(localPoint.x, localPoint.y, localPoint.z), pressureDelta);
         }
 
         internal void EmitHullBreachJet(Vector3 localPoint, float pressureDelta)

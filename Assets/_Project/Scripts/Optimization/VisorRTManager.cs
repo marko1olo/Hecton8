@@ -137,7 +137,10 @@ namespace Hecton8.Optimization
 
         private void TryRegister()
         {
-            if (_registeredSlowTick)
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);

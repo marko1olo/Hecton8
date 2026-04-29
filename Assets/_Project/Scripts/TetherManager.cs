@@ -84,11 +84,7 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            if (!_registeredFixedTick)
-            {
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-                _registeredFixedTick = true;
-            }
+            TryRegisterFixedTickable();
 
             if (!_registeredOriginShiftListener)
             {
@@ -99,11 +95,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            if (_registeredFixedTick)
-            {
-                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
-                _registeredFixedTick = false;
-            }
+            TryUnregisterFixedTickable();
 
             if (_registeredOriginShiftListener)
             {
@@ -113,6 +105,27 @@ namespace Hecton8.Physics
 
             for (int i = _activeInstances.Count - 1; i >= 0; i--)
                 DetachTether(_activeInstances[i], false, true);
+        }
+
+        private void TryRegisterFixedTickable()
+        {
+            if (_registeredFixedTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
+            _registeredFixedTick = true;
+        }
+
+        private void TryUnregisterFixedTickable()
+        {
+            if (!_registeredFixedTick)
+                return;
+
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+            _registeredFixedTick = false;
         }
 
         private void OnDestroy()

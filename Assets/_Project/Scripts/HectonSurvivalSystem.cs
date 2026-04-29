@@ -220,6 +220,8 @@ namespace Hecton8.Gameplay
         private bool  alive = true;
 
         private float _slowTickDt = 0.5f;
+        private bool _registeredUpdatable;
+        private bool _registeredSlowTickable;
 
         // Throttling / Event publishing
         private float lastPubOxygen;
@@ -452,8 +454,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveRuntimeContextDependencies();
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
+            TryRegisterTickOwners();
             _slowTickDt = 0.5f;
 
             RegisterBloodScentSignal();
@@ -462,8 +463,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            TryUnregisterTickOwners();
             UnregisterBloodScentSignal();
             GlobalRegistry.Save?.Unregister(this);
             ResetOxygenGraceState();
@@ -473,8 +473,7 @@ namespace Hecton8.Gameplay
         {
             if (Application.isPlaying)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                TryUnregisterTickOwners();
                 GlobalRegistry.Save?.Unregister(this);
             }
 
@@ -491,6 +490,39 @@ namespace Hecton8.Gameplay
             _playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
             _traumaDispatcher = runtimeContext.TraumaDispatcher;
             _playerRigidbody = runtimeContext.PlayerRigidbody;
+        }
+
+        private void TryRegisterTickOwners()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredUpdatable)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+                _registeredUpdatable = true;
+            }
+
+            if (!_registeredSlowTickable)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTickable = true;
+            }
+        }
+
+        private void TryUnregisterTickOwners()
+        {
+            if (_registeredUpdatable)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredUpdatable = false;
+            }
+
+            if (_registeredSlowTickable)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTickable = false;
+            }
         }
 
         private void PublishRuntimeContextState()

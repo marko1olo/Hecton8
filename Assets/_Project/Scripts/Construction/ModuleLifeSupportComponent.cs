@@ -251,6 +251,18 @@ namespace Hecton8.Construction
                 _co2Level = _co2Capacity;
         }
 
+        public void CollapseBreathableReserve()
+        {
+            _breathableReserve = 0f;
+            _co2Level = Mathf.Max(_co2Level, _co2CriticalThreshold);
+            if (_co2Level > _co2Capacity)
+                _co2Level = _co2Capacity;
+
+            _airReserveWarningLatched = true;
+            _airReserveDepletedLatched = true;
+            _co2CriticalLatched = IsCo2Critical;
+        }
+
         private void AccumulateCo2(float amount)
         {
             if (amount <= 0f)

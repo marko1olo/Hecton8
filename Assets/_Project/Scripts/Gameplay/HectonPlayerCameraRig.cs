@@ -45,29 +45,17 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (!_registered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         private void Start()
         {
-            if (!_registered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registered = true;
-            }
+            TryRegister();
         }
 
         private void OnDisable()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-                _registered = false;
-            }
+            TryUnregister();
         }
 
         /// <inheritdoc />
@@ -92,6 +80,27 @@ namespace Hecton8.Gameplay
                 float fovT = 1f - math.exp(-math.max(0.01f, state.FieldOfViewSharpness) * math.max(0.0001f, state.DeltaTime));
                 cameraComponent.fieldOfView = math.lerp(cameraComponent.fieldOfView, state.TargetFieldOfView, fovT);
             }
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+            _registered = true;
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registered = false;
         }
     }
 }

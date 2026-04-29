@@ -17,12 +17,12 @@ Evidence:
 
 - `Core/GlobalRegistry.cs` holds dense registry buckets and typed slots
 - `Core/SystemDispatcher.cs` owns lane-based `Update`, `FixedUpdate`, `LateUpdate`, and slow-tick dispatch
-- runtime native loop declarations across non-editor code are limited to `12`, with `SystemDispatcher` acting as the intended main owner
+- registry/service ownership remains a real architectural spine rather than dead documentation
 
 Verdict:
 
-- The codebase still has a real dispatcher spine.
-- This is one of the strongest architectural surfaces in the project.
+- The codebase still has a real dispatcher backbone.
+- This remains one of the strongest architectural surfaces in the project.
 
 ### Interaction packetization
 
@@ -33,34 +33,34 @@ Evidence:
 
 Verdict:
 
-- Tool interaction is being pushed through queue-friendly data contracts instead of string-based sludge.
+- Tool interaction is being pushed through queue-friendly data contracts instead of string-driven sludge.
 - This is closer to the declared architecture than many other subsystems.
 
-### Zero-GC UI infrastructure exists
+### Zero-GC UI and event infrastructure exists
 
 Evidence:
 
-- runtime-like scripts contain `TryFormat=32` and `SetCharArray=56`
-- `UI/SuitHUDV4CanvasOverlay.cs` is heavily invested in `TryFormat` and `SetCharArray`
-- `QuestEvents.cs` and `SaveEvents.cs` use `NativeQueue<T>` payload lanes rather than delegate-only broadcasting
+- `UI/SuitHUDV4CanvasOverlay.cs` is heavily invested in cached buffers and `SetCharArray`
+- queue-backed buses now include `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, and `AudioLogEvents`
+- direct service ownership for audio/UI is explicit through `SpatialAudioManager` and `SuitHUDV4CanvasOverlay`
 
 Verdict:
 
-- The project has genuine zero-GC UI and queue-event infrastructure.
-- The problem is inconsistent adoption, not total absence.
+- The project has genuine zero-GC HUD and deferred-event work in production code.
+- The problem is inconsistent adoption, not absence.
 
-### No live runtime coroutine gameplay path found in production-like code
+### Current editor console state is cleaner than older same-day first-party compile snapshots
 
 Evidence:
 
-- broad scan found `StartCoroutine=37` across all first-party scripts
-- after excluding `Editor`, `Dev`, `SmokeTester`, and `Verifier`, executable runtime hits dropped to `0`
-- the one remaining runtime-like text hit is comment text in `InteractionHighlighter.cs`
+- current Unity MCP readback shows `15` errors, but they are package-side `ManageAsset` conversion failures on `ResourceNodeTemplate_*` assets rather than first-party compile errors
+- loaded active scene is `02_HECTON_WORLD`
+- Build Settings remain aligned to `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`
 
 Verdict:
 
-- This is better than older audit slices implied.
-- Coroutine drift still exists in tooling/test surfaces, but not as a confirmed live gameplay path in the current production-like pass.
+- Older "currently broken first-party compile" wording is no longer safe.
+- Current console is still not clean, and console cleanliness is still not the same thing as runtime proof.
 
 ## Acceptable
 
@@ -69,8 +69,7 @@ Verdict:
 Evidence:
 
 - `Optimization/AssetLifecycleGovernor.cs` and `Optimization/AssetLoadDispatcher.cs` exist and are non-trivial
-- runtime-like script scan found `Addressables=33`
-- `ItemCatalog.cs` consumes dispatcher tickets via `TryConsumeReadyTicketByAssetKey(...)` and calls `LoadAssetAsync<GameObject>()`
+- `ItemCatalog.cs` consumes ready tickets and calls `LoadAssetAsync<GameObject>()`
 
 Verdict:
 
@@ -82,136 +81,86 @@ Verdict:
 
 Evidence:
 
-- `SaveBinaryStorage.cs` is extremely large and uses memory-mapped file IO
-- binary storage logic shows explicit file handles, temp paths, and compression/decompression jobs
-- top `JobHandle.Complete()` sites still include `SaveBinaryStorage.cs`
+- `SaveBinaryStorage.cs` is still extremely large and uses serious persistence machinery
+- save-related code shows explicit temp-path, handle, and integrity ownership
 
 Verdict:
 
 - The save stack is deep and serious.
 - It is also dense, high-risk, and too large to trust without focused runtime validation.
 
-### World/vegetation/scatter implementation strength
-
-Evidence:
-
-- `World/HectonMapMagicVegetationBridge.cs` is `13205` lines
-- `WorldProceduralScatterDirector.cs` is `10316` lines
-- both clearly contain real systems rather than stubs
-
-Verdict:
-
-- There is substantial world-tech investment here.
-- The price is fragility through extreme file size and high cognitive load.
-
 ### Event migration progress
 
 Evidence:
 
-- `SaveEvents.cs` and `QuestEvents.cs` now use `NativeQueue<T>` with `FlushPending()`
-- `SystemDispatcher.LateUpdate()` explicitly flushes pending events
-- `ModdingAPI/HectonEventBus.cs` still uses managed `List<>` channels and class events
+- queue-backed buses coexist with direct static buses
+- `SystemDispatcher.LateUpdate()` flushes deferred event lanes
+- `ModdingAPI/HectonEventBus.cs` remains managed and synchronous
 
 Verdict:
 
 - The project is mid-migration, not uniform.
-- Some legacy audit statements saying "delegate buses dominate everything" are now too blunt.
+- Some older audit statements saying "delegate buses dominate everything" are now too blunt.
 
 ## Bad
 
-### Current build health
+### Bootstrap ownership is split and still lifetime-heavy
 
 Evidence:
 
-- Unity compile request completed during this audit
-- console still reports active compile errors in:
-  - `Visor/VolumetricLightFeature.cs`
-  - `FluidCompartmentTemplate.cs`
-  - `Construction/BaseDegradationSystem.cs`
-
-Real-game consequence:
-
-- The project is not in a trustworthy playable state while these blockers remain.
-- Any gameplay-feel claim beyond partial scene/editor inspection is compromised.
-
-### Bootstrap ownership is split and still singleton-heavy
-
-Evidence:
-
-- `Bootstrap/BootstrapController.cs` is explicit singleton/DDOL bootstrap authority
-- `Bootstrap/GameBootstrapper.cs` is a second bootstrap authority with additional service registration logic
-- runtime-like scripts still contain `DontDestroyOnLoad=61`
-- top DDOL owners are led by `BootstrapController.cs` and `GameBootstrapper.cs`
+- `Bootstrap/BootstrapController.cs` and `Bootstrap/GameBootstrapper.cs` both remain startup authorities
+- `SceneBootstrap.cs` adds a third startup/readiness owner
+- direct `DontDestroyOnLoad` ownership still exists in bootstrap-facing systems
 
 Real-game consequence:
 
 - Scene transitions and startup behavior remain high regression zones.
 - Lifetime ownership is still too distributed to call deterministic.
 
-### UI panel layer is still inconsistent and expensive
+### UI and presentation ownership remain oversized
 
 Evidence:
 
-- runtime-like scripts still contain `TextAssignment=61`
-- runtime-like scripts still contain `SetActive=159`
-- `PDAInventoryTab.cs` alone contains `29` direct `.text =` hits and `6` `SetActive(...)` hits
+- `UI/SuitHUDV4CanvasOverlay.cs`: `4608` lines
+- `HectonUnderwaterVisuals.cs`: `4826` lines
+- large presentation/UI owners still combine formatting, effects, and service responsibilities
 
 Real-game consequence:
 
-- PDA and secondary UI flows remain likely GC and rebuild hotspots.
-- The codebase has a strong HUD core and a much weaker long-tail UI layer.
+- Even when these files contain strong local engineering, they are hard to change safely.
+- Long-tail UI and presentation regressions remain likely.
 
-### Oversized god objects
+### World and player god objects remain severe
 
 Evidence:
 
-- `31` scripts exceed `2000` lines
-- `6` scripts exceed `4000` lines
-- largest owners include world, player movement, visuals, and suit HUD
+- `World/HectonMapMagicVegetationBridge.cs`: `13279` lines
+- `WorldProceduralScatterDirector.cs`: `10333` lines
+- `HectonPlayerMovement.cs`: `7851` lines
+- `HectonVoxelEngine.cs`: `4138` lines
 
 Real-game consequence:
 
-- These files are hard to patch safely.
-- Regressions become easier to introduce than to isolate.
+- These files are patch magnets and regression multipliers.
+- Real verification cost is inflated by owner concentration alone.
 
-### Job barrier density remains dangerous
+### Broad runtime proof is still absent
 
 Evidence:
 
-- runtime-like scan found `JobComplete=128`
-- top completion-heavy owners include:
-  - `World/HectonMapMagicVegetationBridge.cs` (`11`)
-  - `HectonWorldGenerator.cs` (`9`)
-  - `Core/ConnectionSplineBatchRenderer.cs` (`6`)
-  - `World/WorldSpatialHashGrid.cs` (`6`)
-  - `SubmarineFluidDynamics.cs` (`5`)
-  - `SaveBinaryStorage.cs` (`3`)
+- no play-mode replay
+- no profiler capture
+- no GCMonitor evidence
+- no build verification
 
 Real-game consequence:
 
-- Even when some barriers are legal, the density is too high to trust without frame captures.
-- Mid-frame stall risk remains significant.
-
-### Rendering memory pressure is suspicious even before gameplay proof
-
-Evidence:
-
-- current Unity rendering stats snapshot reported:
-  - `render_textures=1118`
-  - `render_textures_bytes=1511534709`
-  - `draw_calls=0`
-  - `batches=0`
-
-Real-game consequence:
-
-- This may indicate aggressive editor-side RT retention, a real leak, or both.
-- It is too large to ignore against an MX350 VRAM target.
-- Runtime leak status is still unverified.
+- "console currently clean" and "system safe in a real session" are still different statements.
 
 ## Bottom Line
 
-- Good: core dispatcher spine, interaction packetization, zero-GC HUD infrastructure, partial queue-event migration
-- Acceptable: asset streaming governance, save stack depth, world-tech ambition
-- Bad: current compile state, bootstrap ownership convergence, long-tail UI discipline, god-object size, barrier density, suspicious render-target memory
+- Good: dispatcher spine, interaction packetization, zero-GC HUD/event infrastructure, direct service ownership clarity
+- Acceptable: asset streaming governance, save-system depth, event migration progress
+- Bad: bootstrap authority convergence, owner size concentration, missing runtime proof
 
-This codebase has serious engineering in it. It is also carrying enough structural debt that "it exists" and "it is safe in a real session" are still different statements.
+This codebase has serious engineering in it. It is also carrying enough structural debt that current editor cleanliness is not yet the same thing as production trust.

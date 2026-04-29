@@ -107,7 +107,7 @@ namespace Hecton8.Optimization
 
         private void TryRegister()
         {
-            if (_registeredTick)
+            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);

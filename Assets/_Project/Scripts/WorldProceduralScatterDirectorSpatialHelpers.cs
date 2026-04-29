@@ -9,12 +9,14 @@ namespace Hecton8.World
         private static readonly int _FamilyCoralMassiveHash = ComputeStableStringHash("family.coral.massive");
         private static readonly int _FamilyCoralBranchingHash = ComputeStableStringHash("family.coral.branching");
         private static readonly int _FamilyCoralPlateHash = ComputeStableStringHash("family.coral.plate");
+        private static readonly int _FamilyCoralBrittleHash = ComputeStableStringHash("family.coral.brittle");
         private static readonly int _FamilyRockSmallFloorHash = ComputeStableStringHash("family.rock.small_floor");
         private static readonly int _FamilyRockClusterMediumHash = ComputeStableStringHash("family.rock.cluster.medium");
         private static readonly int _FamilyRockArchLargeHash = ComputeStableStringHash("family.rock.arch.large");
         private static readonly int _FamilyKelpTallHash = ComputeStableStringHash("family.kelp.tall");
         private static readonly int _FamilyKelpPatchDenseHash = ComputeStableStringHash("family.kelp.patch.dense");
         private static readonly int _FamilyKelpCanopyHash = ComputeStableStringHash("family.kelp.canopy");
+        private static readonly int _FamilyKelpAbyssalHash = ComputeStableStringHash("family.kelp.abyssal");
         private static readonly int _FamilyCreatureSpawnPassiveHash = ComputeStableStringHash("family.creature.spawn.passive");
         private static readonly int _FamilyPocketSafeHash = ComputeStableStringHash("family.pocket.safe");
         private static readonly int _FamilyEggClusterHash = ComputeStableStringHash("family.egg.cluster");

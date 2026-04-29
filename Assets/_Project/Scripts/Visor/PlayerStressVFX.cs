@@ -255,7 +255,10 @@ namespace Hecton8.Visor
 
         private void TryRegisterTickHandler()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

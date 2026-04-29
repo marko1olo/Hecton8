@@ -32,6 +32,17 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// Optional rigidbody-side metadata provider for procedural impact material synthesis.
+    /// </summary>
+    public interface IPhysicsImpactMaterialProvider
+    {
+        /// <summary>
+        /// Compact authored impact-audio material family.
+        /// </summary>
+        byte ImpactAudioMaterialId { get; }
+    }
+
+    /// <summary>
     /// Immutable gameplay impact payload flushed in LateUpdate after the fixed-step collision phase.
     /// </summary>
     public readonly struct PhysicsImpactSignal
@@ -46,7 +57,9 @@ namespace Hecton8.Physics
             Vector3 normal,
             float force,
             float intensity,
-            PhysicsImpactWeightClass weightClass)
+            PhysicsImpactWeightClass weightClass,
+            byte primaryAudioMaterialId,
+            byte secondaryAudioMaterialId)
         {
             PrimaryBodyId = primaryBodyId;
             SecondaryBodyId = secondaryBodyId;
@@ -55,6 +68,8 @@ namespace Hecton8.Physics
             Force = force;
             Intensity = intensity;
             WeightClass = weightClass;
+            PrimaryAudioMaterialId = primaryAudioMaterialId;
+            SecondaryAudioMaterialId = secondaryAudioMaterialId;
         }
 
         /// <summary>Primary tracked rigidbody instance ID.</summary>
@@ -77,6 +92,12 @@ namespace Hecton8.Physics
 
         /// <summary>Discrete impact-weight bucket for downstream presentation systems.</summary>
         public PhysicsImpactWeightClass WeightClass { get; }
+
+        /// <summary>Primary collision body's compact authored impact material family.</summary>
+        public byte PrimaryAudioMaterialId { get; }
+
+        /// <summary>Secondary collision body's compact authored impact material family.</summary>
+        public byte SecondaryAudioMaterialId { get; }
 
         /// <summary>True when the event falls into the heavy feedback bucket.</summary>
         public bool IsHeavy => WeightClass == PhysicsImpactWeightClass.Heavy;
@@ -148,6 +169,8 @@ namespace Hecton8.Physics
             public float3 Point;
             public float3 Normal;
             public PhysicsImpactWeightClass WeightClass;
+            public byte PrimaryAudioMaterialId;
+            public byte SecondaryAudioMaterialId;
         }
 
         private const int MaxTrackedBodies = 512;
@@ -319,7 +342,7 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            if (!_registeredFixedTick)
+            if (!_registeredFixedTick && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
                 _registeredFixedTick = true;
@@ -586,7 +609,9 @@ namespace Hecton8.Physics
                 Intensity = impactIntensity,
                 Point = new float3(point.x, point.y, point.z),
                 Normal = new float3(normal.x, normal.y, normal.z),
-                WeightClass = weightClass
+                WeightClass = weightClass,
+                PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
+                SecondaryAudioMaterialId = ResolveImpactAudioMaterialId(secondaryBody)
             });
             _queuedImpactCount++;
         }
@@ -610,8 +635,22 @@ namespace Hecton8.Physics
                     new Vector3(impactEvent.Normal.x, impactEvent.Normal.y, impactEvent.Normal.z),
                     impactEvent.Force,
                     impactEvent.Intensity,
-                    impactEvent.WeightClass));
+                    impactEvent.WeightClass,
+                    impactEvent.PrimaryAudioMaterialId,
+                    impactEvent.SecondaryAudioMaterialId));
             }
+        }
+
+        private static byte ResolveImpactAudioMaterialId(Rigidbody body)
+        {
+            if (body == null)
+                return 0;
+
+            if (body.TryGetComponent(out IPhysicsImpactMaterialProvider directProvider))
+                return directProvider.ImpactAudioMaterialId;
+
+            IPhysicsImpactMaterialProvider provider = body.GetComponentInParent<IPhysicsImpactMaterialProvider>();
+            return provider != null ? provider.ImpactAudioMaterialId : (byte)0;
         }
 
         private void RegisterOrUpdateConnection(

@@ -239,20 +239,12 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (!_registeredToTickManager)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToTickManager = true;
-            }
+            TryRegisterToTickManager();
         }
 
         private void Start()
         {
-            if (!_registeredToTickManager)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToTickManager = true;
-            }
+            TryRegisterToTickManager();
 
             // ── Initial biome detection ──
             // v3.1: Guaranteed to publish at least biome 0.
@@ -261,11 +253,7 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
-            if (_registeredToTickManager)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToTickManager = false;
-            }
+            TryUnregisterFromTickManager();
         }
 
         private void OnDestroy()
@@ -275,6 +263,27 @@ namespace Hecton8.Core
                 _instance = null;
                 OnBiomeChanged = null;
             }
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredToTickManager = true;
+        }
+
+        private void TryUnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredToTickManager = false;
         }
 
         // ══════════════════════════════════════════════════════════

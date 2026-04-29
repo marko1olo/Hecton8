@@ -212,7 +212,10 @@ namespace Hecton8.Tools
 
         private void TryRegisterUpdate()
         {
-            if (_registeredUpdate)
+            if (_registeredUpdate || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
@@ -230,7 +233,10 @@ namespace Hecton8.Tools
 
         private void TryRegisterLateFrame()
         {
-            if (_registeredLateFrame)
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);

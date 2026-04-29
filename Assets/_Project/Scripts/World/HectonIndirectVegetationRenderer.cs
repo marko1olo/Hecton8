@@ -2509,11 +2509,11 @@ namespace Hecton8.World
             switch (_legacyFallbackType)
             {
                 case HectonVegetationInstanceType.GiantKelp:
-                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.GiantKelp, 0.55f, 0.8f, 0.5f);
+                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.GiantKelp, 0.55f, 0.8f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.55f, new Vector4(0.11f, 0.52f, 0.47f, 0.42f));
                 case HectonVegetationInstanceType.Sargassum:
-                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Sargassum, 0.4f, 0.9f, 0.5f);
+                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Sargassum, 0.4f, 0.9f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.45f, new Vector4(0.08f, 0.42f, 0.38f, 0.26f));
                 default:
-                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Grass, 0.55f, 1f, 0.5f);
+                    return new HectonVegetationInstanceData(HectonVegetationInstanceType.Grass, 0.55f, 1f, 0.5f, -1f, HectonVegetationInstanceData.RuntimeStateIdle, 0f, 0.35f, new Vector4(0.10f, 0.48f, 0.34f, 0.22f));
             }
         }
 
@@ -2761,7 +2761,7 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_isRegistered)
+            if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

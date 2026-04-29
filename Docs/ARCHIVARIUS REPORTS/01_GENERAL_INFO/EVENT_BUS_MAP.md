@@ -89,4 +89,5 @@ Primary first-party event files currently tied to this topology:
 
 - `HectonEventBus` remains a separate managed typed bus and is not replaced by these queue lanes.
 - Multiple older static `Action<T>` buses still exist outside this migrated set.
-- Global compile verification is currently blocked by unrelated Crest package errors, so this topology remains `PENDING VERIFICATION`.
+- Current reachable editor readback is not compile-clean proof. Latest visible console slice shows package-side MCP `ManageAsset` failures on `ResourceNodeTemplate_*` assets, not first-party event-bus compile errors.
+- Runtime wiring, subscriber completeness, and teardown behavior still remain `PENDING VERIFICATION`.

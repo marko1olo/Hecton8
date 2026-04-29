@@ -149,6 +149,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             if (!_dispatcherRegistered)
             {

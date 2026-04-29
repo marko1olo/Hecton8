@@ -32,6 +32,7 @@ namespace Hecton8.Building
         private bool _collisionValid = true;
         private bool _externalValid = true;
         private bool _lastVisualState = true;
+        private bool _registeredFixedTick;
 
         // COLD ALLOC: Collider[32] — shared non-alloc overlap buffer for placement blocking checks — owner: PlacementGhost
         private static readonly Collider[] OverlapBuffer = new Collider[32];
@@ -61,12 +62,12 @@ namespace Hecton8.Building
 
         private void OnEnable()
         {
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
+            TryRegisterFixedTickable();
         }
 
         private void OnDisable()
         {
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+            TryUnregisterFixedTickable();
         }
 
         public void OnSpawn()
@@ -147,6 +148,27 @@ namespace Hecton8.Building
                 if (renderer != null)
                     renderer.sharedMaterial = material;
             }
+        }
+
+        private void TryRegisterFixedTickable()
+        {
+            if (_registeredFixedTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
+            _registeredFixedTick = true;
+        }
+
+        private void TryUnregisterFixedTickable()
+        {
+            if (!_registeredFixedTick)
+                return;
+
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+            _registeredFixedTick = false;
         }
 
 #if UNITY_EDITOR

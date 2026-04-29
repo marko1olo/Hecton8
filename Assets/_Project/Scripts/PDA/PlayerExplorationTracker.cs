@@ -280,9 +280,11 @@ namespace Hecton8.PDA
 
         private void TryRegisterWithTickManager()
         {
-            if (_registeredToTick)
+            if (_registeredToTick || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredToTick = true;

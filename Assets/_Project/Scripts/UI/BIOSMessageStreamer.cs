@@ -150,7 +150,10 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (_registeredUpdatable)
+            if (_registeredUpdatable || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

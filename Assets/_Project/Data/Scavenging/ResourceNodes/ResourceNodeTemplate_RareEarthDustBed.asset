@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_RareEarthDustBed
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.rare_earth_dust_bed
+  displayName: Rare Earth Dust Bed
+  toolResistance: 0.92
+  harvestDurationSeconds: 1.2
+  requiredToolClass: 4
+  maxIntegrity: 94
+  defaultLootCount: 1
+  minimumDepthMeters: 420
+  maximumDepthMeters: 1100
+  minimumTemperatureCelsius: 0
+  maximumTemperatureCelsius: 9
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 20
+  spawnOffsetMeters: 0.03
+  candidateBudgetPerSector: 4
+  maxInstancesPerSector: 1
+  placementProbability: 0.34
+  minimumDensity: 0.1
+  maximumDensity: 0.52
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.8, y: 0.35, z: 1.8}
+  harvestYield:
+  - item: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

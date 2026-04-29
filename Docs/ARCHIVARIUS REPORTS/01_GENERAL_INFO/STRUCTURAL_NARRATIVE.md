@@ -81,26 +81,27 @@ Architecture signal:
 
 ## 7. UI / Audio Layer
 
-Current source confirms fragmented UI ownership:
+Current source no longer supports the old "ghost contract" narrative.
 
-- `HectonFabricatorUI`
-- `HectonSuitHUD_v4`
-- `SuitHUDV4CanvasOverlay`
-- multiple PDA tab controllers
+Observed facts:
 
-Current source also confirms audio surface fragmentation:
+- `SuitHUDV4CanvasOverlay` is the direct `IUIService` implementor confirmed by current source scan
+- `SpatialAudioManager` is the direct `IAudioService` implementor confirmed by current source scan
+- both also register themselves into `GlobalRegistry`
+- project still contains many separate UI feature owners such as PDA tabs, fabricator UI, and visor/HUD presentation layers
 
-- `SpatialAudioManager` exists
-- `IAudioService` implementor was not confirmed in current code audit
-- project contains both first-party runtime audio code and specialized event surfaces such as `AudioLogEvents`
+Meaning:
+
+- the direct service contracts are less fragmented than older reports claimed
+- the wider UI layer is still multi-owner and therefore not architecturally simple
 
 ## 8. Event Narrative
 
 Current project does not rely on a single bus.
 It uses at least three event styles:
 
-- static gameplay buses such as `InteractionEvents`, `CraftingEvents`, `SaveEvents`, `ScanEvents`
-- embedded static buses inside feature owners such as `PDAEvents`, `FlashlightEvents`, `RandomEventEvents`
+- queue-backed deferred buses such as `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, and `AudioLogEvents`
+- direct static delegate buses such as `InteractionEvents`, `CraftingEvents`, `PDAEvents`, `FlashlightEvents`, `RandomEventEvents`, and `HectonSubmarineOsEvents`
 - separate modding bus `HectonEventBus`
 
 This means "one frame" can branch through multiple signaling styles depending on feature.

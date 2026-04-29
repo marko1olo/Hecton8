@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_LithiumCrystalCluster
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.lithium_crystal_cluster
+  displayName: Lithium Crystal Cluster
+  toolResistance: 1.28
+  harvestDurationSeconds: 1.65
+  requiredToolClass: 3
+  maxIntegrity: 128
+  defaultLootCount: 1
+  minimumDepthMeters: 380
+  maximumDepthMeters: 1020
+  minimumTemperatureCelsius: 0
+  maximumTemperatureCelsius: 12
+  minimumSlopeDegrees: 16
+  maximumSlopeDegrees: 52
+  spawnOffsetMeters: 0.14
+  candidateBudgetPerSector: 4
+  maxInstancesPerSector: 1
+  placementProbability: 0.27
+  minimumDensity: 0.1
+  maximumDensity: 0.42
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 1
+  physicalSize: {x: 1.05, y: 1.25, z: 1.05}
+  harvestYield:
+  - item: {fileID: 11400000, guid: 432c7f076754baf48ba1ab5a83231c02, type: 2}
+    minimumAmount: 1
+    maximumAmount: 1
+    weight: 1
+  rarityDrops: []

@@ -51,11 +51,7 @@ namespace Hecton8.World
 
         public static int RegisterBioform(FaunaBrain brain)
         {
-            int speciesId = 0;
-            if (brain != null && brain.SpeciesProfile != null)
-                speciesId = brain.SpeciesProfile.speciesID;
-
-            return Register(brain, brain != null ? brain.transform : null, SpatialTargetKind.Bioform, FieldTargetRole.Generic, speciesId);
+            return Register(brain, brain != null ? brain.transform : null, SpatialTargetKind.Bioform, FieldTargetRole.Generic, brain != null ? brain.SpeciesId : 0);
         }
 
         public static int RegisterSignal(FieldTargetDescriptor descriptor)

@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_MembraneTissueBloom
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.membrane_tissue_bloom
+  displayName: Membrane Tissue Bloom
+  toolResistance: 0.6
+  harvestDurationSeconds: 0.85
+  requiredToolClass: 0
+  maxIntegrity: 72
+  defaultLootCount: 2
+  lootPickupPrefab: {fileID: 2572332944962446987, guid: c0a27162bed68b345b3aca43093fbaac, type: 3}
+  minimumDepthMeters: 80
+  maximumDepthMeters: 460
+  minimumTemperatureCelsius: 6
+  maximumTemperatureCelsius: 22
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 30
+  spawnOffsetMeters: 0.06
+  candidateBudgetPerSector: 5
+  maxInstancesPerSector: 2
+  placementProbability: 0.6
+  minimumDensity: 0.3
+  maximumDensity: 1.3
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.1, y: 0.65, z: 1.1}
+  harvestYield:
+  - item: {fileID: 11400000, guid: 91b73894e80923843a89007d3b9cc97d, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

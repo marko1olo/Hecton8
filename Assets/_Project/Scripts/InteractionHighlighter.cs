@@ -312,7 +312,11 @@ namespace Hecton8.Interaction
         /// </summary>
         private void StartTicking()
         {
-            if (_isTicking) return;
+            if (_isTicking || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _isTicking = true;

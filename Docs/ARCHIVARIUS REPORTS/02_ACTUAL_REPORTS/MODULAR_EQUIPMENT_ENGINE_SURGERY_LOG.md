@@ -1,5 +1,17 @@
 # MODULAR EQUIPMENT ENGINE SURGERY LOG
 
+## Current-State Addendum
+
+This file remains useful as a surgery/change log.
+It is not the current global project-health page.
+
+Later same-day recheck changed the surrounding project state:
+
+- current reachable Unity console readback is `0` entries
+- earlier unrelated full-project compile blockers described below are no longer safe as current-state claims
+- the modular-equipment implementation record remains valid
+- the blocker framing below must be read as historical surgery-session context
+
 ## Mandates Followed
 - `CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`
 - `DATA_Inventory_Resources_Items_SOA_Layout.txt`
@@ -108,11 +120,11 @@ Result: flashlight energy now has one runtime owner, `ToolState.CurrentBattery`.
   - `FlashlightTool.cs`
 - Asset refresh completed and `.meta` files were generated for all five tool-module assets.
 
-## Blockers
-- Full-project MCP console is still red on unrelated object-pool regressions after the modular-equipment work compiled:
+## Historical Blockers During Surgery Session
+- Full-project MCP console was red on unrelated object-pool regressions during this surgery pass:
   - `ObjectPoolManager.cs` lost or no longer exposes `Spawn`, `Despawn`, `Warmup`, `GetAvailableCount`, `HasPool`
   - this fans out into `PlayerToolManager`, `FaunaDirector`, `PersistentWorldRegistry`, `HectonVoxelEngine`, `ConstructionManager`, and many other callers
-- Because of that unrelated pool-system break, a truthful `"0 errors"` console proof is not available in this session.
+- Because of that unrelated pool-system break, a truthful `"0 errors"` console proof was not available in that surgery session.
 - `LaserCutter.cs` still trips an MCP validator warning path, but the touched modular scripts validate cleanly.
 
 ## Verification Status
@@ -121,7 +133,7 @@ Result: flashlight energy now has one runtime owner, `ToolState.CurrentBattery`.
   - repeated full-compile MCP attempts proving the remaining blocker is external to the modular-equipment changes
   - authored module assets present on disk and linked in metadata
 - PENDING VERIFICATION for:
-  - full project compile with `0` console errors
+  - full project compile with `0` console errors at the time of the surgery pass
   - in-scene runtime behavior
   - GC/perf regression numbers
 

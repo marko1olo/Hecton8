@@ -256,7 +256,8 @@ namespace Hecton8.World
                     position,
                     placement.EffectiveSpacing,
                     placement.Family != null ? (int)placement.Family.scatterLayer : 0,
-                    placement.Family != null ? (int)placement.Family.proceduralDomain : 0));
+                    placement.Family != null ? (int)placement.Family.proceduralDomain : 0,
+                    (byte)ResolveFloraBudgetClass(placement.Family)));
 
                 int cellKey = ComposeScatterGridNativeKey(placement.CellX, placement.CellZ);
                 GridPlacementPositionBuckets.Add(cellKey, position);

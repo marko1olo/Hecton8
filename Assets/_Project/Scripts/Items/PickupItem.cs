@@ -17,7 +17,7 @@ namespace Hecton8.Interaction
 
     [RequireComponent(typeof(InteractionHighlighter))]
     [RequireComponent(typeof(Collider))]
-    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable
+    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
     {
         // COLD ALLOC: RegistryBucket<PickupItem>[4096] — authored/persistent pickup registry for world-state scans — owner: PickupItem
         private static readonly RegistryBucket<PickupItem> _worldStateRegistry = new RegistryBucket<PickupItem>(4096);
@@ -68,6 +68,8 @@ namespace Hecton8.Interaction
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
         public static int WorldStateRegistryCount => _worldStateRegistry.Count;
+        public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;
+        public byte ImpactAudioMaterialId => itemData != null ? itemData.AudioMaterialByte : (byte)ItemAudioMaterialId.Organic;
 
         public static PickupItem GetWorldStateRegistryAt(int index)
         {
@@ -78,6 +80,7 @@ namespace Hecton8.Interaction
         {
             itemData = data;
             quantity = Mathf.Max(1, itemQuantity);
+            ApplyPhysicalMetadata();
             InvalidateWorldStateIdentity();
             RebuildInteractTextCache();
         }
@@ -98,7 +101,14 @@ namespace Hecton8.Interaction
         {
             TryGetComponent(out _highlighter);
             TryGetComponent(out _rigidbody);
+            ApplyPhysicalMetadata();
             RebuildInteractTextCache();
+        }
+
+        private void ApplyPhysicalMetadata()
+        {
+            if (_rigidbody != null && itemData != null)
+                _rigidbody.mass = itemData.MassKg;
         }
 
         private void OnEnable()
@@ -248,9 +258,8 @@ namespace Hecton8.Interaction
 
         private void TryRegisterSlowTick()
         {
-            if (_registeredToSlowTick)
+            if (_registeredToSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToSlowTick = true;
@@ -258,12 +267,11 @@ namespace Hecton8.Interaction
 
         private void TryRegisterFixedTick()
         {
-            if (_registeredToFixedTick)
+            if (_registeredToFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (_rigidbody == null || _rigidbody.isKinematic)
                 return;
-
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredToFixedTick = true;

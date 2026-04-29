@@ -1,91 +1,73 @@
 # ARCHIVARIUS DOCSET REVERIFICATION
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION
-
----
+Date: 2026-04-29
+Status: PENDING VERIFICATION
 
 ## Scope
 
-This pass re-read every file in:
+This pass re-read the active documentation set in:
 
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO`
 - `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`
 
-Coverage totals:
+It also rechecked the current source and current reachable Unity Editor state before finalizing corrections.
+
+## Coverage Totals
 
 | Bucket | Count |
 |---|---:|
 | `01_GENERAL_INFO` markdown files | 13 |
 | `02_ACTUAL_REPORTS` markdown files | 32 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| **Total files reviewed** | **46** |
+| Total files reviewed | 46 |
 
----
+## What Was Rechecked
 
-## Pass Method
+- first-party script count under `Assets/_Project/Scripts`
+- `GlobalRegistryContracts.cs` interface count
+- direct ownership for `IAudioService`, `IUIService`, `IRenderable`, and `Hecton8.Core.IDamageReceiver`
+- queue-backed vs direct-static event bus classification
+- current Unity Editor scene/build/console state
 
-### Pass 1
-
-- Read file inventory and line counts.
-- Read the full selected file set.
-- Spot-validated high-risk claims against current code and project state.
-- Searched for impossible chronology, stale filenames, internal count mismatches, and interface-owner drift.
-
-### Pass 2
-
-- Re-read the files modified in this pass.
-- Re-checked file counts, interface ownership claims, and chronology notes.
-- Confirmed the repaired index points only to files that currently exist in the audited folders.
-
----
-
-## Confirmed Defects
-
-| Area | Defect | Evidence |
-|---|---|---|
-| Master indexing | `MASTER_INDEX.md` referenced files absent from the audited folders | direct file-system readback |
-| Interface mapping | interface docs contained stale implementor claims | `GlobalRegistryContracts.cs` + class declaration grep |
-| Singleton inventory | summary claimed 74 violations while the table enumerated 101 rows | internal document contradiction |
-| Chronology | some docs carried impossible future dates relative to 2026-04-29 | file headers |
-| Project atlas | duplicate mandate entry and stale `Assets/DOCS` / non-present docs references | direct file readback |
-| Structural narrative | used unsupported `"verified"` timing and GC summaries | no embedded measurement proof |
-
----
-
-## Corrections Applied
+## Final Corrections Applied
 
 | File | Correction |
 |---|---|
-| `01_GENERAL_INFO/MASTER_INDEX.md` | Rebuilt as a live index of files that actually exist |
-| `01_GENERAL_INFO/INTERFACE_CONTRACT_TABLE.md` | Rewritten from current code readback |
-| `01_GENERAL_INFO/EVENT_BUS_MAP.md` | Rewritten as a chronology-safe orientation page |
-| `01_GENERAL_INFO/DEPENDENCY_GRAPH.md` | Rewritten as a source-backed core dependency orientation page |
-| `01_GENERAL_INFO/PROJECT_ATLAS.md` | Rewritten as a live workspace atlas without stale references or fake readiness claims |
-| `01_GENERAL_INFO/STRUCTURAL_NARRATIVE.md` | Rewritten as an architecture narrative without fake profiler metrics |
-| `02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` | Rewritten from current code readback |
-| `02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` | Rewritten as a source-backed event topology with inferred chains removed |
-| `02_ACTUAL_REPORTS/2026-04-28_EVENT_LEAK_REPORT.md` | Rewritten as a current-source subscription hygiene snapshot |
-| `02_ACTUAL_REPORTS/2026-04-28_HOT_PATH_VIOLATIONS.md` | Rewritten to separate stale accusations from current architecture debt |
-| `02_ACTUAL_REPORTS/2026-04-28_PROFILING_PREPAREDNESS_AUDIT.md` | Rewritten after confirming several formerly claimed blind spots are already instrumented |
-| `02_ACTUAL_REPORTS/2026-04-28_DEAD_ASSET_SWEEP.md` | Rewritten as a filesystem-only snapshot with unsupported deletion advice removed |
-| `02_ACTUAL_REPORTS/2026-04-28_CIRCULAR_DEPS.md` | Rewritten from current asmdef readback and false dependency entries removed |
-| `02_ACTUAL_REPORTS/2026-04-28_CYRILLIC_SWEEP.md` | Rewritten with a measured non-ASCII path count and broader scope |
-| `02_ACTUAL_REPORTS/SINGLETON_VIOLATIONS.md` | Corrected impossible header date and summary count |
-| `02_ACTUAL_REPORTS/SCENE_VRAM_FOOTPRINT.md` | Corrected impossible header date and downgraded certainty |
+| `01_GENERAL_INFO/PROJECT_ATLAS.md` | corrected current script count, ownership summary, and stale-doc framing |
+| `01_GENERAL_INFO/INTERFACE_CONTRACT_TABLE.md` | corrected implementor table to current source |
+| `01_GENERAL_INFO/INTERFACE_STRATEGY.md` | removed stale ghost-interface framing and rewrote around current ownership |
+| `01_GENERAL_INFO/DEPENDENCY_GRAPH.md` | corrected audio/UI ownership and expanded current service surface |
+| `01_GENERAL_INFO/STRUCTURAL_NARRATIVE.md` | corrected direct UI/audio contract ownership and event-style classification |
+| `02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` | corrected interface count, removed ghost claims, and rebuilt ownership table |
+| `02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` | corrected queue-backed vs direct-static bus classification |
+| `02_ACTUAL_REPORTS/SINGLETON_FIX_PRIORITY.md` | added current-state boundary so `IUIService` / `IAudioService` are not misused as catch-all singleton buckets |
+| `02_ACTUAL_REPORTS/2026-04-28_LIAR_DETECTION.md` | downgraded to narrow dated accusation report instead of broad current-state authority |
+| `02_ACTUAL_REPORTS/2026-04-28_ASSET_DEPENDENCY_MAP.md` | downgraded `ETA VERIFIED` framing and marked as static snapshot only |
+| `02_ACTUAL_REPORTS/2026-04-28_VRAM_EXECUTION_LIST.md` | removed deletion-authority implication around `Sandbox` assets via addendum |
+| `02_ACTUAL_REPORTS/2026-04-28_VRAM_BUDGET_AUDIT.md` | marked as estimate/budget context, not current measured residency truth |
+| `02_ACTUAL_REPORTS/2026-04-28_DATA_DICTIONARY.md` | marked as structural reference map, not surgery-ready authority |
+| `02_ACTUAL_REPORTS/2026-04-28_MEMORY_ALIGNMENT_FIX.md` | marked as inferred surgery queue, not direct implementation spec |
+| `02_ACTUAL_REPORTS/2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | refreshed to final same-day state |
 
----
+## Current Confirmed Truths
+
+| Area | Current truth |
+|---|---|
+| Script inventory | `970` first-party `.cs` files under `Assets/_Project/Scripts` |
+| Registry contracts | `27` public interfaces in `GlobalRegistryContracts.cs` |
+| Audio ownership | `SpatialAudioManager : IAudioService` |
+| UI ownership | `SuitHUDV4CanvasOverlay : IUIService` |
+| Damage contract | `HabitatIntegrityManager : Hecton8.Core.IDamageReceiver` |
+| Event topology | mixed: queue-backed buses plus direct static buses |
+| Current editor state | `02_HECTON_WORLD` active, Build Settings aligned, latest console readback shows package-side MCP `ManageAsset` errors on `ResourceNodeTemplate_*`, not first-party compile errors |
 
 ## Open Items
 
 | File or area | Why still open |
 |---|---|
-| Remaining large dated audit bundles (`2026-04-28_*`) | Some historical reports still remain unnormalized because they were not yet fully rechecked in this pass |
-| Legacy encoded historical reports | `2026-04-28_ASSET_DEPENDENCY_MAP.md`, `2026-04-28_DATA_DICTIONARY.md`, `2026-04-28_DEEP_FORENSIC_AUDIT.md`, and `2026-04-28_SUPREME_AUDITOR_REPORT.md` still require dedicated rewrite or downgrade work |
-| Runtime metrics (`VRAM`, frame time, event traffic) | No new Unity measurement was taken in this documentation-only pass |
-| Event flow runtime truth | Static source read is now narrowed and grounded, but live replay still requires dedicated runtime validation |
-
----
+| Remaining dated bundles (`2026-04-28_*`, older archive audits) | several were reframed in this pass, but not every historical bundle was rerun end-to-end against current source truth |
+| Unity runtime proof | no new play-mode, profiler, or GCMonitor replay was captured |
+| Scene/prefab truth | source ownership does not prove authored scenes/prefabs contain only the expected service owners |
 
 ## Regression Model
 
@@ -95,4 +77,10 @@ Coverage totals:
 | GC | None. Documentation-only pass. |
 | Memory | None. Documentation-only pass. |
 | Cadence | None. No runtime code changed. |
-| Correctness | Improved documentation truthfulness; runtime behavior unchanged. |
+| Correctness | Improved against both current source and current reachable editor state. |
+
+## Hot Path Impact
+
+None. Markdown-only change.
+
+STATUS: PENDING VERIFICATION

@@ -116,6 +116,7 @@ namespace Hecton8.AI
 
         [Header("Content")]
         public GameObject prefab;
+        public FaunaDataTemplate faunaDataTemplate;
         public string lootProfileId = string.Empty;
         [TextArea(1, 3)] public string biomeNotes = string.Empty;
 

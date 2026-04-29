@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 051b2a59c8e741e4cb17d83cb1929fa5, type: 3}
+  m_Name: BaseModuleTemplate_CrewQuarters
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.BaseModuleTemplate
+  stableId: base.module.crew_quarters
+  templateHashId: 273123897
+  snapPoints:
+  - x: 0
+    y: 0
+    z: -2.2
+  - x: 0
+    y: 0
+    z: 2.2
+  buildCost: []
+  powerDrawKW: 10
+  airVolumeM3: 220
+  defaultIntegrityState: 0.27
+  floodedBelowIntegrityState: 0.42
+  oxygenOfflineBelowIntegrityState: 0.31
+  vfxSockets:
+  - localPosition:
+      x: -1.2
+      y: 0.3
+      z: 1.3
+    socketType: 0
+  - localPosition:
+      x: 1.1
+      y: 1.2
+      z: -0.9
+    socketType: 1

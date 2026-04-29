@@ -63,6 +63,7 @@ namespace Hecton8.Systems.AI
         private const float SonarStressDecayPerSecond = 0.18f;
 
         private HectonPlayerMovement _playerMovement;
+        private bool _encounterDirectorServiceRegistered;
         private bool _dispatcherRegistered;
         private float _resolveRetryTimer;
         private float _hunterSquadCooldown;
@@ -124,7 +125,14 @@ namespace Hecton8.Systems.AI
             if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterEncounterDirectorService(this);
+            if (!_encounterDirectorServiceRegistered)
+            {
+                GlobalRegistry.RegisterEncounterDirectorService(this);
+                _encounterDirectorServiceRegistered = true;
+            }
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             if (!_dispatcherRegistered)
             {
@@ -147,7 +155,11 @@ namespace Hecton8.Systems.AI
             if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.UnregisterEncounterDirectorService(this);
+            if (_encounterDirectorServiceRegistered)
+            {
+                GlobalRegistry.UnregisterEncounterDirectorService(this);
+                _encounterDirectorServiceRegistered = false;
+            }
 
             if (_dispatcherRegistered)
             {

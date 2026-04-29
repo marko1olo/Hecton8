@@ -1,6 +1,22 @@
 # ASSET-TO-CODE DEPENDENCY MAP
 
-**Версия:** 2026-04-28 | **Статус:** ETA VERIFIED
+## Current-State Addendum (2026-04-29)
+
+This file is a dated static snapshot and should not be treated as current verified authority.
+
+Known problems with using it raw:
+
+- status line says `ETA VERIFIED`, which is too strong for a static dependency note without fresh Unity-side referencer proof
+- some counts and dependency examples inside may still be directionally useful, but they were not rerun in the 2026-04-29 reverification pass
+- use of this file for deletion or prefab surgery without current source/editor cross-check would be guesswork
+
+Preferred current references:
+
+- `PROJECT_ATLAS.md`
+- `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
+- `2026-04-28_DEAD_ASSET_SWEEP.md` for deletion-proof boundaries
+
+**Версия:** 2026-04-28 | **Исторический статус на момент скана:** ETA VERIFIED
 
 ---
 
@@ -183,7 +199,7 @@ Obsolete note:
 
 ---
 
-**STATUS:** ETA VERIFIED ✅
+**Historical Scan Status:** ETA VERIFIED ✅
 
 **Critical Risk:** Scene object name dependencies  
 **Recommendation:** Replace scene object search with GlobalRegistry injection

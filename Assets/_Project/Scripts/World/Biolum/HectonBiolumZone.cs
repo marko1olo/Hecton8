@@ -114,7 +114,7 @@ namespace Hecton8.Biolum
 
         protected virtual void OnEnable()
         {
-            if (!_isRegistered)
+            if (!_isRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _isRegistered = true;
@@ -212,7 +212,12 @@ namespace Hecton8.Biolum
         /// </summary>
         public void EnsureTickRegistration()
         {
-            if (_isRegistered)
+            if (_isRegistered || !Application.isPlaying)
+            {
+                return;
+            }
+
+            if (GlobalRegistry.Dispatcher == null)
             {
                 return;
             }

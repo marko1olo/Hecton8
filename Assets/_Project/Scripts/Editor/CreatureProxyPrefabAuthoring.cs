@@ -95,6 +95,7 @@ namespace Hecton8.AI.Editor
             rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
 
             root.AddComponent<FaunaBrain>();
+            root.AddComponent<Hecton8.Gameplay.ScannableTarget>();
             addCollider(root);
 
             GameObject visual = GameObject.CreatePrimitive(visualType);

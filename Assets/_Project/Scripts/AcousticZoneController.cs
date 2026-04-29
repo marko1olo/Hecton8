@@ -819,7 +819,11 @@ namespace Hecton8.Audio
 
         private void TryRegister()
         {
-            if (_registeredToTickManager) return;
+            if (_registeredToTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredToTickManager = true;

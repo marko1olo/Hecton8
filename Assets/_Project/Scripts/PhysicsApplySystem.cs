@@ -452,14 +452,14 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            if (Application.isPlaying && !_fixedTickRegistered)
+            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_fixedTickRegistered)
             {
                 // Flush after world/player fixed lanes so deferred packets apply in the same simulation step.
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.UI);
                 _fixedTickRegistered = true;
             }
 
-            if (Application.isPlaying && !_lateFrameTickRegistered)
+            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_lateFrameTickRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
                 _lateFrameTickRegistered = true;

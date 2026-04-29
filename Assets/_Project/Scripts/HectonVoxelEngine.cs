@@ -3362,6 +3362,7 @@ public class HectonVoxelEngine : MonoBehaviour
         ct.ThrowIfCancellationRequested();
         NativeArray<byte> navGridBackBuffer = default;
         NativeArray<ushort> navGridDistanceMap = default; // COLD ALLOC: NativeArray<ushort>[TotalPts] - temporary Manhattan clearance scratch for cave-nav dilation - owner: HectonVoxelEngine build cycle
+        NativeArray<VoxelDynamicNavGridRuntime.NavObstaclePrimitive> navObstacleSnapshot = default;
         bool navGridScheduled = false;
         JobHandle navGridHandle = default;
 
@@ -3416,6 +3417,20 @@ public class HectonVoxelEngine : MonoBehaviour
                 Output = navGridBackBuffer,
                 SolidThreshold = 0f
             }.Schedule(data.TotalPts, JOB_BATCH, densityHandle);
+            navObstacleSnapshot = VoxelDynamicNavGridRuntime.CreateObstacleSnapshot(Allocator.TempJob);
+            JobHandle obstacleHandle = navPassabilityHandle;
+            if (navObstacleSnapshot.IsCreated)
+            {
+                obstacleHandle = new VoxelDynamicNavGridRuntime.ObstacleStampJob
+                {
+                    Passability = navGridBackBuffer,
+                    Obstacles = navObstacleSnapshot,
+                    Dimensions = new int3(data.PtsX, data.PtsY, data.PtsZ),
+                    Origin = data.VolumeOrigin,
+                    CellSize = data.VoxelStep
+                }.Schedule(data.TotalPts, JOB_BATCH, navPassabilityHandle);
+            }
+
             navGridDistanceMap = new NativeArray<ushort>(data.TotalPts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ushort>[TotalPts] - temporary Manhattan clearance scratch for cave-nav dilation - owner: HectonVoxelEngine build cycle
             navGridHandle = new VoxelDynamicNavGridRuntime.ClearanceDilationJob
             {
@@ -3423,7 +3438,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 DistanceMap = navGridDistanceMap,
                 Dimensions = new int3(data.PtsX, data.PtsY, data.PtsZ),
                 AgentRadiusCells = VoxelDynamicNavGridRuntime.ResolveClearanceRadiusCells(data.VoxelStep)
-            }.Schedule(navPassabilityHandle);
+            }.Schedule(obstacleHandle);
             navGridScheduled = true;
         }
 
@@ -3450,6 +3465,12 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         catch
         {
+            if (navObstacleSnapshot.IsCreated)
+            {
+                navObstacleSnapshot.Dispose(firstPhaseHandle);
+                navObstacleSnapshot = default;
+            }
+
             if (navGridDistanceMap.IsCreated)
             {
                 navGridDistanceMap.Dispose(firstPhaseHandle);
@@ -3459,6 +3480,11 @@ public class HectonVoxelEngine : MonoBehaviour
             throw;
         }
 
+        if (navObstacleSnapshot.IsCreated)
+        {
+            navObstacleSnapshot.Dispose();
+            navObstacleSnapshot = default;
+        }
         if (navGridDistanceMap.IsCreated)
         {
             navGridDistanceMap.Dispose();

@@ -99,6 +99,7 @@ namespace Hecton8.AI
         public float HungerWeight;
         public float ThreatWeight;
         public float FearWeight;
+        public float CuriosityWeight;
         public float AggressionWeight;
         public float EscapeDistance;
         public float EscapeSafeDistance;
@@ -284,6 +285,7 @@ namespace Hecton8.AI
         private static NativeArray<byte> _evaluationDueFlags;
         private static NativeArray<float> _nextEvaluationTimes;
         private static NativeArray<float> _evaluationIntervals;
+        private static NativeParallelHashMap<int, SpeciesCognitionTuning> _speciesTuningById;
         private static NativeArray<byte> _threatVoxelGrid;
         private static int3 _threatVoxelDimensions;
         private static float3 _threatVoxelOrigin;
@@ -334,6 +336,15 @@ namespace Hecton8.AI
             }
 
             return -1;
+        }
+
+        internal static void RegisterSpeciesTuning(int speciesId, in SpeciesCognitionTuning tuning)
+        {
+            if (speciesId == 0)
+                return;
+
+            EnsureInitialized();
+            _speciesTuningById[speciesId] = tuning;
         }
 
         internal static void Unregister(int slot)
@@ -638,6 +649,7 @@ namespace Hecton8.AI
                 ClaimedBoidPositions = _claimedBoidPositions,
                 PredatorPackTargets = _predatorPackTargets,
                 PredatorPackWeights = _predatorPackWeights,
+                SpeciesTuningById = _speciesTuningById,
                 ChosenStates = _chosenStates,
                 BoidClaimTable = _boidClaimTable,
                 Outputs = _outputs,
@@ -706,6 +718,8 @@ namespace Hecton8.AI
                 _nextEvaluationTimes.Dispose(disposeDependency);
             if (_evaluationIntervals.IsCreated)
                 _evaluationIntervals.Dispose(disposeDependency);
+            if (_speciesTuningById.IsCreated)
+                _speciesTuningById.Dispose();
 
             _cores = default;
             _controls = default;
@@ -729,6 +743,7 @@ namespace Hecton8.AI
             _evaluationDueFlags = default;
             _nextEvaluationTimes = default;
             _evaluationIntervals = default;
+            _speciesTuningById = default;
             _threatVoxelGrid = default;
             _threatVoxelDimensions = int3.zero;
             _threatVoxelOrigin = float3.zero;
@@ -798,6 +813,8 @@ namespace Hecton8.AI
             _nextEvaluationTimes = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[Capacity] - resolved cognition cadence intervals per slot - owner: PredatorCognitionDomain
             _evaluationIntervals = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeParallelHashMap<int,SpeciesCognitionTuning>[Capacity] - species cognition tuning table keyed by stable species id - owner: PredatorCognitionDomain
+            _speciesTuningById = new NativeParallelHashMap<int, SpeciesCognitionTuning>(Capacity, Allocator.Persistent);
             ClearBoidClaims();
         }
 
@@ -1325,6 +1342,7 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<float3> ClaimedBoidPositions;
             [ReadOnly] public NativeArray<float3> PredatorPackTargets;
             [ReadOnly] public NativeArray<float> PredatorPackWeights;
+            [ReadOnly] public NativeParallelHashMap<int, SpeciesCognitionTuning> SpeciesTuningById;
             [NativeDisableParallelForRestriction] public NativeArray<int> ChosenStates;
             [NativeDisableParallelForRestriction] public NativeArray<int> BoidClaimTable;
             public NativeArray<PackedCognitionOutput> Outputs;
@@ -1354,6 +1372,15 @@ namespace Hecton8.AI
 
                 if (DueFlags[slot] == 0)
                     return;
+
+                if (input.SpeciesId != 0 &&
+                    SpeciesTuningById.IsCreated &&
+                    SpeciesTuningById.TryGetValue(input.SpeciesId, out SpeciesCognitionTuning tuning))
+                {
+                    input.HungerWeight = tuning.HungerWeight;
+                    input.FearWeight = tuning.FearWeight;
+                    input.CuriosityWeight = tuning.CuriosityWeight;
+                }
 
                 CognitionCore core = Cores[slot];
                 CognitionControl control = Controls[slot];
@@ -1552,12 +1579,13 @@ namespace Hecton8.AI
 
                 float hungerScore = ScoreHunger(hunger) * math.max(0.1f, input.HungerWeight);
                 float fatigueScore = ScoreFatigue(fatigue);
+                float curiosityWeight = math.max(0.1f, input.CuriosityWeight);
                 float fearScore = canFlee
                     ? ScoreFear(math.max(fear, threatRaw * 0.45f)) * math.max(0.1f, input.FearWeight)
                     : 0f;
                 float threatScore = ScoreThreat(threatLevel) * math.max(0.1f, input.ThreatWeight);
-                float acousticUtility = ScoreThreat(acousticScore) * math.max(0.1f, input.ThreatWeight);
-                float chemicalUtility = ScoreThreat(chemicalScore) * math.max(0.1f, input.HungerWeight);
+                float acousticUtility = ScoreThreat(acousticScore) * curiosityWeight;
+                float chemicalUtility = ScoreThreat(chemicalScore) * math.max(0.1f, input.HungerWeight) * curiosityWeight;
                 float targetDistanceSq = math.lengthsq(targetPosition - input.Position);
                 float attackCommit01 = hasTarget
                     ? ScoreHunger(math.saturate(1f - (math.sqrt(math.max(targetDistanceSq, 0f)) / math.max(input.AttackRange, 1f))))
@@ -1582,7 +1610,7 @@ namespace Hecton8.AI
                         fearScore,
                         threatScore,
                         fatigueScore,
-                        satedActive));
+                        satedActive)) * math.lerp(0.85f, 1.25f, math.saturate(curiosityWeight * 0.5f));
                 float stalkingScore = huntUtility * math.lerp(0.55f, 0.95f, Pow01(targetSignal, 1.2f));
                 float attackingScore = huntUtility *
                                        math.lerp(0.25f, 1f, Pow01(attackCommit01, 1.5f)) *
@@ -1738,6 +1766,7 @@ namespace Hecton8.AI
                                     (canFlee && (threatVisible || acousticScore > AcousticStimulusThreshold));
 
                 float fatigueScore = ScoreFatigue(fatigue);
+                float curiosityWeight = math.max(0.1f, input.CuriosityWeight);
                 float escapeScore = ScoreFear(math.max(fear, threatLevel)) * math.max(0.1f, input.FearWeight) * math.select(0f, 1f, shouldEscape);
                 float homeDistance01 = useHomeTerritory && input.PatrolRadius > 0f
                     ? math.saturate(math.sqrt(math.lengthsq(input.Position - control.SpawnAnchor)) / math.max(input.PatrolRadius, 1f))
@@ -1745,12 +1774,14 @@ namespace Hecton8.AI
                 float returnScore = ScoreThreat(homeDistance01) * math.select(0f, 1f, homeOutOfBounds && !shouldEscape && !satedActive);
                 float scatterScore = math.select(0f, OverrideScoreBias + ScoreThreat(math.max(acousticScore, threatLevel)), scatterActive);
                 float flockingScore = ScoreThreat(math.saturate((float)input.FlockCount / 6f)) * math.select(0f, math.max(0.25f, 1f - escapeScore), isFlocking && input.FlockCount > 1 && !scatterActive && !satedActive && !shouldEscape && !homeOutOfBounds);
+                float curiosityScore = math.max(ScoreThreat(acousticScore), ScoreThreat(threatVisual * 0.5f)) * curiosityWeight * math.select(0f, 1f, !shouldEscape && !satedActive);
                 float satedScore = math.select(0f, OverrideScoreBias + fatigueScore, satedActive);
                 float wanderScore = math.max(
                     MinimumScoreThreshold,
                     ((1f - escapeScore) * 0.45f) +
                     ((1f - math.saturate(threatLevel)) * 0.35f) +
-                    (fatigueScore * 0.2f)) *
+                    (fatigueScore * 0.2f) +
+                    (curiosityScore * 0.15f)) *
                     math.select(1f, 0.15f, satedActive);
 
                 int selectedStateCode = (int)FaunaBrain.AIState.Wander;

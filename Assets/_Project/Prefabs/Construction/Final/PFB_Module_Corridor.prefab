@@ -103,6 +103,7 @@ GameObject:
   - component: {fileID: 6297894015317484069}
   - component: {fileID: 8942004158805481689}
   - component: {fileID: 6964830624448832012}
+  - component: {fileID: 4341808213773969873}
   m_Layer: 0
   m_Name: PFB_Module_Corridor
   m_TagString: Untagged
@@ -217,11 +218,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.BaseModule
   maxIntegrity: 100
   currentIntegrity: 100
+  moduleTemplate: {fileID: 0}
   isFlooded: 0
   drainDuration: 8
+  floodPumpEnergyCost: 65
   passiveRecoveryRate: 0
   passiveDegradationRate: 0.001
   depthDegradationMultiplier: 2
+  failureMode: 0
+  repairWearPerCascade: 12
+  minimumRecoverableIntegrityRatio: 0.45
+  maxRecoverableIntegrity: 100
+  oxygenLeakDrainRate: 10
+  fireSuitDamageRate: 12
+  fireSuitEnergyDrainRate: 6
   interiorTrigger: {fileID: 4812677737396731781}
   worldItemPrefab: {fileID: 0}
   waterVolume: {fileID: 0}
@@ -234,12 +244,38 @@ MonoBehaviour:
   drainClip: {fileID: 0}
   deconstructClip: {fileID: 0}
   oxygenRefillRate: 15
+  breathableReserveCapacity: 120
+  breathableReserve: 120
+  airRecycleRate: 6
+  occupiedAirDrainRate: 9
+  staleAirThreshold: 0.25
+  staleAirMinRefillScale: 0.2
+  staleAirSuitDrainRate: 3
+  co2Capacity: 100
+  co2Level: 0
+  co2GenerationRate: 5
+  co2CriticalThreshold: 75
   fallbackPowerRating: -10
   powerPriority: 50
   _debugHasPower: 1
   _debugIsDraining: 0
   _debugDrainProgress: 0
   _debugTrackedObjectCount: 0
+--- !u!114 &4341808213773969873
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 289323947487979299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efd3fe19f290bf94fb2a171c18221166, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Construction.BaseModuleNavModifier
+  obstacleBoxes:
+  - {fileID: 6297894015317484069}
+  obstacleCapsules: []
 --- !u!1 &511071081319534760
 GameObject:
   m_ObjectHideFlags: 0
@@ -1533,6 +1569,10 @@ PrefabInstance:
     - target: {fileID: 19822582, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
       propertyPath: ShapeModule.m_Scale.z
       value: 0.14
+      objectReference: {fileID: 0}
+    - target: {fileID: 19822582, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
+      propertyPath: ShapeModule.radiusThickness
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 19822582, guid: 472bc216b0f362147943a3cedc36711f, type: 3}
       propertyPath: InitialModule.maxNumParticles

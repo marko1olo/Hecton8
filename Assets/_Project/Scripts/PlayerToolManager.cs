@@ -123,6 +123,7 @@ namespace Hecton8.Gameplay
         private bool _assignedPoolsWarmed;
         private bool _constructionGhostPoolsWarmed;
         private bool _handlingEquippedToolBreak;
+        private bool _registeredToTick;
         private BaseModule _currentInteriorModule;
         private Rigidbody _currentInteriorCarrierBody;
         private bool _suppressInventoryChangedHandling;
@@ -192,7 +193,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveRuntimeContextDependencies();
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+            TryRegisterToTickManager();
             RefreshInputSubscriptions();
             SubscribeModuleStatusEvents();
             RefreshInteriorCarrierCache(true);
@@ -204,7 +205,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            TryUnregisterFromTickManager();
             UnsubscribeFromInputManager();
             UnsubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
@@ -214,6 +215,27 @@ namespace Hecton8.Gameplay
 
             // Деспавним текущий инструмент при отключении менеджера
             DespawnCurrentTool();
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+            _registeredToTick = true;
+        }
+
+        private void TryUnregisterFromTickManager()
+        {
+            if (!_registeredToTick)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            _registeredToTick = false;
         }
 
         private void RefreshInputSubscriptions()

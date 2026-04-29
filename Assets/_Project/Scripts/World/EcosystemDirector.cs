@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
@@ -32,6 +33,13 @@ namespace Hecton8.World
         private const int MinimumSectorCapacity = 16;
         private const int MinimumPredationEventCapacity = 32;
         private const float DefaultHostilityPeakHoldSeconds = 18f;
+        private const float LogicalLodFullSimDistanceMeters = 40f;
+        private const float LogicalLodDataOnlyDistanceMeters = 150f;
+        private const float ThermalSpawnTemperatureThresholdCelsius = 40f;
+        private const float ThermalSpawnDepthThresholdMeters = 2000f;
+        private const float LightFalloffDepthMeters = 2500f;
+        private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
+        private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
 
         [StructLayout(LayoutKind.Sequential)]
         private struct SectorPopulationState
@@ -350,6 +358,8 @@ namespace Hecton8.World
         private float _biomeHostility01;
         private float _starvationAggressionPressure01;
         private int _hostilityTier;
+        private HectonMapMagicVegetationBridge _cachedVegetationBridge;
+        private PersistentWorldRegistry _cachedPersistentWorldRegistry;
 
         /// <summary>
         /// True once the runtime-native state is allocated and registered.
@@ -360,6 +370,92 @@ namespace Hecton8.World
         /// Normalized biome hostility score exposed to UI and pacing systems.
         /// </summary>
         public float BiomeHostility01 => ResolveCombinedHostility01();
+
+        internal FaunaLogicalLodTier ResolveLogicalLodTier(Vector3 observerPosition, Vector3 faunaPosition)
+        {
+            AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
+            AbsoluteUniversePosition faunaAup = AbsoluteUniversePosition.FromRuntimePosition(faunaPosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in faunaAup);
+
+            if (distanceSq <= (LogicalLodFullSimDistanceMeters * LogicalLodFullSimDistanceMeters))
+                return FaunaLogicalLodTier.FullSim;
+
+            if (distanceSq <= (LogicalLodDataOnlyDistanceMeters * LogicalLodDataOnlyDistanceMeters))
+                return FaunaLogicalLodTier.DataOnly;
+
+            return FaunaLogicalLodTier.Hibernating;
+        }
+
+        internal bool TryBuildEnvelope(Vector3 worldPosition, out EcosystemEnvelope envelope)
+        {
+            float depthMeters = 0f;
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            if (mapMagicBridge != null)
+                depthMeters = math.max(0f, mapMagicBridge.WaterSurfaceLevel - worldPosition.y);
+
+            ResolveRuntimeReferences();
+
+            float temperatureCelsius = _cachedVegetationBridge != null
+                ? _cachedVegetationBridge.GetWaterTemperature(worldPosition)
+                : 15f;
+
+            float4 normalizedChannels;
+            if (!ChemicalInfluenceGrid.TrySampleNormalizedChannels(worldPosition, out normalizedChannels))
+                normalizedChannels = float4.zero;
+
+            float lightExposure01 = math.saturate(1f - (depthMeters / math.max(1f, LightFalloffDepthMeters)));
+            envelope = new EcosystemEnvelope(
+                temperatureCelsius,
+                depthMeters,
+                lightExposure01,
+                normalizedChannels.x,
+                normalizedChannels.y,
+                normalizedChannels.z,
+                ResolveCombinedHostility01());
+            return true;
+        }
+
+        internal bool TryResolveSpawnWeightMultiplier(CreatureArchetypeData archetype, Vector3 worldPosition, out float selectionMultiplier)
+        {
+            selectionMultiplier = 1f;
+            if (archetype == null)
+                return true;
+
+            TryBuildEnvelope(worldPosition, out EcosystemEnvelope envelope);
+            if (RequiresThermalEnvelope(archetype) &&
+                (envelope.TemperatureCelsius < ThermalSpawnTemperatureThresholdCelsius ||
+                 envelope.DepthMeters < ThermalSpawnDepthThresholdMeters))
+            {
+                return false;
+            }
+
+            float scentPressure01 = math.saturate(math.max(envelope.BloodScent01, envelope.FearScent01));
+            if (IsSharkLikePredator(archetype))
+            {
+                selectionMultiplier = math.lerp(0.65f, 1.85f, scentPressure01);
+                return selectionMultiplier > 0f;
+            }
+
+            if (archetype.isAggressive || archetype.roleType == CreatureRoleType.Hunter || archetype.roleType == CreatureRoleType.Leviathan)
+            {
+                selectionMultiplier = math.lerp(0.9f, 1.35f, scentPressure01);
+            }
+
+            return selectionMultiplier > 0f;
+        }
+
+        internal bool IsApexTombstoned(uint uniqueInstanceUid)
+        {
+            ResolveRuntimeReferences();
+            return _cachedPersistentWorldRegistry != null && _cachedPersistentWorldRegistry.IsTombstoned(uniqueInstanceUid);
+        }
+
+        internal void RegisterApexPredatorKill(uint uniqueInstanceUid, Vector3 worldPosition, float hostilityDelta)
+        {
+            ResolveRuntimeReferences();
+            _cachedPersistentWorldRegistry?.TryRegisterFaunaTombstone(uniqueInstanceUid);
+            ReportApexPredatorKilled(worldPosition, hostilityDelta);
+        }
 
         internal void CaptureSaveSnapshot()
         {
@@ -621,6 +717,46 @@ namespace Hecton8.World
             starvationHostilityWeight = math.clamp(starvationHostilityWeight, 0f, 1f);
         }
 
+        private void ResolveRuntimeReferences()
+        {
+            _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (_cachedPersistentWorldRegistry == null)
+                _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
+        }
+
+        private static bool RequiresThermalEnvelope(CreatureArchetypeData archetype)
+        {
+            return MatchesAnyToken(archetype.creatureId, ThermalSpawnTokens) ||
+                   MatchesAnyToken(archetype.displayName, ThermalSpawnTokens) ||
+                   MatchesAnyToken(archetype.gameplayPurpose, ThermalSpawnTokens) ||
+                   MatchesAnyToken(archetype.behaviorTreeHint, ThermalSpawnTokens);
+        }
+
+        private static bool IsSharkLikePredator(CreatureArchetypeData archetype)
+        {
+            if (archetype == null)
+                return false;
+
+            return MatchesAnyToken(archetype.creatureId, SharkSpawnTokens) ||
+                   MatchesAnyToken(archetype.displayName, SharkSpawnTokens) ||
+                   (archetype.isAggressive && archetype.roleType == CreatureRoleType.Hunter);
+        }
+
+        private static bool MatchesAnyToken(string value, string[] tokens)
+        {
+            if (string.IsNullOrWhiteSpace(value) || tokens == null || tokens.Length == 0)
+                return false;
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                string token = tokens[i];
+                if (!string.IsNullOrEmpty(token) && value.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+
         private void DecayBiomeHostility()
         {
             if (_biomeHostility01 <= 0f)
@@ -813,7 +949,10 @@ namespace Hecton8.World
 
         private void TryRegisterSlowTickable()
         {
-            if (_registeredSlowTickable)
+            if (_registeredSlowTickable || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);

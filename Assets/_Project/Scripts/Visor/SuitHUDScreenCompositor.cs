@@ -365,6 +365,8 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying || _tickRegistered)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;

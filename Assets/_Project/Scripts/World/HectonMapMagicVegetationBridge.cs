@@ -148,6 +148,10 @@ namespace Hecton8.World
         private HectonIndirectVegetationRenderer underwaterRenderer;
 
         [SerializeField]
+        [Tooltip("Authored flora templates used to stamp harvest/shader descriptors into streamed indirect vegetation instances.")]
+        private FloraDataTemplate[] floraTemplates;
+
+        [SerializeField]
         [Tooltip("Gameplay camera used for frustum culling. If null, resolved from the player hierarchy.")]
         private Camera viewCamera;
 
@@ -1425,6 +1429,7 @@ namespace Hecton8.World
         private GraphicsBuffer _surfaceInstanceDataBuffer;
         private GraphicsBuffer _underwaterInstanceBuffer;
         private GraphicsBuffer _underwaterInstanceDataBuffer;
+        private GraphicsBuffer _predatorFearNodeBuffer;
         private NativeChunkPool _surfaceChunkPool;
         private NativeChunkPool _underwaterChunkPool;
         private PoolBlock[] _surfacePoolFreeBlocks;
@@ -1473,6 +1478,7 @@ namespace Hecton8.World
         public static Bounds GlobalArtificialInteriorBounds { get; private set; }
         public static Vector3 GlobalTotalUniverseOffset { get; private set; }
         internal static HectonMapMagicVegetationBridge ActiveRuntimeInstance => _activeRuntimeInstance;
+        public FloraDataTemplate[] FloraTemplates => floraTemplates;
 
         internal bool TryFillTerrainHeightGridFromNativeCache(
             float originX,
@@ -1724,11 +1730,15 @@ namespace Hecton8.World
         private bool _runtimeTeardownComplete;
         private ArtificialInteriorState _activeArtificialInteriorState;
         private static HectonMapMagicVegetationBridge _activeRuntimeInstance;
+        private FloraDataTemplate.RuntimeDescriptor[] _floraTemplateRuntimeDescriptors = Array.Empty<FloraDataTemplate.RuntimeDescriptor>();
+        private static readonly int _PredatorFearNodeBufferId = Shader.PropertyToID("_HectonPredatorFearNodes");
+        private static readonly int _PredatorFearNodeCountId = Shader.PropertyToID("_HectonPredatorFearNodeCount");
 
         private void Awake()
         {
             _totalUniverseOffset = Vector3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
+            RebuildFloraTemplateRuntimeDescriptors();
             if (_surfaceNativeBufferSource == null)
                 _surfaceNativeBufferSource = new IndirectVegetationNativeBufferSource(this, false); // COLD ALLOC: IndirectVegetationNativeBufferSource[1] - surface native vegetation renderer seam - owner: HectonMapMagicVegetationBridge
 
@@ -1902,6 +1912,36 @@ namespace Hecton8.World
             InitializeChunkPools();
             _runtimeLifecycleActive = true;
             _runtimeTeardownComplete = false;
+        }
+
+        public bool TryGetFloraTemplateRuntimeDescriptor(int templateIndex, out FloraDataTemplate.RuntimeDescriptor descriptor)
+        {
+            if (_floraTemplateRuntimeDescriptors == null ||
+                templateIndex < 0 ||
+                templateIndex >= _floraTemplateRuntimeDescriptors.Length)
+            {
+                descriptor = default;
+                return false;
+            }
+
+            descriptor = _floraTemplateRuntimeDescriptors[templateIndex];
+            return true;
+        }
+
+        private void RebuildFloraTemplateRuntimeDescriptors()
+        {
+            if (floraTemplates == null || floraTemplates.Length == 0)
+            {
+                _floraTemplateRuntimeDescriptors = Array.Empty<FloraDataTemplate.RuntimeDescriptor>();
+                return;
+            }
+
+            // COLD ALLOC: FloraDataTemplate.RuntimeDescriptor[floraTemplates.Length] - immutable flora authoring runtime cache for indirect vegetation stamping - owner: HectonMapMagicVegetationBridge
+            FloraDataTemplate.RuntimeDescriptor[] descriptors = new FloraDataTemplate.RuntimeDescriptor[floraTemplates.Length];
+            for (int i = 0; i < floraTemplates.Length; i++)
+                descriptors[i] = floraTemplates[i] != null ? floraTemplates[i].BuildRuntimeDescriptor() : default;
+
+            _floraTemplateRuntimeDescriptors = descriptors;
         }
 
         private void OnEnable()
@@ -2871,6 +2911,29 @@ namespace Hecton8.World
 
                 _predatorFearNodesSnapshotNative[i] = snapshot;
             }
+
+            UploadPredatorFearShaderPayload(activeCount);
+        }
+
+        private void UploadPredatorFearShaderPayload(int activeCount)
+        {
+            int safeCount = Mathf.Max(1, activeCount);
+            EnsurePredatorFearShaderBuffer(safeCount);
+            if (_predatorFearNodeBuffer == null || !_predatorFearNodesSnapshotNative.IsCreated)
+                return;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_predatorFearNodeBuffer, _predatorFearNodesSnapshotNative, safeCount);
+            Shader.SetGlobalBuffer(_PredatorFearNodeBufferId, _predatorFearNodeBuffer);
+            Shader.SetGlobalInt(_PredatorFearNodeCountId, activeCount);
+        }
+
+        private void EnsurePredatorFearShaderBuffer(int requiredCount)
+        {
+            if (_predatorFearNodeBuffer != null && _predatorFearNodeBuffer.count >= requiredCount)
+                return;
+
+            ReleaseBuffer(ref _predatorFearNodeBuffer);
+            _predatorFearNodeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<PredatorFearNodeSnapshot>(requiredCount); // COLD ALLOC: GraphicsBuffer[requiredCount] - global predator-fear StructuredBuffer for flora stealth dimming - owner: HectonMapMagicVegetationBridge
         }
 
         /// <summary>
@@ -6915,13 +6978,13 @@ namespace Hecton8.World
                     int writeIndex = surfaceOffset;
                     if (useScratchPool)
                     {
-                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffset);
-                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffset);
+                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
                     else
                     {
-                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffset);
-                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffset);
+                        WriteJobRecordsToPool(jobState.GrassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        WriteJobRecordsToPool(jobState.FloatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
                 }
             }
@@ -6936,9 +6999,9 @@ namespace Hecton8.World
                     payload.UnderwaterPoolSet = useScratchPool ? (byte)1 : (byte)0;
                     int writeIndex = underwaterOffset;
                     if (useScratchPool)
-                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffset);
+                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
                     else
-                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffset);
+                        WriteJobRecordsToPool(jobState.KelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffset, floraTemplates, _floraTemplateRuntimeDescriptors);
                 }
             }
 
@@ -6969,7 +7032,9 @@ namespace Hecton8.World
             NativeArray<JobInstanceRecord> source,
             ref NativeChunkPool pool,
             ref int writeIndex,
-            Vector3 universeOffset)
+            Vector3 universeOffset,
+            FloraDataTemplate[] floraTemplates,
+            FloraDataTemplate.RuntimeDescriptor[] floraTemplateRuntimeDescriptors)
         {
             if (!source.IsCreated)
                 return;
@@ -6980,12 +7045,30 @@ namespace Hecton8.World
                 if (record.IsValid == 0)
                     continue;
 
+                ResolveFloraDescriptor(
+                    floraTemplates,
+                    floraTemplateRuntimeDescriptors,
+                    record.Type,
+                    record.SemanticType,
+                    record.BiomeLayer,
+                    record.Variation,
+                    out int floraTemplateIndex,
+                    out FloraDataTemplate.RuntimeDescriptor floraDescriptor);
                 pool.Matrices[writeIndex] = ConvertMatrixToStableUniverseSpace(ToMatrix4x4(record.Matrix), universeOffset);
                 pool.Metadata[writeIndex] = new HectonVegetationInstanceData(
                     (HectonVegetationInstanceType)record.Type,
                     record.HeightScale,
                     record.WidthScale,
-                    record.Variation);
+                    record.Variation,
+                    floraTemplateIndex,
+                    HectonVegetationInstanceData.RuntimeStateIdle,
+                    0f,
+                    floraDescriptor.PulseFrequency,
+                    new Vector4(
+                        floraDescriptor.BioluminescenceColor.x,
+                        floraDescriptor.BioluminescenceColor.y,
+                        floraDescriptor.BioluminescenceColor.z,
+                        floraDescriptor.BioluminescenceColor.w));
                 pool.Types[writeIndex] = record.Type;
                 pool.SemanticTypes[writeIndex] = record.SemanticType;
                 pool.BiomeLayers[writeIndex] = record.BiomeLayer;
@@ -6994,6 +7077,88 @@ namespace Hecton8.World
                 pool.FlowVectors[writeIndex] = new Vector3(record.FlowVector.x, record.FlowVector.y, record.FlowVector.z);
                 writeIndex++;
             }
+        }
+
+        private static void ResolveFloraDescriptor(
+            FloraDataTemplate[] floraTemplates,
+            FloraDataTemplate.RuntimeDescriptor[] floraTemplateRuntimeDescriptors,
+            int type,
+            int semanticType,
+            byte biomeLayer,
+            float variation,
+            out int templateIndex,
+            out FloraDataTemplate.RuntimeDescriptor descriptor)
+        {
+            templateIndex = -1;
+            descriptor = ResolveFallbackFloraDescriptor(type);
+            if (floraTemplates == null || floraTemplateRuntimeDescriptors == null)
+                return;
+
+            HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)type;
+            VegetationSemanticType semantic = (VegetationSemanticType)semanticType;
+            VegetationBiomeLayer biome = (VegetationBiomeLayer)biomeLayer;
+            int candidateCount = 0;
+            for (int i = 0; i < floraTemplates.Length; i++)
+            {
+                FloraDataTemplate template = floraTemplates[i];
+                if (template == null ||
+                    template.VegetationType != vegetationType ||
+                    template.SemanticType != semantic ||
+                    template.BiomeLayer != biome)
+                {
+                    continue;
+                }
+
+                candidateCount++;
+            }
+
+            if (candidateCount <= 0)
+                return;
+
+            int selectedOrdinal = Mathf.Clamp(Mathf.FloorToInt(Mathf.Repeat(variation, 1f) * candidateCount), 0, candidateCount - 1);
+            int currentOrdinal = 0;
+            for (int i = 0; i < floraTemplates.Length; i++)
+            {
+                FloraDataTemplate template = floraTemplates[i];
+                if (template == null ||
+                    template.VegetationType != vegetationType ||
+                    template.SemanticType != semantic ||
+                    template.BiomeLayer != biome)
+                {
+                    continue;
+                }
+
+                if (currentOrdinal == selectedOrdinal)
+                {
+                    templateIndex = i;
+                    if (i >= 0 && i < floraTemplateRuntimeDescriptors.Length)
+                        descriptor = floraTemplateRuntimeDescriptors[i];
+                    return;
+                }
+
+                currentOrdinal++;
+            }
+        }
+
+        private static FloraDataTemplate.RuntimeDescriptor ResolveFallbackFloraDescriptor(int type)
+        {
+            Vector4 color = type switch
+            {
+                (int)HectonVegetationInstanceType.GiantKelp => new Vector4(0.11f, 0.52f, 0.47f, 0.42f),
+                (int)HectonVegetationInstanceType.Sargassum => new Vector4(0.08f, 0.42f, 0.38f, 0.26f),
+                _ => new Vector4(0.10f, 0.48f, 0.34f, 0.22f)
+            };
+            return new FloraDataTemplate.RuntimeDescriptor
+            {
+                StableHashId = 0,
+                LootHashId = 0,
+                VulnerabilityMask = 0u,
+                AudioMaterialId = (uint)FloraDataTemplate.AudioMaterialId.Organic,
+                BioluminescenceColor = new float4(color.x, color.y, color.z, color.w),
+                PulseFrequency = 0.55f,
+                HarvestTemplateStableHashId = 0,
+                Reserved0 = 0u
+            };
         }
 
         private static void CopyChunkSliceToAggregate(
@@ -12836,7 +13001,7 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_isRegistered)
+            if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
 
@@ -13951,6 +14116,7 @@ namespace Hecton8.World
             ReleaseBuffer(ref _surfaceInstanceDataBuffer);
             ReleaseBuffer(ref _underwaterInstanceBuffer);
             ReleaseBuffer(ref _underwaterInstanceDataBuffer);
+            ReleaseBuffer(ref _predatorFearNodeBuffer);
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

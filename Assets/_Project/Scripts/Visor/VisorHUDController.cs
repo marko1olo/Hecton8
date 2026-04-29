@@ -406,6 +406,9 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying || _runtimeTickRegistered)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _runtimeTickRegistered = true;
         }

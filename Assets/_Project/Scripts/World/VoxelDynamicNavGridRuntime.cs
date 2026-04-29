@@ -34,6 +34,8 @@ namespace Hecton8.World
         private static readonly List<int> _routeOpenSetScratch = new List<int>(128);
         // COLD ALLOC: List<int>(128) - reusable portal route reconstruction scratch - owner: VoxelDynamicNavGridRuntime
         private static readonly List<int> _routePathScratch = new List<int>(128);
+        // COLD ALLOC: Dictionary<int,ObstacleRegistration>(64) - registered habitat obstacle collider sources - owner: VoxelDynamicNavGridRuntime
+        private static readonly Dictionary<int, ObstacleRegistration> _registeredObstacles = new Dictionary<int, ObstacleRegistration>(64);
 
         private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;
         private static bool _portalGraphDirty = true;
@@ -131,6 +133,50 @@ namespace Hecton8.World
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast)]
+        internal struct ObstacleStampJob : Unity.Jobs.IJobParallelFor
+        {
+            public NativeArray<byte> Passability;
+            [ReadOnly] public NativeArray<NavObstaclePrimitive> Obstacles;
+            public int3 Dimensions;
+            public float3 Origin;
+            public float CellSize;
+
+            public void Execute(int index)
+            {
+                if (!Passability.IsCreated ||
+                    !Obstacles.IsCreated ||
+                    Obstacles.Length <= 0 ||
+                    index < 0 ||
+                    index >= Passability.Length)
+                {
+                    return;
+                }
+
+                int slice = Dimensions.x * Dimensions.y;
+                int z = index / slice;
+                int y = (index - (z * slice)) / Dimensions.x;
+                int x = index - (z * slice) - (y * Dimensions.x);
+                float3 samplePoint = Origin + new float3(x * CellSize, y * CellSize, z * CellSize);
+
+                for (int obstacleIndex = 0; obstacleIndex < Obstacles.Length; obstacleIndex++)
+                {
+                    NavObstaclePrimitive obstacle = Obstacles[obstacleIndex];
+                    float3 min = obstacle.Center - obstacle.Extents;
+                    float3 max = obstacle.Center + obstacle.Extents;
+                    if (samplePoint.x < min.x || samplePoint.x > max.x ||
+                        samplePoint.y < min.y || samplePoint.y > max.y ||
+                        samplePoint.z < min.z || samplePoint.z > max.z)
+                    {
+                        continue;
+                    }
+
+                    Passability[index] = SolidCell;
+                    return;
+                }
+            }
+        }
+
         private struct DirtyVolumeRequest
         {
             public int VolumeInstanceId;
@@ -152,6 +198,12 @@ namespace Hecton8.World
             public float FScore;
             public int ParentIndex;
             public byte Flags;
+        }
+
+        internal struct NavObstaclePrimitive
+        {
+            public float3 Center;
+            public float3 Extents;
         }
 
         internal struct HybridNavigationSample
@@ -201,6 +253,12 @@ namespace Hecton8.World
                 PortalCount = 0;
                 FaceVisitStamp = 0;
             }
+        }
+
+        private sealed class ObstacleRegistration
+        {
+            public BoxCollider[] Boxes = System.Array.Empty<BoxCollider>();
+            public CapsuleCollider[] Capsules = System.Array.Empty<CapsuleCollider>();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -299,6 +357,65 @@ namespace Hecton8.World
             record.Next = swap;
             RebuildPortals(record);
             _portalGraphDirty = true;
+        }
+
+        internal static void RegisterModuleObstacle(int obstacleId, BoxCollider[] boxes, CapsuleCollider[] capsules)
+        {
+            if (obstacleId == 0)
+                return;
+
+            ObstacleRegistration registration = null;
+            if (!_registeredObstacles.TryGetValue(obstacleId, out registration))
+            {
+                registration = new ObstacleRegistration();
+                _registeredObstacles.Add(obstacleId, registration);
+            }
+
+            registration.Boxes = boxes ?? System.Array.Empty<BoxCollider>();
+            registration.Capsules = capsules ?? System.Array.Empty<CapsuleCollider>();
+            MarkAllVolumesDirty();
+        }
+
+        internal static void UnregisterModuleObstacle(int obstacleId)
+        {
+            if (obstacleId == 0)
+                return;
+
+            if (_registeredObstacles.Remove(obstacleId))
+                MarkAllVolumesDirty();
+        }
+
+        internal static NativeArray<NavObstaclePrimitive> CreateObstacleSnapshot(Allocator allocator)
+        {
+            int obstacleCount = 0;
+            Dictionary<int, ObstacleRegistration>.Enumerator countEnumerator = _registeredObstacles.GetEnumerator();
+            while (countEnumerator.MoveNext())
+            {
+                ObstacleRegistration registration = countEnumerator.Current.Value;
+                if (registration == null)
+                    continue;
+
+                obstacleCount += CountLiveColliders(registration.Boxes);
+                obstacleCount += CountLiveColliders(registration.Capsules);
+            }
+
+            if (obstacleCount <= 0)
+                return default;
+
+            NativeArray<NavObstaclePrimitive> snapshot = new NativeArray<NavObstaclePrimitive>(obstacleCount, allocator, NativeArrayOptions.UninitializedMemory);
+            int writeIndex = 0;
+            Dictionary<int, ObstacleRegistration>.Enumerator writeEnumerator = _registeredObstacles.GetEnumerator();
+            while (writeEnumerator.MoveNext())
+            {
+                ObstacleRegistration registration = writeEnumerator.Current.Value;
+                if (registration == null)
+                    continue;
+
+                WriteColliderBounds(registration.Boxes, ref snapshot, ref writeIndex);
+                WriteColliderBounds(registration.Capsules, ref snapshot, ref writeIndex);
+            }
+
+            return snapshot;
         }
 
         internal static bool TryGetPassabilityPayload(
@@ -560,6 +677,7 @@ namespace Hecton8.World
             _routeNodeScratch.Clear();
             _routeOpenSetScratch.Clear();
             _routePathScratch.Clear();
+            _registeredObstacles.Clear();
             _portalGraphDirty = true;
             if (_dirtyVolumes.IsCreated)
             {
@@ -574,6 +692,17 @@ namespace Hecton8.World
                 return;
 
             _dirtyVolumes = new NativeQueue<DirtyVolumeRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirtyVolumeRequest>[32] - dirty voxel volume rebuild requests - owner: VoxelDynamicNavGridRuntime
+        }
+
+        internal static void MarkAllVolumesDirty()
+        {
+            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                VolumeRecord record = enumerator.Current.Value;
+                if (record != null)
+                    record.IsDirty = true;
+            }
         }
 
         internal static int ResolveClearanceRadiusCells(float cellSize)
@@ -637,6 +766,45 @@ namespace Hecton8.World
                 buffer.Dispose();
 
             buffer = new NativeArray<byte>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[pointCount] - double-buffered voxel passability snapshot - owner: VoxelDynamicNavGridRuntime
+        }
+
+        private static int CountLiveColliders<T>(T[] colliders)
+            where T : Collider
+        {
+            if (colliders == null || colliders.Length <= 0)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                T collider = colliders[i];
+                if (collider != null && collider.enabled && collider.gameObject.activeInHierarchy)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static void WriteColliderBounds<T>(T[] colliders, ref NativeArray<NavObstaclePrimitive> snapshot, ref int writeIndex)
+            where T : Collider
+        {
+            if (colliders == null || colliders.Length <= 0)
+                return;
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                T collider = colliders[i];
+                if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy)
+                    continue;
+
+                Bounds bounds = collider.bounds;
+                snapshot[writeIndex] = new NavObstaclePrimitive
+                {
+                    Center = bounds.center,
+                    Extents = bounds.extents
+                };
+                writeIndex++;
+            }
         }
 
         private static bool ContainsPoint(VolumeRecord record, float3 worldPosition)

@@ -2695,6 +2695,9 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterToDispatchers()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);

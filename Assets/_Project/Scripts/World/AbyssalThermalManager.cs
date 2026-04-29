@@ -437,6 +437,7 @@ namespace Hecton8.World
         private Bounds _smokeBounds;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredThermodynamicsRuntime;
         private bool _cutterBeamActive;
         private bool _hasSmokeData;
         private int _kernelIndex = -1;
@@ -2311,7 +2312,14 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            GlobalRegistry.RegisterThermodynamicsRuntime(this);
+            if (!_registeredThermodynamicsRuntime && Application.isPlaying)
+            {
+                GlobalRegistry.RegisterThermodynamicsRuntime(this);
+                _registeredThermodynamicsRuntime = true;
+            }
+
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             if (!_registeredTick)
             {
@@ -2328,7 +2336,11 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
-            GlobalRegistry.UnregisterThermodynamicsRuntime(this);
+            if (_registeredThermodynamicsRuntime)
+            {
+                GlobalRegistry.UnregisterThermodynamicsRuntime(this);
+                _registeredThermodynamicsRuntime = false;
+            }
 
             if (_registeredTick)
             {

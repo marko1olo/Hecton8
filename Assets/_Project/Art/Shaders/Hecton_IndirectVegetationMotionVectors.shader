@@ -51,8 +51,21 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float4 velocitySpeed;
             };
 
+            struct HectonVegetationInstanceGpuData
+            {
+                float Type;
+                float HeightScale;
+                float WidthScale;
+                float Variation;
+                float TemplateIndex;
+                float RuntimeState;
+                float RuntimeFlags;
+                float PulseFrequency;
+                float4 BioluminescenceColor;
+            };
+
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
-            StructuredBuffer<float4> _HectonVegetationInstanceData;
+            StructuredBuffer<HectonVegetationInstanceGpuData> _HectonVegetationInstanceData;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
             StructuredBuffer<float2> _MarineSnowFlowField;
             float4 _ChunkWorldOffset;
@@ -386,16 +399,23 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return saturate((timeValue - max(0.0, encodedWidthScale)) / 0.85);
             }
 
-            float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float2 uv, float4x4 instanceMatrix, float4 instanceData, float timeValue, float3 cameraPositionWS)
+            float2 ResolveStateBlendWeights(float runtimeState)
+            {
+                float agitated = saturate(1.0 - abs(runtimeState - 1.0));
+                float dying = saturate(1.0 - abs(runtimeState - 2.0));
+                return float2(agitated, dying);
+            }
+
+            float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float2 uv, float4x4 instanceMatrix, HectonVegetationInstanceGpuData instanceData, float timeValue, float3 cameraPositionWS)
             {
                 float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)) + _GlobalFloatingOffset.xyz;
-                float instanceType = clamp(round(instanceData.x), 0.0, 2.0);
-                float encodedHeightScale = instanceData.y;
-                float encodedWidthScale = instanceData.z;
+                float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
+                float encodedHeightScale = instanceData.HeightScale;
+                float encodedWidthScale = instanceData.WidthScale;
                 float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
                 float heightScale = saturate(abs(encodedHeightScale));
                 float widthScale = entropyProgress > 0.0001 ? 1.0 : max(0.2, encodedWidthScale);
-                float variation = frac(instanceData.w);
+                float variation = frac(instanceData.Variation);
                 float heightMask = saturate(uv.y);
                 float bendMask = heightMask * heightMask;
                 float curvatureMask = heightMask;
@@ -439,6 +459,13 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 animatedPositionWS += ResolveWakeTrailOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType);
                 animatedPositionWS += ResolveInteractionOffset(animatedPositionWS, baseNormalWS, bendMask, historyDelta);
                 animatedPositionWS += ResolvePlayerBendOffset(animatedPositionWS, baseNormalWS, bendMask, instanceType) * 1.1;
+                float2 stateWeights = ResolveStateBlendWeights(instanceData.RuntimeState);
+                if (stateWeights.x > 0.0001 || stateWeights.y > 0.0001)
+                {
+                    float statePhase = sin(timeValue * (1.35 + max(instanceData.PulseFrequency, 0.05)) + instanceNoise * 9.0 + heightMask * 3.2);
+                    animatedPositionWS.xz += ResolvePlanarCurrentDirection() * (statePhase * bendMask * 0.16 * stateWeights.x);
+                    animatedPositionWS.y -= instanceHeight * bendMask * (0.06 * stateWeights.x + 0.18 * stateWeights.y);
+                }
 
                 if (_HectonLodPassMode >= 0.5)
                 {
@@ -465,13 +492,13 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     sourceInstanceIndex = _HectonVisibleInstanceIndices[GetIndirectInstanceID(instanceID)];
                 #endif
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
-                float4 instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
+                HectonVegetationInstanceGpuData instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
 
                 float3 currentPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, _Time.y, _WorldSpaceCameraPos);
                 float previousTime = _Time.y - unity_DeltaTime.x;
                 float3 previousPositionWS = AnimatePositionWS(input.positionOS.xyz, input.normalOS, input.uv, instanceMatrix, instanceData, previousTime, _HectonPreviousCameraPosition);
                 output.positionWS = currentPositionWS;
-                output.vegetationData = float2(clamp(round(instanceData.x), 0.0, 2.0), saturate(input.uv.y));
+                output.vegetationData = float2(clamp(round(instanceData.Type), 0.0, 2.0), saturate(input.uv.y));
 
                 output.positionCS = TransformWorldToHClip(currentPositionWS);
                 output.positionCSNoJitter = mul(_NonJitteredViewProjMatrix, float4(currentPositionWS, 1.0));

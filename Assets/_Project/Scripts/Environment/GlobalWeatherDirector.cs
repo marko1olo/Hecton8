@@ -389,7 +389,10 @@ namespace Hecton8.Environment
 
         private void TryRegisterTickManager()
         {
-            if (_registeredToTickManager)
+            if (_registeredToTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

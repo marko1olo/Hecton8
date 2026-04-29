@@ -674,6 +674,9 @@ namespace Hecton8.Audio
 
         private void TryRegisterTickHandlers()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

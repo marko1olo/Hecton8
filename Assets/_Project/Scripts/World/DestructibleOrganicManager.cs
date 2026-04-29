@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
+using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Scavenging;
 using Hecton8.SaveSystem;
@@ -34,7 +36,7 @@ namespace Hecton8.World
         private const float OrganicDecompositionDurationSeconds = 10f * 60f;
         private const float MinimumDecomposedHeightScale = 0.05f;
         private const float MinimumDecomposedWidthScale = 0.12f;
-        private const byte FloraRuntimeFlagHasParasite = 1 << 0;
+        private const byte FloraRuntimeFlagHasParasite = (byte)HectonVegetationRuntimeFlags.Parasite;
 
         [Header("Runtime Wiring")]
         [SerializeField]
@@ -96,6 +98,9 @@ namespace Hecton8.World
         private NativeHashMap<uint, float2> _baseScaleByInstanceUid;
         private NativeHashMap<uint, byte> _runtimeFlagsByInstanceUid;
         private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
+        private NativeList<PersistentWorldDeltaRecord> _floraStateOverrideScratch;
+        private NativeHashMap<uint, Unity.Mathematics.half> _persistedHealth01ByInstanceUid;
+        private NativeHashMap<uint, Unity.Mathematics.half> _persistedHeightScale01ByInstanceUid;
         private NativeList<DestroyedOrganicEvent> _pendingYieldEvents;
         private NativeArray<DestroyedOrganicEvent> _yieldJobInput;
         private DropBuffer _dropBuffer;
@@ -123,6 +128,8 @@ namespace Hecton8.World
         private NativeArray<int> _underwaterSemanticTypes;
 
         private int[] _templateIndexByMaterialClass;
+        private int[] _harvestDescriptorIndexByFloraTemplateIndex = Array.Empty<int>();
+        private HarvestableTemplate[] _descriptorHarvestTemplates = Array.Empty<HarvestableTemplate>();
 
         /// <summary>Currently enabled runtime organic entropy owner.</summary>
         public static DestructibleOrganicManager ActiveRuntimeInstance => _activeRuntimeInstance;
@@ -161,6 +168,12 @@ namespace Hecton8.World
             _runtimeFlagsByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora tombstone restore scratch - owner: DestructibleOrganicManager
             _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[4096] - partial flora-state restore scratch - owner: DestructibleOrganicManager
+            _floraStateOverrideScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,half>[4096] - persisted normalized flora health overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _persistedHealth01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,half>[4096] - persisted normalized flora height overrides keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _persistedHeightScale01ByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeList<DestroyedOrganicEvent>[128] - pending entropy yield event queue - owner: DestructibleOrganicManager
             _pendingYieldEvents = new NativeList<DestroyedOrganicEvent>(DefaultPendingYieldCapacity, Allocator.Persistent);
             _dropBuffer = new DropBuffer(DefaultDropBufferCapacity, Allocator.Persistent);
@@ -173,6 +186,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_tickRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -186,6 +202,8 @@ namespace Hecton8.World
             }
 
             SyncDestroyedFloraFromPersistence();
+            SyncFloraStateOverridesFromPersistence();
+            BuildFloraTemplateHarvestMap();
             RefreshActiveCachesIfNeeded(force: true);
         }
 
@@ -233,6 +251,12 @@ namespace Hecton8.World
             if (_destroyedByInstanceUid.IsCreated)
                 _destroyedByInstanceUid.Dispose();
 
+            if (_persistedHealth01ByInstanceUid.IsCreated)
+                _persistedHealth01ByInstanceUid.Dispose();
+
+            if (_persistedHeightScale01ByInstanceUid.IsCreated)
+                _persistedHeightScale01ByInstanceUid.Dispose();
+
             if (_pendingWiltEndTimeByInstanceUid.IsCreated)
                 _pendingWiltEndTimeByInstanceUid.Dispose();
 
@@ -256,6 +280,9 @@ namespace Hecton8.World
 
             if (_destroyedFloraScratch.IsCreated)
                 _destroyedFloraScratch.Dispose();
+
+            if (_floraStateOverrideScratch.IsCreated)
+                _floraStateOverrideScratch.Dispose();
 
             if (_pendingYieldEvents.IsCreated)
                 _pendingYieldEvents.Dispose();
@@ -282,6 +309,7 @@ namespace Hecton8.World
         public void SlowTick()
         {
             SyncDestroyedFloraFromPersistence();
+            SyncFloraStateOverridesFromPersistence();
             RefreshActiveCachesIfNeeded(force: true);
         }
 
@@ -293,7 +321,8 @@ namespace Hecton8.World
             Vector3 hitNormal,
             Vector3 direction,
             float deliveredDamage,
-            float normalizedPower)
+            float normalizedPower,
+            uint toolCapabilityMask)
         {
             if (deliveredDamage <= 0f || vegetationBridge == null || _templateDescriptors.Length <= 0)
                 return false;
@@ -302,6 +331,7 @@ namespace Hecton8.World
             if (!TryResolveNearestHarvestTarget(
                 hitPoint,
                 Mathf.Max(hitSearchRadius, interactionBurstRadius),
+                toolCapabilityMask,
                 out bool underwater,
                 out int activeIndex,
                 out uint instanceUid,
@@ -316,6 +346,7 @@ namespace Hecton8.World
             if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid))
                 return false;
 
+            float baseHealth = Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth);
             float toolResistance = math.max(0.01f, _templateDescriptors[templateIndex].ToolResistance);
             float nextHealth = Mathf.Max(0f, GetLaneHealth(underwater, activeIndex) - (deliveredDamage / toolResistance));
             SetLaneHealth(underwater, activeIndex, nextHealth);
@@ -323,9 +354,12 @@ namespace Hecton8.World
             _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)nextHealth);
 
             PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
-            ApplyDamageVisualState(instanceUid, underwater, activeIndex, _templateDescriptors[templateIndex].BaseHealth, nextHealth, Time.time);
+            ApplyDamageVisualState(instanceUid, underwater, activeIndex, baseHealth, nextHealth, Time.time);
             if (nextHealth > 0.0001f)
+            {
+                PersistFloraStateOverride(instanceUid, templateIndex, instancePosition, underwater, activeIndex, baseHealth, nextHealth);
                 return true;
+            }
 
             DestroyResolvedInstance(
                 underwater,
@@ -388,6 +422,7 @@ namespace Hecton8.World
                 math.max(1, totalLootEntries),
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: LootRuntimeEntry[totalLootEntries] - flattened harvest loot runtime table - owner: DestructibleOrganicManager
+            _descriptorHarvestTemplates = new HarvestableTemplate[math.max(1, validTemplateCount)]; // COLD ALLOC: HarvestableTemplate[templateCount] - descriptor-to-authoring lookup for flora template harvest routing - owner: DestructibleOrganicManager
 
             if (harvestTemplates == null)
                 return;
@@ -414,7 +449,11 @@ namespace Hecton8.World
                     }
 
                     if (descriptorWriteIndex < _templateDescriptors.Length)
-                        _templateDescriptors[descriptorWriteIndex++] = template.BuildRuntimeDescriptor(lootStartIndex);
+                    {
+                        _templateDescriptors[descriptorWriteIndex] = template.BuildRuntimeDescriptor(lootStartIndex);
+                        _descriptorHarvestTemplates[descriptorWriteIndex] = template;
+                        descriptorWriteIndex++;
+                    }
 
                     int materialIndex = (int)template.TemplateMaterialClass;
                     if ((uint)materialIndex < (uint)_templateIndexByMaterialClass.Length)
@@ -426,6 +465,45 @@ namespace Hecton8.World
                 if (lootScratch.IsCreated)
                     lootScratch.Dispose();
             }
+
+            BuildFloraTemplateHarvestMap();
+        }
+
+        private void BuildFloraTemplateHarvestMap()
+        {
+            if (vegetationBridge == null)
+                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
+
+            FloraDataTemplate[] floraTemplateAssets = vegetationBridge != null ? vegetationBridge.FloraTemplates : null;
+            if (floraTemplateAssets == null || floraTemplateAssets.Length == 0)
+            {
+                _harvestDescriptorIndexByFloraTemplateIndex = Array.Empty<int>();
+                return;
+            }
+
+            // COLD ALLOC: int[floraTemplateAssets.Length] - flora-template to harvest-descriptor lookup for instance-specific loot routing - owner: DestructibleOrganicManager
+            int[] mapping = new int[floraTemplateAssets.Length];
+            for (int i = 0; i < mapping.Length; i++)
+                mapping[i] = -1;
+
+            for (int i = 0; i < floraTemplateAssets.Length; i++)
+            {
+                FloraDataTemplate floraTemplate = floraTemplateAssets[i];
+                HarvestableTemplate harvestTemplate = floraTemplate != null ? floraTemplate.HarvestTemplate : null;
+                if (harvestTemplate == null || _descriptorHarvestTemplates == null)
+                    continue;
+
+                for (int descriptorIndex = 0; descriptorIndex < _descriptorHarvestTemplates.Length; descriptorIndex++)
+                {
+                    if (_descriptorHarvestTemplates[descriptorIndex] != harvestTemplate)
+                        continue;
+
+                    mapping[i] = descriptorIndex;
+                    break;
+                }
+            }
+
+            _harvestDescriptorIndexByFloraTemplateIndex = mapping;
         }
 
         private void BuildYieldMaterialLut()
@@ -550,22 +628,28 @@ namespace Hecton8.World
             for (int i = 0; i < count; i++)
             {
                 uint instanceUid = ComputeStableInstanceUid(matrices[i], metadata[i], types[i], semanticTypes[i]);
-                HarvestableTemplate.MaterialClass materialClass = ResolveMaterialClass(types[i], semanticTypes[i]);
+                HarvestableTemplate.MaterialClass fallbackMaterialClass = ResolveMaterialClass(types[i], semanticTypes[i]);
+                int templateIndex = ResolveTemplateIndex(metadata[i], fallbackMaterialClass);
+                HarvestableTemplate.MaterialClass materialClass = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
+                    ? (HarvestableTemplate.MaterialClass)_templateDescriptors[templateIndex].MaterialClassId
+                    : fallbackMaterialClass;
                 instanceUids[i] = instanceUid;
                 materialClasses[i] = (byte)materialClass;
                 CacheBaseScale(instanceUid, metadata[i]);
                 byte runtimeFlags = ResolveRuntimeFlags(instanceUid, materialClass, semanticTypes[i]);
                 ApplyRuntimeFlags(ref metadata, i, runtimeFlags);
-
-                int templateIndex = ResolveTemplateIndex(materialClass);
+                SetRuntimeState(ref metadata, i, HectonVegetationInstanceData.RuntimeStateIdle);
                 float defaultHealth = templateIndex >= 0 ? _templateDescriptors[templateIndex].BaseHealth : 0f;
                 float resolvedHealth = defaultHealth;
+                bool hasPersistedFloraState = TryResolvePersistedFloraState(instanceUid, out float persistedHealth01, out float persistedHeightScale01);
                 bool isDestroyed = _destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid);
                 float regrowthProgress = 0f;
                 bool isRegrowing = _regrowthProgressByInstanceUid.IsCreated &&
                                    _regrowthProgressByInstanceUid.TryGetValue(instanceUid, out regrowthProgress);
                 if (_healthByInstanceUid.IsCreated && _healthByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half savedHealth))
                     resolvedHealth = math.max(0f, (float)savedHealth);
+                else if (hasPersistedFloraState && templateIndex >= 0)
+                    resolvedHealth = Mathf.Max(0f, defaultHealth * Mathf.Clamp01(persistedHealth01));
 
                 if (_healthByInstanceUid.IsCreated)
                 {
@@ -592,7 +676,10 @@ namespace Hecton8.World
                 {
                     float damage01 = ResolveDamageProgress(defaultHealth, resolvedHealth);
                     UpdateDamageProgressCache(instanceUid, damage01);
-                    ApplyDamageMetadata(ref metadata, i, damage01, currentTime);
+                    float normalizedHeightScale = hasPersistedFloraState
+                        ? Mathf.Clamp01(persistedHeightScale01)
+                        : ResolveNormalizedHeightScale(defaultHealth, resolvedHealth);
+                    ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, normalizedHeightScale, damage01, currentTime);
                 }
                 else if (_damageVisualProgressByInstanceUid.IsCreated)
                 {
@@ -642,6 +729,39 @@ namespace Hecton8.World
                 PrimeDecompositionState(record.InstanceUid, Time.time - OrganicDecompositionDurationSeconds);
                 _healthByInstanceUid.Remove(record.InstanceUid);
                 _healthByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)0f);
+            }
+        }
+
+        private void SyncFloraStateOverridesFromPersistence()
+        {
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null ||
+                !_floraStateOverrideScratch.IsCreated ||
+                !_persistedHealth01ByInstanceUid.IsCreated ||
+                !_persistedHeightScale01ByInstanceUid.IsCreated)
+            {
+                return;
+            }
+
+            _floraStateOverrideScratch.Clear();
+            _persistedHealth01ByInstanceUid.Clear();
+            _persistedHeightScale01ByInstanceUid.Clear();
+            registry.CopyFloraStateOverrideDeltas(_floraStateOverrideScratch);
+            for (int i = 0; i < _floraStateOverrideScratch.Length; i++)
+            {
+                PersistentWorldDeltaRecord record = _floraStateOverrideScratch[i];
+                if (record.InstanceUid == 0u)
+                    continue;
+
+                if ((_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(record.InstanceUid)) ||
+                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(record.InstanceUid)))
+                {
+                    continue;
+                }
+
+                PersistentWorldRegistry.UnpackFloraStateOverride(record.Quantity, out float persistedHealth01, out float persistedHeightScale01);
+                _persistedHealth01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)Mathf.Clamp01(persistedHealth01));
+                _persistedHeightScale01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)Mathf.Clamp01(persistedHeightScale01));
             }
         }
 
@@ -717,6 +837,7 @@ namespace Hecton8.World
         private bool TryResolveNearestHarvestTarget(
             Vector3 hitPoint,
             float searchRadius,
+            uint toolCapabilityMask,
             out bool underwater,
             out int activeIndex,
             out uint instanceUid,
@@ -737,6 +858,7 @@ namespace Hecton8.World
             if (TryResolveNearestHarvestTargetInLane(
                 hitPoint,
                 searchRadius,
+                toolCapabilityMask,
                 true,
                 ref bestDistanceSq,
                 ref activeIndex,
@@ -758,6 +880,7 @@ namespace Hecton8.World
             if (TryResolveNearestHarvestTargetInLane(
                 hitPoint,
                 searchRadius,
+                toolCapabilityMask,
                 false,
                 ref bestDistanceSq,
                 ref surfaceIndex,
@@ -782,6 +905,7 @@ namespace Hecton8.World
         private bool TryResolveNearestHarvestTargetInLane(
             Vector3 hitPoint,
             float searchRadius,
+            uint toolCapabilityMask,
             bool underwater,
             ref float bestDistanceSq,
             ref int bestIndex,
@@ -809,13 +933,17 @@ namespace Hecton8.World
                 if (instanceUid == 0u || (float)health[i] <= 0.0001f)
                     continue;
 
+                HectonVegetationInstanceData instanceMetadata = metadata[i];
                 HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
-                int templateIndex = ResolveTemplateIndex(materialClass);
+                int templateIndex = ResolveTemplateIndex(instanceMetadata, materialClass);
                 if (materialClass == HarvestableTemplate.MaterialClass.None || templateIndex < 0)
                     continue;
 
+                if (!IsToolCompatible(instanceMetadata, toolCapabilityMask))
+                    continue;
+
                 Vector3 rootPosition = ExtractTranslation(matrices[i]);
-                float distanceSq = ResolveHarvestDistanceSq(hitPoint, rootPosition, metadata[i], types[i], searchRadiusSq, kelpHeightTolerance);
+                float distanceSq = ResolveHarvestDistanceSq(hitPoint, rootPosition, instanceMetadata, types[i], searchRadiusSq, kelpHeightTolerance);
                 if (distanceSq > searchRadiusSq || distanceSq >= bestDistanceSq)
                     continue;
 
@@ -874,6 +1002,10 @@ namespace Hecton8.World
                 1f);
 
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry != null)
+                registry.TryClearFloraStateOverride(instanceUid);
+
+            ClearPersistedFloraStateOverride(instanceUid);
             if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
                 registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
         }
@@ -959,6 +1091,33 @@ namespace Hecton8.World
             return _templateIndexByMaterialClass[materialIndex];
         }
 
+        private int ResolveTemplateIndex(HectonVegetationInstanceData metadata, HarvestableTemplate.MaterialClass fallbackMaterialClass)
+        {
+            int floraTemplateIndex = Mathf.RoundToInt(metadata.TemplateIndex);
+            if (_harvestDescriptorIndexByFloraTemplateIndex != null &&
+                floraTemplateIndex >= 0 &&
+                floraTemplateIndex < _harvestDescriptorIndexByFloraTemplateIndex.Length)
+            {
+                int mappedDescriptorIndex = _harvestDescriptorIndexByFloraTemplateIndex[floraTemplateIndex];
+                if (mappedDescriptorIndex >= 0)
+                    return mappedDescriptorIndex;
+            }
+
+            return ResolveTemplateIndex(fallbackMaterialClass);
+        }
+
+        private bool IsToolCompatible(HectonVegetationInstanceData metadata, uint toolCapabilityMask)
+        {
+            if (toolCapabilityMask == 0u || vegetationBridge == null)
+                return true;
+
+            int floraTemplateIndex = Mathf.RoundToInt(metadata.TemplateIndex);
+            if (!vegetationBridge.TryGetFloraTemplateRuntimeDescriptor(floraTemplateIndex, out FloraDataTemplate.RuntimeDescriptor descriptor))
+                return true;
+
+            return descriptor.VulnerabilityMask == 0u || (descriptor.VulnerabilityMask & toolCapabilityMask) != 0u;
+        }
+
         private void CacheBaseScale(uint instanceUid, HectonVegetationInstanceData metadata)
         {
             if (!_baseScaleByInstanceUid.IsCreated || instanceUid == 0u || _baseScaleByInstanceUid.ContainsKey(instanceUid))
@@ -999,8 +1158,18 @@ namespace Hecton8.World
                 return;
 
             HectonVegetationInstanceData flaggedMetadata = metadata[activeIndex];
-            flaggedMetadata.Variation = ResolveFractionalVariation(flaggedMetadata.Variation) + runtimeFlags;
+            flaggedMetadata.RuntimeFlags = runtimeFlags;
             metadata[activeIndex] = flaggedMetadata;
+        }
+
+        private static void SetRuntimeState(ref NativeArray<HectonVegetationInstanceData> metadata, int activeIndex, float runtimeState)
+        {
+            if (!metadata.IsCreated || activeIndex < 0 || activeIndex >= metadata.Length)
+                return;
+
+            HectonVegetationInstanceData stateMetadata = metadata[activeIndex];
+            stateMetadata.RuntimeState = runtimeState;
+            metadata[activeIndex] = stateMetadata;
         }
 
         private void PrimeDecompositionState(uint instanceUid, float decompositionStartTime)
@@ -1057,7 +1226,8 @@ namespace Hecton8.World
             if (damage01 <= 0.0001f)
                 return;
 
-            ApplyDamageToLaneInstance(underwater, activeIndex, damage01, currentTime);
+            float normalizedHeightScale = ResolveNormalizedHeightScale(baseHealth, currentHealth);
+            ApplyDamageToLaneInstance(underwater, activeIndex, instanceUid, damage01, normalizedHeightScale, currentTime);
         }
 
         private void UpdateDamageProgressCache(uint instanceUid, float damage01)
@@ -1074,6 +1244,119 @@ namespace Hecton8.World
         {
             float normalizedHealth = currentHealth / math.max(0.0001f, baseHealth);
             return math.saturate((0.5f - normalizedHealth) * 2f);
+        }
+
+        private static float ResolveNormalizedHeightScale(float baseHealth, float currentHealth)
+        {
+            return math.max(MinimumDecomposedHeightScale, currentHealth / math.max(0.0001f, baseHealth));
+        }
+
+        private bool TryResolvePersistedFloraState(uint instanceUid, out float normalizedHealth, out float normalizedHeightScale)
+        {
+            normalizedHealth = 1f;
+            normalizedHeightScale = 1f;
+            if (!_persistedHealth01ByInstanceUid.IsCreated || !_persistedHeightScale01ByInstanceUid.IsCreated || instanceUid == 0u)
+                return false;
+
+            bool hasHealth = _persistedHealth01ByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half persistedHealth);
+            bool hasHeight = _persistedHeightScale01ByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half persistedHeight);
+            if (!hasHealth || !hasHeight)
+                return false;
+
+            normalizedHealth = Mathf.Clamp01((float)persistedHealth);
+            normalizedHeightScale = Mathf.Clamp01((float)persistedHeight);
+            return true;
+        }
+
+        private float ResolvePersistedNormalizedHeightScale(uint instanceUid)
+        {
+            if (!_persistedHeightScale01ByInstanceUid.IsCreated ||
+                instanceUid == 0u ||
+                !_persistedHeightScale01ByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half persistedHeight))
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01((float)persistedHeight);
+        }
+
+        private float ResolveRuntimeNormalizedHeightScale(uint instanceUid, HectonVegetationInstanceData metadata)
+        {
+            if (!_baseScaleByInstanceUid.IsCreated ||
+                instanceUid == 0u ||
+                !_baseScaleByInstanceUid.TryGetValue(instanceUid, out float2 baseScale))
+            {
+                return Mathf.Clamp01(Mathf.Abs(metadata.HeightScale));
+            }
+
+            return Mathf.Clamp01(Mathf.Abs(metadata.HeightScale) / math.max(0.0001f, baseScale.x));
+        }
+
+        private void ClearPersistedFloraStateOverride(uint instanceUid)
+        {
+            if (_persistedHealth01ByInstanceUid.IsCreated)
+                _persistedHealth01ByInstanceUid.Remove(instanceUid);
+
+            if (_persistedHeightScale01ByInstanceUid.IsCreated)
+                _persistedHeightScale01ByInstanceUid.Remove(instanceUid);
+        }
+
+        private void PersistFloraStateOverride(
+            uint instanceUid,
+            int templateIndex,
+            Vector3 instancePosition,
+            bool underwater,
+            int activeIndex,
+            float baseHealth,
+            float currentHealth)
+        {
+            if (instanceUid == 0u || templateIndex < 0 || templateIndex >= _templateDescriptors.Length)
+                return;
+
+            float normalizedHealth = Mathf.Clamp01(currentHealth / math.max(0.0001f, baseHealth));
+            float normalizedHeightScale = ResolveCurrentNormalizedHeightScale(underwater, activeIndex, instanceUid, normalizedHealth);
+            if (normalizedHealth >= 0.9999f && normalizedHeightScale >= 0.9999f)
+            {
+                PersistentWorldRegistry.Instance?.TryClearFloraStateOverride(instanceUid);
+                ClearPersistedFloraStateOverride(instanceUid);
+                return;
+            }
+
+            if (_persistedHealth01ByInstanceUid.IsCreated)
+            {
+                _persistedHealth01ByInstanceUid.Remove(instanceUid);
+                _persistedHealth01ByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)normalizedHealth);
+            }
+
+            if (_persistedHeightScale01ByInstanceUid.IsCreated)
+            {
+                _persistedHeightScale01ByInstanceUid.Remove(instanceUid);
+                _persistedHeightScale01ByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)normalizedHeightScale);
+            }
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return;
+
+            registry.TryRegisterFloraStateOverride(
+                (ulong)(uint)_templateDescriptors[templateIndex].StableHashId,
+                instanceUid,
+                instancePosition,
+                normalizedHealth,
+                normalizedHeightScale);
+        }
+
+        private float ResolveCurrentNormalizedHeightScale(
+            bool underwater,
+            int activeIndex,
+            uint instanceUid,
+            float fallbackNormalizedHeightScale)
+        {
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            if (!metadata.IsCreated || activeIndex < 0 || activeIndex >= metadata.Length)
+                return Mathf.Clamp01(fallbackNormalizedHeightScale);
+
+            return ResolveRuntimeNormalizedHeightScale(instanceUid, metadata[activeIndex]);
         }
 
         private float GetLaneHealth(bool underwater, int activeIndex)
@@ -1108,12 +1391,18 @@ namespace Hecton8.World
                 ApplyWiltMetadata(ref _surfaceMetadata, activeIndex, wiltStartTime);
         }
 
-        private void ApplyDamageToLaneInstance(bool underwater, int activeIndex, float damage01, float currentTime)
+        private void ApplyDamageToLaneInstance(
+            bool underwater,
+            int activeIndex,
+            uint instanceUid,
+            float damage01,
+            float normalizedHeightScale,
+            float currentTime)
         {
             if (underwater)
-                ApplyDamageMetadata(ref _underwaterMetadata, activeIndex, damage01, currentTime);
+                ApplyPersistedDamageMetadata(ref _underwaterMetadata, activeIndex, instanceUid, normalizedHeightScale, damage01, currentTime);
             else
-                ApplyDamageMetadata(ref _surfaceMetadata, activeIndex, damage01, currentTime);
+                ApplyPersistedDamageMetadata(ref _surfaceMetadata, activeIndex, instanceUid, normalizedHeightScale, damage01, currentTime);
         }
 
         private void UpdateRegrowthVisuals()
@@ -1204,7 +1493,11 @@ namespace Hecton8.World
                     continue;
                 }
 
-                ApplyDamageMetadata(ref metadata, i, damage01, currentTime);
+                float normalizedHeightScale = ResolvePersistedNormalizedHeightScale(instanceUid);
+                if (normalizedHeightScale <= 0.0001f)
+                    normalizedHeightScale = ResolveRuntimeNormalizedHeightScale(instanceUid, metadata[i]);
+
+                ApplyPersistedDamageMetadata(ref metadata, i, instanceUid, normalizedHeightScale, damage01, currentTime);
             }
         }
 
@@ -1260,6 +1553,8 @@ namespace Hecton8.World
             hiddenMetadata.Type = 0f;
             hiddenMetadata.HeightScale = 0f;
             hiddenMetadata.WidthScale = 0f;
+            hiddenMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateIdle;
+            hiddenMetadata.RuntimeFlags = 0f;
             metadata[activeIndex] = hiddenMetadata;
         }
 
@@ -1274,6 +1569,7 @@ namespace Hecton8.World
             HectonVegetationInstanceData wiltMetadata = metadata[activeIndex];
             wiltMetadata.HeightScale = -Mathf.Max(0.05f, Mathf.Abs(wiltMetadata.HeightScale));
             wiltMetadata.WidthScale = Mathf.Max(0.001f, wiltStartTime);
+            wiltMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateDying;
             metadata[activeIndex] = wiltMetadata;
         }
 
@@ -1297,6 +1593,7 @@ namespace Hecton8.World
             HectonVegetationInstanceData decompositionMetadata = metadata[activeIndex];
             decompositionMetadata.HeightScale = -Mathf.Lerp(baseScale.x, MinimumDecomposedHeightScale, smoothEntropy);
             decompositionMetadata.WidthScale = -Mathf.Max(0.001f, decompositionStartTime);
+            decompositionMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateDying;
             metadata[activeIndex] = decompositionMetadata;
         }
 
@@ -1312,7 +1609,34 @@ namespace Hecton8.World
             HectonVegetationInstanceData damageMetadata = metadata[activeIndex];
             damageMetadata.HeightScale = -Mathf.Max(0.05f, Mathf.Abs(damageMetadata.HeightScale));
             damageMetadata.WidthScale = currentTime - (Mathf.Clamp01(damage01) * OrganicWiltDurationSeconds);
+            damageMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateAgitated;
             metadata[activeIndex] = damageMetadata;
+        }
+
+        private void ApplyPersistedDamageMetadata(
+            ref NativeArray<HectonVegetationInstanceData> metadata,
+            int activeIndex,
+            uint instanceUid,
+            float normalizedHeightScale,
+            float damage01,
+            float currentTime)
+        {
+            if (!metadata.IsCreated || activeIndex < 0 || activeIndex >= metadata.Length)
+                return;
+
+            if (_baseScaleByInstanceUid.IsCreated &&
+                _baseScaleByInstanceUid.TryGetValue(instanceUid, out float2 baseScale))
+            {
+                float clampedHeight01 = Mathf.Clamp01(normalizedHeightScale);
+                HectonVegetationInstanceData damageMetadata = metadata[activeIndex];
+                damageMetadata.HeightScale = -Mathf.Max(MinimumDecomposedHeightScale, baseScale.x * clampedHeight01);
+                damageMetadata.WidthScale = currentTime - (Mathf.Clamp01(damage01) * OrganicWiltDurationSeconds);
+                damageMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateAgitated;
+                metadata[activeIndex] = damageMetadata;
+                return;
+            }
+
+            ApplyDamageMetadata(ref metadata, activeIndex, damage01, currentTime);
         }
 
         private void EvaluateParasiteExposureInLane(Vector3 runtimePosition, bool underwater, ref float bestExposure)
@@ -1429,6 +1753,12 @@ namespace Hecton8.World
             if (_decompositionStartTimeByInstanceUid.IsCreated)
                 _decompositionStartTimeByInstanceUid.Remove(instanceUid);
 
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry != null)
+                registry.TryClearFloraStateOverride(instanceUid);
+
+            ClearPersistedFloraStateOverride(instanceUid);
+
             if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
             {
                 float baseHealth = templateIndex >= 0 && templateIndex < _templateDescriptors.Length
@@ -1487,18 +1817,21 @@ namespace Hecton8.World
             regrowthMetadata.Type = types[activeIndex];
             regrowthMetadata.HeightScale = Mathf.Lerp(MinimumDecomposedHeightScale, baseScale.x, smoothProgress);
             regrowthMetadata.WidthScale = Mathf.Lerp(MinimumDecomposedWidthScale, baseScale.y, smoothProgress);
+            regrowthMetadata.RuntimeState = progress01 >= 0.995f
+                ? HectonVegetationInstanceData.RuntimeStateIdle
+                : HectonVegetationInstanceData.RuntimeStateAgitated;
             metadata[activeIndex] = regrowthMetadata;
         }
 
         private bool TryResolveActiveInstanceByUid(uint instanceUid, out bool underwater, out int activeIndex, out int templateIndex)
         {
-            if (TryResolveActiveInstanceByUid(instanceUid, _surfaceInstanceUids, _surfaceCount, _surfaceMaterialClasses, out activeIndex, out templateIndex))
+            if (TryResolveActiveInstanceByUid(instanceUid, _surfaceInstanceUids, _surfaceCount, _surfaceMaterialClasses, _surfaceMetadata, out activeIndex, out templateIndex))
             {
                 underwater = false;
                 return true;
             }
 
-            if (TryResolveActiveInstanceByUid(instanceUid, _underwaterInstanceUids, _underwaterCount, _underwaterMaterialClasses, out activeIndex, out templateIndex))
+            if (TryResolveActiveInstanceByUid(instanceUid, _underwaterInstanceUids, _underwaterCount, _underwaterMaterialClasses, _underwaterMetadata, out activeIndex, out templateIndex))
             {
                 underwater = true;
                 return true;
@@ -1515,12 +1848,13 @@ namespace Hecton8.World
             NativeArray<uint> instanceUids,
             int count,
             NativeArray<byte> materialClasses,
+            NativeArray<HectonVegetationInstanceData> metadata,
             out int activeIndex,
             out int templateIndex)
         {
             activeIndex = -1;
             templateIndex = -1;
-            if (!instanceUids.IsCreated || !materialClasses.IsCreated || count <= 0)
+            if (!instanceUids.IsCreated || !materialClasses.IsCreated || !metadata.IsCreated || count <= 0)
                 return false;
 
             for (int i = 0; i < count; i++)
@@ -1529,7 +1863,7 @@ namespace Hecton8.World
                     continue;
 
                 activeIndex = i;
-                templateIndex = ResolveTemplateIndex((HarvestableTemplate.MaterialClass)materialClasses[i]);
+                templateIndex = ResolveTemplateIndex(metadata[i], (HarvestableTemplate.MaterialClass)materialClasses[i]);
                 return true;
             }
 

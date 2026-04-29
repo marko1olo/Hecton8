@@ -1058,7 +1058,10 @@ namespace Hecton8.Crafting
 
         private void TryRegister()
         {
-            if (_tickRegistered)
+            if (_tickRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

@@ -43,7 +43,10 @@ namespace ScifiOffice
 
         private void OnEnable()
         {
-            if (_registeredTick)
+            if (_registeredTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);

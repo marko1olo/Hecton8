@@ -27,7 +27,9 @@ namespace Hecton8.AI
         public void ApplyArchetype(CreatureArchetypeData archetype)
         {
             _archetype = archetype;
-            _utilityBrain.BindProfile(_speciesProfile, _archetype);
+            ApplyFaunaDataTemplate(archetype != null && archetype.faunaDataTemplate != null ? archetype.faunaDataTemplate : _faunaDataTemplate);
+            _utilityBrain.BindProfile(_speciesProfile, _archetype, _faunaDataTemplate);
+            _runtimeRandom = CreateDeterministicRandom();
             if (archetype == null)
                 return;
 
@@ -403,6 +405,7 @@ namespace Hecton8.AI
     {
         private CreatureArchetypeData _archetype;
         private FaunaSpeciesProfile _speciesProfile;
+        private FaunaDataTemplate _dataTemplate;
         private int _slot;
         private bool _initialized;
 
@@ -414,22 +417,28 @@ namespace Hecton8.AI
         public float FearScore { get; private set; }
         public bool IsRegistered => _initialized && _slot >= 0;
 
-        public void Initialize(Vector3 spawnAnchor, FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype)
+        public void Initialize(Vector3 spawnAnchor, FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype, FaunaDataTemplate dataTemplate)
         {
             _speciesProfile = speciesProfile;
             _archetype = archetype;
+            _dataTemplate = dataTemplate;
             if (!_initialized)
                 _slot = PredatorCognitionDomain.Register();
 
             _initialized = _slot >= 0;
             if (_initialized)
+            {
+                RegisterSpeciesTuning();
                 PredatorCognitionDomain.ResetSlot(_slot, spawnAnchor, ResolveSpeciesId());
+            }
         }
 
-        public void BindProfile(FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype)
+        public void BindProfile(FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype, FaunaDataTemplate dataTemplate)
         {
             _speciesProfile = speciesProfile;
             _archetype = archetype;
+            _dataTemplate = dataTemplate;
+            RegisterSpeciesTuning();
         }
 
         public void SetSpawnAnchor(Vector3 spawnAnchor)
@@ -451,7 +460,10 @@ namespace Hecton8.AI
             AggressionScore = 0f;
             FearScore = 0f;
             if (_initialized)
+            {
+                RegisterSpeciesTuning();
                 PredatorCognitionDomain.ResetSlot(_slot, spawnAnchor, ResolveSpeciesId());
+            }
         }
 
         public void RecordAuditoryStimulus(Vector3 worldPosition, float timeStamp)
@@ -504,7 +516,7 @@ namespace Hecton8.AI
         public CreatureUtilityEvaluation Evaluate(int frameId, float dt, float currentTime, in CreatureUtilityContext context)
         {
             if (!_initialized)
-                Initialize(context.SelfPosition, _speciesProfile, _archetype);
+                Initialize(context.SelfPosition, _speciesProfile, _archetype, _dataTemplate);
 
             float3 fallbackForward = (float3)context.SelfForward;
             float acousticPingStrength01 = 0f;
@@ -574,9 +586,13 @@ namespace Hecton8.AI
             input.AcousticTransmission01 = acousticTransmission01;
             input.ChemicalSignal01 = chemicalSignal01;
             input.ChemicalSensitivity = chemicalSensitivity;
-            input.HungerWeight = 1f;
+            SpeciesCognitionTuning tuning = _dataTemplate != null
+                ? _dataTemplate.BuildSpeciesCognitionTuning()
+                : new SpeciesCognitionTuning(1f, ResolveFearWeight(), 1f);
+            input.HungerWeight = tuning.HungerWeight;
             input.ThreatWeight = 1f + (ResolveAggressionWeight(aggressionMultiplier) * 0.45f);
-            input.FearWeight = ResolveFearWeight();
+            input.FearWeight = tuning.FearWeight;
+            input.CuriosityWeight = tuning.CuriosityWeight;
             input.AggressionWeight = ResolveAttackSpeedWeight(aggressionMultiplier);
             input.EscapeDistance = math.max(0f, context.EscapeDistance);
             input.EscapeSafeDistance = math.max(input.EscapeDistance, context.EscapeSafeDistance);
@@ -737,6 +753,9 @@ namespace Hecton8.AI
 
         private float ResolveFearWeight()
         {
+            if (_dataTemplate != null)
+                return _dataTemplate.ResolveDriveWeight(FaunaDriveChannel.Fear, 1.5f);
+
             if (_speciesProfile == null)
                 return 1.5f;
 
@@ -753,13 +772,28 @@ namespace Hecton8.AI
 
         private int ResolveSpeciesId()
         {
+            if (_dataTemplate != null && _dataTemplate.SpeciesId != 0)
+                return _dataTemplate.SpeciesId;
+
             if (_speciesProfile != null && _speciesProfile.speciesID != 0)
                 return _speciesProfile.speciesID;
 
-            if (_archetype != null)
-                return ((int)_archetype.roleType << 8) | (_archetype.isAggressive ? 1 : 0);
+            if (_archetype != null && !string.IsNullOrWhiteSpace(_archetype.creatureId))
+                return unchecked((int)Hecton.Localization.LocHash.Compute(_archetype.creatureId)) & int.MaxValue;
 
             return 0;
+        }
+
+        private void RegisterSpeciesTuning()
+        {
+            if (_dataTemplate == null)
+                return;
+
+            int speciesId = ResolveSpeciesId();
+            if (speciesId == 0)
+                return;
+
+            PredatorCognitionDomain.RegisterSpeciesTuning(speciesId, _dataTemplate.BuildSpeciesCognitionTuning());
         }
     }
 }

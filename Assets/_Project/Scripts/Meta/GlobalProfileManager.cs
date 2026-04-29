@@ -871,9 +871,8 @@ namespace Hecton8.Meta
 
         private void TryRegisterWithTickManager()
         {
-            if (_registeredToTick)
+            if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registeredToTick = true;

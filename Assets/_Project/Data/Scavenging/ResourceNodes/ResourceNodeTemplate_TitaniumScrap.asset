@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_TitaniumScrap
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.titanium_scrap
+  displayName: Titanium Scrap Field
+  toolResistance: 0.75
+  harvestDurationSeconds: 0.9
+  requiredToolClass: 4
+  maxIntegrity: 80
+  defaultLootCount: 2
+  lootPickupPrefab: {fileID: 131972386016503839, guid: cc05a4753de6c1f48b51d49126443a9c, type: 3}
+  minimumDepthMeters: 0
+  maximumDepthMeters: 220
+  minimumTemperatureCelsius: 4
+  maximumTemperatureCelsius: 24
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 22
+  spawnOffsetMeters: 0.08
+  candidateBudgetPerSector: 7
+  maxInstancesPerSector: 3
+  placementProbability: 0.88
+  minimumDensity: 0.6
+  maximumDensity: 2.4
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.4, y: 0.8, z: 1.1}
+  harvestYield:
+  - item: {fileID: 11400000, guid: e5817766c5653214f8db9a6161026a98, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

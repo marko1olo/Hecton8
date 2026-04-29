@@ -1,4 +1,18 @@
 # VRAM BUDGET AUDIT — HECTON-8
+
+## Current-State Addendum (2026-04-29)
+
+This file is a dated static estimate report, not a fresh measured GPU-memory capture.
+
+Current limits still matter, but this report does not prove today's runtime footprint.
+
+Important boundary corrections:
+
+- the estimate ranges here were not remeasured through a new live VRAM capture in this pass
+- later same-day doc corrections already established that some deletion-oriented assumptions around `Sandbox/` content were not proven
+- current reachable Unity editor state is also noisy because the latest visible console slice shows package-side MCP `ManageAsset` conversion failures on `ResourceNodeTemplate_*`; that is separate from real VRAM proof
+
+Use this file as budget policy and estimate context only, not as current measured residency truth.
 **Версия:** 1.0.0 | **Дата:** 2026-04-28 | **Автор:** Supreme Compliance Auditor
 
 ---

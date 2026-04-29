@@ -631,6 +631,7 @@ namespace Hecton8.World
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _saveRegistered;
         private int _editorValidateDepth;
         private bool _hasFieldData;
         private float _inverseCellSize;
@@ -2971,6 +2972,15 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
+            if (Application.isPlaying && !_saveRegistered)
+            {
+                SaveManager.Instance?.Register(this);
+                _saveRegistered = true;
+            }
+
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -2982,8 +2992,6 @@ namespace Hecton8.World
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
-
-            SaveManager.Instance?.Register(this);
         }
 
         private void TryUnregister()
@@ -3000,7 +3008,11 @@ namespace Hecton8.World
                 _registeredSlowTick = false;
             }
 
-            SaveManager.Instance?.Unregister(this);
+            if (_saveRegistered)
+            {
+                SaveManager.Instance?.Unregister(this);
+                _saveRegistered = false;
+            }
         }
 
         private static float ExtractUniformScale(Matrix4x4 matrix)

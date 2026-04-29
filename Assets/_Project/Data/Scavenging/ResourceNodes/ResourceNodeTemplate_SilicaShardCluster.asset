@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_SilicaShardCluster
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.silica_shard_cluster
+  displayName: Silica Shard Cluster
+  toolResistance: 0.8
+  harvestDurationSeconds: 1
+  requiredToolClass: 0
+  maxIntegrity: 84
+  defaultLootCount: 2
+  lootPickupPrefab: {fileID: 5347411261108251368, guid: 23915a0462260944fad1abd2e26fb1b2, type: 3}
+  minimumDepthMeters: 0
+  maximumDepthMeters: 260
+  minimumTemperatureCelsius: 4
+  maximumTemperatureCelsius: 20
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 28
+  spawnOffsetMeters: 0.1
+  candidateBudgetPerSector: 6
+  maxInstancesPerSector: 2
+  placementProbability: 0.78
+  minimumDensity: 0.5
+  maximumDensity: 2
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 1
+  physicalSize: {x: 0.78, y: 0.72, z: 0.78}
+  harvestYield:
+  - item: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+    minimumAmount: 1
+    maximumAmount: 3
+    weight: 1
+  rarityDrops: []

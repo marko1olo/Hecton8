@@ -6,6 +6,26 @@ using UnityEngine;
 namespace Hecton8.World
 {
     /// <summary>
+    /// Shader-driven vegetation state lane consumed by the indirect vegetation runtime.
+    /// </summary>
+    public enum HectonVegetationRuntimeState : byte
+    {
+        Idle = 0,
+        Agitated = 1,
+        Dying = 2
+    }
+
+    /// <summary>
+    /// Stable runtime flags written into the indirect vegetation metadata payload.
+    /// </summary>
+    [System.Flags]
+    public enum HectonVegetationRuntimeFlags : byte
+    {
+        None = 0,
+        Parasite = 1 << 0
+    }
+
+    /// <summary>
     /// Vegetation type consumed by the indirect vegetation shader.
     /// </summary>
     public enum HectonVegetationInstanceType
@@ -22,7 +42,10 @@ namespace Hecton8.World
     public struct HectonVegetationInstanceData
     {
         /// <summary>Exact GPU stride in bytes.</summary>
-        public const int Stride = 16;
+        public const int Stride = 48;
+        public const float RuntimeStateIdle = (float)HectonVegetationRuntimeState.Idle;
+        public const float RuntimeStateAgitated = (float)HectonVegetationRuntimeState.Agitated;
+        public const float RuntimeStateDying = (float)HectonVegetationRuntimeState.Dying;
 
         /// <summary>Vegetation type flag: 0 grass, 1 giant kelp, 2 sargassum.</summary>
         public float Type;
@@ -40,6 +63,21 @@ namespace Hecton8.World
         /// <summary>Stable per-instance variation value used for phase/randomization.</summary>
         public float Variation;
 
+        /// <summary>Resolved flora-template index authored by the vegetation bridge. -1 when no template matched.</summary>
+        public float TemplateIndex;
+
+        /// <summary>Zero-state runtime animation lane: 0 idle, 1 agitated, 2 dying.</summary>
+        public float RuntimeState;
+
+        /// <summary>Explicit runtime flags consumed by shaders and gameplay instead of overloading variation bits.</summary>
+        public float RuntimeFlags;
+
+        /// <summary>Per-instance bioluminescence pulse frequency in Hertz.</summary>
+        public float PulseFrequency;
+
+        /// <summary>Per-instance bioluminescence color in linear space. Alpha stores emission intensity.</summary>
+        public Vector4 BioluminescenceColor;
+
         /// <summary>
         /// Creates one per-instance vegetation metadata payload.
         /// </summary>
@@ -51,12 +89,43 @@ namespace Hecton8.World
             HectonVegetationInstanceType type,
             float heightScale,
             float widthScale,
-            float variation)
+            float variation,
+            float templateIndex,
+            float runtimeState,
+            float runtimeFlags,
+            float pulseFrequency,
+            Vector4 bioluminescenceColor)
         {
             Type = (float)type;
             HeightScale = heightScale;
             WidthScale = widthScale;
             Variation = variation;
+            TemplateIndex = templateIndex;
+            RuntimeState = runtimeState;
+            RuntimeFlags = runtimeFlags;
+            PulseFrequency = pulseFrequency;
+            BioluminescenceColor = bioluminescenceColor;
+        }
+
+        /// <summary>
+        /// Creates one legacy metadata payload using the widened runtime layout defaults.
+        /// </summary>
+        public HectonVegetationInstanceData(
+            HectonVegetationInstanceType type,
+            float heightScale,
+            float widthScale,
+            float variation)
+            : this(
+                type,
+                heightScale,
+                widthScale,
+                variation,
+                -1f,
+                RuntimeStateIdle,
+                0f,
+                0f,
+                Vector4.zero)
+        {
         }
     }
 

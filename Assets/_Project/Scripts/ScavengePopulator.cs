@@ -256,6 +256,7 @@ namespace Hecton8.Core
         private List<Vector2Int> _chunksToUnload;
         private bool _initialized;
         private bool _isDuplicateInstance;
+        private bool _registeredToSlowTickManager;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -290,7 +291,11 @@ namespace Hecton8.Core
             if (_isDuplicateInstance || !_initialized)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredToSlowTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToSlowTickManager = true;
+            }
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -301,7 +306,11 @@ namespace Hecton8.Core
             if (_isDuplicateInstance || !_initialized)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredToSlowTickManager)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToSlowTickManager = false;
+            }
 
             DespawnAllChunks();
         }

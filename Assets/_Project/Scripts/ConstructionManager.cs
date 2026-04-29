@@ -734,6 +734,9 @@ namespace Hecton8.Construction
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             GlobalRegistry.RegisterLogisticsService(this);
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;

@@ -410,7 +410,7 @@ namespace Hecton8.VFX
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager)
+            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);

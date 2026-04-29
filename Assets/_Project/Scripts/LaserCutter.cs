@@ -675,7 +675,7 @@ namespace Hecton8.Gameplay
 
                 DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
                 if (organicManager != null)
-                    organicManager.TryApplyToolHit(_hitInfo.point, _hitInfo.normal, direction, damage, normalizedPower);
+                    organicManager.TryApplyToolHit(_hitInfo.point, _hitInfo.normal, direction, damage, normalizedPower, GetCapabilityMask());
 
                 ApplyRecoilImpulse(direction, normalizedPower);
             }

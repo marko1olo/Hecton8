@@ -182,7 +182,10 @@ namespace Hecton8.Core
 
         private void TryRegisterUpdatable()
         {
-            if (_registeredUpdatable)
+            if (_registeredUpdatable || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);

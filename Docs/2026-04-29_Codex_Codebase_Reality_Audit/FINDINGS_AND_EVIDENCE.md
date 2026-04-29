@@ -11,9 +11,10 @@ Mandates followed:
 - `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `UI_Data_Streaming_ZeroGC_Optimization.txt`
 
-## 1. Live Compile / Runtime Blockers
+## 1. Live Editor State
 
 Unity Editor was reachable through MCP during this pass.
+
 Build Settings currently contain:
 
 - `Assets/_Project/Scenes/00_BOOTSTRAP.unity`
@@ -22,65 +23,47 @@ Build Settings currently contain:
 
 Loaded scene during inspection: `02_HECTON_WORLD` (dirty in editor, active scene).
 
-### 1.1 Current first-party compile errors observed in live console
+### 1.1 Current live console state
 
-- `Assets/_Project/Scripts/SaveManager.cs:1161`
-  `SaveBinaryStorage.TryWriteSaveFile(...)` call no longer matches the required signature.
+Latest console readback returned `15` errors.
 
-- `Assets/_Project/Scripts/SaveBinaryStorage.cs:1481`
-  Console reports missing `PackedQuestStateSectionHeader`; local readback shows the code now reads `QuestSaveHeader` there, which indicates the compile state and source likely drifted between edits or related declarations are broken elsewhere.
+All `15` visible entries are package-side MCP asset-inspection failures rather than first-party compile errors.
 
-- `Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs:49`
-- `Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs:68`
-  `NarrativeEvents` symbol not found.
+Observed pattern:
 
-- `Assets/_Project/Scripts/Quest/QuestStateManager.cs:870`
-- `Assets/_Project/Scripts/Quest/QuestManager.cs:275`
-  `Hecton8.Environment.NewLine` namespace/type lookup is invalid.
+- tool/package source: `./Library/PackageCache/com.coplaydev.unity-mcp.../Editor/Tools/ManageAsset.cs`
+- repeated message: `Failed to convert -1 to a unsigned 32 bit int`
+- affected assets: `Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_*`
 
-- `Assets/_Project/Scripts/HectonFluidEngine.cs:1444`
-- `Assets/_Project/Scripts/HectonFluidEngine.cs:1456`
-- `Assets/_Project/Scripts/HectonFluidEngine.cs:1463`
-- `Assets/_Project/Scripts/HectonFluidEngine.cs:1465`
-  storm / thermocline constants are referenced but not defined in scope.
+### 1.2 What changed relative to older audit notes
 
-- `Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs:520`
-- `Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs:533`
-  `char[]` is used with `.AsSpan(...)` without the extension method being available in the current compile context.
+Earlier same-day audit notes had captured first-party compile and shader failures.
+They are not treated as current blockers in this document because the latest reachable console readback on `2026-04-29` no longer reports those first-party failures.
 
-- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs:708`
-- `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs:1003`
-  missing `ItemCatalog` type and `NativeHashMap<uint, float>.Count` used as an invocable member.
+That means:
 
-- `Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs:314`
-  by-ref usage error `CS8156`.
-
-### 1.2 Live shader exceptions also present
-
-- `Assets/_Project/Art/Shaders/Hecton_IndirectVegetationDepthOnly.shader:497`
-- `Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader:470`
-- `Assets/_Project/Art/Shaders/Hecton_IndirectVegetationShadow.shader:458`
-  invalid subscript `color`
-
-This matters because world/vegetation evaluation is not purely a script problem. Even after C# repair, these shader errors still threaten the runtime path.
+- earlier compile-breakage claims became stale
+- current first-party editor health is improved
+- console is still not clean because MCP package-side asset inspection can emit errors into the same console surface
+- runtime stability is still unverified because play-mode and build validation were not run
 
 ## 2. Quantitative Codebase Snapshot
 
-- First-party script files under `Assets/_Project/Scripts`: `936`
-- Total lines in those scripts: `398253`
-- Average lines per script: `425.48`
-- Files directly in `Assets/_Project/Scripts` root: `306`
+- First-party script files under `Assets/_Project/Scripts`: `970`
+- Total lines in those scripts: `420468`
+- Average lines per script: `433.47`
+- Files directly in `Assets/_Project/Scripts` root: `312`
 
 ### 2.1 Largest owners by line count
 
-- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` - `12793`
-- `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` - `10316`
-- `Assets/_Project/Scripts/HectonPlayerMovement.cs` - `7839`
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` - `13279`
+- `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` - `10333`
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs` - `7851`
 - `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs` - `4826`
-- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` - `4257`
-- `Assets/_Project/Scripts/HectonVoxelEngine.cs` - `4132`
-- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` - `3870`
-- `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` - `3762`
+- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` - `4608`
+- `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` - `4200`
+- `Assets/_Project/Scripts/HectonVoxelEngine.cs` - `4138`
+- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` - `3921`
 
 Interpretation:
 These are not just large files. They are likely regression multipliers because world logic, presentation, and ownership are condensed into a few oversized files.
@@ -92,74 +75,89 @@ They are still useful because they show where manual review pressure belongs.
 
 ### 3.1 Runtime method ownership
 
-- Runtime `Update/LateUpdate/FixedUpdate` method definitions outside editor folders: `12`
-- Exact matches:
+- Runtime `Update/LateUpdate/FixedUpdate` method definitions outside editor folders after filtering interface declarations and noise: `28`
+- Exact file matches:
+  - `AtlasSignal/AtlasSignalSystem.cs`
+  - `BuoyancyObject.cs`
   - `Core/SystemDispatcher.cs`
+  - `GameTickManager.cs`
   - `Core/ConnectionSplineBatchRenderer.cs`
   - `GlobalPhysicsStateManager.cs`
+  - `Gameplay/ClimbableLadder.cs`
+  - `Gameplay/DeployableFlare.cs`
+  - `Gameplay/Floater.cs`
+  - `Gameplay/FloraProjectile.cs`
+  - `Gameplay/OxygenBubble.cs`
+  - `Gameplay/OxygenPlant.cs`
+  - `Gameplay/ScannableFragment.cs`
+  - `Gameplay/SealedDoor.cs`
+  - `Gameplay/StorageCrate.cs`
   - `Interaction/EquipmentInteractionHandler.cs`
+  - `Interaction/PlayerInteraction.cs`
+  - `InteractionHighlighter.cs`
+  - `ObjectPoolDiagnostics.cs`
   - `ObserverRelativeCelestialBody.cs`
-  - `TetherManager.cs`
+  - `RepairTool.cs`
+  - `SceneBootstrap.cs`
   - `SkySystemFollowCamera.cs`
-  - `UI/LocalizedTMPAutoSizer.cs`
+  - `SpatialAudioManager.cs`
+  - `TetherManager.cs`
   - `UI/LocalizedLayoutMirror.cs`
+  - `UI/LocalizedTMPAutoSizer.cs`
   - `UI/SuitHUDV4CanvasOverlay.cs`
 
 Interpretation:
-The project is not drowning in raw `Update()`, which is good.
-The remaining exceptions therefore matter more, not less.
+The project is not pure dispatcher-only runtime.
+The remaining explicit Unity loop owners are concrete review targets, not theory.
 
 ### 3.2 Coroutine usage
 
 - Runtime `StartCoroutine(...)` hits: `37`
 
 Interpretation:
-Most hits are smoke-test / verifier / debug utility code, but the project still carries coroutine-heavy validation infrastructure inside first-party scripts.
+Coroutine usage still exists across first-party scripts.
+That does not prove all are hot-path violations, but it does prove the migration to tick/state-machine ownership is incomplete.
 
 ### 3.3 Runtime object/component lookup pressure
 
-- Runtime `GetComponent*` hits: `700`
-- Runtime `GetComponentInParent/GetComponentInChildren` hits: `161`
-- Runtime `TryGetComponent(...)` hits: `610`
+- Runtime `GetComponent*` hits: `926`
+- Runtime `TryGetComponent(...)` hits: `647`
 
 Interpretation:
 The codebase knows the right API (`TryGetComponent` is common), but component lookup volume is still high enough that cold-path and hot-path separation must be treated skeptically on a per-owner basis.
 
 ### 3.4 Runtime object activation in UI / interaction
 
-- `SetActive(...)` hits in `UI` + `Interaction`: `35`
+- Current `SetActive(...)` hits in `UI` + `Interaction`: `2`
 
-Notable examples:
-- `Assets/_Project/Scripts/Interaction/InteractionUI.cs:243`
-- `Assets/_Project/Scripts/Interaction/InteractionUI.cs:270`
-- `Assets/_Project/Scripts/UI/PDAConstructionTab.cs:1224`
-- `Assets/_Project/Scripts/UI/PDABarterTab.cs:335`
-- `Assets/_Project/Scripts/UI/PDADataLogTab.cs:755` to `763`
-- `Assets/_Project/Scripts/UI/DiegeticPDAController.cs:277`
+Observed examples:
+
+- `Assets/_Project/Scripts/UI/DiegeticPDAController.cs:280`
+- `Assets/_Project/Scripts/UI/DiegeticPanelController.cs:1031`
 
 Counterpoint:
-`InteractionUI.cs` at least attempts to migrate toward `CanvasGroup`, which is the correct direction.
-The broader PDA/pause/UI surface is not consistently there yet.
+This is materially better than older scans implied.
+It does not prove hot-path safety, but it does remove one previously overstated red flag.
 
 ### 3.5 Addressables / asset lifecycle
 
-- Runtime addressable load hits: `4`
+- Concrete first-party `LoadAssetAsync<GameObject>()` usage confirmed in `Assets/_Project/Scripts/ItemCatalog.cs`
 - Runtime addressable release hits: `1`
-- Concrete first-party load/release pair observed in `Assets/_Project/Scripts/ItemCatalog.cs`
+- Legacy `AsyncLoadHelper` still exists, but its runtime path is intentionally disabled rather than serving as an active asset-loading owner
 
 Interpretation:
 There is not strong evidence of a project-wide runtime asset lifecycle layer matching the mandate. There is evidence of one local implementation.
 
 ### 3.6 Forbidden or high-risk API surfaces
 
-- `Resources.UnloadUnusedAssets()` runtime hits: `1`
-  - `Assets/_Project/Scripts/UI/PauseMenuController.cs:1004`
+- `Resources.UnloadUnusedAssets()` runtime hits: `0`
+- `DG.Tweening` / `DOTween` runtime hits under `Assets/_Project/Scripts`: `0`
+- Runtime `Find* / Resources.FindObjectsOfTypeAll / FindAnyObjectByType` hits: `136`
 
-- DOTween runtime hits: `6`
-  - all from `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs`
+Interpretation:
 
-- Runtime `Find* / Resources.FindObjectsOfTypeAll / FindAnyObjectByType` hits: `12`
-  - includes `MapMagicBridge.cs`, `HectonUrpTextureRequirementsGuard.cs`, `HectonCrestOceanDepthCacheBootstrap.cs`, `InputManager.cs`, smoke-test probes, and runtime verification helpers
+- older violations around `UnloadUnusedAssets()` and DOTween are not current in this scan
+- broad object-finding usage is still noisy enough to warrant skepticism
 
 ## 4. Specific Architectural Findings
 
@@ -177,35 +175,45 @@ Problem:
 The codebase has more than one startup brain.
 That is survivable, but it invites order drift, duplicate guarantees, and unclear failure ownership.
 
-### 4.2 UI service fragmentation
+### 4.2 UI service reality
 
 Evidence:
 
-- `Assets/_Project/Scripts/HectonFabricatorUI.cs`
-- `Assets/_Project/Scripts/HectonSuitHUD_v4.cs`
 - `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
+  direct `IUIService` implementor
 
-All implement `IUIService`.
-At the same time, `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` says:
-
-- UI layer adapter does not exist yet
+- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
+  registers itself through `GlobalRegistry.RegisterUIService(this)`
 
 Problem:
-The registry contract implies one authoritative UI root.
-The current code advertises several.
+The direct registry contract currently resolves to one owner, not several.
+The remaining issue is wider UI ownership sprawl, not direct `IUIService` ambiguity.
 
-### 4.3 Ghost audio contract
+### 4.3 Audio contract is no longer ghosted
 
 Evidence:
 
 - `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` defines `IAudioService`
 - `Assets/_Project/Scripts/Core/GlobalRegistry.cs` exposes audio registration/getter paths
-- no first-party `: IAudioService` implementor was found in `Assets/_Project/Scripts`
+- `Assets/_Project/Scripts/SpatialAudioManager.cs` directly implements `IAudioService`
+- `Assets/_Project/Scripts/SpatialAudioManager.cs` registers itself through `GlobalRegistry.RegisterAudioService(this)`
+
+Problem removed:
+the current contract has a real owner.
+Remaining risk is not ghosting but the size and responsibility load of `SpatialAudioManager`.
+
+### 4.4 Event architecture is mixed
+
+Evidence:
+
+- queue-backed: `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, `AudioLogEvents`
+- direct static buses: `InteractionEvents`, `CraftingEvents`, `PDAEvents`, `FlashlightEvents`, `RandomEventEvents`, `HectonSubmarineOsEvents`
 
 Problem:
-This is dead contract surface until someone either owns it or deletes it.
+Migration toward deferred event lanes is real, but not complete.
+This complicates reasoning about ordering, burst-safety, and ownership consistency.
 
-### 4.4 Runtime fail-safe spawning hides authored ownership gaps
+### 4.5 Runtime fail-safe spawning hides authored ownership gaps
 
 Evidence:
 
@@ -261,26 +269,38 @@ What is weak:
 - still string-based status/tip updates
 - no proof yet that every caller respects load/scene activation guardrails
 
-### 5.4 `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs`
+### 5.4 `Assets/_Project/Scripts/SpatialAudioManager.cs`
 
-Problem:
+What is strong:
 
-- runtime DOTween dependency directly conflicts with project package policy
-- file is large and presentation-heavy
-- this is a likely regression hotspot because camera, FOV, and post-process behavior converge here
+- direct `IAudioService` ownership is explicit
+- registry registration is explicit
+- cold-allocation discipline is visible in large parts of the file
 
-### 5.5 `Assets/_Project/Scripts/UI/PauseMenuController.cs`
+What is risky:
 
-Problem:
+- the file is large
+- audio service ownership, radar data, pooling, and world-facing audio responsibilities are concentrated into one owner
 
-- direct `Resources.UnloadUnusedAssets()` call after pending main-menu cleanup
-- this is a documented hard ban in `AGENTS.md`
+### 5.5 `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
+
+What is strong:
+
+- direct `IUIService` ownership is explicit
+- registry registration is explicit
+- zero-GC HUD formatting intent is visible in cached buffers and `SetCharArray` style usage
+
+What is risky:
+
+- the file is very large
+- HUD rendering, scanner visuals, threat overlays, and service-layer responsibilities are concentrated into one owner
 
 ## 6. What Was Good In Practice
 
 - The codebase is not fake-enterprise. There are real attempts at registry ownership, packet contracts, jobs, native containers, and zero-GC discipline.
 - Several runtime systems already document their cold allocations explicitly.
 - Build Settings scene order currently matches the required `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`.
+- Current reachable editor console is no longer showing the compile/shader failure set cited by older audit notes.
 
 ## 7. What Was Weak But Recoverable
 
@@ -290,17 +310,16 @@ Problem:
 
 ## 8. What Was Simply Bad
 
-- Live compile breakage.
-- Shader exceptions in vegetation passes.
-- Fragmented service ownership.
 - Massive file concentration.
-- Explicit rule violations still present in runtime code.
+- Split bootstrap authority.
+- Root-folder ownership sprawl.
+- Mixed event architecture.
 
 ## 9. Runtime Verification Limits
 
-Without repairing compile errors, the following remain blocked:
+Even with the cleaner current console state, the following remain blocked:
 
-- trustworthy play-mode behavior judgement for affected quest/save/world/UI flows
+- trustworthy play-mode behavior judgement for quest/save/world/UI flows
 - meaningful profiler validation
 - meaningful GC validation in live gameplay
 - meaningful smoke-test verdicts
@@ -310,7 +329,7 @@ Because of that, this report does not claim:
 - that the game currently boots clean from `00_BOOTSTRAP` into a stable playable loop
 - that save/load works
 - that quest progression works
-- that vegetation rendering is visually correct
+- that vegetation rendering is visually correct in motion
 
 Those would be invented claims.
 
@@ -320,7 +339,7 @@ CPU: no code changed
 GC: no code changed  
 Memory: no code changed  
 Cadence: documentation only  
-Correctness: improved by grounding judgments in source and live console evidence instead of assumptions
+Correctness: improved because stale blockers were removed and current evidence replaced them
 
 ## Hot Path Impact
 
@@ -328,11 +347,11 @@ None. Documentation-only pass.
 
 ## Failure Modes
 
-- Some violations counted here are cold-path acceptable but still worth review.
-- Some broken files are currently masked by compile failure and may reveal second-order defects after repair.
-- Large owner files can hide local good code that this report does not individually score.
+- console state can change between editor sessions
+- static scans can overcount cold-path or tooling code
+- file-size concentration can hide bugs not visible in architecture-level review
 
-## Why Kept
+## Why This Version Was Kept
 
-Kept because it is evidence-first.
-Not kept because it is pleasant.
+Kept because it no longer confuses historical breakage with current state.
+It is still harsh, but it is harsh about things that remain visible now.

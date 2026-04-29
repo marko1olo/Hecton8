@@ -3,59 +3,135 @@
 Date: 2026-04-29
 Status: PENDING VERIFICATION
 Scope: source-backed event topology visible in first-party code
-Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 
 ## 1. Audit Standard
 
-This file only records flows that were directly observed in current `.cs` source.
-Older versions mixed real buses with inferred publishers, inferred subscribers, and file names not confirmed in the repository. Those claims were removed.
+This file records only event flows directly rechecked in current source.
+It does not claim runtime replay, scene-wiring proof, or exhaustive subscriber coverage.
 
 Evidence basis for this pass:
 
 - direct reads of bus definitions
-- direct subscription scans via `rg`
-- direct publish/raise call scans via `rg`
-
-No runtime replay was executed in this pass.
+- direct scans for `NativeQueue<TPayload>` ownership
+- direct scans for `Raise*` and `FlushPending()` paths
+- direct scans for remaining static `Action` buses
 
 ## 2. Core Finding
 
-The project uses multiple event styles at once:
+The project is in a mixed event architecture state.
 
-- standalone static bus classes
-- static bus classes nested inside feature owners
-- feature-local instance events
-- separate modding bus `HectonEventBus`
+It currently contains:
 
-Because of that, there is no single "nervous system". There is a collection of overlapping signal surfaces.
+- queue-backed deferred buses
+- direct static `Action` buses
+- feature-local direct callbacks
+- a separate managed modding bus
 
-## 3. Source-Confirmed Static Gameplay Buses
+There is no single event model yet.
+There is a partial migration plus legacy/static residue.
 
-### 3.1 `InteractionEvents`
+## 3. Queue-Backed Deferred Buses Rechecked
 
-Definition confirmed in `Assets/_Project/Scripts/Interaction/InteractionEvents.cs`
+### 3.1 `SaveEvents`
 
-Signals confirmed:
+Definition rechecked in `Assets/_Project/Scripts/SaveEvents.cs`
 
-- `OnItemCollected : Action<ItemData, int, Transform>`
-- `OnInteractionStarted : Action<IInteractable, Transform>`
-- `OnHoverChanged : Action<IInteractable>`
+Confirmed properties:
 
-Confirmed subscribers:
+- `NativeQueue<SaveEventPayload>` backing store
+- `RegistryBucket<ISaveEventListener>` listener registry
+- `FlushPending()` fanout path
+- `SaveEventPayload` uses:
+  - `SaveEventType`
+  - `FixedString64Bytes SlotName`
+  - `FixedString128Bytes Message`
 
-- `FirstHourDirector` subscribes to `OnItemCollected`
-- `InteractionUI` subscribes to `OnHoverChanged`
-- `CameraJuiceSystem` subscribes to `OnHoverChanged`
+Correction:
 
-Observed risk:
+- older doc claim that this bus was direct static `Action` dispatch was false
 
-- static direct `Action` dispatch, not `NativeQueue`-backed
+### 3.2 `QuestEvents`
 
-### 3.2 `CraftingEvents`
+Definition rechecked in `Assets/_Project/Scripts/Quest/QuestEvents.cs`
 
-Definition confirmed in `Assets/_Project/Scripts/CraftingEvents.cs`
+Confirmed properties:
 
-Signals confirmed:
+- `NativeQueue<QuestEventPayload>` backing store
+- `RegistryBucket<IQuestEventListener>` listener registry
+- `FlushPending()` fanout path
+- compact payload with quest hash + event type
+
+### 3.3 `ScanEvents`
+
+Definition rechecked in `Assets/_Project/Scripts/ScanEvents.cs`
+
+Confirmed properties:
+
+- `NativeQueue<ScanEventPayload>` backing store
+- `RegistryBucket<IScanEventListener>` listener registry
+- hash-based payload fields for entry/title/category/summary
+- cold-path `Dictionary<uint, ScanEntryMetadata>` used for authored string recovery
+
+Correction:
+
+- older claim that `OnEntryDiscovered` was a public direct `Action<string, string, string, string>` is false in current source
+
+### 3.4 `NarrativeEvents`
+
+Definition rechecked in `Assets/_Project/Scripts/NarrativeEvents.cs`
+
+Confirmed properties:
+
+- `NativeQueue<NarrativeEventPayload>` backing store for discovery/depth events
+- `RegistryBucket<INarrativeEventListener>` listener registry
+- hashed discovery payload via `DiscoveryHash`
+- cold-path `Dictionary<uint, string>` for authored discovery id recovery
+
+Important nuance:
+
+- `NarrativeEvents` also contains a separate direct point-of-interest callback lane:
+  - `RegisterPointOfInterestListener`
+  - `RaiseNarrativePOIRegistered`
+  - `RaiseNarrativePOIDisposed`
+
+So this file is not pure queue-only architecture.
+It is a hybrid event owner.
+
+### 3.5 `AudioLogEvents`
+
+Definition rechecked indirectly by file readback and direct search hits in `Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs`
+
+Confirmed properties:
+
+- `NativeQueue<AudioLogEventPayload>` backing store
+- `RegistryBucket<IAudioLogEventListener>` listener registry
+- `FlushPending()` deferred dispatch path
+
+## 4. Direct Static `Action` Buses Still Present
+
+### 4.1 `InteractionEvents`
+
+Definition rechecked in `Assets/_Project/Scripts/Interaction/InteractionEvents.cs`
+
+Confirmed properties:
+
+- direct static `event Action<ItemData, int, Transform> OnItemCollected`
+- direct static `event Action<IInteractable, Transform> OnInteractionStarted`
+- direct static `event Action<IInteractable> OnHoverChanged`
+- immediate delegate invocation in `Raise*` methods
+
+### 4.2 `CraftingEvents`
+
+Definition rechecked in `Assets/_Project/Scripts/CraftingEvents.cs`
+
+Confirmed properties:
+
+- direct static `Action` events
+- immediate `Raise*` delegate invocation
+- not queue-backed
+
+Signals visible in current source:
 
 - `OnFabricatorOpened`
 - `OnFabricatorClosed`
@@ -64,308 +140,94 @@ Signals confirmed:
 - `OnCraftCompleted`
 - `OnCraftCancelled`
 
-Confirmed subscribers:
+### 4.3 `HectonSubmarineOsEvents`
 
-- `HectonFabricatorUI`
-- `FirstHourDirector` on `OnCraftCompleted`
-- `ModLoader` on `OnCraftCompleted`
+Definition rechecked in `Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs`
 
-Observed risk:
+Confirmed properties:
 
-- comments claim "zero-GC" static bus, but architecture still diverges from the `NativeQueue` requirement in `AGENTS.md`
+- direct static delegate events
+- `OnSnapshotUpdated`
+- `OnLogRequested`
+- direct invocation, not queue-backed
 
-### 3.3 `SaveEvents`
+### 4.4 Other Feature-Embedded Buses
 
-Definition confirmed in `Assets/_Project/Scripts/SaveEvents.cs`
+Current codebase still contains multiple feature-local event surfaces such as:
 
-Signals confirmed:
+- `PDAEvents`
+- `FlashlightEvents`
+- `RandomEventEvents`
+- celestial/weather feature buses
 
-- `OnSaveStarted`
-- `OnSaveCompleted`
-- `OnSaveFailed`
-- `OnLoadStarted`
-- `OnLoadCompleted`
-- `OnLoadFailed`
-- `OnEmergencyBackupRestoreRequested`
-
-Confirmed subscribers:
-
-- `MainMenuController`
-- `PauseMenuController`
-- `HUDSaveNotificationLink`
-- `SaveThumbnailCapture`
-- `ModLoader`
-- `ModWorldPersistenceManager`
-
-Observed risk:
-
-- save/load events use `string` payloads for slot/error surfaces
-- bus is static `Action`, not `NativeQueue`-backed
-
-### 3.4 `ModuleStatusEvents`
-
-Definition confirmed in `Assets/_Project/Scripts/ModuleStatusEvents.cs`
-
-Signals confirmed:
-
-- `OnModuleEnter`
-- `OnModuleExit`
-
-Confirmed publishers:
-
-- `BaseModule` via `NotifyEnter` and `NotifyExit`
-
-Confirmed subscribers:
-
-- `TraumaDispatcher`
-- `PlayerToolManager`
-
-### 3.5 `ScanEvents`
-
-Definition confirmed in `Assets/_Project/Scripts/ScanEvents.cs`
-
-Signals confirmed:
-
-- `OnScanTriggered : Action<float3, float>`
-- `OnNodeFound : Action<float3>`
-- `OnEntryDiscovered : Action<string, string, string, string>`
-
-Confirmed publishers:
-
-- `ScannerTool` raises all three surfaces directly
-
-Confirmed subscribers:
-
-- `HectonScanMarkerSystem` on `OnNodeFound`
-- `ScanLogSystem` on `OnNodeFound` and `OnEntryDiscovered`
-- `FirstHourDirector` on `OnEntryDiscovered`
-
-Observed risk:
-
-- `OnEntryDiscovered` carries four strings
-- bus uses public delegate fields rather than `event` for some signals
-
-### 3.6 `AudioLogEvents`
-
-Definition confirmed in `Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs`
-
-Signals confirmed:
-
-- `OnLogDiscovered`
-- `OnLogPlaybackStarted`
-- `OnLogPlaybackStopped`
-- `OnLogPlaybackCompleted`
-
-Confirmed publishers:
-
-- `AudioLogSystem`
-
-Confirmed subscribers:
-
-- `PDADataLogTab`
-- `FirstHourDirector` on `OnLogDiscovered`
-
-Observed risk:
-
-- mixed payloads include `string` IDs
-
-## 4. Source-Confirmed Feature-Embedded Static Buses
-
-### 4.1 `PDAEvents`
-
-Definition confirmed inside `Assets/_Project/Scripts/PlayerPDA.cs`
-
-Signals confirmed:
-
-- `OnOpened`
-- `OnClosed`
-- `OnTabChanged`
-- `OnLowBatteryShutdown`
-
-Confirmed publisher:
-
-- `PlayerPDA`
-
-Confirmed subscribers:
-
-- `PDAInventoryTab`
-- `PDALoadoutTab`
-- `PDAConstructionTab`
-- `PDABarterTab`
-- `PDADataLogTab`
-- `PDAAtlasSignalTab`
-- `PDASpectrumTab`
-- `PDAShellChrome`
-- `PDAControlsRebindUI`
-- `HectonOSBootManager`
-- nested diagnostics terminal in `PlayerPDA`
-
-### 4.2 `FlashlightEvents`
-
-Definition confirmed inside `Assets/_Project/Scripts/PlayerFlashlight.cs`
-
-Signals confirmed:
-
-- `OnToggled`
-- `OnBatteryDepleted`
-- `OnOverheat`
-- `OnFlickerStart`
-
-Confirmed publisher:
-
-- `PlayerFlashlight`
-
-Confirmed subscribers:
-
-- `SargassumMicroFaunaBoids` on `OnToggled`
-
-No source-confirmed subscribers were established in this pass for:
-
-- `OnBatteryDepleted`
-- `OnOverheat`
-- `OnFlickerStart`
-
-### 4.3 `NarrativeEvents`
-
-Definition confirmed in `Assets/_Project/Scripts/NarrativeEvents.cs`
-
-Signals confirmed:
-
-- `OnNarrativePOIRegistered`
-- `OnNarrativePOIDisposed`
-- `OnDiscoveryMade`
-- `OnDepthTierReached`
-
-Confirmed publishers:
-
-- `NarrativeDiscovery`
-- `HectonNarrativeDirector`
-- `AudioLogSystem`
-- `AtlasSignalSystem`
-- `AtlasSignalDecoder`
-- `DirectorMissionBridge`
-- `EndingSystem`
-- `EndingTerminalInteractable`
-- `DepthZoneDirector`
-- `EmergencyServiceRelay`
-- `CorporateOrderSystem`
-- `FirstHourDirector`
-
-Confirmed subscribers:
-
-- `HectonNarrativeDirector`
-- `AudioLogSystem`
-- `Atlas6DirectiveSystem`
-- `FirstHourDirector`
-- `SuitUpgradeManager`
-- `QuestManager`
-
-Observed risk:
-
-- `OnDiscoveryMade` uses `string`
-
-### 4.4 `RandomEventEvents`
-
-Definition confirmed inside `Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs`
-
-Signals confirmed:
-
-- `OnEventStarted : Action<RandomEventType, float>`
-- `OnEventEnded : Action<RandomEventType>`
-
-Confirmed publisher:
-
-- `RandomEventSystem`
-
-Confirmed subscribers:
-
-- none confirmed by source scan in this pass
-
-Interpretation:
-
-- either this bus is currently underconsumed
-- or listeners exist outside the scanned patterns used in this pass
-
-Status therefore remains partial, not dead and not verified live.
-
-### 4.5 Celestial Surface Events
-
-Definition confirmed inside `Assets/_Project/Scripts/HectonCelestialEngine.cs`
-
-Signals directly observed:
-
-- `OnEclipseStart`
-- `OnEclipseEnd`
-- `OnSunAngleChanged`
-- `OnPlanetPhaseChanged`
-
-Confirmed subscribers:
-
-- `EclipseGameplaySystem` on `OnEclipseStart` and `OnEclipseEnd`
-- `QuestManager` on `OnEclipseStart`
-
-No source-confirmed subscribers were established in this pass for:
-
-- `OnSunAngleChanged`
-- `OnPlanetPhaseChanged`
+Not all of those were fully re-mapped in this pass.
+Their existence is confirmed.
+Their full subscriber tables were not re-authored here because this pass prioritized factual correction over speculative completeness.
 
 ## 5. Separate Modding Bus
 
-`Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs` is a separate typed event system.
+`Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs` remains a separate typed managed bus.
 
-Observed properties:
+Observed boundary:
 
-- typed channels per event type
-- `List`-backed subscription storage
-- try/catch isolation around handler dispatch
-- resettable static channel registry
-
-What it is not:
-
-- not a `NativeQueue<T>` gameplay event bus
-- not the same thing as the static gameplay buses listed above
+- it is not the owner of first-party queue-backed gameplay buses
+- it is not the canonical replacement for `SaveEvents`, `QuestEvents`, `ScanEvents`, or `NarrativeEvents`
+- it remains an additional communication surface, not the central one
 
 ## 6. Conformity Findings Against `AGENTS.md`
 
-### 6.1 Architecture Drift
+### 6.1 What Already Moved Toward The Mandate
 
-`AGENTS.md` requires event-bus backing by `NativeQueue<T>` with late flush semantics.
-Current source-backed picture shows widespread direct static `Action` dispatch instead.
-
-This is documented drift, not a guess.
-
-### 6.2 String Payload Debt
-
-Confirmed string-heavy surfaces include:
+These buses now match the direction required by `AGENTS.md` much better than older docs admitted:
 
 - `SaveEvents`
-- `ScanEvents.OnEntryDiscovered`
+- `QuestEvents`
+- `ScanEvents`
+- `NarrativeEvents`
 - `AudioLogEvents`
-- `NarrativeEvents.OnDiscoveryMade`
 
-This does not automatically prove hot-path GC, but it is a documented risk surface and contradicts the spirit of the zero-alloc mandate.
+They are queue-backed and late-flush oriented.
 
-### 6.3 Subscription Hygiene
+### 6.2 What Still Drifts
 
-Many subscribers do pair `+=` with `-=`.
-That is positive, but this audit did not exhaustively prove leak safety for every event surface in the project.
+Direct static delegate buses still remain in first-party gameplay/UI surfaces:
+
+- `InteractionEvents`
+- `CraftingEvents`
+- `HectonSubmarineOsEvents`
+- several feature-local embedded buses
+
+So the event architecture is still only partially normalized.
+
+### 6.3 String-Payload Risk Was Overstated In Older Docs
+
+Older docs described several migrated buses as still string-heavy direct-action surfaces.
+Current source shows the more accurate picture:
+
+- `SaveEvents` payload is fixed-string based
+- `QuestEvents` payload is hash/ushort based
+- `ScanEvents` payload is hash-based with cold metadata cache
+- `NarrativeEvents` payload is hash-based with cold id cache
+
+This does not prove zero runtime alloc everywhere.
+It does prove the older doc description was stale.
 
 ## 7. What Was Removed From The Old Version
 
-Removed as unsupported:
+Removed as unsupported or stale:
 
-- invented files such as `ItemCollector.cs` and `TimeScaleManager`
-- claims that specific UI or world systems were subscribed where current source scan did not prove it
-- fake totals such as fully verified signal counts
-- "ETA CODEX VERIFIED" language
+- claim that `SaveEvents` was static direct `Action`
+- claim that `ScanEvents` published public string-based delegate payloads
+- claim that `NarrativeEvents.OnDiscoveryMade` remained direct string dispatch
+- inflated certainty about complete subscriber maps not revalidated in this pass
 
 ## 8. Regression Model
 
 CPU: no runtime code changed
 GC: no runtime code changed
 Memory: no runtime code changed
-Cadence: no runtime cadence change
-Correctness: improved documentation accuracy by replacing inferred topology with source-backed topology
+Cadence: no runtime cadence changed
+Correctness: documentation accuracy improved by separating migrated queue buses from legacy direct static buses
 
 ## 9. Hot Path Impact
 
@@ -373,13 +235,14 @@ None. Markdown-only change.
 
 ## 10. Failure Modes
 
-- some subscribers may still be missed if they use indirect hookup patterns not matched by the search pass
-- runtime-only wiring from scenes/prefabs is outside this static-source pass
-- modding/event surfaces outside the named buses remain underdocumented
+- some subscriber hookups remain outside this static source pass
+- scene/prefab wiring can still add listeners not visible in class-only scans
+- live event cadence and leak behavior still require Unity-side validation
 
 ## 11. Why This Version Was Kept
 
-Kept because it narrows claims to what current source actually proves.
-Rejected content: fabricated certainty, inferred class names, and unsupported publisher-to-subscriber chains.
+Kept because it removes false negatives and false positives at the same time.
+It does not pretend the event layer is clean.
+It records the actual mixed state visible in source.
 
 STATUS: PENDING VERIFICATION

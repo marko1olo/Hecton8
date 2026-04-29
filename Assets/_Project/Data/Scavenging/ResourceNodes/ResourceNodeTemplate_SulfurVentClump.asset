@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_SulfurVentClump
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.sulfur_vent_clump
+  displayName: Sulfur Vent Clump
+  toolResistance: 0.85
+  harvestDurationSeconds: 1.05
+  requiredToolClass: 0
+  maxIntegrity: 88
+  defaultLootCount: 2
+  lootPickupPrefab: {fileID: 2963166077466320613, guid: 8c3267ce473acfc4ea806ee87fe3e090, type: 3}
+  minimumDepthMeters: 120
+  maximumDepthMeters: 680
+  minimumTemperatureCelsius: 10
+  maximumTemperatureCelsius: 36
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 24
+  spawnOffsetMeters: 0.08
+  candidateBudgetPerSector: 5
+  maxInstancesPerSector: 2
+  placementProbability: 0.56
+  minimumDensity: 0.25
+  maximumDensity: 1.1
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 0.92, y: 0.66, z: 0.92}
+  harvestYield:
+  - item: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

@@ -216,7 +216,10 @@ namespace Hecton8.SaveSystem
 
         private void OnEnable()
         {
-            if (!_serviceRegistered || _updatableRegistered)
+            if (!_serviceRegistered || _updatableRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
@@ -258,7 +261,7 @@ namespace Hecton8.SaveSystem
         {
             if (_serviceRegistered)
             {
-                if (isActiveAndEnabled && !_updatableRegistered)
+                if (isActiveAndEnabled && !_updatableRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                 {
                     GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                     _updatableRegistered = true;
@@ -270,7 +273,7 @@ namespace Hecton8.SaveSystem
             GlobalRegistry.RegisterSaveService(this);
             _serviceRegistered = true;
 
-            if (isActiveAndEnabled && !_updatableRegistered)
+            if (isActiveAndEnabled && !_updatableRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 _updatableRegistered = true;

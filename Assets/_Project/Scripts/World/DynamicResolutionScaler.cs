@@ -263,9 +263,8 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered)
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registered = true;

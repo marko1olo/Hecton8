@@ -255,7 +255,10 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (_isRegisteredToTickManager)
+            if (_isRegisteredToTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);

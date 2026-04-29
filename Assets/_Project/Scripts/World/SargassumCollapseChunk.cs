@@ -363,6 +363,9 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (_registeredTick)
             {
                 if (_registeredFixedTick)

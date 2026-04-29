@@ -1,5 +1,20 @@
 # SUPREME AUDITOR — CONTINUOUS SMART AUDIT REPORT
 
+## Current-State Addendum (2026-04-29)
+
+This file is a dated static bundle, not the preferred current-state authority.
+
+Known drift relative to current source/editor rechecks:
+
+- the old `514+` script-scale statement is stale; current first-party inventory is `1010` `.cs` under `Assets/_Project` and `970` under `Assets/_Project/Scripts`
+- interface/service ownership changed materially from older assumptions:
+  - `SpatialAudioManager -> IAudioService`
+  - `SuitHUDV4CanvasOverlay -> IUIService`
+- the event layer is mixed, but several buses previously treated as direct-static are now confirmed queue-backed: `SaveEvents`, `QuestEvents`, `ScanEvents`, `NarrativeEvents`, `AudioLogEvents`
+- latest reachable Unity console slice on `2026-04-29` is not empty; it shows package-side MCP `ManageAsset` conversion failures on `ResourceNodeTemplate_*` assets and is not proof of first-party compile cleanliness
+
+Use `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` and the refreshed `01_GENERAL_INFO` / `02_ACTUAL_REPORTS` core files before trusting older totals or ownership claims in this report.
+
 **Дата:** 2026-04-28 | **Режим:** Offline Static Analysis | **Автор:** Supreme Compliance Auditor
 
 ---

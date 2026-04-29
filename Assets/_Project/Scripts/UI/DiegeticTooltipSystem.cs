@@ -121,7 +121,10 @@ namespace Hecton8.UI
                 InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
             ActiveRuntimeInstance = this;
 
-            if (_registeredToDispatcher)
+            if (_registeredToDispatcher || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

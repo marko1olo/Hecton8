@@ -241,6 +241,9 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

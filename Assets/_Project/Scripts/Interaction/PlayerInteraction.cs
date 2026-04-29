@@ -216,7 +216,7 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
-            if (!_registeredToTickManager)
+            if (!_registeredToTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 _registeredToTickManager = true;
@@ -231,7 +231,10 @@ namespace Hecton8.Interaction
 
         private void Start()
         {
-            if (_registeredToTickManager)
+            if (_registeredToTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);

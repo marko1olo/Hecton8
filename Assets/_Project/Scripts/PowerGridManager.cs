@@ -368,7 +368,7 @@ namespace Hecton8.Power
 
         private void TryRegister()
         {
-            if (_dispatcherRegistered || !Application.isPlaying)
+            if (_dispatcherRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
