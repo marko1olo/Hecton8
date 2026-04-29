@@ -217,6 +217,11 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float resolvedRawDepth = validMask > 0.5 ? rawDepth : ResolveFarRawDepth();
             scenePositionWS = ReconstructWorldPosition(screenUV, resolvedRawDepth);
             linearEyeDepth = LinearEyeDepth(resolvedRawDepth, _ZBufferParams);
+            if (!isfinite(linearEyeDepth) || linearEyeDepth < 0.0)
+            {
+                validMask = 0.0;
+                linearEyeDepth = 0.0;
+            }
         }
 
         float PhaseHG(float cosTheta, float anisotropy)
@@ -680,6 +685,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float3 scenePositionWS;
             float linearEyeDepth;
             ResolveDepthData(screenUV, rawDepth, depthValid, scenePositionWS, linearEyeDepth);
+            if (depthValid <= 0.5 || linearEyeDepth <= 0.0001)
+                return half3(0.0, 0.0, 0.0);
 
             float3 cameraPositionWS = _WorldSpaceCameraPos;
             float3 rayVectorWS = scenePositionWS - cameraPositionWS;
@@ -741,7 +748,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         #else
             rawDepth = min(rawDepth, 0.9999);
         #endif
-            return LinearEyeDepth(rawDepth, _ZBufferParams);
+            float linearEyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
+            return isfinite(linearEyeDepth) && linearEyeDepth >= 0.0 ? linearEyeDepth : 0.0;
         }
 
         half4 BlurShafts(float2 screenUV, float2 direction)
@@ -990,6 +998,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
             half3 finalColor = sourceColor.rgb + shafts + biolumProjection + lensGhosts;
             finalColor = max(finalColor, noirMinimum);
+            if (any(isnan(finalColor)) || any(isinf(finalColor)))
+                finalColor = noirMinimum;
             finalColor = ApplyResolveBlueNoiseDither(finalColor, input.screenUV);
             return half4(finalColor, sourceColor.a);
         }

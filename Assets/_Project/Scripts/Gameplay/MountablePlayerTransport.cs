@@ -672,12 +672,16 @@ namespace Hecton8.Gameplay
             float hydrodynamicSubmersionFactor = _riderMovement != null
                 ? math.saturate(_riderMovement.WaterImmersionRatio)
                 : 0f;
+            float hydrodynamicDepthMeters = _riderSurvival != null
+                ? math.max(0f, _riderSurvival.Depth)
+                : (_riderMovement != null ? math.max(0f, _riderMovement.CurrentDepth) : 0f);
 
             float forwardInput = math.clamp(_driveMoveInput.y, -1f, 1f) * throttleOutput;
             float yawInput = math.clamp(_driveMoveInput.x, -1f, 1f);
             float pitchInput = math.clamp(_driveVerticalInput, -1f, 1f);
 
             _vehicleMotor.ConfigureHydrodynamicSubmersion(hydrodynamicSubmersionFactor);
+            _vehicleMotor.ConfigureHydrodynamicDepth(hydrodynamicDepthMeters);
             _vehicleMotor.IntegrateDrive(
                 forwardInput,
                 yawInput,

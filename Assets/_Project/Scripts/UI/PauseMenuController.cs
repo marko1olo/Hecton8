@@ -1003,10 +1003,7 @@ namespace Hecton8.UI
 
             AsyncOperation unloadOperation = Resources.UnloadUnusedAssets();
             if (unloadOperation == null)
-            {
-                GC.Collect();
                 return;
-            }
 
             unloadOperation.completed -= _onMainMenuCleanupCompleted;
             unloadOperation.completed += _onMainMenuCleanupCompleted;
@@ -1016,8 +1013,6 @@ namespace Hecton8.UI
         {
             if (unloadOperation != null)
                 unloadOperation.completed -= _onMainMenuCleanupCompleted;
-
-            GC.Collect();
         }
 
         private void QuitApplication()

@@ -56,6 +56,7 @@ namespace Crest
 
         internal void CleanUp()
         {
+            ReleaseTemporaryTargets();
             CoreUtils.Destroy(_oceanMaskMaterial.material);
         }
 
@@ -77,12 +78,8 @@ namespace Crest
 
         public void Disable()
         {
-#if UNITY_6000_0_OR_NEWER
-            _volumeFrontFaceRT?.Release();
-            _volumeBackFaceRT?.Release();
-            _maskRT?.Release();
-            _depthRT?.Release();
-#else
+            ReleaseTemporaryTargets();
+#if !UNITY_6000_0_OR_NEWER
             _underwaterRenderer.OnDisableMask();
 #endif
 
@@ -90,6 +87,20 @@ namespace Crest
             {
                 RenderPipelineManager.beginCameraRendering -= EnqueuePass;
             }
+        }
+
+        void ReleaseTemporaryTargets()
+        {
+#if UNITY_6000_0_OR_NEWER
+            _volumeFrontFaceRT?.Release();
+            _volumeFrontFaceRT = null;
+            _volumeBackFaceRT?.Release();
+            _volumeBackFaceRT = null;
+            _maskRT?.Release();
+            _maskRT = null;
+            _depthRT?.Release();
+            _depthRT = null;
+#endif
         }
 
         static void EnqueuePass(ScriptableRenderContext context, Camera camera)
@@ -226,6 +237,47 @@ namespace Crest
             CommandBufferPool.Release(commandBuffer);
 #endif
         }
+
+#if UNITY_6000_0_OR_NEWER && UNITY_2023_3_OR_NEWER
+        void EnsureRenderGraphTargets(UniversalCameraData cameraData)
+        {
+            var descriptor = cameraData.cameraTargetDescriptor;
+            _underwaterRenderer.SetUpVolume(_oceanMaskMaterial.material);
+
+            descriptor = _underwaterRenderer.GetMaskColorRTD(descriptor);
+            _maskRT ??= RTHandles.Alloc(descriptor);
+            RenderingUtils.ReAllocateHandleIfNeeded(ref _maskRT, descriptor);
+            _underwaterRenderer._maskTarget = new RenderTargetIdentifier(_maskRT, 0, CubemapFace.Unknown, -1);
+
+            descriptor = _underwaterRenderer.GetMaskDepthRTD(cameraData.cameraTargetDescriptor);
+            _depthRT ??= RTHandles.Alloc(descriptor);
+            RenderingUtils.ReAllocateHandleIfNeeded(ref _depthRT, descriptor);
+            _underwaterRenderer._depthTarget = new RenderTargetIdentifier(_depthRT, 0, CubemapFace.Unknown, -1);
+
+            if (_underwaterRenderer._mode == UnderwaterRenderer.Mode.FullScreen || _underwaterRenderer._volumeGeometry == null)
+                return;
+
+            descriptor = cameraData.cameraTargetDescriptor;
+            descriptor.msaaSamples = 1;
+            descriptor.colorFormat = RenderTextureFormat.Depth;
+            descriptor.depthBufferBits = 24;
+
+            _volumeFrontFaceRT ??= RTHandles.Alloc(descriptor);
+            RenderingUtils.ReAllocateHandleIfNeeded(ref _volumeFrontFaceRT, descriptor);
+            _underwaterRenderer._volumeFrontFaceTarget = new RenderTargetIdentifier(_volumeFrontFaceRT, 0, CubemapFace.Unknown, -1);
+
+            if (_underwaterRenderer._mode == UnderwaterRenderer.Mode.Volume || _underwaterRenderer._mode == UnderwaterRenderer.Mode.VolumeFlyThrough)
+            {
+                _volumeBackFaceRT ??= RTHandles.Alloc(descriptor);
+                RenderingUtils.ReAllocateHandleIfNeeded(ref _volumeBackFaceRT, descriptor);
+                _underwaterRenderer._volumeBackFaceTarget = new RenderTargetIdentifier(_volumeBackFaceRT, 0, CubemapFace.Unknown, -1);
+            }
+            else
+            {
+                _underwaterRenderer._volumeBackFaceTarget = default;
+            }
+        }
+#endif
     }
 }
 

@@ -17,11 +17,23 @@ namespace Hecton8.World
     {
         private const float BasePlasticRecycleStrain = 1.2f;
         private const float BaseDiscardPollution = 1.0f;
+        private const int MaxTrackedSectorStrainSlots = 128;
+        private const float SectorEdgeLengthMeters = 1000f;
+        private const float HarvestedResourceSectorStrainPerUnit = 0.02f;
+        private const float PreyKillSectorStrainPerUnit = 0.08f;
+        private const float EcologicalCollapseThreshold = 0.8f;
 
         private static EnvironmentalStrainManager _instance;
 
+        private HectonEventSubscription _itemCollectedSubscription;
         private HectonEventSubscription _itemRecycledSubscription;
         private HectonEventSubscription _itemDiscardedSubscription;
+
+        // COLD ALLOC: long[128] — packed 1 km sector keys for local ecological strain lookup — owner: EnvironmentalStrainManager
+        private readonly long[] _sectorStrainKeys = new long[MaxTrackedSectorStrainSlots];
+        // COLD ALLOC: float[128] — normalized local ecological strain values per tracked sector — owner: EnvironmentalStrainManager
+        private readonly float[] _sectorStrainValues = new float[MaxTrackedSectorStrainSlots];
+        private int _trackedSectorStrainCount;
 
         [SerializeField] private float _microplasticStrain;
         [SerializeField] private float _generalPollution;
@@ -58,6 +70,26 @@ namespace Hecton8.World
         /// </summary>
         public static float CurrentPredatorAggressionScale => _instance != null ? _instance.GetPredatorAggressionScale() : 1f;
 
+        /// <summary>
+        /// Resolves the normalized ecological strain carried by the 1 km sector containing the supplied world position.
+        /// </summary>
+        public static bool TryGetSectorStrain01(Vector3 worldPosition, out float strain01)
+        {
+            if (_instance != null)
+                return _instance.TryResolveSectorStrain(worldPosition, out strain01);
+
+            strain01 = 0f;
+            return false;
+        }
+
+        /// <summary>
+        /// True when the containing sector crossed the authored collapse threshold.
+        /// </summary>
+        public static bool IsSectorEcologicallyCollapsed(Vector3 worldPosition)
+        {
+            return TryGetSectorStrain01(worldPosition, out float strain01) && strain01 >= EcologicalCollapseThreshold;
+        }
+
         private void Awake()
         {
             if (_instance != null && _instance != this)
@@ -73,6 +105,9 @@ namespace Hecton8.World
         {
             GlobalRegistry.Save?.Register(this);
 
+            if (_itemCollectedSubscription == null)
+                _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, "world.environment");
+
             if (_itemRecycledSubscription == null)
                 _itemRecycledSubscription = HectonEventBus.Subscribe<ItemRecycledEvent>(HandleItemRecycled, "world.environment");
 
@@ -83,6 +118,8 @@ namespace Hecton8.World
         private void OnDisable()
         {
             GlobalRegistry.Save?.Unregister(this);
+            _itemCollectedSubscription?.Dispose();
+            _itemCollectedSubscription = null;
             _itemRecycledSubscription?.Dispose();
             _itemRecycledSubscription = null;
             _itemDiscardedSubscription?.Dispose();
@@ -92,6 +129,8 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             GlobalRegistry.Save?.Unregister(this);
+            _itemCollectedSubscription?.Dispose();
+            _itemCollectedSubscription = null;
             _itemRecycledSubscription?.Dispose();
             _itemRecycledSubscription = null;
             _itemDiscardedSubscription?.Dispose();
@@ -99,6 +138,23 @@ namespace Hecton8.World
 
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void HandleItemCollected(ItemCollectedEvent itemCollectedEvent)
+        {
+            if (itemCollectedEvent == null || itemCollectedEvent.Item == null || itemCollectedEvent.Quantity <= 0)
+                return;
+
+            if (itemCollectedEvent.Interactor == null)
+                return;
+
+            ItemData item = itemCollectedEvent.Item;
+            if (!item.isRawResource && item.category != ItemCategory.Material)
+                return;
+
+            AccumulateSectorStrain(
+                itemCollectedEvent.Interactor.position,
+                itemCollectedEvent.Quantity * HarvestedResourceSectorStrainPerUnit);
         }
 
         private void HandleItemRecycled(ItemRecycledEvent itemRecycledEvent)
@@ -138,6 +194,88 @@ namespace Hecton8.World
 
             if (microplasticDelta > 0f)
                 _microplasticStrain += ApplyGreenTechReduction(microplasticDelta);
+        }
+
+        internal void AccumulatePredationStrain(Vector3 worldPosition, int preyRemoved)
+        {
+            if (preyRemoved <= 0)
+                return;
+
+            AccumulateSectorStrain(worldPosition, preyRemoved * PreyKillSectorStrainPerUnit);
+        }
+
+        private bool TryResolveSectorStrain(Vector3 worldPosition, out float strain01)
+        {
+            int slot = FindSectorStrainSlot(PackSectorKey(worldPosition));
+            if (slot >= 0)
+            {
+                strain01 = _sectorStrainValues[slot];
+                return true;
+            }
+
+            strain01 = 0f;
+            return false;
+        }
+
+        private void AccumulateSectorStrain(Vector3 worldPosition, float strainDelta)
+        {
+            if (strainDelta <= 0f)
+                return;
+
+            long packedKey = PackSectorKey(worldPosition);
+            int slot = FindSectorStrainSlot(packedKey);
+            if (slot < 0)
+            {
+                if (_trackedSectorStrainCount >= MaxTrackedSectorStrainSlots)
+                    slot = FindLowestStrainSlot();
+                else
+                    slot = _trackedSectorStrainCount++;
+
+                if (slot < 0)
+                    return;
+
+                _sectorStrainKeys[slot] = packedKey;
+                _sectorStrainValues[slot] = 0f;
+            }
+
+            _sectorStrainValues[slot] = Mathf.Clamp01(_sectorStrainValues[slot] + strainDelta);
+        }
+
+        private int FindSectorStrainSlot(long packedKey)
+        {
+            for (int i = 0; i < _trackedSectorStrainCount; i++)
+            {
+                if (_sectorStrainKeys[i] == packedKey)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private int FindLowestStrainSlot()
+        {
+            if (_trackedSectorStrainCount <= 0)
+                return -1;
+
+            int bestIndex = 0;
+            float bestStrain = _sectorStrainValues[0];
+            for (int i = 1; i < _trackedSectorStrainCount; i++)
+            {
+                if (_sectorStrainValues[i] >= bestStrain)
+                    continue;
+
+                bestStrain = _sectorStrainValues[i];
+                bestIndex = i;
+            }
+
+            return bestIndex;
+        }
+
+        private static long PackSectorKey(Vector3 worldPosition)
+        {
+            int sectorX = Mathf.FloorToInt(worldPosition.x / SectorEdgeLengthMeters);
+            int sectorZ = Mathf.FloorToInt(worldPosition.z / SectorEdgeLengthMeters);
+            return ((long)sectorX << 32) | (uint)sectorZ;
         }
 
         private static float ResolveDiscardPollution(ItemData item)

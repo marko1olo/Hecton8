@@ -984,12 +984,28 @@ namespace Hecton8.Core
                 int exportBytes = _pendingExportBytes;
                 if (!string.IsNullOrEmpty(exportPath) && exportBytes > 0)
                 {
+                    string directory = Path.GetDirectoryName(exportPath);
+                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                        Directory.CreateDirectory(directory);
+
                     unsafe
                     {
                         void* exportPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_exportScratch);
                         AsyncWriteManager.WriteAll(exportPath, exportPtr, exportBytes, out _);
                     }
                 }
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
+            }
+            catch (IOException exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
             }
             catch (Exception)
             {

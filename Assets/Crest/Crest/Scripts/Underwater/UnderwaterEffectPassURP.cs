@@ -351,6 +351,53 @@ namespace Crest
             _firstRender = false;
         }
 
+#if UNITY_6000_0_OR_NEWER && UNITY_2023_3_OR_NEWER
+        void EnsureRenderGraphTemporaryTargets(UniversalCameraData cameraData, RenderGraphHelper.Handle colorTargetHandle, RenderGraphHelper.Handle depthTargetHandle)
+        {
+            var descriptor = cameraData.cameraTargetDescriptor;
+            descriptor.msaaSamples = 1;
+
+            RTHandle colorHandle = colorTargetHandle.RT;
+            if (colorHandle != null)
+            {
+                Vector2Int size = colorHandle.GetScaledSize();
+                if (size.x > 0 && size.y > 0)
+                {
+                    descriptor.width = size.x;
+                    descriptor.height = size.y;
+                }
+            }
+
+            _temporaryColorHandle ??= RTHandles.Alloc(descriptor);
+            RenderingUtils.ReAllocateHandleIfNeeded(ref _temporaryColorHandle, descriptor);
+            _temporaryColorTarget = new RenderTargetIdentifier(_temporaryColorHandle, 0, CubemapFace.Unknown, -1);
+
+            if (!_underwaterRenderer.UseStencilBufferOnEffect)
+                return;
+
+            descriptor = cameraData.cameraTargetDescriptor;
+            descriptor.colorFormat = RenderTextureFormat.Depth;
+            descriptor.depthBufferBits = 24;
+            descriptor.SetMSAASamples(cameraData.camera);
+            descriptor.bindMS = descriptor.msaaSamples > 1;
+
+            RTHandle depthHandle = depthTargetHandle.RT;
+            if (depthHandle != null)
+            {
+                Vector2Int size = depthHandle.GetScaledSize();
+                if (size.x > 0 && size.y > 0)
+                {
+                    descriptor.width = size.x;
+                    descriptor.height = size.y;
+                }
+            }
+
+            _depthStencilHandle ??= RTHandles.Alloc(descriptor);
+            RenderingUtils.ReAllocateHandleIfNeeded(ref _depthStencilHandle, descriptor);
+            _depthStencilTarget = new RenderTargetIdentifier(_depthStencilHandle, 0, CubemapFace.Unknown, -1);
+        }
+#endif
+
         partial class RenderObjectsWithoutFogPass : ScriptableRenderPass
         {
             FilteringSettings m_FilteringSettings;

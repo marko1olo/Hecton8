@@ -4242,15 +4242,18 @@ public class HectonVoxelEngine : MonoBehaviour
 
                 var mcol = go.GetComponent<MeshCollider>();
                 if (mcol == null) mcol = go.AddComponent<MeshCollider>();
-                mcol.sharedMesh = null;
-                mcol.enabled = false;
 
                 HectonVoxelVolume volume = go.GetComponent<HectonVoxelVolume>();
-                if (volume != null)
-                    volume.ResetColliderChunks(false);
 
                 if (!data.BuildCollider)
+                {
+                    if (volume != null)
+                        volume.ResetColliderChunks(false);
+
+                    mcol.sharedMesh = null;
+                    mcol.enabled = false;
                     return;
+                }
 
                 if (volume == null)
                 {
@@ -4364,18 +4367,18 @@ public class HectonVoxelEngine : MonoBehaviour
                 ct.ThrowIfCancellationRequested();
 
                 MeshCollider chunkCollider = volume.GetColliderChunkCollider(chunkIndex);
-                Mesh chunkMesh = volume.GetOrCreateColliderChunkMesh(chunkIndex);
+                Mesh chunkMesh = volume.GetOrCreateColliderChunkBakeMesh(chunkIndex);
                 if (chunkCollider == null || chunkMesh == null)
                     continue;
 
                 int chunkIndexCount = bucketCounts[chunkIndex];
-                chunkCollider.sharedMesh = null;
-                chunkCollider.enabled = false;
 
                 if (chunkIndexCount <= 0)
                 {
-                    chunkMesh.Clear(false);
+                    chunkCollider.sharedMesh = null;
+                    chunkCollider.enabled = false;
                     chunkCollider.gameObject.SetActive(false);
+                    chunkMesh.Clear(false);
                     continue;
                 }
 
@@ -4422,7 +4425,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 await AwaitForJobCompletionAsync(bakeHandle, ct);
 
                 ct.ThrowIfCancellationRequested();
-                chunkCollider.sharedMesh = chunkMesh;
+                volume.PublishColliderChunkMesh(chunkIndex);
                 chunkCollider.enabled = true;
 
                 await Awaitable.NextFrameAsync(cancellationToken: ct);
@@ -4434,7 +4437,7 @@ public class HectonVoxelEngine : MonoBehaviour
         finally
         {
             if (!completed)
-                volume.ResetColliderChunks(false);
+                volume.ClearColliderChunkBakeMeshes();
 
             if (triangleBuckets.IsCreated) triangleBuckets.Dispose();
             if (bucketCounts.IsCreated) bucketCounts.Dispose();

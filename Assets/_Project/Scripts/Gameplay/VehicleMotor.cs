@@ -32,6 +32,7 @@ namespace Hecton8.Gameplay
         private const float SlopeDot45Degrees = 0.70710678f;
         private const float GroundAlignmentSharpness = 10f;
         private const float MaxHydrodynamicGhostBlend = 0.15f;
+        private const float MinDepthViscosityReferenceMeters = 100f;
 
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
@@ -53,6 +54,7 @@ namespace Hecton8.Gameplay
         private int _hydrodynamicGhostWriteIndex;
         private int _hydrodynamicGhostSampleCount;
         private float _hydrodynamicSubmersionFactor;
+        private float _hydrodynamicDepthMeters;
 
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
@@ -89,6 +91,7 @@ namespace Hecton8.Gameplay
             _groundNormal = Vector3.up;
             _groundContactTimer = 0f;
             _hydrodynamicSubmersionFactor = 0f;
+            _hydrodynamicDepthMeters = 0f;
             ResetHydrodynamicGhostState();
         }
 
@@ -102,6 +105,12 @@ namespace Hecton8.Gameplay
         public void ConfigureHydrodynamicSubmersion(float submersionFactor)
         {
             _hydrodynamicSubmersionFactor = math.saturate(submersionFactor);
+        }
+
+        /// <summary>Sets the current water depth used to scale analytical viscosity drag.</summary>
+        public void ConfigureHydrodynamicDepth(float depthMeters)
+        {
+            _hydrodynamicDepthMeters = math.max(0f, depthMeters);
         }
 
         /// <summary>
@@ -130,7 +139,10 @@ namespace Hecton8.Gameplay
                 localAngularVelocityDegrees.x += (-pitchInput * pitchAngularAccelerationDegrees) * safeDeltaTime;
                 localAngularVelocityDegrees.y += (yawInput * yawAngularAccelerationDegrees) * safeDeltaTime;
                 float angularDampingFactor = math.saturate(angularDamping * safeDeltaTime);
-                localAngularVelocityDegrees = Vector3.Lerp(localAngularVelocityDegrees, Vector3.zero, angularDampingFactor);
+                localAngularVelocityDegrees = (Vector3)math.lerp(
+                    new float3(localAngularVelocityDegrees.x, localAngularVelocityDegrees.y, localAngularVelocityDegrees.z),
+                    float3.zero,
+                    angularDampingFactor);
                 _localAngularVelocityDegrees = HectonPlayerMotor.SafeVelocity(localAngularVelocityDegrees);
 
                 Quaternion deltaRotation = Quaternion.Euler(_localAngularVelocityDegrees * safeDeltaTime);
@@ -146,8 +158,8 @@ namespace Hecton8.Gameplay
                 if (downwardAcceleration > 0f)
                     candidateVelocity += Vector3.down * (downwardAcceleration * safeDeltaTime);
 
-                float dampingDenominator = math.max(1f, 1f + math.max(0f, linearDamping) * safeDeltaTime);
-                candidateVelocity /= dampingDenominator;
+                float effectiveDragCoefficient = ResolveDepthScaledDragCoefficient(linearDamping);
+                candidateVelocity = ApplyAnalyticalDrag(candidateVelocity, effectiveDragCoefficient, safeDeltaTime);
 
                 float safeMaxSpeed = math.max(0.1f, maxSpeed);
                 float sqrMagnitude = candidateVelocity.sqrMagnitude;
@@ -358,8 +370,35 @@ namespace Hecton8.Gameplay
                 return safeActualVelocity;
 
             Vector3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
-            Vector3 perceivedVelocity = Vector3.Lerp(safeActualVelocity, oldestVelocity, ghostBlend);
+            Vector3 perceivedVelocity = (Vector3)math.lerp(
+                new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z),
+                new float3(oldestVelocity.x, oldestVelocity.y, oldestVelocity.z),
+                ghostBlend);
             return HectonPlayerMotor.SafeVelocity(perceivedVelocity, safeActualVelocity);
+        }
+
+        private float ResolveDepthScaledDragCoefficient(float baseDragCoefficient)
+        {
+            float safeBaseDrag = math.max(0f, baseDragCoefficient);
+            if (safeBaseDrag <= 0f)
+                return 0f;
+
+            float depthViscosityScale = math.log10(1f + (_hydrodynamicDepthMeters / MinDepthViscosityReferenceMeters));
+            float depthDragCoefficient = safeBaseDrag * math.max(0f, depthViscosityScale);
+            return safeBaseDrag + depthDragCoefficient;
+        }
+
+        private static Vector3 ApplyAnalyticalDrag(Vector3 velocity, float dragCoefficient, float deltaTime)
+        {
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            float speed = math.length(velocity3);
+            if (speed <= 0.0001f || dragCoefficient <= 0f)
+                return velocity;
+
+            float safeDeltaTime = math.max(deltaTime, 0.0001f);
+            float denominator = math.max(1f, 1f + (dragCoefficient * speed * safeDeltaTime));
+            float3 result = velocity3 / denominator;
+            return new Vector3(result.x, result.y, result.z);
         }
 
         private void RecordHydrodynamicGhostVelocity(Vector3 velocity)

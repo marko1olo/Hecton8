@@ -328,6 +328,14 @@ namespace Hecton8.Gameplay
                     currentPosition += advance;
                 }
 
+                float penetrationDepth = math.max(0f, skinWidth - nearestHit.distance);
+                if (penetrationDepth > 0f)
+                {
+                    Vector3 depenetration = nearestHit.normal * penetrationDepth;
+                    accumulatedDisplacement += depenetration;
+                    currentPosition += depenetration;
+                }
+
                 Vector3 slideDisplacement = Vector3.ProjectOnPlane(remainingDisplacement - advance, nearestHit.normal);
                 if (slideDisplacement.sqrMagnitude <= MinVectorMagnitudeSq)
                     break;
@@ -541,7 +549,10 @@ namespace Hecton8.Gameplay
                 wasBlocked = true;
                 blockingHit = _scheduledSweepResults[nearestIndex];
                 float safeDistance = math.max(0f, blockingHit.distance - _scheduledSweepState.SkinWidth);
-                resolvedPosition = startPosition + (_scheduledSweepState.Direction * safeDistance);
+                float penetrationDepth = math.max(0f, _scheduledSweepState.SkinWidth - blockingHit.distance);
+                resolvedPosition = startPosition +
+                    (_scheduledSweepState.Direction * safeDistance) +
+                    (blockingHit.normal * penetrationDepth);
 
                 Vector3 previousVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
                 Vector3 projectedVelocity = Vector3.ProjectOnPlane(previousVelocity, blockingHit.normal);

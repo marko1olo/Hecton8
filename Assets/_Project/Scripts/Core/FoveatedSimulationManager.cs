@@ -367,7 +367,11 @@ namespace Hecton8.Core
             if (TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
                 rawVelocity = SanitizeFiniteVector((currentPosition - previousPosition) * inverseDeltaTime);
             float velocityBlend = 1.0f - math.exp(-ResolveVelocitySmoothingSharpness(_tickRates[index]) * deltaTime);
-            _smoothedVelocities[index] = Vector3.Lerp(_smoothedVelocities[index], rawVelocity, velocityBlend);
+            float3 smoothedVelocity = math.lerp(
+                new float3(_smoothedVelocities[index].x, _smoothedVelocities[index].y, _smoothedVelocities[index].z),
+                new float3(rawVelocity.x, rawVelocity.y, rawVelocity.z),
+                velocityBlend);
+            _smoothedVelocities[index] = new Vector3(smoothedVelocity.x, smoothedVelocity.y, smoothedVelocity.z);
 
             if (_deferredRaycastCommands.IsCreated &&
                 _pendingDeferredRaycastCommands.IsCreated &&

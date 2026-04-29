@@ -666,6 +666,7 @@ namespace Hecton8.UI
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RebuildLocalizationCache();
+            HideIncompleteRootImmediately();
 
             if (!Application.isPlaying)
             {
@@ -673,6 +674,7 @@ namespace Hecton8.UI
                 {
                     NormalizeCanvas();
                     EnsureHierarchy();
+                    RefreshVisuals(0f, refreshMediumCadence: true, refreshSlowCadence: true);
                 }
 
                 return;
@@ -730,6 +732,48 @@ namespace Hecton8.UI
             DisposeThreatChevronRuntimeResources();
         }
 
+        private void HideIncompleteRootImmediately()
+        {
+            RectTransform root = _root;
+            if (root == null)
+            {
+                Canvas resolvedCanvas = targetCanvas != null ? targetCanvas : ResolveTargetCanvas();
+                RectTransform parentRoot = ResolveUiParent(resolvedCanvas);
+                if (parentRoot != null)
+                    root = FindChildRect(parentRoot, RootName);
+
+                if (root == null && resolvedCanvas != null)
+                    root = FindChildRect(resolvedCanvas.transform, RootName);
+            }
+
+            if (root == null)
+                return;
+
+            _root = root;
+            EnsureRootCanvasGroup();
+            if (_rootCanvasGroup != null)
+            {
+                _rootCanvasGroup.alpha = 0f;
+                _rootCanvasGroup.interactable = false;
+                _rootCanvasGroup.blocksRaycasts = false;
+                _appliedRootVisible = false;
+                _hasAppliedRootVisibility = true;
+            }
+
+            Image[] images = root.GetComponentsInChildren<Image>(true);
+            for (int imageIndex = 0; imageIndex < images.Length; imageIndex++)
+            {
+                Image image = images[imageIndex];
+                if (image == null || image.name != "AcousticRadarOverlay")
+                    continue;
+
+                image.enabled = false;
+                if (_acousticRadarMaterial != null && image.material == _acousticRadarMaterial)
+                    image.material = null;
+                break;
+            }
+        }
+
         private void TryRegisterUiService()
         {
             if (!Application.isPlaying || _ownsGlobalUiSlot)
@@ -758,6 +802,7 @@ namespace Hecton8.UI
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RebuildLocalizationCache();
+            HideIncompleteRootImmediately();
 
             if (!Application.isPlaying && isActiveAndEnabled && keepVisibleInEditMode)
             {
@@ -773,6 +818,8 @@ namespace Hecton8.UI
                 return;
 
             NormalizeCanvas();
+            EnsureHierarchy();
+            RefreshVisuals(0f, refreshMediumCadence: true, refreshSlowCadence: true);
         }
 
         private void OnDrawGizmos()
@@ -939,6 +986,7 @@ namespace Hecton8.UI
             {
                 NormalizeCanvas();
                 EnsureHierarchy();
+                RefreshVisuals(0f, refreshMediumCadence: true, refreshSlowCadence: true);
             }
         }
 
@@ -2028,9 +2076,6 @@ namespace Hecton8.UI
                 InvalidateVisualCaches();
             }
 
-            EnsureRootCanvasGroup();
-            SetRootVisible(true);
-
             if (_appliedLayoutRevision != LayoutRevision)
             {
                 _layoutBuilt = false;
@@ -2038,8 +2083,16 @@ namespace Hecton8.UI
                 InvalidateVisualCaches();
             }
 
+            EnsureRootCanvasGroup();
             if (_layoutBuilt)
+            {
+                SetRootVisible(true);
                 return;
+            }
+
+            // Keep the projection root hidden until the first full visual pass
+            // has restyled the default white UI primitives.
+            SetRootVisible(false);
 
             ClearChildren(_root);
 
@@ -2051,6 +2104,7 @@ namespace Hecton8.UI
             _acousticRadarOverlay = CreateImage("AcousticRadarOverlay", _root, Color.white);
             Stretch(_acousticRadarOverlay.rectTransform, 0f, 0f, 0f, 0f);
             _acousticRadarOverlay.raycastTarget = false;
+            _acousticRadarOverlay.enabled = false;
 
             _ornamentRoot = CreateRect("OrnamentRoot", _root);
             Stretch(_ornamentRoot, 0f, 0f, 0f, 0f);
@@ -2429,6 +2483,8 @@ namespace Hecton8.UI
             bool shouldRefreshHeadingLabel = specialCadenceBypass || NeedsHeadingCadenceRefresh(refreshMediumCadence, heading);
             bool shouldRefreshTelemetryText = specialCadenceBypass || NeedsTelemetryCadenceRefresh(refreshMediumCadence, oxygen, depth, localizedTemperature, pressure);
             bool shouldRefreshGaugeText = specialCadenceBypass || NeedsGaugeCadenceRefresh(refreshMediumCadence, oxygen, power, health);
+
+            SetRootVisible(true);
             bool shouldRefreshQuickbar = !_quickbarVisualsInitialized || specialCadenceBypass || refreshMediumCadence;
             char[] hullStressWhisperBuffer = null;
             int hullStressWhisperLength = 0;

@@ -79,6 +79,7 @@ namespace Hecton8.Caves
         private Transform _colliderChunkRoot;
         private MeshCollider[] _colliderChunkColliders = Array.Empty<MeshCollider>();
         private Mesh[] _colliderChunkMeshes = Array.Empty<Mesh>();
+        private Mesh[] _colliderChunkBakeMeshes = Array.Empty<Mesh>();
         private MeshRenderer _meshRenderer;
         private MeshCollider _rootMeshCollider;
         private VoxelBakeState _bakeState;
@@ -265,14 +266,18 @@ namespace Hecton8.Caves
                 MeshCollider[] newColliders = new MeshCollider[clampedCount];
                 // COLD ALLOC: Mesh[clampedCount] - pooled collider meshes for distributed voxel physics - owner: HectonVoxelVolume
                 Mesh[] newMeshes = new Mesh[clampedCount];
+                // COLD ALLOC: Mesh[clampedCount] - staged collider bake meshes for front/back voxel physics publication - owner: HectonVoxelVolume
+                Mesh[] newBakeMeshes = new Mesh[clampedCount];
                 for (int i = 0; i < _colliderChunkColliders.Length; i++)
                 {
                     newColliders[i] = _colliderChunkColliders[i];
                     newMeshes[i] = _colliderChunkMeshes[i];
+                    newBakeMeshes[i] = _colliderChunkBakeMeshes[i];
                 }
 
                 _colliderChunkColliders = newColliders;
                 _colliderChunkMeshes = newMeshes;
+                _colliderChunkBakeMeshes = newBakeMeshes;
             }
 
             for (int i = 0; i < clampedCount; i++)
@@ -329,6 +334,65 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Returns a reusable staging mesh for the requested collider chunk.
+        /// The staged mesh is never the currently published collider mesh.
+        /// </summary>
+        internal Mesh GetOrCreateColliderChunkBakeMesh(int index)
+        {
+            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
+                return null;
+
+            Mesh mesh = _colliderChunkBakeMeshes[index];
+            if (mesh != null)
+                return mesh;
+
+            mesh = new Mesh
+            {
+                name = $"VoxelColliderChunkBake_{index:D2}_{name}"
+            };
+            mesh.MarkDynamic();
+            _colliderChunkBakeMeshes[index] = mesh;
+            return mesh;
+        }
+
+        /// <summary>
+        /// Publishes the staged collider mesh for the requested chunk and swaps the previous live mesh into the bake slot.
+        /// </summary>
+        internal void PublishColliderChunkMesh(int index)
+        {
+            if (index < 0 ||
+                index >= _colliderChunkColliders.Length ||
+                index >= _colliderChunkMeshes.Length ||
+                index >= _colliderChunkBakeMeshes.Length)
+            {
+                return;
+            }
+
+            MeshCollider collider = _colliderChunkColliders[index];
+            Mesh stagedMesh = _colliderChunkBakeMeshes[index];
+            if (collider == null || stagedMesh == null)
+                return;
+
+            Mesh previousLiveMesh = _colliderChunkMeshes[index];
+            collider.sharedMesh = stagedMesh;
+            _colliderChunkMeshes[index] = stagedMesh;
+            _colliderChunkBakeMeshes[index] = previousLiveMesh;
+        }
+
+        /// <summary>
+        /// Clears staged collider bake meshes without touching the currently published live collider meshes.
+        /// </summary>
+        internal void ClearColliderChunkBakeMeshes()
+        {
+            for (int i = 0; i < _colliderChunkBakeMeshes.Length; i++)
+            {
+                Mesh mesh = _colliderChunkBakeMeshes[i];
+                if (mesh != null)
+                    mesh.Clear(false);
+            }
+        }
+
+        /// <summary>
         /// Clears all pooled collider chunks. When destroyMeshes is true the mesh instances are destroyed permanently.
         /// </summary>
         public void ResetColliderChunks(bool destroyMeshes)
@@ -345,17 +409,31 @@ namespace Hecton8.Caves
                 }
 
                 Mesh mesh = i < _colliderChunkMeshes.Length ? _colliderChunkMeshes[i] : null;
-                if (mesh == null)
-                    continue;
-
-                if (destroyMeshes)
+                Mesh bakeMesh = i < _colliderChunkBakeMeshes.Length ? _colliderChunkBakeMeshes[i] : null;
+                if (mesh != null)
                 {
-                    DestroyOwnedObject(mesh);
-                    _colliderChunkMeshes[i] = null;
+                    if (destroyMeshes)
+                    {
+                        DestroyOwnedObject(mesh);
+                        _colliderChunkMeshes[i] = null;
+                    }
+                    else
+                    {
+                        mesh.Clear(false);
+                    }
                 }
-                else
+
+                if (bakeMesh != null)
                 {
-                    mesh.Clear(false);
+                    if (destroyMeshes)
+                    {
+                        DestroyOwnedObject(bakeMesh);
+                        _colliderChunkBakeMeshes[i] = null;
+                    }
+                    else
+                    {
+                        bakeMesh.Clear(false);
+                    }
                 }
             }
 
@@ -724,11 +802,12 @@ namespace Hecton8.Caves
         {
             CacheRuntimeComponents();
 
-            bool interactionAllowed = _bakeState == VoxelBakeState.Complete;
+            bool visualsStable = _bakeState == VoxelBakeState.Complete;
+            bool collisionAllowed = _bakeState != VoxelBakeState.Idle;
             if (_meshRenderer != null)
             {
                 Material targetMaterial = null;
-                if (_engine != null && interactionAllowed)
+                if (_engine != null && visualsStable)
                     targetMaterial = _engine.voxelMaterial;
                 else if (_engine != null)
                     targetMaterial = _engine.ResolvedVoxelBakeGhostMaterial != null
@@ -740,7 +819,7 @@ namespace Hecton8.Caves
             }
 
             if (_rootMeshCollider != null)
-                _rootMeshCollider.enabled = interactionAllowed && _rootMeshCollider.sharedMesh != null;
+                _rootMeshCollider.enabled = collisionAllowed && _rootMeshCollider.sharedMesh != null;
 
             for (int i = 0; i < _colliderChunkColliders.Length; i++)
             {
@@ -748,7 +827,7 @@ namespace Hecton8.Caves
                 if (collider == null)
                     continue;
 
-                collider.enabled = interactionAllowed && collider.sharedMesh != null && collider.gameObject.activeSelf;
+                collider.enabled = collisionAllowed && collider.sharedMesh != null && collider.gameObject.activeSelf;
             }
         }
 

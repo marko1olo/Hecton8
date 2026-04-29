@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.SaveSystem;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -16,6 +17,8 @@ namespace Hecton8.Optimization
         private const int DefaultSampleIntervalFrames = 90;
         private const float RamWarningFraction = 0.75f;
         private const float RamEmergencyFraction = 0.90f;
+        private const long MinimumHardwareHeadroomBytes = 200L * 1024L * 1024L;
+        private const int WorldPrefabEvictionIdleFrames = 180;
 
         private static VRAMPressureMonitor _instance;
 
@@ -185,15 +188,27 @@ namespace Hecton8.Optimization
         private void RunPressureEviction(AssetLifecycleGovernor governor, VRAMMonitor monitor)
         {
             EmergencyEvictionCount = 0;
-            if (governor == null)
-                return;
+            ItemCatalog itemCatalog = GlobalRegistry.PlayerInventory != null && GlobalRegistry.PlayerInventory.Inventory != null
+                ? GlobalRegistry.PlayerInventory.Inventory.ItemCatalog
+                : null;
+
+            long hardwareHeadroomBytes = long.MaxValue;
+            if (monitor != null)
+            {
+                hardwareHeadroomBytes = ((long)SystemInfo.graphicsMemorySize * 1024L * 1024L) - monitor.TotalVRAMBytes;
+                if (hardwareHeadroomBytes < 0L)
+                    hardwareHeadroomBytes = 0L;
+            }
 
             if (VramPressureFactor >= emergencyVramFraction || RamPressureFactor >= RamEmergencyFraction)
             {
-                governor.ForceDrainPendingReleaseQueue();
-                EmergencyEvictionCount = governor.EvictLowestPriorityUnusedAssets(
-                    maxEmergencyEvictionsPerPass,
-                    AssetPriorityTier.Tier4MidRange);
+                if (governor != null)
+                {
+                    governor.ForceDrainPendingReleaseQueue();
+                    EmergencyEvictionCount = governor.EvictLowestPriorityUnusedAssets(
+                        maxEmergencyEvictionsPerPass,
+                        AssetPriorityTier.Tier4MidRange);
+                }
 
                 if (monitor != null && monitor.RenderTextureBudgetUtilization >= 1f)
                 {
@@ -202,13 +217,26 @@ namespace Hecton8.Optimization
                         pool.ClearAllPools();
                 }
 
+                if (itemCatalog != null && hardwareHeadroomBytes < MinimumHardwareHeadroomBytes)
+                {
+                    EmergencyEvictionCount += itemCatalog.EvictLeastRecentlyUsedWorldPrefabs(
+                        maxEmergencyEvictionsPerPass,
+                        WorldPrefabEvictionIdleFrames);
+                }
+
                 return;
             }
 
             if (VramPressureFactor >= warningVramFraction || RamPressureFactor >= RamWarningFraction)
             {
-                governor.ForceDrainPendingReleaseQueue();
-                governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTier.Tier5DistantHlod);
+                if (governor != null)
+                {
+                    governor.ForceDrainPendingReleaseQueue();
+                    governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTier.Tier5DistantHlod);
+                }
+
+                if (itemCatalog != null && hardwareHeadroomBytes < MinimumHardwareHeadroomBytes)
+                    itemCatalog.EvictLeastRecentlyUsedWorldPrefabs(1, WorldPrefabEvictionIdleFrames);
             }
         }
     }

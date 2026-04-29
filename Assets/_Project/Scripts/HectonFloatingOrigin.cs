@@ -92,6 +92,7 @@ namespace Hecton8.Core
         private bool _physicsAutoSimulationBeforeShift = true;
         private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
         private bool _driftCheckScheduled;
+        private int _physicsResumeFrame = -1;
         private float _thresholdSqr;
         private float _anchorResolveTimer;
         private uint _shiftSequence;
@@ -321,7 +322,15 @@ namespace Hecton8.Core
         /// <param name="deltaTime">Scaled tick delta supplied by the tick manager.</param>
         public void Tick(float deltaTime)
         {
-            if (_isShiftInProgress || _physicsPauseActive)
+            if (_physicsPauseActive)
+            {
+                if (Time.frameCount >= _physicsResumeFrame)
+                    ResumePhysicsAfterShift();
+                else
+                    return;
+            }
+
+            if (_isShiftInProgress)
                 return;
 
             if (_driftCheckScheduled && _driftCheckHandle.IsCompleted && ConsumeCompletedDriftCheck())
@@ -424,7 +433,6 @@ namespace Hecton8.Core
                 if (trackedBodiesPrepared && !trackedBodiesFinalized)
                     PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
 
-                ResumePhysicsAfterShift();
                 _isShiftInProgress = false;
             }
 
@@ -442,6 +450,7 @@ namespace Hecton8.Core
             _physicsSimulationModeBeforeShift = UnityEngine.Physics.simulationMode;
             UnityEngine.Physics.simulationMode = SimulationMode.Script;
             _physicsPauseActive = true;
+            _physicsResumeFrame = Time.frameCount + 1;
         }
 
         private void ResumePhysicsAfterShift()
@@ -454,6 +463,7 @@ namespace Hecton8.Core
 #pragma warning restore CS0618
             UnityEngine.Physics.simulationMode = _physicsSimulationModeBeforeShift;
             _physicsPauseActive = false;
+            _physicsResumeFrame = -1;
         }
 
         private void BroadcastOriginShift(in OriginShiftEventData shiftData)

@@ -23,6 +23,8 @@ namespace Hecton8.Gameplay
         private const float UnderwaterGravity = 2.9f;
         private const float NoiseStrength = 0.42f;
         private const float MinimumPower = 0.05f;
+        private const float WorldCullY = -5000f;
+        private const float MaximumChunkLifetime = 60f;
 
         private static DebrisManager _instance;
 
@@ -275,6 +277,8 @@ namespace Hecton8.Gameplay
                     CollisionDisableDelay = CollisionDisableDelay,
                     Gravity = UnderwaterGravity,
                     NoiseStrength = NoiseStrength,
+                    MaximumLifetime = MaximumChunkLifetime,
+                    WorldCullY = WorldCullY,
                     RandomSeed = ResolveJobSeed()
                 };
                 _simulationHandle = job.Schedule();
@@ -707,6 +711,8 @@ namespace Hecton8.Gameplay
             public float CollisionDisableDelay;
             public float Gravity;
             public float NoiseStrength;
+            public float MaximumLifetime;
+            public float WorldCullY;
             public uint RandomSeed;
 
             public void Execute()
@@ -724,6 +730,12 @@ namespace Hecton8.Gameplay
                     }
 
                     state.Age += dt;
+                    if (state.Age > MaximumLifetime || state.Position.y < WorldCullY)
+                    {
+                        WriteStates[i] = default;
+                        continue;
+                    }
+
                     float inverseMass = 1f / math.max(0.2f, state.MassScale);
                     float3 randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
 

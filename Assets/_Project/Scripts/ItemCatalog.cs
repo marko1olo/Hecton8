@@ -54,6 +54,7 @@ namespace Hecton8.SaveSystem
             public AssetReferenceGameObject PrefabReference;
             public AsyncOperationHandle<GameObject> Handle;
             public WorldPrefabLoadState LoadState;
+            public int LastAccessFrame;
         }
 
         private readonly struct WorldPrefabGuidFallbackEntry
@@ -167,6 +168,7 @@ namespace Hecton8.SaveSystem
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary;
         private List<ItemData> _runtimeItems;
+        private const int DefaultWorldPrefabLruIdleFrames = 180;
 
         /// <summary>
         /// True when the catalog detected at least one authored or runtime alias collision.
@@ -241,6 +243,9 @@ namespace Hecton8.SaveSystem
 
             if (_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
             {
+                runtimeRecord.LastAccessFrame = Time.frameCount;
+                _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
+
                 if (runtimeRecord.LoadState == WorldPrefabLoadState.Loaded)
                     return runtimeRecord.Handle.IsValid() && runtimeRecord.Handle.Result != null;
 
@@ -264,7 +269,8 @@ namespace Hecton8.SaveSystem
             {
                 PrefabReference = prefabReference,
                 Handle = handle,
-                LoadState = WorldPrefabLoadState.Loading
+                LoadState = WorldPrefabLoadState.Loading,
+                LastAccessFrame = Time.frameCount
             };
 
             return true;
@@ -297,6 +303,8 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
                 return false;
 
+            runtimeRecord.LastAccessFrame = Time.frameCount;
+
             if (!runtimeRecord.Handle.IsValid())
             {
                 runtimeRecord.LoadState = WorldPrefabLoadState.Failed;
@@ -324,6 +332,7 @@ namespace Hecton8.SaveSystem
                 return false;
 
             prefab = runtimeRecord.Handle.Result;
+            _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
             return prefab != null;
 #endif
         }
@@ -413,11 +422,57 @@ namespace Hecton8.SaveSystem
                 if (!_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
                     continue;
 
-                if (runtimeRecord.Handle.IsValid())
-                    Addressables.Release(runtimeRecord.Handle);
-
-                _worldPrefabRuntimeLookup.Remove(hashId);
+                ReleaseWorldPrefabRuntimeRecord(hashId, runtimeRecord);
             }
+#endif
+        }
+
+        public int EvictLeastRecentlyUsedWorldPrefabs(int maxReleaseCount, int minUnusedFrames = DefaultWorldPrefabLruIdleFrames)
+        {
+#if !UNITY_ADDRESSABLES_EXIST
+            return 0;
+#else
+            if (maxReleaseCount <= 0 || _worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count <= 0)
+                return 0;
+
+            int currentFrame = Time.frameCount;
+            int minimumIdleFrames = minUnusedFrames > 0 ? minUnusedFrames : DefaultWorldPrefabLruIdleFrames;
+            int evictedCount = 0;
+
+            while (evictedCount < maxReleaseCount)
+            {
+                bool foundCandidate = false;
+                int candidateHashId = 0;
+                int oldestAccessFrame = int.MaxValue;
+                Dictionary<int, WorldPrefabRuntimeRecord>.Enumerator enumerator = _worldPrefabRuntimeLookup.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    KeyValuePair<int, WorldPrefabRuntimeRecord> entry = enumerator.Current;
+                    WorldPrefabRuntimeRecord runtimeRecord = entry.Value;
+                    if (runtimeRecord.LoadState != WorldPrefabLoadState.Loaded || !runtimeRecord.Handle.IsValid())
+                        continue;
+
+                    if (currentFrame - runtimeRecord.LastAccessFrame < minimumIdleFrames)
+                        continue;
+
+                    if (!foundCandidate || runtimeRecord.LastAccessFrame < oldestAccessFrame)
+                    {
+                        foundCandidate = true;
+                        candidateHashId = entry.Key;
+                        oldestAccessFrame = runtimeRecord.LastAccessFrame;
+                    }
+                }
+
+                enumerator.Dispose();
+
+                if (!foundCandidate || !_worldPrefabRuntimeLookup.TryGetValue(candidateHashId, out WorldPrefabRuntimeRecord candidateRecord))
+                    break;
+
+                ReleaseWorldPrefabRuntimeRecord(candidateHashId, candidateRecord);
+                evictedCount++;
+            }
+
+            return evictedCount;
 #endif
         }
 
@@ -586,6 +641,17 @@ namespace Hecton8.SaveSystem
             }
 #endif
         }
+
+#if UNITY_ADDRESSABLES_EXIST
+        private void ReleaseWorldPrefabRuntimeRecord(int hashId, WorldPrefabRuntimeRecord runtimeRecord)
+        {
+            if (runtimeRecord.Handle.IsValid())
+                Addressables.Release(runtimeRecord.Handle);
+
+            _pendingWorldPrefabReleaseSet?.Remove(hashId);
+            _worldPrefabRuntimeLookup.Remove(hashId);
+        }
+#endif
 
         private void AddLookupAlias(string id, ItemData item)
         {

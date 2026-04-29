@@ -351,6 +351,20 @@ namespace Hecton8.World
             public bool IsResident;
         }
 
+        private readonly struct SectorOverrideWriteResult
+        {
+            public readonly long SectorHash;
+            public readonly string TempPath;
+            public readonly string EntityStateTempPath;
+
+            public SectorOverrideWriteResult(long sectorHash, string tempPath, string entityStateTempPath)
+            {
+                SectorHash = sectorHash;
+                TempPath = tempPath;
+                EntityStateTempPath = entityStateTempPath;
+            }
+        }
+
         private const int DefaultMaxTrackedItems = 16384;
         private const int DefaultChunkSizeMeters = 64;
         private const int DefaultHydrationRadius = 1;
@@ -943,7 +957,8 @@ namespace Hecton8.World
                     }
                 }
 
-                SnapshotResidentSectorOverrides(desiredSectorHashes);
+                if (!await SnapshotResidentSectorOverridesAsync(desiredSectorHashes))
+                    return;
                 loadedSectorRecords = new NativeList<PersistentWorldDeltaRecord>(math.max(16, maxTrackedItems), Allocator.Persistent);
 
                 await Awaitable.BackgroundThreadAsync();

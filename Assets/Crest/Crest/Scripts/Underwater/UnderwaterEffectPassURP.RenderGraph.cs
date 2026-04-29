@@ -18,19 +18,32 @@ namespace Crest
             public UniversalCameraData cameraData;
             public RenderGraphHelper.Handle colorTargetHandle;
             public RenderGraphHelper.Handle depthTargetHandle;
+            public RenderGraphHelper.Handle temporaryColorHandle;
+            public RenderGraphHelper.Handle depthStencilHandle;
 
-            public void Init(ContextContainer frameData, IUnsafeRenderGraphBuilder builder = null)
+            public void Init(UnderwaterEffectPassURP owner, RenderGraph graph, ContextContainer frameData, IUnsafeRenderGraphBuilder builder = null)
             {
                 var resources = frameData.Get<UniversalResourceData>();
                 cameraData = frameData.Get<UniversalCameraData>();
 
                 colorTargetHandle = resources.activeColorTexture;
                 depthTargetHandle = resources.activeDepthTexture;
+                owner.EnsureRenderGraphTemporaryTargets(cameraData, colorTargetHandle, depthTargetHandle);
+
+                if (graph != null && owner._temporaryColorHandle != null)
+                    temporaryColorHandle = graph.ImportTexture(owner._temporaryColorHandle);
+
+                if (graph != null && owner._underwaterRenderer.UseStencilBufferOnEffect && owner._depthStencilHandle != null)
+                    depthStencilHandle = graph.ImportTexture(owner._depthStencilHandle);
 
                 if (builder != null)
                 {
                     builder.UseTexture(colorTargetHandle, AccessFlags.ReadWrite);
                     builder.UseTexture(depthTargetHandle, AccessFlags.ReadWrite);
+                    if (owner._temporaryColorHandle != null)
+                        builder.UseTexture(temporaryColorHandle, AccessFlags.ReadWrite);
+                    if (owner._underwaterRenderer.UseStencilBufferOnEffect && owner._depthStencilHandle != null)
+                        builder.UseTexture(depthStencilHandle, AccessFlags.ReadWrite);
                 }
             }
         }
@@ -41,8 +54,9 @@ namespace Crest
         {
             using (var builder = graph.AddUnsafePass<PassData>(PassName, out var data))
             {
-                data.Init(frame, builder);
+                data.Init(this, graph, frame, builder);
                 builder.AllowPassCulling(false);
+                builder.AllowGlobalStateModification(true);
 
                 builder.SetRenderFunc<PassData>((data, context) =>
                 {
@@ -56,13 +70,13 @@ namespace Crest
         [System.Obsolete]
         public void OnCameraSetup(CommandBuffer buffer, ref RenderingData renderingData)
         {
-            passData.Init(renderingData.GetFrameData());
+            passData.Init(this, default, renderingData.GetFrameData());
         }
 
         [System.Obsolete]
         public void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
         {
-            passData.Init(renderingData.GetFrameData());
+            passData.Init(this, default, renderingData.GetFrameData());
             var buffer = CommandBufferPool.Get(PassName);
             OnSetup(buffer, passData);
             ExecutePass(context, buffer, passData);
