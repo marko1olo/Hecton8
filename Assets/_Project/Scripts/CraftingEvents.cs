@@ -10,9 +10,26 @@
 
 using System;
 using Hecton8.Items;
+using UnityEngine;
 
 namespace Hecton8.Crafting
 {
+    public readonly struct CraftedItemSynthesisEvent
+    {
+        public CraftedItemSynthesisEvent(ItemData item, int quantity, Vector3 spawnPosition, Vector3 velocityChange)
+        {
+            Item = item;
+            Quantity = quantity;
+            SpawnPosition = spawnPosition;
+            VelocityChange = velocityChange;
+        }
+
+        public ItemData Item { get; }
+        public int Quantity { get; }
+        public Vector3 SpawnPosition { get; }
+        public Vector3 VelocityChange { get; }
+    }
+
     public static class CraftingEvents
     {
         // ════════════════════════════════════════════════════════
@@ -85,6 +102,8 @@ namespace Hecton8.Crafting
 
         public static event Action<ItemData> OnCraftCompleted;
 
+        public static event Action<CraftedItemSynthesisEvent> OnCraftOutputSynthesized;
+
         /// <summary>Крафт завершён успешно, предмет добавлен в инвентарь.</summary>
         public static void RaiseCraftCompleted(ItemData resultItem)
         {
@@ -93,6 +112,12 @@ namespace Hecton8.Crafting
 
             var handler = OnCraftCompleted;
             handler?.Invoke(resultItem);
+        }
+
+        public static void RaiseCraftOutputSynthesized(CraftedItemSynthesisEvent synthesisEvent)
+        {
+            var handler = OnCraftOutputSynthesized;
+            handler?.Invoke(synthesisEvent);
         }
 
         // ════════════════════════════════════════════════════════

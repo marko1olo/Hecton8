@@ -319,6 +319,8 @@ namespace Hecton8.PDA
         {
             if (_registeredToTick)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = true;

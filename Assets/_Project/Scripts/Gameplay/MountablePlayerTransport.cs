@@ -1253,6 +1253,8 @@ namespace Hecton8.Gameplay
         {
             if (_registered)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);

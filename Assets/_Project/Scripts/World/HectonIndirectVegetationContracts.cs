@@ -130,6 +130,39 @@ namespace Hecton8.World
     }
 
     /// <summary>
+    /// Shared bit-packing helpers for vegetation runtime flags consumed by gameplay and shaders.
+    /// </summary>
+    internal static class HectonVegetationRuntimeFlagEncoding
+    {
+        internal const byte BiomeLayerBitShift = 4;
+        internal const byte BiomeLayerBitMask = 0x30;
+        internal const byte BiomeLayerValueMask = 0x03;
+
+        internal static float Encode(byte biomeLayer, byte runtimeFlags)
+        {
+            byte packedFlags = MergeBiomeLayer(runtimeFlags, biomeLayer);
+            return packedFlags;
+        }
+
+        internal static byte MergeBiomeLayer(byte runtimeFlags, byte biomeLayer)
+        {
+            byte sanitizedBiomeLayer = (byte)(biomeLayer & BiomeLayerValueMask);
+            return (byte)((runtimeFlags & ~BiomeLayerBitMask) | (sanitizedBiomeLayer << BiomeLayerBitShift));
+        }
+
+        internal static byte ExtractBiomeLayer(float runtimeFlags)
+        {
+            return (byte)((ExtractPackedFlags(runtimeFlags) & BiomeLayerBitMask) >> BiomeLayerBitShift);
+        }
+
+        internal static byte ExtractPackedFlags(float runtimeFlags)
+        {
+            int roundedValue = Mathf.RoundToInt(runtimeFlags);
+            return (byte)Mathf.Clamp(roundedValue, 0, byte.MaxValue);
+        }
+    }
+
+    /// <summary>
     /// External buffer seam for indirect vegetation rendering.
     /// Cartographer or any other producer owns the buffers and lifetime.
     /// </summary>

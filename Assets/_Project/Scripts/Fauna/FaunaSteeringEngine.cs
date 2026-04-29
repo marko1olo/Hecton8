@@ -50,6 +50,7 @@ namespace Hecton8.AI
             if (_selfTransform == null) return;
 
             desiredDirection = targetDir;
+            float resolvedForceMultiplier = Mathf.Max(0.1f, forceMult);
             
             // TACTICAL DIRECTION: Predator Retreat (User REQ: Flee strictly from threat)
             if (isRetreating && threatPos != default)
@@ -73,7 +74,7 @@ namespace Hecton8.AI
                 speedTarget *= (1.0f - drag);
             }
 
-            currentSpeed = Mathf.Lerp(currentSpeed, speedTarget, acceleration * fdt);
+            currentSpeed = Mathf.Lerp(currentSpeed, speedTarget, acceleration * resolvedForceMultiplier * fdt);
 
             // 3. DIRECTION & ROTATION
             if (desiredDirection.sqrMagnitude > 0.01f)
@@ -83,7 +84,7 @@ namespace Hecton8.AI
                 
                 // Rotation Speed multiplier for aggressive/retreat states
                 float rotMod = (isRetreating || speedMult > 1.1f) ? 2.5f * turnMult : turnMult;
-                _selfTransform.rotation = Quaternion.Slerp(_selfTransform.rotation, targetRot, rotationSpeed * rotMod * fdt);
+                _selfTransform.rotation = Quaternion.Slerp(_selfTransform.rotation, targetRot, rotationSpeed * rotMod * resolvedForceMultiplier * fdt);
 
                 // 4. VISUAL BANKING (User REQ: Fluid aquatic tilt)
                 float angle = Vector3.SignedAngle(_selfTransform.forward, lookDir, _selfTransform.up);

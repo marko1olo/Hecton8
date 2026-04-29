@@ -43,6 +43,9 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.Power;
+using Hecton8.World;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Crafting
@@ -89,6 +92,20 @@ namespace Hecton8.Crafting
         [SerializeField] private AudioClip   craftCancelSound;
         [SerializeField] private AudioClip   powerLostSound;
 
+        [Header("── Physical Output ──────────────────────────")]
+        [Tooltip("Optional socket used as the fabrication output origin.")]
+        [SerializeField] private Transform outputSocket;
+        [Tooltip("Local output direction used when no dedicated socket forward is authored.")]
+        [SerializeField] private Vector3 outputDirectionLocal = Vector3.forward;
+        [Tooltip("Meters pushed forward from the output origin before the stack is registered in the world.")]
+        [SerializeField] private float outputForwardOffset = 0.45f;
+        [Tooltip("Meters lifted above the output origin before the crafted stack is released.")]
+        [SerializeField] private float outputLiftOffset = 0.12f;
+        [Tooltip("Initial synthesized velocity change along the output direction.")]
+        [SerializeField] private float outputVelocityChange = 1.75f;
+        [Tooltip("Extra upward velocity change so the crafted stack clears the hatch before falling.")]
+        [SerializeField] private float outputUpwardVelocityChange = 0.55f;
+
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
         // ══════════════════════════════════════════════════════════
@@ -133,6 +150,9 @@ namespace Hecton8.Crafting
         private readonly int[] _networkCostAmounts = new int[MaxNetworkCraftCosts];
         private int _localCraftReservationCount;
         private int _networkCostCount;
+        private NativeParallelHashMap<int, int> _craftInventoryCounts;
+        private NativeArray<int2> _craftRecipeCosts;
+        private NativeArray<byte> _craftRecipeEvaluationResult;
 
         private BaseLogisticsNetwork.LogisticsReservation _networkReservation;
 
@@ -270,6 +290,7 @@ namespace Hecton8.Crafting
             EnsureScanLogSystem();
             MarkRecipeCacheDirty();
             _activeCraftPowerMultiplier = 1f;
+            EnsureCraftingScratch();
         }
 
         private void OnEnable()
@@ -305,6 +326,7 @@ namespace Hecton8.Crafting
             UnregisterActiveFabricator(this);
             BaseLogisticsNetwork.UnregisterFabricator(this);
             TryUnregister();
+            DisposeCraftingScratch();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -586,7 +608,7 @@ namespace Hecton8.Crafting
                 _powerNode.Grid.ConsumePower(powerCost);
             }
 
-            if (result != null && _playerInventory != null)
+            if (result != null && !TrySynthesizeCraftOutput(recipe, result) && _playerInventory != null)
             {
                 int resultHashId = ComputeItemHash(result);
                 for (int i = 0; i < recipe.resultQuantity; i++)
@@ -652,44 +674,91 @@ namespace Hecton8.Crafting
 
         private bool HasIngredients(RecipeData recipe)
         {
-            if (recipe == null || recipe.ingredients == null || _playerInventory == null || _playerInventory.Grid == null)
+            if (recipe == null || _playerInventory == null)
                 return false;
 
-            List<InventoryCost> costs = recipe.ingredients;
-            ulong satisfiedMask = 0UL;
-            int maskBit = 0;
+            EnsureCraftingScratch();
+            return CraftingSystem.CanCraft(
+                recipe,
+                this,
+                _playerInventory,
+                _craftInventoryCounts,
+                _craftRecipeCosts,
+                _craftRecipeEvaluationResult);
+        }
 
-            for (int c = 0, cCount = costs.Count; c < cCount; c++)
+        private void EnsureCraftingScratch()
+        {
+            if (!_craftInventoryCounts.IsCreated)
             {
-                InventoryCost cost = costs[c];
-                if (cost == null || cost.item == null)
-                    continue;
-
-                int requiredAmount = GetAdjustedIngredientAmount(cost);
-                if (requiredAmount <= 0)
-                    continue;
-
-                if (CountAccessibleItem(cost.item) >= requiredAmount)
-                {
-                    if (maskBit < 64)
-                        satisfiedMask |= 1UL << maskBit;
-                }
-                else
-                {
-                    return false;
-                }
-
-                if (maskBit < 64)
-                    maskBit++;
+                // COLD ALLOC: NativeParallelHashMap<Int32,Int32>[128] — temporary per-craft accessible item counts — owner: Fabricator
+                _craftInventoryCounts = new NativeParallelHashMap<int, int>(128, Allocator.Persistent);
             }
 
-            if (maskBit <= 0)
-                return true;
+            if (!_craftRecipeCosts.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<int2>[32] — flattened recipe ingredient cost buffer — owner: Fabricator
+                _craftRecipeCosts = new NativeArray<int2>(CraftingSystem.MaxRecipeIngredientCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
 
-            ulong requiredMask = maskBit >= 64
-                ? ulong.MaxValue
-                : ((1UL << maskBit) - 1UL);
-            return (satisfiedMask & requiredMask) == requiredMask;
+            if (!_craftRecipeEvaluationResult.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<byte>[1] — Burst crafting-availability result cell — owner: Fabricator
+                _craftRecipeEvaluationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+        }
+
+        private void DisposeCraftingScratch()
+        {
+            if (_networkReservation != null)
+            {
+                BaseLogisticsNetwork.RollbackReserved(_networkReservation);
+                _networkReservation = null;
+            }
+
+            if (_craftInventoryCounts.IsCreated)
+                _craftInventoryCounts.Dispose();
+
+            if (_craftRecipeCosts.IsCreated)
+                _craftRecipeCosts.Dispose();
+
+            if (_craftRecipeEvaluationResult.IsCreated)
+                _craftRecipeEvaluationResult.Dispose();
+        }
+
+        private bool TrySynthesizeCraftOutput(RecipeData recipe, ItemData result)
+        {
+            if (recipe == null || result == null)
+                return false;
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return false;
+
+            int quantity = math.max(1, recipe.resultQuantity);
+            ResolveCraftOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
+            bool synthesized = registry.TryRegisterDroppedItem(result, quantity, spawnPosition, Vector3.zero, velocityChange);
+            if (!synthesized)
+                return false;
+
+            CraftingEvents.RaiseCraftOutputSynthesized(
+                new CraftedItemSynthesisEvent(result, quantity, spawnPosition, velocityChange));
+            return true;
+        }
+
+        private void ResolveCraftOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange)
+        {
+            Transform origin = outputSocket != null ? outputSocket : transform;
+            Vector3 localDirection = outputDirectionLocal.sqrMagnitude > 0.0001f
+                ? outputDirectionLocal.normalized
+                : Vector3.forward;
+            Vector3 worldDirection = origin.TransformDirection(localDirection);
+            if (worldDirection.sqrMagnitude <= 0.0001f)
+                worldDirection = origin.forward;
+
+            worldDirection.Normalize();
+            spawnPosition = origin.position + worldDirection * outputForwardOffset + Vector3.up * outputLiftOffset;
+            velocityChange = worldDirection * outputVelocityChange + Vector3.up * outputUpwardVelocityChange;
         }
 
         private static int CountAvailableItemInInventory(PlayerInventory inventory, ItemData item)

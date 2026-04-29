@@ -29,7 +29,12 @@ namespace Hecton8.Editor
             "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_ThermalGelPocket.asset",
             "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_NickelVein.asset",
             "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_LithiumCrystalCluster.asset",
-            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_AbyssalCrystalSpire.asset"
+            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_AbyssalCrystalSpire.asset",
+            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_DeepMantleGeode.asset",
+            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_TitaniumBasaltMass.asset",
+            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_XenonOmegaVentCache.asset",
+            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_Silicon7BGlassVein.asset",
+            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_AegiriumCrustNodule.asset"
         };
 
         [MenuItem("HECTON-8/World/Install Resource Distribution Director", priority = 230)]

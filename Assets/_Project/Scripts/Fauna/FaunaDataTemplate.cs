@@ -19,6 +19,15 @@ namespace Hecton8.AI
         Cut = 2
     }
 
+    public enum FaunaAttackPattern : byte
+    {
+        Ram = 0,
+        Bite = 1,
+        TailWhip = 2,
+        SonicPulse = 3,
+        Emp = 4
+    }
+
     [Serializable]
     public struct FaunaInteractionMatrixEntry
     {
@@ -191,6 +200,19 @@ namespace Hecton8.AI
         [SerializeField, Tooltip("Stable lore/research hashes unlocked when the fauna scan is archived.")]
         private uint[] loreUnlockHashes = Array.Empty<uint>();
 
+        [SerializeField, Tooltip("Primary lore hash that unlocks full scanner behavior prediction for this fauna.")]
+        private uint fullLoreHash;
+
+        [SerializeField, Tooltip("Supported combat patterns for this fauna. Used by scanner prediction and downstream behavior authoring.")]
+        private FaunaAttackPattern[] attackPatterns =
+        {
+            FaunaAttackPattern.Ram,
+            FaunaAttackPattern.Bite,
+            FaunaAttackPattern.TailWhip,
+            FaunaAttackPattern.SonicPulse,
+            FaunaAttackPattern.Emp
+        };
+
         /// <summary>
         /// Stable species identifier for gameplay-side lookups.
         /// </summary>
@@ -200,6 +222,11 @@ namespace Hecton8.AI
         /// Optional high-level species profile linked to this template.
         /// </summary>
         public FaunaSpeciesProfile SpeciesProfile => speciesProfile;
+
+        /// <summary>
+        /// Authored broadphase body radius used by dodge and separation logic.
+        /// </summary>
+        public float BodyRadiusMeters => math.max(0.01f, bodyRadiusMeters);
 
         /// <summary>
         /// Primary creature archetype linked to this data template.
@@ -232,6 +259,18 @@ namespace Hecton8.AI
         /// Stable lore/research hashes emitted when this fauna scan is resolved.
         /// </summary>
         public uint[] LoreUnlockHashes => loreUnlockHashes;
+
+        /// <summary>
+        /// Stable lore hash that upgrades scanner prediction from generic contact intel to explicit combat behavior intel.
+        /// </summary>
+        public uint FullLoreHash => fullLoreHash != 0u
+            ? fullLoreHash
+            : ResolvePrimaryLoreHash();
+
+        /// <summary>
+        /// Authored combat-pattern catalog for this fauna template.
+        /// </summary>
+        public FaunaAttackPattern[] AttackPatterns => attackPatterns;
 
         /// <summary>
         /// Builds the blittable runtime descriptor consumed by SOA-friendly fauna systems.
@@ -336,6 +375,31 @@ namespace Hecton8.AI
             return math.max(0.1f, driveWeights[index]);
         }
 
+        /// <summary>
+        /// Resolves whether the authored attack-pattern catalog contains a specific pattern.
+        /// </summary>
+        public bool SupportsAttackPattern(FaunaAttackPattern attackPattern)
+        {
+            if (attackPatterns == null)
+                return false;
+
+            for (int i = 0; i < attackPatterns.Length; i++)
+            {
+                if (attackPatterns[i] == attackPattern)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private uint ResolvePrimaryLoreHash()
+        {
+            if (loreUnlockHashes == null || loreUnlockHashes.Length == 0)
+                return 0u;
+
+            return loreUnlockHashes[0];
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -357,6 +421,21 @@ namespace Hecton8.AI
 
             for (int i = 0; i < driveWeights.Length; i++)
                 driveWeights[i] = math.max(0.1f, driveWeights[i]);
+
+            if (attackPatterns == null || attackPatterns.Length == 0)
+            {
+                attackPatterns = new[]
+                {
+                    FaunaAttackPattern.Ram,
+                    FaunaAttackPattern.Bite,
+                    FaunaAttackPattern.TailWhip,
+                    FaunaAttackPattern.SonicPulse,
+                    FaunaAttackPattern.Emp
+                }; // COLD ALLOC: FaunaAttackPattern[5] - default authored combat-pattern catalog - owner: FaunaDataTemplate
+            }
+
+            if (fullLoreHash == 0u)
+                fullLoreHash = ResolvePrimaryLoreHash();
         }
 #endif
     }

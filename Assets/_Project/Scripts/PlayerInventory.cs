@@ -140,6 +140,7 @@ namespace Hecton8.Inventory
 
         public static PlayerInventory Instance => _instance;
         public float TotalWeight { get; private set; }
+        public float TotalMassKg { get; private set; }
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
         public int InventoryVersion { get; private set; }
@@ -247,9 +248,6 @@ namespace Hecton8.Inventory
             _lastUpdateUnixSeconds[anchorIndex] = 0;
 
             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * count);
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
             NotifyInventoryChanged();
         }
 
@@ -283,9 +281,6 @@ namespace Hecton8.Inventory
             }
 
             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight);
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
             NotifyInventoryChanged();
             return descriptor.HashId;
         }
@@ -380,8 +375,7 @@ namespace Hecton8.Inventory
         public void AddWeight(float amount)
         {
             TotalWeight = Mathf.Max(0f, TotalWeight + amount);
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
+            RefreshDerivedMassAndSurvivalLoad();
         }
 
         public bool ContainsItem(int itemHashId)
@@ -398,6 +392,48 @@ namespace Hecton8.Inventory
         public void SlowTick()
         {
             ApplyInventoryEnvironmentalDegradation();
+        }
+
+        public bool TryCopyAvailableItemCountsNonAlloc(
+            NativeParallelHashMap<int, int> destination,
+            out int uniqueItemCount)
+        {
+            uniqueItemCount = 0;
+            if (!destination.IsCreated || _grid == null || !_stackCounts.IsCreated)
+                return false;
+
+            destination.Clear();
+
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex))
+                    continue;
+
+                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
+                if (itemHashId == 0)
+                    continue;
+
+                int availableCount = Mathf.Max(0, Mathf.Max(1, (int)_stackCounts[anchorIndex]) - GetReservedCraftCount(anchorIndex));
+                if (availableCount <= 0)
+                    continue;
+
+                if (destination.TryGetValue(itemHashId, out int existingCount))
+                {
+                    destination[itemHashId] = existingCount + availableCount;
+                    continue;
+                }
+
+                if (!destination.TryAdd(itemHashId, availableCount))
+                {
+                    destination.Clear();
+                    uniqueItemCount = 0;
+                    return false;
+                }
+
+                uniqueItemCount++;
+            }
+
+            return true;
         }
 
         public bool TryReserveQuantityForCraft(int itemHashId, int quantity, CraftReservation[] reservations, ref int reservationCount)
@@ -502,9 +538,6 @@ namespace Hecton8.Inventory
             }
 
             TotalWeight = Mathf.Max(0f, TotalWeight - removedWeight);
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
             NotifyInventoryChanged();
             return true;
         }
@@ -575,9 +608,6 @@ namespace Hecton8.Inventory
             }
 
             TotalWeight = Mathf.Max(0f, TotalWeight);
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
             NotifyInventoryChanged();
             return true;
         }
@@ -685,9 +715,6 @@ namespace Hecton8.Inventory
                 }
             }
 
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
             NotifyInventoryChanged();
         }
 
@@ -742,9 +769,6 @@ namespace Hecton8.Inventory
                     sortEntries.Dispose();
             }
 
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
-
             NotifyInventoryChanged();
         }
 
@@ -781,9 +805,6 @@ namespace Hecton8.Inventory
                 return false;
 
             MoveAnchorState(sourceAnchorIndex, destinationAnchorIndex, targetAnchorIndex >= 0);
-
-            if (survival != null)
-                survival.SetWeight(TotalWeight);
 
             NotifyInventoryChanged();
             return true;
@@ -921,9 +942,6 @@ namespace Hecton8.Inventory
 
             if (addedQuantity > 0)
             {
-                if (survival != null)
-                    survival.SetWeight(TotalWeight);
-
                 NotifyInventoryChanged();
             }
 
@@ -1208,6 +1226,7 @@ namespace Hecton8.Inventory
 
         private void NotifyInventoryChanged()
         {
+            RefreshDerivedMassAndSurvivalLoad();
             InventoryVersion++;
             InventoryChanged?.Invoke();
         }
@@ -1260,6 +1279,37 @@ namespace Hecton8.Inventory
 
             if (changed)
                 NotifyInventoryChanged();
+        }
+
+        private void RefreshDerivedMassAndSurvivalLoad()
+        {
+            TotalMassKg = ComputeTotalMassKg();
+            if (survival != null)
+                survival.SetWeight(TotalMassKg);
+        }
+
+        private float ComputeTotalMassKg()
+        {
+            if (_grid == null || !_stackCounts.IsCreated)
+                return 0f;
+
+            float totalMassKg = 0f;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex))
+                    continue;
+
+                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
+                if (itemHashId == 0 ||
+                    !TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+                {
+                    continue;
+                }
+
+                totalMassKg += runtimeDescriptor.MassKg * Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            }
+
+            return Mathf.Max(0f, totalMassKg);
         }
 
         private bool ApplyEnvironmentalDegradation(

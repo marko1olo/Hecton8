@@ -6690,6 +6690,8 @@ namespace Hecton8.World
                     HeightSamples = heightSamples,
                     TerrainHoles = _terrainHoleRecordsNative,
                     ThreatEchoFlags = _ecosystemThreatEchoCurrentNative,
+                    ArtificialStructures = _artificialStructureRecordsNative,
+                    ArtificialStructureHash = _artificialStructureHashFrontNative,
                     TerrainHoleCount = _terrainHoleCount,
                     Output = jobState.GrassRecords,
                     TerrainPosition = terrainPosition,
@@ -6770,6 +6772,8 @@ namespace Hecton8.World
                     HeightSamples = heightSamples,
                     TerrainHoles = _terrainHoleRecordsNative,
                     ThreatEchoFlags = _ecosystemThreatEchoCurrentNative,
+                    ArtificialStructures = _artificialStructureRecordsNative,
+                    ArtificialStructureHash = _artificialStructureHashFrontNative,
                     TerrainHoleCount = _terrainHoleCount,
                     Output = jobState.KelpRecords,
                     TerrainPosition = terrainPosition,
@@ -7062,7 +7066,7 @@ namespace Hecton8.World
                     record.Variation,
                     floraTemplateIndex,
                     HectonVegetationInstanceData.RuntimeStateIdle,
-                    0f,
+                    HectonVegetationRuntimeFlagEncoding.Encode(record.BiomeLayer, 0),
                     floraDescriptor.PulseFrequency,
                     new Vector4(
                         floraDescriptor.BioluminescenceColor.x,
@@ -7097,6 +7101,7 @@ namespace Hecton8.World
             HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)type;
             VegetationSemanticType semantic = (VegetationSemanticType)semanticType;
             VegetationBiomeLayer biome = (VegetationBiomeLayer)biomeLayer;
+            FloraDataTemplate.AttachmentSurface requiredAttachmentSurface = ResolveAttachmentSurfaceForSemantic(semantic);
             int candidateCount = 0;
             for (int i = 0; i < floraTemplates.Length; i++)
             {
@@ -7104,7 +7109,8 @@ namespace Hecton8.World
                 if (template == null ||
                     template.VegetationType != vegetationType ||
                     template.SemanticType != semantic ||
-                    template.BiomeLayer != biome)
+                    template.BiomeLayer != biome ||
+                    !DoesTemplateAttachmentMatch(template.AttachmentSurfaceType, requiredAttachmentSurface))
                 {
                     continue;
                 }
@@ -7123,7 +7129,8 @@ namespace Hecton8.World
                 if (template == null ||
                     template.VegetationType != vegetationType ||
                     template.SemanticType != semantic ||
-                    template.BiomeLayer != biome)
+                    template.BiomeLayer != biome ||
+                    !DoesTemplateAttachmentMatch(template.AttachmentSurfaceType, requiredAttachmentSurface))
                 {
                     continue;
                 }
@@ -7137,6 +7144,30 @@ namespace Hecton8.World
                 }
 
                 currentOrdinal++;
+            }
+        }
+
+        private static bool DoesTemplateAttachmentMatch(
+            FloraDataTemplate.AttachmentSurface templateAttachmentSurface,
+            FloraDataTemplate.AttachmentSurface requiredAttachmentSurface)
+        {
+            return templateAttachmentSurface == FloraDataTemplate.AttachmentSurface.Any ||
+                   templateAttachmentSurface == requiredAttachmentSurface;
+        }
+
+        private static FloraDataTemplate.AttachmentSurface ResolveAttachmentSurfaceForSemantic(VegetationSemanticType semanticType)
+        {
+            switch (semanticType)
+            {
+                case VegetationSemanticType.ColonyCable:
+                case VegetationSemanticType.ColonyHullPlating:
+                case VegetationSemanticType.ColonySupportBeam:
+                case VegetationSemanticType.DeadZoneMassiveStructure:
+                    return FloraDataTemplate.AttachmentSurface.Metal;
+                case VegetationSemanticType.FloatingSargassum:
+                    return FloraDataTemplate.AttachmentSurface.Any;
+                default:
+                    return FloraDataTemplate.AttachmentSurface.Seabed;
             }
         }
 
@@ -7157,6 +7188,7 @@ namespace Hecton8.World
                 BioluminescenceColor = new float4(color.x, color.y, color.z, color.w),
                 PulseFrequency = 0.55f,
                 HarvestTemplateStableHashId = 0,
+                AttachmentSurface = (uint)FloraDataTemplate.AttachmentSurface.Any,
                 Reserved0 = 0u
             };
         }
@@ -8846,6 +8878,8 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<ushort> HeightSamples;
             [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
             [ReadOnly] public NativeArray<byte> ThreatEchoFlags;
+            [ReadOnly] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            [ReadOnly] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
             public NativeArray<JobInstanceRecord> Output;
             public int TerrainHoleCount;
             public float3 TerrainPosition;
@@ -8954,6 +8988,13 @@ namespace Hecton8.World
                 if (!TryPassChunkEdgeDither(sampleX, sampleZ, MinX, MaxX, MinZ, MaxZ, EdgeDitherDistance, seed, out float edgeDistance))
                     return;
 
+                bool isMetalSurface = TryResolveMetalAttachmentSurface(new float3(sampleX, worldY, sampleZ), out float metalSurfaceY);
+                if (isMetalSurface)
+                {
+                    worldY = math.max(worldY, metalSurfaceY);
+                    normal = new float3(0f, 1f, 0f);
+                }
+
                 float scaleLerp = Hash01(seed ^ ScaleSalt);
                 float scale = math.lerp(ScaleMin, ScaleMax, scaleLerp);
                 float scaleJitter = math.lerp(1f - ScaleJitter, 1f + ScaleJitter, Hash01(seed ^ (ScaleSalt ^ 0x27D4EB2Fu)));
@@ -8983,77 +9024,83 @@ namespace Hecton8.World
 
                     if (EnableVerticalBiomeRewrite != 0)
                     {
-                        biomeLayer = ResolveBiomeLayerStatic(
-                            WaterLevel,
-                            worldY,
-                            ColonyBiomeStartDepth,
-                            DeadZoneStartDepth,
-                            VerticalBiomeBlendBand,
-                            seed);
-
-                        if (biomeLayer == (byte)VegetationBiomeLayer.ColonyGraveyard)
+                        if (isMetalSurface)
                         {
-                            float technoThreshold = math.max(0f, TechnoJungleThreshold - (hasPermanentEcho ? EchoTechnoJungleThresholdBias : 0f));
-                            if (!TryEvaluateTechnoJungle(
-                                    sampleX,
-                                    sampleZ,
-                                    seed,
-                                    flowDirection,
-                                    technoThreshold,
-                                    TechnoJungleCellSize,
-                                    TechnoJungleSecondaryCellSize,
-                                    TechnoJungleWallWidth,
-                                    TechnoJungleWarpMeters,
-                                    TechnoJungleFlowAnisotropy,
-                                    out float technoOccupancy))
-                            {
-                                return;
-                            }
-
-                            semanticType = hasPermanentEcho
-                                ? ColonyCableSemanticType
-                                : ResolveColonySemanticTypeStatic(
-                                    seed,
-                                    ColonyCableSemanticType,
-                                    ColonyHullSemanticType,
-                                    ColonyBeamSemanticType);
-                            heightScale *= math.lerp(0.9f, 1.35f, technoOccupancy);
-                            widthScale *= math.lerp(0.95f, hasPermanentEcho ? 1.45f : 1.2f, technoOccupancy);
+                            biomeLayer = (byte)VegetationBiomeLayer.ColonyGraveyard;
+                            semanticType = ResolveColonySemanticTypeStatic(
+                                seed,
+                                ColonyCableSemanticType,
+                                ColonyHullSemanticType,
+                                ColonyBeamSemanticType);
+                            heightScale *= math.lerp(0.95f, 1.2f, Hash01(seed ^ 0x4F6CDD1Du));
+                            widthScale *= math.lerp(1.05f, 1.28f, Hash01(seed ^ 0x61C88647u));
                         }
-                        else if (biomeLayer == (byte)VegetationBiomeLayer.DeadZone)
+                        else
                         {
-                            float deadZoneDepth = math.max(0f, WaterLevel - worldY);
-                            float deadZoneDepthT = math.saturate((deadZoneDepth - DeadZoneStartDepth) / 2000f);
-                            float deadZoneThreshold = math.max(0f, TechnoJungleThreshold - (hasPermanentEcho ? EchoTechnoJungleThresholdBias * 0.75f : 0f));
-                            if (!TryEvaluateTechnoJungle(
-                                    sampleX,
-                                    sampleZ,
-                                    seed ^ 0x51ED270Bu,
-                                    flowDirection,
-                                    deadZoneThreshold,
-                                    TechnoJungleCellSize * 1.6f,
-                                    TechnoJungleSecondaryCellSize * 1.35f,
-                                    TechnoJungleWallWidth * 1.4f,
-                                    TechnoJungleWarpMeters * 0.8f,
-                                    math.max(0.2f, TechnoJungleFlowAnisotropy * 0.7f),
-                                    out float deadZoneOccupancy))
+                            biomeLayer = ResolveBiomeLayerStatic(
+                                WaterLevel,
+                                worldY,
+                                ColonyBiomeStartDepth,
+                                DeadZoneStartDepth,
+                                VerticalBiomeBlendBand,
+                                seed);
+
+                            if (biomeLayer == (byte)VegetationBiomeLayer.ColonyGraveyard)
                             {
-                                return;
+                                float technoThreshold = math.max(0f, TechnoJungleThreshold - (hasPermanentEcho ? EchoTechnoJungleThresholdBias : 0f));
+                                if (!TryEvaluateTechnoJungle(
+                                        sampleX,
+                                        sampleZ,
+                                        seed,
+                                        flowDirection,
+                                        technoThreshold,
+                                        TechnoJungleCellSize,
+                                        TechnoJungleSecondaryCellSize,
+                                        TechnoJungleWallWidth,
+                                        TechnoJungleWarpMeters,
+                                        TechnoJungleFlowAnisotropy,
+                                        out float technoOccupancy))
+                                {
+                                    return;
+                                }
+
+                                heightScale *= math.lerp(0.9f, 1.2f, technoOccupancy);
+                                widthScale *= math.lerp(0.95f, 1.12f, technoOccupancy);
                             }
+                            else if (biomeLayer == (byte)VegetationBiomeLayer.DeadZone)
+                            {
+                                float deadZoneDepth = math.max(0f, WaterLevel - worldY);
+                                float deadZoneDepthT = math.saturate((deadZoneDepth - DeadZoneStartDepth) / 2000f);
+                                float deadZoneThreshold = math.max(0f, TechnoJungleThreshold - (hasPermanentEcho ? EchoTechnoJungleThresholdBias * 0.75f : 0f));
+                                if (!TryEvaluateTechnoJungle(
+                                        sampleX,
+                                        sampleZ,
+                                        seed ^ 0x51ED270Bu,
+                                        flowDirection,
+                                        deadZoneThreshold,
+                                        TechnoJungleCellSize * 1.6f,
+                                        TechnoJungleSecondaryCellSize * 1.35f,
+                                        TechnoJungleWallWidth * 1.4f,
+                                        TechnoJungleWarpMeters * 0.8f,
+                                        math.max(0.2f, TechnoJungleFlowAnisotropy * 0.7f),
+                                        out float deadZoneOccupancy))
+                                {
+                                    return;
+                                }
 
-                            float keepChance = math.saturate(
-                                math.lerp(DeadZoneDensityScale, DeadZoneDensityScale * 0.18f, deadZoneDepthT) *
-                                math.max(DeadZoneStructureChance, deadZoneOccupancy * math.lerp(1f, 0.45f, deadZoneDepthT)));
-                            if (hasPermanentEcho)
-                                keepChance = math.saturate(keepChance + EchoDeadZoneKeepBoost);
-                            if (Hash01(seed ^ 0xC13FA9A9u) > keepChance)
-                                return;
+                                float keepChance = math.saturate(
+                                    math.lerp(DeadZoneDensityScale, DeadZoneDensityScale * 0.18f, deadZoneDepthT) *
+                                    math.max(DeadZoneStructureChance, deadZoneOccupancy * math.lerp(1f, 0.45f, deadZoneDepthT)));
+                                if (hasPermanentEcho)
+                                    keepChance = math.saturate(keepChance + EchoDeadZoneKeepBoost);
+                                if (Hash01(seed ^ 0xC13FA9A9u) > keepChance)
+                                    return;
 
-                            semanticType = DeadZoneSemanticType;
-                            float deadZoneScale = math.lerp(4.5f, 12f, math.max(deadZoneDepthT, Hash01(seed ^ 0x94D049BBu)));
-                            scale *= deadZoneScale;
-                            heightScale *= deadZoneScale;
-                            widthScale *= math.lerp(2.1f, 4.4f, math.max(deadZoneOccupancy, deadZoneDepthT));
+                                float deadZoneScale = math.lerp(4.5f, 12f, math.max(deadZoneDepthT, Hash01(seed ^ 0x94D049BBu)));
+                                scale *= deadZoneScale;
+                                heightScale *= deadZoneScale;
+                                widthScale *= math.lerp(2.1f, 4.4f, math.max(deadZoneOccupancy, deadZoneDepthT));
+                            }
                         }
                     }
                 }
@@ -9085,6 +9132,66 @@ namespace Hecton8.World
                     BiomeLayer = biomeLayer,
                     IsValid = 1
                 };
+            }
+
+            private bool TryResolveMetalAttachmentSurface(float3 samplePosition, out float surfaceY)
+            {
+                surfaceY = samplePosition.y;
+                if (!ArtificialStructures.IsCreated ||
+                    !ArtificialStructureHash.IsCreated ||
+                    ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f)
+                {
+                    return false;
+                }
+
+                int cellIndex = ComputeStructureGridCellIndex(samplePosition);
+                if (cellIndex < 0)
+                    return false;
+
+                NativeParallelMultiHashMapIterator<int> iterator;
+                int structureIndex;
+                if (!ArtificialStructureHash.TryGetFirstValue(cellIndex, out structureIndex, out iterator))
+                    return false;
+
+                bool found = false;
+                do
+                {
+                    if (structureIndex < 0 || structureIndex >= ArtificialStructures.Length)
+                        continue;
+
+                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                    StructureType structureType = (StructureType)structure.Type;
+                    if (structureType != StructureType.BaseModule && structureType != StructureType.MegaWreck)
+                        continue;
+
+                    if (samplePosition.x < structure.MinX ||
+                        samplePosition.x > structure.MaxX ||
+                        samplePosition.z < structure.MinZ ||
+                        samplePosition.z > structure.MaxZ)
+                    {
+                        continue;
+                    }
+
+                    surfaceY = math.max(surfaceY, structure.MaxY);
+                    found = true;
+                }
+                while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
+
+                return found;
+            }
+
+            private int ComputeStructureGridCellIndex(float3 position)
+            {
+                float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
+                float localX = position.x - (ThreatGridCenter.x - halfExtent);
+                float localZ = position.z - (ThreatGridCenter.z - halfExtent);
+                if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
+                    return -1;
+
+                int cellX = math.clamp((int)math.floor(localX / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                int cellZ = math.clamp((int)math.floor(localZ / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                return (cellZ * ThreatGridResolution) + cellX;
             }
         }
 

@@ -290,6 +290,8 @@ namespace Hecton8.Optimization
         {
             if (_registeredSlowTick)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = true;

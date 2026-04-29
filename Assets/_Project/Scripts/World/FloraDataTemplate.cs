@@ -37,7 +37,15 @@ namespace Hecton8.World
             Metallic = 3
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
+        public enum AttachmentSurface : byte
+        {
+            Any = 0,
+            Seabed = 1,
+            Rock = 2,
+            Metal = 3
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
         public struct RuntimeDescriptor
         {
             public int StableHashId;
@@ -47,6 +55,7 @@ namespace Hecton8.World
             public float4 BioluminescenceColor;
             public float PulseFrequency;
             public int HarvestTemplateStableHashId;
+            public uint AttachmentSurface;
             public uint Reserved0;
         }
 
@@ -93,6 +102,11 @@ namespace Hecton8.World
         [Tooltip("Semantic audio-material id published for flora acoustics and impact routing.")]
         private AudioMaterialId audioMaterialId = AudioMaterialId.Organic;
 
+        [Header("Attachment")]
+        [SerializeField]
+        [Tooltip("Preferred substrate for this flora template. Metal-locked flora is selected only for artificial-structure overgrowth passes.")]
+        private AttachmentSurface attachmentSurface = AttachmentSurface.Any;
+
         [Header("Bioluminescence")]
         [SerializeField]
         [Tooltip("Linear bioluminescent emission color. Alpha is used as emission intensity.")]
@@ -138,6 +152,9 @@ namespace Hecton8.World
         /// <summary>Semantic audio-material id used by runtime consumers.</summary>
         public byte AudioMaterialID => (byte)audioMaterialId;
 
+        /// <summary>Preferred authored substrate used by flora-template selection.</summary>
+        public AttachmentSurface AttachmentSurfaceType => attachmentSurface;
+
         /// <summary>Authored bioluminescent emission color in linear space.</summary>
         public Color BioluminescenceColor => bioluminescenceColor.linear;
 
@@ -162,6 +179,7 @@ namespace Hecton8.World
                 BioluminescenceColor = new float4(linearColor.r, linearColor.g, linearColor.b, linearColor.a),
                 PulseFrequency = Mathf.Max(0.05f, pulseFrequency),
                 HarvestTemplateStableHashId = harvestStableHashId,
+                AttachmentSurface = (uint)attachmentSurface,
                 Reserved0 = 0u
             };
         }

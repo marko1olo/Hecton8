@@ -36,6 +36,17 @@ MonoBehaviour:
     m_Bits: 4294967295
   colliderShape: 0
   physicalSize: {x: 1.8, y: 0.35, z: 1.8}
+  supportsAutonomousExtraction: 1
+  extractorYieldItem: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
+  extractorCycleSeconds: 38
+  extractorInventoryCapacity: 24
+  requiresHydrothermalVent: 0
+  hydrothermalVentTemperatureThresholdCelsius: 80
+  triggersSteamExplosionWithoutThermalShield: 0
+  steamExplosionRadiusMeters: 5
+  steamExplosionImpulse: 12
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 2.4
   harvestYield:
   - item: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
     minimumAmount: 1

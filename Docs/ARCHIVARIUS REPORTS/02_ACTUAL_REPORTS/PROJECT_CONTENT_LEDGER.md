@@ -1,17 +1,17 @@
 # PROJECT_CONTENT_LEDGER
 
-| Module | PersistentId | HashId | DefaultIntegrityState | AssetPath |
-|---|---|---:|---:|---|
-| BaseModuleTemplate_Corridor | base.module.corridor | -1561972746 | 0.38 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_Corridor.asset |
-| BaseModuleTemplate_Airlock | base.module.airlock | -1900346693 | 0.42 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_Airlock.asset |
-| BaseModuleTemplate_BioReactor | base.module.bioreactor | 318713642 | 0.24 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_BioReactor.asset |
-| BaseModuleTemplate_WindowObservation | base.module.window | -752382274 | 0.31 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_WindowObservation.asset |
-| BaseModuleTemplate_ControlRoom | base.module.control_room | -247614979 | 0.29 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_ControlRoom.asset |
-| BaseModuleTemplate_JunctionT | base.module.junction_t | 1962095695 | 0.34 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_JunctionT.asset |
-| BaseModuleTemplate_CrewQuarters | base.module.crew_quarters | 273123897 | 0.27 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_CrewQuarters.asset |
-| BaseModuleTemplate_ServiceSpine | base.module.service_spine | 52203761 | 0.22 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_ServiceSpine.asset |
-| BaseModuleTemplate_DockingClamp | base.module.docking_clamp | -1151154059 | 0.33 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_DockingClamp.asset |
-| BaseModuleTemplate_ResearchLab | base.module.research_lab | -207977013 | 0.26 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_ResearchLab.asset |
+| Module | PersistentId | HashId | DefaultIntegrityState | DragArea m2 | Yield N | BreachArea m2 | AssetPath |
+|---|---|---:|---:|---:|---:|---:|---|
+| BaseModuleTemplate_Corridor | base.module.corridor | -1561972746 | 0.38 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_Corridor.asset |
+| BaseModuleTemplate_Airlock | base.module.airlock | -1900346693 | 0.42 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_Airlock.asset |
+| BaseModuleTemplate_BioReactor | base.module.bioreactor | 318713642 | 0.24 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_BioReactor.asset |
+| BaseModuleTemplate_WindowObservation | base.module.window | -752382274 | 0.31 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_WindowObservation.asset |
+| BaseModuleTemplate_ControlRoom | base.module.control_room | -247614979 | 0.29 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_ControlRoom.asset |
+| BaseModuleTemplate_JunctionT | base.module.junction_t | 1962095695 | 0.34 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_JunctionT.asset |
+| BaseModuleTemplate_CrewQuarters | base.module.crew_quarters | 273123897 | 0.27 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_CrewQuarters.asset |
+| BaseModuleTemplate_ServiceSpine | base.module.service_spine | 52203761 | 0.22 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_ServiceSpine.asset |
+| BaseModuleTemplate_DockingClamp | base.module.docking_clamp | -1151154059 | 0.33 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_DockingClamp.asset |
+| BaseModuleTemplate_ResearchLab | base.module.research_lab | -207977013 | 0.26 | 12.0 | 180000 | 1.2 | Assets/_Project/Data/Construction/AbandonedModuleTemplates/BaseModuleTemplate_ResearchLab.asset |
 
 ## Flora Template HashIDs
 

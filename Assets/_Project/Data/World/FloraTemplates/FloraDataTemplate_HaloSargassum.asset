@@ -22,5 +22,6 @@ MonoBehaviour:
   lootHashId: 0
   vulnerabilityMask: 17
   audioMaterialId: 1
+  attachmentSurface: 0
   bioluminescenceColor: {r: 0.14, g: 0.68, b: 0.78, a: 0.54}
   pulseFrequency: 1.12

@@ -497,6 +497,18 @@ namespace Hecton8.AI
             _hasDeferredObstacleHit = hit.collider != null;
         }
 
+        internal bool TryGetDeferredObstacleHitInfo(out RaycastHit hit)
+        {
+            if (isAvoidingObstacle && _deferredObstacleHit.collider != null)
+            {
+                hit = _deferredObstacleHit;
+                return true;
+            }
+
+            hit = default;
+            return false;
+        }
+
         public Transform GetPlayerTransform() => _playerTransform;
 
         private static bool HasPlayerLineOfSightThroughCaveSdf(Vector3 startPosition, Vector3 endPosition)

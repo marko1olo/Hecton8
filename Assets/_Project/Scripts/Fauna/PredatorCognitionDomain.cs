@@ -79,6 +79,7 @@ namespace Hecton8.AI
         public float3 Forward;
         public float3 PlayerPosition;
         public float3 PlayerVelocity;
+        public float3 PlayerForward;
         public float3 ThreatPosition;
         public float3 PreyPosition;
         public float3 ScavengePosition;
@@ -129,6 +130,8 @@ namespace Hecton8.AI
         public int LegacyState;
         public int ShouldAttack;
         public int EmitThreatPulse;
+        public int PackRoleCode;
+        public int FlankingManeuverDetected;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
@@ -152,6 +155,16 @@ namespace Hecton8.AI
         None = 0u,
         ShouldAttack = 1u << 0,
         EmitThreatPulse = 1u << 1,
+        PackRoleBait = 1u << 2,
+        PackRoleFlanker = 1u << 3,
+        FlankingManeuverDetected = 1u << 4,
+    }
+
+    internal enum PredatorPackRole : byte
+    {
+        None = 0,
+        Bait = 1,
+        Flanker = 2,
     }
 
     [System.Flags]
@@ -262,6 +275,8 @@ namespace Hecton8.AI
         private const byte SignedDistanceSolidThreshold = 128;
         private const float QuantizedByteScale = 255f;
         private const float DdaEpsilon = 0.000001f;
+        private const float PlayerFacingBaitThreshold = 0.45f;
+        private const float PackFlankHoldDistanceMeters = 3.5f;
 
         private static NativeArray<CognitionCore> _cores;
         private static NativeArray<CognitionControl> _controls;
@@ -281,7 +296,11 @@ namespace Hecton8.AI
         private static NativeArray<int> _chosenStates;
         private static NativeArray<float3> _predatorPackTargets;
         private static NativeArray<float> _predatorPackWeights;
+        private static NativeArray<float3> _predatorPackBaitPositions;
+        private static NativeArray<byte> _predatorPackRoles;
         private static NativeArray<int> _boidClaimTable;
+        private static NativeArray<int> _packBaitClaimTable;
+        private static NativeArray<int> _packFlankerClaimTable;
         private static NativeArray<byte> _evaluationDueFlags;
         private static NativeArray<float> _nextEvaluationTimes;
         private static NativeArray<float> _evaluationIntervals;
@@ -330,6 +349,8 @@ namespace Hecton8.AI
                 _evaluationIntervals[i] = CenterEvaluationIntervalSeconds;
                 _predatorPackTargets[i] = float3.zero;
                 _predatorPackWeights[i] = 0f;
+                _predatorPackBaitPositions[i] = float3.zero;
+                _predatorPackRoles[i] = (byte)PredatorPackRole.None;
                 ClearMemoryEntries(i);
                 ClearAcousticMemoryEntries(i);
                 return i;
@@ -364,6 +385,8 @@ namespace Hecton8.AI
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
             _predatorPackTargets[slot] = float3.zero;
             _predatorPackWeights[slot] = 0f;
+            _predatorPackBaitPositions[slot] = float3.zero;
+            _predatorPackRoles[slot] = (byte)PredatorPackRole.None;
             ClearMemoryEntries(slot);
             ClearAcousticMemoryEntries(slot);
         }
@@ -437,6 +460,8 @@ namespace Hecton8.AI
             _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
             _predatorPackTargets[slot] = float3.zero;
             _predatorPackWeights[slot] = 0f;
+            _predatorPackBaitPositions[slot] = float3.zero;
+            _predatorPackRoles[slot] = (byte)PredatorPackRole.None;
             ClearMemoryEntries(slot);
             ClearAcousticMemoryEntries(slot);
         }
@@ -558,6 +583,12 @@ namespace Hecton8.AI
             output.LegacyState = packedOutput.LegacyState;
             output.ShouldAttack = (packedOutput.OutputFlags & (uint)CognitionOutputFlags.ShouldAttack) != 0u ? 1 : 0;
             output.EmitThreatPulse = (packedOutput.OutputFlags & (uint)CognitionOutputFlags.EmitThreatPulse) != 0u ? 1 : 0;
+            output.PackRoleCode = (packedOutput.OutputFlags & (uint)CognitionOutputFlags.PackRoleFlanker) != 0u
+                ? (int)PredatorPackRole.Flanker
+                : (packedOutput.OutputFlags & (uint)CognitionOutputFlags.PackRoleBait) != 0u
+                    ? (int)PredatorPackRole.Bait
+                    : (int)PredatorPackRole.None;
+            output.FlankingManeuverDetected = (packedOutput.OutputFlags & (uint)CognitionOutputFlags.FlankingManeuverDetected) != 0u ? 1 : 0;
             if (math.lengthsq(output.DesiredDirection) <= 0.0001f)
                 output.DesiredDirection = math.normalizesafe(fallbackForward, new float3(0f, 0f, 1f));
             return output;
@@ -627,6 +658,10 @@ namespace Hecton8.AI
                 ClaimedBoidPositions = _claimedBoidPositions,
                 PredatorPackTargets = _predatorPackTargets,
                 PredatorPackWeights = _predatorPackWeights,
+                PredatorPackBaitPositions = _predatorPackBaitPositions,
+                PredatorPackRoles = _predatorPackRoles,
+                PackBaitClaimTable = (int*)_packBaitClaimTable.GetUnsafePtr(),
+                PackFlankerClaimTable = (int*)_packFlankerClaimTable.GetUnsafePtr(),
                 SwarmBoundsMin = swarmBoundsMin
             };
 
@@ -649,6 +684,8 @@ namespace Hecton8.AI
                 ClaimedBoidPositions = _claimedBoidPositions,
                 PredatorPackTargets = _predatorPackTargets,
                 PredatorPackWeights = _predatorPackWeights,
+                PredatorPackBaitPositions = _predatorPackBaitPositions,
+                PredatorPackRoles = _predatorPackRoles,
                 SpeciesTuningById = _speciesTuningById,
                 ChosenStates = _chosenStates,
                 BoidClaimTable = _boidClaimTable,
@@ -710,8 +747,16 @@ namespace Hecton8.AI
                 _predatorPackTargets.Dispose(disposeDependency);
             if (_predatorPackWeights.IsCreated)
                 _predatorPackWeights.Dispose(disposeDependency);
+            if (_predatorPackBaitPositions.IsCreated)
+                _predatorPackBaitPositions.Dispose(disposeDependency);
+            if (_predatorPackRoles.IsCreated)
+                _predatorPackRoles.Dispose(disposeDependency);
             if (_boidClaimTable.IsCreated)
                 _boidClaimTable.Dispose(disposeDependency);
+            if (_packBaitClaimTable.IsCreated)
+                _packBaitClaimTable.Dispose(disposeDependency);
+            if (_packFlankerClaimTable.IsCreated)
+                _packFlankerClaimTable.Dispose(disposeDependency);
             if (_evaluationDueFlags.IsCreated)
                 _evaluationDueFlags.Dispose(disposeDependency);
             if (_nextEvaluationTimes.IsCreated)
@@ -739,7 +784,11 @@ namespace Hecton8.AI
             _chosenStates = default;
             _predatorPackTargets = default;
             _predatorPackWeights = default;
+            _predatorPackBaitPositions = default;
+            _predatorPackRoles = default;
             _boidClaimTable = default;
+            _packBaitClaimTable = default;
+            _packFlankerClaimTable = default;
             _evaluationDueFlags = default;
             _nextEvaluationTimes = default;
             _evaluationIntervals = default;
@@ -805,8 +854,16 @@ namespace Hecton8.AI
             _predatorPackTargets = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[Capacity] - burst-computed predator flank weights for coordinated pack strikes - owner: PredatorCognitionDomain
             _predatorPackWeights = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float3>[Capacity] - resolved bait-predator positions shared with flankers - owner: PredatorCognitionDomain
+            _predatorPackBaitPositions = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[Capacity] - resolved pack roles per predator slot - owner: PredatorCognitionDomain
+            _predatorPackRoles = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<int>[Capacity] - atomic prey claim table keyed by creature slot - owner: PredatorCognitionDomain
             _boidClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[Capacity] - atomic bait-role reservation table keyed by stable species hash - owner: PredatorCognitionDomain
+            _packBaitClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[Capacity] - atomic flanker-role reservation table keyed by stable species hash - owner: PredatorCognitionDomain
+            _packFlankerClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[Capacity] - per-slot due flags for foveated cognition cadence - owner: PredatorCognitionDomain
             _evaluationDueFlags = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[Capacity] - next allowed cognition evaluation timestamps per slot - owner: PredatorCognitionDomain
@@ -1003,6 +1060,18 @@ namespace Hecton8.AI
                 for (int i = 0; i < _claimedBoidIndices.Length; i++)
                     _claimedBoidIndices[i] = UnclaimedBoidSlot;
             }
+
+            if (_packBaitClaimTable.IsCreated)
+            {
+                for (int i = 0; i < _packBaitClaimTable.Length; i++)
+                    _packBaitClaimTable[i] = UnclaimedBoidSlot;
+            }
+
+            if (_packFlankerClaimTable.IsCreated)
+            {
+                for (int i = 0; i < _packFlankerClaimTable.Length; i++)
+                    _packFlankerClaimTable[i] = UnclaimedBoidSlot;
+            }
         }
 
         private static float ResolveEvaluationInterval(float importanceScore)
@@ -1158,6 +1227,10 @@ namespace Hecton8.AI
             public NativeArray<float3> ClaimedBoidPositions;
             public NativeArray<float3> PredatorPackTargets;
             public NativeArray<float> PredatorPackWeights;
+            public NativeArray<float3> PredatorPackBaitPositions;
+            public NativeArray<byte> PredatorPackRoles;
+            [NativeDisableUnsafePtrRestriction] public int* PackBaitClaimTable;
+            [NativeDisableUnsafePtrRestriction] public int* PackFlankerClaimTable;
             public float3 SwarmBoundsMin;
 
             public void Execute(int index)
@@ -1175,6 +1248,8 @@ namespace Hecton8.AI
                     ClaimedBoidPositions[slot] = float3.zero;
                     PredatorPackTargets[slot] = input.PlayerPosition;
                     PredatorPackWeights[slot] = 0f;
+                    PredatorPackBaitPositions[slot] = input.PlayerPosition;
+                    PredatorPackRoles[slot] = (byte)PredatorPackRole.None;
                     return;
                 }
 
@@ -1202,6 +1277,10 @@ namespace Hecton8.AI
                                          packFlankDistance > DdaEpsilon;
                 float3 predatorPackTarget = input.PlayerPosition;
                 float predatorPackWeight = 0f;
+                float3 predatorPackBaitPosition = input.Position;
+                PredatorPackRole predatorPackRole = PredatorPackRole.None;
+                int bestBaitSlot = slot;
+                float bestBaitDistanceSq = input.DistanceToPlayerSqr;
                 float perceptionRadiusSq = SwarmPerceptionRadius * SwarmPerceptionRadius;
                 float separationRadiusSq = SwarmSeparationRadius * SwarmSeparationRadius;
                 int maxNeighborIterations = math.min(ActiveSlots.Length, MaxSwarmNeighborIterations);
@@ -1256,20 +1335,26 @@ namespace Hecton8.AI
                         (otherInput.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0 &&
                         (PriorCores[otherSlot].StateFlags & (uint)FaunaWorldStateFlags.Hunting) != 0u)
                     {
+                        float otherDistanceToPlayerSq = math.lengthsq(otherInput.PlayerPosition - otherInput.Position);
+                        if (otherDistanceToPlayerSq < bestBaitDistanceSq)
+                        {
+                            bestBaitDistanceSq = otherDistanceToPlayerSq;
+                            bestBaitSlot = otherSlot;
+                        }
+
                         float coordinationDistance = distSq * invDist;
                         float coordinationWeight = 1f - math.saturate(coordinationDistance / packCoordinationRadius);
                         if (coordinationWeight > predatorPackWeight)
                         {
-                            float3 packForward = math.normalizesafe(
-                                otherInput.Velocity + (otherInput.PlayerPosition - otherInput.Position),
-                                math.normalizesafe(otherInput.Forward, new float3(0f, 0f, 1f)));
+                            float3 playerForward = math.normalizesafe(otherInput.PlayerForward, math.normalizesafe(otherInput.Forward, new float3(0f, 0f, 1f)));
                             float3 packRight = math.normalizesafe(
-                                math.cross(new float3(0f, 1f, 0f), packForward),
-                                math.cross(new float3(0f, 0f, 1f), packForward));
+                                math.cross(new float3(0f, 1f, 0f), playerForward),
+                                math.cross(new float3(0f, 0f, 1f), playerForward));
                             if (math.lengthsq(packRight) > DdaEpsilon)
                             {
                                 float sideSign = math.select(-1f, 1f, math.dot(input.Position - otherInput.PlayerPosition, packRight) >= 0f);
                                 predatorPackTarget = otherInput.PlayerPosition + (packRight * (packFlankDistance * sideSign));
+                                predatorPackBaitPosition = otherInput.Position;
                                 predatorPackWeight = coordinationWeight;
                             }
                         }
@@ -1286,6 +1371,26 @@ namespace Hecton8.AI
                 AmbientThreats[slot] = threatCount > 0 ? math.saturate(threatSum / threatCount) : 0f;
                 ClaimedBoidIndices[slot] = claimedSlot;
                 ClaimedBoidPositions[slot] = claimedPosition;
+
+                if (canCoordinatePack)
+                {
+                    int reservationIndex = ResolvePackReservationIndex(input.SpeciesId);
+                    if (bestBaitSlot == slot)
+                    {
+                        if (TryReservePackRole(PackBaitClaimTable, reservationIndex, slot))
+                        {
+                            predatorPackRole = PredatorPackRole.Bait;
+                            predatorPackWeight = math.max(predatorPackWeight, 1f);
+                            predatorPackTarget = input.PlayerPosition;
+                            predatorPackBaitPosition = input.Position;
+                        }
+                    }
+                    else if (bestBaitSlot >= 0 && TryReservePackRole(PackFlankerClaimTable, reservationIndex, slot))
+                    {
+                        predatorPackRole = PredatorPackRole.Flanker;
+                        predatorPackBaitPosition = Inputs[bestBaitSlot].Position;
+                    }
+                }
 
                 float3 swarmCenter = input.FlockCenter;
                 float3 swarmDirection = input.FlockDirection;
@@ -1320,6 +1425,22 @@ namespace Hecton8.AI
                 SwarmCounts[slot] = swarmCount;
                 PredatorPackTargets[slot] = predatorPackTarget;
                 PredatorPackWeights[slot] = predatorPackWeight;
+                PredatorPackBaitPositions[slot] = predatorPackBaitPosition;
+                PredatorPackRoles[slot] = (byte)predatorPackRole;
+            }
+
+            private static int ResolvePackReservationIndex(int speciesId)
+            {
+                return math.abs(speciesId) % Capacity;
+            }
+
+            private static unsafe bool TryReservePackRole(int* claimTable, int reservationIndex, int creatureSlot)
+            {
+                int priorOwner = System.Threading.Interlocked.CompareExchange(
+                    ref claimTable[reservationIndex],
+                    creatureSlot,
+                    UnclaimedBoidSlot);
+                return priorOwner == UnclaimedBoidSlot || priorOwner == creatureSlot;
             }
         }
 
@@ -1342,6 +1463,8 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<float3> ClaimedBoidPositions;
             [ReadOnly] public NativeArray<float3> PredatorPackTargets;
             [ReadOnly] public NativeArray<float> PredatorPackWeights;
+            [ReadOnly] public NativeArray<float3> PredatorPackBaitPositions;
+            [ReadOnly] public NativeArray<byte> PredatorPackRoles;
             [ReadOnly] public NativeParallelHashMap<int, SpeciesCognitionTuning> SpeciesTuningById;
             [NativeDisableParallelForRestriction] public NativeArray<int> ChosenStates;
             [NativeDisableParallelForRestriction] public NativeArray<int> BoidClaimTable;
@@ -1476,6 +1599,8 @@ namespace Hecton8.AI
                     : 0f;
                 float packFlankWeight = PredatorPackWeights[slot];
                 float3 packFlankTarget = PredatorPackTargets[slot];
+                float3 packBaitPosition = PredatorPackBaitPositions[slot];
+                PredatorPackRole packRole = (PredatorPackRole)PredatorPackRoles[slot];
                 bool hasAcousticMemory = TryResolveStrongestAcousticMemory(slot, input.Position, input.CurrentTime, out float3 acousticMemoryPosition, out float acousticMemoryScore);
                 float acousticScore = math.max(directAcousticScore, acousticMemoryScore);
                 bool hasScavengeTarget = (input.Flags & (int)CognitionInputFlags.HasScavengeTarget) != 0;
@@ -1553,14 +1678,23 @@ namespace Hecton8.AI
                 float packCommitDistance = math.max(input.PackCommitDistance, input.AttackRange * 1.25f);
                 bool usePackFlank = hasPlayerTarget &&
                                     packFlankWeight > DdaEpsilon &&
+                                    packRole == PredatorPackRole.Flanker &&
                                     math.lengthsq(predictedPlayerPosition - input.Position) > packCommitDistance * packCommitDistance &&
                                     !scavengeVisible &&
                                     !resolvedPreyVisible;
+                bool playerFacingBait = false;
+                bool flankingManeuverDetected = false;
                 if (usePackFlank)
                 {
+                    float3 playerToBait = math.normalizesafe(packBaitPosition - predictedPlayerPosition, float3.zero);
+                    float3 playerForward = math.normalizesafe(input.PlayerForward, float3.zero);
+                    playerFacingBait = math.lengthsq(playerForward) > DdaEpsilon &&
+                                       math.lengthsq(playerToBait) > DdaEpsilon &&
+                                       math.dot(playerForward, playerToBait) >= PlayerFacingBaitThreshold;
                     float3 packPredictionDelta = predictedPlayerPosition - input.PlayerPosition;
                     targetPosition = math.lerp(predictedPlayerPosition, packFlankTarget + packPredictionDelta, math.saturate(packFlankWeight));
                     hasTarget = true;
+                    flankingManeuverDetected = true;
                 }
 
                 float threatVisual = 0f;
@@ -1643,6 +1777,17 @@ namespace Hecton8.AI
                     input.ClaimedBoidIndex >= 0 &&
                     !playerVisible &&
                     !scavengeVisible;
+                if (packRole == PredatorPackRole.Flanker && flankingManeuverDetected)
+                {
+                    float flankDistanceSq = math.lengthsq(targetPosition - input.Position);
+                    bool holdingBlindSpot = flankDistanceSq <= PackFlankHoldDistanceMeters * PackFlankHoldDistanceMeters;
+                    if (!playerFacingBait && holdingBlindSpot)
+                    {
+                        stateMask = PredatorUtilityState.Stalking;
+                        stateCode = (int)stateMask;
+                        wantsBoidClaim = false;
+                    }
+                }
                 if (wantsBoidClaim)
                 {
                     bool claimSucceeded = TryClaimBoid(slot, input.ClaimedBoidIndex);
@@ -1689,9 +1834,13 @@ namespace Hecton8.AI
                         output.ForceMultiplier = 2.15f;
                         output.SpeedMultiplier = math.max(1.15f, aggression);
                         output.TurnMultiplier = 1.2f;
-                        output.OutputFlags |= ((playerVisible || resolvedPreyVisible || scavengeVisible) &&
-                                               targetDistanceSq <= math.max(1f, input.AttackRange * input.AttackRange) &&
-                                               input.CurrentTime >= control.NextAttackAllowedTime)
+                        bool canStrike = (playerVisible || resolvedPreyVisible || scavengeVisible) &&
+                                         targetDistanceSq <= math.max(1f, input.AttackRange * input.AttackRange) &&
+                                         input.CurrentTime >= control.NextAttackAllowedTime;
+                        if (packRole == PredatorPackRole.Flanker && flankingManeuverDetected)
+                            canStrike &= playerFacingBait;
+
+                        output.OutputFlags |= canStrike
                             ? (uint)CognitionOutputFlags.ShouldAttack
                             : 0u;
                         break;
@@ -1701,6 +1850,14 @@ namespace Hecton8.AI
                         output.TurnMultiplier = 1.15f;
                         break;
                 }
+
+                if (packRole == PredatorPackRole.Bait)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.PackRoleBait;
+                else if (packRole == PredatorPackRole.Flanker)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.PackRoleFlanker;
+
+                if (flankingManeuverDetected)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.FlankingManeuverDetected;
 
                 control.LastPredatorStateCode = (int)stateMask;
                 return output;

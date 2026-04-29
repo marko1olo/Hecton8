@@ -111,6 +111,7 @@ namespace Hecton8.AI
             Vector3 selfVelocity,
             Vector3 selfForward,
             Vector3 playerPosition,
+            Vector3 playerForward,
             Vector3 playerVelocity,
             Vector3 threatPosition,
             Vector3 preyPosition,
@@ -144,6 +145,7 @@ namespace Hecton8.AI
             SelfVelocity = selfVelocity;
             SelfForward = selfForward;
             PlayerPosition = playerPosition;
+            PlayerForward = playerForward;
             PlayerVelocity = playerVelocity;
             ThreatPosition = threatPosition;
             PreyPosition = preyPosition;
@@ -178,6 +180,7 @@ namespace Hecton8.AI
         public Vector3 SelfVelocity { get; }
         public Vector3 SelfForward { get; }
         public Vector3 PlayerPosition { get; }
+        public Vector3 PlayerForward { get; }
         public Vector3 PlayerVelocity { get; }
         public Vector3 ThreatPosition { get; }
         public Vector3 PreyPosition { get; }
@@ -224,7 +227,9 @@ namespace Hecton8.AI
             float speedMultiplier,
             float turnMultiplier,
             bool shouldAttack,
-            bool emitThreatPulse)
+            bool emitThreatPulse,
+            int packRoleCode,
+            bool flankingManeuverDetected)
         {
             DesiredDirection = desiredDirection;
             StateMask = stateMask;
@@ -237,6 +242,8 @@ namespace Hecton8.AI
             TurnMultiplier = turnMultiplier;
             ShouldAttack = shouldAttack;
             EmitThreatPulse = emitThreatPulse;
+            PackRoleCode = packRoleCode;
+            FlankingManeuverDetected = flankingManeuverDetected;
         }
 
         public Vector3 DesiredDirection { get; }
@@ -250,6 +257,8 @@ namespace Hecton8.AI
         public float TurnMultiplier { get; }
         public bool ShouldAttack { get; }
         public bool EmitThreatPulse { get; }
+        public int PackRoleCode { get; }
+        public bool FlankingManeuverDetected { get; }
     }
 
     /// <summary>
@@ -570,6 +579,7 @@ namespace Hecton8.AI
             input.Forward = context.SelfForward;
             input.PlayerPosition = resolvedPlayerPosition;
             input.ThreatPosition = context.ThreatPosition;
+            input.PlayerForward = context.PlayerForward;
             input.PreyPosition = context.PreyPosition;
             input.ScavengePosition = context.ScavengePosition;
             input.FlockCenter = context.FlockCenter;
@@ -673,7 +683,9 @@ namespace Hecton8.AI
                 output.SpeedMultiplier,
                 output.TurnMultiplier,
                 output.ShouldAttack != 0,
-                output.EmitThreatPulse != 0);
+                output.EmitThreatPulse != 0,
+                output.PackRoleCode,
+                output.FlankingManeuverDetected != 0);
         }
 
         public void Dispose()

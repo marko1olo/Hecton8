@@ -24,7 +24,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            WorldContentSocket[] sockets = UnityEngine.Object.FindObjectsByType<WorldContentSocket>();
+            WorldContentSocket[] sockets = UnityEngine.Object.FindObjectsByType<WorldContentSocket>(FindObjectsSortMode.None);
             if (sockets == null || sockets.Length == 0)
             {
                 Debug.LogWarning("[WorldProceduralProxySceneBuilder] No WorldContentSocket objects found.");

@@ -319,6 +319,8 @@ namespace Hecton8.Gameplay
         private const float OxygenMovementScaleCeiling = 1.55f;
         private const float OxygenStressScaleCeilingBonus = 0.50f;
         private const float OxygenLeakScaleCeilingBonus = 0.70f;
+        private const float OxygenCarryMassGraceKg = 18f;
+        private const float OxygenCarryMassScaleCeilingBonus = 0.22f;
         private const float OxygenGraceDurationSeconds = 2f;
         private const float OxygenGraceSpeedMultiplier = 1.2f;
         private const float OverpressureSeverityFullRangeMeters = 150f;
@@ -1001,12 +1003,14 @@ namespace Hecton8.Gameplay
             float movementFactor = ResolveOxygenMovementScale();
             float stressFactor = ResolveOxygenStressScale();
             float leakFactor = ResolveOxygenLeakScale();
+            float carryMassFactor = ResolveOxygenCarryMassScale();
             return ResolveMultiplicativeOxygenDrain(
                 baseRate,
                 pressureFactor,
                 movementFactor,
                 stressFactor,
-                leakFactor);
+                leakFactor,
+                carryMassFactor);
         }
 
         private float ResolveBaseOxygenDrainPerSecond()
@@ -1042,6 +1046,15 @@ namespace Hecton8.Gameplay
                 ? _traumaDispatcher.AdditionalVehicleOxygenDrainScale
                 : 1f;
             return suitLeakScale * vehicleLeakScale;
+        }
+
+        private float ResolveOxygenCarryMassScale()
+        {
+            if (weight <= OxygenCarryMassGraceKg)
+                return 1f;
+
+            float carry01 = math.saturate((weight - OxygenCarryMassGraceKg) / math.max(0.01f, stats.CarryCapacityKg));
+            return 1f + carry01 * OxygenCarryMassScaleCeilingBonus;
         }
 
         private float ResolveOxygenStressSeverity01()
@@ -2452,9 +2465,10 @@ namespace Hecton8.Gameplay
             float pressureFactor,
             float movementFactor,
             float stressFactor,
-            float leakFactor)
+            float leakFactor,
+            float carryMassFactor)
         {
-            return baseRate * pressureFactor * movementFactor * stressFactor * leakFactor;
+            return baseRate * pressureFactor * movementFactor * stressFactor * leakFactor * carryMassFactor;
         }
 
         private static float ResolveExponentialTemperatureStep(

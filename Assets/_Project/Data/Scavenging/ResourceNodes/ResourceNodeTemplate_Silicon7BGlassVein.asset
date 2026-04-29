@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_Silicon7BGlassVein
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.silicon_7b_glass_vein
+  displayName: Silicon-7B Glass Vein
+  toolResistance: 1.46
+  harvestDurationSeconds: 1.7
+  requiredToolClass: 3
+  maxIntegrity: 162
+  defaultLootCount: 1
+  minimumDepthMeters: 1500
+  maximumDepthMeters: 3000
+  minimumTemperatureCelsius: -8
+  maximumTemperatureCelsius: 4
+  minimumSlopeDegrees: 18
+  maximumSlopeDegrees: 58
+  spawnOffsetMeters: 0.17
+  candidateBudgetPerSector: 3
+  maxInstancesPerSector: 1
+  placementProbability: 0.14
+  minimumDensity: 0.04
+  maximumDensity: 0.14
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.7, y: 1.9, z: 1.7}
+  supportsAutonomousExtraction: 1
+  extractorYieldItem: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+  extractorCycleSeconds: 42
+  extractorInventoryCapacity: 14
+  requiresHydrothermalVent: 0
+  hydrothermalVentTemperatureThresholdCelsius: 80
+  triggersSteamExplosionWithoutThermalShield: 0
+  steamExplosionRadiusMeters: 5
+  steamExplosionImpulse: 12
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 2.7
+  harvestYield:
+  - item: {fileID: 11400000, guid: 6a1c86c304c76f8418aebd8801ca7f40, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

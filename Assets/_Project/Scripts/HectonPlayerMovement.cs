@@ -29,6 +29,7 @@ using Hecton8.Meta;
 using Hecton8.Tools;
 using Hecton8.Visor;
 using Hecton8.World;
+using Hecton8.Inventory;
 using Hecton.Localization;
 using NASAPunk.Visor;
 using System.Collections.Generic;
@@ -46,9 +47,13 @@ namespace Hecton8.Gameplay
         private const float GroundCheckSkin = 0.02f;
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
+        private const float InventoryLoadGraceMassKg = 18f;
+        private const float InventoryLoadClampMassKg = 90f;
+        private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
         private float _runtimeEmergencyMovementMultiplier = 1f;
+        private float _runtimeInventoryLoadMovementMultiplier = 1f;
         private const float TwoPi = 2f * math.PI;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const int CrestBodySampleCount = 5;
@@ -903,6 +908,7 @@ namespace Hecton8.Gameplay
         private HeavyTowWinch _heavyTowWinch;
         private SargassumMovementInfluence _sargassumMovementInfluence;
         private HectonSurvivalSystem _survivalSystem;
+        private PlayerInventory _inventoryLoadSource;
         private HectonUnderwaterVisuals _underwaterVisuals;
         private bool _resolvedInputManager;
         private bool _resolvedPlayerToolManager;
@@ -1293,6 +1299,15 @@ namespace Hecton8.Gameplay
         internal void SetRuntimeEmergencyMovementMultiplier(float multiplier)
         {
             _runtimeEmergencyMovementMultiplier = Mathf.Clamp(multiplier, 0.5f, 2f);
+        }
+
+        /// <summary>
+        /// Applies a runtime-only movement penalty sourced from carried inventory mass.
+        /// </summary>
+        /// <param name="multiplier">Runtime carry-load movement multiplier.</param>
+        public void SetRuntimeInventoryLoadMovementMultiplier(float multiplier)
+        {
+            _runtimeInventoryLoadMovementMultiplier = Mathf.Clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
         }
 
         /// <summary>Currently active suit data driving mass, drag, and swim parameters.</summary>
@@ -2488,6 +2503,7 @@ namespace Hecton8.Gameplay
         {
             SargassumGlobalDragManager.OnEntanglementStrain += HandleSargassumEntanglementStrain;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            BindInventoryLoadSource();
             ResolvePlayerToolManager();
             ResolvePlayerTransportCoordinator();
             ResolveSwimPresentationController();
@@ -2509,6 +2525,7 @@ namespace Hecton8.Gameplay
             if (_registeredTick && _registeredFixedTick) return;
             TryRegisterToDispatchers();
 
+            BindInventoryLoadSource();
             ResolveInputManagerBinding();
             if (useCrestOceanHeight && !_crestAvailable)
                 InitOceanKinematics();
@@ -2518,6 +2535,7 @@ namespace Hecton8.Gameplay
         {
             SargassumGlobalDragManager.OnEntanglementStrain -= HandleSargassumEntanglementStrain;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            UnbindInventoryLoadSource();
             UnsubscribeFromInput();
             _cachedMoveInput = Vector2.zero;
             _pendingLookInput = Vector2.zero;
@@ -2648,6 +2666,60 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = false;
             }
+        }
+
+        private void BindInventoryLoadSource()
+        {
+            PlayerInventory resolvedInventory = ResolveInventoryLoadSource();
+            if (resolvedInventory == null)
+                return;
+
+            if (_inventoryLoadSource == resolvedInventory)
+            {
+                HandleInventoryLoadChanged();
+                return;
+            }
+
+            UnbindInventoryLoadSource();
+            _inventoryLoadSource = resolvedInventory;
+            _inventoryLoadSource.InventoryChanged += HandleInventoryLoadChanged;
+            HandleInventoryLoadChanged();
+        }
+
+        private void UnbindInventoryLoadSource()
+        {
+            if (_inventoryLoadSource != null)
+                _inventoryLoadSource.InventoryChanged -= HandleInventoryLoadChanged;
+
+            _inventoryLoadSource = null;
+            SetRuntimeInventoryLoadMovementMultiplier(1f);
+        }
+
+        private PlayerInventory ResolveInventoryLoadSource()
+        {
+            if (_inventoryLoadSource != null)
+                return _inventoryLoadSource;
+
+            if (TryGetComponent(out PlayerInventory localInventory))
+                return localInventory;
+
+            return PlayerInventory.Instance;
+        }
+
+        private void HandleInventoryLoadChanged()
+        {
+            float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
+            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplier(totalMassKg));
+        }
+
+        private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg)
+        {
+            if (totalMassKg <= InventoryLoadGraceMassKg)
+                return 1f;
+
+            float massRange = math.max(0.01f, InventoryLoadClampMassKg - InventoryLoadGraceMassKg);
+            float load01 = math.saturate((totalMassKg - InventoryLoadGraceMassKg) / massRange);
+            return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01);
         }
 
         /// <inheritdoc />
@@ -7891,7 +7963,7 @@ namespace Hecton8.Gameplay
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier;
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeInventoryLoadMovementMultiplier;
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
@@ -8182,6 +8254,7 @@ namespace Hecton8.Gameplay
                 suit.walkForce *
                 wadeMultiplier *
                 sprintMult *
+                _runtimeInventoryLoadMovementMultiplier *
                 ResolveHeavyCarryForceMultiplier() *
                 ResolveExternalEnvironmentalThrustMultiplier();
 
@@ -8387,6 +8460,7 @@ namespace Hecton8.Gameplay
                 float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
                 maxSpd *= math.max(wadeMultiplier, 0.2f);
                 if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
+                maxSpd *= _runtimeInventoryLoadMovementMultiplier;
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
                 maxSpd *= _runtimeEmergencyMovementMultiplier;
@@ -8427,7 +8501,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier);
+                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeInventoryLoadMovementMultiplier);
                 if (_isSurfaceSwimming)
                 {
                     maxSpd *= surfaceMaxSpeedMultiplier;

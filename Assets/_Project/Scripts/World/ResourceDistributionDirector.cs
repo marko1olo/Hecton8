@@ -382,6 +382,12 @@ namespace Hecton8.World
             if (!template.MatchesEnvelope(depthMeters, temperatureCelsius, slopeDegrees))
                 return false;
 
+            if (template.RequiresHydrothermalVent &&
+                temperatureCelsius < template.HydrothermalVentTemperatureThresholdCelsius)
+            {
+                return false;
+            }
+
             if (Next01(ref state) > template.PlacementProbability)
                 return false;
 

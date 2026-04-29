@@ -18,7 +18,8 @@ namespace Hecton8.Tools
         HighCapacityCell = 1u << 4,
         CoolingSink = 1u << 5,
         KineticAccelerator = 1u << 6,
-        StandardBattery = 1u << 7
+        StandardBattery = 1u << 7,
+        ThermalShield = 1u << 8
     }
 
     /// <summary>
@@ -88,6 +89,7 @@ namespace Hecton8.Tools
         public static bool HasHighCapacityCell(uint mask) => (mask & (uint)ToolUpgradeBits.HighCapacityCell) != 0u;
         public static bool HasCoolingSink(uint mask) => (mask & (uint)ToolUpgradeBits.CoolingSink) != 0u;
         public static bool HasKineticAccelerator(uint mask) => (mask & (uint)ToolUpgradeBits.KineticAccelerator) != 0u;
+        public static bool HasThermalShield(uint mask) => (mask & (uint)ToolUpgradeBits.ThermalShield) != 0u;
 
         /// <summary>
         /// Applies a branchless upgrade bonus to one compiled stat.

@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_TitaniumBasaltMass
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.titanium_basalt_mass
+  displayName: Titanium Basalt Mass
+  toolResistance: 1.34
+  harvestDurationSeconds: 1.6
+  requiredToolClass: 2
+  maxIntegrity: 156
+  defaultLootCount: 1
+  minimumDepthMeters: 1100
+  maximumDepthMeters: 2600
+  minimumTemperatureCelsius: 2
+  maximumTemperatureCelsius: 18
+  minimumSlopeDegrees: 10
+  maximumSlopeDegrees: 54
+  spawnOffsetMeters: 0.14
+  candidateBudgetPerSector: 3
+  maxInstancesPerSector: 1
+  placementProbability: 0.2
+  minimumDensity: 0.08
+  maximumDensity: 0.24
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 2.1, y: 1.4, z: 2.1}
+  supportsAutonomousExtraction: 1
+  extractorYieldItem: {fileID: 11400000, guid: e5817766c5653214f8db9a6161026a98, type: 2}
+  extractorCycleSeconds: 36
+  extractorInventoryCapacity: 24
+  requiresHydrothermalVent: 0
+  hydrothermalVentTemperatureThresholdCelsius: 80
+  triggersSteamExplosionWithoutThermalShield: 0
+  steamExplosionRadiusMeters: 5
+  steamExplosionImpulse: 12
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 3.1
+  harvestYield:
+  - item: {fileID: 11400000, guid: e5817766c5653214f8db9a6161026a98, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

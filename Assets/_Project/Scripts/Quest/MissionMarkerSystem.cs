@@ -65,7 +65,8 @@ namespace Hecton8.Quest
         private Material _runtimeMarkerMaterial;
         private Mesh _runtimeMarkerMesh;
         private int _visibleMarkerCount;
-        private bool _registered;
+        private bool _registeredUpdatable;
+        private bool _registeredRenderable;
 
         private void Awake()
         {
@@ -155,22 +156,32 @@ namespace Hecton8.Quest
 
         private void RegisterRuntime()
         {
-            if (_registered || !Application.isPlaying)
-                return;
+            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_registeredUpdatable)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+                _registeredUpdatable = true;
+            }
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            GlobalRegistry.Renderables.Register(this);
-            _registered = true;
+            if (!_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Register(this);
+                _registeredRenderable = true;
+            }
         }
 
         private void UnregisterRuntime()
         {
-            if (!_registered)
-                return;
+            if (_registeredUpdatable)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredUpdatable = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            GlobalRegistry.Renderables.Unregister(this);
-            _registered = false;
+            if (_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderable = false;
+            }
         }
 
         private void ResolvePlayerTransform()

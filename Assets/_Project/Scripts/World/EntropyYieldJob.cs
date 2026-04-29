@@ -11,6 +11,8 @@ namespace Hecton8.World
     internal struct DestroyedOrganicEvent
     {
         public float3 Position;
+        public float3 NavObstacleCenter;
+        public float3 NavObstacleExtents;
         public float ToolPower;
         public float ParentMassKg;
         public float Damage01;

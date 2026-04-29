@@ -293,6 +293,7 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
+            VoxelDynamicNavGridRuntime.CompletePendingDynamicObstacleUpdates();
             RefreshActiveCachesIfNeeded(force: false);
             UpdateDecompositionVisuals(Time.time);
             UpdateRegrowthVisuals();
@@ -300,7 +301,9 @@ namespace Hecton8.World
             UpdateWiltInstances(Time.time);
             CompleteYieldJobIfNeeded();
             DrainDropBuffer();
+            VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(_pendingYieldEvents);
             ScheduleYieldJobIfNeeded();
+            VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
         }
 
         /// <summary>
@@ -539,7 +542,7 @@ namespace Hecton8.World
                     continue;
 
                 int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
-                ApplyPassiveDecomposition(underwater, i, instanceUid, templateIndex, rootPosition);
+                ApplyPassiveDecomposition(underwater, i, instanceUid, materialClass, templateIndex, rootPosition);
                 decomposedCount++;
             }
 
@@ -713,7 +716,7 @@ namespace Hecton8.World
                 instanceUids[i] = instanceUid;
                 materialClasses[i] = (byte)materialClass;
                 CacheBaseScale(instanceUid, metadata[i]);
-                byte runtimeFlags = ResolveRuntimeFlags(instanceUid, materialClass, semanticTypes[i]);
+                byte runtimeFlags = ResolveRuntimeFlags(instanceUid, materialClass, semanticTypes[i], metadata[i].RuntimeFlags);
                 ApplyRuntimeFlags(ref metadata, i, runtimeFlags);
                 SetRuntimeState(ref metadata, i, HectonVegetationInstanceData.RuntimeStateIdle);
                 float defaultHealth = templateIndex >= 0 ? _templateDescriptors[templateIndex].BaseHealth : 0f;
@@ -1055,6 +1058,8 @@ namespace Hecton8.World
             if (_destroyedByInstanceUid.ContainsKey(instanceUid))
                 return;
 
+            bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
+
             _destroyedByInstanceUid.TryAdd(instanceUid, 1);
             _healthByInstanceUid.Remove(instanceUid);
             _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
@@ -1076,7 +1081,9 @@ namespace Hecton8.World
                 templateIndex,
                 materialClass,
                 ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex),
-                1f);
+                1f,
+                hasNavObstacleBounds ? navObstacleCenter : float3.zero,
+                hasNavObstacleBounds ? navObstacleExtents : float3.zero);
 
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             if (registry != null)
@@ -1091,11 +1098,14 @@ namespace Hecton8.World
             bool underwater,
             int activeIndex,
             uint instanceUid,
+            HarvestableTemplate.MaterialClass materialClass,
             int templateIndex,
             Vector3 instancePosition)
         {
             if (!_destroyedByInstanceUid.IsCreated || instanceUid == 0u || _destroyedByInstanceUid.ContainsKey(instanceUid))
                 return;
+
+            bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
 
             _destroyedByInstanceUid.TryAdd(instanceUid, 1);
             _healthByInstanceUid.Remove(instanceUid);
@@ -1120,6 +1130,17 @@ namespace Hecton8.World
             ClearPersistedFloraStateOverride(instanceUid);
             if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
                 registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
+
+            QueueYieldEvent(
+                instancePosition,
+                0.1f,
+                instanceUid,
+                -1,
+                materialClass,
+                0.05f,
+                0f,
+                hasNavObstacleBounds ? navObstacleCenter : float3.zero,
+                hasNavObstacleBounds ? navObstacleExtents : float3.zero);
         }
 
         private void SpawnDebris(
@@ -1157,7 +1178,9 @@ namespace Hecton8.World
             int templateIndex,
             HarvestableTemplate.MaterialClass materialClass,
             float parentMassKg,
-            float damage01)
+            float damage01,
+            float3 navObstacleCenter,
+            float3 navObstacleExtents)
         {
             if (!_pendingYieldEvents.IsCreated || _pendingYieldEvents.Length >= _pendingYieldEvents.Capacity)
                 return;
@@ -1165,6 +1188,8 @@ namespace Hecton8.World
             _pendingYieldEvents.AddNoResize(new DestroyedOrganicEvent
             {
                 Position = new float3(instancePosition.x, instancePosition.y, instancePosition.z),
+                NavObstacleCenter = navObstacleCenter,
+                NavObstacleExtents = navObstacleExtents,
                 ToolPower = Mathf.Max(0.1f, normalizedPower),
                 ParentMassKg = Mathf.Max(0.05f, parentMassKg),
                 Damage01 = Mathf.Clamp01(damage01),
@@ -1242,15 +1267,15 @@ namespace Hecton8.World
                     Mathf.Max(MinimumDecomposedWidthScale, Mathf.Clamp01(Mathf.Abs(metadata.WidthScale)))));
         }
 
-        private byte ResolveRuntimeFlags(uint instanceUid, HarvestableTemplate.MaterialClass materialClass, int semanticType)
+        private byte ResolveRuntimeFlags(uint instanceUid, HarvestableTemplate.MaterialClass materialClass, int semanticType, float existingRuntimeFlags)
         {
             if (!_runtimeFlagsByInstanceUid.IsCreated || instanceUid == 0u)
-                return 0;
+                return HectonVegetationRuntimeFlagEncoding.ExtractPackedFlags(existingRuntimeFlags);
 
             if (_runtimeFlagsByInstanceUid.TryGetValue(instanceUid, out byte existingFlags))
                 return existingFlags;
 
-            byte resolvedFlags = 0;
+            byte resolvedFlags = HectonVegetationRuntimeFlagEncoding.ExtractPackedFlags(existingRuntimeFlags);
             bool parasiteEligible = materialClass == HarvestableTemplate.MaterialClass.Kelp ||
                                     materialClass == HarvestableTemplate.MaterialClass.Sargassum;
             if (parasiteEligible)
@@ -1272,6 +1297,36 @@ namespace Hecton8.World
             HectonVegetationInstanceData flaggedMetadata = metadata[activeIndex];
             flaggedMetadata.RuntimeFlags = runtimeFlags;
             metadata[activeIndex] = flaggedMetadata;
+        }
+
+        private bool TryResolveNavObstacleForLaneInstance(bool underwater, int activeIndex, out float3 center, out float3 extents)
+        {
+            center = float3.zero;
+            extents = float3.zero;
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                !semanticTypes.IsCreated ||
+                activeIndex < 0 ||
+                activeIndex >= matrices.Length ||
+                activeIndex >= metadata.Length ||
+                activeIndex >= types.Length ||
+                activeIndex >= semanticTypes.Length)
+            {
+                return false;
+            }
+
+            return VoxelDynamicNavGridRuntime.TryResolveMacroFloraObstacleWorldBounds(
+                matrices[activeIndex],
+                metadata[activeIndex],
+                types[activeIndex],
+                semanticTypes[activeIndex],
+                out center,
+                out extents);
         }
 
         private static void SetRuntimeState(ref NativeArray<HectonVegetationInstanceData> metadata, int activeIndex, float runtimeState)

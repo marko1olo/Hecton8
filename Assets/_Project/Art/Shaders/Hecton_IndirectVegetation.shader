@@ -32,6 +32,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
         _NormalResponse ("Normal Response", Range(0, 1)) = 0.32
         _AnisotropicSssStrength ("Anisotropic SSS Strength", Range(0, 2)) = 0.72
         _AnisotropicSssPower ("Anisotropic SSS Power", Range(1, 12)) = 4.5
+        _OrganicSssDistortion ("Organic SSS Distortion", Range(0, 2)) = 0.45
+        _OrganicSssPower ("Organic SSS Power", Range(0.1, 16)) = 4.2
+        _OrganicSssScale ("Organic SSS Scale", Range(0, 4)) = 1.05
         _BacklightViewBias ("Backlight View Bias", Range(0, 1)) = 0.58
         _EdgeBloomStrength ("Edge Bloom Strength", Range(0, 2)) = 0.62
         _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.18
@@ -118,6 +121,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half _NormalResponse;
                 half _AnisotropicSssStrength;
                 half _AnisotropicSssPower;
+                half _OrganicSssDistortion;
+                half _OrganicSssPower;
+                half _OrganicSssScale;
                 half _BacklightViewBias;
                 half _EdgeBloomStrength;
                 half _LocalCausticStrength;
@@ -219,6 +225,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half runtimeState : TEXCOORD12;
                 half pulseFrequency : TEXCOORD13;
                 half4 biolumColor : TEXCOORD14;
+                half flowMagnitude : TEXCOORD15;
             };
 
             float Hash21(float2 value)
@@ -887,6 +894,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float2 fallbackCurrentVector = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : _HectonVegetationCurrentVector.xz;
                 float3 sampledFlowVector = ResolveMarineSnowFlowField(basePositionWS);
                 float2 sampledCurrentVector = sampledFlowVector.xz;
+                float flowMagnitude = length(sampledCurrentVector);
                 float2 currentVector = dot(sampledCurrentVector, sampledCurrentVector) > 0.0001 ? sampledCurrentVector : fallbackCurrentVector;
                 float currentStrength = max(
                     ResolvePlanarOceanFlowStrength(_HectonVegetationCurrentVector.xz, _HectonVegetationCurrentStrength),
@@ -1065,6 +1073,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.runtimeState = instanceData.RuntimeState;
                 output.pulseFrequency = max(0.05, instanceData.PulseFrequency);
                 output.biolumColor = instanceData.BioluminescenceColor;
+                output.flowMagnitude = flowMagnitude;
                 return output;
             }
 
@@ -1153,12 +1162,22 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 anisotropicTint = lerp(anisotropicTint, sargassumGoldTint, sargassumMask * (0.62h + edgeBacklightMask * 0.38h));
                 half edgeFocusedBacklight = lerp(1.0h, edgeBiasedThickness * 1.12h, sargassumMask);
                 half3 anisotropicSss = anisotropicTint * (anisotropicPhase * backlightPhase * edgeFocusedBacklight * anisotropicMask * _AnisotropicSssStrength);
+                half organicSssMask = saturate(edgeBiasedThickness * lerp(0.45h, 1.0h, input.curvatureMask));
+                half3 organicSss = HectonCoreLitEvaluateOrganicSss(
+                    viewDirectionWS,
+                    lightDirectionWS,
+                    normalWS,
+                    anisotropicTint * organicSssMask,
+                    _OrganicSssDistortion,
+                    _OrganicSssPower,
+                    _OrganicSssScale * organicSssMask);
                 half edgeBloomMask = saturate(backlightPhase * edgeBacklightMask * rim);
                 half3 edgeBloomTint = lerp(kelpGoldTint, sargassumGoldTint, sargassumMask);
                 half3 edgeBloom = edgeBloomTint * (edgeBloomMask * _EdgeBloomStrength * (0.35h + 0.65h * max(kelpMask, sargassumMask)));
                 half rimLightingVisibility = max(sunVisibility, ambientVisibility);
                 half localCausticMask = ResolveLocalLightCaustic(input.positionWS, normalWS, input.heightMask);
                 half3 finalColor = diffuse + transmission + tipColor * rim * (0.08h * rimLightingVisibility);
+                finalColor += organicSss * mainLight.color * sunVisibility;
                 finalColor += anisotropicSss * mainLight.color * sunVisibility;
                 finalColor += edgeBloom * mainLight.color * (1.45h * sunVisibility);
                 half agitatedWeight = saturate(1.0h - abs(input.runtimeState - 1.0h));
@@ -1170,8 +1189,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half predatorDim = ResolveBiolumPredatorDim(input.positionWS);
                 half parasiteBiolumBoost = lerp(1.0h, 1.12h, input.parasiteMask);
                 half biolumVisibility = saturate(1.0h - input.entropyProgress * 0.65h);
+                half flowReactiveBoost = 1.0h + (max(0.0h, input.flowMagnitude) * 0.5h);
                 half3 biolumEmission = input.biolumColor.rgb *
-                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility);
+                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost);
                 finalColor += biolumEmission;
 
                 #ifdef _ADDITIONAL_LIGHTS

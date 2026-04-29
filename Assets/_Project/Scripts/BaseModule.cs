@@ -57,6 +57,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Construction;
@@ -250,6 +251,8 @@ namespace Hecton8.Gameplay
 
         private ModuleMarker _moduleMarker;
         private HabitatIntegrityManager _habitatIntegrityManager;
+        private SubmarineAtmosphereSystem _submarineAtmosphereSystem;
+        private bool _breachLatched;
 
         /// <summary>
         /// Предыдущее состояние isFlooded, используемое для определения
@@ -417,10 +420,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
-            ApplyDamage(damage);
-
-            if (_habitatIntegrityManager != null && _integrityComponent.CurrentIntegrity <= 0f)
-                _habitatIntegrityManager.NotifyHullBreach(transform.InverseTransformPoint(hitPoint));
+            ApplyDamageInternal(damage, true, transform.InverseTransformPoint(hitPoint));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -434,6 +434,7 @@ namespace Hecton8.Gameplay
             ConfigureRuntimeComponentsFromSerializedState();
             _isDeconstructing = false;
             _ambientLightsBrownedOut = false;
+            _breachLatched = IsBreached;
 
             RefreshVisualStateImmediate();
             ResyncInteriorOccupants(true);
@@ -453,6 +454,7 @@ namespace Hecton8.Gameplay
             SetLightsEnabled(true);
 
             _isDeconstructing = false;
+            _breachLatched = false;
             _trackedPlayerSurvival = null;
             _integrityComponent.ResetForDespawn();
             _lifeSupportComponent.ResetForDespawn();
@@ -607,9 +609,15 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ApplyDamage(float amount)
         {
+            ApplyDamageInternal(amount, false, Vector3.zero);
+        }
+
+        private void ApplyDamageInternal(float amount, bool hasBreachLocalPointOverride, Vector3 breachLocalPointOverride)
+        {
             float previousIntegrityNormalized = _integrityComponent.MaxIntegrity > 0.01f
                 ? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)
                 : 0f;
+            bool wasBreached = _integrityComponent.CurrentIntegrity <= 0f;
             ModuleDamageOutcome outcome = _integrityComponent.ApplyDamage(amount);
             if (outcome == ModuleDamageOutcome.None)
                 return;
@@ -634,7 +642,9 @@ namespace Hecton8.Gameplay
                     : (uint)DamageTypeMask.Pressure;
                 DamageSignal signal = default;
                 signal.magnitude = Mathf.Max(0f, amount);
-                signal.localPoint = new Unity.Mathematics.float3(0f, 0f, 0f);
+                signal.localPoint = hasBreachLocalPointOverride
+                    ? new Unity.Mathematics.float3(breachLocalPointOverride.x, breachLocalPointOverride.y, breachLocalPointOverride.z)
+                    : new Unity.Mathematics.float3(0f, 0f, 0f);
                 signal.damageType = damageType;
                 signal.integrityDelta = (byte)Mathf.Clamp(
                     Mathf.RoundToInt(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
@@ -656,6 +666,14 @@ namespace Hecton8.Gameplay
                     _habitatIntegrityManager.DispatchTraumaThresholdCrossed(TraumaLevel.Significant);
                 else
                     _habitatIntegrityManager.DispatchTraumaThresholdCrossed(TraumaLevel.Minor);
+            }
+
+            if (!wasBreached && _integrityComponent.CurrentIntegrity <= 0f)
+            {
+                Vector3 resolvedBreachLocalPoint = hasBreachLocalPointOverride
+                    ? breachLocalPointOverride
+                    : ResolveDefaultBreachLocalPoint();
+                HandleIntegrityCollapse(resolvedBreachLocalPoint);
             }
 
             _integrityComponent.StopDrain();
@@ -694,6 +712,9 @@ namespace Hecton8.Gameplay
 
             UpdateDrainDiagnostics();
             RefreshVisualStateImmediate();
+            if (_integrityComponent.CurrentIntegrity > 0f)
+                _breachLatched = false;
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         /// <summary>
@@ -727,6 +748,7 @@ namespace Hecton8.Gameplay
         public void SetIntegrityState(float integrityState)
         {
             ConfigureRuntimeComponentsFromSerializedState();
+            bool wasBreached = _integrityComponent.CurrentIntegrity <= 0f;
 
             float normalizedIntegrity = Mathf.Clamp01(integrityState);
             float resolvedIntegrity = normalizedIntegrity * Mathf.Max(0f, _integrityComponent.MaxIntegrity);
@@ -747,6 +769,12 @@ namespace Hecton8.Gameplay
             RefreshVisualStateImmediate();
             SyncTrackedObjectsFloodState();
             SyncSpatialRole();
+
+            if (!wasBreached && normalizedIntegrity <= 0f)
+                HandleIntegrityCollapse(ResolveDefaultBreachLocalPoint());
+            else if (normalizedIntegrity > 0f)
+                _breachLatched = false;
+
             BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
@@ -1457,6 +1485,9 @@ namespace Hecton8.Gameplay
                 if (!TryGetComponent(out _habitatIntegrityManager))
                     _habitatIntegrityManager = gameObject.AddComponent<HabitatIntegrityManager>();
             }
+
+            if (_submarineAtmosphereSystem == null)
+                _submarineAtmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
         }
 
         private void ResolveLeakVfxReference()
@@ -1697,6 +1728,48 @@ namespace Hecton8.Gameplay
 
             radius = halfExtents.magnitude;
             return radius > 0.01f;
+        }
+
+        private void HandleIntegrityCollapse(Vector3 localBreachPoint)
+        {
+            if (_breachLatched)
+                return;
+
+            _breachLatched = true;
+            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
+                return;
+
+            atmosphereSystem.HandleExternalModuleBreach(
+                transform.TransformPoint(localBreachPoint),
+                ResolveBreachAreaSquareMeters());
+        }
+
+        private bool TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem)
+        {
+            if (_submarineAtmosphereSystem == null || !_submarineAtmosphereSystem.isActiveAndEnabled)
+                _submarineAtmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+
+            atmosphereSystem = _submarineAtmosphereSystem;
+            return atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled;
+        }
+
+        private float ResolveBreachAreaSquareMeters()
+        {
+            if (moduleTemplate != null)
+                return Mathf.Max(0.05f, moduleTemplate.BreachAreaSquareMeters);
+
+            return 1.2f;
+        }
+
+        private Vector3 ResolveDefaultBreachLocalPoint()
+        {
+            if (TryGetDegradationSockets(out BaseModuleTemplate.VfxSocket[] sockets))
+            {
+                BaseModuleTemplate.VfxSocket socket = sockets[0];
+                return new Vector3(socket.LocalPosition.x, socket.LocalPosition.y, socket.LocalPosition.z);
+            }
+
+            return Vector3.zero;
         }
 
         private void ConfigureRuntimeComponentsFromSerializedState()

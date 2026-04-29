@@ -10,6 +10,7 @@ using Hecton8.Items;
 using Hecton8.Scavenging;
 using Hecton8.Tools;
 using Hecton8.World;
+using Hecton8.Narrative;
 using Hecton.Localization;
 using Unity.Collections;
 using Unity.Jobs;
@@ -66,7 +67,11 @@ namespace Hecton8.Gameplay
                 float toxicity01,
                 float chemicalLoad01,
                 float organicBlood01,
-                float depthMeters)
+                float depthMeters,
+                FaunaBrain faunaBrain,
+                uint threatPredictionLoreHash,
+                bool threatPredictionUnlocked,
+                bool flankingManeuverDetected)
             {
                 IsActive = isActive;
                 Progress01 = progress01;
@@ -82,6 +87,10 @@ namespace Hecton8.Gameplay
                 ChemicalLoad01 = chemicalLoad01;
                 OrganicBlood01 = organicBlood01;
                 DepthMeters = depthMeters;
+                FaunaBrain = faunaBrain;
+                ThreatPredictionLoreHash = threatPredictionLoreHash;
+                ThreatPredictionUnlocked = threatPredictionUnlocked;
+                FlankingManeuverDetected = flankingManeuverDetected;
             }
 
             public bool IsActive { get; }
@@ -98,6 +107,11 @@ namespace Hecton8.Gameplay
             public float ChemicalLoad01 { get; }
             public float OrganicBlood01 { get; }
             public float DepthMeters { get; }
+            public FaunaBrain FaunaBrain { get; }
+            public uint ThreatPredictionLoreHash { get; }
+            public bool ThreatPredictionUnlocked { get; }
+            public bool FlankingManeuverDetected { get; }
+            public bool HasFaunaContact => FaunaBrain != null;
         }
 
         private struct ScanResultSummary
@@ -1372,7 +1386,9 @@ namespace Hecton8.Gameplay
             ResolveCachedSurvivalSystem();
             ScannableFragment resolvedFragment = null;
             HectonVoxelVolume resolvedVolume = null;
+            FaunaBrain resolvedFauna = null;
             float nearestFragmentDistance = float.MaxValue;
+            float nearestFaunaDistance = float.MaxValue;
             float densitySum = 0f;
             float density01Sum = 0f;
             int densitySampleCount = 0;
@@ -1401,6 +1417,16 @@ namespace Hecton8.Gameplay
                 {
                     resolvedFragment = fragment;
                     nearestFragmentDistance = hit.distance;
+                }
+
+                FaunaBrain faunaBrain = hitCollider.GetComponent<FaunaBrain>();
+                if (faunaBrain == null)
+                    faunaBrain = hitCollider.GetComponentInParent<FaunaBrain>();
+
+                if (faunaBrain != null && hit.distance < nearestFaunaDistance)
+                {
+                    resolvedFauna = faunaBrain;
+                    nearestFaunaDistance = hit.distance;
                 }
 
                 HectonVoxelVolume volume = hitCollider.GetComponent<HectonVoxelVolume>();
@@ -1457,7 +1483,16 @@ namespace Hecton8.Gameplay
                 out float toxicity01,
                 out float depthMeters);
 
+            uint threatPredictionLoreHash = resolvedFauna != null ? resolvedFauna.ThreatPredictionLoreHash : 0u;
+            bool threatPredictionUnlocked = threatPredictionLoreHash != 0u &&
+                                            LoreDatabaseManager.Instance != null &&
+                                            LoreDatabaseManager.Instance.IsUnlocked(threatPredictionLoreHash);
+            bool flankingManeuverDetected = resolvedFauna != null &&
+                                            resolvedFauna.IsFlankingManeuverDetected &&
+                                            threatPredictionUnlocked;
+
             if (resolvedFragment == null &&
+                resolvedFauna == null &&
                 densitySampleCount <= 0 &&
                 averagedChemicalLoad01 <= 0.0001f &&
                 toxicity01 <= 0.0001f)
@@ -1490,7 +1525,11 @@ namespace Hecton8.Gameplay
                 toxicity01,
                 averagedChemicalLoad01,
                 organicBloodPeak01,
-                depthMeters);
+                depthMeters,
+                resolvedFauna,
+                threatPredictionLoreHash,
+                threatPredictionUnlocked,
+                flankingManeuverDetected);
         }
 
         private void UpdateScientificSnapshot(
@@ -1503,7 +1542,11 @@ namespace Hecton8.Gameplay
             float toxicity01,
             float chemicalLoad01,
             float organicBlood01,
-            float depthMeters)
+            float depthMeters,
+            FaunaBrain faunaBrain,
+            uint threatPredictionLoreHash,
+            bool threatPredictionUnlocked,
+            bool flankingManeuverDetected)
         {
             float progress01 = fragment != null ? Mathf.Clamp01(fragment.ProgressNormalized) : 0f;
             _scientificSnapshot = new ScientificScanSnapshot(
@@ -1520,7 +1563,11 @@ namespace Hecton8.Gameplay
                 Mathf.Clamp01(toxicity01),
                 Mathf.Clamp01(chemicalLoad01),
                 Mathf.Clamp01(organicBlood01),
-                Mathf.Max(0f, depthMeters));
+                Mathf.Max(0f, depthMeters),
+                faunaBrain,
+                threatPredictionLoreHash,
+                threatPredictionUnlocked,
+                flankingManeuverDetected);
         }
 
         private void RefreshScientificSnapshotProgress()
@@ -1544,7 +1591,11 @@ namespace Hecton8.Gameplay
                 _scientificSnapshot.Toxicity01,
                 _scientificSnapshot.ChemicalLoad01,
                 _scientificSnapshot.OrganicBlood01,
-                _scientificSnapshot.DepthMeters);
+                _scientificSnapshot.DepthMeters,
+                _scientificSnapshot.FaunaBrain,
+                _scientificSnapshot.ThreatPredictionLoreHash,
+                _scientificSnapshot.ThreatPredictionUnlocked,
+                _scientificSnapshot.FlankingManeuverDetected);
         }
 
         private void StopScientificFragmentScan()

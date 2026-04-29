@@ -1,6 +1,9 @@
+using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.Tools;
 using Hecton8.World;
 using UnityEngine;
 
@@ -11,10 +14,12 @@ namespace Hecton8.Scavenging
     /// Legacy UniqueId support remains for scene-authored compatibility, but authoritative depletion lives in PersistentWorldRegistry.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable
+    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer
     {
         private static readonly int _MeltCenterId = Shader.PropertyToID("_MeltCenter");
         private static readonly int _MeltRadiusId = Shader.PropertyToID("_MeltRadius");
+        private static readonly Collider[] _steamExplosionOverlapBuffer = new Collider[16];
+        private static readonly Rigidbody[] _steamExplosionBodyBuffer = new Rigidbody[16];
         // COLD ALLOC: RegistryBucket<ResourceNode>[4096] — authored/persistent resource node registry for legacy world-state compatibility — owner: ResourceNode
         private static readonly RegistryBucket<ResourceNode> _worldStateRegistry = new RegistryBucket<ResourceNode>(4096);
 
@@ -95,6 +100,7 @@ namespace Hecton8.Scavenging
         private bool _registeredToWorldStateRegistry;
         private int _spatialHandle;
         private ulong _persistentTombstoneId;
+        private HectonVoxelEngine _cachedVoxelEngine;
 
         /// <summary>Legacy scene-facing ID retained for compatibility systems.</summary>
         public string UniqueId => uniqueId;
@@ -250,6 +256,20 @@ namespace Hecton8.Scavenging
                 UpdateMeltProperties(hitPoint);
         }
 
+        public void ApplyInteractionSignal(in Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
+        {
+            if (_isDepleted || _despawnRequested || signal.PowerDelivered <= 0f)
+                return;
+
+            if (ShouldTriggerSteamExplosion(in signal))
+            {
+                TriggerSteamExplosion(runtimeHitPoint);
+                return;
+            }
+
+            ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
+        }
+
         public void TakeDamage(float amount)
         {
             if (_isDepleted || _despawnRequested || amount <= 0f)
@@ -322,6 +342,8 @@ namespace Hecton8.Scavenging
                 if (worldStateManager != null)
                     worldStateManager.RegisterDepletedNode(uniqueId);
             }
+
+            TryApplyDepletionCrater();
         }
 
         private bool TrySpawnLoot()
@@ -364,6 +386,129 @@ namespace Hecton8.Scavenging
             }
 
             return true;
+        }
+
+        private bool ShouldTriggerSteamExplosion(in Hecton8.Interaction.InteractionSignal signal)
+        {
+            if (resourceTemplate == null ||
+                !resourceTemplate.TriggersSteamExplosionWithoutThermalShield ||
+                !IsMiningSignal(in signal))
+            {
+                return false;
+            }
+
+            IModularEquipmentService modularEquipment = GlobalRegistry.ModularEquipment;
+            return modularEquipment == null ||
+                   !modularEquipment.HasUpgrade(signal.Source.ToolID, ToolUpgradeBits.ThermalShield);
+        }
+
+        private static bool IsMiningSignal(in Hecton8.Interaction.InteractionSignal signal)
+        {
+            switch ((InteractionEffectType)signal.EffectType)
+            {
+                case InteractionEffectType.Drill:
+                case InteractionEffectType.PlasmaCut:
+                case InteractionEffectType.Torch:
+                case InteractionEffectType.Boil:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private void TriggerSteamExplosion(Vector3 runtimeOrigin)
+        {
+            if (resourceTemplate == null)
+                return;
+
+            float radius = resourceTemplate.SteamExplosionRadiusMeters;
+            float impulseMagnitude = resourceTemplate.SteamExplosionImpulse;
+            if (radius <= 0f || impulseMagnitude <= 0f)
+                return;
+
+            int overlapCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                runtimeOrigin,
+                radius,
+                _steamExplosionOverlapBuffer,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+            if (overlapCount <= 0)
+                return;
+
+            int uniqueBodyCount = 0;
+            for (int i = 0; i < overlapCount; i++)
+            {
+                Collider collider = _steamExplosionOverlapBuffer[i];
+                _steamExplosionOverlapBuffer[i] = null;
+                if (collider == null)
+                    continue;
+
+                Rigidbody body = collider.attachedRigidbody;
+                if (body == null)
+                    continue;
+
+                bool alreadyQueued = false;
+                for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
+                {
+                    if (ReferenceEquals(_steamExplosionBodyBuffer[bodyIndex], body))
+                    {
+                        alreadyQueued = true;
+                        break;
+                    }
+                }
+
+                if (alreadyQueued || uniqueBodyCount >= _steamExplosionBodyBuffer.Length)
+                    continue;
+
+                _steamExplosionBodyBuffer[uniqueBodyCount++] = body;
+            }
+
+            for (int i = 0; i < uniqueBodyCount; i++)
+            {
+                Rigidbody body = _steamExplosionBodyBuffer[i];
+                _steamExplosionBodyBuffer[i] = null;
+                if (body == null)
+                    continue;
+
+                Vector3 direction = body.worldCenterOfMass - runtimeOrigin;
+                float distance = direction.magnitude;
+                if (distance > 0.0001f)
+                    direction /= distance;
+                else
+                    direction = Vector3.up;
+
+                float falloff = Mathf.Clamp01(1f - (distance / radius));
+                Vector3 impulse = direction * (impulseMagnitude * falloff);
+                if (impulse.sqrMagnitude <= 0.0001f)
+                    continue;
+
+                PhysicsForceRouter.QueueForce(body, impulse, ForceMode.Impulse);
+            }
+        }
+
+        private void TryApplyDepletionCrater()
+        {
+            if (resourceTemplate == null || !resourceTemplate.LeavesDepletionCrater)
+                return;
+
+            float craterRadiusMeters = resourceTemplate.DepletionCraterRadiusMeters;
+            if (craterRadiusMeters <= 0f)
+                return;
+
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref _cachedVoxelEngine);
+            if (_cachedVoxelEngine == null)
+                return;
+
+            VoxelDeltaProcessor deltaProcessor = _cachedVoxelEngine.DeltaProcessor;
+            if (deltaProcessor == null ||
+                !_cachedVoxelEngine.TryGetNearestActiveVolume(_cachedTransform.position, out HectonVoxelVolume volume) ||
+                volume == null)
+            {
+                return;
+            }
+
+            deltaProcessor.ApplyImmediateCrater(volume, _cachedTransform.position, craterRadiusMeters);
         }
 
         private void DespawnSelf()

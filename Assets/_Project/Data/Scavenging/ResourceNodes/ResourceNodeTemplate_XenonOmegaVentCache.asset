@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_XenonOmegaVentCache
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.xenon_omega_vent_cache
+  displayName: Xenon-Omega Vent Cache
+  toolResistance: 1.72
+  harvestDurationSeconds: 2.1
+  requiredToolClass: 3
+  maxIntegrity: 188
+  defaultLootCount: 1
+  minimumDepthMeters: 1700
+  maximumDepthMeters: 3400
+  minimumTemperatureCelsius: 92
+  maximumTemperatureCelsius: 180
+  minimumSlopeDegrees: 8
+  maximumSlopeDegrees: 48
+  spawnOffsetMeters: 0.2
+  candidateBudgetPerSector: 2
+  maxInstancesPerSector: 1
+  placementProbability: 0.08
+  minimumDensity: 0.03
+  maximumDensity: 0.1
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.9, y: 1.6, z: 1.9}
+  supportsAutonomousExtraction: 1
+  extractorYieldItem: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
+  extractorCycleSeconds: 54
+  extractorInventoryCapacity: 10
+  requiresHydrothermalVent: 1
+  hydrothermalVentTemperatureThresholdCelsius: 92
+  triggersSteamExplosionWithoutThermalShield: 1
+  steamExplosionRadiusMeters: 6.5
+  steamExplosionImpulse: 20
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 3
+  harvestYield:
+  - item: {fileID: 11400000, guid: dac6660f5c751ac4eb866d5b3954c6db, type: 2}
+    minimumAmount: 1
+    maximumAmount: 1
+    weight: 1
+  rarityDrops: []

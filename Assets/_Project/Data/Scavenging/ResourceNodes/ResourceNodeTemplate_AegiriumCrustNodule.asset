@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_AegiriumCrustNodule
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.aegirium_crust_nodule
+  displayName: Aegirium Crust Nodule
+  toolResistance: 1.58
+  harvestDurationSeconds: 1.85
+  requiredToolClass: 3
+  maxIntegrity: 170
+  defaultLootCount: 1
+  minimumDepthMeters: 1800
+  maximumDepthMeters: 3600
+  minimumTemperatureCelsius: 24
+  maximumTemperatureCelsius: 88
+  minimumSlopeDegrees: 14
+  maximumSlopeDegrees: 62
+  spawnOffsetMeters: 0.16
+  candidateBudgetPerSector: 2
+  maxInstancesPerSector: 1
+  placementProbability: 0.1
+  minimumDensity: 0.03
+  maximumDensity: 0.1
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.8, y: 1.5, z: 1.8}
+  supportsAutonomousExtraction: 1
+  extractorYieldItem: {fileID: 11400000, guid: 59a14819e2557ec4a9c83015dc8dabca, type: 2}
+  extractorCycleSeconds: 60
+  extractorInventoryCapacity: 8
+  requiresHydrothermalVent: 0
+  hydrothermalVentTemperatureThresholdCelsius: 80
+  triggersSteamExplosionWithoutThermalShield: 0
+  steamExplosionRadiusMeters: 5
+  steamExplosionImpulse: 12
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 3.2
+  harvestYield:
+  - item: {fileID: 11400000, guid: 59a14819e2557ec4a9c83015dc8dabca, type: 2}
+    minimumAmount: 1
+    maximumAmount: 1
+    weight: 1
+  rarityDrops: []

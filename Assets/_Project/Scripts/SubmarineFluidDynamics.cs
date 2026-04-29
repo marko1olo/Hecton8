@@ -284,6 +284,19 @@ namespace Hecton8.Physics
         [Tooltip("Extra linear damping applied once the hull enters catastrophic implosion drag.")]
         [SerializeField, Min(0f)] private float implosionDragBonus = DefaultImplosionDragBonus;
 
+        [Header("Flora Drag")]
+        [Tooltip("Minimum submarine speed required before kelp and sargassum drag queries can amplify hydrodynamic damping.")]
+        [SerializeField, Min(0f)] private float floraDragMinimumSpeedMetersPerSecond = 1f;
+
+        [Tooltip("Minimum world-space sample radius used when querying macro-flora density around the hull.")]
+        [SerializeField, Min(0.25f)] private float floraDragMinimumSampleRadiusMeters = 2.5f;
+
+        [Tooltip("Additional linear damping multiplier applied at full macro-flora density.")]
+        [SerializeField, Range(1f, 3f)] private float floraDragLinearMultiplier = 1.45f;
+
+        [Tooltip("Additional angular damping multiplier applied at full macro-flora density.")]
+        [SerializeField, Range(1f, 3f)] private float floraDragAngularMultiplier = 1.3f;
+
         [Header("â”€â”€ Exterior Buoyancy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional explicit collider used to derive exterior buoyancy sample points. Falls back to the first owned collider.")]
         [SerializeField] private Collider exteriorHullCollider;
@@ -319,6 +332,7 @@ namespace Hecton8.Physics
         [SerializeField] private bool _debugHullImplosionActive;
         [SerializeField] private float _debugExternalPressureKPa;
         [SerializeField] private float _debugCompressionScale = 1f;
+        [SerializeField] private float _debugFloraDragDensity;
         [SerializeField] private Vector3 _debugLastThermalAnomalyCenter;
         [SerializeField] private float _debugLastThermalAnomalyTemperature;
         [SerializeField] private float _debugLastThermalAnomalyDepth;
@@ -913,6 +927,70 @@ namespace Hecton8.Physics
         public void ClearBreach(int compartmentIndex)
         {
             TriggerBreach(compartmentIndex, 0f);
+        }
+
+        internal void TriggerImmediateBreachDepressurization(int compartmentIndex, Vector3 breachWorldPosition, float breachAreaSquareMeters)
+        {
+            if (_atmosphereSystem == null || _cachedTransform == null || !IsCompartmentIndexValid(compartmentIndex))
+                return;
+
+            TriggerBreach(compartmentIndex, breachAreaSquareMeters);
+
+            float externalPressureKPa = math.max(1f, externalReferencePressureKPa);
+            float pressureDeltaKPa = _atmosphereSystem.GetRoomPressureKPa(compartmentIndex) - externalPressureKPa;
+            if (pressureDeltaKPa < math.max(0f, minimumDepressurizationPressureDeltaKPa))
+                return;
+
+            Vector3 roomCenter = _cachedTransform.TransformPoint(GetCompartmentCentroid(compartmentIndex));
+            float roomVolume = compartmentIndex < _compartmentMaxVolumes.Length
+                ? math.max(Epsilon, _compartmentMaxVolumes[compartmentIndex])
+                : Epsilon;
+            float compartmentRadius = math.pow(roomVolume / 4.1887903f, 0.33333334f);
+            float influenceRadius = math.max(0.5f, compartmentRadius + math.max(0f, depressurizationRoomRadiusPaddingMeters));
+            float rawForceNewtons = pressureDeltaKPa * 1000f * math.max(Epsilon, breachAreaSquareMeters);
+            float baseAcceleration = rawForceNewtons / math.max(1f, depressurizationReferenceMassKilograms);
+            float maximumAcceleration = math.max(0f, maximumDepressurizationAccelerationMetersPerSecondSquared);
+            if (!math.isfinite(baseAcceleration) || baseAcceleration <= Epsilon || maximumAcceleration <= Epsilon)
+                return;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+
+            if (playerTransform != null)
+            {
+                if (playerMovement != null)
+                {
+                    ApplyDepressurizationToPlayer(
+                        playerMovement,
+                        playerTransform.position,
+                        breachWorldPosition,
+                        roomCenter,
+                        influenceRadius,
+                        baseAcceleration,
+                        maximumAcceleration);
+                }
+                else if (playerBody != null)
+                {
+                    ApplyDepressurizationToBody(
+                        playerBody,
+                        playerTransform.position,
+                        breachWorldPosition,
+                        roomCenter,
+                        influenceRadius,
+                        baseAcceleration,
+                        maximumAcceleration);
+                }
+            }
+
+            ApplyDepressurizationToLooseBodies(
+                playerBody,
+                roomCenter,
+                breachWorldPosition,
+                influenceRadius,
+                baseAcceleration,
+                maximumAcceleration);
         }
 
         /// <summary>
@@ -2976,17 +3054,23 @@ namespace Hecton8.Physics
                 (1f + internalFloodRatio + (criticalFloodRatio * CriticalFloodAddedMassLinearBoost));
             float angularScale = math.max(0f, addedMassAngularDampingScale) *
                 (1f + (internalFloodRatio * 2f) + (criticalFloodRatio * CriticalFloodAddedMassAngularBoost));
+            float floraDensity01 = SampleMacroFloraDragDensity();
+            float floraLinearMultiplier = math.lerp(1f, math.max(1f, floraDragLinearMultiplier), floraDensity01);
+            float floraAngularMultiplier = math.lerp(1f, math.max(1f, floraDragAngularMultiplier), floraDensity01);
+            _debugFloraDragDensity = floraDensity01;
             if (!float.IsFinite(criticalFloodRatio) ||
                 !float.IsFinite(dampingSubmersion) ||
                 !float.IsFinite(linearScale) ||
-                !float.IsFinite(angularScale))
+                !float.IsFinite(angularScale) ||
+                !float.IsFinite(floraLinearMultiplier) ||
+                !float.IsFinite(floraAngularMultiplier))
             {
                 EmergencyResetHydrodynamics("ApplyAddedMassDamping.Scale");
                 return;
             }
 
-            float targetLinearDamping = _baseLinearDamping * (1f + (linearScale * dampingSubmersion));
-            float targetAngularDamping = _baseAngularDamping * (1f + (angularScale * dampingSubmersion));
+            float targetLinearDamping = _baseLinearDamping * (1f + (linearScale * dampingSubmersion)) * floraLinearMultiplier;
+            float targetAngularDamping = _baseAngularDamping * (1f + (angularScale * dampingSubmersion)) * floraAngularMultiplier;
             if (_hullImplosionActive)
                 targetLinearDamping += math.max(0f, implosionDragBonus);
 
@@ -2996,8 +3080,8 @@ namespace Hecton8.Physics
                 return;
             }
 
-            _currentHydrodynamicLinearInertiaScale = math.max(1f, 1f + (linearScale * dampingSubmersion));
-            _currentHydrodynamicAngularInertiaScale = math.max(1f, 1f + (angularScale * dampingSubmersion));
+            _currentHydrodynamicLinearInertiaScale = math.max(1f, (1f + (linearScale * dampingSubmersion)) * floraLinearMultiplier);
+            _currentHydrodynamicAngularInertiaScale = math.max(1f, (1f + (angularScale * dampingSubmersion)) * floraAngularMultiplier);
 
             if (math.abs(_lastAppliedLinearDamping - targetLinearDamping) > 0.0005f)
             {
@@ -3010,6 +3094,64 @@ namespace Hecton8.Physics
                 _rigidbody.angularDamping = targetAngularDamping;
                 _lastAppliedAngularDamping = targetAngularDamping;
             }
+        }
+
+        private float SampleMacroFloraDragDensity()
+        {
+            if (_rigidbody == null || _cachedTransform == null)
+                return 0f;
+
+            Vector3 linearVelocity = _rigidbody.linearVelocity;
+            if (linearVelocity.sqrMagnitude < floraDragMinimumSpeedMetersPerSecond * floraDragMinimumSpeedMetersPerSecond)
+                return 0f;
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null)
+                return 0f;
+
+            Bounds hullBounds = exteriorHullCollider != null
+                ? exteriorHullCollider.bounds
+                : new Bounds(_rigidbody.worldCenterOfMass, Vector3.one * 4f);
+            Vector3 center = hullBounds.center;
+            Vector3 forwardOffset = _cachedTransform.forward * (hullBounds.extents.z * 0.6f);
+            Vector3 rightOffset = _cachedTransform.right * (hullBounds.extents.x * 0.6f);
+
+            float densitySum = 0f;
+            int densityCount = 0;
+            AccumulateFloraDensitySample(vegetationBridge, center, ref densitySum, ref densityCount);
+            AccumulateFloraDensitySample(vegetationBridge, center + forwardOffset, ref densitySum, ref densityCount);
+            AccumulateFloraDensitySample(vegetationBridge, center - forwardOffset, ref densitySum, ref densityCount);
+            AccumulateFloraDensitySample(vegetationBridge, center + rightOffset, ref densitySum, ref densityCount);
+            AccumulateFloraDensitySample(vegetationBridge, center - rightOffset, ref densitySum, ref densityCount);
+
+            if (densityCount <= 0)
+                return 0f;
+
+            float normalizedDensity = densitySum / densityCount;
+            float sampleRadius = math.max(floraDragMinimumSampleRadiusMeters, math.max(hullBounds.extents.x, hullBounds.extents.z));
+            float radiusScale = math.saturate(sampleRadius / math.max(floraDragMinimumSampleRadiusMeters, 0.01f));
+            return math.saturate(normalizedDensity * math.lerp(0.85f, 1.15f, math.saturate(radiusScale - 1f)));
+        }
+
+        private static void AccumulateFloraDensitySample(
+            HectonMapMagicVegetationBridge vegetationBridge,
+            Vector3 samplePosition,
+            ref float densitySum,
+            ref int densityCount)
+        {
+            HectonMapMagicVegetationBridge.VegetationDensitySample sample = vegetationBridge.GetVegetationDensity(samplePosition);
+            if (!sample.HasVegetation)
+                return;
+
+            bool contributesDrag = sample.Type == HectonVegetationInstanceType.GiantKelp ||
+                                   sample.Type == HectonVegetationInstanceType.Sargassum ||
+                                   sample.SemanticType == HectonMapMagicVegetationBridge.VegetationSemanticType.OrganicKelp ||
+                                   sample.SemanticType == HectonMapMagicVegetationBridge.VegetationSemanticType.FloatingSargassum;
+            if (!contributesDrag)
+                return;
+
+            densitySum += math.saturate(sample.Density);
+            densityCount++;
         }
 
         private void UpdateExteriorThermalAnomalies(float fixedDeltaTime)

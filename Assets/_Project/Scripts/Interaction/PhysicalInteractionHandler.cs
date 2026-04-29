@@ -608,6 +608,9 @@ namespace Hecton8.Interaction
 
         private void RegisterToTickSystems()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);

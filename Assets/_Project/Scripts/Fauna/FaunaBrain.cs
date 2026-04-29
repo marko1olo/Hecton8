@@ -62,6 +62,8 @@ namespace Hecton8.AI
         public FaunaSpeciesProfile SpeciesProfile => _speciesProfile;
         public FaunaDataTemplate DataTemplate => _faunaDataTemplate;
         public int SpeciesId => ResolveStableSpeciesId();
+        public bool IsFlankingManeuverDetected => _flankingManeuverDetected;
+        public uint ThreatPredictionLoreHash => _faunaDataTemplate != null ? _faunaDataTemplate.FullLoreHash : 0u;
 
         /// <summary>
         /// [REQ] Eye Tracking vector for Animator/Bones.
@@ -79,6 +81,8 @@ namespace Hecton8.AI
         private CreatureUtilityBrain _utilityBrain;
         private ProceduralLeviathanSpineIK _proceduralLeviathanSpineIk;
         private ScannableTarget _scannableTarget;
+        private PredatorPackRole _currentPackRole;
+        private bool _flankingManeuverDetected;
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
@@ -94,6 +98,10 @@ namespace Hecton8.AI
         private const float VoxelRouteRefreshIntervalSeconds = 0.25f;
         private const float VoxelRouteRetargetDistanceSqr = 16f;
         private const float VoxelRouteWaypointReachDistanceSqr = 4f;
+        private const float DynamicDodgeDistanceScale = 2.25f;
+        private const float DynamicDodgeForceMultiplier = 2.75f;
+        private const float DynamicDodgeSpeedMultiplier = 1.3f;
+        private const float DynamicDodgeTurnMultiplier = 3.25f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextSlowTickWatchdogLogTime;
 #endif
@@ -460,6 +468,7 @@ namespace Hecton8.AI
                 (Vector3)selfVelocity,
                 (Vector3)selfForward,
                 hasPlayerTarget ? playerPosition : default,
+                hasDirectPlayerTransform ? directPlayerTransform.forward : selfForward,
                 hasPlayerVelocity ? playerVelocity : default,
                 hasThreatTarget ? _sensorSuite.currentThreat.position : default,
                 hasPreyTarget ? _sensorSuite.currentPrey.position : default,
@@ -601,13 +610,24 @@ namespace Hecton8.AI
                 playerTargetPosition = perceivedPlayerPosition;
 
             float runtimeSpeedScale = ResolveRuntimeSpeedMultiplierForState(_stateMachine.currentState);
+            Vector3 desiredDirection = _cachedDesiredDirection;
+            float forceMultiplier = _stateMachine.currentForceMultiplier;
+            float speedMultiplier = _stateMachine.currentSpeedMultiplier * runtimeSpeedScale;
+            float turnMultiplier = _stateMachine.currentTurnMultiplier;
+            if (TryResolveDynamicDodgeDirection(desiredDirection, out Vector3 dodgeDirection))
+            {
+                desiredDirection = dodgeDirection;
+                forceMultiplier = Mathf.Max(forceMultiplier, DynamicDodgeForceMultiplier);
+                speedMultiplier = Mathf.Max(speedMultiplier, DynamicDodgeSpeedMultiplier);
+                turnMultiplier = Mathf.Max(turnMultiplier, DynamicDodgeTurnMultiplier);
+            }
             
             _steeringEngine.FixedTick(
                 fdt, 
-                _cachedDesiredDirection, 
-                _stateMachine.currentForceMultiplier, 
-                _stateMachine.currentSpeedMultiplier * runtimeSpeedScale,
-                _stateMachine.currentTurnMultiplier,
+                desiredDirection, 
+                forceMultiplier, 
+                speedMultiplier,
+                turnMultiplier,
                 _stateMachine.currentState == AIState.Retreat,
                 playerTargetPosition
             );
@@ -1115,6 +1135,8 @@ namespace Hecton8.AI
             _stateMachine.currentForceMultiplier = evaluation.ForceMultiplier;
             _stateMachine.currentSpeedMultiplier = evaluation.SpeedMultiplier;
             _stateMachine.currentTurnMultiplier = evaluation.TurnMultiplier;
+            _currentPackRole = (PredatorPackRole)evaluation.PackRoleCode;
+            _flankingManeuverDetected = evaluation.FlankingManeuverDetected;
         }
 
         private void ResetStateCache()
@@ -1123,7 +1145,35 @@ namespace Hecton8.AI
             _stateMachine.ResetRuntime(initialState);
             _currentStateCache = initialState;
             _cachedDesiredDirection = transform != null ? transform.forward : Vector3.forward;
+            _currentPackRole = PredatorPackRole.None;
+            _flankingManeuverDetected = false;
             ClearVoxelPathGuidance();
+        }
+
+        public bool SupportsAttackPattern(FaunaAttackPattern attackPattern)
+        {
+            return _faunaDataTemplate != null && _faunaDataTemplate.SupportsAttackPattern(attackPattern);
+        }
+
+        private bool TryResolveDynamicDodgeDirection(Vector3 desiredDirection, out Vector3 dodgeDirection)
+        {
+            dodgeDirection = default;
+            if (!_sensorSuite.TryGetDeferredObstacleHitInfo(out RaycastHit obstacleHit))
+                return false;
+
+            float safeBodyRadius = _faunaDataTemplate != null
+                ? Mathf.Max(0.25f, _faunaDataTemplate.BodyRadiusMeters)
+                : 0.65f;
+            float dodgeDistance = safeBodyRadius * DynamicDodgeDistanceScale;
+            if (obstacleHit.distance <= 0f || obstacleHit.distance > dodgeDistance)
+                return false;
+
+            float3 incoming = math.normalizesafe((float3)desiredDirection, (float3)transform.forward);
+            float3 surfaceNormal = math.normalizesafe((float3)obstacleHit.normal, new float3(0f, 1f, 0f));
+            float reflectionDot = math.dot(incoming, surfaceNormal);
+            float3 reflectedDirection = incoming - (2f * reflectionDot * surfaceNormal);
+            dodgeDirection = (Vector3)math.normalizesafe(reflectedDirection, (float3)_sensorSuite.bestFreeDirection);
+            return dodgeDirection.sqrMagnitude > 0.0001f;
         }
 
         private AIState ResolveInitialState()

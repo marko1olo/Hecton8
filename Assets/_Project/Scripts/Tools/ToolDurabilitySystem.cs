@@ -769,6 +769,8 @@ namespace Hecton8.Tools
         {
             if (_registeredSlowTick)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
             _registeredSlowTick = true;
@@ -787,6 +789,8 @@ namespace Hecton8.Tools
         {
             if (_registeredUpdate)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredUpdate = true;
@@ -804,6 +808,8 @@ namespace Hecton8.Tools
         private void TryRegisterLateFrame()
         {
             if (_registeredLateFrame)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);

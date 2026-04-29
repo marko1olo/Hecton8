@@ -941,6 +941,20 @@ namespace Hecton8.Atmosphere
             return math.max(0f, _steamFront[roomIndex]);
         }
 
+        internal void HandleExternalModuleBreach(Vector3 breachWorldPosition, float breachAreaSquareMeters)
+        {
+            if (fluidDynamics == null)
+                return;
+
+            int roomIndex = ResolveNearestRoomIndexForWorldPosition(breachWorldPosition);
+            if (roomIndex < 0 || roomIndex >= RoomCount)
+                return;
+
+            float sanitizedArea = math.max(0.05f, breachAreaSquareMeters);
+            fluidDynamics.TriggerImmediateBreachDepressurization(roomIndex, breachWorldPosition, sanitizedArea);
+            SealAdjacentBulkheads(roomIndex);
+        }
+
         internal float ResolveThermalFatigueMultiplier(int roomIndex)
         {
             if (roomIndex < 0 || roomIndex >= RoomCount || !_temperatureFront.IsCreated)
@@ -957,6 +971,28 @@ namespace Hecton8.Atmosphere
             return structuralMaterial == RoomStructuralMaterial.Glass
                 ? math.max(0f, glassThermalFatigueMultiplier)
                 : math.max(0f, titaniumThermalFatigueMultiplier);
+        }
+
+        private void SealAdjacentBulkheads(int breachedRoomIndex)
+        {
+            if (fluidDynamics == null || breachedRoomIndex < 0)
+                return;
+
+            int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
+            for (int doorIndex = 0; doorIndex < doorCount; doorIndex++)
+            {
+                if (!fluidDynamics.TryGetBulkheadDefinition(doorIndex, out int compartmentA, out int compartmentB, out bool isSealed))
+                    continue;
+
+                if (isSealed || (compartmentA != breachedRoomIndex && compartmentB != breachedRoomIndex))
+                    continue;
+
+                fluidDynamics.SetBulkheadSealed(compartmentA, compartmentB, true);
+                if (_doorSealed.IsCreated && doorIndex < _doorSealed.Length)
+                    _doorSealed[doorIndex] = 1;
+                if (_doorSealedPrevious.IsCreated && doorIndex < _doorSealedPrevious.Length)
+                    _doorSealedPrevious[doorIndex] = 1;
+            }
         }
 
         internal int ResolveNearestRoomIndexForWorldPosition(Vector3 worldPosition)

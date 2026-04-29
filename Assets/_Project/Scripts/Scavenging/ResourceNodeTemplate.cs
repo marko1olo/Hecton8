@@ -220,6 +220,53 @@ namespace Hecton8.Scavenging
         [Tooltip("Exact physical dimensions in meters for the runtime node root and ghost placeholder.")]
         private Vector3 physicalSize = new Vector3(1f, 1f, 1f);
 
+        [Header("Automation")]
+        [SerializeField]
+        [Tooltip("Allows player-placed autonomous extractors to bind to this node family as an infinite-vein source.")]
+        private bool supportsAutonomousExtraction;
+
+        [SerializeField]
+        [Tooltip("Primary item routed into the autonomous extractor SOA inventory. Falls back to the first valid harvest-yield entry when empty.")]
+        private ItemData extractorYieldItem;
+
+        [SerializeField, Min(1f)]
+        [Tooltip("Seconds required for one autonomous extraction cycle while the extractor has power.")]
+        private float extractorCycleSeconds = 30f;
+
+        [SerializeField, Range(1, 64)]
+        [Tooltip("Maximum buffered units an attached autonomous extractor may hold for this vein family.")]
+        private int extractorInventoryCapacity = 16;
+
+        [Header("Thermal Hazard")]
+        [SerializeField]
+        [Tooltip("Requires the hydrothermal vent gate in addition to the generic temperature envelope.")]
+        private bool requiresHydrothermalVent;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Minimum local water temperature in Celsius required when the hydrothermal vent gate is enabled.")]
+        private float hydrothermalVentTemperatureThresholdCelsius = 80f;
+
+        [SerializeField]
+        [Tooltip("When enabled, unshielded mining interactions trigger a localized steam explosion instead of applying harvest damage.")]
+        private bool triggersSteamExplosionWithoutThermalShield;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Radius in meters used by the localized steam-explosion impulse pass.")]
+        private float steamExplosionRadiusMeters = 5f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Impulse magnitude routed through PhysicsForceRouter when the steam hazard trips.")]
+        private float steamExplosionImpulse = 12f;
+
+        [Header("Depletion Aftermath")]
+        [SerializeField]
+        [Tooltip("When enabled, fully depleted tombstoned nodes dispatch a crater carve into the voxel delta processor.")]
+        private bool leaveDepletionCrater;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Radius in meters used by the voxel crater carve on depletion.")]
+        private float depletionCraterRadiusMeters = 2f;
+
         [Header("Yield")]
         [SerializeField]
         [Tooltip("Primary weighted harvest table. Resolved to hash-based rows at runtime.")]
@@ -297,6 +344,70 @@ namespace Hecton8.Scavenging
 
         /// <summary>Returns true when the template carries an authored presentation mesh.</summary>
         public bool HasPresentationMesh => nodeMesh != null;
+
+        /// <summary>True when autonomous extractors may bind to this node family.</summary>
+        public bool SupportsAutonomousExtraction => supportsAutonomousExtraction && ExtractorYieldItemHashId != 0;
+
+        /// <summary>Primary authored extractor output item.</summary>
+        public ItemData ExtractorYieldItem
+        {
+            get
+            {
+                if (extractorYieldItem != null && !string.IsNullOrWhiteSpace(extractorYieldItem.PersistentId))
+                    return extractorYieldItem;
+
+                if (harvestYield == null)
+                    return null;
+
+                for (int i = 0; i < harvestYield.Length; i++)
+                {
+                    ItemData item = harvestYield[i].item;
+                    if (item != null && !string.IsNullOrWhiteSpace(item.PersistentId))
+                        return item;
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>Hash-stable extractor output item id.</summary>
+        public int ExtractorYieldItemHashId
+        {
+            get
+            {
+                ItemData item = ExtractorYieldItem;
+                return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
+                    ? LocHash.Compute(item.PersistentId)
+                    : 0;
+            }
+        }
+
+        /// <summary>Seconds required for one extractor cycle.</summary>
+        public float ExtractorCycleSeconds => math.max(1f, extractorCycleSeconds);
+
+        /// <summary>Maximum buffered extractor units for this node family.</summary>
+        public int ExtractorInventoryCapacity => math.clamp(extractorInventoryCapacity, 1, 64);
+
+        /// <summary>True when this node family requires the hydrothermal vent gate.</summary>
+        public bool RequiresHydrothermalVent => requiresHydrothermalVent;
+
+        /// <summary>Minimum Celsius gate for hydrothermal-only nodes.</summary>
+        public float HydrothermalVentTemperatureThresholdCelsius => math.max(0f, hydrothermalVentTemperatureThresholdCelsius);
+
+        /// <summary>True when unshielded mining should trigger a localized steam explosion.</summary>
+        public bool TriggersSteamExplosionWithoutThermalShield => triggersSteamExplosionWithoutThermalShield;
+
+        /// <summary>Steam explosion impulse radius in meters.</summary>
+        public float SteamExplosionRadiusMeters => math.max(0f, steamExplosionRadiusMeters);
+
+        /// <summary>Steam explosion impulse magnitude.</summary>
+        public float SteamExplosionImpulse => math.max(0f, steamExplosionImpulse);
+
+        /// <summary>True when depletion should carve a crater into the voxel delta owner.</summary>
+        public bool LeavesDepletionCrater => leaveDepletionCrater;
+
+        /// <summary>Crater carve radius in meters.</summary>
+        public float DepletionCraterRadiusMeters => math.max(0f, depletionCraterRadiusMeters);
 
         /// <summary>Builds the blittable runtime descriptor consumed by scatter/harvest SOA lanes.</summary>
         public RuntimeDescriptor BuildRuntimeDescriptor()
@@ -421,6 +532,12 @@ namespace Hecton8.Scavenging
             maximumSlopeDegrees = math.clamp(math.max(minimumSlopeDegrees, maximumSlopeDegrees), 0f, 90f);
             spawnOffsetMeters = math.max(0f, spawnOffsetMeters);
             placementProbability = math.saturate(placementProbability);
+            extractorCycleSeconds = math.max(1f, extractorCycleSeconds);
+            extractorInventoryCapacity = math.clamp(extractorInventoryCapacity, 1, 64);
+            hydrothermalVentTemperatureThresholdCelsius = math.max(0f, hydrothermalVentTemperatureThresholdCelsius);
+            steamExplosionRadiusMeters = math.max(0f, steamExplosionRadiusMeters);
+            steamExplosionImpulse = math.max(0f, steamExplosionImpulse);
+            depletionCraterRadiusMeters = math.max(0f, depletionCraterRadiusMeters);
             physicalSize.x = math.max(0.1f, physicalSize.x);
             physicalSize.y = math.max(0.1f, physicalSize.y);
             physicalSize.z = math.max(0.1f, physicalSize.z);
