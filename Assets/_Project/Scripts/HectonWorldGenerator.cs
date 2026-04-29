@@ -669,6 +669,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
     {
         if (_registeredToTickManager)
             return;
+        if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            return;
 
         GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
         _registeredToTickManager = true;

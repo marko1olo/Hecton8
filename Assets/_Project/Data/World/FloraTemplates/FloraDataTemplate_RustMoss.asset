@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22dbe8e98819e134eb82884be78c9c0c, type: 3}
+  m_Name: FloraDataTemplate_RustMoss
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.FloraDataTemplate
+  stableId: flora.rust_moss
+  displayName: Rust Moss
+  vegetationType: 1
+  semanticType: 3
+  biomeLayer: 1
+  harvestTemplate: {fileID: 11400000, guid: 2971cc2971e94534b9fb360aa24e88e6, type: 2}
+  lootItem: {fileID: 11400000, guid: 91d1c706ac87dda4c939dcef146bcbd1, type: 2}
+  lootHashId: 0
+  vulnerabilityMask: 17
+  audioMaterialId: 1
+  attachmentSurface: 3
+  bioluminescenceColor: {r: 0.22, g: 0.86, b: 0.34, a: 0.26}
+  pulseFrequency: 0.24
+  parasiticToModules: 1
+  modulePowerDrainWatts: 12
+  moduleInfectionStrength: 0.72
+  moduleInfectionRadiusMeters: 2.6
+  moduleInfectionPulseFrequency: 0.28
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

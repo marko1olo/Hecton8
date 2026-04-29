@@ -975,17 +975,27 @@ namespace Hecton8.Gameplay
         private float ResolveTransportPressureDamageScale()
         {
             PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
-            return transportPreset != null
+            float presetScale = transportPreset != null
                 ? transportPreset.PressureDamageScale
                 : 1f;
+            VehicleUpgradeModule upgradeModule = ResolveActiveVehicleUpgradeModule();
+            float upgradeScale = upgradeModule != null
+                ? math.max(0.1f, upgradeModule.PressureDamageScale)
+                : 1f;
+            return presetScale * upgradeScale;
         }
 
         private float ResolveTransportThermalExposureScale()
         {
             PlayerTransportPreset transportPreset = ResolveActiveTransportPreset();
-            return transportPreset != null
+            float presetScale = transportPreset != null
                 ? transportPreset.ThermalExposureScale
                 : 1f;
+            VehicleUpgradeModule upgradeModule = ResolveActiveVehicleUpgradeModule();
+            float upgradeScale = upgradeModule != null
+                ? math.max(0.1f, upgradeModule.ThermalExposureScale)
+                : 1f;
+            return presetScale * upgradeScale;
         }
 
         private float ResolveTransportRadiationExposureScale()

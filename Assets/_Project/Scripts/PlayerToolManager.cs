@@ -421,8 +421,21 @@ namespace Hecton8.Gameplay
                 cursor = AppendLiteral(destination, cursor, " // TOX ");
                 cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(snapshot.Toxicity01 * 100f), 0, 100));
                 cursor = AppendLiteral(destination, cursor, "%");
-                if (snapshot.OrganicBlood01 > 0.1f)
+                if (snapshot.HasAttractantTrace)
+                {
+                    cursor = AppendLiteral(destination, cursor, " // ");
+                    cursor = AppendLiteral(destination, cursor, DescribeScientificAttractantChannel(snapshot.AttractantChannel));
+                    cursor = AppendLiteral(destination, cursor, " VEC ");
+                    cursor = AppendSignedInt(destination, cursor, Mathf.RoundToInt(snapshot.ScentDirection.x * 100f));
+                    cursor = AppendLiteral(destination, cursor, ",");
+                    cursor = AppendSignedInt(destination, cursor, Mathf.RoundToInt(snapshot.ScentDirection.y * 100f));
+                    cursor = AppendLiteral(destination, cursor, ",");
+                    cursor = AppendSignedInt(destination, cursor, Mathf.RoundToInt(snapshot.ScentDirection.z * 100f));
+                }
+                else if (snapshot.OrganicBlood01 > 0.1f)
+                {
                     cursor = AppendLiteral(destination, cursor, " // TRACES OF ORGANIC BLOOD DETECTED");
+                }
                 length = cursor;
                 return cursor > 0;
             }
@@ -582,6 +595,8 @@ namespace Hecton8.Gameplay
             {
                 case ScannerTool.ScientificMaterialClass.Basalt:
                     return "BASALT";
+                case ScannerTool.ScientificMaterialClass.MetallicSilt:
+                    return "METALLIC SILT";
                 case ScannerTool.ScientificMaterialClass.Sediment:
                     return "SEDIMENT";
                 default:
@@ -589,8 +604,24 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static string DescribeScientificAttractantChannel(ScannerTool.ScientificAttractantChannel attractantChannel)
+        {
+            switch (attractantChannel)
+            {
+                case ScannerTool.ScientificAttractantChannel.Blood:
+                    return "BLOOD";
+                case ScannerTool.ScientificAttractantChannel.Exhaust:
+                    return "EXHAUST";
+                default:
+                    return "TRACE";
+            }
+        }
+
         private static string DescribeScientificTarget(ScannerTool.ScientificScanSnapshot snapshot)
         {
+            if (snapshot.HasFaunaContact)
+                return "BIOFORM";
+
             return snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None
                 ? DescribeScientificMaterial(snapshot.MaterialClass)
                 : "WATER";
@@ -628,6 +659,14 @@ namespace Hecton8.Gameplay
             return value.TryFormat(destination.Slice(cursor), out int charsWritten)
                 ? cursor + charsWritten
                 : cursor;
+        }
+
+        private static int AppendSignedInt(Span<char> destination, int cursor, int value)
+        {
+            if (value >= 0)
+                cursor = AppendLiteral(destination, cursor, "+");
+
+            return AppendInt(destination, cursor, value);
         }
 
         public int FindAssignedSlotForToolType<TTool>() where TTool : PlayerTool

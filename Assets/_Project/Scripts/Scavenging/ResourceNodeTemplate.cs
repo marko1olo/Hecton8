@@ -267,6 +267,40 @@ namespace Hecton8.Scavenging
         [Tooltip("Radius in meters used by the voxel crater carve on depletion.")]
         private float depletionCraterRadiusMeters = 2f;
 
+        [Header("Brine Pool")]
+        [SerializeField]
+        [Tooltip("When enabled, this node family only spawns inside deterministic deep-brine bowls.")]
+        private bool requiresBrinePool;
+
+        [SerializeField, Min(1025f)]
+        [Tooltip("Fluid density in kg/m3 used by deterministic brine-pool sampling for this node family.")]
+        private float brineDensityKgPerCubicMeter = 1250f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Normalized toxicity intensity forwarded into the brine hazard-zone owner.")]
+        private float brineToxicityIntensity = 0.92f;
+
+        [Header("Embedded Vein")]
+        [SerializeField]
+        [Tooltip("When enabled, the placement pass stamps an additive voxel ore vein so the node ends up embedded inside rock.")]
+        private bool embedInVoxelRock;
+
+        [SerializeField, Range(2, 24)]
+        [Tooltip("Number of additive weld stamps used to build the embedded voxel vein path.")]
+        private byte embeddedVeinStampCount = 6;
+
+        [SerializeField, Min(0.5f)]
+        [Tooltip("Total authored length in meters for the embedded voxel vein path.")]
+        private float embeddedVeinLengthMeters = 10f;
+
+        [SerializeField, Min(0.25f)]
+        [Tooltip("Radius in meters used by each additive weld stamp in the embedded vein path.")]
+        private float embeddedVeinRadiusMeters = 1.5f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Maximum lateral path displacement in meters applied to each embedded-vein sample.")]
+        private float embeddedVeinNoiseAmplitudeMeters = 0.8f;
+
         [Header("Yield")]
         [SerializeField]
         [Tooltip("Primary weighted harvest table. Resolved to hash-based rows at runtime.")]
@@ -409,6 +443,30 @@ namespace Hecton8.Scavenging
         /// <summary>Crater carve radius in meters.</summary>
         public float DepletionCraterRadiusMeters => math.max(0f, depletionCraterRadiusMeters);
 
+        /// <summary>True when this node family only spawns inside deterministic deep-brine bowls.</summary>
+        public bool RequiresBrinePool => requiresBrinePool;
+
+        /// <summary>Fluid density in kg/m3 used by the brine-pool buoyancy override.</summary>
+        public float BrineDensityKgPerCubicMeter => math.max(1025f, brineDensityKgPerCubicMeter);
+
+        /// <summary>Normalized toxicity intensity forwarded into the brine hazard runtime.</summary>
+        public float BrineToxicityIntensity => math.saturate(brineToxicityIntensity);
+
+        /// <summary>True when runtime placement should stamp an additive ore vein into the voxel volume.</summary>
+        public bool EmbedInVoxelRock => embedInVoxelRock;
+
+        /// <summary>Additive weld stamp count used by the embedded ore-vein path.</summary>
+        public int EmbeddedVeinStampCount => Mathf.Clamp((int)embeddedVeinStampCount, 2, 24);
+
+        /// <summary>Total authored length of the embedded ore-vein path in meters.</summary>
+        public float EmbeddedVeinLengthMeters => math.max(0.5f, embeddedVeinLengthMeters);
+
+        /// <summary>Radius in meters applied to each additive embedded-vein weld stamp.</summary>
+        public float EmbeddedVeinRadiusMeters => math.max(0.25f, embeddedVeinRadiusMeters);
+
+        /// <summary>Maximum lateral path displacement in meters for the embedded ore-vein jitter.</summary>
+        public float EmbeddedVeinNoiseAmplitudeMeters => math.max(0f, embeddedVeinNoiseAmplitudeMeters);
+
         /// <summary>Builds the blittable runtime descriptor consumed by scatter/harvest SOA lanes.</summary>
         public RuntimeDescriptor BuildRuntimeDescriptor()
         {
@@ -538,6 +596,12 @@ namespace Hecton8.Scavenging
             steamExplosionRadiusMeters = math.max(0f, steamExplosionRadiusMeters);
             steamExplosionImpulse = math.max(0f, steamExplosionImpulse);
             depletionCraterRadiusMeters = math.max(0f, depletionCraterRadiusMeters);
+            brineDensityKgPerCubicMeter = math.max(1025f, brineDensityKgPerCubicMeter);
+            brineToxicityIntensity = math.saturate(brineToxicityIntensity);
+            embeddedVeinStampCount = (byte)Mathf.Clamp((int)embeddedVeinStampCount, 2, 24);
+            embeddedVeinLengthMeters = math.max(0.5f, embeddedVeinLengthMeters);
+            embeddedVeinRadiusMeters = math.max(0.25f, embeddedVeinRadiusMeters);
+            embeddedVeinNoiseAmplitudeMeters = math.max(0f, embeddedVeinNoiseAmplitudeMeters);
             physicalSize.x = math.max(0.1f, physicalSize.x);
             physicalSize.y = math.max(0.1f, physicalSize.y);
             physicalSize.z = math.max(0.1f, physicalSize.z);

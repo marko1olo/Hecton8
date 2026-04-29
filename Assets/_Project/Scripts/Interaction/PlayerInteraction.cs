@@ -44,6 +44,7 @@ namespace Hecton8.Interaction
 {
     using Hecton8.Core;
     using Hecton8.Gameplay;
+    using Hecton8.Inventory;
     using Hecton8.UI;
     using Unity.Mathematics;
     using UnityEngine;
@@ -114,6 +115,7 @@ namespace Hecton8.Interaction
         // ====================================================================
 
         private IInteractable _currentHovered;
+        private IInventoryPickupSource _currentPickupSource;
         private float         _raycastTimer;
         private Transform     _cameraTransform;
         private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
@@ -381,6 +383,7 @@ namespace Hecton8.Interaction
         private void SetHover(IInteractable target)
         {
             _currentHovered = target;
+            _currentPickupSource = target as IInventoryPickupSource;
             _currentHovered.OnHoverStart();
 
             // Audio: subtle metallic click on hover acquisition.
@@ -401,6 +404,7 @@ namespace Hecton8.Interaction
 
             _currentHovered.OnHoverEnd();
             _currentHovered = null;
+            _currentPickupSource = null;
 
             InteractionEvents.RaiseHoverChanged(null);
         }
@@ -417,6 +421,14 @@ namespace Hecton8.Interaction
             {
                 Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(
                     interactSound, 0.6f);
+            }
+
+            if (_currentPickupSource != null &&
+                _currentPickupSource.TryHandleInventoryPickup(PlayerInventory.Instance, transform))
+            {
+                InteractionEvents.RaiseInteractionStarted(
+                    _currentHovered, transform);
+                return;
             }
 
             if (_physicalInteractionHandler != null &&

@@ -1,6 +1,6 @@
 # Habitat Logistics Graph
 
-Date: `2026-04-29`  
+Date: `2026-04-30`  
 Status: `PENDING VERIFICATION`
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
@@ -60,9 +60,11 @@ Rebuild sequence:
 3. Quantize sockets and assemble provisional undirected edges.
 4. Build node records.
 5. Build edge records, evaluate unsupported spans, and mark ruptures.
-6. Publish degradation state.
-7. Publish the logical `LogisticsNetworkGraph`.
-8. Publish visual spline links.
+6. Traverse anchor reachability from all explicit anchor modules.
+7. Publish unmoored state and emergency bulkhead lockdown state back into `BaseModule`.
+8. Publish degradation state.
+9. Publish the logical `LogisticsNetworkGraph`.
+10. Publish visual spline links.
 
 Unsupported span rule:
 
@@ -73,6 +75,59 @@ Unsupported span rule:
 - and the edge is excluded from CSR publication
 
 Result: structural breakage visually persists, but the power / atmosphere graph splits into isolated islands immediately on rebuild.
+
+## Anchor Node Contract
+
+Anchor state is explicit, not inferred from arbitrary support proximity.
+
+- `Foundation` and `Pylon` modules are structural roots unless authoring overrides say otherwise.
+- `BaseModuleTemplate.IsStructuralAnchor` is the primary authoring flag.
+- `BaseModule.isStructuralAnchor` is the prefab/runtime fallback when a template is missing.
+- legacy fallback IDs remain hard-coded only for known shipped content:
+  - `Build_Foundation_Platform`
+  - `Build_Utility_Pylon`
+
+Traversal rule:
+
+```csharp
+seedQueue(allAnchorNodes);
+while (queue not empty)
+{
+    node = pop();
+    for each neighbor in csr(node)
+        if not visited:
+            visit(neighbor);
+}
+```
+
+Any module not visited by that traversal is `UNMOORED`.
+
+Unmoored consequences:
+
+- the node inherits `LogisticsNodeFlags.Isolated`
+- `LogisticsModuleStatusBits.Unmoored` is written into the node reserved byte
+- `BaseModule.SetAnchoredState(false)` enables runtime buoyancy takeover for that module
+
+If no anchor nodes exist in the current habitat island, the entire island becomes unmoored on the same rebuild.
+
+## Emergency Bulkhead Adjacency
+
+Emergency airlock lockdown is driven from the same CSR snapshot.
+
+- `BaseModuleTemplate.IsEmergencyAirlock` is the primary authoring flag.
+- `BaseModule.isEmergencyAirlock` is the fallback.
+- legacy airlock IDs remain hard-coded only for known shipped content:
+  - `Build_Airlock_Hatch`
+  - `base.module.airlock`
+
+For each airlock node:
+
+- scan all CSR neighbors
+- if any adjacent module is currently breached
+- push `SetEmergencyLockdown(true)` into the owned `BaseAirlock`
+- mirror that state into `LogisticsModuleStatusBits.EmergencyLockdown`
+
+This keeps structural anchor detection, rupture isolation, and emergency door response on one authoritative topology rebuild.
 
 ## Bishop Frame Spline Contract
 

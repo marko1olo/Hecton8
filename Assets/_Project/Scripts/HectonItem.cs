@@ -31,7 +31,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
+    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
     {
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
@@ -73,7 +73,10 @@ namespace Hecton8.Items
         private InteractionHighlighter _highlighter;
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
+        private Collider _collider;
+        private PhysicMaterial _defaultColliderMaterial;
         private string _cachedInteractText = "???";
+        private int _cachedItemHashId;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
 
@@ -82,9 +85,12 @@ namespace Hecton8.Items
         {
             _highlighter = GetComponent<InteractionHighlighter>();
             _rb = GetComponent<Rigidbody>();
+            _collider = GetComponent<Collider>();
             _buoyancy = GetComponent<BuoyancyObject>();
+            _defaultColliderMaterial = _collider != null ? _collider.sharedMaterial : null;
             ApplyPhysicalMetadata();
             ConfigureWaterDynamicsFromData();
+            RefreshCachedItemHash();
 
             if (itemData == null)
                 Debug.LogError($"[HectonItem] ItemData не назначен на {gameObject.name}!", this);
@@ -192,6 +198,7 @@ namespace Hecton8.Items
         private void StartTicking()
         {
             if (_isTickRegistered) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isTickRegistered = true;
@@ -220,6 +227,7 @@ namespace Hecton8.Items
         {
             itemData = data;
             quantity = qty > 0 ? qty : 1;
+            RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             ConfigureWaterDynamicsFromData();
             RebuildInteractTextCache();
@@ -243,6 +251,7 @@ namespace Hecton8.Items
 
         /// <summary>Текущее количество (read-only).</summary>
         public int Quantity => quantity;
+        public int ItemHashId => _cachedItemHashId;
         public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;
         public byte ImpactAudioMaterialId => itemData != null ? itemData.AudioMaterialByte : (byte)ItemAudioMaterialId.Organic;
 
@@ -273,6 +282,20 @@ namespace Hecton8.Items
         {
             if (_rb != null && itemData != null)
                 _rb.mass = itemData.MassKg;
+
+            if (_collider == null)
+                return;
+
+            _collider.sharedMaterial = itemData != null && itemData.WorldPhysicMaterial != null
+                ? itemData.WorldPhysicMaterial
+                : _defaultColliderMaterial;
+        }
+
+        private void RefreshCachedItemHash()
+        {
+            _cachedItemHashId = itemData != null
+                ? LocHash.Compute(itemData.PersistentId)
+                : 0;
         }
 
         // ─────────────────────── IInteractable ───────────────────
@@ -288,37 +311,41 @@ namespace Hecton8.Items
 
         public void Interact(Transform interactor)
         {
-            if (itemData == null || quantity <= 0)
-                return;
+            TryHandleInventoryPickup(PlayerInventory.Instance, interactor);
+        }
 
-            PlayerInventory playerInventory = PlayerInventory.Instance;
-            if (playerInventory == null)
+        public bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor)
+        {
+            if (itemData == null || quantity <= 0 || _cachedItemHashId == 0)
+                return false;
+
+            if (inventory == null)
             {
                 DropOverflow(interactor);
-                return;
+                return true;
             }
 
-            int itemHashId = LocHash.Compute(itemData.PersistentId);
-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
+            PlayerInventory.ScavengeAttemptResult attempt = inventory.ScavengeAttempt(_cachedItemHashId, quantity, interactor);
             if (!attempt.AnyAdded)
             {
                 DropOverflow(interactor);
-                return;
+                return true;
             }
 
             InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
-            HectonEventBus.Publish(new ItemCollectedEvent(itemData, itemHashId, attempt.AddedQuantity, interactor));
+            HectonEventBus.Publish(new ItemCollectedEvent(itemData, _cachedItemHashId, attempt.AddedQuantity, interactor));
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)
             {
                 RebuildInteractTextCache();
                 DropOverflow(interactor);
-                return;
+                return true;
             }
 
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
+            return true;
         }
 
         public string GetInteractText()

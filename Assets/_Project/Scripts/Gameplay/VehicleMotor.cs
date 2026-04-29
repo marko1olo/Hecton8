@@ -33,6 +33,8 @@ namespace Hecton8.Gameplay
         private const float GroundAlignmentSharpness = 10f;
         private const float MaxHydrodynamicGhostBlend = 0.15f;
         private const float MinDepthViscosityReferenceMeters = 100f;
+        private const float MinEntanglementTetherMeters = 1.25f;
+        private const float EntanglementFacingSharpness = 8f;
 
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
@@ -55,6 +57,12 @@ namespace Hecton8.Gameplay
         private int _hydrodynamicGhostSampleCount;
         private float _hydrodynamicSubmersionFactor;
         private float _hydrodynamicDepthMeters;
+        private bool _isEntangled;
+        private Vector3 _entanglementAnchorPosition;
+        private float _entanglementTetherLength;
+        private float _lastBlockingImpactSpeedMetersPerSecond;
+        private Vector3 _lastBlockingImpactPoint;
+        private Vector3 _lastBlockingImpactNormal = Vector3.up;
 
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
@@ -64,6 +72,15 @@ namespace Hecton8.Gameplay
 
         /// <summary>Returns true when both rigidbody and capsule are available for kinematic sweep driving.</summary>
         public bool IsDriveReady => _body != null && _capsule != null;
+
+        /// <summary>True while macro-flora entanglement is suppressing thrust and driving tethered motion.</summary>
+        public bool IsEntangled => _isEntangled;
+
+        internal float LastBlockingImpactSpeedMetersPerSecond => _lastBlockingImpactSpeedMetersPerSecond;
+
+        internal Vector3 LastBlockingImpactPoint => _lastBlockingImpactPoint;
+
+        internal Vector3 LastBlockingImpactNormal => _lastBlockingImpactNormal;
 
         /// <summary>Binds the authoritative rigidbody and sweep capsule.</summary>
         public void Bind(Rigidbody body, CapsuleCollider capsule)
@@ -95,6 +112,12 @@ namespace Hecton8.Gameplay
             _groundContactTimer = 0f;
             _hydrodynamicSubmersionFactor = 0f;
             _hydrodynamicDepthMeters = 0f;
+            _isEntangled = false;
+            _entanglementAnchorPosition = Vector3.zero;
+            _entanglementTetherLength = 0f;
+            _lastBlockingImpactSpeedMetersPerSecond = 0f;
+            _lastBlockingImpactPoint = Vector3.zero;
+            _lastBlockingImpactNormal = Vector3.up;
             ResetHydrodynamicGhostState();
         }
 
@@ -116,6 +139,83 @@ namespace Hecton8.Gameplay
             _hydrodynamicDepthMeters = math.max(0f, depthMeters);
         }
 
+        /// <summary>Activates a kinematic macro-flora tether that suppresses thrust and constrains the vehicle to one anchor.</summary>
+        public void BeginEntanglement(Vector3 anchorPosition, float tetherLength)
+        {
+            if (_body == null)
+                return;
+
+            float3 anchor = new float3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
+            if (!math.all(math.isfinite(anchor)))
+                return;
+
+            Vector3 relative = _body.position - anchorPosition;
+            float resolvedTetherLength = math.max(MinEntanglementTetherMeters, tetherLength);
+            if (relative.sqrMagnitude > MinVectorMagnitudeSq)
+            {
+                Vector3 radialDirection = relative.normalized;
+                _linearVelocity = Vector3.ProjectOnPlane(_linearVelocity, radialDirection);
+                _linearVelocity = HectonPlayerMotor.SafeVelocity(_linearVelocity);
+            }
+            else
+            {
+                _linearVelocity = Vector3.zero;
+            }
+
+            _localAngularVelocityDegrees = Vector3.zero;
+            _entanglementAnchorPosition = anchorPosition;
+            _entanglementTetherLength = resolvedTetherLength;
+            _isEntangled = true;
+        }
+
+        /// <summary>Clears the current macro-flora tether and restores normal thrust integration on the next tick.</summary>
+        public void ClearEntanglement()
+        {
+            _isEntangled = false;
+            _entanglementAnchorPosition = Vector3.zero;
+            _entanglementTetherLength = 0f;
+            _localAngularVelocityDegrees = Vector3.zero;
+        }
+
+        /// <summary>Advances tethered current-driven motion while propulsion is locked out by macro-flora entanglement.</summary>
+        public void AdvanceEntanglement(Vector3 currentFlowVelocity, float currentAcceleration, float linearDamping, float fixedDeltaTime)
+        {
+            if (!_isEntangled || _body == null || fixedDeltaTime <= 0f)
+                return;
+
+            using (_driveProfilerMarker.Auto())
+            {
+                float safeDeltaTime = math.max(fixedDeltaTime, 0.0001f);
+                Vector3 currentPosition = _body.position;
+                Vector3 relative = currentPosition - _entanglementAnchorPosition;
+                if (relative.sqrMagnitude <= MinVectorMagnitudeSq)
+                    relative = _body.rotation * Vector3.back * math.max(MinEntanglementTetherMeters, _entanglementTetherLength);
+
+                float tetherLength = math.max(MinEntanglementTetherMeters, _entanglementTetherLength);
+                Vector3 safeFlowVelocity = HectonPlayerMotor.SafeVelocity(currentFlowVelocity);
+                Vector3 candidateVelocity = _linearVelocity + (safeFlowVelocity * math.max(0f, currentAcceleration) * safeDeltaTime);
+                candidateVelocity = ApplyAnalyticalDrag(candidateVelocity, math.max(0f, linearDamping), safeDeltaTime);
+
+                Vector3 predictedRelative = relative + (candidateVelocity * safeDeltaTime);
+                if (predictedRelative.sqrMagnitude <= MinVectorMagnitudeSq)
+                    predictedRelative = relative.sqrMagnitude > MinVectorMagnitudeSq
+                        ? relative.normalized * tetherLength
+                        : _body.rotation * Vector3.back * tetherLength;
+
+                Vector3 constrainedRelative = predictedRelative.normalized * tetherLength;
+                Vector3 targetPosition = _entanglementAnchorPosition + constrainedRelative;
+                _linearVelocity = HectonPlayerMotor.SafeVelocity((targetPosition - currentPosition) / safeDeltaTime);
+
+                if (_linearVelocity.sqrMagnitude > MinVectorMagnitudeSq)
+                {
+                    Vector3 targetForward = _linearVelocity.normalized;
+                    Quaternion targetRotation = Quaternion.LookRotation(targetForward, Vector3.up);
+                    float facingBlend = 1f - math.exp(-EntanglementFacingSharpness * safeDeltaTime);
+                    _body.MoveRotation(Quaternion.Slerp(_body.rotation, targetRotation, facingBlend));
+                }
+            }
+        }
+
         /// <summary>
         /// Integrates thrust and local pitch/yaw steering into a kinematic velocity and rotation target.
         /// </summary>
@@ -132,6 +232,9 @@ namespace Hecton8.Gameplay
             float fixedDeltaTime)
         {
             if (_body == null || fixedDeltaTime <= 0f)
+                return;
+
+            if (_isEntangled)
                 return;
 
             using (_driveProfilerMarker.Auto())
@@ -252,6 +355,9 @@ namespace Hecton8.Gameplay
 
                 if (nearestIndex < 0)
                 {
+                    _lastBlockingImpactSpeedMetersPerSecond = 0f;
+                    _lastBlockingImpactPoint = Vector3.zero;
+                    _lastBlockingImpactNormal = Vector3.up;
                     resolvedPosition = _scheduledSweepState.StartPosition + (_scheduledSweepState.Direction * _scheduledSweepState.Distance);
                     MovePosition(resolvedPosition);
                     return true;
@@ -263,6 +369,11 @@ namespace Hecton8.Gameplay
                 resolvedPosition = _scheduledSweepState.StartPosition + (_scheduledSweepState.Direction * safeDistance);
                 MovePosition(resolvedPosition);
                 CacheGroundContact(blockingHit.normal);
+                _lastBlockingImpactSpeedMetersPerSecond = math.max(0f, -Vector3.Dot(_linearVelocity, blockingHit.normal));
+                _lastBlockingImpactPoint = blockingHit.point;
+                _lastBlockingImpactNormal = blockingHit.normal.sqrMagnitude > MinVectorMagnitudeSq
+                    ? blockingHit.normal.normalized
+                    : Vector3.up;
                 Vector3 projectedVelocity = Vector3.ProjectOnPlane(_linearVelocity, blockingHit.normal);
                 if (IsSlopeTooSteep(blockingHit.normal))
                     projectedVelocity = Vector3.ProjectOnPlane(projectedVelocity, Vector3.up);

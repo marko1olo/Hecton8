@@ -20,8 +20,16 @@ MonoBehaviour:
   harvestTemplate: {fileID: 11400000, guid: 2971cc2971e94534b9fb360aa24e88e6, type: 2}
   lootItem: {fileID: 11400000, guid: 91d1c706ac87dda4c939dcef146bcbd1, type: 2}
   lootHashId: 0
-  vulnerabilityMask: 2
+  vulnerabilityMask: 17
   audioMaterialId: 2
   attachmentSurface: 3
   bioluminescenceColor: {r: 0.66, g: 0.58, b: 0.26, a: 0.44}
   pulseFrequency: 0.31
+  parasiticToModules: 1
+  modulePowerDrainWatts: 18
+  moduleInfectionStrength: 0.58
+  moduleInfectionRadiusMeters: 3.4
+  moduleInfectionPulseFrequency: 0.48
+  thermophilicModuleGrowth: 0
+  thermalActivationTemperatureCelsius: 100
+  thermalActivationDwellSeconds: 300

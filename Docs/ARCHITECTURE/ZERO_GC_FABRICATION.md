@@ -89,6 +89,45 @@ Runtime flow:
 
 If the persistent world registry is unavailable, the fabricator falls back to direct inventory insertion to avoid silent item loss.
 
+## Deconstruction rules
+
+The scrap grinder uses the same flat native recipe-cost representation in reverse.
+
+Runtime ownership:
+
+- `Fabricator.TryDeconstructItem(int itemHashId)` is the deconstruction entry point.
+- `PlayerInventory.TryConsumeFirstMatchingItemByHash(...)` supplies the consumed stack state (`flags`, `qualityMilli`) without managed allocations.
+- `CraftingSystem.TryBuildDeconstructionYieldBuffer(...)` converts one crafted result back into reclaimed `NativeArray<int2>` outputs.
+
+Deconstruction math:
+
+1. Resolve the crafted item's source `RecipeData` through the existing result-item reverse lookup.
+2. Flatten the source ingredients into the same `NativeArray<int2>` cost buffer used by crafting.
+3. Apply reclaim percentage in a Burst-compatible flat job.
+
+```csharp
+int scaledYield = (cost.y * reclaimPercent) / (safeResultQuantity * 100);
+if (scaledYield <= 0 && reclaimPercent > 0)
+    scaledYield = 1;
+```
+
+Reclaim percentages:
+
+- Normal item: `80%`
+- Degraded item (`IS_DEGRADED` bit set or `qualityMilli < 250`): `30%`
+
+State-bit rule:
+
+- `IS_DEGRADED` is bit `8` in the item-state SOA bitfield.
+- Rust moved off bit `8` so deconstruction and impact damage do not alias the degraded state.
+
+Physical salvage output:
+
+1. The fabricator resolves a dedicated catch-bin pose when authored, otherwise falls back to the normal output socket.
+2. Each reclaimed ingredient stack is registered through `PersistentWorldRegistry.TryRegisterDroppedItem(...)`.
+3. The hydrated rigidbody inherits `ItemData.MassKg`.
+4. Reclaimed stacks receive one authored `VelocityChange` burst so they pop into the bin and settle.
+
 ## Carry-mass propagation
 
 `PlayerInventory` now computes `TotalMassKg` from SOA stack counts and per-item `MassKg`.

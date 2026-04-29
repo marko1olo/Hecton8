@@ -60,6 +60,9 @@ namespace Hecton8.AI
         [Tooltip("If true, this creature can damage vehicles and structures.")]
         public bool isLeviathan = false;
 
+        [Tooltip("Optional authored territory profile used by apex rivalry and intimidation logic.")]
+        public ApexTerritoryProfile apexTerritoryProfile;
+
         [Header("Ecology")]
         [Tooltip("Unique species identifier used for AI recognition.")]
         public int speciesID = 0;

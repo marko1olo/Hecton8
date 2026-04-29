@@ -335,6 +335,8 @@ namespace Hecton8.UI
         {
             if (_registeredToUpdateLoop || !Application.isPlaying)
                 return;
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToUpdateLoop = true;
@@ -3487,4 +3489,3 @@ namespace Hecton8.UI
         }
     }
 }
-

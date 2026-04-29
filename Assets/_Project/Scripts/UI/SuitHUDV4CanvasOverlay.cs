@@ -4045,11 +4045,36 @@ namespace Hecton8.UI
             cursor = AppendInt(temperatureRounded, buffer, cursor);
             cursor = AppendLiteral("C // X ", buffer, cursor);
             cursor = AppendInt(toxicityPercent, buffer, cursor);
-            if (snapshot.OrganicBlood01 > 0.1f)
+            if (snapshot.HasAttractantTrace)
+            {
+                cursor = AppendLiteral(" // ", buffer, cursor);
+                cursor = AppendLiteral(DescribeScientificAttractantChannel(snapshot.AttractantChannel), buffer, cursor);
+                cursor = AppendLiteral(" V ", buffer, cursor);
+                cursor = AppendSignedInt(Mathf.RoundToInt(snapshot.ScentDirection.x * 100f), buffer, cursor);
+                cursor = AppendLiteral(",", buffer, cursor);
+                cursor = AppendSignedInt(Mathf.RoundToInt(snapshot.ScentDirection.y * 100f), buffer, cursor);
+                cursor = AppendLiteral(",", buffer, cursor);
+                cursor = AppendSignedInt(Mathf.RoundToInt(snapshot.ScentDirection.z * 100f), buffer, cursor);
+            }
+            else if (snapshot.OrganicBlood01 > 0.1f)
+            {
                 cursor = AppendLiteral(" // BLOOD TRACE", buffer, cursor);
+            }
+            if (snapshot.ThreatPredictionUnlocked && snapshot.FlankingManeuverDetected)
+                cursor = AppendLiteral(" // FLANKING MANEUVER DETECTED", buffer, cursor);
 
             length = Mathf.Clamp(cursor, 0, buffer.Length);
-            version = unchecked((progressPercent * 397) ^ (purityPercent * 17) ^ ((int)snapshot.MaterialClass * 13) ^ (temperatureRounded * 31) ^ (toxicityPercent * 19) ^ (snapshot.OrganicBlood01 > 0.1f ? 251 : 0));
+            version = unchecked(
+                (progressPercent * 397) ^
+                (purityPercent * 17) ^
+                ((int)snapshot.MaterialClass * 13) ^
+                (temperatureRounded * 31) ^
+                (toxicityPercent * 19) ^
+                (snapshot.OrganicBlood01 > 0.1f ? 251 : 0) ^
+                ((int)snapshot.AttractantChannel * 67) ^
+                (snapshot.HasFaunaContact ? 911 : 0) ^
+                (snapshot.ThreatPredictionUnlocked ? 577 : 0) ^
+                (snapshot.FlankingManeuverDetected ? 839 : 0));
             return true;
         }
 
@@ -4062,10 +4087,25 @@ namespace Hecton8.UI
             {
                 case ScannerTool.ScientificMaterialClass.Basalt:
                     return AppendLiteral("BASALT", buffer, cursor);
+                case ScannerTool.ScientificMaterialClass.MetallicSilt:
+                    return AppendLiteral("METALLIC SILT", buffer, cursor);
                 case ScannerTool.ScientificMaterialClass.Sediment:
                     return AppendLiteral("SEDIMENT", buffer, cursor);
                 default:
                     return AppendLiteral("UNKNOWN", buffer, cursor);
+            }
+        }
+
+        private static string DescribeScientificAttractantChannel(ScannerTool.ScientificAttractantChannel attractantChannel)
+        {
+            switch (attractantChannel)
+            {
+                case ScannerTool.ScientificAttractantChannel.Blood:
+                    return "BLOOD";
+                case ScannerTool.ScientificAttractantChannel.Exhaust:
+                    return "EXHAUST";
+                default:
+                    return "TRACE";
             }
         }
 
@@ -4074,6 +4114,9 @@ namespace Hecton8.UI
             char[] buffer,
             int cursor)
         {
+            if (snapshot.HasFaunaContact)
+                return AppendLiteral("BIOFORM", buffer, cursor);
+
             return snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None
                 ? AppendScientificMaterial(snapshot.MaterialClass, buffer, cursor)
                 : AppendLiteral("WATER", buffer, cursor);
@@ -4099,6 +4142,14 @@ namespace Hecton8.UI
                 return cursor;
 
             return cursor + written;
+        }
+
+        private static int AppendSignedInt(int value, char[] buffer, int cursor)
+        {
+            if (value >= 0)
+                cursor = AppendLiteral("+", buffer, cursor);
+
+            return AppendInt(value, buffer, cursor);
         }
 
         private static void SetDisplayBufferIfChanged(

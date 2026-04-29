@@ -30,6 +30,9 @@ namespace Hecton8.Economy
         private const int KnownClustersPerResource = 4;
         private const int MaxSectorExtractionRecords = 64;
         private const float SectorEdgeLengthMeters = 1000f;
+        private const string DefaultTitaniumDirectiveItemId = "Data_TitaniumScrap";
+        private const int DefaultTitaniumCriticalThreshold = 4;
+        private const int DefaultTitaniumDirectiveHarvestUnits = 4;
 
         [Serializable]
         private struct DirectiveResourceDefinition
@@ -101,9 +104,18 @@ namespace Hecton8.Economy
         private readonly string[] _directiveTitles = new string[MaxDirectiveResources];
         // COLD ALLOC: string[8] - cached directive descriptions - owner: ResourceScarcityDirector
         private readonly string[] _directiveDescriptions = new string[MaxDirectiveResources];
+        // COLD ALLOC: int[8] - cached directive critical inventory thresholds - owner: ResourceScarcityDirector
+        private readonly int[] _directiveCriticalThresholds = new int[MaxDirectiveResources];
+        // COLD ALLOC: int[8] - cached directive harvest completion requirements - owner: ResourceScarcityDirector
+        private readonly int[] _directiveHarvestUnits = new int[MaxDirectiveResources];
+        // COLD ALLOC: float[8] - cached directive marker height offsets - owner: ResourceScarcityDirector
+        private readonly float[] _directiveMarkerHeightOffsets = new float[MaxDirectiveResources];
+        // COLD ALLOC: QuestPhaseGateType[8] - cached directive phase gates - owner: ResourceScarcityDirector
+        private readonly QuestPhaseGateType[] _directivePhaseGates = new QuestPhaseGateType[MaxDirectiveResources];
 
         private HectonEventSubscription _itemCollectedSubscription;
         private bool _registeredSlowTickable;
+        private int _cachedDirectiveCount;
 
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
@@ -364,7 +376,7 @@ namespace Hecton8.Economy
 
         private void EvaluateScarcityDirectives()
         {
-            if (directiveResources == null || directiveResources.Length <= 0)
+            if (_cachedDirectiveCount <= 0)
                 return;
 
             QuestManager questManager = QuestManager.Instance;
@@ -377,10 +389,8 @@ namespace Hecton8.Economy
 
             Transform playerTransform = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerTransform : null;
             Vector3 playerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
-            int definitionCount = Mathf.Min(directiveResources.Length, MaxDirectiveResources);
-            for (int definitionIndex = 0; definitionIndex < definitionCount; definitionIndex++)
+            for (int definitionIndex = 0; definitionIndex < _cachedDirectiveCount; definitionIndex++)
             {
-                DirectiveResourceDefinition definition = directiveResources[definitionIndex];
                 int itemHashId = _directiveItemHashes[definitionIndex];
                 if (itemHashId == 0)
                     continue;
@@ -391,7 +401,7 @@ namespace Hecton8.Economy
                 if (markerTargetHash == 0u)
                     TryResolveNearestKnownCluster(itemHashId, playerPosition, out markerWorldPosition);
 
-                bool shouldActivate = inventory.CountTotal(itemHashId) < Mathf.Max(0, definition.criticalThreshold);
+                bool shouldActivate = inventory.CountTotal(itemHashId) < Mathf.Max(0, _directiveCriticalThresholds[definitionIndex]);
                 if (!questManager.UpsertProceduralDirective(
                         questHash,
                         (uint)itemHashId,
@@ -399,9 +409,9 @@ namespace Hecton8.Economy
                         _directiveDescriptions[definitionIndex],
                         markerTargetHash,
                         markerWorldPosition,
-                        Mathf.Max(0f, definition.markerHeightOffset),
-                        definition.phaseGate,
-                        Mathf.Max(1, definition.directiveHarvestUnits),
+                        Mathf.Max(0f, _directiveMarkerHeightOffsets[definitionIndex]),
+                        _directivePhaseGates[definitionIndex],
+                        Mathf.Max(1, _directiveHarvestUnits[definitionIndex]),
                         shouldActivate,
                         out bool activatedNow))
                 {
@@ -521,13 +531,12 @@ namespace Hecton8.Economy
 
         private int FindDirectiveDefinitionIndex(int itemHashId)
         {
-            if (itemHashId == 0 || directiveResources == null)
+            if (itemHashId == 0 || _cachedDirectiveCount <= 0)
                 return -1;
 
-            int count = Mathf.Min(directiveResources.Length, MaxDirectiveResources);
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < _cachedDirectiveCount; i++)
             {
-                if (ResolveDirectiveItemHash(directiveResources[i]) == itemHashId)
+                if (_directiveItemHashes[i] == itemHashId)
                     return i;
             }
 
@@ -642,21 +651,83 @@ namespace Hecton8.Economy
             Array.Clear(_directiveMarkerTargetHashes, 0, _directiveMarkerTargetHashes.Length);
             Array.Clear(_directiveTitles, 0, _directiveTitles.Length);
             Array.Clear(_directiveDescriptions, 0, _directiveDescriptions.Length);
+            Array.Clear(_directiveCriticalThresholds, 0, _directiveCriticalThresholds.Length);
+            Array.Clear(_directiveHarvestUnits, 0, _directiveHarvestUnits.Length);
+            Array.Clear(_directiveMarkerHeightOffsets, 0, _directiveMarkerHeightOffsets.Length);
+            Array.Clear(_directivePhaseGates, 0, _directivePhaseGates.Length);
 
-            if (directiveResources == null)
+            int writeIndex = 0;
+            bool hasTitaniumDirective = false;
+            if (directiveResources != null)
+            {
+                int count = Mathf.Min(directiveResources.Length, MaxDirectiveResources);
+                for (int i = 0; i < count && writeIndex < MaxDirectiveResources; i++)
+                {
+                    DirectiveResourceDefinition definition = directiveResources[i];
+                    int itemHashId = ResolveDirectiveItemHash(definition);
+                    if (itemHashId == 0)
+                        continue;
+
+                    CacheDirectiveDefinition(
+                        writeIndex,
+                        itemHashId,
+                        ResolveDirectiveTitle(definition),
+                        ResolveDirectiveDescription(definition),
+                        QuestFlagHashKernel.ComputeStableHash(definition.markerTargetId),
+                        Mathf.Max(0, definition.criticalThreshold),
+                        Mathf.Max(1, definition.directiveHarvestUnits),
+                        Mathf.Max(0f, definition.markerHeightOffset),
+                        definition.phaseGate);
+
+                    if (string.Equals(definition.item.PersistentId, DefaultTitaniumDirectiveItemId, StringComparison.Ordinal))
+                        hasTitaniumDirective = true;
+
+                    writeIndex++;
+                }
+            }
+
+            if (!hasTitaniumDirective && writeIndex < MaxDirectiveResources)
+            {
+                int titaniumHashId = LocHash.Compute(DefaultTitaniumDirectiveItemId);
+                CacheDirectiveDefinition(
+                    writeIndex,
+                    titaniumHashId,
+                    "ATLAS-6 DIRECTIVE: RESTOCK TITANIUM SCRAP",
+                    "Recovered titanium stock is below Atlas-6 operating threshold. Harvest additional Titanium Scrap to stabilize fabrication reserves.",
+                    0u,
+                    DefaultTitaniumCriticalThreshold,
+                    DefaultTitaniumDirectiveHarvestUnits,
+                    0f,
+                    QuestPhaseGateType.None);
+                writeIndex++;
+            }
+
+            _cachedDirectiveCount = writeIndex;
+        }
+
+        private void CacheDirectiveDefinition(
+            int index,
+            int itemHashId,
+            string title,
+            string description,
+            uint markerTargetHash,
+            int criticalThreshold,
+            int directiveHarvestUnits,
+            float markerHeightOffset,
+            QuestPhaseGateType phaseGate)
+        {
+            if (index < 0 || index >= MaxDirectiveResources || itemHashId == 0)
                 return;
 
-            int count = Mathf.Min(directiveResources.Length, MaxDirectiveResources);
-            for (int i = 0; i < count; i++)
-            {
-                DirectiveResourceDefinition definition = directiveResources[i];
-                int itemHashId = ResolveDirectiveItemHash(definition);
-                _directiveItemHashes[i] = itemHashId;
-                _directiveQuestHashes[i] = itemHashId != 0 ? BuildDirectiveQuestHash(itemHashId) : 0u;
-                _directiveMarkerTargetHashes[i] = QuestFlagHashKernel.ComputeStableHash(definition.markerTargetId);
-                _directiveTitles[i] = ResolveDirectiveTitle(definition);
-                _directiveDescriptions[i] = ResolveDirectiveDescription(definition);
-            }
+            _directiveItemHashes[index] = itemHashId;
+            _directiveQuestHashes[index] = BuildDirectiveQuestHash(itemHashId);
+            _directiveMarkerTargetHashes[index] = markerTargetHash;
+            _directiveTitles[index] = string.IsNullOrWhiteSpace(title) ? "ATLAS-6 DIRECTIVE" : title;
+            _directiveDescriptions[index] = description ?? string.Empty;
+            _directiveCriticalThresholds[index] = Mathf.Max(0, criticalThreshold);
+            _directiveHarvestUnits[index] = Mathf.Max(1, directiveHarvestUnits);
+            _directiveMarkerHeightOffsets[index] = Mathf.Max(0f, markerHeightOffset);
+            _directivePhaseGates[index] = phaseGate;
         }
     }
 }

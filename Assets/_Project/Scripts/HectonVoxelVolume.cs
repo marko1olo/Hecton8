@@ -244,6 +244,94 @@ namespace Hecton8.Caves
             return TrySampleDensity(worldPosition, out density, out _);
         }
 
+        /// <summary>
+        /// Samples the published runtime SDF gradient and resolves an outward-facing surface normal.
+        /// </summary>
+        /// <param name="worldPosition">Runtime-space probe position near the target surface.</param>
+        /// <param name="probeDistance">Central-difference probe distance in meters.</param>
+        /// <param name="surfaceNormal">Resolved outward-facing normal.</param>
+        /// <returns>True when a stable gradient could be resolved from the published SDF payload.</returns>
+        public bool TrySampleSurfaceNormal(Vector3 worldPosition, float probeDistance, out Vector3 surfaceNormal)
+        {
+            surfaceNormal = Vector3.up;
+
+            if (!_runtimeDataReady || !_publishedSonarSdf.IsCreated)
+                return false;
+
+            float safeProbe = Mathf.Max(0.05f, probeDistance);
+            if (!TrySampleDensity(worldPosition + new Vector3(safeProbe, 0f, 0f), out float densityPosX) ||
+                !TrySampleDensity(worldPosition - new Vector3(safeProbe, 0f, 0f), out float densityNegX) ||
+                !TrySampleDensity(worldPosition + new Vector3(0f, safeProbe, 0f), out float densityPosY) ||
+                !TrySampleDensity(worldPosition - new Vector3(0f, safeProbe, 0f), out float densityNegY) ||
+                !TrySampleDensity(worldPosition + new Vector3(0f, 0f, safeProbe), out float densityPosZ) ||
+                !TrySampleDensity(worldPosition - new Vector3(0f, 0f, safeProbe), out float densityNegZ))
+            {
+                return false;
+            }
+
+            Vector3 gradient = new Vector3(
+                (densityPosX - densityNegX) / (safeProbe * 2f),
+                (densityPosY - densityNegY) / (safeProbe * 2f),
+                (densityPosZ - densityNegZ) / (safeProbe * 2f));
+            if (gradient.sqrMagnitude <= 0.000001f)
+                return false;
+
+            surfaceNormal = (-gradient).normalized;
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves a burrow route that stays inside solid density until a final breach point near the prey.
+        /// </summary>
+        public bool TryResolveBurrowAmbushRoute(
+            Vector3 predatorWorldPosition,
+            Vector3 preyWorldPosition,
+            float seabedTriggerDistanceMeters,
+            float breachOffsetMeters,
+            out Vector3 solidAnchorWorldPosition,
+            out Vector3 breachWorldPosition)
+        {
+            solidAnchorWorldPosition = default;
+            breachWorldPosition = default;
+
+            if (!_runtimeDataReady ||
+                _gridDimension <= 0 ||
+                _voxelSize <= 0f ||
+                !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+            {
+                return false;
+            }
+
+            Transform cachedTransform = transform;
+            if (!TryResolveNearestSolidDistance(preyWorldPosition, localBounds, out float preySolidDistance) ||
+                preySolidDistance > Mathf.Max(1f, seabedTriggerDistanceMeters))
+            {
+                return false;
+            }
+
+            Vector3 preyLocal = cachedTransform.InverseTransformPoint(preyWorldPosition);
+            if (!TryResolveTopSolidAnchor(
+                    cachedTransform,
+                    localBounds,
+                    preyLocal.x,
+                    preyLocal.z,
+                    Mathf.Max(_voxelSize, breachOffsetMeters),
+                    out Vector3 localSolidAnchor))
+            {
+                return false;
+            }
+
+            Vector3 localBreach = localSolidAnchor + new Vector3(0f, Mathf.Max(_voxelSize, breachOffsetMeters), 0f);
+            Vector3 candidateSolidAnchor = cachedTransform.TransformPoint(localSolidAnchor);
+            Vector3 candidateBreach = cachedTransform.TransformPoint(localBreach);
+            if (!HasSolidDensityPath(predatorWorldPosition, candidateSolidAnchor))
+                return false;
+
+            solidAnchorWorldPosition = candidateSolidAnchor;
+            breachWorldPosition = candidateBreach;
+            return true;
+        }
+
         private static int ResolveDominantAxis(Vector3 normal)
         {
             Vector3 absNormal = new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z));
@@ -1163,6 +1251,61 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Deposits an additive noise-jittered ore vein into the authoritative voxel delta pipeline.
+        /// This is used by large resource deposits that must live inside solid rock instead of sitting on top of the seabed.
+        /// </summary>
+        public bool TryApplyEmbeddedOreVein(
+            Vector3 absoluteStart,
+            Vector3 absoluteDirection,
+            float lengthMeters,
+            float radiusMeters,
+            float noiseAmplitudeMeters,
+            int stampCount,
+            uint stableSeed)
+        {
+            if (_deltaProcessor == null || !_runtimeDataReady || _gridDimension <= 0 || _voxelSize <= 0f || _bakeState != VoxelBakeState.Complete)
+                return false;
+
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+                return false;
+
+            Vector3 direction = absoluteDirection.sqrMagnitude > 0.0001f
+                ? absoluteDirection.normalized
+                : Vector3.down;
+            float resolvedLength = Mathf.Max(_voxelSize * 2f, lengthMeters);
+            float resolvedRadius = Mathf.Max(_voxelSize * 0.75f, radiusMeters);
+            float resolvedStrength = Mathf.Max(_voxelSize, resolvedRadius * 0.55f);
+            float jitterAmplitude = Mathf.Max(0f, noiseAmplitudeMeters);
+            int resolvedStampCount = Mathf.Clamp(stampCount, 2, 24);
+
+            Vector3 tangentA = Vector3.Cross(direction, Vector3.up);
+            if (tangentA.sqrMagnitude <= 0.0001f)
+                tangentA = Vector3.Cross(direction, Vector3.right);
+            tangentA.Normalize();
+            Vector3 tangentB = Vector3.Cross(direction, tangentA).normalized;
+
+            bool modified = false;
+            for (int stampIndex = 0; stampIndex < resolvedStampCount; stampIndex++)
+            {
+                float t = resolvedStampCount <= 1 ? 0f : stampIndex / (float)(resolvedStampCount - 1);
+                float longitudinalOffset = (t - 0.5f) * resolvedLength;
+                float angle = Hash01(stableSeed, stampIndex, 41) * Mathf.PI * 2f;
+                float radialScale = (Hash01(stableSeed, stampIndex, 53) * 2f) - 1f;
+                Vector3 jitter = (tangentA * Mathf.Cos(angle) + tangentB * Mathf.Sin(angle)) * (jitterAmplitude * radialScale);
+                Vector3 absoluteSample = absoluteStart + direction * longitudinalOffset + jitter;
+                Vector3 runtimeSample = HectonFloatingOrigin.ToRuntimePosition(absoluteSample);
+                Vector3 localSample = transform.InverseTransformPoint(runtimeSample);
+                if (!localBounds.Contains(localSample))
+                    continue;
+
+                _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absoluteSample, resolvedRadius, resolvedStrength, DefaultDeltaMaterialId);
+                modified = true;
+            }
+
+            return modified;
+        }
+
+        /// <summary>
         /// Tracks a persistent terrain-hole handle so cave unload can restore vegetation generation.
         /// </summary>
         public void TrackTerrainHoleHandle(int holeHandle)
@@ -1578,6 +1721,58 @@ namespace Hecton8.Caves
             }
 
             return false;
+        }
+
+        private bool TryResolveNearestSolidDistance(Vector3 worldPosition, Bounds localBounds, out float distanceMeters)
+        {
+            distanceMeters = float.PositiveInfinity;
+            Transform cachedTransform = transform;
+            Vector3 localPoint = cachedTransform.InverseTransformPoint(worldPosition);
+            float sampleStep = Mathf.Max(_voxelSize * 0.75f, 0.5f);
+            float maxSearchDistance = Mathf.Max(_voxelSize * 8f, 12f);
+
+            for (float offset = 0f; offset <= maxSearchDistance; offset += sampleStep)
+            {
+                Vector3 upSample = localPoint + new Vector3(0f, offset, 0f);
+                if (localBounds.Contains(upSample) &&
+                    TrySampleDensity(cachedTransform.TransformPoint(upSample), out float upDensity) &&
+                    upDensity > 0f)
+                {
+                    distanceMeters = offset;
+                    return true;
+                }
+
+                if (offset <= 0f)
+                    continue;
+
+                Vector3 downSample = localPoint - new Vector3(0f, offset, 0f);
+                if (localBounds.Contains(downSample) &&
+                    TrySampleDensity(cachedTransform.TransformPoint(downSample), out float downDensity) &&
+                    downDensity > 0f)
+                {
+                    distanceMeters = offset;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasSolidDensityPath(Vector3 startWorldPosition, Vector3 endWorldPosition)
+        {
+            float pathLength = Vector3.Distance(startWorldPosition, endWorldPosition);
+            float sampleStep = Mathf.Max(_voxelSize * 0.75f, 0.5f);
+            int sampleCount = Mathf.Max(2, Mathf.CeilToInt(pathLength / sampleStep));
+
+            for (int i = 0; i <= sampleCount; i++)
+            {
+                float t = sampleCount > 0 ? i / (float)sampleCount : 0f;
+                Vector3 samplePosition = Vector3.Lerp(startWorldPosition, endWorldPosition, t);
+                if (!TrySampleDensity(samplePosition, out float density) || density <= 0f)
+                    return false;
+            }
+
+            return true;
         }
 
         private static float Hash01(uint seed, int index, int salt)

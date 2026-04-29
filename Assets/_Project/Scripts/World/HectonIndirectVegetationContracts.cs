@@ -22,7 +22,11 @@ namespace Hecton8.World
     public enum HectonVegetationRuntimeFlags : byte
     {
         None = 0,
-        Parasite = 1 << 0
+        Parasite = 1 << 0,
+        PlayerContact = 1 << 1,
+        CascadeActive = 1 << 2,
+        AllelopathicRelease = 1 << 3,
+        Dead = 1 << 6
     }
 
     /// <summary>

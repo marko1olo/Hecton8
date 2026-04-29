@@ -1,6 +1,7 @@
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Audio;
+using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Construction;
@@ -30,12 +31,14 @@ namespace Hecton8.Gameplay
         internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
         private const int AtlasDetectionRevealStage = 2;
         private const int AtlasNavigationRevealStage = 3;
-        private const int ScientificConeRayCount = 7;
+        private const int ScientificConeRayCount = 12;
         private const float ScientificScanHoldGraceMultiplier = 1.75f;
         private const float ScientificDefaultTemperatureC = 4.2f;
         private const float ScientificSurfaceSalinityPpt = 34.6f;
         private const float ScientificDeepSalinityPpt = 35.8f;
         private const float ScientificSalinityDepthRangeMeters = 1800f;
+        private const float ScientificAttractantTraceThreshold01 = 0.1f;
+        private const float ScientificGradientSampleStepMultiplier = 0.75f;
 
         private enum ScanMode
         {
@@ -48,7 +51,15 @@ namespace Hecton8.Gameplay
         {
             None = 0,
             Sediment = 1,
-            Basalt = 2
+            Basalt = 2,
+            MetallicSilt = 3
+        }
+
+        internal enum ScientificAttractantChannel : byte
+        {
+            None = 0,
+            Blood = 1,
+            Exhaust = 2
         }
 
         internal readonly struct ScientificScanSnapshot
@@ -67,6 +78,9 @@ namespace Hecton8.Gameplay
                 float toxicity01,
                 float chemicalLoad01,
                 float organicBlood01,
+                float attractantScent01,
+                Vector3 scentDirection,
+                ScientificAttractantChannel attractantChannel,
                 float depthMeters,
                 FaunaBrain faunaBrain,
                 uint threatPredictionLoreHash,
@@ -86,6 +100,9 @@ namespace Hecton8.Gameplay
                 Toxicity01 = toxicity01;
                 ChemicalLoad01 = chemicalLoad01;
                 OrganicBlood01 = organicBlood01;
+                AttractantScent01 = attractantScent01;
+                ScentDirection = scentDirection;
+                AttractantChannel = attractantChannel;
                 DepthMeters = depthMeters;
                 FaunaBrain = faunaBrain;
                 ThreatPredictionLoreHash = threatPredictionLoreHash;
@@ -106,12 +123,19 @@ namespace Hecton8.Gameplay
             public float Toxicity01 { get; }
             public float ChemicalLoad01 { get; }
             public float OrganicBlood01 { get; }
+            public float AttractantScent01 { get; }
+            public Vector3 ScentDirection { get; }
+            public ScientificAttractantChannel AttractantChannel { get; }
             public float DepthMeters { get; }
             public FaunaBrain FaunaBrain { get; }
             public uint ThreatPredictionLoreHash { get; }
             public bool ThreatPredictionUnlocked { get; }
             public bool FlankingManeuverDetected { get; }
             public bool HasFaunaContact => FaunaBrain != null;
+            public bool HasAttractantTrace =>
+                AttractantChannel != ScientificAttractantChannel.None &&
+                AttractantScent01 > ScientificAttractantTraceThreshold01 &&
+                ScentDirection.sqrMagnitude > 0.0001f;
         }
 
         private struct ScanResultSummary
@@ -292,7 +316,8 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(1f, 18f)] private float focusedScanConeAngleDegrees = 5.5f;
         [SerializeField, Range(0.05f, 0.5f)] private float focusedScanResampleInterval = 0.12f;
         [SerializeField, Range(0.01f, 0.5f)] private float focusedScanSurfaceInset = 0.12f;
-        [SerializeField, Range(0f, 1f)] private float basaltDensityThreshold01 = 0.58f;
+        [SerializeField, Range(0f, 1f)] private float sedimentDensityThreshold01 = 0.34f;
+        [SerializeField, Range(0f, 1f)] private float basaltDensityThreshold01 = 0.66f;
 
         [Header("Pulse Visual")]
         [SerializeField] private float pulseDuration = 1.5f;
@@ -337,9 +362,9 @@ namespace Hecton8.Gameplay
         private string _currentModeSummary;
         private string _currentModeHudMessage;
         private string _currentModeOperationTitle;
-        // COLD ALLOC: NativeArray<RaycastCommand>[7] — focused scientific scanner cone batch — owner: ScannerTool
+        // COLD ALLOC: NativeArray<RaycastCommand>[12] — focused scientific scanner cone batch — owner: ScannerTool
         private NativeArray<RaycastCommand> _scientificRayCommands;
-        // COLD ALLOC: NativeArray<RaycastHit>[7] — focused scientific scanner cone hit buffer — owner: ScannerTool
+        // COLD ALLOC: NativeArray<RaycastHit>[12] — focused scientific scanner cone hit buffer — owner: ScannerTool
         private NativeArray<RaycastHit> _scientificRayHits;
         private JobHandle _scientificBatchHandle;
         private ScannableFragment _activeScientificFragment;
@@ -621,7 +646,10 @@ namespace Hecton8.Gameplay
                     temperatureRounded,
                     salinityRounded,
                     toxicityPercent);
-                return _scientificSnapshot.OrganicBlood01 > 0.1f
+                if (_scientificSnapshot.HasAttractantTrace)
+                    return string.Concat(summary, BuildScientificScentVectorSuffix(_scientificSnapshot));
+
+                return _scientificSnapshot.OrganicBlood01 > ScientificAttractantTraceThreshold01
                     ? string.Concat(summary, " // TRACES OF ORGANIC BLOOD DETECTED")
                     : summary;
             }
@@ -727,8 +755,14 @@ namespace Hecton8.Gameplay
                 buffer.Append(" // TOX ");
                 buffer.AppendInt(Mathf.Clamp(Mathf.RoundToInt(_scientificSnapshot.Toxicity01 * 100f), 0, 100));
                 buffer.Append("%");
-                if (_scientificSnapshot.OrganicBlood01 > 0.1f)
+                if (_scientificSnapshot.HasAttractantTrace)
+                {
+                    AppendScientificScentVector(buffer, _scientificSnapshot);
+                }
+                else if (_scientificSnapshot.OrganicBlood01 > ScientificAttractantTraceThreshold01)
+                {
                     buffer.Append(" // TRACES OF ORGANIC BLOOD DETECTED");
+                }
                 return;
             }
 
@@ -1395,6 +1429,11 @@ namespace Hecton8.Gameplay
             float chemicalLoadSum = 0f;
             int chemicalSampleCount = 0;
             float organicBloodPeak01 = 0f;
+            float exhaustPeak01 = 0f;
+            float3 bloodGradientAccumulator = float3.zero;
+            float3 exhaustGradientAccumulator = float3.zero;
+            float bloodGradientWeight = 0f;
+            float exhaustGradientWeight = 0f;
             Vector3 chemistryProbePosition = _cachedTransform != null
                 ? _cachedTransform.position + (_cachedTransform.forward * Mathf.Min(Mathf.Max(1f, focusedScanRange * 0.45f), focusedScanRange))
                 : Vector3.zero;
@@ -1446,6 +1485,29 @@ namespace Hecton8.Gameplay
                     chemicalSampleCount++;
                 }
 
+                if (TrySampleScientificAttractantGradient(
+                        hit.point,
+                        out float bloodSignal01,
+                        out float exhaustSignal01,
+                        out float3 bloodGradient,
+                        out float3 exhaustGradient))
+                {
+                    organicBloodPeak01 = Mathf.Max(organicBloodPeak01, bloodSignal01);
+                    exhaustPeak01 = Mathf.Max(exhaustPeak01, exhaustSignal01);
+
+                    if (bloodSignal01 > 0.0001f && math.lengthsq(bloodGradient) > 0.0001f)
+                    {
+                        bloodGradientAccumulator += bloodGradient * bloodSignal01;
+                        bloodGradientWeight += bloodSignal01;
+                    }
+
+                    if (exhaustSignal01 > 0.0001f && math.lengthsq(exhaustGradient) > 0.0001f)
+                    {
+                        exhaustGradientAccumulator += exhaustGradient * exhaustSignal01;
+                        exhaustGradientWeight += exhaustSignal01;
+                    }
+                }
+
                 if (volume == null)
                     continue;
 
@@ -1467,6 +1529,29 @@ namespace Hecton8.Gameplay
                 chemicalSampleCount = 1;
             }
 
+            if (TrySampleScientificAttractantGradient(
+                    chemistryProbePosition,
+                    out float fallbackBloodSignal01,
+                    out float fallbackExhaustSignal01,
+                    out float3 fallbackBloodGradient,
+                    out float3 fallbackExhaustGradient))
+            {
+                organicBloodPeak01 = Mathf.Max(organicBloodPeak01, fallbackBloodSignal01);
+                exhaustPeak01 = Mathf.Max(exhaustPeak01, fallbackExhaustSignal01);
+
+                if (bloodGradientWeight <= 0f && fallbackBloodSignal01 > 0.0001f && math.lengthsq(fallbackBloodGradient) > 0.0001f)
+                {
+                    bloodGradientAccumulator += fallbackBloodGradient * fallbackBloodSignal01;
+                    bloodGradientWeight += fallbackBloodSignal01;
+                }
+
+                if (exhaustGradientWeight <= 0f && fallbackExhaustSignal01 > 0.0001f && math.lengthsq(fallbackExhaustGradient) > 0.0001f)
+                {
+                    exhaustGradientAccumulator += fallbackExhaustGradient * fallbackExhaustSignal01;
+                    exhaustGradientWeight += fallbackExhaustSignal01;
+                }
+            }
+
             if (!ReferenceEquals(_activeScientificFragment, resolvedFragment))
             {
                 StopScientificFragmentScan();
@@ -1475,6 +1560,16 @@ namespace Hecton8.Gameplay
 
             _activeScientificVoxelVolume = resolvedVolume;
             float averagedChemicalLoad01 = chemicalSampleCount > 0 ? Mathf.Clamp01(chemicalLoadSum / chemicalSampleCount) : 0f;
+            ResolveScientificAttractantTrace(
+                organicBloodPeak01,
+                exhaustPeak01,
+                bloodGradientAccumulator,
+                bloodGradientWeight,
+                exhaustGradientAccumulator,
+                exhaustGradientWeight,
+                out float attractantScent01,
+                out Vector3 scentDirection,
+                out ScientificAttractantChannel attractantChannel);
             ResolveScientificWaterMetrics(
                 chemistryProbePosition,
                 averagedChemicalLoad01,
@@ -1525,6 +1620,9 @@ namespace Hecton8.Gameplay
                 toxicity01,
                 averagedChemicalLoad01,
                 organicBloodPeak01,
+                attractantScent01,
+                scentDirection,
+                attractantChannel,
                 depthMeters,
                 resolvedFauna,
                 threatPredictionLoreHash,
@@ -1542,6 +1640,9 @@ namespace Hecton8.Gameplay
             float toxicity01,
             float chemicalLoad01,
             float organicBlood01,
+            float attractantScent01,
+            Vector3 scentDirection,
+            ScientificAttractantChannel attractantChannel,
             float depthMeters,
             FaunaBrain faunaBrain,
             uint threatPredictionLoreHash,
@@ -1563,6 +1664,9 @@ namespace Hecton8.Gameplay
                 Mathf.Clamp01(toxicity01),
                 Mathf.Clamp01(chemicalLoad01),
                 Mathf.Clamp01(organicBlood01),
+                Mathf.Clamp01(attractantScent01),
+                scentDirection.sqrMagnitude > 0.0001f ? scentDirection.normalized : Vector3.zero,
+                attractantChannel,
                 Mathf.Max(0f, depthMeters),
                 faunaBrain,
                 threatPredictionLoreHash,
@@ -1591,6 +1695,9 @@ namespace Hecton8.Gameplay
                 _scientificSnapshot.Toxicity01,
                 _scientificSnapshot.ChemicalLoad01,
                 _scientificSnapshot.OrganicBlood01,
+                _scientificSnapshot.AttractantScent01,
+                _scientificSnapshot.ScentDirection,
+                _scientificSnapshot.AttractantChannel,
                 _scientificSnapshot.DepthMeters,
                 _scientificSnapshot.FaunaBrain,
                 _scientificSnapshot.ThreatPredictionLoreHash,
@@ -1627,23 +1734,28 @@ namespace Hecton8.Gameplay
             if (density01 <= 0.0001f)
                 return ScientificMaterialClass.None;
 
-            return density01 >= basaltDensityThreshold01
-                ? ScientificMaterialClass.Basalt
-                : ScientificMaterialClass.Sediment;
+            if (density01 >= basaltDensityThreshold01)
+                return ScientificMaterialClass.Basalt;
+
+            if (density01 <= sedimentDensityThreshold01)
+                return ScientificMaterialClass.Sediment;
+
+            return ScientificMaterialClass.MetallicSilt;
         }
 
         private static float2 ResolveScientificConeOffset(int index)
         {
-            switch (index)
+            if (index <= 0)
+                return float2.zero;
+
+            if (index <= 5)
             {
-                case 1: return new float2(0f, 1f);
-                case 2: return new float2(0.8660254f, 0.5f);
-                case 3: return new float2(0.8660254f, -0.5f);
-                case 4: return new float2(0f, -1f);
-                case 5: return new float2(-0.8660254f, -0.5f);
-                case 6: return new float2(-0.8660254f, 0.5f);
-                default: return float2.zero;
+                float angleRadians = math.radians(90f - ((index - 1) * 72f));
+                return new float2(math.cos(angleRadians), math.sin(angleRadians)) * 0.45f;
             }
+
+            float outerAngleRadians = math.radians((index - 6) * 60f);
+            return new float2(math.cos(outerAngleRadians), math.sin(outerAngleRadians));
         }
 
         private static string DescribeScientificMaterial(ScientificMaterialClass materialClass)
@@ -1652,6 +1764,8 @@ namespace Hecton8.Gameplay
             {
                 case ScientificMaterialClass.Basalt:
                     return "BASALT";
+                case ScientificMaterialClass.MetallicSilt:
+                    return "METALLIC SILT";
                 case ScientificMaterialClass.Sediment:
                     return "SEDIMENT";
                 default:
@@ -1659,11 +1773,58 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static string DescribeScientificAttractantChannel(ScientificAttractantChannel attractantChannel)
+        {
+            switch (attractantChannel)
+            {
+                case ScientificAttractantChannel.Blood:
+                    return "BLOOD";
+                case ScientificAttractantChannel.Exhaust:
+                    return "EXHAUST";
+                default:
+                    return "TRACE";
+            }
+        }
+
         private static string DescribeScientificTarget(ScientificScanSnapshot snapshot)
         {
+            if (snapshot.HasFaunaContact)
+                return "BIOFORM";
+
             return snapshot.MaterialClass != ScientificMaterialClass.None
                 ? DescribeScientificMaterial(snapshot.MaterialClass)
                 : "WATER";
+        }
+
+        private static string BuildScientificScentVectorSuffix(ScientificScanSnapshot snapshot)
+        {
+            Vector3 direction = snapshot.ScentDirection;
+            return string.Format(
+                " // {0} VEC {1:+0;-0;+0},{2:+0;-0;+0},{3:+0;-0;+0}",
+                DescribeScientificAttractantChannel(snapshot.AttractantChannel),
+                Mathf.RoundToInt(direction.x * 100f),
+                Mathf.RoundToInt(direction.y * 100f),
+                Mathf.RoundToInt(direction.z * 100f));
+        }
+
+        private static void AppendScientificScentVector(FixedCharBuffer buffer, ScientificScanSnapshot snapshot)
+        {
+            buffer.Append(" // ");
+            buffer.Append(DescribeScientificAttractantChannel(snapshot.AttractantChannel));
+            buffer.Append(" VEC ");
+            AppendScientificSignedComponent(buffer, Mathf.RoundToInt(snapshot.ScentDirection.x * 100f));
+            buffer.Append(",");
+            AppendScientificSignedComponent(buffer, Mathf.RoundToInt(snapshot.ScentDirection.y * 100f));
+            buffer.Append(",");
+            AppendScientificSignedComponent(buffer, Mathf.RoundToInt(snapshot.ScentDirection.z * 100f));
+        }
+
+        private static void AppendScientificSignedComponent(FixedCharBuffer buffer, int value)
+        {
+            if (value >= 0)
+                buffer.Append("+");
+
+            buffer.AppendInt(value);
         }
 
         private void ResolveCachedSurvivalSystem()
@@ -1705,12 +1866,40 @@ namespace Hecton8.Gameplay
         private static bool TrySampleScientificChemicalSignal(Vector3 worldPosition, out float4 chemicalSignal)
         {
             chemicalSignal = float4.zero;
-            if (!ChemicalInfluenceGrid.TryGetPublishedSnapshot(
+            if (!TryResolveScientificChemicalSnapshot(
                     out NativeArray<float4> frontGrid,
                     out NativeArray<float4> overlayGrid,
                     out int3 dimensions,
                     out float3 origin,
-                    out float3 cellSize) ||
+                    out float3 cellSize))
+            {
+                return false;
+            }
+
+            return TryReadScientificChemicalSignal(
+                frontGrid,
+                overlayGrid,
+                dimensions,
+                origin,
+                cellSize,
+                new float3(worldPosition.x, worldPosition.y, worldPosition.z),
+                out chemicalSignal) &&
+                math.cmax(math.abs(chemicalSignal)) > 0.0001f;
+        }
+
+        private static bool TryResolveScientificChemicalSnapshot(
+            out NativeArray<float4> frontGrid,
+            out NativeArray<float4> overlayGrid,
+            out int3 dimensions,
+            out float3 origin,
+            out float3 cellSize)
+        {
+            if (!ChemicalInfluenceGrid.TryGetPublishedSnapshot(
+                    out frontGrid,
+                    out overlayGrid,
+                    out dimensions,
+                    out origin,
+                    out cellSize) ||
                 !frontGrid.IsCreated ||
                 !overlayGrid.IsCreated ||
                 dimensions.x <= 0 ||
@@ -1720,17 +1909,152 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            float cellSizeX = Mathf.Max(0.0001f, cellSize.x);
-            float cellSizeY = Mathf.Max(0.0001f, cellSize.y);
-            float cellSizeZ = Mathf.Max(0.0001f, cellSize.z);
-            float sampleX = Mathf.Clamp((worldPosition.x - origin.x) / cellSizeX, 0f, Mathf.Max(0f, dimensions.x - 1.001f));
-            float sampleY = Mathf.Clamp((worldPosition.y - origin.y) / cellSizeY, 0f, Mathf.Max(0f, dimensions.y - 1.001f));
-            float sampleZ = Mathf.Clamp((worldPosition.z - origin.z) / cellSizeZ, 0f, Mathf.Max(0f, dimensions.z - 1.001f));
+            return true;
+        }
+
+        private static bool TryReadScientificChemicalSignal(
+            NativeArray<float4> frontGrid,
+            NativeArray<float4> overlayGrid,
+            int3 dimensions,
+            float3 origin,
+            float3 cellSize,
+            float3 worldPosition,
+            out float4 chemicalSignal)
+        {
+            chemicalSignal = float4.zero;
+            if (!TryResolveScientificChemicalCoordinates(worldPosition, dimensions, origin, cellSize, out float sampleX, out float sampleY, out float sampleZ))
+                return false;
 
             float4 frontSample = SampleScientificChemicalField(frontGrid, dimensions, sampleX, sampleY, sampleZ);
             float4 overlaySample = SampleScientificChemicalField(overlayGrid, dimensions, sampleX, sampleY, sampleZ);
             chemicalSignal = frontSample + overlaySample;
-            return math.cmax(math.abs(chemicalSignal)) > 0.0001f;
+            return true;
+        }
+
+        private static bool TryResolveScientificChemicalCoordinates(
+            float3 worldPosition,
+            int3 dimensions,
+            float3 origin,
+            float3 cellSize,
+            out float sampleX,
+            out float sampleY,
+            out float sampleZ)
+        {
+            sampleX = 0f;
+            sampleY = 0f;
+            sampleZ = 0f;
+            if (dimensions.x <= 0 || dimensions.y <= 0 || dimensions.z <= 0)
+                return false;
+
+            float cellSizeX = math.max(0.0001f, cellSize.x);
+            float cellSizeY = math.max(0.0001f, cellSize.y);
+            float cellSizeZ = math.max(0.0001f, cellSize.z);
+            sampleX = math.clamp((worldPosition.x - origin.x) / cellSizeX, 0f, math.max(0f, dimensions.x - 1.001f));
+            sampleY = math.clamp((worldPosition.y - origin.y) / cellSizeY, 0f, math.max(0f, dimensions.y - 1.001f));
+            sampleZ = math.clamp((worldPosition.z - origin.z) / cellSizeZ, 0f, math.max(0f, dimensions.z - 1.001f));
+            return true;
+        }
+
+        private static bool TrySampleScientificAttractantGradient(
+            Vector3 worldPosition,
+            out float bloodSignal01,
+            out float exhaustSignal01,
+            out float3 bloodGradient,
+            out float3 exhaustGradient)
+        {
+            bloodSignal01 = 0f;
+            exhaustSignal01 = 0f;
+            bloodGradient = float3.zero;
+            exhaustGradient = float3.zero;
+            if (!TryResolveScientificChemicalSnapshot(
+                    out NativeArray<float4> frontGrid,
+                    out NativeArray<float4> overlayGrid,
+                    out int3 dimensions,
+                    out float3 origin,
+                    out float3 cellSize))
+            {
+                return false;
+            }
+
+            float3 center = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            if (!TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center, out float4 centerSignal))
+                return false;
+
+            bloodSignal01 = math.saturate(centerSignal.x);
+            exhaustSignal01 = math.saturate(centerSignal.y);
+
+            float3 step = math.max(cellSize * ScientificGradientSampleStepMultiplier, new float3(0.25f, 0.25f, 0.25f));
+            float3 offsetX = new float3(step.x, 0f, 0f);
+            float3 offsetY = new float3(0f, step.y, 0f);
+            float3 offsetZ = new float3(0f, 0f, step.z);
+
+            if (TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center + offsetX, out float4 xp) &&
+                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center - offsetX, out float4 xn) &&
+                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center + offsetY, out float4 yp) &&
+                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center - offsetY, out float4 yn) &&
+                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center + offsetZ, out float4 zp) &&
+                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center - offsetZ, out float4 zn))
+            {
+                bloodGradient = new float3(xp.x - xn.x, yp.x - yn.x, zp.x - zn.x);
+                exhaustGradient = new float3(xp.y - xn.y, yp.y - yn.y, zp.y - zn.y);
+
+                if (math.lengthsq(bloodGradient) > 0.000001f)
+                    bloodGradient = math.normalize(bloodGradient);
+                else
+                    bloodGradient = float3.zero;
+
+                if (math.lengthsq(exhaustGradient) > 0.000001f)
+                    exhaustGradient = math.normalize(exhaustGradient);
+                else
+                    exhaustGradient = float3.zero;
+            }
+
+            return bloodSignal01 > 0.0001f || exhaustSignal01 > 0.0001f;
+        }
+
+        private static void ResolveScientificAttractantTrace(
+            float bloodSignal01,
+            float exhaustSignal01,
+            float3 bloodGradientAccumulator,
+            float bloodGradientWeight,
+            float3 exhaustGradientAccumulator,
+            float exhaustGradientWeight,
+            out float attractantScent01,
+            out Vector3 scentDirection,
+            out ScientificAttractantChannel attractantChannel)
+        {
+            attractantScent01 = 0f;
+            scentDirection = Vector3.zero;
+            attractantChannel = ScientificAttractantChannel.None;
+
+            if (bloodSignal01 <= ScientificAttractantTraceThreshold01 &&
+                exhaustSignal01 <= ScientificAttractantTraceThreshold01)
+            {
+                return;
+            }
+
+            if (bloodSignal01 >= exhaustSignal01)
+            {
+                attractantScent01 = bloodSignal01;
+                attractantChannel = ScientificAttractantChannel.Blood;
+                if (bloodGradientWeight > 0f)
+                {
+                    float3 direction = bloodGradientAccumulator / bloodGradientWeight;
+                    if (math.lengthsq(direction) > 0.000001f)
+                        scentDirection = math.normalize(direction);
+                }
+            }
+            else
+            {
+                attractantScent01 = exhaustSignal01;
+                attractantChannel = ScientificAttractantChannel.Exhaust;
+                if (exhaustGradientWeight > 0f)
+                {
+                    float3 direction = exhaustGradientAccumulator / exhaustGradientWeight;
+                    if (math.lengthsq(direction) > 0.000001f)
+                        scentDirection = math.normalize(direction);
+                }
+            }
         }
 
         private static float4 SampleScientificChemicalField(
@@ -2023,6 +2347,8 @@ namespace Hecton8.Gameplay
         private void RegisterTick()
         {
             if (_registered || !Application.isPlaying)
+                return;
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

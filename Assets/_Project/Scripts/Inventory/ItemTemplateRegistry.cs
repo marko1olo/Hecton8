@@ -37,9 +37,10 @@ namespace Hecton8.Inventory
         [SerializeField] private ushort hlodSilhouetteIndex;
         [SerializeField] private uint vulnerabilityMask;
         [SerializeField] private byte audioMaterialId;
-        [SerializeField] private byte _reserved0;
-        [SerializeField] private ushort _reserved1;
+        [SerializeField] private byte physicsMaterialTag;
+        [SerializeField] private ushort _reserved0;
         [SerializeField] private float massKg;
+        [SerializeField] private float volumeM3;
 
         public ItemTemplate(
             uint hashID,
@@ -52,7 +53,9 @@ namespace Hecton8.Inventory
             ushort hlodSilhouetteIndex,
             uint vulnerabilityMask,
             byte audioMaterialId,
-            float massKg)
+            byte physicsMaterialTag,
+            float massKg,
+            float volumeM3)
         {
             this.hashID = hashID;
             this.categoryMask = categoryMask;
@@ -64,9 +67,10 @@ namespace Hecton8.Inventory
             this.hlodSilhouetteIndex = hlodSilhouetteIndex;
             this.vulnerabilityMask = vulnerabilityMask;
             this.audioMaterialId = audioMaterialId;
+            this.physicsMaterialTag = physicsMaterialTag;
             _reserved0 = 0;
-            _reserved1 = 0;
             this.massKg = massKg;
+            this.volumeM3 = volumeM3;
         }
 
         public uint HashID => hashID;
@@ -79,7 +83,9 @@ namespace Hecton8.Inventory
         public ushort HlodSilhouetteIndex => hlodSilhouetteIndex;
         public uint VulnerabilityMask => vulnerabilityMask;
         public byte AudioMaterialId => audioMaterialId;
+        public byte PhysicsMaterialTag => physicsMaterialTag;
         public float MassKg => massKg;
+        public float VolumeM3 => volumeM3;
         public bool IsValid => hashID != 0u;
 
         public bool SupportsCapability(uint capabilityMask)

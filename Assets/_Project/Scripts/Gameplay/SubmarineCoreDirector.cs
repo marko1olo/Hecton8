@@ -1,5 +1,6 @@
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton.Localization;
 using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -41,8 +42,40 @@ namespace Hecton8.Gameplay
         private const int HullSummaryMaxCompartmentBreachArea = 1;
         private const int HullSummaryCompartmentCount = 2;
         private const int HullSummaryReadyFlag = 3;
+        private const int UpgradeSlotCount = 4;
+        private const float DefaultBaseMassKilograms = 1200f;
+        private const float DefaultMaxThrustNewtons = 16000f;
+        private const float DefaultTurnSpeedDegreesPerSecond = 35f;
+        private const float DefaultMaxDepthMeters = 400f;
+        private const float DefaultBaseIntegrity = 250f;
+        private const float PressureCompensatorDepthBonusMeters = 220f;
+        private const float AbyssalStabilizerDepthBonusMeters = 110f;
+        private const float HullArmorIntegrityBonus = 55f;
+        private const float ShockMountIntegrityBonus = 22f;
+        private const float EngineOverdriveThrustMultiplier = 1.18f;
+        private const float BallastOptimizerThrustMultiplier = 1.08f;
+        private const float ReactorBypassThrustMultiplier = 1.06f;
+        private const float EngineOverdriveTurnMultiplier = 1.08f;
+        private const float BallastOptimizerTurnMultiplier = 1.12f;
+        private const float AbyssalStabilizerTurnMultiplier = 1.05f;
+
+        private static readonly int _PressureCompensatorHashId = LocHash.Compute("Comp_PressureCompensator");
+        private static readonly int _EngineOverdriveHashId = LocHash.Compute("Comp_EngineOverdriveManifold");
+        private static readonly int _HullArmorLatticeHashId = LocHash.Compute("Comp_HullArmorLattice");
+        private static readonly int _ShockMountArrayHashId = LocHash.Compute("Comp_ShockMountArray");
+        private static readonly int _BallastOptimizerHashId = LocHash.Compute("Comp_BallastOptimizer");
+        private static readonly int _ReactorBypassCouplerHashId = LocHash.Compute("Comp_ReactorBypassCoupler");
+        private static readonly int _AbyssalStabilizerHashId = LocHash.Compute("Comp_AbyssalStabilizer");
 
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.CoreDirector.FixedTick");
+
+        [Header("── Vehicle Profile ────────────────")]
+        [Tooltip("Authored baseline hull, thrust, turn, depth, and integrity data for this submarine.")]
+        [SerializeField] private SubmarineProfile submarineProfile;
+
+        [Header("── Upgrade Slots ──────────────────")]
+        [Tooltip("Fixed generic upgrade slots storing installed submarine item hash IDs.")]
+        [SerializeField] private int[] installedUpgradeItemHashIds = new int[UpgradeSlotCount];
 
         [Header("â”€â”€ Frame â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional explicit transform used as the rider-space reference frame. Defaults to this root transform.")]
@@ -66,6 +99,7 @@ namespace Hecton8.Gameplay
 
         private Transform _cachedTransform;
         private bool _registeredFixedTick;
+        private bool _profileMassApplied;
 
         // COLD ALLOC: NativeArray<float>[4] â€” submarine root hull summary buffer for registry-facing readback without crawling child systems â€” owner: SubmarineCoreDirector
         private NativeArray<float> _hullIntegritySummaryNative;
@@ -104,10 +138,30 @@ namespace Hecton8.Gameplay
         /// <summary>Published subsystem readiness snapshot owned by the submarine root.</summary>
         public NativeArray<SubmarineGridState> GridStatesNative => _gridStatesNative;
 
+        /// <summary>Baseline authored submarine stat asset.</summary>
+        public SubmarineProfile Profile => submarineProfile;
+
+        /// <summary>Resolved submarine hull mass in kilograms after profile evaluation.</summary>
+        public float BaseMass => submarineProfile != null ? submarineProfile.BaseMass : DefaultBaseMassKilograms;
+
+        /// <summary>Resolved maximum submarine thrust in Newtons after upgrade modifiers.</summary>
+        public float MaxThrust => ResolveMaxThrust();
+
+        /// <summary>Resolved yaw-turn speed in degrees per second after upgrade modifiers.</summary>
+        public float TurnSpeed => ResolveTurnSpeed();
+
+        /// <summary>Resolved certified operating depth in meters after upgrade modifiers.</summary>
+        public float MaxDepth => ResolveMaxDepth();
+
+        /// <summary>Resolved structural integrity ceiling after upgrade modifiers.</summary>
+        public float BaseIntegrity => ResolveBaseIntegrity();
+
         private void Awake()
         {
             _cachedTransform = transform;
+            EnsureUpgradeSlots();
             CacheReferences();
+            ApplyProfileMassToHull();
             EnsureNativeState();
             RefreshNativeState();
         }
@@ -115,7 +169,9 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             _cachedTransform = transform;
+            EnsureUpgradeSlots();
             CacheReferences();
+            ApplyProfileMassToHull();
             EnsureNativeState();
             RefreshNativeState();
             GlobalRegistry.RegisterSubmarine(this);
@@ -160,11 +216,54 @@ namespace Hecton8.Gameplay
             }
         }
 
+        /// <summary>
+        /// Returns the installed item hash ID in one of the four fixed upgrade slots.
+        /// </summary>
+        public int GetInstalledUpgradeHash(int slotIndex)
+        {
+            EnsureUpgradeSlots();
+            if ((uint)slotIndex >= UpgradeSlotCount)
+                return 0;
+
+            return installedUpgradeItemHashIds[slotIndex];
+        }
+
+        /// <summary>
+        /// Installs an upgrade item hash into a fixed slot.
+        /// </summary>
+        public bool TryInstallUpgrade(int slotIndex, int itemHashId)
+        {
+            EnsureUpgradeSlots();
+            if ((uint)slotIndex >= UpgradeSlotCount)
+                return false;
+
+            installedUpgradeItemHashIds[slotIndex] = itemHashId;
+            ApplyProfileMassToHull();
+            RefreshNativeState();
+            return true;
+        }
+
+        /// <summary>
+        /// Clears one fixed submarine upgrade slot.
+        /// </summary>
+        public void ClearUpgradeSlot(int slotIndex)
+        {
+            EnsureUpgradeSlots();
+            if ((uint)slotIndex >= UpgradeSlotCount)
+                return;
+
+            installedUpgradeItemHashIds[slotIndex] = 0;
+            ApplyProfileMassToHull();
+            RefreshNativeState();
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             _cachedTransform = transform;
+            EnsureUpgradeSlots();
             CacheReferences();
+            ApplyProfileMassToHull();
             if (Application.isPlaying)
             {
                 EnsureNativeState();
@@ -192,6 +291,38 @@ namespace Hecton8.Gameplay
 
             if (structuralGrid == null)
                 TryGetComponent(out structuralGrid);
+        }
+
+        private void EnsureUpgradeSlots()
+        {
+            if (installedUpgradeItemHashIds == null || installedUpgradeItemHashIds.Length != UpgradeSlotCount)
+            {
+                int[] resizedSlots = new int[UpgradeSlotCount]; // COLD ALLOC: int[4] — fixed submarine upgrade-slot state — owner: SubmarineCoreDirector
+                if (installedUpgradeItemHashIds != null)
+                {
+                    int copyCount = math.min(installedUpgradeItemHashIds.Length, UpgradeSlotCount);
+                    for (int i = 0; i < copyCount; i++)
+                        resizedSlots[i] = installedUpgradeItemHashIds[i];
+                }
+
+                installedUpgradeItemHashIds = resizedSlots;
+            }
+        }
+
+        private void ApplyProfileMassToHull()
+        {
+            if (hullRigidbody == null)
+            {
+                _profileMassApplied = false;
+                return;
+            }
+
+            float resolvedMass = math.max(1f, BaseMass);
+            if (_profileMassApplied && math.abs(hullRigidbody.mass - resolvedMass) <= 0.01f)
+                return;
+
+            hullRigidbody.mass = resolvedMass;
+            _profileMassApplied = true;
         }
 
         private void EnsureNativeState()
@@ -302,6 +433,81 @@ namespace Hecton8.Gameplay
             return float.IsFinite(value.x) &&
                    float.IsFinite(value.y) &&
                    float.IsFinite(value.z);
+        }
+
+        private uint ComposeInstalledUpgradeMask()
+        {
+            EnsureUpgradeSlots();
+
+            uint mask = 0u;
+            for (int i = 0; i < UpgradeSlotCount; i++)
+            {
+                int itemHashId = installedUpgradeItemHashIds[i];
+                if (itemHashId == _PressureCompensatorHashId)
+                    mask |= (uint)VehicleUpgradeBits.PressureCompensator;
+                else if (itemHashId == _EngineOverdriveHashId)
+                    mask |= (uint)VehicleUpgradeBits.EngineOverdrive;
+                else if (itemHashId == _HullArmorLatticeHashId)
+                    mask |= (uint)VehicleUpgradeBits.HullArmorLattice;
+                else if (itemHashId == _ShockMountArrayHashId)
+                    mask |= (uint)VehicleUpgradeBits.ShockMountArray;
+                else if (itemHashId == _BallastOptimizerHashId)
+                    mask |= (uint)VehicleUpgradeBits.BallastOptimizer;
+                else if (itemHashId == _ReactorBypassCouplerHashId)
+                    mask |= (uint)VehicleUpgradeBits.ReactorBypassCoupler;
+                else if (itemHashId == _AbyssalStabilizerHashId)
+                    mask |= (uint)VehicleUpgradeBits.AbyssalStabilizer;
+            }
+
+            return mask;
+        }
+
+        private float ResolveMaxThrust()
+        {
+            uint mask = ComposeInstalledUpgradeMask();
+            float thrust = submarineProfile != null ? submarineProfile.MaxThrust : DefaultMaxThrustNewtons;
+            if ((mask & (uint)VehicleUpgradeBits.EngineOverdrive) != 0u)
+                thrust *= EngineOverdriveThrustMultiplier;
+            if ((mask & (uint)VehicleUpgradeBits.BallastOptimizer) != 0u)
+                thrust *= BallastOptimizerThrustMultiplier;
+            if ((mask & (uint)VehicleUpgradeBits.ReactorBypassCoupler) != 0u)
+                thrust *= ReactorBypassThrustMultiplier;
+            return math.max(0f, thrust);
+        }
+
+        private float ResolveTurnSpeed()
+        {
+            uint mask = ComposeInstalledUpgradeMask();
+            float turnSpeed = submarineProfile != null ? submarineProfile.TurnSpeed : DefaultTurnSpeedDegreesPerSecond;
+            if ((mask & (uint)VehicleUpgradeBits.EngineOverdrive) != 0u)
+                turnSpeed *= EngineOverdriveTurnMultiplier;
+            if ((mask & (uint)VehicleUpgradeBits.BallastOptimizer) != 0u)
+                turnSpeed *= BallastOptimizerTurnMultiplier;
+            if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
+                turnSpeed *= AbyssalStabilizerTurnMultiplier;
+            return math.max(0f, turnSpeed);
+        }
+
+        private float ResolveMaxDepth()
+        {
+            uint mask = ComposeInstalledUpgradeMask();
+            float maxDepth = submarineProfile != null ? submarineProfile.MaxDepth : DefaultMaxDepthMeters;
+            if ((mask & (uint)VehicleUpgradeBits.PressureCompensator) != 0u)
+                maxDepth += PressureCompensatorDepthBonusMeters;
+            if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
+                maxDepth += AbyssalStabilizerDepthBonusMeters;
+            return math.max(0f, maxDepth);
+        }
+
+        private float ResolveBaseIntegrity()
+        {
+            uint mask = ComposeInstalledUpgradeMask();
+            float integrity = submarineProfile != null ? submarineProfile.BaseIntegrity : DefaultBaseIntegrity;
+            if ((mask & (uint)VehicleUpgradeBits.HullArmorLattice) != 0u)
+                integrity += HullArmorIntegrityBonus;
+            if ((mask & (uint)VehicleUpgradeBits.ShockMountArray) != 0u)
+                integrity += ShockMountIntegrityBonus;
+            return math.max(1f, integrity);
         }
     }
 }

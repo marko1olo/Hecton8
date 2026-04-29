@@ -252,6 +252,14 @@ namespace Hecton8.World
         [Tooltip("Offset along the sampled terrain normal for anchored vegetation.")]
         private float normalOffset = 0.04f;
 
+        [SerializeField, Min(1f)]
+        [Tooltip("Vertical lift above scatter candidates before issuing the exact downward snap ray.")]
+        private float scatterSnapRaycastElevationMeters = 24f;
+
+        [SerializeField, Min(1f)]
+        [Tooltip("Maximum downward snap-ray distance used to align procedural flora to terrain or voxel colliders.")]
+        private float scatterSnapRaycastDistanceMeters = 96f;
+
         [SerializeField, Min(0f)]
         [Tooltip("Vertical offset applied to floating sargassum over the water plane.")]
         private float floatingSurfaceOffset = 0.15f;
@@ -1044,6 +1052,25 @@ namespace Hecton8.World
             ColonyHullPlating = 4,
             ColonySupportBeam = 5,
             DeadZoneMassiveStructure = 6
+        }
+
+        internal static bool IsColonyCoralSemanticType(VegetationSemanticType semanticType)
+        {
+            switch (semanticType)
+            {
+                case VegetationSemanticType.ColonyCable:
+                case VegetationSemanticType.ColonyHullPlating:
+                case VegetationSemanticType.ColonySupportBeam:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        internal static bool IsSolidStructureSemanticType(VegetationSemanticType semanticType)
+        {
+            return IsColonyCoralSemanticType(semanticType) ||
+                   semanticType == VegetationSemanticType.DeadZoneMassiveStructure;
         }
 
         /// <summary>
@@ -2176,6 +2203,15 @@ namespace Hecton8.World
 
         /// <summary>Active underwater instance metadata buffer currently owned by this bridge.</summary>
         public GraphicsBuffer UnderwaterInstanceDataBuffer => _underwaterInstanceDataBuffer;
+
+        internal void BindReactivePhaseSeedBuffer(bool underwater, GraphicsBuffer buffer)
+        {
+            HectonIndirectVegetationRenderer targetRenderer = underwater ? underwaterRenderer : surfaceRenderer;
+            if (targetRenderer == null)
+                return;
+
+            targetRenderer.BindFloraPhaseSeedBuffer(buffer);
+        }
 
         /// <summary>Active surface matrix cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
         public NativeArray<Matrix4x4> ActiveSurfaceMatricesNative => _surfaceAggregateFrontBuffers.Matrices;
@@ -3800,6 +3836,79 @@ namespace Hecton8.World
             float gradientZ = (heightPosZ - heightNegZ) / (resolvedSampleDistance * 2f);
             float gradientMagnitude = Mathf.Sqrt((gradientX * gradientX) + (gradientZ * gradientZ));
             slopeDegrees = Mathf.Atan(gradientMagnitude) * Mathf.Rad2Deg;
+            return true;
+        }
+
+        /// <summary>
+        /// Resolves the dominant cached substrate mask under a runtime-space flora query position.
+        /// </summary>
+        public bool TrySampleFloraSubstrate(Vector3 position, out WorldProceduralPlacementRule.FloraSubstrateMask substrate)
+        {
+            substrate = WorldProceduralPlacementRule.FloraSubstrateMask.None;
+            if (IsInsideRegisteredTerrainHole(position.x, position.z))
+                return false;
+
+            if (!TryFindTileStateAtPosition(position, out TileRuntimeState state) ||
+                state == null ||
+                !TryGetActiveTileCache(state, out NativeArray<byte> sandMask, out NativeArray<byte> rockMask, out _))
+            {
+                return false;
+            }
+
+            float localX = position.x - state.TerrainPosition.x;
+            float localZ = position.z - state.TerrainPosition.z;
+            if (localX < 0f || localZ < 0f || localX > state.TerrainSize.x || localZ > state.TerrainSize.z || state.AlphamapResolution <= 0)
+                return false;
+
+            float normalizedX = Mathf.Clamp01(localX / Mathf.Max(0.01f, state.TerrainSize.x));
+            float normalizedZ = Mathf.Clamp01(localZ / Mathf.Max(0.01f, state.TerrainSize.z));
+            int alphaX = Mathf.Clamp(Mathf.FloorToInt(normalizedX * state.AlphamapResolution), 0, state.AlphamapResolution - 1);
+            int alphaZ = Mathf.Clamp(Mathf.FloorToInt(normalizedZ * state.AlphamapResolution), 0, state.AlphamapResolution - 1);
+            int maskIndex = (alphaZ * state.AlphamapResolution) + alphaX;
+            if (maskIndex < 0 || maskIndex >= sandMask.Length)
+                return false;
+
+            if (sandMask[maskIndex] > _sandMaskThresholdByte)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Sand;
+
+            if (rockMask.IsCreated && maskIndex < rockMask.Length && rockMask[maskIndex] > _rockMaskThresholdByte)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
+
+            if (substrate == WorldProceduralPlacementRule.FloraSubstrateMask.None)
+                substrate = sandMask[maskIndex] >= (rockMask.IsCreated && maskIndex < rockMask.Length ? rockMask[maskIndex] : (byte)0)
+                    ? WorldProceduralPlacementRule.FloraSubstrateMask.Sand
+                    : WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Snaps a runtime-space scatter placement to colliders first, then cached terrain height/normal as fallback.
+        /// </summary>
+        public bool TrySnapScatterPlacement(
+            Vector3 position,
+            float surfaceOffset,
+            float maxTiltAngleDegrees,
+            int stableHash,
+            out Vector3 snappedPosition,
+            out Quaternion snappedRotation)
+        {
+            snappedPosition = position;
+            snappedRotation = Quaternion.Euler(0f, Mathf.Abs(stableHash % 360), 0f);
+
+            Vector3 surfacePoint;
+            Vector3 surfaceNormal;
+            if (!TrySampleScatterSurfaceByRaycast(position, out surfacePoint, out surfaceNormal) &&
+                !TrySampleScatterSurfaceFromCachedTerrain(position, out surfacePoint, out surfaceNormal))
+            {
+                return false;
+            }
+
+            Vector3 clampedUp = ClampScatterUpVector(surfaceNormal, maxTiltAngleDegrees);
+            Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
+            Quaternion yawRotation = Quaternion.AngleAxis(Mathf.Abs(stableHash % 360), clampedUp);
+            snappedPosition = surfacePoint + (clampedUp * Mathf.Max(0f, surfaceOffset));
+            snappedRotation = yawRotation * alignRotation;
             return true;
         }
 
@@ -7157,18 +7266,12 @@ namespace Hecton8.World
 
         private static FloraDataTemplate.AttachmentSurface ResolveAttachmentSurfaceForSemantic(VegetationSemanticType semanticType)
         {
-            switch (semanticType)
-            {
-                case VegetationSemanticType.ColonyCable:
-                case VegetationSemanticType.ColonyHullPlating:
-                case VegetationSemanticType.ColonySupportBeam:
-                case VegetationSemanticType.DeadZoneMassiveStructure:
-                    return FloraDataTemplate.AttachmentSurface.Metal;
-                case VegetationSemanticType.FloatingSargassum:
-                    return FloraDataTemplate.AttachmentSurface.Any;
-                default:
-                    return FloraDataTemplate.AttachmentSurface.Seabed;
-            }
+            if (IsSolidStructureSemanticType(semanticType))
+                return FloraDataTemplate.AttachmentSurface.Metal;
+
+            return semanticType == VegetationSemanticType.FloatingSargassum
+                ? FloraDataTemplate.AttachmentSurface.Any
+                : FloraDataTemplate.AttachmentSurface.Seabed;
         }
 
         private static FloraDataTemplate.RuntimeDescriptor ResolveFallbackFloraDescriptor(int type)
@@ -8001,14 +8104,14 @@ namespace Hecton8.World
 
         private static float2 ResolveThreatAttractorChannel(int semanticType, float densityWeight)
         {
-            switch ((VegetationSemanticType)semanticType)
+            VegetationSemanticType resolvedSemanticType = (VegetationSemanticType)semanticType;
+            if (IsColonyCoralSemanticType(resolvedSemanticType))
+                return new float2(0f, densityWeight);
+
+            switch (resolvedSemanticType)
             {
                 case VegetationSemanticType.FloatingSargassum:
                     return new float2(densityWeight, 0f);
-                case VegetationSemanticType.ColonyCable:
-                case VegetationSemanticType.ColonyHullPlating:
-                case VegetationSemanticType.ColonySupportBeam:
-                    return new float2(0f, densityWeight);
                 case VegetationSemanticType.DeadZoneMassiveStructure:
                     return new float2(0f, densityWeight * 0.35f);
                 default:
@@ -8165,6 +8268,14 @@ namespace Hecton8.World
             }
 
             return density;
+        }
+
+        /// <summary>
+        /// Samples only macro-flora biomass density (kelp plus sargassum) from the current resident chunk-density snapshot.
+        /// </summary>
+        public float SampleMacroFloraDensityImmediate(Vector3 positionWS)
+        {
+            return SampleBiomassDensityImmediate(positionWS, DensityTypeMaskKelp | DensityTypeMaskSargassum);
         }
 
         private static float3 SampleDensityChannelsAtPositionHashed(
@@ -11440,6 +11551,87 @@ namespace Hecton8.World
             return false;
         }
 
+        private bool TrySampleScatterSurfaceByRaycast(Vector3 position, out Vector3 point, out Vector3 normal)
+        {
+            point = position;
+            normal = Vector3.up;
+
+            Vector3 origin = position + (Vector3.up * Mathf.Max(1f, scatterSnapRaycastElevationMeters));
+            float distance = Mathf.Max(1f, scatterSnapRaycastElevationMeters + scatterSnapRaycastDistanceMeters);
+            NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<RaycastHit> hits = new NativeArray<RaycastHit>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+
+            try
+            {
+                commands[0] = new RaycastCommand(
+                    origin,
+                    Vector3.down,
+                    new QueryParameters(Physics.DefaultRaycastLayers, false, QueryTriggerInteraction.Ignore),
+                    distance);
+                // COLD SYNC JOB: scatter preview/runtime-state snapping is rebuilt episodically, not per-frame gameplay cadence.
+                JobHandle handle = RaycastCommand.ScheduleBatch(commands, hits, 1, default);
+                handle.Complete();
+
+                RaycastHit hit = hits[0];
+                if (hit.collider == null)
+                    return false;
+
+                point = hit.point;
+                normal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
+                return true;
+            }
+            finally
+            {
+                if (commands.IsCreated)
+                    commands.Dispose();
+                if (hits.IsCreated)
+                    hits.Dispose();
+            }
+        }
+
+        private bool TrySampleScatterSurfaceFromCachedTerrain(Vector3 position, out Vector3 point, out Vector3 normal)
+        {
+            point = position;
+            normal = Vector3.up;
+            if (!TryFindTileStateAtPosition(position, out TileRuntimeState state) ||
+                state == null ||
+                !TryGetActiveTileCache(state, out _, out _, out NativeArray<ushort> heightSamples) ||
+                !heightSamples.IsCreated ||
+                state.HeightmapResolution <= 1)
+            {
+                return false;
+            }
+
+            float localX = position.x - state.TerrainPosition.x;
+            float localZ = position.z - state.TerrainPosition.z;
+            if (localX < 0f || localZ < 0f || localX > state.TerrainSize.x || localZ > state.TerrainSize.z)
+                return false;
+
+            float normalizedX = Mathf.Clamp01(localX / Mathf.Max(0.01f, state.TerrainSize.x));
+            float normalizedZ = Mathf.Clamp01(localZ / Mathf.Max(0.01f, state.TerrainSize.z));
+            float3 terrainSize = new float3(state.TerrainSize.x, state.TerrainSize.y, state.TerrainSize.z);
+            float terrainY = state.TerrainPosition.y + SampleHeight(normalizedX, normalizedZ, terrainSize, state.HeightmapResolution, heightSamples);
+            float3 sampledNormal = SampleNormal(normalizedX, normalizedZ, terrainSize, state.HeightmapResolution, heightSamples);
+            point = new Vector3(position.x, terrainY, position.z);
+            normal = new Vector3(sampledNormal.x, sampledNormal.y, sampledNormal.z);
+            return true;
+        }
+
+        private static Vector3 ClampScatterUpVector(Vector3 normal, float maxTiltAngleDegrees)
+        {
+            Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            float safeMaxTilt = Mathf.Clamp(maxTiltAngleDegrees, 0f, 89.5f);
+            float angle = Vector3.Angle(Vector3.up, safeNormal);
+            if (angle <= safeMaxTilt)
+                return safeNormal;
+
+            Vector3 axis = Vector3.Cross(Vector3.up, safeNormal);
+            if (axis.sqrMagnitude <= 0.000001f)
+                return Vector3.up;
+
+            return Quaternion.AngleAxis(safeMaxTilt, axis.normalized) * Vector3.up;
+        }
+
         private static bool IsInsideTerrainHoleStatic(float worldX, float worldZ, NativeArray<TerrainHoleRecord> holes, int holeCount)
         {
             if (!holes.IsCreated || holeCount <= 0)
@@ -14214,6 +14406,7 @@ namespace Hecton8.World
             if (renderer == null)
                 return;
 
+            renderer.BindFloraPhaseSeedBuffer(null);
             renderer.ClearSource();
         }
 

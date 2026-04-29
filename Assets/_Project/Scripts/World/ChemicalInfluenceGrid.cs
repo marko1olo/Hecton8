@@ -26,6 +26,7 @@ namespace Hecton8.World
             Blood = 0,
             Exhaust = 1,
             Fear = 2,
+            Toxicity = 3,
         }
 
         private struct InfluenceWrite
@@ -196,6 +197,11 @@ namespace Hecton8.World
         internal static void QueueFearPheromone(Vector3 worldPosition, float intensity)
         {
             EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, math.max(0f, intensity), 0f));
+        }
+
+        internal static void QueueToxicityBurst(Vector3 worldPosition, float intensity)
+        {
+            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, math.max(0f, intensity)));
         }
 
         private void Awake()

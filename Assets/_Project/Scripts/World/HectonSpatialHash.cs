@@ -99,7 +99,6 @@ namespace Hecton8.World
 
         private static readonly ProfilerMarker _registerProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Register");
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Update");
-        private static readonly ProfilerMarker _rebuildProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Rebuild");
         private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.QuerySphere");
 
         private readonly double _cellSizeMeters;
@@ -108,8 +107,6 @@ namespace Hecton8.World
         private NativeParallelMultiHashMap<Long3, int> _cellOccupancy;
         private QueryScratchArena _queryScratch;
         private int _nextHandle;
-        private bool _cellsDirty;
-
         public HectonSpatialHash(int entryCapacity = 128, int cellCapacity = 512, double cellSizeMeters = DefaultCellSizeMeters)
         {
             int safeEntryCapacity = math.max(1, entryCapacity);
@@ -123,7 +120,6 @@ namespace Hecton8.World
             _cellOccupancy = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, Allocator.Persistent);
             _queryScratch = new QueryScratchArena(safeEntryCapacity);
             _nextHandle = 1;
-            _cellsDirty = false;
         }
 
         public int EntryCount => _entryHandles.IsCreated ? _entryHandles.Length : 0;
@@ -152,8 +148,11 @@ namespace Hecton8.World
 
         public void Unregister(int handle)
         {
-            if (handle <= 0 || !_entries.Remove(handle))
+            if (handle <= 0 || !_entries.TryGetValue(handle, out SpatialEntry existingEntry))
                 return;
+
+            RemoveEntryCells(handle, in existingEntry);
+            _entries.Remove(handle);
 
             for (int i = 0; i < _entryHandles.Length; i++)
             {
@@ -165,13 +164,10 @@ namespace Hecton8.World
                 _entryHandles.RemoveAt(lastIndex);
                 break;
             }
-
-            _cellsDirty = true;
         }
 
         public bool TryGetEntry(int handle, out SpatialEntry entry)
         {
-            RebuildCellsIfDirty();
             return _entries.TryGetValue(handle, out entry);
         }
 
@@ -182,8 +178,6 @@ namespace Hecton8.World
 
             using (_queryProfilerMarker.Auto())
             {
-                RebuildCellsIfDirty();
-
                 resultHandles.Clear();
                 if (radiusMeters <= 0f || !_cellOccupancy.IsCreated || _entryHandles.Length == 0)
                     return 0;
@@ -256,6 +250,10 @@ namespace Hecton8.World
             ResolveCellRange(absoluteCenter, halfExtents, out minCell, out maxCell);
             EnsureCapacityForEntry(minCell, maxCell, appendHandle ? 1 : 0);
 
+            bool hadExistingEntry = _entries.TryGetValue(handle, out SpatialEntry previousEntry);
+            if (hadExistingEntry)
+                RemoveEntryCells(handle, in previousEntry);
+
             SpatialEntry entry = new SpatialEntry
             {
                 AbsoluteCenter = absoluteCenter,
@@ -269,8 +267,7 @@ namespace Hecton8.World
             _entries[handle] = entry;
             if (appendHandle)
                 _entryHandles.Add(handle);
-
-            _cellsDirty = true;
+            AddEntryCells(handle, in entry);
         }
 
         private void EnsureCapacityForEntry(Long3 minCell, Long3 maxCell, int additionalEntries)
@@ -288,32 +285,48 @@ namespace Hecton8.World
                 _cellOccupancy.Capacity = math.max(requiredCellCapacity, _cellOccupancy.Capacity << 1);
         }
 
-        private void RebuildCellsIfDirty()
+        private void AddEntryCells(int handle, in SpatialEntry entry)
         {
-            if (!_cellsDirty)
-                return;
-
-            using (_rebuildProfilerMarker.Auto())
+            for (long z = entry.MinCell.Z; z <= entry.MaxCell.Z; z++)
             {
-                _cellOccupancy.Clear();
-
-                for (int i = 0; i < _entryHandles.Length; i++)
+                for (long y = entry.MinCell.Y; y <= entry.MaxCell.Y; y++)
                 {
-                    int handle = _entryHandles[i];
-                    if (!_entries.TryGetValue(handle, out SpatialEntry entry))
-                        continue;
-
-                    for (long z = entry.MinCell.Z; z <= entry.MaxCell.Z; z++)
+                    for (long x = entry.MinCell.X; x <= entry.MaxCell.X; x++)
                     {
-                        for (long y = entry.MinCell.Y; y <= entry.MaxCell.Y; y++)
+                        _cellOccupancy.Add(new Long3(x, y, z), handle);
+                    }
+                }
+            }
+        }
+
+        private void RemoveEntryCells(int handle, in SpatialEntry entry)
+        {
+            for (long z = entry.MinCell.Z; z <= entry.MaxCell.Z; z++)
+            {
+                for (long y = entry.MinCell.Y; y <= entry.MaxCell.Y; y++)
+                {
+                    for (long x = entry.MinCell.X; x <= entry.MaxCell.X; x++)
+                    {
+                        Long3 cellKey = new Long3(x, y, z);
+                        while (_cellOccupancy.TryGetFirstValue(cellKey, out int existingHandle, out NativeParallelMultiHashMapIterator<Long3> iterator))
                         {
-                            for (long x = entry.MinCell.X; x <= entry.MaxCell.X; x++)
-                                _cellOccupancy.Add(new Long3(x, y, z), handle);
+                            bool removedCurrentHandle = false;
+                            do
+                            {
+                                if (existingHandle != handle)
+                                    continue;
+
+                                _cellOccupancy.Remove(iterator);
+                                removedCurrentHandle = true;
+                                break;
+                            }
+                            while (_cellOccupancy.TryGetNextValue(out existingHandle, ref iterator));
+
+                            if (!removedCurrentHandle)
+                                break;
                         }
                     }
                 }
-
-                _cellsDirty = false;
             }
         }
 

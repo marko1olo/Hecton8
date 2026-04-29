@@ -284,6 +284,8 @@ namespace Hecton8.AtlasSignal
         private bool _directiveConflictTriggered;
         private bool _registered;
         private Transform _playerTransform;
+        private uint _latestScarcityDirectiveQuestHash;
+        private uint _latestScarcityDirectiveResourceHash;
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable
@@ -473,7 +475,7 @@ namespace Hecton8.AtlasSignal
             }
 
             if (eventType == Atlas6EventType.ScarcityDirectiveIssued)
-                HandleScarcityDirective(payload.ResourceHash);
+                HandleScarcityDirective(payload.DirectiveQuestHash, payload.ResourceHash);
         }
 
         private void HandleBarterAccepted(int count)
@@ -484,8 +486,27 @@ namespace Hecton8.AtlasSignal
                 SetStatus(Atlas6PlayerStatus.Neutral);
         }
 
-        private void HandleScarcityDirective(uint resourceHash)
+        private void HandleScarcityDirective(uint directiveQuestHash, uint resourceHash)
         {
+            _latestScarcityDirectiveQuestHash = directiveQuestHash;
+            _latestScarcityDirectiveResourceHash = resourceHash;
+
+            Quest.QuestManager questManager = Quest.QuestManager.Instance;
+            if (questManager != null &&
+                directiveQuestHash != 0u &&
+                questManager.TryGetQuestPresentation(
+                    directiveQuestHash,
+                    out string title,
+                    out _,
+                    out _,
+                    out _,
+                    out _)
+                && !string.IsNullOrWhiteSpace(title))
+            {
+                NotificationEvents.PushWarning(title);
+                return;
+            }
+
             string resourceName = "ESSENTIAL RESOURCE";
             IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
             PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
@@ -568,6 +589,8 @@ namespace Hecton8.AtlasSignal
             _playerStatus = (Atlas6PlayerStatus)data.atlas6PlayerStatus;
             _barterTransactionCount = data.atlas6BarterCount;
             _directiveConflictTriggered = data.atlas6DirectiveConflictTriggered;
+            _latestScarcityDirectiveQuestHash = 0u;
+            _latestScarcityDirectiveResourceHash = 0u;
         }
     }
 }

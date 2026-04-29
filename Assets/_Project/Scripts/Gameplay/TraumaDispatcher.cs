@@ -1,4 +1,6 @@
 using Hecton8.Core;
+using Hecton8.Physics;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -23,6 +25,7 @@ namespace Hecton8.Gameplay
         private const float FloodThermalThreshold = 0.3f;
         private const float FloodedInsulationFactor = 0.2f;
         private const float RadiationFatigueSignalThreshold = 0.05f;
+        private const float EmpStressTransfer01 = 0.92f;
 
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
@@ -46,6 +49,7 @@ namespace Hecton8.Gameplay
         private int _lastPublishedTraumaSignature = int.MinValue;
         private int _lastPublishedInteractionSignature = int.MinValue;
         private float _radiationExposureSeconds;
+        private float _empSensorBlindTimer;
 
         /// <summary>Current integrity trauma channel intensity.</summary>
         public float IntegrityChannel01 => _integrityChannel01;
@@ -55,6 +59,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Current clarity trauma channel intensity.</summary>
         public float ClarityChannel01 => _clarityChannel01;
+
+        /// <summary>True while an EMP pulse is suppressing the player's sensors.</summary>
+        public bool IsEmpSensorBlindActive => _empSensorBlindTimer > 0.0001f;
 
         internal float HazardRadiationSignal01 => _hazardRadiationSignal01;
 
@@ -111,6 +118,7 @@ namespace Hecton8.Gameplay
             ResolveReferences();
             ModuleStatusEvents.OnModuleEnter += HandleModuleEnter;
             ModuleStatusEvents.OnModuleExit += HandleModuleExit;
+            PhysicsEventBus.OnElectromagneticPulse += HandleElectromagneticPulse;
 
             if (_playerTransportCoordinator != null)
                 _playerTransportCoordinator.ActiveTransportLifecycleChanged += HandleTransportLifecycleChanged;
@@ -128,6 +136,7 @@ namespace Hecton8.Gameplay
         {
             ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;
             ModuleStatusEvents.OnModuleExit -= HandleModuleExit;
+            PhysicsEventBus.OnElectromagneticPulse -= HandleElectromagneticPulse;
 
             if (_playerTransportCoordinator != null)
                 _playerTransportCoordinator.ActiveTransportLifecycleChanged -= HandleTransportLifecycleChanged;
@@ -151,7 +160,11 @@ namespace Hecton8.Gameplay
             _hazardRadiationSignal01 = DecayChannel(_hazardRadiationSignal01, HazardSignalDecayPerSecond, deltaTime);
             _hazardThermalSignal01 = DecayChannel(_hazardThermalSignal01, HazardSignalDecayPerSecond, deltaTime);
             _hazardToxicSignal01 = DecayChannel(_hazardToxicSignal01, HazardSignalDecayPerSecond, deltaTime);
+            _empSensorBlindTimer = Mathf.Max(0f, _empSensorBlindTimer - Mathf.Max(0f, deltaTime));
             UpdateRadiationFatigue(deltaTime);
+
+            if (IsEmpSensorBlindActive)
+                PromoteChannel(ref _clarityChannel01, 1f);
 
             if (_activeTransportOwner != null)
             {
@@ -366,6 +379,7 @@ namespace Hecton8.Gameplay
             _hazardRadiationSignal01 = 0f;
             _hazardThermalSignal01 = 0f;
             _hazardToxicSignal01 = 0f;
+            _empSensorBlindTimer = 0f;
             _lastPublishedTraumaSignature = int.MinValue;
             _lastPublishedInteractionSignature = int.MinValue;
         }
@@ -508,6 +522,55 @@ namespace Hecton8.Gameplay
 
             float clarityRemaining01 = 1f - Mathf.Clamp01(_clarityChannel01);
             return clarityRemaining01 < BiosRecoveryClarityThreshold || playerIntegrity01 < 0.05f;
+        }
+
+        private void HandleElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        {
+            if ((pulseEvent.DamageType & (uint)DamageTypeMask.Emp) == 0u ||
+                !IsPulseRelevantToPlayer(in pulseEvent))
+            {
+                return;
+            }
+
+            float durationSeconds = Mathf.Max(0f, pulseEvent.DurationSeconds);
+            float claritySuppression01 = Mathf.Clamp01(pulseEvent.ClaritySuppression01);
+            _empSensorBlindTimer = Mathf.Max(_empSensorBlindTimer, durationSeconds);
+            PromoteChannel(ref _clarityChannel01, claritySuppression01);
+
+            if (_playerMovement != null)
+                _playerMovement.RequestExternalHullStress(Mathf.Max(EmpStressTransfer01, claritySuppression01));
+
+            if (_activeTransportOwner is MantaScooter mantaScooter)
+                mantaScooter.ApplyEmpDisruption(durationSeconds);
+
+            Hecton.Localization.LocalizationManager manager = Hecton.Localization.LocalizationManager.Instance;
+            if (manager != null)
+                manager.RequestExternalPdaCorrosion(claritySuppression01, durationSeconds);
+        }
+
+        private bool IsPulseRelevantToPlayer(in ElectromagneticPulseEvent pulseEvent)
+        {
+            Vector3 pulsePosition = pulseEvent.RuntimePosition;
+            float pulseRadius = Mathf.Max(0f, pulseEvent.RadiusMeters);
+            float pulseRadiusSq = pulseRadius * pulseRadius;
+
+            Transform playerTransform = _playerMovement != null ? _playerMovement.transform : transform;
+            if (playerTransform != null && (playerTransform.position - pulsePosition).sqrMagnitude <= pulseRadiusSq)
+                return true;
+
+            if (_activeTransportEmitterBehaviour != null &&
+                (_activeTransportEmitterBehaviour.transform.position - pulsePosition).sqrMagnitude <= pulseRadiusSq)
+            {
+                return true;
+            }
+
+            if (_activeHabitatEmitterBehaviour != null &&
+                (_activeHabitatEmitterBehaviour.transform.position - pulsePosition).sqrMagnitude <= pulseRadiusSq)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

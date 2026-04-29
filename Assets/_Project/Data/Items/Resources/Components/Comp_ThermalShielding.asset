@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
+  m_Name: Comp_ThermalShielding
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
+  itemName: Thermal Shielding
+  stableId: Comp_ThermalShielding
+  localizedItemName:
+    tableKey: ITEM_THERMAL_SHIELDING_NAME
+    fallbackText: Thermal Shielding
+    variants: []
+  icon: {fileID: 0}
+  description: Heat-sink laminate package for vent work, magma lanes, and sustained thermal soak.
+  localizedDescription:
+    tableKey: ITEM_THERMAL_SHIELDING_DESCRIPTION
+    fallbackText: Heat-sink laminate package for vent work, magma lanes, and sustained thermal soak.
+    variants: []
+  weight: 0.9
+  stackable: 1
+  maxStack: 4
+  category: 5
+  resourceFamily: 7
+  progressionTier: 4
+  isRawResource: 0
+  width: 1
+  height: 1
+  isConsumable: 0
+  oxygenRestore: 0
+  energyRestore: 0
+  integrityRestore: 0
+  useSound: {fileID: 0}
+  interactVerb: Take
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: Take
+    variants: []
+  worldPrefab: {fileID: 0}
+  worldBuoyancyProfile: {fileID: 0}

@@ -36,7 +36,7 @@ static const float ThermoclineHalfBandMeters = 8.0;
 static const float ThermoclineVerticalAttenuation = 0.1;
 static const float SurfaceStormDepthMeters = 200.0;
 static const float SurfaceStormTurbulenceBoost = 0.4;
-static const float DeepStormTurbulenceBoost = 0.1;
+static const float DeepStormTurbulenceBoost = 0.15;
 static const float PressureWaveSpatialFrequency = 0.035;
 static const float PressureWaveTemporalBaseSpeed = 0.35;
 static const float PressureWaveWaveHeightAmplitude = 0.18;
@@ -58,7 +58,8 @@ int3 ResolveGridCoord(uint nodeIndex)
     int cellsPerLayer = resolutionX * resolutionZ;
     int layer = (int)(nodeIndex / (uint)cellsPerLayer);
     int rem = (int)(nodeIndex - (uint)(layer * cellsPerLayer));
-    int cellZ = rem / resolutionX;
+    float inverseResolutionX = rcp((float)resolutionX);
+    int cellZ = (int)floor((float)rem * inverseResolutionX);
     int cellX = rem - (cellZ * resolutionX);
     return int3(cellX, layer, cellZ);
 }
@@ -72,7 +73,7 @@ uint ResolveFlatIndex(int3 coord)
 
 float3 ResolveNodeWorldPosition(int3 coord)
 {
-    int3 halfExtent = int3(_AbyssalGridResolution.x / 2, _AbyssalGridResolution.y / 2, _AbyssalGridResolution.z / 2);
+    int3 halfExtent = int3(_AbyssalGridResolution.x >> 1, _AbyssalGridResolution.y >> 1, _AbyssalGridResolution.z >> 1);
     float3 offset = float3(
         (coord.x - halfExtent.x) * _AbyssalFlowSpacing.x,
         (coord.y - halfExtent.y) * _AbyssalFlowSpacing.y,

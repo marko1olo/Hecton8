@@ -17,7 +17,7 @@ namespace Hecton8.Interaction
 
     [RequireComponent(typeof(InteractionHighlighter))]
     [RequireComponent(typeof(Collider))]
-    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
+    public class PickupItem : MonoBehaviour, IInteractable, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
     {
         // COLD ALLOC: RegistryBucket<PickupItem>[4096] — authored/persistent pickup registry for world-state scans — owner: PickupItem
         private static readonly RegistryBucket<PickupItem> _worldStateRegistry = new RegistryBucket<PickupItem>(4096);
@@ -48,8 +48,11 @@ namespace Hecton8.Interaction
 
         private InteractionHighlighter _highlighter;
         private Rigidbody _rigidbody;
+        private Collider _collider;
+        private PhysicMaterial _defaultColliderMaterial;
         private HectonPlayerMovement _playerMovement;
         private string _cachedInteractText;
+        private int _cachedItemHashId;
         private int _spatialHandle;
         private int _faunaSpatialHandle;
         private bool _registeredToSlowTick;
@@ -68,8 +71,10 @@ namespace Hecton8.Interaction
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
         public static int WorldStateRegistryCount => _worldStateRegistry.Count;
+        public int ItemHashId => _cachedItemHashId;
         public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;
         public byte ImpactAudioMaterialId => itemData != null ? itemData.AudioMaterialByte : (byte)ItemAudioMaterialId.Organic;
+        public bool IsFaunaBait => Hecton8.Inventory.PlayerInventory.IsFaunaBaitItem(itemData);
 
         public static PickupItem GetWorldStateRegistryAt(int index)
         {
@@ -80,6 +85,7 @@ namespace Hecton8.Interaction
         {
             itemData = data;
             quantity = Mathf.Max(1, itemQuantity);
+            RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             InvalidateWorldStateIdentity();
             RebuildInteractTextCache();
@@ -101,6 +107,9 @@ namespace Hecton8.Interaction
         {
             TryGetComponent(out _highlighter);
             TryGetComponent(out _rigidbody);
+            TryGetComponent(out _collider);
+            _defaultColliderMaterial = _collider != null ? _collider.sharedMaterial : null;
+            RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             RebuildInteractTextCache();
         }
@@ -109,6 +118,20 @@ namespace Hecton8.Interaction
         {
             if (_rigidbody != null && itemData != null)
                 _rigidbody.mass = itemData.MassKg;
+
+            if (_collider == null)
+                return;
+
+            _collider.sharedMaterial = itemData != null && itemData.WorldPhysicMaterial != null
+                ? itemData.WorldPhysicMaterial
+                : _defaultColliderMaterial;
+        }
+
+        private void RefreshCachedItemHash()
+        {
+            _cachedItemHashId = itemData != null
+                ? Hecton.Localization.LocHash.Compute(itemData.PersistentId)
+                : 0;
         }
 
         private void OnEnable()
@@ -309,33 +332,36 @@ namespace Hecton8.Interaction
 
         public void Interact(Transform interactor)
         {
-            if (itemData == null || quantity <= 0)
-                return;
+            TryHandleInventoryPickup(PlayerInventory.Instance, interactor);
+        }
 
-            PlayerInventory playerInventory = PlayerInventory.Instance;
-            if (playerInventory == null)
+        public bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor)
+        {
+            if (itemData == null || quantity <= 0 || _cachedItemHashId == 0)
+                return false;
+
+            if (inventory == null)
             {
                 DropOverflow(interactor);
-                return;
+                return true;
             }
 
-            int itemHashId = Hecton.Localization.LocHash.Compute(itemData.PersistentId);
-            PlayerInventory.ScavengeAttemptResult attempt = playerInventory.ScavengeAttempt(itemHashId, quantity, interactor);
+            PlayerInventory.ScavengeAttemptResult attempt = inventory.ScavengeAttempt(_cachedItemHashId, quantity, interactor);
             if (!attempt.AnyAdded)
             {
                 DropOverflow(interactor);
-                return;
+                return true;
             }
 
             InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
-            HectonEventBus.Publish(new ItemCollectedEvent(itemData, itemHashId, attempt.AddedQuantity, interactor));
+            HectonEventBus.Publish(new ItemCollectedEvent(itemData, _cachedItemHashId, attempt.AddedQuantity, interactor));
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)
             {
                 RebuildInteractTextCache();
                 DropOverflow(interactor);
-                return;
+                return true;
             }
 
             if (_worldStateIdentityAvailable)
@@ -343,6 +369,7 @@ namespace Hecton8.Interaction
 
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
+            return true;
         }
 
         public string GetInteractText()

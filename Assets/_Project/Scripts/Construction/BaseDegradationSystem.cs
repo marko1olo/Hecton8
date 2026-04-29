@@ -27,6 +27,7 @@ namespace Hecton8.Construction
         private struct RuptureNodeState
         {
             public bool IsRuptured;
+            public int ModuleRuntimeId;
             public Vector3 AbsoluteUniversePosition;
             public Matrix4x4 DecalMatrix;
             public int DecalAtlasIndex;
@@ -52,6 +53,8 @@ namespace Hecton8.Construction
         private static readonly Dictionary<int, bool> _integritySocketStates = new Dictionary<int, bool>(64);
         // COLD ALLOC: Dictionary<Int32,IntegrityDecalState>[64] - degraded-module deferred decal cache keyed by runtime module id - owner: BaseDegradationSystem
         private static readonly Dictionary<int, IntegrityDecalState> _integrityDecalStates = new Dictionary<int, IntegrityDecalState>(64);
+        // COLD ALLOC: Dictionary<Int32,Boolean>[64] - rupture-state mirror keyed by runtime module id for fleet arbitration - owner: BaseDegradationSystem
+        private static readonly Dictionary<int, bool> _moduleRuptureStates = new Dictionary<int, bool>(64);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -63,10 +66,20 @@ namespace Hecton8.Construction
             _globalCrackDecalAtlasIndices.Clear();
             _integritySocketStates.Clear();
             _integrityDecalStates.Clear();
+            _moduleRuptureStates.Clear();
         }
 
         internal static IReadOnlyList<Matrix4x4> GlobalCrackDecalMatrices => _globalCrackDecalMatrices;
         internal static IReadOnlyList<int> GlobalCrackDecalAtlasIndices => _globalCrackDecalAtlasIndices;
+
+        internal static bool IsModuleRuptured(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return false;
+
+            int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
+            return _moduleRuptureStates.TryGetValue(moduleRuntimeId, out bool isRuptured) && isRuptured;
+        }
 
         internal static void BeginRuptureSync()
         {
@@ -79,11 +92,15 @@ namespace Hecton8.Construction
 
             bool isRuptured = (flags & LogisticsNodeFlags.Ruptured) != 0;
             bool hadPreviousState = _ruptureStates.TryGetValue(nodeId, out RuptureNodeState previousState);
+            int moduleRuntimeId = ResolveModuleRuntimeId(moduleObject);
 
             if (!isRuptured)
             {
                 if (hadPreviousState && previousState.IsRuptured)
                     ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
+
+                if (moduleRuntimeId != 0)
+                    _moduleRuptureStates[moduleRuntimeId] = false;
 
                 _ruptureStates.Remove(nodeId);
                 return;
@@ -95,10 +112,14 @@ namespace Hecton8.Construction
             _ruptureStates[nodeId] = new RuptureNodeState
             {
                 IsRuptured = true,
+                ModuleRuntimeId = moduleRuntimeId,
                 AbsoluteUniversePosition = absoluteUniversePosition,
                 DecalMatrix = decalMatrix,
                 DecalAtlasIndex = StructuralIntegrityProfile.DefaultRuptureDecalAtlasIndex
             };
+
+            if (moduleRuntimeId != 0)
+                _moduleRuptureStates[moduleRuntimeId] = true;
 
             ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, true);
 
@@ -120,6 +141,9 @@ namespace Hecton8.Construction
             for (int i = 0; i < staleCount; i++)
             {
                 uint nodeId = _staleNodeIds[i];
+                if (_ruptureStates.TryGetValue(nodeId, out RuptureNodeState staleState) && staleState.ModuleRuntimeId != 0)
+                    _moduleRuptureStates[staleState.ModuleRuntimeId] = false;
+
                 ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
                 _ruptureStates.Remove(nodeId);
             }
@@ -297,6 +321,14 @@ namespace Hecton8.Construction
                 return null;
 
             return lod0Transform.Find(childName);
+        }
+
+        private static int ResolveModuleRuntimeId(GameObject moduleObject)
+        {
+            if (moduleObject == null || !moduleObject.TryGetComponent(out BaseModule baseModule))
+                return 0;
+
+            return unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
         }
     }
 }

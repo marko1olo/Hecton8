@@ -1009,6 +1009,32 @@ namespace Hecton8.Atmosphere
             return _cachedTransform != null ? _cachedTransform.TransformPoint(localCentroid) : localCentroid;
         }
 
+        internal float ResolveRoomFloodFillNormalized(int roomIndex)
+        {
+            if (fluidDynamics == null || roomIndex < 0 || roomIndex >= RoomCount)
+                return 0f;
+
+            return math.saturate(fluidDynamics.GetCompartmentFillRatio(roomIndex));
+        }
+
+        internal bool TryResolveRoomFloodFillNormalized(Vector3 worldPosition, out int roomIndex, out float floodFillNormalized)
+        {
+            roomIndex = ResolveNearestRoomIndex(worldPosition);
+            if (roomIndex < 0 || roomIndex >= RoomCount)
+            {
+                floodFillNormalized = 0f;
+                return false;
+            }
+
+            floodFillNormalized = ResolveRoomFloodFillNormalized(roomIndex);
+            return true;
+        }
+
+        internal float ResolveExternalDepthMeters()
+        {
+            return fluidDynamics != null ? math.max(0f, fluidDynamics.ExternalDepthMeters) : 0f;
+        }
+
         public void ApplyInteractionSignal(in Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
         {
             InteractionEffectType effectType = (InteractionEffectType)signal.EffectType;
@@ -1401,6 +1427,8 @@ namespace Hecton8.Atmosphere
         private void TryRegister()
         {
             if (_registered)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);

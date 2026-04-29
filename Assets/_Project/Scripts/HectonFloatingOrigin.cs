@@ -78,6 +78,7 @@ namespace Hecton8.Core
         private static OriginShiftEventData _lastShiftEvent;
 
         private readonly List<GameObject> _sceneRootObjects = new List<GameObject>(256);
+        private readonly List<Scene> _pendingLoadedScenes = new List<Scene>(8);
         private readonly List<Transform> _shiftTargetTransforms = new List<Transform>(256);
 
         private TransformAccessArray _shiftTargetAccessArray;
@@ -328,6 +329,9 @@ namespace Hecton8.Core
 
             if (_isShiftInProgress)
                 return;
+
+            if (_shiftTargetsDirty || _pendingLoadedScenes.Count > 0)
+                ProcessPendingSceneSynchronization();
 
             if (_driftCheckScheduled && _driftCheckHandle.IsCompleted && ConsumeCompletedDriftCheck())
                 return;
@@ -758,8 +762,7 @@ namespace Hecton8.Core
         {
             if (_isRegistered)
                 return;
-
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
@@ -800,12 +803,14 @@ namespace Hecton8.Core
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             _shiftTargetsDirty = true;
+            QueuePendingLoadedScene(scene);
             TryPrepareShiftTargets();
         }
 
         private void HandleSceneUnloaded(Scene scene)
         {
             _shiftTargetsDirty = true;
+            RemovePendingLoadedScene(scene);
             TryPrepareShiftTargets();
         }
 
@@ -821,6 +826,71 @@ namespace Hecton8.Core
                 return;
 
             RebuildShiftTargetCache();
+        }
+
+        private void ProcessPendingSceneSynchronization()
+        {
+            if (_pendingLoadedScenes.Count > 0)
+            {
+                Vector3 committedTotalOffset = TotalOffset;
+                for (int i = 0; i < _pendingLoadedScenes.Count; i++)
+                {
+                    Scene loadedScene = _pendingLoadedScenes[i];
+                    if (!loadedScene.IsValid() || !loadedScene.isLoaded)
+                        continue;
+
+                    ApplyCommittedOffsetToLoadedScene(loadedScene, committedTotalOffset);
+                }
+
+                _pendingLoadedScenes.Clear();
+            }
+
+            TryPrepareShiftTargets();
+        }
+
+        private void QueuePendingLoadedScene(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+            for (int i = 0; i < _pendingLoadedScenes.Count; i++)
+            {
+                if (_pendingLoadedScenes[i].handle == scene.handle)
+                    return;
+            }
+
+            _pendingLoadedScenes.Add(scene);
+        }
+
+        private void RemovePendingLoadedScene(Scene scene)
+        {
+            if (!scene.IsValid())
+                return;
+
+            for (int i = _pendingLoadedScenes.Count - 1; i >= 0; i--)
+            {
+                if (_pendingLoadedScenes[i].handle != scene.handle)
+                    continue;
+
+                _pendingLoadedScenes.RemoveAt(i);
+            }
+        }
+
+        private void ApplyCommittedOffsetToLoadedScene(Scene scene, Vector3 committedTotalOffset)
+        {
+            if (committedTotalOffset.sqrMagnitude <= 0.0001f)
+                return;
+
+            _sceneRootObjects.Clear();
+            scene.GetRootGameObjects(_sceneRootObjects);
+            for (int i = 0; i < _sceneRootObjects.Count; i++)
+            {
+                GameObject rootObject = _sceneRootObjects[i];
+                if (rootObject == null)
+                    continue;
+
+                rootObject.transform.position -= committedTotalOffset;
+            }
         }
 
 #if UNITY_EDITOR

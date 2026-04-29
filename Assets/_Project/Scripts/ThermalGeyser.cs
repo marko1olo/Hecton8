@@ -242,6 +242,9 @@ namespace Hecton8.Caves
 
         private void TryRegister()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

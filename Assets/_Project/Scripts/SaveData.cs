@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Narrative;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -44,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 45; // v45: procedural geology cave entrance persistence
+        public const int CurrentVersion = 46; // v46: fauna hibernation delta persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -474,6 +475,28 @@ namespace Hecton8.SaveSystem
     }
 
     [Serializable]
+    public struct HibernatedFaunaStateDTO
+    {
+        public int speciesId;
+        public int biomeIndex;
+        public int creatureTypeIndex;
+        public float health;
+        public AbsoluteUniversePositionBlit128 position;
+        public float rotationX;
+        public float rotationY;
+        public float rotationZ;
+        public float rotationW;
+        public float linearVelocityX;
+        public float linearVelocityY;
+        public float linearVelocityZ;
+        public float angularVelocityX;
+        public float angularVelocityY;
+        public float angularVelocityZ;
+        public uint uniqueInstanceUid;
+        public bool isLargeThreat;
+    }
+
+    [Serializable]
     public struct ProceduralGeologySeamStateDTO
     {
         public long runtimeKey;
@@ -514,6 +537,8 @@ namespace Hecton8.SaveSystem
         public long[] suppressedPlacementKeys;
         public int faunaStateCount;
         public ProceduralFaunaStateDTO[] faunaStates;
+        public int hibernatedFaunaCount;
+        public HibernatedFaunaStateDTO[] hibernatedFaunaStates;
         public int geologySeamStateCount;
         public ProceduralGeologySeamStateDTO[] geologySeamStates;
         public int geologyCaveEntranceCount;
@@ -521,6 +546,7 @@ namespace Hecton8.SaveSystem
 
         public const int MaxSuppressedPlacements = 8192;
         public const int MaxFaunaStates = 4096;
+        public const int MaxHibernatedFaunaStates = 512;
         public const int MaxGeologySeamStates = 512;
         public const int MaxGeologyCaveEntrances = 512;
 
@@ -531,6 +557,9 @@ namespace Hecton8.SaveSystem
 
             if (faunaStates == null || faunaStates.Length < MaxFaunaStates)
                 faunaStates = new ProceduralFaunaStateDTO[MaxFaunaStates];
+
+            if (hibernatedFaunaStates == null || hibernatedFaunaStates.Length < MaxHibernatedFaunaStates)
+                hibernatedFaunaStates = new HibernatedFaunaStateDTO[MaxHibernatedFaunaStates];
 
             if (geologySeamStates == null || geologySeamStates.Length < MaxGeologySeamStates)
                 geologySeamStates = new ProceduralGeologySeamStateDTO[MaxGeologySeamStates];

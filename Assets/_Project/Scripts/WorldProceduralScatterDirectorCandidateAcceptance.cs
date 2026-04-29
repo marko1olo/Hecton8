@@ -15,12 +15,14 @@ namespace Hecton8.World
             public ScatterPlacementSpatialMetadata(
                 float3 position,
                 float effectiveSpacing,
+                int familyHash,
                 int scatterLayer,
                 int proceduralDomain,
                 byte floraBudgetClass)
             {
                 Position = position;
                 EffectiveSpacing = effectiveSpacing;
+                FamilyHash = familyHash;
                 ScatterLayer = scatterLayer;
                 ProceduralDomain = proceduralDomain;
                 FloraBudgetClass = floraBudgetClass;
@@ -28,6 +30,7 @@ namespace Hecton8.World
 
             public readonly float3 Position;
             public readonly float EffectiveSpacing;
+            public readonly int FamilyHash;
             public readonly int ScatterLayer;
             public readonly int ProceduralDomain;
             public readonly byte FloraBudgetClass;
@@ -40,6 +43,7 @@ namespace Hecton8.World
             public int CellX;
             public int CellZ;
             public int HeightLayerIndex;
+            public int FamilyHash;
             public int ScatterLayer;
             public int ProceduralDomain;
             public int ClusterAccentRole;
@@ -230,6 +234,7 @@ namespace Hecton8.World
             public int CandidateCellX;
             public int CandidateCellZ;
             public int SearchRadiusCells;
+            public int CandidateFamilyHash;
             public int CandidateLayer;
             public int CandidateDomain;
             public float FloraDensityClampRadiusSq;
@@ -243,7 +248,7 @@ namespace Hecton8.World
             {
                 if (FloraDensityClampEnabled != 0 &&
                     CandidateFloraBudgetClass != (byte)FloraBudgetClass.None &&
-                    ExceedsFloraDensityBudget(
+                    WorldProceduralScatterDirector.ExceedsFloraDensityBudget(
                         CandidatePosition,
                         CandidateCellX,
                         CandidateCellZ,
@@ -291,6 +296,7 @@ namespace Hecton8.World
                             ScatterPlacementSpatialMetadata existing = SpatialMetadata[metadataIndex];
                             float minDistance = ResolveRequiredDistanceNative(
                                 CandidateSpacing,
+                                CandidateFamilyHash,
                                 CandidateLayer,
                                 CandidateDomain,
                                 in existing);
@@ -621,6 +627,7 @@ namespace Hecton8.World
                 PendingSpatialMetadata.AddNoResize(new ScatterPlacementSpatialMetadata(
                     candidate.Position,
                     candidate.EffectiveSpacing,
+                    candidate.FamilyHash,
                     candidate.ScatterLayer,
                     candidate.ProceduralDomain,
                     candidate.FloraBudgetClass));
@@ -1075,6 +1082,7 @@ namespace Hecton8.World
                 PendingSpatialMetadata.AddNoResize(new ScatterPlacementSpatialMetadata(
                     candidate.Position,
                     candidate.EffectiveSpacing,
+                    candidate.FamilyHash,
                     candidate.ScatterLayer,
                     candidate.ProceduralDomain,
                     candidate.FloraBudgetClass));
@@ -1133,11 +1141,15 @@ namespace Hecton8.World
 
         private static float ResolveRequiredDistanceNative(
             float candidateSpacing,
+            int candidateFamilyHash,
             int candidateLayer,
             int candidateDomain,
             in ScatterPlacementSpatialMetadata existing)
         {
             float maxSpacing = math.max(candidateSpacing, existing.EffectiveSpacing);
+            if (candidateFamilyHash != 0 && candidateFamilyHash == existing.FamilyHash)
+                return maxSpacing;
+
             if (candidateLayer == existing.ScatterLayer)
             {
                 switch ((WorldPrefabFamilyProfile.ScatterLayer)candidateLayer)
@@ -1179,6 +1191,7 @@ namespace Hecton8.World
         {
             return ResolveRequiredDistanceNative(
                 candidate.EffectiveSpacing,
+                candidate.FamilyHash,
                 candidate.ScatterLayer,
                 candidate.ProceduralDomain,
                 in existing);
@@ -1521,6 +1534,7 @@ namespace Hecton8.World
             input.CellX = placement.CellX;
             input.CellZ = placement.CellZ;
             input.HeightLayerIndex = placement.HeightLayerIndex;
+            input.FamilyHash = family.FamilyHash;
             input.ScatterLayer = (int)family.scatterLayer;
             input.ProceduralDomain = (int)family.proceduralDomain;
             input.ClusterAccentRole = (int)GetClusterAccentRole(family);
@@ -1659,6 +1673,7 @@ namespace Hecton8.World
                 CandidateCellX = placement.CellX,
                 CandidateCellZ = placement.CellZ,
                 SearchRadiusCells = searchRadiusCells,
+                CandidateFamilyHash = family != null ? family.FamilyHash : 0,
                 CandidateLayer = family != null ? (int)family.scatterLayer : 0,
                 CandidateDomain = family != null ? (int)family.proceduralDomain : 0,
                 FloraDensityClampRadiusSq = floraDensityClampRadiusMeters * floraDensityClampRadiusMeters,

@@ -119,6 +119,8 @@ When prerequisites span multiple words, the runtime falls back to the flattened 
 
 `ResourceScarcityDirector` does not allocate or append arrays during play. It computes a deterministic scarcity quest hash per essential resource and calls the procedural registration seam on `QuestManager`, which routes into `QuestStateManager.TryUpsertProceduralDirective(...)`.
 
+If no authored scarcity row covers Titanium Scrap, `ResourceScarcityDirector` seeds one runtime fallback definition for `Data_TitaniumScrap` so the structural-survival directive lane still exists in production scenes that missed authoring.
+
 Runtime shape:
 - quest slot addresses are reserved up front in the `Quest` band
 - completion node payload is the harvested resource hash

@@ -95,6 +95,7 @@ namespace Hecton8.Core
         private JobHandle _jobHandle;
         private bool      _jobScheduled;
         private bool      _initialized;
+        private bool      _registeredToDispatcher;
 
         // ── Cached squared radii (avoid sqrt in Job) ──
         private float _activateRadiusSq;
@@ -331,7 +332,11 @@ namespace Hecton8.Core
                 deactivateRadius = activateRadius + 5f;
             }
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_registeredToDispatcher)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToDispatcher = true;
+            }
         }
 
         private void OnDisable()
@@ -339,7 +344,11 @@ namespace Hecton8.Core
             // ── Завершаем текущую Job, если она в полёте ──
             CompleteCurrentJob();
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            if (_registeredToDispatcher)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToDispatcher = false;
+            }
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
 #endif
@@ -627,6 +636,11 @@ namespace Hecton8.Core
         private void PrepareForReinitialize()
         {
             CompleteCurrentJob();
+            if (_registeredToDispatcher)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToDispatcher = false;
+            }
             DespawnAllColliders();
             Cleanup();
 #if UNITY_EDITOR

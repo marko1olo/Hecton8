@@ -150,7 +150,10 @@ namespace Hecton8.Core
             EnsureInitialized();
             ResetSlowTickState();
 
-            if (_serviceRegistered && Application.isPlaying && !_registeredToDispatcher)
+            if (_serviceRegistered &&
+                Application.isPlaying &&
+                GlobalRegistry.Dispatcher != null &&
+                !_registeredToDispatcher)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
@@ -210,7 +213,10 @@ namespace Hecton8.Core
                 _serviceRegistered = true;
             }
 
-            if (isActiveAndEnabled && !_registeredToDispatcher && Application.isPlaying)
+            if (isActiveAndEnabled &&
+                !_registeredToDispatcher &&
+                Application.isPlaying &&
+                GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);

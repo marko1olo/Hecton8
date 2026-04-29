@@ -54,6 +54,30 @@ namespace Hecton8.Building
             RefreshBuildState();
         }
 
+        /// <summary>
+        /// Cold-path runtime setup for generated ghost proxies.
+        /// </summary>
+        public void ConfigureRuntimeProxy(
+            Material runtimeValidMaterial,
+            Material runtimeInvalidMaterial,
+            Vector3 runtimeHalfExtents,
+            Vector3 runtimeCenterOffset,
+            LayerMask runtimeBlockingMask,
+            float runtimeShrink = 0.02f)
+        {
+            validMaterial = runtimeValidMaterial;
+            invalidMaterial = runtimeInvalidMaterial;
+            checkHalfExtents = runtimeHalfExtents;
+            checkCenterOffset = runtimeCenterOffset;
+            blockingMask = runtimeBlockingMask;
+            checkShrink = runtimeShrink;
+
+            _renderers = GetComponentsInChildren<Renderer>(true);
+            _ownColliders = GetComponentsInChildren<Collider>(true);
+            RefreshBuildState();
+            ApplyMaterial(_canBuild ? validMaterial : invalidMaterial);
+        }
+
         private void Awake()
         {
             _renderers = GetComponentsInChildren<Renderer>(true);

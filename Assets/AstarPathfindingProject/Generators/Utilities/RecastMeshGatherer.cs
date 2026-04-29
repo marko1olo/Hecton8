@@ -44,7 +44,7 @@ namespace Pathfinding.Recast {
 		public void CollectSceneMeshes (List<RasterizationMesh> meshes) {
 			if (tagMask.Count > 0 || mask != 0) {
 				// This is unfortunately the fastest way to find all mesh filters.. and it is not particularly fast.
-				var meshFilters = GameObject.FindObjectsOfType<MeshFilter>();
+				var meshFilters = GameObject.FindObjectsByType<MeshFilter>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 				var filteredMeshes = FilterMeshes(meshFilters, tagMask, mask);
 
 				var cachedVertices = new Dictionary<Mesh, Vector3[]>();

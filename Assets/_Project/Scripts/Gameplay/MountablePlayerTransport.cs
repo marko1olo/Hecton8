@@ -3,6 +3,7 @@ using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.World;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -27,6 +28,8 @@ namespace Hecton8.Gameplay
         private const string DefaultDismountText = "Dismount";
         private const float InertialGhostBlend = 0.15f;
         private const float MountedDriveSkinWidth = 0.08f;
+        private const int EntanglementDensityProbeCount = 4;
+        private const int MaxEntanglingFloraCount = 4;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -60,6 +63,25 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Maximum world-up slope angle the mounted kinematic drive may climb before the sweep result is treated like a wall and flattened.")]
         [SerializeField, Range(5f, 89f)] private float mountedGroundSlopeLimitDegrees = 48f;
+
+        [Header("-- Macro-Flora Entanglement ------")]
+        [Tooltip("Minimum vehicle speed required before dense kelp or sargassum can jam the propeller.")]
+        [SerializeField, Min(0.1f)] private float entanglementMinimumSpeed = 4.5f;
+
+        [Tooltip("Look-ahead distance sampled along the vehicle velocity vector when evaluating macro-flora density.")]
+        [SerializeField, Min(0.5f)] private float entanglementProbeLengthMeters = 5f;
+
+        [Tooltip("Density-speed threshold used to trigger a propeller jam. Score = average density * speed.")]
+        [SerializeField, Min(0.1f)] private float entanglementThreshold = 2.4f;
+
+        [Tooltip("Search radius used to capture the actual kelp or sargassum stems currently wrapping the vehicle.")]
+        [SerializeField, Min(0.5f)] private float entanglementCaptureRadius = 4f;
+
+        [Tooltip("Current-driven acceleration scale applied while the vehicle is tethered to macro-flora.")]
+        [SerializeField, Min(0f)] private float entanglementCurrentAcceleration = 0.6f;
+
+        [Tooltip("Additional damping applied while the vehicle is swinging on an entanglement tether.")]
+        [SerializeField, Min(0f)] private float entanglementCurrentDamping = 0.9f;
 
         [Header("-- Audio ----------------------------")]
         [Tooltip("One-shot played when the player mounts this transport.")]
@@ -124,18 +146,26 @@ namespace Hecton8.Gameplay
         private float _bailoutDriftTimer;
         private bool _hasCachedBodyDamping;
         private bool _cachedBodyWasKinematic = true;
+        private bool _dockControlLocked;
         private bool _platformMotionInitialized;
         private Vector3 _platformLinearVelocity;
         private Vector3 _platformAngularVelocity;
         private Vector3 _previousPlatformPosition;
         private Quaternion _previousPlatformRotation = Quaternion.identity;
         private float _presentationTransportBoost01;
+        private float _nextMountedImpactFeedbackTime;
         private int _platformVelocityGhostWriteIndex;
         private int _platformVelocityGhostSampleCount;
         // COLD ALLOC: List<IDamageSignalReceiver>[1] â€” mounted transport damage listeners (player trauma dispatcher) â€” owner: MountablePlayerTransport
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
         // COLD ALLOC: Vector3[4] Ã¢â‚¬â€ inertial ghost history for presentation-only transport boost carry Ã¢â‚¬â€ owner: MountablePlayerTransport
         private readonly Vector3[] _platformVelocityGhostHistory = new Vector3[4];
+
+        // COLD ALLOC: UInt32[4] - tracked kelp or sargassum instance uids holding the propeller lock - owner: MountablePlayerTransport
+        private readonly uint[] _entanglementInstanceUids = new uint[MaxEntanglingFloraCount];
+        // COLD ALLOC: Vector3[4] - tracked kelp or sargassum anchor positions paired with entanglement instance ids - owner: MountablePlayerTransport
+        private readonly Vector3[] _entanglementInstancePositions = new Vector3[MaxEntanglingFloraCount];
+        private int _entanglementTrackedCount;
 
         /// <summary>True while this external transport is actively mounted by the rider.</summary>
         public bool IsMounted => _mounted;
@@ -269,6 +299,15 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (_dockControlLocked)
+            {
+                _transportActive = false;
+                _currentThrottle = 0f;
+                _driveMoveInput = Vector2.zero;
+                _driveVerticalInput = 0f;
+                return;
+            }
+
             bool underwaterDriveAllowed = !preset.UnderwaterOnly ||
                 (_riderMovement != null && _riderMovement.CurrentLocomotionMode == PlayerLocomotionMode.UnderwaterSwim);
             if (!underwaterDriveAllowed)
@@ -286,6 +325,13 @@ namespace Hecton8.Gameplay
             float verticalInput = inputState.VerticalDelta;
             _driveMoveInput = moveInput;
             _driveVerticalInput = verticalInput;
+            if (_vehicleMotor != null && _vehicleMotor.IsEntangled)
+            {
+                _currentThrottle = 0f;
+                _transportActive = true;
+                return;
+            }
+
             float throttle = ResolveThrottle(moveInput, verticalInput);
             float configuredSuitEnergyDrain = ResolveConfiguredSuitEnergyDrainPerSecond();
             if (throttle > 0f && _riderSurvival != null && configuredSuitEnergyDrain > 0f)
@@ -342,6 +388,18 @@ namespace Hecton8.Gameplay
         {
             if (_mounted && _riderTransform != null)
             {
+                if (_dockControlLocked)
+                {
+                    if (_vehicleMotor != null)
+                    {
+                        _vehicleMotor.TryConsumeScheduledCapsuleSweep(out _, out _, out _);
+                        _vehicleMotor.ResetRuntimeState();
+                    }
+
+                    UpdatePlatformMotionCache(fixedDeltaTime);
+                    return;
+                }
+
                 ApplyMountedVehicleKinematics(fixedDeltaTime);
                 UpdatePlatformMotionCache(fixedDeltaTime);
                 return;
@@ -542,6 +600,7 @@ namespace Hecton8.Gameplay
             RefreshMountedInputSubscription();
             BindPresetToFeelContract();
             ResolveVehicleDriveReferences();
+            ClearMacroFloraEntanglement();
             PrepareMountedKinematicBody();
             AlignTransportToRider(0f);
             ResetPlatformMotionCache();
@@ -570,6 +629,7 @@ namespace Hecton8.Gameplay
 
         private void ForceReleaseMountedRider()
         {
+            ClearMacroFloraEntanglement();
             if (!_mounted)
             {
                 UnsubscribeMountedInput();
@@ -661,7 +721,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _vehicleMotor.TryConsumeScheduledCapsuleSweep(out _, out _, out _);
+            if (_vehicleMotor.TryConsumeScheduledCapsuleSweep(out bool wasBlocked, out _, out _))
+            {
+                if (wasBlocked)
+                    HandleMountedSweepImpact();
+            }
+
             if (_vehicleMotor.HasPendingSweep)
                 return;
 
@@ -669,6 +734,9 @@ namespace Hecton8.Gameplay
             float safeMass = math.max(1f, _transportBody.mass);
             float thrustAcceleration = (preset != null ? math.max(0f, preset.PropulsionForce) : 0f) / safeMass;
             float maxSpeed = math.max(1f, ResolveMountedDriveMaxSpeed(throttleOutput));
+            ResolveVehicleUpgradeModule();
+            if (_vehicleUpgradeModule != null)
+                thrustAcceleration *= math.max(1f, _vehicleUpgradeModule.ThrustAccelerationMultiplier);
             float hydrodynamicSubmersionFactor = _riderMovement != null
                 ? math.saturate(_riderMovement.WaterImmersionRatio)
                 : 0f;
@@ -676,12 +744,26 @@ namespace Hecton8.Gameplay
                 ? math.max(0f, _riderSurvival.Depth)
                 : (_riderMovement != null ? math.max(0f, _riderMovement.CurrentDepth) : 0f);
 
+            _vehicleMotor.ConfigureHydrodynamicSubmersion(hydrodynamicSubmersionFactor);
+            _vehicleMotor.ConfigureHydrodynamicDepth(hydrodynamicDepthMeters);
+            if (TryAdvanceMacroFloraEntanglement(fixedDeltaTime))
+            {
+                int entanglementSelfColliderInstanceId = _interactionCollider != null
+                    ? unchecked((int)EntityId.ToULong(_interactionCollider.GetEntityId()))
+                    : 0;
+                int entanglementSweepMask = mountedSweepMask.value != 0 ? mountedSweepMask.value : UnityEngine.Physics.DefaultRaycastLayers;
+                _vehicleMotor.ScheduleCapsuleSweepBatch(
+                    entanglementSweepMask,
+                    MountedDriveSkinWidth,
+                    entanglementSelfColliderInstanceId,
+                    fixedDeltaTime);
+                return;
+            }
+
             float forwardInput = math.clamp(_driveMoveInput.y, -1f, 1f) * throttleOutput;
             float yawInput = math.clamp(_driveMoveInput.x, -1f, 1f);
             float pitchInput = math.clamp(_driveVerticalInput, -1f, 1f);
 
-            _vehicleMotor.ConfigureHydrodynamicSubmersion(hydrodynamicSubmersionFactor);
-            _vehicleMotor.ConfigureHydrodynamicDepth(hydrodynamicDepthMeters);
             _vehicleMotor.IntegrateDrive(
                 forwardInput,
                 yawInput,
@@ -703,6 +785,110 @@ namespace Hecton8.Gameplay
                 MountedDriveSkinWidth,
                 selfColliderInstanceId,
                 fixedDeltaTime);
+        }
+
+        private bool TryAdvanceMacroFloraEntanglement(float fixedDeltaTime)
+        {
+            if (_vehicleMotor == null || _transportBody == null)
+                return false;
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (_vehicleMotor.IsEntangled)
+            {
+                DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+                if (organicManager != null && organicManager.AreTrackedFloraDestroyed(_entanglementInstanceUids, _entanglementTrackedCount))
+                {
+                    ClearMacroFloraEntanglement();
+                    return false;
+                }
+
+                Vector3 flowVelocity = Vector3.zero;
+                if (vegetationBridge != null)
+                    vegetationBridge.TrySampleAbyssalFlow(_transportBody.position, out flowVelocity);
+
+                _currentThrottle = 0f;
+                _transportActive = true;
+                _vehicleMotor.AdvanceEntanglement(flowVelocity, entanglementCurrentAcceleration, entanglementCurrentDamping, fixedDeltaTime);
+                return true;
+            }
+
+            if (vegetationBridge == null)
+                return false;
+
+            Vector3 velocity = _vehicleMotor.LinearVelocity;
+            float speed = velocity.magnitude;
+            if (speed < entanglementMinimumSpeed)
+                return false;
+
+            Vector3 direction = velocity / math.max(speed, 0.0001f);
+            float density = SampleMacroFloraDensityAlongVelocity(vegetationBridge, _transportBody.position, direction, speed, fixedDeltaTime);
+            float entanglementScore = density * speed;
+            if (entanglementScore < entanglementThreshold)
+                return false;
+
+            DestructibleOrganicManager destructibleOrganicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (destructibleOrganicManager == null)
+                return false;
+
+            Vector3 sampleCenter = _transportBody.position + direction * math.max(1f, entanglementProbeLengthMeters * 0.5f);
+            int trackedCount = destructibleOrganicManager.CollectNearestConsumableFlora(
+                sampleCenter,
+                entanglementCaptureRadius,
+                _entanglementInstanceUids,
+                _entanglementInstancePositions);
+            if (trackedCount <= 0)
+                return false;
+
+            _entanglementTrackedCount = trackedCount;
+            Vector3 anchorPosition = Vector3.zero;
+            for (int i = 0; i < trackedCount; i++)
+                anchorPosition += _entanglementInstancePositions[i];
+
+            anchorPosition /= trackedCount;
+            float tetherLength = Vector3.Distance(_transportBody.position, anchorPosition);
+            _vehicleMotor.BeginEntanglement(anchorPosition, tetherLength);
+
+            Vector3 anchorFlowVelocity = Vector3.zero;
+            vegetationBridge.TrySampleAbyssalFlow(anchorPosition, out anchorFlowVelocity);
+            _currentThrottle = 0f;
+            _transportActive = true;
+            _vehicleMotor.AdvanceEntanglement(anchorFlowVelocity, entanglementCurrentAcceleration, entanglementCurrentDamping, fixedDeltaTime);
+            return true;
+        }
+
+        private float SampleMacroFloraDensityAlongVelocity(
+            HectonMapMagicVegetationBridge vegetationBridge,
+            Vector3 origin,
+            Vector3 direction,
+            float speed,
+            float fixedDeltaTime)
+        {
+            if (vegetationBridge == null || direction.sqrMagnitude <= 0.0001f)
+                return 0f;
+
+            float probeDistance = math.max(1f, math.max(entanglementProbeLengthMeters, speed * math.max(fixedDeltaTime, 0.0001f)));
+            float accumulatedDensity = 0f;
+            for (int i = 0; i < EntanglementDensityProbeCount; i++)
+            {
+                float sampleT = (i + 1f) / EntanglementDensityProbeCount;
+                Vector3 samplePosition = origin + direction * (probeDistance * sampleT);
+                accumulatedDensity += vegetationBridge.SampleMacroFloraDensityImmediate(samplePosition);
+            }
+
+            return accumulatedDensity / EntanglementDensityProbeCount;
+        }
+
+        private void ClearMacroFloraEntanglement()
+        {
+            if (_vehicleMotor != null && _vehicleMotor.IsEntangled)
+                _vehicleMotor.ClearEntanglement();
+
+            _entanglementTrackedCount = 0;
+            for (int i = 0; i < _entanglementInstanceUids.Length; i++)
+            {
+                _entanglementInstanceUids[i] = 0u;
+                _entanglementInstancePositions[i] = Vector3.zero;
+            }
         }
 
         private Quaternion ResolveDesiredRiderRotation()
@@ -889,6 +1075,44 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out _vehicleUpgradeModule);
         }
 
+        internal void BeginDockControlLock()
+        {
+            _dockControlLocked = true;
+            _transportActive = false;
+            _currentThrottle = 0f;
+            _driveMoveInput = Vector2.zero;
+            _driveVerticalInput = 0f;
+            if (_vehicleMotor != null)
+                _vehicleMotor.ResetRuntimeState();
+        }
+
+        internal void EndDockControlLock()
+        {
+            _dockControlLocked = false;
+            _currentThrottle = 0f;
+            _driveMoveInput = Vector2.zero;
+            _driveVerticalInput = 0f;
+            if (_vehicleMotor != null)
+                _vehicleMotor.ResetRuntimeState();
+        }
+
+        private void HandleMountedSweepImpact()
+        {
+            if (_transportBody == null || _vehicleMotor == null)
+                return;
+
+            float impactSpeed = _vehicleMotor.LastBlockingImpactSpeedMetersPerSecond;
+            float threshold = preset != null ? Mathf.Max(0f, preset.CollisionDamageStartSpeed) : 0f;
+            if (impactSpeed <= threshold || Time.time < _nextMountedImpactFeedbackTime)
+                return;
+
+            _nextMountedImpactFeedbackTime = Time.time + 0.12f;
+            Vector3 impactPoint = _vehicleMotor.LastBlockingImpactPoint;
+            Vector3 impactNormal = _vehicleMotor.LastBlockingImpactNormal;
+            GlobalPhysicsStateManager.QueueKinematicImpact(_transportBody, impactPoint, impactNormal, impactSpeed);
+            ApplyTransportCollisionImpact(impactSpeed, impactPoint, impactNormal);
+        }
+
         private void PrepareMountedKinematicBody()
         {
             if (_transportBody == null)
@@ -1022,6 +1246,8 @@ namespace Hecton8.Gameplay
         {
             if (!_mounted)
                 return;
+
+            ClearMacroFloraEntanglement();
 
             Vector3 exitPosition = _riderBody != null
                 ? _riderBody.position
@@ -1246,6 +1472,10 @@ namespace Hecton8.Gameplay
         {
             float speedMultiplier = preset != null ? math.max(1f, preset.SpeedMultiplier) : 1f;
             float throttleSpeed = math.lerp(1.5f, speedMultiplier * 6f, math.saturate(throttleOutput));
+            ResolveVehicleUpgradeModule();
+            if (_vehicleUpgradeModule != null)
+                throttleSpeed *= math.max(1f, _vehicleUpgradeModule.MaxSpeedMultiplier);
+
             return math.max(1.5f, throttleSpeed);
         }
 

@@ -16,6 +16,7 @@ namespace Hecton8.Crafting
     internal static class CraftingSystem
     {
         public const int MaxRecipeIngredientCount = 32;
+        public const int MaxDeconstructionOutputCount = MaxRecipeIngredientCount;
 
         [BurstCompile]
         private struct EvaluateRecipeAvailabilityJob : IJob
@@ -43,6 +44,44 @@ namespace Hecton8.Crafting
                 }
 
                 Result[0] = canCraft;
+            }
+        }
+
+        [BurstCompile]
+        private struct BuildDeconstructionYieldJob : IJob
+        {
+            [ReadOnly] public NativeArray<int2> RecipeCosts;
+            public NativeArray<int2> OutputYields;
+            public NativeArray<int> OutputCount;
+            public int RecipeCostCount;
+            public int ResultQuantity;
+            public int ReclaimPercent;
+
+            public void Execute()
+            {
+                int safeResultQuantity = math.max(1, ResultQuantity);
+                int resolvedCount = 0;
+
+                for (int index = 0; index < OutputYields.Length; index++)
+                    OutputYields[index] = int2.zero;
+
+                for (int index = 0; index < RecipeCostCount; index++)
+                {
+                    int2 cost = RecipeCosts[index];
+                    if (cost.x == 0 || cost.y <= 0)
+                        continue;
+
+                    int scaledYield = (cost.y * ReclaimPercent) / (safeResultQuantity * 100);
+                    if (scaledYield <= 0 && ReclaimPercent > 0)
+                        scaledYield = 1;
+
+                    if (scaledYield <= 0 || resolvedCount >= OutputYields.Length)
+                        continue;
+
+                    OutputYields[resolvedCount++] = new int2(cost.x, scaledYield);
+                }
+
+                OutputCount[0] = resolvedCount;
             }
         }
 
@@ -127,6 +166,42 @@ namespace Hecton8.Crafting
             }
 
             return recipeCostCount > 0;
+        }
+
+        public static bool TryBuildDeconstructionYieldBuffer(
+            RecipeData recipe,
+            Fabricator fabricator,
+            bool isDegraded,
+            NativeArray<int2> recipeCosts,
+            NativeArray<int2> outputYields,
+            NativeArray<int> outputCount)
+        {
+            if (recipe == null ||
+                fabricator == null ||
+                !recipeCosts.IsCreated ||
+                !outputYields.IsCreated ||
+                !outputCount.IsCreated ||
+                outputCount.Length == 0 ||
+                outputYields.Length < MaxDeconstructionOutputCount)
+            {
+                return false;
+            }
+
+            if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out int recipeCostCount))
+                return false;
+
+            outputCount[0] = 0;
+            new BuildDeconstructionYieldJob
+            {
+                RecipeCosts = recipeCosts,
+                OutputYields = outputYields,
+                OutputCount = outputCount,
+                RecipeCostCount = recipeCostCount,
+                ResultQuantity = math.max(1, recipe.resultQuantity),
+                ReclaimPercent = isDegraded ? 30 : 80
+            }.Run();
+
+            return outputCount[0] > 0;
         }
 
         private static void MergeAccessibleNetworkCounts(

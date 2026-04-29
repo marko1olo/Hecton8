@@ -70,6 +70,10 @@ Rules:
 - if mesh indices differ, group by mesh index and issue one instanced call per mesh group
 - never spawn one `Canvas`, `MeshRenderer`, or `GameObject` per tooltip, slot, or inventory item
 - keep drag previews and other pointer affordances in the existing UI owner; the 3D projection layer is presentation only
+- default inventory lift is `0.05 m` above the panel surface plus any procedural bob offset
+- per-frame hologram animation must be matrix-only via `Matrix4x4.TRS(...)`; do not mutate slot `Transform` components
+- runtime hologram materials and staging arrays must be created once by the owner and released in `OnDestroy()`
+- if the panel owner, proxy mesh bank, or authored `ProxyMeshIndex` is unavailable, fall back to the existing 2D icon path without exceptions
 
 Reference grid math:
 

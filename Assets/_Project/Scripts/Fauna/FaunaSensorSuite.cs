@@ -21,6 +21,11 @@ namespace Hecton8.AI
         private const float PlayerNoiseFreshSeconds = 0.5f;
         private const byte CaveSignedDistanceSolidThreshold = 128;
         private const float CaveVoxelDdaEpsilon = 0.000001f;
+        private const int DeferredObstacleRayCount = 3;
+        private const int ForwardObstacleRayIndex = 0;
+        private const int LeftObstacleRayIndex = 1;
+        private const int RightObstacleRayIndex = 2;
+        private const float SideObstacleRayYawDegrees = 45f;
 
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
@@ -29,6 +34,7 @@ namespace Hecton8.AI
         public float spreadAngle = 35f;
         public float avoidanceSphereRadius = 0.8f;
         public LayerMask obstacleMask;
+        public float visionConeAngle = 135f;
 
         [Header("── Detection ──────────────────────────────────")]
         public float aggroDistance = 25f;
@@ -74,6 +80,7 @@ namespace Hecton8.AI
         public LayerMask preyMask;
         [HideInInspector] public Transform currentPrey;
 
+        private FaunaBrain _ownerBrain;
         private Transform _selfTransform;
         private Transform _playerTransform;
         private Rigidbody _playerRigidbody;
@@ -88,9 +95,15 @@ namespace Hecton8.AI
         private float _lastKnownPlayerTimeSeconds;
         private float _authoredTimeSeconds;
         private float _queuedObstacleRayLength;
-        private Vector3 _queuedObstacleRayDirection;
-        private RaycastHit _deferredObstacleHit;
-        private bool _hasDeferredObstacleHit;
+        private Vector3 _queuedForwardObstacleRayDirection;
+        private Vector3 _queuedLeftObstacleRayDirection;
+        private Vector3 _queuedRightObstacleRayDirection;
+        private RaycastHit _deferredForwardObstacleHit;
+        private RaycastHit _deferredLeftObstacleHit;
+        private RaycastHit _deferredRightObstacleHit;
+        private bool _hasDeferredForwardObstacleHit;
+        private bool _hasDeferredLeftObstacleHit;
+        private bool _hasDeferredRightObstacleHit;
         private FoveatedTickRate _foveatedTickRate = FoveatedTickRate.Center60Hz;
         private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
         private float _foveatedImportanceScore = 1.0f;
@@ -108,9 +121,12 @@ namespace Hecton8.AI
         private static readonly Vector3[] _rayDirs = new Vector3[7];
         // COLD ALLOC: SpatialQueryHit[8] - fauna distractor lookup buffer over spatial grid - owner: FaunaSensorSuite
         private static readonly SpatialQueryHit[] _distractorSpatialBuffer = new SpatialQueryHit[8];
+        // COLD ALLOC: SpatialQueryHit[16] - fauna prey lookup buffer over spatial grid - owner: FaunaSensorSuite
+        private static readonly SpatialQueryHit[] _preySpatialBuffer = new SpatialQueryHit[16];
 
-        public void Init(Transform self, FaunaSpeciesProfile profile)
+        public void Init(FaunaBrain ownerBrain, Transform self, FaunaSpeciesProfile profile)
         {
+            _ownerBrain = ownerBrain;
             _selfTransform = self;
             _profile = profile;
             _lastReportedPlayerNoise = default;
@@ -121,9 +137,16 @@ namespace Hecton8.AI
             _lastKnownPlayerTimeSeconds = float.NegativeInfinity;
             _authoredTimeSeconds = 0f;
             _queuedObstacleRayLength = avoidanceRange;
-            _queuedObstacleRayDirection = self != null ? self.forward : Vector3.forward;
-            _deferredObstacleHit = default;
-            _hasDeferredObstacleHit = false;
+            Vector3 initialForward = self != null ? self.forward : Vector3.forward;
+            _queuedForwardObstacleRayDirection = initialForward;
+            _queuedLeftObstacleRayDirection = initialForward;
+            _queuedRightObstacleRayDirection = initialForward;
+            _deferredForwardObstacleHit = default;
+            _deferredLeftObstacleHit = default;
+            _deferredRightObstacleHit = default;
+            _hasDeferredForwardObstacleHit = false;
+            _hasDeferredLeftObstacleHit = false;
+            _hasDeferredRightObstacleHit = false;
             _foveatedTickRate = FoveatedTickRate.Center60Hz;
             _foveatedTickIntervalSeconds = 1.0f / 60.0f;
             _foveatedImportanceScore = 1.0f;
@@ -163,7 +186,7 @@ namespace Hecton8.AI
             {
                 isAvoidingObstacle = false;
                 _avoidanceTimeAccumulator = 0f;
-                _hasDeferredObstacleHit = false;
+                ClearDeferredObstacleHits();
                 return;
             }
 
@@ -178,7 +201,21 @@ namespace Hecton8.AI
 
         private void UpdateMajorSenses()
         {
+            bool withinVisionCone = true;
+            if (_playerTransform != null)
+            {
+                float3 toPlayer = (float3)(_playerTransform.position - _cachedSelfPosition);
+                float toPlayerLengthSq = math.lengthsq(toPlayer);
+                if (toPlayerLengthSq > 0.0001f && visionConeAngle < 359f)
+                {
+                    float3 playerDirection = toPlayer * math.rsqrt(toPlayerLengthSq);
+                    float coneDotThreshold = math.cos(math.radians(math.clamp(visionConeAngle, 10f, 360f) * 0.5f));
+                    withinVisionCone = math.dot((float3)_cachedSelfForward, playerDirection) >= coneDotThreshold;
+                }
+            }
+
             bool visualContact = _playerTransform != null &&
+                                 withinVisionCone &&
                                  distSqrToPlayer < aggroDistance * aggroDistance &&
                                  HasPlayerLineOfSightThroughCaveSdf(_cachedSelfPosition, _playerTransform.position);
             bool reportedContact = HasFreshReportedPlayerNoise();
@@ -300,17 +337,15 @@ namespace Hecton8.AI
             float length = Mathf.Clamp(avoidanceRange + velocity.magnitude * lookAheadFactor, avoidanceRange, maxRayLength);
             Vector3 forwardDirection = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : _cachedSelfForward;
             _rayDirs[0] = forwardDirection;
-            _queuedObstacleRayDirection = forwardDirection;
+            _queuedForwardObstacleRayDirection = forwardDirection;
+            _queuedLeftObstacleRayDirection = RotateObstacleDirection(forwardDirection, -SideObstacleRayYawDegrees);
+            _queuedRightObstacleRayDirection = RotateObstacleDirection(forwardDirection, SideObstacleRayYawDegrees);
             _queuedObstacleRayLength = length;
-
-            isAvoidingObstacle = _hasDeferredObstacleHit &&
-                                 _deferredObstacleHit.collider != null &&
-                                 _deferredObstacleHit.distance > 0f &&
-                                 _deferredObstacleHit.distance <= length;
+            isAvoidingObstacle = TryResolveObstacleAvoidanceDirection(forwardDirection, length, out Vector3 resolvedDirection, out _);
             if (isAvoidingObstacle)
             {
                 _avoidanceTimeAccumulator += Mathf.Max(dt, _foveatedTickIntervalSeconds);
-                bestFreeDirection = Vector3.Reflect(forwardDirection, _deferredObstacleHit.normal).normalized;
+                bestFreeDirection = resolvedDirection;
             }
             else
             {
@@ -318,7 +353,7 @@ namespace Hecton8.AI
                 bestFreeDirection = forwardDirection;
             }
 
-            _hasDeferredObstacleHit = false;
+            ClearDeferredObstacleHits();
         }
 
         private void UpdateDistractorDetection()
@@ -336,10 +371,13 @@ namespace Hecton8.AI
         private void UpdateScavengeTarget()
         {
             currentScavengeTarget = null;
-            if (_profile == null || !_profile.isScavenger) return;
+            if (_profile == null)
+                return;
 
-            // 1. Check for player tool (priority)
-            if (_playerToolManager != null && _playerToolManager.CurrentTool != null)
+            // 1. Dedicated scavengers still prioritize exposed player tools.
+            if (_profile.isScavenger &&
+                _playerToolManager != null &&
+                _playerToolManager.CurrentTool != null)
             {
                 Transform toolTransform = _playerToolManager.CurrentTool.transform;
                 if ((toolTransform.position - _cachedSelfPosition).sqrMagnitude < distractorDetectRadius * distractorDetectRadius)
@@ -349,12 +387,47 @@ namespace Hecton8.AI
                 }
             }
 
-            currentScavengeTarget = ResolveNearestDistractorByTag("DroppedFood");
+            currentScavengeTarget = ResolveNearestBaitPickup();
         }
 
         private void UpdatePreyDetection()
         {
             currentPrey = null;
+            if (_ownerBrain == null)
+                return;
+
+            uint dietMaskBits = _ownerBrain.DietMaskBits;
+            if (dietMaskBits != 0u)
+            {
+                int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                    _cachedSelfPosition,
+                    aggroDistance,
+                    SpatialTargetKind.Bioform,
+                    _preySpatialBuffer);
+                float bestDistanceSqr = float.MaxValue;
+                for (int i = 0; i < count; i++)
+                {
+                    SpatialQueryHit hit = _preySpatialBuffer[i];
+                    if (!(hit.Owner is FaunaBrain preyBrain) ||
+                        preyBrain == _ownerBrain ||
+                        preyBrain.IsDead ||
+                        preyBrain.SpeciesId == _ownerBrain.SpeciesId ||
+                        !preyBrain.IsValidPreyFor(_ownerBrain))
+                    {
+                        continue;
+                    }
+
+                    if (hit.DistanceSqr >= bestDistanceSqr)
+                        continue;
+
+                    bestDistanceSqr = hit.DistanceSqr;
+                    currentPrey = hit.Transform;
+                }
+
+                if (currentPrey != null)
+                    return;
+            }
+
             if (_profile == null)
                 return;
 
@@ -417,6 +490,34 @@ namespace Hecton8.AI
             return nearestTransform;
         }
 
+        private Transform ResolveNearestBaitPickup()
+        {
+            int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                _cachedSelfPosition,
+                distractorDetectRadius,
+                SpatialTargetKind.Pickup,
+                _distractorSpatialBuffer);
+            Transform nearestTransform = null;
+            float bestDistanceSqr = float.MaxValue;
+
+            for (int i = 0; i < count; i++)
+            {
+                SpatialQueryHit hit = _distractorSpatialBuffer[i];
+                if (!(hit.Owner is Hecton8.Interaction.PickupItem pickupItem) ||
+                    !pickupItem.IsFaunaBait ||
+                    hit.Transform == null ||
+                    hit.DistanceSqr >= bestDistanceSqr)
+                {
+                    continue;
+                }
+
+                bestDistanceSqr = hit.DistanceSqr;
+                nearestTransform = hit.Transform;
+            }
+
+            return nearestTransform;
+        }
+
         private Transform ResolveNearestBleedingDistractor()
         {
             if (_profile == null)
@@ -460,56 +561,155 @@ namespace Hecton8.AI
             _foveatedInsideFrustum = insideFrustum;
         }
 
-        internal bool TryBuildDeferredRaycastCommand(out RaycastCommand command)
+        internal int BuildDeferredRaycastCommands(RaycastCommand[] commands)
         {
-            command = default;
+            if (commands == null || commands.Length < DeferredObstacleRayCount)
+                return 0;
+
             if (_selfTransform == null || lodDisabled || isSleeping)
-                return false;
+                return 0;
 
             int obstacleLayerMask = obstacleMask.value;
             if (obstacleLayerMask == 0)
-                return false;
+                return 0;
 
             if (_foveatedImportanceScore < 0.2f)
             {
-                return false;
+                return 0;
             }
 
-            Vector3 direction = _queuedObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? _queuedObstacleRayDirection.normalized
-                : _cachedSelfForward;
             float distance = Mathf.Clamp(
                 _queuedObstacleRayLength > 0f ? _queuedObstacleRayLength : avoidanceRange,
                 avoidanceRange,
                 maxRayLength);
+            QueryParameters queryParameters = new QueryParameters(obstacleLayerMask, false, QueryTriggerInteraction.Ignore);
 
-            command = new RaycastCommand(
+            Vector3 forwardDirection = _queuedForwardObstacleRayDirection.sqrMagnitude > 0.0001f
+                ? _queuedForwardObstacleRayDirection.normalized
+                : _cachedSelfForward;
+            Vector3 leftDirection = _queuedLeftObstacleRayDirection.sqrMagnitude > 0.0001f
+                ? _queuedLeftObstacleRayDirection.normalized
+                : forwardDirection;
+            Vector3 rightDirection = _queuedRightObstacleRayDirection.sqrMagnitude > 0.0001f
+                ? _queuedRightObstacleRayDirection.normalized
+                : forwardDirection;
+
+            commands[ForwardObstacleRayIndex] = new RaycastCommand(
                 _cachedSelfPosition,
-                direction,
-                new QueryParameters(obstacleLayerMask, false, QueryTriggerInteraction.Ignore),
+                forwardDirection,
+                queryParameters,
                 distance);
-            return true;
+            commands[LeftObstacleRayIndex] = new RaycastCommand(
+                _cachedSelfPosition,
+                leftDirection,
+                queryParameters,
+                distance);
+            commands[RightObstacleRayIndex] = new RaycastCommand(
+                _cachedSelfPosition,
+                rightDirection,
+                queryParameters,
+                distance);
+            return DeferredObstacleRayCount;
         }
 
-        internal void ConsumeDeferredRaycastHit(in RaycastHit hit)
+        internal void ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit)
         {
-            _deferredObstacleHit = hit;
-            _hasDeferredObstacleHit = hit.collider != null;
-        }
-
-        internal bool TryGetDeferredObstacleHitInfo(out RaycastHit hit)
-        {
-            if (isAvoidingObstacle && _deferredObstacleHit.collider != null)
+            switch (commandIndex)
             {
-                hit = _deferredObstacleHit;
-                return true;
+                case ForwardObstacleRayIndex:
+                    _deferredForwardObstacleHit = hit;
+                    _hasDeferredForwardObstacleHit = hit.collider != null;
+                    break;
+                case LeftObstacleRayIndex:
+                    _deferredLeftObstacleHit = hit;
+                    _hasDeferredLeftObstacleHit = hit.collider != null;
+                    break;
+                case RightObstacleRayIndex:
+                    _deferredRightObstacleHit = hit;
+                    _hasDeferredRightObstacleHit = hit.collider != null;
+                    break;
             }
+        }
 
-            hit = default;
-            return false;
+        internal bool TryGetDeferredObstacleAvoidance(out Vector3 avoidanceDirection, out float obstaclePressure01)
+        {
+            return TryResolveObstacleAvoidanceDirection(_cachedSelfForward, _queuedObstacleRayLength, out avoidanceDirection, out obstaclePressure01);
         }
 
         public Transform GetPlayerTransform() => _playerTransform;
+
+        private bool TryResolveObstacleAvoidanceDirection(
+            Vector3 fallbackForward,
+            float rayLength,
+            out Vector3 avoidanceDirection,
+            out float obstaclePressure01)
+        {
+            float safeRayLength = Mathf.Max(avoidanceRange, rayLength);
+            Vector3 resolvedForward = fallbackForward.sqrMagnitude > 0.0001f
+                ? fallbackForward.normalized
+                : _cachedSelfForward;
+            float totalPressure = 0f;
+            Vector3 avoidance = Vector3.zero;
+            bool hasHit = false;
+
+            AccumulateObstacleAvoidance(_hasDeferredForwardObstacleHit, _deferredForwardObstacleHit, safeRayLength, ref totalPressure, ref avoidance, ref hasHit);
+            AccumulateObstacleAvoidance(_hasDeferredLeftObstacleHit, _deferredLeftObstacleHit, safeRayLength, ref totalPressure, ref avoidance, ref hasHit);
+            AccumulateObstacleAvoidance(_hasDeferredRightObstacleHit, _deferredRightObstacleHit, safeRayLength, ref totalPressure, ref avoidance, ref hasHit);
+
+            obstaclePressure01 = Mathf.Clamp01(totalPressure);
+            if (!hasHit || obstaclePressure01 <= 0f)
+            {
+                avoidanceDirection = Vector3.zero;
+                return false;
+            }
+
+            Vector3 sideBias = Vector3.zero;
+            if (!_hasDeferredLeftObstacleHit)
+                sideBias += _queuedLeftObstacleRayDirection;
+            if (!_hasDeferredRightObstacleHit)
+                sideBias += _queuedRightObstacleRayDirection;
+
+            Vector3 combined = resolvedForward + avoidance + sideBias * 0.35f;
+            if (combined.sqrMagnitude <= 0.0001f)
+                combined = Vector3.Reflect(resolvedForward, _deferredForwardObstacleHit.normal);
+
+            avoidanceDirection = combined.normalized;
+            return avoidanceDirection.sqrMagnitude > 0.0001f;
+        }
+
+        private void AccumulateObstacleAvoidance(
+            bool hasHit,
+            in RaycastHit hit,
+            float rayLength,
+            ref float totalPressure,
+            ref Vector3 avoidance,
+            ref bool anyHit)
+        {
+            if (!hasHit || hit.collider == null || hit.distance <= 0f || hit.distance > rayLength)
+                return;
+
+            anyHit = true;
+            float pressure = 1f - Mathf.Clamp01(hit.distance / Mathf.Max(rayLength, 0.001f));
+            totalPressure += pressure;
+            avoidance += hit.normal * pressure;
+        }
+
+        private static Vector3 RotateObstacleDirection(Vector3 forwardDirection, float yawDegrees)
+        {
+            float3 forward = math.normalizesafe((float3)forwardDirection, new float3(0f, 0f, 1f));
+            quaternion rotation = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(yawDegrees));
+            return (Vector3)math.normalizesafe(math.mul(rotation, forward), new float3(0f, 0f, 1f));
+        }
+
+        private void ClearDeferredObstacleHits()
+        {
+            _deferredForwardObstacleHit = default;
+            _deferredLeftObstacleHit = default;
+            _deferredRightObstacleHit = default;
+            _hasDeferredForwardObstacleHit = false;
+            _hasDeferredLeftObstacleHit = false;
+            _hasDeferredRightObstacleHit = false;
+        }
 
         private static bool HasPlayerLineOfSightThroughCaveSdf(Vector3 startPosition, Vector3 endPosition)
         {

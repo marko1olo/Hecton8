@@ -1949,6 +1949,8 @@ namespace Hecton8.Audio
 
         private void TryRegister()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             if (!_registered)
             {

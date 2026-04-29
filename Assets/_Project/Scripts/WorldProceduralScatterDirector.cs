@@ -1634,7 +1634,12 @@ namespace Hecton8.World
                     rule.minDepthMeters,
                     rule.maxDepthMeters,
                     rule.minSlopeDegrees,
-                    rule.maxSlopeDegrees));
+                    rule.maxSlopeDegrees,
+                    rule.requiredSubstrate,
+                    rule.maxTiltAngleDegrees,
+                    rule.clusterNoiseScale,
+                    rule.clusterNoiseThreshold,
+                    rule.strictEnvelopeMapping));
             }
 
             RebuildScatterBackendLookup();
@@ -1810,6 +1815,33 @@ namespace Hecton8.World
             faunaSpawnRegistry?.Clear();
             _faunaSnapshotDirty = false;
             ResetDiagnostics();
+        }
+
+        /// <summary>
+        /// Copies the current edit/play scatter preview placements into a caller-owned buffer for SceneView gizmo drawing.
+        /// </summary>
+        public void BuildScatterPreviewGizmoSnapshot(List<ScatterPreviewGizmoRecord> buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Clear();
+            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                ScatterPlacement placement = enumerator.Current.Value;
+                if (placement == null || placement.Family == null || placement.Rule == null)
+                    continue;
+
+                buffer.Add(new ScatterPreviewGizmoRecord(
+                    placement.Position,
+                    placement.EffectiveSpacing,
+                    placement.DepthMeters,
+                    placement.SlopeDegrees,
+                    placement.Family.scatterLayer,
+                    placement.Rule.requiredSubstrate,
+                    placement.Rule.maxTiltAngleDegrees));
+            }
         }
 
         private void EnsureCandidateMapsInitialized()
@@ -2021,7 +2053,9 @@ namespace Hecton8.World
             if (slopeDegrees < runtimeRule.MinSlopeDegrees || slopeDegrees > runtimeRule.MaxSlopeDegrees)
                 return false;
 
-            if (runtimeRule.PreferredBiomeFamilies != null && runtimeRule.PreferredBiomeFamilies.Length > 0)
+            if (!runtimeRule.StrictEnvelopeMapping &&
+                runtimeRule.PreferredBiomeFamilies != null &&
+                runtimeRule.PreferredBiomeFamilies.Length > 0)
             {
                 bool biomeMatched = false;
                 for (int i = 0; i < runtimeRule.PreferredBiomeFamilies.Length; i++)
@@ -2038,7 +2072,9 @@ namespace Hecton8.World
                     return false;
             }
 
-            if (runtimeRule.PreferredZoneKinds != null && runtimeRule.PreferredZoneKinds.Length > 0)
+            if (!runtimeRule.StrictEnvelopeMapping &&
+                runtimeRule.PreferredZoneKinds != null &&
+                runtimeRule.PreferredZoneKinds.Length > 0)
             {
                 bool zoneMatched = false;
                 WorldZoneAnchor.ZoneKind effectiveZoneKind = zone != null ? zone.Kind : zoneKindHint;
@@ -2055,7 +2091,9 @@ namespace Hecton8.World
                     return false;
             }
 
-            if (runtimeRule.PreferredSocketKinds != null && runtimeRule.PreferredSocketKinds.Length > 0)
+            if (!runtimeRule.StrictEnvelopeMapping &&
+                runtimeRule.PreferredSocketKinds != null &&
+                runtimeRule.PreferredSocketKinds.Length > 0)
             {
                 bool kindMatched = false;
                 for (int i = 0; i < runtimeRule.PreferredSocketKinds.Length; i++)
@@ -2952,12 +2990,27 @@ namespace Hecton8.World
                 placement.StableHash,
                 preferFinalVariant: false);
             float scale = ResolveScaleMultiplier(variant, placement.StableHash);
+            Vector3 resolvedPosition = placement.Position;
             Quaternion rotation = Quaternion.Euler(0f, Mathf.Abs(placement.StableHash % 360), 0f);
-            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(placement.Position, _runtimeStreamingState.ChunkSize);
+            if (placement.Rule != null &&
+                EnsureEnvironmentalVegetationBridgeResolved() &&
+                environmentalVegetationBridge.TrySnapScatterPlacement(
+                    placement.RuntimePosition,
+                    surfaceYOffset,
+                    placement.Rule.maxTiltAngleDegrees,
+                    placement.StableHash,
+                    out Vector3 snappedRuntimePosition,
+                    out Quaternion snappedRotation))
+            {
+                resolvedPosition = ToAbsoluteScatterPosition(snappedRuntimePosition);
+                rotation = snappedRotation;
+            }
+
+            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(resolvedPosition, _runtimeStreamingState.ChunkSize);
             WorldMacroZoneCoordinate macroZoneCoord = placement.HasMacroZone
-                ? WorldMacroZoneCoordinate.FromWorldPosition(placement.Position, _runtimeStreamingState.MacroZoneSize)
+                ? WorldMacroZoneCoordinate.FromWorldPosition(resolvedPosition, _runtimeStreamingState.MacroZoneSize)
                 : default;
-            placement.ResolveDeferredRuntimeState(variant, rotation, scale, chunkCoord, macroZoneCoord);
+            placement.ResolveDeferredRuntimeState(variant, resolvedPosition, rotation, scale, chunkCoord, macroZoneCoord);
         }
 
         private bool TryRegisterDesiredPlacement(ScatterPlacement placement)
@@ -11107,12 +11160,14 @@ namespace Hecton8.World
 
             public void ResolveDeferredRuntimeState(
                 WorldPrefabFamilyProfile.VariantEntry variant,
+                Vector3 position,
                 Quaternion rotation,
                 float scale,
                 WorldChunkCoordinate chunkCoord,
                 WorldMacroZoneCoordinate macroZoneCoord)
             {
                 Variant = variant;
+                Position = position;
                 Rotation = rotation;
                 Scale = scale;
                 ChunkCoord = chunkCoord;
@@ -11356,7 +11411,12 @@ namespace Hecton8.World
                 float minDepthMeters,
                 float maxDepthMeters,
                 float minSlopeDegrees,
-                float maxSlopeDegrees)
+                float maxSlopeDegrees,
+                WorldProceduralPlacementRule.FloraSubstrateMask requiredSubstrate,
+                float maxTiltAngleDegrees,
+                float clusterNoiseScale,
+                float clusterNoiseThreshold,
+                bool strictEnvelopeMapping)
             {
                 Rule = rule;
                 Family = family;
@@ -11389,6 +11449,11 @@ namespace Hecton8.World
                 MaxDepthMeters = maxDepthMeters;
                 MinSlopeDegrees = minSlopeDegrees;
                 MaxSlopeDegrees = maxSlopeDegrees;
+                RequiredSubstrate = requiredSubstrate;
+                MaxTiltAngleDegrees = maxTiltAngleDegrees;
+                ClusterNoiseScale = clusterNoiseScale;
+                ClusterNoiseThreshold = clusterNoiseThreshold;
+                StrictEnvelopeMapping = strictEnvelopeMapping;
                 PreferredBiomeFamilies = rule != null ? rule.preferredBiomeFamilies : null;
                 PreferredZoneKinds = rule != null ? rule.preferredZoneKinds : null;
                 PreferredSocketKinds = rule != null ? rule.preferredSocketKinds : null;
@@ -11425,6 +11490,11 @@ namespace Hecton8.World
             public float MaxDepthMeters { get; }
             public float MinSlopeDegrees { get; }
             public float MaxSlopeDegrees { get; }
+            public WorldProceduralPlacementRule.FloraSubstrateMask RequiredSubstrate { get; }
+            public float MaxTiltAngleDegrees { get; }
+            public float ClusterNoiseScale { get; }
+            public float ClusterNoiseThreshold { get; }
+            public bool StrictEnvelopeMapping { get; }
             public HectonBiomeFamilyProfile[] PreferredBiomeFamilies { get; }
             public WorldZoneAnchor.ZoneKind[] PreferredZoneKinds { get; }
             public WorldContentSocket.ContentKind[] PreferredSocketKinds { get; }
@@ -11442,6 +11512,38 @@ namespace Hecton8.World
             public int StableHash { get; }
             public Vector3 Position { get; }
             public int HeightLayerIndex { get; }
+        }
+
+        /// <summary>
+        /// Lightweight editor-only preview payload describing one accepted scatter placement envelope.
+        /// </summary>
+        public readonly struct ScatterPreviewGizmoRecord
+        {
+            public ScatterPreviewGizmoRecord(
+                Vector3 position,
+                float spacingRadius,
+                float depthMeters,
+                float slopeDegrees,
+                WorldPrefabFamilyProfile.ScatterLayer scatterLayer,
+                WorldProceduralPlacementRule.FloraSubstrateMask substrate,
+                float maxTiltAngleDegrees)
+            {
+                Position = position;
+                SpacingRadius = spacingRadius;
+                DepthMeters = depthMeters;
+                SlopeDegrees = slopeDegrees;
+                ScatterLayer = scatterLayer;
+                Substrate = substrate;
+                MaxTiltAngleDegrees = maxTiltAngleDegrees;
+            }
+
+            public Vector3 Position { get; }
+            public float SpacingRadius { get; }
+            public float DepthMeters { get; }
+            public float SlopeDegrees { get; }
+            public WorldPrefabFamilyProfile.ScatterLayer ScatterLayer { get; }
+            public WorldProceduralPlacementRule.FloraSubstrateMask Substrate { get; }
+            public float MaxTiltAngleDegrees { get; }
         }
 
         internal readonly struct ScatterCandidate : IComparable<ScatterCandidate>

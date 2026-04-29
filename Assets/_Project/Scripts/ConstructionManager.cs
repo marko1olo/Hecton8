@@ -105,6 +105,7 @@ namespace Hecton8.Construction
         private List<GameObject> _spawnedModules;
         private HabitatGraphManager _habitatGraphManager;
         private bool _tickRegistered;
+        private bool _logisticsServiceRegistered;
         private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
@@ -166,20 +167,23 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             _slowTickAccumulator = 0f;
-            TryRegister();
+            TryRegisterLogisticsService();
+            TryRegisterTick();
             SaveManager.Instance?.Register(this);
         }
 
         private void OnDisable()
         {
-            TryUnregister();
+            TryUnregisterTick();
+            TryUnregisterLogisticsService();
             _slowTickAccumulator = 0f;
             SaveManager.Instance?.Unregister(this);
         }
 
         private void OnDestroy()
         {
-            TryUnregister();
+            TryUnregisterTick();
+            TryUnregisterLogisticsService();
             if (_habitatGraphManager != null)
             {
                 _habitatGraphManager.Dispose();
@@ -734,7 +738,16 @@ namespace Hecton8.Construction
         //  DIAGNOSTICS
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private void TryRegister()
+        private void TryRegisterLogisticsService()
+        {
+            if (_logisticsServiceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterLogisticsService(this);
+            _logisticsServiceRegistered = true;
+        }
+
+        private void TryRegisterTick()
         {
             if (_tickRegistered || !Application.isPlaying)
                 return;
@@ -742,19 +755,26 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLogisticsService(this);
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
         }
 
-        private void TryUnregister()
+        private void TryUnregisterTick()
         {
             if (!_tickRegistered)
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterLogisticsService(this);
             _tickRegistered = false;
+        }
+
+        private void TryUnregisterLogisticsService()
+        {
+            if (!_logisticsServiceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLogisticsService(this);
+            _logisticsServiceRegistered = false;
         }
 
         private void TryTriggerAmbientAccident()
@@ -881,6 +901,14 @@ namespace Hecton8.Construction
                 return;
 
             _habitatGraphManager.Rebuild(_spawnedModules);
+        }
+
+        internal void NotifyModuleEmergencyStateChanged(BaseModule module)
+        {
+            if (_habitatGraphManager == null)
+                return;
+
+            _habitatGraphManager.NotifyModuleEmergencyStateChanged(module);
         }
     }
 }

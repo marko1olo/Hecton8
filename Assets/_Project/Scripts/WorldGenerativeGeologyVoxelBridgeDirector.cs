@@ -209,6 +209,8 @@ namespace Hecton8.World
             EnsureLifetimeCancellation();
             RegisterRandomEventHooks();
             QueueStartupReconcile();
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
             if (!_registeredToFrameTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -224,6 +226,8 @@ namespace Hecton8.World
 
         private void Start()
         {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
             if (!_registeredToFrameTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);

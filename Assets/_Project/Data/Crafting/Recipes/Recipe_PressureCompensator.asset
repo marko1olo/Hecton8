@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6861b8625f37359469259f19f4b26554, type: 3}
+  m_Name: Recipe_PressureCompensator
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Crafting.RecipeData
+  recipeName: Pressure Compensator
+  localizedRecipeName: {tableKey: '', fallbackText: '', variants: []}
+  overrideIcon: {fileID: 0}
+  description: Assemble a submarine pressure compensator for deeper crush tolerance.
+  localizedRecipeDescription: {tableKey: '', fallbackText: '', variants: []}
+  resultItem: {fileID: 11400000, guid: 1e8c5c1c9f8a4b4d8a1e5c7d9b3f1001, type: 2}
+  resultQuantity: 1
+  ingredients:
+  - item: {fileID: 11400000, guid: ae02bcd19d7e28b44a03544b03dc399a, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 02536e73b3fe4cc4593bb90b44c03511, type: 2}
+    amount: 1
+  - item: {fileID: 11400000, guid: 2ca36e41c0fad80438b5045fe075de77, type: 2}
+    amount: 1
+  craftTime: 2.2
+  powerCost: 5
+  requiredScanEntryId: 
+  fabricationGroup: 5

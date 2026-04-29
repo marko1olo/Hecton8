@@ -10,6 +10,15 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
         _OcclusionStrength("Occlusion Strength", Range(0.0, 1.0)) = 1.0
         [HDR] _EmissionColor("Emission", Color) = (0, 0, 0, 1)
         _EmissionMap("Emission Map", 2D) = "white" {}
+        _ParasiteOverlayMap("Parasite Overlay", 2D) = "white" {}
+        _ParasiteNormalMap("Parasite Normal", 2D) = "bump" {}
+        [HDR] _ParasiteOverlayColor("Parasite Tint", Color) = (0.48, 0.92, 0.42, 1)
+        [HDR] _ParasiteOverlayEmissionColor("Parasite Emission", Color) = (0.10, 0.42, 0.16, 1)
+        _ParasiteOverlayScale("Parasite UV Scale", Float) = 0.18
+        _ParasiteOverlayStrength("Parasite Blend", Range(0.0, 1.0)) = 0.8
+        _ParasiteOverlayNormalStrength("Parasite Normal Strength", Range(0.0, 2.0)) = 0.65
+        _ParasiteOverlaySmoothness("Parasite Smoothness", Range(0.0, 1.0)) = 0.18
+        _ParasiteOverlayMetallic("Parasite Metallic", Range(0.0, 1.0)) = 0.02
         _Cull("Cull", Float) = 2.0
         [ToggleUI] _AlphaClip("Alpha Clip", Float) = 0.0
         [HideInInspector] _Surface("__surface", Float) = 0.0
@@ -93,11 +102,18 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
                 float4 _EmissionColor;
+                float4 _ParasiteOverlayColor;
+                float4 _ParasiteOverlayEmissionColor;
                 float4 _BaseMap_ST;
                 float _Cutoff;
                 float _Smoothness;
                 float _Metallic;
                 float _OcclusionStrength;
+                float _ParasiteOverlayScale;
+                float _ParasiteOverlayStrength;
+                float _ParasiteOverlayNormalStrength;
+                float _ParasiteOverlaySmoothness;
+                float _ParasiteOverlayMetallic;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
@@ -106,6 +122,10 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             SAMPLER(sampler_OcclusionMap);
             TEXTURE2D(_EmissionMap);
             SAMPLER(sampler_EmissionMap);
+            TEXTURE2D(_ParasiteOverlayMap);
+            SAMPLER(sampler_ParasiteOverlayMap);
+            TEXTURE2D(_ParasiteNormalMap);
+            SAMPLER(sampler_ParasiteNormalMap);
 
             struct Attributes
             {
@@ -128,6 +148,23 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             {
                 half lenSq = dot(value, value);
                 return lenSq > 0.0001h ? value * rsqrt(lenSq) : half3(0.0h, 1.0h, 0.0h);
+            }
+
+            half3 BuildParasiteNormalWS(float3 positionWS, half3 baseNormalWS)
+            {
+                float2 uv = positionWS.xz * max(_ParasiteOverlayScale, 0.001);
+                half3 parasiteNormalTS = UnpackNormalScale(
+                    SAMPLE_TEXTURE2D(_ParasiteNormalMap, sampler_ParasiteNormalMap, uv),
+                    _ParasiteOverlayNormalStrength);
+                half3 baseNormal = SafeNormalize3(baseNormalWS);
+                half3 tangentWS = abs(baseNormal.y) < 0.999h
+                    ? SafeNormalize3(cross(half3(0.0h, 1.0h, 0.0h), baseNormal))
+                    : half3(1.0h, 0.0h, 0.0h);
+                half3 bitangentWS = SafeNormalize3(cross(baseNormal, tangentWS));
+                return SafeNormalize3(
+                    tangentWS * parasiteNormalTS.x +
+                    bitangentWS * parasiteNormalTS.y +
+                    baseNormal * parasiteNormalTS.z);
             }
 
             Varyings Vert(Attributes input)
@@ -191,6 +228,21 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half3 normalWS = SafeNormalize3(input.normalWS);
                 half3 albedo = albedoSample.rgb;
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
+                float parasitePulse = 1.0;
+                float thermalGrowthMask = 0.0;
+                float parasiteMask = HectonCoreLitEvaluateParasiteField(input.positionWS, parasitePulse, thermalGrowthMask);
+                if (parasiteMask > 0.0001)
+                {
+                    float2 parasiteUv = input.positionWS.xz * max(_ParasiteOverlayScale, 0.001);
+                    half4 parasiteOverlay = SAMPLE_TEXTURE2D(_ParasiteOverlayMap, sampler_ParasiteOverlayMap, parasiteUv);
+                    half parasiteBlend = saturate((half)(parasiteMask * _ParasiteOverlayStrength * parasiteOverlay.a));
+                    half3 parasiteColor = parasiteOverlay.rgb * _ParasiteOverlayColor.rgb;
+                    half3 parasiteNormalWS = BuildParasiteNormalWS(input.positionWS, normalWS);
+                    albedo = lerp(albedo, parasiteColor, parasiteBlend);
+                    normalWS = SafeNormalize3(lerp(normalWS, parasiteNormalWS, parasiteBlend));
+                    metallic = lerp(metallic, (half)_ParasiteOverlayMetallic, parasiteBlend);
+                    smoothness = lerp(smoothness, (half)_ParasiteOverlaySmoothness, parasiteBlend);
+                }
                 half3 litColor = EvaluateLighting(
                     input.positionWS,
                     normalWS,
@@ -200,6 +252,13 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     smoothness,
                     saturate(occlusion));
                 half3 emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, input.uv).rgb * _EmissionColor.rgb;
+                if (parasiteMask > 0.0001)
+                {
+                    float2 parasiteUv = input.positionWS.xz * max(_ParasiteOverlayScale, 0.001);
+                    half3 parasiteEmissionMask = SAMPLE_TEXTURE2D(_ParasiteOverlayMap, sampler_ParasiteOverlayMap, parasiteUv).rgb;
+                    half parasiteEmission = (half)(parasiteMask * saturate(parasitePulse) * lerp(1.0, 1.35, thermalGrowthMask));
+                    emission += parasiteEmissionMask * _ParasiteOverlayEmissionColor.rgb * parasiteEmission;
+                }
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
                 return half4(finalColor, coverage);
             }

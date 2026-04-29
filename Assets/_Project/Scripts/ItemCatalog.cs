@@ -106,7 +106,9 @@ namespace Hecton8.SaveSystem
             public readonly byte CategoryId;
             public readonly uint VulnerabilityMask;
             public readonly byte AudioMaterialId;
+            public readonly byte PhysicsMaterialTag;
             public readonly float MassKg;
+            public readonly float VolumeM3;
             public readonly bool Stackable;
             public readonly bool IsConsumable;
             public readonly float OxygenRestore;
@@ -126,7 +128,9 @@ namespace Hecton8.SaveSystem
                 byte categoryId,
                 uint vulnerabilityMask,
                 byte audioMaterialId,
+                byte physicsMaterialTag,
                 float massKg,
+                float volumeM3,
                 bool stackable,
                 bool isConsumable,
                 float oxygenRestore,
@@ -145,7 +149,9 @@ namespace Hecton8.SaveSystem
                 CategoryId = categoryId;
                 VulnerabilityMask = vulnerabilityMask;
                 AudioMaterialId = audioMaterialId;
+                PhysicsMaterialTag = physicsMaterialTag;
                 MassKg = massKg;
+                VolumeM3 = volumeM3;
                 Stackable = stackable;
                 IsConsumable = isConsumable;
                 OxygenRestore = oxygenRestore;
@@ -906,7 +912,9 @@ namespace Hecton8.SaveSystem
                 (byte)item.category,
                 item.VulnerabilityMask,
                 item.AudioMaterialByte,
+                (byte)item.PhysicsMaterialTag,
                 item.MassKg,
+                item.VolumeM3,
                 item.stackable && item.maxStack > 1,
                 item.isConsumable,
                 item.oxygenRestore,
@@ -1033,7 +1041,9 @@ namespace Hecton8.SaveSystem
                 0,
                 descriptor.VulnerabilityMask,
                 descriptor.AudioMaterialId,
-                descriptor.MassKg);
+                descriptor.PhysicsMaterialTag,
+                descriptor.MassKg,
+                descriptor.VolumeM3);
         }
 
         private static ItemCategoryMask ResolveCategoryMask(ItemCategory category, ItemData item)

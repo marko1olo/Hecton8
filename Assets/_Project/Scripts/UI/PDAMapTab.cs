@@ -3,6 +3,7 @@ using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using TMPro;
 using Unity.Collections;
 using UnityEngine;
@@ -211,6 +212,15 @@ namespace Hecton8.UI
 
         private void RefreshMapSource(bool force)
         {
+            if (TryGetEmpBlindState(out _))
+            {
+                _activeVolume = null;
+                _activeVolumeVersion = -1;
+                _activeThreatPingCount = 0;
+                WriteEmpBlindStatus();
+                return;
+            }
+
             Vector3 playerPosition = ResolvePlayerPosition();
             HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
             if (engine == null || !engine.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume volume))
@@ -406,6 +416,16 @@ namespace Hecton8.UI
             statusLabel.SetCharArray(buffer, 0, length);
         }
 
+        private void WriteEmpBlindStatus()
+        {
+            if (statusLabel == null || !_statusBufferLease.IsValid)
+                return;
+
+            char[] buffer = _statusBufferLease.Buffer;
+            int length = CopyLiteral(buffer, 0, "SONAR WIRE // EMP BLIND");
+            statusLabel.SetCharArray(buffer, 0, length);
+        }
+
         private void WriteOnlineStatus(Vector3Int gridDimensions)
         {
             if (statusLabel == null || !_statusBufferLease.IsValid)
@@ -462,6 +482,19 @@ namespace Hecton8.UI
             float localScale = 0.55f / dominantHalfExtent;
             Vector3 localHalfExtent = worldHalfExtent * localScale;
             return new Vector4(localHalfExtent.x, localHalfExtent.y, localHalfExtent.z, 0f);
+        }
+
+        private static bool TryGetEmpBlindState(out TraumaDispatcher traumaDispatcher)
+        {
+            traumaDispatcher = null;
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null)
+            {
+                return false;
+            }
+
+            traumaDispatcher = runtimeContext.TraumaDispatcher;
+            return traumaDispatcher != null && traumaDispatcher.IsEmpSensorBlindActive;
         }
 
         private void ReleaseResources()

@@ -61,7 +61,7 @@ This is deliberate one-step latency. The main thread never blocks mid-step for p
 - Dispatcher deferred raycasts via `_scheduledDispatcherRaycastHandle.Complete()`.
 - Foveated simulation completion through `FoveatedSimulationManager.CompleteFrameJobs()`.
 
-Both are profiled. If either barrier takes more than `2.0ms`, the dispatcher emits a warning naming the subsystem that stalled.
+Both are profiled. If either barrier takes more than `1.0ms`, the dispatcher emits a warning naming the subsystem that stalled and publishes the stall to `GlobalTelemetryBus`.
 
 ## ThreadSafeCommandQueue
 `ThreadSafeCommandQueue` exists for structural intent only.
@@ -96,10 +96,23 @@ These are the reference before/after cases for future audits. If a system schedu
 
 - Scene load starts with `allowSceneActivation = false`.
 - The service monitors `AsyncOperation.progress`.
-- Activation is allowed only when progress reaches `0.9` and `PersistentWorldRegistry.AreResidentWorldPrefabPoolsReady()` returns true.
+- Activation is allowed only when progress reaches `0.9`, `PersistentWorldRegistry.AreResidentWorldPrefabPoolsReady()` returns true, and the floating-origin service is not inside a shift or post-shift physics pause window.
 - If no live `PersistentWorldRegistry` exists for the transition, the gate falls through to avoid deadlock.
 
-This gate is intended to prevent a scene from activating before resident pooled world prefabs are both addressable-ready and pool-ready.
+This gate is intended to prevent a scene from activating before resident pooled world prefabs are both addressable-ready and pool-ready, and before a committed origin shift has reached a stable synchronization point.
+
+## Multi-Scene Rebase Sync
+`HectonFloatingOrigin` owns additive-scene synchronization as well as normal global shifts.
+
+- `sceneLoaded` marks the shift-target cache dirty and queues the loaded scene for synchronization.
+- Once the floating-origin service is out of the shift/physics-pause window, it subtracts the current committed `TotalOffset` from every root in the newly loaded scene.
+- After that rebase, it rebuilds the cached `TransformAccessArray` so the next atomic world shift includes the new scene roots.
+
+This prevents newly activated additive content from entering the world at stale pre-shift coordinates.
+
+## Core Awaitable Audit
+`Assets/_Project/Scripts/Core/` currently has no `IEnumerator`, `StartCoroutine`, or `yield return` usage.
+Core dispatch timing is already on `Awaitable`/dispatcher state-machine ownership. No architecture docs in `Docs/ARCHITECTURE/` currently describe an active coroutine-based Core loop.
 
 ## Failure Modes
 - Calling `Complete()` from `Tick()` or `FixedTick()` reintroduces frame stalls and breaks the contract.

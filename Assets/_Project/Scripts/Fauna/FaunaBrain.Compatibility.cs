@@ -1,5 +1,7 @@
 using System;
 using Hecton8.Ecosystem;
+using Hecton8.Core;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -50,9 +52,20 @@ namespace Hecton8.AI
             _baseBurstSpeed = Mathf.Max(_baseCruiseSpeed, archetype.burstSpeed);
             _baseTurnSpeed = Mathf.Max(0.1f, archetype.turnSpeed);
 
+            if (_faunaDataTemplate != null)
+            {
+                _baseAggroDistance = _faunaDataTemplate.AggroRadius;
+                _baseDeaggroDistance = Mathf.Max(_baseAggroDistance, Mathf.Max(archetype.baseDeaggroDistance, _baseAggroDistance * 1.35f));
+                _baseCruiseSpeed = _faunaDataTemplate.SwimSpeed;
+                _baseBurstSpeed = Mathf.Max(_baseCruiseSpeed, _faunaDataTemplate.MaxSpeedMetersPerSecond);
+                _baseTurnSpeed = _faunaDataTemplate.TurnRate;
+            }
+
             _sensorSuite.aggroDistance = _baseAggroDistance;
             _sensorSuite.deaggroDistance = _baseDeaggroDistance;
             _sensorSuite.sleepDistance = Mathf.Max(1f, archetype.sleepDistance);
+            if (_faunaDataTemplate != null)
+                _sensorSuite.visionConeAngle = _faunaDataTemplate.VisionConeAngle;
             _sensorSuite.reactToPlayerNoise = archetype.reactToPlayerNoise;
             _sensorSuite.reactToPlayerLight = archetype.reactToPlayerLight;
 
@@ -67,8 +80,9 @@ namespace Hecton8.AI
                 : Mathf.Max(1f, _stateMachine.wanderRadius);
 
             _steeringEngine.moveSpeed = _baseCruiseSpeed;
-            _steeringEngine.maxSpeed = _baseCruiseSpeed;
+            _steeringEngine.maxSpeed = _baseBurstSpeed;
             _steeringEngine.turnSpeed = _baseTurnSpeed;
+            _steeringEngine.rotationSpeed = _baseTurnSpeed;
             _steeringEngine.swimForce = Mathf.Max(_baseCruiseSpeed, _baseBurstSpeed);
             ApplyRuntimeEcosystemOverlays();
         }
@@ -114,6 +128,7 @@ namespace Hecton8.AI
             Vector3 playerForward,
             Vector3 playerVelocity,
             Vector3 threatPosition,
+            Vector3 apexRivalPosition,
             Vector3 preyPosition,
             Vector3 scavengePosition,
             Vector3 flockCenter,
@@ -124,22 +139,27 @@ namespace Hecton8.AI
             float distanceToPlayerSqr,
             float attackRange,
             float fearPressure01,
+            float fleeHealthThreshold,
             float escapeDistance,
             float escapeSafeDistance,
             float wanderRadius,
             float patrolRadius,
+            float apexTerritoryRadius,
+            float apexAggressionMultiplier,
             float foveatedImportanceScore,
             int flockCount,
             bool canFlee,
             bool hasVisualContact,
             bool hasPlayerTarget,
             bool hasThreatTarget,
+            bool hasApexRivalTarget,
             bool hasPreyTarget,
             bool hasScavengeTarget,
             bool useHomeTerritory,
             bool isFlocking,
             bool hasScatterDirection,
-            bool isAggressive)
+            bool isAggressive,
+            bool isApexPredator)
         {
             SelfPosition = selfPosition;
             SelfVelocity = selfVelocity;
@@ -148,6 +168,7 @@ namespace Hecton8.AI
             PlayerForward = playerForward;
             PlayerVelocity = playerVelocity;
             ThreatPosition = threatPosition;
+            ApexRivalPosition = apexRivalPosition;
             PreyPosition = preyPosition;
             ScavengePosition = scavengePosition;
             FlockCenter = flockCenter;
@@ -158,22 +179,27 @@ namespace Hecton8.AI
             DistanceToPlayerSqr = distanceToPlayerSqr;
             AttackRange = attackRange;
             FearPressure01 = fearPressure01;
+            FleeHealthThreshold = fleeHealthThreshold;
             EscapeDistance = escapeDistance;
             EscapeSafeDistance = escapeSafeDistance;
             WanderRadius = wanderRadius;
             PatrolRadius = patrolRadius;
+            ApexTerritoryRadius = apexTerritoryRadius;
+            ApexAggressionMultiplier = apexAggressionMultiplier;
             FoveatedImportanceScore = foveatedImportanceScore;
             FlockCount = flockCount;
             CanFlee = canFlee;
             HasVisualContact = hasVisualContact;
             HasPlayerTarget = hasPlayerTarget;
             HasThreatTarget = hasThreatTarget;
+            HasApexRivalTarget = hasApexRivalTarget;
             HasPreyTarget = hasPreyTarget;
             HasScavengeTarget = hasScavengeTarget;
             UseHomeTerritory = useHomeTerritory;
             IsFlocking = isFlocking;
             HasScatterDirection = hasScatterDirection;
             IsAggressive = isAggressive;
+            IsApexPredator = isApexPredator;
         }
 
         public Vector3 SelfPosition { get; }
@@ -183,6 +209,7 @@ namespace Hecton8.AI
         public Vector3 PlayerForward { get; }
         public Vector3 PlayerVelocity { get; }
         public Vector3 ThreatPosition { get; }
+        public Vector3 ApexRivalPosition { get; }
         public Vector3 PreyPosition { get; }
         public Vector3 ScavengePosition { get; }
         public Vector3 FlockCenter { get; }
@@ -193,22 +220,27 @@ namespace Hecton8.AI
         public float DistanceToPlayerSqr { get; }
         public float AttackRange { get; }
         public float FearPressure01 { get; }
+        public float FleeHealthThreshold { get; }
         public float EscapeDistance { get; }
         public float EscapeSafeDistance { get; }
         public float WanderRadius { get; }
         public float PatrolRadius { get; }
+        public float ApexTerritoryRadius { get; }
+        public float ApexAggressionMultiplier { get; }
         public float FoveatedImportanceScore { get; }
         public int FlockCount { get; }
         public bool CanFlee { get; }
         public bool HasVisualContact { get; }
         public bool HasPlayerTarget { get; }
         public bool HasThreatTarget { get; }
+        public bool HasApexRivalTarget { get; }
         public bool HasPreyTarget { get; }
         public bool HasScavengeTarget { get; }
         public bool UseHomeTerritory { get; }
         public bool IsFlocking { get; }
         public bool HasScatterDirection { get; }
         public bool IsAggressive { get; }
+        public bool IsApexPredator { get; }
     }
 
     /// <summary>
@@ -516,6 +548,12 @@ namespace Hecton8.AI
                 PredatorCognitionDomain.ForceSated(_slot, currentTime, duration);
         }
 
+        public void ApplyFatigueRelief(float amount)
+        {
+            if (_initialized)
+                PredatorCognitionDomain.ReduceFatigue(_slot, amount);
+        }
+
         public void NotifyAttackPerformed(float currentTime, float cooldownSeconds)
         {
             if (_initialized)
@@ -547,6 +585,10 @@ namespace Hecton8.AI
 
             Vector3 resolvedPlayerPosition = context.HasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
             bool hasAnyPlayerTarget = context.HasPlayerTarget || hasNoisePlayerTarget;
+            Vector3 floatingOriginOffset = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffset;
+            AbsoluteUniversePositionBlit128 playerTargetAup = default;
+            if (hasAnyPlayerTarget)
+                playerTargetAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPlayerPosition).ToAlignedBlit();
 
             float chemicalSignal01 = 0f;
             if (context.HasScavengeTarget)
@@ -578,7 +620,10 @@ namespace Hecton8.AI
             input.Velocity = context.SelfVelocity;
             input.Forward = context.SelfForward;
             input.PlayerPosition = resolvedPlayerPosition;
+            input.FloatingOriginOffset = floatingOriginOffset;
+            input.PlayerTargetAup = playerTargetAup;
             input.ThreatPosition = context.ThreatPosition;
+            input.RivalApexPosition = context.ApexRivalPosition;
             input.PlayerForward = context.PlayerForward;
             input.PreyPosition = context.PreyPosition;
             input.ScavengePosition = context.ScavengePosition;
@@ -590,6 +635,7 @@ namespace Hecton8.AI
             input.AttackRange = math.max(1f, context.AttackRange);
             input.HealthNormalized = math.saturate(context.HealthNormalized);
             input.FearPressure01 = math.saturate(context.FearPressure01);
+            input.FleeHealthThreshold = math.saturate(context.FleeHealthThreshold);
             input.DeltaTime = math.max(0f, dt);
             input.CurrentTime = currentTime;
             input.AcousticPingStrength01 = acousticPingStrength01;
@@ -608,6 +654,8 @@ namespace Hecton8.AI
             input.EscapeSafeDistance = math.max(input.EscapeDistance, context.EscapeSafeDistance);
             input.WanderRadius = math.max(1f, context.WanderRadius);
             input.PatrolRadius = math.max(1f, context.PatrolRadius);
+            input.ApexTerritoryRadius = math.max(0f, context.ApexTerritoryRadius);
+            input.ApexAggressionMultiplier = math.max(1f, context.ApexAggressionMultiplier);
             input.PackCoordinationRadius = packCoordinationRadius;
             input.PackFlankDistance = packFlankDistance;
             input.PackCommitDistance = packCommitDistance;
@@ -624,6 +672,8 @@ namespace Hecton8.AI
                 input.Flags |= (int)CognitionInputFlags.HasPlayerTarget;
             if (context.HasThreatTarget)
                 input.Flags |= (int)CognitionInputFlags.HasThreatTarget;
+            if (context.HasApexRivalTarget)
+                input.Flags |= (int)CognitionInputFlags.HasApexRivalTarget;
             if (context.HasPreyTarget)
                 input.Flags |= (int)CognitionInputFlags.HasPreyTarget;
             if (context.HasScavengeTarget)
@@ -638,6 +688,13 @@ namespace Hecton8.AI
                 input.Flags |= (int)CognitionInputFlags.IsAggressive;
             if (context.HasVisualContact)
                 input.Flags |= (int)CognitionInputFlags.HasVisualPlayerHint;
+            if (context.IsApexPredator)
+                input.Flags |= (int)CognitionInputFlags.IsApexPredator;
+            if ((_speciesProfile != null && _speciesProfile.isAmbusher) ||
+                (_dataTemplate != null && _dataTemplate.CanBurrowAmbush))
+            {
+                input.Flags |= (int)CognitionInputFlags.IsAmbusher;
+            }
 
             if (hasAnyPlayerTarget && context.HasVisualContact)
             {

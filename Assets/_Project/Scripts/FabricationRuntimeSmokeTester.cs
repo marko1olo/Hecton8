@@ -100,7 +100,7 @@ namespace Hecton8.Debugging
 
         private Fabricator FindTargetFabricator()
         {
-            Fabricator[] all = FindObjectsByType<Fabricator>(FindObjectsSortMode.None);
+            Fabricator[] all = FindObjectsByType<Fabricator>();
             for (int i = 0; i < all.Length; i++)
             {
                 Fabricator fabricator = all[i];

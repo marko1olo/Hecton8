@@ -15,11 +15,14 @@ namespace Hecton8.Construction
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Vehicle Docking Module")]
-    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IPoolable
+    public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, IPowerComponent, IPoolable
     {
         [Header("── Docking ──────────────────")]
         [Tooltip("Optional snap anchor applied when a rigidbody transport is docked. Falls back to this transform.")]
         [SerializeField] private Transform dockAnchor;
+
+        [Tooltip("Deterministic docking travel duration in seconds from trigger capture to hard-lock.")]
+        [SerializeField, Range(0.25f, 8f)] private float dockingDurationSeconds = 2f;
 
         [Tooltip("Normalized transport charge restored per second while the dock is powered.")]
         [SerializeField, Range(0f, 1f)] private float chargeRatePerSecond = 0.2f;
@@ -50,12 +53,18 @@ namespace Hecton8.Construction
         private bool _registered;
         private bool _hasPower = true;
         private bool _activelyCharging;
+        private bool _dockingInProgress;
+        private bool _isDocked;
         private IPlayerTransportLifecycleOwner _dockedTransport;
         private MonoBehaviour _dockedBehaviour;
         private Rigidbody _dockedBody;
         private bool _cachedBodyWasKinematic;
         private bool _cachedBodyUseGravity;
         private RigidbodyConstraints _cachedBodyConstraints;
+        private Vector3 _dockingStartPosition;
+        private Quaternion _dockingStartRotation = Quaternion.identity;
+        private float _dockingElapsedSeconds;
+        private MountablePlayerTransport _mountedTransportLockOwner;
 
         /// <summary>Continuous draw while charge is actually transferred to a docked transport.</summary>
         public float PowerRating => _activelyCharging ? -chargingPowerDraw : 0f;
@@ -97,6 +106,8 @@ namespace Hecton8.Construction
             _hasPower = true;
             _debugHasPower = true;
             _activelyCharging = false;
+            _dockingInProgress = false;
+            _isDocked = false;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryRegister();
@@ -108,6 +119,8 @@ namespace Hecton8.Construction
             _hasPower = true;
             _debugHasPower = true;
             _activelyCharging = false;
+            _dockingInProgress = false;
+            _isDocked = false;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryUnregister();
@@ -115,7 +128,7 @@ namespace Hecton8.Construction
 
         public void Tick(float deltaTime)
         {
-            if (_dockedTransport == null || _dockedBehaviour == null)
+            if (_dockedTransport == null || _dockedBehaviour == null || !_isDocked)
             {
                 if (_activelyCharging)
                     _activelyCharging = false;
@@ -133,6 +146,14 @@ namespace Hecton8.Construction
 
             if (_activelyCharging != nextChargingState)
                 _activelyCharging = nextChargingState;
+        }
+
+        public void FixedTick(float fixedDeltaTime)
+        {
+            if (!_dockingInProgress || _dockedBehaviour == null)
+                return;
+
+            AdvanceDockingPose(fixedDeltaTime);
         }
 
         public void OnPowerStatusChanged(bool hasPower)
@@ -185,6 +206,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -194,6 +216,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -221,10 +244,10 @@ namespace Hecton8.Construction
             _debugDockedTransportName = transportBehaviour.name;
 
             ResolveDockedBody(transportBehaviour);
-            SnapDockedBodyToAnchor();
-            ConnectDockedCargoCrates();
-            if (_dockedBody != null)
-                GlobalPhysicsStateManager.RegisterDockConnection(this, _dockedBody);
+            BeginDockingControlLock(transportBehaviour);
+            _dockingElapsedSeconds = 0f;
+            _dockingInProgress = true;
+            _isDocked = false;
         }
 
         private void ReleaseDockedTransport()
@@ -233,16 +256,22 @@ namespace Hecton8.Construction
 
             if (_dockedBody != null)
             {
+                _dockedBody.linearVelocity = Vector3.zero;
+                _dockedBody.angularVelocity = Vector3.zero;
                 _dockedBody.isKinematic = _cachedBodyWasKinematic;
                 _dockedBody.useGravity = _cachedBodyUseGravity;
                 _dockedBody.constraints = _cachedBodyConstraints;
             }
 
             GlobalPhysicsStateManager.UnregisterDockConnection(this);
+            EndDockingControlLock();
             _dockedBody = null;
             _dockedTransport = null;
             _dockedBehaviour = null;
             _activelyCharging = false;
+            _dockingInProgress = false;
+            _isDocked = false;
+            _dockingElapsedSeconds = 0f;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
         }
@@ -262,9 +291,10 @@ namespace Hecton8.Construction
             _cachedBodyWasKinematic = _dockedBody.isKinematic;
             _cachedBodyUseGravity = _dockedBody.useGravity;
             _cachedBodyConstraints = _dockedBody.constraints;
+            _dockingStartPosition = _dockedBody.position;
+            _dockingStartRotation = _dockedBody.rotation;
             _dockedBody.linearVelocity = Vector3.zero;
             _dockedBody.angularVelocity = Vector3.zero;
-            _dockedBody.isKinematic = true;
             _dockedBody.useGravity = false;
         }
 
@@ -274,8 +304,82 @@ namespace Hecton8.Construction
                 return;
 
             Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
+            if (_dockedBody != null)
+            {
+                _dockedBody.MovePosition(anchor.position);
+                _dockedBody.MoveRotation(anchor.rotation);
+                return;
+            }
+
             Transform transportTransform = _dockedBehaviour.transform;
             transportTransform.SetPositionAndRotation(anchor.position, anchor.rotation);
+        }
+
+        private void AdvanceDockingPose(float fixedDeltaTime)
+        {
+            float duration = Mathf.Max(0.25f, dockingDurationSeconds);
+            _dockingElapsedSeconds = Mathf.Min(duration, _dockingElapsedSeconds + Mathf.Max(0f, fixedDeltaTime));
+            Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
+            float normalizedTime = Mathf.Clamp01(_dockingElapsedSeconds / duration);
+            float smoothTime = normalizedTime * normalizedTime * (3f - 2f * normalizedTime);
+            Vector3 targetPosition = Vector3.LerpUnclamped(_dockingStartPosition, anchor.position, smoothTime);
+            Quaternion targetRotation = Quaternion.Slerp(_dockingStartRotation, anchor.rotation, smoothTime);
+
+            if (_dockedBody != null)
+            {
+                _dockedBody.linearVelocity = Vector3.zero;
+                _dockedBody.angularVelocity = Vector3.zero;
+                _dockedBody.MovePosition(targetPosition);
+                _dockedBody.MoveRotation(targetRotation);
+            }
+            else if (_dockedBehaviour != null)
+            {
+                _dockedBehaviour.transform.SetPositionAndRotation(targetPosition, targetRotation);
+            }
+
+            if (normalizedTime < 0.9999f)
+                return;
+
+            FinalizeDockedTransport();
+        }
+
+        private void FinalizeDockedTransport()
+        {
+            SnapDockedBodyToAnchor();
+            if (_dockedBody != null)
+            {
+                _dockedBody.linearVelocity = Vector3.zero;
+                _dockedBody.angularVelocity = Vector3.zero;
+                _dockedBody.isKinematic = true;
+                _dockedBody.useGravity = false;
+                GlobalPhysicsStateManager.RegisterDockConnection(this, _dockedBody);
+            }
+
+            ConnectDockedCargoCrates();
+            _dockingInProgress = false;
+            _isDocked = true;
+        }
+
+        private void BeginDockingControlLock(MonoBehaviour transportBehaviour)
+        {
+            _mountedTransportLockOwner = null;
+            if (transportBehaviour == null)
+                return;
+
+            if (!transportBehaviour.TryGetComponent(out _mountedTransportLockOwner))
+                _mountedTransportLockOwner = transportBehaviour.GetComponentInParent<MountablePlayerTransport>();
+
+            if (_mountedTransportLockOwner != null)
+                _mountedTransportLockOwner.BeginDockControlLock();
+        }
+
+        private void EndDockingControlLock()
+        {
+            if (_mountedTransportLockOwner == null)
+                return;
+
+            _mountedTransportLockOwner.EndDockControlLock();
+            _mountedTransportLockOwner = null;
         }
 
         private void ConnectDockedCargoCrates()

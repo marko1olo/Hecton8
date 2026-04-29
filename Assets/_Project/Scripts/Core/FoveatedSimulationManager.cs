@@ -29,8 +29,8 @@ namespace Hecton8.Core
         Transform VisualTransform { get; }
         AudioSource DopplerAudioSource { get; }
         void OnFoveatedCadenceResolved(FoveatedTickRate tickRate, float tickIntervalSeconds, float importanceScore, bool insideFrustum);
-        bool TryBuildDeferredRaycastCommand(out RaycastCommand command);
-        void ConsumeDeferredRaycastHit(in RaycastHit hit);
+        int BuildDeferredRaycastCommands(RaycastCommand[] commands);
+        void ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit);
     }
 
     internal enum FoveatedTickRate : byte
@@ -119,6 +119,8 @@ namespace Hecton8.Core
 
         private const int ImportanceScoreBatchSize = 32;
         private const int MaxTargets = 512;
+        private const int MaxDeferredRaycastCommandsPerTarget = 3;
+        private const int MaxDeferredRaycastCommands = MaxTargets * MaxDeferredRaycastCommandsPerTarget;
         private const int MinimumCommandsPerJob = 1;
         private const float CenterTickIntervalSeconds = 1.0f / 60.0f;
         private const float FocusTickIntervalSeconds = 1.0f / 30.0f;
@@ -184,7 +186,9 @@ namespace Hecton8.Core
         // COLD ALLOC: int[512] — compact target-to-visual-transform mapping — owner: FoveatedSimulationManager
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
         // COLD ALLOC: IFoveatedSimulationTarget[512] — deferred raycast owners for same-frame dispatch — owner: FoveatedSimulationManager
-        private readonly IFoveatedSimulationTarget[] _deferredRaycastOwners = new IFoveatedSimulationTarget[MaxTargets];
+        private readonly IFoveatedSimulationTarget[] _deferredRaycastOwners = new IFoveatedSimulationTarget[MaxDeferredRaycastCommands];
+        private readonly int[] _deferredRaycastCommandIndices = new int[MaxDeferredRaycastCommands];
+        private readonly RaycastCommand[] _deferredRaycastScratchCommands = new RaycastCommand[MaxDeferredRaycastCommandsPerTarget];
 
         private TransformAccessArray _visualTransformAccessArray;
         private Transform[] _visualTransformArray = Array.Empty<Transform>();
@@ -197,6 +201,7 @@ namespace Hecton8.Core
         private NativeArray<float> _jobAlphas;
         private NativeQueue<RaycastCommand> _pendingDeferredRaycastCommands;
         private NativeQueue<int> _pendingDeferredRaycastOwnerIndices;
+        private NativeQueue<int> _pendingDeferredRaycastCommandIndices;
         private NativeList<RaycastCommand> _deferredRaycastCommands;
         private NativeArray<RaycastHit> _deferredRaycastResults;
         private JobHandle _importanceHandle;
@@ -376,13 +381,21 @@ namespace Hecton8.Core
             if (_deferredRaycastCommands.IsCreated &&
                 _pendingDeferredRaycastCommands.IsCreated &&
                 _pendingDeferredRaycastOwnerIndices.IsCreated &&
-                _queuedDeferredRaycastCount < MaxTargets &&
-                _importanceScores[index] >= MinimumDeferredRaycastImportanceScore &&
-                target.TryBuildDeferredRaycastCommand(out RaycastCommand raycastCommand))
+                _pendingDeferredRaycastCommandIndices.IsCreated &&
+                _queuedDeferredRaycastCount < MaxDeferredRaycastCommands &&
+                _importanceScores[index] >= MinimumDeferredRaycastImportanceScore)
             {
-                _pendingDeferredRaycastCommands.Enqueue(raycastCommand);
-                _pendingDeferredRaycastOwnerIndices.Enqueue(index);
-                _queuedDeferredRaycastCount++;
+                int commandCount = target.BuildDeferredRaycastCommands(_deferredRaycastScratchCommands);
+                int safeCommandCount = math.clamp(commandCount, 0, MaxDeferredRaycastCommandsPerTarget);
+                for (int commandIndex = 0;
+                     commandIndex < safeCommandCount && _queuedDeferredRaycastCount < MaxDeferredRaycastCommands;
+                     commandIndex++)
+                {
+                    _pendingDeferredRaycastCommands.Enqueue(_deferredRaycastScratchCommands[commandIndex]);
+                    _pendingDeferredRaycastOwnerIndices.Enqueue(index);
+                    _pendingDeferredRaycastCommandIndices.Enqueue(commandIndex);
+                    _queuedDeferredRaycastCount++;
+                }
             }
         }
 
@@ -452,9 +465,10 @@ namespace Hecton8.Core
                 {
                     IFoveatedSimulationTarget owner = _deferredRaycastOwners[i];
                     if (owner != null)
-                        owner.ConsumeDeferredRaycastHit(_deferredRaycastResults[i]);
+                        owner.ConsumeDeferredRaycastHit(_deferredRaycastCommandIndices[i], _deferredRaycastResults[i]);
 
                     _deferredRaycastOwners[i] = null;
+                    _deferredRaycastCommandIndices[i] = 0;
                 }
 
                 _deferredRaycastScheduled = false;
@@ -492,6 +506,7 @@ namespace Hecton8.Core
             Array.Clear(_framesSinceTickRateChange, 0, _framesSinceTickRateChange.Length);
             Array.Clear(_visualTargetIndices, 0, _visualTargetIndices.Length);
             Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
+            Array.Clear(_deferredRaycastCommandIndices, 0, _deferredRaycastCommandIndices.Length);
 
             _viewCamera = null;
             _cameraTransform = null;
@@ -748,22 +763,27 @@ namespace Hecton8.Core
 
             if (!_pendingDeferredRaycastCommands.IsCreated)
             {
-                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[512] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[1536] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
             }
 
             if (!_pendingDeferredRaycastOwnerIndices.IsCreated)
             {
-                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[512] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[1536] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
+            }
+
+            if (!_pendingDeferredRaycastCommandIndices.IsCreated)
+            {
+                _pendingDeferredRaycastCommandIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[1536] - deferred fauna sight-line command slot indices aligned to queued commands - owner: FoveatedSimulationManager
             }
 
             if (!_deferredRaycastCommands.IsCreated)
             {
-                _deferredRaycastCommands = new NativeList<RaycastCommand>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[512] — deferred throttled-entity physics commands — owner: FoveatedSimulationManager
+                _deferredRaycastCommands = new NativeList<RaycastCommand>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[512] — deferred throttled-entity physics commands — owner: FoveatedSimulationManager
             }
 
             if (!_deferredRaycastResults.IsCreated)
             {
-                _deferredRaycastResults = new NativeArray<RaycastHit>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[512] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
+                _deferredRaycastResults = new NativeArray<RaycastHit>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[512] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
             }
             RegisterNativeMemoryBudget();
         }
@@ -780,6 +800,7 @@ namespace Hecton8.Core
             DisposeNativeArray(ref _jobAlphas, dependency);
             DisposeNativeQueue(ref _pendingDeferredRaycastCommands);
             DisposeNativeQueue(ref _pendingDeferredRaycastOwnerIndices);
+            DisposeNativeQueue(ref _pendingDeferredRaycastCommandIndices);
             DisposeNativeList(ref _deferredRaycastCommands, dependency);
             DisposeNativeArray(ref _deferredRaycastResults, dependency);
 
@@ -792,6 +813,7 @@ namespace Hecton8.Core
             _jobAlphas = default;
             _pendingDeferredRaycastCommands = default;
             _pendingDeferredRaycastOwnerIndices = default;
+            _pendingDeferredRaycastCommandIndices = default;
             _deferredRaycastCommands = default;
             _deferredRaycastResults = default;
         }
@@ -830,16 +852,20 @@ namespace Hecton8.Core
 
             _deferredRaycastCommands.Clear();
             Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
+            Array.Clear(_deferredRaycastCommandIndices, 0, _deferredRaycastCommandIndices.Length);
 
             int commandIndex = 0;
-            while (commandIndex < MaxTargets &&
+            while (commandIndex < MaxDeferredRaycastCommands &&
                    _pendingDeferredRaycastCommands.IsCreated &&
                    _pendingDeferredRaycastOwnerIndices.IsCreated &&
+                   _pendingDeferredRaycastCommandIndices.IsCreated &&
                    _pendingDeferredRaycastCommands.TryDequeue(out RaycastCommand command) &&
-                   _pendingDeferredRaycastOwnerIndices.TryDequeue(out int ownerIndex))
+                   _pendingDeferredRaycastOwnerIndices.TryDequeue(out int ownerIndex) &&
+                   _pendingDeferredRaycastCommandIndices.TryDequeue(out int ownerCommandIndex))
             {
                 _deferredRaycastCommands.Add(command);
                 _deferredRaycastOwners[commandIndex] = ownerIndex >= 0 && ownerIndex < _targetCount ? _targets[ownerIndex] : null;
+                _deferredRaycastCommandIndices[commandIndex] = ownerCommandIndex;
                 commandIndex++;
             }
 
@@ -853,6 +879,13 @@ namespace Hecton8.Core
             if (_pendingDeferredRaycastOwnerIndices.IsCreated)
             {
                 while (_pendingDeferredRaycastOwnerIndices.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_pendingDeferredRaycastCommandIndices.IsCreated)
+            {
+                while (_pendingDeferredRaycastCommandIndices.TryDequeue(out _))
                 {
                 }
             }
@@ -1037,4 +1070,5 @@ namespace Hecton8.Core
         }
     }
 }
+
 

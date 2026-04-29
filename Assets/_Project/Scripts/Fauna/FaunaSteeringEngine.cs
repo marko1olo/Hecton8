@@ -30,15 +30,19 @@ namespace Hecton8.AI
         public Vector3 desiredDirection;
         public float currentSpeed;
 
+        private Rigidbody _body;
         private Transform _selfTransform;
         private FaunaSpeciesProfile _speciesProfile;
         private float _lastBankingRoll;
 
         public void Init(Rigidbody rb, Transform self, FaunaSpeciesProfile profile = null)
         {
+            _body = rb;
             _selfTransform = self;
             _speciesProfile = profile;
             currentDirection = self.forward;
+            velocity = rb != null ? rb.linearVelocity : Vector3.zero;
+            currentSpeed = velocity.magnitude;
         }
 
         /// <summary>
@@ -47,7 +51,8 @@ namespace Hecton8.AI
         /// </summary>
         public void FixedTick(float fdt, Vector3 targetDir, float forceMult, float speedMult, float turnMult, bool isRetreating, Vector3 threatPos = default)
         {
-            if (_selfTransform == null) return;
+            if (_selfTransform == null || _body == null || fdt <= 0f)
+                return;
 
             desiredDirection = targetDir;
             float resolvedForceMultiplier = Mathf.Max(0.1f, forceMult);
@@ -55,12 +60,14 @@ namespace Hecton8.AI
             // TACTICAL DIRECTION: Predator Retreat (User REQ: Flee strictly from threat)
             if (isRetreating && threatPos != default)
             {
-                desiredDirection = (_selfTransform.position - threatPos).normalized;
+                Vector3 retreatDirection = _selfTransform.position - threatPos;
+                if (retreatDirection.sqrMagnitude > 0.0001f)
+                    desiredDirection = retreatDirection.normalized;
             }
 
             // 1. TACTICAL SPEED: Predator Retreat (User REQ: 1.5x speed)
             float stateMod = isRetreating ? (_speciesProfile != null ? _speciesProfile.retreatSpeedMultiplier : 1.5f) : 1f;
-            float targetMaxSpeed = moveSpeed * speedMult * stateMod;
+            float targetMaxSpeed = Mathf.Max(0.1f, maxSpeed * speedMult * stateMod);
 
             // 2. ACCELERATION / DECELERATION
             float speedTarget = desiredDirection.sqrMagnitude > 0.01f ? targetMaxSpeed : 0f;
@@ -74,17 +81,32 @@ namespace Hecton8.AI
                 speedTarget *= (1.0f - drag);
             }
 
-            currentSpeed = Mathf.Lerp(currentSpeed, speedTarget, acceleration * resolvedForceMultiplier * fdt);
-
-            // 3. DIRECTION & ROTATION
+            Vector3 currentVelocity = _body.linearVelocity;
+            float maxVelocityDelta = Mathf.Max(0.01f, swimForce * resolvedForceMultiplier * fdt);
             if (desiredDirection.sqrMagnitude > 0.01f)
             {
-                Vector3 lookDir = desiredDirection.normalized;
+                Vector3 desiredVelocity = desiredDirection.normalized * speedTarget;
+                currentVelocity = Vector3.MoveTowards(currentVelocity, desiredVelocity, maxVelocityDelta);
+            }
+            else
+            {
+                currentVelocity = Vector3.MoveTowards(currentVelocity, Vector3.zero, maxVelocityDelta);
+            }
+
+            _body.linearVelocity = currentVelocity;
+            velocity = currentVelocity;
+            currentSpeed = currentVelocity.magnitude;
+
+            // 3. DIRECTION & ROTATION
+            Vector3 facingDirection = currentVelocity.sqrMagnitude > 0.01f ? currentVelocity.normalized : currentDirection;
+            if (facingDirection.sqrMagnitude > 0.01f)
+            {
+                Vector3 lookDir = facingDirection.normalized;
                 Quaternion targetRot = Quaternion.LookRotation(lookDir, Vector3.up);
                 
                 // Rotation Speed multiplier for aggressive/retreat states
                 float rotMod = (isRetreating || speedMult > 1.1f) ? 2.5f * turnMult : turnMult;
-                _selfTransform.rotation = Quaternion.Slerp(_selfTransform.rotation, targetRot, rotationSpeed * rotMod * resolvedForceMultiplier * fdt);
+                Quaternion nextRotation = Quaternion.Slerp(_body.rotation, targetRot, turnSpeed * rotMod * resolvedForceMultiplier * fdt);
 
                 // 4. VISUAL BANKING (User REQ: Fluid aquatic tilt)
                 float angle = Vector3.SignedAngle(_selfTransform.forward, lookDir, _selfTransform.up);
@@ -94,13 +116,10 @@ namespace Hecton8.AI
                 float targetRoll = -angle * bankingStrength * 0.1f * bankIntensity * bankMult;
                 _lastBankingRoll = Mathf.Lerp(_lastBankingRoll, targetRoll, 5f * fdt);
 
-                Vector3 eulers = _selfTransform.rotation.eulerAngles;
-                _selfTransform.rotation = Quaternion.Euler(eulers.x, eulers.y, _lastBankingRoll);
+                Vector3 eulers = nextRotation.eulerAngles;
+                _body.MoveRotation(Quaternion.Euler(eulers.x, eulers.y, _lastBankingRoll));
+                currentDirection = lookDir;
             }
-
-            // 5. VELOCITY & POSITION
-            velocity = _selfTransform.forward * currentSpeed;
-            _selfTransform.position += velocity * fdt;
         }
 
         /// <summary>

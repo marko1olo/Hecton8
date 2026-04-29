@@ -68,6 +68,24 @@ namespace Hecton8.Power
             EmergencyReserveActive = _debugEmergencyReserveGridCount > 0
         };
 
+        internal static LogisticsBrownoutTier ResolveProjectedBrownoutTier(float supplyWatts, float demandWatts)
+        {
+            if (demandWatts <= 0.0001f)
+                return LogisticsBrownoutTier.None;
+
+            float supplyRatio = math.saturate(supplyWatts / demandWatts);
+            if (supplyRatio < 0.10f)
+                return LogisticsBrownoutTier.EmergencyOnly;
+
+            if (supplyRatio < 0.40f)
+                return LogisticsBrownoutTier.EssentialOnly;
+
+            if (supplyRatio < 0.85f)
+                return LogisticsBrownoutTier.AmbientLightsOnly;
+
+            return LogisticsBrownoutTier.None;
+        }
+
         public bool TryQueueWirelessToolDrain(float energyWattSeconds, out float grantedEnergyWattSeconds)
         {
             grantedEnergyWattSeconds = 0f;

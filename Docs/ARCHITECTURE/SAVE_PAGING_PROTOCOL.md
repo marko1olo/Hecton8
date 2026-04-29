@@ -26,6 +26,15 @@ Dirty sector commit path:
 7. storage recomputes directory hash and header hash
 8. storage deletes the temp override file
 
+Sector paging integrity path:
+
+1. storage reads one indexed sector block via MMF offset
+2. block codec decompresses protected `16 KB` sub-blocks independently
+3. each sub-block verifies a stored low-32-of-`XXHash3-64` checksum
+4. if any protected sub-block fails, storage rejects the primary sector block
+5. storage retries that same `SectorHash` from `"{slot}.sav.bak"`
+6. only the failed sector falls back; the rest of the world remains resident
+
 ## Master Index
 
 Directory layout is fixed:
@@ -171,6 +180,21 @@ Binary block relocation/overwrite path uses:
 - native temporary staging (`NativeArray<byte>`)
 
 Managed `byte[]` staging is forbidden in the block commit lane.
+
+## Protected 16 KB Block Validation
+
+Indexed sector blocks and temp sector override blocks use protected internal LZ4 sub-blocks:
+
+```text
+[compressedLength:int][rawLength:int][checksum:uint]
+```
+
+Rules:
+
+- `rawLength` max = `16384`
+- `checksum` = low 32 bits of `XXHash3-64(rawBlockBytes)`
+- validation happens immediately after each sub-block decompress
+- one bad sub-block invalidates only that sector block load, not the whole save
 
 ## Defrag Relationship
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Scavenging;
 using Unity.Mathematics;
 using UnityEngine;
@@ -23,14 +24,46 @@ namespace Hecton8.World
         private const float DefaultSlopeSampleDistanceMeters = 4f;
         private const float DefaultVoxelSolidThreshold = 0.08f;
         private const float DefaultSectorMarginMeters = 2f;
+        private const float DefaultBrinePoolRadiusMinMeters = 12f;
+        private const float DefaultBrinePoolRadiusMaxMeters = 28f;
+        private const float DefaultBrinePoolThicknessMinMeters = 4f;
+        private const float DefaultBrinePoolThicknessMaxMeters = 18f;
+        private const float DefaultBrinePoolMinimumDepthMeters = 2500f;
+        private const float DefaultBrinePoolMinimumLipMeters = 2.5f;
+        private const float DefaultBrinePoolToxicityIntensity = 0.92f;
+        private const float DefaultBrinePoolHazardVisorBias = 0.8f;
+        private const float DefaultBrinePoolFluidDensityKgPerCubicMeter = 1250f;
+        private const float DefaultUpwellingRespawnRate = 0.05f;
+        private const float DefaultMagmaVentLifetimeSeconds = 6f;
         private const float GhostAlpha = 0.24f;
         private const string RuntimePrefabName = "PFB_RuntimeResourceNode_Generic";
+        private const string RuntimeMagmaVentPrefabName = "PFB_RuntimeMagmaVent_Generic";
+        private const int BrinePoolSeedSalt = unchecked((int)0x4252494E);
+        private const int BrinePoolHazardIdSalt = unchecked((int)0x52494E45);
+        private const int MagmaVentSeedSalt = unchecked((int)0x56454E54);
+
+        internal static ResourceDistributionDirector ActiveRuntimeInstance { get; private set; }
+
+        private struct BrinePoolState
+        {
+            public bool IsValid;
+            public bool HazardRegistered;
+            public int HazardZoneId;
+            public uint StableSeed;
+            public Vector3 Center;
+            public float RadiusMeters;
+            public float BottomHeight;
+            public float SurfaceHeight;
+            public float ToxicityIntensity;
+            public float FluidDensityKgPerCubicMeter;
+        }
 
         private sealed class SectorState
         {
             public readonly int2 Coordinates;
             public readonly List<ResourceNode> ActiveNodes;
             public bool SpawnEnvelopeQueued;
+            public BrinePoolState BrinePool;
 
             public SectorState(int2 coordinates, int initialCapacity)
             {
@@ -38,6 +71,7 @@ namespace Hecton8.World
                 // COLD ALLOC: List<ResourceNode>[initialCapacity] — live sector resource node registry — owner: ResourceDistributionDirector
                 ActiveNodes = new List<ResourceNode>(initialCapacity);
                 SpawnEnvelopeQueued = false;
+                BrinePool = default;
             }
         }
 
@@ -46,7 +80,10 @@ namespace Hecton8.World
             public long SectorKey;
             public int TemplateIndex;
             public Vector3 RuntimePosition;
+            public Quaternion Rotation;
             public float YawDegrees;
+            public uint StableSeed;
+            public ulong TombstoneId;
         }
 
         [Header("References")]
@@ -100,12 +137,59 @@ namespace Hecton8.World
         [Tooltip("Positive voxel density above this threshold blocks surface placement.")]
         private float voxelSolidThreshold = DefaultVoxelSolidThreshold;
 
+        [Header("Brine Pools")]
+        [SerializeField, Min(4f)]
+        [Tooltip("Minimum deterministic brine-pool radius allowed inside deep hadal sectors.")]
+        private float brinePoolRadiusMinMeters = DefaultBrinePoolRadiusMinMeters;
+
+        [SerializeField, Min(6f)]
+        [Tooltip("Maximum deterministic brine-pool radius allowed inside deep hadal sectors.")]
+        private float brinePoolRadiusMaxMeters = DefaultBrinePoolRadiusMaxMeters;
+
+        [SerializeField, Min(1f)]
+        [Tooltip("Minimum vertical thickness of the deterministic brine fluid lens.")]
+        private float brinePoolThicknessMinMeters = DefaultBrinePoolThicknessMinMeters;
+
+        [SerializeField, Min(2f)]
+        [Tooltip("Maximum vertical thickness of the deterministic brine fluid lens.")]
+        private float brinePoolThicknessMaxMeters = DefaultBrinePoolThicknessMaxMeters;
+
+        [SerializeField, Min(1000f)]
+        [Tooltip("Minimum seabed depth before a sector becomes eligible for brine-pool generation.")]
+        private float brinePoolMinimumDepthMeters = DefaultBrinePoolMinimumDepthMeters;
+
+        [SerializeField, Min(0.5f)]
+        [Tooltip("Minimum lip delta between the bowl floor and sampled rim heights for a valid brine pool.")]
+        private float brinePoolMinimumLipMeters = DefaultBrinePoolMinimumLipMeters;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Normalized toxicity intensity registered into HazardZoneManager for brine pools.")]
+        private float brinePoolToxicityIntensity = DefaultBrinePoolToxicityIntensity;
+
+        [SerializeField, Range(0f, 2f)]
+        [Tooltip("Visor glitch multiplier registered alongside brine toxicity hazards.")]
+        private float brinePoolHazardVisorBias = DefaultBrinePoolHazardVisorBias;
+
+        [SerializeField, Min(1025f)]
+        [Tooltip("Fluid density in kg/m3 used by buoyancy overrides inside deterministic brine pools.")]
+        private float brinePoolFluidDensityKgPerCubicMeter = DefaultBrinePoolFluidDensityKgPerCubicMeter;
+
+        [Header("Tectonic Upwelling")]
+        [SerializeField, Range(0f, 0.25f)]
+        [Tooltip("Fraction of tombstoned nodes in an affected chunk that are eligible for seismic reinstatement.")]
+        private float tectonicUpwellingRespawnRate = DefaultUpwellingRespawnRate;
+
+        [SerializeField, Range(1f, 20f)]
+        [Tooltip("Lifetime in seconds of the temporary magma-vent marker spawned during upwelling reinstatement.")]
+        private float magmaVentLifetimeSeconds = DefaultMagmaVentLifetimeSeconds;
+
         [Header("Diagnostics")]
         [SerializeField] private int _debugResidentSectorCount;
         [SerializeField] private int _debugActiveNodeCount;
         [SerializeField] private int _debugQueuedSpawnCount;
         [SerializeField] private int _debugLastAcceptedTemplateHash;
         [SerializeField] private Vector2Int _debugPlayerSector;
+        [SerializeField] private int _debugActiveBrinePoolCount;
 
         // COLD ALLOC: Dictionary<long,SectorState>[32] — resident sector registry keyed by AUP sector hash — owner: ResourceDistributionDirector
         private Dictionary<long, SectorState> _residentSectors;
@@ -115,11 +199,17 @@ namespace Hecton8.World
         private List<long> _sectorEvictionScratch;
 
         private GameObject _runtimePrefab;
+        private GameObject _magmaVentPrefab;
         private Mesh _ghostCubeMesh;
+        private Mesh _ghostCylinderMesh;
         private Material _ghostMaterial;
+        private Material _magmaVentMaterial;
         private bool _runtimePoolReady;
         private bool _slowTickRegistered;
+        private bool _seismicHookRegistered;
         private int _computedPoolWarmupCount;
+        // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
+        private List<ResourceNodeTombstoneRecord> _resourceTombstoneScratch;
 
         private void Awake()
         {
@@ -129,6 +219,17 @@ namespace Hecton8.World
             slopeSampleDistanceMeters = math.max(0.5f, slopeSampleDistanceMeters);
             sectorEdgeMarginMeters = math.clamp(sectorEdgeMarginMeters, 0f, sectorSizeMeters * 0.25f);
             voxelSolidThreshold = math.clamp(voxelSolidThreshold, 0.001f, 1f);
+            brinePoolRadiusMinMeters = math.max(4f, brinePoolRadiusMinMeters);
+            brinePoolRadiusMaxMeters = math.max(brinePoolRadiusMinMeters, brinePoolRadiusMaxMeters);
+            brinePoolThicknessMinMeters = math.max(1f, brinePoolThicknessMinMeters);
+            brinePoolThicknessMaxMeters = math.max(brinePoolThicknessMinMeters, brinePoolThicknessMaxMeters);
+            brinePoolMinimumDepthMeters = math.max(1000f, brinePoolMinimumDepthMeters);
+            brinePoolMinimumLipMeters = math.max(0.5f, brinePoolMinimumLipMeters);
+            brinePoolToxicityIntensity = math.saturate(brinePoolToxicityIntensity);
+            brinePoolHazardVisorBias = math.max(0f, brinePoolHazardVisorBias);
+            brinePoolFluidDensityKgPerCubicMeter = math.max(1025f, brinePoolFluidDensityKgPerCubicMeter);
+            tectonicUpwellingRespawnRate = math.clamp(tectonicUpwellingRespawnRate, 0f, 0.25f);
+            magmaVentLifetimeSeconds = math.max(1f, magmaVentLifetimeSeconds);
 
             // COLD ALLOC: Dictionary<long,SectorState>[32] — resident sector registry keyed by AUP sector hash — owner: ResourceDistributionDirector
             _residentSectors = new Dictionary<long, SectorState>(32);
@@ -136,6 +237,8 @@ namespace Hecton8.World
             _pendingSpawns = new Queue<SpawnRequest>(DefaultMaxPendingSpawnRequests);
             // COLD ALLOC: List<long>[32] — sector eviction scratch list — owner: ResourceDistributionDirector
             _sectorEvictionScratch = new List<long>(32);
+            // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
+            _resourceTombstoneScratch = new List<ResourceNodeTombstoneRecord>(64);
 
             EnsureRuntimePrefab();
             UpdateDiagnostics(default);
@@ -143,15 +246,32 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (_slowTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _slowTickRegistered = true;
+            ActiveRuntimeInstance = this;
+
+            if (!_slowTickRegistered && GlobalRegistry.Dispatcher != null)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _slowTickRegistered = true;
+            }
+
+            if (!_seismicHookRegistered)
+            {
+                RandomEventEvents.OnSeismicShockwave += HandleSeismicShockwave;
+                _seismicHookRegistered = true;
+            }
         }
 
         private void OnDisable()
         {
+            if (_seismicHookRegistered)
+            {
+                RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
+                _seismicHookRegistered = false;
+            }
+
             if (_slowTickRegistered)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
@@ -162,6 +282,7 @@ namespace Hecton8.World
             _residentSectors?.Clear();
             _pendingSpawns?.Clear();
             _runtimePoolReady = false;
+            ActiveRuntimeInstance = ReferenceEquals(ActiveRuntimeInstance, this) ? null : ActiveRuntimeInstance;
             UpdateDiagnostics(default);
         }
 
@@ -206,7 +327,9 @@ namespace Hecton8.World
                 return;
 
             _ghostCubeMesh = CaptureCubeMesh();
+            _ghostCylinderMesh = CaptureCylinderMesh();
             _ghostMaterial = CreateGhostMaterial();
+            _magmaVentMaterial = CreateMagmaVentMaterial();
 
             // COLD ALLOC: GameObject[1] — generic pooled runtime resource-node prefab template — owner: ResourceDistributionDirector
             _runtimePrefab = new GameObject(RuntimePrefabName);
@@ -229,6 +352,22 @@ namespace Hecton8.World
             sphereCollider.radius = 0.5f;
 
             _runtimePrefab.AddComponent<ResourceNode>();
+
+            if (_ghostCylinderMesh == null || _magmaVentMaterial == null)
+                return;
+
+            // COLD ALLOC: GameObject[1] — temporary tectonic-upwelling marker prefab template — owner: ResourceDistributionDirector
+            _magmaVentPrefab = new GameObject(RuntimeMagmaVentPrefabName);
+            _magmaVentPrefab.transform.SetParent(transform, false);
+            _magmaVentPrefab.SetActive(false);
+
+            MeshFilter magmaMeshFilter = _magmaVentPrefab.AddComponent<MeshFilter>();
+            magmaMeshFilter.sharedMesh = _ghostCylinderMesh;
+
+            MeshRenderer magmaMeshRenderer = _magmaVentPrefab.AddComponent<MeshRenderer>();
+            magmaMeshRenderer.sharedMaterial = _magmaVentMaterial;
+            magmaMeshRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            magmaMeshRenderer.receiveShadows = false;
         }
 
         private void EnsureRuntimePool()
@@ -244,6 +383,9 @@ namespace Hecton8.World
             int warmupCount = math.max(poolWarmupFloor, _computedPoolWarmupCount);
             if (!pool.HasPool(_runtimePrefab))
                 pool.Warmup(_runtimePrefab, warmupCount);
+
+            if (_magmaVentPrefab != null && !pool.HasPool(_magmaVentPrefab))
+                pool.Warmup(_magmaVentPrefab, math.max(4, ((sectorRadius * 2) + 1) * ((sectorRadius * 2) + 1)));
 
             _runtimePoolReady = pool.HasPool(_runtimePrefab);
         }
@@ -281,7 +423,10 @@ namespace Hecton8.World
                 if (deltaX > sectorRadius || deltaY > sectorRadius)
                     _sectorEvictionScratch.Add(residentEnumerator.Current.Key);
                 else
+                {
                     CompactSectorNodes(state);
+                    SyncBrineHazardRegistration(state);
+                }
             }
 
             residentEnumerator.Dispose();
@@ -298,6 +443,7 @@ namespace Hecton8.World
                     if (_residentSectors.TryGetValue(sectorKey, out SectorState existingState))
                     {
                         CompactSectorNodes(existingState);
+                        SyncBrineHazardRegistration(existingState);
                         continue;
                     }
 
@@ -331,6 +477,8 @@ namespace Hecton8.World
             if (state == null || state.SpawnEnvelopeQueued)
                 return;
 
+            state.BrinePool = ResolveBrinePoolState(state.Coordinates);
+            SyncBrineHazardRegistration(state);
             state.SpawnEnvelopeQueued = true;
             for (int templateIndex = 0; templateIndex < resourceTemplates.Length; templateIndex++)
             {
@@ -348,8 +496,11 @@ namespace Hecton8.World
                         return;
                     }
 
-                    if (!TryBuildSpawnRequest(state.Coordinates, sectorKey, template, templateIndex, candidateIndex, out SpawnRequest request))
+                    if (!TryBuildSpawnRequest(state.Coordinates, sectorKey, template, templateIndex, candidateIndex, in state.BrinePool, out SpawnRequest request) ||
+                        IsSpawnAlreadyQueuedOrActive(state, in request))
+                    {
                         continue;
+                    }
 
                     _pendingSpawns.Enqueue(request);
                     acceptedForTemplate++;
@@ -363,18 +514,48 @@ namespace Hecton8.World
             ResourceNodeTemplate template,
             int templateIndex,
             int candidateIndex,
+            in BrinePoolState brinePool,
             out SpawnRequest request)
         {
             request = default;
-            uint state = SeedSectorCandidate(sector, template.StableHashId, candidateIndex);
+            uint seed = SeedSectorCandidate(sector, template.StableHashId, candidateIndex);
+            uint state = seed;
 
-            double absoluteX = (sector.x * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
-            double absoluteZ = (sector.y * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
-            Vector3 runtimeProbe = AbsoluteToRuntime(absoluteX, 0d, absoluteZ);
-            if (!mapMagicBridge.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out float seabedHeight))
+            float seabedHeight;
+            Vector3 surfaceAnchorPosition;
+            if (template.RequiresBrinePool)
+            {
+                if (!brinePool.IsValid)
+                    return false;
+
+                float angleRadians = Next01(ref state) * math.PI * 2f;
+                float radialDistance = math.sqrt(Next01(ref state)) * math.max(1f, brinePool.RadiusMeters * 0.82f);
+                float sampleX = brinePool.Center.x + (math.cos(angleRadians) * radialDistance);
+                float sampleZ = brinePool.Center.z + (math.sin(angleRadians) * radialDistance);
+                if (!mapMagicBridge.TryGetHeight(sampleX, sampleZ, out seabedHeight))
+                    return false;
+
+                surfaceAnchorPosition = new Vector3(sampleX, seabedHeight, sampleZ);
+                if (!IsInsideBrinePool(in brinePool, surfaceAnchorPosition))
+                    return false;
+            }
+            else
+            {
+                double absoluteX = (sector.x * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
+                double absoluteZ = (sector.y * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
+                Vector3 runtimeProbe = AbsoluteToRuntime(absoluteX, 0d, absoluteZ);
+                if (!mapMagicBridge.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out seabedHeight))
+                    return false;
+
+                surfaceAnchorPosition = new Vector3(runtimeProbe.x, seabedHeight, runtimeProbe.z);
+                if (brinePool.IsValid && IsInsideBrinePool(in brinePool, surfaceAnchorPosition))
+                    return false;
+            }
+
+            float yawDegrees = Next01(ref state) * 360f;
+            if (!TryResolveSurfacePlacement(surfaceAnchorPosition, template.SpawnOffsetMeters, yawDegrees, out Vector3 runtimePosition, out Quaternion rotation))
                 return false;
 
-            Vector3 runtimePosition = new Vector3(runtimeProbe.x, seabedHeight + template.SpawnOffsetMeters, runtimeProbe.z);
             float waterSurface = mapMagicBridge.WaterSurfaceLevel;
             float depthMeters = math.max(0f, waterSurface - seabedHeight);
             float temperatureCelsius = ResolveTemperature(runtimePosition);
@@ -404,7 +585,10 @@ namespace Hecton8.World
                 SectorKey = sectorKey,
                 TemplateIndex = templateIndex,
                 RuntimePosition = runtimePosition,
-                YawDegrees = Next01(ref state) * 360f
+                Rotation = rotation,
+                YawDegrees = yawDegrees,
+                StableSeed = seed,
+                TombstoneId = tombstoneId
             };
             return true;
         }
@@ -434,6 +618,12 @@ namespace Hecton8.World
                     continue;
                 }
 
+                if (ContainsActiveNodeWithTombstone(sectorState, request.TombstoneId))
+                {
+                    _pendingSpawns.Dequeue();
+                    continue;
+                }
+
                 ResourceNodeTemplate template = resourceTemplates[request.TemplateIndex];
                 if (template == null)
                 {
@@ -441,8 +631,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                Quaternion rotation = Quaternion.Euler(0f, request.YawDegrees, 0f);
-                GameObject instance = pool.Spawn(_runtimePrefab, request.RuntimePosition, rotation);
+                GameObject instance = pool.Spawn(_runtimePrefab, request.RuntimePosition, request.Rotation);
                 if (instance == null)
                     break;
 
@@ -456,10 +645,288 @@ namespace Hecton8.World
                 }
 
                 node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
+                TryApplyEmbeddedVein(node, template, in request);
                 node.RefreshRuntimeSpatialRegistration();
                 sectorState.ActiveNodes.Add(node);
                 _debugLastAcceptedTemplateHash = template.StableHashId;
             }
+        }
+
+        internal bool TrySampleBrineFluidDensity(Vector3 runtimePosition, out float fluidDensityKgPerCubicMeter)
+        {
+            fluidDensityKgPerCubicMeter = 0f;
+            if (_residentSectors == null || _residentSectors.Count == 0)
+                return false;
+
+            Dictionary<long, SectorState>.Enumerator enumerator = _residentSectors.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                BrinePoolState brinePool = enumerator.Current.Value.BrinePool;
+                if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
+                    continue;
+
+                fluidDensityKgPerCubicMeter = brinePool.FluidDensityKgPerCubicMeter;
+                enumerator.Dispose();
+                return fluidDensityKgPerCubicMeter > 0f;
+            }
+
+            enumerator.Dispose();
+            return false;
+        }
+
+        private void HandleSeismicShockwave(SeismicShockwaveEvent payload)
+        {
+            if (!Application.isPlaying || tectonicUpwellingRespawnRate <= 0f)
+                return;
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null || _resourceTombstoneScratch == null)
+                return;
+
+            int3 affectedChunkId = registry.ResolveRuntimeChunkId(payload.EpicenterWS);
+            if (registry.CopyResourceNodeTombstonesInChunk(affectedChunkId, _resourceTombstoneScratch) <= 0)
+                return;
+
+            uint shockSeed = ResolveShockwaveSeed(in payload);
+            float maxDistanceSqr = math.max(1f, payload.ImpulseRadiusMeters * payload.ImpulseRadiusMeters);
+            for (int i = 0; i < _resourceTombstoneScratch.Count; i++)
+            {
+                ResourceNodeTombstoneRecord tombstone = _resourceTombstoneScratch[i];
+                Vector3 runtimePosition = tombstone.Position.ToRuntimeFloat3();
+                if ((runtimePosition - payload.EpicenterWS).sqrMagnitude > maxDistanceSqr)
+                    continue;
+
+                uint selectionState = Mix(shockSeed, (uint)tombstone.TombstoneId);
+                selectionState = Mix(selectionState, (uint)(tombstone.TombstoneId >> 32));
+                if (Next01(ref selectionState) > tectonicUpwellingRespawnRate ||
+                    !registry.TryReinstateDestroyedResourceNode(tombstone.TombstoneId))
+                {
+                    continue;
+                }
+
+                int2 sector = QuantizeSector(in tombstone.Position);
+                long sectorKey = ComposeSectorKey(sector);
+                if (_residentSectors != null && _residentSectors.TryGetValue(sectorKey, out SectorState residentState))
+                {
+                    residentState.SpawnEnvelopeQueued = false;
+                    EnqueueSectorEnvelope(residentState, sectorKey);
+                }
+
+                SpawnMagmaVentMarker(runtimePosition, payload.ImpulseMagnitude, selectionState);
+            }
+        }
+
+        private BrinePoolState ResolveBrinePoolState(int2 sector)
+        {
+            BrinePoolState brinePool = default;
+            uint state = SeedSectorCandidate(sector, BrinePoolSeedSalt, 0);
+            uint stableSeed = state;
+
+            double absoluteX = (sector.x * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
+            double absoluteZ = (sector.y * (double)sectorSizeMeters) + ResolveSectorOffsetMeters(ref state);
+            Vector3 runtimeProbe = AbsoluteToRuntime(absoluteX, 0d, absoluteZ);
+            if (!mapMagicBridge.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out float bowlFloorHeight))
+                return brinePool;
+
+            float waterSurface = mapMagicBridge.WaterSurfaceLevel;
+            float depthMeters = math.max(0f, waterSurface - bowlFloorHeight);
+            if (depthMeters < brinePoolMinimumDepthMeters)
+                return brinePool;
+
+            float radiusMeters = math.lerp(brinePoolRadiusMinMeters, brinePoolRadiusMaxMeters, Next01(ref state));
+            float thicknessMeters = math.lerp(brinePoolThicknessMinMeters, brinePoolThicknessMaxMeters, Next01(ref state));
+            thicknessMeters = math.min(thicknessMeters, math.max(1f, depthMeters * 0.12f));
+            float rimSampleRadius = math.max(1f, radiusMeters * 0.94f);
+            float rimMinHeight = float.MaxValue;
+            for (int sampleIndex = 0; sampleIndex < 4; sampleIndex++)
+            {
+                float angle = sampleIndex * (math.PI * 0.5f);
+                float sampleX = runtimeProbe.x + (math.cos(angle) * rimSampleRadius);
+                float sampleZ = runtimeProbe.z + (math.sin(angle) * rimSampleRadius);
+                if (!mapMagicBridge.TryGetHeight(sampleX, sampleZ, out float rimHeight))
+                    return default;
+
+                rimMinHeight = math.min(rimMinHeight, rimHeight);
+            }
+
+            if ((rimMinHeight - bowlFloorHeight) < brinePoolMinimumLipMeters)
+                return brinePool;
+
+            float surfaceHeight = math.min(waterSurface - 0.25f, bowlFloorHeight + thicknessMeters);
+            if (surfaceHeight <= bowlFloorHeight + 0.1f)
+                return brinePool;
+
+            brinePool.IsValid = true;
+            brinePool.StableSeed = stableSeed;
+            brinePool.Center = new Vector3(runtimeProbe.x, (bowlFloorHeight + surfaceHeight) * 0.5f, runtimeProbe.z);
+            brinePool.RadiusMeters = radiusMeters;
+            brinePool.BottomHeight = bowlFloorHeight;
+            brinePool.SurfaceHeight = surfaceHeight;
+            brinePool.ToxicityIntensity = brinePoolToxicityIntensity;
+            brinePool.FluidDensityKgPerCubicMeter = brinePoolFluidDensityKgPerCubicMeter;
+            return brinePool;
+        }
+
+        private void SyncBrineHazardRegistration(SectorState state)
+        {
+            if (state == null)
+                return;
+
+            if (!state.BrinePool.IsValid)
+            {
+                UnregisterBrineHazard(ref state.BrinePool);
+                return;
+            }
+
+            HazardZoneManager hazardManager = HazardZoneManager.EnsureRuntimeInstance();
+            if (hazardManager == null)
+                return;
+
+            int zoneId = ResolveBrineHazardZoneId(state.BrinePool.StableSeed);
+            float radius = math.max(state.BrinePool.RadiusMeters, (state.BrinePool.SurfaceHeight - state.BrinePool.BottomHeight) * 0.75f);
+            if (!hazardManager.RegisterZone(
+                    zoneId,
+                    state.BrinePool.Center,
+                    state.BrinePool.ToxicityIntensity,
+                    radius,
+                    HazardType.Toxicity,
+                    brinePoolHazardVisorBias))
+            {
+                return;
+            }
+
+            state.BrinePool.HazardZoneId = zoneId;
+            state.BrinePool.HazardRegistered = true;
+        }
+
+        private void UnregisterBrineHazard(ref BrinePoolState brinePool)
+        {
+            if (!brinePool.HazardRegistered)
+                return;
+
+            HazardZoneManager manager = HazardZoneManager.Instance;
+            if (manager != null)
+                manager.UnregisterZone(brinePool.HazardZoneId);
+
+            brinePool.HazardRegistered = false;
+            brinePool.HazardZoneId = 0;
+        }
+
+        private bool IsSpawnAlreadyQueuedOrActive(SectorState state, in SpawnRequest request)
+        {
+            return ContainsActiveNodeWithTombstone(state, request.TombstoneId) ||
+                   ContainsPendingSpawn(request.SectorKey, request.TombstoneId);
+        }
+
+        private bool ContainsActiveNodeWithTombstone(SectorState state, ulong tombstoneId)
+        {
+            if (state == null || tombstoneId == 0UL)
+                return false;
+
+            List<ResourceNode> nodes = state.ActiveNodes;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                ResourceNode node = nodes[i];
+                if (node != null && node.PersistentTombstoneId == tombstoneId && node.gameObject.activeInHierarchy)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool ContainsPendingSpawn(long sectorKey, ulong tombstoneId)
+        {
+            if (_pendingSpawns == null || _pendingSpawns.Count == 0 || tombstoneId == 0UL)
+                return false;
+
+            Queue<SpawnRequest>.Enumerator enumerator = _pendingSpawns.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                SpawnRequest queuedRequest = enumerator.Current;
+                if (queuedRequest.SectorKey == sectorKey && queuedRequest.TombstoneId == tombstoneId)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsInsideBrinePool(in BrinePoolState brinePool, Vector3 runtimePosition)
+        {
+            if (!brinePool.IsValid ||
+                runtimePosition.y < brinePool.BottomHeight ||
+                runtimePosition.y > brinePool.SurfaceHeight)
+            {
+                return false;
+            }
+
+            float deltaX = runtimePosition.x - brinePool.Center.x;
+            float deltaZ = runtimePosition.z - brinePool.Center.z;
+            float radius = math.max(0.01f, brinePool.RadiusMeters);
+            return ((deltaX * deltaX) + (deltaZ * deltaZ)) <= (radius * radius);
+        }
+
+        private void TryApplyEmbeddedVein(ResourceNode node, ResourceNodeTemplate template, in SpawnRequest request)
+        {
+            if (node == null ||
+                template == null ||
+                !template.EmbedInVoxelRock ||
+                voxelEngine == null ||
+                !voxelEngine.TryGetNearestActiveVolume(request.RuntimePosition, out HectonVoxelVolume volume) ||
+                volume == null)
+            {
+                return;
+            }
+
+            double3 absolutePosition = AbsoluteUniversePosition.FromRuntimePosition(request.RuntimePosition).ToAbsoluteDouble3();
+            Vector3 absoluteStart = new Vector3((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z);
+            float yawRadians = request.YawDegrees * Mathf.Deg2Rad;
+            Vector3 veinDirection = new Vector3(math.cos(yawRadians), -0.35f, math.sin(yawRadians)).normalized;
+            volume.TryApplyEmbeddedOreVein(
+                absoluteStart,
+                veinDirection,
+                template.EmbeddedVeinLengthMeters,
+                template.EmbeddedVeinRadiusMeters,
+                template.EmbeddedVeinNoiseAmplitudeMeters,
+                template.EmbeddedVeinStampCount,
+                request.StableSeed);
+        }
+
+        private void SpawnMagmaVentMarker(Vector3 runtimePosition, float impulseMagnitude, uint stableSeed)
+        {
+            if (_magmaVentPrefab == null)
+                return;
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+                return;
+
+            if (!pool.HasPool(_magmaVentPrefab))
+                pool.Warmup(_magmaVentPrefab, 4);
+
+            GameObject marker = pool.Spawn(_magmaVentPrefab, runtimePosition, Quaternion.identity);
+            if (marker == null)
+                return;
+
+            float magnitude01 = math.saturate(impulseMagnitude / 40f);
+            float height = math.lerp(2.5f, 6.5f, magnitude01);
+            float radius = math.lerp(0.75f, 1.65f, Next01(ref stableSeed));
+            marker.transform.localScale = new Vector3(radius, height, radius);
+            pool.Despawn(marker, magmaVentLifetimeSeconds);
+        }
+
+        private uint ResolveShockwaveSeed(in SeismicShockwaveEvent payload)
+        {
+            AbsoluteUniversePosition epicenter = AbsoluteUniversePosition.FromRuntimePosition(payload.EpicenterWS);
+            int2 sector = QuantizeSector(in epicenter);
+            uint seed = SeedSectorCandidate(sector, MagmaVentSeedSalt, payload.AppliedStampCount);
+            seed = Mix(seed, (uint)math.asint(payload.ImpulseRadiusMeters));
+            seed = Mix(seed, (uint)math.asint(payload.ImpulseMagnitude));
+            return seed;
+        }
+
+        private static int ResolveBrineHazardZoneId(uint stableSeed)
+        {
+            return (int)(stableSeed ^ BrinePoolHazardIdSalt);
         }
 
         private void CompactSectorNodes(SectorState state)
@@ -481,6 +948,7 @@ namespace Hecton8.World
             if (!_residentSectors.TryGetValue(sectorKey, out SectorState state))
                 return;
 
+            UnregisterBrineHazard(ref state.BrinePool);
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             List<ResourceNode> nodes = state.ActiveNodes;
             for (int i = 0; i < nodes.Count; i++)
@@ -537,6 +1005,73 @@ namespace Hecton8.World
             return vegetationBridge != null
                 ? vegetationBridge.GetWaterTemperature(runtimePosition)
                 : 0f;
+        }
+
+        private bool TryResolveSurfacePlacement(
+            Vector3 surfaceAnchorPosition,
+            float surfaceOffsetMeters,
+            float yawDegrees,
+            out Vector3 runtimePosition,
+            out Quaternion rotation)
+        {
+            Vector3 surfaceNormal = ResolveSurfaceNormal(surfaceAnchorPosition);
+            runtimePosition = surfaceAnchorPosition + (surfaceNormal * math.max(0f, surfaceOffsetMeters));
+            rotation = ResolveSurfaceRotation(surfaceNormal, yawDegrees);
+            return true;
+        }
+
+        private Vector3 ResolveSurfaceNormal(Vector3 runtimePosition)
+        {
+            if (voxelEngine != null &&
+                voxelEngine.TryGetNearestActiveVolume(runtimePosition, out HectonVoxelVolume volume) &&
+                volume != null &&
+                CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, volume.preset, out Bounds localBounds))
+            {
+                Vector3 localPoint = volume.transform.InverseTransformPoint(runtimePosition);
+                localBounds.Expand(math.max(1f, slopeSampleDistanceMeters));
+                if (localBounds.Contains(localPoint) &&
+                    volume.TrySampleSurfaceNormal(runtimePosition, math.max(0.2f, slopeSampleDistanceMeters * 0.25f), out Vector3 voxelSurfaceNormal))
+                {
+                    return voxelSurfaceNormal;
+                }
+            }
+
+            return ResolveTerrainNormal(runtimePosition);
+        }
+
+        private Vector3 ResolveTerrainNormal(Vector3 runtimePosition)
+        {
+            float probe = math.max(0.5f, slopeSampleDistanceMeters);
+            if (!mapMagicBridge.TryGetHeight(runtimePosition.x + probe, runtimePosition.z, out float heightPosX) ||
+                !mapMagicBridge.TryGetHeight(runtimePosition.x - probe, runtimePosition.z, out float heightNegX) ||
+                !mapMagicBridge.TryGetHeight(runtimePosition.x, runtimePosition.z + probe, out float heightPosZ) ||
+                !mapMagicBridge.TryGetHeight(runtimePosition.x, runtimePosition.z - probe, out float heightNegZ))
+            {
+                return Vector3.up;
+            }
+
+            float gradientX = (heightPosX - heightNegX) / (probe * 2f);
+            float gradientZ = (heightPosZ - heightNegZ) / (probe * 2f);
+            Vector3 terrainNormal = new Vector3(-gradientX, 1f, -gradientZ);
+            return terrainNormal.sqrMagnitude > 0.000001f ? terrainNormal.normalized : Vector3.up;
+        }
+
+        private static Quaternion ResolveSurfaceRotation(Vector3 surfaceNormal, float yawDegrees)
+        {
+            Vector3 up = surfaceNormal.sqrMagnitude > 0.000001f ? surfaceNormal.normalized : Vector3.up;
+            float yawRadians = yawDegrees * Mathf.Deg2Rad;
+            Vector3 authoredForward = new Vector3(math.sin(yawRadians), 0f, math.cos(yawRadians));
+            Vector3 tangentForward = Vector3.ProjectOnPlane(authoredForward, up);
+            if (tangentForward.sqrMagnitude <= 0.000001f)
+                tangentForward = Vector3.ProjectOnPlane(Vector3.forward, up);
+
+            if (tangentForward.sqrMagnitude <= 0.000001f)
+                tangentForward = Vector3.Cross(up, Vector3.right);
+
+            if (tangentForward.sqrMagnitude <= 0.000001f)
+                tangentForward = Vector3.forward;
+
+            return Quaternion.LookRotation(tangentForward.normalized, up);
         }
 
         private float ResolveSlope(Vector3 runtimePosition)
@@ -628,6 +1163,20 @@ namespace Hecton8.World
             return mesh;
         }
 
+        private Mesh CaptureCylinderMesh()
+        {
+            // COLD ALLOC: GameObject[1] — temporary primitive source used to capture the built-in cylinder mesh — owner: ResourceDistributionDirector
+            GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            MeshFilter filter = temp.GetComponent<MeshFilter>();
+            Mesh mesh = filter != null ? filter.sharedMesh : null;
+            if (Application.isPlaying)
+                Destroy(temp);
+            else
+                DestroyImmediate(temp);
+
+            return mesh;
+        }
+
         private Material CreateGhostMaterial()
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
@@ -662,21 +1211,61 @@ namespace Hecton8.World
             return material;
         }
 
+        private Material CreateMagmaVentMaterial()
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null)
+                shader = Shader.Find("Unlit/Color");
+
+            if (shader == null)
+                return null;
+
+            // COLD ALLOC: Material[1] — shared tectonic-upwelling marker material — owner: ResourceDistributionDirector
+            Material material = new Material(shader)
+            {
+                name = "MAT_Runtime_MagmaVentGhost"
+            };
+
+            Color ventColor = new Color(1f, 0.42f, 0.12f, 0.72f);
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", ventColor);
+            else if (material.HasProperty("_Color"))
+                material.SetColor("_Color", ventColor);
+
+            if (material.HasProperty("_Surface"))
+            {
+                material.SetFloat("_Surface", 1f);
+                material.SetFloat("_Blend", 0f);
+                material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+                material.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+                material.SetFloat("_ZWrite", 0f);
+                material.renderQueue = (int)RenderQueue.Transparent;
+            }
+
+            return material;
+        }
+
         private void UpdateDiagnostics(int2 playerSector)
         {
             _debugResidentSectorCount = _residentSectors != null ? _residentSectors.Count : 0;
             _debugQueuedSpawnCount = _pendingSpawns != null ? _pendingSpawns.Count : 0;
 
             int activeNodeCount = 0;
+            int activeBrinePoolCount = 0;
             if (_residentSectors != null)
             {
                 Dictionary<long, SectorState>.Enumerator enumerator = _residentSectors.GetEnumerator();
                 while (enumerator.MoveNext())
+                {
                     activeNodeCount += enumerator.Current.Value.ActiveNodes.Count;
+                    if (enumerator.Current.Value.BrinePool.IsValid)
+                        activeBrinePoolCount++;
+                }
                 enumerator.Dispose();
             }
 
             _debugActiveNodeCount = activeNodeCount;
+            _debugActiveBrinePoolCount = activeBrinePoolCount;
             _debugPlayerSector = new Vector2Int(playerSector.x, playerSector.y);
         }
 
@@ -690,6 +1279,17 @@ namespace Hecton8.World
             slopeSampleDistanceMeters = math.max(0.5f, slopeSampleDistanceMeters);
             voxelSolidThreshold = math.clamp(voxelSolidThreshold, 0.001f, 1f);
             sectorEdgeMarginMeters = math.max(0f, sectorEdgeMarginMeters);
+            brinePoolRadiusMinMeters = math.max(4f, brinePoolRadiusMinMeters);
+            brinePoolRadiusMaxMeters = math.max(brinePoolRadiusMinMeters, brinePoolRadiusMaxMeters);
+            brinePoolThicknessMinMeters = math.max(1f, brinePoolThicknessMinMeters);
+            brinePoolThicknessMaxMeters = math.max(brinePoolThicknessMinMeters, brinePoolThicknessMaxMeters);
+            brinePoolMinimumDepthMeters = math.max(1000f, brinePoolMinimumDepthMeters);
+            brinePoolMinimumLipMeters = math.max(0.5f, brinePoolMinimumLipMeters);
+            brinePoolToxicityIntensity = math.saturate(brinePoolToxicityIntensity);
+            brinePoolHazardVisorBias = math.max(0f, brinePoolHazardVisorBias);
+            brinePoolFluidDensityKgPerCubicMeter = math.max(1025f, brinePoolFluidDensityKgPerCubicMeter);
+            tectonicUpwellingRespawnRate = math.clamp(tectonicUpwellingRespawnRate, 0f, 0.25f);
+            magmaVentLifetimeSeconds = math.max(1f, magmaVentLifetimeSeconds);
         }
 #endif
     }

@@ -1578,6 +1578,30 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Applies a fauna-authored hypnosis pull toward one world-space lure source without bypassing the locomotion force pipeline.
+        /// </summary>
+        public void ApplyFaunaHypnosisPull(Vector3 sourcePosition, float acceleration, float lockDuration)
+        {
+            if (_rb == null)
+                return;
+
+            Vector3 toSource = sourcePosition - _rb.worldCenterOfMass;
+            float sqrMagnitude = toSource.sqrMagnitude;
+            if (sqrMagnitude <= 0.0001f || acceleration <= 0.0001f)
+                return;
+
+            QueueEnvironmentalForce(toSource.normalized * (math.max(_rb.mass, 0.0001f) * acceleration));
+
+            float clampedLockDuration = math.max(0f, lockDuration);
+            if (clampedLockDuration <= 0.0001f)
+                return;
+
+            _wipeoutSeverity = math.max(_wipeoutSeverity, math.saturate(acceleration / 12f));
+            _wipeoutTimer = math.max(_wipeoutTimer, clampedLockDuration);
+            _stateMachine?.BeginWipeout(_wipeoutSeverity, _wipeoutTimer);
+        }
+
+        /// <summary>
         /// Accepts a one-step external hull-stress request from non-pressure hazards such as parasite swarms.
         /// Call continuously while the hazard remains attached to the active hull.
         /// </summary>

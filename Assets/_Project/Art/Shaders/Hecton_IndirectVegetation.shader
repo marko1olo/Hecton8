@@ -159,6 +159,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
             StructuredBuffer<float4x4> _HectonInstanceMatrices;
             StructuredBuffer<HectonVegetationInstanceData> _HectonVegetationInstanceData;
+            StructuredBuffer<float> _HectonFloraPhaseSeeds;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
             StructuredBuffer<float2> _MarineSnowFlowField;
             float4 _ChunkWorldOffset;
@@ -178,6 +179,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonPlayerRuntimePosition;
             float4 _HectonPlayerFloraInteractionParams;
             float4 _HectonFloraPredatorThreatParams;
+            float4 _HectonFloraLifecycleParams;
+            float4 _HectonFloraCascadeParams;
             float4 _HectonFlowSynchronyParams;
             float _HectonVegetationDepth;
             float _HectonVegetationLightFactor;
@@ -226,6 +229,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half pulseFrequency : TEXCOORD13;
                 half4 biolumColor : TEXCOORD14;
                 half flowMagnitude : TEXCOORD15;
+                half biomeLayer : TEXCOORD16;
+                half cascadeSeed : TEXCOORD17;
             };
 
             float Hash21(float2 value)
@@ -590,6 +595,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 planarWakeDirection = SafeNormalize3(planarWakeDirection);
                 float typeScale = instanceType < 0.5 ? 0.72 : (instanceType < 1.5 ? 1.05 : 0.38);
                 float flattening = (displacement + velocityMagnitude * 0.5) * bendMask * typeScale;
+                if (instanceType > 0.5 && instanceType < 1.5)
+                {
+                    float whipFactor = saturate((velocityMagnitude - 0.58) * 2.8 + displacement * 0.75);
+                    flattening *= lerp(1.0, 2.35, whipFactor);
+                }
                 float downwardBias = lerp(0.04, 0.18, heightMask) * flattening;
                 return (planarWakeDirection + baseNormalWS * 0.02) * flattening + float3(0.0, -downwardBias, 0.0);
             }
@@ -810,6 +820,12 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return step(0.5, fmod(variationFlags, 2.0));
             }
 
+            float ResolveBiomeLayer(float runtimeFlags)
+            {
+                float variationFlags = floor(max(runtimeFlags, 0.0));
+                return floor(variationFlags / 16.0) % 4.0;
+            }
+
             void ResolveRuntimeStateWeights(float runtimeState, out float agitatedWeight, out float dyingWeight)
             {
                 agitatedWeight = saturate(1.0 - abs(runtimeState - 1.0));
@@ -826,6 +842,32 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half playerProximity = saturate(1.0h - (distance(positionWS, _HectonPlayerRuntimePosition.xyz) / dimRadius));
                 half dimStrength = saturate(_HectonFloraPredatorThreatParams.z);
                 return saturate(1.0h - (threatExposure * playerProximity * dimStrength));
+            }
+
+            half ResolveSeasonalBloomEmissionScale()
+            {
+                half bloomWeight = saturate(_HectonFloraLifecycleParams.x);
+                half bloomScale = max(1.0h, (half)_HectonFloraLifecycleParams.z);
+                return lerp(1.0h, bloomScale, bloomWeight);
+            }
+
+            half ResolveCascadeEmissionScale(half cascadeSeed)
+            {
+                if (cascadeSeed <= -99999.0h)
+                    return 0.0h;
+
+                half cascadeTime = (half)_HectonFloraCascadeParams.x;
+                half pulseDuration = max(0.05h, (half)_HectonFloraCascadeParams.y);
+                half emissionBoost = max(0.0h, (half)_HectonFloraCascadeParams.z);
+                half releaseDuration = max(pulseDuration, (half)_HectonFloraCascadeParams.w);
+                half age = cascadeTime - cascadeSeed;
+                if (age < 0.0h || age > releaseDuration)
+                    return 0.0h;
+
+                half rise = smoothstep(0.0h, pulseDuration * 0.18h, age);
+                half crest = 1.0h - smoothstep(pulseDuration * 0.52h, pulseDuration, age);
+                half tail = 1.0h - smoothstep(pulseDuration, releaseDuration, age);
+                return rise * max(crest, tail * 0.55h) * emissionBoost;
             }
 
             Varyings Vert(Attributes input, uint instanceID : SV_InstanceID)
@@ -850,6 +892,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float timeValue = _Time.y;
                 float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
                 float parasiteMask = ResolveParasiteMask(instanceData.RuntimeFlags);
+                float biomeLayer = ResolveBiomeLayer(instanceData.RuntimeFlags);
                 float wiltSuppression = lerp(1.0, 0.18, entropyProgress);
                 float heightScale = saturate(abs(encodedHeightScale));
                 float widthScale = ResolveOrganicWidthScale(encodedWidthScale, entropyProgress);
@@ -1023,6 +1066,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 animatedPositionWS = lerp(animatedPositionWS, renderOriginWS, dyingWeight * bendMask * 0.18);
                 animatedPositionWS.y -= dyingWeight * instanceHeight * lerp(0.03, 0.16, heightMask);
 
+                float seasonalDecayWeight = saturate(_HectonFloraLifecycleParams.y) * saturate(_HectonFloraLifecycleParams.w);
+                if (seasonalDecayWeight > 0.0001)
+                {
+                    float seasonalWiltWeight = seasonalDecayWeight *
+                        saturate(lerp(0.18, 1.0, heightMask) * lerp(0.35, 1.0, bendMask));
+                    animatedPositionWS = lerp(animatedPositionWS, renderOriginWS, seasonalWiltWeight * 0.24);
+                    animatedPositionWS.y -= instanceHeight * seasonalWiltWeight * lerp(0.04, 0.19, heightMask);
+                    animatedPositionWS.xz += currentDirection * (-seasonalWiltWeight * instanceHeight * 0.018 * heightMask);
+                }
+
                 if (instanceType > 1.5)
                 {
                     half cutMask = ResolveVegetationCutMask(instanceType, animatedPositionWS);
@@ -1074,6 +1127,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.pulseFrequency = max(0.05, instanceData.PulseFrequency);
                 output.biolumColor = instanceData.BioluminescenceColor;
                 output.flowMagnitude = flowMagnitude;
+                output.biomeLayer = biomeLayer;
+                output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
                 return output;
             }
 
@@ -1128,6 +1183,15 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     ? half3(0.18h, 0.95h, 0.72h)
                     : half3(0.14h, 0.78h, 1.00h);
                 gradientColor = lerp(gradientColor, gradientColor + parasiteGlowTint * 0.38h, input.parasiteMask * saturate(1.0h - input.entropyProgress * 0.65h));
+                half biomeWeight = saturate(input.biomeLayer / 3.0h);
+                half biomeTintStrength = lerp(0.04h, 0.16h, biomeWeight);
+                half3 biomeAmbientTint = lerp(half3(1.0h, 1.0h, 1.0h), saturate(_HectonVegetationAmbientColor.rgb + 0.16h), biomeTintStrength);
+                gradientColor *= biomeAmbientTint;
+                if (input.biomeLayer > 2.5h)
+                {
+                    half deadZoneLuma = dot(gradientColor, half3(0.299h, 0.587h, 0.114h));
+                    gradientColor = lerp(half3(deadZoneLuma, deadZoneLuma, deadZoneLuma), gradientColor, 0.82h);
+                }
 
                 if (input.instanceType > 0.5h && input.instanceType < 1.5h)
                 {
@@ -1190,8 +1254,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half parasiteBiolumBoost = lerp(1.0h, 1.12h, input.parasiteMask);
                 half biolumVisibility = saturate(1.0h - input.entropyProgress * 0.65h);
                 half flowReactiveBoost = 1.0h + (max(0.0h, input.flowMagnitude) * 0.5h);
+                half seasonalBloomScale = ResolveSeasonalBloomEmissionScale();
+                half seasonalDecaySuppression = lerp(1.0h, 0.82h, saturate(_HectonFloraLifecycleParams.y * _HectonFloraLifecycleParams.w));
+                half cascadeEmissionScale = 1.0h + ResolveCascadeEmissionScale(input.cascadeSeed);
                 half3 biolumEmission = input.biolumColor.rgb *
-                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost);
+                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale);
                 finalColor += biolumEmission;
 
                 #ifdef _ADDITIONAL_LIGHTS

@@ -54,6 +54,16 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Compatibility alias for call sites that already resolve a stable owner entity identifier.
+        /// </summary>
+        /// <param name="ownerEntityId">Stable entity identifier for the procedural draw owner.</param>
+        /// <returns>Reusable property block for the owner entity.</returns>
+        public static MaterialPropertyBlock GetOrCreateLegacyBlock(ulong ownerEntityId)
+        {
+            return GetLegacyBlock(ownerEntityId);
+        }
+
+        /// <summary>
         /// Attempts to resolve an existing cached block without creating a new one.
         /// </summary>
         /// <param name="ownerEntityId">Stable entity identifier for the procedural draw owner.</param>

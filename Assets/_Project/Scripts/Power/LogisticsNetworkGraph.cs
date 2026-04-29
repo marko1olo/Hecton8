@@ -72,7 +72,11 @@ namespace Hecton8.Power
         Powered = 1 << 0,
         Overheating = 1 << 1,
         Flooded = 1 << 2,
-        Damaged = 1 << 3
+        Damaged = 1 << 3,
+        AnchorNode = 1 << 4,
+        Anchored = 1 << 5,
+        Unmoored = 1 << 6,
+        EmergencyLockdown = 1 << 7
     }
 
     /// <summary>

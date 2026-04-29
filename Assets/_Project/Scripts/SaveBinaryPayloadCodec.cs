@@ -9,6 +9,7 @@ namespace Hecton8.SaveSystem
 {
     internal static unsafe class SaveBinaryPayloadCodec
     {
+        internal const int ProtectedLz4BlockSizeBytes = 16 * 1024;
         private const ushort BiologicalItemStateMask = 1 << 6;
         private const ushort DefaultQualityMilli = 1000;
         private const float BiologicalReferenceTemperatureCelsius = 4f;
@@ -565,7 +566,9 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.geologySeamStateCount)
                 && writer.WriteStructArray(value.geologySeamStates)
                 && writer.WriteInt(value.geologyCaveEntranceCount)
-                && writer.WriteStructArray(value.geologyCaveEntrances);
+                && writer.WriteStructArray(value.geologyCaveEntrances)
+                && writer.WriteInt(value.hibernatedFaunaCount)
+                && writer.WriteStructArray(value.hibernatedFaunaStates);
         }
 
         private static bool ReadProceduralWorldState(ref BufferReader reader, int version, out ProceduralWorldStateDTO value)
@@ -591,8 +594,17 @@ namespace Hecton8.SaveSystem
             if (version < 45)
                 return true;
 
-            return reader.ReadInt(out value.geologyCaveEntranceCount)
-                && reader.ReadStructArray(out value.geologyCaveEntrances);
+            if (!reader.ReadInt(out value.geologyCaveEntranceCount)
+                || !reader.ReadStructArray(out value.geologyCaveEntrances))
+            {
+                return false;
+            }
+
+            if (version < 46)
+                return true;
+
+            return reader.ReadInt(out value.hibernatedFaunaCount)
+                && reader.ReadStructArray(out value.hibernatedFaunaStates);
         }
 
         private static bool WriteConstruction(ref BufferWriter writer, ConstructionDTO value)

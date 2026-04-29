@@ -36,14 +36,14 @@ namespace Hecton8.AI
             _sensorSuite.SetFoveatedCadence(_foveatedTickRate, _foveatedTickIntervalSeconds, _foveatedImportanceScore, _foveatedInsideFrustum);
         }
 
-        bool IFoveatedSimulationTarget.TryBuildDeferredRaycastCommand(out RaycastCommand command)
+        int IFoveatedSimulationTarget.BuildDeferredRaycastCommands(RaycastCommand[] commands)
         {
-            return _sensorSuite.TryBuildDeferredRaycastCommand(out command);
+            return _sensorSuite.BuildDeferredRaycastCommands(commands);
         }
 
-        void IFoveatedSimulationTarget.ConsumeDeferredRaycastHit(in RaycastHit hit)
+        void IFoveatedSimulationTarget.ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit)
         {
-            _sensorSuite.ConsumeDeferredRaycastHit(hit);
+            _sensorSuite.ConsumeDeferredRaycastHit(commandIndex, hit);
         }
 
         private void ResolveFoveatedBindings()

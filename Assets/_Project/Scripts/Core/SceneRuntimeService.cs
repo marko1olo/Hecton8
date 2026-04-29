@@ -120,8 +120,12 @@ namespace Hecton8.Core
 
                 while (Application.isPlaying && ReferenceEquals(_instance, this) && !_pendingSceneLoadOperation.isDone)
                 {
-                    if (_pendingSceneLoadOperation.progress >= 0.9f && ArePersistentWorldPoolsReadyForSceneActivation())
+                    if (_pendingSceneLoadOperation.progress >= 0.9f &&
+                        ArePersistentWorldPoolsReadyForSceneActivation() &&
+                        IsFloatingOriginStableForSceneActivation())
+                    {
                         _pendingSceneLoadOperation.allowSceneActivation = true;
+                    }
 
                     await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
                 }
@@ -223,6 +227,12 @@ namespace Hecton8.Core
                 return true;
 
             return registry.AreResidentWorldPrefabPoolsReady();
+        }
+
+        private static bool IsFloatingOriginStableForSceneActivation()
+        {
+            return !HectonFloatingOrigin.IsShiftInProgress &&
+                   !HectonFloatingOrigin.IsPhysicsPausedForShift;
         }
 
         private void TryRegisterUpdatable()

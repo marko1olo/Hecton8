@@ -37,6 +37,10 @@ public class SurvivalStats : ScriptableObject
     [Min(0f)]
     [SerializeField] private float energyConsumptionRate = 0.8f;
 
+    [Tooltip("Soft carry-capacity budget used by survival oxygen/strain scaling.")]
+    [Min(1f)]
+    [SerializeField] private float carryCapacityKg = 200f;
+
     // ─── Integrity ───────────────────────────────────────────
 
     [Header("Integrity")]
@@ -125,6 +129,7 @@ public class SurvivalStats : ScriptableObject
     public virtual float OxygenConsumptionRate  => oxygenConsumptionRate;
     public virtual float MaxEnergy              => maxEnergy;
     public virtual float EnergyConsumptionRate  => energyConsumptionRate;
+    public virtual float CarryCapacityKg        => carryCapacityKg;
     public virtual float MaxIntegrity           => maxIntegrity;
 
     public virtual float MaxHunger              => maxHunger;
@@ -160,6 +165,7 @@ public class SurvivalStats : ScriptableObject
         // Clamp to sane minimums — prevents division-by-zero at runtime
         maxOxygen              = Mathf.Max(1f,  maxOxygen);
         maxEnergy              = Mathf.Max(1f,  maxEnergy);
+        carryCapacityKg        = Mathf.Max(1f,  carryCapacityKg);
         maxIntegrity           = Mathf.Max(1f,  maxIntegrity);
         maxHunger              = Mathf.Max(1f,  maxHunger);
         maxThirst              = Mathf.Max(1f,  maxThirst);

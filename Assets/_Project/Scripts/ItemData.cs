@@ -74,6 +74,12 @@ namespace Hecton8.Items
         [SerializeField] private ItemAudioMaterialId audioMaterialId = ItemAudioMaterialId.Organic;
         [Tooltip("Exact rigidbody mass applied when the item is hydrated into world physics.")]
         [SerializeField, Min(0.05f)] private float massKg;
+        [Tooltip("Physical occupied volume used by cargo and balance systems.")]
+        [SerializeField, Min(0.0005f)] private float volumeM3;
+        [Tooltip("Stable world-physics material family used to select a shared PhysicMaterial on dropped items.")]
+        [SerializeField] private ItemPhysicsMaterialTag physicsMaterialTag = ItemPhysicsMaterialTag.Default;
+        [Tooltip("Optional shared PhysicMaterial override applied to world colliders. Leave null to preserve the prefab default.")]
+        [SerializeField] private PhysicMaterial worldPhysicMaterial;
 
         [Header("Classification")]
         [Tooltip("Category used by UI filters and fabrication rules.")]
@@ -224,6 +230,13 @@ namespace Hecton8.Items
         public float MassKg => autoResolvePhysicalMetadata
             ? ItemPhysicalMetadataUtility.ResolveDefaultMassKg(weight, width, height, category)
             : Mathf.Max(0.05f, massKg);
+        public float VolumeM3 => autoResolvePhysicalMetadata
+            ? ItemPhysicalMetadataUtility.ResolveDefaultVolumeM3(MassKg, width, height, category)
+            : Mathf.Max(0.0005f, volumeM3);
+        public ItemPhysicsMaterialTag PhysicsMaterialTag => autoResolvePhysicalMetadata
+            ? ItemPhysicalMetadataUtility.ResolveDefaultPhysicsMaterialTag(category, resourceFamily, PersistentId)
+            : physicsMaterialTag;
+        public PhysicMaterial WorldPhysicMaterial => worldPhysicMaterial;
 
         public int CellArea => width * height;
 
@@ -273,6 +286,9 @@ namespace Hecton8.Items
 
             if (!autoResolvePhysicalMetadata && massKg < 0.05f)
                 massKg = 0.05f;
+
+            if (!autoResolvePhysicalMetadata && volumeM3 < 0.0005f)
+                volumeM3 = 0.0005f;
 
             InvalidateLocalizedCache();
             EnsureLocalizedCache();

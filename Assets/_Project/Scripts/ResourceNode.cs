@@ -2,6 +2,7 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
+using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.World;
@@ -18,8 +19,19 @@ namespace Hecton8.Scavenging
     {
         private static readonly int _MeltCenterId = Shader.PropertyToID("_MeltCenter");
         private static readonly int _MeltRadiusId = Shader.PropertyToID("_MeltRadius");
+        private const int DebrisPoolWarmupCount = 96;
+        private const int MinimumImpactDebrisCount = 3;
+        private const int MaximumImpactDebrisCount = 5;
+        private const float ImpactDebrisLifetimeSeconds = 3f;
+        private const float DefaultFirstYieldSampleSeconds = 0.12f;
+        private const float MinimumYieldSampleSeconds = 0.016f;
+        private const float MaximumYieldSampleSeconds = 0.35f;
         private static readonly Collider[] _steamExplosionOverlapBuffer = new Collider[16];
         private static readonly Rigidbody[] _steamExplosionBodyBuffer = new Rigidbody[16];
+        private static GameObject s_runtimeDebrisPrefab;
+        private static Mesh s_runtimeDebrisMesh;
+        private static Material s_runtimeDebrisMaterial;
+        private static bool s_runtimeDebrisPoolReady;
         // COLD ALLOC: RegistryBucket<ResourceNode>[4096] — authored/persistent resource node registry for legacy world-state compatibility — owner: ResourceNode
         private static readonly RegistryBucket<ResourceNode> _worldStateRegistry = new RegistryBucket<ResourceNode>(4096);
 
@@ -27,6 +39,10 @@ namespace Hecton8.Scavenging
         private static void ResetStaticState()
         {
             _worldStateRegistry.Clear();
+            s_runtimeDebrisPrefab = null;
+            s_runtimeDebrisMesh = null;
+            s_runtimeDebrisMaterial = null;
+            s_runtimeDebrisPoolReady = false;
         }
 
         [Header("Identity")]
@@ -101,6 +117,9 @@ namespace Hecton8.Scavenging
         private int _spatialHandle;
         private ulong _persistentTombstoneId;
         private HectonVoxelEngine _cachedVoxelEngine;
+        private float _lastYieldSampleTimeSeconds;
+        private float _fractionalYieldAccumulator;
+        private int _yieldDropCount;
 
         /// <summary>Legacy scene-facing ID retained for compatibility systems.</summary>
         public string UniqueId => uniqueId;
@@ -251,7 +270,14 @@ namespace Hecton8.Scavenging
 
         public void ApplyCutDamage(float damage, Vector3 hitPoint)
         {
-            TakeDamage(damage);
+            TakeDamage(
+                damage,
+                damage,
+                ResolveYieldSampleDeltaSeconds(),
+                hitPoint,
+                ResolveFallbackNormal(hitPoint),
+                allowIncrementalYield: true,
+                allowImpactDebris: true);
             if (!_isDepleted && targetRenderer != null)
                 UpdateMeltProperties(hitPoint);
         }
@@ -267,30 +293,30 @@ namespace Hecton8.Scavenging
                 return;
             }
 
-            ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
+            Vector3 hitNormal = new Vector3(signal.HitNormal.x, signal.HitNormal.y, signal.HitNormal.z);
+            TakeDamage(
+                signal.PowerDelivered,
+                Mathf.Max(signal.Source.Power, signal.PowerDelivered),
+                ResolveYieldSampleDeltaSeconds(),
+                runtimeHitPoint,
+                hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : ResolveFallbackNormal(runtimeHitPoint),
+                allowIncrementalYield: true,
+                allowImpactDebris: true);
+
+            if (!_isDepleted && targetRenderer != null)
+                UpdateMeltProperties(runtimeHitPoint);
         }
 
         public void TakeDamage(float amount)
         {
-            if (_isDepleted || _despawnRequested || amount <= 0f)
-                return;
-
-            float previousHealth = _currentHealth;
-            _currentHealth -= amount;
-
-            if (_currentHealth > 0f)
-                return;
-
-            if (!TrySpawnLoot())
-            {
-                _currentHealth = previousHealth;
-                return;
-            }
-
-            _currentHealth = 0f;
-            _isDepleted = true;
-            RegisterPersistentDepletion();
-            DespawnSelf();
+            TakeDamage(
+                amount,
+                amount,
+                ResolveYieldSampleDeltaSeconds(),
+                _cachedTransform != null ? _cachedTransform.position : transform.position,
+                Vector3.up,
+                allowIncrementalYield: true,
+                allowImpactDebris: true);
         }
 
         private void ActivateRuntimeState()
@@ -348,6 +374,9 @@ namespace Hecton8.Scavenging
 
         private bool TrySpawnLoot()
         {
+            if (resourceTemplate != null && resourceTemplate.ExtractorYieldItem != null)
+                return true;
+
             if (lootPrefab == null || lootCount <= 0)
                 return true;
 
@@ -534,7 +563,275 @@ namespace Hecton8.Scavenging
             _isDepleted = false;
             _despawnRequested = false;
             _lootSpawnBlockedLogged = false;
+            _lastYieldSampleTimeSeconds = -1f;
+            _fractionalYieldAccumulator = 0f;
+            _yieldDropCount = 0;
             ResetMeltProperties();
+        }
+
+        private void TakeDamage(
+            float amount,
+            float toolPower,
+            float elapsedSeconds,
+            Vector3 hitPoint,
+            Vector3 hitNormal,
+            bool allowIncrementalYield,
+            bool allowImpactDebris)
+        {
+            if (_isDepleted || _despawnRequested || amount <= 0f)
+                return;
+
+            ResourceNodeTemplate.RuntimeDescriptor descriptor = resourceTemplate != null
+                ? resourceTemplate.BuildRuntimeDescriptor()
+                : default;
+            float hardness = resourceTemplate != null
+                ? Mathf.Max(0.01f, descriptor.ToolResistance)
+                : 1f;
+            float appliedDamage = Mathf.Max(0.01f, amount / hardness);
+            float previousHealth = _currentHealth;
+
+            if (allowIncrementalYield)
+                TryEmitIncrementalYield(descriptor, Mathf.Max(toolPower, amount), elapsedSeconds, hitPoint, hitNormal);
+
+            if (allowImpactDebris)
+                SpawnImpactDebris(hitPoint, hitNormal, Mathf.Max(toolPower, amount));
+
+            _currentHealth -= appliedDamage;
+            if (_currentHealth > 0f)
+                return;
+
+            if (!TrySpawnLoot())
+            {
+                _currentHealth = previousHealth;
+                return;
+            }
+
+            _currentHealth = 0f;
+            _isDepleted = true;
+            RegisterPersistentDepletion();
+            DespawnSelf();
+        }
+
+        private void TryEmitIncrementalYield(
+            ResourceNodeTemplate.RuntimeDescriptor descriptor,
+            float toolPower,
+            float elapsedSeconds,
+            Vector3 hitPoint,
+            Vector3 hitNormal)
+        {
+            if (resourceTemplate == null)
+                return;
+
+            ItemData primaryYieldItem = resourceTemplate.ExtractorYieldItem;
+            if (primaryYieldItem == null)
+                return;
+
+            float yieldUnits = ResourceYieldMath.EvaluateYieldUnits(
+                Mathf.Max(0.01f, toolPower),
+                Mathf.Max(0.01f, descriptor.ToolResistance),
+                Mathf.Max(MinimumYieldSampleSeconds, elapsedSeconds),
+                Mathf.Max(0.05f, descriptor.HarvestDurationSeconds));
+            if (yieldUnits <= 0f)
+                return;
+
+            _fractionalYieldAccumulator += yieldUnits;
+            int wholeUnits = Mathf.FloorToInt(_fractionalYieldAccumulator);
+            if (wholeUnits <= 0)
+                return;
+
+            int emittedCount = 0;
+            uint seed = unchecked((uint)_persistentTombstoneId) ^ ((uint)_yieldDropCount * 0x9E3779B9u);
+            for (int i = 0; i < wholeUnits; i++)
+            {
+                if (!TryDropYieldItem(primaryYieldItem, hitPoint, hitNormal, seed ^ (uint)i))
+                    break;
+
+                emittedCount++;
+                _yieldDropCount++;
+            }
+
+            if (emittedCount > 0)
+                _fractionalYieldAccumulator -= emittedCount;
+        }
+
+        private bool TryDropYieldItem(ItemData itemData, Vector3 hitPoint, Vector3 hitNormal, uint seed)
+        {
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null || itemData == null)
+                return false;
+
+            Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : ResolveFallbackNormal(hitPoint);
+            Vector3 tangent = ResolveTangent(outwardNormal, seed);
+            Vector3 spawnPosition = hitPoint + (outwardNormal * 0.12f) + (tangent * 0.05f);
+            Vector3 impulse = (outwardNormal * 0.8f) + (tangent * 0.25f);
+            return registry.TryRegisterDroppedItem(itemData, 1, spawnPosition, impulse);
+        }
+
+        private void SpawnImpactDebris(Vector3 hitPoint, Vector3 hitNormal, float toolPower)
+        {
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null || !EnsureRuntimeDebrisPool(pool))
+                return;
+
+            Material debrisMaterial = ResolveDebrisMaterial();
+            Mesh debrisMesh = _meshFilter != null && _meshFilter.sharedMesh != null ? _meshFilter.sharedMesh : s_runtimeDebrisMesh;
+            if (debrisMesh == null)
+                return;
+
+            uint state = unchecked((uint)_persistentTombstoneId) ^ ((uint)(_yieldDropCount + 1) * 0x85EBCA6Bu);
+            int debrisCount = MinimumImpactDebrisCount + (int)Mathf.Floor(Next01(ref state) * (MaximumImpactDebrisCount - MinimumImpactDebrisCount + 1));
+            debrisCount = Mathf.Clamp(debrisCount, MinimumImpactDebrisCount, MaximumImpactDebrisCount);
+            Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : ResolveFallbackNormal(hitPoint);
+            float impulseScale = Mathf.Clamp(toolPower, 0.4f, 3.5f);
+
+            for (int i = 0; i < debrisCount; i++)
+            {
+                Quaternion rotation = Random.rotation;
+                Vector3 tangent = ResolveTangent(outwardNormal, state ^ (uint)i);
+                Vector3 spawnPosition = hitPoint + (outwardNormal * 0.08f) + (tangent * (0.04f + (0.03f * Next01(ref state))));
+                GameObject debris = pool.Spawn(s_runtimeDebrisPrefab, spawnPosition, rotation);
+                if (debris == null)
+                    return;
+
+                if (debris.TryGetComponent(out MeshFilter debrisFilter))
+                    debrisFilter.sharedMesh = debrisMesh;
+
+                if (debris.TryGetComponent(out MeshRenderer debrisRenderer) && debrisMaterial != null)
+                    debrisRenderer.sharedMaterial = debrisMaterial;
+
+                debris.transform.localScale = Vector3.one * Mathf.Lerp(0.08f, 0.18f, Next01(ref state));
+
+                if (debris.TryGetComponent(out Rigidbody body))
+                {
+                    body.isKinematic = false;
+                    body.useGravity = false;
+                    body.linearVelocity = Vector3.zero;
+                    body.angularVelocity = Vector3.zero;
+                    body.WakeUp();
+
+                    Vector3 impulse = ((outwardNormal * Mathf.Lerp(0.45f, 0.9f, Next01(ref state))) +
+                                       (tangent * Mathf.Lerp(0.1f, 0.35f, Next01(ref state)))) * impulseScale;
+                    PhysicsForceRouter.QueueForce(body, impulse, ForceMode.Impulse);
+                    PhysicsForceRouter.QueueTorque(body, tangent * Mathf.Lerp(0.08f, 0.22f, Next01(ref state)), ForceMode.Impulse);
+                }
+
+                pool.Despawn(debris, ImpactDebrisLifetimeSeconds);
+            }
+        }
+
+        private static bool EnsureRuntimeDebrisPool(ObjectPoolManager pool)
+        {
+            if (pool == null)
+                return false;
+
+            if (s_runtimeDebrisPrefab == null)
+                s_runtimeDebrisPrefab = BuildRuntimeDebrisPrefab();
+
+            if (s_runtimeDebrisPrefab == null)
+                return false;
+
+            if (!pool.HasPool(s_runtimeDebrisPrefab))
+                pool.Warmup(s_runtimeDebrisPrefab, DebrisPoolWarmupCount);
+
+            s_runtimeDebrisPoolReady = pool.HasPool(s_runtimeDebrisPrefab);
+            return s_runtimeDebrisPoolReady;
+        }
+
+        private static GameObject BuildRuntimeDebrisPrefab()
+        {
+            if (s_runtimeDebrisMesh == null || s_runtimeDebrisMaterial == null)
+            {
+                // COLD ALLOC: GameObject[1] - temporary primitive source used to capture the built-in cube mesh/material for runtime mineral debris - owner: ResourceNode
+                GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                if (primitive.TryGetComponent(out MeshFilter primitiveFilter))
+                    s_runtimeDebrisMesh = primitiveFilter.sharedMesh;
+
+                if (primitive.TryGetComponent(out MeshRenderer primitiveRenderer))
+                    s_runtimeDebrisMaterial = primitiveRenderer.sharedMaterial;
+
+                if (Application.isPlaying)
+                    Destroy(primitive);
+                else
+                    DestroyImmediate(primitive);
+            }
+
+            if (s_runtimeDebrisMesh == null)
+                return null;
+
+            // COLD ALLOC: GameObject[1] - pooled mineral debris runtime prefab - owner: ResourceNode
+            GameObject prefab = new GameObject("[RuntimeMineralDebrisShard]");
+            prefab.SetActive(false);
+            prefab.hideFlags = HideFlags.HideAndDontSave;
+
+            MeshFilter filter = prefab.AddComponent<MeshFilter>();
+            filter.sharedMesh = s_runtimeDebrisMesh;
+
+            MeshRenderer renderer = prefab.AddComponent<MeshRenderer>();
+            if (s_runtimeDebrisMaterial != null)
+                renderer.sharedMaterial = s_runtimeDebrisMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            BoxCollider collider = prefab.AddComponent<BoxCollider>();
+            collider.size = Vector3.one;
+
+            Rigidbody body = prefab.AddComponent<Rigidbody>();
+            body.mass = 0.08f;
+            body.useGravity = false;
+            body.linearDamping = 0.45f;
+            body.angularDamping = 0.35f;
+            body.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.isKinematic = false;
+
+            prefab.AddComponent<ObjectPoolManager.DespawnTimer>();
+            return prefab;
+        }
+
+        private Material ResolveDebrisMaterial()
+        {
+            if (_meshRenderer != null && _meshRenderer.sharedMaterial != null)
+                return _meshRenderer.sharedMaterial;
+
+            if (targetRenderer != null && targetRenderer.sharedMaterial != null)
+                return targetRenderer.sharedMaterial;
+
+            return s_runtimeDebrisMaterial;
+        }
+
+        private float ResolveYieldSampleDeltaSeconds()
+        {
+            float currentTimeSeconds = Time.time;
+            if (_lastYieldSampleTimeSeconds < 0f)
+            {
+                _lastYieldSampleTimeSeconds = currentTimeSeconds;
+                return DefaultFirstYieldSampleSeconds;
+            }
+
+            float deltaSeconds = Mathf.Clamp(currentTimeSeconds - _lastYieldSampleTimeSeconds, MinimumYieldSampleSeconds, MaximumYieldSampleSeconds);
+            _lastYieldSampleTimeSeconds = currentTimeSeconds;
+            return deltaSeconds;
+        }
+
+        private static Vector3 ResolveTangent(Vector3 normal, uint seed)
+        {
+            Vector3 basis = Mathf.Abs(normal.y) < 0.9f ? Vector3.up : Vector3.right;
+            Vector3 tangent = Vector3.Cross(normal, basis);
+            if (tangent.sqrMagnitude <= 0.000001f)
+                tangent = Vector3.Cross(normal, Vector3.forward);
+
+            tangent = tangent.sqrMagnitude > 0.000001f ? tangent.normalized : Vector3.right;
+            Vector3 bitangent = Vector3.Cross(normal, tangent).normalized;
+            float angleRadians = Next01(ref seed) * Mathf.PI * 2f;
+            return ((tangent * Mathf.Cos(angleRadians)) + (bitangent * Mathf.Sin(angleRadians))).normalized;
+        }
+
+        private static float Next01(ref uint state)
+        {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            return (state & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
         private void RegisterSpatialHandle()

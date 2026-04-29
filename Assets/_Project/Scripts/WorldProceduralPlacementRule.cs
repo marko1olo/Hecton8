@@ -6,6 +6,15 @@ namespace Hecton8.World
     [CreateAssetMenu(fileName = "WorldProceduralPlacementRule", menuName = "Hecton8/World/Procedural Placement Rule")]
     public sealed class WorldProceduralPlacementRule : ScriptableObject
     {
+        [System.Flags]
+        public enum FloraSubstrateMask : byte
+        {
+            None = 0,
+            Sand = 1 << 0,
+            Rock = 1 << 1,
+            Any = Sand | Rock
+        }
+
         [Header("Identity")]
         public string ruleId = "procedural.rule.generic";
         public string ruleLabel = "Generic Procedural Rule";
@@ -25,6 +34,8 @@ namespace Hecton8.World
         [Min(0f)] public float maxDepthMeters = 5000f;
         [Range(0f, 90f)] public float minSlopeDegrees;
         [Range(0f, 90f)] public float maxSlopeDegrees = 45f;
+        public FloraSubstrateMask requiredSubstrate = FloraSubstrateMask.Any;
+        [Range(0f, 85f)] public float maxTiltAngleDegrees = 28f;
         public string requiredHeatmapChannel = string.Empty;
         [Range(0f, 1f)] public float minHeatmapValue = 0.35f;
 
@@ -32,6 +43,8 @@ namespace Hecton8.World
         [Range(0.1f, 4f)] public float densityScale = 1f;
         [Min(0f)] public float minSpacingOverrideMeters;
         [Min(0f)] public float clusterRadiusOverrideMeters;
+        [Min(0.001f)] public float clusterNoiseScale = 0.009f;
+        [Range(0f, 1f)] public float clusterNoiseThreshold = 0.3f;
         [Min(0)] public int minInstances = 1;
         [Min(0)] public int maxInstances = 3;
 
@@ -41,6 +54,7 @@ namespace Hecton8.World
         public bool preferSeafloor;
         public bool suppressInTightRoutes;
         public bool runtimeOnly;
+        public bool strictEnvelopeMapping = true;
 
         public bool Matches(HectonBiomeFamilyProfile biomeFamily, WorldZoneAnchor zone, WorldContentSocket socket)
         {

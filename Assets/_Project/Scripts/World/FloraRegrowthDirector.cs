@@ -15,7 +15,7 @@ namespace Hecton8.World
     public sealed class FloraRegrowthDirector : MonoBehaviour, ITickable, ISlowTickable
     {
         private const float RegrowthDelaySeconds = 4f * 60f * 60f;
-        private const float RegrowthDurationSeconds = 90f;
+        private const float DefaultRegrowthDurationSeconds = 90f;
         private const int DefaultTrackedRegrowthCapacity = 2048;
         private const float SeedFlightDurationSeconds = 60f;
         private const float SeedSproutDelaySeconds = 2f * 60f * 60f;
@@ -31,9 +31,11 @@ namespace Hecton8.World
         private struct FloraRegrowthState
         {
             public uint InstanceUid;
+            public ulong TemplateHash;
             public float3 RuntimePosition;
             public float EligiblePlayTime;
             public float RegrowthStartPlayTime;
+            public float RegrowthDurationSeconds;
             public byte State;
             public byte SeenThisScan;
             public ushort Reserved0;
@@ -176,7 +178,8 @@ namespace Hecton8.World
                 if (state.State != StateActive)
                     continue;
 
-                float progress01 = math.saturate((currentPlayTime - state.RegrowthStartPlayTime) / RegrowthDurationSeconds);
+                float durationSeconds = Mathf.Max(1f, state.RegrowthDurationSeconds > 0f ? state.RegrowthDurationSeconds : DefaultRegrowthDurationSeconds);
+                float progress01 = math.saturate((currentPlayTime - state.RegrowthStartPlayTime) / durationSeconds);
                 destructibleOrganicManager.TrySetRegrowthProgress(
                     state.InstanceUid,
                     new Vector3(state.RuntimePosition.x, state.RuntimePosition.y, state.RuntimePosition.z),
@@ -228,7 +231,9 @@ namespace Hecton8.World
                 if (_stateIndexByInstanceUid.TryGetValue(deltaRecord.InstanceUid, out int stateIndex))
                 {
                     FloraRegrowthState existing = _regrowthStates[stateIndex];
+                    existing.TemplateHash = deltaRecord.ItemPersistentIdHash;
                     existing.RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                    existing.RegrowthDurationSeconds = destructibleOrganicManager.ResolveGrowthTimeSeconds(deltaRecord.ItemPersistentIdHash);
                     existing.SeenThisScan = 1;
                     if (existing.State == StateWaiting && currentPlayTime >= existing.EligiblePlayTime)
                     {
@@ -246,9 +251,11 @@ namespace Hecton8.World
                 FloraRegrowthState newState = new FloraRegrowthState
                 {
                     InstanceUid = deltaRecord.InstanceUid,
+                    TemplateHash = deltaRecord.ItemPersistentIdHash,
                     RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
                     EligiblePlayTime = currentPlayTime + RegrowthDelaySeconds,
                     RegrowthStartPlayTime = 0f,
+                    RegrowthDurationSeconds = destructibleOrganicManager.ResolveGrowthTimeSeconds(deltaRecord.ItemPersistentIdHash),
                     State = StateWaiting,
                     SeenThisScan = 1,
                     Reserved0 = 0

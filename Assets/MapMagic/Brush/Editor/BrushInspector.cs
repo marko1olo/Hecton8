@@ -259,7 +259,7 @@ namespace MapMagic.Brush
 								using (Cell.LineStd)
 									if (Draw.Button("All Terrains"))
 									{
-										Terrain[] terrains = GameObject.FindObjectsOfType<Terrain>();
+										Terrain[] terrains = GameObject.FindObjectsByType<Terrain>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 										if (!TerrainManager.TryAddTerrains(ref brush.terrains, terrains, out string error))
 											EditorUtility.DisplayDialog("MapMagic Brush", error, "OK");
 									}

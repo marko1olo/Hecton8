@@ -50,6 +50,7 @@ using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Ecosystem;
 using Hecton8.Environment;
+using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.World;
 using Unity.Burst;
@@ -64,7 +65,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ISaveable
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -77,6 +78,9 @@ namespace Hecton8.AI
         private const double DehydrationDistanceSq = DehydrationDistanceMeters * DehydrationDistanceMeters;
         private const float HibernationDistanceMeters = 150f;
         private const double HibernationDistanceSq = HibernationDistanceMeters * HibernationDistanceMeters;
+        private const int GlobalFaunaHardCap = 200;
+        private const int PredatorHardCapPerKilometerSector = 5;
+        private const uint StandardFaunaInstanceTypeId = 0xF9u;
         private const byte ResidentSimulationFlag = 1 << 0;
         private const byte DehydratedSimulationFlag = 1 << 1;
         private const uint ApexFaunaInstanceTypeId = 0xFAu;
@@ -179,6 +183,7 @@ namespace Hecton8.AI
 
             /// <summary>Ð¯Ð²Ð»ÑÐµÑ‚ÑÑ Ð»Ð¸ ÑÑ‚Ð¾ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾ ÐºÑ€ÑƒÐ¿Ð½Ð¾Ð¹ ÑƒÐ³Ñ€Ð¾Ð·Ð¾Ð¹ Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð³Ð¾ ÑƒÑ‡Ð°ÑÑ‚ÐºÐ° Ð²Ð¾Ð´Ñ‹.</summary>
             public bool isLargeThreat;
+            public bool isPredator;
 
             /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ñ€ÐµÐ·Ð¸Ð´ÐµÐ½Ñ‚Ð½Ð¾Ð³Ð¾ ÑÐ»Ð¾Ñ‚Ð° Ð´ÐµÐ³Ð¸Ð´Ñ€Ð°Ñ‚Ð°Ñ†Ð¸Ð¸.</summary>
             public uint uniqueInstanceUid;
@@ -189,6 +194,7 @@ namespace Hecton8.AI
         {
             public GameObject prefab;
             public CreatureArchetypeData archetype;
+            public int speciesId;
             public float spawnWeight;
             public int maxAlive;
             public int creatureTypeIndex;
@@ -208,11 +214,13 @@ namespace Hecton8.AI
             public Vector3 linearVelocity;
             public Vector3 angularVelocity;
             public float health;
+            public int speciesId;
             public int creatureTypeIndex;
             public int biomeIndex;
             public WorldChunkCoordinate chunkCoord;
             public WorldMacroZoneCoordinate macroZoneCoord;
             public bool isLargeThreat;
+            public bool isPredator;
             public uint uniqueInstanceUid;
             public bool isResident;
             public bool isDehydrated;
@@ -504,6 +512,7 @@ namespace Hecton8.AI
         private Dictionary<FaunaBiomeData, ResolvedFaunaEntry[]> _resolvedEntriesPerBiome;
         private Dictionary<FaunaBiomeData, int[]> _availablePoolCountsPerBiome;
         private Dictionary<FaunaBiomeData, Dictionary<GameObject, int>> _prefabTypeIndexLookup;
+        private Dictionary<long, int> _predatorCountsPerSector;
         private NativeArray<PoolSlotData> _dehydratedPoolSlots;
         private NativeArray<float3> _dehydratedLinearVelocityNative;
         private NativeArray<byte> _dehydratedSimulationFlagsNative;
@@ -513,6 +522,9 @@ namespace Hecton8.AI
         // COLD ALLOC: int[512] - active dehydrated slot index list for rehydration scans - owner: FaunaDirector
         private int[] _activeDehydrationSlots;
         private int _activeDehydrationSlotCount;
+        // COLD ALLOC: List<EntityDataRecord>[64] - nearby tier-2 fauna restore scratch loaded from persistent sector cache - owner: FaunaDirector
+        private List<EntityDataRecord> _persistedFaunaRestoreScratch;
+        private int _persistedTier2FaunaCount;
         private JobHandle _residentDataOnlyLodHandle;
         private bool _residentDataOnlyLodScheduled;
         private float _nextPlayerResolveTime = float.NegativeInfinity;
@@ -559,6 +571,8 @@ namespace Hecton8.AI
             ? biomeMatrixDirector.CurrentProfile.name
             : _debugCurrentBiome.ToString();
         internal string DebugEcologyBiasLabel => ResolveDebugEcologyBiasLabel();
+        public int SavePriority => 56;
+        public int LoadPriority => 56;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
@@ -585,6 +599,8 @@ namespace Hecton8.AI
         {
             if (!Application.isPlaying)
                 return;
+
+            GlobalRegistry.Save?.Register(this);
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
@@ -625,6 +641,7 @@ namespace Hecton8.AI
             if (!Application.isPlaying)
                 return;
 
+            GlobalRegistry.Save?.Unregister(this);
             CompleteResidentDataOnlySimulation(forceComplete: true);
 
             if (_dispatcherRegistered)
@@ -638,6 +655,9 @@ namespace Hecton8.AI
 
         private void OnDestroy()
         {
+            if (Application.isPlaying)
+                GlobalRegistry.Save?.Unregister(this);
+
             CompleteResidentDataOnlySimulation(forceComplete: true);
 
             if (_dispatcherRegistered)
@@ -738,6 +758,7 @@ namespace Hecton8.AI
             }
 
             Vector3 playerPos = _playerTransform.position;
+            RestorePersistedTier2Fauna(playerPos);
             int spawnValidationAttempts = 0;
             int spawnValidationSuccesses = 0;
             int anchorBasedSpawns = 0;
@@ -749,6 +770,7 @@ namespace Hecton8.AI
 
             int cullCount = CullOrDehydrateDistantCreatures(playerPos);
             HydrateResidentCreatures(playerPos);
+            OffloadPersistedTier2Fauna(playerPos);
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  3. BIOME DETECTION (THROTTLED)
@@ -1093,8 +1115,13 @@ namespace Hecton8.AI
 
                 Quaternion spawnRot = Quaternion.Euler(0f, _biomeSpawnRandom.NextFloat(0f, 360f), 0f);
                 WorldChunkCoordinate spawnChunk = WorldChunkCoordinate.FromWorldPosition(spawnPos, _runtimeChunkSize);
+                if (selectedEntry.isPredator && GetPredatorSectorCount(spawnChunk) >= PredatorHardCapPerKilometerSector)
+                    continue;
 
                 if (GetChunkCreatureCount(spawnChunk) >= _runtimePerChunkMaxCount)
+                    continue;
+
+                if (selectedEntry.isPredator && GetPredatorSectorCount(spawnChunk) >= PredatorHardCapPerKilometerSector)
                     continue;
 
                 if (isLargeThreat)
@@ -1109,7 +1136,7 @@ namespace Hecton8.AI
 
                 uint uniqueInstanceUid = IsApexPredatorArchetype(selectedEntry.archetype, isLargeThreat)
                     ? BuildApexFaunaInstanceUid(selectedEntry.archetype, in spawnMacroZone)
-                    : 0u;
+                    : BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, spawnPos);
                 if (uniqueInstanceUid != 0u &&
                     ecosystemDirector != null &&
                     ecosystemDirector.IsApexTombstoned(uniqueInstanceUid))
@@ -1156,6 +1183,7 @@ namespace Hecton8.AI
                         spawnChunk,
                         spawnMacroZone,
                         isLargeThreat,
+                        selectedEntry.isPredator,
                         uniqueInstanceUid,
                         out ActiveCreature record))
                 {
@@ -1179,6 +1207,8 @@ namespace Hecton8.AI
                     availablePoolCounts[typeIndex]--;
 
                 IncrementChunkCount(spawnChunk);
+                if (selectedEntry.isPredator)
+                    IncrementPredatorSectorCount(spawnChunk);
                 if (isLargeThreat)
                     IncrementMacroZoneCount(spawnMacroZone);
 
@@ -1707,6 +1737,8 @@ namespace Hecton8.AI
             }
 
             DecrementChunkCount(creature.chunkCoord);
+            if (creature.isPredator)
+                DecrementPredatorSectorCount(creature.chunkCoord);
             if (creature.isLargeThreat)
                 DecrementMacroZoneCount(creature.macroZoneCoord);
         }
@@ -1719,9 +1751,11 @@ namespace Hecton8.AI
                 _availablePoolCountsPerBiome != null &&
                 _prefabTypeIndexLookup != null &&
                 _countsPerChunk != null &&
+                _predatorCountsPerSector != null &&
                 _largeThreatCountsPerMacroZone != null &&
                 _activeCreatures != null &&
-                _countsPerBiome != null)
+                _countsPerBiome != null &&
+                _persistedFaunaRestoreScratch != null)
             {
                 return;
             }
@@ -1733,7 +1767,9 @@ namespace Hecton8.AI
             _availablePoolCountsPerBiome ??= new Dictionary<FaunaBiomeData, int[]>(capacity);
             _prefabTypeIndexLookup ??= new Dictionary<FaunaBiomeData, Dictionary<GameObject, int>>(capacity);
             _countsPerChunk ??= new Dictionary<long, int>(32);
+            _predatorCountsPerSector ??= new Dictionary<long, int>(32);
             _largeThreatCountsPerMacroZone ??= new Dictionary<long, int>(16);
+            _persistedFaunaRestoreScratch ??= new List<EntityDataRecord>(64);
 
             _biomeLookup.Clear();
             _countsPerTypePerBiome.Clear();
@@ -1770,6 +1806,7 @@ namespace Hecton8.AI
                             {
                                 prefab = resolvedPrefab,
                                 archetype = faunaEntry.archetype,
+                                speciesId = ResolveStableSpeciesId(faunaEntry.archetype, resolvedPrefab),
                                 spawnWeight = faunaEntry.GetResolvedSpawnWeight(),
                                 maxAlive = Mathf.Max(1, faunaEntry.GetResolvedMaxAlive()),
                                 creatureTypeIndex = creatureIndex,
@@ -1958,7 +1995,7 @@ namespace Hecton8.AI
         private int GetTrackedCreaturePopulationCount()
         {
             int activeCount = _activeCreatures != null ? _activeCreatures.Count : 0;
-            return activeCount + _activeDehydrationSlotCount;
+            return activeCount + _activeDehydrationSlotCount + _persistedTier2FaunaCount;
         }
 
         private int AllocateDehydrationSlot()
@@ -2108,6 +2145,27 @@ namespace Hecton8.AI
                    archetype.roleType == CreatureRoleType.Leviathan;
         }
 
+        private static int ResolveStableSpeciesId(CreatureArchetypeData archetype, GameObject prefabSource)
+        {
+            if (archetype != null)
+            {
+                if (archetype.faunaDataTemplate != null && archetype.faunaDataTemplate.SpeciesId != 0)
+                    return archetype.faunaDataTemplate.SpeciesId;
+
+                if (!string.IsNullOrWhiteSpace(archetype.creatureId))
+                    return unchecked((int)Hecton.Localization.LocHash.Compute(archetype.creatureId)) & int.MaxValue;
+            }
+
+            if (prefabSource != null && prefabSource.TryGetComponent(out FaunaBrain faunaBrain))
+            {
+                int prefabSpeciesId = faunaBrain.SpeciesId;
+                if (prefabSpeciesId != 0)
+                    return prefabSpeciesId;
+            }
+
+            return 0;
+        }
+
         private static uint BuildApexFaunaInstanceUid(CreatureArchetypeData archetype, in WorldMacroZoneCoordinate macroZoneCoord)
         {
             if (!IsApexPredatorArchetype(archetype, isLargeThreat: true))
@@ -2126,6 +2184,25 @@ namespace Hecton8.AI
             return (ApexFaunaInstanceTypeId << 24) | sequence;
         }
 
+        private static uint BuildStandardFaunaInstanceUid(int speciesId, int biomeIndex, WorldChunkCoordinate chunkCoord, Vector3 runtimePosition)
+        {
+            uint positionHash = math.hash(new int4(
+                Mathf.RoundToInt(runtimePosition.x * 10f),
+                Mathf.RoundToInt(runtimePosition.y * 10f),
+                Mathf.RoundToInt(runtimePosition.z * 10f),
+                biomeIndex));
+            uint sectorHash = math.hash(new int4(
+                chunkCoord.x,
+                chunkCoord.z,
+                speciesId,
+                unchecked((int)positionHash)));
+            uint sequence = sectorHash & 0x00FFFFFFu;
+            if (sequence == 0u)
+                sequence = 1u;
+
+            return (StandardFaunaInstanceTypeId << 24) | sequence;
+        }
+
         private static EcosystemDirector ResolveConcreteEcosystemDirector()
         {
             return GlobalRegistry.EcosystemDirector as EcosystemDirector;
@@ -2140,6 +2217,7 @@ namespace Hecton8.AI
             WorldChunkCoordinate chunkCoord,
             WorldMacroZoneCoordinate macroZoneCoord,
             bool isLargeThreat,
+            bool isPredator,
             uint uniqueInstanceUid,
             out ActiveCreature record)
         {
@@ -2152,7 +2230,7 @@ namespace Hecton8.AI
                 return false;
 
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(instance.transform.position);
-            UpdateResidencySlot(slotIndex, instance, prefabSource, archetype, creatureTypeIndex, biomeIndex, chunkCoord, macroZoneCoord, isLargeThreat, uniqueInstanceUid, in positionAup, markDehydrated: false);
+            UpdateResidencySlot(slotIndex, instance, prefabSource, archetype, creatureTypeIndex, biomeIndex, chunkCoord, macroZoneCoord, isLargeThreat, isPredator, uniqueInstanceUid, in positionAup, markDehydrated: false);
 
             record = new ActiveCreature
             {
@@ -2165,6 +2243,7 @@ namespace Hecton8.AI
                 chunkCoord = chunkCoord,
                 macroZoneCoord = macroZoneCoord,
                 isLargeThreat = isLargeThreat,
+                isPredator = isPredator,
                 uniqueInstanceUid = uniqueInstanceUid,
                 dehydrationSlotIndex = slotIndex
             };
@@ -2187,6 +2266,7 @@ namespace Hecton8.AI
                 creature.chunkCoord,
                 creature.macroZoneCoord,
                 creature.isLargeThreat,
+                creature.isPredator,
                 creature.uniqueInstanceUid,
                 in positionAup,
                 markDehydrated);
@@ -2202,6 +2282,7 @@ namespace Hecton8.AI
             WorldChunkCoordinate chunkCoord,
             WorldMacroZoneCoordinate macroZoneCoord,
             bool isLargeThreat,
+            bool isPredator,
             uint uniqueInstanceUid,
             in AbsoluteUniversePosition positionAup,
             bool markDehydrated)
@@ -2258,11 +2339,13 @@ namespace Hecton8.AI
                 linearVelocity = linearVelocity,
                 angularVelocity = angularVelocity,
                 health = health,
+                speciesId = ResolveStableSpeciesId(archetype, prefabSource),
                 creatureTypeIndex = creatureTypeIndex,
                 biomeIndex = biomeIndex,
                 chunkCoord = chunkCoord,
                 macroZoneCoord = macroZoneCoord,
                 isLargeThreat = isLargeThreat,
+                isPredator = isPredator,
                 uniqueInstanceUid = uniqueInstanceUid,
                 isResident = true,
                 isDehydrated = markDehydrated
@@ -2341,6 +2424,7 @@ namespace Hecton8.AI
                     chunkCoord = state.chunkCoord,
                     macroZoneCoord = state.macroZoneCoord,
                     isLargeThreat = state.isLargeThreat,
+                    isPredator = state.isPredator,
                     uniqueInstanceUid = state.uniqueInstanceUid,
                     dehydrationSlotIndex = slotIndex
                 };
@@ -2362,6 +2446,362 @@ namespace Hecton8.AI
             }
 
             return hydrated;
+        }
+
+        private void OffloadPersistedTier2Fauna(Vector3 playerPos)
+        {
+            if (_activeDehydrationSlotCount <= 0)
+                return;
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return;
+
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPos);
+            for (int i = _activeDehydrationSlotCount - 1; i >= 0; i--)
+            {
+                int slotIndex = _activeDehydrationSlots[i];
+                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length || slotIndex >= _dehydratedPoolSlots.Length)
+                    continue;
+
+                FaunaResidencyState state = _dehydratedCreatureStates[slotIndex];
+                if (!state.isResident || !state.isDehydrated)
+                    continue;
+
+                PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
+                AbsoluteUniversePosition creatureAup = ReadPoolSlotPosition(in slotData);
+                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) <= HibernationDistanceSq)
+                    continue;
+
+                uint instanceUid = state.uniqueInstanceUid != 0u
+                    ? state.uniqueInstanceUid
+                    : BuildStandardFaunaInstanceUid(state.speciesId, state.biomeIndex, state.chunkCoord, creatureAup.ToRuntimeFloat3());
+                EntityDataRecord cachedState = PersistentWorldRegistry.CreateFaunaHibernationState(
+                    instanceUid,
+                    state.speciesId,
+                    state.health,
+                    in creatureAup,
+                    state.isLargeThreat,
+                    state.isPredator);
+                if (!registry.TryCacheFaunaHibernationState(in cachedState))
+                    continue;
+
+                ReleaseDehydrationSlot(slotIndex);
+                _persistedTier2FaunaCount++;
+            }
+        }
+
+        private void RestorePersistedTier2Fauna(Vector3 playerPos)
+        {
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return;
+
+            if (_persistedFaunaRestoreScratch == null)
+                return;
+
+            _persistedFaunaRestoreScratch.Clear();
+            int restoredCount = registry.ConsumeCachedFaunaHibernationStates(playerPos, HibernationDistanceMeters, _persistedFaunaRestoreScratch);
+            if (restoredCount <= 0)
+                return;
+
+            for (int i = 0; i < _persistedFaunaRestoreScratch.Count; i++)
+            {
+                EntityDataRecord cachedState = _persistedFaunaRestoreScratch[i];
+                if (!TryRestorePersistedTier2FaunaState(in cachedState))
+                {
+                    registry.TryCacheFaunaHibernationState(in cachedState);
+                    continue;
+                }
+
+                if (_persistedTier2FaunaCount > 0)
+                    _persistedTier2FaunaCount--;
+            }
+        }
+
+        private bool TryRestorePersistedTier2FaunaState(in EntityDataRecord cachedState)
+        {
+            if (!PersistentWorldRegistry.IsFaunaHibernationState(in cachedState))
+                return false;
+
+            int speciesId = PersistentWorldRegistry.GetFaunaHibernationSpeciesId(in cachedState);
+            if (speciesId == 0)
+                return false;
+
+            if (!TryResolvePersistedTier2Entry(speciesId, out FaunaBiomeData biomeData, out ResolvedFaunaEntry entry))
+                return false;
+
+            int slotIndex = AllocateDehydrationSlot();
+            if (slotIndex == InvalidDehydrationSlotIndex)
+                return false;
+
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in cachedState.Position);
+            Vector3 runtimePosition = position.ToRuntimeFloat3();
+            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(runtimePosition, _runtimeChunkSize);
+            WorldMacroZoneCoordinate macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(runtimePosition, _runtimeMacroZoneSize);
+            bool isLargeThreat = PersistentWorldRegistry.GetFaunaHibernationLargeThreatFlag(in cachedState) || entry.isLargeThreat;
+            bool isPredator = PersistentWorldRegistry.GetFaunaHibernationPredatorFlag(in cachedState) || entry.isPredator;
+
+            UpdateResidencySlot(
+                slotIndex,
+                null,
+                entry.prefab,
+                entry.archetype,
+                entry.creatureTypeIndex,
+                biomeData.biomeIndex,
+                chunkCoord,
+                macroZoneCoord,
+                isLargeThreat,
+                isPredator,
+                cachedState.InstanceUid,
+                in position,
+                markDehydrated: true);
+
+            FaunaResidencyState restoredState = _dehydratedCreatureStates[slotIndex];
+            restoredState.health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState);
+            restoredState.speciesId = speciesId;
+            restoredState.isLargeThreat = isLargeThreat;
+            restoredState.isPredator = isPredator;
+            _dehydratedCreatureStates[slotIndex] = restoredState;
+            AddActiveDehydrationSlot(slotIndex);
+            return true;
+        }
+
+        private bool TryResolvePersistedTier2Entry(int speciesId, out FaunaBiomeData biomeData, out ResolvedFaunaEntry entry)
+        {
+            biomeData = null;
+            entry = default;
+            if (_resolvedEntriesPerBiome == null || biomeDatasets == null)
+                return false;
+
+            for (int i = 0; i < biomeDatasets.Length; i++)
+            {
+                FaunaBiomeData candidateBiome = biomeDatasets[i];
+                if (candidateBiome == null ||
+                    !_resolvedEntriesPerBiome.TryGetValue(candidateBiome, out ResolvedFaunaEntry[] resolvedEntries) ||
+                    resolvedEntries == null)
+                {
+                    continue;
+                }
+
+                for (int entryIndex = 0; entryIndex < resolvedEntries.Length; entryIndex++)
+                {
+                    ResolvedFaunaEntry candidateEntry = resolvedEntries[entryIndex];
+                    if (candidateEntry.prefab == null || candidateEntry.speciesId != speciesId)
+                        continue;
+
+                    biomeData = candidateBiome;
+                    entry = candidateEntry;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            CompleteResidentDataOnlySimulation(forceComplete: true);
+            ref ProceduralWorldStateDTO dto = ref data.proceduralWorldState;
+            dto.EnsureCapacity();
+
+            int savedCount = 0;
+            for (int i = 0; i < _activeDehydrationSlotCount; i++)
+            {
+                if (savedCount >= ProceduralWorldStateDTO.MaxHibernatedFaunaStates)
+                {
+                    Debug.LogWarning($"[FaunaDirector] Max hibernated fauna states ({ProceduralWorldStateDTO.MaxHibernatedFaunaStates}) reached. Extra residents were not saved.", this);
+                    break;
+                }
+
+                int slotIndex = _activeDehydrationSlots[i];
+                if (!TryBuildHibernatedFaunaState(slotIndex, out HibernatedFaunaStateDTO savedState))
+                    continue;
+
+                dto.hibernatedFaunaStates[savedCount] = savedState;
+                savedCount++;
+            }
+
+            dto.hibernatedFaunaCount = savedCount;
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            EnsureRuntimeStateInitialized();
+            InitializeDehydrationResidencyState();
+            DespawnAll();
+
+            if (data == null)
+                return;
+
+            ProceduralWorldStateDTO dto = data.proceduralWorldState;
+            if (dto.hibernatedFaunaStates == null)
+                return;
+
+            int restoreCount = Mathf.Min(dto.hibernatedFaunaCount, dto.hibernatedFaunaStates.Length);
+            for (int i = 0; i < restoreCount; i++)
+                TryRestoreHibernatedFaunaState(in dto.hibernatedFaunaStates[i]);
+        }
+
+        private bool TryBuildHibernatedFaunaState(int slotIndex, out HibernatedFaunaStateDTO savedState)
+        {
+            savedState = default;
+            if (slotIndex < 0 ||
+                _dehydratedCreatureStates == null ||
+                !_dehydratedPoolSlots.IsCreated ||
+                slotIndex >= _dehydratedCreatureStates.Length ||
+                slotIndex >= _dehydratedPoolSlots.Length)
+            {
+                return false;
+            }
+
+            FaunaResidencyState state = _dehydratedCreatureStates[slotIndex];
+            if (!state.isResident || !state.isDehydrated || state.prefabSource == null || state.archetype == null)
+                return false;
+
+            if (IsApexPredatorArchetype(state.archetype, state.isLargeThreat))
+                return false;
+
+            int speciesId = state.speciesId != 0 ? state.speciesId : ResolveStableSpeciesId(state.archetype, state.prefabSource);
+            if (speciesId == 0)
+                return false;
+
+            PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
+            AbsoluteUniversePosition position = ReadPoolSlotPosition(in slotData);
+            savedState = new HibernatedFaunaStateDTO
+            {
+                speciesId = speciesId,
+                biomeIndex = state.biomeIndex,
+                creatureTypeIndex = state.creatureTypeIndex,
+                health = state.health,
+                position = position.ToAlignedBlit(),
+                rotationX = state.rotation.x,
+                rotationY = state.rotation.y,
+                rotationZ = state.rotation.z,
+                rotationW = state.rotation.w,
+                linearVelocityX = state.linearVelocity.x,
+                linearVelocityY = state.linearVelocity.y,
+                linearVelocityZ = state.linearVelocity.z,
+                angularVelocityX = state.angularVelocity.x,
+                angularVelocityY = state.angularVelocity.y,
+                angularVelocityZ = state.angularVelocity.z,
+                uniqueInstanceUid = state.uniqueInstanceUid,
+                isLargeThreat = state.isLargeThreat
+            };
+            return true;
+        }
+
+        private bool TryRestoreHibernatedFaunaState(in HibernatedFaunaStateDTO savedState)
+        {
+            if (savedState.speciesId == 0)
+                return false;
+
+            if (!TryResolveHibernatedEntry(savedState.biomeIndex, savedState.creatureTypeIndex, savedState.speciesId, out FaunaBiomeData biomeData, out ResolvedFaunaEntry entry))
+                return false;
+
+            if (entry.prefab == null || entry.archetype == null)
+                return false;
+
+            int slotIndex = AllocateDehydrationSlot();
+            if (slotIndex == InvalidDehydrationSlotIndex)
+                return false;
+
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in savedState.position);
+            Vector3 runtimePosition = position.ToRuntimeFloat3();
+            WorldChunkCoordinate chunkCoord = WorldChunkCoordinate.FromWorldPosition(runtimePosition, _runtimeChunkSize);
+            WorldMacroZoneCoordinate macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(runtimePosition, _runtimeMacroZoneSize);
+            bool isLargeThreat = savedState.isLargeThreat || entry.isLargeThreat;
+            uint uniqueInstanceUid = savedState.uniqueInstanceUid != 0u
+                ? savedState.uniqueInstanceUid
+                : BuildStandardFaunaInstanceUid(savedState.speciesId, biomeData.biomeIndex, chunkCoord, runtimePosition);
+
+            UpdateResidencySlot(
+                slotIndex,
+                null,
+                entry.prefab,
+                entry.archetype,
+                entry.creatureTypeIndex,
+                biomeData.biomeIndex,
+                chunkCoord,
+                macroZoneCoord,
+                isLargeThreat,
+                entry.isPredator,
+                uniqueInstanceUid,
+                in position,
+                markDehydrated: true);
+
+            FaunaResidencyState restoredState = _dehydratedCreatureStates[slotIndex];
+            restoredState.rotation = new Quaternion(savedState.rotationX, savedState.rotationY, savedState.rotationZ, savedState.rotationW);
+            restoredState.linearVelocity = new Vector3(savedState.linearVelocityX, savedState.linearVelocityY, savedState.linearVelocityZ);
+            restoredState.angularVelocity = new Vector3(savedState.angularVelocityX, savedState.angularVelocityY, savedState.angularVelocityZ);
+            restoredState.health = savedState.health;
+            restoredState.speciesId = savedState.speciesId;
+            restoredState.isLargeThreat = isLargeThreat;
+            restoredState.isPredator = entry.isPredator;
+            _dehydratedCreatureStates[slotIndex] = restoredState;
+
+            if (_dehydratedLinearVelocityNative.IsCreated && slotIndex < _dehydratedLinearVelocityNative.Length)
+            {
+                _dehydratedLinearVelocityNative[slotIndex] = new float3(
+                    savedState.linearVelocityX,
+                    savedState.linearVelocityY,
+                    savedState.linearVelocityZ);
+            }
+
+            AddActiveDehydrationSlot(slotIndex);
+            IncrementCreatureCounters(biomeData.biomeIndex, entry.creatureTypeIndex, biomeData);
+            IncrementChunkCount(chunkCoord);
+            if (entry.isPredator)
+                IncrementPredatorSectorCount(chunkCoord);
+            if (isLargeThreat)
+                IncrementMacroZoneCount(macroZoneCoord);
+            return true;
+        }
+
+        private bool TryResolveHibernatedEntry(
+            int biomeIndex,
+            int creatureTypeIndex,
+            int speciesId,
+            out FaunaBiomeData biomeData,
+            out ResolvedFaunaEntry entry)
+        {
+            biomeData = null;
+            entry = default;
+            if (_biomeLookup == null ||
+                _resolvedEntriesPerBiome == null ||
+                !_biomeLookup.TryGetValue(biomeIndex, out biomeData) ||
+                biomeData == null ||
+                !_resolvedEntriesPerBiome.TryGetValue(biomeData, out ResolvedFaunaEntry[] resolvedEntries) ||
+                resolvedEntries == null ||
+                resolvedEntries.Length == 0)
+            {
+                return false;
+            }
+
+            if (creatureTypeIndex >= 0 && creatureTypeIndex < resolvedEntries.Length)
+            {
+                ResolvedFaunaEntry directEntry = resolvedEntries[creatureTypeIndex];
+                if (directEntry.prefab != null && directEntry.speciesId == speciesId)
+                {
+                    entry = directEntry;
+                    return true;
+                }
+            }
+
+            for (int i = 0; i < resolvedEntries.Length; i++)
+            {
+                ResolvedFaunaEntry candidate = resolvedEntries[i];
+                if (candidate.prefab == null || candidate.speciesId != speciesId)
+                    continue;
+
+                entry = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -3049,6 +3489,9 @@ namespace Hecton8.AI
             if (GetChunkCreatureCount(spawnChunk) >= _runtimePerChunkMaxCount)
                 return false;
 
+            if (selectedEntry.isPredator && GetPredatorSectorCount(spawnChunk) >= PredatorHardCapPerKilometerSector)
+                return false;
+
             WorldMacroZoneCoordinate spawnMacroZone = WorldMacroZoneCoordinate.FromWorldPosition(spawnPosition, _runtimeMacroZoneSize);
             if (selectedEntry.isLargeThreat &&
                 _playerTransform != null &&
@@ -3070,7 +3513,7 @@ namespace Hecton8.AI
 
             uint uniqueInstanceUid = IsApexPredatorArchetype(selectedEntry.archetype, selectedEntry.isLargeThreat)
                 ? BuildApexFaunaInstanceUid(selectedEntry.archetype, in spawnMacroZone)
-                : 0u;
+                : BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIndex, spawnChunk, spawnPosition);
             if (uniqueInstanceUid != 0u &&
                 ecosystemDirector != null &&
                 ecosystemDirector.IsApexTombstoned(uniqueInstanceUid))
@@ -3108,6 +3551,7 @@ namespace Hecton8.AI
                     spawnChunk,
                     spawnMacroZone,
                     selectedEntry.isLargeThreat,
+                    selectedEntry.isPredator,
                     uniqueInstanceUid,
                     out ActiveCreature record))
             {
@@ -3122,6 +3566,8 @@ namespace Hecton8.AI
             _activeCreatures.Add(record);
             IncrementCreatureCounters(biomeIndex, typeIndex, biomeData);
             IncrementChunkCount(spawnChunk);
+            if (selectedEntry.isPredator)
+                IncrementPredatorSectorCount(spawnChunk);
             if (selectedEntry.isLargeThreat)
                 IncrementMacroZoneCount(spawnMacroZone);
 
@@ -3189,7 +3635,9 @@ namespace Hecton8.AI
             _activeCreatures.Clear();
             ResetDehydrationResidencyState();
             _countsPerChunk.Clear();
+            _predatorCountsPerSector.Clear();
             _largeThreatCountsPerMacroZone.Clear();
+            _persistedTier2FaunaCount = 0;
 
             // â”€â”€ ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² â”€â”€
             System.Array.Clear(_countsPerBiome, 0, _countsPerBiome.Length);
@@ -3632,7 +4080,7 @@ namespace Hecton8.AI
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
-                    ai.SetLogicalIdentity(0u);
+                    ai.SetLogicalIdentity(BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, spawnPos));
                     ai.SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
                     FaunaGeneticsManager.Instance?.ApplyTraits(ai, selectedEntry.archetype, biomeIdx, spawnPos);
                     EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
@@ -3648,7 +4096,8 @@ namespace Hecton8.AI
                         spawnChunk,
                         default,
                         false,
-                        0u,
+                        selectedEntry.isPredator,
+                        BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, spawnPos),
                         out record))
                 {
                     if (pool != null)
@@ -3662,6 +4111,8 @@ namespace Hecton8.AI
                 _activeCreatures.Add(record);
                 IncrementCreatureCounters(biomeIdx, typeIndex, biomeData);
                 IncrementChunkCount(spawnChunk);
+                if (selectedEntry.isPredator)
+                    IncrementPredatorSectorCount(spawnChunk);
 
                 if (typeIndex >= 0 && typeIndex < availablePoolCounts.Length && availablePoolCounts[typeIndex] > 0)
                     availablePoolCounts[typeIndex]--;
@@ -3868,7 +4319,7 @@ namespace Hecton8.AI
             _runtimeLargeThreatSpawnInner = Mathf.Max(_runtimeSpawnRingOuter + 60f, _runtimeSpawnRingInner + 120f);
             _runtimeLargeThreatSpawnOuter = Mathf.Max(_runtimeLargeThreatSpawnInner + 120f, _runtimeKillDistance);
             _runtimeLargeThreatKillDistance = Mathf.Max(_runtimeLargeThreatSpawnOuter + 120f, _runtimeKillDistance * 1.5f);
-            _runtimeGlobalMaxCount = Mathf.Max(1, globalMaxCount);
+            _runtimeGlobalMaxCount = Mathf.Clamp(globalMaxCount, 1, GlobalFaunaHardCap);
             _runtimeMaxSpawnsPerTick = Mathf.Max(1, maxSpawnsPerTick);
             _runtimePerChunkMaxCount = Mathf.Max(4, Mathf.CeilToInt(_runtimeGlobalMaxCount / 5f));
             _runtimeMaxNearbyLargeThreats = 1;
@@ -3899,7 +4350,7 @@ namespace Hecton8.AI
                 _runtimeLargeThreatKillDistance = largeThreatFar;
 
                 int estimatedLoadedChunks = EstimateChunkCoverage(midRadius, _runtimeChunkSize);
-                _runtimeGlobalMaxCount = Mathf.Max(globalMaxCount, estimatedLoadedChunks * 6);
+                _runtimeGlobalMaxCount = Mathf.Clamp(Mathf.Max(globalMaxCount, estimatedLoadedChunks * 6), 1, GlobalFaunaHardCap);
                 _runtimeMaxSpawnsPerTick = Mathf.Max(maxSpawnsPerTick, Mathf.Clamp(faunaLayer.maxActivationsPerTick / 2, 4, 16));
                 _runtimePerChunkMaxCount = Mathf.Clamp(Mathf.CeilToInt(_runtimeGlobalMaxCount / (float)Mathf.Max(1, estimatedLoadedChunks)), 4, 12);
                 _runtimeMaxNearbyLargeThreats = Mathf.Clamp(Mathf.Max(1, largeThreatLayer.maxActivationsPerTick / 2), 1, 2);
@@ -4008,6 +4459,15 @@ namespace Hecton8.AI
             return _largeThreatCountsPerMacroZone.TryGetValue(key, out int count) ? count : 0;
         }
 
+        private int GetPredatorSectorCount(WorldChunkCoordinate chunkCoord)
+        {
+            if (_predatorCountsPerSector == null)
+                return 0;
+
+            long key = ComposePredatorSectorKey(chunkCoord);
+            return _predatorCountsPerSector.TryGetValue(key, out int count) ? count : 0;
+        }
+
         private void IncrementChunkCount(WorldChunkCoordinate chunkCoord)
         {
             if (_countsPerChunk == null)
@@ -4018,6 +4478,18 @@ namespace Hecton8.AI
                 _countsPerChunk[key] = count + 1;
             else
                 _countsPerChunk.Add(key, 1);
+        }
+
+        private void IncrementPredatorSectorCount(WorldChunkCoordinate chunkCoord)
+        {
+            if (_predatorCountsPerSector == null)
+                return;
+
+            long key = ComposePredatorSectorKey(chunkCoord);
+            if (_predatorCountsPerSector.TryGetValue(key, out int count))
+                _predatorCountsPerSector[key] = count + 1;
+            else
+                _predatorCountsPerSector.Add(key, 1);
         }
 
         private void DecrementChunkCount(WorldChunkCoordinate chunkCoord)
@@ -4034,6 +4506,22 @@ namespace Hecton8.AI
                 _countsPerChunk.Remove(key);
             else
                 _countsPerChunk[key] = count;
+        }
+
+        private void DecrementPredatorSectorCount(WorldChunkCoordinate chunkCoord)
+        {
+            if (_predatorCountsPerSector == null)
+                return;
+
+            long key = ComposePredatorSectorKey(chunkCoord);
+            if (!_predatorCountsPerSector.TryGetValue(key, out int count))
+                return;
+
+            count--;
+            if (count <= 0)
+                _predatorCountsPerSector.Remove(key);
+            else
+                _predatorCountsPerSector[key] = count;
         }
 
         private void IncrementMacroZoneCount(WorldMacroZoneCoordinate macroZoneCoord)
@@ -4072,6 +4560,14 @@ namespace Hecton8.AI
         private static long ComposeMacroZoneKey(WorldMacroZoneCoordinate macroZoneCoord)
         {
             return ((long)macroZoneCoord.x << 32) ^ (uint)macroZoneCoord.z;
+        }
+
+        private long ComposePredatorSectorKey(WorldChunkCoordinate chunkCoord)
+        {
+            float sectorScale = 1000f / Mathf.Max(1f, _runtimeChunkSize);
+            int sectorX = Mathf.FloorToInt(chunkCoord.x / sectorScale);
+            int sectorZ = Mathf.FloorToInt(chunkCoord.z / sectorScale);
+            return ((long)sectorX << 32) ^ (uint)sectorZ;
         }
 
         private static void WritePoolSlotPosition(ref PoolSlotData slotData, in AbsoluteUniversePosition position)

@@ -72,6 +72,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Red color for Cycling state.")]
         [SerializeField] private Color cyclingColor = new Color(1f, 0.2f, 0.1f);
 
+        [Tooltip("Amber color shown while emergency bulkhead lockdown overrides player control.")]
+        [SerializeField] private Color lockedDownColor = new Color(1f, 0.6f, 0.08f);
+
         [Header("── Audio ──────────────────────────────────────")]
         [Tooltip("Sound played when airlock cycle starts.")]
         [SerializeField] private AudioClip cycleStartSound;
@@ -97,6 +100,7 @@ namespace Hecton8.Gameplay
         private float _cycleTimer;
         private bool _isPlayerInside; // True if player is currently inside the base
         private bool _registered;
+        private bool _emergencyLockedDown;
         private int _emissionPropertyId;
 
         // Cached references
@@ -108,9 +112,11 @@ namespace Hecton8.Gameplay
         private const string DefaultEnterText = "Enter Base";
         private const string DefaultExitText = "Exit Base";
         private const string DefaultCyclingText = "Cycling...";
+        private const string DefaultLockedText = "Bulkhead Lockdown";
         private string _cachedEnterText;
         private string _cachedExitText;
         private string _cachedCyclingText;
+        private string _cachedLockedText;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -121,6 +127,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>True if player is currently inside the base.</summary>
         public bool IsPlayerInside => _isPlayerInside;
+
+        /// <summary>True while emergency lockdown overrides player interaction.</summary>
+        public bool IsEmergencyLockedDown => _emergencyLockedDown;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -143,7 +152,7 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
             // Set initial state
             _state = AirlockState.Ready;
-            UpdateStatusLight(readyColor);
+            UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
         }
 
         private void OnDisable()
@@ -225,7 +234,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Interact(Transform interactor)
         {
-            if (_state != AirlockState.Ready)
+            if (_emergencyLockedDown || _state != AirlockState.Ready)
                 return;
 
             StartCycle(interactor);
@@ -239,6 +248,8 @@ namespace Hecton8.Gameplay
             switch (_state)
             {
                 case AirlockState.Ready:
+                    if (_emergencyLockedDown)
+                        return _cachedLockedText;
                     return _isPlayerInside ? _cachedExitText : _cachedEnterText;
                 case AirlockState.Cycling:
                     return _cachedCyclingText;
@@ -277,8 +288,8 @@ namespace Hecton8.Gameplay
         {
             _state = AirlockState.Ready;
 
-            // Update status light to green
-            UpdateStatusLight(readyColor);
+            // Restore state light after the cycle ends.
+            UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
 
             // Play cycle end sound
             if (cycleEndSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -404,6 +415,7 @@ namespace Hecton8.Gameplay
             _cachedEnterText = ResolveLocalized(LocalizationKeys.INTERACT_ENTER_BASE, DefaultEnterText);
             _cachedExitText = ResolveLocalized(LocalizationKeys.INTERACT_EXIT_BASE, DefaultExitText);
             _cachedCyclingText = ResolveLocalized(LocalizationKeys.INTERACT_CYCLING, DefaultCyclingText);
+            _cachedLockedText = ResolveLocalized(LocalizationKeys.INTERACT_LOCKED, DefaultLockedText);
         }
 
         private void HandleLanguageChanged(GameLanguage language)
@@ -417,6 +429,19 @@ namespace Hecton8.Gameplay
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        /// <summary>
+        /// Enables or clears emergency bulkhead lockdown. While active, interaction is blocked.
+        /// </summary>
+        public void SetEmergencyLockdown(bool lockedDown)
+        {
+            if (_emergencyLockedDown == lockedDown)
+                return;
+
+            _emergencyLockedDown = lockedDown;
+            if (_state == AirlockState.Ready)
+                UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
         }
     }
 }

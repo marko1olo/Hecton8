@@ -77,13 +77,7 @@ namespace DigitalOpus.MB.Core
 
         public UnityEngine.Object[] FindSceneObjectsOfType(Type t)
         {
-#if UNITY_3_0 || UNITY_3_0_0 || UNITY_3_1 || UNITY_3_2 || UNITY_3_3 || UNITY_3_4 || UNITY_3_5
-            return GameObject.FindSceneObjectsOfType(t);
-#elif UNITY_2023_1_OR_NEWER
             return UnityEngine.Object.FindObjectsByType(t, FindObjectsSortMode.None);
-#else
-            return GameObject.FindObjectsOfType(t);
-#endif
         }
 
         /// <summary>

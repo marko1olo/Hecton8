@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_ToxicSulfurDeposit
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.toxic_sulfur_deposit
+  displayName: Toxic Sulfur Deposit
+  toolResistance: 1.1
+  harvestDurationSeconds: 1.35
+  requiredToolClass: 0
+  maxIntegrity: 120
+  defaultLootCount: 2
+  minimumDepthMeters: 2600
+  maximumDepthMeters: 4200
+  minimumTemperatureCelsius: -2
+  maximumTemperatureCelsius: 18
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 24
+  spawnOffsetMeters: 0.08
+  candidateBudgetPerSector: 4
+  maxInstancesPerSector: 2
+  placementProbability: 0.28
+  minimumDensity: 0.12
+  maximumDensity: 0.55
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.2, y: 0.8, z: 1.2}
+  supportsAutonomousExtraction: 0
+  extractorYieldItem: {fileID: 0}
+  extractorCycleSeconds: 45
+  extractorInventoryCapacity: 8
+  requiresHydrothermalVent: 0
+  hydrothermalVentTemperatureThresholdCelsius: 60
+  triggersSteamExplosionWithoutThermalShield: 0
+  steamExplosionRadiusMeters: 4
+  steamExplosionImpulse: 12
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 2.1
+  requiresBrinePool: 1
+  brineDensityKgPerCubicMeter: 1250
+  brineToxicityIntensity: 0.95
+  embedInVoxelRock: 0
+  embeddedVeinStampCount: 6
+  embeddedVeinLengthMeters: 8
+  embeddedVeinRadiusMeters: 1.2
+  embeddedVeinNoiseAmplitudeMeters: 0.6
+  harvestYield:
+  - item: {fileID: 11400000, guid: dc4c55351a434644891b5ec8a5fbdc6b, type: 2}
+    minimumAmount: 1
+    maximumAmount: 3
+    weight: 1
+  rarityDrops: []

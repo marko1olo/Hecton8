@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Ecosystem;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
 using Unity.Burst;
@@ -27,8 +28,11 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4037)]
     public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IEcosystemDirectorService
     {
+        internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
+
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
         private const float DefaultDiffusionTickIntervalSeconds = 5f;
+        private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
         private const float SectorEdgeLengthMeters = 1000f;
         private const int MinimumSectorCapacity = 16;
         private const int MinimumPredationEventCapacity = 32;
@@ -340,6 +344,36 @@ namespace Hecton8.World
         [Tooltip("Scale applied when converting starvation pressure into director hostility.")]
         [SerializeField, Range(0f, 1f)] private float starvationHostilityWeight = 0.85f;
 
+        [Header("Fauna Ecology Chains")]
+        [Tooltip("Species IDs treated as herbivores for flora grazing and migration redirection.")]
+        [SerializeField] private int[] herbivoreSpeciesIds;
+        [Tooltip("Species IDs treated as cleaners that shadow apex fauna and reduce fatigue.")]
+        [SerializeField] private int[] cleanerSpeciesIds;
+        [Tooltip("Optional apex species IDs that accept cleaner symbiosis. Empty means any leviathan host.")]
+        [SerializeField] private int[] cleanerHostSpeciesIds;
+        [Tooltip("Hunger threshold that allows herbivore flora seeking to override default wander logic.")]
+        [SerializeField, Range(0f, 1f)] private float herbivoreGrazeHungerThreshold = 0.68f;
+        [Tooltip("Search radius used when resolving nearby consumable flora for hungry herbivores.")]
+        [SerializeField, Min(1f)] private float herbivoreGrazeSearchRadiusMeters = 500f;
+        [Tooltip("Distance where herbivores consume the resolved flora instance.")]
+        [SerializeField, Min(0.1f)] private float herbivoreConsumeDistanceMeters = 6f;
+        [Tooltip("Search radius used by cleaner species when acquiring an apex host to orbit.")]
+        [SerializeField, Min(1f)] private float cleanerHostSearchRadiusMeters = 96f;
+        [Tooltip("Distance where cleaner fish begin to apply fatigue relief to the host.")]
+        [SerializeField, Min(0.1f)] private float cleanerSymbiosisDistanceMeters = 10f;
+        [Tooltip("Normalized fatigue relief applied per second while a cleaner remains in symbiotic range.")]
+        [SerializeField, Min(0f)] private float cleanerFatigueReliefPerSecond = 0.09f;
+        [Tooltip("Hunger threshold that allows scavenger corpse feeding to override default hunt logic.")]
+        [SerializeField, Range(0f, 1f)] private float scavengerHungerThreshold = 0.55f;
+        [Tooltip("Search radius used when resolving active corpse-resource nodes for scavengers.")]
+        [SerializeField, Min(1f)] private float scavengerCorpseSearchRadiusMeters = 240f;
+        [Tooltip("Distance where scavengers begin consuming the corpse-resource node.")]
+        [SerializeField, Min(0.1f)] private float scavengerConsumeDistanceMeters = 6f;
+        [Tooltip("Units per second removed from a corpse-resource node while a scavenger is feeding.")]
+        [SerializeField, Min(0.01f)] private float scavengerConsumeUnitsPerSecond = 1.2f;
+        [Tooltip("Distance where dropped organic bait locks fauna into a local feeding investigate/sated loop.")]
+        [SerializeField, Min(0.1f)] private float baitFeedingDistanceMeters = 5f;
+
         private NativeArray<SectorPopulationState> _sectorFrontStates;
         private NativeArray<SectorPopulationState> _sectorBackStates;
         private NativeHashMap<long, int> _sectorIndexByKey;
@@ -444,6 +478,91 @@ namespace Hecton8.World
             return selectionMultiplier > 0f;
         }
 
+        internal bool IsHerbivoreSpecies(int speciesId)
+        {
+            return ContainsSpeciesId(herbivoreSpeciesIds, speciesId);
+        }
+
+        internal bool IsCleanerSpecies(int speciesId)
+        {
+            return ContainsSpeciesId(cleanerSpeciesIds, speciesId);
+        }
+
+        internal bool IsCleanerHostSpecies(FaunaBrain hostBrain)
+        {
+            if (hostBrain == null)
+                return false;
+
+            int speciesId = hostBrain.SpeciesId;
+            if (cleanerHostSpeciesIds != null && cleanerHostSpeciesIds.Length > 0)
+                return ContainsSpeciesId(cleanerHostSpeciesIds, speciesId);
+
+            return hostBrain.SpeciesProfile != null && hostBrain.SpeciesProfile.isLeviathan;
+        }
+
+        internal float HerbivoreGrazeHungerThreshold => herbivoreGrazeHungerThreshold;
+        internal float HerbivoreConsumeDistanceMeters => herbivoreConsumeDistanceMeters;
+        internal float CleanerHostSearchRadiusMeters => cleanerHostSearchRadiusMeters;
+        internal float CleanerSymbiosisDistanceMeters => cleanerSymbiosisDistanceMeters;
+        internal float CleanerFatigueReliefPerSecond => cleanerFatigueReliefPerSecond;
+        internal float ScavengerHungerThreshold => scavengerHungerThreshold;
+        internal float ScavengerConsumeDistanceMeters => scavengerConsumeDistanceMeters;
+        internal float ScavengerConsumeUnitsPerSecond => scavengerConsumeUnitsPerSecond;
+        internal float BaitFeedingDistanceMeters => baitFeedingDistanceMeters;
+
+        internal bool TryResolveHerbivoreGrazeTarget(Vector3 worldPosition, out Vector3 floraPosition, out uint floraInstanceUid)
+        {
+            floraPosition = default;
+            floraInstanceUid = 0u;
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            return organicManager != null &&
+                   organicManager.TryResolveNearestConsumableFlora(worldPosition, herbivoreGrazeSearchRadiusMeters, out floraPosition, out floraInstanceUid);
+        }
+
+        internal bool TryConsumeHerbivoreGrazeTarget(uint floraInstanceUid)
+        {
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            return organicManager != null && organicManager.TryConsumeFlora(floraInstanceUid);
+        }
+
+        internal bool TryResolveMigrationTarget(int speciesId, Vector3 origin, out Vector3 target)
+        {
+            return MigrationDirector.TryResolveMigrationTarget(speciesId, origin, out target);
+        }
+
+        internal void RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits)
+        {
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager != null)
+                organicManager.RegisterCorpseResourceNode(worldPosition, speciesId, capacityUnits);
+        }
+
+        internal bool TryResolveCorpseScavengeTarget(Vector3 worldPosition, out Vector3 corpsePosition, out uint corpseNodeId)
+        {
+            corpsePosition = default;
+            corpseNodeId = 0u;
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            return organicManager != null &&
+                   organicManager.TryResolveNearestCorpseResourceNode(worldPosition, scavengerCorpseSearchRadiusMeters, out corpsePosition, out corpseNodeId);
+        }
+
+        internal bool TryConsumeCorpseScavengeTarget(uint corpseNodeId, float consumeUnits)
+        {
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            return organicManager != null && organicManager.TryConsumeCorpseResourceNode(corpseNodeId, consumeUnits);
+        }
+
+        internal bool DoesSpeciesRespondToBait(FaunaBrain faunaBrain)
+        {
+            if (faunaBrain == null || faunaBrain.SpeciesProfile == null)
+                return false;
+
+            int speciesId = faunaBrain.SpeciesId;
+            return faunaBrain.SpeciesProfile.isScavenger ||
+                   IsHerbivoreSpecies(speciesId) ||
+                   (faunaBrain.isAggressive && !faunaBrain.SpeciesProfile.isLeviathan);
+        }
+
         internal bool IsApexTombstoned(uint uniqueInstanceUid)
         {
             ResolveRuntimeReferences();
@@ -546,12 +665,14 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            ActiveRuntimeInstance = this;
             SanitizeSettings();
             AllocateRuntimeState();
         }
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             SanitizeSettings();
             AllocateRuntimeState();
             TryRegisterService();
@@ -560,6 +681,9 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            if (ActiveRuntimeInstance == this)
+                ActiveRuntimeInstance = null;
+
             TryUnregisterSlowTickable();
             TryUnregisterService();
             DisposeRuntimeState();
@@ -664,6 +788,25 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Applies one herbivore flora-consumption event at the supplied world position and mirrors it into the sector prey-pressure solve.
+        /// </summary>
+        internal bool TryReportFloraGrazing(Vector3 worldPosition, float searchRadiusMeters = DefaultFloraGrazingSearchRadiusMeters)
+        {
+            if (!IsInitialized)
+                return false;
+
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager == null ||
+                !organicManager.TryConsumeFloraAtPosition(worldPosition, Mathf.Max(0.5f, searchRadiusMeters), out _))
+            {
+                return false;
+            }
+
+            ReportPredation(worldPosition, 1);
+            return true;
+        }
+
+        /// <summary>
         /// Registers one player-attributed apex predator kill and escalates biome hostility.
         /// </summary>
         public void ReportApexPredatorKilled(Vector3 worldPosition, float hostilityDelta)
@@ -715,6 +858,17 @@ namespace Hecton8.World
             starvationComfortPreyPerPredator = math.max(1f, starvationComfortPreyPerPredator);
             starvationHarvestWeight = math.max(0f, starvationHarvestWeight);
             starvationHostilityWeight = math.clamp(starvationHostilityWeight, 0f, 1f);
+            herbivoreGrazeHungerThreshold = math.clamp(herbivoreGrazeHungerThreshold, 0f, 1f);
+            herbivoreGrazeSearchRadiusMeters = math.max(1f, herbivoreGrazeSearchRadiusMeters);
+            herbivoreConsumeDistanceMeters = math.max(0.1f, herbivoreConsumeDistanceMeters);
+            cleanerHostSearchRadiusMeters = math.max(1f, cleanerHostSearchRadiusMeters);
+            cleanerSymbiosisDistanceMeters = math.max(0.1f, cleanerSymbiosisDistanceMeters);
+            cleanerFatigueReliefPerSecond = math.max(0f, cleanerFatigueReliefPerSecond);
+            scavengerHungerThreshold = math.clamp(scavengerHungerThreshold, 0f, 1f);
+            scavengerCorpseSearchRadiusMeters = math.max(1f, scavengerCorpseSearchRadiusMeters);
+            scavengerConsumeDistanceMeters = math.max(0.1f, scavengerConsumeDistanceMeters);
+            scavengerConsumeUnitsPerSecond = math.max(0.01f, scavengerConsumeUnitsPerSecond);
+            baitFeedingDistanceMeters = math.max(0.1f, baitFeedingDistanceMeters);
         }
 
         private void ResolveRuntimeReferences()
@@ -751,6 +905,20 @@ namespace Hecton8.World
             {
                 string token = tokens[i];
                 if (!string.IsNullOrEmpty(token) && value.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsSpeciesId(int[] speciesIds, int speciesId)
+        {
+            if (speciesId == 0 || speciesIds == null)
+                return false;
+
+            for (int i = 0; i < speciesIds.Length; i++)
+            {
+                if (speciesIds[i] == speciesId)
                     return true;
             }
 

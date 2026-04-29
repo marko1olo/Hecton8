@@ -135,7 +135,7 @@ namespace Hecton8.Construction
                 if (candidate == null)
                     continue;
 
-                if (!AreSocketsCompatible(candidate.CompatibleType, targetSocket.CompatibleType))
+                if (!candidate.CanConnectTo(targetSocket))
                     continue;
 
                 Quaternion desiredSocketRotation = targetTransform.rotation * Quaternion.Euler(0f, 180f + yawOffsetDegrees, 0f);
@@ -413,7 +413,7 @@ namespace Hecton8.Construction
                 if (_socketLookup.TryGetValue(oppositeKey, out SocketMatchEntry existing))
                 {
                     if (existing.ModuleIndex != moduleIndex &&
-                        AreSocketsCompatible(existing.CompatibleType, socket.CompatibleType) &&
+                        ModuleSocketTopology.AreCompatible(existing.CompatibleType, existing.Direction, socket.CompatibleType, socket.Direction) &&
                         Vector3.Dot(existing.Forward, socketTransform.forward) <= OppositeDirectionDotThreshold)
                     {
                         _connectionBuffer.Add(new int2(existing.ModuleIndex, moduleIndex));
@@ -422,7 +422,7 @@ namespace Hecton8.Construction
                 }
 
                 SocketKey ownKey = SocketKey.Create(socketTransform.position, axis, validationGridSize);
-                _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.CompatibleType, socketTransform.forward);
+                _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.CompatibleType, socket.Direction, socketTransform.forward);
             }
         }
 
@@ -474,14 +474,6 @@ namespace Hecton8.Construction
                 return null;
 
             return moduleObject.TryGetComponent(out ModuleMarker marker) ? marker.Data : null;
-        }
-
-        private static bool AreSocketsCompatible(string lhs, string rhs)
-        {
-            if (string.IsNullOrEmpty(lhs) || string.IsNullOrEmpty(rhs))
-                return true;
-
-            return string.Equals(lhs, rhs, StringComparison.OrdinalIgnoreCase);
         }
 
         private static int QuantizeAxis(Vector3 direction)
@@ -682,12 +674,14 @@ namespace Hecton8.Construction
         {
             public readonly int ModuleIndex;
             public readonly string CompatibleType;
+            public readonly ModuleSocketDirection Direction;
             public readonly Vector3 Forward;
 
-            public SocketMatchEntry(int moduleIndex, string compatibleType, Vector3 forward)
+            public SocketMatchEntry(int moduleIndex, string compatibleType, ModuleSocketDirection direction, Vector3 forward)
             {
                 ModuleIndex = moduleIndex;
                 CompatibleType = compatibleType;
+                Direction = direction;
                 Forward = forward;
             }
         }

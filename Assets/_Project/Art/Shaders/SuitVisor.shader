@@ -52,6 +52,7 @@ Shader "NASAPunk/SuitVisor"
         _ChromaticAberration ("Structural Chromatic Aberration", Range(0, 0.02)) = 0
         _StaticNoise ("Structural Static Noise", Range(0, 1)) = 0
         _HypoxiaLevel ("HUD Hypoxia Failure", Range(0, 1)) = 0
+        _HullStressFlicker ("Pressure Flicker", Range(0, 1)) = 0
         _HazardRadiationLevel ("Radiation Glitch Level", Range(0, 1)) = 0
         _HazardThermalLevel ("Thermal Glitch Level", Range(0, 1)) = 0
         _HazardToxicLevel ("Toxic Glitch Level", Range(0, 1)) = 0
@@ -142,6 +143,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _ChromaticAberration;
                 float  _StaticNoise;
                 float  _HypoxiaLevel;
+                float  _HullStressFlicker;
                 float  _HazardRadiationLevel;
                 float  _HazardThermalLevel;
                 float  _HazardToxicLevel;
@@ -598,6 +600,15 @@ Shader "NASAPunk/SuitVisor"
                 float2 hudUV = ComputeCurvedHudUV(IN.uv, IN.positionOS, hudEdgeFade);
                 hudUV = TRANSFORM_TEX(hudUV, _HUD_RenderTexture);
                 float2 hudDistortedUV = hudUV + distortionOffset * 0.3;
+                float hullStressFlicker = saturate(_HullStressFlicker);
+                float2 pressureNoiseSeed = floor(hudDistortedUV * _ScreenParams.xy * (0.6 + hullStressFlicker * 2.1));
+                float pressureNoiseA = frac(sin(dot(pressureNoiseSeed + float2(floor(_Time.y * 36.0), floor(_Time.y * 17.0)), float2(12.9898, 78.233))) * 43758.5453);
+                float pressureNoiseB = frac(sin(dot(pressureNoiseSeed + float2(floor(_Time.y * -23.0), floor(_Time.y * 29.0)), float2(39.3468, 11.135))) * 19642.3491);
+                float pressureFlickerGate = step(0.44 - hullStressFlicker * 0.18, frac(_Time.y * (18.0 + hullStressFlicker * 42.0) + hudDistortedUV.y * 46.0));
+                float2 pressureFlickerOffset = float2(
+                    (pressureNoiseA - 0.5) * 0.0075,
+                    (pressureNoiseB - 0.5) * 0.0025) * hullStressFlicker * pressureFlickerGate;
+                hudDistortedUV += pressureFlickerOffset;
                 float tearBands = floor((hudDistortedUV.y + _Time.y * (7.0 + hazardThermal * 9.0)) * lerp(120.0, 260.0, hazardGlitch));
                 float tearNoise = Hash21(float2(tearBands, floor(_Time.y * 18.0)));
                 float tearGate = step(0.58 - hazardGlitch * 0.26, tearNoise);
@@ -605,6 +616,19 @@ Shader "NASAPunk/SuitVisor"
                 hudDistortedUV.y += (Hash21(float2(tearBands * 1.31, floor(_Time.y * 11.0))) - 0.5) * hazardToxic * 0.012;
 
                 float hypoxiaLevel = saturate(_HypoxiaLevel);
+                float criticalHypoxia = smoothstep(0.0, 0.35, hypoxiaLevel);
+                float criticalHypoxiaEdgeVignette = smoothstep(0.22, 0.88, EdgeMask(IN.uv, 1.12));
+                if (criticalHypoxia > 0.0001)
+                {
+                    float blurStrength = criticalHypoxia * criticalHypoxiaEdgeVignette * 0.0065;
+                    float3 blurScene = 0.0;
+                    blurScene += SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV + float2(blurStrength, 0.0)).rgb;
+                    blurScene += SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV + float2(-blurStrength, 0.0)).rgb;
+                    blurScene += SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV + float2(0.0, blurStrength * 0.82)).rgb;
+                    blurScene += SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV + float2(0.0, -blurStrength * 0.82)).rgb;
+                    blurScene *= 0.25;
+                    sceneColor = lerp(sceneColor, blurScene, criticalHypoxiaEdgeVignette);
+                }
                 float2 hudHypoxiaOffset = float2(hypoxiaLevel * 0.0045, 0.0);
                 float2 hudDecaySplit = float2(
                     hazardRadiation * 0.015 + hazardGlitch * 0.008,
@@ -632,12 +656,18 @@ Shader "NASAPunk/SuitVisor"
                 float decayMask = step(0.46 - hazardGlitch * 0.22, decayNoise) * hazardGlitch;
                 hudColor = lerp(hudColor, hudColor.bgr, hazardRadiation * 0.34);
                 hudColor += decayMask.xxx * (hazardToxic * 0.22);
+                hudColor += pressureFlickerGate.xxx * hullStressFlicker * 0.045;
                 float hypoxiaStaticStrength = saturate((hypoxiaLevel - 0.33333334) * 1.5);
                 float hypoxiaStatic = (Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.85) + floor(_Time.y * 24.0)) - 0.5) * hypoxiaStaticStrength;
                 hudColor += hypoxiaStatic.xxx * 0.22;
                 float hypoxiaAlphaNoise = frac(sin(dot(hudDistortedUV * _ScreenParams.xy, float2(12.9898, 78.233)) + (_Time.y * 43.0)) * 43758.5453);
                 float hypoxiaAlphaDissolve = saturate((hypoxiaAlphaNoise - 0.45) * 1.9) * hypoxiaStaticStrength;
+                float criticalHypoxiaAlphaNoise = Hash21(
+                    floor((hudDistortedUV + float2(_Time.y * 0.31, _Time.y * -0.27)) * _ScreenParams.xy * 3.2)
+                    + float2(floor(_Time.y * 81.0), floor(_Time.y * 53.0)));
+                float criticalHypoxiaAlphaDissolve = saturate((criticalHypoxiaAlphaNoise - 0.32) * 1.45) * criticalHypoxia;
                 hudAlpha *= 1.0 - (hypoxiaAlphaDissolve * 0.68);
+                hudAlpha *= 1.0 - (criticalHypoxiaAlphaDissolve * criticalHypoxiaEdgeVignette * 0.52);
                 float biosRecoverySwitch = step(0.5, biosRecoveryMode);
                 if (biosRecoverySwitch > 0.5)
                 {
@@ -733,6 +763,7 @@ Shader "NASAPunk/SuitVisor"
                     + condensationHazeMask * 0.16
                     + frostMask * 0.22
                     + sonarOverlayMask * 0.08;
+                finalAlpha *= 1.0 - (criticalHypoxiaAlphaDissolve * criticalHypoxiaEdgeVignette * 0.18);
                 finalAlpha = saturate(finalAlpha);
 
                 finalColor = MixFog(finalColor, IN.fogCoord);

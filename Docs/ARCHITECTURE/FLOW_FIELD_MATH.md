@@ -82,7 +82,7 @@ Per node:
 
 ```text
 depthBelowSurface = max(0, surfaceY - nodeWorldPos.y)
-depthBoost        = depthBelowSurface <= 200 ? 0.4 : 0.1
+depthBoost        = depthBelowSurface <= 200 ? 0.4 : 0.15
 stormTurbulence   = 1 + stormBlend * depthBoost
 
 phase = dot(nodeWorldPos.xz - flowCenter.xz, windDir.xz) * 0.035
@@ -97,7 +97,7 @@ flow.xz += windDir.xz * (windIntensity * 0.05 * stormBlend)
 Interpretation:
 
 - top `200 m`: storm turbulence rises by `40%`
-- deep abyss: storm turbulence still rises by `10%`
+- deep abyss: storm turbulence still rises by `15%`
 - the wind vector provides a coherent horizontal bias instead of isotropic noise
 - wave height and wind magnitude drive the phase amplitude, so surface storms physically seed abyssal pressure-wave motion
 

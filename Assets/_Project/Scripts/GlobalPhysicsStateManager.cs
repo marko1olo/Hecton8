@@ -252,6 +252,19 @@ namespace Hecton8.Physics
             manager.QueueImpactInternal(primaryBody, secondaryBody, collision);
         }
 
+        internal static void QueueKinematicImpact(
+            Rigidbody primaryBody,
+            Vector3 point,
+            Vector3 normal,
+            float impactSpeedMetersPerSecond,
+            Rigidbody secondaryBody = null)
+        {
+            if (primaryBody == null || !TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.QueueKinematicImpactInternal(primaryBody, secondaryBody, point, normal, impactSpeedMetersPerSecond);
+        }
+
         internal static void RegisterTetherConnection(UnityEngine.Object owner, Rigidbody anchorBody, Rigidbody payloadBody)
         {
             if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
@@ -592,7 +605,7 @@ namespace Hecton8.Physics
             if (!(impactForce > MinImpactForce))
                 return;
 
-            float impactIntensity = math.log10(1f + (impactForce / 100f));
+            float impactIntensity = ResolveImpactIntensityFromForce(impactForce);
             if (!(impactIntensity > 0f))
                 return;
 
@@ -610,6 +623,54 @@ namespace Hecton8.Physics
                 Point = new float3(point.x, point.y, point.z),
                 Normal = new float3(normal.x, normal.y, normal.z),
                 WeightClass = weightClass,
+                PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
+                SecondaryAudioMaterialId = ResolveImpactAudioMaterialId(secondaryBody)
+            });
+            _queuedImpactCount++;
+        }
+
+        private void QueueKinematicImpactInternal(
+            Rigidbody primaryBody,
+            Rigidbody secondaryBody,
+            Vector3 point,
+            Vector3 normal,
+            float impactSpeedMetersPerSecond)
+        {
+            if (!_impactQueue.IsCreated || _queuedImpactCount >= MaxQueuedImpactEvents)
+                return;
+
+            float safeImpactSpeed = math.max(0f, impactSpeedMetersPerSecond);
+            if (!(safeImpactSpeed > 0.0001f))
+                return;
+
+            float fixedDelta = math.max(Time.fixedDeltaTime, 0.0001f);
+            float effectiveMass = math.max(primaryBody != null ? primaryBody.mass : 1f, MinMass);
+            float impactForce = (effectiveMass * safeImpactSpeed) / fixedDelta;
+            if (!(impactForce > MinImpactForce))
+                return;
+
+            float3 point3 = new float3(point.x, point.y, point.z);
+            float3 normal3 = new float3(normal.x, normal.y, normal.z);
+            if (!math.all(math.isfinite(point3)))
+                point3 = primaryBody != null ? (float3)primaryBody.worldCenterOfMass : float3.zero;
+            if (!math.all(math.isfinite(normal3)) || math.lengthsq(normal3) <= 0.000001f)
+                normal3 = new float3(0f, 1f, 0f);
+            else
+                normal3 = math.normalize(normal3);
+
+            float impactIntensity = ResolveImpactIntensityFromForce(impactForce);
+            if (!(impactIntensity > 0f))
+                return;
+
+            _impactQueue.Enqueue(new PhysicsImpactEventData
+            {
+                PrimaryBodyId = EntityId.ToULong(primaryBody.GetEntityId()),
+                SecondaryBodyId = secondaryBody != null ? EntityId.ToULong(secondaryBody.GetEntityId()) : 0ul,
+                Force = impactForce,
+                Intensity = impactIntensity,
+                Point = point3,
+                Normal = normal3,
+                WeightClass = ResolveImpactWeightClass(impactIntensity),
                 PrimaryAudioMaterialId = ResolveImpactAudioMaterialId(primaryBody),
                 SecondaryAudioMaterialId = ResolveImpactAudioMaterialId(secondaryBody)
             });
@@ -1138,6 +1199,11 @@ namespace Hecton8.Physics
                 return PhysicsImpactWeightClass.Medium;
 
             return PhysicsImpactWeightClass.Light;
+        }
+
+        private static float ResolveImpactIntensityFromForce(float impactForce)
+        {
+            return math.log10(1f + (math.max(0f, impactForce) / 100f));
         }
 
         private void SubscribeSceneEvents()

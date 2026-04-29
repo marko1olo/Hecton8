@@ -38,4 +38,12 @@
 - Authoring source: `Assets/_Project/Data/World/FloraTemplates/`
 - Runtime owner: `HectonMapMagicVegetationBridge.floraTemplates`
 - Loot hash routing is mirrored from authored `FloraDataTemplate` assets and consumed through existing `HarvestableTemplate` drop authority.
+
+## Fauna Scavenging States
+
+- `ApexTerritoryOverride`: rival leviathans inside the authored territory band are promoted above player pursuit in the predator cognition target stack.
+- `ApexForcedRetreat`: apex losers below `30%` health are forced into migration/flee logic and leave the current sector.
+- `ApexIntimidation`: territorial winners hold a temporary intimidation aura that smaller predators read as an avoidance threat.
+- `CorpseResourceNode`: large-fauna deaths register bounded organic corpse nodes, inject blood scent into `ChemicalInfluenceGrid`, and remain available until scavengers consume the remaining biomass.
+- `BaitFeedingLock`: dropped organic bait items are surfaced to fauna through `PickupItem.IsFaunaBait`, allowing herbivores, scavengers, and smaller predators to enter a local feeding lock near the bait source.
 - `AudioMaterialID`: `1 = Organic`, `2 = Brittle`, `3 = Metallic`

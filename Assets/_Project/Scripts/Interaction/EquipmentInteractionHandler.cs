@@ -1,7 +1,9 @@
 using Hecton8.Caves;
+using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -20,6 +22,8 @@ namespace Hecton8.Interaction
         private const int MinCommandsPerJob = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
+        private const float AttachedFloraArbitrationRadiusMeters = 1.35f;
+        private static readonly int BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
 
         private static EquipmentInteractionHandler _instance;
 
@@ -81,16 +85,14 @@ namespace Hecton8.Interaction
         public void InitializeService()
         {
             if (_isInitialized)
-                return;
-
-            GlobalRegistry.RegisterInteractionSignalService(this);
-            if (!_dispatcherRegistered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _dispatcherRegistered = true;
+                TryRegisterToDispatcher();
+                return;
             }
 
+            GlobalRegistry.RegisterInteractionSignalService(this);
             _isInitialized = true;
+            TryRegisterToDispatcher();
         }
 
         /// <inheritdoc />
@@ -224,6 +226,18 @@ namespace Hecton8.Interaction
             }
         }
 
+        private void TryRegisterToDispatcher()
+        {
+            if (_dispatcherRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _dispatcherRegistered = true;
+        }
+
         private static void DispatchSignal(InteractionSignal signal, Collider targetCollider)
         {
             if (!CanApplyInteraction(in signal, targetCollider))
@@ -287,6 +301,9 @@ namespace Hecton8.Interaction
                 return;
 
             Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
+            if (ShouldSuppressBaseModuleCutDamage(targetCollider, runtimeHitPoint))
+                return;
+
             if (TryResolveSignalConsumer(targetCollider, out IInteractionSignalConsumer signalConsumer))
             {
                 signalConsumer.ApplyInteractionSignal(in signal, runtimeHitPoint);
@@ -295,6 +312,26 @@ namespace Hecton8.Interaction
 
             if (TryResolveCuttable(targetCollider, out ICuttable cuttable))
                 cuttable.ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
+        }
+
+        private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint)
+        {
+            if (targetCollider == null || targetCollider.gameObject.layer != BaseModuleLayer)
+                return false;
+
+            BaseModule module = targetCollider.GetComponentInParent<BaseModule>();
+            if (module == null || module.ParasiteInfectionLevel <= 0.0001f)
+                return false;
+
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager == null)
+                return false;
+
+            return organicManager.TryResolveNearestConsumableFlora(
+                runtimeHitPoint,
+                AttachedFloraArbitrationRadiusMeters,
+                out _,
+                out _);
         }
 
         private static bool CanApplyInteraction(in InteractionSignal signal, Collider targetCollider)

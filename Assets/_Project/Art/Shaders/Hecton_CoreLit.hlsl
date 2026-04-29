@@ -7,6 +7,10 @@
 #define HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS 24
 #endif
 
+#ifndef HECTON_PARASITE_MAX_ANCHORS
+#define HECTON_PARASITE_MAX_ANCHORS 16
+#endif
+
 float4 _HectonFlashlightPositionWS;
 float4 _HectonFlashlightDirectionWS;
 float4 _HectonFlashlightColor;
@@ -61,6 +65,9 @@ float4 _HectonSedimentOverlayParamsA;
 float4 _HectonSedimentOverlayParamsB;
 float4 _HectonSedimentTintA;
 float4 _HectonSedimentTintB;
+float4 _HectonParasiteAnchorData[HECTON_PARASITE_MAX_ANCHORS];
+float4 _HectonParasiteAnchorParams[HECTON_PARASITE_MAX_ANCHORS];
+float4 _HectonParasiteGlobals;
 
 float3 HectonCoreLitSafeNormalize(float3 value)
 {
@@ -143,6 +150,44 @@ void HectonCoreLitApplySedimentOverlay(
     normalWS = (half3)HectonCoreLitSafeNormalize(lerp(baseNormal, sedimentNormal, strength));
     metallic = lerp(metallic, (half)_HectonSedimentOverlayParamsB.y, (half)strength);
     smoothness = lerp(smoothness, (half)_HectonSedimentOverlayParamsB.z, (half)strength);
+}
+
+float HectonCoreLitEvaluateParasiteField(float3 positionWS, out float pulseMultiplier, out float thermalGrowthMask)
+{
+    pulseMultiplier = 1.0;
+    thermalGrowthMask = 0.0;
+
+    int anchorCount = (int)min(_HectonParasiteGlobals.x, (float)HECTON_PARASITE_MAX_ANCHORS);
+    if (anchorCount <= 0)
+        return 0.0;
+
+    float timeValue = _HectonParasiteGlobals.y;
+    float pulseAmplitude = max(_HectonParasiteGlobals.z, 0.0);
+    float feather = max(_HectonParasiteGlobals.w, 0.25);
+    float bestMask = 0.0;
+
+    [loop]
+    for (int anchorIndex = 0; anchorIndex < HECTON_PARASITE_MAX_ANCHORS; anchorIndex++)
+    {
+        if (anchorIndex >= anchorCount)
+            break;
+
+        float4 anchor = _HectonParasiteAnchorData[anchorIndex];
+        float4 parameters = _HectonParasiteAnchorParams[anchorIndex];
+        float radius = max(anchor.w, 0.001);
+        float distanceToAnchor = distance(positionWS, anchor.xyz);
+        float normalizedDistance = 1.0 - saturate(distanceToAnchor / radius);
+        float spread = pow(saturate(normalizedDistance), feather);
+        float candidateMask = spread * saturate(parameters.x);
+        if (candidateMask <= bestMask)
+            continue;
+
+        bestMask = candidateMask;
+        pulseMultiplier = 1.0 + sin(timeValue * max(parameters.y, 0.05) * 6.2831853 + distanceToAnchor * 0.35) * pulseAmplitude;
+        thermalGrowthMask = saturate(parameters.z);
+    }
+
+    return saturate(bestMask);
 }
 
 float HectonCoreLitVoronoiRidge(float2 uv, float cellDensity, float timePhase)

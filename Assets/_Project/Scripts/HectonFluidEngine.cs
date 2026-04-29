@@ -866,11 +866,24 @@ namespace Hecton8.Physics
                     mass    = rb.mass,
                     currentResponse = obj.CurrentResponse * currentWeight,
                     surfaceStability = obj.SurfaceStability * stabilityWeight,
+                    localFluidDensity = waterDensity,
                     localCurrent = new float3(localCurrent.x, localCurrent.y, localCurrent.z),
                     isInAir = obj.ShouldSuppressFluid(waterLevel) ? (byte)1 : (byte)0,
                     simulationMode = simulationMode,
-                    simplifiedSubmersion = simplifiedSubmersion
+                    simplifiedSubmersion = simplifiedSubmersion,
+                    useLocalFluidDensityOverride = 0
                 };
+
+                ResourceDistributionDirector brineDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
+                if (brineDirector != null &&
+                    brineDirector.TrySampleBrineFluidDensity(com, out float localFluidDensity) &&
+                    localFluidDensity > waterDensity + 0.01f)
+                {
+                    BuoyancyParams parameters = _params[i];
+                    parameters.localFluidDensity = localFluidDensity;
+                    parameters.useLocalFluidDensityOverride = 1;
+                    _params[i] = parameters;
+                }
             }
             }
         }
@@ -1589,6 +1602,7 @@ namespace Hecton8.Physics
         public float mass;
         public float currentResponse;
         public float surfaceStability;
+        public float localFluidDensity;
         public float3 localCurrent;
 
         /// <summary>
@@ -1598,6 +1612,7 @@ namespace Hecton8.Physics
         public byte isInAir;
         public byte simulationMode;
         public byte simplifiedSubmersion;
+        public byte useLocalFluidDensityOverride;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -1788,21 +1803,29 @@ namespace Hecton8.Physics
             float subRatio = p.simplifiedSubmersion != 0
                 ? (depthBelowSurface > 0f ? 1f : 0f)
                 : math.saturate(depthBelowSurface / p.height);
+            float resolvedWaterDensity = p.useLocalFluidDensityOverride != 0
+                ? math.max(0.01f, p.localFluidDensity)
+                : waterDensity;
+            float densityRatio = math.max(0.1f, resolvedWaterDensity / math.max(0.01f, waterDensity));
 
             // ══════════════════════════════════════════════
             //  1. СИЛА АРХИМЕДА (Buoyancy)
             // ══════════════════════════════════════════════
             float displacedVolume = p.volume * subRatio;
-            float buoyancyMagnitude = waterDensity * displacedVolume * gravity;
-            if (useGpuBuoyancyForce != 0 && i < gpuBuoyancyForcesY.Length)
+            float buoyancyMagnitude = resolvedWaterDensity * displacedVolume * gravity;
+            if (useGpuBuoyancyForce != 0 &&
+                p.useLocalFluidDensityOverride == 0 &&
+                i < gpuBuoyancyForcesY.Length)
+            {
                 buoyancyMagnitude = math.max(0f, gpuBuoyancyForcesY[i]);
+            }
 
             float3 buoyancyForce = new float3(0f, buoyancyMagnitude, 0f);
 
             // ══════════════════════════════════════════════
             //  2. ВЯЗКОЕ СОПРОТИВЛЕНИЕ (Drag)
             // ══════════════════════════════════════════════
-            float dragFactor = viscousDrag * subRatio;
+            float dragFactor = viscousDrag * subRatio * densityRatio;
             float3 dragForce = -vel * dragFactor * p.mass;
 
             // ══════════════════════════════════════════════
@@ -1857,7 +1880,7 @@ namespace Hecton8.Physics
             float dampingForce = 0f;
             if (subRatio < 1f)
             {
-                dampingForce = -vel.y * waterDensity * displacedVolume * 0.5f;
+                dampingForce = -vel.y * resolvedWaterDensity * displacedVolume * 0.5f;
             }
 
             float3 dampingVec = new float3(0f, dampingForce, 0f);

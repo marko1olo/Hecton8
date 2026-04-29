@@ -1,6 +1,6 @@
 # HECTON-8 ARCHIVARIUS MASTER INDEX
 
-**Date:** 2026-04-29  
+**Date:** 2026-04-30  
 **Status:** PENDING VERIFICATION  
 **Scope:** `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO` + `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`
 
@@ -8,7 +8,7 @@
 
 ## Purpose
 
-This index lists the documents that physically exist in folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS` as of 2026-04-29.
+This index lists the documents that physically exist in folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS` as of 2026-04-30.
 
 It replaces stale references to renamed, moved, or obsolete reports.
 
@@ -16,16 +16,16 @@ This index is path-accurate, not truth-uniform.
 
 - files dated `2026-04-28_*` inside `02_ACTUAL_REPORTS` still physically exist in the active folder
 - several of those dated bundles are now historical static snapshots, not the preferred current-state authority
-- for current-source corrections and current editor-state caveats, prefer `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` first
+- for current-source corrections and current editor-state caveats, prefer `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md` first
 
 ## Coverage Snapshot
 
 | Bucket | Count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 16 |
-| `02_ACTUAL_REPORTS` markdown files | 38 |
+| `01_GENERAL_INFO` markdown files | 22 |
+| `02_ACTUAL_REPORTS` markdown files | 43 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| **Total files covered by this index** | **55** |
+| **Total files covered by this index** | **66** |
 
 ---
 
@@ -40,15 +40,21 @@ This index is path-accurate, not truth-uniform.
 | `DEPENDENCY_GRAPH.md` | Runtime service and dependency overview |
 | `DOCSET_COVERAGE_MATRIX.md` | Domain-by-domain authority map and coverage-gap ledger |
 | `EVENT_BUS_MAP.md` | Historical event-bus map with chronology caveat |
+| `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` | Broad owner ledger across major gameplay domains |
 | `GLOSSARY.md` | Shared terminology |
 | `HUD_EDITOR_SPEC.md` | HUD editor/layout spec |
 | `INTERFACE_CONTRACT_TABLE.md` | Verified interface-to-implementor table |
 | `INTERFACE_STRATEGY.md` | Interface cleanup and ownership strategy |
 | `MASTER_INDEX.md` | This file |
+| `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md` | Detailed ownership map for narrative, discovery, lore, Atlas progression, and PDA knowledge systems |
 | `PLAYER_GAMEPLAY_CORE_MAP.md` | Current player-facing gameplay ownership map |
 | `PROJECT_ATLAS.md` | Live workspace atlas rebuilt against current file-system state |
 | `STRUCTURAL_NARRATIVE.md` | One-frame code-walk narrative; not a measured profiler report |
+| `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md` | Detailed ownership map for survival, pressure, thermal stress, hazard routing, parallel health semantics, and downstream stress consequences |
 | `SYSTEM_INTERCONNECT_MATRIX.md` | AUP-sensitive interconnect matrix |
+| `TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md` | Detailed ownership map for player tools, interaction routing, scanner/cutter/repair/beacon branches, and adjacent operational save surfaces |
+| `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md` | Detailed ownership map for HUD, visor, PDA, audio, and presentation-layer runtime surfaces |
+| `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md` | Focused map for world, environment, debris, ocean, thermal, and submarine runtime owners |
 
 ---
 
@@ -65,6 +71,7 @@ This index is path-accurate, not truth-uniform.
 | `GOD_OBJECT_AUDIT.md` | Large-owner decomposition audit |
 | `HARD_LINK_DEBT.md` | Hardcoded asset-path debt audit |
 | `FRAME_TIMELINE.md` | Frame sequencing report |
+| `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md` | Current split-bootstrap authority map across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap` |
 | `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` | Authored-vs-runtime service ownership truth |
 | `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` | Current save/load pipeline truth |
 
@@ -101,6 +108,10 @@ This index is path-accurate, not truth-uniform.
 | `2026-04-28_DEEP_FORENSIC_AUDIT.md` | Dated deep static archaeology snapshot; contains stale counts and stale ownership conclusions |
 | `2026-04-28_ETA2_SUPREME_SUMMARY.md` | Dated ETA2 summary snapshot; partially superseded by 2026-04-29 reverification |
 | `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | This reverification pass over folders `01` and `02` |
+| `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md` | Trust-boundary note clarifying that the 2026-04-29 reverification layer is no longer the newest active anchor |
+| `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md` | Current continuation log for the next-day active docset expansion |
+| `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md` | Detailed runtime authority matrix for `GlobalRegistry` publishers and bootstrap fallback coverage |
+| `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` | Broad `ISaveable` participant ledger and observed priority-band map |
 | `2026-04-28_LIAR_DETECTION.md` | Claim-vs-code liar detection |
 | `2026-04-28_HOT_PATH_VIOLATIONS.md` | Current-source hot-path and architecture debt snapshot |
 | `2026-04-28_EVENT_LEAK_REPORT.md` | Current-source `HectonEventBus` subscription hygiene snapshot |

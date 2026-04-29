@@ -1094,6 +1094,64 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Typed registry service slot identifiers used by GlobalRegistry hot-swap notifications.
+    /// </summary>
+    public enum GlobalRegistryServiceSlot : byte
+    {
+        Input = 0,
+        Physics = 1,
+        Audio = 2,
+        Scene = 3,
+        Save = 4,
+        UI = 5,
+        ObjectPool = 6,
+        Player = 7,
+        PlayerInventory = 8,
+        ModularEquipment = 9,
+        PlayerSensory = 10,
+        Environment = 11,
+        Weather = 12,
+        OceanKinematics = 13,
+        PowerGrid = 14,
+        Submarine = 15,
+        SubmarineHullBreach = 16,
+        InteractionSignals = 17,
+        Debris = 18,
+        EcosystemDirector = 19,
+        ThermodynamicsService = 20,
+        Logistics = 21,
+        WorldGen = 22,
+        EncounterDirector = 23,
+        QuestSystem = 24,
+        FluidRuntime = 25,
+        ThermodynamicsRuntime = 26,
+        NarrativeDirectorRuntime = 27,
+        QuestRuntime = 28,
+        TickManager = 29,
+        Dispatcher = 30,
+        RenderDispatcher = 31,
+        PhysicsStateManager = 32
+    }
+
+    /// <summary>
+    /// Explicit dependency-rebind hook used when <see cref="GlobalRegistry"/> safely replaces a live service.
+    /// Implementers must re-run the dependency portion of their enable-time wiring without manually invoking Unity lifecycle methods.
+    /// </summary>
+    public interface IGlobalRegistryHotSwapListener
+    {
+        /// <summary>
+        /// Called after a service slot has been replaced or cleared at runtime.
+        /// </summary>
+        /// <param name="serviceSlot">Registry slot that changed.</param>
+        /// <param name="previousService">Previous service instance, or null if the slot was empty.</param>
+        /// <param name="currentService">Current service instance, or null if the slot was cleared.</param>
+        void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService);
+    }
+
+    /// <summary>
     /// Registry-backed ocean provider selector published through <see cref="GlobalRegistry"/>.
     /// Gameplay systems must query this service instead of talking to Crest-adapter singletons directly.
     /// </summary>

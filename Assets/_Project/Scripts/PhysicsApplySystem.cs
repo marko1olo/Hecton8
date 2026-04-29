@@ -126,6 +126,36 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// Electromagnetic pulse payload emitted by fauna or environmental hazards.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct ElectromagneticPulseEvent
+    {
+        public ElectromagneticPulseEvent(
+            Vector3 runtimePosition,
+            float radiusMeters,
+            float durationSeconds,
+            float claritySuppression01,
+            uint damageType,
+            ushort sourceId)
+        {
+            RuntimePosition = runtimePosition;
+            RadiusMeters = radiusMeters;
+            DurationSeconds = durationSeconds;
+            ClaritySuppression01 = claritySuppression01;
+            DamageType = damageType;
+            SourceId = sourceId;
+        }
+
+        public Vector3 RuntimePosition { get; }
+        public float RadiusMeters { get; }
+        public float DurationSeconds { get; }
+        public float ClaritySuppression01 { get; }
+        public uint DamageType { get; }
+        public ushort SourceId { get; }
+    }
+
+    /// <summary>
     /// Static physics-domain event surface for transient pressure impulses.
     /// </summary>
     public static class PhysicsEventBus
@@ -133,13 +163,25 @@ namespace Hecton8.Physics
         /// <summary>Delegate used by pressure-impulse subscribers.</summary>
         public delegate void PressureImpulseEventHandler(in PressureImpulseEvent pressureEvent);
 
+        /// <summary>Delegate used by EMP subscribers.</summary>
+        public delegate void ElectromagneticPulseEventHandler(in ElectromagneticPulseEvent pulseEvent);
+
         /// <summary>Fired when a bulkhead blowout impulse is emitted.</summary>
         public static event PressureImpulseEventHandler OnPressureImpulse;
+
+        /// <summary>Fired when an EMP pulse is emitted.</summary>
+        public static event ElectromagneticPulseEventHandler OnElectromagneticPulse;
 
         /// <summary>Broadcasts one pressure-impulse payload.</summary>
         public static void NotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
         {
             OnPressureImpulse?.Invoke(pressureEvent);
+        }
+
+        /// <summary>Broadcasts one EMP payload.</summary>
+        public static void NotifyElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        {
+            OnElectromagneticPulse?.Invoke(pulseEvent);
         }
     }
 
@@ -720,8 +762,13 @@ namespace Hecton8.Physics
                     pair.SetTargetVelocity(contactIndex, tangentialVelocity);
                 }
 
+                Vector3 impactNormalWorld = submarineIsBody ? normal : -normal;
                 float3 localPoint = structuralGrid.transform.InverseTransformPoint(point);
+                float3 localNormal = math.normalizesafe(
+                    (float3)structuralGrid.transform.InverseTransformDirection(impactNormalWorld),
+                    new float3(0f, 1f, 0f));
                 structuralGrid.QueueImpactLocal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.IntegrityDelta);
+                structuralGrid.QueueHullDentLocal(localPoint, localNormal, impact.RelativeSpeedMetersPerSecond, impact.Severity01);
                 EnqueueSubmarineImpactSignal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.Severity01, impact.IntegrityDelta, depthMeters);
             }
         }

@@ -28,6 +28,11 @@ namespace Hecton8.World
         private const float MaximumSargassumObstacleRadiusMeters = 4.5f;
         private const float MinimumSargassumObstacleHalfHeightMeters = 0.75f;
         private const float MaximumSargassumObstacleHalfHeightMeters = 1.8f;
+        private const float MinimumCoralObstacleRadiusMeters = 0.9f;
+        private const float MaximumCoralObstacleRadiusMeters = 4.8f;
+        private const float MinimumCoralObstacleHalfHeightMeters = 0.8f;
+        private const float MaximumCoralObstacleHalfHeightMeters = 5.5f;
+        private const byte FloraRuntimeFlagDead = 1 << 6;
         private const float DynamicObstacleChunkSizeMeters = 16f;
 
         // COLD ALLOC: Dictionary<int, VolumeRecord>(16) - voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
@@ -44,11 +49,9 @@ namespace Hecton8.World
         private static readonly List<int> _routePathScratch = new List<int>(128);
         // COLD ALLOC: Dictionary<int,ObstacleRegistration>(64) - registered habitat obstacle collider sources - owner: VoxelDynamicNavGridRuntime
         private static readonly Dictionary<int, ObstacleRegistration> _registeredObstacles = new Dictionary<int, ObstacleRegistration>(64);
-        // COLD ALLOC: List<DynamicObstacleClearRequest>(16) - drained destroyed-organic obstacle clear queue prior to Burst scheduling - owner: VoxelDynamicNavGridRuntime
-        private static readonly List<DynamicObstacleClearRequest> _pendingObstacleClearSpill = new List<DynamicObstacleClearRequest>(16);
-
         private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;
         private static NativeQueue<DynamicObstacleClearRequest> _pendingObstacleClears;
+        private static NativeList<DynamicObstacleClearRequest> _pendingObstacleClearSpill;
         private static bool _portalGraphDirty = true;
 
         internal enum HybridNavigationMode : byte
@@ -239,7 +242,7 @@ namespace Hecton8.World
                 int globalX = RegionMin.x + localX;
                 int globalY = RegionMin.y + localY;
                 int globalZ = RegionMin.z + localZ;
-                int globalIndex = FlattenIndex(globalX, globalY, globalZ, Dimensions);
+                int globalIndex = globalX + (globalY * Dimensions.x) + (globalZ * Dimensions.x * Dimensions.y);
                 if (globalIndex < 0 || globalIndex >= Passability.Length || globalIndex >= BasePassability.Length)
                     return;
 
@@ -302,7 +305,7 @@ namespace Hecton8.World
                     {
                         for (int x = RegionMin.x; x <= RegionMax.x; x++)
                         {
-                            int flatIndex = FlattenIndex(x, y, z, Dimensions);
+                            int flatIndex = x + (y * Dimensions.x) + (z * Dimensions.x * Dimensions.y);
                             if (flatIndex < 0 || flatIndex >= Passability.Length || flatIndex >= DistanceMap.Length)
                                 continue;
 
@@ -327,7 +330,7 @@ namespace Hecton8.World
                     {
                         for (int x = RegionMax.x; x >= RegionMin.x; x--)
                         {
-                            int flatIndex = FlattenIndex(x, y, z, Dimensions);
+                            int flatIndex = x + (y * Dimensions.x) + (z * Dimensions.x * Dimensions.y);
                             if (flatIndex < 0 || flatIndex >= Passability.Length || flatIndex >= DistanceMap.Length)
                                 continue;
 
@@ -420,6 +423,7 @@ namespace Hecton8.World
             public float3 Max;
             public float CellSize;
             public bool IsDirty;
+            public bool IsPureVoid;
             public NativeArray<byte> Current;
             public NativeArray<byte> Next;
             public NativeArray<byte> BaseCurrent;
@@ -472,6 +476,7 @@ namespace Hecton8.World
                 PendingRegionMin = int3.zero;
                 PendingRegionMax = int3.zero;
                 IsDirty = false;
+                IsPureVoid = false;
                 RuntimeStamp = 0;
                 Dimensions = int3.zero;
                 Origin = float3.zero;
@@ -543,8 +548,13 @@ namespace Hecton8.World
             bool cellSizeChanged = math.abs(record.CellSize - cellSize) > 0.0001f;
             bool needsBuild = consumedDirtyMarker ||
                               record.IsDirty ||
-                              !record.Current.IsCreated ||
-                              !record.Next.IsCreated ||
+                              (!record.IsPureVoid &&
+                               (!record.Current.IsCreated ||
+                                !record.Next.IsCreated ||
+                                !record.BaseCurrent.IsCreated ||
+                                !record.BaseNext.IsCreated ||
+                                !record.CurrentDistance.IsCreated ||
+                                !record.NextDistance.IsCreated)) ||
                               record.RuntimeStamp != runtimeStamp ||
                               dimensionsChanged ||
                               originChanged ||
@@ -561,15 +571,16 @@ namespace Hecton8.World
             record.CellSize = cellSize;
             record.IsDirty = false;
 
+            if (!needsBuild)
+                return false;
+
             EnsureBuffer(ref record.Current, pointCount);
             EnsureBuffer(ref record.Next, pointCount);
             EnsureBuffer(ref record.BaseCurrent, pointCount);
             EnsureBuffer(ref record.BaseNext, pointCount);
             EnsureBuffer(ref record.CurrentDistance, pointCount);
             EnsureBuffer(ref record.NextDistance, pointCount);
-
-            if (!needsBuild)
-                return false;
+            record.IsPureVoid = false;
 
             outputBuffer = record.Next;
             baseOutputBuffer = record.BaseNext;
@@ -598,6 +609,13 @@ namespace Hecton8.World
             NativeArray<ushort> distanceSwap = record.CurrentDistance;
             record.CurrentDistance = record.NextDistance;
             record.NextDistance = distanceSwap;
+            EvaluatePureVoidState(record);
+            if (record.IsPureVoid)
+            {
+                _portalGraphDirty = true;
+                return;
+            }
+
             RebuildPortals(record);
             _portalGraphDirty = true;
         }
@@ -707,6 +725,7 @@ namespace Hecton8.World
                 NativeArray<ushort> distanceSwap = record.CurrentDistance;
                 record.CurrentDistance = record.NextDistance;
                 record.NextDistance = distanceSwap;
+                EvaluatePureVoidState(record);
 
                 if (record.PendingObstacleSnapshot.IsCreated)
                 {
@@ -716,7 +735,8 @@ namespace Hecton8.World
 
                 record.PendingRegionMin = int3.zero;
                 record.PendingRegionMax = int3.zero;
-                RebuildPortals(record);
+                if (!record.IsPureVoid)
+                    RebuildPortals(record);
                 _portalGraphDirty = true;
             }
         }
@@ -735,7 +755,7 @@ namespace Hecton8.World
                 _pendingObstacleClearSpill.Add(request);
             }
 
-            if (_pendingObstacleClearSpill.Count <= 0)
+            if (_pendingObstacleClearSpill.Length <= 0)
                 return;
 
             Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
@@ -1102,6 +1122,12 @@ namespace Hecton8.World
                 _pendingObstacleClears.Dispose();
                 _pendingObstacleClears = default;
             }
+
+            if (_pendingObstacleClearSpill.IsCreated)
+            {
+                _pendingObstacleClearSpill.Dispose();
+                _pendingObstacleClearSpill = default;
+            }
         }
 
         private static void EnsureInitialized()
@@ -1111,6 +1137,9 @@ namespace Hecton8.World
 
             if (!_pendingObstacleClears.IsCreated)
                 _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
+
+            if (!_pendingObstacleClearSpill.IsCreated)
+                _pendingObstacleClearSpill = new NativeList<DynamicObstacleClearRequest>(16, Allocator.Persistent); // COLD ALLOC: NativeList<DynamicObstacleClearRequest>[16] - drained destroyed-organic obstacle clear queue prior to Burst scheduling - owner: VoxelDynamicNavGridRuntime
         }
 
         internal static void MarkAllVolumesDirty()
@@ -1196,6 +1225,64 @@ namespace Hecton8.World
                 buffer.Dispose();
 
             buffer = new NativeArray<ushort>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[pointCount] - double-buffered voxel clearance-distance snapshot - owner: VoxelDynamicNavGridRuntime
+        }
+
+        private static void EvaluatePureVoidState(VolumeRecord record)
+        {
+            if (record == null || !IsPureVoidSnapshot(record))
+            {
+                if (record != null)
+                    record.IsPureVoid = false;
+                return;
+            }
+
+            ReleaseVoxelBuffers(record);
+            record.IsPureVoid = true;
+            record.PortalCount = 0;
+            record.FaceVisitStamp = 0;
+        }
+
+        private static bool IsPureVoidSnapshot(VolumeRecord record)
+        {
+            if (record == null ||
+                !record.Current.IsCreated ||
+                !record.CurrentDistance.IsCreated ||
+                record.Current.Length <= 0 ||
+                record.Current.Length != record.CurrentDistance.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < record.Current.Length; i++)
+            {
+                if (record.Current[i] != OpenCell || record.CurrentDistance[i] != ushort.MaxValue)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static void ReleaseVoxelBuffers(VolumeRecord record)
+        {
+            if (record.Current.IsCreated)
+                record.Current.Dispose();
+            if (record.Next.IsCreated)
+                record.Next.Dispose();
+            if (record.BaseCurrent.IsCreated)
+                record.BaseCurrent.Dispose();
+            if (record.BaseNext.IsCreated)
+                record.BaseNext.Dispose();
+            if (record.CurrentDistance.IsCreated)
+                record.CurrentDistance.Dispose();
+            if (record.NextDistance.IsCreated)
+                record.NextDistance.Dispose();
+
+            record.Current = default;
+            record.Next = default;
+            record.BaseCurrent = default;
+            record.BaseNext = default;
+            record.CurrentDistance = default;
+            record.NextDistance = default;
         }
 
         private static int FlattenIndex(int x, int y, int z, int3 dimensions)
@@ -1369,7 +1456,9 @@ namespace Hecton8.World
             centerOffset = float3.zero;
             extents = float3.zero;
 
-             if (metadata.RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
+            byte runtimeFlags = HectonVegetationRuntimeFlagEncoding.ExtractPackedFlags(metadata.RuntimeFlags);
+            if ((runtimeFlags & FloraRuntimeFlagDead) != 0 ||
+                metadata.RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
                 metadata.HeightScale < 0f ||
                 metadata.WidthScale < 0f)
             {
@@ -1406,24 +1495,49 @@ namespace Hecton8.World
                 return true;
             }
 
+            if (HectonMapMagicVegetationBridge.IsColonyCoralSemanticType(semantic))
+            {
+                float semanticRadiusScale = semantic == HectonMapMagicVegetationBridge.VegetationSemanticType.ColonyCable
+                    ? 0.58f
+                    : (semantic == HectonMapMagicVegetationBridge.VegetationSemanticType.ColonySupportBeam ? 0.92f : 1f);
+                float semanticHeightScale = semantic == HectonMapMagicVegetationBridge.VegetationSemanticType.ColonyCable
+                    ? 0.78f
+                    : (semantic == HectonMapMagicVegetationBridge.VegetationSemanticType.ColonySupportBeam ? 1.18f : 1f);
+                float radius = math.max(
+                    MinimumCoralObstacleRadiusMeters,
+                    math.lerp(
+                        MinimumCoralObstacleRadiusMeters,
+                        MaximumCoralObstacleRadiusMeters,
+                        math.saturate(math.abs(metadata.WidthScale))) * semanticRadiusScale);
+                float halfHeight = math.max(
+                    MinimumCoralObstacleHalfHeightMeters,
+                    math.lerp(
+                        MinimumCoralObstacleHalfHeightMeters,
+                        MaximumCoralObstacleHalfHeightMeters,
+                        math.saturate(math.abs(metadata.HeightScale))) * semanticHeightScale);
+                centerOffset = new float3(0f, halfHeight, 0f);
+                extents = new float3(radius, halfHeight, radius);
+                return true;
+            }
+
             return false;
         }
 
         private static bool TryResolveDynamicUpdateRegion(
             VolumeRecord record,
-            List<DynamicObstacleClearRequest> requests,
+            NativeList<DynamicObstacleClearRequest> requests,
             out int3 regionMin,
             out int3 regionMax)
         {
             regionMin = new int3(int.MaxValue, int.MaxValue, int.MaxValue);
             regionMax = new int3(int.MinValue, int.MinValue, int.MinValue);
-            if (record == null || requests == null || requests.Count <= 0)
+            if (record == null || !requests.IsCreated || requests.Length <= 0)
                 return false;
 
             int chunkCells = math.max(1, (int)math.ceil(DynamicObstacleChunkSizeMeters / math.max(record.CellSize, 0.0001f)));
             int clearanceCells = ResolveClearanceRadiusCells(record.CellSize);
             bool found = false;
-            for (int i = 0; i < requests.Count; i++)
+            for (int i = 0; i < requests.Length; i++)
             {
                 DynamicObstacleClearRequest request = requests[i];
                 float3 requestMinWorld = request.Center - request.Extents;

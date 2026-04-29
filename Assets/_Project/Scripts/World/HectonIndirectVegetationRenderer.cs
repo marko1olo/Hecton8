@@ -49,6 +49,7 @@ namespace Hecton8.World
 
         private static readonly int _InstanceMatricesId = Shader.PropertyToID("_HectonInstanceMatrices");
         private static readonly int _InstanceDataId = Shader.PropertyToID("_HectonVegetationInstanceData");
+        private static readonly int _FloraPhaseSeedsId = Shader.PropertyToID("_HectonFloraPhaseSeeds");
         private static readonly int _VisibleInstanceIndicesId = Shader.PropertyToID("_HectonVisibleInstanceIndices");
         private static readonly int _ChunkWorldOffsetId = Shader.PropertyToID("_ChunkWorldOffset");
         private static readonly int _GlobalFloatingOffsetId = Shader.PropertyToID("_GlobalFloatingOffset");
@@ -273,6 +274,7 @@ namespace Hecton8.World
         private Mesh _generatedImpostorMesh;
         private GraphicsBuffer _instanceMatrixBuffer;
         private GraphicsBuffer _instanceDataBuffer;
+        private GraphicsBuffer _floraPhaseSeedBuffer;
         private GraphicsBuffer _legacyInstanceDataBuffer;
         private GraphicsBuffer _uploadedInstanceMatrixBuffer;
         private GraphicsBuffer _uploadedInstanceDataBuffer;
@@ -920,6 +922,17 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Binds the parallel per-instance cascade phase-seed buffer consumed by reactive flora shaders.
+        /// </summary>
+        /// <param name="floraPhaseSeedBuffer">Structured buffer containing one phase seed per active vegetation instance.</param>
+        public void BindFloraPhaseSeedBuffer(GraphicsBuffer floraPhaseSeedBuffer)
+        {
+            _floraPhaseSeedBuffer = floraPhaseSeedBuffer != null && floraPhaseSeedBuffer.count > 0
+                ? floraPhaseSeedBuffer
+                : null;
+        }
+
+        /// <summary>
         /// Uploads caller-owned arrays into renderer-owned GPU staging buffers and binds them for indirect rendering.
         /// </summary>
         /// <param name="instanceMatrices">Caller-owned instance matrix array.</param>
@@ -1021,6 +1034,7 @@ namespace Hecton8.World
         {
             _bufferSource = null;
             _instanceDataBuffer = null;
+            _floraPhaseSeedBuffer = null;
             _legacyDataDirty = true;
         }
 
@@ -1304,6 +1318,8 @@ namespace Hecton8.World
             material.enableInstancing = true;
             material.SetBuffer(_InstanceMatricesId, _instanceMatrixBuffer);
             material.SetBuffer(_InstanceDataId, activeInstanceDataBuffer);
+            if (_floraPhaseSeedBuffer != null)
+                material.SetBuffer(_FloraPhaseSeedsId, _floraPhaseSeedBuffer);
             material.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
             material.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
             material.SetFloat(_LodPassModeId, passMode);
@@ -2347,6 +2363,7 @@ namespace Hecton8.World
         {
             _instanceMatrixBuffer = null;
             _instanceDataBuffer = null;
+            _floraPhaseSeedBuffer = null;
             _instanceCount = 0;
             _legacyDataDirty = true;
             _hasCpuCullingData = false;

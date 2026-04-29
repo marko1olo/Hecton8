@@ -85,6 +85,9 @@ namespace Hecton8.Building
         [Tooltip("Финальный префаб, устанавливаемый в мир")]
         public GameObject finalPrefab;
 
+        [Tooltip("Optional standardized habitat template that owns socket math, proxy bounds, integrity defaults, and stable hash IDs.")]
+        [SerializeField] private BaseModuleTemplate moduleTemplate;
+
         // ─────────────────────── Cost ────────────────────────────
         [Header("Build Cost")]
         [Tooltip("Список ресурсов для постройки")]
@@ -183,6 +186,19 @@ namespace Hecton8.Building
         /// Stable content identifier used by persistence-facing systems.
         /// </summary>
         public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
+
+        public BaseModuleTemplate ModuleTemplate => moduleTemplate;
+
+        public int ModuleHashId
+        {
+            get
+            {
+                if (moduleTemplate != null)
+                    return moduleTemplate.TemplateHashId;
+
+                return Hecton.Localization.LocHash.Compute(PersistentId);
+            }
+        }
 
         public string FamilyLabel => ResolveFamilyLabel(family);
 

@@ -102,6 +102,8 @@ namespace Hecton8.Physics
         {
             if (_registeredToTick)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTick = true;

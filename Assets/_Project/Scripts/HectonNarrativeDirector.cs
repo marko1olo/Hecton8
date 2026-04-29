@@ -44,7 +44,8 @@ namespace Hecton8.Gameplay
         private Unity.Collections.NativeHashMap<uint, NarrativeNode> _narrativeNodesByHash;
 
         private Transform _playerTransform;
-        private bool _registered;
+        private bool _registeredNarrativeRuntime;
+        private bool _registeredSlowTick;
 
         // Флаг: Director запросил редкую находку в текущем тике
         // Читается в диагностике и будущей системе спавна
@@ -149,22 +150,32 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered)
+            if (!_registeredNarrativeRuntime)
+            {
+                GlobalRegistry.RegisterNarrativeDirectorRuntime(this);
+                _registeredNarrativeRuntime = true;
+            }
+
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterNarrativeDirectorRuntime(this);
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = true;
+            _registeredSlowTick = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registeredNarrativeRuntime)
+            {
+                GlobalRegistry.UnregisterNarrativeDirectorRuntime(this);
+                _registeredNarrativeRuntime = false;
+            }
 
-            GlobalRegistry.UnregisterNarrativeDirectorRuntime(this);
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
-            _registered = false;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _registeredSlowTick = false;
+            }
         }
 
         public NarrativeDiscovery GetNearestUndiscoveredPOI(Vector3 center, float maxDistance)

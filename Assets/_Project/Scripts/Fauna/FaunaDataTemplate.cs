@@ -1,4 +1,5 @@
 using System;
+using System;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
@@ -26,6 +27,31 @@ namespace Hecton8.AI
         TailWhip = 2,
         SonicPulse = 3,
         Emp = 4
+    }
+
+    [Flags]
+    public enum FaunaDietMask : uint
+    {
+        None = 0u,
+        Plankton = 1u << 0,
+        Flora = 1u << 1,
+        SmallFauna = 1u << 2,
+        MediumFauna = 1u << 3,
+        LargeFauna = 1u << 4,
+        Carcass = 1u << 5,
+        Player = 1u << 6,
+        Machine = 1u << 7
+    }
+
+    public enum FaunaFoodChainTier : byte
+    {
+        Microfauna = 0,
+        SmallHerbivore = 1,
+        SwarmPassive = 2,
+        SmallPredator = 3,
+        MediumPredator = 4,
+        LargePredator = 5,
+        Leviathan = 6
     }
 
     [Serializable]
@@ -158,6 +184,31 @@ namespace Hecton8.AI
         [SerializeField, Min(1), Tooltip("Upper bound for local school size spawned from this template.")]
         private int maxSchoolCount = 12;
 
+        [Header("Movement And Perception")]
+        [SerializeField, Min(0.01f), Tooltip("Authoritative authored swim speed used by wander, flee and chase steering.")]
+        private float swimSpeed = 2.5f;
+
+        [SerializeField, Min(0.01f), Tooltip("Authoritative authored turn rate used by fauna steering.")]
+        private float turnRate = 3f;
+
+        [SerializeField, Range(10f, 360f), Tooltip("Horizontal vision cone angle in degrees used for direct player sight checks.")]
+        private float visionConeAngle = 135f;
+
+        [SerializeField, Min(0f), Tooltip("Authoritative aggro radius used by chase-state acquisition.")]
+        private float aggroRadius = 20f;
+
+        [SerializeField, Range(0.05f, 1f), Tooltip("Normalized health threshold below which the fauna strongly prefers fleeing.")]
+        private float fleeHealthThreshold = 0.3f;
+
+        [SerializeField, Tooltip("High-level food-chain band used by ecosystem tuning and authoring review.")]
+        private FaunaFoodChainTier foodChainTier = FaunaFoodChainTier.SmallHerbivore;
+
+        [SerializeField, Tooltip("Bitmask describing what this fauna will consume when evaluating prey targets.")]
+        private FaunaDietMask dietMask = FaunaDietMask.None;
+
+        [SerializeField, Tooltip("Bitmask describing what this fauna counts as when other predators evaluate prey targets.")]
+        private FaunaDietMask preyMask = FaunaDietMask.SmallFauna;
+
         [Header("Cognition")]
         [SerializeField, Tooltip("Drive weights indexed as Hunger, Fear, Curiosity.")]
         private float[] driveWeights = { 1f, 1f, 1f };
@@ -213,6 +264,52 @@ namespace Hecton8.AI
             FaunaAttackPattern.Emp
         };
 
+        [Header("Advanced Behaviors")]
+        [SerializeField, Tooltip("If enabled, this fauna can path inside solid seabed density and breach upward for an ambush.")]
+        private bool canBurrowAmbush;
+
+        [SerializeField, Min(1f), Tooltip("Player distance to the seabed needed before the burrow ambush route arms.")]
+        private float burrowSeabedTriggerDistanceMeters = 8f;
+
+        [SerializeField, Min(0.5f), Tooltip("Maximum predator-to-breach distance before the sand-worm breach and grab sequence is allowed.")]
+        private float burrowBreachDistanceMeters = 3f;
+
+        [SerializeField, Min(0f), Tooltip("Acceleration magnitude injected into the player toward the breach point during the grab phase.")]
+        private float burrowPullAcceleration = 18f;
+
+        [SerializeField, Min(0f), Tooltip("Seconds the player locomotion stays partially locked after the ambush breach connects.")]
+        private float burrowLockDurationSeconds = 2.5f;
+
+        [SerializeField, Tooltip("If enabled, the fauna can pulse a lure field that drags the player when stared at directly.")]
+        private bool canDazzleHypnotize;
+
+        [SerializeField, Min(0.5f), Tooltip("Maximum lure distance for the dazzle hypnosis pull.")]
+        private float dazzleRangeMeters = 14f;
+
+        [SerializeField, Range(-1f, 1f), Tooltip("Required camera-vs-creature dot product before hypnosis pull activates.")]
+        private float dazzleLookDotThreshold = 0.82f;
+
+        [SerializeField, Min(0f), Tooltip("Acceleration magnitude applied toward the fauna while the hypnosis gaze lock is active.")]
+        private float dazzlePullAcceleration = 6f;
+
+        [SerializeField, Tooltip("If enabled, taking damage emits a parental-defense chemical alarm to nearby adults of the same species.")]
+        private bool emitsParentalDefenseSignal;
+
+        [SerializeField, Tooltip("If enabled, this fauna can escalate into a hunt when a same-species parental defense signal is nearby.")]
+        private bool respondsToParentalDefenseSignal;
+
+        [SerializeField, Min(1f), Tooltip("Radius used by the parental defense chemical alert.")]
+        private float parentalDefenseRadiusMeters = 200f;
+
+        [SerializeField, Min(0f), Tooltip("Duration of the forced hunt/retaliation state after a parental defense alert.")]
+        private float parentalDefenseHuntDurationSeconds = 18f;
+
+        [SerializeField, Min(0f), Tooltip("Seconds of sensor blindness applied when this fauna lands an EMP or sonic pulse attack.")]
+        private float empBlindDurationSeconds = 15f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Clarity suppression intensity injected into the trauma dispatcher during the EMP blind window.")]
+        private float empClaritySuppression01 = 1f;
+
         /// <summary>
         /// Stable species identifier for gameplay-side lookups.
         /// </summary>
@@ -232,6 +329,61 @@ namespace Hecton8.AI
         /// Primary creature archetype linked to this data template.
         /// </summary>
         public CreatureArchetypeData Archetype => archetype;
+
+        /// <summary>
+        /// Authoritative authored swim speed for runtime steering.
+        /// </summary>
+        public float SwimSpeed => math.max(0.01f, swimSpeed);
+
+        /// <summary>
+        /// Authoritative authored turn rate for runtime steering.
+        /// </summary>
+        public float TurnRate => math.max(0.01f, turnRate);
+
+        /// <summary>
+        /// Horizontal vision cone angle in degrees used for direct line-of-sight tests.
+        /// </summary>
+        public float VisionConeAngle => math.clamp(visionConeAngle, 10f, 360f);
+
+        /// <summary>
+        /// Authoritative aggro acquisition radius for chase-state transitions.
+        /// </summary>
+        public float AggroRadius => math.max(0f, aggroRadius);
+
+        /// <summary>
+        /// Normalized low-health threshold that biases the fauna into fleeing.
+        /// </summary>
+        public float FleeHealthThreshold => math.clamp(fleeHealthThreshold, 0.05f, 1f);
+
+        /// <summary>
+        /// High-level food-chain band used by ecosystem authoring.
+        /// </summary>
+        public FaunaFoodChainTier FoodChainTier => foodChainTier;
+
+        /// <summary>
+        /// Authored diet bitmask used to filter valid prey.
+        /// </summary>
+        public uint DietMaskBits => (uint)dietMask;
+
+        /// <summary>
+        /// Authored prey identity bitmask used by predators to decide whether this fauna is edible.
+        /// </summary>
+        public uint PreyMaskBits => (uint)preyMask;
+
+        /// <summary>
+        /// Cruise speed exported for runtime steering and descriptor generation.
+        /// </summary>
+        public float CruiseSpeedMetersPerSecond => math.max(0.01f, cruiseSpeedMetersPerSecond);
+
+        /// <summary>
+        /// Maximum speed exported for chase and flee acceleration.
+        /// </summary>
+        public float MaxSpeedMetersPerSecond => math.max(CruiseSpeedMetersPerSecond, maxSpeedMetersPerSecond);
+
+        /// <summary>
+        /// Scalar exported for utility steering response.
+        /// </summary>
+        public float SteeringResponse => math.max(0.01f, steeringResponse);
 
         /// <summary>
         /// Stable scanner entry identifier used by fauna scan registration.
@@ -271,6 +423,36 @@ namespace Hecton8.AI
         /// Authored combat-pattern catalog for this fauna template.
         /// </summary>
         public FaunaAttackPattern[] AttackPatterns => attackPatterns;
+
+        public bool CanBurrowAmbush => canBurrowAmbush;
+
+        public float BurrowSeabedTriggerDistanceMeters => math.max(1f, burrowSeabedTriggerDistanceMeters);
+
+        public float BurrowBreachDistanceMeters => math.max(0.5f, burrowBreachDistanceMeters);
+
+        public float BurrowPullAcceleration => math.max(0f, burrowPullAcceleration);
+
+        public float BurrowLockDurationSeconds => math.max(0f, burrowLockDurationSeconds);
+
+        public bool CanDazzleHypnotize => canDazzleHypnotize;
+
+        public float DazzleRangeMeters => math.max(0.5f, dazzleRangeMeters);
+
+        public float DazzleLookDotThreshold => math.clamp(dazzleLookDotThreshold, -1f, 1f);
+
+        public float DazzlePullAcceleration => math.max(0f, dazzlePullAcceleration);
+
+        public bool EmitsParentalDefenseSignal => emitsParentalDefenseSignal;
+
+        public bool RespondsToParentalDefenseSignal => respondsToParentalDefenseSignal;
+
+        public float ParentalDefenseRadiusMeters => math.max(1f, parentalDefenseRadiusMeters);
+
+        public float ParentalDefenseHuntDurationSeconds => math.max(0f, parentalDefenseHuntDurationSeconds);
+
+        public float EmpBlindDurationSeconds => math.max(0f, empBlindDurationSeconds);
+
+        public float EmpClaritySuppression01 => math.saturate(empClaritySuppression01);
 
         /// <summary>
         /// Builds the blittable runtime descriptor consumed by SOA-friendly fauna systems.
@@ -392,6 +574,17 @@ namespace Hecton8.AI
             return false;
         }
 
+        /// <summary>
+        /// Returns true when this fauna can consume the supplied prey classification bitmask.
+        /// </summary>
+        public bool CanConsumePrey(uint candidatePreyMaskBits)
+        {
+            uint dietBits = (uint)dietMask;
+            return dietBits != 0u &&
+                   candidatePreyMaskBits != 0u &&
+                   (dietBits & candidatePreyMaskBits) != 0u;
+        }
+
         private uint ResolvePrimaryLoreHash()
         {
             if (loreUnlockHashes == null || loreUnlockHashes.Length == 0)
@@ -410,6 +603,22 @@ namespace Hecton8.AI
             maxSpeedMetersPerSecond = math.max(cruiseSpeedMetersPerSecond, maxSpeedMetersPerSecond);
             steeringResponse = math.max(0.01f, steeringResponse);
             maxSchoolCount = math.max(1, maxSchoolCount);
+            swimSpeed = math.max(0.01f, swimSpeed);
+            turnRate = math.max(0.01f, turnRate);
+            visionConeAngle = math.clamp(visionConeAngle, 10f, 360f);
+            aggroRadius = math.max(0f, aggroRadius);
+            fleeHealthThreshold = math.clamp(fleeHealthThreshold, 0.05f, 1f);
+            burrowSeabedTriggerDistanceMeters = math.max(1f, burrowSeabedTriggerDistanceMeters);
+            burrowBreachDistanceMeters = math.max(0.5f, burrowBreachDistanceMeters);
+            burrowPullAcceleration = math.max(0f, burrowPullAcceleration);
+            burrowLockDurationSeconds = math.max(0f, burrowLockDurationSeconds);
+            dazzleRangeMeters = math.max(0.5f, dazzleRangeMeters);
+            dazzleLookDotThreshold = math.clamp(dazzleLookDotThreshold, -1f, 1f);
+            dazzlePullAcceleration = math.max(0f, dazzlePullAcceleration);
+            parentalDefenseRadiusMeters = math.max(1f, parentalDefenseRadiusMeters);
+            parentalDefenseHuntDurationSeconds = math.max(0f, parentalDefenseHuntDurationSeconds);
+            empBlindDurationSeconds = math.max(0f, empBlindDurationSeconds);
+            empClaritySuppression01 = math.saturate(empClaritySuppression01);
 
             if (driveWeights == null || driveWeights.Length != 3)
             {

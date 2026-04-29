@@ -8,6 +8,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Physics
 {
@@ -168,6 +169,61 @@ namespace Hecton8.Physics
             public int DamageBytes;
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct HullDentJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> InputVertices;
+            [ReadOnly] public NativeArray<HullDentCommand> DentCommands;
+            public NativeArray<float3> OutputVertices;
+            public int DentCount;
+
+            public void Execute(int index)
+            {
+                float3 vertex = InputVertices[index];
+
+                for (int dentIndex = 0; dentIndex < DentCount; dentIndex++)
+                {
+                    HullDentCommand dent = DentCommands[dentIndex];
+                    if (dent.DepthMeters <= Epsilon || dent.RadiusMeters <= Epsilon)
+                        continue;
+
+                    float3 safeNormal = math.normalizesafe(dent.LocalNormal, new float3(0f, 1f, 0f));
+                    float3 delta = vertex - dent.LocalPoint;
+                    float normalDistance = math.dot(delta, safeNormal);
+                    if (normalDistance < -dent.FrontFaceToleranceMeters || normalDistance > dent.RadiusMeters)
+                        continue;
+
+                    float3 radial = delta - (safeNormal * normalDistance);
+                    float radialSq = math.lengthsq(radial);
+                    if (radialSq > dent.RadiusSq)
+                        continue;
+
+                    float weight = math.exp(-radialSq * dent.InverseTwoSigmaSq);
+                    vertex -= safeNormal * (dent.DepthMeters * weight);
+                }
+
+                OutputVertices[index] = vertex;
+            }
+        }
+
+        private struct HullDentCommand
+        {
+            public float3 LocalPoint;
+            public float3 LocalNormal;
+            public float RadiusMeters;
+            public float RadiusSq;
+            public float DepthMeters;
+            public float InverseTwoSigmaSq;
+            public float FrontFaceToleranceMeters;
+        }
+
+        private struct HullDentVertex
+        {
+            public float3 Position;
+            public float3 Normal;
+            public float2 UV;
+        }
+
         [Header("â”€â”€ Grid Authoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Voxel columns along the submarine local X axis.")]
         [SerializeField, Min(1)] private int gridWidth = 16;
@@ -196,9 +252,25 @@ namespace Hecton8.Physics
         [Tooltip("Cell-integrity damage contributed by one integrity byte from the incoming damage signal.")]
         [SerializeField, Min(0f)] private float integrityByteToCellDamageScale = DefaultIntegrityByteToCellDamageScale;
 
+        [Header("── Hull Denting ──────────────────")]
+        [Tooltip("Minimum Gaussian dent radius in meters for heavy impacts.")]
+        [SerializeField, Min(0.05f)] private float minimumDentRadiusMeters = 0.35f;
+        [Tooltip("Additional dent radius added at full heavy-impact severity.")]
+        [SerializeField, Min(0f)] private float dentRadiusFromSeverityMeters = 0.95f;
+        [Tooltip("Minimum inward dent depth in meters.")]
+        [SerializeField, Min(0.001f)] private float minimumDentDepthMeters = 0.015f;
+        [Tooltip("Additional inward dent depth added at full heavy-impact severity.")]
+        [SerializeField, Min(0f)] private float dentDepthFromSeverityMeters = 0.18f;
+        [Tooltip("Local-space tolerance used to limit denting to vertices near the struck face.")]
+        [SerializeField, Min(0.001f)] private float dentFrontFaceToleranceMeters = 0.08f;
+
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional authored hull collider used for automatic local bounds fitting.")]
         [SerializeField] private Collider hullCollider;
+        [Tooltip("Optional authored hull visual mesh used for procedural dent publication. Null disables dent rendering.")]
+        [SerializeField] private MeshFilter hullDeformMeshFilter;
+        [Tooltip("Optional mesh collider updated to the dented runtime hull mesh after publication.")]
+        [SerializeField] private MeshCollider hullDeformMeshCollider;
         [Tooltip("Optional authored submarine fluid owner consuming published breach areas.")]
         [SerializeField] private SubmarineFluidDynamics fluidDynamics;
         [Tooltip("Optional authored atmosphere owner used for pressure-cycle fatigue.")]
@@ -221,17 +293,28 @@ namespace Hecton8.Physics
         private bool _registered;
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
+        private bool _dentJobRunning;
         private bool _nativeStateReady;
+        private bool _hullDentMeshReady;
         private int _queuedImpactCount;
         private int _scheduledImpactCount;
+        private int _queuedDentCount;
+        private int _scheduledDentCount;
         private int _mappedCompartmentCount;
+        private int _hullDentIndexCount;
+        private int _hullDentSubMeshCount;
 
         private float _cellBreachAreaSquareMeters;
         private float _fatiguePeakNormalized;
         private float _recentImpactSeverityNormalized;
         private float _debugCompressionScale = 1f;
         private JobHandle _damageJobHandle;
+        private JobHandle _dentJobHandle;
         private IDamageSignalEmitter _damageEmitter;
+        private Mesh _runtimeHullDentMesh;
+        private Bounds _hullDentBoundsLocal;
+        private SubMeshDescriptor[] _hullDentSubMeshes;
+        private readonly List<MeshFilter> _meshFilterSearchBuffer = new List<MeshFilter>(4); // COLD ALLOC: List<MeshFilter>(4) - hull visual search scratch - owner: SubmarineStructuralGrid
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only wiring â€” owner: SubmarineStructuralGrid
 
         private NativeArray<byte> _cellIntegrityFront;
@@ -244,6 +327,13 @@ namespace Hecton8.Physics
         private NativeArray<float> _compartmentBreachAreasBack;
         private NativeArray<ImpactCommand> _queuedImpacts;
         private NativeArray<ImpactCommand> _scheduledImpacts;
+        private NativeArray<HullDentCommand> _queuedDentCommands;
+        private NativeArray<HullDentCommand> _scheduledDentCommands;
+        private NativeArray<float3> _hullDentVerticesFront;
+        private NativeArray<float3> _hullDentVerticesBack;
+        private NativeArray<float3> _hullDentNormals;
+        private NativeArray<float2> _hullDentUvs;
+        private NativeArray<uint> _hullDentIndices;
         // COLD ALLOC: float[8] Ã¢â‚¬â€ previous compartment pressures used to detect fatigue cycles Ã¢â‚¬â€ owner: SubmarineStructuralGrid
         private readonly float[] _previousCompartmentPressuresKPa = new float[CompartmentCapacity];
 
@@ -262,6 +352,7 @@ namespace Hecton8.Physics
             ResolveGridBounds();
             EnsureNativeState();
             SeedStructuralState();
+            EnsureHullDentRuntime();
         }
 
         private void OnEnable()
@@ -270,6 +361,7 @@ namespace Hecton8.Physics
             ResolveGridBounds();
             EnsureNativeState();
             SeedStructuralState();
+            EnsureHullDentRuntime();
             GlobalRegistry.RegisterSubmarineHullBreach(this);
             TryRegister();
             TryRegisterDamageReceiver();
@@ -305,14 +397,16 @@ namespace Hecton8.Physics
                     0f,
                     _recentImpactSeverityNormalized - math.max(0f, fixedDeltaTime) * RecentImpactSeverityDecayPerSecond);
                 ConsumeCompletedDamageJob();
+                ConsumeCompletedHullDentJob();
                 RefreshCompartmentMapping();
                 ApplyAbyssalCompression();
                 ApplyPressureCycleFatigue();
 
-                if (_damageJobRunning || _queuedImpactCount <= 0)
-                    return;
+                if (!_dentJobRunning && _queuedDentCount > 0)
+                    ScheduleHullDentJob();
 
-                ScheduleDamageJob();
+                if (!_damageJobRunning && _queuedImpactCount > 0)
+                    ScheduleDamageJob();
             }
         }
 
@@ -339,6 +433,41 @@ namespace Hecton8.Physics
                 RadiusMeters = radius,
                 SigmaMeters = sigma,
                 DamageBytes = damageBytes
+            };
+        }
+
+        /// <summary>
+        /// Queues one hull-local Gaussian dent for the next dent publication pass.
+        /// </summary>
+        public void QueueHullDentLocal(float3 localPoint, float3 localNormal, float impactSpeed, float severity01)
+        {
+            if (!_hullDentMeshReady ||
+                !_queuedDentCommands.IsCreated ||
+                _queuedDentCount >= _queuedDentCommands.Length)
+            {
+                return;
+            }
+
+            float safeSeverity = math.saturate(severity01);
+            float radiusMeters = math.max(
+                minimumDentRadiusMeters,
+                minimumDentRadiusMeters + (dentRadiusFromSeverityMeters * safeSeverity));
+            radiusMeters += math.saturate(math.max(0f, impactSpeed) / 30f) * 0.2f;
+            float sigmaMeters = math.max(minimumSigmaMeters, radiusMeters * sigmaScale);
+            float depthMeters = math.max(
+                minimumDentDepthMeters,
+                minimumDentDepthMeters + (dentDepthFromSeverityMeters * safeSeverity));
+            float3 safeNormal = math.normalizesafe(localNormal, new float3(0f, 1f, 0f));
+
+            _queuedDentCommands[_queuedDentCount++] = new HullDentCommand
+            {
+                LocalPoint = localPoint,
+                LocalNormal = safeNormal,
+                RadiusMeters = radiusMeters,
+                RadiusSq = radiusMeters * radiusMeters,
+                DepthMeters = depthMeters,
+                InverseTwoSigmaSq = 1f / (2f * sigmaMeters * sigmaMeters),
+                FrontFaceToleranceMeters = math.max(0.005f, dentFrontFaceToleranceMeters)
             };
         }
 
@@ -393,6 +522,24 @@ namespace Hecton8.Physics
 
             if (hullCollider == null)
                 TryGetComponent(out hullCollider);
+
+            if (hullDeformMeshFilter == null)
+            {
+                _meshFilterSearchBuffer.Clear();
+                GetComponentsInChildren(true, _meshFilterSearchBuffer);
+                for (int i = 0; i < _meshFilterSearchBuffer.Count; i++)
+                {
+                    MeshFilter candidate = _meshFilterSearchBuffer[i];
+                    if (candidate == null || candidate.sharedMesh == null)
+                        continue;
+
+                    hullDeformMeshFilter = candidate;
+                    break;
+                }
+            }
+
+            if (hullDeformMeshCollider == null)
+                hullDeformMeshCollider = hullCollider as MeshCollider;
 
             if (_damageEmitter == null)
             {
@@ -476,10 +623,16 @@ namespace Hecton8.Physics
             _queuedImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<ImpactCommand>[16] â€” scheduled impact snapshot buffer â€” owner: SubmarineStructuralGrid
             _scheduledImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<HullDentCommand>[16] - queued hull dent staging buffer - owner: SubmarineStructuralGrid
+            _queuedDentCommands = new NativeArray<HullDentCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<HullDentCommand>[16] - scheduled hull dent snapshot buffer - owner: SubmarineStructuralGrid
+            _scheduledDentCommands = new NativeArray<HullDentCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             _nativeStateReady = true;
             _queuedImpactCount = 0;
             _scheduledImpactCount = 0;
+            _queuedDentCount = 0;
+            _scheduledDentCount = 0;
             _mappedCompartmentCount = 0;
         }
 
@@ -515,6 +668,131 @@ namespace Hecton8.Physics
             RefreshCompartmentMapping();
             for (int i = 0; i < CompartmentCapacity; i++)
                 _previousCompartmentPressuresKPa[i] = 0f;
+        }
+
+        private void EnsureHullDentRuntime()
+        {
+            if (_hullDentMeshReady || hullDeformMeshFilter == null || hullDeformMeshFilter.sharedMesh == null)
+                return;
+
+            Mesh sourceMesh = hullDeformMeshFilter.sharedMesh;
+            if (!TryCaptureHullDentMeshData(sourceMesh))
+                return;
+
+            // COLD ALLOC: Mesh[1] - runtime dentable hull mesh clone - owner: SubmarineStructuralGrid
+            _runtimeHullDentMesh = Instantiate(sourceMesh);
+            _runtimeHullDentMesh.name = $"{sourceMesh.name}_RuntimeDent";
+            _runtimeHullDentMesh.MarkDynamic();
+            hullDeformMeshFilter.sharedMesh = _runtimeHullDentMesh;
+            if (hullDeformMeshCollider != null)
+                hullDeformMeshCollider.sharedMesh = _runtimeHullDentMesh;
+
+            _hullDentMeshReady = true;
+        }
+
+        private bool TryCaptureHullDentMeshData(Mesh sourceMesh)
+        {
+            if (sourceMesh == null)
+                return false;
+
+            using Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(sourceMesh);
+            Mesh.MeshData sourceData = meshDataArray[0];
+            if (!ValidateHullDentMeshLayout(sourceData))
+                return false;
+
+            int vertexCount = sourceData.vertexCount;
+            int subMeshCount = sourceData.subMeshCount;
+            if (vertexCount <= 0 || subMeshCount <= 0)
+                return false;
+
+            int totalIndexCount = 0;
+            for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
+            {
+                SubMeshDescriptor subMesh = sourceData.GetSubMesh(subMeshIndex);
+                totalIndexCount += subMesh.indexCount;
+            }
+
+            if (totalIndexCount <= 0)
+                return false;
+
+            JobHandle dependency = _dentJobRunning ? _dentJobHandle : default;
+            DisposeHullDentStateDeferred(ref dependency);
+
+            // COLD ALLOC: NativeArray<float3>[vertexCount] - front dented hull positions - owner: SubmarineStructuralGrid
+            _hullDentVerticesFront = new NativeArray<float3>(vertexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float3>[vertexCount] - back dented hull positions - owner: SubmarineStructuralGrid
+            _hullDentVerticesBack = new NativeArray<float3>(vertexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float3>[vertexCount] - immutable hull normals for dent publication - owner: SubmarineStructuralGrid
+            _hullDentNormals = new NativeArray<float3>(vertexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float2>[vertexCount] - immutable hull UV0 for dent publication - owner: SubmarineStructuralGrid
+            _hullDentUvs = new NativeArray<float2>(vertexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<uint>[indexCount] - immutable hull triangle index buffer - owner: SubmarineStructuralGrid
+            _hullDentIndices = new NativeArray<uint>(totalIndexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _hullDentSubMeshes = new SubMeshDescriptor[subMeshCount]; // COLD ALLOC: SubMeshDescriptor[subMeshCount] - runtime hull submesh descriptors - owner: SubmarineStructuralGrid
+
+            NativeArray<Vector3> positions = sourceData.GetVertexData<Vector3>(sourceData.GetVertexAttributeStream(VertexAttribute.Position));
+            NativeArray<Vector3> normals = sourceData.GetVertexData<Vector3>(sourceData.GetVertexAttributeStream(VertexAttribute.Normal));
+            NativeArray<Vector2> uvs = sourceData.GetVertexData<Vector2>(sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0));
+            for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
+            {
+                float3 position = positions[vertexIndex];
+                _hullDentVerticesFront[vertexIndex] = position;
+                _hullDentVerticesBack[vertexIndex] = position;
+                _hullDentNormals[vertexIndex] = normals[vertexIndex];
+                _hullDentUvs[vertexIndex] = uvs[vertexIndex];
+            }
+
+            int copiedIndexCount = 0;
+            bool useUintIndices = sourceMesh.indexFormat == IndexFormat.UInt32;
+            NativeArray<uint> indexData32 = useUintIndices ? sourceData.GetIndexData<uint>() : default;
+            NativeArray<ushort> indexData16 = useUintIndices ? default : sourceData.GetIndexData<ushort>();
+            for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
+            {
+                SubMeshDescriptor sourceSubMesh = sourceData.GetSubMesh(subMeshIndex);
+                _hullDentSubMeshes[subMeshIndex] = new SubMeshDescriptor(copiedIndexCount, sourceSubMesh.indexCount, sourceSubMesh.topology)
+                {
+                    bounds = sourceMesh.bounds,
+                    baseVertex = sourceSubMesh.baseVertex,
+                    firstVertex = sourceSubMesh.firstVertex,
+                    vertexCount = sourceSubMesh.vertexCount
+                };
+
+                for (int indexOffset = 0; indexOffset < sourceSubMesh.indexCount; indexOffset++)
+                {
+                    _hullDentIndices[copiedIndexCount + indexOffset] = useUintIndices
+                        ? indexData32[sourceSubMesh.indexStart + indexOffset]
+                        : indexData16[sourceSubMesh.indexStart + indexOffset];
+                }
+
+                copiedIndexCount += sourceSubMesh.indexCount;
+            }
+
+            _hullDentIndexCount = copiedIndexCount;
+            _hullDentSubMeshCount = subMeshCount;
+            _hullDentBoundsLocal = sourceMesh.bounds;
+            _dentJobHandle = default;
+            _dentJobRunning = false;
+            return true;
+        }
+
+        private static bool ValidateHullDentMeshLayout(Mesh.MeshData sourceData)
+        {
+            return ValidateHullDentAttributeLayout(sourceData, VertexAttribute.Position, 12) &&
+                   ValidateHullDentAttributeLayout(sourceData, VertexAttribute.Normal, 12) &&
+                   ValidateHullDentAttributeLayout(sourceData, VertexAttribute.TexCoord0, 8);
+        }
+
+        private static bool ValidateHullDentAttributeLayout(Mesh.MeshData sourceData, VertexAttribute attribute, int expectedStride)
+        {
+            if (!sourceData.HasVertexAttribute(attribute))
+                return false;
+
+            int stream = sourceData.GetVertexAttributeStream(attribute);
+            if (stream < 0)
+                return false;
+
+            return sourceData.GetVertexAttributeOffset(attribute) == 0 &&
+                   sourceData.GetVertexBufferStride(stream) == expectedStride;
         }
 
         private void RefreshCompartmentMapping()
@@ -649,6 +927,32 @@ namespace Hecton8.Physics
             }
         }
 
+        private void ScheduleHullDentJob()
+        {
+            if (_dentJobRunning ||
+                !_hullDentMeshReady ||
+                !_scheduledDentCommands.IsCreated ||
+                !_hullDentVerticesFront.IsCreated ||
+                _queuedDentCount <= 0)
+            {
+                return;
+            }
+
+            _scheduledDentCount = _queuedDentCount;
+            for (int i = 0; i < _scheduledDentCount; i++)
+                _scheduledDentCommands[i] = _queuedDentCommands[i];
+
+            _queuedDentCount = 0;
+            _dentJobHandle = new HullDentJob
+            {
+                InputVertices = _hullDentVerticesFront,
+                DentCommands = _scheduledDentCommands,
+                OutputVertices = _hullDentVerticesBack,
+                DentCount = _scheduledDentCount
+            }.Schedule(_hullDentVerticesFront.Length, 64);
+            _dentJobRunning = true;
+        }
+
         private void ConsumeCompletedDamageJob()
         {
             if (!_damageJobRunning || !_damageJobHandle.IsCompleted)
@@ -675,9 +979,88 @@ namespace Hecton8.Physics
             }
         }
 
+        private void ConsumeCompletedHullDentJob()
+        {
+            if (!_dentJobRunning || !_dentJobHandle.IsCompleted)
+                return;
+
+            _dentJobHandle.Complete();
+            _dentJobHandle = default;
+            _dentJobRunning = false;
+            _scheduledDentCount = 0;
+
+            NativeArray<float3> frontVertices = _hullDentVerticesFront;
+            _hullDentVerticesFront = _hullDentVerticesBack;
+            _hullDentVerticesBack = frontVertices;
+            PublishHullDentMesh();
+        }
+
+        private void PublishHullDentMesh()
+        {
+            if (!_hullDentMeshReady ||
+                _runtimeHullDentMesh == null ||
+                !_hullDentVerticesFront.IsCreated ||
+                !_hullDentNormals.IsCreated ||
+                !_hullDentUvs.IsCreated ||
+                !_hullDentIndices.IsCreated ||
+                _hullDentSubMeshes == null)
+            {
+                return;
+            }
+
+            Mesh.MeshDataArray writableMeshData = Mesh.AllocateWritableMeshData(1);
+            bool meshApplied = false;
+
+            try
+            {
+                Mesh.MeshData meshData = writableMeshData[0];
+                meshData.SetVertexBufferParams(
+                    _hullDentVerticesFront.Length,
+                    new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+                    new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+                    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2));
+                meshData.SetIndexBufferParams(_hullDentIndexCount, IndexFormat.UInt32);
+
+                NativeArray<HullDentVertex> destinationVertices = meshData.GetVertexData<HullDentVertex>();
+                NativeArray<uint> destinationIndices = meshData.GetIndexData<uint>();
+                for (int vertexIndex = 0; vertexIndex < _hullDentVerticesFront.Length; vertexIndex++)
+                {
+                    destinationVertices[vertexIndex] = new HullDentVertex
+                    {
+                        Position = _hullDentVerticesFront[vertexIndex],
+                        Normal = _hullDentNormals[vertexIndex],
+                        UV = _hullDentUvs[vertexIndex]
+                    };
+                }
+
+                for (int index = 0; index < _hullDentIndexCount; index++)
+                    destinationIndices[index] = _hullDentIndices[index];
+
+                meshData.subMeshCount = _hullDentSubMeshCount;
+                for (int subMeshIndex = 0; subMeshIndex < _hullDentSubMeshCount; subMeshIndex++)
+                    meshData.SetSubMesh(subMeshIndex, _hullDentSubMeshes[subMeshIndex], MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
+
+                Mesh.ApplyAndDisposeWritableMeshData(
+                    writableMeshData,
+                    _runtimeHullDentMesh,
+                    MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
+                meshApplied = true;
+                _runtimeHullDentMesh.bounds = _hullDentBoundsLocal;
+                if (hullDeformMeshCollider != null)
+                    hullDeformMeshCollider.sharedMesh = _runtimeHullDentMesh;
+            }
+            finally
+            {
+                if (!meshApplied)
+                    writableMeshData.Dispose();
+            }
+        }
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying)
+                return;
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
@@ -714,6 +1097,8 @@ namespace Hecton8.Physics
         private void DisposeNativeStateDeferred()
         {
             JobHandle dependency = _damageJobRunning ? _damageJobHandle : default;
+            if (_dentJobRunning)
+                dependency = JobHandle.CombineDependencies(dependency, _dentJobHandle);
             DisposeDeferred(ref _cellIntegrityFront, ref dependency);
             DisposeDeferred(ref _cellIntegrityBack, ref dependency);
             DisposeDeferred(ref _cellFatigue, ref dependency);
@@ -724,13 +1109,51 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _compartmentBreachAreasBack, ref dependency);
             DisposeDeferred(ref _queuedImpacts, ref dependency);
             DisposeDeferred(ref _scheduledImpacts, ref dependency);
+            DisposeDeferred(ref _queuedDentCommands, ref dependency);
+            DisposeDeferred(ref _scheduledDentCommands, ref dependency);
+            DisposeDeferred(ref _hullDentVerticesFront, ref dependency);
+            DisposeDeferred(ref _hullDentVerticesBack, ref dependency);
+            DisposeDeferred(ref _hullDentNormals, ref dependency);
+            DisposeDeferred(ref _hullDentUvs, ref dependency);
+            DisposeDeferred(ref _hullDentIndices, ref dependency);
             _damageJobHandle = default;
             _damageJobRunning = false;
+            _dentJobHandle = default;
+            _dentJobRunning = false;
             _nativeStateReady = false;
+            _hullDentMeshReady = false;
             _recentImpactSeverityNormalized = 0f;
             _queuedImpactCount = 0;
             _scheduledImpactCount = 0;
+            _queuedDentCount = 0;
+            _scheduledDentCount = 0;
             _mappedCompartmentCount = 0;
+            _hullDentIndexCount = 0;
+            _hullDentSubMeshCount = 0;
+            _hullDentSubMeshes = null;
+            if (_runtimeHullDentMesh != null)
+            {
+                Destroy(_runtimeHullDentMesh);
+                _runtimeHullDentMesh = null;
+            }
+        }
+
+        private void DisposeHullDentStateDeferred(ref JobHandle dependency)
+        {
+            DisposeDeferred(ref _hullDentVerticesFront, ref dependency);
+            DisposeDeferred(ref _hullDentVerticesBack, ref dependency);
+            DisposeDeferred(ref _hullDentNormals, ref dependency);
+            DisposeDeferred(ref _hullDentUvs, ref dependency);
+            DisposeDeferred(ref _hullDentIndices, ref dependency);
+            _hullDentSubMeshes = null;
+            _hullDentMeshReady = false;
+            _hullDentIndexCount = 0;
+            _hullDentSubMeshCount = 0;
+            if (_runtimeHullDentMesh != null)
+            {
+                Destroy(_runtimeHullDentMesh);
+                _runtimeHullDentMesh = null;
+            }
         }
 
         private int ResolveCellCount()

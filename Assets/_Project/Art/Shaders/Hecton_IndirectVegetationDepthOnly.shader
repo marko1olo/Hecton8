@@ -82,6 +82,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
             float4 _SargassumCutMaskWorldRect;
             float4 _HectonPlayerRuntimePosition;
             float4 _HectonPlayerFloraInteractionParams;
+            float4 _HectonFloraLifecycleParams;
             float4 _HectonFlowSynchronyParams;
             float _HectonVegetationCurrentStrength;
             float _HectonVegetationCurrentTimeScale;
@@ -496,6 +497,17 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 {
                     animatedPositionWS = ResolveBillboardPositionWS(originWS + driftOffsetWS, localPosition, instanceHeight, instanceWidth, heightMask);
                     animatedPositionWS += flowSynchronyOffset * 0.85;
+                }
+
+                float seasonalDecayWeight = saturate(_HectonFloraLifecycleParams.y) * saturate(_HectonFloraLifecycleParams.w);
+                if (seasonalDecayWeight > 0.0001)
+                {
+                    float seasonalWiltWeight = seasonalDecayWeight *
+                        saturate(lerp(0.18, 1.0, heightMask) * lerp(0.35, 1.0, bendMask));
+                    float3 renderOriginWS = originWS + driftOffsetWS;
+                    animatedPositionWS = lerp(animatedPositionWS, renderOriginWS, seasonalWiltWeight * 0.24);
+                    animatedPositionWS.y -= instanceHeight * seasonalWiltWeight * lerp(0.04, 0.19, heightMask);
+                    animatedPositionWS.xz += currentVector * (-seasonalWiltWeight * instanceHeight * 0.018 * heightMask);
                 }
 
                 if (entropyProgress > 0.0001)

@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Caves;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
@@ -61,7 +62,8 @@ namespace Hecton8.AI
         public AIState CurrentState => _stateMachine.currentState;
         public FaunaSpeciesProfile SpeciesProfile => _speciesProfile;
         public FaunaDataTemplate DataTemplate => _faunaDataTemplate;
-        public int SpeciesId => ResolveStableSpeciesId();
+        public int SpeciesId => ComputeStableSpeciesId();
+        public bool HasActiveApexIntimidation => _apexIntimidationUntilTime > _cognitionTimeSeconds;
         public bool IsFlankingManeuverDetected => _flankingManeuverDetected;
         public uint ThreatPredictionLoreHash => _faunaDataTemplate != null ? _faunaDataTemplate.FullLoreHash : 0u;
 
@@ -102,6 +104,19 @@ namespace Hecton8.AI
         private const float DynamicDodgeForceMultiplier = 2.75f;
         private const float DynamicDodgeSpeedMultiplier = 1.3f;
         private const float DynamicDodgeTurnMultiplier = 3.25f;
+        private const float HerbivoreSatedDurationSeconds = 16f;
+        private const float CleanerFormationMinRadius = 1.6f;
+        private const float CleanerFormationMaxRadius = 4.1f;
+        private const float CleanerForwardBias = 0.45f;
+        private const float CleanerVerticalBiasMin = -0.85f;
+        private const float CleanerVerticalBiasMax = 1.15f;
+        private const float DefaultApexTerritoryRadiusMeters = 500f;
+        private const float DefaultApexIntimidationRadiusMeters = 100f;
+        private const float DefaultApexIntimidationDurationSeconds = 24f;
+        private const float DefaultApexForcedRetreatDurationSeconds = 18f;
+        private const float ParentalDefenseIntensityThreshold = 0.1f;
+        private const float DefaultEmpAttackRadiusMeters = 18f;
+        private const float DefaultDazzleLockDurationSeconds = 0.35f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextSlowTickWatchdogLogTime;
 #endif
@@ -119,6 +134,12 @@ namespace Hecton8.AI
         
         // --- Buffers ---
         private static readonly SpatialQueryHit[] _panicBuffer = new SpatialQueryHit[10];
+        // COLD ALLOC: SpatialQueryHit[12] - reusable cleaner host lookup buffer over fauna spatial registry - owner: FaunaBrain
+        private static readonly SpatialQueryHit[] _cleanerHostBuffer = new SpatialQueryHit[12];
+        // COLD ALLOC: SpatialQueryHit[16] - reusable apex rivalry and intimidation lookup buffer over fauna spatial registry - owner: FaunaBrain
+        private static readonly SpatialQueryHit[] _apexContactBuffer = new SpatialQueryHit[16];
+        // COLD ALLOC: SpatialQueryHit[16] - reusable same-species parental-defense response lookup buffer - owner: FaunaBrain
+        private static readonly SpatialQueryHit[] _parentalDefenseBuffer = new SpatialQueryHit[16];
         // COLD ALLOC: Vector3[16] - reusable 3D cave-voxel guidance route for predator steering - owner: FaunaBrain
         private readonly Vector3[] _voxelRouteWaypoints = new Vector3[MaxVoxelRouteWaypointCount];
 
@@ -128,12 +149,20 @@ namespace Hecton8.AI
         [Header("── Audio Hooks ─────────────────────────────────")]
         [Tooltip("Triggered when a Panic Pulse occurs. Hook audio agents here for zero-GC sound dispatch.")]
         public UnityEngine.Events.UnityEvent OnPanicTriggered;
+        public UnityEngine.Events.UnityEvent OnBurrowBreach;
 
         private float _slowTickAccumulator;
         private int _voxelRouteWaypointCount;
         private float _nextVoxelRouteRefreshTime;
         private Vector3 _voxelRouteTargetPosition;
         private bool _hasVoxelRouteTarget;
+        private Transform _apexRivalTarget;
+        private Transform _baitFeedingTarget;
+        private Vector3 _forcedMigrationTarget;
+        private float _apexIntimidationUntilTime;
+        private float _forcedMigrationUntilTime;
+        private float _nextBurrowBreachTime;
+        private bool _hasForcedMigrationTarget;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -191,6 +220,12 @@ namespace Hecton8.AI
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
+            if (!ValidatePrimitiveColliderRig())
+            {
+                enabled = false;
+                return;
+            }
+
             _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             TryGetComponent(out _animator);
             TryGetComponent(out _proceduralLeviathanSpineIk);
@@ -201,8 +236,12 @@ namespace Hecton8.AI
 
             // Inject profile into subsystems
             _steeringEngine.Init(_rb, transform, _speciesProfile);
-            _sensorSuite.Init(transform, _speciesProfile);
+            _sensorSuite.Init(this, transform, _speciesProfile);
             _utilityBrain.Initialize(transform.position, _speciesProfile, _archetype, _faunaDataTemplate);
+            if (_archetype != null)
+                ApplyArchetype(_archetype);
+            else if (_faunaDataTemplate != null)
+                ApplyFaunaDataTemplate(_faunaDataTemplate);
             ConfigureFaunaScanMetadata();
             ResetStateCache();
             _cognitionTimeSeconds = 0f;
@@ -343,10 +382,15 @@ namespace Hecton8.AI
             CreatureUtilityEvaluation utilityEvaluation = EvaluateCognitionBrain(Time.frameCount, dt, selfPosition, out Transform attackTarget);
             ApplyCognitionEvaluation(in utilityEvaluation);
             ApplyVoxelPathGuidance(selfPosition, utilityEvaluation.LegacyState);
-            UpdateProceduralStrikeIntent(utilityEvaluation.LegacyState, attackTarget);
+            bool ecologyOverrideActive = ApplyEcologyChainOverrides(selfPosition, dt);
+            if (ecologyOverrideActive)
+                attackTarget = null;
+
+            UpdateBioluminescentHypnosis();
+            UpdateProceduralStrikeIntent(_currentStateCache, attackTarget);
             UpdateProceduralHeadLookIntent();
             EmitLeviathanThreatPulse(in utilityEvaluation);
-            if (utilityEvaluation.ShouldAttack && attackTarget != null)
+            if (!ecologyOverrideActive && utilityEvaluation.ShouldAttack && attackTarget != null)
             {
                 HandleAttackPerform(attackTarget);
                 float attackCooldown = _speciesProfile != null ? _speciesProfile.attackCooldown : 1f;
@@ -440,7 +484,7 @@ namespace Hecton8.AI
                 HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
                 if (vegetationBridge != null)
                 {
-                    int speciesId = ResolveStableSpeciesId();
+                    int speciesId = ComputeStableSpeciesId();
                     fearPressure01 += vegetationBridge.SamplePredatorFearPressure(selfPosition, speciesId);
                 }
 
@@ -462,6 +506,31 @@ namespace Hecton8.AI
             float attackRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
             float wanderRadius = math.max(1f, _stateMachine.wanderRadius);
             float patrolRadius = math.max(1f, _stateMachine.patrolRadius);
+            bool isApexPredator = IsApexPredator();
+            float apexTerritoryRadius = ResolveApexTerritoryRadius();
+            float apexAggressionMultiplier = ResolveApexAggressionMultiplier();
+            bool hasApexRivalTarget = false;
+            Vector3 apexRivalPosition = default;
+            _apexRivalTarget = null;
+            if (isApexPredator &&
+                TryResolveNearestRivalApex(selfPosition, apexTerritoryRadius, out FaunaBrain rivalBrain, out Vector3 rivalPosition))
+            {
+                _apexRivalTarget = rivalBrain != null ? rivalBrain.transform : null;
+                if (_apexRivalTarget != null)
+                {
+                    hasThreatTarget = true;
+                    hasApexRivalTarget = true;
+                    apexRivalPosition = rivalPosition;
+                }
+            }
+            else if (!hasThreatTarget &&
+                     TryResolveApexIntimidationThreat(selfPosition, out Vector3 intimidationThreatPosition))
+            {
+                hasThreatTarget = true;
+                fearPressure01 += 0.2f;
+                scatterDirection = ((Vector3)selfPosition - intimidationThreatPosition).normalized;
+                hasHazardScatterDirection = math.lengthsq(scatterDirection) > 0.0001f;
+            }
 
             CreatureUtilityContext context = new CreatureUtilityContext(
                 (Vector3)selfPosition,
@@ -470,7 +539,12 @@ namespace Hecton8.AI
                 hasPlayerTarget ? playerPosition : default,
                 hasDirectPlayerTransform ? directPlayerTransform.forward : selfForward,
                 hasPlayerVelocity ? playerVelocity : default,
-                hasThreatTarget ? _sensorSuite.currentThreat.position : default,
+                hasThreatTarget
+                    ? (hasApexRivalTarget
+                        ? apexRivalPosition
+                        : (_sensorSuite.currentThreat != null ? _sensorSuite.currentThreat.position : default))
+                    : default,
+                hasApexRivalTarget ? apexRivalPosition : default,
                 hasPreyTarget ? _sensorSuite.currentPrey.position : default,
                 hasScavengeTarget ? _sensorSuite.currentScavengeTarget.position : default,
                 _sensorSuite.flockCenter,
@@ -481,25 +555,32 @@ namespace Hecton8.AI
                 _sensorSuite.distSqrToPlayer,
                 attackRange,
                 math.saturate(fearPressure01),
+                ResolveFleeHealthThreshold(),
                 _stateMachine.escapeDistance,
                 _stateMachine.escapeSafeDistance,
                 wanderRadius,
                 patrolRadius,
+                apexTerritoryRadius,
+                apexAggressionMultiplier,
                 math.saturate(_foveatedImportanceScore),
                 _sensorSuite.flockCount,
                 canFlee,
                 _sensorSuite.hasVisualPlayerContact,
                 hasPlayerTarget,
                 hasThreatTarget,
+                hasApexRivalTarget,
                 hasPreyTarget,
                 hasScavengeTarget,
                 _stateMachine.useTerritory,
                 _stateMachine.isFlockingFish,
                 hasHazardScatterDirection,
-                isAggressive);
+                isAggressive,
+                isApexPredator);
 
             CreatureUtilityEvaluation evaluation = _utilityBrain.Evaluate(frameId, dt, _cognitionTimeSeconds, in context);
-            attackTarget = _sensorSuite.currentScavengeTarget ??
+            attackTarget = _apexRivalTarget ??
+                           _sensorSuite.currentScavengeTarget ??
+                           _baitFeedingTarget ??
                            _sensorSuite.currentDistractor ??
                            directPlayerTransform ??
                            _sensorSuite.currentPrey;
@@ -531,6 +612,9 @@ namespace Hecton8.AI
                 ClearVoxelPathGuidance();
                 return;
             }
+
+            if (TryApplyBurrowAmbushPathGuidance(selfPosition, playerPosition))
+                return;
 
             HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (vegetationBridge == null)
@@ -574,6 +658,481 @@ namespace Hecton8.AI
                 return;
 
             _cachedDesiredDirection = math.normalizesafe(toWaypoint, (float3)_cachedDesiredDirection);
+        }
+
+        private bool TryApplyBurrowAmbushPathGuidance(float3 selfPosition, Vector3 playerPosition)
+        {
+            if (_faunaDataTemplate == null ||
+                !_faunaDataTemplate.CanBurrowAmbush ||
+                HectonVoxelEngine.ActiveRuntimeInstance == null ||
+                !HectonVoxelEngine.ActiveRuntimeInstance.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume volume) ||
+                volume == null)
+            {
+                return false;
+            }
+
+            if (!volume.TryResolveBurrowAmbushRoute(
+                    (Vector3)selfPosition,
+                    playerPosition,
+                    _faunaDataTemplate.BurrowSeabedTriggerDistanceMeters,
+                    _faunaDataTemplate.BurrowBreachDistanceMeters,
+                    out Vector3 solidAnchorWorldPosition,
+                    out Vector3 breachWorldPosition))
+            {
+                return false;
+            }
+
+            _voxelRouteWaypoints[0] = (Vector3)selfPosition;
+            _voxelRouteWaypoints[1] = solidAnchorWorldPosition;
+            _voxelRouteWaypoints[2] = breachWorldPosition;
+            _voxelRouteWaypointCount = 3;
+            _voxelRouteTargetPosition = breachWorldPosition;
+            _hasVoxelRouteTarget = true;
+            _nextVoxelRouteRefreshTime = _cognitionTimeSeconds + VoxelRouteRefreshIntervalSeconds;
+
+            Vector3 guidePoint = (solidAnchorWorldPosition - (Vector3)selfPosition).sqrMagnitude > VoxelRouteWaypointReachDistanceSqr
+                ? solidAnchorWorldPosition
+                : breachWorldPosition;
+            _cachedDesiredDirection = (Vector3)math.normalizesafe((float3)(guidePoint - (Vector3)selfPosition), (float3)_cachedDesiredDirection);
+
+            if (_cognitionTimeSeconds >= _nextBurrowBreachTime)
+                TryTriggerBurrowAmbushGrab(playerPosition, breachWorldPosition);
+
+            return true;
+        }
+
+        private void TryTriggerBurrowAmbushGrab(Vector3 playerPosition, Vector3 breachWorldPosition)
+        {
+            if (_faunaDataTemplate == null ||
+                _cognitionTimeSeconds < _nextBurrowBreachTime ||
+                (breachWorldPosition - playerPosition).sqrMagnitude >
+                (_faunaDataTemplate.BurrowBreachDistanceMeters * _faunaDataTemplate.BurrowBreachDistanceMeters))
+            {
+                return;
+            }
+
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                runtimeContext.PlayerMovement == null)
+            {
+                return;
+            }
+
+            runtimeContext.PlayerMovement.ApplyFaunaHypnosisPull(
+                breachWorldPosition,
+                _faunaDataTemplate.BurrowPullAcceleration,
+                _faunaDataTemplate.BurrowLockDurationSeconds);
+            _nextBurrowBreachTime = _cognitionTimeSeconds + math.max(2f, _faunaDataTemplate.BurrowLockDurationSeconds);
+            OnBurrowBreach?.Invoke();
+        }
+
+        private void UpdateBioluminescentHypnosis()
+        {
+            if (_isDead ||
+                _faunaDataTemplate == null ||
+                !_faunaDataTemplate.CanDazzleHypnotize ||
+                !PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                runtimeContext.PlayerMovement == null ||
+                runtimeContext.PlayerCamera == null)
+            {
+                return;
+            }
+
+            Vector3 toFauna = transform.position - runtimeContext.PlayerCamera.transform.position;
+            float maxRange = _faunaDataTemplate.DazzleRangeMeters;
+            if (toFauna.sqrMagnitude > maxRange * maxRange)
+                return;
+
+            Vector3 lookDirection = runtimeContext.PlayerCamera.transform.forward;
+            float gazeDot = Vector3.Dot(lookDirection.normalized, toFauna.normalized);
+            if (gazeDot < _faunaDataTemplate.DazzleLookDotThreshold)
+                return;
+
+            runtimeContext.PlayerMovement.ApplyFaunaHypnosisPull(
+                transform.position,
+                _faunaDataTemplate.DazzlePullAcceleration,
+                DefaultDazzleLockDurationSeconds);
+        }
+
+        private void TryDispatchEmpAttack(Transform target)
+        {
+            if (_faunaDataTemplate == null ||
+                target == null ||
+                (!SupportsAttackPattern(FaunaAttackPattern.SonicPulse) && !SupportsAttackPattern(FaunaAttackPattern.Emp)))
+            {
+                return;
+            }
+
+            float radiusMeters = _sensorSuite != null
+                ? Mathf.Max(DefaultEmpAttackRadiusMeters, _sensorSuite.aggroDistance * 0.45f)
+                : DefaultEmpAttackRadiusMeters;
+            PhysicsEventBus.NotifyElectromagneticPulse(new ElectromagneticPulseEvent(
+                transform.position,
+                radiusMeters,
+                _faunaDataTemplate.EmpBlindDurationSeconds,
+                _faunaDataTemplate.EmpClaritySuppression01,
+                (uint)DamageTypeMask.Emp,
+                DamageSourceIds.FaunaEmp));
+        }
+
+        private void EmitParentalDefenseSignal(Vector3 sourcePosition, float normalizedDamage)
+        {
+            if (_faunaDataTemplate == null ||
+                !_faunaDataTemplate.EmitsParentalDefenseSignal ||
+                normalizedDamage < ParentalDefenseIntensityThreshold)
+            {
+                return;
+            }
+
+            int speciesId = ComputeStableSpeciesId();
+            if (speciesId == 0)
+                return;
+
+            ChemicalInfluenceGrid.QueueFearPheromone(sourcePosition, Mathf.Clamp01(normalizedDamage));
+
+            int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                sourcePosition,
+                _faunaDataTemplate.ParentalDefenseRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _parentalDefenseBuffer);
+            for (int i = 0; i < hitCount; i++)
+            {
+                if (!(_parentalDefenseBuffer[i].Owner is FaunaBrain alliedBrain) ||
+                    ReferenceEquals(alliedBrain, this) ||
+                    alliedBrain.IsDead ||
+                    alliedBrain.ComputeStableSpeciesId() != speciesId ||
+                    alliedBrain._faunaDataTemplate == null ||
+                    !alliedBrain._faunaDataTemplate.RespondsToParentalDefenseSignal)
+                {
+                    continue;
+                }
+
+                alliedBrain._utilityBrain.ApplyExternalState(AIState.Aggressive, alliedBrain._cognitionTimeSeconds);
+                alliedBrain._currentStateCache = AIState.Aggressive;
+                alliedBrain._stateMachine.currentState = AIState.Aggressive;
+                alliedBrain._utilityBrain.RecordAuditoryStimulus(sourcePosition, alliedBrain._cognitionTimeSeconds);
+            }
+        }
+
+        private bool ApplyEcologyChainOverrides(float3 selfPosition, float dt)
+        {
+            _baitFeedingTarget = null;
+            EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            if (ecosystemDirector == null)
+                return false;
+
+            if (TryApplyForcedMigrationOverride(ecosystemDirector, selfPosition))
+                return true;
+
+            if (TryApplyCorpseScavengingOverride(ecosystemDirector, selfPosition, dt))
+                return true;
+
+            if (TryApplyBaitFeedingOverride(ecosystemDirector, selfPosition))
+                return true;
+
+            if (TryApplyHerbivoreGrazingOverride(ecosystemDirector, selfPosition))
+                return true;
+
+            return TryApplyCleanerHostOverride(ecosystemDirector, selfPosition, dt);
+        }
+
+        private bool TryApplyForcedMigrationOverride(EcosystemDirector ecosystemDirector, float3 selfPosition)
+        {
+            if (!_hasForcedMigrationTarget || _cognitionTimeSeconds > _forcedMigrationUntilTime)
+            {
+                _hasForcedMigrationTarget = false;
+                return false;
+            }
+
+            ApplyDirectedStateOverride(selfPosition, _forcedMigrationTarget, AIState.Retreat);
+            return true;
+        }
+
+        private bool TryApplyCorpseScavengingOverride(EcosystemDirector ecosystemDirector, float3 selfPosition, float dt)
+        {
+            if (_speciesProfile == null ||
+                !_speciesProfile.isScavenger ||
+                _utilityBrain.HungerScore < ecosystemDirector.ScavengerHungerThreshold)
+            {
+                return false;
+            }
+
+            Vector3 selfWorldPosition = selfPosition;
+            if (!ecosystemDirector.TryResolveCorpseScavengeTarget(selfWorldPosition, out Vector3 corpsePosition, out uint corpseNodeId))
+                return false;
+
+            _baitFeedingTarget = null;
+            float consumeDistance = ecosystemDirector.ScavengerConsumeDistanceMeters;
+            if ((corpsePosition - selfWorldPosition).sqrMagnitude <= consumeDistance * consumeDistance &&
+                ecosystemDirector.TryConsumeCorpseScavengeTarget(corpseNodeId, ecosystemDirector.ScavengerConsumeUnitsPerSecond * dt))
+            {
+                _utilityBrain.ForceSated(_cognitionTimeSeconds, HerbivoreSatedDurationSeconds);
+                ApplyDirectedStateOverride(selfPosition, corpsePosition, AIState.Sated);
+                return true;
+            }
+
+            ApplyDirectedStateOverride(selfPosition, corpsePosition, AIState.Wander);
+            return true;
+        }
+
+        private bool TryApplyBaitFeedingOverride(EcosystemDirector ecosystemDirector, float3 selfPosition)
+        {
+            _baitFeedingTarget = null;
+            if (!ecosystemDirector.DoesSpeciesRespondToBait(this) ||
+                _sensorSuite.currentScavengeTarget == null ||
+                !_sensorSuite.currentScavengeTarget.TryGetComponent(out PickupItem pickupItem) ||
+                !pickupItem.IsFaunaBait)
+            {
+                return false;
+            }
+
+            _baitFeedingTarget = _sensorSuite.currentScavengeTarget;
+            Vector3 baitPosition = _sensorSuite.currentScavengeTarget.position;
+            float consumeDistance = ecosystemDirector.BaitFeedingDistanceMeters;
+            if ((baitPosition - (Vector3)selfPosition).sqrMagnitude <= consumeDistance * consumeDistance)
+            {
+                _utilityBrain.ForceSated(_cognitionTimeSeconds, HerbivoreSatedDurationSeconds);
+                ApplyDirectedStateOverride(selfPosition, baitPosition, AIState.Sated);
+                return true;
+            }
+
+            ApplyDirectedStateOverride(selfPosition, baitPosition, AIState.Investigate);
+            return true;
+        }
+
+        private bool TryApplyHerbivoreGrazingOverride(EcosystemDirector ecosystemDirector, float3 selfPosition)
+        {
+            int speciesId = ComputeStableSpeciesId();
+            if (!ecosystemDirector.IsHerbivoreSpecies(speciesId) ||
+                _utilityBrain.HungerScore < ecosystemDirector.HerbivoreGrazeHungerThreshold)
+            {
+                return false;
+            }
+
+            Vector3 selfWorldPosition = selfPosition;
+            if (ecosystemDirector.TryResolveHerbivoreGrazeTarget(selfWorldPosition, out Vector3 floraPosition, out uint floraInstanceUid))
+            {
+                float consumeDistanceMeters = ecosystemDirector.HerbivoreConsumeDistanceMeters;
+                if ((floraPosition - selfWorldPosition).sqrMagnitude <= consumeDistanceMeters * consumeDistanceMeters &&
+                    ecosystemDirector.TryConsumeHerbivoreGrazeTarget(floraInstanceUid))
+                {
+                    _utilityBrain.ForceSated(_cognitionTimeSeconds, HerbivoreSatedDurationSeconds);
+                    ApplyDirectedStateOverride(selfPosition, selfWorldPosition + transform.forward, AIState.Sated);
+                    return true;
+                }
+
+                ApplyDirectedStateOverride(selfPosition, floraPosition, AIState.Wander);
+                return true;
+            }
+
+            if (ecosystemDirector.TryResolveMigrationTarget(speciesId, selfWorldPosition, out Vector3 migrationTarget))
+            {
+                ApplyDirectedStateOverride(selfPosition, migrationTarget, AIState.Return);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryApplyCleanerHostOverride(EcosystemDirector ecosystemDirector, float3 selfPosition, float dt)
+        {
+            if (!ecosystemDirector.IsCleanerSpecies(ComputeStableSpeciesId()))
+                return false;
+
+            int hostCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                selfPosition,
+                ecosystemDirector.CleanerHostSearchRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _cleanerHostBuffer);
+            FaunaBrain bestHost = null;
+            float bestDistanceSq = float.MaxValue;
+            Vector3 bestHostPosition = default;
+            for (int i = 0; i < hostCount; i++)
+            {
+                SpatialQueryHit hit = _cleanerHostBuffer[i];
+                FaunaBrain hostBrain = hit.Owner as FaunaBrain;
+                if (hostBrain == null ||
+                    hostBrain == this ||
+                    hostBrain._isDead ||
+                    !ecosystemDirector.IsCleanerHostSpecies(hostBrain))
+                {
+                    continue;
+                }
+
+                if (hit.DistanceSqr >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = hit.DistanceSqr;
+                bestHost = hostBrain;
+                bestHostPosition = hit.Position;
+            }
+
+            if (bestHost == null)
+                return false;
+
+            Vector3 cleanerTarget = bestHostPosition + ResolveCleanerCompanionOffset(bestHost);
+            ApplyDirectedStateOverride(selfPosition, cleanerTarget, AIState.Flocking);
+            float symbiosisDistanceMeters = ecosystemDirector.CleanerSymbiosisDistanceMeters;
+            if ((cleanerTarget - (Vector3)selfPosition).sqrMagnitude <= symbiosisDistanceMeters * symbiosisDistanceMeters)
+                bestHost.ApplyCleanerSymbiosis(ecosystemDirector.CleanerFatigueReliefPerSecond * dt);
+
+            return true;
+        }
+
+        private void ApplyDirectedStateOverride(float3 selfPosition, Vector3 targetPosition, AIState state)
+        {
+            float3 desiredDirection = (float3)targetPosition - selfPosition;
+            if (math.lengthsq(desiredDirection) > 0.0001f)
+                _cachedDesiredDirection = math.normalizesafe(desiredDirection, (float3)_cachedDesiredDirection);
+
+            _currentStateCache = state;
+            _stateMachine.currentState = state;
+        }
+
+        private Vector3 ResolveCleanerCompanionOffset(FaunaBrain hostBrain)
+        {
+            uint seed = _uniqueInstanceUid != 0u
+                ? _uniqueInstanceUid
+                : (uint)(ComputeStableSpeciesId() * 73856093);
+            seed ^= (uint)(hostBrain != null ? hostBrain.SpeciesId * 19349663 : 0);
+            float radius01 = ((seed >> 8) & 0xFFu) / 255f;
+            float vertical01 = ((seed >> 16) & 0xFFu) / 255f;
+            float angleRadians = (seed & 0xFFu) * (math.PI * 2f / 255f);
+            float radius = math.lerp(CleanerFormationMinRadius, CleanerFormationMaxRadius, radius01);
+            float verticalOffset = math.lerp(CleanerVerticalBiasMin, CleanerVerticalBiasMax, vertical01);
+
+            Vector3 hostForward = hostBrain != null ? hostBrain.transform.forward : Vector3.forward;
+            if (hostForward.sqrMagnitude <= 0.0001f)
+                hostForward = Vector3.forward;
+            hostForward.Normalize();
+
+            Vector3 hostRight = Vector3.Cross(Vector3.up, hostForward);
+            if (hostRight.sqrMagnitude <= 0.0001f)
+                hostRight = Vector3.right;
+            else
+                hostRight.Normalize();
+
+            Vector3 lateralOffset = (hostRight * Mathf.Cos(angleRadians) * radius) +
+                                    (hostForward * Mathf.Sin(angleRadians) * radius * CleanerForwardBias);
+            return lateralOffset + (Vector3.up * verticalOffset);
+        }
+
+        private bool IsApexPredator()
+        {
+            return (_speciesProfile != null && _speciesProfile.isLeviathan) ||
+                   (_archetype != null && _archetype.roleType == CreatureRoleType.Leviathan);
+        }
+
+        private float ResolveApexTerritoryRadius()
+        {
+            ApexTerritoryProfile profile = _speciesProfile != null ? _speciesProfile.apexTerritoryProfile : null;
+            return profile != null
+                ? Mathf.Max(25f, profile.territoryRadiusMeters)
+                : DefaultApexTerritoryRadiusMeters;
+        }
+
+        private float ResolveApexAggressionMultiplier()
+        {
+            ApexTerritoryProfile profile = _speciesProfile != null ? _speciesProfile.apexTerritoryProfile : null;
+            return profile != null
+                ? Mathf.Max(1f, profile.aggressionMultiplierAgainstRivals)
+                : 1.35f;
+        }
+
+        private float ResolveApexIntimidationRadius()
+        {
+            ApexTerritoryProfile profile = _speciesProfile != null ? _speciesProfile.apexTerritoryProfile : null;
+            return profile != null
+                ? Mathf.Max(1f, profile.intimidationRadiusMeters)
+                : DefaultApexIntimidationRadiusMeters;
+        }
+
+        private float ResolveApexIntimidationDuration()
+        {
+            ApexTerritoryProfile profile = _speciesProfile != null ? _speciesProfile.apexTerritoryProfile : null;
+            return profile != null
+                ? Mathf.Max(1f, profile.intimidationDurationSeconds)
+                : DefaultApexIntimidationDurationSeconds;
+        }
+
+        private float ResolveApexForcedRetreatDuration()
+        {
+            ApexTerritoryProfile profile = _speciesProfile != null ? _speciesProfile.apexTerritoryProfile : null;
+            return profile != null
+                ? Mathf.Max(1f, profile.forcedRetreatDurationSeconds)
+                : DefaultApexForcedRetreatDurationSeconds;
+        }
+
+        private bool TryResolveNearestRivalApex(float3 selfPosition, float searchRadius, out FaunaBrain rivalBrain, out Vector3 rivalPosition)
+        {
+            rivalBrain = null;
+            rivalPosition = default;
+            if (!IsApexPredator())
+                return false;
+
+            int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                selfPosition,
+                searchRadius,
+                SpatialTargetKind.Bioform,
+                _apexContactBuffer);
+            float bestDistanceSq = float.MaxValue;
+            for (int i = 0; i < contactCount; i++)
+            {
+                SpatialQueryHit hit = _apexContactBuffer[i];
+                FaunaBrain candidate = hit.Owner as FaunaBrain;
+                if (candidate == null ||
+                    candidate == this ||
+                    candidate._isDead ||
+                    !candidate.IsApexPredator())
+                {
+                    continue;
+                }
+
+                if (hit.DistanceSqr >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = hit.DistanceSqr;
+                rivalBrain = candidate;
+                rivalPosition = hit.Position;
+            }
+
+            return rivalBrain != null;
+        }
+
+        private bool TryResolveApexIntimidationThreat(float3 selfPosition, out Vector3 threatPosition)
+        {
+            threatPosition = default;
+            if (IsApexPredator())
+                return false;
+
+            int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                selfPosition,
+                DefaultApexIntimidationRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _apexContactBuffer);
+            float bestDistanceSq = float.MaxValue;
+            for (int i = 0; i < contactCount; i++)
+            {
+                SpatialQueryHit hit = _apexContactBuffer[i];
+                FaunaBrain candidate = hit.Owner as FaunaBrain;
+                if (candidate == null ||
+                    candidate == this ||
+                    candidate._isDead ||
+                    !candidate.HasActiveApexIntimidation)
+                {
+                    continue;
+                }
+
+                float intimidationRadius = candidate.ResolveApexIntimidationRadius();
+                if (hit.DistanceSqr > intimidationRadius * intimidationRadius || hit.DistanceSqr >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = hit.DistanceSqr;
+                threatPosition = hit.Position;
+            }
+
+            return bestDistanceSq < float.MaxValue;
         }
 
         private Vector3 ResolvePredictedPlayerGuidanceTarget(float3 selfPosition, Vector3 playerPosition)
@@ -898,6 +1457,8 @@ namespace Hecton8.AI
             // 2. PLAYER / VEHICLE INTERACTION
             if (target.CompareTag("Player"))
             {
+                TryDispatchEmpAttack(target);
+
                 // Resolve HectonPlayerHealth lookup (Fixed as per REQ)
                 if (target.TryGetComponent<HectonPlayerHealth>(out var playerHealth))
                 {
@@ -945,6 +1506,18 @@ namespace Hecton8.AI
             else if (target.TryGetComponent(out FaunaBrain otherBrain))
             {
                 otherBrain.TakeDamage(damage);
+                if (IsApexPredator() && otherBrain.IsApexPredator())
+                {
+                    if (otherBrain.HealthNormalized <= 0.3f)
+                    {
+                        otherBrain.ForceApexRetreat(transform.position);
+                        GainApexIntimidation();
+                    }
+                    else if (otherBrain.IsDead)
+                    {
+                        GainApexIntimidation();
+                    }
+                }
             }
         }
 
@@ -953,10 +1526,11 @@ namespace Hecton8.AI
             if (_isDead) return;
             float normalizedDamage = _maxHealth > 0.001f ? Mathf.Max(0f, amount) / _maxHealth : 0f;
             _currentHealth = Mathf.Max(0f, _currentHealth - amount);
+            EmitParentalDefenseSignal(transform.position, normalizedDamage);
             if (_utilityBrain.UsesPredatorRole && normalizedDamage >= 0.3f)
             {
                 HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-                int speciesId = ResolveStableSpeciesId();
+                int speciesId = ComputeStableSpeciesId();
                 if (vegetationBridge != null && speciesId != 0)
                     vegetationBridge.RegisterPredatorFearNode(speciesId, transform.position, normalizedDamage);
             }
@@ -1057,14 +1631,54 @@ namespace Hecton8.AI
             _currentStateCache = AIState.Retreat;
         }
 
+        internal void ForceApexRetreat(Vector3 rivalPosition)
+        {
+            if (_isDead)
+                return;
+
+            float retreatDuration = ResolveApexForcedRetreatDuration();
+            _utilityBrain.ForceRetreat(rivalPosition, _cognitionTimeSeconds, retreatDuration);
+            _stateMachine.currentState = AIState.Retreat;
+            _currentStateCache = AIState.Retreat;
+
+            EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            if (ecosystemDirector != null &&
+                ecosystemDirector.TryResolveMigrationTarget(ComputeStableSpeciesId(), transform.position, out Vector3 migrationTarget))
+            {
+                _forcedMigrationTarget = migrationTarget;
+                _forcedMigrationUntilTime = _cognitionTimeSeconds + retreatDuration;
+                _hasForcedMigrationTarget = true;
+            }
+        }
+
+        private void GainApexIntimidation()
+        {
+            _apexIntimidationUntilTime = Mathf.Max(_apexIntimidationUntilTime, _cognitionTimeSeconds + ResolveApexIntimidationDuration());
+        }
+
         private void Die()
         {
             _isDead = true;
+            RegisterCorpseResourceNode();
             ReportApexPredatorKill();
             if (ObjectPoolManager.Instance != null)
                 ObjectPoolManager.Instance.Despawn(gameObject);
             else
                 gameObject.SetActive(false);
+        }
+
+        private void RegisterCorpseResourceNode()
+        {
+            EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            if (ecosystemDirector == null)
+                return;
+
+            bool shouldSpawnCorpseNode = IsApexPredator() ||
+                                         (_archetype != null && (_archetype.roleType == CreatureRoleType.Hunter || _archetype.roleType == CreatureRoleType.Territorial));
+            if (!shouldSpawnCorpseNode)
+                return;
+
+            ecosystemDirector.RegisterCorpseResourceNode(transform.position, ComputeStableSpeciesId(), Mathf.Max(6f, _maxHealth * 0.2f));
         }
 
         private void ReportApexPredatorKill()
@@ -1101,6 +1715,14 @@ namespace Hecton8.AI
         internal void SetLogicalIdentity(uint uniqueInstanceUid)
         {
             _uniqueInstanceUid = uniqueInstanceUid;
+        }
+
+        internal void ApplyCleanerSymbiosis(float fatigueRelief)
+        {
+            if (fatigueRelief <= 0f)
+                return;
+
+            _utilityBrain.ApplyFatigueRelief(fatigueRelief);
         }
 
         internal void SetLogicalLodTier(FaunaLogicalLodTier logicalLodTier)
@@ -1147,6 +1769,13 @@ namespace Hecton8.AI
             _cachedDesiredDirection = transform != null ? transform.forward : Vector3.forward;
             _currentPackRole = PredatorPackRole.None;
             _flankingManeuverDetected = false;
+            _apexRivalTarget = null;
+            _baitFeedingTarget = null;
+            _forcedMigrationTarget = default;
+            _apexIntimidationUntilTime = 0f;
+            _forcedMigrationUntilTime = 0f;
+            _nextBurrowBreachTime = 0f;
+            _hasForcedMigrationTarget = false;
             ClearVoxelPathGuidance();
         }
 
@@ -1158,21 +1787,16 @@ namespace Hecton8.AI
         private bool TryResolveDynamicDodgeDirection(Vector3 desiredDirection, out Vector3 dodgeDirection)
         {
             dodgeDirection = default;
-            if (!_sensorSuite.TryGetDeferredObstacleHitInfo(out RaycastHit obstacleHit))
+            if (!_sensorSuite.TryGetDeferredObstacleAvoidance(out Vector3 avoidanceDirection, out float obstaclePressure01))
                 return false;
 
-            float safeBodyRadius = _faunaDataTemplate != null
-                ? Mathf.Max(0.25f, _faunaDataTemplate.BodyRadiusMeters)
-                : 0.65f;
-            float dodgeDistance = safeBodyRadius * DynamicDodgeDistanceScale;
-            if (obstacleHit.distance <= 0f || obstacleHit.distance > dodgeDistance)
+            if (obstaclePressure01 <= 0f || avoidanceDirection.sqrMagnitude <= 0.0001f)
                 return false;
 
             float3 incoming = math.normalizesafe((float3)desiredDirection, (float3)transform.forward);
-            float3 surfaceNormal = math.normalizesafe((float3)obstacleHit.normal, new float3(0f, 1f, 0f));
-            float reflectionDot = math.dot(incoming, surfaceNormal);
-            float3 reflectedDirection = incoming - (2f * reflectionDot * surfaceNormal);
-            dodgeDirection = (Vector3)math.normalizesafe(reflectedDirection, (float3)_sensorSuite.bestFreeDirection);
+            float3 avoidance = math.normalizesafe((float3)avoidanceDirection, incoming);
+            float blend = math.saturate(obstaclePressure01);
+            dodgeDirection = (Vector3)math.normalizesafe(math.lerp(incoming, avoidance, blend), avoidance);
             return dodgeDirection.sqrMagnitude > 0.0001f;
         }
 
@@ -1184,7 +1808,7 @@ namespace Hecton8.AI
             return _stateMachine.isFlockingFish ? AIState.Flocking : AIState.Wander;
         }
 
-        private int ResolveStableSpeciesId()
+        private int ComputeStableSpeciesId()
         {
             if (_faunaDataTemplate != null && _faunaDataTemplate.SpeciesId != 0)
                 return _faunaDataTemplate.SpeciesId;
@@ -1204,9 +1828,77 @@ namespace Hecton8.AI
                 return;
 
             _faunaDataTemplate = faunaDataTemplate;
+            ApplyTemplateRuntimeTuning();
             _utilityBrain.BindProfile(_speciesProfile, _archetype, _faunaDataTemplate);
             ConfigureFaunaScanMetadata();
         }
+
+        private void ApplyTemplateRuntimeTuning()
+        {
+            if (_faunaDataTemplate == null)
+                return;
+
+            _baseAggroDistance = _faunaDataTemplate.AggroRadius;
+            _baseDeaggroDistance = Mathf.Max(_baseAggroDistance, _baseAggroDistance * 1.35f);
+            _baseCruiseSpeed = _faunaDataTemplate.SwimSpeed;
+            _baseBurstSpeed = Mathf.Max(_baseCruiseSpeed, _faunaDataTemplate.MaxSpeedMetersPerSecond);
+            _baseTurnSpeed = _faunaDataTemplate.TurnRate;
+
+            _sensorSuite.aggroDistance = _baseAggroDistance;
+            _sensorSuite.deaggroDistance = _baseDeaggroDistance;
+            _sensorSuite.visionConeAngle = _faunaDataTemplate.VisionConeAngle;
+
+            _steeringEngine.moveSpeed = _baseCruiseSpeed;
+            _steeringEngine.maxSpeed = _baseBurstSpeed;
+            _steeringEngine.turnSpeed = _baseTurnSpeed;
+            _steeringEngine.rotationSpeed = _baseTurnSpeed;
+            _steeringEngine.swimForce = Mathf.Max(_baseCruiseSpeed, _baseBurstSpeed);
+        }
+
+        private float ResolveFleeHealthThreshold()
+        {
+            return _faunaDataTemplate != null
+                ? _faunaDataTemplate.FleeHealthThreshold
+                : 0.3f;
+        }
+
+        private bool ValidatePrimitiveColliderRig()
+        {
+            MeshCollider meshCollider = GetComponentInChildren<MeshCollider>(true);
+            if (meshCollider != null)
+            {
+                Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
+                return false;
+            }
+
+            CapsuleCollider capsuleCollider = GetComponentInChildren<CapsuleCollider>(true);
+            SphereCollider sphereCollider = GetComponentInChildren<SphereCollider>(true);
+            if (capsuleCollider == null && sphereCollider == null)
+            {
+                Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
+                return false;
+            }
+
+            return true;
+        }
+
+        internal bool IsValidPreyFor(FaunaBrain predatorBrain)
+        {
+            if (predatorBrain == null || predatorBrain == this || IsDead)
+                return false;
+
+            uint preyMaskBits = PreyMaskBits;
+            return preyMaskBits != 0u && predatorBrain.CanConsumePrey(preyMaskBits);
+        }
+
+        internal bool CanConsumePrey(uint preyMaskBits)
+        {
+            return _faunaDataTemplate != null && _faunaDataTemplate.CanConsumePrey(preyMaskBits);
+        }
+
+        internal uint DietMaskBits => _faunaDataTemplate != null ? _faunaDataTemplate.DietMaskBits : 0u;
+
+        internal uint PreyMaskBits => _faunaDataTemplate != null ? _faunaDataTemplate.PreyMaskBits : 0u;
 
         private void ConfigureFaunaScanMetadata()
         {
@@ -1239,7 +1931,7 @@ namespace Hecton8.AI
 
         private Unity.Mathematics.Random CreateDeterministicRandom()
         {
-            int speciesId = ResolveStableSpeciesId();
+            int speciesId = ComputeStableSpeciesId();
             uint ownerId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             uint seed = math.hash(new uint4(ownerId, unchecked((uint)speciesId), 0x7F4A7C15u, 0x3A9D2B71u));
             return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);

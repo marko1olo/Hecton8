@@ -255,6 +255,7 @@ namespace Hecton8.World
                 GridPlacementSpatialMetadata.AddNoResize(new ScatterPlacementSpatialMetadata(
                     position,
                     placement.EffectiveSpacing,
+                    placement.Family != null ? placement.Family.FamilyHash : 0,
                     placement.Family != null ? (int)placement.Family.scatterLayer : 0,
                     placement.Family != null ? (int)placement.Family.proceduralDomain : 0,
                     (byte)ResolveFloraBudgetClass(placement.Family)));

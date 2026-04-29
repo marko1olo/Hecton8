@@ -235,7 +235,7 @@ namespace Hecton8.Core
             {
                 case EntityCommandType.DespawnGameObject:
                 {
-                    ObjectPoolManager pool = ObjectPoolManager.Instance;
+                    ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                     if (pool != null)
                         pool.Despawn(instance, Mathf.Max(0f, command.FloatValue));
                     else
@@ -256,7 +256,7 @@ namespace Hecton8.Core
 
                 case EntityCommandType.SpawnGameObject:
                 {
-                    ObjectPoolManager pool = ObjectPoolManager.Instance;
+                    ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                     if (pool != null)
                         pool.Spawn(instance, command.VectorValue, Quaternion.identity);
                     break;

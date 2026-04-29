@@ -23,6 +23,7 @@ namespace Hecton8.Core
         private static readonly RegistryBucket<IRenderable> _renderables = new RegistryBucket<IRenderable>(64);
         private static readonly RegistryBucket<IFixedTickable> _fixedTickables = new RegistryBucket<IFixedTickable>(256);
         private static readonly RegistryBucket<ISlowTickable> _slowTickables = new RegistryBucket<ISlowTickable>(256);
+        private static readonly RegistryBucket<IGlobalRegistryHotSwapListener> _hotSwapListeners = new RegistryBucket<IGlobalRegistryHotSwapListener>(256);
 
         private static IInputService _input;
         private static IPhysicsService _physics;
@@ -250,6 +251,11 @@ namespace Hecton8.Core
         /// </summary>
         public static RegistryBucket<ISlowTickable> SlowTickables => _slowTickables;
 
+        /// <summary>
+        /// Dense registry of explicit service hot-swap listeners.
+        /// </summary>
+        public static RegistryBucket<IGlobalRegistryHotSwapListener> HotSwapListeners => _hotSwapListeners;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -291,6 +297,7 @@ namespace Hecton8.Core
             _fixedTickables.Clear();
             _slowTickables.Clear();
             _renderables.Clear();
+            _hotSwapListeners.Clear();
             SystemDispatcher.ClearAllLanes();
         }
 
@@ -986,6 +993,18 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a listener that rebinds cached dependencies when a service slot is replaced at runtime.
+        /// </summary>
+        /// <param name="listener">Hot-swap listener.</param>
+        public static void RegisterHotSwapListener(IGlobalRegistryHotSwapListener listener)
+        {
+            if (listener == null)
+                return;
+
+            _hotSwapListeners.Register(listener);
+        }
+
+        /// <summary>
         /// Unregisters an update owner from both the global bucket and its dispatcher lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -1054,6 +1073,63 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a previously registered service hot-swap listener.
+        /// </summary>
+        /// <param name="listener">Hot-swap listener.</param>
+        public static void UnregisterHotSwapListener(IGlobalRegistryHotSwapListener listener)
+        {
+            if (listener == null)
+                return;
+
+            _hotSwapListeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Safely replaces the thermodynamics service slot and notifies explicit hot-swap listeners.
+        /// </summary>
+        /// <param name="instance">Replacement service instance, or null to clear the slot.</param>
+        public static void ReplaceThermodynamicsService(IThermodynamicsService instance)
+        {
+            ReplaceService(ref _thermodynamicsService, instance, GlobalRegistryServiceSlot.ThermodynamicsService);
+        }
+
+        /// <summary>
+        /// Safely replaces the logistics service slot and notifies explicit hot-swap listeners.
+        /// </summary>
+        /// <param name="instance">Replacement service instance, or null to clear the slot.</param>
+        public static void ReplaceLogisticsService(ILogisticsService instance)
+        {
+            ReplaceService(ref _logistics, instance, GlobalRegistryServiceSlot.Logistics);
+        }
+
+        /// <summary>
+        /// Safely replaces the world-generation service slot and notifies explicit hot-swap listeners.
+        /// </summary>
+        /// <param name="instance">Replacement service instance, or null to clear the slot.</param>
+        public static void ReplaceWorldGenService(IWorldGenService instance)
+        {
+            ReplaceService(ref _worldGen, instance, GlobalRegistryServiceSlot.WorldGen);
+        }
+
+        /// <summary>
+        /// Safely replaces the encounter-direction service slot and notifies explicit hot-swap listeners.
+        /// </summary>
+        /// <param name="instance">Replacement service instance, or null to clear the slot.</param>
+        public static void ReplaceEncounterDirectorService(IEncounterDirectorService instance)
+        {
+            ReplaceService(ref _encounterDirector, instance, GlobalRegistryServiceSlot.EncounterDirector);
+        }
+
+        /// <summary>
+        /// Safely replaces the quest-system service slot and notifies explicit hot-swap listeners.
+        /// </summary>
+        /// <param name="instance">Replacement service instance, or null to clear the slot.</param>
+        public static void ReplaceQuestSystem(IQuestSystem instance)
+        {
+            ReplaceService(ref _questSystem, instance, GlobalRegistryServiceSlot.QuestSystem);
+        }
+
+        /// <summary>
         /// Clears all global multi-instance registries.
         /// </summary>
         public static void ClearRuntimeBuckets()
@@ -1107,6 +1183,16 @@ namespace Hecton8.Core
             RegisterService(ref slot, instance);
         }
 
+        private static void ReplaceService<T>(ref T slot, T instance, GlobalRegistryServiceSlot serviceSlot) where T : class
+        {
+            T previousService = slot;
+            if (ReferenceEquals(previousService, instance))
+                return;
+
+            slot = instance;
+            NotifyHotSwapListeners(serviceSlot, previousService, instance);
+        }
+
         private static void UnregisterService<T>(ref T slot, T instance) where T : class
         {
             if (!ReferenceEquals(slot, instance))
@@ -1118,6 +1204,22 @@ namespace Hecton8.Core
             }
 
             slot = null;
+        }
+
+        private static void NotifyHotSwapListeners(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            IGlobalRegistryHotSwapListener[] listeners = _hotSwapListeners.RawArray;
+            for (int index = _hotSwapListeners.Count - 1; index >= 0; index--)
+            {
+                IGlobalRegistryHotSwapListener listener = listeners[index];
+                if (listener == null)
+                    continue;
+
+                listener.OnGlobalRegistryServiceReplaced(serviceSlot, previousService, currentService);
+            }
         }
     }
 }

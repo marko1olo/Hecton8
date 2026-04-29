@@ -365,11 +365,7 @@ namespace Crest
 
         internal static T[] FindObjectsByType<T>() where T : Object
         {
-#if UNITY_2023_3_OR_NEWER
-            return Object.FindObjectsByType<T>(FindObjectsInactive.Exclude);
-#else
-            return Object.FindObjectsOfType<T>();
-#endif
+            return Object.FindObjectsByType<T>(FindObjectsSortMode.None);
         }
 
         internal static T FindFirstObjectByType<T>() where T : Object

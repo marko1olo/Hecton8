@@ -568,7 +568,7 @@ namespace Hecton8.Atmosphere
 
             if (_sunLight == null)
             {
-                var lights = FindObjectsByType<Light>(FindObjectsSortMode.None);
+                var lights = FindObjectsByType<Light>();
                 for (int i = 0; i < lights.Length; i++)
                 {
                     if (lights[i].type == LightType.Directional)

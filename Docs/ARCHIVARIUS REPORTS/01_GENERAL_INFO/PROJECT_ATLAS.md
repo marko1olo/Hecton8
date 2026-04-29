@@ -1,9 +1,10 @@
 # PROJECT ATLAS
 
-Date: 2026-04-29
+Version: 1.4.0
+Date: 2026-04-30
 Status: PENDING VERIFICATION
 Scope: live orientation map for the current HECTON-8 workspace
-Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
+Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`
 
 ## 1. What This File Is
 
@@ -19,7 +20,7 @@ It answers four narrow questions:
 
 ## 2. Workspace Snapshot
 
-Repository root observed on 2026-04-29 contains these top-level entries of interest:
+Repository root observed on 2026-04-30 contains these top-level entries of interest:
 
 - `.agents-skills`
 - `Assets`
@@ -103,6 +104,12 @@ Current active anchors include:
 - `HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
 - `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
 - `PROCEDURAL_ASSET_PIPELINE.md`
+- `ARCHITECTURE/DISPATCH_PIPELINE.md`
+- `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
+- `Reports/ILLEGAL_SINGLETONS.md`
+- `Reports/GC_HOTPATH_VIOLATIONS.md`
+- `Reports/BOOT_ORDER_VIOLATIONS.md`
+- `Reports/NATIVE_ALLOCATION_AUDIT.md`
 
 ### 6.2 `Docs/ARCHIVARIUS REPORTS`
 
@@ -113,24 +120,35 @@ This atlas is specifically aligned with:
 
 Coverage snapshot from current reverification pass:
 
-- `01_GENERAL_INFO` markdown files: `16`
-- `02_ACTUAL_REPORTS` markdown files: `38`
+- `01_GENERAL_INFO` markdown files: `22`
+- `02_ACTUAL_REPORTS` markdown files: `43`
 - `02_ACTUAL_REPORTS` csv files: `1`
-- total audited files in folders `01` and `02`: `55`
+- total audited files in folders `01` and `02`: `66`
 
 Canonical entry files inside this bundle:
 
 - `MASTER_INDEX.md`
 - `DOCSET_COVERAGE_MATRIX.md`
+- `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md`
+- `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md`
+- `TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md`
+- `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md`
+- `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md`
 - `PLAYER_GAMEPLAY_CORE_MAP.md`
 - `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`
+ - `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md`
 - `INTERFACE_CONTRACT_TABLE.md`
 - `INTERFACE_HEALTH_DASHBOARD.md`
 - `EVENT_BUS_MAP.md`
 - `EVENT_FLOW_MAP.md`
+- `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`
+- `2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md`
 - `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md`
 - `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
+- `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md`
+ - `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`
+ - `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
 
 ## 7. Architecture Signals Rechecked Against Source
 
@@ -139,6 +157,8 @@ These points were revalidated against current source in this pass:
 - `GlobalRegistryContracts.cs` now contains `27` interfaces, not `19`.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
+- current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
+- narrative/discovery/progression knowledge is distributed across `HectonNarrativeDirector`, `HectonDiscoveryManager`, `LoreDatabaseManager`, `AudioLogSystem`, Atlas systems, PDA archive systems, and scripted progression directors; it is not one subsystem.
 - `IRenderable` is no longer a one-owner curiosity. Current direct implementors include:
   - `HectonUnderwaterVisuals`
   - `HectonSubmarineOS`
@@ -180,6 +200,28 @@ Current code-backed service owners include:
 - `DebrisManager` -> `IDebrisService`
 - `EcosystemDirector` -> `IEcosystemDirectorService`
 
+### 7.3 Current Tools / Interaction Truth Rechecked
+
+Current tool-domain findings added in this pass:
+
+- `PlayerToolManager` is the hand-level active tool dispatch owner, not the deep runtime owner for tool stats or interaction routing.
+- `PlayerTool` is the shared operational spine for equip/unequip, durability, battery drain, recoil queueing, and modular runtime registration.
+- `ModularEquipmentEngine` is the compiled runtime owner for tool state, upgrades, battery, heat, and durability mirrors.
+- `EquipmentInteractionHandler` is the authoritative deferred interaction-routing owner through a `NativeQueue<InteractionSignal>` plus staged `RaycastCommand` lanes.
+- scanner persistence is split from scanner action: `ScannerTool` owns scan action, while `ScanLogSystem` owns scan discovery save state.
+- beacon operations are split from hand tooling: `BeaconDeployerTool` is the action surface, while `BeaconNetworkSystem` is the marker-network and save participant owner.
+
+### 7.4 Current Survival / Hazard Truth Rechecked
+
+Current survival-domain findings added in this pass:
+
+- `HectonSurvivalSystem` is the dominant survival authority for oxygen, pressure, thermal stress, integrity, decompression risk, death-cause resolution, and save state.
+- `HazardZoneManager` is the runtime exposure and damage-routing owner rather than the source owner for every hazard.
+- `HectonHazardManager` is the ingress bridge for authored and runtime hazard sources.
+- `AbyssalThermalManager` is both thermodynamics service owner and a thermal hazard-source owner.
+- `DeepPsychosisController` and `PlayerStressVFX` are downstream stress-consequence owners, not primary survival owners.
+- `HectonPlayerHealth` is a real parallel HP/mutation branch whose own file documents a weak persistence path because `SaveData` has no dedicated player-health DTO.
+
 ### 7.2 Event Topology Rechecked
 
 Current first-party event architecture is mixed:
@@ -210,6 +252,25 @@ These active docs were stale against current code before this pass:
 - `DEPENDENCY_GRAPH.md`
 - `EVENT_FLOW_MAP.md`
 - this file itself
+
+## 8.1 Current Audit Artifacts
+
+Current source-backed audit outputs now include:
+
+- `Docs/Reports/ILLEGAL_SINGLETONS.md`
+- `Docs/Reports/GC_HOTPATH_VIOLATIONS.md`
+- `Docs/Reports/BOOT_ORDER_VIOLATIONS.md`
+- `Docs/Reports/NATIVE_ALLOCATION_AUDIT.md`
+- `Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
+
+Current evidence-backed deltas from this pass:
+
+- `GameBootstrapper` contains a real Kahn-style cycle validator, but bootstrap execution is still manual and registry-safe order is not guaranteed.
+- `RenderDispatcher` and `GlobalPhysicsStateManager` still self-register in `Awake()` instead of explicit bootstrap-owned initialization.
+- `PlayerRuntimeContextService` reads `GlobalRegistry.PlayerInventory` and `GlobalRegistry.PlayerSensory` before those owners are initialized in the player layer.
+- current changed-file native audit found one hard strict-criterion failure: `VoxelDynamicNavGridRuntime.cs` owns persistent arrays without an `OnDisable` or `OnDestroy` disposal path.
+- current `Assets/_Project` path sweep found `0` Cyrillic file paths, but Cyrillic comments remain widespread in source and shader files.
+- a clean "20 agents reported zero console errors" proof surface was not found in the current docs corpus.
 
 Primary stale claims that were removed:
 

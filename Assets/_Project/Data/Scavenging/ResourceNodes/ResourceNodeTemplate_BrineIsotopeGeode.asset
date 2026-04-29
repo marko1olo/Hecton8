@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_BrineIsotopeGeode
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.brine_isotope_geode
+  displayName: Brine Isotope Geode
+  toolResistance: 2.2
+  harvestDurationSeconds: 2.6
+  requiredToolClass: 3
+  maxIntegrity: 260
+  defaultLootCount: 1
+  minimumDepthMeters: 2800
+  maximumDepthMeters: 5000
+  minimumTemperatureCelsius: -2
+  maximumTemperatureCelsius: 10
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 38
+  spawnOffsetMeters: 0.14
+  candidateBudgetPerSector: 2
+  maxInstancesPerSector: 1
+  placementProbability: 0.06
+  minimumDensity: 0.04
+  maximumDensity: 0.16
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  colliderShape: 0
+  physicalSize: {x: 1.9, y: 1.6, z: 1.9}
+  supportsAutonomousExtraction: 0
+  extractorYieldItem: {fileID: 0}
+  extractorCycleSeconds: 45
+  extractorInventoryCapacity: 8
+  requiresHydrothermalVent: 0
+  hydrothermalVentTemperatureThresholdCelsius: 60
+  triggersSteamExplosionWithoutThermalShield: 0
+  steamExplosionRadiusMeters: 4
+  steamExplosionImpulse: 12
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 3.1
+  requiresBrinePool: 1
+  brineDensityKgPerCubicMeter: 1250
+  brineToxicityIntensity: 0.98
+  embedInVoxelRock: 1
+  embeddedVeinStampCount: 10
+  embeddedVeinLengthMeters: 14
+  embeddedVeinRadiusMeters: 2
+  embeddedVeinNoiseAmplitudeMeters: 1.4
+  harvestYield:
+  - item: {fileID: 11400000, guid: cda4ba86d994d7748a5ddf598feaa073, type: 2}
+    minimumAmount: 1
+    maximumAmount: 1
+    weight: 1
+  rarityDrops: []

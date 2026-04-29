@@ -102,7 +102,8 @@ namespace Hecton8.World
         {
             if (_registeredToTickManager)
                 return;
-
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;

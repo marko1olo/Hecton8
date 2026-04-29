@@ -6,9 +6,13 @@ SOURCE OF TRUTH: `Assets/_Project/Data/Scavenging/ResourceNodes/`
 MANDATES FOLLOWED:
 - `CORE_Submarine_Vehicles_Kinematics_AUP.txt`
 - `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+- `LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
 - `STRM_Persistent_Object_Registry.txt`
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `PHYS_Physics_Integrity_Determinism_ForceMode.txt`
 - `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`
+- `VOX_Voxel_World_Logic_Carving_Persistence.txt`
 
 ## Purpose
 
@@ -34,6 +38,21 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 | `ResourceNodeTemplate_NickelVein.asset` | `resource.node.nickel_vein` | -1982472494 | `0x89D5DED2` | `Data_NickelOre` | 1037165092 | `NONE` |
 | `ResourceNodeTemplate_LithiumCrystalCluster.asset` | `resource.node.lithium_crystal_cluster` | 1020671615 | `0x3CD6367F` | `Data_LithiumCrystal` | -531463424 | `NONE` |
 | `ResourceNodeTemplate_AbyssalCrystalSpire.asset` | `resource.node.abyssal_crystal_spire` | -1912665273 | `0x8DFF0B47` | `Data_AbyssalCrystal` | 702456815 | `NONE` |
+| `ResourceNodeTemplate_DeepMantleGeode.asset` | `resource.node.deep_mantle_geode` | 1840897952 | `0x6DB9DFA0` | `Data_AbyssalCrystal` | 702456815 | `NONE` |
+| `ResourceNodeTemplate_CrystallizedOsmium.asset` | `resource.node.crystallized_osmium` | -731924692 | `0xD45FB72C` | `Data_RareEarthDust` | 1997058338 | `NONE` |
+| `ResourceNodeTemplate_ToxicSulfurDeposit.asset` | `resource.node.toxic_sulfur_deposit` | -232166803 | `0xF2296A6D` | `Data_SulfurClumps` | -948091731 | `NONE` |
+| `ResourceNodeTemplate_BrineIsotopeGeode.asset` | `resource.node.brine_isotope_geode` | 694959346 | `0x296C3CF2` | `Data_AbyssalCrystal` | 702456815 | `NONE` |
+| `ResourceNodeTemplate_TitaniumBasaltMass.asset` | `resource.node.titanium_basalt_mass` | 384986101 | `0x16F26BF5` | `Data_TitaniumScrap` | -783267794 | `NONE` |
+| `ResourceNodeTemplate_XenonOmegaVentCache.asset` | `resource.node.xenon_omega_vent_cache` | -779526194 | `0xD1895FCE` | `Data_RareEarthDust` | 1997058338 | `NONE` |
+| `ResourceNodeTemplate_Silicon7BGlassVein.asset` | `resource.node.silicon_7b_glass_vein` | 1566735374 | `0x5D627C0E` | `Data_SilicaShards` | -374612680 | `NONE` |
+| `ResourceNodeTemplate_AegiriumCrustNodule.asset` | `resource.node.aegirium_crust_nodule` | 174837396 | `0x0A6BCE94` | `Data_CobaltAlloy` | 857583970 | `NONE` |
+
+### Extreme-Depth Notes
+
+- `ResourceNodeTemplate_DeepMantleGeode.asset` is the hydrothermal-only geode owner. Runtime gate: `Temperature > 80C`, steam explosion without `ToolUpgradeBits.ThermalShield`, crater carve on depletion, extractor-enabled.
+- `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_ToxicSulfurDeposit.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` are deterministic hadal brine-pool resources. Runtime gate: `RequiresBrinePool = true`, brine density override `1250 kg/m3`, toxicity hazard routing, and seismic upwelling reinstatement.
+- `ResourceNodeTemplate_TitaniumBasaltMass.asset` is the new hadal titanium vein for autonomous production scaling.
+- `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_XenonOmegaVentCache.asset`, `ResourceNodeTemplate_Silicon7BGlassVein.asset`, `ResourceNodeTemplate_AegiriumCrustNodule.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` currently route into placeholder item assets until dedicated isotope item records exist. Lore IDs are `crystallized_osmium`, `xenon_omega`, `silicon_7b`, `aegirium`, and `brine_isotope`.
 
 ## Flora Template HashIDs
 
@@ -41,18 +60,25 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 |---|---|---:|---|---:|---|---:|---|---:|
 | `FloraDataTemplate_BeamAnemone.asset` | `flora.beam_anemone` | -349366742 | `0xEB2D162A` | 1061475281 | `Drill` | 2 | `Metal` | 0.22 |
 | `FloraDataTemplate_BloodKelp.asset` | `flora.blood_kelp` | 718482850 | `0x2AD32DA2` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.42 |
-| `FloraDataTemplate_CableBloom.asset` | `flora.cable_bloom` | -1750052432 | `0x97B051B0` | 1061475281 | `Drill` | 2 | `Metal` | 0.31 |
+| `FloraDataTemplate_CableBloom.asset` | `flora.cable_bloom` | -1750052432 | `0x97B051B0` | 1061475281 | `PlasmaCut` | 2 | `Metal` | 0.31 |
 | `FloraDataTemplate_CathedralKelp.asset` | `flora.cathedral_kelp` | -1210602032 | `0xB7D7ADD0` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.34 |
+| `FloraDataTemplate_FungalStalk.asset` | `flora.fungal_stalk` | -44415284 | `0xFD5A46CC` | 2069849578 | `Cut|Drill` | 1 | `Seabed` | 0.52 |
 | `FloraDataTemplate_GhostWeed.asset` | `flora.ghost_weed` | -788800866 | `0xD0FBDA9E` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.62 |
 | `FloraDataTemplate_HaloSargassum.asset` | `flora.halo_sargassum` | 904227526 | `0x35E56AC6` | 2069849578 | `PlasmaCut` | 1 | `Any` | 1.12 |
+| `FloraDataTemplate_AcidShroom.asset` | `flora.acid_shroom` | -1214853303 | `0xB796CF49` | 2069849578 | `Cut|Drill` | 1 | `Seabed` | 0.66 |
+| `FloraDataTemplate_Blindcap.asset` | `flora.blindcap` | 531854346 | `0x1FB3740A` | 2069849578 | `Cut|Drill` | 1 | `Seabed` | 0.58 |
 | `FloraDataTemplate_IronCoral.asset` | `flora.iron_coral` | 749939571 | `0x2CB32B73` | -446461043 | `Drill` | 3 | `Metal` | 0.26 |
 | `FloraDataTemplate_IronFloatweed.asset` | `flora.iron_floatweed` | 2092772091 | `0x7CBD2AFB` | -446461043 | `Drill` | 3 | `Any` | 0.46 |
 | `FloraDataTemplate_KnifeMat.asset` | `flora.knife_mat` | -408481187 | `0xE7A7125D` | 2069849578 | `PlasmaCut` | 1 | `Any` | 0.58 |
 | `FloraDataTemplate_LanternGrass.asset` | `flora.lantern_grass` | -1773998960 | `0x9642EC90` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.94 |
 | `FloraDataTemplate_LumenFrond.asset` | `flora.lumen_frond` | 607387284 | `0x2433FE94` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.88 |
+| `FloraDataTemplate_NerveVine.asset` | `flora.nerve_vine` | 1090552876 | `0x4100842C` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 1.24 |
 | `FloraDataTemplate_RiftRibbon.asset` | `flora.rift_ribbon` | 926930409 | `0x373FD5E9` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.66 |
+| `FloraDataTemplate_RustMoss.asset` | `flora.rust_moss` | 1719756568 | `0x66816718` | 1061475281 | `PlasmaCut` | 1 | `Metal` | 0.24 |
+| `FloraDataTemplate_SporeCannon.asset` | `flora.spore_cannon` | -1562404102 | `0xA2DF9AFA` | 2069849578 | `Cut|Drill` | 1 | `Seabed` | 0.74 |
 | `FloraDataTemplate_SpineMoss.asset` | `flora.spine_moss` | -541571399 | `0xDFB846B9` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 1.08 |
 | `FloraDataTemplate_StaticThicket.asset` | `flora.static_thicket` | 1167050606 | `0x458FC76E` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.76 |
+| `FloraDataTemplate_ThermalTubeworm.asset` | `flora.thermal_tubeworm` | -958274584 | `0xC6E1E3E8` | 1061475281 | `Burn` | 1 | `Metal` | 0.66 |
 | `FloraDataTemplate_VeilFern.asset` | `flora.veil_fern` | 363094843 | `0x15A4633B` | 2069849578 | `PlasmaCut` | 1 | `Seabed` | 0.48 |
 
 ### Flora Notes
@@ -62,6 +88,7 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 - Loot hash routing is mirrored from authored `FloraDataTemplate` assets and consumed through existing `HarvestableTemplate` drop authority.
 - `AudioMaterialID`: `1 = Organic`, `2 = Brittle`, `3 = Metallic`
 - `Attachment Surface`: `Any = floating/freeform`, `Seabed = terrain-anchored`, `Metal = artificial-structure overgrowth`
+- `Cable Bloom` and `Rust Moss` are authored as parasitic module flora. `Thermal Tubeworm` is authored as thermophilic module flora with a 100 C / 300 s activation gate.
 
 ## Ghost Mesh Standard
 
@@ -75,6 +102,14 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 - Legacy display string bridge: `PersistentWorldRegistry.FormatResourceNodeTombstoneId(...)`
 - Save-path flag: `PersistentWorldItemFlags.ResourceNodeDestroyed`
 - Resident tombstone set: `NativeParallelHashSet<ulong> _resourceNodeTombstoneIds`
+
+## Fauna Scavenging States
+
+- `ApexTerritoryOverride`: `PredatorCognitionDomain` now treats rival leviathans inside the authored `ApexTerritoryProfile.territoryRadiusMeters` band as the dominant hunt target instead of the player.
+- `ApexForcedRetreat`: apex predators below `30%` health receive a forced migration/flee override and vacate the current sector after losing a territorial dispute.
+- `ApexIntimidation`: victorious apex predators broadcast a temporary intimidation aura; smaller predators treat that apex as a threat source and stay outside the authored intimidation radius.
+- `CorpseResourceNode`: large-fauna deaths register bounded corpse resource nodes in `DestructibleOrganicManager`, emit blood scent into `ChemicalInfluenceGrid`, and are depleted by scavenger feeding until despawn.
+- `BaitFeedingLock`: dropped organic bait items are now resolved through `PickupItem.IsFaunaBait`; herbivores, scavengers, and non-leviathan aggressive fauna can enter a local feeding investigate/sated loop around the bait source.
 
 ## Verification State
 

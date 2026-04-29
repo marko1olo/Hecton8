@@ -12,6 +12,7 @@ namespace Hecton8.Inventory
     using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.Modding;
+    using Hecton8.Physics;
     using Hecton8.SaveSystem;
     using Unity.Burst;
     using Unity.Collections;
@@ -25,12 +26,15 @@ namespace Hecton8.Inventory
     {
         private const ushort CraftingLockedMask = 1 << 10;
         private const ushort BiologicalItemStateMask = 1 << 6;
-        private const ushort RustedItemStateMask = 1 << 8;
+        internal const ushort DegradedItemStateMask = 1 << 8;
+        private const ushort RustedItemStateMask = 1 << 9;
         private const ushort DefaultQualityMilli = 1000;
         private const float SlowTickIntervalSeconds = 0.5f;
         private const float OrganicDecayPerSecond = 0.00045f;
         private const float SubmergedOrganicDecayPerSecond = 0.00075f;
         private const float SubmergedMetalRustPerSecond = 0.00065f;
+        private const float KineticDamageThresholdG = 50f;
+        internal const ushort DegradedQualityMilliThreshold = 250;
 
         private struct InventorySortEntry : IComparable<InventorySortEntry>
         {
@@ -137,10 +141,12 @@ namespace Hecton8.Inventory
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
         private bool _registeredSlowTick;
+        private ulong _playerImpactBodyId;
 
         public static PlayerInventory Instance => _instance;
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
+        public float TotalVolumeM3 { get; private set; }
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
         public int InventoryVersion { get; private set; }
@@ -148,6 +154,16 @@ namespace Hecton8.Inventory
 
         public int SavePriority => 20;
         public int LoadPriority => 20;
+
+        internal static bool IsFaunaBaitItem(ItemData itemData)
+        {
+            if (itemData == null)
+                return false;
+
+            return itemData.category == ItemCategory.Organic ||
+                   itemData.resourceFamily == ResourceFamily.Organic ||
+                   itemData.isConsumable;
+        }
 
         private void Awake()
         {
@@ -185,10 +201,13 @@ namespace Hecton8.Inventory
         {
             GlobalRegistry.Save?.Register(this);
             TryRegisterSlowTick();
+            PhysicsEvents.OnImpact += HandlePhysicsImpact;
+            ResolvePlayerImpactBodyId();
         }
 
         private void OnDisable()
         {
+            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             GlobalRegistry.Save?.Unregister(this);
             TryUnregisterSlowTick();
         }
@@ -366,6 +385,23 @@ namespace Hecton8.Inventory
         {
             if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
                 return false;
+
+            int anchorX = anchorIndex % _grid.Columns;
+            int anchorY = anchorIndex / _grid.Columns;
+            return RemoveOneItem(anchorX, anchorY) != 0;
+        }
+
+        internal bool TryConsumeFirstMatchingItemByHash(int itemHashId, out ushort stateFlags, out ushort qualityMilli)
+        {
+            stateFlags = 0;
+            qualityMilli = 0;
+            if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
+                return false;
+
+            stateFlags = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
+            qualityMilli = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
+                ? _qualityMilli[anchorIndex]
+                : DefaultQualityMilli;
 
             int anchorX = anchorIndex % _grid.Columns;
             int anchorY = anchorIndex / _grid.Columns;
@@ -1235,6 +1271,8 @@ namespace Hecton8.Inventory
         {
             if (_registeredSlowTick)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
             _registeredSlowTick = true;
@@ -1284,6 +1322,7 @@ namespace Hecton8.Inventory
         private void RefreshDerivedMassAndSurvivalLoad()
         {
             TotalMassKg = ComputeTotalMassKg();
+            TotalVolumeM3 = ComputeTotalVolumeM3();
             if (survival != null)
                 survival.SetWeight(TotalMassKg);
         }
@@ -1310,6 +1349,27 @@ namespace Hecton8.Inventory
             }
 
             return Mathf.Max(0f, totalMassKg);
+        }
+
+        private float ComputeTotalVolumeM3()
+        {
+            if (_grid == null || !_stackCounts.IsCreated)
+                return 0f;
+
+            float totalVolumeM3 = 0f;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex))
+                    continue;
+
+                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
+                if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+                    continue;
+
+                totalVolumeM3 += runtimeDescriptor.VolumeM3 * Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            }
+
+            return Mathf.Max(0f, totalVolumeM3);
         }
 
         private bool ApplyEnvironmentalDegradation(
@@ -1342,7 +1402,11 @@ namespace Hecton8.Inventory
             ushort nextQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
             bool changed = nextQualityMilli != currentQualityMilli;
             if (changed)
+            {
                 _qualityMilli[anchorIndex] = nextQualityMilli;
+                if (nextQualityMilli < DegradedQualityMilliThreshold)
+                    _itemStateFlags[anchorIndex] |= DegradedItemStateMask;
+            }
 
             if (nowTimestamp != 0u)
                 _lastUpdateUnixSeconds[anchorIndex] = nowTimestamp;
@@ -1363,6 +1427,125 @@ namespace Hecton8.Inventory
             return itemCatalog != null &&
                    itemHashId != 0 &&
                    itemCatalog.TryGetRuntimeDescriptor(itemHashId, out runtimeDescriptor);
+        }
+
+        private void ResolvePlayerImpactBodyId()
+        {
+            if (_playerImpactBodyId != 0ul)
+                return;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            _playerImpactBodyId = playerBody != null ? EntityId.ToULong(playerBody.GetEntityId()) : 0ul;
+        }
+
+        private void HandlePhysicsImpact(PhysicsImpactSignal impactSignal)
+        {
+            ResolvePlayerImpactBodyId();
+            if (_playerImpactBodyId == 0ul ||
+                (impactSignal.PrimaryBodyId != _playerImpactBodyId && impactSignal.SecondaryBodyId != _playerImpactBodyId))
+            {
+                return;
+            }
+
+            float impactAccelerationG = EstimateImpactAccelerationInG(impactSignal);
+            if (impactAccelerationG < KineticDamageThresholdG)
+                return;
+
+            ApplyKineticInventoryDamage();
+        }
+
+        private float EstimateImpactAccelerationInG(PhysicsImpactSignal impactSignal)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            float playerMass = playerBody != null ? Mathf.Max(0.1f, playerBody.mass) : 80f;
+            return Mathf.Max(0f, impactSignal.Force / (playerMass * 9.81f));
+        }
+
+        private void ApplyKineticInventoryDamage()
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_qualityMilli.IsCreated)
+            {
+                return;
+            }
+
+            bool changed = false;
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex))
+                    continue;
+
+                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
+                if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
+                    !IsKineticFragileItem(itemHashId, in runtimeDescriptor))
+                {
+                    continue;
+                }
+
+                if (ApplyKineticDamageToAnchor(anchorIndex))
+                    changed = true;
+            }
+
+            if (changed)
+                NotifyInventoryChanged();
+        }
+
+        private bool IsKineticFragileItem(int itemHashId, in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)
+        {
+            if (runtimeDescriptor.AudioMaterialId == (byte)ItemAudioMaterialId.Glass)
+                return true;
+
+            ItemData itemData = itemCatalog != null ? itemCatalog.FindByHash(itemHashId) : null;
+            if (itemData != null)
+            {
+                if (itemData.resourceFamily == ResourceFamily.ElectronicsMetal ||
+                    itemData.resourceFamily == ResourceFamily.Power)
+                {
+                    return true;
+                }
+            }
+
+            return runtimeDescriptor.CategoryId == (byte)ItemCategory.Component ||
+                   runtimeDescriptor.CategoryId == (byte)ItemCategory.Tool;
+        }
+
+        private bool ApplyKineticDamageToAnchor(int anchorIndex)
+        {
+            if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+                return false;
+
+            ushort currentQualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
+            ushort nextQualityMilli = (ushort)(currentQualityMilli / 2);
+            if (nextQualityMilli == currentQualityMilli && currentQualityMilli > 0)
+                nextQualityMilli = (ushort)Mathf.Max(0, currentQualityMilli - 1);
+
+            if (nextQualityMilli <= 0)
+            {
+                int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+                _grid.RemoveAnchorAt(anchorIndex);
+                _stackCounts[anchorIndex] = 0;
+                _craftLockedCounts[anchorIndex] = 0;
+                _anchorStateFlags[anchorIndex] = 0;
+                _itemStateFlags[anchorIndex] = 0;
+                _qualityMilli[anchorIndex] = 0;
+                _lastUpdateUnixSeconds[anchorIndex] = 0;
+                TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
+                return true;
+            }
+
+            bool changed = nextQualityMilli != currentQualityMilli;
+            if (!changed)
+                return false;
+
+            _qualityMilli[anchorIndex] = nextQualityMilli;
+            if (nextQualityMilli < DegradedQualityMilliThreshold)
+                _itemStateFlags[anchorIndex] |= DegradedItemStateMask;
+
+            return true;
         }
 
         private void ClearCraftReservationState()

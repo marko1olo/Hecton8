@@ -14,6 +14,7 @@
 
 using Hecton8.Environment;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Visor;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -304,7 +305,15 @@ namespace Hecton8.UI
             int idx = (int)active;
             SetLabelText(_currentModeLabel, ActiveModeLabels[idx]);
             RefreshStatusLabel(idx);
-            if (active == SpectrumMode.Sonar && sys != null && sys.HasSonarSnapshot)
+            if (active == SpectrumMode.Sonar && IsEmpSensorBlindActive())
+            {
+                SetLabelText(_sonarStatusLabel, "SONAR OFFLINE // EMP BLIND");
+                SetLabelText(_contactSummaryLabel, "CONTACTS // RES 0 | BIO 0 | SIG 0");
+                SetLabelText(_resourceSummaryLabel, "NEAREST RESOURCE // NONE");
+                SetLabelText(_bioformSummaryLabel, "NEAREST BIOFORM // NONE");
+                SetLabelText(_signalSummaryLabel, "LAST LOSS // SENSOR JAM");
+            }
+            else if (active == SpectrumMode.Sonar && sys != null && sys.HasSonarSnapshot)
             {
                 RefreshSonarSnapshot(sys.LastSonarSnapshot);
             }
@@ -628,6 +637,18 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  NESTED TYPES
         // ══════════════════════════════════════════════════════════
+
+        private static bool IsEmpSensorBlindActive()
+        {
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                runtimeContext.TraumaDispatcher == null)
+            {
+                return false;
+            }
+
+            return runtimeContext.TraumaDispatcher.IsEmpSensorBlindActive;
+        }
 
         private static string ResolveDeathCauseTag(SurvivalDeathCause cause)
         {

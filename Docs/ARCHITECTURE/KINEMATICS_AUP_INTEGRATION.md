@@ -143,6 +143,7 @@ Current rule:
    - clamp solver impulse per contact
    - force tangential target velocity only
    - queue structural diffusion impact into `SubmarineStructuralGrid`
+   - queue an optional Gaussian hull-dent command into `SubmarineStructuralGrid`
    - queue a deferred submarine impact signal into `TraumaDispatcher`
 
 Reference kernel:
@@ -153,6 +154,12 @@ kineticEnergy = 0.5f * dominantMass * lengthsq(relativeVelocity);
 closingSpeed = max(0f, -dot(relativeVelocity, normal));
 maxImpulsePerContact = (dominantMass * closingSpeed) / contactCount;
 ```
+
+Hull-dent publication rule:
+- `SubmarineStructuralGrid` may only publish dents when an explicit hull `MeshFilter` is bound
+- no dent logic is allowed to guess arbitrary child renderers
+- dent math is local-space Gaussian displacement along the struck face normal
+- inertial-ghost math remains unchanged
 
 ## Wall Slide And Depenetration
 

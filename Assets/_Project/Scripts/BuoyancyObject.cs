@@ -438,6 +438,8 @@ namespace Hecton8.Physics
         {
             if (_registeredToFixedTick)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredToFixedTick = true;

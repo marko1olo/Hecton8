@@ -17,17 +17,16 @@ namespace Hecton8.Construction
     [AddComponentMenu("Hecton8/Construction/Repair Drone Hub")]
     public sealed class RepairDroneHub : MonoBehaviour, ISlowTickable, IPoolable, IPowerComponent
     {
-        private const string DefaultRepairSupplyItemId = "Data_TitaniumScrap";
+        private const string DefaultRepairSupplyItemId = "Nanite_Solder";
+        private const string LegacyRepairSupplyItemId = "Data_TitaniumScrap";
         private const int MaxDiscoveredSupplyCrates = 12;
         private const int SupplyOverlapCapacity = 24;
         private const float SupplyRescanInterval = 5f;
-        private static readonly HashSet<int> s_ClaimedModuleIds = new HashSet<int>(64);
         private static readonly List<RepairDroneHub> s_ActiveHubs = new List<RepairDroneHub>(8);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_ClaimedModuleIds.Clear();
             s_ActiveHubs.Clear();
         }
 
@@ -84,11 +83,17 @@ namespace Hecton8.Construction
         [SerializeField] private int _debugActiveDroneCount;
         [SerializeField] private int _debugSupplyCrateCount;
         [SerializeField] private string _debugCurrentTargetName;
+        [SerializeField] private float _debugLastAssignmentScore;
+        [SerializeField] private int _debugLastAssignedSupplyUnits;
 
         // COLD ALLOC: Collider[24] — nearby storage discovery buffer — owner: RepairDroneHub
         private readonly Collider[] _supplyOverlapBuffer = new Collider[SupplyOverlapCapacity];
         // COLD ALLOC: StorageCrate[12] — auto-discovered storage endpoints — owner: RepairDroneHub
         private readonly StorageCrate[] _discoveredSupplyCrates = new StorageCrate[MaxDiscoveredSupplyCrates];
+        // COLD ALLOC: int[1] — repair-supply hash bridge for logistics reservations — owner: RepairDroneHub
+        private readonly int[] _repairSupplyHashIds = new int[1];
+        // COLD ALLOC: int[1] — repair-supply quantity bridge for logistics reservations — owner: RepairDroneHub
+        private readonly int[] _repairSupplyAmounts = new int[1];
 
         private Transform _cachedTransform;
         private PowerNode _powerNode;
@@ -112,6 +117,10 @@ namespace Hecton8.Construction
         internal static List<RepairDroneHub> ActiveHubs => s_ActiveHubs;
         internal int ActiveDroneCount => ResolveActiveDroneCount();
         internal int TotalLaunchCount => _launchCountTotal;
+        internal Vector3 DockPosition => ResolveLaunchPosition();
+        internal PowerGrid CurrentGrid => _powerNode != null ? _powerNode.Grid : null;
+        internal int ActiveSlotCapacity => _activeDrones != null ? _activeDrones.Length : Mathf.Max(1, maxConcurrentDrones);
+        internal bool HasOperationalPower => _hasPower && _powerNode != null && _powerNode.Grid != null;
 
         public void OnPowerStatusChanged(bool hasPower)
         {
@@ -120,6 +129,8 @@ namespace Hecton8.Construction
 
             if (!hasPower)
                 RecallActiveDrones();
+
+            DroneFleetManager.NotifyFleetStateChanged();
         }
 
         private void Awake()
@@ -154,6 +165,7 @@ namespace Hecton8.Construction
             RefreshSupplyCrates(true);
             RegisterHubInstance();
             TryRegister();
+            DroneFleetManager.NotifyFleetStateChanged();
         }
 
         public void OnDespawn()
@@ -165,6 +177,7 @@ namespace Hecton8.Construction
             _debugCurrentTargetName = string.Empty;
             _debugActiveDroneCount = 0;
             UnregisterHubInstance();
+            DroneFleetManager.NotifyFleetStateChanged();
         }
 
         public void SlowTick()
@@ -191,6 +204,7 @@ namespace Hecton8.Construction
 
             TryDispatchDrone();
             RefreshDiagnostics();
+            DroneFleetManager.NotifyFleetStateChanged();
         }
 
         /// <summary>Called by pooled drones once they have returned to the hub and are ready to despawn.</summary>
@@ -205,6 +219,7 @@ namespace Hecton8.Construction
 
             ClearDroneSlot(slot);
             RefreshDiagnostics();
+            DroneFleetManager.NotifyFleetStateChanged();
         }
 
         private void TryRegister()
@@ -245,7 +260,11 @@ namespace Hecton8.Construction
             PlayerInventory inventory = PlayerInventory.Instance;
             ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
             if (catalog != null)
+            {
                 repairSupplyItem = catalog.FindById(DefaultRepairSupplyItemId);
+                if (repairSupplyItem == null)
+                    repairSupplyItem = catalog.FindById(LegacyRepairSupplyItemId);
+            }
         }
 
         private void RefreshSupplyCrates(bool forceImmediate)
@@ -311,23 +330,20 @@ namespace Hecton8.Construction
             if (freeSlot < 0)
                 return;
 
-            BaseModule target = ResolveNextRepairTarget();
-            if (target == null)
-                return;
-
-            if (!HasRepairSupplyAvailable())
+            if (!DroneFleetManager.TryAssignRepairTask(this, dispatchIntegrityThreshold, out BaseModule target, out float assignmentScore, out _))
                 return;
 
             PowerGrid grid = _powerNode.Grid;
-            if (grid.HasPowerDeficit || !TryClaimTarget(target))
+            if (target == null || grid.HasPowerDeficit)
+                return;
+
+            int requiredSupplyUnits = ResolveMissionSupplyUnits(target);
+            if (!HasRepairSupplyAvailable(requiredSupplyUnits))
                 return;
 
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null)
-            {
-                ReleaseClaim(GetModuleRuntimeId(target));
                 return;
-            }
 
             Vector3 launchPosition = ResolveLaunchPosition();
             GameObject droneObject = pool.Spawn(dronePrefab, launchPosition, _cachedTransform.rotation, true);
@@ -335,15 +351,12 @@ namespace Hecton8.Construction
             {
                 if (droneObject != null)
                     pool.Despawn(droneObject);
-
-                ReleaseClaim(GetModuleRuntimeId(target));
                 return;
             }
 
-            if (!TryConsumeRepairSupply())
+            if (!TryConsumeRepairSupply(requiredSupplyUnits))
             {
                 pool.Despawn(droneObject);
-                ReleaseClaim(GetModuleRuntimeId(target));
                 return;
             }
 
@@ -354,7 +367,9 @@ namespace Hecton8.Construction
             _activeTargetIds[freeSlot] = GetModuleRuntimeId(target);
             _launchCountTotal++;
             _debugCurrentTargetName = target.name;
-            drone.AssignMission(this, target, launchPosition, droneRepairRate);
+            _debugLastAssignmentScore = assignmentScore;
+            _debugLastAssignedSupplyUnits = requiredSupplyUnits;
+            drone.AssignMission(this, target, launchPosition, droneRepairRate, requiredSupplyUnits);
         }
 
         private void RegisterHubInstance()
@@ -377,108 +392,59 @@ namespace Hecton8.Construction
             }
         }
 
-        private BaseModule ResolveNextRepairTarget()
+        private bool HasRepairSupplyAvailable(int requiredUnits)
         {
-            ConstructionManager manager = ConstructionManager.Instance;
-            IReadOnlyList<GameObject> modules = manager != null ? manager.SpawnedModules : null;
-            if (modules == null || modules.Count == 0)
-                return null;
+            if (repairSupplyItem == null || requiredUnits <= 0)
+                return false;
 
-            BaseModule bestTarget = null;
-            float bestIntegrity = 2f;
-            float bestDistanceSqr = float.MaxValue;
-            Vector3 hubPosition = _cachedTransform.position;
-
-            int moduleCount = modules.Count;
-            for (int i = 0; i < moduleCount; i++)
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            if (grid != null)
             {
-                GameObject moduleObject = modules[i];
-                if (moduleObject == null || !moduleObject.activeInHierarchy || !moduleObject.TryGetComponent(out BaseModule module))
-                    continue;
-
-                if (!IsEligibleRepairTarget(module))
-                    continue;
-
-                float recoverableIntegrity = Mathf.Max(1f, module.MaxRecoverableIntegrity);
-                float integrityNormalized = Mathf.Clamp01(module.CurrentIntegrity / recoverableIntegrity);
-                float distanceSqr = (module.transform.position - hubPosition).sqrMagnitude;
-
-                if (integrityNormalized < bestIntegrity ||
-                    (Mathf.Abs(integrityNormalized - bestIntegrity) <= 0.001f && distanceSqr < bestDistanceSqr))
-                {
-                    bestIntegrity = integrityNormalized;
-                    bestDistanceSqr = distanceSqr;
-                    bestTarget = module;
-                }
+                int hashId = ResolveRepairSupplyHashId();
+                return hashId != 0 && BaseLogisticsNetwork.CountAccessibleItem(grid, hashId) >= requiredUnits;
             }
 
-            return bestTarget;
+            return TryResolveRepairSupplySlot(requiredUnits, consume: false);
         }
 
-        private bool IsEligibleRepairTarget(BaseModule module)
+        private bool TryConsumeRepairSupply(int requiredUnits)
         {
-            if (module == null)
+            if (repairSupplyItem == null || requiredUnits <= 0)
                 return false;
 
-            int moduleId = GetModuleRuntimeId(module);
-            if (s_ClaimedModuleIds.Contains(moduleId))
-                return false;
-
-            float recoverableIntegrity = Mathf.Max(1f, module.MaxRecoverableIntegrity);
-            bool belowThreshold = module.CurrentIntegrity / recoverableIntegrity < dispatchIntegrityThreshold;
-            if (!belowThreshold && !module.IsFlooded && !module.HasCascadeFailure)
-                return false;
-
-            if (module.CurrentIntegrity >= recoverableIntegrity && !module.IsFlooded)
-                return false;
-
-            if (_powerNode != null &&
-                module.TryGetComponent(out PowerNode modulePowerNode) &&
-                modulePowerNode.Grid != null &&
-                _powerNode.Grid != null &&
-                !ReferenceEquals(modulePowerNode.Grid, _powerNode.Grid))
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            int hashId = ResolveRepairSupplyHashId();
+            if (grid != null && hashId != 0)
             {
-                return false;
-            }
-
-            return true;
-        }
-
-        private bool HasRepairSupplyAvailable()
-        {
-            if (repairSupplyItem == null)
-                return false;
-
-            return TryResolveRepairSupplySlot(consume: false);
-        }
-
-        private bool TryConsumeRepairSupply()
-        {
-            if (repairSupplyItem == null)
-                return false;
-
-            for (int i = 0; i < scrapPerMission; i++)
-            {
-                if (!TryResolveRepairSupplySlot(consume: true))
+                _repairSupplyHashIds[0] = hashId;
+                _repairSupplyAmounts[0] = requiredUnits;
+                if (!BaseLogisticsNetwork.TryReserveResources(grid, _repairSupplyHashIds, _repairSupplyAmounts, 1, out BaseLogisticsNetwork.LogisticsReservation reservation))
                     return false;
+
+                BaseLogisticsNetwork.CommitReserved(reservation);
+                return true;
             }
 
-            return true;
+            return TryResolveRepairSupplySlot(requiredUnits, consume: true);
         }
 
-        private bool TryResolveRepairSupplySlot(bool consume)
+        private bool TryResolveRepairSupplySlot(int requiredUnits, bool consume)
         {
-            if (TryResolveRepairSupplySlot(supplyCrates, supplyCrates != null ? supplyCrates.Length : 0, consume))
+            if (TryResolveRepairSupplySlot(supplyCrates, supplyCrates != null ? supplyCrates.Length : 0, requiredUnits, consume))
                 return true;
 
-            return TryResolveRepairSupplySlot(_discoveredSupplyCrates, _discoveredSupplyCount, consume);
+            return TryResolveRepairSupplySlot(_discoveredSupplyCrates, _discoveredSupplyCount, requiredUnits, consume);
         }
 
-        private bool TryResolveRepairSupplySlot(StorageCrate[] crates, int count, bool consume)
+        private bool TryResolveRepairSupplySlot(StorageCrate[] crates, int count, int requiredUnits, bool consume)
         {
             if (crates == null || repairSupplyItem == null)
                 return false;
 
+            if (consume && CountRepairSupplyUnits(crates, count) < requiredUnits)
+                return false;
+
+            int remaining = requiredUnits;
             for (int crateIndex = 0; crateIndex < count; crateIndex++)
             {
                 StorageCrate crate = crates[crateIndex];
@@ -498,11 +464,13 @@ namespace Hecton8.Construction
                     if (consume)
                         entries[entryIndex] = null;
 
-                    return true;
+                    remaining--;
+                    if (remaining <= 0)
+                        return true;
                 }
             }
 
-            return false;
+            return remaining <= 0;
         }
 
         private int FindFreeDroneSlot()
@@ -590,26 +558,8 @@ namespace Hecton8.Construction
             if (_activeDrones == null || slot < 0 || slot >= _activeDrones.Length)
                 return;
 
-            ReleaseClaim(_activeTargetIds[slot]);
             _activeTargetIds[slot] = 0;
             _activeDrones[slot] = null;
-        }
-
-        private bool TryClaimTarget(BaseModule module)
-        {
-            if (module == null)
-                return false;
-
-            int instanceId = GetModuleRuntimeId(module);
-            return s_ClaimedModuleIds.Add(instanceId);
-        }
-
-        private void ReleaseClaim(int instanceId)
-        {
-            if (instanceId == 0)
-                return;
-
-            s_ClaimedModuleIds.Remove(instanceId);
         }
 
         private static int GetModuleRuntimeId(BaseModule module)
@@ -646,6 +596,17 @@ namespace Hecton8.Construction
             _debugSupplyCrateCount = (supplyCrates != null ? supplyCrates.Length : 0) + _discoveredSupplyCount;
         }
 
+        internal int ResolveDockedStasisSlotCount()
+        {
+            int availableDockSlots = Mathf.Max(0, ActiveSlotCapacity - ResolveActiveDroneCount());
+            if (availableDockSlots <= 0)
+                return 0;
+
+            return (!_hasPower || !HasRepairSupplyAvailable(1))
+                ? availableDockSlots
+                : 0;
+        }
+
         private int ResolveActiveDroneCount()
         {
             if (_activeDrones == null)
@@ -661,6 +622,51 @@ namespace Hecton8.Construction
             }
 
             return activeCount;
+        }
+
+        private int ResolveMissionSupplyUnits(BaseModule target)
+        {
+            if (target == null)
+                return Mathf.Max(1, scrapPerMission);
+
+            float recoverableIntegrity = Mathf.Max(1f, target.MaxRecoverableIntegrity);
+            float missingIntegrity = Mathf.Max(0f, recoverableIntegrity - target.CurrentIntegrity);
+            float missingIntegrityPercent = (missingIntegrity / recoverableIntegrity) * 100f;
+            int missionUnits = Mathf.Max(1, Mathf.CeilToInt(missingIntegrityPercent * 0.1f));
+            if (target.IsFlooded || BaseDegradationSystem.IsModuleRuptured(target))
+                missionUnits++;
+
+            return Mathf.Max(scrapPerMission, missionUnits);
+        }
+
+        private int ResolveRepairSupplyHashId()
+        {
+            return repairSupplyItem != null && !string.IsNullOrWhiteSpace(repairSupplyItem.PersistentId)
+                ? Hecton.Localization.LocHash.Compute(repairSupplyItem.PersistentId)
+                : 0;
+        }
+
+        private int CountRepairSupplyUnits(StorageCrate[] crates, int count)
+        {
+            if (crates == null || repairSupplyItem == null)
+                return 0;
+
+            int availableUnits = 0;
+            for (int crateIndex = 0; crateIndex < count; crateIndex++)
+            {
+                StorageCrate crate = crates[crateIndex];
+                ItemData[] entries = crate != null ? crate.ContainedItems : null;
+                if (entries == null)
+                    continue;
+
+                for (int entryIndex = 0; entryIndex < entries.Length; entryIndex++)
+                {
+                    if (ReferenceEquals(entries[entryIndex], repairSupplyItem))
+                        availableUnits++;
+                }
+            }
+
+            return availableUnits;
         }
     }
 }

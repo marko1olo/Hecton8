@@ -45,6 +45,8 @@ namespace Hecton8.Construction
         private NativeArray<int> _edgeDestinations;
         private NativeArray<float> _edgeResistance;
         private NativeArray<int> _edgeWriteCursor;
+        private NativeArray<byte> _anchorReachability;
+        private NativeArray<int> _anchorTraversalQueue;
 
         private readonly LogisticsNetworkGraph _graph;
         private int _nodeCount;
@@ -121,6 +123,10 @@ namespace Hecton8.Construction
             AppendTemporaryBypassEdges();
             BuildNodeRecords();
             BuildEdgeRecords();
+            EvaluateAnchorReachability();
+            PublishAnchorState();
+            PublishComponentPowerState();
+            PublishEmergencyLockdownState();
             PublishDegradationState();
             PublishGraphKernel();
             PublishVisualLinks();
@@ -171,6 +177,14 @@ namespace Hecton8.Construction
             }
         }
 
+        internal void NotifyModuleEmergencyStateChanged(BaseModule module)
+        {
+            if (module == null || _nodeCount <= 0)
+                return;
+
+            PublishEmergencyLockdownState();
+        }
+
         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
         {
             int count = modules.Count;
@@ -192,7 +206,9 @@ namespace Hecton8.Construction
                     Marker = marker,
                     BaseModule = baseModule,
                     Position = moduleObject.transform.position,
-                    NodeId = unchecked((uint)EntityId.ToULong(moduleObject.GetEntityId()))
+                    NodeId = unchecked((uint)EntityId.ToULong(moduleObject.GetEntityId())),
+                    IsAnchorNode = ResolveStructuralAnchorState(baseModule, marker),
+                    IsEmergencyAirlock = ResolveEmergencyAirlockState(baseModule, marker)
                 });
 
                 _moduleIndexByNodeId[unchecked((uint)EntityId.ToULong(moduleObject.GetEntityId()))] = _moduleBuffer.Count - 1;
@@ -290,7 +306,7 @@ namespace Hecton8.Construction
                 if (_socketLookup.TryGetValue(oppositeKey, out SocketMatchEntry existing))
                 {
                     if (existing.ModuleIndex != moduleIndex &&
-                        AreSocketsCompatible(existing.CompatibleType, socket.CompatibleType) &&
+                        ModuleSocketTopology.AreCompatible(existing.CompatibleType, existing.Direction, socket.CompatibleType, socket.Direction) &&
                         Vector3.Dot(existing.Forward, socketTransform.forward) <= OppositeDirectionDotThreshold)
                     {
                         _edgeBuffer.Add(new EdgeRecord
@@ -309,7 +325,7 @@ namespace Hecton8.Construction
                 }
 
                 SocketKey ownKey = SocketKey.Create(socketTransform.position, axis, quantizationScale);
-                _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.CompatibleType, socketTransform.position, socketTransform.forward);
+                _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.CompatibleType, socket.Direction, socketTransform.position, socketTransform.forward);
             }
         }
 
@@ -328,7 +344,7 @@ namespace Hecton8.Construction
                     Priority = ResolveNodePriority(module.Marker),
                     Flags = ResolveNodeFlags(module.BaseModule),
                     NetworkId = 0,
-                    Reserved = (byte)ResolveReservedState(module.BaseModule)
+                    Reserved = (byte)ResolveReservedState(module.BaseModule, module.IsAnchorNode, false, false)
                 };
             }
         }
@@ -397,6 +413,171 @@ namespace Hecton8.Construction
             }
 
             _edgeCount = logicalDirectedEdgeCount;
+        }
+
+        private void EvaluateAnchorReachability()
+        {
+            if (_nodeCount <= 0 || !_anchorReachability.IsCreated || !_anchorTraversalQueue.IsCreated)
+                return;
+
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+            {
+                _anchorReachability[nodeIndex] = 0;
+                LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
+                node.Flags &= ~LogisticsNodeFlags.Isolated;
+                _nodes[nodeIndex] = node;
+            }
+
+            int queueHead = 0;
+            int queueTail = 0;
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+            {
+                if (!_moduleBuffer[nodeIndex].IsAnchorNode)
+                    continue;
+
+                _anchorReachability[nodeIndex] = 1;
+                _anchorTraversalQueue[queueTail++] = nodeIndex;
+            }
+
+            while (queueHead < queueTail)
+            {
+                int currentNodeIndex = _anchorTraversalQueue[queueHead++];
+                int edgeStart = _edgeOffsets[currentNodeIndex];
+                int edgeEnd = _edgeOffsets[currentNodeIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                    if (_anchorReachability[neighborNodeIndex] != 0)
+                        continue;
+
+                    _anchorReachability[neighborNodeIndex] = 1;
+                    _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
+                }
+            }
+
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+            {
+                bool anchored = _anchorReachability[nodeIndex] != 0;
+                LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
+                if (!anchored)
+                    node.Flags |= LogisticsNodeFlags.Isolated;
+
+                node.Reserved = (byte)ResolveReservedState(
+                    _moduleBuffer[nodeIndex].BaseModule,
+                    _moduleBuffer[nodeIndex].IsAnchorNode,
+                    anchored,
+                    false);
+                _nodes[nodeIndex] = node;
+            }
+        }
+
+        private void PublishAnchorState()
+        {
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+            {
+                BaseModule baseModule = _moduleBuffer[nodeIndex].BaseModule;
+                if (baseModule != null)
+                    baseModule.SetAnchoredState(_anchorReachability[nodeIndex] != 0);
+            }
+        }
+
+        private void PublishComponentPowerState()
+        {
+            if (_nodeCount <= 0)
+                return;
+
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+                _anchorReachability[nodeIndex] = 0;
+
+            for (int startNodeIndex = 0; startNodeIndex < _nodeCount; startNodeIndex++)
+            {
+                if (_anchorReachability[startNodeIndex] != 0)
+                    continue;
+
+                int queueHead = 0;
+                int queueTail = 0;
+                _anchorReachability[startNodeIndex] = 1;
+                _anchorTraversalQueue[queueTail++] = startNodeIndex;
+
+                float componentSupply = 0f;
+                float componentDraw = 0f;
+
+                while (queueHead < queueTail)
+                {
+                    int currentNodeIndex = _anchorTraversalQueue[queueHead++];
+                    float powerRating = ResolveModulePowerRating(_moduleBuffer[currentNodeIndex]);
+                    if (powerRating >= 0f)
+                        componentSupply += powerRating;
+                    else
+                        componentDraw -= powerRating;
+
+                    int edgeStart = _edgeOffsets[currentNodeIndex];
+                    int edgeEnd = _edgeOffsets[currentNodeIndex + 1];
+                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                    {
+                        int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                        if (_anchorReachability[neighborNodeIndex] != 0)
+                            continue;
+
+                        _anchorReachability[neighborNodeIndex] = 1;
+                        _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
+                    }
+                }
+
+                bool componentLowPower = componentDraw > componentSupply + 0.001f &&
+                                         PowerGridManager.ResolveProjectedBrownoutTier(componentSupply, componentDraw) != LogisticsBrownoutTier.None;
+                for (int queueIndex = 0; queueIndex < queueTail; queueIndex++)
+                {
+                    int componentNodeIndex = _anchorTraversalQueue[queueIndex];
+                    LogisticsNetworkGraph.LogisticsNode node = _nodes[componentNodeIndex];
+                    if (componentLowPower)
+                        node.Flags |= LogisticsNodeFlags.Brownout;
+                    else
+                        node.Flags &= ~LogisticsNodeFlags.Brownout;
+
+                    _nodes[componentNodeIndex] = node;
+
+                    BaseModule baseModule = _moduleBuffer[componentNodeIndex].BaseModule;
+                    if (baseModule != null)
+                        baseModule.SetAmbientLightsBrownout(componentLowPower);
+                }
+            }
+        }
+
+        private void PublishEmergencyLockdownState()
+        {
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[nodeIndex];
+                BaseModule baseModule = module.BaseModule;
+                if (baseModule == null)
+                    continue;
+
+                bool shouldLock = false;
+                if (module.IsEmergencyAirlock)
+                {
+                    int edgeStart = _edgeOffsets[nodeIndex];
+                    int edgeEnd = _edgeOffsets[nodeIndex + 1];
+                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                    {
+                        BaseModule adjacentModule = _moduleBuffer[_edgeDestinations[edgeIndex]].BaseModule;
+                        if (adjacentModule != null && adjacentModule.IsBreached)
+                        {
+                            shouldLock = true;
+                            break;
+                        }
+                    }
+                }
+
+                baseModule.SetEmergencyBulkheadLockdown(shouldLock);
+                LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
+                node.Reserved = (byte)ResolveReservedState(
+                    baseModule,
+                    module.IsAnchorNode,
+                    _anchorReachability[nodeIndex] != 0,
+                    shouldLock);
+                _nodes[nodeIndex] = node;
+            }
         }
 
         private void PublishDegradationState()
@@ -603,28 +784,56 @@ namespace Hecton8.Construction
             return flags;
         }
 
-        private static LogisticsModuleStatusBits ResolveReservedState(BaseModule baseModule)
+        private static float ResolveModulePowerRating(ModuleRecord module)
         {
-            if (baseModule == null)
-                return LogisticsModuleStatusBits.None;
+            if (module.BaseModule != null)
+                return module.BaseModule.PowerRating;
 
+            if (module.Marker != null && module.Marker.Data != null)
+                return module.Marker.Data.powerRating;
+
+            return 0f;
+        }
+
+        private static LogisticsModuleStatusBits ResolveReservedState(BaseModule baseModule, bool isAnchorNode, bool isAnchored, bool emergencyLockdown)
+        {
             LogisticsModuleStatusBits bits = LogisticsModuleStatusBits.None;
-            if (baseModule.HasPower)
+            if (baseModule != null && baseModule.HasPower)
                 bits |= LogisticsModuleStatusBits.Powered;
-            if (baseModule.IsFlooded)
+            if (baseModule != null && baseModule.IsFlooded)
                 bits |= LogisticsModuleStatusBits.Flooded;
-            if (baseModule.CurrentIntegrity < baseModule.MaxIntegrity)
+            if (baseModule != null && baseModule.CurrentIntegrity < baseModule.MaxIntegrity)
                 bits |= LogisticsModuleStatusBits.Damaged;
+            if (isAnchorNode)
+                bits |= LogisticsModuleStatusBits.AnchorNode;
+            if (isAnchored)
+                bits |= LogisticsModuleStatusBits.Anchored;
+            else
+                bits |= LogisticsModuleStatusBits.Unmoored;
+            if (emergencyLockdown)
+                bits |= LogisticsModuleStatusBits.EmergencyLockdown;
 
             return bits;
         }
 
-        private static bool AreSocketsCompatible(string lhs, string rhs)
+        private static bool ResolveStructuralAnchorState(BaseModule baseModule, ModuleMarker marker)
         {
-            if (string.IsNullOrEmpty(lhs) || string.IsNullOrEmpty(rhs))
+            if (baseModule != null && baseModule.ResolveStructuralAnchorRole(marker))
                 return true;
 
-            return string.Equals(lhs, rhs, StringComparison.OrdinalIgnoreCase);
+            string persistentId = marker != null ? marker.PrefabId : string.Empty;
+            return string.Equals(persistentId, "Build_Foundation_Platform", StringComparison.Ordinal) ||
+                   string.Equals(persistentId, "Build_Utility_Pylon", StringComparison.Ordinal);
+        }
+
+        private static bool ResolveEmergencyAirlockState(BaseModule baseModule, ModuleMarker marker)
+        {
+            if (baseModule != null && baseModule.ResolveEmergencyAirlockRole(marker))
+                return true;
+
+            string persistentId = marker != null ? marker.PrefabId : string.Empty;
+            return string.Equals(persistentId, "Build_Airlock_Hatch", StringComparison.Ordinal) ||
+                   string.Equals(persistentId, "base.module.airlock", StringComparison.Ordinal);
         }
 
         private static int QuantizeAxis(Vector3 direction)
@@ -675,12 +884,19 @@ namespace Hecton8.Construction
             _edgeResistance = new NativeArray<float>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Int32>[64] — CSR write-cursor scratch buffer — owner: HabitatGraphManager
             _edgeWriteCursor = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorReachability = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _anchorTraversalQueue = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 
         private void EnsureNodeCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
-            if (_nodes.IsCreated && _nodes.Length >= safeLength && _edgeOffsets.Length >= safeLength + 1 && _edgeWriteCursor.Length >= safeLength)
+            if (_nodes.IsCreated &&
+                _nodes.Length >= safeLength &&
+                _edgeOffsets.Length >= safeLength + 1 &&
+                _edgeWriteCursor.Length >= safeLength &&
+                _anchorReachability.Length >= safeLength &&
+                _anchorTraversalQueue.Length >= safeLength)
                 return;
 
             DisposeNativeBuffers();
@@ -716,6 +932,12 @@ namespace Hecton8.Construction
 
             if (_edgeWriteCursor.IsCreated)
                 _edgeWriteCursor.Dispose();
+
+            if (_anchorReachability.IsCreated)
+                _anchorReachability.Dispose();
+
+            if (_anchorTraversalQueue.IsCreated)
+                _anchorTraversalQueue.Dispose();
         }
 
         private static int NextPowerOfTwo(int value)
@@ -737,6 +959,8 @@ namespace Hecton8.Construction
             public BaseModule BaseModule;
             public float3 Position;
             public uint NodeId;
+            public bool IsAnchorNode;
+            public bool IsEmergencyAirlock;
         }
 
         private struct EdgeRecord
@@ -813,13 +1037,15 @@ namespace Hecton8.Construction
         {
             public readonly int ModuleIndex;
             public readonly string CompatibleType;
+            public readonly ModuleSocketDirection Direction;
             public readonly float3 Position;
             public readonly float3 Forward;
 
-            public SocketMatchEntry(int moduleIndex, string compatibleType, float3 position, float3 forward)
+            public SocketMatchEntry(int moduleIndex, string compatibleType, ModuleSocketDirection direction, float3 position, float3 forward)
             {
                 ModuleIndex = moduleIndex;
                 CompatibleType = compatibleType;
+                Direction = direction;
                 Position = position;
                 Forward = forward;
             }

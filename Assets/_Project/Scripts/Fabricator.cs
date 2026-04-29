@@ -38,6 +38,7 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Economy;
+using Hecton8.SaveSystem;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -106,6 +107,20 @@ namespace Hecton8.Crafting
         [Tooltip("Extra upward velocity change so the crafted stack clears the hatch before falling.")]
         [SerializeField] private float outputUpwardVelocityChange = 0.55f;
 
+        [Header("── Deconstruction Output ────────────────────────")]
+        [Tooltip("Optional catch-bin socket used when salvage components are ground back out of the fabricator.")]
+        [SerializeField] private Transform deconstructOutputSocket;
+        [Tooltip("Local ejection direction for reclaimed salvage when no dedicated catch-bin socket is authored.")]
+        [SerializeField] private Vector3 deconstructOutputDirectionLocal = Vector3.forward;
+        [Tooltip("Meters pushed forward from the deconstruction socket before reclaimed components register in the world.")]
+        [SerializeField] private float deconstructOutputForwardOffset = 0.28f;
+        [Tooltip("Meters lifted above the deconstruction socket before reclaimed components are released.")]
+        [SerializeField] private float deconstructOutputLiftOffset = 0.08f;
+        [Tooltip("Initial velocity change used to pop reclaimed salvage into the catch-bin.")]
+        [SerializeField] private float deconstructOutputVelocityChange = 1.1f;
+        [Tooltip("Extra upward velocity change used to keep reclaimed salvage from colliding with the grinder lip.")]
+        [SerializeField] private float deconstructOutputUpwardVelocityChange = 0.25f;
+
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
         // ══════════════════════════════════════════════════════════
@@ -153,6 +168,8 @@ namespace Hecton8.Crafting
         private NativeParallelHashMap<int, int> _craftInventoryCounts;
         private NativeArray<int2> _craftRecipeCosts;
         private NativeArray<byte> _craftRecipeEvaluationResult;
+        private NativeArray<int2> _deconstructionRecipeOutputs;
+        private NativeArray<int> _deconstructionOutputCount;
 
         private BaseLogisticsNetwork.LogisticsReservation _networkReservation;
 
@@ -706,6 +723,16 @@ namespace Hecton8.Crafting
                 // COLD ALLOC: NativeArray<byte>[1] — Burst crafting-availability result cell — owner: Fabricator
                 _craftRecipeEvaluationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
+
+            if (!_deconstructionRecipeOutputs.IsCreated)
+            {
+                _deconstructionRecipeOutputs = new NativeArray<int2>(CraftingSystem.MaxDeconstructionOutputCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_deconstructionOutputCount.IsCreated)
+            {
+                _deconstructionOutputCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
         }
 
         private void DisposeCraftingScratch()
@@ -724,6 +751,12 @@ namespace Hecton8.Crafting
 
             if (_craftRecipeEvaluationResult.IsCreated)
                 _craftRecipeEvaluationResult.Dispose();
+
+            if (_deconstructionRecipeOutputs.IsCreated)
+                _deconstructionRecipeOutputs.Dispose();
+
+            if (_deconstructionOutputCount.IsCreated)
+                _deconstructionOutputCount.Dispose();
         }
 
         private bool TrySynthesizeCraftOutput(RecipeData recipe, ItemData result)
@@ -746,6 +779,83 @@ namespace Hecton8.Crafting
             return true;
         }
 
+        /// <summary>
+        /// Grinds one crafted item back into reclaimed ingredient stacks using the reverse recipe path.
+        /// </summary>
+        public bool TryDeconstructItem(int itemHashId)
+        {
+            if (itemHashId == 0 || _playerInventory == null)
+                return false;
+
+            Hecton8.SaveSystem.ItemCatalog itemCatalog = _playerInventory.ItemCatalog;
+            if (itemCatalog == null)
+                return false;
+
+            ItemData targetItem = itemCatalog.FindByHash(itemHashId);
+            if (targetItem == null || !TryResolveRecipeForResultItem(targetItem, out RecipeData sourceRecipe))
+                return false;
+
+            if (!_playerInventory.TryConsumeFirstMatchingItemByHash(itemHashId, out ushort stateFlags, out ushort qualityMilli))
+                return false;
+
+            EnsureCraftingScratch();
+            bool isDegraded = (stateFlags & PlayerInventory.DegradedItemStateMask) != 0 ||
+                              qualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
+            if (!CraftingSystem.TryBuildDeconstructionYieldBuffer(
+                    sourceRecipe,
+                    this,
+                    isDegraded,
+                    _craftRecipeCosts,
+                    _deconstructionRecipeOutputs,
+                    _deconstructionOutputCount))
+            {
+                _playerInventory.TryAddItem(itemHashId, 1);
+                return false;
+            }
+
+            int outputCount = _deconstructionOutputCount[0];
+            if (outputCount <= 0)
+            {
+                _playerInventory.TryAddItem(itemHashId, 1);
+                return false;
+            }
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            ResolveDeconstructionOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
+            bool emittedAny = false;
+
+            for (int outputIndex = 0; outputIndex < outputCount; outputIndex++)
+            {
+                int2 output = _deconstructionRecipeOutputs[outputIndex];
+                if (output.x == 0 || output.y <= 0)
+                    continue;
+
+                ItemData outputItem = itemCatalog.FindByHash(output.x);
+                if (outputItem == null)
+                    continue;
+
+                bool emitted = registry != null &&
+                               registry.TryRegisterDroppedItem(outputItem, output.y, spawnPosition, Vector3.zero, velocityChange);
+                if (!emitted)
+                {
+                    for (int quantityIndex = 0; quantityIndex < output.y; quantityIndex++)
+                    {
+                        if (!_playerInventory.TryAddItem(output.x, 1))
+                            break;
+                    }
+                }
+
+                CraftingEvents.RaiseCraftOutputSynthesized(
+                    new CraftedItemSynthesisEvent(outputItem, output.y, spawnPosition, velocityChange));
+                emittedAny = true;
+            }
+
+            if (!emittedAny)
+                _playerInventory.TryAddItem(itemHashId, 1);
+
+            return emittedAny;
+        }
+
         private void ResolveCraftOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange)
         {
             Transform origin = outputSocket != null ? outputSocket : transform;
@@ -759,6 +869,21 @@ namespace Hecton8.Crafting
             worldDirection.Normalize();
             spawnPosition = origin.position + worldDirection * outputForwardOffset + Vector3.up * outputLiftOffset;
             velocityChange = worldDirection * outputVelocityChange + Vector3.up * outputUpwardVelocityChange;
+        }
+
+        private void ResolveDeconstructionOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange)
+        {
+            Transform origin = deconstructOutputSocket != null ? deconstructOutputSocket : (outputSocket != null ? outputSocket : transform);
+            Vector3 localDirection = deconstructOutputDirectionLocal.sqrMagnitude > 0.0001f
+                ? deconstructOutputDirectionLocal.normalized
+                : Vector3.forward;
+            Vector3 worldDirection = origin.TransformDirection(localDirection);
+            if (worldDirection.sqrMagnitude <= 0.0001f)
+                worldDirection = origin.forward;
+
+            worldDirection.Normalize();
+            spawnPosition = origin.position + worldDirection * deconstructOutputForwardOffset + Vector3.up * deconstructOutputLiftOffset;
+            velocityChange = worldDirection * deconstructOutputVelocityChange + Vector3.up * deconstructOutputUpwardVelocityChange;
         }
 
         private static int CountAvailableItemInInventory(PlayerInventory inventory, ItemData item)

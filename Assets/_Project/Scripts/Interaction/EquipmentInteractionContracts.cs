@@ -52,7 +52,9 @@ namespace Hecton8.Interaction
         public const uint Grab = 1u << 2;
         public const uint Stun = 1u << 3;
         public const uint Burn = 1u << 4;
-        public const uint PlasmaCut = Cut | Burn;
+        public const uint Laser = 1u << 5;
+        public const uint Bash = 1u << 6;
+        public const uint PlasmaCut = Cut | Burn | Laser;
 
         public static uint ResolveCapabilityMask(InteractionEffectType effectType)
         {
@@ -62,12 +64,12 @@ namespace Hecton8.Interaction
                     return Drill;
 
                 case InteractionEffectType.Harpoon:
-                    return Grab;
+                    return Grab | Bash;
 
                 case InteractionEffectType.Weld:
                 case InteractionEffectType.Torch:
                 case InteractionEffectType.Boil:
-                    return Burn;
+                    return Burn | Laser;
 
                 case InteractionEffectType.PlasmaCut:
                     return PlasmaCut;

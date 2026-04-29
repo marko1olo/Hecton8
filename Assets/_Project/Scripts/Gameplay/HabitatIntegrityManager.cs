@@ -39,7 +39,8 @@ namespace Hecton8.Gameplay
         Impact = 1u << 2,
         Parasite = 1u << 3,
         Radioactive = 1u << 4,
-        Toxic = 1u << 5
+        Toxic = 1u << 5,
+        Emp = 1u << 6
     }
 
     /// <summary>
@@ -95,6 +96,7 @@ namespace Hecton8.Gameplay
         public const ushort MantaScooter = 3;
         public const ushort EnvironmentHazard = 4;
         public const ushort SubmarineImpact = 5;
+        public const ushort FaunaEmp = 6;
     }
 
     [DisallowMultipleComponent]

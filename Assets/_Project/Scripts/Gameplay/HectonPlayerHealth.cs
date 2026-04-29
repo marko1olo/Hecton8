@@ -27,6 +27,22 @@ namespace Hecton8.Gameplay
         private const float RadiationFatigueScalePerSecond = 0.005f;
         private const float GillsOxygenCapacityMultiplier = 1.25f;
         private const float BioluminescentPredatorVisibilityScale = 2f;
+        // COLD ALLOC: MutationThreshold[2] — fallback mutation thresholds when no authored profile is assigned — owner: HectonPlayerHealth
+        private static readonly HazardMutationProfile.MutationThreshold[] s_fallbackMutationThresholds =
+        {
+            new HazardMutationProfile.MutationThreshold
+            {
+                DisplayName = "BIOLUMINESCENT SKIN",
+                ExposureThresholdSeconds = 120f,
+                MutationBit = HazardMutationProfile.BioluminescentSkinBit
+            },
+            new HazardMutationProfile.MutationThreshold
+            {
+                DisplayName = "GILLS",
+                ExposureThresholdSeconds = 180f,
+                MutationBit = HazardMutationProfile.GillsBit
+            }
+        };
 
         /// <summary>Maximum health points.</summary>
         [Header("Health Settings")]
@@ -287,10 +303,9 @@ namespace Hecton8.Gameplay
         private void EvaluateMutationThresholds()
         {
             HazardMutationProfile profile = hazardMutationProfile;
-            if (profile == null || profile.Mutations == null)
-                return;
-
-            HazardMutationProfile.MutationThreshold[] thresholds = profile.Mutations;
+            HazardMutationProfile.MutationThreshold[] thresholds = profile != null && profile.Mutations != null && profile.Mutations.Length > 0
+                ? profile.Mutations
+                : s_fallbackMutationThresholds;
             for (int i = 0; i < thresholds.Length; i++)
             {
                 HazardMutationProfile.MutationThreshold threshold = thresholds[i];

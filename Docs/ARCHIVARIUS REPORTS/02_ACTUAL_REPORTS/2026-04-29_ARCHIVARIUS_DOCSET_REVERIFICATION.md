@@ -16,10 +16,10 @@ It also rechecked the current source and current reachable Unity Editor state be
 
 | Bucket | Count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 16 |
-| `02_ACTUAL_REPORTS` markdown files | 38 |
+| `01_GENERAL_INFO` markdown files | 17 |
+| `02_ACTUAL_REPORTS` markdown files | 39 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| Total files reviewed | 55 |
+| Total files reviewed | 57 |
 
 ## What Was Rechecked
 
@@ -28,8 +28,10 @@ It also rechecked the current source and current reachable Unity Editor state be
 - direct ownership for `IAudioService`, `IUIService`, `IRenderable`, and `Hecton8.Core.IDamageReceiver`
 - queue-backed vs direct-static event bus classification
 - player/gameplay ownership split
+- broad gameplay-domain ownership ledger
 - construction/runtime integration ownership
 - save/load runtime truth
+- GlobalRegistry runtime authority
 - scene/prefab authored-vs-runtime service truth
 - current Unity Editor scene/build/console state
 
@@ -39,6 +41,7 @@ It also rechecked the current source and current reachable Unity Editor state be
 |---|---|
 | `01_GENERAL_INFO/PROJECT_ATLAS.md` | corrected current script count, ownership summary, and stale-doc framing |
 | `01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | added authority-by-domain coverage map plus explicit remaining coverage gaps |
+| `01_GENERAL_INFO/GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` | added broad owner ledger across major gameplay domains |
 | `01_GENERAL_INFO/PLAYER_GAMEPLAY_CORE_MAP.md` | added dedicated player/gameplay ownership truth map |
 | `01_GENERAL_INFO/CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` | added dedicated construction, habitat, logistics, and power map |
 | `01_GENERAL_INFO/INTERFACE_CONTRACT_TABLE.md` | corrected implementor table to current source |
@@ -48,6 +51,7 @@ It also rechecked the current source and current reachable Unity Editor state be
 | `02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md` | corrected interface count, removed ghost claims, and rebuilt ownership table |
 | `02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md` | corrected queue-backed vs direct-static bus classification |
 | `02_ACTUAL_REPORTS/2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` | added dedicated current save/load pipeline authority |
+| `02_ACTUAL_REPORTS/2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md` | added detailed registry-slot, publisher, and bootstrap-backfill truth layer |
 | `02_ACTUAL_REPORTS/2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` | added authored-vs-runtime service-owner proof layer |
 | `02_ACTUAL_REPORTS/SINGLETON_FIX_PRIORITY.md` | added current-state boundary so `IUIService` / `IAudioService` are not misused as catch-all singleton buckets |
 | `02_ACTUAL_REPORTS/2026-04-28_LIAR_DETECTION.md` | downgraded to narrow dated accusation report instead of broad current-state authority |
@@ -68,7 +72,9 @@ It also rechecked the current source and current reachable Unity Editor state be
 | UI ownership | `SuitHUDV4CanvasOverlay : IUIService` |
 | Damage contract | `HabitatIntegrityManager : Hecton8.Core.IDamageReceiver` |
 | Event topology | mixed: queue-backed buses plus direct static buses |
+| Registry runtime authority | `GlobalRegistry` now documented as mixed interface-slot plus runtime-owner surface with bootstrap backfill coverage |
 | Player core | authored player prefab + runtime context/mirror services + specialized interaction/equipment owners |
+| Gameplay ownership breadth | broad owner ledger now exists across player, survival, PDA, progression, environment, worldgen, construction, and submarine domains |
 | Construction core | `ConstructionManager` + `BaseModuleTemplate` + `BaseModule` + `HabitatGraphManager` + `PowerGridManager` |
 | Save/load runtime | `SaveManager` + queue-backed `SaveEvents` + explicit `.sav/.tmp/.bak*` artifact model |
 | Scene/prefab truth | `00_BOOTSTRAP` authors core persistent managers; many gameplay services are bootstrap-instanced at runtime |

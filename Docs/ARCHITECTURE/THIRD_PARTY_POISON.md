@@ -25,6 +25,7 @@ Core engine owners in scope:
 6. Shared authored materials remain shared. Per-instance data travels through `GraphicsBuffer` / `ComputeBuffer` on BRG or indirect draw paths.
 7. `MaterialPropertyBlock` is restricted to approved legacy procedural draws, particles, and UI. It is not a standard-geometry SRP Batcher path.
 8. `MaterialPropertyBlockRegistry` is keyed by stable owner entity IDs for those approved legacy paths. It is not a loophole for renderer-local `material` mutation.
+9. Procedural renderers must treat `renderer.material`, `renderer.materials`, and runtime `new Material()` as violations unless the path is explicitly documented as UI-only or test-only.
 
 ## Anti-Corruption Layers
 

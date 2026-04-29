@@ -16,6 +16,8 @@ namespace Hecton8.Inventory
         Grab = 1u << 2,
         Stun = 1u << 3,
         Burn = 1u << 4,
+        Laser = 1u << 5,
+        Bash = 1u << 6,
     }
 
     /// <summary>
@@ -29,6 +31,17 @@ namespace Hecton8.Inventory
     }
 
     /// <summary>
+    /// Stable world-physics material family used to bind shared PhysicMaterial assets on dropped items.
+    /// </summary>
+    public enum ItemPhysicsMaterialTag : byte
+    {
+        Default = 0,
+        Organic = 1,
+        Metal = 2,
+        Glass = 3,
+    }
+
+    /// <summary>
     /// Cold-path physical metadata heuristics for item assets that have not been explicitly authored yet.
     /// </summary>
     public static class ItemPhysicalMetadataUtility
@@ -37,29 +50,29 @@ namespace Hecton8.Inventory
         {
             string safeId = persistentId ?? string.Empty;
             if (IsGlassLikeId(safeId))
-                return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Drill);
+                return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Drill | ItemVulnerabilityMask.Laser | ItemVulnerabilityMask.Bash);
 
             switch (category)
             {
                 case ItemCategory.Tool:
                 case ItemCategory.Equipment:
-                    return (uint)ItemVulnerabilityMask.Grab;
+                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Bash);
 
                 case ItemCategory.Consumable:
                 case ItemCategory.Organic:
-                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Cut | ItemVulnerabilityMask.Burn | ItemVulnerabilityMask.Stun);
+                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Cut | ItemVulnerabilityMask.Burn | ItemVulnerabilityMask.Stun | ItemVulnerabilityMask.Laser | ItemVulnerabilityMask.Bash);
 
                 case ItemCategory.Component:
-                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Drill);
+                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Drill | ItemVulnerabilityMask.Laser | ItemVulnerabilityMask.Bash);
             }
 
             switch (resourceFamily)
             {
                 case ResourceFamily.Organic:
-                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Cut | ItemVulnerabilityMask.Burn | ItemVulnerabilityMask.Stun);
+                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Cut | ItemVulnerabilityMask.Burn | ItemVulnerabilityMask.Stun | ItemVulnerabilityMask.Laser | ItemVulnerabilityMask.Bash);
 
                 case ResourceFamily.Chemical:
-                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Burn);
+                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Burn | ItemVulnerabilityMask.Laser);
 
                 case ResourceFamily.Crystal:
                 case ResourceFamily.DeepMaterial:
@@ -67,10 +80,10 @@ namespace Hecton8.Inventory
                 case ResourceFamily.ElectronicsMetal:
                 case ResourceFamily.Component:
                 case ResourceFamily.Power:
-                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Drill);
+                    return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Drill | ItemVulnerabilityMask.Laser | ItemVulnerabilityMask.Bash);
             }
 
-            return (uint)ItemVulnerabilityMask.Grab;
+            return (uint)(ItemVulnerabilityMask.Grab | ItemVulnerabilityMask.Bash);
         }
 
         public static ItemAudioMaterialId ResolveDefaultAudioMaterialId(
@@ -122,6 +135,34 @@ namespace Hecton8.Inventory
                 resolvedMass = Mathf.Max(resolvedMass, 0.35f);
 
             return Mathf.Max(0.05f, resolvedMass);
+        }
+
+        public static float ResolveDefaultVolumeM3(float resolvedMassKg, int width, int height, ItemCategory category)
+        {
+            float footprintCells = Mathf.Max(1, width * height);
+            float baselineVolume = footprintCells * 0.0025f;
+            float densityBias = category == ItemCategory.Tool || category == ItemCategory.Component
+                ? 0.0014f
+                : 0.0022f;
+            return Mathf.Max(0.0005f, baselineVolume + Mathf.Max(0.05f, resolvedMassKg) * densityBias);
+        }
+
+        public static ItemPhysicsMaterialTag ResolveDefaultPhysicsMaterialTag(
+            ItemCategory category,
+            ResourceFamily resourceFamily,
+            string persistentId)
+        {
+            switch (ResolveDefaultAudioMaterialId(category, resourceFamily, persistentId))
+            {
+                case ItemAudioMaterialId.Glass:
+                    return ItemPhysicsMaterialTag.Glass;
+
+                case ItemAudioMaterialId.Metal:
+                    return ItemPhysicsMaterialTag.Metal;
+
+                default:
+                    return ItemPhysicsMaterialTag.Organic;
+            }
         }
 
         public static bool IsOrganic(byte materialId)

@@ -16,7 +16,7 @@
 // * Move origin when x or z exceeds threshold (not the dist from origin exceeds threshold). This is required to support the previous point.
 // * Notify ocean when origin moves
 // * Misc style adjustments to align with Crest
-// * Optional lists of components that can be provided to avoid evil FindObjectsOfType() calls
+// * Optional lists of components that can be provided to avoid scene-wide object searches
 //
 // NOTE 1: This thread discusses usage of this script: https://github.com/huwb/crest-oceanrender/issues/150
 // NOTE 2: Of particular note - any world space texturing should have a period that tiles perfectly across the teleport distance, otherwise visible
@@ -66,13 +66,13 @@ namespace Crest
 
         [SerializeField] float _defaultSleepThreshold = 0.14f;
 
-        [Tooltip("Optionally provide a list of transforms to avoid doing a FindObjectsOfType() call."), SerializeField]
+        [Tooltip("Optionally provide a list of transforms to avoid doing a scene-wide object search."), SerializeField]
         Transform[] _overrideTransformList = null;
-        [Tooltip("Optionally provide a list of particle systems to avoid doing a FindObjectsOfType() call."), SerializeField]
+        [Tooltip("Optionally provide a list of particle systems to avoid doing a scene-wide object search."), SerializeField]
         ParticleSystem[] _overrideParticleSystemList = null;
-        [Tooltip("Optionally provide a list of rigidbodies to avoid doing a FindObjectsOfType() call."), SerializeField]
+        [Tooltip("Optionally provide a list of rigidbodies to avoid doing a scene-wide object search."), SerializeField]
         Rigidbody[] _overrideRigidbodyList = null;
-        [Tooltip("Optionally provide a list of Gerstner components to avoid doing a FindObjectsOfType() call."), SerializeField]
+        [Tooltip("Optionally provide a list of Gerstner components to avoid doing a scene-wide object search."), SerializeField]
         ShapeGerstnerBatched[] _overrideGerstnerList = null;
 
         [Space(10)]

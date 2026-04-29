@@ -874,6 +874,7 @@ namespace Hecton8.SaveSystem
             bool changed = false;
             if (dto.suppressedPlacementKeys == null || dto.suppressedPlacementKeys.Length < ProceduralWorldStateDTO.MaxSuppressedPlacements ||
                 dto.faunaStates == null || dto.faunaStates.Length < ProceduralWorldStateDTO.MaxFaunaStates ||
+                dto.hibernatedFaunaStates == null || dto.hibernatedFaunaStates.Length < ProceduralWorldStateDTO.MaxHibernatedFaunaStates ||
                 dto.geologySeamStates == null || dto.geologySeamStates.Length < ProceduralWorldStateDTO.MaxGeologySeamStates ||
                 dto.geologyCaveEntrances == null || dto.geologyCaveEntrances.Length < ProceduralWorldStateDTO.MaxGeologyCaveEntrances)
             {
@@ -896,6 +897,14 @@ namespace Hecton8.SaveSystem
                 dto.faunaStateCount = clampedFauna;
                 changed = true;
                 steps.Add("procedural fauna state count clamped");
+            }
+
+            int clampedHibernatedFauna = math.clamp(dto.hibernatedFaunaCount, 0, dto.hibernatedFaunaStates != null ? dto.hibernatedFaunaStates.Length : 0);
+            if (clampedHibernatedFauna != dto.hibernatedFaunaCount)
+            {
+                dto.hibernatedFaunaCount = clampedHibernatedFauna;
+                changed = true;
+                steps.Add("hibernated fauna state count clamped");
             }
 
             int clampedSeamStates = math.clamp(dto.geologySeamStateCount, 0, dto.geologySeamStates != null ? dto.geologySeamStates.Length : 0);

@@ -107,6 +107,10 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0.01f, 0.5f)] private float _hypoxiaStartThreshold = 0.15f;
         [SerializeField, Range(0.25f, 12f)] private float _hypoxiaBlendSharpness = 5.6f;
 
+        [Header("Pressure Flicker")]
+        [SerializeField, Range(0f, 1f)] private float _pressureFlickerMaximum = 0.42f;
+        [SerializeField, Range(0.25f, 12f)] private float _pressureFlickerBlendSharpness = 4.2f;
+
         [Header("BIOS Recovery")]
         [SerializeField] private Color _biosRecoveryHudTint = new Color(0.16f, 1f, 0.22f, 0.18f);
         [SerializeField, Range(0f, 5f)] private float _biosRecoveryHudIntensity = 2.2f;
@@ -181,6 +185,7 @@ namespace NASAPunk.Visor
         private float _structuralFatigueChromaticAberration;
         private float _structuralFatigueStaticNoise;
         private float _hudHypoxiaLevel;
+        private float _hudHullStressFlicker;
         private float _hazardRadiationLevel;
         private float _hazardThermalLevel;
         private float _hazardToxicLevel;
@@ -207,6 +212,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_ChromaticAberration = Shader.PropertyToID("_ChromaticAberration");
         private static readonly int ID_StaticNoise = Shader.PropertyToID("_StaticNoise");
         private static readonly int ID_HypoxiaLevel = Shader.PropertyToID("_HypoxiaLevel");
+        private static readonly int ID_HullStressFlicker = Shader.PropertyToID("_HullStressFlicker");
         private static readonly int ID_HazardRadiationLevel = Shader.PropertyToID("_HazardRadiationLevel");
         private static readonly int ID_HazardThermalLevel = Shader.PropertyToID("_HazardThermalLevel");
         private static readonly int ID_HazardToxicLevel = Shader.PropertyToID("_HazardToxicLevel");
@@ -386,6 +392,7 @@ namespace NASAPunk.Visor
             UpdateStructuralFatigueState(deltaTime);
             UpdateHazardTraumaState(deltaTime);
             UpdateHypoxiaState(deltaTime);
+            UpdatePressureFlickerState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
         }
@@ -578,6 +585,7 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_ChromaticAberration, compositeChromaticAberration);
             _mpb.SetFloat(ID_StaticNoise, compositeStaticNoise);
             _mpb.SetFloat(ID_HypoxiaLevel, _hudHypoxiaLevel);
+            _mpb.SetFloat(ID_HullStressFlicker, _hudHullStressFlicker);
             _mpb.SetFloat(ID_HazardRadiationLevel, _hazardRadiationLevel);
             _mpb.SetFloat(ID_HazardThermalLevel, _hazardThermalLevel);
             _mpb.SetFloat(ID_HazardToxicLevel, _hazardToxicLevel);
@@ -944,6 +952,25 @@ namespace NASAPunk.Visor
                 _hudHypoxiaLevel = nextHypoxia;
                 _materialPropertiesDirty = true;
             }
+        }
+
+        private void UpdatePressureFlickerState(float deltaTime)
+        {
+            float targetFlicker = ResolveHullStress01() * Mathf.Clamp01(_pressureFlickerMaximum);
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _pressureFlickerBlendSharpness) * deltaTime);
+            float nextFlicker = Mathf.Lerp(_hudHullStressFlicker, targetFlicker, blendT);
+            if (!Mathf.Approximately(nextFlicker, _hudHullStressFlicker))
+            {
+                _hudHullStressFlicker = nextFlicker;
+                _materialPropertiesDirty = true;
+            }
+        }
+
+        private static float ResolveHullStress01()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            return playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;
         }
 
         private float ResolveStructuralFatigue01()

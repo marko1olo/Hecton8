@@ -343,6 +343,13 @@ namespace Hecton8.Visor
 
         public void Tick(float deltaTime)
         {
+            if (IsEmpSensorBlindActive())
+            {
+                ClearSonarSnapshot();
+                UpdateLidarPersistence(deltaTime);
+                return;
+            }
+
             UpdateActiveSonarWavefront(deltaTime);
             UpdateLidarPersistence(deltaTime);
 
@@ -416,6 +423,9 @@ namespace Hecton8.Visor
         /// <param name="revealDurationSeconds">Reveal hold duration for shader/VFX consumers.</param>
         public bool TriggerActiveSonarPing(float radius, float revealDurationSeconds)
         {
+            if (IsEmpSensorBlindActive())
+                return false;
+
             float pulseRadius = Mathf.Max(1f, radius);
             float revealDurationValue = revealDurationSeconds > 0f ? revealDurationSeconds : sonarRevealDuration;
             return EmitSonarPulse(pulseRadius, revealDurationValue, true, true);
@@ -433,6 +443,9 @@ namespace Hecton8.Visor
 
         private bool EmitSonarPulse(float pulseRadius, float revealDurationSeconds, bool consumeEnergy, bool isActivePing)
         {
+            if (IsEmpSensorBlindActive())
+                return false;
+
             if (!ResolvePlayerTransform())
                 return false;
 
@@ -524,6 +537,18 @@ namespace Hecton8.Visor
             _activeLidarPersistence = 0f;
             ClearPassiveRadarState();
             SpectrumEvents.RaiseSonarSnapshotUpdated(default);
+        }
+
+        private static bool IsEmpSensorBlindActive()
+        {
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                runtimeContext.TraumaDispatcher == null)
+            {
+                return false;
+            }
+
+            return runtimeContext.TraumaDispatcher.IsEmpSensorBlindActive;
         }
 
         private void PublishSonarReveal(
