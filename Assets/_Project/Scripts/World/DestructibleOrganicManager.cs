@@ -375,6 +375,29 @@ namespace Hecton8.World
             return true;
         }
 
+        /// <summary>
+        /// Applies non-harvest decomposition to any active indirect flora intersecting a newly placed construction envelope.
+        /// </summary>
+        internal int ApplyConstructionDecomposition(Vector3 runtimePosition, float radiusMeters)
+        {
+            if (radiusMeters <= 0f)
+                return 0;
+
+            if (vegetationBridge == null)
+                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
+
+            if (vegetationBridge == null)
+                return 0;
+
+            RefreshActiveCachesIfNeeded(force: false);
+            Vector3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
+            float radiusSq = radiusMeters * radiusMeters;
+            int decomposedCount = 0;
+            decomposedCount += ApplyConstructionDecompositionInLane(false, universePosition, radiusSq);
+            decomposedCount += ApplyConstructionDecompositionInLane(true, universePosition, radiusSq);
+            return decomposedCount;
+        }
+
         private void BuildTemplateCaches()
         {
             int materialClassCount = System.Enum.GetValues(typeof(HarvestableTemplate.MaterialClass)).Length;
@@ -467,6 +490,60 @@ namespace Hecton8.World
             }
 
             BuildFloraTemplateHarvestMap();
+        }
+
+        private int ApplyConstructionDecompositionInLane(bool underwater, Vector3 centerUniversePosition, float radiusSq)
+        {
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+            int count = underwater ? _underwaterCount : _surfaceCount;
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                !semanticTypes.IsCreated ||
+                !instanceUids.IsCreated ||
+                !materialClasses.IsCreated ||
+                count <= 0)
+            {
+                return 0;
+            }
+
+            int decomposedCount = 0;
+            int safeCount = math.min(
+                count,
+                math.min(
+                    math.min(matrices.Length, metadata.Length),
+                    math.min(
+                        math.min(types.Length, semanticTypes.Length),
+                        math.min(instanceUids.Length, materialClasses.Length))));
+            for (int i = 0; i < safeCount; i++)
+            {
+                uint instanceUid = instanceUids[i];
+                if (instanceUid == 0u)
+                    continue;
+
+                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
+                if (materialClass == HarvestableTemplate.MaterialClass.None)
+                    continue;
+
+                if (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid))
+                    continue;
+
+                Vector3 rootPosition = ExtractTranslation(matrices[i]);
+                float distanceSq = ResolveConstructionDistanceSq(centerUniversePosition, rootPosition, metadata[i], types[i]);
+                if (distanceSq > radiusSq)
+                    continue;
+
+                int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
+                ApplyPassiveDecomposition(underwater, i, instanceUid, templateIndex, rootPosition);
+                decomposedCount++;
+            }
+
+            return decomposedCount;
         }
 
         private void BuildFloraTemplateHarvestMap()
@@ -1000,6 +1077,41 @@ namespace Hecton8.World
                 materialClass,
                 ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex),
                 1f);
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry != null)
+                registry.TryClearFloraStateOverride(instanceUid);
+
+            ClearPersistedFloraStateOverride(instanceUid);
+            if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
+                registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
+        }
+
+        private void ApplyPassiveDecomposition(
+            bool underwater,
+            int activeIndex,
+            uint instanceUid,
+            int templateIndex,
+            Vector3 instancePosition)
+        {
+            if (!_destroyedByInstanceUid.IsCreated || instanceUid == 0u || _destroyedByInstanceUid.ContainsKey(instanceUid))
+                return;
+
+            _destroyedByInstanceUid.TryAdd(instanceUid, 1);
+            _healthByInstanceUid.Remove(instanceUid);
+            _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
+            if (_damageVisualProgressByInstanceUid.IsCreated)
+                _damageVisualProgressByInstanceUid.Remove(instanceUid);
+            if (_pendingWiltEndTimeByInstanceUid.IsCreated)
+                _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
+            if (_regrowthProgressByInstanceUid.IsCreated)
+                _regrowthProgressByInstanceUid.Remove(instanceUid);
+            if (_regrowthPositionByInstanceUid.IsCreated)
+                _regrowthPositionByInstanceUid.Remove(instanceUid);
+
+            PrimeDecompositionState(instanceUid, Time.time);
+            SetLaneHealth(underwater, activeIndex, 0f);
+            ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
 
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             if (registry != null)
@@ -1910,6 +2022,24 @@ namespace Hecton8.World
                 return HarvestableTemplate.MaterialClass.Sargassum;
 
             return HarvestableTemplate.MaterialClass.None;
+        }
+
+        private static float ResolveConstructionDistanceSq(
+            Vector3 centerUniversePosition,
+            Vector3 rootPosition,
+            HectonVegetationInstanceData metadata,
+            int typeId)
+        {
+            HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
+            if (vegetationType == HectonVegetationInstanceType.GiantKelp)
+            {
+                float kelpHeight = Mathf.Lerp(10f, 20f, Mathf.Clamp01(metadata.HeightScale));
+                Vector3 top = rootPosition + Vector3.up * Mathf.Max(0.5f, kelpHeight + KelpRadiusBias);
+                Vector3 closest = ClosestPointOnSegment(rootPosition, top, centerUniversePosition);
+                return (closest - centerUniversePosition).sqrMagnitude;
+            }
+
+            return (rootPosition - centerUniversePosition).sqrMagnitude;
         }
 
         private static float ResolveHarvestDistanceSq(

@@ -296,6 +296,7 @@ namespace Hecton8.Gameplay
         private void RegisterToTick()
         {
             if (_isRegisteredTick) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _isRegisteredTick = true;
@@ -312,6 +313,7 @@ namespace Hecton8.Gameplay
         private void RegisterToSlowTick()
         {
             if (_isRegisteredSlowTick) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _isRegisteredSlowTick = true;

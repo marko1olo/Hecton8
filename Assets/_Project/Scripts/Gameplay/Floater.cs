@@ -499,6 +499,7 @@ namespace Hecton8.Gameplay
         private void RegisterToFixedTick()
         {
             if (_isRegistered) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             _isRegistered = true;

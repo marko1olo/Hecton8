@@ -113,18 +113,23 @@ This atlas is specifically aligned with:
 
 Coverage snapshot from current reverification pass:
 
-- `01_GENERAL_INFO` markdown files: `13`
-- `02_ACTUAL_REPORTS` markdown files: `32`
+- `01_GENERAL_INFO` markdown files: `16`
+- `02_ACTUAL_REPORTS` markdown files: `38`
 - `02_ACTUAL_REPORTS` csv files: `1`
-- total audited files in folders `01` and `02`: `46`
+- total audited files in folders `01` and `02`: `55`
 
 Canonical entry files inside this bundle:
 
 - `MASTER_INDEX.md`
+- `DOCSET_COVERAGE_MATRIX.md`
+- `PLAYER_GAMEPLAY_CORE_MAP.md`
+- `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`
 - `INTERFACE_CONTRACT_TABLE.md`
 - `INTERFACE_HEALTH_DASHBOARD.md`
 - `EVENT_BUS_MAP.md`
 - `EVENT_FLOW_MAP.md`
+- `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md`
+- `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
 
 ## 7. Architecture Signals Rechecked Against Source
@@ -224,8 +229,9 @@ Use this order for future technical work:
 3. `Docs/ROOT_DOCS_REFERENCE.md`
 4. `Docs/SYSTEMS_CONTRACTS.md`
 5. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/MASTER_INDEX.md`
-6. the specific architecture or audit file tied to the touched system
-7. source files themselves when the doc and code disagree
+6. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md`
+7. the specific architecture or audit file tied to the touched system
+8. source files themselves when the doc and code disagree
 
 ## 10. Regression Model
 

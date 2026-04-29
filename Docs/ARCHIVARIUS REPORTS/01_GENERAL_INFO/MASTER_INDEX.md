@@ -22,10 +22,10 @@ This index is path-accurate, not truth-uniform.
 
 | Bucket | Count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 13 |
-| `02_ACTUAL_REPORTS` markdown files | 32 |
+| `01_GENERAL_INFO` markdown files | 16 |
+| `02_ACTUAL_REPORTS` markdown files | 38 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| **Total files covered by this index** | **46** |
+| **Total files covered by this index** | **55** |
 
 ---
 
@@ -36,13 +36,16 @@ This index is path-accurate, not truth-uniform.
 | `ASSET_DEPENDENCY_MAP.md` | General asset-reference map and migration notes |
 | `AUP_SURGERY_MAP.md` | AUP layout and migration planning |
 | `BUILD_DEPENDENCY_GRAPH.md` | Bootstrap dependency and cold-load audit |
+| `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` | Current construction, habitat, logistics, and power ownership map |
 | `DEPENDENCY_GRAPH.md` | Runtime service and dependency overview |
+| `DOCSET_COVERAGE_MATRIX.md` | Domain-by-domain authority map and coverage-gap ledger |
 | `EVENT_BUS_MAP.md` | Historical event-bus map with chronology caveat |
 | `GLOSSARY.md` | Shared terminology |
 | `HUD_EDITOR_SPEC.md` | HUD editor/layout spec |
 | `INTERFACE_CONTRACT_TABLE.md` | Verified interface-to-implementor table |
 | `INTERFACE_STRATEGY.md` | Interface cleanup and ownership strategy |
 | `MASTER_INDEX.md` | This file |
+| `PLAYER_GAMEPLAY_CORE_MAP.md` | Current player-facing gameplay ownership map |
 | `PROJECT_ATLAS.md` | Live workspace atlas rebuilt against current file-system state |
 | `STRUCTURAL_NARRATIVE.md` | One-frame code-walk narrative; not a measured profiler report |
 | `SYSTEM_INTERCONNECT_MATRIX.md` | AUP-sensitive interconnect matrix |
@@ -62,6 +65,8 @@ This index is path-accurate, not truth-uniform.
 | `GOD_OBJECT_AUDIT.md` | Large-owner decomposition audit |
 | `HARD_LINK_DEBT.md` | Hardcoded asset-path debt audit |
 | `FRAME_TIMELINE.md` | Frame sequencing report |
+| `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` | Authored-vs-runtime service ownership truth |
+| `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` | Current save/load pipeline truth |
 
 ### Performance / Memory / VRAM / Rendering
 
@@ -83,6 +88,7 @@ This index is path-accurate, not truth-uniform.
 | `2026-04-28_DATA_DICTIONARY.md` | Structs, layouts, alignment findings |
 | `2026-04-28_ASSET_DEPENDENCY_MAP.md` | Dated asset dependency report |
 | `ITEM_ASSET_GUIDS.md` | Item prefab GUID lookup table |
+| `PROJECT_CONTENT_LEDGER.md` | Project content and asset-ledger snapshot |
 | `2026-04-28_DEAD_ASSET_SWEEP.md` | Filesystem-only dead-asset candidate sweep with deletion claims downgraded |
 | `DEAD_CODE_GRAVEYARD.md` | Dead-code registry |
 | `vram_detail.csv` | Raw VRAM detail dataset backing the budget audit |
@@ -103,6 +109,9 @@ This index is path-accurate, not truth-uniform.
 | `AGENTS_SKILLS_AUDIT.md` | `.agents-skills` coverage audit |
 | `AUDIO_ROUTING_AUDIT.md` | Audio routing ownership audit |
 | `DEBUG_LOG_DELETION_QUEUE.md` | Debug log cleanup queue |
+| `MODULAR_EQUIPMENT_ENGINE_SURGERY_LOG.md` | Narrow equipment-runtime surgery log |
+| `2026-04-29_EQUIPMENT_VOXEL_WELD_SURGERY_LOG.md` | Narrow equipment weld/runtime repair log |
+| `2026-04-29_LOGIC_SPANNER_OVERCHARGE_SURGERY_LOG.md` | Narrow logic-spanner repair log |
 
 ---
 

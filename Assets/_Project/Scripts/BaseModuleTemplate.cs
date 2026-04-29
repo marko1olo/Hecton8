@@ -82,6 +82,16 @@ namespace Hecton8.Building
         [Tooltip("Integrity threshold below which breathable reserve should be considered offline.")]
         [SerializeField, Range(0f, 1f)] private float oxygenOfflineBelowIntegrityState = 0.35f;
 
+        [Header("── Hydrodynamic Fatigue ──────")]
+        [Tooltip("Projected module cross-section used by abyssal drag-stress evaluation in square meters.")]
+        [SerializeField, Min(0.1f)] private float projectedDragAreaSquareMeters = 12f;
+
+        [Tooltip("Drag-force threshold in newtons above which structural fatigue starts consuming integrity.")]
+        [SerializeField, Min(1f)] private float moduleYieldStrengthNewtons = 180000f;
+
+        [Tooltip("Effective opening area routed into the depressurization system once integrity collapses to zero.")]
+        [SerializeField, Min(0.05f)] private float breachAreaSquareMeters = 1.2f;
+
         [Header("── VFX Hardpoints ────────────")]
         [Tooltip("Pre-authored module-local VFX sockets used by degradation routing.")]
         [SerializeField] private VfxSocket[] vfxSockets = Array.Empty<VfxSocket>();
@@ -116,6 +126,12 @@ namespace Hecton8.Building
         /// <summary>Pre-authored module-local VFX sockets used by degradation routing.</summary>
         public VfxSocket[] VfxSockets => vfxSockets;
 
+        internal float ProjectedDragAreaSquareMeters => projectedDragAreaSquareMeters;
+
+        internal float ModuleYieldStrengthNewtons => moduleYieldStrengthNewtons;
+
+        internal float BreachAreaSquareMeters => breachAreaSquareMeters;
+
         private void OnValidate()
         {
             if (string.IsNullOrWhiteSpace(stableId))
@@ -126,6 +142,9 @@ namespace Hecton8.Building
             defaultIntegrityState = math.clamp(defaultIntegrityState, 0f, 1f);
             floodedBelowIntegrityState = math.clamp(floodedBelowIntegrityState, 0f, 1f);
             oxygenOfflineBelowIntegrityState = math.clamp(oxygenOfflineBelowIntegrityState, 0f, 1f);
+            projectedDragAreaSquareMeters = math.max(0.1f, projectedDragAreaSquareMeters);
+            moduleYieldStrengthNewtons = math.max(1f, moduleYieldStrengthNewtons);
+            breachAreaSquareMeters = math.max(0.05f, breachAreaSquareMeters);
             if (oxygenOfflineBelowIntegrityState > floodedBelowIntegrityState)
                 oxygenOfflineBelowIntegrityState = floodedBelowIntegrityState;
 

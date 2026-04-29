@@ -55,7 +55,7 @@ namespace Hecton8.EditorTools
 
         private static void ValidateDescriptorCoverage(List<string> issues)
         {
-            FieldTargetDescriptor[] descriptors = Object.FindObjectsByType<FieldTargetDescriptor>();
+            FieldTargetDescriptor[] descriptors = Object.FindObjectsByType<FieldTargetDescriptor>(FindObjectsSortMode.None);
             if (descriptors == null || descriptors.Length == 0)
             {
                 issues.Add("No FieldTargetDescriptor instances are present in the active scene.");

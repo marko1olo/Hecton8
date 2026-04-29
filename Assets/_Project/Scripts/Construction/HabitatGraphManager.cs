@@ -20,6 +20,9 @@ namespace Hecton8.Construction
         private const float OppositeDirectionDotThreshold = -0.85f;
         private const float EdgeResistancePerMeter = 0.05f;
         private const float MinimumEdgeResistance = 0.1f;
+        private const float DefaultWaterDensityKilogramsPerCubicMeter = 1025f;
+        private const float DefaultHydrodynamicDamagePerSecondAtFullOverload = 1.5f;
+        private const float MinimumHydrodynamicFlowSpeedMetersPerSecond = 0.1f;
         private const float SupportCaptureRadiusMeters = 3f;
         private const float SupportCaptureRadiusSq = SupportCaptureRadiusMeters * SupportCaptureRadiusMeters;
         private const int InitialSocketCapacity = 32;
@@ -121,6 +124,50 @@ namespace Hecton8.Construction
             PublishGraphKernel();
             PublishVisualLinks();
             BaseDegradationSystem.EndRuptureSync();
+        }
+
+        internal void ApplyHydrodynamicStress(float deltaTime)
+        {
+            if (deltaTime <= 0f || _moduleBuffer.Count <= 0)
+                return;
+
+            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (bridge == null)
+                return;
+
+            for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[moduleIndex];
+                BaseModule baseModule = module.BaseModule;
+                if (baseModule == null || !baseModule.isActiveAndEnabled || baseModule.IsBreached)
+                    continue;
+
+                Transform moduleTransform = baseModule.transform;
+                Vector3 runtimePosition = moduleTransform.position;
+                if (!bridge.TrySampleAbyssalFlow(runtimePosition, out Vector3 flowVector))
+                    continue;
+
+                float flowSpeedSquared = flowVector.sqrMagnitude;
+                if (flowSpeedSquared < (MinimumHydrodynamicFlowSpeedMetersPerSecond * MinimumHydrodynamicFlowSpeedMetersPerSecond))
+                    continue;
+
+                float projectedAreaSquareMeters = ResolveProjectedDragAreaSquareMeters(baseModule);
+                float moduleYieldStrengthNewtons = ResolveYieldStrengthNewtons(baseModule);
+                if (projectedAreaSquareMeters <= 0f || moduleYieldStrengthNewtons <= 0f)
+                    continue;
+
+                // DragForce = 0.5 * rho * v^2 * A. Overload above yield converts into normalized fatigue.
+                float dragForceNewtons = 0.5f * DefaultWaterDensityKilogramsPerCubicMeter * flowSpeedSquared * projectedAreaSquareMeters;
+                if (dragForceNewtons <= moduleYieldStrengthNewtons)
+                    continue;
+
+                float overloadRatio = (dragForceNewtons - moduleYieldStrengthNewtons) / moduleYieldStrengthNewtons;
+                float damageAmount = overloadRatio * deltaTime * DefaultHydrodynamicDamagePerSecondAtFullOverload * math.max(1f, baseModule.MaxIntegrity);
+                if (damageAmount <= 0f || !math.isfinite(damageAmount))
+                    continue;
+
+                baseModule.ApplyDamage(damageAmount);
+            }
         }
 
         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
@@ -499,6 +546,30 @@ namespace Hecton8.Construction
                 resistance += 0.1f;
 
             return resistance;
+        }
+
+        private static float ResolveProjectedDragAreaSquareMeters(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return 0f;
+
+            Hecton8.Building.BaseModuleTemplate template = baseModule.ModuleTemplate;
+            if (template != null)
+                return math.max(0.1f, template.ProjectedDragAreaSquareMeters);
+
+            return 12f;
+        }
+
+        private static float ResolveYieldStrengthNewtons(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return 0f;
+
+            Hecton8.Building.BaseModuleTemplate template = baseModule.ModuleTemplate;
+            if (template != null)
+                return math.max(1f, template.ModuleYieldStrengthNewtons);
+
+            return 180000f;
         }
 
         private static byte ResolveNodePriority(ModuleMarker marker)

@@ -283,6 +283,8 @@ namespace Hecton8.Gameplay
         {
             if (_registered)
                 return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registered = true;

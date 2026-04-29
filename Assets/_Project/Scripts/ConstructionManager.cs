@@ -208,6 +208,9 @@ namespace Hecton8.Construction
 
         public void SlowTick()
         {
+            if (_habitatGraphManager != null)
+                _habitatGraphManager.ApplyHydrodynamicStress(SlowTickDeltaTime);
+
             if (!enableAmbientAccidents || ambientAccidentCheckInterval <= 0f)
                 return;
 
@@ -248,6 +251,8 @@ namespace Hecton8.Construction
             // â”€â”€ Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð² Ñ€ÐµÐµÑÑ‚Ñ€ â”€â”€
             _spawnedModules.Add(module);
             RefreshHabitatGraph();
+            if (module.TryGetComponent(out BaseModuleNavModifier navModifier))
+                navModifier.RefreshVegetationExclusion();
 
             UpdateDiagnostics();
         }

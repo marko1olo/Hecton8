@@ -21,6 +21,12 @@ namespace Hecton8.World
         private const float BoundsMatchEpsilon = 0.05f;
         private const float DefaultPredatorClearanceRadiusMeters = 2f;
         private const int InvalidPortalIndex = -1;
+        private const float MinimumKelpObstacleRadiusMeters = 0.9f;
+        private const float MaximumKelpObstacleRadiusMeters = 2.4f;
+        private const float MinimumSargassumObstacleRadiusMeters = 1.5f;
+        private const float MaximumSargassumObstacleRadiusMeters = 4.5f;
+        private const float MinimumSargassumObstacleHalfHeightMeters = 0.75f;
+        private const float MaximumSargassumObstacleHalfHeightMeters = 1.8f;
 
         // COLD ALLOC: Dictionary<int, VolumeRecord>(16) - voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
         private static readonly Dictionary<int, VolumeRecord> _records = new Dictionary<int, VolumeRecord>(16);
@@ -399,6 +405,9 @@ namespace Hecton8.World
                 obstacleCount += CountLiveColliders(registration.Capsules);
             }
 
+            HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            obstacleCount += CountMacroFloraObstacles(activeBridge);
+
             if (obstacleCount <= 0)
                 return default;
 
@@ -414,6 +423,8 @@ namespace Hecton8.World
                 WriteColliderBounds(registration.Boxes, ref snapshot, ref writeIndex);
                 WriteColliderBounds(registration.Capsules, ref snapshot, ref writeIndex);
             }
+
+            WriteMacroFloraObstacles(activeBridge, ref snapshot, ref writeIndex);
 
             return snapshot;
         }
@@ -805,6 +816,165 @@ namespace Hecton8.World
                 };
                 writeIndex++;
             }
+        }
+
+        private static int CountMacroFloraObstacles(HectonMapMagicVegetationBridge vegetationBridge)
+        {
+            if (vegetationBridge == null)
+                return 0;
+
+            int obstacleCount = 0;
+            if (vegetationBridge.TryGetActiveUnderwaterNativePayload(out _, out NativeArray<HectonVegetationInstanceData> underwaterMetadata, out NativeArray<int> underwaterTypes, out int underwaterCount) &&
+                vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int> underwaterSemanticTypes, out _, out int underwaterSemanticCount))
+            {
+                obstacleCount += CountMacroFloraObstacles(underwaterMetadata, underwaterTypes, underwaterSemanticTypes, math.min(underwaterCount, underwaterSemanticCount));
+            }
+
+            if (vegetationBridge.TryGetActiveSurfaceNativePayload(out _, out NativeArray<HectonVegetationInstanceData> surfaceMetadata, out NativeArray<int> surfaceTypes, out int surfaceCount) &&
+                vegetationBridge.TryGetActiveSurfaceSemanticPayload(out NativeArray<int> surfaceSemanticTypes, out _, out int surfaceSemanticCount))
+            {
+                obstacleCount += CountMacroFloraObstacles(surfaceMetadata, surfaceTypes, surfaceSemanticTypes, math.min(surfaceCount, surfaceSemanticCount));
+            }
+
+            return obstacleCount;
+        }
+
+        private static int CountMacroFloraObstacles(
+            NativeArray<HectonVegetationInstanceData> metadata,
+            NativeArray<int> types,
+            NativeArray<int> semanticTypes,
+            int count)
+        {
+            if (!metadata.IsCreated || !types.IsCreated || !semanticTypes.IsCreated || count <= 0)
+                return 0;
+
+            int safeCount = math.min(count, math.min(metadata.Length, math.min(types.Length, semanticTypes.Length)));
+            int obstacleCount = 0;
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (TryResolveMacroFloraObstacle(metadata[i], types[i], semanticTypes[i], out _, out _))
+                    obstacleCount++;
+            }
+
+            return obstacleCount;
+        }
+
+        private static void WriteMacroFloraObstacles(
+            HectonMapMagicVegetationBridge vegetationBridge,
+            ref NativeArray<NavObstaclePrimitive> snapshot,
+            ref int writeIndex)
+        {
+            if (vegetationBridge == null || !snapshot.IsCreated)
+                return;
+
+            if (vegetationBridge.TryGetActiveUnderwaterNativePayload(out NativeArray<Matrix4x4> underwaterMatrices, out NativeArray<HectonVegetationInstanceData> underwaterMetadata, out NativeArray<int> underwaterTypes, out int underwaterCount) &&
+                vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out NativeArray<int> underwaterSemanticTypes, out _, out int underwaterSemanticCount))
+            {
+                WriteMacroFloraObstacles(
+                    underwaterMatrices,
+                    underwaterMetadata,
+                    underwaterTypes,
+                    underwaterSemanticTypes,
+                    math.min(underwaterCount, underwaterSemanticCount),
+                    ref snapshot,
+                    ref writeIndex);
+            }
+
+            if (vegetationBridge.TryGetActiveSurfaceNativePayload(out NativeArray<Matrix4x4> surfaceMatrices, out NativeArray<HectonVegetationInstanceData> surfaceMetadata, out NativeArray<int> surfaceTypes, out int surfaceCount) &&
+                vegetationBridge.TryGetActiveSurfaceSemanticPayload(out NativeArray<int> surfaceSemanticTypes, out _, out int surfaceSemanticCount))
+            {
+                WriteMacroFloraObstacles(
+                    surfaceMatrices,
+                    surfaceMetadata,
+                    surfaceTypes,
+                    surfaceSemanticTypes,
+                    math.min(surfaceCount, surfaceSemanticCount),
+                    ref snapshot,
+                    ref writeIndex);
+            }
+        }
+
+        private static void WriteMacroFloraObstacles(
+            NativeArray<Matrix4x4> matrices,
+            NativeArray<HectonVegetationInstanceData> metadata,
+            NativeArray<int> types,
+            NativeArray<int> semanticTypes,
+            int count,
+            ref NativeArray<NavObstaclePrimitive> snapshot,
+            ref int writeIndex)
+        {
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                !semanticTypes.IsCreated ||
+                !snapshot.IsCreated ||
+                count <= 0)
+            {
+                return;
+            }
+
+            int safeCount = math.min(
+                count,
+                math.min(
+                    matrices.Length,
+                    math.min(metadata.Length, math.min(types.Length, semanticTypes.Length))));
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!TryResolveMacroFloraObstacle(metadata[i], types[i], semanticTypes[i], out float3 centerOffset, out float3 extents))
+                    continue;
+
+                Vector3 stableUniverseRoot = new Vector3(matrices[i].m03, matrices[i].m13, matrices[i].m23);
+                Vector3 runtimeRoot = HectonMapMagicVegetationBridge.ToRuntimeSpace(stableUniverseRoot);
+                snapshot[writeIndex] = new NavObstaclePrimitive
+                {
+                    Center = new float3(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z) + centerOffset,
+                    Extents = extents
+                };
+                writeIndex++;
+            }
+        }
+
+        private static bool TryResolveMacroFloraObstacle(
+            HectonVegetationInstanceData metadata,
+            int typeId,
+            int semanticType,
+            out float3 centerOffset,
+            out float3 extents)
+        {
+            centerOffset = float3.zero;
+            extents = float3.zero;
+
+            HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
+            HectonMapMagicVegetationBridge.VegetationSemanticType semantic = (HectonMapMagicVegetationBridge.VegetationSemanticType)semanticType;
+            if (vegetationType == HectonVegetationInstanceType.GiantKelp ||
+                semantic == HectonMapMagicVegetationBridge.VegetationSemanticType.OrganicKelp)
+            {
+                float height = math.lerp(10f, 20f, math.saturate(metadata.HeightScale));
+                float radius = math.lerp(
+                    MinimumKelpObstacleRadiusMeters,
+                    MaximumKelpObstacleRadiusMeters,
+                    math.saturate(math.abs(metadata.WidthScale)));
+                centerOffset = new float3(0f, height * 0.5f, 0f);
+                extents = new float3(radius, height * 0.5f, radius);
+                return true;
+            }
+
+            if (vegetationType == HectonVegetationInstanceType.Sargassum ||
+                semantic == HectonMapMagicVegetationBridge.VegetationSemanticType.FloatingSargassum)
+            {
+                float radius = math.lerp(
+                    MinimumSargassumObstacleRadiusMeters,
+                    MaximumSargassumObstacleRadiusMeters,
+                    math.saturate(math.abs(metadata.WidthScale)));
+                float halfHeight = math.lerp(
+                    MinimumSargassumObstacleHalfHeightMeters,
+                    MaximumSargassumObstacleHalfHeightMeters,
+                    math.saturate(metadata.HeightScale));
+                extents = new float3(radius, halfHeight, radius);
+                return true;
+            }
+
+            return false;
         }
 
         private static bool ContainsPoint(VolumeRecord record, float3 worldPosition)

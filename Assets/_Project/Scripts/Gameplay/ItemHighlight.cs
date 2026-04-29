@@ -226,6 +226,7 @@ namespace Hecton8.Gameplay
         private void TryRegisterTick()
         {
             if (_tickRegistered) return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = true;
