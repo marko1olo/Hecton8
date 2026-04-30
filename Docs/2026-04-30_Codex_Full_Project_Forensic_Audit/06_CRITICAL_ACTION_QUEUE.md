@@ -82,3 +82,44 @@ Suggested values:
 - Do not treat large files as harmless if they still absorb more responsibility.
 - Do not use docs as truth without code/editor cross-check.
 - Do not call the project “close” while verification truth, test truth, and authority truth are still fragmented.
+
+## 2026-05-01 Queue Delta
+
+This section supersedes queue ordering where the May 1 audits produced sharper evidence.
+
+## Priority 0 Additions
+
+1. Remove presentation-owned gameplay transitions.
+Reason: `FaunaBrain.UpdateBioluminescentHypnosis()` changes gameplay behavior based on `runtimeContext.PlayerCamera`. `StorageCrate.OpenCrate()` can dead-state if an Animator event does not fire. These are headless-simulation failures, not cosmetic issues.
+
+2. Move frame-lane job barriers behind dispatcher-owned completion windows.
+Reason: `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` call `.Complete()` in cadence-sensitive lanes. `IsCompleted` checks reduce stall probability but do not satisfy the project mandate requiring completion only in defined swap/end windows.
+
+3. Replace broad physics masks with named layer masks.
+Reason: the latest flaw report found query surfaces using `~0`, `DefaultRaycastLayers`, or serialized all-layer defaults. These are collision-matrix holes and make gameplay queries depend on unrelated visual/trigger layers.
+
+4. Keep Core asmdef isolation as blocked, not done.
+Reason: `OMEGA_CORE_ENFORCEMENT_2026-05-01.md` explicitly rejected blind removal. `Hecton8.Core.asmdef` still references UI/third-party packages, and safe isolation requires staged bridge assemblies first.
+
+## Priority 1 Additions
+
+1. Convert the remaining coroutine smoke/verifier harnesses one by one.
+Reason: current strict grep still finds 15 `StartCoroutine(` call sites in `FieldToolRuntimeSmokeTester`, `ToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, `Dev/ShellVerificationRuntimeSmokeTester`, and `Tools/StateRecoveryVerifier`.
+
+2. Add AUP-safe route ownership to fauna navigation.
+Reason: `FaunaBrain` caches raw `Vector3` route waypoints and target positions without implementing origin-shift listener behavior. After floating-origin rebases, cached routes can drift by the shift vector.
+
+3. Add a hard event generation/depth guard.
+Reason: `SystemDispatcher` has a late-frame dispatch budget, but `HectonEventBus` depth tracking has no hard cap. A recursive publish chain can still produce unbounded same-frame work unless generation splitting or max-depth rejection is enforced.
+
+4. Verify BRG temporary allocation ownership before touching rendering code.
+Reason: `HectonBatchRendererGroupUtility` allocates direct-draw `TempJob` memory. It may be Unity-owned after submission, but the project-owned free path is not proven in source.
+
+## Current Do-Not-Claim List
+
+- Do not claim Play Mode deadlock is fixed. Play Mode was intentionally not launched.
+- Do not claim GC is zero. GCMonitor/profiler proof is absent.
+- Do not claim MCP VERIFIED as a global runtime state. Previous May 1 evidence was `0` console errors for editor/script state only; this delta pass could not refresh the console because MCP returned `no_unity_session`.
+- Do not claim the docs are fully current. This queue now points to current deltas, but older dated documents still contain historical and stale claims.
+
+STATUS: PENDING VERIFICATION

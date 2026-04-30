@@ -58,7 +58,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float reelImpulse = 14f;
         [SerializeField] private float maxReelMass = 55f;
         [SerializeField] private float shotCooldown = 0.85f;
-        [SerializeField] private LayerMask targetMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
         [SerializeField] private float tetherDuration = 5f;
         [SerializeField] private float tetherPullBonus = 1.35f;

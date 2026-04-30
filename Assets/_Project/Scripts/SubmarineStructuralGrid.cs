@@ -57,9 +57,15 @@ namespace Hecton8.Physics
         private const float DefaultCompressionFullPressureKPa = 60000f;
         private const float DefaultMaximumVolumeCompressionNormalized = 0.15f;
         private const float RecentImpactSeverityDecayPerSecond = 2.8f;
+        private const int HullDentPositionStrideBytes = 12;
+        private const int HullDentNormalStrideBytes = 12;
+        private const int HullDentUvStrideBytes = 8;
+        private const int HullDentInterleavedStrideBytes = 32;
+        private const int HullDentInterleavedNormalOffsetBytes = 12;
+        private const int HullDentInterleavedUvOffsetBytes = 24;
         private const float Epsilon = 0.0001f;
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDamageDiffusionJob : IJob
         {
             [ReadOnly] public NativeArray<byte> InputIntegrity;
@@ -169,7 +175,7 @@ namespace Hecton8.Physics
             public int DamageBytes;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDentJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> InputVertices;
@@ -222,6 +228,14 @@ namespace Hecton8.Physics
             public float3 Position;
             public float3 Normal;
             public float2 UV;
+        }
+
+        private struct HullDentMeshLayout
+        {
+            public bool Interleaved;
+            public int PositionStream;
+            public int NormalStream;
+            public int UvStream;
         }
 
         [Header("â”€â”€ Grid Authoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -697,7 +711,7 @@ namespace Hecton8.Physics
 
             using Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(sourceMesh);
             Mesh.MeshData sourceData = meshDataArray[0];
-            if (!ValidateHullDentMeshLayout(sourceData))
+            if (!TryResolveHullDentMeshLayout(sourceData, out HullDentMeshLayout layout))
                 return false;
 
             int vertexCount = sourceData.vertexCount;
@@ -730,16 +744,31 @@ namespace Hecton8.Physics
             _hullDentIndices = new NativeArray<uint>(totalIndexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _hullDentSubMeshes = new SubMeshDescriptor[subMeshCount]; // COLD ALLOC: SubMeshDescriptor[subMeshCount] - runtime hull submesh descriptors - owner: SubmarineStructuralGrid
 
-            NativeArray<Vector3> positions = sourceData.GetVertexData<Vector3>(sourceData.GetVertexAttributeStream(VertexAttribute.Position));
-            NativeArray<Vector3> normals = sourceData.GetVertexData<Vector3>(sourceData.GetVertexAttributeStream(VertexAttribute.Normal));
-            NativeArray<Vector2> uvs = sourceData.GetVertexData<Vector2>(sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0));
-            for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
+            if (layout.Interleaved)
             {
-                float3 position = positions[vertexIndex];
-                _hullDentVerticesFront[vertexIndex] = position;
-                _hullDentVerticesBack[vertexIndex] = position;
-                _hullDentNormals[vertexIndex] = normals[vertexIndex];
-                _hullDentUvs[vertexIndex] = uvs[vertexIndex];
+                NativeArray<HullDentVertex> vertices = sourceData.GetVertexData<HullDentVertex>(layout.PositionStream);
+                for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
+                {
+                    HullDentVertex vertex = vertices[vertexIndex];
+                    _hullDentVerticesFront[vertexIndex] = vertex.Position;
+                    _hullDentVerticesBack[vertexIndex] = vertex.Position;
+                    _hullDentNormals[vertexIndex] = vertex.Normal;
+                    _hullDentUvs[vertexIndex] = vertex.UV;
+                }
+            }
+            else
+            {
+                NativeArray<Vector3> positions = sourceData.GetVertexData<Vector3>(layout.PositionStream);
+                NativeArray<Vector3> normals = sourceData.GetVertexData<Vector3>(layout.NormalStream);
+                NativeArray<Vector2> uvs = sourceData.GetVertexData<Vector2>(layout.UvStream);
+                for (int vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++)
+                {
+                    float3 position = positions[vertexIndex];
+                    _hullDentVerticesFront[vertexIndex] = position;
+                    _hullDentVerticesBack[vertexIndex] = position;
+                    _hullDentNormals[vertexIndex] = normals[vertexIndex];
+                    _hullDentUvs[vertexIndex] = uvs[vertexIndex];
+                }
             }
 
             int copiedIndexCount = 0;
@@ -775,22 +804,68 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private static bool ValidateHullDentMeshLayout(Mesh.MeshData sourceData)
+        private static bool TryResolveHullDentMeshLayout(Mesh.MeshData sourceData, out HullDentMeshLayout layout)
         {
-            return ValidateHullDentAttributeLayout(sourceData, VertexAttribute.Position, 12) &&
-                   ValidateHullDentAttributeLayout(sourceData, VertexAttribute.Normal, 12) &&
-                   ValidateHullDentAttributeLayout(sourceData, VertexAttribute.TexCoord0, 8);
+            layout = default;
+            if (!ValidateHullDentAttribute(sourceData, VertexAttribute.Position, VertexAttributeFormat.Float32, 3) ||
+                !ValidateHullDentAttribute(sourceData, VertexAttribute.Normal, VertexAttributeFormat.Float32, 3) ||
+                !ValidateHullDentAttribute(sourceData, VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2))
+            {
+                return false;
+            }
+
+            int positionStream = sourceData.GetVertexAttributeStream(VertexAttribute.Position);
+            int normalStream = sourceData.GetVertexAttributeStream(VertexAttribute.Normal);
+            int uvStream = sourceData.GetVertexAttributeStream(VertexAttribute.TexCoord0);
+            if (positionStream < 0 || normalStream < 0 || uvStream < 0)
+                return false;
+
+            if (positionStream == normalStream && positionStream == uvStream &&
+                sourceData.GetVertexAttributeOffset(VertexAttribute.Position) == 0 &&
+                sourceData.GetVertexAttributeOffset(VertexAttribute.Normal) == HullDentInterleavedNormalOffsetBytes &&
+                sourceData.GetVertexAttributeOffset(VertexAttribute.TexCoord0) == HullDentInterleavedUvOffsetBytes &&
+                sourceData.GetVertexBufferStride(positionStream) == HullDentInterleavedStrideBytes)
+            {
+                layout.Interleaved = true;
+                layout.PositionStream = positionStream;
+                layout.NormalStream = normalStream;
+                layout.UvStream = uvStream;
+                return true;
+            }
+
+            if (!ValidateHullDentSeparateAttributeStream(sourceData, VertexAttribute.Position, positionStream, HullDentPositionStrideBytes) ||
+                !ValidateHullDentSeparateAttributeStream(sourceData, VertexAttribute.Normal, normalStream, HullDentNormalStrideBytes) ||
+                !ValidateHullDentSeparateAttributeStream(sourceData, VertexAttribute.TexCoord0, uvStream, HullDentUvStrideBytes))
+            {
+                return false;
+            }
+
+            layout.Interleaved = false;
+            layout.PositionStream = positionStream;
+            layout.NormalStream = normalStream;
+            layout.UvStream = uvStream;
+            return true;
         }
 
-        private static bool ValidateHullDentAttributeLayout(Mesh.MeshData sourceData, VertexAttribute attribute, int expectedStride)
+        private static bool ValidateHullDentAttribute(
+            Mesh.MeshData sourceData,
+            VertexAttribute attribute,
+            VertexAttributeFormat expectedFormat,
+            int expectedDimension)
         {
             if (!sourceData.HasVertexAttribute(attribute))
                 return false;
 
-            int stream = sourceData.GetVertexAttributeStream(attribute);
-            if (stream < 0)
-                return false;
+            return sourceData.GetVertexAttributeFormat(attribute) == expectedFormat &&
+                   sourceData.GetVertexAttributeDimension(attribute) == expectedDimension;
+        }
 
+        private static bool ValidateHullDentSeparateAttributeStream(
+            Mesh.MeshData sourceData,
+            VertexAttribute attribute,
+            int stream,
+            int expectedStride)
+        {
             return sourceData.GetVertexAttributeOffset(attribute) == 0 &&
                    sourceData.GetVertexBufferStride(stream) == expectedStride;
         }
@@ -1047,7 +1122,10 @@ namespace Hecton8.Physics
                 meshApplied = true;
                 _runtimeHullDentMesh.bounds = _hullDentBoundsLocal;
                 if (hullDeformMeshCollider != null)
+                {
+                    hullDeformMeshCollider.sharedMesh = null;
                     hullDeformMeshCollider.sharedMesh = _runtimeHullDentMesh;
+                }
             }
             finally
             {

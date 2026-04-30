@@ -3,7 +3,9 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
+using Hecton8.UI;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -22,6 +24,7 @@ namespace Hecton8.PDA
         private const int MaskOriginOffset = ExplorationMapDTO.MortonMaskOriginOffset;
         private const int MaskBitCount = ExplorationMapDTO.MortonMaskBitCount;
         private const int MaskWordCount = ExplorationMapDTO.MortonMaskWordCount;
+        private const int MaskByteCount = ExplorationMapDTO.MortonMaskByteCount;
         private const int LocalMask = MaskAxisLength - 1;
 
         [Header("References")]
@@ -223,6 +226,19 @@ namespace Hecton8.PDA
 
             NativeArray<ulong> maskWords = _exploredChunkMask.AsNativeArray<ulong>();
             int wordCount = math.min(maskWords.Length, MaskWordCount);
+            int byteCount = ResolveSerializedByteCount(maskWords, wordCount);
+            data.explorationMap.exploredMortonByteCount = byteCount;
+            Array.Clear(data.explorationMap.exploredMortonMaskBytes, 0, data.explorationMap.exploredMortonMaskBytes.Length);
+            unsafe
+            {
+                fixed (byte* destination = data.explorationMap.exploredMortonMaskBytes)
+                {
+                    void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(maskWords);
+                    if (byteCount > 0)
+                        UnsafeUtility.MemCpy(destination, source, byteCount);
+                }
+            }
+
             for (int i = 0; i < wordCount; i++)
             {
                 long word = unchecked((long)maskWords[i]);
@@ -254,7 +270,7 @@ namespace Hecton8.PDA
                 return;
 
             ExplorationMapDTO dto = data.explorationMap;
-            bool loadedMask = TryLoadDenseMask(dto);
+            bool loadedMask = TryLoadDenseByteMask(dto) || TryLoadDenseMask(dto);
             if (!loadedMask)
                 LoadLegacyChunkKeys(dto);
 
@@ -292,8 +308,47 @@ namespace Hecton8.PDA
             _exploredBitIndices.Add(bitIndex);
             _lastBitIndex = bitIndex;
             if (raiseEvent)
+            {
+                PDAEvents.RaiseMapChunkExplored(chunkX, chunkZ);
                 ChunkExplored?.Invoke(new Vector2Int(chunkX, chunkZ));
+            }
             return true;
+        }
+
+        /// <summary>
+        /// Exposes the dense Morton exploration mask for headless PDA cartography jobs.
+        /// </summary>
+        public bool TryGetExplorationMaskPayload(
+            out NativeArray<ulong> maskWords,
+            out int axisLength,
+            out int originOffset,
+            out int chunkSizeMeters)
+        {
+            InitializeExplorationMask();
+            maskWords = _exploredChunkMask.AsNativeArray<ulong>();
+            axisLength = MaskAxisLength;
+            originOffset = MaskOriginOffset;
+            chunkSizeMeters = ExplorationChunkSizeMeters;
+            return maskWords.IsCreated;
+        }
+
+        private static int ResolveSerializedByteCount(NativeArray<ulong> maskWords, int wordCount)
+        {
+            int safeWordCount = math.min(wordCount, maskWords.IsCreated ? maskWords.Length : 0);
+            for (int wordIndex = safeWordCount - 1; wordIndex >= 0; wordIndex--)
+            {
+                ulong word = maskWords[wordIndex];
+                if (word == 0UL)
+                    continue;
+
+                int usedBytes = sizeof(ulong);
+                while (usedBytes > 0 && ((word >> ((usedBytes - 1) * 8)) & 0xFFUL) == 0UL)
+                    usedBytes--;
+
+                return (wordIndex * sizeof(ulong)) + usedBytes;
+            }
+
+            return 0;
         }
 
         private void InitializeExplorationMask()
@@ -341,6 +396,31 @@ namespace Hecton8.PDA
 
             for (int i = wordCount; i < maskWords.Length; i++)
                 maskWords[i] = 0UL;
+
+            RebuildExploredBitIndexCache(maskWords);
+            return true;
+        }
+
+        private bool TryLoadDenseByteMask(ExplorationMapDTO dto)
+        {
+            if (dto.exploredMortonMaskBytes == null ||
+                dto.exploredMortonMaskBytes.Length == 0 ||
+                dto.exploredMortonByteCount <= 0)
+            {
+                return false;
+            }
+
+            NativeArray<ulong> maskWords = _exploredChunkMask.AsNativeArray<ulong>();
+            int byteCount = math.min(math.min(MaskByteCount, dto.exploredMortonMaskBytes.Length), dto.exploredMortonByteCount);
+            unsafe
+            {
+                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(maskWords);
+                UnsafeUtility.MemClear(destination, maskWords.Length * sizeof(ulong));
+                fixed (byte* source = dto.exploredMortonMaskBytes)
+                {
+                    UnsafeUtility.MemCpy(destination, source, byteCount);
+                }
+            }
 
             RebuildExploredBitIndexCache(maskWords);
             return true;

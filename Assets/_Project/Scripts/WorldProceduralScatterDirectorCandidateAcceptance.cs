@@ -10,6 +10,8 @@ namespace Hecton8.World
 {
     public sealed partial class WorldProceduralScatterDirector
     {
+        private const int FloraChunkInstanceHardCap = 4096;
+
         internal readonly struct ScatterPlacementSpatialMetadata
         {
             public ScatterPlacementSpatialMetadata(
@@ -221,7 +223,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CanAcceptCandidateJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> PositionBuckets;
@@ -241,11 +243,24 @@ namespace Hecton8.World
             public int FloraDensityClampSearchRadiusCells;
             public int FloraDensityClampMicroCap;
             public int FloraDensityClampMacroCap;
+            public int FloraChunkHardCap;
             public byte CandidateFloraBudgetClass;
             public byte FloraDensityClampEnabled;
 
             public void Execute()
             {
+                if (CandidateFloraBudgetClass != (byte)FloraBudgetClass.None &&
+                    ExceedsFloraChunkHardCap(
+                        CandidateCellX,
+                        CandidateCellZ,
+                        FloraChunkHardCap,
+                        MetadataBuckets,
+                        SpatialMetadata))
+                {
+                    Result[0] = 0;
+                    return;
+                }
+
                 if (FloraDensityClampEnabled != 0 &&
                     CandidateFloraBudgetClass != (byte)FloraBudgetClass.None &&
                     WorldProceduralScatterDirector.ExceedsFloraDensityBudget(
@@ -315,7 +330,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateScatterCellCandidateBatchJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;
@@ -365,6 +380,7 @@ namespace Hecton8.World
             public int FloraDensityClampSearchRadiusCells;
             public int FloraDensityClampMicroCap;
             public int FloraDensityClampMacroCap;
+            public int FloraChunkHardCap;
 
             public void Execute()
             {
@@ -393,6 +409,12 @@ namespace Hecton8.World
                     ScatterCellCandidateAcceptanceInput candidate = Candidates[candidateIndex];
                     if (candidate.ExternalBlock != 0)
                         continue;
+
+                    if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
+                        ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
+                    {
+                        continue;
+                    }
 
                     if (!HasPatternLayerBudget(
                             candidate.ScatterLayer,
@@ -562,6 +584,18 @@ namespace Hecton8.World
                         macroCap,
                         PendingMetadataBuckets,
                         PendingSpatialMetadata.AsArray());
+            }
+
+            private bool ExceedsFloraChunkHardCap(in ScatterCellCandidateAcceptanceInput candidate, int hardCap)
+            {
+                return WorldProceduralScatterDirector.ExceedsFloraChunkHardCap(
+                    candidate.CellX,
+                    candidate.CellZ,
+                    hardCap,
+                    ExistingMetadataBuckets,
+                    ExistingSpatialMetadata,
+                    PendingMetadataBuckets,
+                    PendingSpatialMetadata.AsArray());
             }
 
             private static bool HasSpatialConflictInBuckets(
@@ -835,7 +869,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateScatterRescueCandidateBatchJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;
@@ -867,6 +901,7 @@ namespace Hecton8.World
             public int FloraDensityClampSearchRadiusCells;
             public int FloraDensityClampMicroCap;
             public int FloraDensityClampMacroCap;
+            public int FloraChunkHardCap;
 
             public void Execute()
             {
@@ -886,6 +921,12 @@ namespace Hecton8.World
 
                     if (acceptedCount >= AcceptLimit)
                         continue;
+
+                    if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
+                        ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
+                    {
+                        continue;
+                    }
 
                     if (LayerTargetMax > 0 && layerCount >= LayerTargetMax)
                         continue;
@@ -1031,6 +1072,18 @@ namespace Hecton8.World
                         macroCap,
                         PendingMetadataBuckets,
                         PendingSpatialMetadata.AsArray());
+            }
+
+            private bool ExceedsFloraChunkHardCap(in ScatterCellCandidateAcceptanceInput candidate, int hardCap)
+            {
+                return WorldProceduralScatterDirector.ExceedsFloraChunkHardCap(
+                    candidate.CellX,
+                    candidate.CellZ,
+                    hardCap,
+                    ExistingMetadataBuckets,
+                    ExistingSpatialMetadata,
+                    PendingMetadataBuckets,
+                    PendingSpatialMetadata.AsArray());
             }
 
             private static bool HasSpatialConflictInBuckets(
@@ -1256,6 +1309,66 @@ namespace Hecton8.World
             return false;
         }
 
+        private static bool ExceedsFloraChunkHardCap(
+            int candidateCellX,
+            int candidateCellZ,
+            int hardCap,
+            NativeParallelMultiHashMap<int, int> metadataBuckets,
+            NativeArray<ScatterPlacementSpatialMetadata> spatialMetadata)
+        {
+            if (hardCap <= 0)
+                return false;
+
+            int cellKey = ComposeScatterGridNativeKey(candidateCellX, candidateCellZ);
+            return CountFloraInChunkCell(cellKey, metadataBuckets, spatialMetadata) >= hardCap;
+        }
+
+        private static bool ExceedsFloraChunkHardCap(
+            int candidateCellX,
+            int candidateCellZ,
+            int hardCap,
+            NativeParallelMultiHashMap<int, int> existingMetadataBuckets,
+            NativeArray<ScatterPlacementSpatialMetadata> existingSpatialMetadata,
+            NativeParallelMultiHashMap<int, int> pendingMetadataBuckets,
+            NativeArray<ScatterPlacementSpatialMetadata> pendingSpatialMetadata)
+        {
+            if (hardCap <= 0)
+                return false;
+
+            int cellKey = ComposeScatterGridNativeKey(candidateCellX, candidateCellZ);
+            int existingCount = CountFloraInChunkCell(cellKey, existingMetadataBuckets, existingSpatialMetadata);
+            if (existingCount >= hardCap)
+                return true;
+
+            int pendingCount = CountFloraInChunkCell(cellKey, pendingMetadataBuckets, pendingSpatialMetadata);
+            return existingCount + pendingCount >= hardCap;
+        }
+
+        private static int CountFloraInChunkCell(
+            int cellKey,
+            NativeParallelMultiHashMap<int, int> metadataBuckets,
+            NativeArray<ScatterPlacementSpatialMetadata> spatialMetadata)
+        {
+            if (!metadataBuckets.IsCreated || !spatialMetadata.IsCreated)
+                return 0;
+
+            int count = 0;
+            if (!metadataBuckets.TryGetFirstValue(cellKey, out int metadataIndex, out NativeParallelMultiHashMapIterator<int> metadataIterator))
+                return 0;
+
+            do
+            {
+                if (metadataIndex < 0 || metadataIndex >= spatialMetadata.Length)
+                    continue;
+
+                if (spatialMetadata[metadataIndex].FloraBudgetClass != (byte)FloraBudgetClass.None)
+                    count++;
+            }
+            while (metadataBuckets.TryGetNextValue(out metadataIndex, ref metadataIterator));
+
+            return count;
+        }
+
         private static int ResolveFloraDensityCap(byte floraBudgetClass, int microCap, int macroCap)
         {
             if (floraBudgetClass == (byte)FloraBudgetClass.Micro)
@@ -1350,7 +1463,8 @@ namespace Hecton8.World
                 FloraDensityClampRadiusSq = floraDensityClampRadiusMeters * floraDensityClampRadiusMeters,
                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
-                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap)
+                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
+                FloraChunkHardCap = FloraChunkInstanceHardCap
             };
 
             JobHandle handle = job.Schedule();
@@ -1508,7 +1622,8 @@ namespace Hecton8.World
                 FloraDensityClampRadiusSq = floraDensityClampRadiusMeters * floraDensityClampRadiusMeters,
                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
-                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap)
+                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
+                FloraChunkHardCap = FloraChunkInstanceHardCap
             };
 
             JobHandle handle = job.Schedule();
@@ -1541,7 +1656,14 @@ namespace Hecton8.World
             input.StructureAccentRole = (int)GetStructureAccentRole(family);
             input.IsPassiveSpawnFamily = IsPassiveSpawnFamily(family) ? (byte)1 : (byte)0;
             input.IsPredatorSpawnFamily = IsPredatorSpawnFamily(family) ? (byte)1 : (byte)0;
-            input.ExternalBlock = IsPlacementRegistrationBlocked(placement, in registrationContext) ? (byte)1 : (byte)0;
+            ScatterCandidatePreview shadePreview = new ScatterCandidatePreview(
+                family.FamilyHash,
+                placement.Position,
+                placement.HeightLayerIndex);
+            input.ExternalBlock = IsPlacementRegistrationBlocked(placement, in registrationContext) ||
+                                  ShouldRejectForMigratorySargassumShade(family, in shadePreview)
+                ? (byte)1
+                : (byte)0;
             input.FloraBudgetClass = (byte)ResolveFloraBudgetClass(family);
             return input;
         }
@@ -1680,6 +1802,7 @@ namespace Hecton8.World
                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
                 FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
+                FloraChunkHardCap = FloraChunkInstanceHardCap,
                 CandidateFloraBudgetClass = (byte)ResolveFloraBudgetClass(family),
                 FloraDensityClampEnabled = enableFloraDensityClamp ? (byte)1 : (byte)0
             };

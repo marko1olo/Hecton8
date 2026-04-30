@@ -46,7 +46,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst deterministic flora yield generation. One stack-oriented drop record per destroyed instance.
     /// </summary>
-    [BurstCompile]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct EntropyYieldJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<DestroyedOrganicEvent> Events;

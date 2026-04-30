@@ -31,7 +31,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float sampleDamage = 18f;
         [SerializeField] private float sampleImpulse = 1.5f;
         [SerializeField] private float sampleCooldown = 0.3f;
-        [SerializeField] private LayerMask samplingMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask samplingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.45f;
 
         private Transform _cachedTransform;

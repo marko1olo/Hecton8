@@ -152,7 +152,7 @@ namespace Hecton8.Gameplay
             // Set default layer mask if not assigned
             if (playerLayerMask == 0)
             {
-                playerLayerMask = LayerMask.GetMask(PlayerTag);
+                playerLayerMask = HectonLayerMasks.PlayerLayerMask;
             }
         }
 

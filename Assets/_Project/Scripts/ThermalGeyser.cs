@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.World;
 using UnityEngine;
@@ -17,6 +18,9 @@ namespace Hecton8.Caves
         private const float MinimumCylinderHeightMeters = 1f;
         private const float EruptionCylinderHeightMultiplier = 2.25f;
         private const float CavitationCylinderHeightMultiplier = 1.5f;
+        private const float DefaultMineralEjectionIntervalSeconds = 600f;
+        private const int MinimumEjectedMineralCount = 3;
+        private const int MaximumEjectedMineralCount = 5;
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -34,7 +38,20 @@ namespace Hecton8.Caves
         [Header("── Query Settings ──────────────────")]
         [SerializeField]
         [Tooltip("Layers sampled when applying eruption shock and cavitation to nearby rigidbodies.")]
-        private LayerMask affectedLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        private LayerMask affectedLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+
+        [Header("Mineral Ejection")]
+        [SerializeField]
+        [Tooltip("Low-tier mineral item emitted as physical loot during long-lived geyser activity.")]
+        private ItemData ejectedMineralItem;
+
+        [SerializeField, Range(60f, 1800f)]
+        [Tooltip("Seconds between mineral ejection bursts while the geyser is erupting.")]
+        private float mineralEjectionIntervalSeconds = DefaultMineralEjectionIntervalSeconds;
+
+        [SerializeField, Range(0.1f, 30f)]
+        [Tooltip("Impulse magnitude stored on ejected item records and applied when their Rigidbody hydrates.")]
+        private float mineralEjectionImpulse = 8f;
 
         private float _quietDuration = 10f;
         private float _eruptionDuration = 3f;
@@ -51,6 +68,8 @@ namespace Hecton8.Caves
         private Transform _playerTransform;
         private Rigidbody _playerRigidbody;
         private HectonPlayerMovement _playerMovement;
+        private float _mineralEjectionTimer = DefaultMineralEjectionIntervalSeconds;
+        private uint _mineralEjectionSeed;
         private readonly Collider[] _affectedColliders = new Collider[24]; // COLD ALLOC: Collider[24] — bounded geyser influence query buffer — owner: ThermalGeyser
 
         /// <summary>
@@ -74,6 +93,7 @@ namespace Hecton8.Caves
             ConfigureCurrentVolume(isErupting: false);
             _phaseTimer = _quietDuration;
             _isErupting = false;
+            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
         }
 
         /// <summary>
@@ -81,7 +101,10 @@ namespace Hecton8.Caves
         /// </summary>
         public void Tick(float dt)
         {
-            _phaseTimer -= Mathf.Max(0f, dt);
+            float safeDt = Mathf.Max(0f, dt);
+            TickMineralEjection(safeDt);
+
+            _phaseTimer -= safeDt;
             if (_phaseTimer > 0f)
                 return;
 
@@ -193,9 +216,25 @@ namespace Hecton8.Caves
             return radialFactor * verticalFactor;
         }
 
+        private static uint Mix(uint hash, uint value)
+        {
+            hash ^= value + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+            return hash != 0u ? hash : 0xA341316Cu;
+        }
+
+        private static float Next01(ref uint state)
+        {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
         private void Awake()
         {
             ResolveRuntimeWiring();
+            _mineralEjectionSeed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x9E3779B9u;
+            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
         }
 
         private void OnEnable()
@@ -211,6 +250,44 @@ namespace Hecton8.Caves
         private void OnDestroy()
         {
             TryUnregister();
+        }
+
+        private void TickMineralEjection(float dt)
+        {
+            if (dt <= 0f || ejectedMineralItem == null)
+                return;
+
+            _mineralEjectionTimer -= dt;
+            if (_mineralEjectionTimer > 0f || !_isErupting)
+                return;
+
+            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
+            EjectMineralBurst();
+        }
+
+        private void EjectMineralBurst()
+        {
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null || ejectedMineralItem == null)
+                return;
+
+            uint state = _mineralEjectionSeed;
+            _mineralEjectionSeed = Mix(_mineralEjectionSeed, 0xA511E9B3u);
+            int count = MinimumEjectedMineralCount + (int)Mathf.Floor(Next01(ref state) * (MaximumEjectedMineralCount - MinimumEjectedMineralCount + 1));
+            count = Mathf.Clamp(count, MinimumEjectedMineralCount, MaximumEjectedMineralCount);
+            Vector3 origin = transform.position;
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 lateral = new Vector3((Next01(ref state) * 2f) - 1f, 0f, (Next01(ref state) * 2f) - 1f);
+                if (lateral.sqrMagnitude <= 0.0001f)
+                    lateral = Vector3.right;
+                lateral.Normalize();
+
+                Vector3 spawnPosition = origin + (Vector3.up * 0.25f) + (lateral * Mathf.Lerp(0.15f, 0.6f, Next01(ref state)));
+                Vector3 impulse = (Vector3.up * Mathf.Lerp(0.85f, 1.25f, Next01(ref state)) * mineralEjectionImpulse) +
+                                  (lateral * (mineralEjectionImpulse * 0.25f));
+                registry.TryRegisterDroppedItem(ejectedMineralItem, 1, spawnPosition, impulse);
+            }
         }
 
         private void ResolveRuntimeWiring()

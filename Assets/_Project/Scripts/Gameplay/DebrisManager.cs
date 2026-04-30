@@ -736,7 +736,7 @@ namespace Hecton8.Gameplay
             public byte Kinematic;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DebrisSimulationJob : IJob
         {
             [ReadOnly] public NativeArray<DebrisChunkState> ReadStates;

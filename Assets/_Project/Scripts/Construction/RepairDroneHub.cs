@@ -31,7 +31,7 @@ namespace Hecton8.Construction
         }
 
         [Header("── Drone Bay ──────────────────────────")]
-        [Tooltip("Pooled drone prefab launched by this hub.")]
+        [Tooltip("Optional drone visual source used for headless indirect rendering mesh and material extraction.")]
         [SerializeField] private GameObject dronePrefab;
 
         [Tooltip("Optional launch socket. Falls back to this transform when omitted.")]
@@ -57,7 +57,7 @@ namespace Hecton8.Construction
         [SerializeField, Range(1f, 40f)] private float supplySearchRadius = 18f;
 
         [Tooltip("Layer mask used while probing for nearby storage crates.")]
-        [SerializeField] private LayerMask supplySearchMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask supplySearchMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Override repair supply item. Falls back to Data_TitaniumScrap through the active ItemCatalog when left empty.")]
         [SerializeField] private ItemData repairSupplyItem;
@@ -97,7 +97,7 @@ namespace Hecton8.Construction
 
         private Transform _cachedTransform;
         private PowerNode _powerNode;
-        private RepairDroneEntity[] _activeDrones;
+        private int[] _activeDroneIds;
         private int[] _activeTargetIds;
         private bool _registered;
         private bool _hasPower = true;
@@ -120,7 +120,7 @@ namespace Hecton8.Construction
         internal Vector3 DockPosition => ResolveDockSocketPositionInternal();
         internal Quaternion DockRotation => ResolveDockSocketRotationInternal();
         internal PowerGrid CurrentGrid => _powerNode != null ? _powerNode.Grid : null;
-        internal int ActiveSlotCapacity => _activeDrones != null ? _activeDrones.Length : Mathf.Max(1, maxConcurrentDrones);
+        internal int ActiveSlotCapacity => _activeDroneIds != null ? _activeDroneIds.Length : Mathf.Max(1, maxConcurrentDrones);
         internal bool HasOperationalPower => _hasPower && _powerNode != null && _powerNode.Grid != null;
 
         public void OnPowerStatusChanged(bool hasPower)
@@ -140,8 +140,9 @@ namespace Hecton8.Construction
             TryGetComponent(out _powerNode);
 
             int capacity = Mathf.Max(1, maxConcurrentDrones);
-            _activeDrones = new RepairDroneEntity[capacity]; // COLD ALLOC: RepairDroneEntity[capacity] — active drone slots — owner: RepairDroneHub
+            _activeDroneIds = new int[capacity]; // COLD ALLOC: int[capacity] - active headless drone ids by hub slot - owner: RepairDroneHub
             _activeTargetIds = new int[capacity]; // COLD ALLOC: int[capacity] — claimed target ids by slot — owner: RepairDroneHub
+            DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
             ResolveRepairSupplyItem();
         }
 
@@ -161,7 +162,7 @@ namespace Hecton8.Construction
         {
             _hasPower = true;
             _debugHasPower = true;
-            WarmupDrones();
+            DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
             ResolveRepairSupplyItem();
             RefreshSupplyCrates(true);
             RegisterHubInstance();
@@ -208,13 +209,12 @@ namespace Hecton8.Construction
             DroneFleetManager.NotifyFleetStateChanged();
         }
 
-        /// <summary>Called by pooled drones once they have returned to the hub and are ready to despawn.</summary>
-        public void NotifyDroneReturned(RepairDroneEntity drone)
+        internal void NotifyHeadlessDroneReturned(int droneId)
         {
-            if (drone == null || _activeDrones == null)
+            if (droneId <= 0 || _activeDroneIds == null)
                 return;
 
-            int slot = FindDroneSlot(drone);
+            int slot = FindDroneSlot(droneId);
             if (slot < 0)
                 return;
 
@@ -242,15 +242,6 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
-        }
-
-        private void WarmupDrones()
-        {
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool == null || dronePrefab == null || _activeDrones == null)
-                return;
-
-            pool.Warmup(dronePrefab, _activeDrones.Length);
         }
 
         private void ResolveRepairSupplyItem()
@@ -324,7 +315,7 @@ namespace Hecton8.Construction
 
         private void TryDispatchDrone()
         {
-            if (dronePrefab == null || _activeDrones == null || _powerNode == null || _powerNode.Grid == null)
+            if (_activeDroneIds == null || _powerNode == null || _powerNode.Grid == null)
                 return;
 
             int freeSlot = FindFreeDroneSlot();
@@ -342,35 +333,31 @@ namespace Hecton8.Construction
             if (!HasRepairSupplyAvailable(requiredSupplyUnits))
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
-            if (pool == null)
-                return;
-
             Vector3 launchPosition = ResolveDockSocketPositionInternal();
-            GameObject droneObject = pool.Spawn(dronePrefab, launchPosition, _cachedTransform.rotation, true);
-            if (droneObject == null || !droneObject.TryGetComponent(out RepairDroneEntity drone))
-            {
-                if (droneObject != null)
-                    pool.Despawn(droneObject);
+            if (!DroneFleetManager.TryLaunchHeadlessDrone(
+                this,
+                in task,
+                launchPosition,
+                droneRepairRate,
+                requiredSupplyUnits,
+                out int droneId))
                 return;
-            }
 
             if (!TryConsumeRepairSupply(requiredSupplyUnits))
             {
-                pool.Despawn(droneObject);
+                DroneFleetManager.ReleaseHeadlessDrone(droneId);
                 return;
             }
 
             if (launchBurstPowerCost > 0f)
                 grid.ConsumePower(launchBurstPowerCost);
 
-            _activeDrones[freeSlot] = drone;
+            _activeDroneIds[freeSlot] = droneId;
             _activeTargetIds[freeSlot] = GetModuleRuntimeId(task.Module);
             _launchCountTotal++;
             _debugCurrentTargetName = task.Module != null ? task.Module.name : string.Empty;
             _debugLastAssignmentScore = assignmentScore;
             _debugLastAssignedSupplyUnits = requiredSupplyUnits;
-            drone.AssignMission(this, task, launchPosition, droneRepairRate, requiredSupplyUnits);
         }
 
         private void RegisterHubInstance()
@@ -542,29 +529,29 @@ namespace Hecton8.Construction
 
         private int FindFreeDroneSlot()
         {
-            if (_activeDrones == null)
+            if (_activeDroneIds == null)
                 return -1;
 
-            int slotCount = _activeDrones.Length;
+            int slotCount = _activeDroneIds.Length;
             for (int i = 0; i < slotCount; i++)
             {
-                RepairDroneEntity drone = _activeDrones[i];
-                if (drone == null || !drone.gameObject.activeInHierarchy)
+                int droneId = _activeDroneIds[i];
+                if (droneId <= 0 || !DroneFleetManager.IsHeadlessDroneActive(droneId))
                     return i;
             }
 
             return -1;
         }
 
-        private int FindDroneSlot(RepairDroneEntity drone)
+        private int FindDroneSlot(int droneId)
         {
-            if (_activeDrones == null || drone == null)
+            if (_activeDroneIds == null || droneId <= 0)
                 return -1;
 
-            int slotCount = _activeDrones.Length;
+            int slotCount = _activeDroneIds.Length;
             for (int i = 0; i < slotCount; i++)
             {
-                if (ReferenceEquals(_activeDrones[i], drone))
+                if (_activeDroneIds[i] == droneId)
                     return i;
             }
 
@@ -573,14 +560,14 @@ namespace Hecton8.Construction
 
         private void CompactActiveDrones()
         {
-            if (_activeDrones == null)
+            if (_activeDroneIds == null)
                 return;
 
-            int slotCount = _activeDrones.Length;
+            int slotCount = _activeDroneIds.Length;
             for (int i = 0; i < slotCount; i++)
             {
-                RepairDroneEntity drone = _activeDrones[i];
-                if (drone == null || drone.gameObject.activeInHierarchy)
+                int droneId = _activeDroneIds[i];
+                if (droneId <= 0 || DroneFleetManager.IsHeadlessDroneActive(droneId))
                     continue;
 
                 ClearDroneSlot(i);
@@ -589,32 +576,31 @@ namespace Hecton8.Construction
 
         private void RecallActiveDrones()
         {
-            if (_activeDrones == null)
+            if (_activeDroneIds == null)
                 return;
 
-            int slotCount = _activeDrones.Length;
+            int slotCount = _activeDroneIds.Length;
             for (int i = 0; i < slotCount; i++)
             {
-                RepairDroneEntity drone = _activeDrones[i];
-                if (drone == null)
+                int droneId = _activeDroneIds[i];
+                if (droneId <= 0)
                     continue;
 
-                drone.AbortMission();
+                DroneFleetManager.AbortHeadlessDrone(droneId);
             }
         }
 
         private void ReturnAllDronesToPool()
         {
-            if (_activeDrones == null)
+            if (_activeDroneIds == null)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
-            int slotCount = _activeDrones.Length;
+            int slotCount = _activeDroneIds.Length;
             for (int i = 0; i < slotCount; i++)
             {
-                RepairDroneEntity drone = _activeDrones[i];
-                if (drone != null && drone.gameObject.activeInHierarchy && pool != null)
-                    pool.Despawn(drone.gameObject);
+                int droneId = _activeDroneIds[i];
+                if (droneId > 0)
+                    DroneFleetManager.ReleaseHeadlessDrone(droneId);
 
                 ClearDroneSlot(i);
             }
@@ -622,11 +608,11 @@ namespace Hecton8.Construction
 
         private void ClearDroneSlot(int slot)
         {
-            if (_activeDrones == null || slot < 0 || slot >= _activeDrones.Length)
+            if (_activeDroneIds == null || slot < 0 || slot >= _activeDroneIds.Length)
                 return;
 
             _activeTargetIds[slot] = 0;
-            _activeDrones[slot] = null;
+            _activeDroneIds[slot] = 0;
         }
 
         private static int GetModuleRuntimeId(BaseModule module)
@@ -649,21 +635,8 @@ namespace Hecton8.Construction
         private void RefreshDiagnostics()
         {
             _debugActiveDroneCount = CountActiveDronesInternal();
-            _debugCurrentTargetName = string.Empty;
-
-            if (_activeDrones != null)
-            {
-                int slotCount = _activeDrones.Length;
-                for (int i = 0; i < slotCount; i++)
-                {
-                    RepairDroneEntity drone = _activeDrones[i];
-                    if (drone == null || !drone.gameObject.activeInHierarchy)
-                        continue;
-
-                    if (string.IsNullOrEmpty(_debugCurrentTargetName) && drone.CurrentTarget != null)
-                        _debugCurrentTargetName = drone.CurrentTarget.name;
-                }
-            }
+            if (_debugActiveDroneCount <= 0)
+                _debugCurrentTargetName = string.Empty;
 
             _debugSupplyCrateCount = (supplyCrates != null ? supplyCrates.Length : 0) + _discoveredSupplyCount;
         }
@@ -681,15 +654,15 @@ namespace Hecton8.Construction
 
         private int CountActiveDronesInternal()
         {
-            if (_activeDrones == null)
+            if (_activeDroneIds == null)
                 return 0;
 
             int activeCount = 0;
-            int slotCount = _activeDrones.Length;
+            int slotCount = _activeDroneIds.Length;
             for (int i = 0; i < slotCount; i++)
             {
-                RepairDroneEntity drone = _activeDrones[i];
-                if (drone != null && drone.gameObject.activeInHierarchy)
+                int droneId = _activeDroneIds[i];
+                if (droneId > 0 && DroneFleetManager.IsHeadlessDroneActive(droneId))
                     activeCount++;
             }
 

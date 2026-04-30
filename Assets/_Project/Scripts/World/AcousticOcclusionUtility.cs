@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -126,14 +127,15 @@ namespace Hecton8.World
         private const float FloraScatteringTransmissionFloor = 0.18f;
         private const float FloraScatteringLowPassFloorHertz = 220f;
 
-        private static readonly int PlayerLayer;
-        private static readonly int TriggerZoneLayer;
-        private static readonly int TransparentFxLayer;
-        private static readonly int FirstPersonToolsLayer;
-        private static readonly int VoxelCaveLayer;
-        private static readonly int BaseModuleLayer;
-        private static readonly int VehicleLayer;
-        private static readonly int WaterLayer;
+        private static int PlayerLayer = -1;
+        private static int TriggerZoneLayer = -1;
+        private static int TransparentFxLayer = -1;
+        private static int FirstPersonToolsLayer = -1;
+        private static int VoxelCaveLayer = -1;
+        private static int BaseModuleLayer = -1;
+        private static int VehicleLayer = -1;
+        private static int WaterLayer = -1;
+        private static bool _layerCacheInitialized;
 
         [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct QueryKey
@@ -262,21 +264,36 @@ namespace Hecton8.World
         // COLD ALLOC: NativeArray<RaycastHit>[1] - transient forward-echo acoustic probe result buffer - owner: AcousticOcclusionUtility
         private static NativeArray<RaycastHit> _forwardEchoResults;
 
-        static AcousticOcclusionUtility()
+        private static void EnsureLayerCache()
         {
-            PlayerLayer = LayerMask.NameToLayer("Player");
-            TriggerZoneLayer = LayerMask.NameToLayer("TriggerZone");
-            TransparentFxLayer = LayerMask.NameToLayer("TransparentFX");
-            FirstPersonToolsLayer = LayerMask.NameToLayer("FirstPersonTools");
-            VoxelCaveLayer = LayerMask.NameToLayer("VoxelCave");
-            BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
-            VehicleLayer = LayerMask.NameToLayer("Vehicle");
-            WaterLayer = LayerMask.NameToLayer("Water");
+            if (_layerCacheInitialized)
+                return;
+
+            PlayerLayer = Hecton8.Core.HectonLayerMasks.Player;
+            TriggerZoneLayer = Hecton8.Core.HectonLayerMasks.TriggerZone;
+            TransparentFxLayer = Hecton8.Core.HectonLayerMasks.TransparentFX;
+            FirstPersonToolsLayer = Hecton8.Core.HectonLayerMasks.FirstPersonTools;
+            VoxelCaveLayer = Hecton8.Core.HectonLayerMasks.VoxelCave;
+            BaseModuleLayer = Hecton8.Core.HectonLayerMasks.BaseModule;
+            VehicleLayer = Hecton8.Core.HectonLayerMasks.Vehicle;
+            WaterLayer = Hecton8.Core.HectonLayerMasks.Water;
+            _layerCacheInitialized = true;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeState()
         {
+            PlayerLayer = -1;
+            TriggerZoneLayer = -1;
+            TransparentFxLayer = -1;
+            FirstPersonToolsLayer = -1;
+            VoxelCaveLayer = -1;
+            BaseModuleLayer = -1;
+            VehicleLayer = -1;
+            WaterLayer = -1;
+            _layerCacheInitialized = false;
+            EnsureLayerCache();
+
             if (_queryBatchScheduled && _pendingQueryHandle.IsCompleted)
                 _pendingQueryHandle.Complete();
 
@@ -409,7 +426,8 @@ namespace Hecton8.World
 
         public static int BuildSensoryMask()
         {
-            int mask = UnityEngine.Physics.DefaultRaycastLayers;
+            EnsureLayerCache();
+            int mask = HectonLayerMasks.DefaultRaycastLayerMask;
             mask &= ~LayerBit(PlayerLayer);
             mask &= ~LayerBit(TriggerZoneLayer);
             mask &= ~LayerBit(TransparentFxLayer);
@@ -1337,6 +1355,8 @@ namespace Hecton8.World
         {
             if (collider == null)
                 return DefaultAbsorption01;
+
+            EnsureLayerCache();
 
             if (collider.CompareTag("MetalFloor") ||
                 collider.CompareTag("Grate") ||

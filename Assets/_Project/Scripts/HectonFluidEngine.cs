@@ -238,7 +238,7 @@ namespace Hecton8.Physics
         [Tooltip("Particle count emitted by a full-intensity cavitation burst.")]
         [SerializeField, Range(1, 128)] private int cavitationBubbleEmitCountAtFullIntensity = 42;
         [Tooltip("Layer mask for small fauna or loose bodies affected by cavitation shockwaves.")]
-        [SerializeField] private LayerMask cavitationShockwaveLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask cavitationShockwaveLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [Tooltip("Maximum Rigidbody mass affected by cavitation collapse so large props and the submarine are ignored.")]
         [SerializeField, Min(0.1f)] private float cavitationShockwaveMaxAffectedMassKg = 120f;
         [Tooltip("Upward lift mixed into cavitation shockwave direction.")]
@@ -349,7 +349,7 @@ namespace Hecton8.Physics
         /// <param name="direction">Preferred burst direction from the thruster exhaust.</param>
         /// <param name="intensity01">Normalized cavitation intensity.</param>
         /// <param name="radius">Shockwave radius in meters.</param>
-        /// <param name="acceleration">Shockwave acceleration routed through PhysicsApplySystem.</param>
+        /// <param name="acceleration">Shockwave velocity-change magnitude routed through PhysicsApplySystem.</param>
         /// <param name="sourceBodyInstanceId">Rigidbody instance ID to ignore, usually the submarine body.</param>
         /// <returns>True when the fixed-capacity burst queue accepted the event.</returns>
         public static bool QueueCavitationBurst(
@@ -1116,11 +1116,16 @@ namespace Hecton8.Physics
                 if (distance01 <= 0.0001f)
                     continue;
 
-                float acceleration = burstEvent.Acceleration * burstEvent.Intensity01 * distance01;
+                float velocityChange = burstEvent.Acceleration * burstEvent.Intensity01 * distance01;
+                GlobalPhysicsStateManager.QueueKinematicImpact(
+                    targetBody,
+                    burstEvent.Position,
+                    radialDirection,
+                    velocityChange);
                 PhysicsForceRouter.QueueForce(
                     targetBody,
-                    radialDirection * acceleration,
-                    ForceMode.Acceleration);
+                    radialDirection * velocityChange,
+                    ForceMode.VelocityChange);
             }
         }
 
@@ -1837,7 +1842,7 @@ namespace Hecton8.Physics
     /// Параллельный Job для вычисления сил плавучести, сопротивления
     /// и подводных течений.
     ///
-    /// [BurstCompile] — SIMD-оптимизация, нет managed code, нет GC.
+    /// Burst-compiled SIMD-оптимизация, нет managed code, нет GC.
     ///
     /// ИЗМЕНЕНИЕ (Dry Zones):
     ///   Первая проверка в Execute: если p.isInAir == true,
@@ -1854,7 +1859,7 @@ namespace Hecton8.Physics
     /// Burst-compiled fallback wave evaluator used by CPU-side buoyancy systems.
     /// This samples the first-party weather spectrum for physics consumers and does not replace Crest FFT rendering.
     /// </summary>
-    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     [StructLayout(LayoutKind.Sequential)]
     public struct WaveQueryJob : IJobParallelFor
     {
@@ -1926,6 +1931,7 @@ namespace Hecton8.Physics
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BuoyancyJob : IJobParallelFor
     {
         private const float ThermoclineDepthMeters = 120f;
@@ -2107,9 +2113,18 @@ namespace Hecton8.Physics
             float3 tiltAxis = math.cross(up, new float3(0f, 1f, 0f));
             float3 stabilityTorque = tiltAxis * (p.surfaceStability * buoyancyMagnitude * surfaceBand * 0.12f);
             float3 angularDragTorque = -angularVel * (angularDragCoeff * math.max(0.1f, p.angularDragMultiplier) * subRatio * math.max(1f, p.mass * 0.35f));
+            float3 flowAxis = math.normalizesafe(sampledCurrent, new float3(1f, 0f, 0f));
+            float3 gyroscopicAxis = math.cross(up, flowAxis);
+            float currentSpeed = math.length(sampledCurrent);
+            float volumeLever = math.sqrt(math.max(0.0001f, p.volume));
+            float lightTumbleBias = math.saturate(1f / math.max(0.25f, p.mass));
+            float massStabilizer = math.rcp(math.max(1f, p.mass));
+            float3 gyroscopicFlowTorque = gyroscopicAxis *
+                                          (currentSpeed * volumeLever * lightTumbleBias * massStabilizer *
+                                           subRatio * math.max(0f, p.currentResponse) * 3.25f);
 
             resultForces[i] = ResolveFiniteFloat3OrZero(buoyancyForce + dragForce + currentF + dampingVec);
-            resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque);
+            resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque + gyroscopicFlowTorque);
         }
 
         private static float3 ResolveFiniteFloat3OrZero(float3 value)

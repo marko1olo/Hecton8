@@ -12,13 +12,13 @@ namespace Hecton8.Physics
 {
     /// <summary>
     /// Player-owned tether runtime host.
-    /// Physics executes in <see cref="FixedTick(float)"/> and visuals render in <see cref="LateUpdate"/>.
+    /// Physics executes in <see cref="FixedTick(float)"/> and visuals render in <see cref="LateFrameTick"/>.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Tether Manager")]
-    public sealed class TetherManager : MonoBehaviour, IFixedTickable, IOriginShiftListener
+    public sealed class TetherManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IOriginShiftListener
     {
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct TranslateVisualPointsJob : IJobParallelFor
         {
             public float3 ShiftOffset;
@@ -68,6 +68,7 @@ namespace Hecton8.Physics
         private Material _runtimeRenderMaterial;
         private bool _ownsRuntimeMaterial;
         private bool _registeredFixedTick;
+        private bool _registeredLateFrameTick;
         private bool _registeredOriginShiftListener;
 
         private void Awake()
@@ -85,6 +86,7 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             TryRegisterFixedTickable();
+            TryRegisterLateFrameTickable();
 
             if (!_registeredOriginShiftListener)
             {
@@ -96,6 +98,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             TryUnregisterFixedTickable();
+            TryUnregisterLateFrameTickable();
 
             if (_registeredOriginShiftListener)
             {
@@ -128,8 +131,31 @@ namespace Hecton8.Physics
             _registeredFixedTick = false;
         }
 
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = true;
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = false;
+        }
+
         private void OnDestroy()
         {
+            TryUnregisterLateFrameTickable();
+
             if (_registeredOriginShiftListener)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -265,7 +291,8 @@ namespace Hecton8.Physics
             _debugActiveTetherCount = _activeInstances.Count;
         }
 
-        private void LateUpdate()
+        /// <inheritdoc />
+        public void LateFrameTick()
         {
             Material renderMaterial = ResolveRenderMaterial();
             if (renderMaterial == null || _activeInstances.Count == 0)

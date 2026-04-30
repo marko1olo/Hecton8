@@ -7,6 +7,7 @@ namespace Hecton8.Inventory
 {
     using System;
     using Hecton.Localization;
+    using Hecton8.Audio;
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Interaction;
@@ -24,16 +25,23 @@ namespace Hecton8.Inventory
     [DisallowMultipleComponent]
     public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable
     {
-        private const ushort CraftingLockedMask = 1 << 10;
-        private const ushort RadioactiveItemStateMask = 1 << 4;
-        private const ushort BiologicalItemStateMask = 1 << 6;
-        internal const ushort DegradedItemStateMask = 1 << 8;
-        private const ushort RustedItemStateMask = 1 << 9;
+        private const ushort CraftingLockedMask = ItemRuntimeStateFlags.CraftingLocked;
+        private const ushort RadioactiveItemStateMask = ItemRuntimeStateFlags.Radioactive;
+        private const ushort BiologicalItemStateMask = ItemRuntimeStateFlags.Biological;
+        internal const ushort DegradedItemStateMask = ItemRuntimeStateFlags.Degraded;
+        private const ushort RustedItemStateMask = ItemRuntimeStateFlags.Rusted;
+        private const ushort FlammableItemStateMask = ItemRuntimeStateFlags.Flammable;
         private const ushort DefaultQualityMilli = 1000;
         private const float SlowTickIntervalSeconds = 0.5f;
         private const float OrganicDecayPerSecond = 0.00045f;
         private const float SubmergedOrganicDecayPerSecond = 0.00075f;
         private const float SubmergedMetalRustPerSecond = 0.00065f;
+        private const float ThermalRunawayPerSecond = 0.65f;
+        private const float ThermalRunawayCooldownPerSecond = 0.2f;
+        private const float ThermalRunawayDamage = 50f;
+        private const float ThermalRunawayAudioVolume = 0.72f;
+        private const float PressureCrushDepthMeters = 2000f;
+        private const float PressureCrushDurabilityPerSecond = 0.08f;
         private const float RadioactiveHalfLifeBaseSeconds = 1800f;
         private const float Ln2 = 0.6931471805599453f;
         private const float KineticDamageThresholdG = 50f;
@@ -55,7 +63,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct InventorySortJob : IJob
         {
             public NativeArray<InventorySortEntry> Entries;
@@ -66,7 +74,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct InventoryRadixSortJob : IJob
         {
             private const int ByteBucketCount = 256;
@@ -129,7 +137,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct InventoryMassVolumeJob : IJob
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
@@ -167,7 +175,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct InventoryRadioactiveHalfLifeJob : IJob
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
@@ -245,6 +253,148 @@ namespace Hecton8.Inventory
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct InventoryReactiveChemistryJob : IJob
+        {
+            [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
+            [ReadOnly] public NativeArray<ushort> StackCounts;
+            [ReadOnly] public NativeArray<ushort> CraftLockedCounts;
+            [ReadOnly] public NativeArray<ushort> ItemStateFlags;
+            public NativeArray<float> ThermalRunawayByAnchor;
+            public NativeArray<int2> RunawayPairs;
+            public NativeArray<int> Counters;
+            public int Columns;
+            public int Rows;
+            public float DeltaSeconds;
+            public float RunawayPerSecond;
+            public float CooldownPerSecond;
+            public ushort RadioactiveMask;
+            public ushort FlammableMask;
+
+            public void Execute()
+            {
+                if (Counters.Length >= 2)
+                {
+                    Counters[0] = 0;
+                    Counters[1] = 0;
+                }
+
+                int slotCount = math.min(
+                    math.min(math.min(AnchorHashIds.Length, StackCounts.Length), CraftLockedCounts.Length),
+                    math.min(ItemStateFlags.Length, ThermalRunawayByAnchor.Length));
+                int safeColumns = math.max(1, Columns);
+                int safeRows = math.max(1, Rows);
+                if (slotCount <= 0 || !(DeltaSeconds > 0f))
+                    return;
+
+                int pairCount = 0;
+                int changed = 0;
+                float heatDelta = math.max(0f, RunawayPerSecond) * DeltaSeconds;
+                float cooldownDelta = math.max(0f, CooldownPerSecond) * DeltaSeconds;
+
+                for (int anchorIndex = 0; anchorIndex < slotCount; anchorIndex++)
+                {
+                    if (!IsReactiveCandidate(anchorIndex, slotCount))
+                    {
+                        if (ThermalRunawayByAnchor[anchorIndex] > 0f)
+                        {
+                            ThermalRunawayByAnchor[anchorIndex] = math.max(0f, ThermalRunawayByAnchor[anchorIndex] - cooldownDelta);
+                            changed = 1;
+                        }
+
+                        continue;
+                    }
+
+                    int adjacentAnchor = FindAdjacentReactivePartner(anchorIndex, slotCount, safeColumns, safeRows);
+                    if (adjacentAnchor < 0)
+                    {
+                        if (ThermalRunawayByAnchor[anchorIndex] > 0f)
+                        {
+                            ThermalRunawayByAnchor[anchorIndex] = math.max(0f, ThermalRunawayByAnchor[anchorIndex] - cooldownDelta);
+                            changed = 1;
+                        }
+
+                        continue;
+                    }
+
+                    float nextRunaway = math.min(1f, ThermalRunawayByAnchor[anchorIndex] + heatDelta);
+                    if (nextRunaway != ThermalRunawayByAnchor[anchorIndex])
+                    {
+                        ThermalRunawayByAnchor[anchorIndex] = nextRunaway;
+                        changed = 1;
+                    }
+
+                    if (nextRunaway >= 1f && anchorIndex < adjacentAnchor && pairCount < RunawayPairs.Length)
+                        RunawayPairs[pairCount++] = new int2(anchorIndex, adjacentAnchor);
+                }
+
+                if (Counters.Length >= 2)
+                {
+                    Counters[0] = pairCount;
+                    Counters[1] = changed;
+                }
+            }
+
+            private bool IsReactiveCandidate(int anchorIndex, int slotCount)
+            {
+                return (uint)anchorIndex < (uint)slotCount &&
+                       AnchorHashIds[anchorIndex] != 0 &&
+                       StackCounts[anchorIndex] > 0 &&
+                       CraftLockedCounts[anchorIndex] == 0 &&
+                       ((ItemStateFlags[anchorIndex] & (RadioactiveMask | FlammableMask)) != 0);
+            }
+
+            private int FindAdjacentReactivePartner(int anchorIndex, int slotCount, int safeColumns, int safeRows)
+            {
+                ushort flags = ItemStateFlags[anchorIndex];
+                bool isRadioactive = (flags & RadioactiveMask) != 0;
+                bool isFlammable = (flags & FlammableMask) != 0;
+                if (!isRadioactive && !isFlammable)
+                    return -1;
+
+                int x = anchorIndex % safeColumns;
+                int y = anchorIndex / safeColumns;
+                int partner = FindReactivePartnerAt(x - 1, y, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
+                if (partner >= 0)
+                    return partner;
+
+                partner = FindReactivePartnerAt(x + 1, y, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
+                if (partner >= 0)
+                    return partner;
+
+                partner = FindReactivePartnerAt(x, y - 1, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
+                if (partner >= 0)
+                    return partner;
+
+                return FindReactivePartnerAt(x, y + 1, slotCount, safeColumns, safeRows, isRadioactive, isFlammable);
+            }
+
+            private int FindReactivePartnerAt(
+                int x,
+                int y,
+                int slotCount,
+                int safeColumns,
+                int safeRows,
+                bool sourceRadioactive,
+                bool sourceFlammable)
+            {
+                if ((uint)x >= (uint)safeColumns || (uint)y >= (uint)safeRows)
+                    return -1;
+
+                int candidateIndex = y * safeColumns + x;
+                if (!IsReactiveCandidate(candidateIndex, slotCount))
+                    return -1;
+
+                ushort flags = ItemStateFlags[candidateIndex];
+                bool candidateRadioactive = (flags & RadioactiveMask) != 0;
+                bool candidateFlammable = (flags & FlammableMask) != 0;
+                if ((sourceRadioactive && candidateFlammable) || (sourceFlammable && candidateRadioactive))
+                    return candidateIndex;
+
+                return -1;
+            }
+        }
+
         public struct CraftReservation
         {
             public int AnchorIndex;
@@ -280,7 +430,7 @@ namespace Hecton8.Inventory
             public ushort stackCount;
             public ushort lockedCount;
             public ushort stateFlags;
-            public uint geneticsMask;
+            public ulong geneticsMask;
             public ushort qualityMilli;
             public uint lastUpdateUnixSeconds;
             public float weight;
@@ -320,7 +470,7 @@ namespace Hecton8.Inventory
         private NativeArray<ushort> _craftLockedCounts;
         private NativeArray<ushort> _anchorStateFlags;
         private NativeArray<ushort> _itemStateFlags;
-        private NativeArray<uint> _itemGeneticsWords;
+        private NativeArray<ulong> _itemGeneticsWords;
         private NativeArray<ushort> _qualityMilli;
         private NativeArray<uint> _lastUpdateUnixSeconds;
         private NativeArray<ushort> _scavengeSimStackCounts;
@@ -334,17 +484,22 @@ namespace Hecton8.Inventory
         private NativeArray<float3> _derivedMassVolumeScratch;
         private NativeArray<int> _radioactiveConversionAnchors;
         private NativeArray<int> _radioactiveHalfLifeCounters;
+        private NativeArray<float> _thermalRunawayByAnchor;
+        private NativeArray<int2> _thermalRunawayPairs;
+        private NativeArray<int> _thermalRunawayCounters;
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
         private bool _registeredSlowTick;
         private ulong _playerImpactBodyId;
         private TraumaDispatcher _traumaDispatcher;
+        private int _pressurizedContainerProtectionCount;
 
         public static PlayerInventory Instance => _instance;
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
         public float TotalVolumeM3 { get; private set; }
         public float TotalRadiationSv { get; private set; }
+        public bool HasPressurizedContainerProtection => _pressurizedContainerProtectionCount > 0;
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
         public int InventoryVersion { get; private set; }
@@ -352,6 +507,24 @@ namespace Hecton8.Inventory
 
         public int SavePriority => 20;
         public int LoadPriority => 20;
+
+        /// <summary>
+        /// Registers one active pressurized storage protector for this inventory.
+        /// </summary>
+        public void AddPressurizedContainerProtection()
+        {
+            if (_pressurizedContainerProtectionCount < int.MaxValue)
+                _pressurizedContainerProtectionCount++;
+        }
+
+        /// <summary>
+        /// Removes one active pressurized storage protector from this inventory.
+        /// </summary>
+        public void RemovePressurizedContainerProtection()
+        {
+            if (_pressurizedContainerProtectionCount > 0)
+                _pressurizedContainerProtectionCount--;
+        }
 
         internal static bool IsFaunaBaitItem(ItemData itemData)
         {
@@ -382,7 +555,7 @@ namespace Hecton8.Inventory
             // COLD ALLOC: ushort[columns * rows] — persistent per-anchor item-state flags — owner: PlayerInventory
             _itemStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: uint[columns * rows] â€” persistent per-anchor cultivation genetics words â€” owner: PlayerInventory
-            _itemGeneticsWords = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _itemGeneticsWords = new NativeArray<ulong>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — persistent per-anchor quality values (0-1000) — owner: PlayerInventory
             _qualityMilli = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: uint[columns * rows] — persistent per-anchor last update timestamps — owner: PlayerInventory
@@ -401,6 +574,9 @@ namespace Hecton8.Inventory
             _derivedMassVolumeScratch = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float3[1] — Burst-derived mass/volume/radiation totals scratch — owner: PlayerInventory
             _radioactiveConversionAnchors = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] — radioactive half-life conversion anchor scratch — owner: PlayerInventory
             _radioactiveHalfLifeCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — radioactive half-life changed/conversion counters — owner: PlayerInventory
+            _thermalRunawayByAnchor = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — reactive chemistry thermal runaway cache — owner: PlayerInventory
+            _thermalRunawayPairs = new NativeArray<int2>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int2[columns * rows] — reactive chemistry explosion pair scratch — owner: PlayerInventory
+            _thermalRunawayCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — reactive chemistry pair/change counters — owner: PlayerInventory
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
             _sortedPlacements = new ItemPlacement[columns * rows];
@@ -484,6 +660,15 @@ namespace Hecton8.Inventory
             if (_radioactiveHalfLifeCounters.IsCreated)
                 _radioactiveHalfLifeCounters.Dispose(default);
 
+            if (_thermalRunawayByAnchor.IsCreated)
+                _thermalRunawayByAnchor.Dispose(default);
+
+            if (_thermalRunawayPairs.IsCreated)
+                _thermalRunawayPairs.Dispose(default);
+
+            if (_thermalRunawayCounters.IsCreated)
+                _thermalRunawayCounters.Dispose(default);
+
             if (_instance == this)
                 _instance = null;
         }
@@ -530,12 +715,12 @@ namespace Hecton8.Inventory
             int anchorY,
             out int itemHashId,
             out ushort stateFlags,
-            out uint geneticsMask,
+            out ulong geneticsMask,
             out ushort qualityMilli)
         {
             itemHashId = 0;
             stateFlags = 0;
-            geneticsMask = 0u;
+            geneticsMask = 0UL;
             qualityMilli = 0;
             if (_grid == null || !_stackCounts.IsCreated)
                 return false;
@@ -551,7 +736,7 @@ namespace Hecton8.Inventory
 
             itemHashId = descriptor.HashId;
             stateFlags = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
-            geneticsMask = _itemGeneticsWords.IsCreated ? _itemGeneticsWords[anchorIndex] : 0u;
+            geneticsMask = _itemGeneticsWords.IsCreated ? _itemGeneticsWords[anchorIndex] : 0UL;
             qualityMilli = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
                 ? _qualityMilli[anchorIndex]
                 : DefaultQualityMilli;
@@ -670,16 +855,16 @@ namespace Hecton8.Inventory
             return TryConsumeFirstMatchingItemByHash(itemHashId, out stateFlags, out qualityMilli, out _);
         }
 
-        internal bool TryConsumeFirstMatchingItemByHash(int itemHashId, out ushort stateFlags, out ushort qualityMilli, out uint geneticsMask)
+        internal bool TryConsumeFirstMatchingItemByHash(int itemHashId, out ushort stateFlags, out ushort qualityMilli, out ulong geneticsMask)
         {
             stateFlags = 0;
             qualityMilli = 0;
-            geneticsMask = 0u;
+            geneticsMask = 0UL;
             if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
                 return false;
 
             stateFlags = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
-            geneticsMask = _itemGeneticsWords.IsCreated ? _itemGeneticsWords[anchorIndex] : 0u;
+            geneticsMask = _itemGeneticsWords.IsCreated ? _itemGeneticsWords[anchorIndex] : 0UL;
             qualityMilli = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
                 ? _qualityMilli[anchorIndex]
                 : DefaultQualityMilli;
@@ -708,10 +893,20 @@ namespace Hecton8.Inventory
 
         public bool TryAddItemWithGenetics(int itemHashId, uint geneticsMask, int quantity = 1)
         {
+            return TryAddItemWithGenetics(itemHashId, (ulong)geneticsMask, quantity);
+        }
+
+        public bool TryAddItemWithGenetics(int itemHashId, ulong geneticsMask, int quantity = 1)
+        {
             return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, DefaultQualityMilli, out _);
         }
 
         public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, int quantity = 1)
+        {
+            return TryAddItemWithState(itemHashId, (ulong)geneticsMask, qualityMilli, quantity);
+        }
+
+        public bool TryAddItemWithState(int itemHashId, ulong geneticsMask, ushort qualityMilli, int quantity = 1)
         {
             return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out _);
         }
@@ -720,6 +915,8 @@ namespace Hecton8.Inventory
         {
             ApplyInventoryEnvironmentalDegradation();
             ApplyInventoryRadioactiveHalfLife();
+            ApplyInventoryReactiveChemistry();
+            ApplyInventoryDepthPressureCrush();
             DispatchInventoryRadiationTrauma();
         }
 
@@ -892,10 +1089,15 @@ namespace Hecton8.Inventory
 
         public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor)
         {
-            return ScavengeAttempt(itemHashId, quantity, interactor, 0u, DefaultQualityMilli);
+            return ScavengeAttempt(itemHashId, quantity, interactor, 0UL, DefaultQualityMilli);
         }
 
         public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor, uint geneticsMask, ushort qualityMilli)
+        {
+            return ScavengeAttempt(itemHashId, quantity, interactor, (ulong)geneticsMask, qualityMilli);
+        }
+
+        public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor, ulong geneticsMask, ushort qualityMilli)
         {
             if (itemHashId == 0 || quantity <= 0)
                 return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
@@ -1269,10 +1471,10 @@ namespace Hecton8.Inventory
 
         private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
         {
-            return TryAddItemWithStateInternal(itemHashId, quantity, 0u, DefaultQualityMilli, out addedQuantity);
+            return TryAddItemWithStateInternal(itemHashId, quantity, 0UL, DefaultQualityMilli, out addedQuantity);
         }
 
-        private bool TryAddItemWithStateInternal(int itemHashId, int quantity, uint geneticsMask, ushort qualityMilli, out int addedQuantity)
+        private bool TryAddItemWithStateInternal(int itemHashId, int quantity, ulong geneticsMask, ushort qualityMilli, out int addedQuantity)
         {
             addedQuantity = 0;
             if (_grid == null ||
@@ -1324,7 +1526,7 @@ namespace Hecton8.Inventory
             return allAdded;
         }
 
-        private bool TryStackItemWithState(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, uint geneticsMask, ushort qualityMilli)
+        private bool TryStackItemWithState(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, ulong geneticsMask, ushort qualityMilli)
         {
             if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1)
                 return false;
@@ -1811,6 +2013,177 @@ namespace Hecton8.Inventory
             NotifyInventoryChanged();
         }
 
+        private void ApplyInventoryReactiveChemistry()
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_craftLockedCounts.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_thermalRunawayByAnchor.IsCreated ||
+                !_thermalRunawayPairs.IsCreated ||
+                !_thermalRunawayCounters.IsCreated)
+            {
+                return;
+            }
+
+            // ZERO-GC SYNC JOB: bounded SOA slot-adjacency kernel; mutates only preallocated thermal cache.
+            new InventoryReactiveChemistryJob
+            {
+                AnchorHashIds = _grid.AnchorHashIds,
+                StackCounts = _stackCounts,
+                CraftLockedCounts = _craftLockedCounts,
+                ItemStateFlags = _itemStateFlags,
+                ThermalRunawayByAnchor = _thermalRunawayByAnchor,
+                RunawayPairs = _thermalRunawayPairs,
+                Counters = _thermalRunawayCounters,
+                Columns = columns,
+                Rows = rows,
+                DeltaSeconds = SlowTickIntervalSeconds,
+                RunawayPerSecond = ThermalRunawayPerSecond,
+                CooldownPerSecond = ThermalRunawayCooldownPerSecond,
+                RadioactiveMask = RadioactiveItemStateMask,
+                FlammableMask = FlammableItemStateMask
+            }.Run();
+
+            if (_thermalRunawayCounters.Length < 2)
+                return;
+
+            int pairCount = math.clamp(_thermalRunawayCounters[0], 0, _thermalRunawayPairs.Length);
+            if (pairCount <= 0)
+                return;
+
+            int destroyedPairs = 0;
+            for (int pairIndex = 0; pairIndex < pairCount; pairIndex++)
+            {
+                int2 pair = _thermalRunawayPairs[pairIndex];
+                if (TryDestroyReactivePair(pair.x, pair.y))
+                    destroyedPairs++;
+            }
+
+            if (destroyedPairs <= 0)
+                return;
+
+            DispatchInventoryThermalRunaway(destroyedPairs);
+            NotifyInventoryChanged();
+        }
+
+        private bool TryDestroyReactivePair(int firstAnchorIndex, int secondAnchorIndex)
+        {
+            if (!IsReactiveAnchorStillValid(firstAnchorIndex) ||
+                !IsReactiveAnchorStillValid(secondAnchorIndex))
+            {
+                return false;
+            }
+
+            int firstFlags = _itemStateFlags[firstAnchorIndex];
+            int secondFlags = _itemStateFlags[secondAnchorIndex];
+            bool firstRadioactive = (firstFlags & RadioactiveItemStateMask) != 0;
+            bool firstFlammable = (firstFlags & FlammableItemStateMask) != 0;
+            bool secondRadioactive = (secondFlags & RadioactiveItemStateMask) != 0;
+            bool secondFlammable = (secondFlags & FlammableItemStateMask) != 0;
+            if (!((firstRadioactive && secondFlammable) || (firstFlammable && secondRadioactive)))
+                return false;
+
+            bool destroyedSecond = DestroyInventoryAnchor(secondAnchorIndex);
+            bool destroyedFirst = DestroyInventoryAnchor(firstAnchorIndex);
+            return destroyedFirst | destroyedSecond;
+        }
+
+        private bool IsReactiveAnchorStillValid(int anchorIndex)
+        {
+            return _grid != null &&
+                   _stackCounts.IsCreated &&
+                   _itemStateFlags.IsCreated &&
+                   (uint)anchorIndex < (uint)_stackCounts.Length &&
+                   _grid.HasAnchor(anchorIndex) &&
+                   _grid.GetAnchorHashId(anchorIndex) != 0 &&
+                   _stackCounts[anchorIndex] > 0 &&
+                   !IsCraftLockedFlagSet(anchorIndex);
+        }
+
+        private void DispatchInventoryThermalRunaway(int destroyedPairCount)
+        {
+            float damage = ThermalRunawayDamage * math.max(1, destroyedPairCount);
+            if (survival != null)
+                survival.TakeDamage(damage);
+
+            DamageSignal signal = new DamageSignal
+            {
+                magnitude = damage,
+                localPoint = float3.zero,
+                damageType = (uint)(DamageTypeMask.Thermal | DamageTypeMask.Impact | DamageTypeMask.Radioactive),
+                integrityDelta = byte.MaxValue,
+                depth = ResolveInventoryCarrierDepthMeters(),
+                sourceID = DamageSourceIds.InventoryRadiation
+            };
+
+            TraumaDispatcher dispatcher = ResolveTraumaDispatcher();
+            if (dispatcher != null)
+            {
+                dispatcher.OnIntegrityChanged(1f, 0f, signal);
+                dispatcher.OnTraumaThresholdCrossed(TraumaLevel.Critical);
+            }
+
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+                spatialAudio.QueueInventoryRunawayExplosion(transform.position, ThermalRunawayAudioVolume);
+        }
+
+        private void ApplyInventoryDepthPressureCrush()
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_qualityMilli.IsCreated ||
+                ResolveInventoryPressurizedContainerProtection())
+            {
+                return;
+            }
+
+            float depthMeters = ResolveInventoryCarrierDepthMeters();
+            if (depthMeters <= PressureCrushDepthMeters)
+                return;
+
+            bool changed = false;
+            float depthFactor = math.saturate((depthMeters - PressureCrushDepthMeters) / 1000f);
+            float damageMilli = PressureCrushDurabilityPerSecond * SlowTickIntervalSeconds * math.max(1f, depthFactor) * 1000f;
+
+            for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex) || IsCraftLockedFlagSet(anchorIndex))
+                    continue;
+
+                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
+                if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor) ||
+                    !IsDepthPressureFragileItem(itemHashId, in runtimeDescriptor))
+                {
+                    continue;
+                }
+
+                if (ApplyPressureCrushDamageToAnchor(anchorIndex, damageMilli))
+                    changed = true;
+            }
+
+            if (changed)
+                NotifyInventoryChanged();
+        }
+
+        private bool ApplyPressureCrushDamageToAnchor(int anchorIndex, float damageMilli)
+        {
+            ushort currentQualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
+            ushort nextQualityMilli = (ushort)math.clamp((int)math.round(currentQualityMilli - math.max(1f, damageMilli)), 0, 1000);
+            if (nextQualityMilli <= 0)
+                return DestroyInventoryAnchor(anchorIndex);
+
+            if (nextQualityMilli == currentQualityMilli)
+                return false;
+
+            _qualityMilli[anchorIndex] = nextQualityMilli;
+            if (nextQualityMilli < DegradedQualityMilliThreshold)
+                _itemStateFlags[anchorIndex] |= DegradedItemStateMask;
+
+            return true;
+        }
+
         private void DispatchInventoryRadiationTrauma()
         {
             float threshold = ResolveInventoryRadiationThresholdSv();
@@ -2027,6 +2400,17 @@ namespace Hecton8.Inventory
                    runtimeDescriptor.CategoryId == (byte)ItemCategory.Tool;
         }
 
+        private bool IsDepthPressureFragileItem(int itemHashId, in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)
+        {
+            if (runtimeDescriptor.AudioMaterialId == (byte)ItemAudioMaterialId.Glass)
+                return true;
+
+            ItemData itemData = itemCatalog != null ? itemCatalog.FindByHash(itemHashId) : null;
+            return itemData != null &&
+                   (itemData.resourceFamily == ResourceFamily.ElectronicsMetal ||
+                    itemData.resourceFamily == ResourceFamily.Power);
+        }
+
         private bool ApplyKineticDamageToAnchor(int anchorIndex)
         {
             if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
@@ -2062,6 +2446,40 @@ namespace Hecton8.Inventory
                 _itemStateFlags[anchorIndex] |= DegradedItemStateMask;
 
             return true;
+        }
+
+        private bool DestroyInventoryAnchor(int anchorIndex)
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_craftLockedCounts.IsCreated ||
+                !_anchorStateFlags.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_itemGeneticsWords.IsCreated ||
+                !_qualityMilli.IsCreated ||
+                !_lastUpdateUnixSeconds.IsCreated ||
+                !_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+            {
+                return false;
+            }
+
+            int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            _grid.RemoveAnchorAt(anchorIndex);
+            _stackCounts[anchorIndex] = 0;
+            _craftLockedCounts[anchorIndex] = 0;
+            _anchorStateFlags[anchorIndex] = 0;
+            _itemStateFlags[anchorIndex] = 0;
+            _itemGeneticsWords[anchorIndex] = 0u;
+            _qualityMilli[anchorIndex] = 0;
+            _lastUpdateUnixSeconds[anchorIndex] = 0;
+            ClearAnchorPhysicalMetadata(anchorIndex);
+            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
+            return true;
+        }
+
+        private bool ResolveInventoryPressurizedContainerProtection()
+        {
+            return HasPressurizedContainerProtection;
         }
 
         private void ClearCraftReservationState()
@@ -2113,6 +2531,8 @@ namespace Hecton8.Inventory
             _anchorUnitMassKg[anchorIndex] = 0f;
             _anchorUnitVolumeM3[anchorIndex] = 0f;
             _anchorUnitRadiationSv[anchorIndex] = 0f;
+            if (_thermalRunawayByAnchor.IsCreated && (uint)anchorIndex < (uint)_thermalRunawayByAnchor.Length)
+                _thermalRunawayByAnchor[anchorIndex] = 0f;
         }
 
         private static uint ResolveCurrentUnixTimestamp()
@@ -2157,10 +2577,10 @@ namespace Hecton8.Inventory
             return savedFlags != 0 ? savedFlags : fallbackFlags;
         }
 
-        private static uint ResolveLoadedGeneticsMask(InventoryDTO dto, int index)
+        private static ulong ResolveLoadedGeneticsMask(InventoryDTO dto, int index)
         {
             if (dto.itemGeneticsWords == null || (uint)index >= (uint)dto.itemGeneticsWords.Length)
-                return 0u;
+                return 0UL;
 
             return dto.itemGeneticsWords[index];
         }
@@ -2246,6 +2666,15 @@ namespace Hecton8.Inventory
 
             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
             UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<uint>());
+        }
+
+        private static unsafe void ClearNativeArray(NativeArray<ulong> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+            UnsafeUtility.MemClear(destinationPtr, array.Length * UnsafeUtility.SizeOf<ulong>());
         }
 
         private static unsafe void ClearNativeArray(NativeArray<float> array)

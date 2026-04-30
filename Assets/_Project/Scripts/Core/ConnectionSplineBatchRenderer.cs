@@ -16,7 +16,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("")]
-    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour
+    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, ILateFrameTickable
     {
         private const int SamplesPerLink = 8;
         private const int NearPipeRadialSegments = 8;
@@ -53,7 +53,7 @@ namespace Hecton8.Core
             public float3 Position;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildTubeFramesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SplineDescriptor> Descriptors;
@@ -101,7 +101,7 @@ namespace Hecton8.Core
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildTubeVerticesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SplineDescriptor> Descriptors;
@@ -150,7 +150,7 @@ namespace Hecton8.Core
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildTubeIndicesJob : IJobParallelFor
         {
             public NativeArray<int> Indices;
@@ -223,6 +223,7 @@ namespace Hecton8.Core
         }
 
         private static ConnectionSplineBatchRenderer _instance;
+        private bool _registeredLateFrameTick;
 
         // COLD ALLOC: BatchState[5] — persistent shared tube/line render batches for pipes and relay cables — owner: ConnectionSplineBatchRenderer
         private readonly BatchState[] _batches = new BatchState[5];
@@ -333,7 +334,26 @@ namespace Hecton8.Core
             InitializeBatch((int)BatchKind.RelayUnpowered, BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters, RelayRadialSegments, MeshTopology.Triangles);
         }
 
-        private void LateUpdate()
+        private void OnEnable()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = true;
+        }
+
+        private void OnDisable()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = false;
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
         {
             RefreshPipeBatchAssignments();
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
@@ -342,6 +362,8 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            OnDisable();
+
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 DisposeBatch(_batches[batchIndex]);
 

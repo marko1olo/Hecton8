@@ -75,7 +75,7 @@ namespace Hecton8.Interaction
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
         private bool _registeredToWorldStateRegistry;
-        private uint _geneticsMask;
+        private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
 
         public ItemData ItemData => itemData;
@@ -83,7 +83,7 @@ namespace Hecton8.Interaction
         public static int WorldStateRegistryCount => _worldStateRegistry.Count;
         public int ItemHashId => _cachedItemHashId;
         /// <summary>Persisted genetics payload carried by biological seed pickups.</summary>
-        public uint GeneticsMask => _geneticsMask;
+        public ulong GeneticsMask => _geneticsMask;
         /// <summary>Persisted item quality in milli-normalized units.</summary>
         public ushort QualityMilli => _qualityMilli != 0 ? _qualityMilli : DefaultQualityMilli;
         public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;
@@ -97,11 +97,17 @@ namespace Hecton8.Interaction
 
         public void Configure(ItemData data, int itemQuantity)
         {
-            Configure(data, itemQuantity, 0u, DefaultQualityMilli);
+            Configure(data, itemQuantity, 0UL, DefaultQualityMilli);
         }
 
         /// <summary>Configures pickup identity and persisted mutable item state.</summary>
         public void Configure(ItemData data, int itemQuantity, uint geneticsMask, ushort qualityMilli)
+        {
+            Configure(data, itemQuantity, (ulong)geneticsMask, qualityMilli);
+        }
+
+        /// <summary>Configures pickup identity and persisted mutable item state.</summary>
+        public void Configure(ItemData data, int itemQuantity, ulong geneticsMask, ushort qualityMilli)
         {
             itemData = data;
             quantity = Mathf.Max(1, itemQuantity);
@@ -204,6 +210,8 @@ namespace Hecton8.Interaction
             UnregisterWorldStateRegistry();
             ClearPersistentWorldRecord();
             RestoreDamping();
+            if (_rigidbody != null)
+                GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -215,6 +223,8 @@ namespace Hecton8.Interaction
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
+            if (_rigidbody != null)
+                GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;

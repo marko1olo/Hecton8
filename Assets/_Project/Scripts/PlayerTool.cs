@@ -187,7 +187,17 @@ namespace Hecton8.Gameplay
             if (interactionService != null && interactionService.IsInitialized)
             {
                 if (_queuedRaycastRequesterId == 0UL) RefreshQueuedRaycastRequesterId();
-                return interactionService.TryRaycastPrimary(_queuedRaycastRequesterId, origin, direction, range, layerMask, qti, out hit);
+                Vector3 normalizedDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : transform.forward;
+                InteractionPacket packet = new InteractionPacket(
+                    ResolveRuntimeToolId(),
+                    new Unity.Mathematics.float3(origin.x, origin.y, origin.z),
+                    new Unity.Mathematics.float3(normalizedDirection.x, normalizedDirection.y, normalizedDirection.z),
+                    GetRuntimePowerScalar(1f),
+                    range,
+                    (byte)ToolActionMode.Primary,
+                    (byte)(IsEquipped ? ToolStateBits.Active : ToolStateBits.Idle),
+                    unchecked((uint)Time.frameCount));
+                return interactionService.TryRaycastPrimary(_queuedRaycastRequesterId, in packet, layerMask, qti, out hit);
             }
             hit = default;
             return false;

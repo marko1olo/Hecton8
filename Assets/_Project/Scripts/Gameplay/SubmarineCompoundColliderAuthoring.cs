@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -8,8 +10,10 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Compound Collider Authoring")]
-    public sealed class SubmarineCompoundColliderAuthoring : MonoBehaviour
+    public sealed class SubmarineCompoundColliderAuthoring : MonoBehaviour, ISlowTickable
     {
+        private const int ColliderLodOverlapCapacity = 32;
+
         [Serializable]
         public struct BoxShape
         {
@@ -54,18 +58,49 @@ namespace Hecton8.Gameplay
             public bool IsTrigger;
         }
 
-        [Header("── Generation ───────────────────")]
+        [Header("-- Generation ----------------------")]
         [Tooltip("Name used for the generated collider root beneath this submarine.")]
         [SerializeField] private string generatedRootName = "__CompoundColliders";
 
         [Tooltip("When enabled, the baker clears previously generated colliders before rebuilding.")]
         [SerializeField] private bool replaceExistingGeneratedColliders = true;
 
-        [Header("── Box Segments ─────────────────")]
+        [Header("-- Box Segments --------------------")]
+        [Tooltip("Authored local-space box collider segments baked by the editor tool.")]
         [SerializeField] private BoxShape[] boxShapes = Array.Empty<BoxShape>();
 
-        [Header("── Capsule Segments ─────────────")]
+        [Header("-- Capsule Segments ----------------")]
+        [Tooltip("Authored local-space capsule collider segments baked by the editor tool.")]
         [SerializeField] private CapsuleShape[] capsuleShapes = Array.Empty<CapsuleShape>();
+
+        [Header("-- Runtime Collider LOD ------------")]
+        [Tooltip("When enabled, distant low-risk submarine physics uses one sphere instead of the compound collider rig.")]
+        [SerializeField] private bool enableRuntimeColliderLod = true;
+
+        [Tooltip("No external obstacle or enemy inside this radius allows the simplified sphere collider.")]
+        [SerializeField, Min(1f)] private float colliderLodProbeRadius = 100f;
+
+        [Tooltip("Layers counted as nearby obstacles or enemies for keeping the detailed compound collider active.")]
+        [SerializeField] private LayerMask colliderLodThreatMask = HectonLayerMasks.DefaultRaycastLayerMask;
+
+        [Tooltip("Simplified collision sphere used when no nearby threats are detected. Created cold if omitted.")]
+        [SerializeField] private SphereCollider simplifiedCollider;
+
+        [Tooltip("Local center for the simplified collision sphere when the component has to create it.")]
+        [SerializeField] private Vector3 simplifiedColliderCenter = Vector3.zero;
+
+        [Tooltip("Radius for the simplified collision sphere when the component has to create it.")]
+        [SerializeField, Min(0.1f)] private float simplifiedColliderRadius = 4.5f;
+
+        private Transform _cachedTransform;
+        private bool _registeredSlowTick;
+        private bool _usingSimplifiedCollider;
+        private bool _ownsSimplifiedCollider;
+
+        // COLD ALLOC: List<Collider>[32] - generated compound collider cache for runtime collider LOD toggles - owner: SubmarineCompoundColliderAuthoring
+        private readonly List<Collider> _compoundColliderCache = new List<Collider>(32);
+        // COLD ALLOC: Collider[32] - nonalloc collider LOD threat probe results - owner: SubmarineCompoundColliderAuthoring
+        private readonly Collider[] _colliderLodOverlapBuffer = new Collider[ColliderLodOverlapCapacity];
 
         /// <summary>Name used for the generated collider root beneath this submarine.</summary>
         public string GeneratedRootName => string.IsNullOrWhiteSpace(generatedRootName) ? "__CompoundColliders" : generatedRootName;
@@ -78,5 +113,152 @@ namespace Hecton8.Gameplay
 
         /// <summary>Authored capsule-shape definitions.</summary>
         public CapsuleShape[] CapsuleShapes => capsuleShapes;
+
+        private void Awake()
+        {
+            _cachedTransform = transform;
+            EnsureSimplifiedCollider();
+            RebuildRuntimeColliderCache();
+            ApplyColliderLodState(false);
+        }
+
+        private void OnEnable()
+        {
+            _cachedTransform = transform;
+            EnsureSimplifiedCollider();
+            RebuildRuntimeColliderCache();
+            TryRegisterSlowTickable();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterSlowTickable();
+            ApplyColliderLodState(false);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterSlowTickable();
+        }
+
+        public void SlowTick()
+        {
+            if (!enableRuntimeColliderLod || _cachedTransform == null || simplifiedCollider == null || _compoundColliderCache.Count <= 0)
+            {
+                ApplyColliderLodState(false);
+                return;
+            }
+
+            int mask = colliderLodThreatMask.value != 0 ? colliderLodThreatMask.value : HectonLayerMasks.DefaultRaycastLayerMask;
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                _cachedTransform.position,
+                Mathf.Max(1f, colliderLodProbeRadius),
+                _colliderLodOverlapBuffer,
+                mask,
+                QueryTriggerInteraction.Ignore);
+
+            bool hasExternalThreat = false;
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = _colliderLodOverlapBuffer[i];
+                _colliderLodOverlapBuffer[i] = null;
+                if (hitCollider == null)
+                    continue;
+
+                Transform hitTransform = hitCollider.transform;
+                if (hitTransform == _cachedTransform || hitTransform.IsChildOf(_cachedTransform))
+                    continue;
+
+                hasExternalThreat = true;
+                break;
+            }
+
+            for (int i = hitCount; i < _colliderLodOverlapBuffer.Length; i++)
+                _colliderLodOverlapBuffer[i] = null;
+
+            ApplyColliderLodState(!hasExternalThreat);
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = true;
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = false;
+        }
+
+        private void EnsureSimplifiedCollider()
+        {
+            if (simplifiedCollider != null)
+                return;
+
+            // COLD ALLOC: SphereCollider[1] - simplified submarine physics LOD collider - owner: SubmarineCompoundColliderAuthoring
+            simplifiedCollider = gameObject.AddComponent<SphereCollider>();
+            _ownsSimplifiedCollider = true;
+            simplifiedCollider.center = simplifiedColliderCenter;
+            simplifiedCollider.radius = Mathf.Max(0.1f, simplifiedColliderRadius);
+            simplifiedCollider.isTrigger = false;
+            simplifiedCollider.enabled = false;
+        }
+
+        private void RebuildRuntimeColliderCache()
+        {
+            _compoundColliderCache.Clear();
+            Transform generatedRoot = _cachedTransform != null ? _cachedTransform.Find(GeneratedRootName) : null;
+            if (generatedRoot == null)
+                return;
+
+            generatedRoot.GetComponentsInChildren(true, _compoundColliderCache);
+            for (int i = _compoundColliderCache.Count - 1; i >= 0; i--)
+            {
+                Collider cachedCollider = _compoundColliderCache[i];
+                if (cachedCollider == null || cachedCollider == simplifiedCollider)
+                    _compoundColliderCache.RemoveAt(i);
+            }
+        }
+
+        private void ApplyColliderLodState(bool useSimplifiedCollider)
+        {
+            if (_usingSimplifiedCollider == useSimplifiedCollider && simplifiedCollider != null)
+                return;
+
+            _usingSimplifiedCollider = useSimplifiedCollider;
+            if (simplifiedCollider != null)
+            {
+                simplifiedCollider.center = simplifiedColliderCenter;
+                simplifiedCollider.radius = Mathf.Max(0.1f, simplifiedColliderRadius);
+                simplifiedCollider.enabled = useSimplifiedCollider;
+            }
+
+            for (int i = 0; i < _compoundColliderCache.Count; i++)
+            {
+                Collider cachedCollider = _compoundColliderCache[i];
+                if (cachedCollider != null)
+                    cachedCollider.enabled = !useSimplifiedCollider;
+            }
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            colliderLodProbeRadius = Mathf.Max(1f, colliderLodProbeRadius);
+            simplifiedColliderRadius = Mathf.Max(0.1f, simplifiedColliderRadius);
+            if (simplifiedCollider != null && _ownsSimplifiedCollider)
+            {
+                simplifiedCollider.center = simplifiedColliderCenter;
+                simplifiedCollider.radius = simplifiedColliderRadius;
+            }
+        }
+#endif
     }
 }

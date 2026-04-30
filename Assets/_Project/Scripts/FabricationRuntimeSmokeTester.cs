@@ -1,4 +1,5 @@
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton8.Building;
 using Hecton8.Crafting;
 using Hecton8.Gameplay;
@@ -34,67 +35,86 @@ namespace Hecton8.Debugging
             if (!runOnStart)
                 return;
 
-            StartCoroutine(RunSmoke());
+            _ = RunSmokeAsync(destroyCancellationToken);
         }
 
-        private IEnumerator RunSmoke()
+        private async Awaitable RunSmokeAsync(CancellationToken cancellationToken)
         {
-            yield return new WaitForSeconds(startupDelay);
-
-            if (_inventory == null || _scanLogSystem == null)
+            try
             {
-                Debug.LogError("[FabricationSmoke] Missing PlayerInventory or ScanLogSystem on Player.");
-                yield break;
+                await Awaitable.WaitForSecondsAsync(startupDelay, cancellationToken: cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested || this == null)
+                    return;
+
+                if (_inventory == null || _scanLogSystem == null)
+                {
+                    Debug.LogError("[FabricationSmoke] Missing PlayerInventory or ScanLogSystem on Player.");
+                    return;
+                }
+
+                Fabricator fabricator = FindTargetFabricator();
+                if (fabricator == null)
+                {
+                    Debug.LogError($"[FabricationSmoke] Fabricator '{targetFabricatorName}' not found.");
+                    return;
+                }
+
+                RecipeData recipe = FindTargetRecipe(fabricator);
+                if (recipe == null)
+                {
+                    Debug.LogError($"[FabricationSmoke] Recipe '{targetRecipeName}' not found on '{fabricator.name}'.");
+                    return;
+                }
+
+                UnlockRecipe(recipe);
+                SeedIngredients(recipe);
+
+                int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
+
+                fabricator.Interact(transform);
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested || this == null)
+                    return;
+
+                bool menuOpened = HectonFabricatorUI.IsMenuOpen;
+                bool craftStarted = fabricator.StartCraft(recipe);
+
+                if (!craftStarted)
+                {
+                    Debug.LogError($"[FabricationSmoke] Failed to start craft '{recipe.recipeName}'.");
+                    return;
+                }
+
+                float waitTime = Mathf.Max(0.1f, recipe.craftTime + completionPadding);
+                await Awaitable.WaitForSecondsAsync(waitTime, cancellationToken: cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested || this == null)
+                    return;
+
+                int afterCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
+                bool crafted = afterCount > beforeCount;
+
+                if (!crafted)
+                {
+                    Debug.LogError(
+                        $"[FabricationSmoke] FAIL recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}");
+                    return;
+                }
+
+                if (verboseLogging)
+                {
+                    Debug.Log(
+                        $"[FabricationSmoke] PASS recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}");
+                }
             }
-
-            Fabricator fabricator = FindTargetFabricator();
-            if (fabricator == null)
+            catch (OperationCanceledException)
             {
-                Debug.LogError($"[FabricationSmoke] Fabricator '{targetFabricatorName}' not found.");
-                yield break;
             }
-
-            RecipeData recipe = FindTargetRecipe(fabricator);
-            if (recipe == null)
+            catch (Exception exception)
             {
-                Debug.LogError($"[FabricationSmoke] Recipe '{targetRecipeName}' not found on '{fabricator.name}'.");
-                yield break;
-            }
-
-            UnlockRecipe(recipe);
-            SeedIngredients(recipe);
-
-            int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
-
-            fabricator.Interact(transform);
-            yield return null;
-
-            bool menuOpened = HectonFabricatorUI.IsMenuOpen;
-            bool craftStarted = fabricator.StartCraft(recipe);
-
-            if (!craftStarted)
-            {
-                Debug.LogError($"[FabricationSmoke] Failed to start craft '{recipe.recipeName}'.");
-                yield break;
-            }
-
-            float waitTime = Mathf.Max(0.1f, recipe.craftTime + completionPadding);
-            yield return new WaitForSeconds(waitTime);
-
-            int afterCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
-            bool crafted = afterCount > beforeCount;
-
-            if (!crafted)
-            {
-                Debug.LogError(
-                    $"[FabricationSmoke] FAIL recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}");
-                yield break;
-            }
-
-            if (verboseLogging)
-            {
-                Debug.Log(
-                    $"[FabricationSmoke] PASS recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}");
+                Debug.LogException(exception);
             }
         }
 

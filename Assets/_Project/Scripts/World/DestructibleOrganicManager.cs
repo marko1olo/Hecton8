@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System;
 using Hecton8.Audio;
+using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -45,6 +46,12 @@ namespace Hecton8.World
         private const float LightStarvationDeathHealth01 = 0.015f;
         private const float AllelopathicBareHealth01 = 0.08f;
         private const float AllelopathicDeathThreshold01 = 0.85f;
+        private const float OvergrowthUntouchedSeconds = 3f * 24f * 60f * 60f;
+        private const float OvergrowthExpansionMeters = 2f;
+        private const int OvergrowthScanBudgetPerSlowTick = 64;
+        private const float TitanRootMoundRadiusMeters = 5f;
+        private const float TitanRootMoundStrengthMeters = 2.25f;
+        private const float TitanRootMoundMatureThreshold01 = 0.999f;
         private const byte FloraRuntimeFlagHasParasite = (byte)HectonVegetationRuntimeFlags.Parasite;
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const int DefaultCorpseNodeCapacity = 96;
@@ -94,6 +101,92 @@ namespace Hecton8.World
                 Volume = volume;
                 Pitch = pitch;
             }
+        }
+
+        private void EvaluateAggressiveOvergrowth(float currentTime)
+        {
+            EvaluateAggressiveOvergrowthInLane(false, currentTime, ref _surfaceOvergrowthScanCursor);
+            EvaluateAggressiveOvergrowthInLane(true, currentTime, ref _underwaterOvergrowthScanCursor);
+        }
+
+        private void EvaluateAggressiveOvergrowthInLane(bool underwater, float currentTime, ref int cursor)
+        {
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+            NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;
+            int count = underwater ? _underwaterCount : _surfaceCount;
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                !semanticTypes.IsCreated ||
+                !instanceUids.IsCreated ||
+                !materialClasses.IsCreated ||
+                !health.IsCreated ||
+                !_lastOrganicTouchTimeByInstanceUid.IsCreated ||
+                !_overgrownByInstanceUid.IsCreated ||
+                count <= 0)
+            {
+                cursor = 0;
+                return;
+            }
+
+            int safeCount = math.min(
+                count,
+                math.min(
+                    math.min(matrices.Length, metadata.Length),
+                    math.min(
+                        math.min(types.Length, semanticTypes.Length),
+                        math.min(instanceUids.Length, math.min(materialClasses.Length, health.Length)))));
+            if (safeCount <= 0)
+            {
+                cursor = 0;
+                return;
+            }
+
+            cursor = math.clamp(cursor, 0, safeCount - 1);
+            int checks = math.min(OvergrowthScanBudgetPerSlowTick, safeCount);
+            for (int step = 0; step < checks; step++)
+            {
+                int activeIndex = (cursor + step) % safeCount;
+                uint instanceUid = instanceUids[activeIndex];
+                if (instanceUid == 0u ||
+                    (float)health[activeIndex] <= 0.0001f ||
+                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
+                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
+                    _overgrownByInstanceUid.ContainsKey(instanceUid))
+                {
+                    continue;
+                }
+
+                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
+                if (!IsConsumableFloraMaterialClass(materialClass))
+                    continue;
+
+                if (!_lastOrganicTouchTimeByInstanceUid.TryGetValue(instanceUid, out float lastTouchTime))
+                {
+                    _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
+                    continue;
+                }
+
+                if (currentTime - lastTouchTime < OvergrowthUntouchedSeconds)
+                    continue;
+
+                if (!TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents))
+                    continue;
+
+                VoxelDynamicNavGridRuntime.EnqueueDynamicObstacleGrowth(
+                    navObstacleCenter,
+                    navObstacleExtents,
+                    OvergrowthExpansionMeters);
+                _overgrownByInstanceUid.TryAdd(instanceUid, 1);
+                TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
+            }
+
+            cursor = (cursor + checks) % safeCount;
         }
 
         [Header("Runtime Wiring")]
@@ -209,6 +302,9 @@ namespace Hecton8.World
         private NativeHashMap<uint, float> _nextSporeAcousticTimeByInstanceUid;
         private NativeHashMap<uint, float2> _baseScaleByInstanceUid;
         private NativeHashMap<uint, byte> _runtimeFlagsByInstanceUid;
+        private NativeHashMap<uint, float> _lastOrganicTouchTimeByInstanceUid;
+        private NativeHashMap<uint, byte> _overgrownByInstanceUid;
+        private NativeHashMap<uint, byte> _rootMoundAppliedByInstanceUid;
         private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
         private NativeList<PersistentWorldDeltaRecord> _floraStateOverrideScratch;
         private NativeHashMap<uint, Unity.Mathematics.half> _persistedHealth01ByInstanceUid;
@@ -251,6 +347,8 @@ namespace Hecton8.World
         private float[] _sporeAcousticVolumeByDescriptorIndex = Array.Empty<float>();
         private int _surfaceMatureSporeScanCursor;
         private int _underwaterMatureSporeScanCursor;
+        private int _surfaceOvergrowthScanCursor;
+        private int _underwaterOvergrowthScanCursor;
         // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
         private CorpseResourceNodeRecord[] _corpseResourceNodes = Array.Empty<CorpseResourceNodeRecord>();
         private int _corpseResourceNodeCount;
@@ -427,6 +525,12 @@ namespace Hecton8.World
             _baseScaleByInstanceUid = new NativeHashMap<uint, float2>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,byte>[4096] - runtime flora bit-mask flags keyed by deterministic flora uid - owner: DestructibleOrganicManager
             _runtimeFlagsByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,float>[4096] - untouched flora clock keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _lastOrganicTouchTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,byte>[4096] - macro-flora overgrowth obstacle state keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _overgrownByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,byte>[4096] - one-shot Titan root SDF mound state keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _rootMoundAppliedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora tombstone restore scratch - owner: DestructibleOrganicManager
             _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[4096] - partial flora-state restore scratch - owner: DestructibleOrganicManager
@@ -551,6 +655,15 @@ namespace Hecton8.World
             if (_runtimeFlagsByInstanceUid.IsCreated)
                 _runtimeFlagsByInstanceUid.Dispose();
 
+            if (_lastOrganicTouchTimeByInstanceUid.IsCreated)
+                _lastOrganicTouchTimeByInstanceUid.Dispose();
+
+            if (_overgrownByInstanceUid.IsCreated)
+                _overgrownByInstanceUid.Dispose();
+
+            if (_rootMoundAppliedByInstanceUid.IsCreated)
+                _rootMoundAppliedByInstanceUid.Dispose();
+
             if (_destroyedFloraScratch.IsCreated)
                 _destroyedFloraScratch.Dispose();
 
@@ -591,6 +704,7 @@ namespace Hecton8.World
             RefreshActiveCachesIfNeeded(force: true);
             RefreshCorpseResourceNodes(Time.time);
             EvaluateAllelopathicRelease();
+            EvaluateAggressiveOvergrowth(Time.time);
         }
 
         /// <summary>
@@ -639,6 +753,7 @@ namespace Hecton8.World
             SetLaneHealth(underwater, activeIndex, nextHealth);
             _healthByInstanceUid.Remove(instanceUid);
             _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)nextHealth);
+            MarkOrganicTouched(instanceUid, Time.time);
 
             PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
             ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, Time.time);
@@ -724,6 +839,29 @@ namespace Hecton8.World
             decomposedCount += ApplyConstructionDecompositionInLane(false, universePosition, radiusSq);
             decomposedCount += ApplyConstructionDecompositionInLane(true, universePosition, radiusSq);
             return decomposedCount;
+        }
+
+        /// <summary>
+        /// Instantly tombstones active consumable flora inside a persistent chemical dead zone.
+        /// </summary>
+        internal int ApplyDefoliantDeadZone(Vector3 runtimePosition, float radiusMeters)
+        {
+            if (radiusMeters <= 0f)
+                return 0;
+
+            if (vegetationBridge == null)
+                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
+
+            if (vegetationBridge == null)
+                return 0;
+
+            RefreshActiveCachesIfNeeded(force: false);
+            Vector3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
+            float radiusSq = radiusMeters * radiusMeters;
+            int killedCount = 0;
+            killedCount += ApplyDefoliantDeadZoneInLane(false, universePosition, radiusSq);
+            killedCount += ApplyDefoliantDeadZoneInLane(true, universePosition, radiusSq);
+            return killedCount;
         }
 
         private bool ShouldDetonateDefensiveSporeBurst(int templateIndex, uint toolCapabilityMask)
@@ -1023,6 +1161,61 @@ namespace Hecton8.World
             return decomposedCount;
         }
 
+        private int ApplyDefoliantDeadZoneInLane(bool underwater, Vector3 centerUniversePosition, float radiusSq)
+        {
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
+            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+            int count = underwater ? _underwaterCount : _surfaceCount;
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                !semanticTypes.IsCreated ||
+                !instanceUids.IsCreated ||
+                !materialClasses.IsCreated ||
+                count <= 0)
+            {
+                return 0;
+            }
+
+            int killedCount = 0;
+            int safeCount = math.min(
+                count,
+                math.min(
+                    math.min(matrices.Length, metadata.Length),
+                    math.min(
+                        math.min(types.Length, semanticTypes.Length),
+                        math.min(instanceUids.Length, materialClasses.Length))));
+            for (int i = 0; i < safeCount; i++)
+            {
+                uint instanceUid = instanceUids[i];
+                if (instanceUid == 0u)
+                    continue;
+
+                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
+                if (!IsConsumableFloraMaterialClass(materialClass))
+                    continue;
+
+                if (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid))
+                    continue;
+
+                Vector3 rootPosition = ExtractTranslation(matrices[i]);
+                if ((rootPosition - centerUniversePosition).sqrMagnitude > radiusSq)
+                    continue;
+
+                int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
+                ApplyPassiveDecomposition(underwater, i, instanceUid, materialClass, templateIndex, rootPosition);
+                PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
+                ApplyDecompositionToLaneInstance(underwater, i, instanceUid, 1f);
+                killedCount++;
+            }
+
+            return killedCount;
+        }
+
         private void BuildFloraTemplateHarvestMap()
         {
             if (_harvestDescriptorIndexByFloraTemplateIndex != null && _harvestDescriptorIndexByFloraTemplateIndex.Length > 0)
@@ -1209,6 +1402,7 @@ namespace Hecton8.World
                 instanceUids[i] = instanceUid;
                 materialClasses[i] = (byte)materialClass;
                 CacheBaseScale(instanceUid, metadata[i]);
+                PrimeUntouchedClock(instanceUid, currentTime);
                 byte runtimeFlags = ResolveRuntimeFlags(instanceUid, materialClass, semanticTypes[i], metadata[i].RuntimeFlags);
                 ApplyRuntimeFlags(ref metadata, i, runtimeFlags);
                 SetRuntimeState(ref metadata, i, HectonVegetationInstanceData.RuntimeStateIdle);
@@ -1216,6 +1410,15 @@ namespace Hecton8.World
                 float resolvedHealth = defaultHealth;
                 bool hasPersistedFloraState = TryResolvePersistedFloraState(instanceUid, out float persistedHealth01, out float persistedHeightScale01);
                 bool isDestroyed = _destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid);
+                bool isDefoliantSuppressed = !isDestroyed &&
+                                             IsConsumableFloraMaterialClass(materialClass) &&
+                                             ChemicalInfluenceGrid.IsInsidePermanentDefoliantDeadZoneAbsolute(ExtractTranslation(matrices[i]));
+                if (isDefoliantSuppressed)
+                {
+                    RegisterDefoliantDestroyedInstance(instanceUid, templateIndex, ExtractTranslation(matrices[i]));
+                    ApplyRuntimeFlags(ref metadata, i, MarkDeadRuntimeFlag(instanceUid));
+                    isDestroyed = true;
+                }
                 float regrowthProgress = 0f;
                 bool isRegrowing = _regrowthProgressByInstanceUid.IsCreated &&
                                    _regrowthProgressByInstanceUid.TryGetValue(instanceUid, out regrowthProgress);
@@ -1306,6 +1509,7 @@ namespace Hecton8.World
                     continue;
 
                 _destroyedByInstanceUid.TryAdd(record.InstanceUid, 1);
+                ClearOrganicLifecycleState(record.InstanceUid);
                 PrimeDecompositionState(record.InstanceUid, Time.time - OrganicDecompositionDurationSeconds);
                 _healthByInstanceUid.Remove(record.InstanceUid);
                 _healthByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)0f);
@@ -1877,6 +2081,7 @@ namespace Hecton8.World
 
             bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
             byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
+            ClearOrganicLifecycleState(instanceUid);
 
             _destroyedByInstanceUid.TryAdd(instanceUid, 1);
             _healthByInstanceUid.Remove(instanceUid);
@@ -1926,6 +2131,7 @@ namespace Hecton8.World
 
             bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
             byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
+            ClearOrganicLifecycleState(instanceUid);
 
             _destroyedByInstanceUid.TryAdd(instanceUid, 1);
             _healthByInstanceUid.Remove(instanceUid);
@@ -2086,6 +2292,58 @@ namespace Hecton8.World
                 new float2(
                     Mathf.Max(MinimumDecomposedHeightScale, Mathf.Abs(metadata.HeightScale)),
                     Mathf.Max(MinimumDecomposedWidthScale, Mathf.Clamp01(Mathf.Abs(metadata.WidthScale)))));
+        }
+
+        private void PrimeUntouchedClock(uint instanceUid, float currentTime)
+        {
+            if (instanceUid == 0u || !_lastOrganicTouchTimeByInstanceUid.IsCreated || _lastOrganicTouchTimeByInstanceUid.ContainsKey(instanceUid))
+                return;
+
+            _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
+        }
+
+        private void MarkOrganicTouched(uint instanceUid, float currentTime)
+        {
+            if (instanceUid == 0u || !_lastOrganicTouchTimeByInstanceUid.IsCreated)
+                return;
+
+            _lastOrganicTouchTimeByInstanceUid.Remove(instanceUid);
+            _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
+            if (_overgrownByInstanceUid.IsCreated)
+                _overgrownByInstanceUid.Remove(instanceUid);
+        }
+
+        private void ClearOrganicLifecycleState(uint instanceUid)
+        {
+            if (instanceUid == 0u)
+                return;
+
+            if (_lastOrganicTouchTimeByInstanceUid.IsCreated)
+                _lastOrganicTouchTimeByInstanceUid.Remove(instanceUid);
+            if (_overgrownByInstanceUid.IsCreated)
+                _overgrownByInstanceUid.Remove(instanceUid);
+            if (_rootMoundAppliedByInstanceUid.IsCreated)
+                _rootMoundAppliedByInstanceUid.Remove(instanceUid);
+        }
+
+        private void RegisterDefoliantDestroyedInstance(uint instanceUid, int templateIndex, Vector3 instancePosition)
+        {
+            if (instanceUid == 0u || !_destroyedByInstanceUid.IsCreated)
+                return;
+
+            _destroyedByInstanceUid.TryAdd(instanceUid, 1);
+            _healthByInstanceUid.Remove(instanceUid);
+            _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
+            PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
+            ClearOrganicLifecycleState(instanceUid);
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry != null)
+                registry.TryClearFloraStateOverride(instanceUid);
+
+            ClearPersistedFloraStateOverride(instanceUid);
+            if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
+                registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
         }
 
         private byte ResolveRuntimeFlags(uint instanceUid, HarvestableTemplate.MaterialClass materialClass, int semanticType, float existingRuntimeFlags)
@@ -2520,7 +2778,7 @@ namespace Hecton8.World
                 return;
 
             float pulseFrequency = ResolveMatureSporePulseFrequency(templateIndex);
-            float intervalSeconds = math.max(sporeAcousticMinimumIntervalSeconds, 1f / math.max(0.05f, pulseFrequency));
+            float intervalSeconds = 1f / math.max(0.05f, pulseFrequency);
             float volume = ResolveMatureSporeAcousticVolume(templateIndex);
             float pitch = ResolveMatureSporeAcousticPitch(pulseFrequency);
             Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
@@ -3127,8 +3385,56 @@ namespace Hecton8.World
 
                 float exposure = 1f - Mathf.Clamp01(distance * inverseRadius);
                 if (exposure > bestExposure)
-                    bestExposure = exposure;
+                bestExposure = exposure;
             }
+        }
+
+        private bool TryApplyTitanRootMound(bool underwater, int activeIndex, uint instanceUid)
+        {
+            if (instanceUid == 0u ||
+                !_rootMoundAppliedByInstanceUid.IsCreated ||
+                _rootMoundAppliedByInstanceUid.ContainsKey(instanceUid))
+            {
+                return false;
+            }
+
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                activeIndex < 0 ||
+                activeIndex >= matrices.Length ||
+                activeIndex >= metadata.Length ||
+                activeIndex >= types.Length)
+            {
+                return false;
+            }
+
+            if ((HectonVegetationInstanceType)types[activeIndex] != HectonVegetationInstanceType.GiantKelp)
+                return false;
+
+            HectonVegetationInstanceData instanceData = metadata[activeIndex];
+            if (math.saturate(instanceData.Reserved0) < TitanRootMoundMatureThreshold01 &&
+                math.saturate(instanceData.HealthNormalized) < TitanRootMoundMatureThreshold01 &&
+                math.saturate(math.abs(instanceData.HeightScale)) < TitanRootMoundMatureThreshold01)
+            {
+                return false;
+            }
+
+            HectonVoxelEngine voxelEngine = HectonVoxelEngine.ActiveRuntimeInstance;
+            if (voxelEngine == null)
+                return false;
+
+            Vector3 universePosition = ExtractTranslation(matrices[activeIndex]);
+            Vector3 runtimePosition = HectonMapMagicVegetationBridge.ToRuntimeSpace(universePosition);
+            if (!voxelEngine.TryGetNearestActiveVolume(runtimePosition, out HectonVoxelVolume volume) || volume == null)
+                return false;
+
+            volume.ApplyOrganicRootMound(runtimePosition, TitanRootMoundRadiusMeters, TitanRootMoundStrengthMeters);
+            _rootMoundAppliedByInstanceUid.TryAdd(instanceUid, 1);
+            return true;
         }
 
         internal bool IsMaterialClassRegrowable(ulong floraPersistentIdHash)
@@ -3215,6 +3521,8 @@ namespace Hecton8.World
             {
                 ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, scaleMultiplier);
                 TryDispatchMatureSporeAcoustic(instanceUid, progress01, underwater, activeIndex, templateIndex, Time.time);
+                if (progress01 >= TitanRootMoundMatureThreshold01)
+                    TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
             }
             else if (progress01 < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
             {
@@ -3439,10 +3747,14 @@ namespace Hecton8.World
                 return false;
             }
 
+            if (ChemicalInfluenceGrid.IsInsidePermanentDefoliantDeadZone(runtimePosition))
+                return false;
+
             progress01 = math.saturate(progress01);
             if (_destroyedByInstanceUid.IsCreated)
                 _destroyedByInstanceUid.Remove(instanceUid);
             ClearDeadRuntimeFlag(instanceUid);
+            MarkOrganicTouched(instanceUid, Time.time);
 
             if (_pendingWiltEndTimeByInstanceUid.IsCreated)
                 _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
@@ -3470,6 +3782,8 @@ namespace Hecton8.World
                 SetLaneHealth(underwater, activeIndex, health);
                 _healthByInstanceUid.Remove(instanceUid);
                 _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)health);
+                if (progress01 >= TitanRootMoundMatureThreshold01)
+                    TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
             }
 
             if (progress01 >= 0.9999f)
@@ -3488,6 +3802,7 @@ namespace Hecton8.World
 
             if (_decompositionStartTimeByInstanceUid.IsCreated)
                 _decompositionStartTimeByInstanceUid.Remove(instanceUid);
+            MarkOrganicTouched(instanceUid, Time.time);
 
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             if (registry != null)

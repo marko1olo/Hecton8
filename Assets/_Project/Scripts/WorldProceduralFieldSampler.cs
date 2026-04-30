@@ -418,7 +418,7 @@ namespace Hecton8.World
             public SeafloorSource CenterSource;
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CellSamplingJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<CellInputData> CellInputs;

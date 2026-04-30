@@ -242,7 +242,7 @@ namespace Hecton8.Atmosphere
             public int RoomIndex;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct AtmosphereStepJob : IJob
         {
@@ -719,7 +719,7 @@ namespace Hecton8.Atmosphere
         [SerializeField, Min(1f)] private float maximumPressureImpulseNewtonSeconds = DefaultMaximumPressureImpulseNewtonSeconds;
 
         [Tooltip("Rigidbodies on these layers receive the blowout impulse.")]
-        [SerializeField] private LayerMask pressureImpulseLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask pressureImpulseLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Diagnostics ──────────────────")]
         [SerializeField] private int _debugRoomCount;
@@ -849,6 +849,45 @@ namespace Hecton8.Atmosphere
             _pressureFront[roomIndex] = ResolveInstantPressure(
                 _o2Front[roomIndex] + _co2Front[roomIndex] + _inertFront[roomIndex] + (_steamFront.IsCreated ? _steamFront[roomIndex] : 0f),
                 _gasVolumeFront[roomIndex]);
+        }
+
+        /// <summary>
+        /// Injects oxygen from mature cultivation slots carrying genetics Bit1 into a room atmosphere.
+        /// </summary>
+        internal float InjectCultivationOxygenFromSlots(
+            int roomIndex,
+            NativeArray<CultivationManager.CultivationSlotState>.ReadOnly slots,
+            float oxygenUnitsPerMaturePlant)
+        {
+            if (oxygenUnitsPerMaturePlant <= 0f ||
+                !slots.IsCreated ||
+                roomIndex < 0 ||
+                roomIndex >= RoomCount)
+            {
+                return 0f;
+            }
+
+            ulong oxygenGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.OxygenProducing;
+            float oxygenUnits = 0f;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                CultivationManager.CultivationSlotState slot = slots[i];
+                if (slot.SeedItemHashId == 0 ||
+                    slot.Growth01 < 0.999f ||
+                    slot.Quality01 <= 0f ||
+                    (slot.GeneticsMask & oxygenGeneMask) == 0UL)
+                {
+                    continue;
+                }
+
+                oxygenUnits += oxygenUnitsPerMaturePlant;
+            }
+
+            if (oxygenUnits <= 0f)
+                return 0f;
+
+            InjectOxygenUnits(roomIndex, oxygenUnits);
+            return oxygenUnits;
         }
 
         public void InjectRoomTemperatureDeltaCelsius(int roomIndex, float deltaCelsius)

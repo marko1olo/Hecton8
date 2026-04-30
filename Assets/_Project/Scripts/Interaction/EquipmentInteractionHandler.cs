@@ -15,17 +15,18 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9935)]
-    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, IUpdatable
+    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, IUpdatable, ILateFrameTickable
     {
         private const int MaxQueuedSignals = 256;
         private const int MaxQueuedRayRequests = 64;
+        private const int MaxHitArbitrationHits = 8;
         private const int MinCommandsPerJob = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
         private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
         private static int _baseModuleLayer = int.MinValue;
-
-        private static EquipmentInteractionHandler _instance;
+        private static int _interactableLayer = int.MinValue;
+        private static int _voxelLayer = int.MinValue;
 
         // COLD ALLOC: Collider[256] - queued target side-channel aligned with the native interaction queue - owner: EquipmentInteractionHandler
         private readonly Collider[] _queuedTargetColliders = new Collider[MaxQueuedSignals];
@@ -39,6 +40,8 @@ namespace Hecton8.Interaction
         private readonly RaycastHit[] _completedHits = new RaycastHit[MaxQueuedRayRequests];
         // COLD ALLOC: bool[64] - validity bits for completed frame-latent tool raycast results - owner: EquipmentInteractionHandler
         private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
+        // COLD ALLOC: RaycastHit[8] - fixed flora/base overlap arbitration buffer - owner: EquipmentInteractionHandler
+        private static readonly RaycastHit[] _hitArbitrationHits = new RaycastHit[MaxHitArbitrationHits];
 
         private NativeQueue<InteractionSignal> _signalQueue;
         private NativeArray<RaycastCommand> _scheduledCommands;
@@ -55,29 +58,10 @@ namespace Hecton8.Interaction
         private bool _scheduledRaycastActive;
         private bool _isInitialized;
         private bool _dispatcherRegistered;
+        private bool _serviceRegistered;
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
-
-        /// <summary>
-        /// Ensures a runtime signal handler exists.
-        /// </summary>
-        /// <returns>Live handler instance.</returns>
-        public static EquipmentInteractionHandler EnsureRuntimeInstance()
-        {
-            if (_instance != null)
-                return _instance;
-
-            GameObject runtimeRoot = new GameObject("[EquipmentInteractionHandler]");
-            EquipmentInteractionHandler handler = runtimeRoot.AddComponent<EquipmentInteractionHandler>();
-            return handler;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
 
         /// <summary>
         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
@@ -86,12 +70,13 @@ namespace Hecton8.Interaction
         {
             if (_isInitialized)
             {
+                TryRegisterSignalService();
                 TryRegisterToDispatcher();
                 return;
             }
 
-            GlobalRegistry.RegisterInteractionSignalService(this);
             _isInitialized = true;
+            TryRegisterSignalService();
             TryRegisterToDispatcher();
         }
 
@@ -106,6 +91,14 @@ namespace Hecton8.Interaction
             _queueTail = (_queueTail + 1) % MaxQueuedSignals;
             _queueCount++;
             return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryRaycastPrimary(ulong requesterId, in InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
+        {
+            Vector3 origin = new Vector3(packet.Origin.x, packet.Origin.y, packet.Origin.z);
+            Vector3 direction = new Vector3(packet.Direction.x, packet.Direction.y, packet.Direction.z);
+            return TryRaycastPrimary(requesterId, origin, direction, packet.Range, layerMask, queryTriggerInteraction, out hit);
         }
 
         /// <inheritdoc />
@@ -147,13 +140,6 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             EnsureLayerCache();
 
             if (!_signalQueue.IsCreated)
@@ -170,23 +156,43 @@ namespace Hecton8.Interaction
                 ResetCommandLane(_scheduledCommands);
                 ResetCommandLane(_stagingCommands);
             }
+        }
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
+        private void OnEnable()
+        {
+            if (!_isInitialized)
+                return;
 
-                DontDestroyOnLoad(gameObject);
-            }
+            TryRegisterSignalService();
+            TryRegisterToDispatcher();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterFromDispatcher();
+            TryUnregisterSignalService();
         }
 
         private static void EnsureLayerCache()
         {
             if (_baseModuleLayer == int.MinValue)
-                _baseModuleLayer = LayerMask.NameToLayer("BaseModule");
+            {
+                _baseModuleLayer = Hecton8.Core.HectonLayerMasks.BaseModule;
+            }
+
+            if (_interactableLayer == int.MinValue)
+            {
+                _interactableLayer = Hecton8.Core.HectonLayerMasks.Interactable;
+            }
+
+            if (_voxelLayer == int.MinValue)
+            {
+                _voxelLayer = Hecton8.Core.HectonLayerMasks.VoxelCave;
+            }
         }
 
-        private void LateUpdate()
+        /// <inheritdoc />
+        public void LateFrameTick()
         {
             FlushSignals();
             ScheduleStagedRaycasts();
@@ -194,26 +200,15 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
-            if (_isInitialized)
-            {
-                GlobalRegistry.UnregisterInteractionSignalService(this);
-                _isInitialized = false;
-            }
-
-            if (_dispatcherRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-                _dispatcherRegistered = false;
-            }
+            TryUnregisterFromDispatcher();
+            TryUnregisterSignalService();
+            _isInitialized = false;
 
             ClearQueuedSignals();
             if (_signalQueue.IsCreated)
                 _signalQueue.Dispose();
 
             DisposeRaycastBuffers();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         private void FlushSignals()
@@ -242,7 +237,36 @@ namespace Hecton8.Interaction
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
             _dispatcherRegistered = true;
+        }
+
+        private void TryUnregisterFromDispatcher()
+        {
+            if (!_dispatcherRegistered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _dispatcherRegistered = false;
+        }
+
+        private void TryRegisterSignalService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterInteractionSignalService(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterSignalService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterInteractionSignalService(this);
+            _serviceRegistered = false;
         }
 
         private static void DispatchSignal(InteractionSignal signal, Collider targetCollider)
@@ -308,7 +332,7 @@ namespace Hecton8.Interaction
                 return;
 
             Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
-            if (ShouldSuppressBaseModuleCutDamage(targetCollider, runtimeHitPoint))
+            if (ShouldSuppressBaseModuleCutDamage(targetCollider, runtimeHitPoint, in signal))
                 return;
 
             if (TryResolveSignalConsumer(targetCollider, out IInteractionSignalConsumer signalConsumer))
@@ -321,25 +345,79 @@ namespace Hecton8.Interaction
                 cuttable.ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
         }
 
-        private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint)
+        private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint, in InteractionSignal signal)
         {
             EnsureLayerCache();
             if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
                 return false;
 
             BaseModule module = targetCollider.GetComponentInParent<BaseModule>();
-            if (module == null || module.ParasiteInfectionLevel <= 0.0001f)
+            if (module == null)
                 return false;
 
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             if (organicManager == null)
                 return false;
 
-            return organicManager.TryResolveNearestConsumableFlora(
+            if (!organicManager.TryResolveNearestConsumableFlora(
                 runtimeHitPoint,
                 AttachedFloraArbitrationRadiusMeters,
                 out _,
-                out _);
+                out _))
+            {
+                return false;
+            }
+
+            Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
+            if (direction.sqrMagnitude < MinDirectionSqr)
+                direction = Vector3.forward;
+            else
+                direction.Normalize();
+
+            int layerMask = BuildHitArbitrationLayerMask(targetCollider.gameObject.layer);
+            Vector3 castOrigin = runtimeHitPoint - direction * AttachedFloraArbitrationRadiusMeters;
+            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                castOrigin,
+                AttachedFloraArbitrationRadiusMeters,
+                direction,
+                _hitArbitrationHits,
+                AttachedFloraArbitrationRadiusMeters * 2f,
+                layerMask,
+                QueryTriggerInteraction.Collide);
+
+            if (hitCount <= 0)
+                return true;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = _hitArbitrationHits[i].collider;
+                if (hitCollider == null)
+                    continue;
+
+                if (hitCollider == targetCollider)
+                    return true;
+
+                BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
+                if (hitModule == module)
+                    return true;
+            }
+
+            return true;
+        }
+
+        private static int BuildHitArbitrationLayerMask(int targetLayer)
+        {
+            EnsureLayerCache();
+            int layerMask = 0;
+            if (targetLayer >= 0 && targetLayer < 32)
+                layerMask |= 1 << targetLayer;
+            if (_baseModuleLayer >= 0 && _baseModuleLayer < 32)
+                layerMask |= 1 << _baseModuleLayer;
+            if (_interactableLayer >= 0 && _interactableLayer < 32)
+                layerMask |= 1 << _interactableLayer;
+            if (_voxelLayer >= 0 && _voxelLayer < 32)
+                layerMask |= 1 << _voxelLayer;
+            return layerMask;
         }
 
         private static bool CanApplyInteraction(in InteractionSignal signal, Collider targetCollider)

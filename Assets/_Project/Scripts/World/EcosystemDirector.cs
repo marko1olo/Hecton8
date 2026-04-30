@@ -37,7 +37,7 @@ namespace Hecton8.World
         private const int MinimumSectorCapacity = 16;
         private const int MinimumPredationEventCapacity = 32;
         private const float DefaultHostilityPeakHoldSeconds = 18f;
-        private const float LogicalLodFullSimDistanceMeters = 40f;
+        private const float LogicalLodFullSimDistanceMeters = 50f;
         private const float LogicalLodDataOnlyDistanceMeters = 150f;
         private const float ThermalSpawnTemperatureThresholdCelsius = 40f;
         private const float ThermalSpawnDepthThresholdMeters = 2000f;
@@ -75,7 +75,7 @@ namespace Hecton8.World
             public int PreyConsumed;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct LotkaVolterraSolveJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
@@ -205,7 +205,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct PopulationDiffusionJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
@@ -267,7 +267,7 @@ namespace Hecton8.World
         [Tooltip("Maximum predation events buffered between 10-second cold solves.")]
         [SerializeField, Min(MinimumPredationEventCapacity)] private int maxBufferedPredationEvents = 256;
         [Tooltip("Seconds between ecosystem solves. 10 seconds = 0.1 Hz.")]
-        [SerializeField, Min(1f)] private float coldTickIntervalSeconds = 10f;
+        [SerializeField, Min(1f)] private float coldTickIntervalSeconds = 60f;
 
         [Header("Initial Populations")]
         [Tooltip("Minimum deterministic prey population seeded into a new 1 km sector.")]
@@ -494,7 +494,7 @@ namespace Hecton8.World
 
             if (RespondsToCorpseFalls(archetype))
             {
-                float corpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, CorpseSpawnInfluenceRadiusMeters);
+                float corpseInfluence01 = ResolveCombinedCorpseSpawnInfluence01(worldPosition, CorpseSpawnInfluenceRadiusMeters);
                 if (corpseInfluence01 > 0f)
                     selectionMultiplier *= math.lerp(1f, CorpseSpawnSelectionScale, corpseInfluence01);
             }
@@ -513,7 +513,7 @@ namespace Hecton8.World
                 return false;
 
             if ((dietMaskBits & (uint)FaunaDietMask.Carcass) != 0u &&
-                ResolveCorpseSpawnInfluence01(worldPosition, CorpseSpawnInfluenceRadiusMeters) > MinimumCorpseDietInfluence01)
+                ResolveCombinedCorpseSpawnInfluence01(worldPosition, CorpseSpawnInfluenceRadiusMeters) > MinimumCorpseDietInfluence01)
             {
                 return true;
             }
@@ -638,6 +638,12 @@ namespace Hecton8.World
         {
             ResolveRuntimeReferences();
             _cachedPersistentWorldRegistry?.TryRegisterFaunaTombstone(uniqueInstanceUid);
+            if (_cachedPersistentWorldRegistry != null)
+            {
+                AbsoluteUniversePosition whaleFallAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+                _cachedPersistentWorldRegistry.TryCacheWhaleFallPoiState(uniqueInstanceUid, unchecked((int)(uniqueInstanceUid & 0x00FFFFFFu)), in whaleFallAup, Time.time);
+            }
+
             ReportApexPredatorKilled(worldPosition, hostilityDelta);
         }
 
@@ -753,6 +759,18 @@ namespace Hecton8.World
             TryUnregisterSlowTickable();
             TryUnregisterService();
             DisposeRuntimeState();
+        }
+
+        /// <summary>
+        /// Explicit bootstrap registration pass for headless/data-only simulation.
+        /// </summary>
+        internal void InitializeService()
+        {
+            ActiveRuntimeInstance = this;
+            SanitizeSettings();
+            AllocateRuntimeState();
+            TryRegisterService();
+            TryRegisterSlowTickable();
         }
 
         /// <summary>
@@ -999,6 +1017,16 @@ namespace Hecton8.World
             return organicManager != null
                 ? organicManager.ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters)
                 : 0f;
+        }
+
+        private static float ResolveCombinedCorpseSpawnInfluence01(Vector3 worldPosition, float radiusMeters)
+        {
+            float liveCorpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters);
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            float persistentWhaleFallInfluence01 = registry != null
+                ? registry.ResolveWhaleFallSpawnInfluence01(worldPosition, Time.time, radiusMeters)
+                : 0f;
+            return math.max(liveCorpseInfluence01, persistentWhaleFallInfluence01);
         }
 
         private static bool MatchesAnyToken(string value, string[] tokens)

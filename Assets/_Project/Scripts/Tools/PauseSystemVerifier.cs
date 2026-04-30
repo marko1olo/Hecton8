@@ -1,4 +1,5 @@
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.UI;
@@ -97,7 +98,7 @@ namespace Hecton8.Tools
             if (!_enableVerification)
                 return;
 
-            StartCoroutine(TestPauseMenuFlow());
+            _ = TestPauseMenuFlowAsync(destroyCancellationToken);
         }
 
         public (int testsRun, int testsPassed, int testsFailed) GetStats()
@@ -105,86 +106,116 @@ namespace Hecton8.Tools
             return (_testsRun, _testsPassed, _testsFailed);
         }
 
-        private IEnumerator TestPauseMenuFlow()
+        private async Awaitable TestPauseMenuFlowAsync(CancellationToken cancellationToken)
         {
-            _testsRun++;
-            ResolvePauseMenu();
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _testsRun++;
+                ResolvePauseMenu();
 
-            if (_pauseMenu == null)
+                if (_pauseMenu == null)
+                {
+                    _testsFailed++;
+                    LogVerification("FAIL pause flow: PauseMenuController not found.");
+                    return;
+                }
+
+                LogVerification("Testing pause menu navigation flow");
+
+                if (_pauseMenu.IsOpen)
+                {
+                    _pauseMenu.Close();
+                    await WaitForConditionAsync(() => !_pauseMenu.IsOpen, "Initial pause close", cancellationToken);
+                }
+
+                bool pauseTriggered = SimulatePauseInput();
+                if (!pauseTriggered)
+                {
+                    _testsFailed++;
+                    LogVerification("FAIL pause flow: could not issue pause open.");
+                    return;
+                }
+
+                await WaitForConditionAsync(
+                    () => _pauseMenu.IsOpen && IsPauseMenuVisible(),
+                    "Pause open",
+                    cancellationToken);
+
+                bool pauseStateValid = IsGamePaused() && IsPauseMenuVisible() && IsPauseInputModeValid();
+                bool navigationWorks = TestMenuNavigation();
+
+                bool unpauseTriggered = SimulateUnpauseInput();
+                if (!unpauseTriggered)
+                {
+                    _testsFailed++;
+                    LogVerification("FAIL pause flow: could not issue pause close.");
+                    return;
+                }
+
+                await WaitForConditionAsync(
+                    () => !_pauseMenu.IsOpen && !IsPauseMenuVisible(),
+                    "Pause close",
+                    cancellationToken);
+
+                bool returnedToGameplay = !IsGamePaused() && IsGameplayInputModeValid();
+
+                if (pauseStateValid && navigationWorks && returnedToGameplay)
+                {
+                    _testsPassed++;
+                    LogVerification("PASS pause menu navigation flow");
+                }
+                else
+                {
+                    _testsFailed++;
+                    LogVerification(
+                        $"FAIL pause menu navigation flow: pauseState={pauseStateValid}, nav={navigationWorks}, gameplay={returnedToGameplay}");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                LogVerification("Pause menu navigation verification cancelled.");
+            }
+            catch (Exception exception)
             {
                 _testsFailed++;
-                LogVerification("FAIL pause flow: PauseMenuController not found.");
-                yield break;
-            }
-
-            LogVerification("Testing pause menu navigation flow");
-
-            if (_pauseMenu.IsOpen)
-            {
-                _pauseMenu.Close();
-                yield return WaitForCondition(() => !_pauseMenu.IsOpen, "Initial pause close");
-            }
-
-            bool pauseTriggered = SimulatePauseInput();
-            if (!pauseTriggered)
-            {
-                _testsFailed++;
-                LogVerification("FAIL pause flow: could not issue pause open.");
-                yield break;
-            }
-
-            yield return WaitForCondition(
-                () => _pauseMenu.IsOpen && IsPauseMenuVisible(),
-                "Pause open");
-
-            bool pauseStateValid = IsGamePaused() && IsPauseMenuVisible() && IsPauseInputModeValid();
-            bool navigationWorks = TestMenuNavigation();
-
-            bool unpauseTriggered = SimulateUnpauseInput();
-            if (!unpauseTriggered)
-            {
-                _testsFailed++;
-                LogVerification("FAIL pause flow: could not issue pause close.");
-                yield break;
-            }
-
-            yield return WaitForCondition(
-                () => !_pauseMenu.IsOpen && !IsPauseMenuVisible(),
-                "Pause close");
-
-            bool returnedToGameplay = !IsGamePaused() && IsGameplayInputModeValid();
-
-            if (pauseStateValid && navigationWorks && returnedToGameplay)
-            {
-                _testsPassed++;
-                LogVerification("PASS pause menu navigation flow");
-            }
-            else
-            {
-                _testsFailed++;
-                LogVerification(
-                    $"FAIL pause menu navigation flow: pauseState={pauseStateValid}, nav={navigationWorks}, gameplay={returnedToGameplay}");
+                LogVerification($"FAIL pause menu navigation flow: exception {exception.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
             }
         }
 
-        private IEnumerator WaitForCondition(System.Func<bool> predicate, string label)
+        private async Awaitable<bool> WaitForConditionAsync(Func<bool> predicate, string label, CancellationToken cancellationToken)
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0.05f, _actionTimeout);
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (predicate())
                 {
                     if (_settleDelay > 0f)
-                        yield return new WaitForSecondsRealtime(_settleDelay);
+                        await DelayRealtimeAsync(_settleDelay, cancellationToken);
 
                     LogVerification($"PASS {label}");
-                    yield break;
+                    return true;
                 }
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken);
             }
 
             LogVerification($"FAIL {label}: timeout after {_actionTimeout:0.00}s");
+            return false;
+        }
+
+        private static async Awaitable DelayRealtimeAsync(float duration, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, duration);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken);
+            }
         }
 
         private void OnPauseStateChanged(bool isPaused)

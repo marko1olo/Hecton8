@@ -1,6 +1,6 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using Hecton8.World;
 using UnityEngine;
 
@@ -66,7 +66,7 @@ namespace Hecton8.Dev
             if (!runOnStart || _isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
 #if UNITY_EDITOR
@@ -89,7 +89,7 @@ namespace Hecton8.Dev
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
         public void ConfigureForDevRun(
@@ -118,7 +118,7 @@ namespace Hecton8.Dev
                 return false;
 
             AutoResolve();
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
             return true;
         }
 
@@ -130,10 +130,10 @@ namespace Hecton8.Dev
                 $"runtimeKey={_debugSelectedRuntimeKey} pass={_debugLastPass} issue={issue}";
         }
 
-        private IEnumerator RunSmokePass()
+        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
-                yield break;
+                return;
 
             _isRunning = true;
             _debugRunCount++;
@@ -145,33 +145,35 @@ namespace Hecton8.Dev
             _debugSelectedRequiresVoxel = false;
             _debugLastPass = false;
 
-            if (startupDelay > 0f)
-                yield return new WaitForSecondsRealtime(startupDelay);
-
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (startupDelay > 0f)
+                    await DelayRealtimeAsync(startupDelay, cancellationToken);
+
                 AutoResolve();
                 if (!HasRequiredReferences())
                 {
                     Fail($"Missing references refs={DescribeRefs()}");
-                    yield break;
+                    return;
                 }
 
                 _debugLastPhase = "Warmup";
-                yield return WaitForCondition(
+                await WaitForConditionAsync(
                     () =>
                     {
                         PulsePipeline();
                         return TrySelectTarget(out _, out _);
                     },
-                    "Resolve active generated geology target");
+                    "Resolve active generated geology target",
+                    cancellationToken);
                 if (!_isRunning)
-                    yield break;
+                    return;
 
                 if (!TrySelectTarget(out WorldGenerativeGeologySeamPlan targetPlan, out WorldGenerativeGeologyBinding targetBinding))
                 {
                     Fail("No active generated geology target was found after warmup.");
-                    yield break;
+                    return;
                 }
 
                 long runtimeKey = targetPlan.runtimeKey;
@@ -182,7 +184,7 @@ namespace Hecton8.Dev
                 LogVerbose($"Selected runtimeKey={runtimeKey} family={_debugSelectedFamilyId} terrain={_debugSelectedRequiresTerrain} voxel={_debugSelectedRequiresVoxel}");
 
                 _debugLastPhase = "Seam";
-                yield return WaitForCondition(
+                await WaitForConditionAsync(
                     () =>
                     {
                         PulsePipeline();
@@ -190,22 +192,24 @@ namespace Hecton8.Dev
                             && currentBinding != null
                             && currentBinding.transform.Find(SeamRootName) != null;
                     },
-                    "Wait for seam root");
+                    "Wait for seam root",
+                    cancellationToken);
                 if (!_isRunning)
-                    yield break;
+                    return;
 
                 if (_debugSelectedRequiresVoxel)
                 {
                     _debugLastPhase = "Voxel";
-                    yield return WaitForCondition(
+                    await WaitForConditionAsync(
                         () =>
                         {
                             PulsePipeline();
                             return FindVoxelRuntime(runtimeKey) != null;
                         },
-                        "Wait for voxel seam runtime");
+                        "Wait for voxel seam runtime",
+                        cancellationToken);
                     if (!_isRunning)
-                        yield break;
+                        return;
                 }
 
                 if (testSuppressionAndRestore)
@@ -214,14 +218,14 @@ namespace Hecton8.Dev
                     if (proceduralStateRegistry == null)
                     {
                         Fail("Suppression test requested but WorldProceduralStateRegistry is missing.");
-                        yield break;
+                        return;
                     }
 
                     proceduralStateRegistry.SuppressPlacement(runtimeKey);
                     if (settleDelay > 0f)
-                        yield return new WaitForSecondsRealtime(settleDelay);
+                        await DelayRealtimeAsync(settleDelay, cancellationToken);
 
-                    yield return WaitForCondition(
+                    await WaitForConditionAsync(
                         () =>
                         {
                             PulsePipeline();
@@ -230,16 +234,17 @@ namespace Hecton8.Dev
                             bool voxelGone = !_debugSelectedRequiresVoxel || FindVoxelRuntime(runtimeKey) == null;
                             return bindingGone && planGone && voxelGone;
                         },
-                        "Wait for suppression teardown");
+                        "Wait for suppression teardown",
+                        cancellationToken);
                     if (!_isRunning)
-                        yield break;
+                        return;
 
                     _debugLastPhase = "Restore";
                     proceduralStateRegistry.RestorePlacement(runtimeKey);
                     if (settleDelay > 0f)
-                        yield return new WaitForSecondsRealtime(settleDelay);
+                        await DelayRealtimeAsync(settleDelay, cancellationToken);
 
-                    yield return WaitForCondition(
+                    await WaitForConditionAsync(
                         () =>
                         {
                             PulsePipeline();
@@ -257,9 +262,10 @@ namespace Hecton8.Dev
 
                             return true;
                         },
-                        "Wait for restored geology runtime");
+                        "Wait for restored geology runtime",
+                        cancellationToken);
                     if (!_isRunning)
-                        yield break;
+                        return;
                 }
 
                 _debugLastPhase = "Complete";
@@ -269,17 +275,32 @@ namespace Hecton8.Dev
                     $"family={_debugSelectedFamilyId} terrain={_debugSelectedRequiresTerrain} " +
                     $"voxel={_debugSelectedRequiresVoxel} pass={_debugLastPass}");
             }
+            catch (OperationCanceledException)
+            {
+                _debugLastPhase = "Cancelled";
+                _debugLastIssue = "Cancellation requested.";
+                _debugLastPass = false;
+                LogVerbose("World generative geology smoke pass cancelled.");
+            }
+            catch (Exception exception)
+            {
+                Fail($"Unhandled exception: {exception.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
+            }
             finally
             {
                 _isRunning = false;
             }
         }
 
-        private IEnumerator WaitForCondition(Func<bool> predicate, string label)
+        private async Awaitable<bool> WaitForConditionAsync(Func<bool> predicate, string label, CancellationToken cancellationToken)
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0.5f, operationTimeout);
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 AutoResolve();
                 bool passed = false;
                 try
@@ -289,16 +310,27 @@ namespace Hecton8.Dev
                 catch (Exception ex)
                 {
                     Fail($"{label} exception: {ex.Message}");
-                    yield break;
+                    return false;
                 }
 
                 if (passed)
-                    yield break;
+                    return true;
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken);
             }
 
             Fail($"{label} timed out.");
+            return false;
+        }
+
+        private static async Awaitable DelayRealtimeAsync(float duration, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, duration);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken);
+            }
         }
 
         private void PulsePipeline()

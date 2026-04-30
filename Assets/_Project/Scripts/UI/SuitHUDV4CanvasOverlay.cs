@@ -28,7 +28,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener
     {
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
@@ -146,7 +146,7 @@ namespace Hecton8.UI
         private static readonly char[] s_statusLifeSupportNominalStableChars = DefaultStatusLifeSupportNominalStable.ToCharArray();
         private static readonly char[] s_statusLifeSupportNominalAscendingChars = DefaultStatusLifeSupportNominalAscending.ToCharArray();
         private static readonly char[] s_statusLifeSupportNominalDescendingChars = DefaultStatusLifeSupportNominalDescending.ToCharArray();
-        private static readonly char[] s_loadPrefixChars = "LOAD: ".ToCharArray();
+        private static readonly char[] s_loadPrefixChars = "MASS: ".ToCharArray();
         private static readonly char[] s_loadSeparatorChars = "/".ToCharArray();
         private static readonly char[] s_loadKgSuffixChars = " KG".ToCharArray();
         private static readonly char[] s_emptyHudChars = Array.Empty<char>();
@@ -167,7 +167,7 @@ namespace Hecton8.UI
             if (s_layerCacheInitialized)
                 return;
 
-            UiLayerIndex = LayerMask.NameToLayer("UI");
+            UiLayerIndex = HectonLayerMasks.UI;
             s_layerCacheInitialized = true;
         }
         private static readonly int _StatusPressureLimitExceededKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED);
@@ -290,8 +290,8 @@ namespace Hecton8.UI
 
         [Header("Reticle Dynamics")]
         [SerializeField, Range(0f, 24f)] private float reticleBaseSpread = 16f;
-        [SerializeField, Range(0f, 8f)] private float reticleVelocityFactor = 1.65f;
-        [SerializeField, Range(0f, 24f)] private float reticleHeatSpread = 12f;
+        [SerializeField, Range(0f, 8f)] private float reticleVelocityFactor = 0.1f;
+        [SerializeField, Range(0f, 24f)] private float reticleHeatSpread = 2f;
         [SerializeField, Range(0.25f, 24f)] private float reticleSpreadBlendSpeed = 8f;
         [SerializeField, Range(8f, 36f)] private float reticleLineLength = 22f;
         [SerializeField, Range(1f, 6f)] private float reticleLineThickness = 2f;
@@ -509,6 +509,7 @@ namespace Hecton8.UI
         private float _nextAutoResolveAt;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
+        private bool _lateFrameTickRegistered;
         private bool _pendingRuntimeCanvasRefresh = true;
         private bool _forceResolveOnSlowTick = true;
         private bool _pendingDepthSignalRefresh = true;
@@ -538,6 +539,11 @@ namespace Hecton8.UI
         private Color _appliedPressureColor;
         private int _appliedLoadVersion = int.MinValue;
         private Color _appliedLoadColor;
+        private int _loadMassCharStart = -1;
+        private int _loadMassCharLength;
+        private float _loadMassPulsePhase;
+        private bool _hasAppliedLoadMassVertexColor;
+        private Color32 _appliedLoadMassVertexColor;
         private bool _styleApplied;
         private bool _canvasStateApplied;
         private bool _hasAppliedRootVisibility;
@@ -1061,7 +1067,8 @@ namespace Hecton8.UI
             }
         }
 
-        private void LateUpdate()
+        /// <inheritdoc />
+        public void LateFrameTick()
         {
             if (!Application.isPlaying || _root == null)
                 return;
@@ -1734,30 +1741,41 @@ namespace Hecton8.UI
             if (_spatialAudioManager == null)
                 _spatialAudioManager = Hecton8.Core.GlobalRegistry.Audio;
 
-            if (_spatialAudioManager == null)
-                return;
+            NativeArray<float> radarSamples = default;
+            int radarResolution = 0;
+            bool hasRadarPayload = _spatialAudioManager != null &&
+                                   _spatialAudioManager.TryGetAcousticRadarPayload(out radarSamples, out radarResolution) &&
+                                   radarSamples.IsCreated &&
+                                   radarResolution > 0;
 
-            if (_spatialAudioManager == null ||
-                !_spatialAudioManager.TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution) ||
-                !radialIntensityBins.IsCreated ||
-                radialResolution <= 0)
+            if (!hasRadarPayload &&
+                WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float> densityMap, out Vector3Int densityDimensions) &&
+                densityMap.IsCreated)
+            {
+                int densityCellCount = densityDimensions.x * densityDimensions.y * densityDimensions.z;
+                radarSamples = densityMap;
+                radarResolution = math.min(densityMap.Length, densityCellCount);
+                hasRadarPayload = radarResolution > 0;
+            }
+
+            if (!hasRadarPayload)
             {
                 _acousticRadarPeakIntensity = 0f;
                 return;
             }
 
-            if (!EnsureAcousticRadarTexture(radialResolution))
+            if (!EnsureAcousticRadarTexture(radarResolution))
                 return;
 
-            _acousticRadarTexture.SetPixelData(radialIntensityBins, 0);
+            _acousticRadarTexture.SetPixelData(radarSamples, 0);
             _acousticRadarTexture.Apply(false, false);
             _acousticRadarMaterial.SetTexture(_AcousticRadarTexId, _acousticRadarTexture);
 
             float peakIntensity = 0f;
-            int sampleCount = math.min(radialIntensityBins.Length, radialResolution);
+            int sampleCount = math.min(radarSamples.Length, radarResolution);
             for (int i = 0; i < sampleCount; i++)
             {
-                float sample = radialIntensityBins[i];
+                float sample = radarSamples[i];
                 if (sample > peakIntensity)
                     peakIntensity = sample;
             }
@@ -2815,7 +2833,7 @@ namespace Hecton8.UI
                 _lastStreamedPressure = pressure;
             }
 
-            UpdateEncumbranceReadout(pulsedPrimary, pulsedDim, pulsedWarning, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion);
+            UpdateEncumbranceReadout(dt, pulsedPrimary, pulsedDim, pulsedWarning, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion);
 
             Color statusColor = PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning);
             if (_biosRecoveryMode)
@@ -2878,6 +2896,7 @@ namespace Hecton8.UI
         }
 
         private void UpdateEncumbranceReadout(
+            float deltaTime,
             Color primary,
             Color dim,
             Color warning,
@@ -2889,7 +2908,7 @@ namespace Hecton8.UI
                 return;
 
             ResolveInventoryLoadValues(out float totalMassKg, out float carryCapacityKg, out float load01);
-            Color loadColor = ResolveLoadColor(primary, dim, warning, load01);
+            Color loadColor = ResolveLoadBaseColor(primary, dim, warning, load01);
 
             if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
             {
@@ -2897,8 +2916,10 @@ namespace Hecton8.UI
                 {
                     _loadLabel.color = loadColor;
                     _appliedLoadColor = loadColor;
+                    _hasAppliedLoadMassVertexColor = false;
                 }
 
+                UpdateLoadMassVertexWarning(deltaTime, load01, loadColor, warning);
                 return;
             }
 
@@ -2909,6 +2930,9 @@ namespace Hecton8.UI
                     if (!TryBuildLoadBuffer(_loadDisplayFallbackBuffer, totalMassKg, carryCapacityKg, out length, out version))
                         return;
 
+                    _loadMassCharStart = 0;
+                    _loadMassCharLength = length;
+                    bool forceMeshUpdate = PrepareLoadMassVertexRefresh(version, loadColor, corruptedMode, corruptionVersion, 229);
                     SetDisplayBufferIfChanged(
                         _loadLabel,
                         _loadDisplayFallbackBuffer,
@@ -2922,9 +2946,16 @@ namespace Hecton8.UI
                         229,
                         ref _appliedLoadVersion,
                         ref _appliedLoadColor);
+                    if (forceMeshUpdate)
+                        _loadLabel.ForceMeshUpdate(false, false);
+
+                    UpdateLoadMassVertexWarning(deltaTime, load01, loadColor, warning);
                     return;
                 }
 
+                _loadMassCharStart = 0;
+                _loadMassCharLength = length;
+                bool forceLeaseMeshUpdate = PrepareLoadMassVertexRefresh(version, loadColor, corruptedMode, corruptionVersion, 229);
                 SetDisplayBufferIfChanged(
                     _loadLabel,
                     lease.Buffer,
@@ -2938,6 +2969,10 @@ namespace Hecton8.UI
                     229,
                     ref _appliedLoadVersion,
                     ref _appliedLoadColor);
+                if (forceLeaseMeshUpdate)
+                    _loadLabel.ForceMeshUpdate(false, false);
+
+                UpdateLoadMassVertexWarning(deltaTime, load01, loadColor, warning);
             }
             finally
             {
@@ -2958,14 +2993,88 @@ namespace Hecton8.UI
                 : Mathf.Clamp01(totalMassKg / carryCapacityKg);
         }
 
-        private static Color ResolveLoadColor(Color primary, Color dim, Color warning, float load01)
+        private bool PrepareLoadMassVertexRefresh(int version, Color loadColor, bool corruptedMode, int corruptionVersion, int corruptionSalt)
+        {
+            int displayVersion = corruptedMode
+                ? unchecked((version * 397) ^ corruptionVersion ^ corruptionSalt)
+                : version;
+            bool textWillChange = _appliedLoadVersion != displayVersion;
+            bool colorWillChange = _appliedLoadColor != loadColor;
+            if (!textWillChange && !colorWillChange)
+                return false;
+
+            _hasAppliedLoadMassVertexColor = false;
+            return textWillChange;
+        }
+
+        private void UpdateLoadMassVertexWarning(float deltaTime, float load01, Color loadBaseColor, Color warning)
+        {
+            if (_loadMassCharStart < 0 || _loadMassCharLength <= 0)
+                return;
+
+            if (load01 > 0.9f)
+            {
+                _loadMassPulsePhase += Mathf.Max(0f, deltaTime) * 10f;
+                if (_loadMassPulsePhase >= Mathf.PI * 2f)
+                    _loadMassPulsePhase -= Mathf.PI * 2f;
+
+                ApplyLoadMassVertexColor(ResolveLoadMassPulseColor(warning, _loadMassPulsePhase));
+                return;
+            }
+
+            _loadMassPulsePhase = 0f;
+            ApplyLoadMassVertexColor((Color32)loadBaseColor);
+        }
+
+        private void ApplyLoadMassVertexColor(Color32 color)
+        {
+            if (_loadLabel == null || _loadMassCharStart < 0 || _loadMassCharLength <= 0)
+                return;
+
+            if (_hasAppliedLoadMassVertexColor && _appliedLoadMassVertexColor.Equals(color))
+                return;
+
+            TMP_TextInfo textInfo = _loadLabel.textInfo;
+            if (textInfo == null || textInfo.characterCount <= 0 || _loadMassCharStart >= textInfo.characterCount)
+                return;
+
+            int end = Mathf.Min(textInfo.characterCount, _loadMassCharStart + _loadMassCharLength);
+            for (int i = _loadMassCharStart; i < end; i++)
+            {
+                TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
+                if (!characterInfo.isVisible)
+                    continue;
+
+                int meshIndex = characterInfo.materialReferenceIndex;
+                int vertexIndex = characterInfo.vertexIndex;
+                Color32[] colors = textInfo.meshInfo[meshIndex].colors32;
+                colors[vertexIndex] = color;
+                colors[vertexIndex + 1] = color;
+                colors[vertexIndex + 2] = color;
+                colors[vertexIndex + 3] = color;
+            }
+
+            _loadLabel.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
+            _appliedLoadMassVertexColor = color;
+            _hasAppliedLoadMassVertexColor = true;
+        }
+
+        private static Color ResolveLoadBaseColor(Color primary, Color dim, Color warning, float load01)
         {
             if (load01 <= 0.9f)
                 return Alpha(Color.Lerp(dim, primary, Mathf.Clamp01(load01 * 0.65f)), 0.72f);
 
-            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 10f);
-            Color red = new Color(1f, 0.06f, 0.045f, 1f);
-            return Alpha(Color.Lerp(warning, red, 0.42f + pulse * 0.48f), 0.95f);
+            return Alpha(warning, 0.95f);
+        }
+
+        private static Color32 ResolveLoadMassPulseColor(Color warning, float phase)
+        {
+            float pulse = 0.5f + (0.5f * Mathf.Sin(phase));
+            Color32 warning32 = warning;
+            byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(warning32.g, 14f, 0.5f + pulse * 0.35f)), 0, 255);
+            byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(warning32.b, 10f, 0.55f + pulse * 0.3f)), 0, 255);
+            byte alpha = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(224f, 255f, pulse)), 0, 255);
+            return new Color32(255, green, blue, alpha);
         }
 
         private static bool TryBuildLoadBuffer(char[] buffer, float totalMassKg, float carryCapacityKg, out int length, out int version)
@@ -5094,6 +5203,12 @@ namespace Hecton8.UI
                 _tickRegistered = true;
             }
 
+            if (!_lateFrameTickRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameTickRegistered = true;
+            }
+
             if (_slowTickRegistered)
                 return;
 
@@ -5107,6 +5222,12 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _tickRegistered = false;
+            }
+
+            if (_lateFrameTickRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameTickRegistered = false;
             }
 
             if (!_slowTickRegistered)

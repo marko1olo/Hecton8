@@ -102,6 +102,7 @@ namespace Hecton8.UI
         {
             PDAIntrusionManager.OnRebootCompleted -= HandleIntrusionRebootCompleted;
             PDAEvents.Unregister(this);
+            PDAEvents.AssertUnregistered(this, nameof(HectonOSBootManager));
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();

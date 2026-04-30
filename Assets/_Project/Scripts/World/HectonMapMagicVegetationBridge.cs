@@ -76,6 +76,7 @@ namespace Hecton8.World
         private const float DefaultPredatorFearLifetimeSeconds = 900f;
         private const float DefaultAbyssalNavGraphCellSize = 64f;
         private const int InvalidTerrainHoleId = 0;
+        private const int InvalidArtificialStructureId = 0;
         private const float DefaultTerrainHoleEvictionDistance = 3000f;
         private const float DefaultThermalGridRadius = 1000f;
         private const float DefaultThermalGridHorizontalCellSize = 50f;
@@ -1161,7 +1162,7 @@ namespace Hecton8.World
             public TerrainHoleSourceType SourceType;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct TerrainHoleMaskBuildJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
@@ -3110,8 +3111,16 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterArtificialStructure(Bounds bounds, StructureType type)
         {
+            RegisterArtificialStructureHandle(bounds, type);
+        }
+
+        /// <summary>
+        /// Registers a persistent artificial structure bounds and returns a stable runtime handle for removal.
+        /// </summary>
+        public int RegisterArtificialStructureHandle(Bounds bounds, StructureType type)
+        {
             if (bounds.size.sqrMagnitude <= 0.0001f)
-                return;
+                return InvalidArtificialStructureId;
 
             Vector3 center = bounds.center;
             Vector3 size = bounds.size;
@@ -3127,17 +3136,53 @@ namespace Hecton8.World
                 if ((existing.Bounds.size - size).sqrMagnitude > 0.25f)
                     continue;
 
+                Bounds previousBounds = existing.Bounds;
                 existing.Bounds = bounds;
                 _persistentArtificialStructures[i] = existing;
-                return;
+                InvalidateChunksIntersectingBounds(previousBounds);
+                InvalidateChunksIntersectingBounds(bounds);
+                RefreshArtificialStructureSnapshotIfIdle();
+                RefreshResidency();
+                return existing.StructureId;
             }
 
+            int structureId = _nextArtificialStructureId++;
             _persistentArtificialStructures.Add(new PersistentArtificialStructureRecord
             {
-                StructureId = _nextArtificialStructureId++,
+                StructureId = structureId,
                 Bounds = bounds,
                 Type = type
             });
+
+            InvalidateChunksIntersectingBounds(bounds);
+            RefreshArtificialStructureSnapshotIfIdle();
+            RefreshResidency();
+            return structureId;
+        }
+
+        /// <summary>
+        /// Unregisters a persistent artificial structure by stable runtime handle.
+        /// </summary>
+        public bool UnregisterArtificialStructure(int structureId)
+        {
+            if (structureId == InvalidArtificialStructureId || _persistentArtificialStructures.Count <= 0)
+                return false;
+
+            for (int i = 0; i < _persistentArtificialStructures.Count; i++)
+            {
+                PersistentArtificialStructureRecord structure = _persistentArtificialStructures[i];
+                if (structure.StructureId != structureId)
+                    continue;
+
+                Bounds removedBounds = structure.Bounds;
+                _persistentArtificialStructures.RemoveAt(i);
+                InvalidateChunksIntersectingBounds(removedBounds);
+                RefreshArtificialStructureSnapshotIfIdle();
+                RefreshResidency();
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -4417,6 +4462,15 @@ namespace Hecton8.World
                 SwapThreatSamplingChunkHashBuffers();
                 _threatSamplingChunkHashSwapPending = false;
             }
+        }
+
+        private void RefreshArtificialStructureSnapshotIfIdle()
+        {
+            if (!CanRefreshThreatSpatialSnapshots())
+                return;
+
+            RebuildArtificialStructureThreatSnapshot();
+            CommitThreatSpatialSnapshotBufferSwaps();
         }
 
         private void GetThreatGridBounds(Vector3 gridCenter, out float minX, out float maxX, out float minZ, out float maxZ)
@@ -8761,7 +8815,7 @@ namespace Hecton8.World
             return JobHandle.CombineDependencies(current, next);
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateAnchoredVegetationJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<byte> SandMask;
@@ -8996,6 +9050,9 @@ namespace Hecton8.World
                     }
                 }
 
+                if (IntersectsBaseModuleAabb(position, scale, heightScale, widthScale))
+                    return;
+
                 float depthBelowSurface = math.max(0f, WaterLevel - position.y);
                 flowVector = ApplyAbyssalFlowNoiseStatic(
                     flowVector,
@@ -9023,6 +9080,98 @@ namespace Hecton8.World
                     BiomeLayer = biomeLayer,
                     IsValid = 1
                 };
+            }
+
+            private bool IntersectsBaseModuleAabb(float3 position, float scale, float heightScale, float widthScale)
+            {
+                if (!ArtificialStructures.IsCreated ||
+                    !ArtificialStructureHash.IsCreated ||
+                    ThreatGridResolution <= 0 ||
+                    ThreatGridCellSize <= 0f)
+                {
+                    return false;
+                }
+
+                float uniformScale = math.max(0.001f, math.abs(scale));
+                float radius = math.max(0.25f, uniformScale * math.max(0.25f, math.abs(widthScale)));
+                float height = math.max(0.25f, uniformScale * math.max(0.25f, math.abs(heightScale)));
+                float3 aabbMin = new float3(position.x - radius, position.y - 0.05f, position.z - radius);
+                float3 aabbMax = new float3(position.x + radius, position.y + height, position.z + radius);
+
+                if (!TryComputeStructureCellRange(aabbMin, aabbMax, out int minCellX, out int maxCellX, out int minCellZ, out int maxCellZ))
+                    return false;
+
+                for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
+                {
+                    int rowOffset = cellZ * ThreatGridResolution;
+                    for (int cellX = minCellX; cellX <= maxCellX; cellX++)
+                    {
+                        if (IntersectsBaseModuleAabbInCell(rowOffset + cellX, aabbMin, aabbMax))
+                            return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private bool IntersectsBaseModuleAabbInCell(int cellIndex, float3 aabbMin, float3 aabbMax)
+            {
+                NativeParallelMultiHashMapIterator<int> iterator;
+                int structureIndex;
+                if (!ArtificialStructureHash.TryGetFirstValue(cellIndex, out structureIndex, out iterator))
+                    return false;
+
+                do
+                {
+                    if (structureIndex < 0 || structureIndex >= ArtificialStructures.Length)
+                        continue;
+
+                    ArtificialStructureRecord structure = ArtificialStructures[structureIndex];
+                    if ((StructureType)structure.Type != StructureType.BaseModule)
+                        continue;
+
+                    if (aabbMax.x >= structure.MinX &&
+                        aabbMin.x <= structure.MaxX &&
+                        aabbMax.y >= structure.MinY &&
+                        aabbMin.y <= structure.MaxY &&
+                        aabbMax.z >= structure.MinZ &&
+                        aabbMin.z <= structure.MaxZ)
+                    {
+                        return true;
+                    }
+                }
+                while (ArtificialStructureHash.TryGetNextValue(out structureIndex, ref iterator));
+
+                return false;
+            }
+
+            private bool TryComputeStructureCellRange(
+                float3 aabbMin,
+                float3 aabbMax,
+                out int minCellX,
+                out int maxCellX,
+                out int minCellZ,
+                out int maxCellZ)
+            {
+                float halfExtent = (ThreatGridResolution - 1) * 0.5f * ThreatGridCellSize;
+                float minGridX = ThreatGridCenter.x - halfExtent;
+                float maxGridX = ThreatGridCenter.x + halfExtent;
+                float minGridZ = ThreatGridCenter.z - halfExtent;
+                float maxGridZ = ThreatGridCenter.z + halfExtent;
+                if (aabbMax.x < minGridX || aabbMin.x > maxGridX || aabbMax.z < minGridZ || aabbMin.z > maxGridZ)
+                {
+                    minCellX = 0;
+                    maxCellX = 0;
+                    minCellZ = 0;
+                    maxCellZ = 0;
+                    return false;
+                }
+
+                minCellX = math.clamp((int)math.floor((aabbMin.x - minGridX) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                maxCellX = math.clamp((int)math.floor((aabbMax.x - minGridX) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                minCellZ = math.clamp((int)math.floor((aabbMin.z - minGridZ) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                maxCellZ = math.clamp((int)math.floor((aabbMax.z - minGridZ) / ThreatGridCellSize), 0, ThreatGridResolution - 1);
+                return minCellX <= maxCellX && minCellZ <= maxCellZ;
             }
 
             private bool TryResolveMetalAttachmentSurface(float3 samplePosition, out float surfaceY)
@@ -9086,7 +9235,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateFloatingVegetationJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<byte> SandMask;
@@ -9219,7 +9368,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SampleBiomassDensityJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> Positions;
@@ -9238,7 +9387,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct VegetationDensityQueryJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<Vector3> Positions;
@@ -9276,7 +9425,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThreatPropagationJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> CurrentThreat;
@@ -9481,7 +9630,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThreatVoxelizationJob : IJobParallelFor
         {
             private const byte SolidThreat = 255;
@@ -9626,7 +9775,7 @@ namespace Hecton8.World
             public float Strength;
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalFlowFieldJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> ThreatGrid;
@@ -9836,7 +9985,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalThermalGridJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<VegetationDensityChunkRecord> ThreatChunks;
@@ -9950,7 +10099,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalFlowVolumeJob : IJobParallelFor
         {
             private const float ThermoclineHalfBandMeters = 8f;
@@ -10084,7 +10233,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct NativeAStarJob : IJob
         {
             [ReadOnly] public NativeArray<Vector3> Nodes;
@@ -10500,7 +10649,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct StringPullPathJob : IJob
         {
             private const float FunnelEpsilon = 0.00001f;
@@ -10976,7 +11125,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CullHLODInstancesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<HLODData> Registry;
@@ -11034,7 +11183,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DefragPoolJob : IJob
         {
             [ReadOnly] public NativeArray<ChunkSliceMoveRecord> Moves;
@@ -11092,7 +11241,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ReduceAverageDensityJob : IJob
         {
             [ReadOnly] public NativeArray<float> Input;
@@ -11346,7 +11495,7 @@ namespace Hecton8.World
                 commands[0] = new RaycastCommand(
                     origin,
                     Vector3.down,
-                    new QueryParameters(UnityEngine.Physics.DefaultRaycastLayers, false, QueryTriggerInteraction.Ignore),
+                    new QueryParameters(HectonLayerMasks.DefaultRaycastLayerMask, false, QueryTriggerInteraction.Ignore),
                     distance);
                 // COLD SYNC JOB: scatter preview/runtime-state snapping is rebuilt episodically, not per-frame gameplay cadence.
                 JobHandle handle = RaycastCommand.ScheduleBatch(commands, hits, 1, default);
@@ -13362,6 +13511,49 @@ namespace Hecton8.World
             }
         }
 
+        private void InvalidateChunksIntersectingBounds(Bounds bounds)
+        {
+            if (bounds.size.sqrMagnitude <= 0.0001f)
+                return;
+
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            _evictionKeys.Clear();
+            Dictionary<ChunkKey, ChunkPayload>.Enumerator payloadEnumerator = _chunkPayloads.GetEnumerator();
+            while (payloadEnumerator.MoveNext())
+            {
+                if (DoesChunkIntersectBounds(payloadEnumerator.Current.Value, min.x, max.x, min.z, max.z))
+                    _evictionKeys.Add(payloadEnumerator.Current.Key);
+            }
+
+            for (int i = 0; i < _evictionKeys.Count; i++)
+            {
+                ChunkKey key = _evictionKeys[i];
+                if (_chunkPayloads.TryGetValue(key, out ChunkPayload payload))
+                    ReleaseChunkPayloadStorage(payload);
+
+                _chunkPayloads.Remove(key);
+                RemoveChunkAbyssalNavPayload(key);
+                RemoveChunkMegaWreckPayload(key);
+            }
+
+            _jobScratchKeys.Clear();
+            Dictionary<ChunkKey, ChunkBuildJobState>.Enumerator jobEnumerator = _chunkBuildJobs.GetEnumerator();
+            while (jobEnumerator.MoveNext())
+            {
+                ChunkBuildJobState jobState = jobEnumerator.Current.Value;
+                if (jobState == null || !DoesChunkIntersectBounds(jobState.PayloadHeader, min.x, max.x, min.z, max.z))
+                    continue;
+
+                _jobScratchKeys.Add(jobEnumerator.Current.Key);
+            }
+
+            for (int i = 0; i < _jobScratchKeys.Count; i++)
+                CancelChunkBuildJob(_jobScratchKeys[i]);
+
+            _activeSetDirty = true;
+        }
+
         private static bool DoesChunkIntersectHole(ChunkPayload payload, float holeX, float holeZ, float radiusSq)
         {
             float clampedX = Mathf.Clamp(holeX, payload.MinX, payload.MaxX);
@@ -13369,6 +13561,14 @@ namespace Hecton8.World
             float dx = holeX - clampedX;
             float dz = holeZ - clampedZ;
             return (dx * dx) + (dz * dz) <= radiusSq;
+        }
+
+        private static bool DoesChunkIntersectBounds(ChunkPayload payload, float minX, float maxX, float minZ, float maxZ)
+        {
+            return maxX >= payload.MinX &&
+                   minX <= payload.MaxX &&
+                   maxZ >= payload.MinZ &&
+                   minZ <= payload.MaxZ;
         }
 
         private static int CountSemanticType(NativeChunkPool pool, int offset, int count, int semanticType)

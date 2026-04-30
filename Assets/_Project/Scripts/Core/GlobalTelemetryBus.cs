@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -18,7 +19,8 @@ namespace Hecton8.Core
         BiomeVisited = 1,
         ItemCrafted = 2,
         BootstrapDependencyCycle = 3,
-        JobBarrierStall = 4
+        JobBarrierStall = 4,
+        PoolExhausted = 5
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -110,6 +112,14 @@ namespace Hecton8.Core
             Publish(TelemetryEventType.PlayerDeath, 0u, 0u, 0f, worldPosition);
         }
 
+        /// <summary>
+        /// Cold-allocates the telemetry buffers before runtime systems can publish failure events.
+        /// </summary>
+        public static void Initialize()
+        {
+            EnsureInitialized();
+        }
+
         public static void PublishBiomeVisited(string biomeId, int depthTier, float depthMeters)
         {
             Publish(
@@ -142,6 +152,21 @@ namespace Hecton8.Core
                 ComputeHash(systemName),
                 ComputeHash(phaseName),
                 stallMilliseconds,
+                default);
+        }
+
+        /// <summary>
+        /// Publishes a pool exhaustion event without requiring a managed prefab name payload.
+        /// </summary>
+        /// <param name="prefabId">Registered prefab identifier that failed to spawn.</param>
+        /// <param name="reasonCode">Pool failure reason code owned by <see cref="ObjectPoolManager"/>.</param>
+        public static void PublishPoolExhausted(int prefabId, uint reasonCode)
+        {
+            Publish(
+                TelemetryEventType.PoolExhausted,
+                unchecked((uint)prefabId),
+                reasonCode,
+                1f,
                 default);
         }
 
@@ -307,9 +332,21 @@ namespace Hecton8.Core
 
                 if (_pendingByteCount > 0 && !string.IsNullOrEmpty(_pendingBinaryPath))
                 {
-                    fixed (byte* exportPtr = _exportBytes)
+                    using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
+                               _pendingBinaryPath,
+                               FileMode.Create,
+                               null,
+                               _pendingByteCount,
+                               MemoryMappedFileAccess.ReadWrite))
                     {
-                        AsyncWriteManager.WriteAll(_pendingBinaryPath, exportPtr, _pendingByteCount, out _);
+                        using (MemoryMappedViewStream mappedStream = mappedFile.CreateViewStream(
+                                   0L,
+                                   _pendingByteCount,
+                                   MemoryMappedFileAccess.Write))
+                        {
+                            mappedStream.Write(_exportBytes, 0, _pendingByteCount);
+                            mappedStream.Flush();
+                        }
                     }
                 }
 

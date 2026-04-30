@@ -120,7 +120,7 @@ namespace Hecton8.Core
         ///
         /// Это позволяет избежать мерцания коллайдеров на границе радиуса.
         /// </summary>
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DistanceCalcJob : IJobParallelFor
         {
             [ReadOnly] public float3 playerPos;

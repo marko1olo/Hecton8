@@ -1,4 +1,5 @@
 using Hecton.Localization;
+using Hecton8.Core;
 using TMPro;
 using UnityEngine;
 
@@ -10,7 +11,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("Hecton/UI/Localized TMP Auto Sizer")]
-    public sealed class LocalizedTMPAutoSizer : MonoBehaviour
+    public sealed class LocalizedTMPAutoSizer : MonoBehaviour, IUpdatable
     {
         private const float CollapsedRectThreshold = 0.5f;
         private const int MaxRectRepairPasses = 4;
@@ -50,6 +51,7 @@ namespace Hecton8.UI
         private GameLanguage _lastAppliedLanguage = (GameLanguage)(-1);
         private Vector2 _lastAppliedRectSize = new Vector2(-1f, -1f);
         private Vector3 _baselineLocalScale = Vector3.one;
+        private bool _registeredForTick;
 #if UNITY_EDITOR
         private bool _isEditorValidating;
 #endif
@@ -66,11 +68,13 @@ namespace Hecton8.UI
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             InvalidateConfiguration();
             QueueConfigurationApply();
+            TryRegisterForTick();
         }
 
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            TryUnregisterFromTick();
         }
 
         private void OnRectTransformDimensionsChange()
@@ -137,7 +141,8 @@ namespace Hecton8.UI
             QueueConfigurationApply();
         }
 
-        private void LateUpdate()
+        /// <inheritdoc />
+        public void Tick(float deltaTime)
         {
             if (!_configurationApplyPending)
                 return;
@@ -145,6 +150,24 @@ namespace Hecton8.UI
             _configurationApplyPending = false;
             RepairCollapsedRectHierarchy();
             ApplyConfiguration();
+        }
+
+        private void TryRegisterForTick()
+        {
+            if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registeredForTick = true;
+        }
+
+        private void TryUnregisterFromTick()
+        {
+            if (!_registeredForTick)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registeredForTick = false;
         }
 
         private void ApplyConfiguration()

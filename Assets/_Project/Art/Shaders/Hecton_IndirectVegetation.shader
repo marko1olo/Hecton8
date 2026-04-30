@@ -189,6 +189,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonFloraCascadeParams;
             float4 _HectonSubmarineWashSphere;
             float4 _HectonSubmarineWashVelocity;
+            float4 _HectonSubmarineWashAupGrid;
+            float4 _HectonSubmarineWashAupLocal;
             float4 _HectonFlowSynchronyParams;
             float _HectonSeasonCycle;
             float _HectonVegetationDepth;
@@ -633,9 +635,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 velocityDirection = SafeNormalize3(velocityDirection);
                 float3 bendDirection = SafeNormalize3(lerp(awayDirection, velocityDirection, 0.65));
                 float speedFactor = saturate(_HectonSubmarineWashVelocity.w * 0.045);
+                float shockwave01 = saturate((_HectonSubmarineWashVelocity.w - 15.0) * 0.10);
                 float typeScale = instanceType < 0.5 ? 0.55 : (instanceType < 1.5 ? 1.25 : 0.72);
-                float flattening = proximity * speedFactor * bendMask * typeScale * lerp(0.35, 1.0, heightMask);
-                float downwardBias = lerp(0.02, 0.12, heightMask) * flattening;
+                float flattening = proximity * bendMask * typeScale * (speedFactor * lerp(0.35, 1.0, heightMask) + shockwave01 * lerp(0.55, 1.45, heightMask));
+                float downwardBias = lerp(0.02, 0.12 + shockwave01 * 0.26, heightMask) * flattening;
                 return bendDirection * flattening + float3(0.0, -downwardBias, 0.0);
             }
 
@@ -977,7 +980,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 baseNormalWS = TransformDirection(instanceMatrix, input.normalOS);
                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
                 float3 renderOriginWS = originWS + driftOffsetWS;
-                float growthHeightScale = lerp(0.08, 1.0, growth01);
+                float growthHeightScale = growth01;
 
                 if (instanceType < 0.5)
                 {
@@ -1195,7 +1198,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.parasiteMask = parasiteMask;
                 output.runtimeState = instanceData.RuntimeState;
                 output.pulseFrequency = max(0.05, instanceData.PulseFrequency);
-                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, instanceData.BioluminescenceColor.a * normalizedHealth);
+                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, instanceData.BioluminescenceColor.a);
                 output.flowMagnitude = flowMagnitude;
                 output.biomeLayer = biomeLayer;
                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
@@ -1253,6 +1256,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half3 decayColor = lerp(half3(gradientLuma, gradientLuma, gradientLuma), half3(0.32h, 0.29h, 0.24h), 0.55h);
                 gradientColor = lerp(gradientColor, decayColor, input.entropyProgress * 0.92h);
                 half necrosisMask = ResolveEdgeInwardNecrosisMask(input);
+                if (input.health01 < 0.985h)
+                {
+                    half edgeSignal = saturate(max(input.edgeMask, input.curvatureMask * 0.82h));
+                    edgeSignal = saturate(edgeSignal + smoothstep(0.72h, 1.0h, input.heightMask) * 0.14h);
+                    half necrosisClipNoise = (half)ValueNoise3D(
+                        input.positionWS * 4.7 +
+                        float3(input.cascadeSeed * 11.0h, _Time.y * 0.021h, input.pulseFrequency * 3.0h));
+                    half inwardThreshold = saturate(1.0h - input.health01 + (necrosisClipNoise - 0.5h) * 0.18h);
+                    clip(edgeSignal - inwardThreshold);
+                }
                 half necrosisNoise = (half)ValueNoise3D(input.positionWS * 5.6 + float3(0.0, input.cascadeSeed * 7.0h, _Time.y * 0.025));
                 half3 necrosisColor = lerp(half3(0.025h, 0.018h, 0.012h), half3(0.20h, 0.10h, 0.035h), necrosisNoise);
                 gradientColor = lerp(gradientColor, necrosisColor, necrosisMask);
@@ -1260,8 +1273,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     ? half3(0.18h, 0.95h, 0.72h)
                     : half3(0.14h, 0.78h, 1.00h);
                 gradientColor = lerp(gradientColor, gradientColor + parasiteGlowTint * 0.38h, input.parasiteMask * saturate(1.0h - input.entropyProgress * 0.65h));
-                half biomeWeight = saturate(input.biomeLayer / 3.0h);
-                half biomeTintStrength = lerp(0.04h, 0.16h, biomeWeight);
+                half biomeTintStrength = 0.10h;
                 half3 biomeAmbientTint = lerp(half3(1.0h, 1.0h, 1.0h), saturate(_HectonVegetationAmbientColor.rgb + 0.16h), biomeTintStrength);
                 gradientColor *= biomeAmbientTint;
                 if (input.biomeLayer > 2.5h)
@@ -1338,7 +1350,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half cascadeEmissionScale = 1.0h + ResolveCascadeEmissionScale(input.cascadeSeed);
                 half3 biolumEmission = input.biolumColor.rgb *
                     (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale);
-                biolumEmission *= input.growth01;
+                biolumEmission *= input.growth01 * input.health01;
                 half3 decayTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(0.92h, 0.84h, 0.68h), decaySeasonWeight * 0.22h);
                 finalColor *= decayTint;
                 finalColor += biolumEmission;

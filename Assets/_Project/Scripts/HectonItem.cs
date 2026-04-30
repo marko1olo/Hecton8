@@ -82,7 +82,7 @@ namespace Hecton8.Items
         private int _cachedItemHashId;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
-        private uint _geneticsMask;
+        private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
 
         // ═════════════════════════════════════════════════════════
@@ -124,6 +124,8 @@ namespace Hecton8.Items
             // Гарантированная отписка при деактивации (пулинг).
             // Сбрасываем фазу — при следующем OnEnable начнём заново.
             StopSettle();
+            if (_rb != null)
+                GlobalPhysicsStateManager.UnregisterTrackedBody(_rb);
             ClearPersistentWorldRecord();
         }
 
@@ -233,11 +235,17 @@ namespace Hecton8.Items
         /// <param name="qty">Количество единиц.</param>
         public void SetItemData(ItemData data, int qty)
         {
-            SetItemData(data, qty, 0u, DefaultQualityMilli);
+            SetItemData(data, qty, 0UL, DefaultQualityMilli);
         }
 
         /// <summary>Programmatic item initialization with persisted mutable item state.</summary>
         public void SetItemData(ItemData data, int qty, uint geneticsMask, ushort qualityMilli)
+        {
+            SetItemData(data, qty, (ulong)geneticsMask, qualityMilli);
+        }
+
+        /// <summary>Programmatic item initialization with persisted mutable item state.</summary>
+        public void SetItemData(ItemData data, int qty, ulong geneticsMask, ushort qualityMilli)
         {
             itemData = data;
             quantity = qty > 0 ? qty : 1;
@@ -269,7 +277,7 @@ namespace Hecton8.Items
         public int Quantity => quantity;
         public int ItemHashId => _cachedItemHashId;
         /// <summary>Persisted genetics payload carried by biological seed world items.</summary>
-        public uint GeneticsMask => _geneticsMask;
+        public ulong GeneticsMask => _geneticsMask;
         /// <summary>Persisted item quality in milli-normalized units.</summary>
         public ushort QualityMilli => _qualityMilli != 0 ? _qualityMilli : DefaultQualityMilli;
         public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;

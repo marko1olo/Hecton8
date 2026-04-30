@@ -11,9 +11,6 @@ public static class SceneViewSkyboxEnforcer
     private const string PreviewName = "__SceneViewSkyPreview";
     private const double DefaultRefreshIntervalSeconds = 0.5d;
     private const double SourceRetryIntervalSeconds = 1d;
-    private const string WaterLayerName = "Water";
-    private const string TerrainLayerName = "Terrain ";
-
     private static GameObject _previewObject;
     private static MeshFilter _previewFilter;
     private static MeshRenderer _previewRenderer;
@@ -161,10 +158,10 @@ public static class SceneViewSkyboxEnforcer
 
             if (sceneCamera != null)
             {
-                if (ExcludeLayer(sceneCamera, ref _waterLayer, WaterLayerName))
+                if (ExcludeLayer(sceneCamera, ref _waterLayer, Hecton8.Core.HectonLayerMasks.Water))
                     stateChanged = true;
 
-                if (ExcludeLayer(sceneCamera, ref _terrainLayer, TerrainLayerName))
+                if (ExcludeLayer(sceneCamera, ref _terrainLayer, Hecton8.Core.HectonLayerMasks.Terrain))
                     stateChanged = true;
             }
 
@@ -173,10 +170,10 @@ public static class SceneViewSkyboxEnforcer
         }
     }
 
-    private static bool ExcludeLayer(Camera sceneCamera, ref int layer, string layerName)
+    private static bool ExcludeLayer(Camera sceneCamera, ref int layer, int layerIndex)
     {
         if (layer == int.MinValue)
-            layer = LayerMask.NameToLayer(layerName);
+            layer = layerIndex;
 
         if (layer < 0)
             return false;
@@ -197,8 +194,8 @@ public static class SceneViewSkyboxEnforcer
             return;
         }
 
-        ExcludeLayer(camera, ref _waterLayer, WaterLayerName);
-        ExcludeLayer(camera, ref _terrainLayer, TerrainLayerName);
+        ExcludeLayer(camera, ref _waterLayer, Hecton8.Core.HectonLayerMasks.Water);
+        ExcludeLayer(camera, ref _terrainLayer, Hecton8.Core.HectonLayerMasks.Terrain);
         UpdatePreview(camera);
     }
 

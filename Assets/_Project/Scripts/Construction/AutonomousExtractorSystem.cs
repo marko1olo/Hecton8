@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Scavenging;
 using Unity.Burst;
@@ -42,7 +43,7 @@ namespace Hecton8.Construction
             public byte IsOperating;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct AdvanceExtractionJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<ExtractorJobInput> Inputs;
@@ -257,16 +258,31 @@ namespace Hecton8.Construction
                 ExtractorJobResult result = _jobResults[i];
                 _cycleTimers[i] = result.NextCycleTimerSeconds;
                 _bufferedItemHashIds[i] = result.BufferedItemHashId;
-                _bufferedUnitCounts[i] = result.NextBufferedUnitCount;
                 _completedCycleCounts[i] += result.CompletedCycleDelta;
 
                 AutonomousExtractorModule module = i < _modules.Count ? _modules[i] : null;
                 if (module == null)
+                {
+                    _bufferedUnitCounts[i] = result.NextBufferedUnitCount;
                     continue;
+                }
+
+                int bufferedUnitCount = result.NextBufferedUnitCount;
+                ResourceNode hostNode = module.BoundNode;
+                ResourceNodeTemplate template = hostNode != null ? hostNode.ResourceTemplate : null;
+                ItemData routedItem = template != null ? template.ExtractorYieldItem : null;
+                if (bufferedUnitCount > 0 &&
+                    routedItem != null &&
+                    module.TryRouteBufferedOutput(routedItem, bufferedUnitCount, out int routedCount))
+                {
+                    bufferedUnitCount = math.max(0, bufferedUnitCount - routedCount);
+                }
+
+                _bufferedUnitCounts[i] = bufferedUnitCount;
 
                 module.ApplyRuntimeTelemetry(
                     result.BufferedItemHashId,
-                    result.NextBufferedUnitCount,
+                    bufferedUnitCount,
                     _completedCycleCounts[i],
                     result.IsOperating != 0);
             }
@@ -634,6 +650,16 @@ namespace Hecton8.Construction
         internal void SetRuntimeIndex(int runtimeIndex)
         {
             _runtimeIndex = runtimeIndex;
+        }
+
+        internal bool TryRouteBufferedOutput(ItemData item, int bufferedUnitCount, out int routedCount)
+        {
+            routedCount = 0;
+            if (item == null || bufferedUnitCount <= 0 || _powerNode == null)
+                return false;
+
+            PowerGrid grid = _powerNode.Grid;
+            return BaseLogisticsNetwork.TryDepositItem(grid, item, bufferedUnitCount, out routedCount);
         }
 
         private void TryRegister()

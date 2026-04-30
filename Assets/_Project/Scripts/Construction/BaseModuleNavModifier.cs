@@ -25,6 +25,7 @@ namespace Hecton8.Construction
 
         private int _obstacleId;
         private int _terrainHoleHandle;
+        private int _artificialStructureHandle;
 
         private void Awake()
         {
@@ -57,32 +58,42 @@ namespace Hecton8.Construction
         internal void RefreshVegetationExclusion()
         {
             ClearVegetationExclusion();
-            if (!TryResolveObstacleEnvelope(out Vector3 worldCenter, out float horizontalRadius))
+            if (!TryResolveObstacleEnvelope(out Vector3 worldCenter, out float horizontalRadius, out Bounds moduleBounds))
                 return;
 
             HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (vegetationBridge != null)
+            {
                 _terrainHoleHandle = vegetationBridge.RegisterTerrainHoleHandle(worldCenter, horizontalRadius);
+                _artificialStructureHandle = vegetationBridge.RegisterArtificialStructureHandle(moduleBounds, StructureType.BaseModule);
+            }
 
             DestructibleOrganicManager.ActiveRuntimeInstance?.ApplyConstructionDecomposition(worldCenter, horizontalRadius);
         }
 
         private void ClearVegetationExclusion()
         {
-            if (_terrainHoleHandle <= 0)
+            if (_terrainHoleHandle <= 0 && _artificialStructureHandle <= 0)
                 return;
 
             HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (vegetationBridge != null)
-                vegetationBridge.UnregisterTerrainHole(_terrainHoleHandle);
+            {
+                if (_terrainHoleHandle > 0)
+                    vegetationBridge.UnregisterTerrainHole(_terrainHoleHandle);
+
+                if (_artificialStructureHandle > 0)
+                    vegetationBridge.UnregisterArtificialStructure(_artificialStructureHandle);
+            }
 
             _terrainHoleHandle = 0;
+            _artificialStructureHandle = 0;
         }
 
-        private bool TryResolveObstacleEnvelope(out Vector3 worldCenter, out float horizontalRadius)
+        private bool TryResolveObstacleEnvelope(out Vector3 worldCenter, out float horizontalRadius, out Bounds combinedBounds)
         {
             horizontalRadius = 0f;
-            Bounds combinedBounds = default;
+            combinedBounds = default;
             bool hasBounds = false;
 
             hasBounds |= TryAccumulateBounds(obstacleBoxes, ref combinedBounds);

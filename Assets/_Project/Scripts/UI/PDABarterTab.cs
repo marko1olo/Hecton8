@@ -94,6 +94,12 @@ namespace Hecton8.UI
             Unsubscribe();
         }
 
+        private void OnDestroy()
+        {
+            Unsubscribe();
+            PDAEvents.AssertUnregistered(this, nameof(PDABarterTab));
+        }
+
         private void AutoResolve()
         {
             if (exchangeSystem == null)

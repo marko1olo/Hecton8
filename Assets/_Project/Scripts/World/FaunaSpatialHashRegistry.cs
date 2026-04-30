@@ -260,15 +260,15 @@ namespace Hecton8.World
             return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, _queryHandles);
         }
 
-        private static uint ResolveEntityFlags(SpatialTargetKind kind)
+        private static ulong ResolveEntityFlags(SpatialTargetKind kind)
         {
-            uint flags = 0u;
+            ulong flags = 0UL;
             if ((kind & SpatialTargetKind.Bioform) != 0)
-                flags |= (uint)(SpatialInteractionFlags.Bioform | SpatialInteractionFlags.AcousticReceiver | SpatialInteractionFlags.ChemicalReceiver);
+                flags |= (ulong)(SpatialInteractionFlags.Bioform | SpatialInteractionFlags.AcousticReceiver | SpatialInteractionFlags.ChemicalReceiver | SpatialInteractionFlags.ThermalReceiver);
             if ((kind & SpatialTargetKind.Signal) != 0)
-                flags |= (uint)SpatialInteractionFlags.Signal;
+                flags |= (ulong)SpatialInteractionFlags.Signal;
             if ((kind & SpatialTargetKind.Pickup) != 0)
-                flags |= (uint)(SpatialInteractionFlags.Pickup | SpatialInteractionFlags.Interactable);
+                flags |= (ulong)(SpatialInteractionFlags.Pickup | SpatialInteractionFlags.Interactable);
             return flags;
         }
 

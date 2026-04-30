@@ -146,6 +146,7 @@ namespace Hecton8.AI
             float patrolRadius,
             float apexTerritoryRadius,
             float apexAggressionMultiplier,
+            float playerLightExposure01,
             float foveatedImportanceScore,
             int flockCount,
             bool canFlee,
@@ -186,6 +187,7 @@ namespace Hecton8.AI
             PatrolRadius = patrolRadius;
             ApexTerritoryRadius = apexTerritoryRadius;
             ApexAggressionMultiplier = apexAggressionMultiplier;
+            PlayerLightExposure01 = math.saturate(playerLightExposure01);
             FoveatedImportanceScore = foveatedImportanceScore;
             FlockCount = flockCount;
             CanFlee = canFlee;
@@ -227,6 +229,7 @@ namespace Hecton8.AI
         public float PatrolRadius { get; }
         public float ApexTerritoryRadius { get; }
         public float ApexAggressionMultiplier { get; }
+        public float PlayerLightExposure01 { get; }
         public float FoveatedImportanceScore { get; }
         public int FlockCount { get; }
         public bool CanFlee { get; }
@@ -457,6 +460,7 @@ namespace Hecton8.AI
         public float AggressionScore { get; private set; }
         public float FearScore { get; private set; }
         public bool IsRegistered => _initialized && _slot >= 0;
+        public float CurrentHunger01 => _initialized ? PredatorCognitionDomain.GetHunger01(_slot) : HungerScore;
 
         public void Initialize(Vector3 spawnAnchor, FaunaSpeciesProfile speciesProfile, CreatureArchetypeData archetype, FaunaDataTemplate dataTemplate)
         {
@@ -521,6 +525,7 @@ namespace Hecton8.AI
             switch (state)
             {
                 case FaunaBrain.AIState.Aggressive:
+                case FaunaBrain.AIState.Starving:
                     PredatorCognitionDomain.ApplyExternalState(_slot, PredatorUtilityState.Attacking, currentTime);
                     break;
                 case FaunaBrain.AIState.Retreat:
@@ -557,6 +562,14 @@ namespace Hecton8.AI
         public bool ApplyHibernationCatchUp(float sleepSeconds, float currentTime)
         {
             return _initialized && PredatorCognitionDomain.ApplyHibernationCatchUp(_slot, sleepSeconds, currentTime);
+        }
+
+        public void SetHunger01(float hunger01)
+        {
+            float clampedHunger = math.saturate(hunger01);
+            HungerScore = clampedHunger;
+            if (_initialized)
+                PredatorCognitionDomain.SetHunger01(_slot, clampedHunger);
         }
 
         public void NotifyAttackPerformed(float currentTime, float cooldownSeconds)
@@ -649,11 +662,23 @@ namespace Hecton8.AI
             input.ChemicalSensitivity = chemicalSensitivity;
             SpeciesCognitionTuning tuning = _dataTemplate != null
                 ? _dataTemplate.BuildSpeciesCognitionTuning()
-                : new SpeciesCognitionTuning(1f, ResolveFearWeight(), 1f);
+                : new SpeciesCognitionTuning(
+                    1f,
+                    ResolveFearWeight(),
+                    1f,
+                    FaunaLightReactionMode.None,
+                    1f,
+                    0.65f,
+                    1f,
+                    0f);
             input.HungerWeight = tuning.HungerWeight;
             input.ThreatWeight = 1f + (ResolveAggressionWeight(aggressionMultiplier) * 0.45f);
             input.FearWeight = tuning.FearWeight;
             input.CuriosityWeight = tuning.CuriosityWeight;
+            input.PlayerLightExposure01 = math.saturate(context.PlayerLightExposure01);
+            input.LightReactionMode = (int)tuning.LightReactionMode;
+            input.LightFrenzySpeedMultiplier = tuning.LightFrenzySpeedMultiplier;
+            input.LightReactionFearBoost01 = tuning.LightReactionFearBoost01;
             input.AggressionWeight = ResolveAttackSpeedWeight(aggressionMultiplier);
             input.EscapeDistance = math.max(0f, context.EscapeDistance);
             input.EscapeSafeDistance = math.max(input.EscapeDistance, context.EscapeSafeDistance);

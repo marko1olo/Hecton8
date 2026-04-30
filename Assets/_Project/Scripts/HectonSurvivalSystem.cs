@@ -953,7 +953,7 @@ namespace Hecton8.Gameplay
         {
             VehicleUpgradeModule upgradeModule = ResolveActiveVehicleUpgradeModule();
             return upgradeModule != null
-                ? math.max(0f, upgradeModule.SafeDepthBonusMeters)
+                ? upgradeModule.SafeDepthBonusMeters
                 : 0f;
         }
 

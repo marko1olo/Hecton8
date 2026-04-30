@@ -72,8 +72,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out NotificationEventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out NotificationEventPayload payload))
+                    return;
+
                 INotificationEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)

@@ -219,7 +219,7 @@ namespace Hecton8.Gameplay
             NarrativeEvents.RaiseDepthTierReached(currentDepthTier);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Narrative] New Depth Tier Reached: {currentDepthTier} (Depth: {depth:F1}m)");
+            Debug.Log("[Narrative] New depth tier reached.");
 #endif
         }
 

@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
+  m_Name: ResourceNodeTemplate_CarbonGraphiteNodule
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
+  stableId: resource.node.carbon_graphite_nodule
+  displayName: Carbon Graphite Nodule
+  toolResistance: 1.4
+  harvestDurationSeconds: 2.1
+  requiredToolClass: 3
+  maxIntegrity: 160
+  defaultLootCount: 1
+  lootPickupPrefab: {fileID: 0}
+  minimumDepthMeters: 3200
+  maximumDepthMeters: 6000
+  minimumTemperatureCelsius: -4
+  maximumTemperatureCelsius: 22
+  minimumSlopeDegrees: 0
+  maximumSlopeDegrees: 68
+  spawnOffsetMeters: 0.08
+  candidateBudgetPerSector: 1
+  maxInstancesPerSector: 1
+  placementProbability: 0.18
+  minimumDensity: 1.8
+  maximumDensity: 3.2
+  validLayers:
+    serializedVersion: 2
+    m_Bits: 1792
+  acousticResonance: 0.82
+  debrisPhysicalProfile: 2
+  basaltDensityThreshold: 1.25
+  sedimentDebrisPhysicsMaterial: {fileID: 0}
+  basaltDebrisPhysicsMaterial: {fileID: 0}
+  nodeMesh: {fileID: 0}
+  nodeMaterial: {fileID: 0}
+  colliderShape: 1
+  physicalSize: {x: 1.25, y: 0.9, z: 1.25}
+  supportsAutonomousExtraction: 1
+  extractorYieldItem: {fileID: 11400000, guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d11, type: 2}
+  extractorCycleSeconds: 54
+  extractorInventoryCapacity: 24
+  requiresHydrothermalVent: 0
+  hydrothermalVentTemperatureThresholdCelsius: 80
+  triggersSteamExplosionWithoutThermalShield: 0
+  steamExplosionRadiusMeters: 5
+  steamExplosionImpulse: 12
+  leaveDepletionCrater: 1
+  depletionCraterRadiusMeters: 2.6
+  requiresBrinePool: 0
+  brineDensityKgPerCubicMeter: 1250
+  brineToxicityIntensity: 0.92
+  embedInVoxelRock: 1
+  embeddedVeinStampCount: 6
+  embeddedVeinLengthMeters: 8
+  embeddedVeinRadiusMeters: 1.2
+  embeddedVeinNoiseAmplitudeMeters: 0.45
+  harvestYield:
+  - item: {fileID: 11400000, guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d11, type: 2}
+    minimumAmount: 1
+    maximumAmount: 2
+    weight: 1
+  rarityDrops: []

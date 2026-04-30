@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — PhysicalHandController.cs
+// HECTON-8 ï¿½ PhysicalHandController.cs
 // Heavy-object articulation hand proxy with zero-GC finger spherecast batching.
 // ============================================================================
 
@@ -90,7 +90,7 @@ namespace Hecton8.Interaction
 
         [Header("-- Finger Solve -----------------------")]
         [Tooltip("Collision layers considered solid for finger spherecasts.")]
-        [SerializeField] private LayerMask fingerCollisionMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask fingerCollisionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Maximum curl angle applied to the proximal finger segment.")]
         [SerializeField, Range(10f, 100f)] private float proximalCurlDegrees = 56f;
@@ -116,6 +116,7 @@ namespace Hecton8.Interaction
         private Transform _cachedTransform;
         private Transform _runtimeRoot;
         private Transform _runtimeGripPoint;
+        private Transform _resolvedRightHandAttachment;
         private ArticulationBody _runtimeHandBody;
         private Quaternion _previousControllerRotation = Quaternion.identity;
         private Quaternion _previousTargetLocalRotation = Quaternion.identity;
@@ -133,6 +134,7 @@ namespace Hecton8.Interaction
         private bool _disconnectArmed;
         private bool _gripBroken;
         private bool _runtimeProxyCreated;
+        private bool _rightHandAttachmentResolved;
         private bool _fingerSegmentsResolved;
         private bool _hasPreviousControllerPose;
         private bool _fingerPoseScheduled;
@@ -157,6 +159,34 @@ namespace Hecton8.Interaction
 
         /// <summary>Current virtual hand mass used to introduce heavy-object lag.</summary>
         public float CurrentVirtualHandMass => _virtualHandMass;
+
+        /// <summary>
+        /// Resolves the current physical hand probe used by collider-driven diegetic controls.
+        /// </summary>
+        /// <param name="position">World-space hand probe position.</param>
+        /// <param name="rotation">World-space hand probe rotation.</param>
+        /// <returns>True when a valid authored or runtime hand probe exists.</returns>
+        public bool TryGetInteractionProbePose(out Vector3 position, out Quaternion rotation)
+        {
+            Transform attachment = ResolveRightHandAttachment();
+            if (attachment != null)
+            {
+                position = attachment.position;
+                rotation = attachment.rotation;
+                return true;
+            }
+
+            if (_runtimeGripPoint != null)
+            {
+                position = _runtimeGripPoint.position;
+                rotation = _runtimeGripPoint.rotation;
+                return true;
+            }
+
+            position = default;
+            rotation = default;
+            return false;
+        }
 
         /// <summary>
         /// Attempts to begin a heavy-object grab session.
@@ -384,15 +414,15 @@ namespace Hecton8.Interaction
             if (_fingerCommands.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<SpherecastCommand>[5] — persistent finger spherecast commands — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<SpherecastCommand>[5] ï¿½ persistent finger spherecast commands ï¿½ owner: PhysicalHandController
             _fingerCommands = new NativeArray<SpherecastCommand>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<RaycastHit>[5] — persistent finger spherecast results — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<RaycastHit>[5] ï¿½ persistent finger spherecast results ï¿½ owner: PhysicalHandController
             _fingerHits = new NativeArray<RaycastHit>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerPoseData>[5] — persistent finger pose results — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<FingerPoseData>[5] ï¿½ persistent finger pose results ï¿½ owner: PhysicalHandController
             _fingerPoses = new NativeArray<FingerPoseData>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerRayDefinition>[5] — persistent local finger ray definitions — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<FingerRayDefinition>[5] ï¿½ persistent local finger ray definitions ï¿½ owner: PhysicalHandController
             _fingerRayDefinitions = new NativeArray<FingerRayDefinition>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerRayRuntime>[5] — persistent world-space finger ray runtime data — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<FingerRayRuntime>[5] ï¿½ persistent world-space finger ray runtime data ï¿½ owner: PhysicalHandController
             _fingerRayRuntime = new NativeArray<FingerRayRuntime>(FingerCount, Allocator.Persistent);
 
             _fingerRayDefinitions[0] = new FingerRayDefinition
@@ -430,7 +460,7 @@ namespace Hecton8.Interaction
             int segmentCount = fingerSegments != null ? fingerSegments.Length : 0;
             if (segmentCount > 0)
             {
-                // COLD ALLOC: Quaternion[15] — cached authored finger local rotations — owner: PhysicalHandController
+                // COLD ALLOC: Quaternion[15] ï¿½ cached authored finger local rotations ï¿½ owner: PhysicalHandController
                 _baseFingerLocalRotations = new Quaternion[segmentCount];
                 for (int i = 0; i < segmentCount; i++)
                 {
@@ -444,16 +474,24 @@ namespace Hecton8.Interaction
 
         private Transform ResolveRightHandAttachment()
         {
+            if (_rightHandAttachmentResolved)
+                return _resolvedRightHandAttachment;
+
             if (rightHandAttachmentOverride != null)
-                return rightHandAttachmentOverride;
+            {
+                _resolvedRightHandAttachment = rightHandAttachmentOverride;
+                _rightHandAttachmentResolved = true;
+                return _resolvedRightHandAttachment;
+            }
 
             if (swimBlockoutRig == null)
                 swimBlockoutRig = GetComponentInChildren<PlayerSwimBlockoutRig>(true);
 
             if (swimBlockoutRig != null)
-                return swimBlockoutRig.RightHandAttachment;
+                _resolvedRightHandAttachment = swimBlockoutRig.RightHandAttachment;
 
-            return null;
+            _rightHandAttachmentResolved = true;
+            return _resolvedRightHandAttachment;
         }
 
         private void CompleteScheduledFingerPose(float dt)
@@ -845,7 +883,7 @@ namespace Hecton8.Interaction
 #endif
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildFingerSpherecastCommandsJob : IJobParallelFor
         {
             public float3 HandPosition;
@@ -886,7 +924,7 @@ namespace Hecton8.Interaction
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ProcessFingerHitsJob : IJobParallelFor
         {
             public float CastLength;

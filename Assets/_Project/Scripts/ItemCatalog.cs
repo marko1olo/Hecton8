@@ -936,23 +936,26 @@ namespace Hecton8.SaveSystem
 
             ushort flags = 0;
             if (item.stackable && item.maxStack > 1)
-                flags |= 1 << 0;
+                flags |= ItemRuntimeStateFlags.Stackable;
 
             if (item.isConsumable)
-                flags |= 1 << 2;
+                flags |= ItemRuntimeStateFlags.Consumable;
 
             if (item.category == ItemCategory.Tool)
-                flags |= 1 << 7;
+                flags |= ItemRuntimeStateFlags.Tool;
 
             if (item.IsRadioactive)
-                flags |= 1 << 4;
+                flags |= ItemRuntimeStateFlags.Radioactive;
 
             if (item.category == ItemCategory.Consumable ||
                 item.category == ItemCategory.Organic ||
                 item.resourceFamily == ResourceFamily.Organic)
             {
-                flags |= 1 << 6;
+                flags |= ItemRuntimeStateFlags.Biological;
             }
+
+            if (ItemPhysicalMetadataUtility.IsFlammable(item.category, item.resourceFamily, item.PersistentId))
+                flags |= ItemRuntimeStateFlags.Flammable;
 
             return flags;
         }

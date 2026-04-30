@@ -127,6 +127,7 @@ namespace Hecton8.Scavenging
         private ulong _persistentTombstoneId;
         private HectonVoxelEngine _cachedVoxelEngine;
         private float _lastYieldSampleTimeSeconds;
+        private float _pressureMetamorphismProgressSeconds;
         private float _fractionalYieldAccumulator;
         private int _yieldDropCount;
 
@@ -147,6 +148,9 @@ namespace Hecton8.Scavenging
 
         /// <summary>AUP-derived persistence tombstone key used by PersistentWorldRegistry.</summary>
         public ulong PersistentTombstoneId => _persistentTombstoneId;
+
+        /// <summary>Accumulated deep-pressure metamorphism progress in in-game seconds.</summary>
+        public float PressureMetamorphismProgressSeconds => Mathf.Max(0f, _pressureMetamorphismProgressSeconds);
 
         /// <summary>Half extents registered into the AUP spatial hash.</summary>
         public Vector3 SpatialHalfExtents
@@ -252,6 +256,15 @@ namespace Hecton8.Scavenging
 
             if (_spatialHandle != 0)
                 WorldSpatialHashGrid.SetResourceHalfExtents(_spatialHandle, SpatialHalfExtents);
+        }
+
+        /// <summary>
+        /// Updates the resident metamorphism progress lane without mutating the authored template.
+        /// </summary>
+        /// <param name="progressSeconds">Accumulated compression progress in in-game seconds.</param>
+        public void SetPressureMetamorphismProgressSeconds(float progressSeconds)
+        {
+            _pressureMetamorphismProgressSeconds = Mathf.Max(0f, progressSeconds);
         }
 
         /// <summary>
@@ -592,7 +605,10 @@ namespace Hecton8.Scavenging
                 return;
             }
 
-            volume.ApplyPersistentResourceCrater(_cachedTransform.position, craterRadiusMeters);
+            if (ResolveDebrisPhysicalProfile() == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment)
+                volume.ApplyPersistentResourceSedimentRotCrater(_cachedTransform.position, craterRadiusMeters);
+            else
+                volume.ApplyPersistentResourceCrater(_cachedTransform.position, craterRadiusMeters);
         }
 
         private void DespawnSelf()
@@ -619,6 +635,7 @@ namespace Hecton8.Scavenging
             _despawnRequested = false;
             _lootSpawnBlockedLogged = false;
             _lastYieldSampleTimeSeconds = -1f;
+            _pressureMetamorphismProgressSeconds = 0f;
             _fractionalYieldAccumulator = 0f;
             _yieldDropCount = 0;
             ResetMeltProperties();

@@ -23,6 +23,8 @@ namespace Hecton8.World
         private const int RecentStampCapacity = 16;
         private const int DamageVolumeStampCapacity = 16;
         private const int DamageVolumeThreadGroupSize = 4;
+        private const float PlasmaCutThermalEventLifetimeSeconds = 1.5f;
+        private const float PlasmaCutThermalDeltaCelsius = 220f;
 #if UNITY_EDITOR
         private const string StampComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_SargassumCutMask.compute";
         private const string DamageVolumeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_TerrainDamageVolume.compute";
@@ -870,6 +872,16 @@ namespace Hecton8.World
                 StartTime = currentTime,
                 Lifetime = lifetime
             };
+            WorldSpatialHashGrid.RegisterTransientEvent(
+                positionWS,
+                Mathf.Max(0.05f, radiusWS),
+                Mathf.Clamp01(strength),
+                PlasmaCutThermalEventLifetimeSeconds,
+                SpatialTransientEventType.ThermalGradient,
+                SpatialInteractionFlags.ThermalReceiver,
+                FieldTargetRole.Generic,
+                0,
+                PlasmaCutThermalDeltaCelsius * Mathf.Clamp01(strength));
             _recentCutHeatDirty = true;
         }
 

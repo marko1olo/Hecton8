@@ -142,7 +142,7 @@ namespace Hecton8.World
             public float MaxY;
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildDensityContributionJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<DensitySourceData> Sources;

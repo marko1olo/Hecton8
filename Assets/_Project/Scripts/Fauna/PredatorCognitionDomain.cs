@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Construction;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -100,6 +101,9 @@ namespace Hecton8.AI
         public float AcousticTransmission01;
         public float ChemicalSignal01;
         public float ChemicalSensitivity;
+        public float PlayerLightExposure01;
+        public float LightFrenzySpeedMultiplier;
+        public float LightReactionFearBoost01;
         public float HungerWeight;
         public float ThreatWeight;
         public float FearWeight;
@@ -119,6 +123,7 @@ namespace Hecton8.AI
         public int SpeciesId;
         public int ClaimedBoidIndex;
         public int FlockCount;
+        public int LightReactionMode;
         public int Flags;
     }
 
@@ -164,6 +169,9 @@ namespace Hecton8.AI
         PackRoleBait = 1u << 2,
         PackRoleFlanker = 1u << 3,
         FlankingManeuverDetected = 1u << 4,
+        BaseSiegeRammer = 1u << 5,
+        BaseSiegeDistractor = 1u << 6,
+        BaseSiegeLoiterer = 1u << 7,
     }
 
     internal enum PredatorPackRole : byte
@@ -171,6 +179,14 @@ namespace Hecton8.AI
         None = 0,
         Bait = 1,
         Flanker = 2,
+    }
+
+    internal enum BaseSiegeRole : byte
+    {
+        None = 0,
+        Rammer = 1,
+        Distractor = 2,
+        Loiterer = 3,
     }
 
     [System.Flags]
@@ -286,6 +302,12 @@ namespace Hecton8.AI
         private const float DdaEpsilon = 0.000001f;
         private const float PlayerFacingBaitThreshold = 0.45f;
         private const float PackFlankHoldDistanceMeters = 3.5f;
+        private const float BaseSiegeEngageRadiusMeters = 220f;
+        private const float BaseSiegeRammerStandoffMeters = 1.5f;
+        private const float BaseSiegeDistractorLateralOffsetMeters = 18f;
+        private const float BaseSiegeDistractorForwardOffsetMeters = 8f;
+        private const float BaseSiegeLoiterRadiusMeters = 10f;
+        private const float BaseSiegeUtilityBias = 0.35f;
         private const int SpatialMemoryRecallCount = 5;
 
         private static NativeArray<CognitionCore> _cores;
@@ -312,6 +334,10 @@ namespace Hecton8.AI
         private static NativeArray<int> _boidClaimTable;
         private static NativeArray<int> _packBaitClaimTable;
         private static NativeArray<int> _packFlankerClaimTable;
+        private static NativeArray<HabitatSiegeTargetSnapshot> _habitatSiegeTargets;
+        private static NativeArray<int> _baseSiegeRammerClaimTable;
+        private static NativeArray<int> _baseSiegeDistractorClaimTable;
+        private static NativeArray<int> _baseSiegeLoitererClaimTable;
         private static NativeArray<byte> _evaluationDueFlags;
         private static NativeArray<float> _nextEvaluationTimes;
         private static NativeArray<float> _evaluationIntervals;
@@ -334,6 +360,7 @@ namespace Hecton8.AI
         private static int _lastScheduledFrame = -1;
         private static int _lastThreatVoxelBindFrame = -1;
         private static int _lastChemicalGridBindFrame = -1;
+        private static int _habitatSiegeTargetCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetDomain()
@@ -546,6 +573,28 @@ namespace Hecton8.AI
             return math.max(0f, currentTime - decodedSleepStartSeconds);
         }
 
+        internal static float HibernationHungerRatePerSecond => HungerRate;
+
+        internal static float GetHunger01(int slot)
+        {
+            if (!IsValidSlot(slot))
+                return 0f;
+
+            UnpackDriveChannels(_cores[slot].QuantizedDrives, out float hunger, out _, out _, out _);
+            return hunger;
+        }
+
+        internal static void SetHunger01(int slot, float hunger01)
+        {
+            if (!IsValidSlot(slot))
+                return;
+
+            CognitionCore core = _cores[slot];
+            UnpackDriveChannels(core.QuantizedDrives, out _, out float aggression, out float fear, out float threatLevel);
+            core.QuantizedDrives = PackDriveChannels(math.saturate(hunger01), aggression, fear, threatLevel);
+            _cores[slot] = core;
+        }
+
         internal static bool ApplyHibernationCatchUp(int slot, float sleepSeconds, float currentTime)
         {
             if (!IsValidSlot(slot) || !math.isfinite(sleepSeconds) || sleepSeconds <= 0f)
@@ -696,6 +745,7 @@ namespace Hecton8.AI
                 return;
             }
 
+            RefreshHabitatSiegeSnapshot();
             ClearBoidClaims();
             float3 swarmBoundsMin = ComputeSwarmBoundsMin();
             var swarmJob = new SwarmAnalysisJob
@@ -743,6 +793,11 @@ namespace Hecton8.AI
                 PredatorPackBaitPositions = _predatorPackBaitPositions,
                 PredatorPackSharedPlayerPositions = _predatorPackSharedPlayerPositions,
                 PredatorPackRoles = _predatorPackRoles,
+                HabitatSiegeTargets = _habitatSiegeTargets,
+                HabitatSiegeTargetCount = _habitatSiegeTargetCount,
+                BaseSiegeRammerClaimTable = (int*)_baseSiegeRammerClaimTable.GetUnsafePtr(),
+                BaseSiegeDistractorClaimTable = (int*)_baseSiegeDistractorClaimTable.GetUnsafePtr(),
+                BaseSiegeLoitererClaimTable = (int*)_baseSiegeLoitererClaimTable.GetUnsafePtr(),
                 SpeciesTuningById = _speciesTuningById,
                 ChosenStates = _chosenStates,
                 BoidClaimTable = _boidClaimTable,
@@ -816,6 +871,14 @@ namespace Hecton8.AI
                 _packBaitClaimTable.Dispose(disposeDependency);
             if (_packFlankerClaimTable.IsCreated)
                 _packFlankerClaimTable.Dispose(disposeDependency);
+            if (_habitatSiegeTargets.IsCreated)
+                _habitatSiegeTargets.Dispose(disposeDependency);
+            if (_baseSiegeRammerClaimTable.IsCreated)
+                _baseSiegeRammerClaimTable.Dispose(disposeDependency);
+            if (_baseSiegeDistractorClaimTable.IsCreated)
+                _baseSiegeDistractorClaimTable.Dispose(disposeDependency);
+            if (_baseSiegeLoitererClaimTable.IsCreated)
+                _baseSiegeLoitererClaimTable.Dispose(disposeDependency);
             if (_evaluationDueFlags.IsCreated)
                 _evaluationDueFlags.Dispose(disposeDependency);
             if (_nextEvaluationTimes.IsCreated)
@@ -849,6 +912,10 @@ namespace Hecton8.AI
             _boidClaimTable = default;
             _packBaitClaimTable = default;
             _packFlankerClaimTable = default;
+            _habitatSiegeTargets = default;
+            _baseSiegeRammerClaimTable = default;
+            _baseSiegeDistractorClaimTable = default;
+            _baseSiegeLoitererClaimTable = default;
             _evaluationDueFlags = default;
             _nextEvaluationTimes = default;
             _evaluationIntervals = default;
@@ -871,6 +938,7 @@ namespace Hecton8.AI
             _lastScheduledFrame = -1;
             _lastThreatVoxelBindFrame = -1;
             _lastChemicalGridBindFrame = -1;
+            _habitatSiegeTargetCount = 0;
         }
 
         private static void EnsureInitialized()
@@ -926,6 +994,14 @@ namespace Hecton8.AI
             _packBaitClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<int>[Capacity] - atomic flanker-role reservation table keyed by stable species hash - owner: PredatorCognitionDomain
             _packFlankerClaimTable = new NativeArray<int>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] — copied base weak-point snapshot for Burst predator siege cognition — owner: PredatorCognitionDomain
+            _habitatSiegeTargets = new NativeArray<HabitatSiegeTargetSnapshot>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[64] — atomic base-siege rammer reservation table keyed by habitat target index — owner: PredatorCognitionDomain
+            _baseSiegeRammerClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[64] — atomic base-siege distractor reservation table keyed by habitat target index — owner: PredatorCognitionDomain
+            _baseSiegeDistractorClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<int>[64] — atomic base-siege loiterer reservation table keyed by habitat target index — owner: PredatorCognitionDomain
+            _baseSiegeLoitererClaimTable = new NativeArray<int>(HabitatGraphManager.MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[Capacity] - per-slot due flags for foveated cognition cadence - owner: PredatorCognitionDomain
             _evaluationDueFlags = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[Capacity] - next allowed cognition evaluation timestamps per slot - owner: PredatorCognitionDomain
@@ -1134,6 +1210,44 @@ namespace Hecton8.AI
                 for (int i = 0; i < _packFlankerClaimTable.Length; i++)
                     _packFlankerClaimTable[i] = UnclaimedBoidSlot;
             }
+
+            if (_baseSiegeRammerClaimTable.IsCreated)
+            {
+                for (int i = 0; i < _baseSiegeRammerClaimTable.Length; i++)
+                    _baseSiegeRammerClaimTable[i] = UnclaimedBoidSlot;
+            }
+
+            if (_baseSiegeDistractorClaimTable.IsCreated)
+            {
+                for (int i = 0; i < _baseSiegeDistractorClaimTable.Length; i++)
+                    _baseSiegeDistractorClaimTable[i] = UnclaimedBoidSlot;
+            }
+
+            if (_baseSiegeLoitererClaimTable.IsCreated)
+            {
+                for (int i = 0; i < _baseSiegeLoitererClaimTable.Length; i++)
+                    _baseSiegeLoitererClaimTable[i] = UnclaimedBoidSlot;
+            }
+        }
+
+        private static void RefreshHabitatSiegeSnapshot()
+        {
+            int previousCount = _habitatSiegeTargetCount;
+            _habitatSiegeTargetCount = 0;
+            if (!_habitatSiegeTargets.IsCreated)
+                return;
+
+            if (!HabitatGraphManager.TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> source, out int sourceCount))
+                return;
+
+            int copyCount = math.min(sourceCount, math.min(source.Length, _habitatSiegeTargets.Length));
+            for (int i = 0; i < copyCount; i++)
+                _habitatSiegeTargets[i] = source[i];
+
+            for (int i = copyCount; i < previousCount; i++)
+                _habitatSiegeTargets[i] = default;
+
+            _habitatSiegeTargetCount = copyCount;
         }
 
         private static float ResolveEvaluationInterval(float importanceScore)
@@ -1273,7 +1387,7 @@ namespace Hecton8.AI
             return math.saturate(lane / QuantizedByteScale);
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct SwarmAnalysisJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<int> ActiveSlots;
@@ -1526,8 +1640,8 @@ namespace Hecton8.AI
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct PredatorCognitionJob : IJobParallelFor
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct PredatorCognitionJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<int> ActiveSlots;
             [ReadOnly] public NativeArray<CognitionInput> Inputs;
@@ -1548,6 +1662,11 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<float3> PredatorPackBaitPositions;
             [ReadOnly] public NativeArray<float3> PredatorPackSharedPlayerPositions;
             [ReadOnly] public NativeArray<byte> PredatorPackRoles;
+            [ReadOnly] public NativeArray<HabitatSiegeTargetSnapshot> HabitatSiegeTargets;
+            public int HabitatSiegeTargetCount;
+            [NativeDisableUnsafePtrRestriction] public int* BaseSiegeRammerClaimTable;
+            [NativeDisableUnsafePtrRestriction] public int* BaseSiegeDistractorClaimTable;
+            [NativeDisableUnsafePtrRestriction] public int* BaseSiegeLoitererClaimTable;
             [ReadOnly] public NativeParallelHashMap<int, SpeciesCognitionTuning> SpeciesTuningById;
             [NativeDisableParallelForRestriction] public NativeArray<int> ChosenStates;
             [NativeDisableParallelForRestriction] public NativeArray<int> BoidClaimTable;
@@ -1586,6 +1705,9 @@ namespace Hecton8.AI
                     input.HungerWeight = tuning.HungerWeight;
                     input.FearWeight = tuning.FearWeight;
                     input.CuriosityWeight = tuning.CuriosityWeight;
+                    input.LightReactionMode = (int)tuning.LightReactionMode;
+                    input.LightFrenzySpeedMultiplier = tuning.LightFrenzySpeedMultiplier;
+                    input.LightReactionFearBoost01 = tuning.LightReactionFearBoost01;
                 }
 
                 CognitionCore core = Cores[slot];
@@ -1699,6 +1821,29 @@ namespace Hecton8.AI
                 bool isAmbusher = (input.Flags & (int)CognitionInputFlags.IsAmbusher) != 0;
                 bool hasApexRivalTarget = (input.Flags & (int)CognitionInputFlags.HasApexRivalTarget) != 0;
                 bool hasChemicalTrail = TryResolveChemicalGradient(input.Position, out float attractantSignal, out float fearPheromoneSignal, out float3 scentGradient);
+                bool lightAversionActive = IsLightAversionActive(input);
+                bool lightFrenzyActive = IsLightFrenzyActive(input) && hasPlayerTarget;
+                if (lightAversionActive)
+                {
+                    control.OverrideThreatPosition = input.PlayerPosition;
+                    control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
+                    fear = math.max(fear, input.PlayerLightExposure01 * math.max(input.LightReactionFearBoost01, 0.1f));
+                    threatLevel = math.max(threatLevel, input.PlayerLightExposure01);
+                }
+
+                bool hasBaseSiegeTarget = TryResolveBaseSiegeTarget(
+                    slot,
+                    in input,
+                    fallbackForward,
+                    predictedPlayerPosition,
+                    (isApexPredator || input.PackCoordinationRadius > DdaEpsilon) &&
+                    !playerVisible &&
+                    !resolvedPreyVisible &&
+                    !scavengeVisible &&
+                    !rivalApexVisible,
+                    out float3 baseSiegeTarget,
+                    out BaseSiegeRole baseSiegeRole,
+                    out float baseSiegeScore);
                 float chemicalScore = ComputeChemicalScore(
                     slot,
                     input.Position,
@@ -1712,7 +1857,13 @@ namespace Hecton8.AI
 
                 float3 targetPosition = input.Position + (fallbackForward * 4f);
                 bool hasTarget = false;
-                if (isApexPredator && rivalApexVisible)
+                if (lightFrenzyActive)
+                {
+                    targetPosition = predictedPlayerPosition;
+                    hasTarget = true;
+                    threatLevel = math.max(threatLevel, input.PlayerLightExposure01);
+                }
+                else if (isApexPredator && rivalApexVisible)
                 {
                     targetPosition = input.RivalApexPosition;
                     hasTarget = true;
@@ -1731,6 +1882,12 @@ namespace Hecton8.AI
                 {
                     targetPosition = resolvedPreyPosition;
                     hasTarget = true;
+                }
+                else if (hasBaseSiegeTarget)
+                {
+                    targetPosition = baseSiegeTarget;
+                    hasTarget = true;
+                    threatLevel = math.max(threatLevel, baseSiegeScore * BaseSiegeUtilityBias);
                 }
                 else if (hasPlayerTarget && directAcousticScore > AcousticStimulusThreshold)
                 {
@@ -1825,6 +1982,9 @@ namespace Hecton8.AI
                 float threatScore = ScoreThreat(threatLevel) * math.max(0.1f, input.ThreatWeight);
                 float acousticUtility = ScoreThreat(acousticScore) * curiosityWeight;
                 float chemicalUtility = ScoreThreat(chemicalScore) * math.max(0.1f, input.HungerWeight) * curiosityWeight;
+                float baseSiegeUtility = ScoreThreat(baseSiegeScore) * math.select(0f, 1f, hasBaseSiegeTarget);
+                float lightFrenzyUtility = ScoreThreat(input.PlayerLightExposure01) *
+                                           math.select(0f, math.max(1f, input.LightFrenzySpeedMultiplier), lightFrenzyActive);
                 float targetDistanceSq = math.lengthsq(targetPosition - input.Position);
                 float attackCommit01 = hasTarget
                     ? ScoreHunger(math.saturate(1f - (math.sqrt(math.max(targetDistanceSq, 0f)) / math.max(input.AttackRange, 1f))))
@@ -1834,7 +1994,7 @@ namespace Hecton8.AI
                 bool satedActive = control.SatedUntilTime > input.CurrentTime;
                 float aggressionWeight = math.max(0.1f, aggression);
                 float satedSuppression = math.select(1f, 0.05f, satedActive);
-                float targetSignal = math.saturate(math.max(threatScore, math.max(acousticUtility, chemicalUtility)));
+                float targetSignal = math.saturate(math.max(math.max(threatScore, baseSiegeUtility), math.max(acousticUtility, chemicalUtility)));
                 float huntUtility = EvaluateHuntUtility(
                     hungerScore,
                     fearScore,
@@ -1855,6 +2015,17 @@ namespace Hecton8.AI
                                        math.lerp(0.25f, 1f, Pow01(attackCommit01, 1.5f)) *
                                        AttackStateBias *
                                        math.select(0.25f, 1f, hasTarget);
+                if (hasBaseSiegeTarget)
+                {
+                    stalkingScore += baseSiegeUtility * BaseSiegeUtilityBias;
+                    attackingScore += baseSiegeUtility * math.select(0.2f, 0.55f, baseSiegeRole == BaseSiegeRole.Rammer);
+                }
+                if (lightFrenzyActive)
+                {
+                    stalkingScore += lightFrenzyUtility;
+                    attackingScore += lightFrenzyUtility * 1.35f;
+                }
+
                 if (isAmbusher)
                 {
                     stalkingScore *= math.select(1.35f, 0.9f, playerVisible);
@@ -1866,6 +2037,7 @@ namespace Hecton8.AI
                         threatScore,
                         1f - math.saturate(input.HealthNormalized))
                     : 0f;
+                fleeingScore += math.select(0f, OverrideScoreBias * math.max(0.35f, input.PlayerLightExposure01), canFlee && lightAversionActive);
                 float fleeHealthThreshold = math.clamp(
                     input.FleeHealthThreshold > 0f ? input.FleeHealthThreshold : PassiveLowHealthThreshold,
                     0.05f,
@@ -1960,8 +2132,13 @@ namespace Hecton8.AI
                         output.ForceMultiplier = 2.15f;
                         output.SpeedMultiplier = math.max(1.15f, aggression);
                         output.TurnMultiplier = 1.2f;
-                        bool canStrike = (playerVisible || resolvedPreyVisible || scavengeVisible || rivalApexVisible) &&
-                                         targetDistanceSq <= math.max(1f, input.AttackRange * input.AttackRange) &&
+                        bool canStrikeLiveTarget = (playerVisible || lightFrenzyActive || resolvedPreyVisible || scavengeVisible || rivalApexVisible) &&
+                                                   targetDistanceSq <= math.max(1f, input.AttackRange * input.AttackRange);
+                        float siegeStrikeRange = math.max(1f, input.AttackRange + BaseSiegeRammerStandoffMeters);
+                        bool canStrikeBaseTarget = hasBaseSiegeTarget &&
+                                                   baseSiegeRole == BaseSiegeRole.Rammer &&
+                                                   targetDistanceSq <= siegeStrikeRange * siegeStrikeRange;
+                        bool canStrike = (canStrikeLiveTarget || canStrikeBaseTarget) &&
                                          input.CurrentTime >= control.NextAttackAllowedTime;
                         if (packRole == PredatorPackRole.Flanker && flankingManeuverDetected)
                             canStrike &= playerFacingBait;
@@ -1977,10 +2154,24 @@ namespace Hecton8.AI
                         break;
                 }
 
+                if (lightFrenzyActive && (stateMask == PredatorUtilityState.Stalking || stateMask == PredatorUtilityState.Attacking))
+                {
+                    output.ForceMultiplier = math.max(output.ForceMultiplier, input.LightFrenzySpeedMultiplier);
+                    output.SpeedMultiplier = math.max(output.SpeedMultiplier, input.LightFrenzySpeedMultiplier);
+                    output.TurnMultiplier = math.max(output.TurnMultiplier, 1.25f);
+                }
+
                 if (packRole == PredatorPackRole.Bait)
                     output.OutputFlags |= (uint)CognitionOutputFlags.PackRoleBait;
                 else if (packRole == PredatorPackRole.Flanker)
                     output.OutputFlags |= (uint)CognitionOutputFlags.PackRoleFlanker;
+
+                if (baseSiegeRole == BaseSiegeRole.Rammer)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.BaseSiegeRammer;
+                else if (baseSiegeRole == BaseSiegeRole.Distractor)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.BaseSiegeDistractor;
+                else if (baseSiegeRole == BaseSiegeRole.Loiterer)
+                    output.OutputFlags |= (uint)CognitionOutputFlags.BaseSiegeLoiterer;
 
                 if (flankingManeuverDetected)
                     output.OutputFlags |= (uint)CognitionOutputFlags.FlankingManeuverDetected;
@@ -2019,6 +2210,15 @@ namespace Hecton8.AI
                 float playerThreat = hasPlayerTarget
                     ? math.saturate(1f - (playerDistance / math.max(input.EscapeSafeDistance, 1f)))
                     : 0f;
+                bool lightAversionActive = IsLightAversionActive(input);
+                if (lightAversionActive)
+                {
+                    control.OverrideThreatPosition = input.PlayerPosition;
+                    control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
+                    playerThreat = math.max(playerThreat, input.PlayerLightExposure01);
+                    fear = math.max(fear, input.PlayerLightExposure01 * math.max(input.LightReactionFearBoost01, 0.1f));
+                }
+
                 float directAcousticScore = hasPlayerTarget
                     ? ComputeAcousticScore(input.Position, input.PlayerPosition, input.AcousticPingStrength01, input.AcousticTransmission01)
                     : 0f;
@@ -2049,6 +2249,7 @@ namespace Hecton8.AI
                                        input.PatrolRadius > 0f &&
                                        math.lengthsq(input.Position - control.SpawnAnchor) > (input.PatrolRadius * input.PatrolRadius);
                 bool shouldEscape = retreatForced ||
+                                    (canFlee && lightAversionActive) ||
                                     (canFlee && hasPlayerTarget && (input.DistanceToPlayerSqr <= input.EscapeDistance * input.EscapeDistance || lowHealth || threatLevel >= 0.35f)) ||
                                     (canFlee && (threatVisible || acousticScore > AcousticStimulusThreshold));
 
@@ -2148,6 +2349,124 @@ namespace Hecton8.AI
                 bool replace = candidateScore > currentScore;
                 currentStateCode = math.select(currentStateCode, candidateStateCode, replace);
                 currentScore = math.select(currentScore, candidateScore, replace);
+            }
+
+            private static bool IsLightAversionActive(in CognitionInput input)
+            {
+                return input.PlayerLightExposure01 > DdaEpsilon &&
+                       input.LightReactionMode == (int)FaunaLightReactionMode.Aversion;
+            }
+
+            private static bool IsLightFrenzyActive(in CognitionInput input)
+            {
+                return input.PlayerLightExposure01 > DdaEpsilon &&
+                       input.LightReactionMode == (int)FaunaLightReactionMode.Frenzy;
+            }
+
+            private unsafe bool TryResolveBaseSiegeTarget(
+                int slot,
+                in CognitionInput input,
+                float3 fallbackForward,
+                float3 predictedPlayerPosition,
+                bool predatorEligible,
+                out float3 targetPosition,
+                out BaseSiegeRole siegeRole,
+                out float siegeScore)
+            {
+                targetPosition = input.Position;
+                siegeRole = BaseSiegeRole.None;
+                siegeScore = 0f;
+                if (!predatorEligible || HabitatSiegeTargetCount <= 0 || !HabitatSiegeTargets.IsCreated)
+                    return false;
+
+                float bestScore = 0f;
+                int bestIndex = -1;
+                HabitatSiegeTargetSnapshot bestTarget = default;
+                float engageRadiusSq = BaseSiegeEngageRadiusMeters * BaseSiegeEngageRadiusMeters;
+                int targetCount = math.min(HabitatSiegeTargetCount, HabitatSiegeTargets.Length);
+                for (int i = 0; i < targetCount; i++)
+                {
+                    HabitatSiegeTargetSnapshot target = HabitatSiegeTargets[i];
+                    if (target.Vulnerability01 <= DdaEpsilon)
+                        continue;
+
+                    float3 delta = target.WeakPoint - input.Position;
+                    float distanceSq = math.lengthsq(delta);
+                    if (distanceSq <= DdaEpsilon || distanceSq > engageRadiusSq)
+                        continue;
+
+                    HabitatSiegeTargetFlags flags = (HabitatSiegeTargetFlags)target.Flags;
+                    float distance = math.sqrt(distanceSq);
+                    float range01 = 1f - math.saturate(distance / BaseSiegeEngageRadiusMeters);
+                    float flagBias = 0f;
+                    flagBias += math.select(0f, 0.25f, (flags & HabitatSiegeTargetFlags.Ruptured) != 0);
+                    flagBias += math.select(0f, 0.15f, (flags & HabitatSiegeTargetFlags.Flooded) != 0);
+                    flagBias += math.select(0f, 0.15f, (flags & HabitatSiegeTargetFlags.EmergencyAirlock) != 0);
+                    flagBias += math.select(0f, 0.1f, (flags & HabitatSiegeTargetFlags.Brownout) != 0);
+                    flagBias += math.select(0f, 0.1f, (flags & HabitatSiegeTargetFlags.Isolated) != 0);
+                    float score = (target.Vulnerability01 * 2f) + range01 + flagBias;
+                    if (score <= bestScore)
+                        continue;
+
+                    bestScore = score;
+                    bestIndex = i;
+                    bestTarget = target;
+                }
+
+                if (bestIndex < 0)
+                    return false;
+
+                if (TryReserveBaseSiegeRole(BaseSiegeRammerClaimTable, bestIndex, slot))
+                    siegeRole = BaseSiegeRole.Rammer;
+                else if (TryReserveBaseSiegeRole(BaseSiegeDistractorClaimTable, bestIndex, slot))
+                    siegeRole = BaseSiegeRole.Distractor;
+                else if (TryReserveBaseSiegeRole(BaseSiegeLoitererClaimTable, bestIndex, slot))
+                    siegeRole = BaseSiegeRole.Loiterer;
+
+                if (siegeRole == BaseSiegeRole.None)
+                    return false;
+
+                float3 toWeakPoint = math.normalizesafe(bestTarget.WeakPoint - input.Position, fallbackForward);
+                float3 moduleToPlayer = math.normalizesafe(predictedPlayerPosition - bestTarget.ModuleCenter, fallbackForward);
+                if (math.lengthsq(moduleToPlayer) <= DdaEpsilon)
+                    moduleToPlayer = math.normalizesafe(input.PlayerPosition - bestTarget.ModuleCenter, fallbackForward);
+
+                float3 lateral = math.normalizesafe(
+                    math.cross(new float3(0f, 1f, 0f), moduleToPlayer),
+                    math.cross(new float3(0f, 0f, 1f), moduleToPlayer));
+                float sideSign = (slot & 1) == 0 ? 1f : -1f;
+
+                if (siegeRole == BaseSiegeRole.Rammer)
+                {
+                    targetPosition = bestTarget.WeakPoint - (toWeakPoint * BaseSiegeRammerStandoffMeters);
+                }
+                else if (siegeRole == BaseSiegeRole.Distractor)
+                {
+                    targetPosition =
+                        bestTarget.ModuleCenter +
+                        (lateral * (BaseSiegeDistractorLateralOffsetMeters * sideSign)) +
+                        (moduleToPlayer * BaseSiegeDistractorForwardOffsetMeters);
+                }
+                else
+                {
+                    float3 loiterDirection = math.normalizesafe(input.Position - bestTarget.ModuleCenter, -moduleToPlayer);
+                    targetPosition = bestTarget.ModuleCenter + (loiterDirection * BaseSiegeLoiterRadiusMeters);
+                }
+
+                siegeScore = math.saturate(bestScore * 0.25f);
+                return true;
+            }
+
+            private static unsafe bool TryReserveBaseSiegeRole(int* claimTable, int targetIndex, int creatureSlot)
+            {
+                if (claimTable == null || targetIndex < 0 || targetIndex >= HabitatGraphManager.MaxSiegeTargetCount)
+                    return false;
+
+                int priorOwner = System.Threading.Interlocked.CompareExchange(
+                    ref claimTable[targetIndex],
+                    creatureSlot,
+                    UnclaimedBoidSlot);
+                return priorOwner == UnclaimedBoidSlot || priorOwner == creatureSlot;
             }
 
             private unsafe bool TryClaimBoid(int creatureSlot, int boidSlot)

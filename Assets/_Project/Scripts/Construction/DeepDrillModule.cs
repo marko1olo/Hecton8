@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
@@ -22,8 +23,8 @@ namespace Hecton8.Construction
         private const float SlowTickDeltaTime = 0.5f;
         private const string DefaultPlacementBlockedReason = "SEABED FOOTING REQUIRED";
         private const string DefaultSlopeBlockedReason = "SEABED TOO STEEP";
+        private static readonly int _placementProbeToolId = Animator.StringToHash("deep_drill_placement_probe");
 
-        private static readonly RaycastHit[] PlacementHits = new RaycastHit[1];
         private static readonly List<DeepDrillModule> s_ActiveModules = new List<DeepDrillModule>(8);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -73,7 +74,7 @@ namespace Hecton8.Construction
 
         [Header("── Placement ──────────────────────────────")]
         [Tooltip("Layers considered valid seabed for drill anchoring.")]
-        [SerializeField] private LayerMask seabedMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask seabedMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Vertical probe height above the candidate placement point.")]
         [SerializeField, Range(0.25f, 8f)] private float placementProbeHeight = 2.5f;
@@ -107,6 +108,7 @@ namespace Hecton8.Construction
         private ItemData _bufferedItem;
         private int _bufferedUnits;
         private int _completedCycleCount;
+        private ulong _placementRayRequesterId;
 
         internal static List<DeepDrillModule> ActiveModules => s_ActiveModules;
         internal bool IsOperating => _isOperating;
@@ -253,22 +255,36 @@ namespace Hecton8.Construction
         public bool ValidatePlacement(Vector3 position, Quaternion rotation, out string blockReason)
         {
             Vector3 origin = position + Vector3.up * placementProbeHeight;
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                Vector3.down,
-                PlacementHits,
-                placementProbeHeight + placementProbeDistance,
-                seabedMask,
-                QueryTriggerInteraction.Ignore);
+            if (_placementRayRequesterId == 0UL)
+                _placementRayRequesterId = EntityId.ToULong(gameObject.GetEntityId()) ^ 0x4452494C4C504C41UL;
 
-            if (hitCount <= 0)
+            IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
+            if (interactionService == null || !interactionService.IsInitialized)
             {
                 blockReason = DefaultPlacementBlockedReason;
                 return false;
             }
 
-            RaycastHit hit = PlacementHits[0];
-            PlacementHits[0] = default;
+            InteractionPacket packet = new InteractionPacket(
+                unchecked((uint)_placementProbeToolId),
+                new Unity.Mathematics.float3(origin.x, origin.y, origin.z),
+                new Unity.Mathematics.float3(0f, -1f, 0f),
+                1f,
+                placementProbeHeight + placementProbeDistance,
+                (byte)ToolActionMode.Primary,
+                (byte)ToolStateBits.Active,
+                unchecked((uint)Time.frameCount));
+
+            if (!interactionService.TryRaycastPrimary(
+                    _placementRayRequesterId,
+                    in packet,
+                    seabedMask.value,
+                    QueryTriggerInteraction.Ignore,
+                    out RaycastHit hit))
+            {
+                blockReason = DefaultPlacementBlockedReason;
+                return false;
+            }
 
             if (hit.normal.y < minimumSeabedNormalY)
             {

@@ -113,9 +113,10 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ICursorHost, IDepthOcclusionReceiver
+    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
+        private const string PhosphorDecayShaderPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_PDA_PhosphorDecay.shader";
         private const float MinCanvasExtent = 0.0001f;
         private const float MatrixRefreshInterval = 0.25f;
         private const int MaxInputEventsPerTick = 4;
@@ -127,6 +128,9 @@ namespace Hecton8.UI
         private static readonly int _DepthFadeRangeId = Shader.PropertyToID("_DepthFadeRange");
         private static readonly int _OcclusionActiveId = Shader.PropertyToID("_OcclusionActive");
         private static readonly int _PanelPowerLevelId = Shader.PropertyToID("_PanelPowerLevel");
+        private static readonly int _PreviousTexId = Shader.PropertyToID("_PreviousTex");
+        private static readonly int _CurrentTexId = Shader.PropertyToID("_CurrentTex");
+        private static readonly int _DecayId = Shader.PropertyToID("_Decay");
 
         [System.Flags]
         private enum PanelStateFlags : ushort
@@ -196,7 +200,7 @@ namespace Hecton8.UI
 
         [Header("── Interaction ────────────────────────────")]
         [SerializeField, Tooltip("Layer mask used for the panel collider hit query.")]
-        private LayerMask interactionMask = (1 << 8) | (1 << 9) | (1 << 10);
+        private LayerMask interactionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [SerializeField, Tooltip("Maximum world-space distance for cursor interaction.")]
         private float maxInteractionDistance = 2.75f;
@@ -226,6 +230,15 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("RenderTexture filter mode applied to the panel surface.")]
         private FilterMode renderTextureFilterMode = FilterMode.Bilinear;
 
+        [SerializeField, Tooltip("Maintains a persistent PDA/panel phosphor history RT: previous frame * decay + current frame.")]
+        private bool enablePhosphorDecay;
+
+        [SerializeField, Tooltip("Hidden full-screen material shader used to accumulate phosphor decay.")]
+        private Shader phosphorDecayShader;
+
+        [SerializeField, Range(0.1f, 0.98f), Tooltip("Multiplier applied to the previous PDA frame before adding the current panel frame.")]
+        private float phosphorDecay = 0.85f;
+
         [Header("── Occlusion ─────────────────────────────")]
         [SerializeField, Tooltip("Enables depth-fade integration on the panel output material.")]
         private bool enableDepthOcclusion = true;
@@ -252,6 +265,9 @@ namespace Hecton8.UI
         private IInteractionSignalService _interactionSignals;
         private IInputService _input;
         private RenderTexture _panelRenderTexture;
+        private RenderTexture _phosphorFrontTexture;
+        private RenderTexture _phosphorBackTexture;
+        private Material _phosphorDecayMaterial;
         private int2 _activeRenderResolution;
         private int2 _fixedRenderResolution;
         private bool _retainRenderTextureOnDisable;
@@ -260,6 +276,8 @@ namespace Hecton8.UI
         private float _appliedDepthFadeRange = -1f;
         private float _appliedPowerLevel = -1f;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
+        private bool _renderPipelineHookRegistered;
         private bool _wasPressedLastFrame;
         private bool _cursorVisible;
         private bool _cursorStateInitialized;
@@ -292,6 +310,7 @@ namespace Hecton8.UI
             ResolveInterfaces();
             DetermineTargetHardwareTier();
             RefreshServices();
+            RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
             ApplyRendererBindings();
             RefreshPanelData(forceRefresh: true);
@@ -304,6 +323,7 @@ namespace Hecton8.UI
             ResolveSerializedReferences();
             RefreshServices();
             TryRegisterTick();
+            RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
             RefreshPanelData(forceRefresh: true);
             EnsureRenderTexture(forceRefresh: true);
@@ -312,6 +332,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterTick();
+            UnregisterRenderPipelineHook();
             _wasPressedLastFrame = false;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
@@ -322,7 +343,9 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            UnregisterRenderPipelineHook();
             ReleaseRenderTexture();
+            ReleasePhosphorResources();
         }
 
         /// <inheritdoc />
@@ -360,6 +383,13 @@ namespace Hecton8.UI
             UpdateCursor(localHit, deltaTime);
             QueueInputEvents(canvasPos);
             DispatchInputEvents();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (enablePhosphorDecay && _panelRenderTexture != null)
+                ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
 
         /// <inheritdoc />
@@ -497,6 +527,18 @@ namespace Hecton8.UI
                 panelSurfaceRenderer = surfaceRenderer;
 
             ApplyRendererBindings();
+        }
+
+        internal void OverridePhosphorDecay(bool enabled, float decay)
+        {
+            enablePhosphorDecay = enabled;
+            phosphorDecay = Mathf.Clamp(decay, 0.1f, 0.98f);
+            if (enabled)
+                EnsurePhosphorResources();
+            else
+                ReleasePhosphorTextures();
+
+            ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
 
         internal void OverridePanelInteractable(MonoBehaviour interactable)
@@ -715,6 +757,7 @@ namespace Hecton8.UI
             _panelRenderTexture.Create();
             panelCamera.targetTexture = _panelRenderTexture;
             _activeRenderResolution = requiredResolution;
+            EnsurePhosphorResources();
 
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: true);
         }
@@ -744,6 +787,8 @@ namespace Hecton8.UI
 
         private void ReleaseRenderTexture()
         {
+            ReleasePhosphorTextures();
+
             if (panelCamera != null && panelCamera.targetTexture == _panelRenderTexture)
                 panelCamera.targetTexture = null;
 
@@ -754,6 +799,108 @@ namespace Hecton8.UI
             Destroy(_panelRenderTexture);
             _panelRenderTexture = null;
             _activeRenderResolution = int2.zero;
+        }
+
+        private void EnsurePhosphorResources()
+        {
+            if (!enablePhosphorDecay || _panelRenderTexture == null)
+                return;
+
+#if UNITY_EDITOR
+            if (phosphorDecayShader == null)
+                phosphorDecayShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(PhosphorDecayShaderPath);
+#endif
+            if (phosphorDecayShader == null)
+                phosphorDecayShader = Shader.Find("Hidden/Hecton8/PDA Phosphor Decay");
+
+            if (_phosphorDecayMaterial == null && phosphorDecayShader != null)
+            {
+                _phosphorDecayMaterial = new Material(phosphorDecayShader)
+                {
+                    name = "Runtime_PDA_PhosphorDecay"
+                }; // COLD ALLOC: Material[1] - PDA phosphor decay compositor - owner: DiegeticPanelController
+            }
+
+            if (_phosphorFrontTexture != null &&
+                _phosphorFrontTexture.width == _panelRenderTexture.width &&
+                _phosphorFrontTexture.height == _panelRenderTexture.height)
+            {
+                return;
+            }
+
+            ReleasePhosphorTextures();
+            RenderTextureDescriptor descriptor = _panelRenderTexture.descriptor;
+            descriptor.msaaSamples = 1;
+            descriptor.depthStencilFormat = GraphicsFormat.None;
+            descriptor.useMipMap = false;
+            descriptor.autoGenerateMips = false;
+
+            _phosphorFrontTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorFront");
+            _phosphorBackTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorBack");
+            ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
+        }
+
+        private static RenderTexture CreatePhosphorTexture(RenderTextureDescriptor descriptor, string textureName)
+        {
+            RenderTexture texture = new RenderTexture(descriptor)
+            {
+                name = textureName,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            }; // COLD ALLOC: RenderTexture[panel resolution] - persistent PDA phosphor history buffer - owner: DiegeticPanelController
+            texture.Create();
+            return texture;
+        }
+
+        private void CompositePhosphorFrame()
+        {
+            if (!enablePhosphorDecay ||
+                _panelRenderTexture == null ||
+                _phosphorDecayMaterial == null)
+            {
+                return;
+            }
+
+            EnsurePhosphorResources();
+            if (_phosphorFrontTexture == null || _phosphorBackTexture == null)
+                return;
+
+            _phosphorDecayMaterial.SetTexture(_PreviousTexId, _phosphorFrontTexture);
+            _phosphorDecayMaterial.SetTexture(_CurrentTexId, _panelRenderTexture);
+            _phosphorDecayMaterial.SetFloat(_DecayId, phosphorDecay);
+            Graphics.Blit(null, _phosphorBackTexture, _phosphorDecayMaterial, 0);
+
+            RenderTexture swap = _phosphorFrontTexture;
+            _phosphorFrontTexture = _phosphorBackTexture;
+            _phosphorBackTexture = swap;
+            ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
+        }
+
+        private void ReleasePhosphorResources()
+        {
+            ReleasePhosphorTextures();
+            if (_phosphorDecayMaterial != null)
+            {
+                Destroy(_phosphorDecayMaterial);
+                _phosphorDecayMaterial = null;
+            }
+        }
+
+        private void ReleasePhosphorTextures()
+        {
+            if (_phosphorFrontTexture != null)
+            {
+                _phosphorFrontTexture.Release();
+                Destroy(_phosphorFrontTexture);
+                _phosphorFrontTexture = null;
+            }
+
+            if (_phosphorBackTexture != null)
+            {
+                _phosphorBackTexture.Release();
+                Destroy(_phosphorBackTexture);
+                _phosphorBackTexture = null;
+            }
         }
 
         private void ApplyPowerLevel()
@@ -781,10 +928,13 @@ namespace Hecton8.UI
 
             if (forceTextureRefresh && _panelRenderTexture != null)
             {
+                Texture outputTexture = enablePhosphorDecay && _phosphorFrontTexture != null
+                    ? _phosphorFrontTexture
+                    : _panelRenderTexture;
                 if (panelOutputMaterial.HasProperty(_BaseMapId))
-                    panelOutputMaterial.SetTexture(_BaseMapId, _panelRenderTexture);
+                    panelOutputMaterial.SetTexture(_BaseMapId, outputTexture);
                 if (panelOutputMaterial.HasProperty(_MainTexId))
-                    panelOutputMaterial.SetTexture(_MainTexId, _panelRenderTexture);
+                    panelOutputMaterial.SetTexture(_MainTexId, outputTexture);
             }
 
             float resolvedFadeRange = enableDepthOcclusion ? depthFadeRange : 0f;
@@ -1035,22 +1185,67 @@ namespace Hecton8.UI
         private void TryRegisterTick()
         {
             if (_tickRegistered || !Application.isPlaying)
+            {
+                TryRegisterLateFrameTick();
                 return;
+            }
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = true;
         }
 
         private void UnregisterTick()
         {
-            if (!_tickRegistered)
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
+
+            if (_tickRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _tickRegistered = false;
+            }
+        }
+
+        private void RegisterRenderPipelineHook()
+        {
+            if (_renderPipelineHookRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = false;
+            RenderPipelineManager.endCameraRendering += HandleEndCameraRendering;
+            _renderPipelineHookRegistered = true;
+        }
+
+        private void UnregisterRenderPipelineHook()
+        {
+            if (!_renderPipelineHookRegistered)
+                return;
+
+            RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
+            _renderPipelineHookRegistered = false;
+        }
+
+        private void HandleEndCameraRendering(ScriptableRenderContext context, Camera renderedCamera)
+        {
+            if (renderedCamera != panelCamera)
+                return;
+
+            CompositePhosphorFrame();
         }
 
         private static void SetLayerRecursive(Transform root, int layer)

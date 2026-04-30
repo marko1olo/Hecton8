@@ -131,7 +131,7 @@ namespace Hecton8.Audio
         private float surfaceRayDistance = 1.5f;
 
         [Tooltip("Layers to raycast against for surface detection.")]
-        [SerializeField] private LayerMask surfaceLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask surfaceLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Layer index for Terrain objects.\n" +
                  "Objects on this layer trigger MapMagic biome lookup.\n" +

@@ -207,6 +207,7 @@ namespace Hecton8.Gameplay
         private bool _registeredUpdatable;
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
+        private bool _runtimeLifecycleStarted;
         private bool _stationKeepingStateCached;
         private HectonDroneFleetSnapshot _fleetSnapshot;
 
@@ -262,19 +263,20 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            CacheReferences();
-            RebuildBrownoutCaches();
-            Subscribe();
-            _fleetSnapshot = DroneFleetManager.CurrentSnapshot;
-            TryRegister();
-            PublishLog(HectonSubmarineOsLogCode.ReactorStable, LogPriorityNormal);
-            RefreshTelemetryFromServices();
-            EvaluateStateMachine(true);
-            HectonSubmarineOsDisplay.EnsureRuntimeInstance();
+            TryStartRuntimeLifecycle();
+        }
+
+        private void Start()
+        {
+            TryStartRuntimeLifecycle();
         }
 
         private void OnDisable()
         {
+            if (!_runtimeLifecycleStarted && !_registeredUpdatable && !_registeredSlowTick && !_registeredRenderable)
+                return;
+
+            _runtimeLifecycleStarted = false;
             PublishShutdownSnapshot();
             Unsubscribe();
             TryUnregister();
@@ -284,6 +286,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            _runtimeLifecycleStarted = false;
             Unsubscribe();
             TryUnregister();
             RestoreBrownoutVisuals();
@@ -292,6 +295,9 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             CacheReferences();
             HectonSubmarineOsDisplay.EnsureRuntimeInstance();
         }
@@ -299,6 +305,9 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void SlowTick()
         {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             CacheReferences();
             RefreshTelemetryFromServices();
             EvaluateStateMachine(false);
@@ -307,6 +316,9 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Render(float deltaTime)
         {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             if (!_cascadingBrownoutActive || _lowPowerModeActive)
             {
                 if (_brownoutVisualStateApplied)
@@ -320,6 +332,23 @@ namespace Hecton8.Gameplay
 
             float pulse = 0.5f + (0.5f * Mathf.Sin(Time.time * BrownoutBlinkFrequency));
             ApplyBrownoutVisuals(pulse);
+        }
+
+        private void TryStartRuntimeLifecycle()
+        {
+            if (_runtimeLifecycleStarted || !CanUseRuntimeDispatcher())
+                return;
+
+            CacheReferences();
+            RebuildBrownoutCaches();
+            Subscribe();
+            _fleetSnapshot = DroneFleetManager.CurrentSnapshot;
+            TryRegister();
+            PublishLog(HectonSubmarineOsLogCode.ReactorStable, LogPriorityNormal);
+            RefreshTelemetryFromServices();
+            EvaluateStateMachine(true);
+            HectonSubmarineOsDisplay.EnsureRuntimeInstance();
+            _runtimeLifecycleStarted = true;
         }
 
         private void CacheReferences()
@@ -364,13 +393,16 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_registeredUpdatable)
+            if (!CanUseRuntimeDispatcher())
+                return;
+
+            if (!_registeredUpdatable)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _registeredUpdatable = true;
             }
 
-            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_registeredSlowTick)
+            if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
@@ -381,6 +413,19 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.Renderables.Register(this);
                 _registeredRenderable = true;
             }
+        }
+
+        private static bool CanUseRuntimeDispatcher()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return false;
+
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating)
+                return false;
+#endif
+
+            return true;
         }
 
         private void TryUnregister()

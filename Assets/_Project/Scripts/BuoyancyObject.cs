@@ -51,7 +51,7 @@ namespace Hecton8.Physics
             if (_layerCacheInitialized)
                 return;
 
-            _WaterLayer = LayerMask.NameToLayer("Water");
+            _WaterLayer = Hecton8.Core.HectonLayerMasks.Water;
             _layerCacheInitialized = true;
         }
 
@@ -133,7 +133,7 @@ namespace Hecton8.Physics
 
         [Tooltip("Layers considered as ground (Terrain, Default, etc). " +
                  "MUST exclude Water layer to avoid false positives.")]
-        [SerializeField] private LayerMask groundLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask groundLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         // ══════════════════════════════════════════════════════════
         //  CACHED

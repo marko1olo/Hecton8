@@ -235,6 +235,9 @@ namespace Hecton8.Core
 
         private static bool ArePersistentWorldPoolsReadyForSceneActivation()
         {
+            if (!GameBootstrapper.ArePreWarmAssetsReady)
+                return false;
+
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             if (registry == null)
                 return false;

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Editor
@@ -8,7 +9,7 @@ namespace Hecton8.Editor
     /// Play-mode editor sentinel that escalates frequent gen0 collections as hard console errors.
     /// </summary>
     [DefaultExecutionOrder(32000)]
-    internal sealed class GCSentinel : MonoBehaviour
+    internal sealed class GCSentinel : MonoBehaviour, IUpdatable
     {
         private const int FrameWindow = 60;
         private const string SentinelObjectName = "__GC_SENTINEL";
@@ -16,6 +17,7 @@ namespace Hecton8.Editor
         private int _framesRemaining = FrameWindow;
         private int _lastGen0CollectionCount;
         private long _lastManagedHeapBytes;
+        private bool _registeredForTick;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -40,7 +42,26 @@ namespace Hecton8.Editor
             _framesRemaining = FrameWindow;
         }
 
-        private void LateUpdate()
+        private void OnEnable()
+        {
+            if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredForTick = true;
+        }
+
+        private void OnDisable()
+        {
+            if (!_registeredForTick)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _registeredForTick = false;
+        }
+
+        /// <inheritdoc />
+        public void Tick(float deltaTime)
         {
             if (--_framesRemaining > 0)
                 return;
@@ -52,8 +73,7 @@ namespace Hecton8.Editor
 
             if (gen0Delta > 1)
             {
-                Debug.LogError(
-                    $"[GCSentinel] GEN0 GC SPIKE DETECTED | Collections/60f={gen0Delta} | ManagedHeapMB={currentManagedHeapBytes / 1048576f:0.00} | HeapDeltaKB={managedHeapDeltaBytes / 1024f:0.0}");
+                Debug.LogError("[GCSentinel] GEN0 GC spike detected.");
             }
 
             _lastGen0CollectionCount = currentGen0Collections;

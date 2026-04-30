@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -13,6 +16,9 @@ namespace Hecton8.EditorTools
     {
         private const string RuleFolder = "Assets/_Project/Data/World/ProceduralPlacementRules";
         private const string ProxyRootName = "__PROCEDURAL_PROXY_WORLD";
+        private const float ProxySnapRaycastElevationMeters = 80f;
+        private const float ProxySnapRaycastDistanceMeters = 240f;
+        private const float ProxySnapMaxTiltDegrees = 35f;
 
         [MenuItem("Hecton/Authoring/Rebuild Procedural Proxy Scene", priority = 179)]
         public static void RebuildProceduralProxyScene()
@@ -230,8 +236,15 @@ namespace Hecton8.EditorTools
 
             instance.name = $"{family.familyLabel}_{instanceIndex:00}";
             instance.transform.SetParent(parent, false);
-            instance.transform.position = ResolvePosition(socket.transform.position, family, instanceIndex, instanceCount);
-            instance.transform.rotation = Quaternion.Euler(0f, ResolveYaw(socket, instanceIndex), 0f);
+            Vector3 position = ResolvePosition(socket.transform.position, family, instanceIndex, instanceCount);
+            Quaternion rotation = Quaternion.Euler(0f, ResolveYaw(socket, instanceIndex), 0f);
+            if (TrySnapProxyToScatterSurface(position, out Vector3 snappedPosition, out Vector3 snappedNormal))
+            {
+                position = snappedPosition;
+                rotation = ResolveTerrainAlignedRotation(rotation, snappedNormal);
+            }
+
+            instance.transform.SetPositionAndRotation(position, rotation);
             float scale = ResolveScaleMultiplier(family, variant, instanceIndex);
             instance.transform.localScale *= scale;
 
@@ -248,6 +261,56 @@ namespace Hecton8.EditorTools
                 variant == null || variant.proxyOnly,
                 0,
                 instanceIndex);
+        }
+
+        private static bool TrySnapProxyToScatterSurface(Vector3 position, out Vector3 point, out Vector3 normal)
+        {
+            point = position;
+            normal = Vector3.up;
+            Vector3 origin = position + (Vector3.up * ProxySnapRaycastElevationMeters);
+            float distance = ProxySnapRaycastElevationMeters + ProxySnapRaycastDistanceMeters;
+            NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<RaycastHit> hits = new NativeArray<RaycastHit>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+
+            try
+            {
+                commands[0] = new RaycastCommand(
+                    origin,
+                    Vector3.down,
+                    new QueryParameters(HectonLayerMasks.DefaultRaycastLayerMask, false, QueryTriggerInteraction.Ignore),
+                    distance);
+                // COLD SYNC JOB: editor-only proxy rebuild uses the same batched down-snap primitive as runtime scatter snapping.
+                JobHandle handle = RaycastCommand.ScheduleBatch(commands, hits, 1, default);
+                handle.Complete();
+
+                RaycastHit hit = hits[0];
+                if (hit.collider == null)
+                    return false;
+
+                point = hit.point;
+                normal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
+                return true;
+            }
+            finally
+            {
+                if (commands.IsCreated)
+                    commands.Dispose();
+                if (hits.IsCreated)
+                    hits.Dispose();
+            }
+        }
+
+        private static Quaternion ResolveTerrainAlignedRotation(Quaternion yawRotation, Vector3 normal)
+        {
+            Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            float angle = Vector3.Angle(Vector3.up, safeNormal);
+            if (angle > ProxySnapMaxTiltDegrees)
+            {
+                float t = ProxySnapMaxTiltDegrees / Mathf.Max(0.001f, angle);
+                safeNormal = Vector3.Slerp(Vector3.up, safeNormal, t).normalized;
+            }
+
+            return Quaternion.FromToRotation(Vector3.up, safeNormal) * yawRotation;
         }
 
         private static WorldPrefabFamilyProfile.VariantEntry ResolveVariant(WorldPrefabFamilyProfile family, int instanceIndex)

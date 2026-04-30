@@ -223,7 +223,7 @@ namespace Hecton8.World
         /// Height sampling uses pre-filled NativeArray (main thread fills via
         /// Physics.RaycastNonAlloc or MapMagic queries before scheduling).
         /// </remarks>
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct ScatterCellEvaluationJob : IJobParallelFor
         {
             [ReadOnly] public ScatterSimulationConfig Config;

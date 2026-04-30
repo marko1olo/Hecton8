@@ -6,6 +6,7 @@
 namespace Hecton8.Interaction
 {
     using System.Runtime.InteropServices;
+    using Hecton.Localization;
     using Hecton8.Core;
     using Hecton8.Items;
     using Unity.Collections;
@@ -28,6 +29,9 @@ namespace Hecton8.Interaction
     [StructLayout(LayoutKind.Sequential)]
     public struct InteractionEventPayload
     {
+        public uint ItemHashId;
+        public uint TargetHashId;
+        public uint InteractorHashId;
         public int ReferenceSlot;
         public int Quantity;
         public ushort EventType;
@@ -68,6 +72,8 @@ namespace Hecton8.Interaction
         private static readonly RegistryBucket<IInteractionEventListener> _listeners = new RegistryBucket<IInteractionEventListener>(ListenerCapacity);
         // COLD ALLOC: InteractionReferenceSlot[128] - managed reference sidecar for unmanaged interaction payloads - owner: InteractionEvents
         private static readonly InteractionReferenceSlot[] _referenceSlots = new InteractionReferenceSlot[ReferenceSlotCapacity];
+        // COLD ALLOC: bool[128] - reference slot occupancy map prevents wrap overwrite before deferred flush - owner: InteractionEvents
+        private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<InteractionEventPayload> _pendingEvents;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
@@ -126,8 +132,14 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out InteractionEventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out InteractionEventPayload payload))
+                    return;
+
                 IInteractionEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
@@ -193,6 +205,9 @@ namespace Hecton8.Interaction
 
             Enqueue(new InteractionEventPayload
             {
+                ItemHashId = ComputeItemHash(item),
+                TargetHashId = 0u,
+                InteractorHashId = ComputeTransformHash(interactor),
                 ReferenceSlot = referenceSlot,
                 Quantity = quantity,
                 EventType = (ushort)InteractionEventType.ItemCollected,
@@ -214,6 +229,9 @@ namespace Hecton8.Interaction
 
             Enqueue(new InteractionEventPayload
             {
+                ItemHashId = 0u,
+                TargetHashId = ComputeInteractableHash(target),
+                InteractorHashId = ComputeTransformHash(interactor),
                 ReferenceSlot = referenceSlot,
                 Quantity = 0,
                 EventType = (ushort)InteractionEventType.InteractionStarted,
@@ -226,15 +244,22 @@ namespace Hecton8.Interaction
         /// </summary>
         public static void RaiseHoverChanged(IInteractable target)
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
+            int referenceSlot = -1;
+            if (target != null)
+            {
+                if (!TryReserveReferenceSlot(out referenceSlot))
+                    return;
 
-            _referenceSlots[referenceSlot].Item = null;
-            _referenceSlots[referenceSlot].Target = target;
-            _referenceSlots[referenceSlot].Interactor = null;
+                _referenceSlots[referenceSlot].Item = null;
+                _referenceSlots[referenceSlot].Target = target;
+                _referenceSlots[referenceSlot].Interactor = null;
+            }
 
             Enqueue(new InteractionEventPayload
             {
+                ItemHashId = 0u,
+                TargetHashId = ComputeInteractableHash(target),
+                InteractorHashId = 0u,
                 ReferenceSlot = referenceSlot,
                 Quantity = 0,
                 EventType = (ushort)InteractionEventType.HoverChanged,
@@ -260,13 +285,23 @@ namespace Hecton8.Interaction
             if (_referencePendingCount >= ReferenceSlotCapacity)
                 return false;
 
-            referenceSlot = _referenceWriteIndex;
-            _referenceWriteIndex++;
-            if (_referenceWriteIndex >= ReferenceSlotCapacity)
-                _referenceWriteIndex = 0;
+            for (int probe = 0; probe < ReferenceSlotCapacity; probe++)
+            {
+                int candidateSlot = _referenceWriteIndex;
+                _referenceWriteIndex++;
+                if (_referenceWriteIndex >= ReferenceSlotCapacity)
+                    _referenceWriteIndex = 0;
 
-            _referencePendingCount++;
-            return true;
+                if (_referenceSlotOccupied[candidateSlot])
+                    continue;
+
+                referenceSlot = candidateSlot;
+                _referenceSlotOccupied[referenceSlot] = true;
+                _referencePendingCount++;
+                return true;
+            }
+
+            return false;
         }
 
         private static void ReleaseReferenceSlot(int referenceSlot)
@@ -274,7 +309,11 @@ namespace Hecton8.Interaction
             if (!IsValidReferenceSlot(referenceSlot))
                 return;
 
+            if (!_referenceSlotOccupied[referenceSlot])
+                return;
+
             _referenceSlots[referenceSlot].Clear();
+            _referenceSlotOccupied[referenceSlot] = false;
             if (_referencePendingCount > 0)
                 _referencePendingCount--;
         }
@@ -296,7 +335,31 @@ namespace Hecton8.Interaction
         private static void ClearReferenceSlots()
         {
             for (int i = 0; i < ReferenceSlotCapacity; i++)
+            {
                 _referenceSlots[i].Clear();
+                _referenceSlotOccupied[i] = false;
+            }
+        }
+
+        private static uint ComputeItemHash(ItemData item)
+        {
+            return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
+                ? unchecked((uint)LocHash.Compute(item.PersistentId))
+                : 0u;
+        }
+
+        private static uint ComputeInteractableHash(IInteractable target)
+        {
+            return target is UnityEngine.Object targetObject
+                ? unchecked((uint)targetObject.GetInstanceID())
+                : 0u;
+        }
+
+        private static uint ComputeTransformHash(Transform transform)
+        {
+            return transform != null
+                ? unchecked((uint)transform.GetInstanceID())
+                : 0u;
         }
     }
 }

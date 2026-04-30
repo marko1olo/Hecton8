@@ -424,7 +424,7 @@ public struct MCRawVertex
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 1: DENSITY FIELD — Multi-primitive SDF cave system (v4.0 REWRITE)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityJob : IJobParallelFor
 {
     // ── Grid dimensions ──
@@ -1482,7 +1482,7 @@ public struct VoxelDensityJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 struct VoxelColliderChunkClassifyJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> positions;
@@ -1521,7 +1521,7 @@ struct VoxelColliderChunkClassifyJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2: Marching Cubes exact count pass
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelMCCountJob : IJobParallelFor
 {
     public int cellsX, cellsY, cellsZ;
@@ -1583,7 +1583,7 @@ public struct VoxelMCCountJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.1: Marching Cubes extraction (exact-offset write)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelMCExtractJob : IJobParallelFor
 {
     public int cellsX, cellsY, cellsZ;
@@ -1736,7 +1736,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.5: Vertex Welding (UNCHANGED from v3.2)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelWeldJob : IJob
 {
     private const int InvalidVertexIndex = -1;
@@ -1861,7 +1861,7 @@ public unsafe struct VoxelWeldJob : IJob
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 3: Normals from density gradient (UNCHANGED from v3.2)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelNormalJob : IJobParallelFor
 {
     public int ptsX, ptsY, ptsZ;
@@ -1950,7 +1950,7 @@ public struct VoxelNormalJob : IJobParallelFor
 int GridIndex(int x, int y, int z) => x + y * ptsX + z * ptsX * ptsY;
 }
 
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelTerrainSeamSnapJob : IJobParallelFor
 {
     public int ptsX;
@@ -2007,7 +2007,7 @@ public struct VoxelTerrainSeamSnapJob : IJobParallelFor
         return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
     }
 }
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelSeamNormalBlendJob : IJobParallelFor
 {
     public int ptsX;
@@ -2124,7 +2124,7 @@ public struct VoxelSeamNormalBlendJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelShiftAwareProjectionJob : IJobParallelFor
 {
     public float3 rebaseDelta;
@@ -2143,7 +2143,7 @@ public struct VoxelShiftAwareProjectionJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 3.5: Biome Sampling (UNCHANGED from v3.2)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelBiomeSampleJob : IJobParallelFor
 {
     public int ptsX, ptsZ;
@@ -2175,7 +2175,7 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 4: Vertex Colors (v4.0 — updated for cave SDF)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelColorJob : IJobParallelFor
 {
     public float maxDepth;
@@ -2264,7 +2264,7 @@ public struct VoxelColorJob : IJobParallelFor
 //  Each point carries a deterministic hashId derived from world position,
 //  ensuring save system consistency regardless of parallel execution order.
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelSpawnPointJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> positions;
@@ -2360,6 +2360,8 @@ public struct VoxelSpawnPointJob : IJobParallelFor
 public class HectonVoxelEngine : MonoBehaviour
 {
     private const string DefaultVoxelBakeGhostShaderName = "Hecton8/Environment/Hecton_VoxelBakeGhost";
+    private const int StreamingScratchLeaseTimeoutFrames = 1200;
+    private const int VoxelJobWaitWatchdogFrames = 1200;
 
     // ╔═══════════════════════════════════════════════╗
     // ║           INSPECTOR SETTINGS                  ║
@@ -2469,6 +2471,8 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<int> CellVertexCounts;
         public NativeArray<int> CellVertexOffsets;
 
+        public bool IsValid => _owner != null && _slotIndex >= 0;
+
         public VoxelStreamingScratchLease(
             HectonVoxelEngine owner,
             int slotIndex,
@@ -2577,6 +2581,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     struct VoxelMeshBakeJob : IJob
     {
         public EntityId MeshId;
@@ -3297,14 +3302,22 @@ public class HectonVoxelEngine : MonoBehaviour
         _runtimeVoxelBakeGhostMaterial.SetFloat("_FresnelPower", 2.3f);
     }
 
-    static async Awaitable AwaitForJobCompletionAsync(JobHandle handle, CancellationToken ct)
+    static async Awaitable AwaitForJobCompletionAsync(JobHandle handle, CancellationToken ct, string context)
     {
+        int waitFrames = 0;
         try
         {
             while (!handle.IsCompleted)
             {
                 ct.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(ct);
+                if (waitFrames >= VoxelJobWaitWatchdogFrames)
+                {
+                    LogVoxelJobWaitWatchdog(context, waitFrames);
+                    break;
+                }
+
+                waitFrames++;
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
             }
         }
         finally
@@ -3313,10 +3326,20 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
+    static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
+    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.LogError($"[HectonVoxel] Job wait watchdog tripped. Context={context}. Frames={waitFrames}. Forcing completion as cleanup barrier.");
+#endif
+    }
+
     async Awaitable<bool> ExecuteVoxelPipelineAsync(VoxelPipelineData data, CancellationToken ct)
     {
         BuildSpatialPartitions(data);
         data.ScratchLease = await AcquireStreamingScratchLeaseAsync(data.PtsX * data.PtsZ, data.TotalPts, data.TotalCells, ct);
+        if (!data.ScratchLease.IsValid)
+            return false;
+
         NativeArray<float> terrainHeights = data.ScratchLease.TerrainHeights;
         NativeArray<float> gridBiome = data.ScratchLease.GridBiome;
         NativeArray<float> densityField = data.ScratchLease.DensityField;
@@ -3469,7 +3492,7 @@ public class HectonVoxelEngine : MonoBehaviour
             : mcCountHandle;
         try
         {
-            await AwaitForJobCompletionAsync(firstPhaseHandle, ct);
+            await AwaitForJobCompletionAsync(firstPhaseHandle, ct, "density/count phase");
         }
         catch
         {
@@ -3544,7 +3567,7 @@ public class HectonVoxelEngine : MonoBehaviour
             outVertices = data.RawVertices
         }.Schedule(data.TotalCells, JOB_BATCH);
 
-        await AwaitForJobCompletionAsync(mcHandle, ct);
+        await AwaitForJobCompletionAsync(mcHandle, ct, "marching-cubes extract");
 
         ct.ThrowIfCancellationRequested();
 
@@ -3568,7 +3591,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 weldedCounter = weldedCounter
             }.Schedule();
 
-            await AwaitForJobCompletionAsync(weldHandle, ct);
+            await AwaitForJobCompletionAsync(weldHandle, ct, "vertex weld");
 
             data.WeldedCount = weldedCounter[0];
         }
@@ -3685,7 +3708,7 @@ public class HectonVoxelEngine : MonoBehaviour
             phase5Handle = JobHandle.CombineDependencies(colorHandle, spawnHandle);
         }
 
-        await AwaitForJobCompletionAsync(phase5Handle, ct);
+        await AwaitForJobCompletionAsync(phase5Handle, ct, "normal/color/spawn phase");
         ct.ThrowIfCancellationRequested();
         return true;
     }
@@ -3696,13 +3719,48 @@ public class HectonVoxelEngine : MonoBehaviour
         int totalCellCount,
         CancellationToken ct)
     {
+        int waitFrames = 0;
         while (true)
         {
             ct.ThrowIfCancellationRequested();
             if (TryAcquireStreamingScratchLease(heightCount, totalPointCount, totalCellCount, out VoxelStreamingScratchLease lease))
                 return lease;
 
+            if (waitFrames >= StreamingScratchLeaseTimeoutFrames)
+            {
+                LogStreamingScratchLeaseTimeout(heightCount, totalPointCount, totalCellCount, waitFrames);
+                return default;
+            }
+
+            waitFrames++;
             await Awaitable.NextFrameAsync(ct);
+        }
+    }
+
+    void LogStreamingScratchLeaseTimeout(
+        int heightCount,
+        int totalPointCount,
+        int totalCellCount,
+        int waitFrames)
+    {
+        GetStreamingScratchLeaseState(out int slotCount, out int inUseCount, out bool teardownRequested);
+        int activeGenerationOperations = Volatile.Read(ref _activeGenerationOperations);
+        Debug.LogError($"[HectonVoxel] Streaming scratch lease timed out after {waitFrames} frames. slots={slotCount} inUse={inUseCount} teardown={teardownRequested} activeOps={activeGenerationOperations} height={heightCount} points={totalPointCount} cells={totalCellCount}.");
+    }
+
+    void GetStreamingScratchLeaseState(out int slotCount, out int inUseCount, out bool teardownRequested)
+    {
+        lock (_streamingScratchGate)
+        {
+            teardownRequested = _teardownStreamingScratchRequested;
+            slotCount = _streamingScratchSlots != null ? _streamingScratchSlots.Length : 0;
+            inUseCount = 0;
+            for (int i = 0; i < slotCount; i++)
+            {
+                VoxelStreamingScratchSlot slot = _streamingScratchSlots[i];
+                if (slot != null && slot.InUse)
+                    inUseCount++;
+            }
         }
     }
 
@@ -4151,7 +4209,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 projectedPositions = projectedPositions
             }.Schedule(data.WeldedCount, JOB_BATCH);
 
-            await AwaitForJobCompletionAsync(projectionHandle, ct);
+            await AwaitForJobCompletionAsync(projectionHandle, ct, "origin-shift projection");
             ct.ThrowIfCancellationRequested();
             return projectedPositions;
         }
@@ -4352,7 +4410,7 @@ public class HectonVoxelEngine : MonoBehaviour
                         Convex = false
                     }.Schedule();
 
-                    await AwaitForJobCompletionAsync(fallbackBakeHandle, ct);
+                    await AwaitForJobCompletionAsync(fallbackBakeHandle, ct, "fallback collider bake");
 
                     ct.ThrowIfCancellationRequested();
                     mcol.sharedMesh = mesh;
@@ -4427,7 +4485,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 triangleBuckets = triangleBuckets
             }.Schedule(triangleCount, 64);
 
-            await AwaitForJobCompletionAsync(classifyHandle, ct);
+            await AwaitForJobCompletionAsync(classifyHandle, ct, "collider chunk classify");
 
             for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
                 bucketCounts[triangleBuckets[triangleIndex]] += 3;
@@ -4511,7 +4569,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     Convex = false
                 }.Schedule();
 
-                await AwaitForJobCompletionAsync(bakeHandle, ct);
+                await AwaitForJobCompletionAsync(bakeHandle, ct, "collider chunk bake");
 
                 ct.ThrowIfCancellationRequested();
                 volume.PublishColliderChunkMesh(chunkIndex);

@@ -11,6 +11,8 @@ using UnityEditor;
 namespace NASAPunk.Visor
 {
     [DisallowMultipleComponent]
+    // Editor preview must keep the shared HUD RenderTexture current outside Play Mode.
+    [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Presentation Controller")]
     public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUpdatable
     {
@@ -37,6 +39,7 @@ namespace NASAPunk.Visor
         [SerializeField] private RenderTexture sharedProjectionTexture;
         [SerializeField] private Camera overlayPresentationCamera;
         [SerializeField] private Camera visorProjectionCamera;
+        [SerializeField] private Renderer diegeticProjectionRenderer;
 
         [Header("Overlay Suppression")]
         [SerializeField] private SuitHUDV4CanvasOverlay canvasOverlay;
@@ -46,6 +49,12 @@ namespace NASAPunk.Visor
         [SerializeField] private bool previewProjectedSourceOnScreen = true;
         [SerializeField] private bool preferCanvasProjectionSource = true;
         [SerializeField] private bool syncProjectionLayoutFromOverlay = false;
+
+        [Header("Diegetic Projection Fit")]
+        [SerializeField, Tooltip("Fits the physical HUD projection surface to the active camera frustum so the 16:9 HUD occupies the Game View instead of a small center patch.")]
+        private bool fitDiegeticProjectionToCamera = true;
+        [SerializeField, Range(0.9f, 1.05f), Tooltip("Viewport fill for the physical HUD projection surface. 1.0 fills the camera frustum at the surface distance.")]
+        private float diegeticProjectionViewportFill = 1f;
 
         [Header("Diagnostics")]
         [SerializeField] private string debugAppliedModeLabel;
@@ -67,7 +76,12 @@ namespace NASAPunk.Visor
         private bool _editorLastProjectedPresentationAvailable;
         private bool _editorLastProjectedOutputSurfaceAvailable;
         private const string ProjectionSourceCanvasName = "Suit_HUD_ProjectionSource";
+        private const string DiegeticProjectionSurfaceName = "Suit_Diegetic_HUD_V4_Projection";
         private const int ProjectionSourceLayer = 17;
+#if UNITY_EDITOR
+        private const double EditorProjectionPreviewInterval = 1.0 / 15.0;
+        private double _nextEditorProjectionPreviewAt;
+#endif
 
         private void OnEnable()
         {
@@ -75,7 +89,13 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying)
             {
 #if UNITY_EDITOR
-                EvaluateEditorTickRegistration();
+                if (!IsEditorPreviewSafe())
+                {
+                    QueueEditorPreviewBootstrap();
+                    return;
+                }
+
+                BootstrapEditorPreview();
 #endif
                 return;
             }
@@ -103,8 +123,10 @@ namespace NASAPunk.Visor
         {
             _pendingApply = true;
 #if UNITY_EDITOR
-            if (!Application.isPlaying)
+            if (!Application.isPlaying && IsEditorPreviewSafe())
                 EvaluateEditorTickRegistration();
+            else if (!Application.isPlaying)
+                QueueEditorPreviewBootstrap();
 #endif
         }
 
@@ -112,6 +134,12 @@ namespace NASAPunk.Visor
         private void EditorTick()
         {
             if (this == null || !this)
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
+            if (!IsEditorPreviewSafe())
             {
                 UnregisterEditorTick();
                 return;
@@ -129,9 +157,69 @@ namespace NASAPunk.Visor
             AutoResolveReferences();
             ApplyPresentation(force: _pendingApply);
             _pendingApply = false;
+            RenderProjectionTextureForEditorPreview(false);
             CacheEditorPresentationState();
             if (!ShouldTickInEditMode())
                 UnregisterEditorTick();
+        }
+
+        private void BootstrapEditorPreview()
+        {
+            if (!IsEditorPreviewSafe() || Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            AutoResolveReferences(true);
+            ApplyPresentation(force: true);
+            _pendingApply = false;
+            RenderProjectionTextureForEditorPreview(true);
+            CacheEditorPresentationState();
+            EvaluateEditorTickRegistration();
+        }
+
+        private void QueueEditorPreviewBootstrap()
+        {
+            EditorApplication.delayCall -= DelayedEditorPreviewBootstrap;
+            EditorApplication.delayCall += DelayedEditorPreviewBootstrap;
+        }
+
+        private void DelayedEditorPreviewBootstrap()
+        {
+            if (this == null || !this)
+                return;
+
+            if (!IsEditorPreviewSafe())
+            {
+                QueueEditorPreviewBootstrap();
+                return;
+            }
+
+            BootstrapEditorPreview();
+        }
+
+        private void RenderProjectionTextureForEditorPreview(bool forceRender)
+        {
+            bool projectedPreviewAvailable = debugProjectedModeActive || IsProjectedPresentationAvailable();
+            if (!IsEditorPreviewSafe() ||
+                Application.isPlaying ||
+                visorProjectionCamera == null ||
+                sharedProjectionTexture == null ||
+                !visorProjectionCamera.gameObject.activeInHierarchy ||
+                !projectedPreviewAvailable)
+            {
+                return;
+            }
+
+            double now = EditorApplication.timeSinceStartup;
+            if (!forceRender && now < _nextEditorProjectionPreviewAt)
+                return;
+
+            _nextEditorProjectionPreviewAt = now + EditorProjectionPreviewInterval;
+
+            if (visorProjectionCamera.targetTexture != sharedProjectionTexture)
+                visorProjectionCamera.targetTexture = sharedProjectionTexture;
+
+            // Editor preview only. Runtime projection is rendered by Unity camera scheduling.
+            visorProjectionCamera.Render();
         }
 #endif
 
@@ -206,6 +294,9 @@ namespace NASAPunk.Visor
                 s_compositorResolveBuffer.Clear();
             }
 
+            if (diegeticProjectionRenderer == null)
+                diegeticProjectionRenderer = FindDiegeticProjectionRenderer(transform.root);
+
             if (sharedProjectionTexture == null && visorController != null)
                 sharedProjectionTexture = visorController.SharedRenderTexture;
 
@@ -219,6 +310,7 @@ namespace NASAPunk.Visor
                 overlayPresentationCamera == null ||
                 overlayModernHud == null ||
                 visorController == null ||
+                diegeticProjectionRenderer == null ||
                 canvasOverlay == null ||
                 screenCompositor == null)
             {
@@ -241,6 +333,7 @@ namespace NASAPunk.Visor
 
             EnsureProjectionSource(projectedModeRequested);
             bool projectedMode = projectedModeRequested && IsProjectedPresentationAvailable();
+            ApplyDiegeticProjectionFrustumFit(projectedMode);
 
             if (!force &&
                 _appliedMode == presentationMode &&
@@ -330,7 +423,14 @@ namespace NASAPunk.Visor
 
             if (canvasOverlay != null)
             {
-                canvasOverlay.SetRenderPathProjectionSource(false);
+                if (suppress)
+                    SetOverlayCanvasVisible(canvasOverlay, false);
+                else
+                {
+                    canvasOverlay.SetRenderPathProjectionSource(false);
+                    SetOverlayCanvasVisible(canvasOverlay, true);
+                }
+
                 _cachedHudCanvasTransform = canvasOverlay.transform;
             }
 
@@ -372,13 +472,45 @@ namespace NASAPunk.Visor
                 return false;
 
             Renderer visorRenderer = visorController.GetComponent<Renderer>();
+            bool visorSurfaceAvailable = visorRenderer != null &&
+                                          visorRenderer.enabled &&
+                                          !visorRenderer.forceRenderingOff &&
+                                          visorRenderer.gameObject.activeInHierarchy;
+            bool diegeticSurfaceAvailable = diegeticProjectionRenderer != null &&
+                                             diegeticProjectionRenderer.enabled &&
+                                             !diegeticProjectionRenderer.forceRenderingOff &&
+                                             diegeticProjectionRenderer.gameObject.activeInHierarchy;
             Camera hudCamera = visorProjectionCamera != null ? visorProjectionCamera : visorController.HudCamera;
             return hudCamera != null &&
                    hudCamera.gameObject.activeInHierarchy &&
-                   visorRenderer != null &&
-                   visorRenderer.enabled &&
-                   !visorRenderer.forceRenderingOff &&
-                   visorRenderer.gameObject.activeInHierarchy;
+                   (visorSurfaceAvailable || diegeticSurfaceAvailable);
+        }
+
+        private void ApplyDiegeticProjectionFrustumFit(bool projectedMode)
+        {
+            if (!projectedMode ||
+                !fitDiegeticProjectionToCamera ||
+                diegeticProjectionRenderer == null)
+            {
+                return;
+            }
+
+            Camera fitCamera = ResolveOverlayHostCamera();
+            if (fitCamera == null)
+                return;
+
+            Transform surface = diegeticProjectionRenderer.transform;
+            float distance = Mathf.Abs(surface.localPosition.z);
+            if (distance <= fitCamera.nearClipPlane + 0.01f)
+                return;
+
+            float height = 2f * distance * Mathf.Tan(fitCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            float width = height * fitCamera.aspect;
+            float fill = Mathf.Max(0.01f, diegeticProjectionViewportFill);
+            Vector3 targetScale = new Vector3(width * fill, height * fill, surface.localScale.z);
+
+            if ((surface.localScale - targetScale).sqrMagnitude > 0.000001f)
+                surface.localScale = targetScale;
         }
 
         private void EnsureProjectionSource(bool projectedMode)
@@ -420,7 +552,7 @@ namespace NASAPunk.Visor
 
         private SuitHUDV4CanvasOverlay CreateProjectionSourceOverlay()
         {
-            Transform parent = canvasOverlay != null ? canvasOverlay.transform.parent : null;
+            Transform parent = ResolveProjectionSourceParent();
             GameObject go = new GameObject(
                 ProjectionSourceCanvasName,
                 typeof(RectTransform),
@@ -441,6 +573,17 @@ namespace NASAPunk.Visor
                 raycaster.enabled = false;
 
             return go.GetComponent<SuitHUDV4CanvasOverlay>();
+        }
+
+        private Transform ResolveProjectionSourceParent()
+        {
+            if (visorProjectionCamera != null)
+                return visorProjectionCamera.transform;
+
+            if (transform != null)
+                return transform;
+
+            return canvasOverlay != null ? canvasOverlay.transform.parent : null;
         }
 
         private static void NormalizeProjectionSourceOverlay(SuitHUDV4CanvasOverlay overlay)
@@ -663,7 +806,13 @@ namespace NASAPunk.Visor
 
         private bool ShouldTickInEditMode()
         {
-            return isActiveAndEnabled && (_pendingApply || NeedsAutoResolve() || HasEditorPresentationStateChanged());
+            if (!isActiveAndEnabled)
+                return false;
+
+            if (RequiresRuntimePresentationMonitoring() && IsProjectedPresentationAvailable())
+                return true;
+
+            return _pendingApply || NeedsAutoResolve() || HasEditorPresentationStateChanged();
         }
 
         private bool HasEditorPresentationStateChanged()
@@ -719,6 +868,12 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EvaluateEditorTickRegistration()
         {
+            if (!IsEditorPreviewSafe())
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
             if (Application.isPlaying)
             {
                 UnregisterEditorTick();
@@ -733,6 +888,9 @@ namespace NASAPunk.Visor
 
         private void RegisterEditorTick()
         {
+            if (!IsEditorPreviewSafe())
+                return;
+
             EditorApplication.update -= EditorTick;
             EditorApplication.update += EditorTick;
         }
@@ -740,6 +898,13 @@ namespace NASAPunk.Visor
         private void UnregisterEditorTick()
         {
             EditorApplication.update -= EditorTick;
+        }
+
+        private static bool IsEditorPreviewSafe()
+        {
+            return !EditorApplication.isCompiling &&
+                   !EditorApplication.isUpdating &&
+                   !EditorApplication.isPlayingOrWillChangePlaymode;
         }
 #endif
 
@@ -783,6 +948,33 @@ namespace NASAPunk.Visor
             }
 
             return compositors.Count > 0 ? compositors[0] : null;
+        }
+
+        private static Renderer FindDiegeticProjectionRenderer(Transform root)
+        {
+            if (root == null)
+                return null;
+
+            Transform surface = FindChildByName(root, DiegeticProjectionSurfaceName);
+            return surface != null ? surface.GetComponent<Renderer>() : null;
+        }
+
+        private static Transform FindChildByName(Transform root, string targetName)
+        {
+            if (root == null)
+                return null;
+
+            if (root.name == targetName)
+                return root;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindChildByName(root.GetChild(i), targetName);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Hecton8.Gameplay
         [Header("Analysis")]
         [SerializeField] private float range = 14f;
         [SerializeField] private float analysisCooldown = 0.4f;
-        [SerializeField] private LayerMask analysisMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask analysisMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.45f;
 
         private Transform _cachedTransform;

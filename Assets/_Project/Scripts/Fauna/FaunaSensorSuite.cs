@@ -33,7 +33,7 @@ namespace Hecton8.AI
         public float maxRayLength = 15f;
         public float spreadAngle = 35f;
         public float avoidanceSphereRadius = 0.8f;
-        public LayerMask obstacleMask;
+        public LayerMask obstacleMask = HectonLayerMasks.DefaultRaycastLayerMask;
         public float visionConeAngle = 135f;
 
         [Header("── Detection ──────────────────────────────────")]
@@ -569,7 +569,9 @@ namespace Hecton8.AI
             if (_selfTransform == null || lodDisabled || isSleeping)
                 return 0;
 
-            int obstacleLayerMask = obstacleMask.value;
+            int obstacleLayerMask = obstacleMask.value != 0
+                ? obstacleMask.value
+                : HectonLayerMasks.DefaultRaycastLayerMask;
             if (obstacleLayerMask == 0)
                 return 0;
 

@@ -10,6 +10,7 @@ namespace Hecton8.SaveSystem
     internal static unsafe class SaveBinaryPayloadCodec
     {
         internal const int ProtectedLz4BlockSizeBytes = 16 * 1024;
+        internal const int Lz4CompressionDictionarySizeBytes = 64 * 1024;
         private const ushort BiologicalItemStateMask = 1 << 6;
         private const ushort DefaultQualityMilli = 1000;
         private const float BiologicalReferenceTemperatureCelsius = 4f;
@@ -17,18 +18,18 @@ namespace Hecton8.SaveSystem
         private const int NullCollectionCount = -1;
         private static readonly byte[] s_lz4CompressionDictionary = SaveCompressionDictionary.Bytes;
 
-        internal static int Lz4CompressionDictionaryLength => s_lz4CompressionDictionary.Length;
-        internal static bool HasLz4CompressionDictionary => s_lz4CompressionDictionary != null &&
-                                                           s_lz4CompressionDictionary.Length == 64 * 1024;
+        internal static int Lz4CompressionDictionaryLength => Lz4CompressionDictionarySizeBytes;
+        internal static bool HasLz4CompressionDictionary => true;
 
+        [Unity.Burst.BurstDiscard]
         internal static void CopyLz4CompressionDictionary(byte* destinationPtr, int destinationCapacity)
         {
-            if (destinationPtr == null || destinationCapacity < s_lz4CompressionDictionary.Length)
+            if (destinationPtr == null || destinationCapacity < Lz4CompressionDictionarySizeBytes)
                 return;
 
             fixed (byte* sourcePtr = s_lz4CompressionDictionary)
             {
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, s_lz4CompressionDictionary.Length);
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, Lz4CompressionDictionarySizeBytes);
             }
         }
 
@@ -201,7 +202,7 @@ namespace Hecton8.SaveSystem
                 || !ReadFieldOperationLog(ref reader, out data.fieldOperations)
                 || !ReadBeaconNetwork(ref reader, out data.beaconNetwork)
                 || !ReadExplorationMap(ref reader, data.version, out data.explorationMap)
-                || !ReadPdaLogbook(ref reader, out data.pdaLogbook)
+                || !ReadPdaLogbook(ref reader, data.version, out data.pdaLogbook)
                 || !ReadPdaMarkers(ref reader, out data.pdaMarkers)
                 || !reader.ReadStruct(out data.pdaAdvisories)
                 || !ReadProceduralLore(ref reader, out data.proceduralLore)
@@ -455,10 +456,18 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadInventoryStateArrays(ref BufferReader reader, int version, ref InventoryDTO value)
         {
-            if (version >= 48)
+            if (version >= 53)
             {
                 return reader.ReadStructArray(out value.itemStateFlags)
                     && reader.ReadStructArray(out value.itemGeneticsWords)
+                    && reader.ReadStructArray(out value.qualityMilli)
+                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+            }
+
+            if (version >= 48)
+            {
+                return reader.ReadStructArray(out value.itemStateFlags)
+                    && ReadLegacyUInt32ArrayAsUInt64(ref reader, out value.itemGeneticsWords)
                     && reader.ReadStructArray(out value.qualityMilli)
                     && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
             }
@@ -478,6 +487,28 @@ namespace Hecton8.SaveSystem
             value.cellCount = safeCount;
             for (int i = 0; i < safeCount; i++)
                 value.qualityMilli[i] = DefaultQualityMilli;
+
+            return true;
+        }
+
+        private static bool ReadLegacyUInt32ArrayAsUInt64(ref BufferReader reader, out ulong[] value)
+        {
+            value = null;
+            if (!reader.ReadStructArray(out uint[] legacyValues))
+                return false;
+
+            if (legacyValues == null)
+                return true;
+
+            if (legacyValues.Length == 0)
+            {
+                value = Array.Empty<ulong>();
+                return true;
+            }
+
+            value = new ulong[legacyValues.Length];
+            for (int i = 0; i < legacyValues.Length; i++)
+                value[i] = legacyValues[i];
 
             return true;
         }
@@ -715,17 +746,26 @@ namespace Hecton8.SaveSystem
         private static bool WriteExplorationMap(ref BufferWriter writer, ExplorationMapDTO value)
         {
             return writer.WriteInt(value.exploredChunkCount)
-                && writer.WriteStructArray(value.exploredChunkKeys)
                 && writer.WriteInt(value.chunkSizeMeters)
                 && writer.WriteInt(value.mortonMaskAxisBits)
                 && writer.WriteInt(value.mortonMaskOriginOffset)
-                && writer.WriteInt(value.exploredMortonWordCount)
-                && writer.WriteStructArray(value.exploredMortonMaskWords);
+                && writer.WriteInt(value.exploredMortonByteCount)
+                && writer.WriteStructArraySlice(value.exploredMortonMaskBytes, value.exploredMortonByteCount);
         }
 
         private static bool ReadExplorationMap(ref BufferReader reader, int version, out ExplorationMapDTO value)
         {
             value = default;
+            if (version >= 52)
+            {
+                return reader.ReadInt(out value.exploredChunkCount)
+                    && reader.ReadInt(out value.chunkSizeMeters)
+                    && reader.ReadInt(out value.mortonMaskAxisBits)
+                    && reader.ReadInt(out value.mortonMaskOriginOffset)
+                    && reader.ReadInt(out value.exploredMortonByteCount)
+                    && reader.ReadStructArray(out value.exploredMortonMaskBytes);
+            }
+
             if (!reader.ReadInt(out value.exploredChunkCount)
                 || !reader.ReadStructArray(out value.exploredChunkKeys))
             {
@@ -755,17 +795,24 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.nextSequence)
                 && WritePdaLogbookEntryArray(ref writer, value.entries)
                 && writer.WriteInt(value.seenOriginCount)
-                && WriteStringArray(ref writer, value.seenOriginKeys);
+                && writer.WriteStructArray(value.seenOriginHashes);
         }
 
-        private static bool ReadPdaLogbook(ref BufferReader reader, out PDALogbookDTO value)
+        private static bool ReadPdaLogbook(ref BufferReader reader, int version, out PDALogbookDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.entryCount)
-                && reader.ReadInt(out value.nextSequence)
-                && ReadPdaLogbookEntryArray(ref reader, out value.entries)
-                && reader.ReadInt(out value.seenOriginCount)
-                && ReadStringArray(ref reader, out value.seenOriginKeys);
+            if (!reader.ReadInt(out value.entryCount)
+                || !reader.ReadInt(out value.nextSequence)
+                || !ReadPdaLogbookEntryArray(ref reader, version, out value.entries)
+                || !reader.ReadInt(out value.seenOriginCount))
+            {
+                return false;
+            }
+
+            if (version >= 54)
+                return reader.ReadStructArray(out value.seenOriginHashes);
+
+            return ReadStringArray(ref reader, out value.seenOriginKeys);
         }
 
         private static bool WritePdaMarkers(ref BufferWriter writer, PDAMarkerRegistryDTO value)
@@ -994,21 +1041,40 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.dayIndex)
                 && writer.WriteFloat(value.dayTimeHours)
                 && writer.WriteFloat(value.playTimeSeconds)
-                && writer.WriteString(value.title)
-                && writer.WriteString(value.message)
-                && writer.WriteString(value.originKey);
+                && writer.WriteInt(value.titleHash)
+                && writer.WriteInt(value.messageHash)
+                && writer.WriteInt(value.originHash);
         }
 
-        private static bool ReadPdaLogbookEntry(ref BufferReader reader, out PDALogbookEntryDTO value)
+        private static bool ReadPdaLogbookEntry(ref BufferReader reader, int version, out PDALogbookEntryDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.sequence)
-                && reader.ReadInt(out value.dayIndex)
-                && reader.ReadFloat(out value.dayTimeHours)
-                && reader.ReadFloat(out value.playTimeSeconds)
-                && reader.ReadString(out value.title)
-                && reader.ReadString(out value.message)
-                && reader.ReadString(out value.originKey);
+            if (!reader.ReadInt(out value.sequence)
+                || !reader.ReadInt(out value.dayIndex)
+                || !reader.ReadFloat(out value.dayTimeHours)
+                || !reader.ReadFloat(out value.playTimeSeconds))
+            {
+                return false;
+            }
+
+            if (version >= 54)
+            {
+                return reader.ReadInt(out value.titleHash)
+                    && reader.ReadInt(out value.messageHash)
+                    && reader.ReadInt(out value.originHash);
+            }
+
+            if (!reader.ReadString(out value.title)
+                || !reader.ReadString(out value.message)
+                || !reader.ReadString(out value.originKey))
+            {
+                return false;
+            }
+
+            value.titleHash = LocHash.Compute(value.title);
+            value.messageHash = LocHash.Compute(value.message);
+            value.originHash = LocHash.Compute(value.originKey);
+            return true;
         }
 
         private static bool WritePdaMarkerEntry(ref BufferWriter writer, in PDAMarkerEntryDTO value)
@@ -1148,7 +1214,9 @@ namespace Hecton8.SaveSystem
 
             ok = reader.ReadInt(out value.cultivationSlotCount)
                 && ReadStringArray(ref reader, out value.cultivationSeedItemIds)
-                && reader.ReadStructArray(out value.cultivationGeneticsMasks)
+                && (version >= 53
+                    ? reader.ReadStructArray(out value.cultivationGeneticsMasks)
+                    : ReadLegacyUInt32ArrayAsUInt64(ref reader, out value.cultivationGeneticsMasks))
                 && reader.ReadStructArray(out value.cultivationGrowth01);
             if (!ok)
                 return false;
@@ -1271,9 +1339,29 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WritePdaLogbookEntry);
         }
 
-        private static bool ReadPdaLogbookEntryArray(ref BufferReader reader, out PDALogbookEntryDTO[] values)
+        private static bool ReadPdaLogbookEntryArray(ref BufferReader reader, int version, out PDALogbookEntryDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadPdaLogbookEntry);
+            values = null;
+            if (!reader.ReadInt(out int count))
+                return false;
+
+            if (count == NullCollectionCount)
+                return true;
+
+            if (count < 0)
+            {
+                reader.SetError("Collection length is negative.");
+                return false;
+            }
+
+            values = new PDALogbookEntryDTO[count];
+            for (int i = 0; i < count; i++)
+            {
+                if (!ReadPdaLogbookEntry(ref reader, version, out values[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool WritePdaMarkerEntryArray(ref BufferWriter writer, PDAMarkerEntryDTO[] values)
@@ -1754,6 +1842,38 @@ namespace Hecton8.SaveSystem
                     return true;
 
                 long byteCountLong = (long)values.Length * UnsafeUtility.SizeOf<T>();
+                if (byteCountLong > int.MaxValue)
+                {
+                    Error = "Struct array byte count exceeds the supported range.";
+                    return false;
+                }
+
+                int byteCount = (int)byteCountLong;
+                if (!TryReserve(byteCount))
+                    return false;
+
+                fixed (T* sourcePtr = values)
+                {
+                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
+                }
+
+                _cursor += byteCount;
+                return true;
+            }
+
+            public bool WriteStructArraySlice<T>(T[] values, int count) where T : unmanaged
+            {
+                if (values == null)
+                    return WriteInt(NullCollectionCount);
+
+                int safeCount = Math.Clamp(count, 0, values.Length);
+                if (!WriteInt(safeCount))
+                    return false;
+
+                if (safeCount == 0)
+                    return true;
+
+                long byteCountLong = (long)safeCount * UnsafeUtility.SizeOf<T>();
                 if (byteCountLong > int.MaxValue)
                 {
                     Error = "Struct array byte count exceeds the supported range.";

@@ -88,7 +88,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float damagePerSecond = 25f;
 
         [Tooltip("LayerMask for raycast targets.")]
-        [SerializeField] private LayerMask cuttableLayer = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask cuttableLayer = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Heat Management ───────────────────────────")]
         [Tooltip("Seconds of continuous firing to reach overheat (heat 0→1).")]
@@ -319,11 +319,11 @@ namespace Hecton8.Gameplay
         private static void EnsureLayerCache()
         {
             if (_WaterLayer == int.MinValue)
-                _WaterLayer = LayerMask.NameToLayer("Water");
+                _WaterLayer = Hecton8.Core.HectonLayerMasks.Water;
             if (_TransparentFxLayer == int.MinValue)
-                _TransparentFxLayer = LayerMask.NameToLayer("TransparentFX");
+                _TransparentFxLayer = Hecton8.Core.HectonLayerMasks.TransparentFX;
             if (_BaseModuleLayer == int.MinValue)
-                _BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
+                _BaseModuleLayer = Hecton8.Core.HectonLayerMasks.BaseModule;
         }
 
         public override void OnSpawn()

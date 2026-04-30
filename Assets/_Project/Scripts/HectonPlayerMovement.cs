@@ -48,11 +48,13 @@ namespace Hecton8.Gameplay
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
+        private const float CriticalEncumbranceRatio = 1.5f;
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
         private float _runtimeEmergencyMovementMultiplier = 1f;
         private float _runtimeInventoryLoadMovementMultiplier = 1f;
         private float _runtimeInventoryLoad01;
+        private float _runtimeInventoryLoadRatio;
         private const float TwoPi = 2f * math.PI;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const int CrestBodySampleCount = 5;
@@ -671,7 +673,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float groundCheckRadius = 0.3f;
         [SerializeField] private float groundCheckDistance = 0.4f;
         [SerializeField, Range(5f, 89f)] private float maxGroundAngle = 60f;
-        [SerializeField] private LayerMask groundLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask groundLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField, Range(1f, 2f)] private float slopeStabilityFactor = 1.1f;
         [SerializeField, Range(0f, 20f)] private float groundSnapForce = 8f;
         [SerializeField, Range(0f, 0.3f)] private float jumpBufferTime = 0.12f;
@@ -1181,7 +1183,10 @@ namespace Hecton8.Gameplay
         private RaycastHit _groundHit;
         private Vector3 _groundCheckOrigin;
         private Vector3 _cachedGravity;
+        private Vector3 _localGravityOverride;
         private float _cachedGravityMagnitude;
+        private float _localGravityOverrideTimer;
+        private bool _localGravityOverrideActive;
         private Vector3 _smoothedGroundNormal;
         private float _minGroundNormalY;
         private readonly RaycastHit[] _groundProbeHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - ground-contact query buffer dedicated to grounding resolution - owner: HectonPlayerMovement
@@ -1315,6 +1320,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
         public float InventoryLoad01 => _runtimeInventoryLoad01;
+
+        /// <summary>True when carried inventory mass exceeds the emergency locomotion cutoff.</summary>
+        public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
 
         /// <summary>Resolved movement multiplier after inventory mass encumbrance.</summary>
         public float InventoryLoadMovementMultiplier => ResolveRuntimeInventoryLoadMovementMultiplier();
@@ -1739,6 +1747,34 @@ namespace Hecton8.Gameplay
             _queuedExternalKinematicVelocityChange += safeVelocityChange;
         }
 
+        internal void RequestLocalGravityOverride(Vector3 gravityVector, float holdSeconds)
+        {
+            Vector3 safeGravity = HectonPlayerMotor.SafeVelocity(gravityVector);
+            if (safeGravity.sqrMagnitude <= 0.000001f || holdSeconds <= 0f)
+                return;
+
+            _localGravityOverride = safeGravity;
+            _localGravityOverrideTimer = math.max(_localGravityOverrideTimer, holdSeconds);
+            _localGravityOverrideActive = true;
+        }
+
+        internal void TriggerHypoxiaVisorDistortion(float intensity, float holdDuration, float recoverySpeed)
+        {
+            float clampedIntensity = math.saturate(intensity);
+            if (clampedIntensity <= 0f)
+                return;
+
+            VisorHUDController.CopyActiveControllersTo(s_fatalPressureGlitchControllers);
+            for (int i = 0; i < s_fatalPressureGlitchControllers.Count; i++)
+            {
+                VisorHUDController controller = s_fatalPressureGlitchControllers[i];
+                if (controller != null)
+                    controller.TriggerEnvironmentalDistortion(clampedIntensity, math.max(0.01f, holdDuration), math.max(0.01f, recoverySpeed));
+            }
+
+            s_fatalPressureGlitchControllers.Clear();
+        }
+
         private void ApplyMotorAccelerationFromForce(Vector3 force)
         {
             if (_rb == null)
@@ -1796,6 +1832,17 @@ namespace Hecton8.Gameplay
             Vector3 currentVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
             Vector3 nextVelocity = HectonPlayerMotor.SafeVelocity(currentVelocity + totalVelocityChange, currentVelocity);
             ApplyMotorLinearVelocity(nextVelocity);
+        }
+
+        private void QueueHydrodynamicWakeTurbulence(float fixedDeltaTime)
+        {
+            if (_rb == null || fixedDeltaTime <= 0f || IsInDryInterior())
+                return;
+
+            if (!VehicleMotor.TrySampleAnyHydrodynamicWake(_rb.worldCenterOfMass, out Vector3 wakeAcceleration))
+                return;
+
+            QueueSubsystemExternalAcceleration(wakeAcceleration);
         }
 
         private void MoveMotorPosition(Vector3 position)
@@ -2735,6 +2782,7 @@ namespace Hecton8.Gameplay
 
             _inventoryLoadSource = null;
             _playerMotor?.BindEncumbranceSource(null);
+            _runtimeInventoryLoadRatio = 0f;
             _runtimeInventoryLoad01 = 0f;
             SetRuntimeInventoryLoadMovementMultiplier(1f);
         }
@@ -2754,7 +2802,8 @@ namespace Hecton8.Gameplay
         {
             float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
             float carryCapacityKg = ResolveInventoryCarryCapacityKg();
-            _runtimeInventoryLoad01 = ResolveInventoryLoad01(totalMassKg, carryCapacityKg);
+            _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
+            _runtimeInventoryLoad01 = math.saturate(_runtimeInventoryLoadRatio);
             SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplierFromLoad(_runtimeInventoryLoad01));
             InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
                 _inventoryLoadSource,
@@ -2787,7 +2836,12 @@ namespace Hecton8.Gameplay
 
         private static float ResolveInventoryLoad01(float totalMassKg, float carryCapacityKg)
         {
-            return math.saturate(totalMassKg / math.max(0.01f, carryCapacityKg));
+            return math.saturate(ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg));
+        }
+
+        private static float ResolveInventoryLoadRatio(float totalMassKg, float carryCapacityKg)
+        {
+            return math.max(0f, totalMassKg) / math.max(0.01f, carryCapacityKg);
         }
 
         private static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
@@ -3143,11 +3197,27 @@ namespace Hecton8.Gameplay
                 bodyVelocity);
             ApplyMotorLinearVelocity(targetVelocity);
             if (_activeTransportPlatform.InheritPlatformRotation)
-                MoveMotorRotation(_transportPlatformDeltaRotation * _rb.rotation);
+                MoveMotorRotation(ResolveInheritedTransportWorldRotation(_rb.rotation));
 
             _lastTransportPlatformPosition = _currentTransportPlatformPosition;
             _lastTransportPlatformRotation = _currentTransportPlatformRotation;
             _transportPlatformDeltaRotation = Quaternion.identity;
+        }
+
+        private Quaternion ResolveInheritedTransportWorldRotation(Quaternion currentWorldRotation)
+        {
+            if (!IsFiniteQuaternion(currentWorldRotation) ||
+                !IsFiniteQuaternion(_lastTransportPlatformRotation) ||
+                !IsFiniteQuaternion(_currentTransportPlatformRotation))
+            {
+                return _transportPlatformDeltaRotation * currentWorldRotation;
+            }
+
+            Quaternion localRotationBeforeDelta = Quaternion.Inverse(_lastTransportPlatformRotation) * currentWorldRotation;
+            Quaternion inheritedWorldRotation = _currentTransportPlatformRotation * localRotationBeforeDelta;
+            return IsFiniteQuaternion(inheritedWorldRotation)
+                ? inheritedWorldRotation
+                : _transportPlatformDeltaRotation * currentWorldRotation;
         }
 
         private static Vector3 ResolveSyncAttachedVelocity(Vector3 platformPointVelocity, Vector3 playerRelativeVelocity, Vector3 fallbackVelocity)
@@ -4355,6 +4425,12 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
 
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            return math.all(math.isfinite(new float4(value.x, value.y, value.z, value.w))) &&
+                   (value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w) > 0.000001f;
+        }
+
         private void TryStartWipeoutFromCollision(
             in QueuedCollisionEvent collisionEvent,
             IPlayerTransportLifecycleOwner transportLifecycleOwner)
@@ -4964,7 +5040,7 @@ namespace Hecton8.Gameplay
 
         private Vector3 ResolveFeedbackVelocity(Vector3 actualVelocity)
         {
-            Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
+            Vector3 safeActualVelocity = ResolveHydrodynamicFeedbackVelocity(actualVelocity);
             MonoBehaviour transportOwner = _activeTransportPlatformBehaviour;
             if (_activeTransportPlatform == null || transportOwner == null)
             {
@@ -5025,6 +5101,11 @@ namespace Hecton8.Gameplay
 
         private Vector3 ResolveHydrodynamicReferenceVelocity(Vector3 actualVelocity)
         {
+            return HectonPlayerMotor.SafeVelocity(actualVelocity);
+        }
+
+        private Vector3 ResolveHydrodynamicFeedbackVelocity(Vector3 actualVelocity)
+        {
             Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
             if (_playerMotor == null)
                 return safeActualVelocity;
@@ -5038,6 +5119,14 @@ namespace Hecton8.Gameplay
         private void ResetHydrodynamicGhostVelocity()
         {
             _playerMotor?.ResetHydrodynamicAddedMassState();
+        }
+
+        internal void ResetKinematicTransientStateForTeleport()
+        {
+            ResetTransportFeedbackGhostVelocity();
+            ResetHydrodynamicGhostVelocity();
+            _queuedExternalKinematicAcceleration = Vector3.zero;
+            _queuedExternalKinematicVelocityChange = Vector3.zero;
         }
 
         private void BuildJuiceInput(float deltaTime, SuitData suit)
@@ -5194,6 +5283,32 @@ namespace Hecton8.Gameplay
             return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
         }
 
+        private void RefreshActiveGravity(float fixedDeltaTime)
+        {
+            if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
+            {
+                _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
+                _cachedGravity = _localGravityOverride;
+                if (_localGravityOverrideTimer <= 0f)
+                    _localGravityOverrideActive = false;
+            }
+            else
+            {
+                _cachedGravity = UnityEngine.Physics.gravity;
+                _localGravityOverrideActive = false;
+            }
+
+            _cachedGravityMagnitude = _cachedGravity.magnitude;
+            if (_cachedGravityMagnitude <= 0.0001f)
+            {
+                _cachedGravity = UnityEngine.Physics.gravity;
+                _cachedGravityMagnitude = _cachedGravity.magnitude;
+            }
+
+            if (_localGravityOverrideActive && _cachedGravityMagnitude > 0.0001f)
+                _smoothedGroundNormal = -_cachedGravity / _cachedGravityMagnitude;
+        }
+
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  FixedTick Ã¢â‚¬â€ PHYSICS
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -5216,6 +5331,7 @@ namespace Hecton8.Gameplay
                 }
 
                 _currentFixedDeltaTime = fixedDeltaTime;
+                RefreshActiveGravity(fixedDeltaTime);
                 _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
                 _useFixedFrameSpatialCache = true;
                 PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
@@ -5494,6 +5610,7 @@ namespace Hecton8.Gameplay
             _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
             SyncStateMachineContext(exosuitActive, physicsImmersion, groundedOnDryLand, groundedOnShore);
             _environmentHandler?.ExecuteStep(fixedDeltaTime);
+            QueueHydrodynamicWakeTurbulence(fixedDeltaTime);
             ApplyQueuedExternalKinematicForces(fixedDeltaTime);
             ApplyTransportPlatformCarrierMotion(fixedDeltaTime);
             ApplyHighSpeedWipeoutSweep(fixedDeltaTime);
@@ -7572,6 +7689,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (IsCriticallyEncumbered)
+            {
+                ConsumeJumpRequest();
+                CoolExosuitJumpJets(fixedDeltaTime);
+                return;
+            }
+
             if (!HasJumpHeadClearance())
             {
                 ConsumeJumpRequest();
@@ -8153,6 +8277,9 @@ namespace Hecton8.Gameplay
             }
 
             float verticalInput = _inputVertical;
+            if (IsCriticallyEncumbered && verticalInput > 0f)
+                verticalInput = 0f;
+
             if (isSurfaceSwim && verticalInput > 0f)
             {
                 float ascendGate = math.saturate(_currentDepth / math.max(surfaceAscendReleaseDepth, 0.01f));

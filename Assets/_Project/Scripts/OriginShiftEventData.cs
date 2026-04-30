@@ -15,13 +15,24 @@ namespace Hecton8.Core
         /// <param name="newTotalOffset">Absolute-universe offset after the shift.</param>
         /// <param name="sequence">Monotonic shift sequence.</param>
         /// <param name="frame">Frame when the shift committed.</param>
-        public OriginShiftEventData(Vector3 shiftOffset, Vector3 previousTotalOffset, Vector3 newTotalOffset, uint sequence, int frame)
+        /// <param name="fixedInterpolationAlpha">Fractional fixed-step interpolation alpha captured before the shift.</param>
+        /// <param name="isSafeTeleport">True when the shift was part of an instantaneous travel protocol.</param>
+        public OriginShiftEventData(
+            Vector3 shiftOffset,
+            Vector3 previousTotalOffset,
+            Vector3 newTotalOffset,
+            uint sequence,
+            int frame,
+            float fixedInterpolationAlpha = 0f,
+            bool isSafeTeleport = false)
         {
             ShiftOffset = shiftOffset;
             PreviousTotalOffset = previousTotalOffset;
             NewTotalOffset = newTotalOffset;
             Sequence = sequence;
             Frame = frame;
+            FixedInterpolationAlpha = Mathf.Clamp01(fixedInterpolationAlpha);
+            IsSafeTeleport = isSafeTeleport;
         }
 
         /// <summary>Offset subtracted from all loaded-scene root transforms.</summary>
@@ -38,6 +49,12 @@ namespace Hecton8.Core
 
         /// <summary>Frame when the shift committed.</summary>
         public int Frame { get; }
+
+        /// <summary>Fractional fixed-step interpolation alpha captured before the shift committed.</summary>
+        public float FixedInterpolationAlpha { get; }
+
+        /// <summary>True when this payload was emitted by the safe teleport protocol.</summary>
+        public bool IsSafeTeleport { get; }
 
         /// <summary>
         /// Converts a runtime-space position captured under <paramref name="capturedTotalOffset"/>

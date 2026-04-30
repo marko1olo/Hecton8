@@ -21,7 +21,7 @@ namespace Hecton8.Building
         [SerializeField] private Vector3 checkCenterOffset = Vector3.zero;
 
         [Tooltip("Layers that block module placement. Exclude the ghost layer.")]
-        [SerializeField] private LayerMask blockingMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask blockingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Small shrink factor to allow flush wall-to-wall socket placement.")]
         [SerializeField] private float checkShrink = 0.02f;

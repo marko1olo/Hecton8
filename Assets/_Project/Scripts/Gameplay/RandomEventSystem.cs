@@ -87,7 +87,16 @@ namespace Hecton8.Gameplay
             => OnEventEnded?.Invoke(type);
 
         public static void RaiseSeismicShockwave(in SeismicShockwaveEvent payload)
-            => OnSeismicShockwave?.Invoke(payload);
+        {
+            PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
+                payload.EpicenterWS,
+                Mathf.Max(payload.ImpulseRadiusMeters, payload.ImpulseRadiusMeters * 4f),
+                Mathf.Clamp01(payload.ImpulseMagnitude / 48f),
+                8f,
+                FieldTargetRole.HazardProbe,
+                0));
+            OnSeismicShockwave?.Invoke(payload);
+        }
     }
 
     [DisallowMultipleComponent]
@@ -487,7 +496,7 @@ namespace Hecton8.Gameplay
                 epicenter,
                 Mathf.Max(1f, radius),
                 _seismicOverlapBuffer,
-                ~0,
+                HectonLayerMasks.DefaultRaycastLayerMask,
                 QueryTriggerInteraction.Ignore);
             if (hitCount <= 0)
                 return;

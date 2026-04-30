@@ -1,6 +1,6 @@
 # System Interconnect Matrix
 
-Date: `2026-04-29`
+Date: `2026-04-30`
 Status: `PENDING VERIFICATION`
 
 Mandates followed:
@@ -10,6 +10,8 @@ Mandates followed:
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 - `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
 - `STRM_Persistent_Object_Registry.txt`
+- `AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt`
+- `UI_Data_Streaming_ZeroGC_Optimization.txt`
 
 ## Scope Correction
 
@@ -24,29 +26,48 @@ The request wording was inaccurate.
 Source: `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 
 1. `NarrativeEvents.FlushPending()`
-2. `ScanEvents.FlushPending()`
-3. `SaveEvents.FlushPending()`
-4. `QuestEvents.FlushPending()`
-5. `AudioLogEvents.FlushPending()`
-6. `Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending()`
-7. `Hecton8.UI.NotificationEvents.FlushPending()`
-8. `Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents()`
-9. `ObjectPoolDiagnostics.FlushPending()`
-10. `Hecton8.AtlasSignal.Atlas6Events.FlushPending()`
+2. `Hecton8.Interaction.InteractionEvents.FlushPending()`
+3. `Hecton8.Crafting.CraftingEvents.FlushPending()`
+4. `ScanEvents.FlushPending()`
+5. `SaveEvents.FlushPending()`
+6. `QuestEvents.FlushPending()`
+7. `AudioLogEvents.FlushPending()`
+8. `Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending()`
+9. `Hecton8.UI.NotificationEvents.FlushPending()`
+10. `Hecton8.UI.PDAEvents.FlushPending()`
+11. `Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents()`
+12. `ObjectPoolDiagnostics.FlushPending()`
+13. `Hecton8.AtlasSignal.Atlas6Events.FlushPending()`
+14. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
+15. `WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount)`
 
 ## Queue-Backed Lanes
 
 | Lane Owner | Backing Queue | Listener Contract | Raise Surface | Flush Owner | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `NarrativeEvents` | `NativeQueue<NarrativeEventPayload>` | `INarrativeEventListener` | `RaiseNarrativePOIRegistered`, `RaiseNarrativePOIDisposed`, `RaiseDiscoveryMade`, `RaiseDepthTierReached` | `SystemDispatcher.LateUpdate()` | Also has immediate `INarrativePointOfInterestListener` buckets outside the queue lane. |
+| `InteractionEvents` | `NativeQueue<InteractionEventPayload>` | `IInteractionEventListener` | `RaiseItemCollected`, `RaiseInteractionStarted`, `RaiseHoverChanged` | `SystemDispatcher.LateUpdate()` | First-party interaction lane. |
+| `CraftingEvents` | `NativeQueue<CraftingEventPayload>` | `ICraftingEventListener` | `RaiseCraftStarted`, `RaiseCraftCompleted`, `RaiseCraftCancelled` | `SystemDispatcher.LateUpdate()` | Crafting lane. |
 | `ScanEvents` | `NativeQueue<ScanEventPayload>` | `IScanEventListener` | `RaiseScanTriggered`, `RaiseNodeFound`, `RaiseEntryDiscovered` | `SystemDispatcher.LateUpdate()` | Scanner lane for node discovery and radius scan traffic. |
 | `SaveEvents` | `NativeQueue<SaveEventPayload>` | `ISaveEventListener` | `RaiseSaveStarted`, `RaiseSaveCompleted`, `RaiseSaveFailed`, `RaiseLoadStarted`, `RaiseLoadCompleted`, `RaiseLoadFailed`, `RaiseEmergencyBackupRestoreRequested` | `SystemDispatcher.LateUpdate()` | Uses `FixedString` payload fields for slot and failure text. |
 | `QuestEvents` | `NativeQueue<QuestEventPayload>` | `IQuestEventListener` | `RaiseActivated`, `RaiseCompleted`, `RaiseFailed`, `RaiseRevertRequested` | `SystemDispatcher.LateUpdate()` | `FlushPending()` also forces `QuestGraphEvaluator.FlushPendingSignals()`. |
 | `AudioLogEvents` | `NativeQueue<AudioLogEventPayload>` | `IAudioLogEventListener` | `RaiseLogDiscovered`, `RaisePlaybackStarted`, `RaisePlaybackStopped`, `RaisePlaybackCompleted` | `SystemDispatcher.LateUpdate()` | Audio-log lane only. |
 | `AtlasSignalEvents` | `NativeQueue<AtlasSignalEventPayload>` | `IAtlasSignalEventListener` | `RaisePulse`, `RaiseDetected`, `RaiseStrengthChanged`, `RaiseDecoded` | `SystemDispatcher.LateUpdate()` | Holds decoded Atlas signal message IDs through a local lookup table. |
 | `NotificationEvents` | `NativeQueue<NotificationEventPayload>` | `INotificationEventListener` | `PushInfo`, `PushWarning`, `PushCritical` | `SystemDispatcher.LateUpdate()` | UI notification lane. |
+| `PDAEvents` | `NativeQueue<PDAEventPayload>` | `IPDAEventListener` | `RaiseOpened`, `RaiseClosed`, `RaiseTabChanged`, `RaiseMapChunkExplored`, `RaiseMarkerChanged`, `RaiseLogbookChanged` | `SystemDispatcher.LateUpdate()` | PDA open/tab/map/marker/logbook lane. |
 | `SceneBootstrap` | `NativeQueue<SceneBootstrapEventPayload>` | `ISceneBootstrapEventListener` | private `RaiseGameReadyEvent`, private `RaiseBootstrapFailedEvent` | `SystemDispatcher.LateUpdate()` via `FlushPendingEvents()` | Queue producer is internal to bootstrap orchestration. |
 | `Atlas6Events` | `NativeQueue<Atlas6EventPayload>` | `IAtlas6EventListener` | `RaisePlayerStatusChanged`, `RaiseDirectiveConflict`, `RaiseBarterAccepted`, `RaiseScarcityDirective` | `SystemDispatcher.LateUpdate()` | Declared inside `Atlas6DirectiveSystem.cs`; separate lane from `AtlasSignalEvents`. |
+
+## Spatial Memory Lane
+
+`WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount)` is not an event bus lane. It is an end-of-frame spatial maintenance lane:
+
+- prunes expired transient spatial records
+- rebuilds the 8x8x8 acoustic density map on cadence
+- compacts oversized native hash buckets after the queue buses flush
+- keeps stale handle validation in `HectonSpatialHash.IsCurrentHandle(...)`
+
+Transient spatial records live in `NativeParallelMultiHashMap<uint, TransientEventRecord>` and are filtered by timestamp before consumers see them.
 
 ## Managed Bus Kept Separate
 

@@ -146,7 +146,7 @@ namespace Hecton8.Construction
             if (s_socketLayer != int.MinValue)
                 return;
 
-            s_socketLayer = LayerMask.NameToLayer("Sockets");
+            s_socketLayer = Hecton8.Core.HectonLayerMasks.Sockets;
         }
 
         private static void EnsureSharedMaterials()

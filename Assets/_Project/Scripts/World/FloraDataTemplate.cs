@@ -123,8 +123,8 @@ namespace Hecton8.World
         private ItemData cultivationSeedItem;
 
         [SerializeField]
-        [Tooltip("Default authored genetics mask injected when this flora is seeded without a custom hybrid payload.")]
-        private GeneticTraitProfile.GeneticTraitMask geneticsMask = GeneticTraitProfile.GeneticTraitMask.None;
+        [Tooltip("Default authored 64-bit genetics mask injected when this flora is seeded without a custom hybrid payload. Stored as long because Unity does not serialize ulong-backed enums.")]
+        private long geneticsMask;
 
         [SerializeField]
         [Tooltip("Capability mask required to harvest this flora family. CUT/PlasmaCut is live; other masks stage future tool integrations.")]
@@ -287,7 +287,14 @@ namespace Hecton8.World
             : 0;
 
         /// <summary>Default authored genetics mask used by cultivation and hybrid fallback resolution.</summary>
-        public uint GeneticsMask => (uint)geneticsMask;
+        public ulong GeneticsMask
+        {
+            get
+            {
+                ulong authoredMask = unchecked((ulong)geneticsMask);
+                return authoredMask != 0UL ? authoredMask : ResolveLegacyDefaultGeneticsMask();
+            }
+        }
 
         /// <summary>Capability mask required to harvest this flora family.</summary>
         public uint ToolVulnerabilityMask => (uint)vulnerabilityMask;
@@ -438,6 +445,24 @@ namespace Hecton8.World
                 BendAmplitude = BendAmplitude,
                 Reserved0 = 0u
             };
+        }
+
+        private ulong ResolveLegacyDefaultGeneticsMask()
+        {
+            ulong mask = 0UL;
+            if (bioluminescenceColor.a > 0.001f)
+                mask |= (ulong)GeneticTraitProfile.GeneticTraitMask.Bioluminescent;
+
+            if (category == FloraCategory.HarvestableKelp || category == FloraCategory.GiantSargassum)
+                mask |= (ulong)GeneticTraitProfile.GeneticTraitMask.OxygenProducing;
+
+            if (matureSporeAcousticEmitter)
+                mask |= (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
+
+            if (growthTimeSeconds <= 300f)
+                mask |= (ulong)GeneticTraitProfile.GeneticTraitMask.FastGrowing;
+
+            return mask;
         }
 
 #if UNITY_EDITOR

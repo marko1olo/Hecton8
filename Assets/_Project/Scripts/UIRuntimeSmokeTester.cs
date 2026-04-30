@@ -4,7 +4,8 @@
 // Verifies shell open/close, tab switching and construction tab -> builder flow.
 // ============================================================================
 
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton8.Gameplay;
 using Hecton8.UI;
 using UnityEngine;
@@ -49,7 +50,7 @@ namespace Hecton8.Dev
                 return;
 
             LogVerbose("START scheduling UI smoke pass.");
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
 #if UNITY_EDITOR
@@ -70,77 +71,78 @@ namespace Hecton8.Dev
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
-        private IEnumerator RunSmokePass()
+        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
-                yield break;
+                return;
 
             AutoResolve();
             LogVerbose($"RUN begin refs={DescribeRefs()}");
             if (playerPDA == null || pauseMenu == null)
             {
                 Debug.LogWarning("[UISmoke] Missing PlayerPDA or PauseMenuController.");
-                yield break;
+                return;
             }
 
             _isRunning = true;
-
-            if (startupDelay > 0f)
-                yield return new WaitForSecondsRealtime(startupDelay);
-
-            Debug.Log("[UISmoke] Starting UI runtime smoke pass.");
-
             bool pdaOk = false;
             bool pauseOk = false;
             bool builderOk = false;
+            bool completed = false;
 
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (startupDelay > 0f)
+                    await DelayRealtimeAsync(startupDelay, cancellationToken);
+
+                Debug.Log("[UISmoke] Starting UI runtime smoke pass.");
+
                 LogVerbose("STEP open PDA inventory");
                 pdaOk = false;
                 playerPDA.Open(0);
-                yield return WaitUntil(() => PlayerPDA.IsOpen && playerPDA.ActiveTab == 0, actionTimeout, "PDA open Inventory");
+                await WaitUntilAsync(() => PlayerPDA.IsOpen && playerPDA.ActiveTab == 0, actionTimeout, "PDA open Inventory", cancellationToken);
                 pdaOk = PlayerPDA.IsOpen && playerPDA.ActiveTab == 0;
 
                 if (pdaOk)
                 {
                     LogVerbose("STEP set PDA loadout");
                     playerPDA.SetActiveTab(1);
-                    yield return WaitUntil(() => playerPDA.ActiveTab == 1, actionTimeout, "PDA tab Loadout");
+                    await WaitUntilAsync(() => playerPDA.ActiveTab == 1, actionTimeout, "PDA tab Loadout", cancellationToken);
                     pdaOk &= playerPDA.ActiveTab == 1;
 
                     LogVerbose("STEP set PDA construction");
                     playerPDA.SetActiveTab(2);
-                    yield return WaitUntil(() => playerPDA.ActiveTab == 2, actionTimeout, "PDA tab Construction");
+                    await WaitUntilAsync(() => playerPDA.ActiveTab == 2, actionTimeout, "PDA tab Construction", cancellationToken);
                     pdaOk &= playerPDA.ActiveTab == 2;
 
                     LogVerbose("STEP set PDA barter");
                     playerPDA.SetActiveTab(3);
-                    yield return WaitUntil(() => playerPDA.ActiveTab == 3, actionTimeout, "PDA tab Barter");
+                    await WaitUntilAsync(() => playerPDA.ActiveTab == 3, actionTimeout, "PDA tab Barter", cancellationToken);
                     pdaOk &= playerPDA.ActiveTab == 3;
 
                     LogVerbose("STEP set PDA datalog");
                     playerPDA.SetActiveTab(4);
-                    yield return WaitUntil(() => playerPDA.ActiveTab == 4, actionTimeout, "PDA tab DataLog");
+                    await WaitUntilAsync(() => playerPDA.ActiveTab == 4, actionTimeout, "PDA tab DataLog", cancellationToken);
                     pdaOk &= playerPDA.ActiveTab == 4;
 
                     LogVerbose("STEP close PDA");
                     playerPDA.Close();
-                    yield return WaitUntil(() => !PlayerPDA.IsOpen, actionTimeout, "PDA close");
+                    await WaitUntilAsync(() => !PlayerPDA.IsOpen, actionTimeout, "PDA close", cancellationToken);
                     pdaOk &= !PlayerPDA.IsOpen;
                 }
 
                 LogVerbose("STEP open pause");
                 pauseMenu.Open();
-                yield return WaitUntil(() => pauseMenu.IsOpen, actionTimeout, "Pause open");
+                await WaitUntilAsync(() => pauseMenu.IsOpen, actionTimeout, "Pause open", cancellationToken);
                 pauseOk = pauseMenu.IsOpen;
 
                 LogVerbose("STEP close pause");
                 pauseMenu.Close();
-                yield return WaitUntil(() => !pauseMenu.IsOpen, actionTimeout, "Pause close");
+                await WaitUntilAsync(() => !pauseMenu.IsOpen, actionTimeout, "Pause close", cancellationToken);
                 pauseOk &= !pauseMenu.IsOpen;
 
                 builderOk = true;
@@ -148,18 +150,20 @@ namespace Hecton8.Dev
                 {
                     LogVerbose("STEP holster tools before builder handoff");
                     toolManager.Holster();
-                    yield return WaitUntil(
+                    await WaitUntilAsync(
                         () => !toolManager.IsSwapping && toolManager.CurrentTool == null && toolManager.CurrentSlotIndex < 0,
                         actionTimeout,
-                        "Tool holster before builder handoff");
+                        "Tool holster before builder handoff",
+                        cancellationToken);
 
                     LogVerbose("STEP open PDA construction");
                     playerPDA.Open(2);
-                    yield return WaitUntil(() => PlayerPDA.IsOpen && playerPDA.ActiveTab == 2, actionTimeout, "Open construction tab");
+                    await WaitUntilAsync(() => PlayerPDA.IsOpen && playerPDA.ActiveTab == 2, actionTimeout, "Open construction tab", cancellationToken);
 
                     LogVerbose("STEP invoke builder action");
                     constructionTab.InvokeBuilderAction();
-                    yield return new WaitForSecondsRealtime(settleDelay);
+                    if (settleDelay > 0f)
+                        await DelayRealtimeAsync(settleDelay, cancellationToken);
 
                     int builderSlot = toolManager.FindAssignedSlotForToolType<BuilderTool>();
                     builderOk &= builderSlot >= 0;
@@ -167,16 +171,18 @@ namespace Hecton8.Dev
                     {
                         LogVerbose("STEP activate builder via construction tab");
                         constructionTab.InvokeBuilderAction();
-                        yield return WaitUntil(
+                        await WaitUntilAsync(
                             () => toolManager.CurrentTool is BuilderTool && toolManager.CurrentSlotIndex == builderSlot,
                             actionTimeout,
-                            "Activate builder from construction tab");
+                            "Activate builder from construction tab",
+                            cancellationToken);
 
                         builderOk &= toolManager.CurrentTool is BuilderTool && toolManager.CurrentSlotIndex == builderSlot;
 
                         LogVerbose("STEP invoke field action");
                         constructionTab.InvokeFieldAction();
-                        yield return new WaitForSecondsRealtime(settleDelay);
+                        if (settleDelay > 0f)
+                            await DelayRealtimeAsync(settleDelay, cancellationToken);
                         builderOk &= !PlayerPDA.IsOpen;
                     }
                     else
@@ -193,6 +199,19 @@ namespace Hecton8.Dev
                     builderOk = false;
                     Debug.LogWarning("[UISmoke] Skipping builder handoff smoke: missing PDAConstructionTab or PlayerToolManager.");
                 }
+
+                completed = true;
+            }
+            catch (OperationCanceledException)
+            {
+                LogVerbose("UI smoke pass cancelled.");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[UISmoke] EXCEPTION smoke pass: {exception.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
             }
             finally
             {
@@ -204,15 +223,17 @@ namespace Hecton8.Dev
                 _isRunning = false;
             }
 
-            Debug.Log($"[UISmoke] COMPLETE pda={pdaOk} pause={pauseOk} builder={builderOk}");
+            if (completed)
+                Debug.Log($"[UISmoke] COMPLETE pda={pdaOk} pause={pauseOk} builder={builderOk}");
         }
 
-        private IEnumerator WaitUntil(System.Func<bool> predicate, float timeout, string label)
+        private async Awaitable<bool> WaitUntilAsync(Func<bool> predicate, float timeout, string label, CancellationToken cancellationToken)
         {
             float startedAt = Time.realtimeSinceStartup;
             float deadline = startedAt + Mathf.Max(0.01f, timeout);
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 bool success = false;
                 try
                 {
@@ -221,19 +242,30 @@ namespace Hecton8.Dev
                 catch (System.Exception ex)
                 {
                     Debug.LogError($"[UISmoke] EXCEPTION {label}: {ex}");
-                    yield break;
+                    return false;
                 }
 
                 if (success)
                 {
                     LogVerbose($"PASS {label}");
-                    yield break;
+                    return true;
                 }
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken);
             }
 
             Debug.LogWarning($"[UISmoke] TIMEOUT {label} after {timeout:0.00}s");
+            return false;
+        }
+
+        private static async Awaitable DelayRealtimeAsync(float duration, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, duration);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken);
+            }
         }
 
         private void AutoResolve()

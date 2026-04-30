@@ -56,12 +56,15 @@ namespace Hecton8.Caves
         private const int MaxColliderChunkCount = 8;
         private const int MaxPlasmaCutSteps = 24;
         private const int MaxQueuedRebuildPassesPerKick = 4;
+        private const int MaxMagmaVeinBurnSamplesPerSegment = 16;
         private const float ResourceCraterClusterRadiusMeters = 20f;
         private const float CollapseBoxHorizontalPaddingMeters = 4f;
         private const float CollapseImpulseVerticalBias = 0.45f;
         private const float MinPlasmaCutPower = 0.02f;
         private const float PlasmaCutAttenuationPerMeter = 1f;
         private const byte DefaultDeltaMaterialId = 0;
+        private const byte SedimentDeltaMaterialId = 1;
+        private const byte MagmaDeltaMaterialId = 2;
 
         private HectonVoxelEngine _engine;
         private VoxelDeltaProcessor _deltaProcessor;
@@ -891,6 +894,19 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Applies a persistent additive organic root mound through the voxel delta owner.
+        /// </summary>
+        internal void ApplyOrganicRootMound(Vector3 pos, float radius, float strength)
+        {
+            if (!_runtimeDataReady || radius <= 0f || strength <= 0f || _deltaProcessor == null)
+                return;
+
+            SetBakeState(VoxelBakeState.Pending);
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
+            _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, radius, strength, DefaultDeltaMaterialId);
+        }
+
+        /// <summary>
         /// Executes the authoritative persistent resource-depletion crater pass.
         /// Kept explicit so tombstoned geology callers route through the volume owner instead of the delta processor.
         /// </summary>
@@ -902,6 +918,131 @@ namespace Hecton8.Caves
             Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
             CarveCrater(pos, radius);
             TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
+        }
+
+        /// <summary>
+        /// Applies a parasite-triggered subtractive box collapse through the persistent voxel delta lane.
+        /// </summary>
+        internal bool ApplyParasiteCollapseBox(Vector3 runtimeCenter, Vector3 halfExtents)
+        {
+            if (!_runtimeDataReady || _deltaProcessor == null)
+                return false;
+
+            Vector3 safeHalfExtents = new Vector3(
+                Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.x)),
+                Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.y)),
+                Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.z)));
+            if (safeHalfExtents.sqrMagnitude <= 0.0001f)
+                return false;
+
+            Vector3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeCenter);
+            SetBakeState(VoxelBakeState.Pending);
+            _deltaProcessor.ApplyImmediateAbsoluteBoxCrater(this, absoluteCenter, safeHalfExtents, DefaultDeltaMaterialId);
+
+            float impulseRadius = Mathf.Max(
+                safeHalfExtents.x,
+                Mathf.Max(safeHalfExtents.y, safeHalfExtents.z)) * 1.8f;
+            float impulseMagnitude = Mathf.Clamp(safeHalfExtents.y * 4f + safeHalfExtents.x + safeHalfExtents.z, 12f, 48f);
+            ApplyCollapseImpulse(runtimeCenter, safeHalfExtents, impulseRadius, impulseMagnitude);
+            return true;
+        }
+
+        /// <summary>
+        /// Applies the sediment-layer depletion-rot crater path for soft ore veins.
+        /// Basalt-profile nodes must keep using <see cref="ApplyPersistentResourceCrater"/>.
+        /// </summary>
+        public void ApplyPersistentResourceSedimentRotCrater(Vector3 pos, float radius)
+        {
+            if (!_runtimeDataReady || radius <= 0f)
+                return;
+
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
+            if (_deltaProcessor != null)
+            {
+                SetBakeState(VoxelBakeState.Pending);
+                _deltaProcessor.ApplyImmediateCrater(this, pos, radius, SedimentDeltaMaterialId);
+            }
+            else
+            {
+                AppendCraterStamp(absolutePosition, radius, true);
+            }
+
+            TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
+        }
+
+        /// <summary>
+        /// Applies a subtractive meteor-impact sphere stamp through the authoritative voxel delta owner.
+        /// </summary>
+        /// <param name="pos">Runtime-space seabed impact point.</param>
+        /// <param name="radius">Sphere carve radius in meters.</param>
+        /// <returns>True when the volume accepted the impact stamp.</returns>
+        public bool TryApplyExtraterrestrialImpactCrater(Vector3 pos, float radius)
+        {
+            if (!_runtimeDataReady || radius <= 0f)
+                return false;
+
+            CarveCrater(pos, radius);
+            return true;
+        }
+
+        /// <summary>
+        /// Applies an additive magma-vein CSG capsule chain through the persistent voxel delta owner.
+        /// </summary>
+        /// <param name="splinePoints">Caller-owned runtime-space spline point buffer.</param>
+        /// <param name="pointCount">Valid point count inside <paramref name="splinePoints"/>.</param>
+        /// <param name="radiusMeters">Magma capsule radius in meters.</param>
+        /// <param name="burnRadiusMeters">Organic burn radius around each accepted segment.</param>
+        /// <returns>Accepted segment count.</returns>
+        public int ApplyMagmaVeinSpline(Vector3[] splinePoints, int pointCount, float radiusMeters, float burnRadiusMeters)
+        {
+            if (!_runtimeDataReady ||
+                _deltaProcessor == null ||
+                splinePoints == null ||
+                pointCount < 2 ||
+                radiusMeters <= 0f)
+            {
+                return 0;
+            }
+
+            int safePointCount = Mathf.Min(pointCount, splinePoints.Length);
+            if (safePointCount < 2)
+                return 0;
+
+            float safeRadius = Mathf.Max(_voxelSize, radiusMeters);
+            float safeBurnRadius = Mathf.Max(safeRadius, burnRadiusMeters);
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            int acceptedSegments = 0;
+            SetBakeState(VoxelBakeState.Pending);
+
+            for (int i = 1; i < safePointCount; i++)
+            {
+                Vector3 start = splinePoints[i - 1];
+                Vector3 end = splinePoints[i];
+                if (!IsFinite(start) || !IsFinite(end))
+                    continue;
+
+                Vector3 segment = end - start;
+                float segmentLengthSq = segment.sqrMagnitude;
+                if (segmentLengthSq <= _voxelSize * _voxelSize * 0.01f)
+                    continue;
+
+                Vector3 absoluteStart = HectonFloatingOrigin.ToAbsoluteUniversePosition(start);
+                Vector3 absoluteEnd = HectonFloatingOrigin.ToAbsoluteUniversePosition(end);
+                _deltaProcessor.ApplyImmediateAbsoluteCapsuleWeld(
+                    this,
+                    absoluteStart,
+                    absoluteEnd,
+                    safeRadius,
+                    safeRadius,
+                    MagmaDeltaMaterialId);
+
+                if (organicManager != null && safeBurnRadius > 0f)
+                    BurnFloraAlongMagmaSegment(organicManager, start, end, Mathf.Sqrt(segmentLengthSq), safeBurnRadius);
+
+                acceptedSegments++;
+            }
+
+            return acceptedSegments;
         }
 
         /// <summary>
@@ -1836,6 +1977,35 @@ namespace Hecton8.Caves
             }
 
             return false;
+        }
+
+        private static void BurnFloraAlongMagmaSegment(
+            DestructibleOrganicManager organicManager,
+            Vector3 start,
+            Vector3 end,
+            float segmentLength,
+            float burnRadius)
+        {
+            if (organicManager == null || segmentLength <= 0f || burnRadius <= 0f)
+                return;
+
+            int sampleCount = Mathf.Clamp(
+                Mathf.CeilToInt(segmentLength / Mathf.Max(0.5f, burnRadius)),
+                1,
+                MaxMagmaVeinBurnSamplesPerSegment);
+            for (int i = 0; i <= sampleCount; i++)
+            {
+                float t = sampleCount > 0 ? i / (float)sampleCount : 0f;
+                Vector3 samplePosition = Vector3.LerpUnclamped(start, end, t);
+                organicManager.ApplyDefoliantDeadZone(samplePosition, burnRadius);
+            }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
 
         private bool AppendCraterStamp(Vector3 absolutePosition, float radius, bool queueRebuild)

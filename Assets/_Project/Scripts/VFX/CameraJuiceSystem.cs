@@ -127,7 +127,7 @@ namespace Hecton8.VFX
         private bool _depthOfFieldEnabled = true;
 
         [SerializeField, Tooltip("Physics layers sampled by the center-eye focus ray.")]
-        private LayerMask _interactionFocusMask = (1 << 8) | (1 << 9) | (1 << 10);
+        private LayerMask _interactionFocusMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [SerializeField, Tooltip("Maximum range used by the center-eye focus ray.")]
         private float _interactionFocusRayDistance = 120f;

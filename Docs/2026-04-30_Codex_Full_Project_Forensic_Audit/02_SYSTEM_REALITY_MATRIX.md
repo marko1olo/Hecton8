@@ -58,3 +58,28 @@ Criticism where required:
 - Large files are not a badge of seriousness anymore. They are now a reliability tax.
 - Docs frequently describe the target architecture more cleanly than the code actually obeys it.
 - DOTS currently functions more as a future-facing story than a live delivery asset.
+
+## 2026-05-01 Reality Delta
+
+Source-backed update after the May 1 audit pass:
+
+- Current first-party script surface under `Assets/_Project/Scripts`: `1020` C# files, `466768` lines by PowerShell line count.
+- `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` is now the current high-risk failure map. It supersedes softer claims that event, headless, AUP, and job-safety risks were only theoretical.
+- Event buses are no longer accurately described as having no breaker at all. `SystemDispatcher` contains `MaxLateFrameEventsPerFrame = 1000` and many static event lanes call `TryConsumeLateFrameEventDispatch()`. The remaining risk is narrower: no proven same-frame generation split across all event lanes, and `HectonEventBus` tracks dispatch depth without a hard max-depth cap.
+- The strongest newly verified headless violations are `FaunaBrain.UpdateBioluminescentHypnosis()` using `runtimeContext.PlayerCamera` as gameplay truth and `StorageCrate.OpenCrate()` depending on an Animator event to leave `Opening`.
+- The hot-lane job barrier finding is not "all Complete calls are equally bad." The currently documented Severity-High cases are `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick`.
+- Coroutine eradication is partial, not complete. `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` reports 15 remaining `StartCoroutine(` call sites, concentrated in runtime smoke/verifier harnesses.
+- Object pool exhaustion policy was tightened by code inspection: spawn exhaustion returns `null` and emits `GlobalTelemetryBus.PublishPoolExhausted(...)`; runtime expansion through `InstantiatePooled` is warmup-only by current source review.
+- Unity MCP console proof from the previous May 1 report pass: error query returned `0` entries. Current delta pass attempted `read_console` twice and MCP returned `no_unity_session`; therefore this update has no fresh console proof. Play Mode, GCMonitor, profiler, and runtime deadlock proof remain absent.
+
+Readiness adjustments implied by this delta:
+
+| System | Previous Read | Current Correction |
+|---|---|---|
+| Event bus architecture | Mixed / 62% | breaker exists; cascade-depth proof still incomplete |
+| Automated testing | Near-paper / 8% | broad smoke infrastructure exists, but formal proof is still weak and some harnesses still use coroutines |
+| Jobs / Burst adoption | Real / 64% | Burst metadata has improved, but local frame-lane barriers remain a production stall risk |
+| Headless simulation | not separately scored | must be treated as critical risk because gameplay state still depends on camera/Animator presentation |
+| Documentation trust | Real but stale-prone | confirmed stale-prone; active truth must now start from May 1 reports and current-source deltas |
+
+STATUS: PENDING VERIFICATION

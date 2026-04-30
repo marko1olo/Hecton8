@@ -1,0 +1,392 @@
+# HECTON-8 DOOMSDAY FLAW REPORT
+
+Generated: 2026-05-01  
+Mode: Deep Flaw Discovery / Forensics / QA Architecture  
+Status: MCP CONSOLE VERIFIED FOR SCRIPT ERRORS; RUNTIME/GC/MEMORY NOT MEASURED  
+Scope: `Assets/_Project/Scripts/`
+
+## Executive Read
+
+This is a static forensic report. No Play Mode was launched. No GCMonitor, Jobs Debugger, Memory Profiler, RenderDoc, or 10-minute retention run was captured. Findings are code-review evidence, not runtime measurements.
+
+Scan surface:
+
+- `Assets/_Project/Scripts/`: 1019 C# files.
+- First-party C# LOC scanned: 466269.
+- `.agents-skills`: 52 mandate files indexed.
+- Mandates loaded for classification: `OPT_Zero_GC_Policy_AllocFree_Mandate`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `MATH_Coordinate_Precision_AUP_FloatingOrigin`, `CORE_Submarine_Vehicles_Kinematics_AUP`, `PHYS_Physics_Integrity_Determinism_ForceMode`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `DBG_Telemetry_Crash_Reporting_PostMortem`.
+
+Primary risk model:
+
+- CPU: frame-lane `.Complete()` barriers still exist in `Tick`/post-fixed code. Most are `IsCompleted` gated, but the architecture still allows local result ownership instead of a single global swap stage.
+- Headless correctness: some gameplay state transitions still depend on Camera or Animator components.
+- Native memory: 122 files contain `Allocator.Persistent` or `Allocator.TempJob`; the one clear no-local-dispose outlier is BRG direct-draw TempJob memory.
+- Physics correctness: `~0` / Everything masks and default layer fallbacks remain in runtime query paths.
+- AUP correctness: `FaunaBrain` caches raw world-space route points without implementing origin-shift listener behavior.
+- Event safety: `SystemDispatcher` now has a late-frame budget breaker, but same-frame generation split is not proven across event lanes; `HectonEventBus` tracks dispatch depth but has no maximum depth cap.
+
+## Surgery Log: 3 Most Dangerous Flaws
+
+1. CRITICAL: `FaunaBrain.UpdateBioluminescentHypnosis()` uses `runtimeContext.PlayerCamera` as gameplay truth and directly applies player pull. Headless/no-camera simulation changes the state transition graph.
+2. CRITICAL: `StorageCrate.OpenCrate()` can enter `Opening` and rely on `OnAnimationComplete()` for the `Open` transition. Animator present but event missing means inventory access can dead-state.
+3. HIGH: `JobHandle.Complete()` exists in `Tick` / `PostFixedTick` lanes. `IsCompleted` gates reduce stalls but do not satisfy the mandate: barriers are locally owned, not dispatcher-owned swap windows.
+
+## CRITICAL Findings
+
+### CRITICAL-01: Fauna Gameplay Depends On Player Camera
+
+Evidence:
+
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:830` returns if `runtimeContext.PlayerCamera == null`.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:835` computes `transform.position - runtimeContext.PlayerCamera.transform.position`.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:840` reads `runtimeContext.PlayerCamera.transform.forward`.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:845` calls `runtimeContext.PlayerMovement.ApplyFaunaHypnosisPull(...)`.
+
+Failure path:
+
+`UpdateBioluminescentHypnosis()` is not presentation-only. It mutates player movement if the player is looking at a dazzle-capable fauna. In a headless simulation there may be no Camera component. The method returns early, so the AI/player state diverges from visual-client state.
+
+Mathematical reason:
+
+The predicate is effectively:
+
+`DazzleActive = CameraExists AND distance <= range AND dot(cameraForward, faunaDirection) >= threshold`
+
+For headless simulation, `CameraExists = false`, therefore `DazzleActive = false` for every possible fauna/player state. That is a different state machine, not a missing visual.
+
+Required fix:
+
+- Move look/aim truth into a headless-safe snapshot: `PlayerLookState { float3 eyePosition; float3 aimForward; uint frame; }`.
+- Produce the snapshot from input/player runtime state, not from `Camera`.
+- Presentation Camera may consume the snapshot; fauna logic must not depend on Camera.
+- Add a headless test: dazzle-capable fauna + synthetic look vector + no Camera must still apply the gameplay effect.
+
+Regression model:
+
+- CPU: neutral if snapshot is already produced by player runtime context.
+- GC: must be 0 B/frame; snapshot must be struct-backed.
+- Correctness: fixes visual/headless divergence.
+- Failure mode if done badly: camera presentation and gameplay aim can desync if two sources remain.
+
+### CRITICAL-02: Storage Crate State Depends On Animator Event
+
+Evidence:
+
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:296` sets `_state = CrateState.Opening`.
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:307` triggers `animator.SetTrigger(_openTriggerHash)`.
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:314` completes immediately only when `animator == null`.
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:359` exposes `OnAnimationComplete()`.
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:361` completes the open transition only from that animation event.
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:406` blocks item transfer unless `_state == CrateState.Open`.
+
+Failure path:
+
+If an Animator component exists but its controller is disabled, stripped, missing the event, or the clip never fires `OnAnimationComplete`, the crate remains in `Opening`. Inventory access is then blocked permanently.
+
+Mathematical reason:
+
+The state graph is:
+
+`Closed -> Opening -> Open`
+
+The second edge is presentation-driven when `animator != null`. If the presentation event is absent, `Opening` has no timeout or logic-owned exit edge.
+
+Required fix:
+
+- Logic owns the open transition; animation only reads state.
+- Use a gameplay timer or deterministic immediate state transition independent of Animator event.
+- Animator event can still notify presentation, but it must not be the only route to `Open`.
+- Add test: Animator component exists, no animation event, crate still reaches `Open`.
+
+Regression model:
+
+- CPU: negligible.
+- GC: no new allocations required.
+- Correctness: removes visual dependency from inventory access.
+- Failure mode if done badly: double `OnOpened` event if animator event and timer both complete without idempotent guard.
+
+## HIGH Findings
+
+### HIGH-01: Job Completion Barriers In Frame Lanes
+
+Evidence from method-context scan:
+
+- `Assets/_Project/Scripts/ProximityColliderSystem.cs:426` declares `Tick(float deltaTime)`.
+- `Assets/_Project/Scripts/ProximityColliderSystem.cs:456` calls `_jobHandle.Complete()`.
+- `Assets/_Project/Scripts/SaveManager.cs:300` declares `Tick(float deltaTime)`.
+- `Assets/_Project/Scripts/SaveManager.cs:304` calls `_integrityScanHandle.Complete()`.
+- `Assets/_Project/Scripts/HectonFluidEngine.cs:789` declares `PostFixedTick(float fixedDeltaTime)`.
+- `Assets/_Project/Scripts/HectonFluidEngine.cs:796` calls `_scheduledBuoyancyHandle.Complete()`.
+
+Scan totals:
+
+- Total `.Complete(` lexical hits in first-party scripts: 149.
+- Direct frame-lane `.Complete()` hits found by method-context scan: 3.
+- `.Complete()` inside job `Execute()` methods: none found by static method-context scan.
+
+Failure path:
+
+The listed calls are mostly `IsCompleted` gated. That avoids most hard stalls, but the job ownership model is still local: each owner decides when to consume results inside its own frame lane. That creates implicit ordering and mixed-generation state risk.
+
+Mathematical reason:
+
+With `n` independent job owners and local result application, there can be up to `n` independent generation swaps per frame. System A can consume job output for frame `N` while System B still exposes frame `N-1`. This is not a guaranteed deadlock, but it is a race-prone cadence model.
+
+Required fix:
+
+- Move frame-lane completions into a dispatcher-owned `LateFrameJobSwap` stage.
+- Producers write only to back buffers/queues.
+- Consumers read only front buffers/queues.
+- `SystemDispatcher` owns `IsCompleted -> Complete -> swap -> telemetry`.
+- If a handle is incomplete at the swap stage, defer consumption and emit telemetry; do not locally force completion from gameplay `Tick`.
+
+Regression model:
+
+- CPU: may improve worst-case frame variance; may add one-frame result latency.
+- GC: no allocation needed.
+- Correctness: improves generation consistency.
+- Failure mode if done badly: stale commands for one extra frame; must be explicitly accepted per system.
+
+### HIGH-02: Collision Matrix Holes Via Everything / Default Masks
+
+Evidence:
+
+- `Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs:706` uses `Physics.OverlapSphereNonAlloc`; `:710` passes `~0`.
+- `Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs:495` uses `Physics.OverlapSphereNonAlloc`; nearby query path uses broad/default behavior.
+- `Assets/_Project/Scripts/ResourceNode.cs:529` uses `Physics.OverlapSphereNonAlloc`; `:533` passes `~0`.
+- `Assets/_Project/Scripts/SubmarineFluidDynamics.cs:3234` uses `Physics.OverlapSphereNonAlloc`; `:3238` passes `~0`.
+- `Assets/_Project/Scripts/WorldCaveDirector.cs:1113` uses `Physics.RaycastNonAlloc`; `:1117` passes `~0`.
+- `Assets/_Project/Scripts/World/AbyssalThermalManager.cs:2299` uses `Physics.SphereCastNonAlloc`; `:2305` passes `~0`.
+- `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs:2705` uses `Physics.RaycastNonAlloc`; `:2710` passes `~0`.
+- `Assets/_Project/Scripts/GravityTetherTool.cs:33` serializes `LayerMask interactableMask = ~0`.
+- `Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs:91` serializes `LayerMask panelButtonMask = ~0`.
+- `Assets/_Project/Scripts/Interaction/PlayerInteraction.cs:194` warns if `interactableMask.value == ~0`, but does not reject the configuration.
+
+Failure path:
+
+Everything masks couple gameplay to unrelated colliders. New VFX, debug, trigger, or third-party colliders can silently enter gameplay query results. Hit ordering can change without code changes.
+
+Mathematical reason:
+
+Candidate set with Everything mask is `C_all`; domain mask candidate set is `C_domain`. In dense scenes, `C_all >> C_domain`, so query cost and result ambiguity scale with unrelated content.
+
+Required fix:
+
+- Runtime physics queries must use centralized `HectonLayerMasks`/domain masks.
+- Serialized LayerMasks for gameplay must fail validation when equal to Everything.
+- `~0` in Physics query arguments should be a static audit error outside editor/test code.
+
+Regression model:
+
+- CPU: likely improves query cost.
+- GC: no change.
+- Correctness: reduces accidental hits.
+- Failure mode if masks are incomplete: legitimate targets can become unqueryable; requires scene validation.
+
+### HIGH-03: AUP Drift In Fauna Route Cache
+
+Evidence:
+
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:23` class does not implement `IOriginShiftListener`.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:165` stores `_voxelRouteWaypoints` as raw `Vector3[]`.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:178` stores `_voxelRouteTargetPosition` as raw `Vector3`.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:725` builds route waypoints from runtime world positions.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:728` caches `_voxelRouteTargetPosition`.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs:744` and `:749` consume cached route waypoints later.
+
+Failure path:
+
+Floating origin rebases runtime coordinates. The cached route remains raw pre-shift `Vector3`. Since `FaunaBrain` is not an origin-shift listener and the route is not AUP-backed, the route can become offset by the shift vector.
+
+Mathematical reason:
+
+If origin shift applies vector `S`, cached runtime waypoint `W` must become `W + S` or be recomputed from absolute coordinates. Current cache keeps `W`. Error after one shift is `|S|`; at 5000m threshold, path error can be kilometers.
+
+Required fix:
+
+- Store route waypoints as AUP/int64 grid + local offset.
+- Or implement `IOriginShiftListener` and atomically shift `_voxelRouteWaypoints` and `_voxelRouteTargetPosition`.
+- During `HectonFloatingOrigin.IsShiftInProgress`, route consumption must pause or use absolute state only.
+
+Regression model:
+
+- CPU: small if shifting array on origin event; better if AUP source is used.
+- GC: no allocation required.
+- Correctness: prevents kilometer-scale path drift.
+- Failure mode if done badly: double-applying shift to waypoints.
+
+### HIGH-04: Event Bus Has Budget Breaker But No Generation Split Proof
+
+Evidence:
+
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs:32` defines `MaxLateFrameEventsPerFrame = 1000`.
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs:450` enters `LateUpdate()`.
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs:475-487` flushes multiple event lanes sequentially.
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs:522` resets the late-frame dispatch budget.
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs:493` `TryConsumeLateFrameEventDispatch()` consumes dispatch budget.
+- `Assets/_Project/Scripts/Interaction/InteractionEvents.cs:127` `FlushPending()` drains while the queue is non-empty.
+- `Assets/_Project/Scripts/Interaction/InteractionEvents.cs:331` `DrainWithoutDispatch()` drains with no dispatch, used when there are no listeners.
+- `Assets/_Project/Scripts/CraftingEvents.cs:151` `FlushPending()` uses the same budgeted pattern.
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs:294` and `:416` have `_dispatchDepth`, but no max-depth constant or cap was found.
+
+Failure path:
+
+The previous unbounded-event defect is partially addressed: late-frame event dispatch now has a frame budget. The remaining risk is same-frame reenqueue and managed mod bus recursion. The flush drains the active queue while it is non-empty; events published during handling can extend the same lane until the global budget trips.
+
+Mathematical reason:
+
+The new upper bound is `MaxLateFrameEventsPerFrame = 1000`, so infinite same-frame loops are cut. But without generation split, a cycle still consumes the full budget every frame. That is bounded but still pathological: `1000 * handlerCost` per frame until the cycle source is removed.
+
+Required fix:
+
+- Keep the current budget breaker.
+- Add generation split: front queue drained this frame, back queue receives publishes during flush.
+- Add max-depth cap to `HectonEventBus` managed/native channels, not just `_dispatchDepth` tracking.
+- Emit zero-alloc telemetry when budget trips or depth cap rejects/defer events.
+
+Regression model:
+
+- CPU: bounded and more predictable.
+- GC: no allocation required with NativeQueue double buffering.
+- Correctness: events published by handlers shift to next frame; systems depending on same-frame reentrancy need explicit opt-in.
+
+## MEDIUM Findings
+
+### MEDIUM-01: BRG TempJob Direct-Draw Allocation Has No Project-Owned Free Path
+
+Evidence:
+
+- `Assets/_Project/Scripts/World/HectonBatchRendererGroupUtility.cs:151` comments that Unity owns TempJob memory after the callback returns.
+- `Assets/_Project/Scripts/World/HectonBatchRendererGroupUtility.cs:163` allocates `visibleInstances` with `UnsafeUtility.Malloc(... Allocator.TempJob)`.
+- `Assets/_Project/Scripts/World/HectonBatchRendererGroupUtility.cs:171` allocates `drawCommands` with `UnsafeUtility.Malloc(... Allocator.TempJob)`.
+- `Assets/_Project/Scripts/World/HectonBatchRendererGroupUtility.cs:179` allocates `drawRanges` with `UnsafeUtility.Malloc(... Allocator.TempJob)`.
+- Static sweep found no `Dispose()` / `UnsafeUtility.Free` in this file.
+
+Risk:
+
+This may be valid Unity BRG ownership behavior, but the project has no local proof in source. If the ownership assumption is wrong for Unity 6000.4, memory growth is linear per culling callback.
+
+Required verification:
+
+- Confirm Unity 6000.4 BRG culling callback ownership contract.
+- Add source-linked inline exception if Unity owns the memory.
+- Run Memory Profiler and Unity leak detection for culling-heavy scene.
+
+### MEDIUM-02: MaterialPropertyBlock On Standard Geometry / Headless Presentation Coupling
+
+Evidence examples:
+
+- `Assets/_Project/Scripts/InteractionHighlighter.cs:402` / `:420` uses renderer property blocks.
+- `Assets/_Project/Scripts/BuilderTool.cs:450` / `:485` uses MPB on tool LCD renderer.
+- `Assets/_Project/Scripts/Visor/VisorHUDController.cs:587` / `:612` uses MPB on visor renderer.
+- `Assets/_Project/Scripts/Gameplay/BioReactor.cs`, `SolarPanel.cs`, `SealedDoor.cs`, and similar gameplay props contain MPB status bridges in scan output.
+
+Risk:
+
+Some are legitimate presentation paths, but project mandate forbids MPB on standard geometry because it can break SRP Batcher residency. This is mostly render-performance risk, not headless correctness, unless gameplay reads renderer state elsewhere.
+
+Required fix:
+
+- Classify MPB uses into allowed legacy UI/particle/BRG exceptions vs standard geometry.
+- Move standard geometry state to material variants, CBUFFER-compatible material data, or GPU instancing buffers.
+- Verify SetPass/SRP Batcher before and after.
+
+### MEDIUM-03: Editor Defines Exist Inside Hot Paths
+
+Evidence:
+
+- Static scan found 885 `#if UNITY_EDITOR` occurrences in runtime script tree.
+- 74 are inside detected frame lanes (`Tick`, `FixedTick`, `SlowTick`, `LateFrameTick`, `Update`, `LateUpdate`, `FixedUpdate`).
+- Examples: `SystemDispatcher.cs:401`, `SystemDispatcher.cs:460`, `PlayerToolManager.cs:295`, `PlayerInteraction.cs:330`, `FaunaBrain.cs:1432`, `CameraJuiceSystem.cs:430`.
+
+Production result:
+
+These blocks are compiled out of non-editor builds if they are exactly `#if UNITY_EDITOR`. They should not slow production builds. They do contaminate Editor/Development profiling and can hide production-only timing behavior.
+
+Required fix:
+
+- Do not move editor diagnostics into production.
+- For hot paths, prefer static telemetry counters guarded by `DEVELOPMENT_BUILD` only when required.
+- Keep Editor-only debug cost out of benchmark captures.
+
+## Native Memory Sweep Result
+
+Observed:
+
+- 122 files contain `Allocator.Persistent` or `Allocator.TempJob`.
+- Files with allocation tokens but no local dispose/free path: `Assets/_Project/Scripts/World/HectonBatchRendererGroupUtility.cs`.
+- Many Persistent allocations have visible dispose paths in owner files; this report does not certify every path without Memory Profiler/leak detection.
+
+Required verification:
+
+- Enable full leak detection stack traces.
+- Run scene for 10 minutes under heavy culling / world streaming.
+- Compare native memory slope, not snapshot.
+- Fail build on TempJob leak warnings.
+
+## Collision Matrix Sweep Result
+
+Primary issue is not alloc-heavy Physics APIs; most sampled calls are NonAlloc or `RaycastCommand`. The defect is mask discipline:
+
+- `~0` / Everything exists in runtime query arguments.
+- Serialized gameplay masks default to `~0`.
+- Some validation only warns.
+
+Required validation:
+
+- Static gate: fail runtime files containing `~0` in Physics query arguments.
+- Boot validator: reject gameplay `LayerMask` values equal to Everything.
+
+## Event Bus Circuit Breaker State
+
+Current state:
+
+- `SystemDispatcher` has a global late-frame dispatch budget and logs circuit-breaker trips in editor/development builds.
+- Event lanes call `SystemDispatcher.TryConsumeLateFrameEventDispatch()`.
+
+Remaining gap:
+
+- No generation split is proven.
+- Managed `HectonEventBus` dispatch depth is tracked but not capped.
+
+Minimum acceptable model:
+
+```csharp
+// Pseudocode only. Do not paste directly.
+Swap(front, back);
+int processed = 0;
+while (processed < MaxEventsPerFrame && front.TryDequeue(out payload))
+{
+    processed++;
+    Dispatch(payload); // Publish() writes to back, not front.
+}
+```
+
+## Verification State
+
+MCP console log: `read_console(types=["error"], count=50)` returned 0 entries after this report-only pass.  
+Play Mode: not launched.  
+GC validation: measured proof absent.  
+Regression check: measured proof absent.  
+Memory retention guard: measured proof absent.  
+In-game result: not verified; this is a report-only operation.
+
+## Evidence Commands
+
+```powershell
+rg --files Assets/_Project/Scripts -g "*.cs"
+rg -n "\.Complete\s*\(|JobHandle\.Complete\s*\(" Assets/_Project/Scripts -g "*.cs"
+rg -n "Physics\.(Raycast|SphereCast|CapsuleCast|BoxCast|OverlapSphere|OverlapBox|OverlapCapsule|RaycastAll|SphereCastAll|OverlapSphereNonAlloc|RaycastNonAlloc|CapsuleCastNonAlloc|SphereCastNonAlloc)\b|RaycastCommand\.ScheduleBatch|LayerMask\.GetMask|LayerMask\.NameToLayer|DefaultRaycastLayers|IgnoreRaycastLayer|~0" Assets/_Project/Scripts -g "*.cs" -g "!**/Editor/**"
+rg -n "Camera\.main|GetComponent<Camera>|MeshRenderer|SkinnedMeshRenderer|\bAnimator\b|MaterialPropertyBlock|SetPropertyBlock|\.GetPropertyBlock" Assets/_Project/Scripts -g "*.cs"
+rg -n "Allocator\.(Persistent|TempJob)|new Native(Array|List|HashMap|HashSet|Queue|ParallelHashMap|ParallelMultiHashMap)|UnsafeUtility\.Malloc" Assets/_Project/Scripts -g "*.cs"
+rg -n "while \([^\n]*TryDequeue|FlushPending|_dispatchDepth|MaxFlush|Max.*PerFrame|LateUpdate\s*\(" Assets/_Project/Scripts -g "*.cs"
+```
+
+## Mandate Compliance Statement
+
+- Zero-GC: report-only file edit; no runtime hot path changed.
+- Native memory/job protocol: `.Complete()` findings classified against dispatcher-owned barrier rule.
+- AUP/floating-origin: raw world position caches checked against listener/AUP contract.
+- Physics integrity: NonAlloc use separated from layer-mask correctness; Everything/default masks flagged.
+- Global registry/event architecture: dispatcher circuit breaker verified; generation split and HectonEventBus depth cap remain gaps.
+- Telemetry/post-mortem: no fake runtime proof; unmeasured items stay `PENDING VERIFICATION`.

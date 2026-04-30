@@ -1,0 +1,2002 @@
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistry.cs b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+index 6f213e81..a41832d9 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistry.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+@@ -46,7 +46,9 @@ namespace Hecton8.Core
+         private static IInteractionSignalService _interactionSignals;
+         private static IDebrisService _debris;
+         private static IEcosystemDirectorService _ecosystemDirector;
++        private static IFaunaSim _faunaSimulation;
+         private static IThermodynamicsService _thermodynamicsService;
++        private static IFluidSim _fluidSimulation;
+         private static ILogisticsService _logistics;
+         private static IWorldGenService _worldGen;
+         private static IEncounterDirectorService _encounterDirector;
+@@ -172,11 +174,21 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IEcosystemDirectorService EcosystemDirector => _ecosystemDirector;
+ 
++        /// <summary>
++        /// Registered data-only fauna simulation service slot.
++        /// </summary>
++        public static IFaunaSim FaunaSimulation => _faunaSimulation;
++
+         /// <summary>
+         /// Registered thermodynamics service slot.
+         /// </summary>
+         public static IThermodynamicsService ThermodynamicsService => _thermodynamicsService;
+ 
++        /// <summary>
++        /// Registered data-only fluid simulation service slot.
++        /// </summary>
++        public static IFluidSim FluidSimulation => _fluidSimulation;
++
+         /// <summary>
+         /// Registered logistics/build-network service slot.
+         /// </summary>
+@@ -290,7 +302,9 @@ namespace Hecton8.Core
+             _interactionSignals = null;
+             _debris = null;
+             _ecosystemDirector = null;
++            _faunaSimulation = null;
+             _thermodynamicsService = null;
++            _fluidSimulation = null;
+             _logistics = null;
+             _worldGen = null;
+             _encounterDirector = null;
+@@ -536,6 +550,15 @@ namespace Hecton8.Core
+             RegisterService(ref _ecosystemDirector, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative data-only fauna simulation service.
++        /// </summary>
++        /// <param name="instance">Fauna simulation service instance.</param>
++        public static void RegisterFaunaSimulationService(IFaunaSim instance)
++        {
++            RegisterService(ref _faunaSimulation, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative thermodynamics service.
+         /// </summary>
+@@ -545,6 +568,15 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _thermodynamicsService, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative data-only fluid simulation service.
++        /// </summary>
++        /// <param name="instance">Fluid simulation service instance.</param>
++        public static void RegisterFluidSimulationService(IFluidSim instance)
++        {
++            RegisterService(ref _fluidSimulation, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative logistics/build-network service.
+         /// </summary>
+@@ -807,6 +839,15 @@ namespace Hecton8.Core
+             UnregisterService(ref _ecosystemDirector, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current data-only fauna simulation service if the owner matches.
++        /// </summary>
++        /// <param name="instance">Service owner requesting unregistration.</param>
++        public static void UnregisterFaunaSimulationService(IFaunaSim instance)
++        {
++            UnregisterService(ref _faunaSimulation, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current thermodynamics service if the owner matches.
+         /// </summary>
+@@ -816,6 +857,15 @@ namespace Hecton8.Core
+             UnregisterService(ref _thermodynamicsService, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current data-only fluid simulation service if the owner matches.
++        /// </summary>
++        /// <param name="instance">Service owner requesting unregistration.</param>
++        public static void UnregisterFluidSimulationService(IFluidSim instance)
++        {
++            UnregisterService(ref _fluidSimulation, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current logistics/build-network service if the owner matches.
+         /// </summary>
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+index cfa1ca76..61fcd7fa 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+@@ -1093,6 +1093,45 @@ namespace Hecton8.Core
+         bool TryGetQuestIdByHash(uint questHash, out string questId);
+     }
+ 
++    /// <summary>
++    /// Data-only fauna simulation contract exposed through <see cref="GlobalRegistry"/>.
++    /// </summary>
++    public interface IFaunaSim
++    {
++        /// <summary>
++        /// True once the simulation owner has allocated its native residency buffers.
++        /// </summary>
++        bool IsReady { get; }
++
++        /// <summary>
++        /// Maximum resident/dehydrated fauna slots available to the simulation.
++        /// </summary>
++        int ResidentSlotCapacity { get; }
++    }
++
++    /// <summary>
++    /// Data-only fluid simulation math contract exposed through <see cref="GlobalRegistry"/>.
++    /// </summary>
++    public interface IFluidSim
++    {
++        /// <summary>
++        /// True once the math service is ready for deterministic simulation calls.
++        /// </summary>
++        bool IsReady { get; }
++
++        /// <summary>
++        /// Resolved water density used by submarine flood mass calculations.
++        /// </summary>
++        float WaterDensityKilogramsPerCubicMeter { get; }
++
++        /// <summary>
++        /// Resolves Torricelli ingress velocity at the supplied depth.
++        /// </summary>
++        /// <param name="depthMeters">External water depth in meters.</param>
++        /// <returns>Ingress velocity in meters per second.</returns>
++        float ResolveIngressVelocity(float depthMeters);
++    }
++
+     /// <summary>
+     /// Typed registry service slot identifiers used by GlobalRegistry hot-swap notifications.
+     /// </summary>
+@@ -1130,7 +1169,9 @@ namespace Hecton8.Core
+         TickManager = 29,
+         Dispatcher = 30,
+         RenderDispatcher = 31,
+-        PhysicsStateManager = 32
++        PhysicsStateManager = 32,
++        FaunaSimulation = 33,
++        FluidSimulation = 34
+     }
+ 
+     /// <summary>
+diff --git a/Assets/_Project/Scripts/FaunaDirector.cs b/Assets/_Project/Scripts/FaunaDirector.cs
+index 9553b73e..b1c632de 100644
+--- a/Assets/_Project/Scripts/FaunaDirector.cs
++++ b/Assets/_Project/Scripts/FaunaDirector.cs
+@@ -96,60 +96,6 @@ namespace Hecton8.AI
+         private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
+         private Unity.Mathematics.Random _biomeSpawnRandom;
+ 
+-        [BurstCompile]
+-        private struct DataOnlyFaunaLodJob : IJobParallelFor
+-        {
+-            public NativeArray<PoolSlotData> PoolSlots;
+-            public NativeArray<float3> LinearVelocities;
+-            [ReadOnly] public NativeArray<byte> SimulationFlags;
+-            public double3 PlayerAbsolutePosition;
+-            public float DeltaTime;
+-
+-            public void Execute(int index)
+-            {
+-                byte flags = SimulationFlags[index];
+-                if ((flags & (ResidentSimulationFlag | DehydratedSimulationFlag)) != (ResidentSimulationFlag | DehydratedSimulationFlag))
+-                    return;
+-
+-                PoolSlotData slotData = PoolSlots[index];
+-                double3 positionAbsolute = ToAbsolutePosition(slotData);
+-                double3 delta = positionAbsolute - PlayerAbsolutePosition;
+-                double distanceSq = math.dot(delta, delta);
+-                if (distanceSq <= DehydrationDistanceSq || distanceSq > HibernationDistanceSq)
+-                    return;
+-
+-                float step = math.max(0f, DeltaTime);
+-                float3 nextVelocity = LinearVelocities[index] * math.saturate(1f - (step * 0.12f));
+-                positionAbsolute += (double3)(nextVelocity * step);
+-                LinearVelocities[index] = nextVelocity;
+-                WriteAbsolutePosition(ref slotData, positionAbsolute);
+-                PoolSlots[index] = slotData;
+-            }
+-
+-            private static double3 ToAbsolutePosition(PoolSlotData slotData)
+-            {
+-                const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+-                return new double3(
+-                    (slotData.AupCell.x * cellSize) + slotData.LocalOffset.x,
+-                    (slotData.AupCell.y * cellSize) + slotData.LocalOffset.y,
+-                    (slotData.AupCell.z * cellSize) + slotData.LocalOffset.z);
+-            }
+-
+-            private static void WriteAbsolutePosition(ref PoolSlotData slotData, double3 absolutePosition)
+-            {
+-                const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+-                long gridX = (long)math.floor(absolutePosition.x / cellSize);
+-                long gridY = (long)math.floor(absolutePosition.y / cellSize);
+-                long gridZ = (long)math.floor(absolutePosition.z / cellSize);
+-
+-                slotData.AupCell = new int3((int)gridX, (int)gridY, (int)gridZ);
+-                slotData.LocalOffset = new float3(
+-                    (float)(absolutePosition.x - (gridX * cellSize)),
+-                    (float)(absolutePosition.y - (gridY * cellSize)),
+-                    (float)(absolutePosition.z - (gridZ * cellSize)));
+-            }
+-        }
+-
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         //  ACTIVE CREATURE â€” struct tracker
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+@@ -518,10 +464,10 @@ namespace Hecton8.AI
+         private Dictionary<FaunaBiomeData, int[]> _availablePoolCountsPerBiome;
+         private Dictionary<FaunaBiomeData, Dictionary<GameObject, int>> _prefabTypeIndexLookup;
+         private Dictionary<long, int> _predatorCountsPerSector;
+-        private NativeArray<PoolSlotData> _dehydratedPoolSlots;
+-        private NativeArray<float3> _dehydratedLinearVelocityNative;
+-        private NativeArray<byte> _dehydratedSimulationFlagsNative;
+-        private NativeQueue<int> _freeDehydrationSlotQueue;
++        private FaunaSimulationMemory _faunaSimulationMemory;
++        private FaunaSimulationEngine _faunaSimulationEngine;
++        private FaunaPresentationService _faunaPresentationService;
++        private bool _faunaSimulationRegistered;
+         // COLD ALLOC: FaunaResidencyState[512] - resident fauna state cache for dehydration and restore - owner: FaunaDirector
+         private FaunaResidencyState[] _dehydratedCreatureStates;
+         // COLD ALLOC: int[512] - active dehydrated slot index list for rehydration scans - owner: FaunaDirector
+@@ -570,15 +516,21 @@ namespace Hecton8.AI
+         private int _smallPassiveCreaturePoolWarmupReserve;
+         private readonly HashSet<GameObject> _warmupPrefabs = new HashSet<GameObject>(128); // COLD ALLOC: dedupe fauna pool warmup prefabs across biome datasets
+         internal static FaunaDirector ActiveRuntimeInstance { get; private set; }
+-        internal int DebugEffectiveSpawnsPerTick => _debugEffectiveSpawnsPerTick;
+-        internal int DebugEffectiveBiomeMaxCount => _debugEffectiveBiomeMaxCount;
+-        internal int DebugEffectiveGlobalMaxCount => _debugEffectiveGlobalMaxCount;
+-        internal string DebugBiomeLabel => biomeMatrixDirector != null && biomeMatrixDirector.CurrentProfile != null
+-            ? biomeMatrixDirector.CurrentProfile.name
+-            : _debugCurrentBiome.ToString();
+-        internal string DebugEcologyBiasLabel => ResolveDebugEcologyBiasLabel();
+-        public int SavePriority => 56;
+-        public int LoadPriority => 56;
++        internal int DebugEffectiveSpawnsPerTick { get { return _debugEffectiveSpawnsPerTick; } }
++        internal int DebugEffectiveBiomeMaxCount { get { return _debugEffectiveBiomeMaxCount; } }
++        internal int DebugEffectiveGlobalMaxCount { get { return _debugEffectiveGlobalMaxCount; } }
++        internal string DebugBiomeLabel
++        {
++            get
++            {
++                return biomeMatrixDirector != null && biomeMatrixDirector.CurrentProfile != null
++                    ? biomeMatrixDirector.CurrentProfile.name
++                    : _debugCurrentBiome.ToString();
++            }
++        }
++        internal string DebugEcologyBiasLabel { get { return ResolveDebugEcologyBiasLabel(); } }
++        public int SavePriority { get { return 56; } }
++        public int LoadPriority { get { return 56; } }
+ 
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         //  LIFECYCLE
+@@ -587,6 +539,10 @@ namespace Hecton8.AI
+         private void Awake()
+         {
+             ActiveRuntimeInstance = this;
++            // COLD ALLOC: FaunaSimulationEngine[1] - data-only fauna LOD simulation service registered through GlobalRegistry - owner: FaunaDirector
++            _faunaSimulationEngine ??= new FaunaSimulationEngine();
++            // COLD ALLOC: FaunaPresentationService[1] - spawn presentation service isolated from native simulation - owner: FaunaDirector
++            _faunaPresentationService ??= new FaunaPresentationService();
+             EnsureRuntimeStateInitialized();
+             InitializeDehydrationResidencyState();
+             _biomeSpawnRandom = CreateBiomeSpawnRandom();
+@@ -607,6 +563,7 @@ namespace Hecton8.AI
+                 return;
+ 
+             GlobalRegistry.Save?.Register(this);
++            TryRegisterFaunaSimulationService();
+ 
+             if (GlobalRegistry.Dispatcher == null)
+                 return;
+@@ -648,6 +605,7 @@ namespace Hecton8.AI
+                 return;
+ 
+             GlobalRegistry.Save?.Unregister(this);
++            TryUnregisterFaunaSimulationService();
+             CompleteResidentDataOnlySimulation(forceComplete: true);
+ 
+             if (_dispatcherRegistered)
+@@ -664,6 +622,7 @@ namespace Hecton8.AI
+             if (Application.isPlaying)
+                 GlobalRegistry.Save?.Unregister(this);
+ 
++            TryUnregisterFaunaSimulationService();
+             CompleteResidentDataOnlySimulation(forceComplete: true);
+ 
+             if (_dispatcherRegistered)
+@@ -677,6 +636,24 @@ namespace Hecton8.AI
+                 ActiveRuntimeInstance = null;
+         }
+ 
++        private void TryRegisterFaunaSimulationService()
++        {
++            if (_faunaSimulationRegistered || _faunaSimulationEngine == null)
++                return;
++
++            GlobalRegistry.RegisterFaunaSimulationService(_faunaSimulationEngine);
++            _faunaSimulationRegistered = true;
++        }
++
++        private void TryUnregisterFaunaSimulationService()
++        {
++            if (!_faunaSimulationRegistered || _faunaSimulationEngine == null)
++                return;
++
++            GlobalRegistry.UnregisterFaunaSimulationService(_faunaSimulationEngine);
++            _faunaSimulationRegistered = false;
++        }
++
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         //  ISlowTickable â€” MAIN LOOP (~Ñ€Ð°Ð· Ð² 0.5-1 ÑÐµÐºÑƒÐ½Ð´Ñƒ)
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+@@ -710,7 +687,7 @@ namespace Hecton8.AI
+                 return;
+             }
+ 
+-            CompleteResidentDataOnlySimulation(forceComplete: true);
++            CompleteResidentDataOnlySimulation(forceComplete: false);
+ 
+             _slowTickAccumulator -= DirectorSlowTickIntervalSeconds;
+             if (_slowTickAccumulator > DirectorSlowTickIntervalSeconds)
+@@ -1174,8 +1151,7 @@ namespace Hecton8.AI
+                     ai.SetSpawnPoint(spawnPos);
+                     ai.SetLogicalIdentity(uniqueInstanceUid);
+                     ai.SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
+-                    FaunaGeneticsManager.Instance?.ApplyTraits(ai, selectedEntry.archetype, biomeIdx, spawnPos);
+-                    EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
++                    _faunaPresentationService?.ConfigureSpawnedCreature(ai, selectedEntry.archetype, biomeIdx, spawnPos, in spawnChunk);
+                 }
+ 
+                 int typeIndex = selectedEntry.creatureTypeIndex;
+@@ -1849,10 +1825,10 @@ namespace Hecton8.AI
+ 
+         private void InitializeDehydrationResidencyState()
+         {
+-            if (_dehydratedPoolSlots.IsCreated &&
+-                _dehydratedLinearVelocityNative.IsCreated &&
+-                _dehydratedSimulationFlagsNative.IsCreated &&
+-                _freeDehydrationSlotQueue.IsCreated &&
++            if (_faunaSimulationMemory.PoolSlots.IsCreated &&
++                _faunaSimulationMemory.LinearVelocities.IsCreated &&
++                _faunaSimulationMemory.SimulationFlags.IsCreated &&
++                _faunaSimulationMemory.FreeSlots.IsCreated &&
+                 _dehydratedCreatureStates != null &&
+                 _activeDehydrationSlots != null)
+             {
+@@ -1861,22 +1837,13 @@ namespace Hecton8.AI
+ 
+             int slotCapacity = MaxFaunaResidencySlots;
+ 
+-            // COLD ALLOC: NativeArray<PoolSlotData>[512] - fauna residency slot metadata for dehydration and restore - owner: FaunaDirector
+-            _dehydratedPoolSlots = new NativeArray<PoolSlotData>(slotCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+-            // COLD ALLOC: NativeArray<float3>[512] - dehydrated fauna linear velocity cache for Burst LOD updates - owner: FaunaDirector
+-            _dehydratedLinearVelocityNative = new NativeArray<float3>(slotCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+-            // COLD ALLOC: NativeArray<byte>[512] - resident/dehydrated simulation flags for Burst LOD updates - owner: FaunaDirector
+-            _dehydratedSimulationFlagsNative = new NativeArray<byte>(slotCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+-            // COLD ALLOC: NativeQueue<int>(Persistent) - free fauna residency slot queue - owner: FaunaDirector
+-            _freeDehydrationSlotQueue = new NativeQueue<int>(Allocator.Persistent);
++            _faunaSimulationMemory.Allocate(slotCapacity);
++            _faunaSimulationEngine?.Initialize(slotCapacity);
+             if (_dehydratedCreatureStates == null || _dehydratedCreatureStates.Length != slotCapacity)
+                 _dehydratedCreatureStates = new FaunaResidencyState[slotCapacity];
+             if (_activeDehydrationSlots == null || _activeDehydrationSlots.Length != slotCapacity)
+                 _activeDehydrationSlots = new int[slotCapacity];
+ 
+-            for (int i = 0; i < slotCapacity; i++)
+-                _freeDehydrationSlotQueue.Enqueue(i);
+-
+             _activeDehydrationSlotCount = 0;
+         }
+ 
+@@ -1884,17 +1851,8 @@ namespace Hecton8.AI
+         {
+             CompleteResidentDataOnlySimulation(forceComplete: true);
+ 
+-            if (_dehydratedPoolSlots.IsCreated)
+-                _dehydratedPoolSlots.Dispose();
+-
+-            if (_dehydratedLinearVelocityNative.IsCreated)
+-                _dehydratedLinearVelocityNative.Dispose();
+-
+-            if (_dehydratedSimulationFlagsNative.IsCreated)
+-                _dehydratedSimulationFlagsNative.Dispose();
+-
+-            if (_freeDehydrationSlotQueue.IsCreated)
+-                _freeDehydrationSlotQueue.Dispose();
++            _faunaSimulationEngine?.Shutdown();
++            _faunaSimulationMemory.Dispose();
+ 
+             _dehydratedCreatureStates = null;
+             _activeDehydrationSlots = null;
+@@ -1906,23 +1864,7 @@ namespace Hecton8.AI
+         {
+             CompleteResidentDataOnlySimulation(forceComplete: true);
+ 
+-            if (_dehydratedPoolSlots.IsCreated)
+-            {
+-                for (int i = 0; i < _dehydratedPoolSlots.Length; i++)
+-                    _dehydratedPoolSlots[i] = default;
+-            }
+-
+-            if (_dehydratedLinearVelocityNative.IsCreated)
+-            {
+-                for (int i = 0; i < _dehydratedLinearVelocityNative.Length; i++)
+-                    _dehydratedLinearVelocityNative[i] = default;
+-            }
+-
+-            if (_dehydratedSimulationFlagsNative.IsCreated)
+-            {
+-                for (int i = 0; i < _dehydratedSimulationFlagsNative.Length; i++)
+-                    _dehydratedSimulationFlagsNative[i] = 0;
+-            }
++            _faunaSimulationMemory.Reset();
+ 
+             if (_dehydratedCreatureStates != null)
+                 System.Array.Clear(_dehydratedCreatureStates, 0, _dehydratedCreatureStates.Length);
+@@ -1930,13 +1872,6 @@ namespace Hecton8.AI
+             if (_activeDehydrationSlots != null)
+                 System.Array.Clear(_activeDehydrationSlots, 0, _activeDehydrationSlots.Length);
+ 
+-            if (_freeDehydrationSlotQueue.IsCreated)
+-            {
+-                _freeDehydrationSlotQueue.Clear();
+-                for (int i = 0; i < _dehydratedPoolSlots.Length; i++)
+-                    _freeDehydrationSlotQueue.Enqueue(i);
+-            }
+-
+             _activeDehydrationSlotCount = 0;
+             _residentDataOnlyLodScheduled = false;
+         }
+@@ -2009,7 +1944,7 @@ namespace Hecton8.AI
+ 
+         private int AllocateDehydrationSlot()
+         {
+-            if (!_freeDehydrationSlotQueue.IsCreated || !_freeDehydrationSlotQueue.TryDequeue(out int slotIndex))
++            if (!_faunaSimulationMemory.FreeSlots.IsCreated || !_faunaSimulationMemory.FreeSlots.TryDequeue(out int slotIndex))
+                 return InvalidDehydrationSlotIndex;
+ 
+             return slotIndex;
+@@ -2018,8 +1953,8 @@ namespace Hecton8.AI
+         private void ReleaseDehydrationSlot(int slotIndex)
+         {
+             if (slotIndex < 0 ||
+-                !_dehydratedPoolSlots.IsCreated ||
+-                !_freeDehydrationSlotQueue.IsCreated ||
++                !_faunaSimulationMemory.PoolSlots.IsCreated ||
++                !_faunaSimulationMemory.FreeSlots.IsCreated ||
+                 _dehydratedCreatureStates == null ||
+                 slotIndex >= _dehydratedCreatureStates.Length)
+             {
+@@ -2030,13 +1965,13 @@ namespace Hecton8.AI
+                 return;
+ 
+             RemoveActiveDehydrationSlot(slotIndex);
+-            _dehydratedPoolSlots[slotIndex] = default;
+-            if (_dehydratedLinearVelocityNative.IsCreated && slotIndex < _dehydratedLinearVelocityNative.Length)
+-                _dehydratedLinearVelocityNative[slotIndex] = default;
+-            if (_dehydratedSimulationFlagsNative.IsCreated && slotIndex < _dehydratedSimulationFlagsNative.Length)
+-                _dehydratedSimulationFlagsNative[slotIndex] = 0;
++            _faunaSimulationMemory.PoolSlots[slotIndex] = default;
++            if (_faunaSimulationMemory.LinearVelocities.IsCreated && slotIndex < _faunaSimulationMemory.LinearVelocities.Length)
++                _faunaSimulationMemory.LinearVelocities[slotIndex] = default;
++            if (_faunaSimulationMemory.SimulationFlags.IsCreated && slotIndex < _faunaSimulationMemory.SimulationFlags.Length)
++                _faunaSimulationMemory.SimulationFlags[slotIndex] = 0;
+             _dehydratedCreatureStates[slotIndex] = default;
+-            _freeDehydrationSlotQueue.Enqueue(slotIndex);
++            _faunaSimulationMemory.FreeSlots.Enqueue(slotIndex);
+         }
+ 
+         private void AddActiveDehydrationSlot(int slotIndex)
+@@ -2094,20 +2029,20 @@ namespace Hecton8.AI
+             _residentDataOnlyLodHandle.Complete();
+             _residentDataOnlyLodScheduled = false;
+ 
+-            if (_dehydratedCreatureStates == null || !_dehydratedLinearVelocityNative.IsCreated)
++            if (_dehydratedCreatureStates == null || !_faunaSimulationMemory.LinearVelocities.IsCreated)
+                 return;
+ 
+             for (int i = 0; i < _activeDehydrationSlotCount; i++)
+             {
+                 int slotIndex = _activeDehydrationSlots[i];
+-                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length || slotIndex >= _dehydratedLinearVelocityNative.Length)
++                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length || slotIndex >= _faunaSimulationMemory.LinearVelocities.Length)
+                     continue;
+ 
+                 FaunaResidencyState state = _dehydratedCreatureStates[slotIndex];
+                 if (!state.isResident || !state.isDehydrated)
+                     continue;
+ 
+-                float3 velocity = _dehydratedLinearVelocityNative[slotIndex];
++                float3 velocity = _faunaSimulationMemory.LinearVelocities[slotIndex];
+                 state.linearVelocity = new Vector3(velocity.x, velocity.y, velocity.z);
+                 _dehydratedCreatureStates[slotIndex] = state;
+             }
+@@ -2117,36 +2052,30 @@ namespace Hecton8.AI
+         {
+             if (_residentDataOnlyLodScheduled ||
+                 _activeDehydrationSlotCount <= 0 ||
+-                !_dehydratedPoolSlots.IsCreated ||
+-                !_dehydratedLinearVelocityNative.IsCreated ||
+-                !_dehydratedSimulationFlagsNative.IsCreated)
++                !_faunaSimulationMemory.PoolSlots.IsCreated ||
++                !_faunaSimulationMemory.LinearVelocities.IsCreated ||
++                !_faunaSimulationMemory.SimulationFlags.IsCreated)
+             {
+                 return;
+             }
+ 
+             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPos);
+-            DataOnlyFaunaLodJob job = new DataOnlyFaunaLodJob
+-            {
+-                PoolSlots = _dehydratedPoolSlots,
+-                LinearVelocities = _dehydratedLinearVelocityNative,
+-                SimulationFlags = _dehydratedSimulationFlagsNative,
+-                PlayerAbsolutePosition = ResolveAbsolutePosition(in playerAup),
+-                DeltaTime = deltaTime
+-            };
++            if (_faunaSimulationEngine == null)
++                return;
+ 
+-            _residentDataOnlyLodHandle = job.Schedule(_dehydratedPoolSlots.Length, 32);
++            _residentDataOnlyLodHandle = _faunaSimulationEngine.ScheduleResidentDataOnlyLod(
++                _faunaSimulationMemory.PoolSlots,
++                _faunaSimulationMemory.LinearVelocities,
++                _faunaSimulationMemory.SimulationFlags,
++                in playerAup,
++                deltaTime,
++                DehydrationDistanceSq,
++                HibernationDistanceSq,
++                ResidentSimulationFlag,
++                DehydratedSimulationFlag);
+             _residentDataOnlyLodScheduled = true;
+         }
+ 
+-        private static double3 ResolveAbsolutePosition(in AbsoluteUniversePosition position)
+-        {
+-            const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+-            return new double3(
+-                (position.GridX * cellSize) + position.LocalX,
+-                (position.GridY * cellSize) + position.LocalY,
+-                (position.GridZ * cellSize) + position.LocalZ);
+-        }
+-
+         private static bool IsApexPredatorArchetype(CreatureArchetypeData archetype, bool isLargeThreat)
+         {
+             return isLargeThreat &&
+@@ -2262,7 +2191,7 @@ namespace Hecton8.AI
+ 
+         private void UpdateResidencyStateFromActiveCreature(in ActiveCreature creature, in AbsoluteUniversePosition positionAup, bool markDehydrated)
+         {
+-            if (creature.dehydrationSlotIndex < 0 || creature.dehydrationSlotIndex >= _dehydratedPoolSlots.Length)
++            if (creature.dehydrationSlotIndex < 0 || creature.dehydrationSlotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+                 return;
+ 
+             UpdateResidencySlot(
+@@ -2297,21 +2226,21 @@ namespace Hecton8.AI
+             bool markDehydrated)
+         {
+             if (slotIndex < 0 ||
+-                !_dehydratedPoolSlots.IsCreated ||
++                !_faunaSimulationMemory.PoolSlots.IsCreated ||
+                 _dehydratedCreatureStates == null ||
+-                slotIndex >= _dehydratedPoolSlots.Length)
++                slotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+             {
+                 return;
+             }
+ 
+-            PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
++            PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+             slotData.BoundGuid = unchecked((ulong)(slotIndex + 1));
+             WritePoolSlotPosition(ref slotData, in positionAup);
+             slotData.HydrationFrame = unchecked((ushort)Time.frameCount);
+             slotData.RefCount = 1;
+             slotData.StateFlags = markDehydrated ? (byte)1 : (byte)0;
+             slotData.LastVisibleFrame = unchecked((ushort)Time.frameCount);
+-            _dehydratedPoolSlots[slotIndex] = slotData;
++            _faunaSimulationMemory.PoolSlots[slotIndex] = slotData;
+ 
+             Vector3 linearVelocity = Vector3.zero;
+             Vector3 angularVelocity = Vector3.zero;
+@@ -2330,14 +2259,14 @@ namespace Hecton8.AI
+                 }
+             }
+ 
+-            if (_dehydratedLinearVelocityNative.IsCreated && slotIndex < _dehydratedLinearVelocityNative.Length)
+-                _dehydratedLinearVelocityNative[slotIndex] = new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
+-            if (_dehydratedSimulationFlagsNative.IsCreated && slotIndex < _dehydratedSimulationFlagsNative.Length)
++            if (_faunaSimulationMemory.LinearVelocities.IsCreated && slotIndex < _faunaSimulationMemory.LinearVelocities.Length)
++                _faunaSimulationMemory.LinearVelocities[slotIndex] = new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
++            if (_faunaSimulationMemory.SimulationFlags.IsCreated && slotIndex < _faunaSimulationMemory.SimulationFlags.Length)
+             {
+                 byte flags = ResidentSimulationFlag;
+                 if (markDehydrated)
+                     flags |= DehydratedSimulationFlag;
+-                _dehydratedSimulationFlagsNative[slotIndex] = flags;
++                _faunaSimulationMemory.SimulationFlags[slotIndex] = flags;
+             }
+ 
+             _dehydratedCreatureStates[slotIndex] = new FaunaResidencyState
+@@ -2393,7 +2322,7 @@ namespace Hecton8.AI
+                     RemoveActiveDehydrationSlotAt(i);
+                     continue;
+                 }
+-                PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
++                PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+                 AbsoluteUniversePosition creatureAup = ReadPoolSlotPosition(in slotData);
+                 if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) > DehydrationDistanceSq)
+                     continue;
+@@ -2409,8 +2338,7 @@ namespace Hecton8.AI
+                     ai.SetSpawnPoint(runtimePosition);
+                     ai.SetLogicalIdentity(state.uniqueInstanceUid);
+                     ai.SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
+-                    FaunaGeneticsManager.Instance?.ApplyTraits(ai, state.archetype, state.biomeIndex, runtimePosition);
+-                    EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, state.archetype, state.chunkCoord);
++                    _faunaPresentationService?.ConfigureSpawnedCreature(ai, state.archetype, state.biomeIndex, runtimePosition, in state.chunkCoord);
+ 
+                     float clampedHealth = Mathf.Clamp(state.health, 0f, ai.MaxHealth);
+                     float restoreDamage = ai.MaxHealth - clampedHealth;
+@@ -2449,13 +2377,13 @@ namespace Hecton8.AI
+                 state.hibernationStartTimeSeconds = -1f;
+                 _dehydratedCreatureStates[slotIndex] = state;
+ 
+-                slotData = _dehydratedPoolSlots[slotIndex];
++                slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+                 slotData.StateFlags = 0;
+                 slotData.HydrationFrame = unchecked((ushort)Time.frameCount);
+                 slotData.LastVisibleFrame = unchecked((ushort)Time.frameCount);
+-                _dehydratedPoolSlots[slotIndex] = slotData;
+-                if (_dehydratedSimulationFlagsNative.IsCreated && slotIndex < _dehydratedSimulationFlagsNative.Length)
+-                    _dehydratedSimulationFlagsNative[slotIndex] = ResidentSimulationFlag;
++                _faunaSimulationMemory.PoolSlots[slotIndex] = slotData;
++                if (_faunaSimulationMemory.SimulationFlags.IsCreated && slotIndex < _faunaSimulationMemory.SimulationFlags.Length)
++                    _faunaSimulationMemory.SimulationFlags[slotIndex] = ResidentSimulationFlag;
+ 
+                 RemoveActiveDehydrationSlotAt(i);
+                 hydrated++;
+@@ -2477,14 +2405,14 @@ namespace Hecton8.AI
+             for (int i = _activeDehydrationSlotCount - 1; i >= 0; i--)
+             {
+                 int slotIndex = _activeDehydrationSlots[i];
+-                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length || slotIndex >= _dehydratedPoolSlots.Length)
++                if (slotIndex < 0 || slotIndex >= _dehydratedCreatureStates.Length || slotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+                     continue;
+ 
+                 FaunaResidencyState state = _dehydratedCreatureStates[slotIndex];
+                 if (!state.isResident || !state.isDehydrated)
+                     continue;
+ 
+-                PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
++                PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+                 AbsoluteUniversePosition creatureAup = ReadPoolSlotPosition(in slotData);
+                 if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) <= HibernationDistanceSq)
+                     continue;
+@@ -2694,9 +2622,9 @@ namespace Hecton8.AI
+             savedState = default;
+             if (slotIndex < 0 ||
+                 _dehydratedCreatureStates == null ||
+-                !_dehydratedPoolSlots.IsCreated ||
++                !_faunaSimulationMemory.PoolSlots.IsCreated ||
+                 slotIndex >= _dehydratedCreatureStates.Length ||
+-                slotIndex >= _dehydratedPoolSlots.Length)
++                slotIndex >= _faunaSimulationMemory.PoolSlots.Length)
+             {
+                 return false;
+             }
+@@ -2712,7 +2640,7 @@ namespace Hecton8.AI
+             if (speciesId == 0)
+                 return false;
+ 
+-            PoolSlotData slotData = _dehydratedPoolSlots[slotIndex];
++            PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
+             AbsoluteUniversePosition position = ReadPoolSlotPosition(in slotData);
+             savedState = new HibernatedFaunaStateDTO
+             {
+@@ -2788,9 +2716,9 @@ namespace Hecton8.AI
+             restoredState.isPredator = entry.isPredator;
+             _dehydratedCreatureStates[slotIndex] = restoredState;
+ 
+-            if (_dehydratedLinearVelocityNative.IsCreated && slotIndex < _dehydratedLinearVelocityNative.Length)
++            if (_faunaSimulationMemory.LinearVelocities.IsCreated && slotIndex < _faunaSimulationMemory.LinearVelocities.Length)
+             {
+-                _dehydratedLinearVelocityNative[slotIndex] = new float3(
++                _faunaSimulationMemory.LinearVelocities[slotIndex] = new float3(
+                     savedState.linearVelocityX,
+                     savedState.linearVelocityY,
+                     savedState.linearVelocityZ);
+@@ -3580,8 +3508,7 @@ namespace Hecton8.AI
+                 ai.SetSpawnPoint(spawnPosition);
+                 ai.SetLogicalIdentity(uniqueInstanceUid);
+                 ai.SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
+-                FaunaGeneticsManager.Instance?.ApplyTraits(ai, selectedEntry.archetype, biomeIndex, spawnPosition);
+-                EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
++                _faunaPresentationService?.ConfigureSpawnedCreature(ai, selectedEntry.archetype, biomeIndex, spawnPosition, in spawnChunk);
+ 
+                 if (selectedEntry.isPredator || threatClass != EncounterThreatClass.Drone)
+                     ai.ForceState(FaunaBrain.AIState.Aggressive);
+@@ -4127,8 +4054,7 @@ namespace Hecton8.AI
+                     ai.SetSpawnPoint(spawnPos);
+                     ai.SetLogicalIdentity(BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, spawnPos));
+                     ai.SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
+-                    FaunaGeneticsManager.Instance?.ApplyTraits(ai, selectedEntry.archetype, biomeIdx, spawnPos);
+-                    EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, selectedEntry.archetype, spawnChunk);
++                    _faunaPresentationService?.ConfigureSpawnedCreature(ai, selectedEntry.archetype, biomeIdx, spawnPos, in spawnChunk);
+                     ai.ForceState(FaunaBrain.AIState.Aggressive);
+                 }
+ 
+diff --git a/Assets/_Project/Scripts/SubmarineFluidDynamics.cs b/Assets/_Project/Scripts/SubmarineFluidDynamics.cs
+index 0df0dae9..4123210b 100644
+--- a/Assets/_Project/Scripts/SubmarineFluidDynamics.cs
++++ b/Assets/_Project/Scripts/SubmarineFluidDynamics.cs
+@@ -429,6 +429,8 @@ namespace Hecton8.Physics
+         private NativeArray<uint> _jobCompartmentFlags;
+         private NativeArray<float> _bulkheadTransferDeltas;
+         private NativeQueue<SplashEvent> _splashEventQueue;
++        private FluidMathCore _fluidMathCore;
++        private bool _fluidSimulationRegistered;
+ 
+         [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+         [StructLayout(LayoutKind.Sequential)]
+@@ -450,14 +452,6 @@ namespace Hecton8.Physics
+ 
+             public void Execute()
+             {
+-                float safeDepth = math.max(0f, DepthMeters);
+-                float ingressVelocity = math.sqrt(2f * GravityMetersPerSecondSquared * safeDepth);
+-                if (!math.isfinite(ingressVelocity))
+-                    ingressVelocity = 0f;
+-
+-                float maxIngressScale = math.max(0.01f, MaximumIngressPerSecondNormalized) * FixedDeltaTime;
+-                float cd = math.clamp(DischargeCoefficient, 0.05f, 1f);
+-
+                 for (int i = 0; i < CompartmentCapacity; i++)
+                 {
+                     if (i >= CompartmentCount)
+@@ -485,13 +479,16 @@ namespace Hecton8.Physics
+                         float remainingCapacity = maxVolume - currentVolume;
+                         if (remainingCapacity > Epsilon)
+                         {
+-                            float deltaVolume = ingressVelocity * breachArea * cd * FixedDeltaTime;
+-                            if (!math.isfinite(deltaVolume))
+-                                deltaVolume = 0f;
+-
+-                            float maxIngressThisStep = maxVolume * maxIngressScale;
+-                            deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
+-                            currentVolume += deltaVolume;
++                            currentVolume = FluidMathCore.ResolveIngressVolume(
++                                currentVolume,
++                                maxVolume,
++                                breachArea,
++                                DepthMeters,
++                                FixedDeltaTime,
++                                DischargeCoefficient,
++                                MaximumIngressPerSecondNormalized,
++                                GravityMetersPerSecondSquared,
++                                Epsilon);
+                         }
+                     }
+                     else
+@@ -542,55 +539,19 @@ namespace Hecton8.Physics
+                 if (maxVolumeA <= Epsilon || maxVolumeB <= Epsilon)
+                     return;
+ 
+-                if (!TryResolveSafeNormalizedRatio(FloodVolumes[compartmentA], maxVolumeA, out float fillA) ||
+-                    !TryResolveSafeNormalizedRatio(FloodVolumes[compartmentB], maxVolumeB, out float fillB))
+-                {
+-                    return;
+-                }
+-
+-                float transferCoefficient = math.max(0f, BulkheadFlowCoefficient);
+-                float perTickTransferCap = math.max(0.01f, MaxTransferPerTick);
+-                float doorAreaSquareMeters = math.max(Epsilon, BulkheadDoorAreas[index]);
+-                float characteristicHeightA = math.max(0.1f, SafeCubeRoot(maxVolumeA));
+-                float characteristicHeightB = math.max(0.1f, SafeCubeRoot(maxVolumeB));
+-                float headHeightA = fillA * characteristicHeightA;
+-                float headHeightB = fillB * characteristicHeightB;
+-                float headDifferenceMeters = headHeightA - headHeightB;
+-                float absHeadDifferenceMeters = math.abs(headDifferenceMeters);
+-                float dampingHeadMeters = math.max(Epsilon, NearZeroHeadDampingMeters);
+-                float dampingFactor = math.smoothstep(0f, dampingHeadMeters, absHeadDifferenceMeters);
+-                if (dampingFactor <= Epsilon)
+-                    return;
+-
+-                float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * GravityMetersPerSecondSquared * math.abs(headDifferenceMeters)));
+-                float signedDeltaVolume =
+-                    math.sign(headDifferenceMeters) *
+-                    doorAreaSquareMeters *
+-                    math.max(0f, DischargeCoefficient) *
+-                    velocityMetersPerSecond *
+-                    transferCoefficient *
+-                    FixedDeltaTime *
+-                    dampingFactor;
+-                float deltaVolume = math.clamp(signedDeltaVolume, -perTickTransferCap, perTickTransferCap);
+-
+-                if (deltaVolume > 0f)
+-                {
+-                    deltaVolume = math.min(
+-                        deltaVolume,
+-                        math.min(FloodVolumes[compartmentA], maxVolumeB - FloodVolumes[compartmentB]));
+-                }
+-                else if (deltaVolume < 0f)
+-                {
+-                    float transferMagnitude = math.min(
+-                        -deltaVolume,
+-                        math.min(FloodVolumes[compartmentB], maxVolumeA - FloodVolumes[compartmentA]));
+-                    deltaVolume = -transferMagnitude;
+-                }
+-
+-                if (math.abs(deltaVolume) <= Epsilon || !math.isfinite(deltaVolume))
+-                    deltaVolume = 0f;
+-
+-                TransferDeltas[index] = deltaVolume;
++                TransferDeltas[index] = FluidMathCore.ResolveBulkheadTransferDelta(
++                    FloodVolumes[compartmentA],
++                    FloodVolumes[compartmentB],
++                    maxVolumeA,
++                    maxVolumeB,
++                    BulkheadDoorAreas[index],
++                    FixedDeltaTime,
++                    BulkheadFlowCoefficient,
++                    MaxTransferPerTick,
++                    DischargeCoefficient,
++                    NearZeroHeadDampingMeters,
++                    GravityMetersPerSecondSquared,
++                    Epsilon);
+             }
+         }
+ 
+@@ -749,6 +710,8 @@ namespace Hecton8.Physics
+ 
+         private void Awake()
+         {
++            // COLD ALLOC: FluidMathCore[1] - data-only submarine fluid math service registered through GlobalRegistry - owner: SubmarineFluidDynamics
++            _fluidMathCore ??= new FluidMathCore();
+             CacheReferences();
+             RefreshResolvedInertiaTensors();
+             RefreshDerivedConstants(DefaultFixedStepSeconds);
+@@ -757,6 +720,7 @@ namespace Hecton8.Physics
+ 
+         private void OnEnable()
+         {
++            TryRegisterFluidSimulationService();
+             CacheReferences();
+             RebuildExteriorBuoyancySampleLocalPoints();
+             EnsureNativeState();
+@@ -779,6 +743,7 @@ namespace Hecton8.Physics
+ 
+         private void OnDisable()
+         {
++            TryUnregisterFluidSimulationService();
+             TryUnregisterOriginShiftListener();
+             TryUnregister();
+             ClearExteriorThermalAnomalies();
+@@ -788,6 +753,7 @@ namespace Hecton8.Physics
+ 
+         private void OnDestroy()
+         {
++            TryUnregisterFluidSimulationService();
+             TryUnregisterOriginShiftListener();
+             TryUnregister();
+             ClearExteriorThermalAnomalies();
+@@ -1585,6 +1551,15 @@ namespace Hecton8.Physics
+             _registered = true;
+         }
+ 
++        private void TryRegisterFluidSimulationService()
++        {
++            if (_fluidSimulationRegistered || _fluidMathCore == null || !Application.isPlaying)
++                return;
++
++            GlobalRegistry.RegisterFluidSimulationService(_fluidMathCore);
++            _fluidSimulationRegistered = true;
++        }
++
+         private void TryRegisterOriginShiftListener()
+         {
+             if (_registeredOriginShiftListener || !Application.isPlaying)
+@@ -1604,6 +1579,15 @@ namespace Hecton8.Physics
+             _registered = false;
+         }
+ 
++        private void TryUnregisterFluidSimulationService()
++        {
++            if (!_fluidSimulationRegistered || _fluidMathCore == null)
++                return;
++
++            GlobalRegistry.UnregisterFluidSimulationService(_fluidMathCore);
++            _fluidSimulationRegistered = false;
++        }
++
+         private void TryUnregisterOriginShiftListener()
+         {
+             if (!_registeredOriginShiftListener)
+@@ -2615,29 +2599,19 @@ namespace Hecton8.Physics
+                 return;
+ 
+             float3 currentCenter = new float3(_appliedCenterOfMassLocal.x, _appliedCenterOfMassLocal.y, _appliedCenterOfMassLocal.z);
+-            float3 blendedCenter = math.lerp(currentCenter, targetCenter, _centerOfMassBlendAlpha);
+-            if (!math.all(math.isfinite(blendedCenter)))
++            float3 blendedCenter = FluidMathCore.ResolveCenterOfMassStep(
++                currentCenter,
++                targetCenter,
++                _centerOfMassBlendAlpha,
++                maxCenterOfMassDeltaPerTickMeters,
++                Epsilon,
++                out byte centerStepValid);
++            if (centerStepValid == 0)
+             {
+                 EmergencyResetHydrodynamics("ApplyCenterOfMassShift.BlendedCenter");
+                 return;
+             }
+ 
+-            float3 delta = blendedCenter - currentCenter;
+-            float maxCenterDelta = math.max(0.001f, maxCenterOfMassDeltaPerTickMeters);
+-            float deltaMagnitude = math.length(delta);
+-            if (deltaMagnitude > maxCenterDelta)
+-            {
+-                if (!TryResolveSafeQuotient(maxCenterDelta, deltaMagnitude, out float centerClampScale))
+-                {
+-                    EmergencyResetHydrodynamics("ApplyCenterOfMassShift.Clamp");
+-                    return;
+-                }
+-                else
+-                {
+-                    blendedCenter = currentCenter + (delta * centerClampScale);
+-                }
+-            }
+-
+             Vector3 newCenter = HectonPlayerMotor.SafeVelocity(new Vector3(blendedCenter.x, blendedCenter.y, blendedCenter.z), _appliedCenterOfMassLocal);
+             if ((_appliedCenterOfMassLocal - newCenter).sqrMagnitude <= 0.000001f)
+                 return;
+@@ -3105,14 +3079,23 @@ namespace Hecton8.Physics
+             if (linearVelocity.sqrMagnitude < floraDragMinimumSpeedMetersPerSecond * floraDragMinimumSpeedMetersPerSecond)
+                 return 0f;
+ 
+-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+-            if (vegetationBridge == null)
+-                return 0f;
+-
+             Bounds hullBounds = exteriorHullCollider != null
+                 ? exteriorHullCollider.bounds
+                 : new Bounds(_rigidbody.worldCenterOfMass, Vector3.one * 4f);
+             Vector3 center = hullBounds.center;
++            float sampleRadius = math.max(floraDragMinimumSampleRadiusMeters, math.max(hullBounds.extents.x, hullBounds.extents.z));
++            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
++            if (floraInteractionManager != null &&
++                floraInteractionManager.TryResolveKelpPushback(center, sampleRadius, out float spatialHashDensity01, out float bendRadiusMeters))
++            {
++                floraInteractionManager.RegisterExternalInteraction(center, linearVelocity, math.max(sampleRadius, bendRadiusMeters));
++                return math.saturate(spatialHashDensity01);
++            }
++
++            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
++            if (vegetationBridge == null)
++                return 0f;
++
+             Vector3 forwardOffset = _cachedTransform.forward * (hullBounds.extents.z * 0.6f);
+             Vector3 rightOffset = _cachedTransform.right * (hullBounds.extents.x * 0.6f);
+ 
+@@ -3128,7 +3111,6 @@ namespace Hecton8.Physics
+                 return 0f;
+ 
+             float normalizedDensity = densitySum / densityCount;
+-            float sampleRadius = math.max(floraDragMinimumSampleRadiusMeters, math.max(hullBounds.extents.x, hullBounds.extents.z));
+             float radiusScale = math.saturate(sampleRadius / math.max(floraDragMinimumSampleRadiusMeters, 0.01f));
+             return math.saturate(normalizedDensity * math.lerp(0.85f, 1.15f, math.saturate(radiusScale - 1f)));
+         }
+@@ -3569,7 +3551,7 @@ namespace Hecton8.Physics
+             if (!IsFiniteVector(absoluteUniversePosition))
+                 return;
+ 
+-            _splashEventQueue.Enqueue(new SplashEvent
++            SplashEvent splashEvent = new SplashEvent
+             {
+                 RuntimePosition = new float3(worldPoint.x, worldPoint.y, worldPoint.z),
+                 AbsoluteUniversePosition = new float3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+@@ -3578,8 +3560,11 @@ namespace Hecton8.Physics
+                 KineticEnergyJoules = kineticEnergyJoules,
+                 SubmersionFactor = currentSubmersionFactor,
+                 SampleIndex = sampleIndex
+-            });
++            };
++
++            _splashEventQueue.Enqueue(splashEvent);
+             _queuedSplashEventCount++;
++            FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
+         }
+ 
+         private void RebuildExteriorBuoyancySampleLocalPoints()
+diff --git a/Assets/_Project/Scripts/World/VegetationMemoryPool.cs b/Assets/_Project/Scripts/World/VegetationMemoryPool.cs
+index 443675ad..b114baa0 100644
+--- a/Assets/_Project/Scripts/World/VegetationMemoryPool.cs
++++ b/Assets/_Project/Scripts/World/VegetationMemoryPool.cs
+@@ -26,6 +26,14 @@ namespace Hecton8.World
+             public NativeArray<Vector2> FlowDirections;
+             public NativeArray<Vector3> FlowVectors;
+             public int Capacity;
++            public bool IsCreated => Matrices.IsCreated ||
++                                     Metadata.IsCreated ||
++                                     Types.IsCreated ||
++                                     SemanticTypes.IsCreated ||
++                                     BiomeLayers.IsCreated ||
++                                     EdgeDistances.IsCreated ||
++                                     FlowDirections.IsCreated ||
++                                     FlowVectors.IsCreated;
+ 
+             public void Dispose()
+             {
+@@ -55,6 +63,13 @@ namespace Hecton8.World
+             public NativeArray<byte> BiomeLayers;
+             public NativeArray<Vector2> FlowDirections;
+             public NativeArray<Vector3> FlowVectors;
++            public bool IsCreated => Matrices.IsCreated ||
++                                     Metadata.IsCreated ||
++                                     Types.IsCreated ||
++                                     SemanticTypes.IsCreated ||
++                                     BiomeLayers.IsCreated ||
++                                     FlowDirections.IsCreated ||
++                                     FlowVectors.IsCreated;
+ 
+             public void Dispose()
+             {
+@@ -134,6 +149,15 @@ namespace Hecton8.World
+             public NativeArray<ActiveAggregateCopyRecord> SurfaceAggregateCopyRecordsNative;
+             public NativeArray<ActiveAggregateCopyRecord> UnderwaterAggregateCopyRecordsNative;
+             public NativeArray<MegaWreckStreamSection> MegaWreckStreamSnapshotNative;
++            public bool IsCreated => DensityQueryChunksNative.IsCreated ||
++                                     DensityQueryGridNative.IsCreated ||
++                                     ThreatAttractorGridNative.IsCreated ||
++                                     EcosystemThreatGridCurrentNative.IsCreated ||
++                                     EcosystemThreatGridNextNative.IsCreated ||
++                                     AbyssalFlowVolumeCurrentNative.IsCreated ||
++                                     AbyssalFlowVolumeNextNative.IsCreated ||
++                                     HlodRegistrySnapshotNative.IsCreated ||
++                                     MegaWreckStreamSnapshotNative.IsCreated;
+ 
+             public void Dispose()
+             {
+@@ -172,9 +196,9 @@ namespace Hecton8.World
+                 DisposeNativeArray(ref TerrainHoleStreamingRecordsNative, dependency);
+                 DisposeNativeArray(ref ArtificialStructureRecordsNative, dependency);
+                 DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashFrontNative, dependency);
+-                DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashBackNative, default);
++                DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashBackNative, dependency);
+                 DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashFrontNative, dependency);
+-                DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashBackNative, default);
++                DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashBackNative, dependency);
+                 DisposeNativeArray(ref AbyssalAnchorPositionsNative, dependency);
+                 DisposeNativeArray(ref AbyssalNavNodeSnapshotNative, dependency);
+                 DisposeNativeArray(ref AbyssalNavConduitVectorsSnapshotNative, dependency);
+diff --git a/Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs b/Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs
+new file mode 100644
+index 00000000..a1003605
+--- /dev/null
++++ b/Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs
+@@ -0,0 +1,208 @@
++using System;
++using Hecton8.Core;
++using Hecton8.World;
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++
++namespace Hecton8.AI
++{
++    /// <summary>
++    /// Data-only fauna simulation service. Owns Burst job scheduling and keeps visual/GameObject logic out of LOD math.
++    /// </summary>
++    public sealed class FaunaSimulationEngine : IFaunaSim
++    {
++        /// <inheritdoc />
++        public bool IsReady { get; private set; }
++
++        /// <inheritdoc />
++        public int ResidentSlotCapacity { get; private set; }
++
++        /// <summary>
++        /// Marks the service ready after residency buffers have been allocated by the owning director.
++        /// </summary>
++        public void Initialize(int residentSlotCapacity)
++        {
++            ResidentSlotCapacity = math.max(0, residentSlotCapacity);
++            IsReady = ResidentSlotCapacity > 0;
++        }
++
++        /// <summary>
++        /// Clears registry-facing state before the owning director disposes its native buffers.
++        /// </summary>
++        public void Shutdown()
++        {
++            IsReady = false;
++            ResidentSlotCapacity = 0;
++        }
++
++        internal JobHandle ScheduleResidentDataOnlyLod(
++            NativeArray<PoolSlotData> poolSlots,
++            NativeArray<float3> linearVelocities,
++            NativeArray<byte> simulationFlags,
++            in AbsoluteUniversePosition playerAup,
++            float deltaTime,
++            double dehydrationDistanceSq,
++            double hibernationDistanceSq,
++            byte residentSimulationFlag,
++            byte dehydratedSimulationFlag)
++        {
++            DataOnlyFaunaLodJob job = new DataOnlyFaunaLodJob
++            {
++                PoolSlots = poolSlots,
++                LinearVelocities = linearVelocities,
++                SimulationFlags = simulationFlags,
++                PlayerAbsolutePosition = AUPMath.ToAbsoluteDouble3(in playerAup),
++                DeltaTime = deltaTime,
++                DehydrationDistanceSq = dehydrationDistanceSq,
++                HibernationDistanceSq = hibernationDistanceSq,
++                ResidentSimulationFlag = residentSimulationFlag,
++                DehydratedSimulationFlag = dehydratedSimulationFlag
++            };
++
++            return job.Schedule(poolSlots.Length, 32);
++        }
++
++        [BurstCompile]
++        private struct DataOnlyFaunaLodJob : IJobParallelFor
++        {
++            public NativeArray<PoolSlotData> PoolSlots;
++            public NativeArray<float3> LinearVelocities;
++            [ReadOnly] public NativeArray<byte> SimulationFlags;
++            public double3 PlayerAbsolutePosition;
++            public float DeltaTime;
++            public double DehydrationDistanceSq;
++            public double HibernationDistanceSq;
++            public byte ResidentSimulationFlag;
++            public byte DehydratedSimulationFlag;
++
++            public void Execute(int index)
++            {
++                byte flags = SimulationFlags[index];
++                if ((flags & (ResidentSimulationFlag | DehydratedSimulationFlag)) != (ResidentSimulationFlag | DehydratedSimulationFlag))
++                    return;
++
++                PoolSlotData slotData = PoolSlots[index];
++                double3 positionAbsolute = ToAbsolutePosition(slotData);
++                double3 delta = positionAbsolute - PlayerAbsolutePosition;
++                double distanceSq = math.dot(delta, delta);
++                if (distanceSq <= DehydrationDistanceSq || distanceSq > HibernationDistanceSq)
++                    return;
++
++                float step = math.max(0f, DeltaTime);
++                float3 nextVelocity = LinearVelocities[index] * math.saturate(1f - (step * 0.12f));
++                positionAbsolute += (double3)(nextVelocity * step);
++                LinearVelocities[index] = nextVelocity;
++                WriteAbsolutePosition(ref slotData, positionAbsolute);
++                PoolSlots[index] = slotData;
++            }
++
++            private static double3 ToAbsolutePosition(PoolSlotData slotData)
++            {
++                const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
++                return new double3(
++                    (slotData.AupCell.x * cellSize) + slotData.LocalOffset.x,
++                    (slotData.AupCell.y * cellSize) + slotData.LocalOffset.y,
++                    (slotData.AupCell.z * cellSize) + slotData.LocalOffset.z);
++            }
++
++            private static void WriteAbsolutePosition(ref PoolSlotData slotData, double3 absolutePosition)
++            {
++                const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
++                long gridX = (long)math.floor(absolutePosition.x / cellSize);
++                long gridY = (long)math.floor(absolutePosition.y / cellSize);
++                long gridZ = (long)math.floor(absolutePosition.z / cellSize);
++
++                slotData.AupCell = new int3((int)gridX, (int)gridY, (int)gridZ);
++                slotData.LocalOffset = new float3(
++                    (float)(absolutePosition.x - (gridX * cellSize)),
++                    (float)(absolutePosition.y - (gridY * cellSize)),
++                    (float)(absolutePosition.z - (gridZ * cellSize)));
++            }
++        }
++    }
++
++    /// <summary>
++    /// IDisposable owner for fauna residency native memory.
++    /// </summary>
++    internal struct FaunaSimulationMemory : IDisposable
++    {
++        public NativeArray<PoolSlotData> PoolSlots;
++        public NativeArray<float3> LinearVelocities;
++        public NativeArray<byte> SimulationFlags;
++        public NativeQueue<int> FreeSlots;
++        public int Capacity;
++
++        public bool IsCreated =>
++            PoolSlots.IsCreated &&
++            LinearVelocities.IsCreated &&
++            SimulationFlags.IsCreated &&
++            FreeSlots.IsCreated;
++
++        public void Allocate(int capacity)
++        {
++            Dispose();
++            Capacity = math.max(0, capacity);
++            if (Capacity <= 0)
++                return;
++
++            // COLD ALLOC: NativeArray<PoolSlotData>[Capacity] - fauna residency slot metadata for dehydration and restore - owner: FaunaSimulationMemory
++            PoolSlots = new NativeArray<PoolSlotData>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            // COLD ALLOC: NativeArray<float3>[Capacity] - dehydrated fauna linear velocity cache for Burst LOD updates - owner: FaunaSimulationMemory
++            LinearVelocities = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            // COLD ALLOC: NativeArray<byte>[Capacity] - resident/dehydrated simulation flags for Burst LOD updates - owner: FaunaSimulationMemory
++            SimulationFlags = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            // COLD ALLOC: NativeQueue<int>(Persistent) - free fauna residency slot queue - owner: FaunaSimulationMemory
++            FreeSlots = new NativeQueue<int>(Allocator.Persistent);
++
++            for (int i = 0; i < Capacity; i++)
++                FreeSlots.Enqueue(i);
++        }
++
++        public void Reset()
++        {
++            if (PoolSlots.IsCreated)
++            {
++                for (int i = 0; i < PoolSlots.Length; i++)
++                    PoolSlots[i] = default;
++            }
++
++            if (LinearVelocities.IsCreated)
++            {
++                for (int i = 0; i < LinearVelocities.Length; i++)
++                    LinearVelocities[i] = default;
++            }
++
++            if (SimulationFlags.IsCreated)
++            {
++                for (int i = 0; i < SimulationFlags.Length; i++)
++                    SimulationFlags[i] = 0;
++            }
++
++            if (!FreeSlots.IsCreated)
++                return;
++
++            FreeSlots.Clear();
++            for (int i = 0; i < Capacity; i++)
++                FreeSlots.Enqueue(i);
++        }
++
++        public void Dispose()
++        {
++            if (PoolSlots.IsCreated)
++                PoolSlots.Dispose();
++
++            if (LinearVelocities.IsCreated)
++                LinearVelocities.Dispose();
++
++            if (SimulationFlags.IsCreated)
++                SimulationFlags.Dispose();
++
++            if (FreeSlots.IsCreated)
++                FreeSlots.Dispose();
++
++            Capacity = 0;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Fauna/FaunaPresentationService.cs b/Assets/_Project/Scripts/Fauna/FaunaPresentationService.cs
+new file mode 100644
+index 00000000..dcf61c55
+--- /dev/null
++++ b/Assets/_Project/Scripts/Fauna/FaunaPresentationService.cs
+@@ -0,0 +1,26 @@
++using Hecton8.Ecosystem;
++using Hecton8.World;
++using UnityEngine;
++
++namespace Hecton8.AI
++{
++    /// <summary>
++    /// Presentation-side fauna spawn wiring. Simulation code must not depend on genetics, ecology, renderers, or animators.
++    /// </summary>
++    internal sealed class FaunaPresentationService
++    {
++        internal void ConfigureSpawnedCreature(
++            FaunaBrain ai,
++            CreatureArchetypeData archetype,
++            int biomeIndex,
++            Vector3 runtimePosition,
++            in WorldChunkCoordinate chunkCoord)
++        {
++            if (ai == null)
++                return;
++
++            FaunaGeneticsManager.Instance?.ApplyTraits(ai, archetype, biomeIndex, runtimePosition);
++            EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, archetype, chunkCoord);
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Physics/FluidMathCore.cs b/Assets/_Project/Scripts/Physics/FluidMathCore.cs
+new file mode 100644
+index 00000000..01e56967
+--- /dev/null
++++ b/Assets/_Project/Scripts/Physics/FluidMathCore.cs
+@@ -0,0 +1,201 @@
++using System.Runtime.CompilerServices;
++using Hecton8.Core;
++using Unity.Burst;
++using Unity.Mathematics;
++
++namespace Hecton8.Physics
++{
++    /// <summary>
++    /// Burst-safe water ingress, transfer, and mass-shift math for submarine fluid simulation.
++    /// </summary>
++    [BurstCompile]
++    public sealed class FluidMathCore : IFluidSim
++    {
++        public const float WaterDensityKgPerCubicMeter = 1025f;
++        private const float DefaultGravityMetersPerSecondSquared = 9.81f;
++
++        /// <inheritdoc />
++        public bool IsReady => true;
++
++        /// <inheritdoc />
++        public float WaterDensityKilogramsPerCubicMeter => WaterDensityKgPerCubicMeter;
++
++        /// <inheritdoc />
++        public float ResolveIngressVelocity(float depthMeters)
++        {
++            return ResolveTorricelliIngressVelocity(depthMeters, DefaultGravityMetersPerSecondSquared);
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static float ResolveTorricelliIngressVelocity(float depthMeters, float gravityMetersPerSecondSquared)
++        {
++            float safeDepth = math.max(0f, depthMeters);
++            float safeGravity = math.max(0f, gravityMetersPerSecondSquared);
++            float velocity = math.sqrt(2f * safeGravity * safeDepth);
++            return math.isfinite(velocity) ? velocity : 0f;
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static float ResolveIngressVolume(
++            float currentVolume,
++            float maxVolume,
++            float breachAreaSquareMeters,
++            float depthMeters,
++            float fixedDeltaTime,
++            float dischargeCoefficient,
++            float maximumIngressPerSecondNormalized,
++            float gravityMetersPerSecondSquared,
++            float epsilon)
++        {
++            float remainingCapacity = maxVolume - currentVolume;
++            if (breachAreaSquareMeters <= epsilon || remainingCapacity <= epsilon)
++                return currentVolume;
++
++            float ingressVelocity = ResolveTorricelliIngressVelocity(depthMeters, gravityMetersPerSecondSquared);
++            float cd = math.clamp(dischargeCoefficient, 0.05f, 1f);
++            float deltaVolume = ingressVelocity * breachAreaSquareMeters * cd * math.max(0f, fixedDeltaTime);
++            if (!math.isfinite(deltaVolume))
++                deltaVolume = 0f;
++
++            float maxIngressScale = math.max(0.01f, maximumIngressPerSecondNormalized) * math.max(0f, fixedDeltaTime);
++            float maxIngressThisStep = math.max(0f, maxVolume) * maxIngressScale;
++            deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
++            return currentVolume + deltaVolume;
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static float ResolveBulkheadTransferDelta(
++            float sourceVolume,
++            float destinationVolume,
++            float sourceMaxVolume,
++            float destinationMaxVolume,
++            float doorAreaSquareMeters,
++            float fixedDeltaTime,
++            float bulkheadFlowCoefficient,
++            float maxTransferPerTick,
++            float dischargeCoefficient,
++            float nearZeroHeadDampingMeters,
++            float gravityMetersPerSecondSquared,
++            float epsilon)
++        {
++            if (!TryResolveSafeNormalizedRatio(sourceVolume, sourceMaxVolume, epsilon, out float fillA) ||
++                !TryResolveSafeNormalizedRatio(destinationVolume, destinationMaxVolume, epsilon, out float fillB))
++            {
++                return 0f;
++            }
++
++            float transferCoefficient = math.max(0f, bulkheadFlowCoefficient);
++            float perTickTransferCap = math.max(0.01f, maxTransferPerTick);
++            float safeDoorArea = math.max(epsilon, doorAreaSquareMeters);
++            float characteristicHeightA = math.max(0.1f, SafeCubeRoot(sourceMaxVolume));
++            float characteristicHeightB = math.max(0.1f, SafeCubeRoot(destinationMaxVolume));
++            float headDifferenceMeters = (fillA * characteristicHeightA) - (fillB * characteristicHeightB);
++            float absHeadDifferenceMeters = math.abs(headDifferenceMeters);
++            float dampingHeadMeters = math.max(epsilon, nearZeroHeadDampingMeters);
++            float dampingFactor = math.smoothstep(0f, dampingHeadMeters, absHeadDifferenceMeters);
++            if (dampingFactor <= epsilon)
++                return 0f;
++
++            float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * math.max(0f, gravityMetersPerSecondSquared) * absHeadDifferenceMeters));
++            float signedDeltaVolume =
++                math.sign(headDifferenceMeters) *
++                safeDoorArea *
++                math.max(0f, dischargeCoefficient) *
++                velocityMetersPerSecond *
++                transferCoefficient *
++                math.max(0f, fixedDeltaTime) *
++                dampingFactor;
++            float deltaVolume = math.clamp(signedDeltaVolume, -perTickTransferCap, perTickTransferCap);
++
++            if (deltaVolume > 0f)
++            {
++                deltaVolume = math.min(deltaVolume, math.min(sourceVolume, destinationMaxVolume - destinationVolume));
++            }
++            else if (deltaVolume < 0f)
++            {
++                float transferMagnitude = math.min(-deltaVolume, math.min(destinationVolume, sourceMaxVolume - sourceVolume));
++                deltaVolume = -transferMagnitude;
++            }
++
++            return math.abs(deltaVolume) <= epsilon || !math.isfinite(deltaVolume) ? 0f : deltaVolume;
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static float3 ResolveCenterOfMassStep(
++            float3 currentCenter,
++            float3 targetCenter,
++            float blendAlpha,
++            float maxCenterDeltaMeters,
++            float epsilon,
++            out byte isValid)
++        {
++            isValid = 1;
++            float3 blendedCenter = math.lerp(currentCenter, targetCenter, math.saturate(blendAlpha));
++            if (!math.all(math.isfinite(blendedCenter)))
++            {
++                isValid = 0;
++                return currentCenter;
++            }
++
++            float3 delta = blendedCenter - currentCenter;
++            float maxCenterDelta = math.max(epsilon, maxCenterDeltaMeters);
++            float deltaMagnitude = math.length(delta);
++            if (deltaMagnitude > maxCenterDelta)
++            {
++                if (!TryResolveSafeQuotient(maxCenterDelta, deltaMagnitude, epsilon, out float centerClampScale))
++                {
++                    isValid = 0;
++                    return currentCenter;
++                }
++
++                blendedCenter = currentCenter + (delta * centerClampScale);
++            }
++
++            return blendedCenter;
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static bool TryResolveSafeNormalizedRatio(float numerator, float denominator, float epsilon, out float ratio)
++        {
++            ratio = 0f;
++            if (math.isnan(numerator) || math.isnan(denominator) ||
++                !math.isfinite(numerator) || !math.isfinite(denominator) ||
++                denominator <= epsilon)
++            {
++                return false;
++            }
++
++            float candidate = numerator / denominator;
++            if (math.isnan(candidate) || !math.isfinite(candidate))
++                return false;
++
++            ratio = math.saturate(candidate);
++            return true;
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static float SafeCubeRoot(float value)
++        {
++            return math.pow(math.max(0f, value), 0.33333334f);
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        private static bool TryResolveSafeQuotient(float numerator, float denominator, float epsilon, out float quotient)
++        {
++            quotient = 0f;
++            if (math.isnan(numerator) || math.isnan(denominator) ||
++                !math.isfinite(numerator) || !math.isfinite(denominator) ||
++                math.abs(denominator) <= epsilon)
++            {
++                return false;
++            }
++
++            float candidate = numerator / denominator;
++            if (math.isnan(candidate) || !math.isfinite(candidate))
++                return false;
++
++            quotient = candidate;
++            return true;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs b/Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs
+new file mode 100644
+index 00000000..e280a9cc
+--- /dev/null
++++ b/Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs
+@@ -0,0 +1,101 @@
++using Hecton8.Core;
++using UnityEngine;
++
++namespace Hecton8.Physics
++{
++    /// <summary>
++    /// Decoupled feedback event bridge for submarine fluid splash payloads.
++    /// </summary>
++    public static class FluidFeedbackEvents
++    {
++        public delegate void SplashQueuedHandler(in SplashEvent splashEvent);
++
++        private static event SplashQueuedHandler SplashQueued;
++
++        /// <summary>
++        /// Subscribes a cold-path listener to splash feedback payloads.
++        /// </summary>
++        public static void SubscribeSplashQueued(SplashQueuedHandler handler)
++        {
++            SplashQueued += handler;
++        }
++
++        /// <summary>
++        /// Unsubscribes a splash feedback listener.
++        /// </summary>
++        public static void UnsubscribeSplashQueued(SplashQueuedHandler handler)
++        {
++            SplashQueued -= handler;
++        }
++
++        /// <summary>
++        /// Publishes one splash payload to presentation listeners.
++        /// </summary>
++        public static void PublishSplashQueued(in SplashEvent splashEvent)
++        {
++            SplashQueued?.Invoke(in splashEvent);
++        }
++    }
++
++    /// <summary>
++    /// Presentation listener that owns optional ParticleSystem and AudioSource feedback for fluid events.
++    /// </summary>
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton/Physics/Fluid Feedback Listener")]
++    public sealed class FluidFeedbackListener : MonoBehaviour
++    {
++        [Header("Feedback")]
++        [Tooltip("Optional particle system used for low-frequency hull splash events.")]
++        [SerializeField] private ParticleSystem splashParticleSystem;
++        [Tooltip("Optional audio source reserved for low-frequency hull splash feedback.")]
++        [SerializeField] private AudioSource splashAudioSource;
++        [Tooltip("Maximum particles emitted by one splash event.")]
++        [SerializeField, Min(1)] private int maxParticlesPerSplash = 12;
++
++        private FluidFeedbackEvents.SplashQueuedHandler _splashQueuedHandler;
++
++        private void Awake()
++        {
++            _splashQueuedHandler = HandleSplashQueued;
++        }
++
++        private void OnEnable()
++        {
++            FluidFeedbackEvents.SubscribeSplashQueued(_splashQueuedHandler);
++        }
++
++        private void OnDisable()
++        {
++            FluidFeedbackEvents.UnsubscribeSplashQueued(_splashQueuedHandler);
++        }
++
++        private void HandleSplashQueued(in SplashEvent splashEvent)
++        {
++            Vector3 runtimePosition = new Vector3(
++                splashEvent.RuntimePosition.x,
++                splashEvent.RuntimePosition.y,
++                splashEvent.RuntimePosition.z);
++
++            if (splashParticleSystem != null)
++            {
++                ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams
++                {
++                    position = runtimePosition,
++                    velocity = Vector3.up * Mathf.Max(0.1f, splashEvent.ImpactSpeedMetersPerSecond * 0.15f)
++                };
++                int particleCount = Mathf.Clamp(Mathf.CeilToInt(splashEvent.KineticEnergyJoules * 0.001f), 1, maxParticlesPerSplash);
++                splashParticleSystem.Emit(emitParams, particleCount);
++            }
++
++            if (splashAudioSource == null)
++                return;
++
++            Transform audioTransform = splashAudioSource.transform;
++            if (audioTransform != null)
++                audioTransform.position = runtimePosition;
++
++            if (!splashAudioSource.isPlaying)
++                splashAudioSource.Play();
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/World/AUPMath.cs b/Assets/_Project/Scripts/World/AUPMath.cs
+new file mode 100644
+index 00000000..18290b0e
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/AUPMath.cs
+@@ -0,0 +1,69 @@
++using System.Runtime.CompilerServices;
++using Unity.Burst;
++using Unity.Mathematics;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Burst-safe Absolute Universe Position math shared by simulation systems.
++    /// </summary>
++    [BurstCompile]
++    internal static class AUPMath
++    {
++        private const double CellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
++
++        /// <summary>
++        /// Computes squared distance between two Absolute Universe Positions without reducing precision to runtime space.
++        /// </summary>
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        internal static double AUPDistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
++        {
++            double3 delta = AUPDelta(in a, in b);
++            return math.dot(delta, delta);
++        }
++
++        /// <summary>
++        /// Computes a normalized direction from one Absolute Universe Position to another.
++        /// </summary>
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        internal static float3 AUPDirection(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)
++        {
++            double3 delta = AUPDelta(in to, in from);
++            return math.normalizesafe(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
++        }
++
++        /// <summary>
++        /// Converts an Absolute Universe Position into local view space relative to another AUP origin.
++        /// </summary>
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        internal static float3 AUPToLocalViewSpace(in AbsoluteUniversePosition point, in AbsoluteUniversePosition viewOrigin)
++        {
++            double3 delta = AUPDelta(in point, in viewOrigin);
++            return new float3((float)delta.x, (float)delta.y, (float)delta.z);
++        }
++
++        /// <summary>
++        /// Resolves the absolute double-precision coordinate for an AUP value.
++        /// </summary>
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        internal static double3 ToAbsoluteDouble3(in AbsoluteUniversePosition position)
++        {
++            return new double3(
++                (position.GridX * CellSizeMeters) + position.LocalX,
++                (position.GridY * CellSizeMeters) + position.LocalY,
++                (position.GridZ * CellSizeMeters) + position.LocalZ);
++        }
++
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        private static double3 AUPDelta(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
++        {
++            long gridDeltaX = a.GridX - b.GridX;
++            long gridDeltaY = a.GridY - b.GridY;
++            long gridDeltaZ = a.GridZ - b.GridZ;
++            return new double3(
++                (gridDeltaX * CellSizeMeters) + ((double)a.LocalX - b.LocalX),
++                (gridDeltaY * CellSizeMeters) + ((double)a.LocalY - b.LocalY),
++                (gridDeltaZ * CellSizeMeters) + ((double)a.LocalZ - b.LocalZ));
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Editor/HeadlessSimulationValidator.cs b/Assets/_Project/Scripts/Editor/HeadlessSimulationValidator.cs
+new file mode 100644
+index 00000000..8ae9a281
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/HeadlessSimulationValidator.cs
+@@ -0,0 +1,281 @@
++#if UNITY_EDITOR
++using System;
++using System.Collections.Generic;
++using Hecton8.Core;
++using UnityEditor;
++using UnityEngine;
++using Object = UnityEngine.Object;
++
++namespace Hecton8.EditorTools
++{
++    /// <summary>
++    /// Editor-only validator that disables scene render/audio presentation and executes simulation interfaces directly.
++    /// </summary>
++    public static class HeadlessSimulationValidator
++    {
++        private const int DefaultTickCount = 500;
++        private const float SimulatedDeltaTime = 0.02f;
++        private const int SlowTickCadence = 25;
++
++        private static readonly List<ComponentState<MeshRenderer>> _meshRendererStates = new List<ComponentState<MeshRenderer>>(4096);
++        private static readonly List<ComponentState<SkinnedMeshRenderer>> _skinnedRendererStates = new List<ComponentState<SkinnedMeshRenderer>>(1024);
++        private static readonly List<ComponentState<AudioSource>> _audioSourceStates = new List<ComponentState<AudioSource>>(512);
++        private static readonly List<MonoBehaviour> _simulationBehaviours = new List<MonoBehaviour>(2048);
++
++        private static bool _isRunning;
++        private static int _remainingTicks;
++        private static int _executedTicks;
++        private static int _nullReferenceCount;
++        private static Exception _firstException;
++
++        private readonly struct ComponentState<T> where T : Component
++        {
++            public readonly T Component;
++            public readonly bool WasEnabled;
++
++            public ComponentState(T component)
++            {
++                Component = component;
++                WasEnabled = IsComponentEnabled(component);
++            }
++        }
++
++        [MenuItem("Hecton/Validation/Headless Simulation Validator")]
++        private static void RunFromMenu()
++        {
++            RunHeadlessSimulationTicks(DefaultTickCount);
++        }
++
++        /// <summary>
++        /// Runs a headless scene simulation pass with renderers and audio sources disabled.
++        /// </summary>
++        /// <param name="tickCount">Number of direct simulation ticks to execute.</param>
++        public static void RunHeadlessSimulationTicks(int tickCount)
++        {
++            if (_isRunning)
++                return;
++
++            if (!EditorApplication.isPlaying)
++            {
++                Debug.LogError("[HeadlessSimulationValidator] Enter Play Mode before running headless simulation validation.");
++                return;
++            }
++
++            _isRunning = true;
++            _remainingTicks = Mathf.Max(1, tickCount);
++            _executedTicks = 0;
++            _nullReferenceCount = 0;
++            _firstException = null;
++            CaptureAndDisablePresentation();
++            CaptureSimulationBehaviours();
++            Application.logMessageReceived += HandleLogMessageReceived;
++            EditorApplication.update += RunOneEditorTick;
++        }
++
++        private static void RunOneEditorTick()
++        {
++            if (!_isRunning)
++                return;
++
++            try
++            {
++                ExecuteSimulationTick(_executedTicks);
++                _executedTicks++;
++                _remainingTicks--;
++                if (_remainingTicks <= 0)
++                    CompleteValidation();
++            }
++            catch (NullReferenceException exception)
++            {
++                _nullReferenceCount++;
++                _firstException = exception;
++                CompleteValidation();
++                throw;
++            }
++            catch (Exception exception)
++            {
++                _firstException = exception;
++                CompleteValidation();
++                throw;
++            }
++        }
++
++        private static void CompleteValidation()
++        {
++            EditorApplication.update -= RunOneEditorTick;
++            Application.logMessageReceived -= HandleLogMessageReceived;
++            RestorePresentation();
++            _simulationBehaviours.Clear();
++            _isRunning = false;
++
++            if (_nullReferenceCount > 0)
++            {
++                Debug.LogError($"[HeadlessSimulationValidator] FAILED: {_nullReferenceCount} NullReferenceException entries during {_executedTicks} headless ticks.");
++                return;
++            }
++
++            if (_firstException != null)
++            {
++                Debug.LogError($"[HeadlessSimulationValidator] FAILED: {_firstException.GetType().Name} during {_executedTicks} headless ticks.");
++                return;
++            }
++
++            Debug.Log($"[HeadlessSimulationValidator] PASS: {_executedTicks} headless ticks, renderers/audio disabled, NullReferenceExceptions=0.");
++        }
++
++        private static void ExecuteSimulationTick(int tickIndex)
++        {
++            for (int i = 0; i < _simulationBehaviours.Count; i++)
++            {
++                MonoBehaviour behaviour = _simulationBehaviours[i];
++                if (behaviour == null || !behaviour.isActiveAndEnabled)
++                    continue;
++
++                if (behaviour is IFixedTickable fixedTickable)
++                    fixedTickable.FixedTick(SimulatedDeltaTime);
++
++                if (behaviour is IPostFixedTickable postFixedTickable)
++                    postFixedTickable.PostFixedTick(SimulatedDeltaTime);
++
++                if (behaviour is IUpdatable updatable)
++                    updatable.Tick(SimulatedDeltaTime);
++
++                if (behaviour is ILateFrameTickable lateFrameTickable)
++                    lateFrameTickable.LateFrameTick();
++
++                if (tickIndex % SlowTickCadence == 0 && behaviour is ISlowTickable slowTickable)
++                    slowTickable.SlowTick();
++            }
++        }
++
++        private static void CaptureAndDisablePresentation()
++        {
++            _meshRendererStates.Clear();
++            _skinnedRendererStates.Clear();
++            _audioSourceStates.Clear();
++
++            MeshRenderer[] meshRenderers = Resources.FindObjectsOfTypeAll<MeshRenderer>();
++            for (int i = 0; i < meshRenderers.Length; i++)
++            {
++                MeshRenderer meshRenderer = meshRenderers[i];
++                if (!IsSceneComponent(meshRenderer))
++                    continue;
++
++                _meshRendererStates.Add(new ComponentState<MeshRenderer>(meshRenderer));
++                meshRenderer.enabled = false;
++            }
++
++            SkinnedMeshRenderer[] skinnedRenderers = Resources.FindObjectsOfTypeAll<SkinnedMeshRenderer>();
++            for (int i = 0; i < skinnedRenderers.Length; i++)
++            {
++                SkinnedMeshRenderer skinnedRenderer = skinnedRenderers[i];
++                if (!IsSceneComponent(skinnedRenderer))
++                    continue;
++
++                _skinnedRendererStates.Add(new ComponentState<SkinnedMeshRenderer>(skinnedRenderer));
++                skinnedRenderer.enabled = false;
++            }
++
++            AudioSource[] audioSources = Resources.FindObjectsOfTypeAll<AudioSource>();
++            for (int i = 0; i < audioSources.Length; i++)
++            {
++                AudioSource audioSource = audioSources[i];
++                if (!IsSceneComponent(audioSource))
++                    continue;
++
++                _audioSourceStates.Add(new ComponentState<AudioSource>(audioSource));
++                audioSource.enabled = false;
++            }
++        }
++
++        private static void RestorePresentation()
++        {
++            for (int i = 0; i < _meshRendererStates.Count; i++)
++            {
++                ComponentState<MeshRenderer> state = _meshRendererStates[i];
++                if (state.Component != null)
++                    SetComponentEnabled(state.Component, state.WasEnabled);
++            }
++
++            for (int i = 0; i < _skinnedRendererStates.Count; i++)
++            {
++                ComponentState<SkinnedMeshRenderer> state = _skinnedRendererStates[i];
++                if (state.Component != null)
++                    SetComponentEnabled(state.Component, state.WasEnabled);
++            }
++
++            for (int i = 0; i < _audioSourceStates.Count; i++)
++            {
++                ComponentState<AudioSource> state = _audioSourceStates[i];
++                if (state.Component != null)
++                    SetComponentEnabled(state.Component, state.WasEnabled);
++            }
++
++            _meshRendererStates.Clear();
++            _skinnedRendererStates.Clear();
++            _audioSourceStates.Clear();
++        }
++
++        private static void CaptureSimulationBehaviours()
++        {
++            _simulationBehaviours.Clear();
++            MonoBehaviour[] behaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
++            for (int i = 0; i < behaviours.Length; i++)
++            {
++                MonoBehaviour behaviour = behaviours[i];
++                if (!IsSceneComponent(behaviour) || !behaviour.isActiveAndEnabled)
++                    continue;
++
++                if (behaviour is IFixedTickable ||
++                    behaviour is IPostFixedTickable ||
++                    behaviour is IUpdatable ||
++                    behaviour is ILateFrameTickable ||
++                    behaviour is ISlowTickable)
++                {
++                    _simulationBehaviours.Add(behaviour);
++                }
++            }
++        }
++
++        private static bool IsSceneComponent(Component component)
++        {
++            return component != null &&
++                   component.gameObject != null &&
++                   component.gameObject.scene.IsValid() &&
++                   !EditorUtility.IsPersistent(component);
++        }
++
++        private static bool IsComponentEnabled(Component component)
++        {
++            if (component is Renderer renderer)
++                return renderer.enabled;
++
++            if (component is Behaviour behaviour)
++                return behaviour.enabled;
++
++            return false;
++        }
++
++        private static void SetComponentEnabled(Component component, bool enabled)
++        {
++            if (component is Renderer renderer)
++            {
++                renderer.enabled = enabled;
++                return;
++            }
++
++            if (component is Behaviour behaviour)
++                behaviour.enabled = enabled;
++        }
++
++        private static void HandleLogMessageReceived(string condition, string stackTrace, LogType type)
++        {
++            if (type != LogType.Exception || condition == null)
++                return;
++
++            if (condition.IndexOf("NullReferenceException", StringComparison.Ordinal) >= 0)
++                _nullReferenceCount++;
++        }
++    }
++}
++#endif

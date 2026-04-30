@@ -180,17 +180,6 @@ namespace Hecton8.Celestial
             ApplyPlacement();
         }
 
-        private void LateUpdate()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            if (placementMode != CelestialPlacementMode.FixedDirection)
-                return;
-
-            ApplyFixedObserverPlacement();
-        }
-
         /// <summary>
         /// Overrides the captured fixed direction from external code.
         /// </summary>

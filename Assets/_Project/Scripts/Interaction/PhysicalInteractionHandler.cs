@@ -8,7 +8,20 @@ namespace Hecton8.Interaction
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Items;
+    using Hecton8.UI;
     using UnityEngine;
+
+    /// <summary>
+    /// Receiver contract for collider-backed physical panel buttons.
+    /// Keeps physical interaction logic independent from concrete UI component load order.
+    /// </summary>
+    public interface IPhysicalPanelButtonReceiver
+    {
+        /// <summary>
+        /// Attempts to queue a physical hand press through the interaction signal service.
+        /// </summary>
+        bool TryQueueHandPress(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals);
+    }
 
     /// <summary>
     /// Owns physical interaction sequences that should happen before inventory insertion
@@ -67,6 +80,16 @@ namespace Hecton8.Interaction
         [Tooltip("Suit energy drained per second while dragging heavy cargo.")]
         [SerializeField, Range(0f, 20f)] private float heavyCarryEnergyDrainPerSecond = 3.5f;
 
+        [Header("Physical Panels")]
+        [Tooltip("Enables collider-volume diegetic panel button presses from the kinematic hand probe.")]
+        [SerializeField] private bool enablePhysicalPanelButtons = true;
+
+        [Tooltip("Radius around the hand probe used to overlap physical panel button trigger volumes.")]
+        [SerializeField, Range(0.005f, 0.2f)] private float panelButtonProbeRadius = 0.035f;
+
+        [Tooltip("Layer mask containing physical diegetic panel button BoxCollider trigger volumes.")]
+        [SerializeField] private LayerMask panelButtonMask = ~0;
+
         [Header("── Heavy Carry Movement Feel ──────────────────")]
         [Tooltip("Movement-force multiplier while dragging the lightest valid heavy object.")]
         [SerializeField, Range(0.1f, 1f)] private float lightHeavyCarryForceMultiplier = 0.76f;
@@ -118,6 +141,8 @@ namespace Hecton8.Interaction
         private bool _registeredFixedTick;
         private float _stateTimer;
         private Vector3 _pullSmoothDampVelocity;
+        private const int MaxPanelButtonOverlaps = 8;
+        private readonly Collider[] _panelButtonOverlaps = new Collider[MaxPanelButtonOverlaps]; // COLD ALLOC: Collider[8] - physical panel button overlap buffer - owner: PhysicalInteractionHandler
 
         private IInteractable _activeInteractable;
         private MonoBehaviour _activeBehaviour;
@@ -176,6 +201,8 @@ namespace Hecton8.Interaction
             }
 
             TryGetComponent(out _physicalHandController);
+            if (enablePhysicalPanelButtons)
+                EnsurePhysicalHandController();
         }
 
         private void OnEnable()
@@ -240,6 +267,8 @@ namespace Hecton8.Interaction
 
         public void Tick(float deltaTime)
         {
+            TickPhysicalPanelButtons();
+
             if (_state == InteractionState.Idle)
                 return;
 
@@ -282,6 +311,42 @@ namespace Hecton8.Interaction
                 case InteractionState.DraggingHeavyObject:
                     FixedTickHeavyCarry(fixedDeltaTime);
                     break;
+            }
+        }
+
+        private void TickPhysicalPanelButtons()
+        {
+            if (!enablePhysicalPanelButtons || _physicalHandController == null)
+                return;
+
+            if (!_physicalHandController.TryGetInteractionProbePose(out Vector3 handPosition, out Quaternion handRotation))
+                return;
+
+            IInteractionSignalService interactionSignals = GlobalRegistry.InteractionSignals;
+            if (interactionSignals == null || !interactionSignals.IsInitialized)
+                return;
+
+            int hitCount = Physics.OverlapSphereNonAlloc(
+                handPosition,
+                panelButtonProbeRadius,
+                _panelButtonOverlaps,
+                panelButtonMask.value,
+                QueryTriggerInteraction.Collide);
+            if (hitCount <= 0)
+                return;
+
+            Vector3 handForward = handRotation * Vector3.forward;
+            for (int i = 0; i < hitCount && i < _panelButtonOverlaps.Length; i++)
+            {
+                Collider candidate = _panelButtonOverlaps[i];
+                _panelButtonOverlaps[i] = null;
+                if (candidate == null)
+                    continue;
+
+                if (!PhysicalPanelButton.TryResolve(candidate, out IPhysicalPanelButtonReceiver button))
+                    continue;
+
+                button.TryQueueHandPress(handPosition, handForward, interactionSignals);
             }
         }
 

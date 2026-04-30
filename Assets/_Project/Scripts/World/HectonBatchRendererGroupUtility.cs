@@ -15,9 +15,7 @@ namespace Hecton8.World
     /// </summary>
     internal static class HectonBatchRendererGroupUtility
     {
-        private const uint StrictRenderingLayerMask = (1u << 8) | (1u << 9) | (1u << 10);
-
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct BuildMatrixVisibilityMaskJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<Matrix4x4> Matrices;
@@ -66,7 +64,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct FinalizeSingleDrawCommandOutputJob : IJob
         {
             [ReadOnly] public NativeArray<byte> VisibilityMask;
@@ -120,7 +118,7 @@ namespace Hecton8.World
                         drawCommandsType = BatchDrawCommandType.Direct,
                         filterSettings = new BatchFilterSettings
                         {
-                            renderingLayerMask = StrictRenderingLayerMask,
+                            renderingLayerMask = HectonLayerMasks.AllDefinedProjectRenderingLayerMaskValue,
                             rendererPriority = 0,
                             layer = (byte)math.clamp(Layer, byte.MinValue, byte.MaxValue),
                             shadowCastingMode = ShadowCastingMode,
@@ -243,7 +241,7 @@ namespace Hecton8.World
                 drawCommandsType = BatchDrawCommandType.Direct,
                 filterSettings = new BatchFilterSettings
                 {
-                    renderingLayerMask = StrictRenderingLayerMask,
+                    renderingLayerMask = HectonLayerMasks.AllDefinedProjectRenderingLayerMaskValue,
                     rendererPriority = 0,
                     layer = (byte)Mathf.Clamp(layer, byte.MinValue, byte.MaxValue),
                     shadowCastingMode = shadowCastingMode,

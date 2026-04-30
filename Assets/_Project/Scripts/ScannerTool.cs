@@ -14,7 +14,6 @@ using Hecton8.World;
 using Hecton8.Narrative;
 using Hecton.Localization;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -311,7 +310,7 @@ namespace Hecton8.Gameplay
         [Header("Scan Parameters")]
         [SerializeField] private float scanRadius = 50f;
         [SerializeField] private float scanCooldown = 3f;
-        [SerializeField] private LayerMask scanLayerMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask scanLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField, Min(1f)] private float focusedScanRange = 14f;
         [SerializeField, Range(1f, 18f)] private float focusedScanConeAngleDegrees = 5.5f;
         [SerializeField, Range(0.05f, 0.5f)] private float focusedScanResampleInterval = 0.12f;
@@ -362,11 +361,6 @@ namespace Hecton8.Gameplay
         private string _currentModeSummary;
         private string _currentModeHudMessage;
         private string _currentModeOperationTitle;
-        // COLD ALLOC: NativeArray<RaycastCommand>[12] — focused scientific scanner cone batch — owner: ScannerTool
-        private NativeArray<RaycastCommand> _scientificRayCommands;
-        // COLD ALLOC: NativeArray<RaycastHit>[12] — focused scientific scanner cone hit buffer — owner: ScannerTool
-        private NativeArray<RaycastHit> _scientificRayHits;
-        private JobHandle _scientificBatchHandle;
         private ScannableFragment _activeScientificFragment;
         private HectonVoxelVolume _activeScientificVoxelVolume;
         private ScientificScanSnapshot _scientificSnapshot;
@@ -375,7 +369,6 @@ namespace Hecton8.Gameplay
         private float _scientificLastContactTime = float.NegativeInfinity;
         private float _heldPrimaryDeltaTime;
         private bool _heldPrimaryThisFrame;
-        private bool _scientificBatchScheduled;
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool STATE
@@ -494,8 +487,6 @@ namespace Hecton8.Gameplay
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: ScannerTool
             _cachedTransform = transform;
             RefreshModeStrings();
-            EnsureScientificBuffers();
-
             #if UNITY_EDITOR
             if (scannerMarkerShader == null)
                 scannerMarkerShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerMarkerShaderPath);
@@ -1307,45 +1298,8 @@ namespace Hecton8.Gameplay
             return snapshot.IsActive;
         }
 
-        private void OnDestroy()
-        {
-            DisposeScientificBuffers();
-        }
-
-        private void EnsureScientificBuffers()
-        {
-            if (!_scientificRayCommands.IsCreated)
-                _scientificRayCommands = new NativeArray<RaycastCommand>(ScientificConeRayCount, Allocator.Persistent);
-
-            if (!_scientificRayHits.IsCreated)
-                _scientificRayHits = new NativeArray<RaycastHit>(ScientificConeRayCount, Allocator.Persistent);
-        }
-
-        private void DisposeScientificBuffers()
-        {
-            JobHandle disposeHandle = _scientificBatchScheduled ? _scientificBatchHandle : default;
-
-            if (_scientificRayCommands.IsCreated)
-            {
-                disposeHandle = _scientificRayCommands.Dispose(disposeHandle);
-                _scientificRayCommands = default;
-            }
-
-            if (_scientificRayHits.IsCreated)
-            {
-                disposeHandle = _scientificRayHits.Dispose(disposeHandle);
-                _scientificRayHits = default;
-            }
-
-            _scientificBatchHandle = disposeHandle;
-            _scientificBatchScheduled = false;
-        }
-
         private void UpdateScientificScanning(float deltaTime)
         {
-            if (_scientificBatchScheduled && _scientificBatchHandle.IsCompleted)
-                ConsumeScientificBatch();
-
             bool heldThisFrame = _heldPrimaryThisFrame;
             float heldDeltaTime = _heldPrimaryDeltaTime;
             _heldPrimaryThisFrame = false;
@@ -1369,7 +1323,7 @@ namespace Hecton8.Gameplay
                 RefreshScientificSnapshotProgress();
             }
 
-            if (!_scientificBatchScheduled && Time.time >= _scientificNextResampleAt)
+            if (Time.time >= _scientificNextResampleAt)
                 ScheduleScientificConeBatch();
         }
 
@@ -1378,51 +1332,26 @@ namespace Hecton8.Gameplay
             if (_cachedTransform == null)
                 return;
 
-            EnsureScientificBuffers();
-            if (!_scientificRayCommands.IsCreated || !_scientificRayHits.IsCreated)
-                return;
-
             Transform cachedTransform = _cachedTransform;
             Vector3 origin = cachedTransform.position;
             Vector3 forward = cachedTransform.forward;
-            Vector3 right = cachedTransform.right;
-            Vector3 up = cachedTransform.up;
-            QueryParameters query = new QueryParameters(scanLayerMask, false, QueryTriggerInteraction.Collide);
             float range = Mathf.Max(1f, focusedScanRange);
-            float coneTangent = math.tan(math.radians(Mathf.Clamp(focusedScanConeAngleDegrees, 0.1f, 45f)));
+            float coneAngle = Mathf.Clamp(focusedScanConeAngleDegrees, 0.1f, 45f);
+            if (coneAngle <= 0f)
+                return;
 
-            for (int commandIndex = 0; commandIndex < ScientificConeRayCount; commandIndex++)
-            {
-                float2 sampleOffset = ResolveScientificConeOffset(commandIndex);
-                Vector3 direction = forward + (right * (sampleOffset.x * coneTangent)) + (up * (sampleOffset.y * coneTangent));
-                if (direction.sqrMagnitude <= 0.0001f)
-                    direction = forward;
-                else
-                    direction.Normalize();
+            if (TryResolveQueuedRaycast(origin, forward, range, scanLayerMask.value, QueryTriggerInteraction.Collide, out RaycastHit hit))
+                ConsumeScientificHit(hit);
 
-                _scientificRayCommands[commandIndex] = new RaycastCommand(
-                    origin,
-                    direction,
-                    query,
-                    range);
-            }
-
-            _scientificBatchHandle = RaycastCommand.ScheduleBatch(_scientificRayCommands, _scientificRayHits, 1);
-            _scientificBatchScheduled = true;
             _scientificNextResampleAt = Time.time + Mathf.Max(0.05f, focusedScanResampleInterval);
         }
 
-        private void ConsumeScientificBatch()
+        private void ConsumeScientificHit(RaycastHit hit)
         {
-            _scientificBatchHandle.Complete();
-            _scientificBatchScheduled = false;
-
             ResolveCachedSurvivalSystem();
             ScannableFragment resolvedFragment = null;
             HectonVoxelVolume resolvedVolume = null;
             FaunaBrain resolvedFauna = null;
-            float nearestFragmentDistance = float.MaxValue;
-            float nearestFaunaDistance = float.MaxValue;
             float densitySum = 0f;
             float density01Sum = 0f;
             int densitySampleCount = 0;
@@ -1439,87 +1368,74 @@ namespace Hecton8.Gameplay
                 : Vector3.zero;
             bool chemistryProbeResolved = false;
 
-            for (int hitIndex = 0; hitIndex < ScientificConeRayCount; hitIndex++)
+            Collider hitCollider = hit.collider;
+            if (hitCollider == null)
+                return;
+
+            ScannableFragment fragment = hitCollider.GetComponent<ScannableFragment>();
+            if (fragment == null)
+                fragment = hitCollider.GetComponentInParent<ScannableFragment>();
+
+            if (fragment != null)
+                resolvedFragment = fragment;
+
+            FaunaBrain faunaBrain = hitCollider.GetComponent<FaunaBrain>();
+            if (faunaBrain == null)
+                faunaBrain = hitCollider.GetComponentInParent<FaunaBrain>();
+
+            if (faunaBrain != null)
+                resolvedFauna = faunaBrain;
+
+            HectonVoxelVolume volume = hitCollider.GetComponent<HectonVoxelVolume>();
+            if (volume == null)
+                volume = hitCollider.GetComponentInParent<HectonVoxelVolume>();
+
+            if (!chemistryProbeResolved)
             {
-                RaycastHit hit = _scientificRayHits[hitIndex];
-                _scientificRayHits[hitIndex] = default;
+                chemistryProbePosition = hit.point;
+                chemistryProbeResolved = true;
+            }
 
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null)
-                    continue;
+            if (TrySampleScientificChemicalSignal(hit.point, out float4 chemicalSignal))
+            {
+                chemicalLoadSum += Mathf.Clamp01(math.cmax(math.abs(chemicalSignal)));
+                organicBloodPeak01 = Mathf.Max(organicBloodPeak01, Mathf.Clamp01(chemicalSignal.x));
+                chemicalSampleCount++;
+            }
 
-                ScannableFragment fragment = hitCollider.GetComponent<ScannableFragment>();
-                if (fragment == null)
-                    fragment = hitCollider.GetComponentInParent<ScannableFragment>();
+            if (TrySampleScientificAttractantGradient(
+                    hit.point,
+                    out float bloodSignal01,
+                    out float exhaustSignal01,
+                    out float3 bloodGradient,
+                    out float3 exhaustGradient))
+            {
+                organicBloodPeak01 = Mathf.Max(organicBloodPeak01, bloodSignal01);
+                exhaustPeak01 = Mathf.Max(exhaustPeak01, exhaustSignal01);
 
-                if (fragment != null && hit.distance < nearestFragmentDistance)
+                if (bloodSignal01 > 0.0001f && math.lengthsq(bloodGradient) > 0.0001f)
                 {
-                    resolvedFragment = fragment;
-                    nearestFragmentDistance = hit.distance;
+                    bloodGradientAccumulator += bloodGradient * bloodSignal01;
+                    bloodGradientWeight += bloodSignal01;
                 }
 
-                FaunaBrain faunaBrain = hitCollider.GetComponent<FaunaBrain>();
-                if (faunaBrain == null)
-                    faunaBrain = hitCollider.GetComponentInParent<FaunaBrain>();
-
-                if (faunaBrain != null && hit.distance < nearestFaunaDistance)
+                if (exhaustSignal01 > 0.0001f && math.lengthsq(exhaustGradient) > 0.0001f)
                 {
-                    resolvedFauna = faunaBrain;
-                    nearestFaunaDistance = hit.distance;
+                    exhaustGradientAccumulator += exhaustGradient * exhaustSignal01;
+                    exhaustGradientWeight += exhaustSignal01;
                 }
+            }
 
-                HectonVoxelVolume volume = hitCollider.GetComponent<HectonVoxelVolume>();
-                if (volume == null)
-                    volume = hitCollider.GetComponentInParent<HectonVoxelVolume>();
-
-                if (!chemistryProbeResolved)
-                {
-                    chemistryProbePosition = hit.point;
-                    chemistryProbeResolved = true;
-                }
-
-                if (TrySampleScientificChemicalSignal(hit.point, out float4 chemicalSignal))
-                {
-                    chemicalLoadSum += Mathf.Clamp01(math.cmax(math.abs(chemicalSignal)));
-                    organicBloodPeak01 = Mathf.Max(organicBloodPeak01, Mathf.Clamp01(chemicalSignal.x));
-                    chemicalSampleCount++;
-                }
-
-                if (TrySampleScientificAttractantGradient(
-                        hit.point,
-                        out float bloodSignal01,
-                        out float exhaustSignal01,
-                        out float3 bloodGradient,
-                        out float3 exhaustGradient))
-                {
-                    organicBloodPeak01 = Mathf.Max(organicBloodPeak01, bloodSignal01);
-                    exhaustPeak01 = Mathf.Max(exhaustPeak01, exhaustSignal01);
-
-                    if (bloodSignal01 > 0.0001f && math.lengthsq(bloodGradient) > 0.0001f)
-                    {
-                        bloodGradientAccumulator += bloodGradient * bloodSignal01;
-                        bloodGradientWeight += bloodSignal01;
-                    }
-
-                    if (exhaustSignal01 > 0.0001f && math.lengthsq(exhaustGradient) > 0.0001f)
-                    {
-                        exhaustGradientAccumulator += exhaustGradient * exhaustSignal01;
-                        exhaustGradientWeight += exhaustSignal01;
-                    }
-                }
-
-                if (volume == null)
-                    continue;
-
+            if (volume != null)
+            {
                 Vector3 sampleWorldPosition = hit.point - (hit.normal * Mathf.Max(0.01f, focusedScanSurfaceInset));
-                if (!TrySampleScientificDensity(volume, sampleWorldPosition, out float density, out float density01))
-                    continue;
-
-                densitySum += density;
-                density01Sum += density01;
-                densitySampleCount++;
-                if (resolvedVolume == null)
+                if (TrySampleScientificDensity(volume, sampleWorldPosition, out float density, out float density01))
+                {
+                    densitySum += density;
+                    density01Sum += density01;
+                    densitySampleCount++;
                     resolvedVolume = volume;
+                }
             }
 
             if (chemicalSampleCount <= 0 && TrySampleScientificChemicalSignal(chemistryProbePosition, out float4 fallbackChemicalSignal))

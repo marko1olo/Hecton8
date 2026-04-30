@@ -422,6 +422,21 @@ namespace Hecton8.Core
         event System.Action OnSecondaryAction;
 
         /// <summary>
+        /// Discrete PDA toggle input event forwarded from the native input backend.
+        /// </summary>
+        event System.Action OnPDA;
+
+        /// <summary>
+        /// Discrete inventory input event forwarded from the native input backend.
+        /// </summary>
+        event System.Action OnInventory;
+
+        /// <summary>
+        /// Discrete cancel/back input event forwarded from the native input backend.
+        /// </summary>
+        event System.Action OnCancel;
+
+        /// <summary>
         /// Discrete next-tab input event forwarded from the native input backend.
         /// </summary>
         event System.Action OnTabNext;
@@ -450,6 +465,33 @@ namespace Hecton8.Core
         /// <param name="maxAgeSeconds">Maximum valid input age in seconds. Values below zero fall back to the service default.</param>
         /// <returns>True when a valid buffered action was consumed.</returns>
         bool TryConsumeBufferedAction(PlayerBufferedAction action, float maxAgeSeconds);
+
+        /// <summary>
+        /// Switches native input routing to gameplay.
+        /// </summary>
+        void SwitchToPlayerInput();
+
+        /// <summary>
+        /// Switches native input routing to UI.
+        /// </summary>
+        void SwitchToUIInput();
+    }
+
+    /// <summary>
+    /// Authoritative PDA logbook append service exposed through <see cref="GlobalRegistry"/>.
+    /// Stored entries are event/localization hashes, not persistent strings.
+    /// </summary>
+    public interface IPDALogbookService
+    {
+        /// <summary>
+        /// Total number of retained PDA logbook events.
+        /// </summary>
+        int EntryCount { get; }
+
+        /// <summary>
+        /// Appends one deduplicated PDA log event by source keys.
+        /// </summary>
+        bool TryAppendEntry(string originKey, string titleKey, string messageKey);
     }
 
     /// <summary>
@@ -1094,6 +1136,116 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Data-only fauna simulation contract exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IFaunaSim
+    {
+        /// <summary>
+        /// True once the simulation owner has allocated its native residency buffers.
+        /// </summary>
+        bool IsReady { get; }
+
+        /// <summary>
+        /// Maximum resident/dehydrated fauna slots available to the simulation.
+        /// </summary>
+        int ResidentSlotCapacity { get; }
+    }
+
+    /// <summary>
+    /// Data-only fluid simulation math contract exposed through <see cref="GlobalRegistry"/>.
+    /// </summary>
+    public interface IFluidSim
+    {
+        /// <summary>
+        /// True once the math service is ready for deterministic simulation calls.
+        /// </summary>
+        bool IsReady { get; }
+
+        /// <summary>
+        /// Resolved water density used by submarine flood mass calculations.
+        /// </summary>
+        float WaterDensityKilogramsPerCubicMeter { get; }
+
+        /// <summary>
+        /// Resolves Torricelli ingress velocity at the supplied depth.
+        /// </summary>
+        /// <param name="depthMeters">External water depth in meters.</param>
+        /// <returns>Ingress velocity in meters per second.</returns>
+        float ResolveIngressVelocity(float depthMeters);
+    }
+
+    /// <summary>
+    /// Boot-time quality tier resolved from immutable hardware facts.
+    /// </summary>
+    public enum HectonQualityTier : byte
+    {
+        Unknown = 0,
+        Low = 1,
+        Mx350 = 2,
+        Mid = 3,
+        High = 4,
+        Ultra = 5
+    }
+
+    /// <summary>
+    /// Immutable hardware profile captured during the bootstrap HardwareCheck phase.
+    /// </summary>
+    public readonly struct HectonHardwareProfile
+    {
+        /// <summary>
+        /// Creates a boot-time hardware profile.
+        /// </summary>
+        public HectonHardwareProfile(
+            int graphicsMemoryMegabytes,
+            int systemMemoryMegabytes,
+            int processorCount,
+            HectonQualityTier qualityTier)
+        {
+            GraphicsMemoryMegabytes = graphicsMemoryMegabytes;
+            SystemMemoryMegabytes = systemMemoryMegabytes;
+            ProcessorCount = processorCount;
+            QualityTier = qualityTier;
+        }
+
+        /// <summary>Detected graphics memory in megabytes.</summary>
+        public int GraphicsMemoryMegabytes { get; }
+
+        /// <summary>Detected system memory in megabytes.</summary>
+        public int SystemMemoryMegabytes { get; }
+
+        /// <summary>Detected logical CPU core count.</summary>
+        public int ProcessorCount { get; }
+
+        /// <summary>Resolved runtime quality tier.</summary>
+        public HectonQualityTier QualityTier { get; }
+    }
+
+    /// <summary>
+    /// Immutable service rebound payload published after a live registry slot is replaced.
+    /// </summary>
+    public readonly struct ServiceReboundEvent
+    {
+        /// <summary>
+        /// Creates a service rebound notification.
+        /// </summary>
+        public ServiceReboundEvent(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            ServiceSlot = serviceSlot;
+            PreviousService = previousService;
+            CurrentService = currentService;
+        }
+
+        /// <summary>Registry slot that was replaced.</summary>
+        public GlobalRegistryServiceSlot ServiceSlot { get; }
+
+        /// <summary>Previous service instance, or null when the slot was empty.</summary>
+        public object PreviousService { get; }
+
+        /// <summary>Current service instance, or null when the slot was cleared.</summary>
+        public object CurrentService { get; }
+    }
+
+    /// <summary>
     /// Typed registry service slot identifiers used by GlobalRegistry hot-swap notifications.
     /// </summary>
     public enum GlobalRegistryServiceSlot : byte
@@ -1130,7 +1282,13 @@ namespace Hecton8.Core
         TickManager = 29,
         Dispatcher = 30,
         RenderDispatcher = 31,
-        PhysicsStateManager = 32
+        PhysicsStateManager = 32,
+        FaunaSimulation = 33,
+        FluidSimulation = 34,
+        PersistentWorldRegistry = 35,
+        PDALogbook = 36,
+        PlayerMotor = 37,
+        Unknown = 255
     }
 
     /// <summary>
@@ -1185,6 +1343,17 @@ namespace Hecton8.Core
         /// <param name="targetCollider">Resolved collider reference associated with the signal target.</param>
         /// <returns>True when the signal was accepted.</returns>
         bool Publish(in Hecton8.Interaction.InteractionSignal signal, Collider targetCollider);
+
+        /// <summary>
+        /// Performs the shared zero-allocation tool hit query from a preformatted interaction packet.
+        /// </summary>
+        /// <param name="requesterId">Stable per-requester identifier used to map frame-latent results.</param>
+        /// <param name="packet">Blittable tool request packet copied by value into the service-owned raycast lane.</param>
+        /// <param name="layerMask">Physics layer mask.</param>
+        /// <param name="queryTriggerInteraction">Whether trigger colliders participate in the batched query.</param>
+        /// <param name="hit">Nearest valid hit when one is found.</param>
+        /// <returns>True when a valid hit was resolved.</returns>
+        bool TryRaycastPrimary(ulong requesterId, in Hecton8.Interaction.InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit);
 
         /// <summary>
         /// Performs the shared zero-allocation tool hit query using the service-owned buffers.

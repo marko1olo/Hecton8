@@ -36,11 +36,11 @@ They have `0` external runtime code refs and `0` prefab/scene/data YAML refs.
 
 | Class | File | External code refs | YAML refs | Internal bootstrap/service mentions | Current reading |
 |---|---|---:|---:|---:|---|
-| `SaveSystemRuntimeSmokeTester` | `Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs` | 0 | 0 | 0 | strong orphan candidate |
-| `WorldGenerativeGeologyRuntimeSmokeTester` | `Assets/_Project/Scripts/WorldGenerativeGeologyRuntimeSmokeTester.cs` | 0 | 0 | 0 | strong orphan candidate |
-| `WeakToolsRuntimeSmokeTester` | `Assets/_Project/Scripts/Dev/WeakToolsRuntimeSmokeTester.cs` | 0 | 0 | 2 | strong orphan candidate; self-resolves player/tool context but no external owner found |
-| `MantaAcousticRuntimeVerifier` | `Assets/_Project/Scripts/Dev/MantaAcousticRuntimeVerifier.cs` | 0 | 0 | 3 | strong orphan candidate; internal `GlobalRegistry`/`SceneBootstrap` lookups only |
-| `PhysicalInteractionRuntimeVerifier` | `Assets/_Project/Scripts/Dev/PhysicalInteractionRuntimeVerifier.cs` | 0 | 0 | 3 | strong orphan candidate; internal `GlobalRegistry`/`SceneBootstrap` lookups only |
+| `SaveSystemRuntimeSmokeTester` | `Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs` | 0 | 0 | 0 | REMOVED 2026-04-30; file and `.meta` deleted |
+| `WorldGenerativeGeologyRuntimeSmokeTester` | `Assets/_Project/Scripts/WorldGenerativeGeologyRuntimeSmokeTester.cs` | 0 in prior scan; current editor refs found | 0 | 0 | retained; `Assets/_Project/Editor/HectonDevToolsMenu.cs` currently references/adds it |
+| `WeakToolsRuntimeSmokeTester` | `Assets/_Project/Scripts/Dev/WeakToolsRuntimeSmokeTester.cs` | 0 | 0 | 2 | REMOVED 2026-04-30; file and `.meta` deleted |
+| `MantaAcousticRuntimeVerifier` | `Assets/_Project/Scripts/Dev/MantaAcousticRuntimeVerifier.cs` | 0 | 0 | 3 | REMOVED 2026-04-30; file and `.meta` deleted |
+| `PhysicalInteractionRuntimeVerifier` | `Assets/_Project/Scripts/Dev/PhysicalInteractionRuntimeVerifier.cs` | 0 | 0 | 3 | REMOVED 2026-04-30; file and `.meta` deleted |
 
 ## Embedded Diagnostics, Not Dead Yet
 
@@ -82,10 +82,10 @@ These are not good architecture, but static evidence says they still belong to a
 
 ## Recommended Action Order
 
-1. Review the `5` strong orphan candidates first.
-2. Confirm no dynamic `AddComponent`, reflection, or test harness loader instantiates them.
-3. Remove one candidate at a time, then re-run compile + scene/prefab validation.
-4. Do not delete player-attached smoke testers until the verification strategy is explicitly replaced.
+1. Keep `WorldGenerativeGeologyRuntimeSmokeTester` until `HectonDevToolsMenu` is migrated or the editor menu entry is removed.
+2. Re-run scene/prefab validation after Unity import settles.
+3. Do not delete player-attached smoke testers until the verification strategy is explicitly replaced.
+4. Continue one-domain-at-a-time cleanup; do not batch-delete verification infrastructure.
 
 ## Regression Model
 
@@ -103,7 +103,8 @@ The older graveyard report overstated confidence and mixed live verification hoo
 
 Current evidence-backed state:
 
-- `5` strong orphan candidates
+- `4` prior strong orphan candidates removed in this pass
+- `1` prior candidate retained because a current editor owner was found
 - `10` embedded or wired diagnostics explicitly retained
 - no deletion-safe proof yet
 

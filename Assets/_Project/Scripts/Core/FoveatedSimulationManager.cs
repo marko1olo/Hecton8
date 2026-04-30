@@ -53,7 +53,7 @@ namespace Hecton8.Core
     {
         private const double SlowJobCompleteWarningMilliseconds = 100.0;
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ImportanceScoringJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> Positions;
@@ -99,7 +99,7 @@ namespace Hecton8.Core
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct VisualInterpolationJob : IJobParallelForTransform
         {
             [ReadOnly] public NativeArray<float3> FromPositions;

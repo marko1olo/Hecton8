@@ -148,7 +148,8 @@ namespace Hecton8.Gameplay
             : 0f;
 
         /// <inheritdoc />
-        public uint VulnerabilityMask => ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.Weld);
+        public uint VulnerabilityMask => ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.Weld) |
+                                         ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.PlasmaCut);
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -305,7 +306,8 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void ApplyInteractionSignal(in global::Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
         {
-            if ((InteractionEffectType)signal.EffectType != InteractionEffectType.Weld)
+            InteractionEffectType effectType = (InteractionEffectType)signal.EffectType;
+            if (effectType != InteractionEffectType.Weld && effectType != InteractionEffectType.PlasmaCut)
                 return;
 
             TryApplyWeldOverride(ResolveSignalWeldDeltaSeconds(in signal), runtimeHitPoint);
@@ -461,7 +463,7 @@ namespace Hecton8.Gameplay
             {
                 owningModule.SetEmergencyBulkheadLockdown(false);
                 if (!owningModule.IsFlooded)
-                    owningModule.ForceFlood();
+                    owningModule.ForceFloodFromBulkheadOverride(_cachedTransform.position);
                 return;
             }
 

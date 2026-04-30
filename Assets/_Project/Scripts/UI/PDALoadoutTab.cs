@@ -49,7 +49,7 @@ namespace Hecton8.UI
         [SerializeField] private bool holsterBeforeApplyingPreset = true;
         [SerializeField] private ToolLoadoutPreset[] loadoutPresets = new ToolLoadoutPreset[4];
         [SerializeField] private float fieldAdviceRange = 18f;
-        [SerializeField] private LayerMask fieldAdviceMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask fieldAdviceMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         // ════════════════════════════════════════════════════════════
         //  CACHED FIELDS FOR ZERO-GC OPTIMIZATION
@@ -289,6 +289,12 @@ namespace Hecton8.UI
             PDAEvents.Unregister(this);
             PlayerExpressionEvents.OnProfileChanged -= HandlePlayerExpressionChanged;
             UnsubscribeDurabilitySystem();
+        }
+
+        private void OnDestroy()
+        {
+            Unsubscribe();
+            PDAEvents.AssertUnregistered(this, nameof(PDALoadoutTab));
         }
 
         private void RefreshDurabilityBindings()

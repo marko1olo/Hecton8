@@ -707,7 +707,7 @@ namespace Hecton8.World
         /// Burst-compiled job for calculating squared distances from camera to LOD groups.
         /// Uses squared distance to avoid expensive sqrt operations.
         /// </summary>
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DistanceCalculationJob : IJobParallelFor
         {
             [ReadOnly] public float3 CameraPosition;

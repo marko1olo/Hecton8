@@ -115,7 +115,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 200f)] private float meltdownPlayerDamage = 65f;
 
         [Tooltip("Layers scanned during the reactor meltdown overlap pass.")]
-        [SerializeField] private LayerMask meltdownMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask meltdownMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Audio ──────────────────────────────────────")]
         [Tooltip("Sound played when fuel is inserted.")]
@@ -631,11 +631,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _overheatTimer += deltaTime;
+            float parasiteOverheatMultiplier = _hostModule != null
+                ? Mathf.Max(1f, _hostModule.ParasiteBioReactorOverheatMultiplier)
+                : 1f;
+            _overheatTimer += deltaTime * parasiteOverheatMultiplier;
             if (_hostModule == null || _overheatTimer < overheatGraceSeconds)
                 return;
 
-            _hostModule.ApplyDamage(overheatIntegrityDamagePerSecond * deltaTime);
+            _hostModule.ApplyDamage(overheatIntegrityDamagePerSecond * deltaTime * parasiteOverheatMultiplier);
             if (_hostModule.CurrentIntegrity <= 0f)
                 TriggerMeltdown();
         }

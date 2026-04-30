@@ -125,6 +125,16 @@ namespace Hecton8.UI
             BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
         }
 
+        private void OnDestroy()
+        {
+            SpectrumEvents.OnModeChanged -= HandleModeChanged;
+            SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
+            PDAEvents.Unregister(this);
+            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
+            PDAEvents.AssertUnregistered(this, nameof(PDASpectrumTab));
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EVENT-DRIVEN REFRESH
         // ══════════════════════════════════════════════════════════

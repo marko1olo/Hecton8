@@ -3,9 +3,9 @@
 // Подсвечивает интерактивный объект через MaterialPropertyBlock.
 //
 // РЕФАКТОРИНГ v2.0 (Zero GC):
-//   • Полностью удалены IEnumerator Fade, StartCoroutine, StopCoroutine.
-//     Каждый вызов StartCoroutine аллоцировал ~100 bytes на GC heap
-//     (Coroutine object + IEnumerator state machine + boxing).
+//   • Полностью удалены iterator Fade, legacy coroutine start, legacy coroutine stop.
+//     Каждый вызов legacy coroutine start аллоцировал ~100 bytes на GC heap
+//     (Coroutine object + iterator state machine + boxing).
 //     При частом наведении на объекты (10+ раз/сек) — ощутимый GC pressure.
 //   • Реализует ITickable — интеграция с GameTickManager.
 //   • Ленивая регистрация: Register в GameTickManager ТОЛЬКО когда
@@ -46,7 +46,7 @@
 //   └──────────────────────────────────────────────────────────────┘
 //
 // ZERO GC:
-//   • Нет StartCoroutine (IEnumerator + Coroutine object = ~100B per call).
+//   • Нет legacy coroutine start (iterator + Coroutine object = ~100B per call).
 //   • Нет foreach, LINQ, лямбд.
 //   • Color — struct (stack, zero GC).
 //   • MaterialPropertyBlock.SetColor — zero GC.

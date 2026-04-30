@@ -26,7 +26,7 @@ namespace Hecton8.World
             return _evaluateYieldUnits.Invoke(toolPower, nodeHardness, elapsedSeconds, harvestDurationSeconds);
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float EvaluateYieldUnitsBurst(
             float toolPower,
             float nodeHardness,

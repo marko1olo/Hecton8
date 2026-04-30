@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Scavenging;
 using UnityEditor;
@@ -1355,7 +1356,7 @@ namespace Hecton8.EditorTools
                 AttachModuleLeakVfx(root.transform, baseModule, scale, primitiveType);
             }
 
-            int socketsLayer = LayerMask.NameToLayer("Sockets");
+            int socketsLayer = HectonLayerMasks.Sockets;
             if (sockets != null)
             {
                 foreach (SocketSpec socketSpec in sockets)
@@ -2338,7 +2339,7 @@ namespace Hecton8.EditorTools
                 SerializedObject builderSo = new SerializedObject(builder);
                 builderSo.FindProperty("activeBuildable").objectReferenceValue = defaultBuildable;
 
-                int socketsLayer = LayerMask.NameToLayer("Sockets");
+                int socketsLayer = HectonLayerMasks.Sockets;
                 if (socketsLayer >= 0)
                 {
                     int socketMask = 1 << socketsLayer;

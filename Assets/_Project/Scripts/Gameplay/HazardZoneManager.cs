@@ -43,7 +43,7 @@ namespace Hecton8.Gameplay
         public byte VehicleExposureMask;
     }
 
-    [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct EvaluateHazardExposureJob : IJob
     {
         [ReadOnly] public NativeArray<HazardVolumeData> Volumes;

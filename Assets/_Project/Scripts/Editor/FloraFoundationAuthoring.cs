@@ -31,6 +31,7 @@ namespace Hecton8.EditorTools
         private const string ThermalGelItemPath = "Assets/_Project/Data/Items/Resources/Raw/Data_ThermalGel.asset";
         private const string ElectrolyteSaltsItemPath = "Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset";
         private const string UrpLitShaderName = "Universal Render Pipeline/Lit";
+        private const string ProxyColliderRigName = "__PROXY_COLLIDERS";
 
         private struct FloraSpec
         {
@@ -392,6 +393,7 @@ namespace Hecton8.EditorTools
             SetObject(serializedObject, "harvestTemplate", harvestTemplate);
             SetObject(serializedObject, "lootItem", lootItem);
             SetInt(serializedObject, "lootHashId", 0);
+            SetLong(serializedObject, "geneticsMask", ResolveDefaultGeneticsMask(spec));
             SetEnum(serializedObject, "vulnerabilityMask", (int)spec.VulnerabilityMask);
             SetEnum(serializedObject, "audioMaterialId", (int)spec.AudioMaterialId);
             SetFloat(serializedObject, "maxHealth", spec.MaxHealth);
@@ -532,6 +534,27 @@ namespace Hecton8.EditorTools
             }
         }
 
+        private static long ResolveDefaultGeneticsMask(FloraSpec spec)
+        {
+            long mask = 0L;
+            if (spec.BiolumColor.a > 0.001f)
+                mask |= (long)GeneticTraitProfile.GeneticTraitMask.Bioluminescent;
+
+            if (spec.Category == FloraDataTemplate.FloraCategory.HarvestableKelp ||
+                spec.Category == FloraDataTemplate.FloraCategory.GiantSargassum)
+            {
+                mask |= (long)GeneticTraitProfile.GeneticTraitMask.OxygenProducing;
+            }
+
+            if (spec.MatureSporeAcousticEmitter)
+                mask |= (long)GeneticTraitProfile.GeneticTraitMask.Toxic;
+
+            if (spec.GrowthTimeSeconds <= 300f)
+                mask |= (long)GeneticTraitProfile.GeneticTraitMask.FastGrowing;
+
+            return mask;
+        }
+
         private static GameObject EnsureProxyPrefab(FloraSpec spec, Material material)
         {
             string prefabPath = $"{ProxyPrefabFolder}/PFB_FloraProxy_{spec.AssetName}.prefab";
@@ -602,33 +625,39 @@ namespace Hecton8.EditorTools
 
         private static void AddPrimitiveColliders(GameObject root, FloraSpec spec)
         {
+            GameObject colliderRig = new GameObject(ProxyColliderRigName);
+            colliderRig.transform.SetParent(root.transform, false);
+            colliderRig.transform.localPosition = Vector3.zero;
+            colliderRig.transform.localRotation = Quaternion.identity;
+            colliderRig.transform.localScale = Vector3.one;
+
             Vector3 center = new Vector3(0f, spec.BoundsSize.y * 0.5f, 0f);
             Vector3 extents = spec.BoundsSize * 0.5f;
             switch (spec.Category)
             {
                 case FloraDataTemplate.FloraCategory.HarvestableKelp:
-                    AddCapsule(root, new Vector3(center.x, spec.BoundsSize.y * 0.22f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.20f), spec.BoundsSize.y * 0.40f);
-                    AddCapsule(root, new Vector3(center.x, spec.BoundsSize.y * 0.52f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.44f);
-                    AddCapsule(root, new Vector3(center.x, spec.BoundsSize.y * 0.80f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.34f);
-                    AddSphere(root, new Vector3(0f, spec.BoundsSize.y * 0.68f, 0f), Mathf.Max(0.08f, extents.x * 0.42f));
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.22f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.20f), spec.BoundsSize.y * 0.40f);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.52f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.44f);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.80f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.34f);
+                    AddSphere(colliderRig, new Vector3(0f, spec.BoundsSize.y * 0.68f, 0f), Mathf.Max(0.08f, extents.x * 0.42f));
                     break;
                 case FloraDataTemplate.FloraCategory.HardCoral:
-                    AddSphere(root, center, Mathf.Max(0.10f, extents.x * 0.44f));
-                    AddSphere(root, center + new Vector3(extents.x * 0.34f, extents.y * 0.20f, 0f), Mathf.Max(0.08f, extents.x * 0.26f));
-                    AddSphere(root, center + new Vector3(-extents.x * 0.30f, extents.y * 0.18f, extents.z * 0.18f), Mathf.Max(0.08f, extents.x * 0.24f));
-                    AddSphere(root, center + new Vector3(0f, extents.y * 0.34f, -extents.z * 0.22f), Mathf.Max(0.08f, extents.x * 0.22f));
+                    AddSphere(colliderRig, center, Mathf.Max(0.10f, extents.x * 0.44f));
+                    AddSphere(colliderRig, center + new Vector3(extents.x * 0.34f, extents.y * 0.20f, 0f), Mathf.Max(0.08f, extents.x * 0.26f));
+                    AddSphere(colliderRig, center + new Vector3(-extents.x * 0.30f, extents.y * 0.18f, extents.z * 0.18f), Mathf.Max(0.08f, extents.x * 0.24f));
+                    AddSphere(colliderRig, center + new Vector3(0f, extents.y * 0.34f, -extents.z * 0.22f), Mathf.Max(0.08f, extents.x * 0.22f));
                     break;
                 case FloraDataTemplate.FloraCategory.GiantSargassum:
-                    AddCapsule(root, new Vector3(0f, spec.BoundsSize.y * 0.28f, 0f), Mathf.Max(0.08f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.32f);
-                    AddSphere(root, center + new Vector3(0f, extents.y * 0.10f, 0f), Mathf.Max(0.12f, extents.x * 0.28f));
-                    AddSphere(root, center + new Vector3(extents.x * 0.42f, 0f, 0f), Mathf.Max(0.10f, extents.x * 0.22f));
-                    AddSphere(root, center + new Vector3(-extents.x * 0.42f, 0f, extents.z * 0.10f), Mathf.Max(0.10f, extents.x * 0.22f));
-                    AddSphere(root, center + new Vector3(0f, 0f, -extents.z * 0.38f), Mathf.Max(0.10f, extents.x * 0.20f));
+                    AddCapsule(colliderRig, new Vector3(0f, spec.BoundsSize.y * 0.28f, 0f), Mathf.Max(0.08f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.32f);
+                    AddSphere(colliderRig, center + new Vector3(0f, extents.y * 0.10f, 0f), Mathf.Max(0.12f, extents.x * 0.28f));
+                    AddSphere(colliderRig, center + new Vector3(extents.x * 0.42f, 0f, 0f), Mathf.Max(0.10f, extents.x * 0.22f));
+                    AddSphere(colliderRig, center + new Vector3(-extents.x * 0.42f, 0f, extents.z * 0.10f), Mathf.Max(0.10f, extents.x * 0.22f));
+                    AddSphere(colliderRig, center + new Vector3(0f, 0f, -extents.z * 0.38f), Mathf.Max(0.10f, extents.x * 0.20f));
                     break;
                 default:
-                    AddCapsule(root, new Vector3(center.x, spec.BoundsSize.y * 0.30f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.46f);
-                    AddCapsule(root, new Vector3(center.x, spec.BoundsSize.y * 0.64f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.14f), spec.BoundsSize.y * 0.28f);
-                    AddSphere(root, new Vector3(0f, spec.BoundsSize.y * 0.78f, 0f), Mathf.Max(0.06f, extents.x * 0.22f));
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.30f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.46f);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.64f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.14f), spec.BoundsSize.y * 0.28f);
+                    AddSphere(colliderRig, new Vector3(0f, spec.BoundsSize.y * 0.78f, 0f), Mathf.Max(0.06f, extents.x * 0.22f));
                     break;
             }
         }
@@ -710,6 +739,13 @@ namespace Hecton8.EditorTools
             SerializedProperty property = serializedObject.FindProperty(propertyName);
             if (property != null)
                 property.intValue = value;
+        }
+
+        private static void SetLong(SerializedObject serializedObject, string propertyName, long value)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property != null)
+                property.longValue = value;
         }
 
         private static void SetFloat(SerializedObject serializedObject, string propertyName, float value)

@@ -902,7 +902,7 @@ namespace Hecton8.World
             entranceGlow.color = new Color(0.8f, 0.7f, 0.5f); // warm safety glow
             entranceGlow.intensity = 0.5f;
             entranceGlow.range = preset.entranceRadius * 3f;
-            entranceGlow.renderingLayerMask = (int)((1u << 8) | (1u << 9) | (1u << 10));
+            entranceGlow.renderingLayerMask = (int)HectonLayerMasks.AllDefinedProjectRenderingLayerMaskValue;
         }
 
         private void InitializeCaveDressingLayer(CaveInstance instance, CavePreset preset)

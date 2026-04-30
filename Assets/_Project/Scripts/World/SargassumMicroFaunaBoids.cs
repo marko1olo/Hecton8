@@ -101,7 +101,7 @@ namespace Hecton8.World
             public float Padding1;
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateSimulationLodJob : IJob
         {
             [ReadOnly] public NativeArray<FoveatedSimulationInput> Input;
@@ -220,7 +220,7 @@ namespace Hecton8.World
             public float Radius;
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildLeviathanNodeJob : IJob
         {
             [ReadOnly] public NativeArray<float3> SourcePath;
@@ -906,7 +906,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Collider layers treated as formation obstacles. Use rock / ruin / terrain layers only.")]
-        private LayerMask formationObstacleLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        private LayerMask formationObstacleLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [SerializeField, Range(4f, 80f)]
         [Tooltip("Non-alloc overlap radius used when harvesting nearby rock obstacles for formation avoidance.")]
@@ -1036,7 +1036,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Layer mask used when the leviathan supplements the vegetation spatial hash with a rigidbody overlap query.")]
-        private LayerMask leviathanShockwaveLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        private LayerMask leviathanShockwaveLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("â”€â”€ Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]
@@ -1416,6 +1416,7 @@ namespace Hecton8.World
 
             SargassumGlobalDragManager.OnMassiveDisplacement -= HandleMassiveDisplacement;
             FlashlightEvents.OnToggled -= HandleFlashlightToggled;
+            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             CompletePendingReadbackAndReleaseBuffers();
@@ -1524,9 +1525,9 @@ namespace Hecton8.World
 
                         _frameParity ^= 1;
                     }
-                    catch (Exception exception)
+                    catch (Exception)
                     {
-                        DisableComputeDispatch($"Compute dispatch failure on '{boidCompute.name}'. {exception.Message}");
+                        DisableComputeDispatch("Compute dispatch failure.");
                     }
                 }
             }

@@ -130,10 +130,10 @@ namespace Hecton8.World
         private static void EnsureTerrainLayerCache()
         {
             if (TerrainLayer == int.MinValue)
-                TerrainLayer = LayerMask.NameToLayer("Terrain");
+                TerrainLayer = HectonLayerMasks.Terrain;
 
             if (TerrainLayerWithTrailingSpace == int.MinValue)
-                TerrainLayerWithTrailingSpace = LayerMask.NameToLayer("Terrain ");
+                TerrainLayerWithTrailingSpace = HectonLayerMasks.Terrain;
         }
 
         private void OnEnable()
@@ -896,7 +896,7 @@ namespace Hecton8.World
 
         private static int ResolveCaptureLayerMask()
         {
-            int resolvedMask = LayerMask.GetMask("Terrain", "Terrain ");
+            int resolvedMask = HectonLayerMasks.TerrainLayerMask;
             if (resolvedMask != 0)
                 return resolvedMask;
 

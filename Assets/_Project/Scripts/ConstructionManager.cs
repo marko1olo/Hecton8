@@ -89,6 +89,7 @@ namespace Hecton8.Construction
         private bool _tickRegistered;
         private bool _logisticsServiceRegistered;
         private bool _saveRegistered;
+        private bool _isInitialized;
         private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
@@ -122,13 +123,14 @@ namespace Hecton8.Construction
         /// <summary>
         /// True once the logistics owner is registered in the global registry.
         /// </summary>
-        public bool IsInitialized => ReferenceEquals(GlobalRegistry.Logistics, this);
+        public bool IsInitialized => _isInitialized && ReferenceEquals(GlobalRegistry.Logistics, this);
 
         /// <summary>
         /// Registers the construction/logistics service with bootstrap-owned runtime systems.
         /// </summary>
         public void InitializeService()
         {
+            _isInitialized = true;
             TryRegisterLogisticsService();
             TryRegisterTick();
             TryRegisterSaveParticipant();
@@ -151,6 +153,10 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             _slowTickAccumulator = 0f;
+            if (!_isInitialized)
+                return;
+
+            TryRegisterLogisticsService();
             TryRegisterTick();
             TryRegisterSaveParticipant();
         }
@@ -168,6 +174,7 @@ namespace Hecton8.Construction
             TryUnregisterTick();
             TryUnregisterLogisticsService();
             TryUnregisterSaveParticipant();
+            _isInitialized = false;
             if (_habitatGraphManager != null)
             {
                 _habitatGraphManager.Dispose();
@@ -1032,12 +1039,28 @@ namespace Hecton8.Construction
             _habitatGraphManager.NotifyModuleEmergencyStateChanged(module);
         }
 
+        internal void NotifyModuleImploded(BaseModule module)
+        {
+            if (_habitatGraphManager == null || module == null)
+                return;
+
+            RefreshHabitatGraph();
+        }
+
         internal void NotifyModuleParasiteRootStateChanged(BaseModule module)
         {
             if (_habitatGraphManager == null || module == null)
                 return;
 
             RefreshHabitatGraph();
+        }
+
+        internal bool TryResolveFungalMindTarget(BaseModule sourceModule, out BaseModule targetModule, out float targetPotential)
+        {
+            targetModule = null;
+            targetPotential = 0f;
+            return _habitatGraphManager != null &&
+                   _habitatGraphManager.TryResolveFungalMindTarget(sourceModule, out targetModule, out targetPotential);
         }
     }
 }

@@ -353,6 +353,7 @@ namespace Hecton8.SaveSystem
             public NativeArray<SectorEntityStateSortEntry> RadixScratch;
             public NativeArray<EntityDataRecord> SortedEntityStates;
             public NativeArray<byte> FileBytes;
+            public NativeArray<byte> DictionaryScratch;
             public NativeArray<int> ResultLength;
             public NativeArray<int> RadixCounts;
             public NativeArray<int> RadixOffsets;
@@ -371,6 +372,8 @@ namespace Hecton8.SaveSystem
                     SortedEntityStates.Dispose();
                 if (FileBytes.IsCreated)
                     FileBytes.Dispose();
+                if (DictionaryScratch.IsCreated)
+                    DictionaryScratch.Dispose();
                 if (ResultLength.IsCreated)
                     ResultLength.Dispose();
                 if (RadixCounts.IsCreated)
@@ -380,26 +383,67 @@ namespace Hecton8.SaveSystem
 
                 this = default;
             }
+
+            internal JobHandle DisposeDeferred(JobHandle dependency)
+            {
+                JobHandle disposeHandle = JobHandle.CombineDependencies(Handle, dependency);
+                if (SourceStates.IsCreated)
+                    disposeHandle = SourceStates.Dispose(disposeHandle);
+                if (SortEntries.IsCreated)
+                    disposeHandle = SortEntries.Dispose(disposeHandle);
+                if (RadixScratch.IsCreated)
+                    disposeHandle = RadixScratch.Dispose(disposeHandle);
+                if (SortedEntityStates.IsCreated)
+                    disposeHandle = SortedEntityStates.Dispose(disposeHandle);
+                if (FileBytes.IsCreated)
+                    disposeHandle = FileBytes.Dispose(disposeHandle);
+                if (DictionaryScratch.IsCreated)
+                    disposeHandle = DictionaryScratch.Dispose(disposeHandle);
+                if (ResultLength.IsCreated)
+                    disposeHandle = ResultLength.Dispose(disposeHandle);
+                if (RadixCounts.IsCreated)
+                    disposeHandle = RadixCounts.Dispose(disposeHandle);
+                if (RadixOffsets.IsCreated)
+                    disposeHandle = RadixOffsets.Dispose(disposeHandle);
+
+                this = default;
+                return disposeHandle;
+            }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct IndexedBlockDecompressJob : IJob
         {
             [ReadOnly] public NativeArray<byte> CompressedPayload;
+            [ReadOnly] public NativeArray<byte> DictionaryBytes;
             public NativeArray<byte> DecompressedPayload;
             public NativeArray<int> ResultLength;
             public uint BlockFlags;
+            public int DictionaryLength;
 
             public void Execute()
             {
                 byte* compressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(CompressedPayload);
                 byte* decompressedPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(DecompressedPayload);
+                byte* dictionaryPtr = null;
+                int dictionaryLength = 0;
+                if ((BlockFlags & FlagStaticDictionary) != 0 &&
+                    DictionaryBytes.IsCreated &&
+                    DictionaryLength > 0 &&
+                    DictionaryBytes.Length >= DictionaryLength)
+                {
+                    dictionaryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(DictionaryBytes);
+                    dictionaryLength = DictionaryLength;
+                }
+
                 int failedBlockIndex = -1;
-                int decompressedLength = Lz4BlockDecompress(
+                int decompressedLength = Lz4BlockDecompressWithPreparedDictionary(
                     compressedPtr,
                     CompressedPayload.Length,
                     decompressedPtr,
                     DecompressedPayload.Length,
-                    (BlockFlags & FlagStaticDictionary) != 0,
+                    dictionaryPtr,
+                    dictionaryLength,
                     (BlockFlags & FlagPerBlockChecksums) != 0,
                     out failedBlockIndex);
                 if (decompressedLength > 0 && (BlockFlags & FlagTokenSubstitution) != 0)
@@ -418,7 +462,7 @@ namespace Hecton8.SaveSystem
             public EntityDataRecord Record;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildSectorEntityStateSortEntriesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<EntityDataRecord> SourceStates;
@@ -447,7 +491,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct RadixSortSectorEntityStateEntriesJob : IJob
         {
             public NativeArray<SectorEntityStateSortEntry> Entries;
@@ -501,7 +545,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ExtractSortedSectorEntityStatesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SectorEntityStateSortEntry> Entries;
@@ -513,12 +557,15 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct CompressSectorEntityStateJob : IJob
         {
             [ReadOnly] public NativeArray<EntityDataRecord> SortedStates;
+            [ReadOnly] public NativeArray<byte> DictionaryScratch;
             public NativeArray<byte> FileBytes;
             public NativeArray<int> ResultLength;
             public long SectorHash;
+            public int DictionaryLength;
 
             public void Execute()
             {
@@ -531,13 +578,17 @@ namespace Hecton8.SaveSystem
 
                 byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(FileBytes);
                 byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(SortedStates);
+                byte* dictionaryScratchPtr = DictionaryScratch.IsCreated
+                    ? (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(DictionaryScratch)
+                    : null;
                 int rawByteLength = recordCount * UnsafeUtility.SizeOf<EntityDataRecord>();
-                int compressedLength = Lz4BlockCompress(
+                int compressedLength = SaveBinaryStorage.Lz4BlockCompressWithPreparedDictionary(
                     rawPtr,
                     rawByteLength,
                     filePtr + UnsafeUtility.SizeOf<SectorEntityStateFileHeader>(),
                     FileBytes.Length - UnsafeUtility.SizeOf<SectorEntityStateFileHeader>(),
-                    useStaticDictionary: true,
+                    dictionaryScratchPtr,
+                    DictionaryLength,
                     protectSubBlocks: true);
                 if (compressedLength <= 0)
                 {
@@ -1493,20 +1544,41 @@ namespace Hecton8.SaveSystem
             int compressedPayloadLength = storedBlockLength - IndexedSectorBlockHeaderSize;
             using NativeArray<byte> compressedPayload = new NativeArray<byte>(compressedPayloadLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             using NativeArray<int> resultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<byte> dictionaryBytes = default;
             byte* compressedPayloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedPayload);
             UnsafeUtility.MemCpy(compressedPayloadPtr, filePtr + blockOffset + IndexedSectorBlockHeaderSize, compressedPayloadLength);
 
-            IndexedBlockDecompressJob decompressJob = new IndexedBlockDecompressJob
+            try
             {
-                CompressedPayload = compressedPayload,
-                DecompressedPayload = destinationBuffer,
-                ResultLength = resultLength,
-                BlockFlags = blockHeader.Flags
-            };
+                int dictionaryLength = 0;
+                if ((blockHeader.Flags & FlagStaticDictionary) != 0)
+                {
+                    dictionaryLength = SaveBinaryPayloadCodec.Lz4CompressionDictionaryLength;
+                    dictionaryBytes = new NativeArray<byte>(dictionaryLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                    byte* dictionaryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dictionaryBytes);
+                    SaveBinaryPayloadCodec.CopyLz4CompressionDictionary(dictionaryPtr, dictionaryBytes.Length);
+                }
 
-            JobHandle decompressHandle = decompressJob.Schedule();
-            decompressHandle.Complete();
-            decompressedLength = resultLength[0];
+                IndexedBlockDecompressJob decompressJob = new IndexedBlockDecompressJob
+                {
+                    CompressedPayload = compressedPayload,
+                    DictionaryBytes = dictionaryBytes,
+                    DecompressedPayload = destinationBuffer,
+                    ResultLength = resultLength,
+                    BlockFlags = blockHeader.Flags,
+                    DictionaryLength = dictionaryLength
+                };
+
+                JobHandle decompressHandle = decompressJob.Schedule();
+                decompressHandle.Complete();
+                decompressedLength = resultLength[0];
+            }
+            finally
+            {
+                if (dictionaryBytes.IsCreated)
+                    dictionaryBytes.Dispose();
+            }
+
             if (decompressedLength <= 0)
             {
                 error = (blockHeader.Flags & FlagPerBlockChecksums) != 0
@@ -2302,6 +2374,14 @@ namespace Hecton8.SaveSystem
             int blockCount = math.max(1, (rawByteLength + SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes - 1) / SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes);
             int compressedCapacity = rawByteLength + (rawByteLength / 255) + 16 + (blockCount * ProtectedCompressedBlockHeaderBytes);
             int fileCapacity = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedCapacity;
+            if (!SaveBinaryPayloadCodec.HasLz4CompressionDictionary)
+            {
+                error = "Static LZ4 dictionary is unavailable for async sector entity-state compression.";
+                return false;
+            }
+
+            int dictionaryLength = SaveBinaryPayloadCodec.Lz4CompressionDictionaryLength;
+            int dictionaryScratchBytes = checked(dictionaryLength + SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes);
 
             try
             {
@@ -2312,6 +2392,7 @@ namespace Hecton8.SaveSystem
                 writeHandle.RadixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.SortedEntityStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.FileBytes = new NativeArray<byte>(fileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                writeHandle.DictionaryScratch = new NativeArray<byte>(dictionaryScratchBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.ResultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 writeHandle.RadixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 writeHandle.RadixOffsets = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -2325,6 +2406,9 @@ namespace Hecton8.SaveSystem
 
             for (int i = 0; i < recordCount; i++)
                 writeHandle.SourceStates[i] = entityStates[i];
+
+            byte* dictionaryScratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writeHandle.DictionaryScratch);
+            SaveBinaryPayloadCodec.CopyLz4CompressionDictionary(dictionaryScratchPtr, writeHandle.DictionaryScratch.Length);
 
             BuildSectorEntityStateSortEntriesJob buildJob = new BuildSectorEntityStateSortEntriesJob
             {
@@ -2347,9 +2431,11 @@ namespace Hecton8.SaveSystem
             CompressSectorEntityStateJob compressJob = new CompressSectorEntityStateJob
             {
                 SortedStates = writeHandle.SortedEntityStates,
+                DictionaryScratch = writeHandle.DictionaryScratch,
                 FileBytes = writeHandle.FileBytes,
                 ResultLength = writeHandle.ResultLength,
-                SectorHash = sectorHash
+                SectorHash = sectorHash,
+                DictionaryLength = dictionaryLength
             };
 
             try
@@ -2411,6 +2497,16 @@ namespace Hecton8.SaveSystem
                 writeHandle.Handle.Complete();
 
             writeHandle.Dispose();
+        }
+
+        internal static JobHandle DisposeIndexedSectorEntityStateOverrideWriteDeferred(
+            ref IndexedSectorEntityStateWriteHandle writeHandle,
+            JobHandle dependency)
+        {
+            if (!writeHandle.IsCreated)
+                return dependency;
+
+            return writeHandle.DisposeDeferred(dependency);
         }
 
         internal static bool TryReadIndexedSectorEntityStateOverride(
@@ -3081,62 +3177,94 @@ namespace Hecton8.SaveSystem
             if (useStaticDictionary && !SaveBinaryPayloadCodec.HasLz4CompressionDictionary)
                 return 0;
 
-            int protectedBlockSize = protectSubBlocks ? SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes : BlockSizeBytes;
-            int blockHeaderBytes = protectSubBlocks ? ProtectedCompressedBlockHeaderBytes : StandardCompressedBlockHeaderBytes;
-            int blockCount = (sourceLength + protectedBlockSize - 1) / protectedBlockSize;
-            int sourceOffset = 0;
-            int destinationOffset = 0;
-            int dictionaryLength = useStaticDictionary ? SaveBinaryPayloadCodec.Lz4CompressionDictionaryLength : 0;
-            NativeArray<byte> dictionaryScratch = default;
-            byte* dictionaryScratchPtr = null;
-
-            if (useStaticDictionary)
+            if (!useStaticDictionary)
             {
-                dictionaryScratch = new NativeArray<byte>(dictionaryLength + protectedBlockSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                dictionaryScratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dictionaryScratch);
-                SaveBinaryPayloadCodec.CopyLz4CompressionDictionary(dictionaryScratchPtr, dictionaryScratch.Length);
+                return Lz4BlockCompressWithPreparedDictionary(
+                    source,
+                    sourceLength,
+                    destination,
+                    destinationCapacity,
+                    null,
+                    0,
+                    protectSubBlocks);
             }
+
+            int protectedBlockSize = protectSubBlocks ? SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes : BlockSizeBytes;
+            int dictionaryLength = SaveBinaryPayloadCodec.Lz4CompressionDictionaryLength;
+            NativeArray<byte> dictionaryScratch = default;
 
             try
             {
-                for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
-                {
-                    int rawBlockLength = math.min(protectedBlockSize, sourceLength - sourceOffset);
-                    if (destinationOffset + blockHeaderBytes > destinationCapacity)
-                        return 0;
-
-                    byte* rawBlockSource = source + sourceOffset;
-                    byte* blockSource = rawBlockSource;
-                    int blockSourceLength = rawBlockLength;
-                    if (useStaticDictionary)
-                    {
-                        UnsafeUtility.MemCpy(dictionaryScratchPtr + dictionaryLength, blockSource, rawBlockLength);
-                        blockSource = dictionaryScratchPtr;
-                        blockSourceLength = dictionaryLength + rawBlockLength;
-                    }
-
-                    byte* blockDestination = destination + destinationOffset + blockHeaderBytes;
-                    int blockDestinationCapacity = destinationCapacity - destinationOffset - blockHeaderBytes;
-                    int blockCompressedLength = LZ4Compress(blockSource, blockDestination, blockSourceLength, blockDestinationCapacity);
-                    if (blockCompressedLength <= 0)
-                        return 0;
-
-                    UnsafeUtility.WriteArrayElement(destination + destinationOffset, 0, blockCompressedLength);
-                    UnsafeUtility.WriteArrayElement(destination + destinationOffset + 4, 0, rawBlockLength);
-                    if (protectSubBlocks)
-                        UnsafeUtility.WriteArrayElement(destination + destinationOffset + 8, 0, ComputeIndexedSectorChecksum(rawBlockSource, rawBlockLength));
-
-                    sourceOffset += rawBlockLength;
-                    destinationOffset += blockHeaderBytes + blockCompressedLength;
-                }
-
-                return destinationOffset;
+                dictionaryScratch = new NativeArray<byte>(dictionaryLength + protectedBlockSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* dictionaryScratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dictionaryScratch);
+                SaveBinaryPayloadCodec.CopyLz4CompressionDictionary(dictionaryScratchPtr, dictionaryScratch.Length);
+                return Lz4BlockCompressWithPreparedDictionary(
+                    source,
+                    sourceLength,
+                    destination,
+                    destinationCapacity,
+                    dictionaryScratchPtr,
+                    dictionaryLength,
+                    protectSubBlocks);
             }
             finally
             {
                 if (dictionaryScratch.IsCreated)
                     dictionaryScratch.Dispose();
             }
+        }
+
+        private static int Lz4BlockCompressWithPreparedDictionary(
+            byte* source,
+            int sourceLength,
+            byte* destination,
+            int destinationCapacity,
+            byte* dictionaryScratchPtr,
+            int dictionaryLength,
+            bool protectSubBlocks)
+        {
+            if (source == null || destination == null || sourceLength <= 0 || destinationCapacity <= 8)
+                return 0;
+
+            bool useStaticDictionary = dictionaryScratchPtr != null && dictionaryLength > 0;
+            int protectedBlockSize = protectSubBlocks ? SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes : BlockSizeBytes;
+            int blockHeaderBytes = protectSubBlocks ? ProtectedCompressedBlockHeaderBytes : StandardCompressedBlockHeaderBytes;
+            int blockCount = (sourceLength + protectedBlockSize - 1) / protectedBlockSize;
+            int sourceOffset = 0;
+            int destinationOffset = 0;
+
+            for (int blockIndex = 0; blockIndex < blockCount; blockIndex++)
+            {
+                int rawBlockLength = math.min(protectedBlockSize, sourceLength - sourceOffset);
+                if (destinationOffset + blockHeaderBytes > destinationCapacity)
+                    return 0;
+
+                byte* rawBlockSource = source + sourceOffset;
+                byte* blockSource = rawBlockSource;
+                int blockSourceLength = rawBlockLength;
+                if (useStaticDictionary)
+                {
+                    UnsafeUtility.MemCpy(dictionaryScratchPtr + dictionaryLength, blockSource, rawBlockLength);
+                    blockSource = dictionaryScratchPtr;
+                    blockSourceLength = dictionaryLength + rawBlockLength;
+                }
+
+                byte* blockDestination = destination + destinationOffset + blockHeaderBytes;
+                int blockDestinationCapacity = destinationCapacity - destinationOffset - blockHeaderBytes;
+                int blockCompressedLength = LZ4Compress(blockSource, blockDestination, blockSourceLength, blockDestinationCapacity);
+                if (blockCompressedLength <= 0)
+                    return 0;
+
+                UnsafeUtility.WriteArrayElement(destination + destinationOffset, 0, blockCompressedLength);
+                UnsafeUtility.WriteArrayElement(destination + destinationOffset + 4, 0, rawBlockLength);
+                if (protectSubBlocks)
+                    UnsafeUtility.WriteArrayElement(destination + destinationOffset + 8, 0, ComputeIndexedSectorChecksum(rawBlockSource, rawBlockLength));
+
+                sourceOffset += rawBlockLength;
+                destinationOffset += blockHeaderBytes + blockCompressedLength;
+            }
+
+            return destinationOffset;
         }
 
         private static bool TryReadPayload(
@@ -4593,6 +4721,54 @@ namespace Hecton8.SaveSystem
             if (useStaticDictionary && !SaveBinaryPayloadCodec.HasLz4CompressionDictionary)
                 return 0;
 
+            int dictionaryLength = useStaticDictionary ? SaveBinaryPayloadCodec.Lz4CompressionDictionaryLength : 0;
+            NativeArray<byte> dictionaryBytes = default;
+            byte* dictionaryPtr = null;
+            if (useStaticDictionary)
+            {
+                dictionaryBytes = new NativeArray<byte>(dictionaryLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                dictionaryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dictionaryBytes);
+                SaveBinaryPayloadCodec.CopyLz4CompressionDictionary(dictionaryPtr, dictionaryBytes.Length);
+            }
+
+            try
+            {
+                return Lz4BlockDecompressWithPreparedDictionary(
+                    source,
+                    compressedLength,
+                    destination,
+                    destinationCapacity,
+                    dictionaryPtr,
+                    dictionaryLength,
+                    validatePerBlockChecksums,
+                    out failedBlockIndex);
+            }
+            finally
+            {
+                if (dictionaryBytes.IsCreated)
+                    dictionaryBytes.Dispose();
+            }
+        }
+
+        private static int Lz4BlockDecompressWithPreparedDictionary(
+            byte* source,
+            int compressedLength,
+            byte* destination,
+            int destinationCapacity,
+            byte* preparedDictionaryPtr,
+            int preparedDictionaryLength,
+            bool validatePerBlockChecksums,
+            out int failedBlockIndex)
+        {
+            failedBlockIndex = -1;
+            if (source == null ||
+                destination == null ||
+                compressedLength <= 0 ||
+                compressedLength > MaxCompressedPayloadBytes ||
+                destinationCapacity <= 0 ||
+                destinationCapacity > RawPayloadCapacityBytes)
+                return 0;
+
             int protectedBlockSize = validatePerBlockChecksums ? SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes : BlockSizeBytes;
             int blockHeaderBytes = validatePerBlockChecksums ? ProtectedCompressedBlockHeaderBytes : StandardCompressedBlockHeaderBytes;
             int minimumCompressedBlockBytes = blockHeaderBytes + 1;
@@ -4608,14 +4784,15 @@ namespace Hecton8.SaveSystem
             if (maxBlockIterations <= 0)
                 return 0;
 
-            int dictionaryLength = useStaticDictionary ? SaveBinaryPayloadCodec.Lz4CompressionDictionaryLength : 0;
+            bool useStaticDictionary = preparedDictionaryPtr != null && preparedDictionaryLength > 0;
+            int dictionaryLength = useStaticDictionary ? preparedDictionaryLength : 0;
             NativeArray<byte> dictionaryScratch = default;
             byte* dictionaryScratchPtr = null;
             if (useStaticDictionary)
             {
                 dictionaryScratch = new NativeArray<byte>(dictionaryLength + protectedBlockSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 dictionaryScratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dictionaryScratch);
-                SaveBinaryPayloadCodec.CopyLz4CompressionDictionary(dictionaryScratchPtr, dictionaryScratch.Length);
+                UnsafeUtility.MemCpy(dictionaryScratchPtr, preparedDictionaryPtr, dictionaryLength);
             }
 
             try

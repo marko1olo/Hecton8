@@ -35,7 +35,7 @@ namespace Hecton8.World
             public float4 Delta;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ChemicalDiffusionJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float4> Source;
@@ -65,7 +65,12 @@ namespace Hecton8.World
                 float4 neighborAverage = (left + right + down + up + back + forward) / 6f;
                 float4 retained = self * (new float4(1f, 1f, 1f, 1f) - DecayRates);
                 float4 diffused = neighborAverage * DiffusionRates;
-                Target[index] = math.min(math.max(retained + diffused, float4.zero), new float4(MaxChannelIntensity));
+                float4 next = retained + diffused;
+                Target[index] = new float4(
+                    math.clamp(next.x, 0f, MaxChannelIntensity),
+                    math.clamp(next.y, 0f, MaxChannelIntensity),
+                    math.clamp(next.z, 0f, MaxChannelIntensity),
+                    math.clamp(next.w, -MaxChannelIntensity, MaxChannelIntensity));
             }
         }
 
@@ -78,6 +83,8 @@ namespace Hecton8.World
         private const float MinimumTransportSignal = 0.05f;
         private const float ChemicalTransientRadiusMeters = 18f;
         private const float ChemicalTransientLifetimeSeconds = 12f;
+        private const float DefaultDefoliantDeadZoneRadiusMeters = 30f;
+        private const int MaxDefoliantDeadZones = 64;
 
         private static readonly int _ChemicalGridSourceId = Shader.PropertyToID("_ChemicalGridSource");
         private static readonly int _ChemicalGridTargetId = Shader.PropertyToID("_ChemicalGridTarget");
@@ -114,6 +121,8 @@ namespace Hecton8.World
 
         // COLD ALLOC: InfluenceWrite[1024] - bounded scent write ring consumed by ChemicalInfluenceGrid - owner: ChemicalInfluenceGrid
         private readonly InfluenceWrite[] _pendingWrites = new InfluenceWrite[PendingWriteCapacity];
+        // COLD ALLOC: Vector4[64] - permanent defoliant dead-zone registry in absolute-universe space - owner: ChemicalInfluenceGrid
+        private readonly Vector4[] _defoliantDeadZones = new Vector4[MaxDefoliantDeadZones];
 
         private NativeArray<float4> _frontGrid;
         private NativeArray<float4> _backGrid;
@@ -131,6 +140,7 @@ namespace Hecton8.World
         private GraphicsBuffer _gpuFrontBuffer;
         private GraphicsBuffer _gpuBackBuffer;
         private int _diffusionKernelIndex = -1;
+        private int _defoliantDeadZoneCount;
 
         /// <summary>
         /// Active runtime instance when the scent field is live.
@@ -177,6 +187,31 @@ namespace Hecton8.World
             return frontGrid.IsCreated && overlayGrid.IsCreated;
         }
 
+        internal static bool TryGetActivePublishedSnapshot(
+            out NativeArray<float4> frontGrid,
+            out NativeArray<float4> overlayGrid,
+            out int3 dimensions,
+            out float3 origin,
+            out float3 cellSize)
+        {
+            frontGrid = default;
+            overlayGrid = default;
+            dimensions = int3.zero;
+            origin = float3.zero;
+            cellSize = float3.zero;
+            ChemicalInfluenceGrid instance = _activeRuntimeInstance;
+            if (instance == null)
+                return false;
+
+            instance.PublishFrame(Time.frameCount);
+            frontGrid = instance._frontGrid;
+            overlayGrid = instance._overlayGrid;
+            dimensions = instance.ResolveDimensions();
+            origin = instance._gridOriginWS;
+            cellSize = instance._cellSizeWS;
+            return frontGrid.IsCreated && overlayGrid.IsCreated;
+        }
+
         internal static bool TrySampleNormalizedChannels(Vector3 worldPosition, out float4 normalizedChannels)
         {
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
@@ -212,6 +247,40 @@ namespace Hecton8.World
             float clampedIntensity = math.max(0f, intensity);
             EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, clampedIntensity));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
+        }
+
+        internal static void QueueDefoliantBurst(Vector3 worldPosition, float intensity)
+        {
+            float clampedIntensity = math.max(0f, intensity);
+            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity));
+            RegisterChemicalTransient(worldPosition, clampedIntensity);
+        }
+
+        internal static void QueueDefoliantDeadZone(Vector3 worldPosition, float radiusMeters = DefaultDefoliantDeadZoneRadiusMeters, float intensity = DefaultMaximumChannelIntensity)
+        {
+            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
+            float clampedIntensity = math.max(0f, intensity);
+            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            instance.RegisterDefoliantDeadZone(worldPosition, safeRadius);
+            instance.Enqueue(worldPosition, new float4(0f, 0f, 0f, -math.max(1f, clampedIntensity)));
+            RegisterChemicalTransient(worldPosition, clampedIntensity);
+
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager != null)
+                organicManager.ApplyDefoliantDeadZone(worldPosition, safeRadius);
+        }
+
+        internal static bool IsInsidePermanentDefoliantDeadZone(Vector3 worldPosition)
+        {
+            ChemicalInfluenceGrid instance = _activeRuntimeInstance;
+            return instance != null &&
+                   instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition));
+        }
+
+        internal static bool IsInsidePermanentDefoliantDeadZoneAbsolute(Vector3 absolutePosition)
+        {
+            ChemicalInfluenceGrid instance = _activeRuntimeInstance;
+            return instance != null && instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(absolutePosition);
         }
 
         private static void RegisterChemicalTransient(Vector3 worldPosition, float intensity)
@@ -382,6 +451,44 @@ namespace Hecton8.World
             _pendingWriteCount++;
         }
 
+        private void RegisterDefoliantDeadZone(Vector3 worldPosition, float radiusMeters)
+        {
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
+            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
+            float mergeRadiusSq = safeRadius * safeRadius;
+            for (int i = 0; i < _defoliantDeadZoneCount; i++)
+            {
+                Vector4 zone = _defoliantDeadZones[i];
+                Vector3 zoneCenter = new Vector3(zone.x, zone.y, zone.z);
+                if ((zoneCenter - absolutePosition).sqrMagnitude > mergeRadiusSq)
+                    continue;
+
+                Vector3 mergedCenter = Vector3.Lerp(zoneCenter, absolutePosition, 0.5f);
+                _defoliantDeadZones[i] = new Vector4(
+                    mergedCenter.x,
+                    mergedCenter.y,
+                    mergedCenter.z,
+                    Mathf.Max(zone.w, safeRadius));
+                return;
+            }
+
+            if (_defoliantDeadZoneCount < _defoliantDeadZones.Length)
+            {
+                _defoliantDeadZones[_defoliantDeadZoneCount++] = new Vector4(
+                    absolutePosition.x,
+                    absolutePosition.y,
+                    absolutePosition.z,
+                    safeRadius);
+                return;
+            }
+
+            _defoliantDeadZones[_defoliantDeadZoneCount - 1] = new Vector4(
+                absolutePosition.x,
+                absolutePosition.y,
+                absolutePosition.z,
+                safeRadius);
+        }
+
         private void FlushPendingWritesToOverlay()
         {
             if (!_overlayGrid.IsCreated || _pendingWriteCount <= 0)
@@ -395,7 +502,7 @@ namespace Hecton8.World
 
                 int flatIndex = Flatten(cell);
                 float4 next = _overlayGrid[flatIndex] + write.Delta;
-                _overlayGrid[flatIndex] = math.min(next, new float4(math.max(0.1f, maximumChannelIntensity)));
+                _overlayGrid[flatIndex] = ClampChemicalChannels(next, math.max(0.1f, maximumChannelIntensity));
             }
 
             _pendingWriteCount = 0;
@@ -412,7 +519,7 @@ namespace Hecton8.World
                 if (math.lengthsq(overlay) <= 0f)
                     continue;
 
-                _frontGrid[i] = math.min(_frontGrid[i] + overlay, new float4(math.max(0.1f, maximumChannelIntensity)));
+                _frontGrid[i] = ClampChemicalChannels(_frontGrid[i] + overlay, math.max(0.1f, maximumChannelIntensity));
                 _overlayGrid[i] = float4.zero;
             }
         }
@@ -573,16 +680,59 @@ namespace Hecton8.World
         private bool TrySampleNormalizedChannelsInternal(float3 worldPosition, out float4 normalizedChannels)
         {
             normalizedChannels = float4.zero;
+            Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
+            bool insideDeadZone = IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition));
             if (!_frontGrid.IsCreated || !_overlayGrid.IsCreated)
-                return false;
+            {
+                if (!insideDeadZone)
+                    return false;
+
+                normalizedChannels = new float4(0f, 0f, 0f, -1f);
+                return true;
+            }
 
             if (!TryWorldToCell(worldPosition, out int3 cell))
-                return false;
+            {
+                if (!insideDeadZone)
+                    return false;
+
+                normalizedChannels = new float4(0f, 0f, 0f, -1f);
+                return true;
+            }
 
             float4 combinedChannels = _frontGrid[Flatten(cell)] + _overlayGrid[Flatten(cell)];
             float inverseMaxIntensity = 1f / math.max(0.1f, maximumChannelIntensity);
-            normalizedChannels = math.saturate(combinedChannels * inverseMaxIntensity);
+            float4 normalized = combinedChannels * inverseMaxIntensity;
+            normalizedChannels = new float4(
+                math.saturate(normalized.x),
+                math.saturate(normalized.y),
+                math.saturate(normalized.z),
+                insideDeadZone ? -1f : math.clamp(normalized.w, -1f, 1f));
             return true;
+        }
+
+        private bool IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(Vector3 absolutePosition)
+        {
+            for (int i = 0; i < _defoliantDeadZoneCount; i++)
+            {
+                Vector4 zone = _defoliantDeadZones[i];
+                float radiusSq = zone.w * zone.w;
+                Vector3 zoneCenter = new Vector3(zone.x, zone.y, zone.z);
+                if ((absolutePosition - zoneCenter).sqrMagnitude <= radiusSq)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static float4 ClampChemicalChannels(float4 value, float maxChannelIntensity)
+        {
+            float safeMax = math.max(0.1f, maxChannelIntensity);
+            return new float4(
+                math.clamp(value.x, 0f, safeMax),
+                math.clamp(value.y, 0f, safeMax),
+                math.clamp(value.z, 0f, safeMax),
+                math.clamp(value.w, -safeMax, safeMax));
         }
 
         private void TryRegisterSlowTick()

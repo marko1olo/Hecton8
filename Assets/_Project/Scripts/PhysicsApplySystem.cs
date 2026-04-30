@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -251,7 +252,7 @@ namespace Hecton8.Physics
         ApplyAtPosition = 1 << 3,
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct ValidateForcePacketsJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<ForcePacket> Packets;
@@ -293,12 +294,15 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService, IFixedTickable, ILateFrameTickable
+    public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService, IFixedTickable, IPostFixedTickable, ILateFrameTickable
     {
         private const int MaxTrackedBodies = 64;
         private const int MaxQueuedPackets = 512;
         private const int MaxQueuedSubmarineImpactSignals = 32;
+        private const int MaxActiveDepressurizationVortices = 8;
+        private const int DepressurizationVortexContactCapacity = 32;
         private const float MinMagnitudeSq = 0.000001f;
+        private const float DepressurizationVortexDistanceFloorMeters = 0.5f;
         private const float HullYieldThresholdJoules = 225000f;
         private const string NonFiniteForceLog = "[PhysicsApplySystem] Non-finite force packet detected. Zeroing vector.";
         private const string NonFiniteTorqueLog = "[PhysicsApplySystem] Non-finite torque packet detected. Zeroing vector.";
@@ -318,22 +322,38 @@ namespace Hecton8.Physics
             public TraumaLevel TraumaLevel;
         }
 
+        private struct DepressurizationVortex
+        {
+            public Vector3 RoomCenter;
+            public Vector3 BreachPosition;
+            public float RadiusMeters;
+            public float BaseAccelerationMetersPerSecondSquared;
+            public float MaximumAccelerationMetersPerSecondSquared;
+            public float RemainingSeconds;
+        }
+
         // COLD ALLOC: ForcePacket[512] — end-of-step flush buffer — owner: PhysicsApplySystem
         private ForcePacket[] _frontPackets = new ForcePacket[MaxQueuedPackets];
-        // COLD ALLOC: ForcePacket[512] — current-step gather buffer — owner: PhysicsApplySystem
-        private ForcePacket[] _backPackets = new ForcePacket[MaxQueuedPackets];
         // COLD ALLOC: Rigidbody[64] — active rigidbody slot map for deferred packet application — owner: PhysicsApplySystem
         private readonly Rigidbody[] _bodySlots = new Rigidbody[MaxTrackedBodies];
+        // COLD ALLOC: DepressurizationVortex[8] - active breach-vortex slots - owner: PhysicsApplySystem
+        private readonly DepressurizationVortex[] _depressurizationVortices = new DepressurizationVortex[MaxActiveDepressurizationVortices];
+        // COLD ALLOC: SpatialQueryHit[32] - spatial-hash scratch for breach-vortex loose-body collection - owner: PhysicsApplySystem
+        private readonly SpatialQueryHit[] _depressurizationVortexContacts = new SpatialQueryHit[DepressurizationVortexContactCapacity];
+        // COLD ALLOC: Rigidbody[32] - unique body scratch for breach-vortex force routing - owner: PhysicsApplySystem
+        private readonly Rigidbody[] _depressurizationVortexBodies = new Rigidbody[DepressurizationVortexContactCapacity];
         // COLD ALLOC: List<Collider>[8] â€” submarine hull collider discovery for contact-modification enablement â€” owner: PhysicsApplySystem
         private readonly List<Collider> _submarineColliderScratch = new List<Collider>(8);
         private NativeArray<ForcePacket> _validationPackets;
         private NativeArray<byte> _validationMask;
+        private NativeQueue<ForcePacket> _frontPacketQueue;
+        private NativeQueue<ForcePacket> _backPacketQueue;
         private NativeQueue<DeferredSubmarineImpactSignal> _submarineImpactSignals;
 
         private int _frontCount;
-        private int _backCount;
         private bool _isInitialized;
         private bool _fixedTickRegistered;
+        private bool _postFixedTickRegistered;
         private bool _lateFrameTickRegistered;
         private bool _frontBufferValidationReady;
         private bool _packetValidationScheduled;
@@ -388,6 +408,53 @@ namespace Hecton8.Physics
                 _instance.ClearQueuedPackets();
         }
 
+        internal static bool TryGetForcePacketBackWriter(out NativeQueue<ForcePacket>.ParallelWriter writer)
+        {
+            writer = default;
+            PhysicsApplySystem system = EnsureRuntimeInstance();
+            if (system == null)
+                return false;
+
+            system.EnsureForcePacketQueues();
+            if (!system._backPacketQueue.IsCreated)
+                return false;
+
+            writer = system._backPacketQueue.AsParallelWriter();
+            return true;
+        }
+
+        internal static bool TriggerDepressurizationVortex(
+            Vector3 roomCenter,
+            Vector3 breachPosition,
+            float radiusMeters,
+            float baseAccelerationMetersPerSecondSquared,
+            float maximumAccelerationMetersPerSecondSquared,
+            float durationSeconds)
+        {
+            PhysicsApplySystem system = EnsureRuntimeInstance();
+            return system.QueueDepressurizationVortex(
+                roomCenter,
+                breachPosition,
+                radiusMeters,
+                baseAccelerationMetersPerSecondSquared,
+                maximumAccelerationMetersPerSecondSquared,
+                durationSeconds);
+        }
+
+        internal static bool TriggerImplosionImpulse(
+            Vector3 roomCenter,
+            float radiusMeters,
+            float baseImpulseNewtonSeconds,
+            float maximumImpulseNewtonSeconds)
+        {
+            PhysicsApplySystem system = EnsureRuntimeInstance();
+            return system.ApplyImplosionImpulse(
+                roomCenter,
+                radiusMeters,
+                baseImpulseNewtonSeconds,
+                maximumImpulseNewtonSeconds);
+        }
+
         internal static void PrepareTrackedBodiesForOriginShift()
         {
             GlobalPhysicsStateManager.PrepareTrackedBodiesForOriginShift();
@@ -416,15 +483,10 @@ namespace Hecton8.Physics
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
-            if (rigidbodyIndex < 0 || _backCount >= _backPackets.Length)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PhysicsApplySystem] Force packet queue saturated.");
-#endif
+            if (rigidbodyIndex < 0)
                 return false;
-            }
 
-            _backPackets[_backCount++] = new ForcePacket
+            ForcePacket packet = new ForcePacket
             {
                 Force = sanitizedForce,
                 Torque = Vector3.zero,
@@ -433,7 +495,7 @@ namespace Hecton8.Physics
                 Flags = (byte)(ForcePacketFlags.HasForce | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
                 RigidbodyIndex = rigidbodyIndex
             };
-            return true;
+            return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Force packet queue saturated.");
         }
 
         /// <inheritdoc />
@@ -453,19 +515,14 @@ namespace Hecton8.Physics
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
-            if (rigidbodyIndex < 0 || _backCount >= _backPackets.Length)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PhysicsApplySystem] Point-force packet queue saturated.");
-#endif
+            if (rigidbodyIndex < 0)
                 return false;
-            }
 
             Vector3 pointOffset = worldPosition - body.worldCenterOfMass;
             if (!IsFiniteNonZero(pointOffset))
                 pointOffset = Vector3.zero;
 
-            _backPackets[_backCount++] = new ForcePacket
+            ForcePacket packet = new ForcePacket
             {
                 Force = sanitizedForce,
                 Torque = Vector3.zero,
@@ -474,7 +531,7 @@ namespace Hecton8.Physics
                 Flags = (byte)(ForcePacketFlags.HasForce | ForcePacketFlags.ApplyAtPosition | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
                 RigidbodyIndex = rigidbodyIndex
             };
-            return true;
+            return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Point-force packet queue saturated.");
         }
 
         /// <inheritdoc />
@@ -490,15 +547,10 @@ namespace Hecton8.Physics
 
             GlobalPhysicsStateManager.RegisterTrackedBody(body);
             int rigidbodyIndex = ResolveBodyIndex(body);
-            if (rigidbodyIndex < 0 || _backCount >= _backPackets.Length)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PhysicsApplySystem] Torque packet queue saturated.");
-#endif
+            if (rigidbodyIndex < 0)
                 return false;
-            }
 
-            _backPackets[_backCount++] = new ForcePacket
+            ForcePacket packet = new ForcePacket
             {
                 Force = Vector3.zero,
                 Torque = sanitizedTorque,
@@ -507,17 +559,161 @@ namespace Hecton8.Physics
                 Flags = (byte)(ForcePacketFlags.HasTorque | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
                 RigidbodyIndex = rigidbodyIndex
             };
+            return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Torque packet queue saturated.");
+        }
+
+        /// <summary>
+        /// Queues a critically damped tractor-beam pull using reduced-mass PD force math.
+        /// </summary>
+        public bool QueueTractorBeamPd(
+            Rigidbody anchorBody,
+            Rigidbody payloadBody,
+            Vector3 targetPosition,
+            Vector3 currentPosition,
+            float springStiffness,
+            float overDampingMultiplier,
+            float maxForceMagnitude,
+            bool applyReactionForce = true,
+            bool wake = true)
+        {
+            if (payloadBody == null || payloadBody.isKinematic)
+                return false;
+
+            float3 targetPosition3 = new float3(targetPosition.x, targetPosition.y, targetPosition.z);
+            float3 currentPosition3 = new float3(currentPosition.x, currentPosition.y, currentPosition.z);
+            if (!math.all(math.isfinite(targetPosition3)) || !math.all(math.isfinite(currentPosition3)))
+                return false;
+
+            float payloadMass = math.max(payloadBody.mass, 0.0001f);
+            bool anchorActsAsWorld = anchorBody == null || anchorBody.isKinematic;
+            float anchorMass = anchorActsAsWorld ? payloadMass : math.max(anchorBody.mass, 0.0001f);
+            float reducedMass = anchorActsAsWorld
+                ? payloadMass
+                : HectonContactJob.ResolveReducedMass(anchorMass, payloadMass, false);
+            float dampingCoefficient = HectonContactJob.ResolveCriticalDamping(
+                springStiffness,
+                reducedMass,
+                math.max(1f, overDampingMultiplier));
+
+            Vector3 targetVelocity = anchorBody != null
+                ? HectonPlayerMotor.SafeVelocity(anchorBody.GetPointVelocity(targetPosition))
+                : Vector3.zero;
+            Vector3 currentVelocity = HectonPlayerMotor.SafeVelocity(payloadBody.GetPointVelocity(currentPosition));
+            float3 force3 = HectonContactJob.ResolveTractorBeamPdForce(
+                targetPosition3,
+                currentPosition3,
+                new float3(targetVelocity.x, targetVelocity.y, targetVelocity.z),
+                new float3(currentVelocity.x, currentVelocity.y, currentVelocity.z),
+                springStiffness,
+                dampingCoefficient,
+                math.max(0f, maxForceMagnitude));
+            Vector3 force = new Vector3(force3.x, force3.y, force3.z);
+            if (!IsFiniteNonZero(force))
+                return false;
+
+            bool payloadQueued = PhysicsForceRouter.QueueForceAtPosition(
+                payloadBody,
+                force,
+                currentPosition,
+                ForceMode.Force,
+                wake);
+            if (applyReactionForce && anchorBody != null && !anchorBody.isKinematic)
+            {
+                PhysicsForceRouter.QueueForceAtPosition(
+                    anchorBody,
+                    -force,
+                    targetPosition,
+                    ForceMode.Force,
+                    wake);
+            }
+
+            return payloadQueued;
+        }
+
+        private bool TryEnqueueBackPacket(in ForcePacket packet, string saturationMessage)
+        {
+            EnsureForcePacketQueues();
+            if (!_backPacketQueue.IsCreated || _backPacketQueue.Count >= MaxQueuedPackets)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning(saturationMessage);
+#endif
+                return false;
+            }
+
+            _backPacketQueue.Enqueue(packet);
+            return true;
+        }
+
+        private bool QueueDepressurizationVortex(
+            Vector3 roomCenter,
+            Vector3 breachPosition,
+            float radiusMeters,
+            float baseAccelerationMetersPerSecondSquared,
+            float maximumAccelerationMetersPerSecondSquared,
+            float durationSeconds)
+        {
+            float3 roomCenter3 = new float3(roomCenter.x, roomCenter.y, roomCenter.z);
+            float3 breachPosition3 = new float3(breachPosition.x, breachPosition.y, breachPosition.z);
+            if (!math.all(math.isfinite(roomCenter3)) ||
+                !math.all(math.isfinite(breachPosition3)) ||
+                radiusMeters <= 0f ||
+                baseAccelerationMetersPerSecondSquared <= 0f ||
+                maximumAccelerationMetersPerSecondSquared <= 0f ||
+                durationSeconds <= 0f)
+            {
+                return false;
+            }
+
+            int selectedSlot = -1;
+            float shortestRemaining = float.MaxValue;
+            for (int i = 0; i < _depressurizationVortices.Length; i++)
+            {
+                float remaining = _depressurizationVortices[i].RemainingSeconds;
+                if (remaining <= 0f)
+                {
+                    selectedSlot = i;
+                    break;
+                }
+
+                if (remaining < shortestRemaining)
+                {
+                    shortestRemaining = remaining;
+                    selectedSlot = i;
+                }
+            }
+
+            if (selectedSlot < 0)
+                return false;
+
+            _depressurizationVortices[selectedSlot] = new DepressurizationVortex
+            {
+                RoomCenter = roomCenter,
+                BreachPosition = breachPosition,
+                RadiusMeters = Mathf.Max(0.5f, radiusMeters),
+                BaseAccelerationMetersPerSecondSquared = Mathf.Max(0f, baseAccelerationMetersPerSecondSquared),
+                MaximumAccelerationMetersPerSecondSquared = Mathf.Max(0f, maximumAccelerationMetersPerSecondSquared),
+                RemainingSeconds = Mathf.Max(0f, durationSeconds)
+            };
             return true;
         }
 
         /// <inheritdoc />
         public void ClearQueuedPackets()
         {
+            if (_packetValidationScheduled)
+            {
+                _packetValidationHandle.Complete();
+                _packetValidationHandle = default;
+            }
+
             System.Array.Clear(_frontPackets, 0, _frontCount);
-            System.Array.Clear(_backPackets, 0, _backCount);
             System.Array.Clear(_bodySlots, 0, _bodySlots.Length);
+            System.Array.Clear(_depressurizationVortices, 0, _depressurizationVortices.Length);
+            System.Array.Clear(_depressurizationVortexBodies, 0, _depressurizationVortexBodies.Length);
+            DrainForcePacketQueue(ref _frontPacketQueue);
+            DrainForcePacketQueue(ref _backPacketQueue);
             _frontCount = 0;
-            _backCount = 0;
             _frontBufferValidationReady = false;
             _packetValidationScheduled = false;
             _packetValidationHandle = default;
@@ -532,6 +728,7 @@ namespace Hecton8.Physics
             }
 
             _instance = this;
+            EnsureForcePacketQueues();
             EnsureValidationBuffers();
             if (!_submarineImpactSignals.IsCreated)
             {
@@ -552,9 +749,16 @@ namespace Hecton8.Physics
         {
             if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_fixedTickRegistered)
             {
-                // Flush after world/player fixed lanes so deferred packets apply in the same simulation step.
+                // Flush the previous validated packet snapshot before producers write this fixed step.
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.UI);
                 _fixedTickRegistered = true;
+            }
+
+            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_postFixedTickRegistered)
+            {
+                // Swap native packet queues only after all fixed-step producers have written to the back queue.
+                GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.UI);
+                _postFixedTickRegistered = true;
             }
 
             if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_lateFrameTickRegistered)
@@ -579,6 +783,12 @@ namespace Hecton8.Physics
                 _fixedTickRegistered = false;
             }
 
+            if (_postFixedTickRegistered)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.UI);
+                _postFixedTickRegistered = false;
+            }
+
             if (_lateFrameTickRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -601,6 +811,12 @@ namespace Hecton8.Physics
                 _fixedTickRegistered = false;
             }
 
+            if (_postFixedTickRegistered)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.UI);
+                _postFixedTickRegistered = false;
+            }
+
             if (_lateFrameTickRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -614,6 +830,7 @@ namespace Hecton8.Physics
             }
 
             DisposeValidationBuffers();
+            DisposeForcePacketQueues();
 
             if (_submarineImpactSignals.IsCreated)
                 _submarineImpactSignals.Dispose();
@@ -629,12 +846,19 @@ namespace Hecton8.Physics
                 EnsureSubmarineModifiableContacts();
                 PhysicsFrame.Tick();
                 FlushValidatedFrontBuffer();
-                if (_packetValidationScheduled)
-                    return;
-
-                SwapBuffers();
-                ScheduleFrontPacketValidation();
+                ApplyDepressurizationVortices(fixedDeltaTime);
             }
+        }
+
+        /// <inheritdoc />
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            if (_packetValidationScheduled)
+                return;
+
+            SwapForcePacketQueues();
+            DrainFrontQueueToValidationSnapshot();
+            ScheduleFrontPacketValidation();
         }
 
         /// <inheritdoc />
@@ -703,13 +927,328 @@ namespace Hecton8.Physics
             }
         }
 
-        private void SwapBuffers()
+        private void ApplyDepressurizationVortices(float fixedDeltaTime)
         {
-            ForcePacket[] swap = _frontPackets;
-            _frontPackets = _backPackets;
-            _backPackets = swap;
-            _frontCount = _backCount;
-            _backCount = 0;
+            if (fixedDeltaTime <= 0f)
+                return;
+
+            for (int i = 0; i < _depressurizationVortices.Length; i++)
+            {
+                DepressurizationVortex vortex = _depressurizationVortices[i];
+                if (vortex.RemainingSeconds <= 0f)
+                    continue;
+
+                ApplyDepressurizationVortex(in vortex);
+                vortex.RemainingSeconds = Mathf.Max(0f, vortex.RemainingSeconds - fixedDeltaTime);
+                if (vortex.RemainingSeconds <= 0f)
+                    vortex = default;
+
+                _depressurizationVortices[i] = vortex;
+            }
+        }
+
+        private void ApplyDepressurizationVortex(in DepressurizationVortex vortex)
+        {
+            if (vortex.RadiusMeters <= 0f ||
+                vortex.BaseAccelerationMetersPerSecondSquared <= 0f ||
+                vortex.MaximumAccelerationMetersPerSecondSquared <= 0f)
+            {
+                return;
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+
+            if (playerTransform != null)
+            {
+                Vector3 playerPosition = playerTransform.position;
+                if ((playerPosition - vortex.RoomCenter).sqrMagnitude <= vortex.RadiusMeters * vortex.RadiusMeters)
+                {
+                    Vector3 acceleration = ResolveDepressurizationVortexAcceleration(
+                        playerPosition,
+                        vortex.BreachPosition,
+                        vortex.BaseAccelerationMetersPerSecondSquared,
+                        vortex.MaximumAccelerationMetersPerSecondSquared);
+                    if (acceleration.sqrMagnitude > MinMagnitudeSq)
+                    {
+                        if (playerMovement != null)
+                            playerMovement.QueueSubsystemExternalAcceleration(acceleration);
+                        else if (playerBody != null)
+                            PhysicsForceRouter.QueueForce(playerBody, acceleration, ForceMode.Acceleration);
+                    }
+                }
+            }
+
+            ApplyDepressurizationVortexToLooseBodies(in vortex, playerBody);
+        }
+
+        private void ApplyDepressurizationVortexToLooseBodies(in DepressurizationVortex vortex, Rigidbody playerBody)
+        {
+            SpatialTargetKind kindMask = SpatialTargetKind.Pickup | SpatialTargetKind.Resource | SpatialTargetKind.Scannable;
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                vortex.RoomCenter,
+                vortex.RadiusMeters,
+                kindMask,
+                _depressurizationVortexContacts);
+            int uniqueBodyCount = 0;
+
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                SpatialQueryHit hit = _depressurizationVortexContacts[hitIndex];
+                if (!TryResolveDynamicBody(hit.Owner, hit.Transform, out Rigidbody body) || body == null)
+                    continue;
+
+                if (ReferenceEquals(body, playerBody))
+                    continue;
+
+                bool duplicateBody = false;
+                for (int uniqueIndex = 0; uniqueIndex < uniqueBodyCount; uniqueIndex++)
+                {
+                    if (!ReferenceEquals(_depressurizationVortexBodies[uniqueIndex], body))
+                        continue;
+
+                    duplicateBody = true;
+                    break;
+                }
+
+                if (duplicateBody)
+                    continue;
+
+                _depressurizationVortexBodies[uniqueBodyCount++] = body;
+                if (uniqueBodyCount >= _depressurizationVortexBodies.Length)
+                    break;
+            }
+
+            for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
+            {
+                Rigidbody body = _depressurizationVortexBodies[bodyIndex];
+                _depressurizationVortexBodies[bodyIndex] = null;
+                if (body == null || body.isKinematic)
+                    continue;
+
+                Vector3 acceleration = ResolveDepressurizationVortexAcceleration(
+                    body.worldCenterOfMass,
+                    vortex.BreachPosition,
+                    vortex.BaseAccelerationMetersPerSecondSquared,
+                    vortex.MaximumAccelerationMetersPerSecondSquared);
+                if (acceleration.sqrMagnitude > MinMagnitudeSq)
+                    QueueForce(body, acceleration, ForceMode.Acceleration);
+            }
+        }
+
+        private bool ApplyImplosionImpulse(
+            Vector3 roomCenter,
+            float radiusMeters,
+            float baseImpulseNewtonSeconds,
+            float maximumImpulseNewtonSeconds)
+        {
+            float3 roomCenter3 = new float3(roomCenter.x, roomCenter.y, roomCenter.z);
+            if (!math.all(math.isfinite(roomCenter3)) ||
+                radiusMeters <= 0f ||
+                baseImpulseNewtonSeconds <= 0f ||
+                maximumImpulseNewtonSeconds <= 0f)
+            {
+                return false;
+            }
+
+            float safeRadius = Mathf.Max(0.5f, radiusMeters);
+            float safeBaseImpulse = Mathf.Max(0f, baseImpulseNewtonSeconds);
+            float safeMaximumImpulse = Mathf.Max(0f, maximumImpulseNewtonSeconds);
+            Rigidbody playerBody = null;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerContext != null)
+                playerBody = playerContext.PlayerRigidbody;
+
+            if (playerTransform != null)
+            {
+                Vector3 playerPosition = playerTransform.position;
+                if ((playerPosition - roomCenter).sqrMagnitude <= safeRadius * safeRadius)
+                {
+                    Vector3 impulse = ResolveImplosionImpulse(
+                        playerPosition,
+                        roomCenter,
+                        safeBaseImpulse,
+                        safeMaximumImpulse);
+                    if (impulse.sqrMagnitude > MinMagnitudeSq)
+                    {
+                        if (playerMovement != null)
+                        {
+                            float mass = playerBody != null ? Mathf.Max(1f, playerBody.mass) : 80f;
+                            playerMovement.QueueSubsystemExternalVelocityChange(impulse / mass);
+                        }
+                        else if (playerBody != null)
+                        {
+                            QueueForce(playerBody, impulse, ForceMode.Impulse);
+                        }
+                    }
+                }
+            }
+
+            ApplyImplosionImpulseToLooseBodies(roomCenter, safeRadius, safeBaseImpulse, safeMaximumImpulse, playerBody);
+            return true;
+        }
+
+        private void ApplyImplosionImpulseToLooseBodies(
+            Vector3 roomCenter,
+            float radiusMeters,
+            float baseImpulseNewtonSeconds,
+            float maximumImpulseNewtonSeconds,
+            Rigidbody playerBody)
+        {
+            SpatialTargetKind kindMask = SpatialTargetKind.Pickup |
+                                         SpatialTargetKind.Resource |
+                                         SpatialTargetKind.Scannable |
+                                         SpatialTargetKind.Bioform;
+            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                roomCenter,
+                radiusMeters,
+                kindMask,
+                _depressurizationVortexContacts);
+            int uniqueBodyCount = 0;
+
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                SpatialQueryHit hit = _depressurizationVortexContacts[hitIndex];
+                if (!TryResolveDynamicBody(hit.Owner, hit.Transform, out Rigidbody body) || body == null)
+                    continue;
+
+                if (ReferenceEquals(body, playerBody))
+                    continue;
+
+                bool duplicateBody = false;
+                for (int uniqueIndex = 0; uniqueIndex < uniqueBodyCount; uniqueIndex++)
+                {
+                    if (!ReferenceEquals(_depressurizationVortexBodies[uniqueIndex], body))
+                        continue;
+
+                    duplicateBody = true;
+                    break;
+                }
+
+                if (duplicateBody)
+                    continue;
+
+                _depressurizationVortexBodies[uniqueBodyCount++] = body;
+                if (uniqueBodyCount >= _depressurizationVortexBodies.Length)
+                    break;
+            }
+
+            for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
+            {
+                Rigidbody body = _depressurizationVortexBodies[bodyIndex];
+                _depressurizationVortexBodies[bodyIndex] = null;
+                if (body == null || body.isKinematic)
+                    continue;
+
+                Vector3 impulse = ResolveImplosionImpulse(
+                    body.worldCenterOfMass,
+                    roomCenter,
+                    baseImpulseNewtonSeconds,
+                    maximumImpulseNewtonSeconds);
+                if (impulse.sqrMagnitude > MinMagnitudeSq)
+                    QueueForce(body, impulse, ForceMode.Impulse);
+            }
+        }
+
+        private static Vector3 ResolveDepressurizationVortexAcceleration(
+            Vector3 bodyPosition,
+            Vector3 breachPosition,
+            float baseAccelerationMetersPerSecondSquared,
+            float maximumAccelerationMetersPerSecondSquared)
+        {
+            Vector3 toBreach = breachPosition - bodyPosition;
+            float distanceMeters = toBreach.magnitude;
+            if (distanceMeters <= 0.0001f)
+                return Vector3.zero;
+
+            float safeDistance = Mathf.Max(DepressurizationVortexDistanceFloorMeters, distanceMeters);
+            float accelerationMagnitude = Mathf.Min(maximumAccelerationMetersPerSecondSquared, baseAccelerationMetersPerSecondSquared / safeDistance);
+            return toBreach * (accelerationMagnitude / distanceMeters);
+        }
+
+        private static Vector3 ResolveImplosionImpulse(
+            Vector3 bodyPosition,
+            Vector3 roomCenter,
+            float baseImpulseNewtonSeconds,
+            float maximumImpulseNewtonSeconds)
+        {
+            Vector3 toCenter = roomCenter - bodyPosition;
+            float distanceMeters = toCenter.magnitude;
+            if (distanceMeters <= 0.0001f)
+                return Vector3.zero;
+
+            float safeDistance = Mathf.Max(DepressurizationVortexDistanceFloorMeters, distanceMeters);
+            float impulseMagnitude = Mathf.Min(maximumImpulseNewtonSeconds, baseImpulseNewtonSeconds / safeDistance);
+            return toCenter * (impulseMagnitude / distanceMeters);
+        }
+
+        private static bool TryResolveDynamicBody(Component owner, Transform runtimeTransform, out Rigidbody body)
+        {
+            body = null;
+            if (owner != null && owner.TryGetComponent(out body))
+                return body != null;
+
+            if (runtimeTransform != null && runtimeTransform.TryGetComponent(out body))
+                return body != null;
+
+            return false;
+        }
+
+        private void SwapForcePacketQueues()
+        {
+            EnsureForcePacketQueues();
+            NativeQueue<ForcePacket> swap = _frontPacketQueue;
+            _frontPacketQueue = _backPacketQueue;
+            _backPacketQueue = swap;
+        }
+
+        private void DrainFrontQueueToValidationSnapshot()
+        {
+            System.Array.Clear(_frontPackets, 0, _frontCount);
+            _frontCount = 0;
+
+            while (_frontPacketQueue.IsCreated &&
+                   _frontPacketQueue.TryDequeue(out ForcePacket packet))
+            {
+                if (_frontCount >= _frontPackets.Length)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning("[PhysicsApplySystem] Native front packet queue exceeded validation snapshot capacity.");
+#endif
+                    continue;
+                }
+
+                _frontPackets[_frontCount++] = packet;
+            }
+        }
+
+        private void EnsureForcePacketQueues()
+        {
+            if (!_frontPacketQueue.IsCreated)
+            {
+                // COLD ALLOC: NativeQueue<ForcePacket>(Persistent) - read-side force packet buffer drained only after post-fixed swap - owner: PhysicsApplySystem
+                _frontPacketQueue = new NativeQueue<ForcePacket>(Allocator.Persistent);
+            }
+
+            if (!_backPacketQueue.IsCreated)
+            {
+                // COLD ALLOC: NativeQueue<ForcePacket>(Persistent) - write-side force packet buffer used by fixed-step producers - owner: PhysicsApplySystem
+                _backPacketQueue = new NativeQueue<ForcePacket>(Allocator.Persistent);
+            }
+        }
+
+        private static void DrainForcePacketQueue(ref NativeQueue<ForcePacket> queue)
+        {
+            if (!queue.IsCreated)
+                return;
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private void EnsureValidationBuffers()
@@ -1005,6 +1544,21 @@ namespace Hecton8.Physics
             _packetValidationHandle = dependency;
             _packetValidationScheduled = false;
         }
+
+        private void DisposeForcePacketQueues()
+        {
+            if (_frontPacketQueue.IsCreated)
+            {
+                _frontPacketQueue.Dispose();
+                _frontPacketQueue = default;
+            }
+
+            if (_backPacketQueue.IsCreated)
+            {
+                _backPacketQueue.Dispose();
+                _backPacketQueue = default;
+            }
+        }
     }
 
     /// <summary>
@@ -1013,6 +1567,33 @@ namespace Hecton8.Physics
     /// </summary>
     public static class PhysicsForceRouter
     {
+        internal static bool ApplyKinematicWeldSnap(Rigidbody body, Vector3 targetPosition, Quaternion targetRotation)
+        {
+            if (body == null ||
+                !IsFiniteVector(targetPosition) ||
+                !IsFiniteQuaternion(targetRotation))
+            {
+                return false;
+            }
+
+            bool wasKinematic = body.isKinematic;
+            Vector3 correction = targetPosition - body.position;
+            if (!wasKinematic && correction.sqrMagnitude > 0.000001f)
+            {
+                float fixedDeltaTime = math.max(Time.fixedDeltaTime, 0.0001f);
+                body.AddForce(correction / fixedDeltaTime, ForceMode.VelocityChange);
+            }
+
+            body.useGravity = false;
+            body.isKinematic = true;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.position = targetPosition;
+            body.rotation = targetRotation;
+            body.Sleep();
+            return true;
+        }
+
         /// <summary>
         /// Routes a force request either into the player motor owner or the deferred packet system.
         /// </summary>
@@ -1046,6 +1627,33 @@ namespace Hecton8.Physics
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
             return system.QueueForceAtPosition(body, force, worldPosition, mode, wake);
+        }
+
+        /// <summary>
+        /// Routes a reduced-mass critically damped tractor-beam force through deferred physics packets.
+        /// </summary>
+        public static bool QueueTractorBeamPd(
+            Rigidbody anchorBody,
+            Rigidbody payloadBody,
+            Vector3 targetPosition,
+            Vector3 currentPosition,
+            float springStiffness,
+            float overDampingMultiplier,
+            float maxForceMagnitude,
+            bool applyReactionForce = true,
+            bool wake = true)
+        {
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system.QueueTractorBeamPd(
+                anchorBody,
+                payloadBody,
+                targetPosition,
+                currentPosition,
+                springStiffness,
+                overDampingMultiplier,
+                maxForceMagnitude,
+                applyReactionForce,
+                wake);
         }
 
         /// <summary>
@@ -1134,6 +1742,18 @@ namespace Hecton8.Physics
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > 0.000001f;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            float3 value3 = new float3(value.x, value.y, value.z);
+            return math.all(math.isfinite(value3));
+        }
+
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            float4 value4 = new float4(value.x, value.y, value.z, value.w);
+            return math.all(math.isfinite(value4)) && math.lengthsq(value4) > 0.000001f;
         }
     }
 }

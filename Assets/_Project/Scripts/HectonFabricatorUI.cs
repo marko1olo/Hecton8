@@ -959,13 +959,21 @@ namespace Hecton8.UI
                 return;
             }
 
+            bool rented = CharBufferPool.TryAcquire(out CharBufferPool.Lease lease);
+            char[] buffer = rented && lease.Buffer != null
+                ? lease.Buffer
+                : _inflationLabelBuffer;
+
             int cursor = 0;
-            cursor = AppendLiteral('x', _inflationLabelBuffer, cursor);
-            if (multiplier.TryFormat(_inflationLabelBuffer.AsSpan(cursor), out int written, "0.00"))
+            cursor = AppendLiteral('x', buffer, cursor);
+            if (multiplier.TryFormat(buffer.AsSpan(cursor), out int written, "0.00"))
                 cursor += written;
 
             entry.InflationLabel.color = inflationColor;
-            entry.InflationLabel.SetCharArray(_inflationLabelBuffer, 0, Mathf.Clamp(cursor, 0, _inflationLabelBuffer.Length));
+            entry.InflationLabel.SetCharArray(buffer, 0, Mathf.Clamp(cursor, 0, buffer.Length));
+
+            if (rented)
+                CharBufferPool.Release(in lease);
         }
 
         private int BuildRecipeLabel(TMP_Text label, RecipeData recipe, bool selected, bool craftable)
@@ -1001,7 +1009,7 @@ namespace Hecton8.UI
             if (_recipePointerScheduled)
                 return;
 
-            QueryParameters query = new QueryParameters((1 << 8) | (1 << 9) | (1 << 10), false, QueryTriggerInteraction.Ignore);
+            QueryParameters query = new QueryParameters(HectonLayerMasks.DataTemplateAuthoringMask, false, QueryTriggerInteraction.Ignore);
             _recipePointerCommands[0] = new RaycastCommand(
                 hudCamera.transform.position,
                 hudCamera.transform.forward,

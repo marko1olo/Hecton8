@@ -340,3 +340,46 @@ Kept because it is source-backed and narrower than the older narrative-heavy ver
 Rejected content: stale counts, ghost-interface claims contradicted by source, and unsupported event-bus descriptions.
 
 STATUS: PENDING VERIFICATION
+
+## 2026-05-01 Atlas Delta
+
+Mandates followed for this update:
+
+- `ARCH_Global_Registry_ServiceLocator_DI_Init`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol`
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin`
+- `PHYS_Physics_Integrity_Determinism_ForceMode`
+- `DBG_Telemetry_Crash_Reporting_PostMortem`
+
+Current measured source surface:
+
+- `Assets/_Project/Scripts`: `1020` C# files.
+- Script LOC by PowerShell line count: `466768`.
+- Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `15`, all in remaining runtime smoke/verifier harnesses.
+- `Docs`: `544` non-meta files.
+- `Docs/ARCHIVARIUS REPORTS`: `117` non-meta files.
+
+Current active forensic reports to read before older atlas claims:
+
+1. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
+2. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
+3. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+4. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
+5. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
+6. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
+
+Current risk corrections:
+
+- Headless simulation is now a first-order risk. `FaunaBrain` still uses player camera data for gameplay hypnosis logic, and `StorageCrate` can rely on Animator events for item access state.
+- Jobs/Burst compliance improved at the attribute level, but local `.Complete()` barriers in cadence lanes remain a stall/deadlock candidate class.
+- Event topology is stronger than old docs implied because late-frame dispatch budgeting exists, but recursive generation/depth is not globally proven safe.
+- Core asmdef purification is not complete. The current safe position is staged bridge extraction, not blind reference removal.
+- Object pool exhaustion behavior is safer by source review: spawn exhaustion publishes pool-exhausted telemetry and returns `null`; no global runtime instantiation purity claim is made for the entire project.
+
+Verification state:
+
+- Unity console: previous May 1 MCP error query returned `0` entries. This atlas delta could not refresh the console because MCP returned `no_unity_session` twice.
+- Runtime: Play Mode was not launched.
+- GC/frame/memory: no fresh profiler or GCMonitor measurement.
+
+STATUS: PENDING VERIFICATION

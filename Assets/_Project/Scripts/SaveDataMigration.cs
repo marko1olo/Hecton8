@@ -481,6 +481,13 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration morton bitmask capacity repaired");
             }
 
+            if (dto.exploredMortonMaskBytes == null || dto.exploredMortonMaskBytes.Length < ExplorationMapDTO.MortonMaskByteCount)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("exploration morton byte mask capacity repaired");
+            }
+
             int clampedCount = math.clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
             if (clampedCount != dto.exploredChunkCount)
             {
@@ -495,6 +502,14 @@ namespace Hecton8.SaveSystem
                 dto.exploredMortonWordCount = clampedWordCount;
                 changed = true;
                 steps.Add("exploration morton word count clamped");
+            }
+
+            int clampedByteCount = math.clamp(dto.exploredMortonByteCount, 0, ExplorationMapDTO.MortonMaskByteCount);
+            if (clampedByteCount != dto.exploredMortonByteCount)
+            {
+                dto.exploredMortonByteCount = clampedByteCount;
+                changed = true;
+                steps.Add("exploration morton byte count clamped");
             }
 
             if (dto.chunkSizeMeters != ExplorationMapDTO.DenseChunkSizeMeters ||
@@ -516,7 +531,8 @@ namespace Hecton8.SaveSystem
             bool changed = false;
 
             if (dto.entries == null || dto.entries.Length < PDALogbookDTO.MaxEntries ||
-                dto.seenOriginKeys == null || dto.seenOriginKeys.Length < PDALogbookDTO.MaxSeenOrigins)
+                dto.seenOriginKeys == null || dto.seenOriginKeys.Length < PDALogbookDTO.MaxSeenOrigins ||
+                dto.seenOriginHashes == null || dto.seenOriginHashes.Length < PDALogbookDTO.MaxSeenOrigins)
             {
                 dto.EnsureCapacity();
                 changed = true;

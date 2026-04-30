@@ -538,6 +538,55 @@ Required structure for this map going forward:
 - Construction success has several owners. A bug may appear as a tool failure while actually being resource hash, integrity validation, graph rebuild, or module registration.
 - No live GC/CPU proof exists for input spam across tool swap, scan, cut, repair, and build placement in one session.
 
+## Unified EquipmentInteractionHandler Execution Flow - 2026-04-30
+
+### Mandates followed
+
+- `CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
+
+### Exact path: input to raycast lane
+
+`Player Input`
+-> `PlayerToolManager.RefreshInputSubscriptions()` binds input actions through `GlobalRegistry.Input`
+-> `PlayerToolManager.Tick()` dispatches the active tool state
+-> concrete `PlayerTool` branch calls the shared interaction service
+-> `GlobalRegistry.InteractionSignalService`
+-> `EquipmentInteractionHandler.TryRaycastPrimary(...)` (`EquipmentInteractionHandler.cs:97`, `EquipmentInteractionHandler.cs:105`)
+-> `QueuePrimaryRaycast(...)` stages one request per requester id (`EquipmentInteractionHandler.cs:113`, `EquipmentInteractionHandler.cs:512`)
+-> `LateFrameTick()` calls `FlushSignals()` then `ScheduleStagedRaycasts()` (`EquipmentInteractionHandler.cs:205-208`)
+-> `RaycastCommand.ScheduleBatch(...)` writes staged commands into the job lane (`EquipmentInteractionHandler.cs:602`)
+-> the next `Tick()` calls `CompleteScheduledRaycasts()` only when `_scheduledRaycastHandle.IsCompleted` is true (`EquipmentInteractionHandler.cs:118-120`, `EquipmentInteractionHandler.cs:560`)
+-> `_completedRequesterIds`, `_completedHasHit`, and `_completedHits` become the read side for the next service query.
+
+### Exact path: NativeQueue to damage signal
+
+`Tool effect`
+-> `EquipmentInteractionHandler.Publish(in InteractionSignal, Collider)` enqueues into `_signalQueue` and writes the collider side-channel (`EquipmentInteractionHandler.cs:84`, `EquipmentInteractionHandler.cs:46`)
+-> `LateFrameTick()` drains via `FlushSignals()` (`EquipmentInteractionHandler.cs:205`, `EquipmentInteractionHandler.cs:224`)
+-> `DispatchSignal(...)` routes by `InteractionEffectType` (`EquipmentInteractionHandler.cs:282`)
+-> `PlasmaCut` tries `HectonVoxelVolume.ApplyPlasmaCutDda(...)` first, then falls back to cut damage (`EquipmentInteractionHandler.cs:306`, `EquipmentInteractionHandler.cs:293`)
+-> `Boil` calls `SubmarineFluidDynamics.InjectLocalizedWaterHeat(...)` through `GlobalRegistry.Submarine` (`EquipmentInteractionHandler.cs:327`)
+-> default/cut flow calls `DispatchCutDamage(...)` (`EquipmentInteractionHandler.cs:339`)
+-> `IInteractionSignalConsumer.ApplyInteractionSignal(in signal, runtimeHitPoint)` is preferred (`EquipmentInteractionHandler.cs:350`)
+-> fallback is `ICuttable.ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint)` (`EquipmentInteractionHandler.cs:355`).
+
+### Barrier and allocation notes
+
+- Raycast completion is non-blocking until the handle reports completion. This is the required shape for avoiding forced input-thread waits.
+- Signal dispatch is main-thread because it resolves `Collider`, `GetComponent`, and managed interfaces. This is not Burst-side damage application.
+- `_signalQueue` is `Allocator.Persistent` and owned by `EquipmentInteractionHandler`; it must remain paired with a disposal path and scene/service shutdown.
+- The side-channel collider array is the managed bridge. It is not a Burst-safe event payload and must not be moved into a worker job without replacing object references.
+
+### Regression model
+
+- CPU risk: `DispatchCutDamage` still resolves components from colliders. Input-spam profiling is required before claiming 60 FPS safety.
+- GC risk: service dispatch uses managed interfaces. No allocation was proven by profiler in this documentation pass.
+- Memory risk: persistent queue/raycast buffers are safe only if disposal remains tied to service teardown.
+- Correctness risk: completed raycast results are one frame delayed by design; tools must tolerate stale/no-hit returns.
+
 ## Verdict
 
 The current tools / interaction / operational stack is not one owner and not one layer.

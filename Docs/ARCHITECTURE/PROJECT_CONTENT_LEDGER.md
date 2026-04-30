@@ -19,6 +19,31 @@ MANDATES FOLLOWED:
 This ledger tracks stable authored identifiers and runtime `LocHash` values for the HECTON-8 resource-node matrix.
 It is the canonical handoff table for item/resource/entity hash coordination until a broader project-wide uint registry is formalized.
 
+## LayerMask Sanitization Ledger
+
+Source of truth: `Assets/_Project/Scripts/Core/HectonLayerMasks.cs` and `ProjectSettings/TagManager.asset`.
+
+| Mask | Decimal | Hex | Layers |
+|---|---:|---|---|
+| `DataTemplateAuthoringMask` | 1792 | `0x00000700` | `BaseModule`/`DroppedItem`/`Creature` |
+| `StrictInteractionLayerMask` | 1792 | `0x00000700` | `BaseModule`/`DroppedItem`/`Creature` |
+| `ConstructionSurfaceLayerMask` | 1792 | `0x00000700` | `BaseModule`/`DroppedItem`/`Creature` |
+| `TerrainLayerMask` | 128 | `0x00000080` | `Terrain` |
+| `BaseModuleLayerMask` | 256 | `0x00000100` | `BaseModule` |
+| `DroppedItemLayerMask` | 512 | `0x00000200` | `DroppedItem` |
+| `CreatureLayerMask` | 1024 | `0x00000400` | `Creature` |
+| `VehicleLayerMask` | 2048 | `0x00000800` | `Vehicle` |
+| `VoxelCaveLayerMask` | 4096 | `0x00001000` | `VoxelCave` |
+| `DebrisLayerMask` | 16384 | `0x00004000` | `Debris` |
+| `SocketsLayerMask` | 524288 | `0x00080000` | `Sockets` |
+| `SeamProbeLayerMask` | 22912 | `0x00005980` | `Terrain`/`BaseModule`/`Vehicle`/`VoxelCave`/`Debris` |
+| `AllDefinedProjectLayersMask` | 1048575 | `0x000FFFFF` | Layers `0..19` |
+| `DefaultRaycastLayerMask` | 1048571 | `0x000FFFFB` | Layers `0..19` except `Ignore Raycast` |
+| `AllDefinedProjectRenderingLayerMask` | 1048575 | `0x000FFFFF` | Renderer-safe 20-bit project mask |
+
+- Sanitizer replacement target for `m_Bits: -1` / `m_Bits: 4294967295`: `DataTemplateAuthoringMask` (`1792`) for `ResourceNodeTemplate`, `FaunaDataTemplate`, and `FloraDataTemplate`; `AllDefinedProjectLayersMask` (`1048575`) for other managed data assets.
+- `Physics.DefaultRaycastLayers` is not an accepted project mask. Use `HectonLayerMasks.DefaultRaycastLayerMask` or a stricter semantic mask.
+
 ## Entity HashIDs
 
 | Template Asset | Stable ID | Entity HashID (int) | Hex | Item Stable ID | Item HashID (int) | Pickup Prefab |
@@ -47,6 +72,8 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 | `ResourceNodeTemplate_XenonOmegaVentCache.asset` | `resource.node.xenon_omega_vent_cache` | -779526194 | `0xD1895FCE` | `Data_RareEarthDust` | 1997058338 | `NONE` |
 | `ResourceNodeTemplate_Silicon7BGlassVein.asset` | `resource.node.silicon_7b_glass_vein` | 1566735374 | `0x5D627C0E` | `Data_SilicaShards` | -374612680 | `NONE` |
 | `ResourceNodeTemplate_AegiriumCrustNodule.asset` | `resource.node.aegirium_crust_nodule` | 174837396 | `0x0A6BCE94` | `Data_CobaltAlloy` | 857583970 | `NONE` |
+| `ResourceNodeTemplate_CarbonGraphiteNodule.asset` | `resource.node.carbon_graphite_nodule` | -645249103 | `0xD98A47B1` | `Data_CarbonGraphite` | 2008184373 | `NONE` |
+| `ResourceNodeTemplate_PressureDiamond.asset` | `resource.node.pressure_diamond` | -1829783455 | `0x92EFB861` | `Data_PressureDiamond` | -1593575957 | `NONE` |
 
 ### Extreme-Depth Notes
 
@@ -55,6 +82,8 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 - `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_ToxicSulfurDeposit.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` are deterministic hadal brine-pool resources. Runtime gate: `RequiresBrinePool = true`, brine density override `1250 kg/m3`, toxicity hazard routing, and seismic upwelling reinstatement.
 - `ResourceNodeTemplate_TitaniumBasaltMass.asset` is the new hadal titanium vein for autonomous production scaling.
 - `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_XenonOmegaVentCache.asset`, `ResourceNodeTemplate_Silicon7BGlassVein.asset`, `ResourceNodeTemplate_AegiriumCrustNodule.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` currently route into placeholder item assets until dedicated isotope item records exist. Lore IDs are `crystallized_osmium`, `xenon_omega`, `silicon_7b`, `aegirium`, and `brine_isotope`.
+- `ResourceNodeTemplate_CarbonGraphiteNodule.asset` is the pressure-metamorphism source. Runtime gate: resident node, depth `>3500m`, `ResourceNode.PressureMetamorphismProgressSeconds` accumulates in the Burst slow-tick lane.
+- `ResourceNodeTemplate_PressureDiamond.asset` is the pressure-metamorphism output. Runtime owner: `ResourceDistributionDirector.PressureMetamorphismJob`, persistence marker: `PersistentWorldItemFlags.ResourceNodeMetamorphosed`, stable entity remains alive and changes template without destruction.
 
 ## Flora Template HashIDs
 
@@ -92,6 +121,22 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 - `Attachment Surface`: `Any = floating/freeform`, `Seabed = terrain-anchored`, `Metal = artificial-structure overgrowth`
 - `Cable Bloom` and `Rust Moss` are authored as parasitic module flora. `Thermal Tubeworm` is authored as thermophilic module flora with a 100 C / 300 s activation gate.
 
+## 64-bit Flora Genetic Trait Definitions
+
+- Authoring/runtime owner: `FloraDataTemplate.GeneticsMask` and `CultivationManager.CultivationSlotState.GeneticsMask`.
+- Persistence owner: `InventoryDTO.itemGeneticsWords : ulong[]` and `ModuleDTO.cultivationGeneticsMasks : ulong[]`.
+- Save format: v53 introduced 64-bit genetics; v54 keeps the same layout and migrates v48-v52 legacy `uint[]` masks into `ulong[]`.
+- Splice equation: `result = (maskA | maskB) ^ (XorShift32(seed) & 0x000000000000000FUL)`.
+
+| Bit | Mask | Trait | Runtime effect |
+|---:|---:|---|---|
+| 0 | `0x0000000000000001` | `Biolum` | Enables biolum lighting credit and shader emission trait inheritance. |
+| 1 | `0x0000000000000002` | `O2_Produce` | Mature cultivation slots inject oxygen into the owning module atmosphere. |
+| 2 | `0x0000000000000004` | `Toxic` | Adds scrubber load, hazard contribution, and mature spore acoustic behavior. |
+| 3 | `0x0000000000000008` | `RapidGrowth` | Applies cultivation growth-rate multiplier during slow tick. |
+
+- Bits `4-63` remain 64-bit reserved space for authored `GeneticTraitProfile` rows; mutation currently toggles only bits `0-3`.
+
 ## Ghost Mesh Standard
 
 - If `ResourceNodeTemplate.nodeMesh == null`, runtime uses a transparent red cube ghost with exact `physicalSize`.
@@ -104,6 +149,8 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 - Legacy display string bridge: `PersistentWorldRegistry.FormatResourceNodeTombstoneId(...)`
 - Save-path flag: `PersistentWorldItemFlags.ResourceNodeDestroyed`
 - Resident tombstone set: `NativeParallelHashSet<ulong> _resourceNodeTombstoneIds`
+- Metamorphosis flag: `PersistentWorldItemFlags.ResourceNodeMetamorphosed`
+- Resident metamorphosis set: `NativeParallelHashSet<ulong> _resourceNodeMetamorphosedIds`
 
 ## Fauna Scavenging States
 

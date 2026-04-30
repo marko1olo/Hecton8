@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Crafting;
 using Hecton8.Interaction;
-using Hecton8.Items;
 using UnityEngine;
 
 namespace Hecton8.Modding
@@ -15,6 +15,11 @@ namespace Hecton8.Modding
     internal interface IResettableEventChannel
     {
         void Reset();
+    }
+
+    internal interface ISubscriberIsolatableEventChannel
+    {
+        void DisableSubscriber(string subscriberId);
     }
 
     /// <summary>
@@ -52,6 +57,23 @@ namespace Hecton8.Modding
             CancelReason = reason ?? string.Empty;
         }
     }
+
+    /// <summary>
+    /// Native first-party event streams exposed to mods as immutable byte payloads.
+    /// </summary>
+    public enum HectonNativeEventKind : byte
+    {
+        Interaction = 0,
+        Crafting = 1
+    }
+
+    /// <summary>
+    /// Managed mod callback for read-only native event payload copies.
+    /// The span is valid only for the callback duration and cannot expose native container ownership.
+    /// </summary>
+    /// <param name="eventKind">Native event lane that produced the payload.</param>
+    /// <param name="payload">Blittable payload bytes copied from the internal native queue.</param>
+    public delegate void HectonNativeEventHandler(HectonNativeEventKind eventKind, ReadOnlySpan<byte> payload);
 
     /// <summary>
     /// Disposable subscription token returned by <see cref="HectonEventBus.Subscribe{TEvent}(Action{TEvent},string)"/>.
@@ -104,6 +126,8 @@ namespace Hecton8.Modding
         private static readonly List<IResettableEventChannel> _channels = new List<IResettableEventChannel>(32);
         // COLD ALLOC: NativeQueueBridge[1] - read-only first-party queue listener for mod event projection - owner: HectonEventBus
         private static readonly NativeQueueBridge _nativeQueueBridge = new NativeQueueBridge();
+        // COLD ALLOC: NativePayloadChannel[1] - immutable byte-span bridge for native payload copies - owner: HectonEventBus
+        private static readonly NativePayloadChannel _nativePayloadChannel = new NativePayloadChannel();
         private static bool _nativeQueueBindingsInstalled;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -112,6 +136,7 @@ namespace Hecton8.Modding
             for (int i = 0; i < _channels.Count; i++)
                 _channels[i].Reset();
 
+            _nativePayloadChannel.Reset();
             _nativeQueueBindingsInstalled = false;
         }
 
@@ -137,6 +162,27 @@ namespace Hecton8.Modding
                 : subscriberId;
 
             return EventChannelCache<TEvent>.Instance.Subscribe(handler, resolvedSubscriberId);
+        }
+
+        /// <summary>
+        /// Subscribes to immutable native queue payload copies. Mods receive bytes, never NativeArray/NativeQueue handles.
+        /// </summary>
+        /// <param name="handler">Callback invoked during the managed bridge flush.</param>
+        /// <param name="subscriberId">Stable mod identifier used for automatic isolation on callback failure.</param>
+        /// <returns>Subscription token, or null when the handler is invalid.</returns>
+        public static HectonEventSubscription SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)
+        {
+            if (handler == null)
+            {
+                Debug.LogError("[HectonEventBus] Cannot subscribe a null native payload handler.");
+                return null;
+            }
+
+            string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId)
+                ? ModExecutionScope.CurrentModId
+                : subscriberId;
+
+            return _nativePayloadChannel.Subscribe(handler, resolvedSubscriberId);
         }
 
         /// <summary>
@@ -199,6 +245,20 @@ namespace Hecton8.Modding
             _channels.Add(channel);
         }
 
+        internal static void DisableSubscriber(string subscriberId)
+        {
+            if (string.IsNullOrWhiteSpace(subscriberId))
+                return;
+
+            for (int i = 0; i < _channels.Count; i++)
+            {
+                if (_channels[i] is ISubscriberIsolatableEventChannel isolatableChannel)
+                    isolatableChannel.DisableSubscriber(subscriberId);
+            }
+
+            _nativePayloadChannel.DisableSubscriber(subscriberId);
+        }
+
         private static class EventChannelCache<TEvent>
             where TEvent : HectonEvent
         {
@@ -209,29 +269,145 @@ namespace Hecton8.Modding
         {
             public void OnInteractionEvent(in InteractionEventPayload payload)
             {
-                if ((InteractionEventType)payload.EventType != InteractionEventType.ItemCollected)
-                    return;
-
-                if (!InteractionEvents.TryResolveItem(in payload, out ItemData item))
-                    return;
-
-                InteractionEvents.TryResolveInteractor(in payload, out Transform interactor);
-                Publish(new ItemCollectedEvent(item, payload.Quantity, interactor));
+                PublishNativePayload(HectonNativeEventKind.Interaction, in payload);
             }
 
             public void OnCraftingEvent(in CraftingEventPayload payload)
             {
-                if ((CraftingEventType)payload.EventType != CraftingEventType.CraftCompleted)
-                    return;
-
-                if (!CraftingEvents.TryResolveItem(in payload, out ItemData item))
-                    return;
-
-                Publish(new ItemCraftedEvent(item));
+                PublishNativePayload(HectonNativeEventKind.Crafting, in payload);
             }
         }
 
-        private sealed class EventChannel<TEvent> : IHectonEventChannel, IResettableEventChannel
+        private static void PublishNativePayload<TPayload>(HectonNativeEventKind eventKind, in TPayload payload)
+            where TPayload : unmanaged
+        {
+            TPayload payloadCopy = payload;
+            ReadOnlySpan<byte> payloadBytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref payloadCopy, 1));
+            _nativePayloadChannel.Publish(eventKind, payloadBytes);
+        }
+
+        private sealed class NativePayloadChannel : IHectonEventChannel, IResettableEventChannel, ISubscriberIsolatableEventChannel
+        {
+            // COLD ALLOC: List<SubscriptionEntry>[8] - native byte-span handlers for mod isolation - owner: NativePayloadChannel
+            private readonly List<SubscriptionEntry> _subscriptions = new List<SubscriptionEntry>(8);
+            private int _nextSubscriptionId = 1;
+            private int _dispatchDepth;
+            private bool _needsCompaction;
+
+            internal HectonEventSubscription Subscribe(HectonNativeEventHandler handler, string subscriberId)
+            {
+                SubscriptionEntry entry = new SubscriptionEntry
+                {
+                    Id = _nextSubscriptionId++,
+                    Handler = handler,
+                    SubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId,
+                    IsActive = true
+                };
+
+                _subscriptions.Add(entry);
+                return new HectonEventSubscription(this, entry.Id, entry.SubscriberId);
+            }
+
+            internal void Publish(HectonNativeEventKind eventKind, ReadOnlySpan<byte> payload)
+            {
+                _dispatchDepth++;
+                try
+                {
+                    for (int i = 0; i < _subscriptions.Count; i++)
+                    {
+                        SubscriptionEntry entry = _subscriptions[i];
+                        if (!entry.IsActive || entry.Handler == null)
+                            continue;
+
+                        try
+                        {
+                            entry.Handler(eventKind, payload);
+                        }
+                        catch (Exception ex)
+                        {
+                            entry.IsActive = false;
+                            entry.Handler = null;
+                            _subscriptions[i] = entry;
+                            _needsCompaction = true;
+                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Native event callback threw '{ex.Message}'.");
+                            Debug.LogError($"[HectonEventBus] Native subscriber '{entry.SubscriberId}' threw while handling '{eventKind}': {ex}");
+                        }
+                    }
+                }
+                finally
+                {
+                    _dispatchDepth--;
+                    if (_dispatchDepth == 0 && _needsCompaction)
+                        CompactInactiveSubscriptions();
+                }
+            }
+
+            public void Unsubscribe(int subscriptionId)
+            {
+                for (int i = 0; i < _subscriptions.Count; i++)
+                {
+                    SubscriptionEntry entry = _subscriptions[i];
+                    if (entry.Id != subscriptionId)
+                        continue;
+
+                    entry.IsActive = false;
+                    entry.Handler = null;
+                    _subscriptions[i] = entry;
+                    _needsCompaction = true;
+
+                    if (_dispatchDepth == 0)
+                        CompactInactiveSubscriptions();
+                    return;
+                }
+            }
+
+            public void Reset()
+            {
+                _subscriptions.Clear();
+                _nextSubscriptionId = 1;
+                _dispatchDepth = 0;
+                _needsCompaction = false;
+            }
+
+            public void DisableSubscriber(string subscriberId)
+            {
+                for (int i = 0; i < _subscriptions.Count; i++)
+                {
+                    SubscriptionEntry entry = _subscriptions[i];
+                    if (!entry.IsActive || entry.SubscriberId != subscriberId)
+                        continue;
+
+                    entry.IsActive = false;
+                    entry.Handler = null;
+                    _subscriptions[i] = entry;
+                    _needsCompaction = true;
+                }
+
+                if (_dispatchDepth == 0 && _needsCompaction)
+                    CompactInactiveSubscriptions();
+            }
+
+            private void CompactInactiveSubscriptions()
+            {
+                for (int i = _subscriptions.Count - 1; i >= 0; i--)
+                {
+                    if (!_subscriptions[i].IsActive || _subscriptions[i].Handler == null)
+                        _subscriptions.RemoveAt(i);
+                }
+
+                _needsCompaction = false;
+            }
+
+            private struct SubscriptionEntry
+            {
+                public int Id;
+                public bool IsActive;
+                public HectonNativeEventHandler Handler;
+                public string SubscriberId;
+            }
+        }
+
+        private sealed class EventChannel<TEvent> : IHectonEventChannel, IResettableEventChannel, ISubscriberIsolatableEventChannel
             where TEvent : HectonEvent
         {
             // COLD ALLOC: List<SubscriptionEntry>[8] — handler list for one typed mod event stream — owner: EventChannel<TEvent>
@@ -277,6 +453,11 @@ namespace Hecton8.Modding
                         }
                         catch (Exception ex)
                         {
+                            entry.IsActive = false;
+                            entry.Handler = null;
+                            _subscriptions[i] = entry;
+                            _needsCompaction = true;
+                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Event callback threw '{ex.Message}'.");
                             Debug.LogError(
                                 $"[HectonEventBus] Subscriber '{entry.SubscriberId}' threw while handling '{typeof(TEvent).Name}': {ex}");
                         }
@@ -315,6 +496,24 @@ namespace Hecton8.Modding
                 _nextSubscriptionId = 1;
                 _dispatchDepth = 0;
                 _needsCompaction = false;
+            }
+
+            public void DisableSubscriber(string subscriberId)
+            {
+                for (int i = 0; i < _subscriptions.Count; i++)
+                {
+                    SubscriptionEntry entry = _subscriptions[i];
+                    if (!entry.IsActive || entry.SubscriberId != subscriberId)
+                        continue;
+
+                    entry.IsActive = false;
+                    entry.Handler = null;
+                    _subscriptions[i] = entry;
+                    _needsCompaction = true;
+                }
+
+                if (_dispatchDepth == 0 && _needsCompaction)
+                    CompactInactiveSubscriptions();
             }
 
             private void CompactInactiveSubscriptions()

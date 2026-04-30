@@ -106,6 +106,63 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ResolveTractorBeamPdForce(
+            float3 targetPosition,
+            float3 currentPosition,
+            float3 targetVelocity,
+            float3 currentVelocity,
+            float springStiffness,
+            float dampingCoefficient,
+            float maxForceMagnitude)
+        {
+            if (!math.all(math.isfinite(targetPosition)) ||
+                !math.all(math.isfinite(currentPosition)) ||
+                !math.all(math.isfinite(targetVelocity)) ||
+                !math.all(math.isfinite(currentVelocity)))
+            {
+                return float3.zero;
+            }
+
+            float3 positionError = targetPosition - currentPosition;
+            float3 relativeVelocity = currentVelocity - targetVelocity;
+            float3 force = (positionError * math.max(0f, springStiffness)) -
+                           (relativeVelocity * math.max(0f, dampingCoefficient));
+            if (!math.all(math.isfinite(force)))
+                return float3.zero;
+
+            float forceMagnitudeSq = math.lengthsq(force);
+            float safeMaxForce = math.max(0f, maxForceMagnitude);
+            if (safeMaxForce > 0f && forceMagnitudeSq > safeMaxForce * safeMaxForce)
+                force *= safeMaxForce * math.rsqrt(forceMagnitudeSq);
+
+            return force;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ResolveTractorBeamPdAcceleration(
+            float3 targetPosition,
+            float3 currentPosition,
+            float3 targetVelocity,
+            float3 currentVelocity,
+            float springStiffness,
+            float dampingCoefficient,
+            float reducedMassKilograms,
+            float maxAccelerationMagnitude)
+        {
+            float safeReducedMass = math.max(0.0001f, reducedMassKilograms);
+            float maxForce = math.max(0f, maxAccelerationMagnitude) * safeReducedMass;
+            float3 force = ResolveTractorBeamPdForce(
+                targetPosition,
+                currentPosition,
+                targetVelocity,
+                currentVelocity,
+                springStiffness,
+                dampingCoefficient,
+                maxForce);
+            return force / safeReducedMass;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float ResolveExponentialBlendAlpha(float deltaTime, float sharpness)
         {
             float safeDeltaTime = math.max(0f, deltaTime);

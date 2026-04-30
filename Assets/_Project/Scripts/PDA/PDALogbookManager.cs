@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.PDA
@@ -14,15 +16,15 @@ namespace Hecton8.PDA
     /// </summary>
     public readonly struct PDALogbookEntry
     {
-        public PDALogbookEntry(int sequence, int dayIndex, float dayTimeHours, float playTimeSeconds, string title, string message, string originKey)
+        public PDALogbookEntry(int sequence, int dayIndex, float dayTimeHours, float playTimeSeconds, int titleHash, int messageHash, int originHash)
         {
             Sequence = sequence;
             DayIndex = dayIndex;
             DayTimeHours = dayTimeHours;
             PlayTimeSeconds = playTimeSeconds;
-            Title = title ?? string.Empty;
-            Message = message ?? string.Empty;
-            OriginKey = originKey ?? string.Empty;
+            TitleHash = titleHash;
+            MessageHash = messageHash;
+            OriginHash = originHash;
         }
 
         /// <summary>Monotonic insertion order for stable sorting.</summary>
@@ -37,14 +39,23 @@ namespace Hecton8.PDA
         /// <summary>Total playtime in seconds when the event was recorded.</summary>
         public float PlayTimeSeconds { get; }
 
-        /// <summary>Short journal headline.</summary>
-        public string Title { get; }
+        /// <summary>Short journal headline localization hash.</summary>
+        public int TitleHash { get; }
 
-        /// <summary>Long-form journal summary.</summary>
-        public string Message { get; }
+        /// <summary>Long-form journal summary localization hash.</summary>
+        public int MessageHash { get; }
 
-        /// <summary>Deduplication key owned by the source event.</summary>
-        public string OriginKey { get; }
+        /// <summary>Deduplication event hash owned by the source event.</summary>
+        public int OriginHash { get; }
+
+        /// <summary>Cold-path string reconstruction for legacy debug consumers.</summary>
+        public string Title => LocRegistry.ResolveRaw(TitleHash).ToString();
+
+        /// <summary>Cold-path string reconstruction for legacy debug consumers.</summary>
+        public string Message => LocRegistry.ResolveRaw(MessageHash).ToString();
+
+        /// <summary>Cold-path source identifier reconstruction is unavailable after hash compaction.</summary>
+        public string OriginKey => OriginHash != 0 ? OriginHash.ToString("X8") : string.Empty;
     }
 
     /// <summary>
@@ -52,7 +63,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Logbook Manager")]
-    public sealed class PDALogbookManager : MonoBehaviour, ISaveable
+    public sealed class PDALogbookManager : MonoBehaviour, ISaveable, IPDALogbookService
     {
         private const string FirstLaserCutterPersistentId = "Item_Tool_LaserCutter";
         private const string FirstDeathOriginKey = "pda.log.death.first";
@@ -61,8 +72,8 @@ namespace Hecton8.PDA
 
         // COLD ALLOC: List<PDALogbookEntry>[64] - runtime journal history - owner: PDALogbookManager
         private readonly List<PDALogbookEntry> _entries = new List<PDALogbookEntry>(64);
-        // COLD ALLOC: HashSet<string>[dynamic] - journal dedupe source keys - owner: PDALogbookManager
-        private readonly HashSet<string> _seenOriginKeys = new HashSet<string>(StringComparer.Ordinal);
+        // COLD ALLOC: HashSet<int>[512] - journal dedupe source hashes - owner: PDALogbookManager
+        private readonly HashSet<int> _seenOriginHashes = new HashSet<int>(512);
 
         private HectonEventSubscription _itemCraftedSubscription;
         private HectonEventSubscription _gameLoadedSubscription;
@@ -73,18 +84,6 @@ namespace Hecton8.PDA
         private HectonDiscoveryManager _discoveryManager;
         private bool _registeredToSave;
         private int _nextSequence = 1;
-
-        /// <summary>Live singleton instance for PDA journal consumers.</summary>
-        public static PDALogbookManager Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            Instance = null;
-        }
-
-        /// <summary>Raised after the runtime journal state changes.</summary>
-        public event Action LogbookChanged;
 
         /// <summary>Total number of retained journal entries.</summary>
         public int EntryCount => _entries.Count;
@@ -97,17 +96,11 @@ namespace Hecton8.PDA
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-                return;
-            }
-
-            Instance = this;
         }
 
         private void OnEnable()
         {
+            TryRegisterLogbookService();
             TryRegisterWithSaveManager();
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
@@ -124,9 +117,7 @@ namespace Hecton8.PDA
             UnsubscribeFromOwners();
             UnsubscribeFromEventBus();
             UnregisterFromSaveManager();
-
-            if (Instance == this)
-                Instance = null;
+            UnregisterLogbookService();
         }
 
         private void OnDestroy()
@@ -134,9 +125,7 @@ namespace Hecton8.PDA
             UnsubscribeFromOwners();
             UnsubscribeFromEventBus();
             UnregisterFromSaveManager();
-
-            if (Instance == this)
-                Instance = null;
+            UnregisterLogbookService();
         }
 
         /// <summary>
@@ -177,11 +166,13 @@ namespace Hecton8.PDA
             if (string.IsNullOrWhiteSpace(originKey) || string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(message))
                 return false;
 
-            originKey = originKey.Trim();
-            title = title.Trim();
-            message = message.Trim();
+            int originHash = LocHash.Compute(originKey);
+            int titleHash = LocHash.Compute(title);
+            int messageHash = LocHash.Compute(message);
+            if (originHash == 0 || titleHash == 0 || messageHash == 0)
+                return false;
 
-            if (!_seenOriginKeys.Add(originKey))
+            if (!_seenOriginHashes.Add(originHash))
                 return false;
 
             PDAClockUtility.CaptureStamp(out int dayIndex, out float dayTimeHours, out float playTimeSeconds);
@@ -190,15 +181,16 @@ namespace Hecton8.PDA
                 Mathf.Max(1, dayIndex),
                 Mathf.Clamp(dayTimeHours, 0f, 24f),
                 Mathf.Max(0f, playTimeSeconds),
-                title,
-                message,
-                originKey);
+                titleHash,
+                messageHash,
+                originHash);
 
             if (_entries.Count >= PDALogbookDTO.MaxEntries)
                 _entries.RemoveAt(0);
 
             _entries.Add(entry);
-            LogbookChanged?.Invoke();
+            UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash));
+            Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entries.Count, unchecked((uint)originHash));
             return true;
         }
 
@@ -222,9 +214,12 @@ namespace Hecton8.PDA
                     dayIndex = entry.DayIndex,
                     dayTimeHours = entry.DayTimeHours,
                     playTimeSeconds = entry.PlayTimeSeconds,
-                    title = entry.Title,
-                    message = entry.Message,
-                    originKey = entry.OriginKey
+                    titleHash = entry.TitleHash,
+                    messageHash = entry.MessageHash,
+                    originHash = entry.OriginHash,
+                    title = string.Empty,
+                    message = string.Empty,
+                    originKey = string.Empty
                 };
             }
 
@@ -232,15 +227,18 @@ namespace Hecton8.PDA
                 data.pdaLogbook.entries[i] = default;
 
             int seenOriginCount = 0;
-            HashSet<string>.Enumerator enumerator = _seenOriginKeys.GetEnumerator();
+            HashSet<int>.Enumerator enumerator = _seenOriginHashes.GetEnumerator();
             while (enumerator.MoveNext() && seenOriginCount < PDALogbookDTO.MaxSeenOrigins)
             {
-                data.pdaLogbook.seenOriginKeys[seenOriginCount] = enumerator.Current;
+                data.pdaLogbook.seenOriginHashes[seenOriginCount] = enumerator.Current;
                 seenOriginCount++;
             }
 
             data.pdaLogbook.seenOriginCount = seenOriginCount;
             for (int i = seenOriginCount; i < PDALogbookDTO.MaxSeenOrigins; i++)
+                data.pdaLogbook.seenOriginHashes[i] = 0;
+
+            for (int i = 0; i < PDALogbookDTO.MaxSeenOrigins; i++)
                 data.pdaLogbook.seenOriginKeys[i] = string.Empty;
         }
 
@@ -248,7 +246,7 @@ namespace Hecton8.PDA
         public void LoadFromSaveData(SaveData data)
         {
             _entries.Clear();
-            _seenOriginKeys.Clear();
+            _seenOriginHashes.Clear();
             _nextSequence = 1;
 
             if (data == null)
@@ -259,30 +257,63 @@ namespace Hecton8.PDA
             for (int i = 0; i < entryCount; i++)
             {
                 PDALogbookEntryDTO entry = dto.entries[i];
+                int titleHash = entry.titleHash != 0 ? entry.titleHash : LocHash.Compute(entry.title);
+                int messageHash = entry.messageHash != 0 ? entry.messageHash : LocHash.Compute(entry.message);
+                int originHash = entry.originHash != 0 ? entry.originHash : LocHash.Compute(entry.originKey);
                 _entries.Add(new PDALogbookEntry(
                     entry.sequence,
                     Mathf.Max(1, entry.dayIndex),
                     Mathf.Clamp(entry.dayTimeHours, 0f, 24f),
                     Mathf.Max(0f, entry.playTimeSeconds),
-                    entry.title,
-                    entry.message,
-                    entry.originKey));
+                    titleHash,
+                    messageHash,
+                    originHash));
 
-                if (!string.IsNullOrWhiteSpace(entry.originKey))
-                    _seenOriginKeys.Add(entry.originKey);
+                if (originHash != 0)
+                {
+                    _seenOriginHashes.Add(originHash);
+                    UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash));
+                }
             }
 
-            int seenOriginCount = Mathf.Clamp(dto.seenOriginCount, 0, dto.seenOriginKeys != null ? dto.seenOriginKeys.Length : 0);
+            int hashSeenCapacity = dto.seenOriginHashes != null ? dto.seenOriginHashes.Length : 0;
+            int stringSeenCapacity = dto.seenOriginKeys != null ? dto.seenOriginKeys.Length : 0;
+            int seenOriginCount = Mathf.Clamp(dto.seenOriginCount, 0, Mathf.Max(hashSeenCapacity, stringSeenCapacity));
             for (int i = 0; i < seenOriginCount; i++)
             {
-                string originKey = dto.seenOriginKeys[i];
-                if (!string.IsNullOrWhiteSpace(originKey))
-                    _seenOriginKeys.Add(originKey);
+                int originHash = i < hashSeenCapacity ? dto.seenOriginHashes[i] : 0;
+                if (originHash == 0 && i < stringSeenCapacity)
+                    originHash = LocHash.Compute(dto.seenOriginKeys[i]);
+
+                if (originHash != 0)
+                    _seenOriginHashes.Add(originHash);
             }
 
             _nextSequence = Mathf.Max(1, dto.nextSequence);
-            LogbookChanged?.Invoke();
+            Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entries.Count, _entries.Count > 0 ? unchecked((uint)_entries[_entries.Count - 1].OriginHash) : 0u);
             RebindOwnerSubscriptions();
+        }
+
+        private void TryRegisterLogbookService()
+        {
+            IPDALogbookService registered = GlobalRegistry.PDALogbook;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[PDALogbookManager] Duplicate logbook service detected. Disabling duplicate.");
+#endif
+                enabled = false;
+                return;
+            }
+
+            if (!ReferenceEquals(registered, this))
+                GlobalRegistry.RegisterPDALogbookService(this);
+        }
+
+        private void UnregisterLogbookService()
+        {
+            if (ReferenceEquals(GlobalRegistry.PDALogbook, this))
+                GlobalRegistry.UnregisterPDALogbookService(this);
         }
 
         private void SubscribeToEventBus()

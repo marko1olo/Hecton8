@@ -122,7 +122,20 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryStartRuntimeLifecycle();
+        }
+
+        private void Start()
+        {
+            TryStartRuntimeLifecycle();
+        }
+
+        private void TryStartRuntimeLifecycle()
+        {
             CacheReferences();
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             TryRegister();
             _hasWaterSource = ResolveWaterSourceAvailability();
             _debugHasWaterSource = _hasWaterSource;
@@ -143,6 +156,9 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void SlowTick()
         {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             if (atmosphereSystem == null || powerNode == null)
                 return;
 
@@ -253,7 +269,7 @@ namespace Hecton8.Gameplay
         {
             if (_registered)
                 return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!CanUseRuntimeDispatcher())
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
@@ -267,6 +283,19 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private static bool CanUseRuntimeDispatcher()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return false;
+
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating)
+                return false;
+#endif
+
+            return true;
         }
     }
 }

@@ -87,8 +87,14 @@ namespace Hecton8.Quest
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out QuestEventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out QuestEventPayload payload))
+                    return;
+
                 IQuestEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)

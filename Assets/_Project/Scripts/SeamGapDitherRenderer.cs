@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -20,6 +22,8 @@ namespace Hecton8.World
         private static readonly int _MaxCameraDistanceId = Shader.PropertyToID("_MaxCameraDistance");
         private static readonly int _BaseTintId = Shader.PropertyToID("_BaseTint");
         private const string LegacyGapDitherName = "__SEAM_DITHER";
+        private const int MaxSeamRaycastCommands = 256;
+        private const float MinimumProbeDistance = 0.05f;
         [Header("References")]
         [SerializeField] private SeamRegistry seamRegistry;
         [SerializeField] private Transform playerTransform;
@@ -38,6 +42,12 @@ namespace Hecton8.World
         [SerializeField, Min(0.01f)] private float verticalJitter = 0.12f;
         [SerializeField, Min(0.5f)] private float maxCameraDistance = 15f;
         [SerializeField, Min(0.5f)] private float segmentLengthBias = 2.5f;
+
+        [Header("Raycast Seam Probes")]
+        [SerializeField] private LayerMask seamProbeMask = HectonLayerMasks.SeamProbeLayerMask;
+        [SerializeField, Min(0.1f)] private float seamProbeHalfHeight = 1.25f;
+        [SerializeField, Min(1)] private int maxRaycastMotes = 128;
+        [SerializeField, Min(1)] private int raycastProbeStride = 2;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -58,7 +68,13 @@ namespace Hecton8.World
         private GraphicsBuffer _colorBuffer;
         private GraphicsBuffer _argsBuffer;
         private Mesh _quadMesh;
+        private NativeArray<RaycastCommand> _seamRaycastCommands;
+        private NativeArray<RaycastHit> _seamRaycastHits;
+        private JobHandle _seamRaycastHandle;
+        private int _scheduledSeamRaycastCount;
+        private int _completedSeamRaycastCount;
         private bool _registeredToDispatcher;
+        private bool _seamRaycastScheduled;
         private float _nextLegacyVfxDisableTime = float.NegativeInfinity;
         private bool _loggedMissingSeamDitherMaterial;
 
@@ -98,6 +114,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregister();
+            DisposeRaycastBuffers();
             ReleaseBuffers();
             ReleaseRuntimeMaterial();
             ReleaseQuadMesh();
@@ -107,6 +124,7 @@ namespace Hecton8.World
         {
             ResolveReferences();
             DisableLegacyGapDitherIfNeeded();
+            CompleteSeamRaycastBatchIfReady();
             if (!EnsureRenderingResources())
             {
                 _debugReady = false;
@@ -115,6 +133,7 @@ namespace Hecton8.World
             }
 
             int instanceCount = BuildInstances();
+            ScheduleSeamRaycastBatch();
             _debugRenderedInstances = instanceCount;
             _debugSourceSeams = _stateScratch.Count;
             _debugReady = instanceCount > 0;
@@ -191,6 +210,7 @@ namespace Hecton8.World
             EnsureCpuCapacity();
             EnsureQuadMesh();
             EnsureBuffers();
+            EnsureRaycastBuffers();
             return _quadMesh != null && ResolveMaterial() != null && _matrixBuffer != null && _colorBuffer != null && _argsBuffer != null;
         }
 
@@ -362,6 +382,16 @@ namespace Hecton8.World
                 }
             }
 
+            instanceCount = AppendRaycastHitInstances(
+                instanceCount,
+                maxCount,
+                cameraPosition,
+                billboardRotation,
+                maxDistanceSq,
+                ref boundsMin,
+                ref boundsMax,
+                ref hasBounds);
+
             if (!hasBounds)
             {
                 _debugDrawBounds = new Bounds(cameraPosition, Vector3.zero);
@@ -372,6 +402,184 @@ namespace Hecton8.World
             Vector3 size = Vector3.Max(boundsMax - boundsMin, Vector3.one * 0.5f);
             _debugDrawBounds = new Bounds(center, size);
             return instanceCount;
+        }
+
+        private int AppendRaycastHitInstances(
+            int instanceCount,
+            int maxCount,
+            Vector3 cameraPosition,
+            Quaternion billboardRotation,
+            float maxDistanceSq,
+            ref Vector3 boundsMin,
+            ref Vector3 boundsMax,
+            ref bool hasBounds)
+        {
+            if (!_seamRaycastHits.IsCreated || _completedSeamRaycastCount <= 0)
+                return instanceCount;
+
+            int appendedCount = 0;
+            int hitLimit = Mathf.Min(_completedSeamRaycastCount, _seamRaycastHits.Length);
+            int appendLimit = Mathf.Min(Mathf.Max(0, maxRaycastMotes), maxCount - instanceCount);
+            for (int i = 0; i < hitLimit && appendedCount < appendLimit; i++)
+            {
+                RaycastHit hit = _seamRaycastHits[i];
+                if (hit.collider == null)
+                    continue;
+
+                Vector3 runtimePoint = hit.point + hit.normal * 0.025f;
+                if ((runtimePoint - cameraPosition).sqrMagnitude > maxDistanceSq)
+                    continue;
+
+                float scale = Mathf.Max(0.01f, moteSize * 0.85f);
+                Color color = defaultBiomeTemplate != null
+                    ? defaultBiomeTemplate.SeamDitherDustColor
+                    : new Color(0.28f, 0.92f, 1f, 0.7f);
+                if (color.a <= 0.01f)
+                    continue;
+
+                _matrixUpload[instanceCount] = Matrix4x4.TRS(runtimePoint, billboardRotation, Vector3.one * scale);
+                _colorUpload[instanceCount] = (Vector4)color;
+                IncludeInstanceBounds(runtimePoint, scale, ref boundsMin, ref boundsMax, ref hasBounds);
+                instanceCount++;
+                appendedCount++;
+            }
+
+            return instanceCount;
+        }
+
+        private void ScheduleSeamRaycastBatch()
+        {
+            if (_seamRaycastScheduled || !_seamRaycastCommands.IsCreated || !_seamRaycastHits.IsCreated || _stateScratch.Count <= 0)
+                return;
+
+            int layerMask = seamProbeMask.value != 0 ? seamProbeMask.value : HectonLayerMasks.SeamProbeLayerMask;
+            QueryParameters queryParameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
+            float halfHeight = Mathf.Max(MinimumProbeDistance, seamProbeHalfHeight);
+            float probeDistance = Mathf.Max(MinimumProbeDistance, halfHeight * 2f);
+            int commandCount = 0;
+            int stride = Mathf.Max(1, raycastProbeStride);
+            int maxCommandCount = Mathf.Min(_seamRaycastCommands.Length, Mathf.Max(1, maxRaycastMotes));
+
+            for (int seamIndex = 0; seamIndex < _stateScratch.Count && commandCount < maxCommandCount; seamIndex++)
+            {
+                ProceduralGeologySeamStateDTO state = _stateScratch[seamIndex];
+                Vector3 surfaceAbsolute = new Vector3(
+                    state.absolutePositionX,
+                    state.absoluteSeamHeight,
+                    state.absolutePositionZ);
+                Vector3 centerAbsolute = new Vector3(
+                    state.absoluteVoxelCenterX,
+                    state.absoluteSeamHeight,
+                    state.absoluteVoxelCenterZ);
+
+                Vector3 segment = centerAbsolute - surfaceAbsolute;
+                segment.y = 0f;
+                float segmentLength = segment.magnitude;
+                int probeCount = Mathf.Clamp(
+                    Mathf.CeilToInt(Mathf.Max(state.seamBlendRadius, segmentLength + segmentLengthBias) / Mathf.Max(0.1f, instanceSpacing)),
+                    1,
+                    Mathf.Max(1, maxInstancesPerSeam));
+
+                for (int pointIndex = 0; pointIndex < probeCount && commandCount < maxCommandCount; pointIndex += stride)
+                {
+                    float t = probeCount <= 1 ? 0.5f : pointIndex / (float)(probeCount - 1);
+                    Vector3 absolutePoint = Vector3.Lerp(surfaceAbsolute, centerAbsolute, t);
+                    Vector3 runtimePoint = HectonFloatingOrigin.ToRuntimePosition(absolutePoint);
+                    Vector3 origin = runtimePoint + Vector3.up * halfHeight;
+                    _seamRaycastCommands[commandCount] = new RaycastCommand(
+                        origin,
+                        Vector3.down,
+                        queryParameters,
+                        probeDistance);
+                    commandCount++;
+                }
+            }
+
+            RaycastCommand invalidCommand = CreateInvalidRaycastCommand();
+            for (int i = commandCount; i < _seamRaycastCommands.Length; i++)
+                _seamRaycastCommands[i] = invalidCommand;
+
+            if (commandCount <= 0)
+                return;
+
+            _scheduledSeamRaycastCount = commandCount;
+            _seamRaycastHandle = RaycastCommand.ScheduleBatch(_seamRaycastCommands, _seamRaycastHits, 16, default);
+            _seamRaycastScheduled = true;
+        }
+
+        private void CompleteSeamRaycastBatchIfReady()
+        {
+            if (!_seamRaycastScheduled || !_seamRaycastHandle.IsCompleted)
+                return;
+
+            _seamRaycastHandle.Complete();
+            _completedSeamRaycastCount = _scheduledSeamRaycastCount;
+            _scheduledSeamRaycastCount = 0;
+            _seamRaycastScheduled = false;
+        }
+
+        private void EnsureRaycastBuffers()
+        {
+            if (!_seamRaycastCommands.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<RaycastCommand>[256] - seam intersection ray batch commands - owner: SeamGapDitherRenderer
+                _seamRaycastCommands = new NativeArray<RaycastCommand>(MaxSeamRaycastCommands, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_seamRaycastHits.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<RaycastHit>[256] - seam intersection ray batch results - owner: SeamGapDitherRenderer
+                _seamRaycastHits = new NativeArray<RaycastHit>(MaxSeamRaycastCommands, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+        }
+
+        private void DisposeRaycastBuffers()
+        {
+            JobHandle dependency = _seamRaycastScheduled ? _seamRaycastHandle : default;
+            if (_seamRaycastCommands.IsCreated)
+            {
+                dependency = _seamRaycastCommands.Dispose(dependency);
+                _seamRaycastCommands = default;
+            }
+
+            if (_seamRaycastHits.IsCreated)
+            {
+                dependency = _seamRaycastHits.Dispose(dependency);
+                _seamRaycastHits = default;
+            }
+
+            _seamRaycastHandle = dependency;
+            _seamRaycastScheduled = false;
+            _scheduledSeamRaycastCount = 0;
+            _completedSeamRaycastCount = 0;
+        }
+
+        private static RaycastCommand CreateInvalidRaycastCommand()
+        {
+            QueryParameters queryParameters = new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore);
+            return new RaycastCommand(Vector3.zero, Vector3.up, queryParameters, MinimumProbeDistance);
+        }
+
+        private static void IncludeInstanceBounds(
+            Vector3 runtimePoint,
+            float scale,
+            ref Vector3 boundsMin,
+            ref Vector3 boundsMax,
+            ref bool hasBounds)
+        {
+            Vector3 padding = Vector3.one * scale;
+            Vector3 pointMin = runtimePoint - padding;
+            Vector3 pointMax = runtimePoint + padding;
+            if (!hasBounds)
+            {
+                boundsMin = pointMin;
+                boundsMax = pointMax;
+                hasBounds = true;
+                return;
+            }
+
+            boundsMin = Vector3.Min(boundsMin, pointMin);
+            boundsMax = Vector3.Max(boundsMax, pointMax);
         }
 
         private Color ResolveSeamColor(long runtimeKey)

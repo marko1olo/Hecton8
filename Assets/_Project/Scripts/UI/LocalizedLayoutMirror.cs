@@ -1,4 +1,5 @@
 using Hecton.Localization;
+using Hecton8.Core;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/UI/Localized Layout Mirror")]
-    public sealed class LocalizedLayoutMirror : MonoBehaviour
+    public sealed class LocalizedLayoutMirror : MonoBehaviour, IUpdatable
     {
         private static bool s_isRebuildingLayout;
 
@@ -54,6 +55,7 @@ namespace Hecton8.UI
         private bool _isAppliedRtl;
         private bool _isApplyingMirroring;
         private bool _applyMirroringPending = true;
+        private bool _registeredForTick;
         private readonly List<RectTransform> _resolvedIconRoots = new List<RectTransform>(8); // COLD ALLOC: List[8] — cached mirrored icon roots — owner: LocalizedLayoutMirror
         private readonly List<Vector3> _baseIconScales = new List<Vector3>(8); // COLD ALLOC: List[8] — cached icon base scales — owner: LocalizedLayoutMirror
 
@@ -67,11 +69,13 @@ namespace Hecton8.UI
         {
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             QueueApplyMirroring();
+            TryRegisterForTick();
         }
 
         private void OnDisable()
         {
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            TryUnregisterFromTick();
         }
 
 #if UNITY_EDITOR
@@ -90,13 +94,32 @@ namespace Hecton8.UI
             QueueApplyMirroring();
         }
 
-        private void LateUpdate()
+        /// <inheritdoc />
+        public void Tick(float deltaTime)
         {
             if (!_applyMirroringPending)
                 return;
 
             _applyMirroringPending = false;
             ApplyMirroring();
+        }
+
+        private void TryRegisterForTick()
+        {
+            if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            _registeredForTick = true;
+        }
+
+        private void TryUnregisterFromTick()
+        {
+            if (!_registeredForTick)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            _registeredForTick = false;
         }
 
         private void ApplyMirroring()

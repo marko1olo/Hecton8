@@ -77,7 +77,7 @@ namespace Hecton8.Power
             public int RoomIndex;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ResolveBatteryDispatchJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<BatteryDispatchRecord> Records;
@@ -555,7 +555,8 @@ namespace Hecton8.Power
                         PowerNode neighbor = neighbors[neighborIndex];
                         if (neighbor == null ||
                             !ReferenceEquals(neighbor.Grid, this) ||
-                            neighbor.GraphScratchVersion != _graphBuildVersion)
+                            neighbor.GraphScratchVersion != _graphBuildVersion ||
+                            !ShouldPublishPowerEdge(node, neighbor))
                         {
                             continue;
                         }
@@ -683,7 +684,8 @@ namespace Hecton8.Power
                     PowerNode neighbor = neighbors[neighborIndex];
                     if (neighbor == null ||
                         !ReferenceEquals(neighbor.Grid, this) ||
-                        neighbor.GraphScratchVersion != _graphBuildVersion)
+                        neighbor.GraphScratchVersion != _graphBuildVersion ||
+                        !ShouldPublishPowerEdge(node, neighbor))
                     {
                         continue;
                     }
@@ -1012,6 +1014,14 @@ namespace Hecton8.Power
             }
 
             return flags;
+        }
+
+        private static bool ShouldPublishPowerEdge(PowerNode sourceNode, PowerNode destinationNode)
+        {
+            return sourceNode != null &&
+                   destinationNode != null &&
+                   !sourceNode.IsRuptured &&
+                   !destinationNode.IsRuptured;
         }
 
         private static byte ResolveNodeStatusBits(PowerNode node)

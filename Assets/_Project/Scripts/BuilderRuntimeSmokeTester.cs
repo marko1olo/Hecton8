@@ -4,7 +4,7 @@
 // Verifies deploy -> registry -> recover -> refund without relying on input.
 // ============================================================================
 
-using System.Collections;
+using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Construction;
@@ -69,7 +69,7 @@ namespace Hecton8.Dev
                 return;
 
             LogVerbose("START scheduling smoke pass.");
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
 #if UNITY_EDITOR
@@ -91,15 +91,15 @@ namespace Hecton8.Dev
                 return;
 
             LogVerbose("CONTEXT_MENU scheduling smoke pass.");
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
-        private IEnumerator RunSmokePass()
+        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
             {
                 LogVerbose("RUN aborted because a previous smoke pass is still active.");
-                yield break;
+                return;
             }
 
             AutoResolveSceneReferences();
@@ -107,109 +107,116 @@ namespace Hecton8.Dev
             if (playerBuilder == null || constructionManager == null || playerInventory == null)
             {
                 Debug.LogWarning("[BuilderSmoke] Missing PlayerBuilder, ConstructionManager or PlayerInventory.");
-                yield break;
+                return;
             }
 
             _isRunning = true;
-
-            if (startupDelay > 0f)
+            try
             {
-                LogVerbose($"WAIT startupDelay={startupDelay:0.00}s");
-                yield return WaitRealtimeWithHeartbeat(startupDelay, "startup");
+                if (startupDelay > 0f)
+                {
+                    LogVerbose($"WAIT startupDelay={startupDelay:0.00}s");
+                    await WaitRealtimeWithHeartbeatAsync(startupDelay, "startup", cancellationToken);
+                }
+
+                if (cancellationToken.IsCancellationRequested || this == null)
+                    return;
+
+                if (provisionConstructionMaterials && loadoutProvisioner != null)
+                {
+                    LogVerbose("PROVISION construction materials.");
+                    loadoutProvisioner.ProvisionConstructionMaterials();
+                }
+
+                BuildableData buildable = playerBuilder.ActiveBuildable;
+                if (buildable == null || buildable.finalPrefab == null)
+                {
+                    Debug.LogWarning("[BuilderSmoke] No active buildable or final prefab.");
+                    return;
+                }
+
+                Vector3 placePos;
+                Quaternion placeRot;
+                if (!TryResolvePlacementPose(out placePos, out placeRot))
+                {
+                    Debug.LogWarning("[BuilderSmoke] Could not resolve a safe placement pose.");
+                    return;
+                }
+
+                int moduleCountBefore = constructionManager.ModuleCount;
+                int[] countsBefore = SnapshotBuildCosts(buildable);
+                LogVerbose(
+                    $"STATE active={buildable.moduleName} registryBefore={moduleCountBefore} inventoryWeight={playerInventory.TotalWeight:0.0}");
+
+                LogVerbose($"DEPLOY pose={placePos} rotY={placeRot.eulerAngles.y:0.0}");
+                bool deployed = playerBuilder.DebugDeployActiveBuildable(
+                    placePos,
+                    placeRot,
+                    consumeBuildCostOnDeploy);
+
+                if (!deployed)
+                {
+                    Debug.LogWarning("[BuilderSmoke] FAIL deploy.");
+                    return;
+                }
+
+                int moduleCountAfterDeploy = constructionManager.ModuleCount;
+                LogVerbose($"REGISTRY afterDeploy={moduleCountAfterDeploy}");
+                if (moduleCountAfterDeploy <= moduleCountBefore)
+                {
+                    Debug.LogWarning(
+                        $"[BuilderSmoke] FAIL registry did not grow. before={moduleCountBefore} after={moduleCountAfterDeploy}");
+                    return;
+                }
+
+                BaseModule spawnedModule = ResolveLastSpawnedModule();
+                if (spawnedModule == null)
+                {
+                    Debug.LogWarning("[BuilderSmoke] FAIL no spawned BaseModule found after deploy.");
+                    return;
+                }
+
+                LogVerbose($"MODULE spawned={spawnedModule.name}");
+
+                if (consumeBuildCostOnDeploy)
+                    ValidateCostConsumption(buildable, countsBefore);
+
+                if (recoverDelay > 0f)
+                {
+                    LogVerbose($"WAIT recoverDelay={recoverDelay:0.00}s");
+                    await WaitRealtimeWithHeartbeatAsync(recoverDelay, "recover", cancellationToken);
+                }
+
+                if (cancellationToken.IsCancellationRequested || this == null)
+                    return;
+
+                LogVerbose($"RECOVER module={spawnedModule.name}");
+                bool recovered = playerBuilder.DebugRecoverModule(spawnedModule);
+                if (!recovered)
+                {
+                    Debug.LogWarning("[BuilderSmoke] FAIL recover.");
+                    return;
+                }
+
+                int moduleCountAfterRecover = constructionManager.ModuleCount;
+                LogVerbose($"REGISTRY afterRecover={moduleCountAfterRecover}");
+                if (moduleCountAfterRecover >= moduleCountAfterDeploy)
+                {
+                    Debug.LogWarning(
+                        $"[BuilderSmoke] FAIL registry did not shrink on recover. deploy={moduleCountAfterDeploy} recover={moduleCountAfterRecover}");
+                    return;
+                }
+
+                Debug.Log(
+                    $"[BuilderSmoke] PASS buildable={buildable.moduleName} registry={moduleCountBefore}->{moduleCountAfterDeploy}->{moduleCountAfterRecover}");
             }
-
-            if (provisionConstructionMaterials && loadoutProvisioner != null)
+            catch (System.OperationCanceledException)
             {
-                LogVerbose("PROVISION construction materials.");
-                loadoutProvisioner.ProvisionConstructionMaterials();
             }
-
-            BuildableData buildable = playerBuilder.ActiveBuildable;
-            if (buildable == null || buildable.finalPrefab == null)
+            finally
             {
-                Debug.LogWarning("[BuilderSmoke] No active buildable or final prefab.");
                 _isRunning = false;
-                yield break;
             }
-
-            Vector3 placePos;
-            Quaternion placeRot;
-            if (!TryResolvePlacementPose(out placePos, out placeRot))
-            {
-                Debug.LogWarning("[BuilderSmoke] Could not resolve a safe placement pose.");
-                _isRunning = false;
-                yield break;
-            }
-
-            int moduleCountBefore = constructionManager.ModuleCount;
-            int[] countsBefore = SnapshotBuildCosts(buildable);
-            LogVerbose(
-                $"STATE active={buildable.moduleName} registryBefore={moduleCountBefore} inventoryWeight={playerInventory.TotalWeight:0.0}");
-
-            LogVerbose($"DEPLOY pose={placePos} rotY={placeRot.eulerAngles.y:0.0}");
-            bool deployed = playerBuilder.DebugDeployActiveBuildable(
-                placePos,
-                placeRot,
-                consumeBuildCostOnDeploy);
-
-            if (!deployed)
-            {
-                Debug.LogWarning("[BuilderSmoke] FAIL deploy.");
-                _isRunning = false;
-                yield break;
-            }
-
-            int moduleCountAfterDeploy = constructionManager.ModuleCount;
-            LogVerbose($"REGISTRY afterDeploy={moduleCountAfterDeploy}");
-            if (moduleCountAfterDeploy <= moduleCountBefore)
-            {
-                Debug.LogWarning(
-                    $"[BuilderSmoke] FAIL registry did not grow. before={moduleCountBefore} after={moduleCountAfterDeploy}");
-                _isRunning = false;
-                yield break;
-            }
-
-            BaseModule spawnedModule = ResolveLastSpawnedModule();
-            if (spawnedModule == null)
-            {
-                Debug.LogWarning("[BuilderSmoke] FAIL no spawned BaseModule found after deploy.");
-                _isRunning = false;
-                yield break;
-            }
-
-            LogVerbose($"MODULE spawned={spawnedModule.name}");
-
-            if (consumeBuildCostOnDeploy)
-                ValidateCostConsumption(buildable, countsBefore);
-
-            if (recoverDelay > 0f)
-            {
-                LogVerbose($"WAIT recoverDelay={recoverDelay:0.00}s");
-                yield return WaitRealtimeWithHeartbeat(recoverDelay, "recover");
-            }
-
-            LogVerbose($"RECOVER module={spawnedModule.name}");
-            bool recovered = playerBuilder.DebugRecoverModule(spawnedModule);
-            if (!recovered)
-            {
-                Debug.LogWarning("[BuilderSmoke] FAIL recover.");
-                _isRunning = false;
-                yield break;
-            }
-
-            int moduleCountAfterRecover = constructionManager.ModuleCount;
-            LogVerbose($"REGISTRY afterRecover={moduleCountAfterRecover}");
-            if (moduleCountAfterRecover >= moduleCountAfterDeploy)
-            {
-                Debug.LogWarning(
-                    $"[BuilderSmoke] FAIL registry did not shrink on recover. deploy={moduleCountAfterDeploy} recover={moduleCountAfterRecover}");
-                _isRunning = false;
-                yield break;
-            }
-
-            Debug.Log(
-                $"[BuilderSmoke] PASS buildable={buildable.moduleName} registry={moduleCountBefore}->{moduleCountAfterDeploy}->{moduleCountAfterRecover}");
-            _isRunning = false;
         }
 
         private void AutoResolveSceneReferences()
@@ -232,7 +239,7 @@ namespace Hecton8.Dev
             return $"builder={(playerBuilder != null ? "Y" : "N")} ctor={(constructionManager != null ? "Y" : "N")} inv={(playerInventory != null ? "Y" : "N")} prov={(loadoutProvisioner != null ? "Y" : "N")}";
         }
 
-        private IEnumerator WaitRealtimeWithHeartbeat(float duration, string phase)
+        private async Awaitable WaitRealtimeWithHeartbeatAsync(float duration, string phase, CancellationToken cancellationToken)
         {
             float startAt = Time.realtimeSinceStartup;
             float endAt = startAt + Mathf.Max(0f, duration);
@@ -247,7 +254,7 @@ namespace Hecton8.Dev
                     _nextWaitHeartbeatAt = Time.realtimeSinceStartup + 0.25f;
                 }
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             LogVerbose($"WAIT_COMPLETE phase={phase}");
@@ -306,7 +313,7 @@ namespace Hecton8.Dev
             for (int i = 0; i < offsets.Length; i++)
             {
                 Vector3 candidate = basePos + offsets[i];
-                if (!UnityEngine.Physics.CheckSphere(candidate, 0.75f, (1 << 8) | (1 << 9) | (1 << 10), QueryTriggerInteraction.Ignore))
+                if (!UnityEngine.Physics.CheckSphere(candidate, 0.75f, Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask, QueryTriggerInteraction.Ignore))
                 {
                     position = candidate;
                     return true;

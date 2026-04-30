@@ -5368,8 +5368,7 @@ namespace Hecton8.Environment
 
         private void CacheBottomSiltLayerMask()
         {
-            int resolvedMask = LayerMask.GetMask("Default", "Terrain");
-            _bottomSiltProbeLayerMask = resolvedMask != 0 ? resolvedMask : 1;
+            _bottomSiltProbeLayerMask = HectonLayerMasks.DefaultLayerMask | HectonLayerMasks.TerrainLayerMask;
         }
 
         private void InitializeCurrentValues()

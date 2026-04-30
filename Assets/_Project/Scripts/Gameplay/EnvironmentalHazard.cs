@@ -32,7 +32,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Environmental Hazard")]
     public sealed class EnvironmentalHazard : MonoBehaviour, ITickable, IUpdatable
     {
-        private static readonly int PlayerLayerIndex;
+        private static int PlayerLayerIndex = -1;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -130,9 +130,18 @@ namespace Hecton8.Gameplay
         /// <summary>Hazard radius.</summary>
         public float HazardRadius => hazardRadius;
 
-        static EnvironmentalHazard()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
         {
-            PlayerLayerIndex = LayerMask.NameToLayer("Player");
+            PlayerLayerIndex = -1;
+        }
+
+        private static void EnsureLayerCache()
+        {
+            if (PlayerLayerIndex >= 0)
+                return;
+
+            PlayerLayerIndex = Hecton8.Core.HectonLayerMasks.Player;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -141,6 +150,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            EnsureLayerCache();
             _cachedTransform = transform;
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: EnvironmentalHazard

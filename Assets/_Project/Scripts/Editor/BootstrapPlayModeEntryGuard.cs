@@ -21,6 +21,9 @@ namespace Hecton8.Editor
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+                return;
+
             if (state != PlayModeStateChange.ExitingEditMode)
                 return;
 

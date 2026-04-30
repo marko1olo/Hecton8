@@ -96,6 +96,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.1f, 1f)] private float pressureCompensatorDamageScale = 0.7f;
 
         private uint _runtimeInstalledUpgradeMask;
+        private float _permanentSafeDepthPenaltyMeters;
 
         /// <summary>Raised whenever the effective vehicle upgrade bitmask changes.</summary>
         public event Action UpgradesChanged;
@@ -116,9 +117,12 @@ namespace Hecton8.Gameplay
                     bonus += Mathf.Max(0f, pressureCompensatorSafeDepthBonus);
                 if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
                     bonus += Mathf.Max(0f, pressureCompensatorSafeDepthBonus * 0.5f);
-                return bonus;
+                return bonus - _permanentSafeDepthPenaltyMeters;
             }
         }
+
+        /// <summary>Permanent safe-depth rating loss accumulated by micro-fracture fatigue.</summary>
+        public float PermanentSafeDepthPenaltyMeters => _permanentSafeDepthPenaltyMeters;
 
         /// <summary>Additional transport integrity supplied by installed armor and damping upgrades.</summary>
         public float MaxIntegrityBonus
@@ -215,6 +219,19 @@ namespace Hecton8.Gameplay
         public bool HasUpgrade(VehicleUpgradeBits flag)
         {
             return (ActiveUpgradeBitmask & (uint)flag) != 0u;
+        }
+
+        /// <summary>
+        /// Applies persistent safe-depth rating loss caused by entanglement micro-fracture fatigue.
+        /// </summary>
+        /// <param name="penaltyMeters">Positive depth penalty in meters.</param>
+        public void ApplyPermanentSafeDepthPenalty(float penaltyMeters)
+        {
+            if (penaltyMeters <= 0f)
+                return;
+
+            _permanentSafeDepthPenaltyMeters = Mathf.Max(0f, _permanentSafeDepthPenaltyMeters + penaltyMeters);
+            UpgradesChanged?.Invoke();
         }
 
         /// <summary>

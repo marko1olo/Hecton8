@@ -31,8 +31,11 @@ namespace Hecton8.Economy
         private const int MaxSectorExtractionRecords = 64;
         private const float SectorEdgeLengthMeters = 1000f;
         private const string DefaultTitaniumDirectiveItemId = "Data_TitaniumScrap";
+        private const int TitaniumHoardingThresholdUnits = 500;
+        private const float TitaniumHoardingIngredientMultiplier = 4f;
         private const int DefaultTitaniumCriticalThreshold = 4;
         private const int DefaultTitaniumDirectiveHarvestUnits = 4;
+        private static readonly int _TitaniumDirectiveHashId = LocHash.Compute(DefaultTitaniumDirectiveItemId);
 
         [Serializable]
         private struct DirectiveResourceDefinition
@@ -274,11 +277,31 @@ namespace Hecton8.Economy
         /// </summary>
         public int ResolveInflatedIngredientAmount(int itemHashId, int baseAmount, Vector3 worldPosition)
         {
+            return ResolveInflatedIngredientAmount(itemHashId, baseAmount, worldPosition, 0);
+        }
+
+        /// <summary>
+        /// Resolves the inflated ingredient amount using sector extraction and accessible-storage hoarding pressure.
+        /// </summary>
+        public int ResolveInflatedIngredientAmount(int itemHashId, int baseAmount, Vector3 worldPosition, int accessibleUnits)
+        {
             if (itemHashId == 0 || baseAmount <= 0)
                 return Mathf.Max(0, baseAmount);
 
-            float multiplier = 1f + GetSectorCraftInflationScalar(itemHashId, worldPosition);
+            float multiplier = Mathf.Max(
+                1f + GetSectorCraftInflationScalar(itemHashId, worldPosition),
+                ResolveHoardingIngredientMultiplier(itemHashId, accessibleUnits));
             return Mathf.Max(baseAmount, Mathf.CeilToInt(baseAmount * multiplier));
+        }
+
+        private static float ResolveHoardingIngredientMultiplier(int itemHashId, int accessibleUnits)
+        {
+            if (accessibleUnits <= TitaniumHoardingThresholdUnits)
+                return 1f;
+
+            return itemHashId == _TitaniumDirectiveHashId
+                ? TitaniumHoardingIngredientMultiplier
+                : 1f;
         }
 
         private void HandleItemCollected(ItemCollectedEvent itemCollectedEvent)

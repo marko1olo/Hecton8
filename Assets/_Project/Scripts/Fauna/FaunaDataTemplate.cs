@@ -53,6 +53,13 @@ namespace Hecton8.AI
         Leviathan = 6
     }
 
+    public enum FaunaLightReactionMode : byte
+    {
+        None = 0,
+        Aversion = 1,
+        Frenzy = 2
+    }
+
     [Serializable]
     public struct FaunaInteractionMatrixEntry
     {
@@ -77,16 +84,34 @@ namespace Hecton8.AI
 
     public readonly struct SpeciesCognitionTuning
     {
-        public SpeciesCognitionTuning(float hungerWeight, float fearWeight, float curiosityWeight)
+        public SpeciesCognitionTuning(
+            float hungerWeight,
+            float fearWeight,
+            float curiosityWeight,
+            FaunaLightReactionMode lightReactionMode,
+            float lightReactionRangeMeters,
+            float lightReactionDotThreshold,
+            float lightFrenzySpeedMultiplier,
+            float lightReactionFearBoost01)
         {
             HungerWeight = math.max(0.1f, hungerWeight);
             FearWeight = math.max(0.1f, fearWeight);
             CuriosityWeight = math.max(0.1f, curiosityWeight);
+            LightReactionMode = lightReactionMode;
+            LightReactionRangeMeters = math.max(1f, lightReactionRangeMeters);
+            LightReactionDotThreshold = math.clamp(lightReactionDotThreshold, -1f, 1f);
+            LightFrenzySpeedMultiplier = math.max(1f, lightFrenzySpeedMultiplier);
+            LightReactionFearBoost01 = math.saturate(lightReactionFearBoost01);
         }
 
         public float HungerWeight { get; }
         public float FearWeight { get; }
         public float CuriosityWeight { get; }
+        public FaunaLightReactionMode LightReactionMode { get; }
+        public float LightReactionRangeMeters { get; }
+        public float LightReactionDotThreshold { get; }
+        public float LightFrenzySpeedMultiplier { get; }
+        public float LightReactionFearBoost01 { get; }
     }
 
     public readonly struct FaunaInteractionResponse
@@ -291,6 +316,21 @@ namespace Hecton8.AI
         [SerializeField, Min(0f), Tooltip("Acceleration magnitude applied toward the fauna while the hypnosis gaze lock is active.")]
         private float dazzlePullAcceleration = 6f;
 
+        [SerializeField, Tooltip("How this species reacts when caught in the player flashlight cone.")]
+        private FaunaLightReactionMode lightReactionMode = FaunaLightReactionMode.None;
+
+        [SerializeField, Min(1f), Tooltip("Maximum flashlight distance that can trigger aversion or frenzy cognition.")]
+        private float lightReactionRangeMeters = 35f;
+
+        [SerializeField, Range(-1f, 1f), Tooltip("Required player-forward dot product before flashlight reaction is considered active.")]
+        private float lightReactionDotThreshold = 0.65f;
+
+        [SerializeField, Min(1f), Tooltip("Speed multiplier used by mutated light-frenzy species when illuminated.")]
+        private float lightFrenzySpeedMultiplier = 2f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Fear contribution applied to light-averse species when illuminated.")]
+        private float lightReactionFearBoost01 = 0.55f;
+
         [SerializeField, Tooltip("If enabled, taking damage emits a parental-defense chemical alarm to nearby adults of the same species.")]
         private bool emitsParentalDefenseSignal;
 
@@ -326,7 +366,7 @@ namespace Hecton8.AI
         private float mimicPingCooldownSeconds = 18f;
 
         [SerializeField, Min(1f), Tooltip("Player distance at which the false beacon vanishes and the predator commits to attack.")]
-        private float mimicPingVanishDistanceMeters = 50f;
+        private float mimicPingVanishDistanceMeters = 40f;
 
         /// <summary>
         /// Stable species identifier for gameplay-side lookups.
@@ -460,6 +500,16 @@ namespace Hecton8.AI
 
         public float DazzlePullAcceleration => math.max(0f, dazzlePullAcceleration);
 
+        public FaunaLightReactionMode LightReactionMode => lightReactionMode;
+
+        public float LightReactionRangeMeters => math.max(1f, lightReactionRangeMeters);
+
+        public float LightReactionDotThreshold => math.clamp(lightReactionDotThreshold, -1f, 1f);
+
+        public float LightFrenzySpeedMultiplier => math.max(1f, lightFrenzySpeedMultiplier);
+
+        public float LightReactionFearBoost01 => math.saturate(lightReactionFearBoost01);
+
         public bool EmitsParentalDefenseSignal => emitsParentalDefenseSignal;
 
         public bool RespondsToParentalDefenseSignal => respondsToParentalDefenseSignal;
@@ -533,7 +583,12 @@ namespace Hecton8.AI
             return new SpeciesCognitionTuning(
                 ResolveDriveWeight(FaunaDriveChannel.Hunger, 1f),
                 ResolveDriveWeight(FaunaDriveChannel.Fear, 1f),
-                ResolveDriveWeight(FaunaDriveChannel.Curiosity, 1f));
+                ResolveDriveWeight(FaunaDriveChannel.Curiosity, 1f),
+                LightReactionMode,
+                LightReactionRangeMeters,
+                LightReactionDotThreshold,
+                LightFrenzySpeedMultiplier,
+                LightReactionFearBoost01);
         }
 
         /// <summary>
@@ -663,6 +718,10 @@ namespace Hecton8.AI
             dazzleRangeMeters = math.max(0.5f, dazzleRangeMeters);
             dazzleLookDotThreshold = math.clamp(dazzleLookDotThreshold, -1f, 1f);
             dazzlePullAcceleration = math.max(0f, dazzlePullAcceleration);
+            lightReactionRangeMeters = math.max(1f, lightReactionRangeMeters);
+            lightReactionDotThreshold = math.clamp(lightReactionDotThreshold, -1f, 1f);
+            lightFrenzySpeedMultiplier = math.max(1f, lightFrenzySpeedMultiplier);
+            lightReactionFearBoost01 = math.saturate(lightReactionFearBoost01);
             parentalDefenseRadiusMeters = math.max(1f, parentalDefenseRadiusMeters);
             parentalDefenseHuntDurationSeconds = math.max(0f, parentalDefenseHuntDurationSeconds);
             empBlindDurationSeconds = math.max(0f, empBlindDurationSeconds);

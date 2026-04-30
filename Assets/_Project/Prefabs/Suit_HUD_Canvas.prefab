@@ -2471,6 +2471,13 @@ MonoBehaviour:
   gaugeClusterSize: {x: 300, y: 128}
   statusOffset: {x: 0, y: 50}
   reticleOffset: {x: 0, y: 0}
+  reticleBaseSpread: 16
+  reticleVelocityFactor: 1.65
+  reticleHeatSpread: 12
+  reticleSpreadBlendSpeed: 8
+  reticleLineLength: 22
+  reticleLineThickness: 2
+  reticleBracketLength: 10
   gaugeColumnSpacing: 82
   gaugeRingSize: 54
   gaugeRingThickness: 6
@@ -2497,6 +2504,16 @@ MonoBehaviour:
   threatChevronFillAlpha: 0.08
   threatChevronFlickerFrequency: 7
   threatChevronFlickerIntensity: 0.04
+  scannerHologramShader: {fileID: 0}
+  scannerHologramProxyMeshes: []
+  scannerHologramDistance: 0.74
+  scannerHologramLocalOffset: {x: 0, y: -0.025, z: 0}
+  scannerHologramScale: 0.052
+  scannerHologramBobAmplitude: 0.006
+  scannerHologramBobFrequency: 1.8
+  scannerHologramSpinDegreesPerSecond: 38
+  scannerHologramScanStartColor: {r: 0.08, g: 0.88, b: 1, a: 0.44}
+  scannerHologramScanCompleteColor: {r: 0.14, g: 1, b: 0.46, a: 0.52}
   _appliedLayoutRevision: 0
 --- !u!114 &3896178095003698194
 MonoBehaviour:
@@ -2514,6 +2531,9 @@ MonoBehaviour:
   matchWidthOrHeight: 0.5
   minimumScale: 0.72
   maximumScale: 1.35
+  ultrawideAspectThreshold: 1.8
+  ultrawideHorizontalInset: 128
+  ultrawideScaleX: 0.94
 --- !u!1 &2686821459172600369
 GameObject:
   m_ObjectHideFlags: 0
@@ -4496,7 +4516,7 @@ GameObject:
   - component: {fileID: 4412544012116848978}
   - component: {fileID: 7970675794362998672}
   m_Layer: 5
-  m_Name: HUD_Master_V2
+  m_Name: DEPRECATED_HUD_Master_V2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

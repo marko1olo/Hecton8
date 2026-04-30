@@ -81,7 +81,7 @@ namespace Hecton8.Gameplay
         public byte ThrottleTier;
     }
 
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, OptimizeFor = OptimizeFor.Performance)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     [StructLayout(LayoutKind.Sequential)]
     internal struct ContextualPhysicalIkGroundDetectionJob : IJobParallelFor
     {
@@ -156,12 +156,12 @@ namespace Hecton8.Gameplay
             Commands[commandIndex] = new RaycastCommand(
                 Vector3.zero,
                 Vector3.down,
-                new QueryParameters(0, false, QueryTriggerInteraction.Ignore, false),
+                new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore, false),
                 0.0f);
         }
     }
 
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, OptimizeFor = OptimizeFor.Performance)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     [StructLayout(LayoutKind.Sequential)]
     internal struct ContextualPhysicalIkGroundResponseJob : IJobParallelFor
     {

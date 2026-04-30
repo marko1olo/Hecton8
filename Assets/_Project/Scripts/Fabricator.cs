@@ -121,6 +121,13 @@ namespace Hecton8.Crafting
         [Tooltip("Extra upward velocity change used to keep reclaimed salvage from colliding with the grinder lip.")]
         [SerializeField] private float deconstructOutputUpwardVelocityChange = 0.25f;
 
+        [Header("Crafting Thermodynamics")]
+        [Tooltip("Base temperature delta injected into the hosting base module when a craft completes.")]
+        [SerializeField, Min(0f)] private float craftTemperatureDeltaCelsius = 0.35f;
+
+        [Tooltip("Optional host module receiving the craft heat pulse. If unset, the fabricator resolves the nearest parent module once.")]
+        [SerializeField] private BaseModule thermalHostModule;
+
         // ══════════════════════════════════════════════════════════
         //  CACHED STATE
         // ══════════════════════════════════════════════════════════
@@ -168,6 +175,7 @@ namespace Hecton8.Crafting
         private NativeParallelHashMap<int, int> _craftInventoryCounts;
         private NativeArray<int2> _craftRecipeCosts;
         private NativeArray<byte> _craftRecipeEvaluationResult;
+        private NativeArray<int2> _deconstructionFlattenedCosts;
         private NativeArray<int2> _deconstructionRecipeOutputs;
         private NativeArray<int> _deconstructionOutputCount;
 
@@ -310,6 +318,11 @@ namespace Hecton8.Crafting
             EnsureCraftingScratch();
         }
 
+        private void Start()
+        {
+            CacheThermalHostModule();
+        }
+
         private void OnEnable()
         {
             RegisterActiveFabricator(this);
@@ -430,7 +443,7 @@ namespace Hecton8.Crafting
             int itemHashId = ComputeItemHash(cost.item);
             ResourceScarcityDirector scarcityDirector = ResourceScarcityDirector.Instance;
             return scarcityDirector != null
-                ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, transform.position)
+                ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, transform.position, CountAccessibleItem(cost.item))
                 : cost.amount;
         }
 
@@ -604,6 +617,7 @@ namespace Hecton8.Crafting
 
             ItemData   result = recipe.resultItem;
             float powerCost = ResolveCraftPowerCost(recipe);
+            float craftTemperatureDelta = ResolveCraftTemperatureDeltaCelsius();
 
             _isCrafting   = false;
             _activeRecipe = null;
@@ -624,6 +638,8 @@ namespace Hecton8.Crafting
             {
                 _powerNode.Grid.ConsumePower(powerCost);
             }
+
+            ApplyCraftingThermodynamics(craftTemperatureDelta);
 
             if (result != null && !TrySynthesizeCraftOutput(recipe, result) && _playerInventory != null)
             {
@@ -689,6 +705,37 @@ namespace Hecton8.Crafting
         //  PRIVATE — INGREDIENT MANAGEMENT
         // ══════════════════════════════════════════════════════════
 
+        private void CacheThermalHostModule()
+        {
+            if (thermalHostModule != null)
+                return;
+
+            thermalHostModule = GetComponentInParent<BaseModule>();
+        }
+
+        private float ResolveCraftTemperatureDeltaCelsius()
+        {
+            if (!(craftTemperatureDeltaCelsius > 0f) || !float.IsFinite(craftTemperatureDeltaCelsius))
+                return 0f;
+
+            float delta = craftTemperatureDeltaCelsius * Mathf.Max(1f, _activeCraftPowerMultiplier);
+            return float.IsFinite(delta) ? delta : 0f;
+        }
+
+        private void ApplyCraftingThermodynamics(float deltaCelsius)
+        {
+            if (!(deltaCelsius > 0f))
+                return;
+
+            if (thermalHostModule == null)
+                CacheThermalHostModule();
+
+            if (thermalHostModule == null)
+                return;
+
+            thermalHostModule.TryInjectHostRoomTemperatureDeltaCelsius(deltaCelsius);
+        }
+
         private bool HasIngredients(RecipeData recipe)
         {
             if (recipe == null || _playerInventory == null)
@@ -724,13 +771,21 @@ namespace Hecton8.Crafting
                 _craftRecipeEvaluationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
+            if (!_deconstructionFlattenedCosts.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<int2>[64] — recursive deconstruction flattened ingredient scratch — owner: Fabricator
+                _deconstructionFlattenedCosts = new NativeArray<int2>(CraftingSystem.MaxRecursiveDeconstructionNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
             if (!_deconstructionRecipeOutputs.IsCreated)
             {
+                // COLD ALLOC: NativeArray<int2>[32] — deconstruction output yield scratch — owner: Fabricator
                 _deconstructionRecipeOutputs = new NativeArray<int2>(CraftingSystem.MaxDeconstructionOutputCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
 
             if (!_deconstructionOutputCount.IsCreated)
             {
+                // COLD ALLOC: NativeArray<int>[1] — deconstruction output count cell — owner: Fabricator
                 _deconstructionOutputCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             }
         }
@@ -751,6 +806,9 @@ namespace Hecton8.Crafting
 
             if (_craftRecipeEvaluationResult.IsCreated)
                 _craftRecipeEvaluationResult.Dispose();
+
+            if (_deconstructionFlattenedCosts.IsCreated)
+                _deconstructionFlattenedCosts.Dispose();
 
             if (_deconstructionRecipeOutputs.IsCreated)
                 _deconstructionRecipeOutputs.Dispose();
@@ -799,15 +857,22 @@ namespace Hecton8.Crafting
                 return false;
 
             EnsureCraftingScratch();
+            int normalizedQualityMilli = qualityMilli > 0 ? qualityMilli : 1000;
             bool isDegraded = (stateFlags & PlayerInventory.DegradedItemStateMask) != 0 ||
-                              qualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
+                              normalizedQualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
+            bool forceScrapYield = normalizedQualityMilli < 200;
+            int reclaimPercent = isDegraded ? 30 : 80;
             if (!CraftingSystem.TryBuildDeconstructionYieldBuffer(
                     sourceRecipe,
                     this,
-                    isDegraded,
+                    itemCatalog,
+                    forceScrapYield,
+                    reclaimPercent,
                     _craftRecipeCosts,
+                    _deconstructionFlattenedCosts,
                     _deconstructionRecipeOutputs,
-                    _deconstructionOutputCount))
+                    _deconstructionOutputCount,
+                    ResolveScrapMetalHashId(itemCatalog)))
             {
                 _playerInventory.TryAddItem(itemHashId, 1);
                 return false;
@@ -1170,6 +1235,23 @@ namespace Hecton8.Crafting
 
             recipe = null;
             return false;
+        }
+
+        internal static bool TryResolveRecipeForResultHash(ItemCatalog itemCatalog, int resultHashId, out RecipeData recipe)
+        {
+            ItemData resultItem = itemCatalog != null && resultHashId != 0
+                ? itemCatalog.FindByHash(resultHashId)
+                : null;
+            return TryResolveRecipeForResultItem(resultItem, out recipe);
+        }
+
+        private static int ResolveScrapMetalHashId(ItemCatalog itemCatalog)
+        {
+            int scrapMetalHashId = LocHash.Compute("Data_ScrapMetal");
+            if (itemCatalog != null && itemCatalog.FindByHash(scrapMetalHashId) != null)
+                return scrapMetalHashId;
+
+            return LocHash.Compute("Data_TitaniumScrap");
         }
 
         private static bool TryResolveRecipeForResultItem(List<RecipeData> recipes, ItemData resultItem, out RecipeData recipe)

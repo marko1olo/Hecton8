@@ -755,7 +755,7 @@ namespace Hecton8.Systems.AI
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct EncounterDirectorJob : IJobParallelFor
     {
         private const float StressTau = 8f;

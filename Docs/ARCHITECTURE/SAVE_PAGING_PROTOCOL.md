@@ -201,3 +201,69 @@ Rules:
 Dirty-sector commit may create holes when a block relocates to EOF.
 
 Those holes are reclaimed later by indexed defrag. Dirty commit does **not** compact synchronously.
+
+## Async Dehydration Pipeline
+
+Sector dehydration has two lanes:
+
+1. main thread snapshots Unity-owned state (`Transform`, pooled proxy state, `Rigidbody` velocity) into unmanaged records
+2. worker jobs sort, compress, and checksum the unmanaged payload
+
+The main thread is not allowed to call compression and then block for completion.
+
+Entity-state temp page scheduling:
+
+```text
+List<EntityDataRecord> scratch
+    -> NativeArray<EntityDataRecord>(Allocator.TempJob)
+    -> TryScheduleIndexedSectorEntityStateOverrideWrite()
+    -> BuildSectorEntityStateSortEntriesJob
+    -> RadixSortSectorEntityStateEntriesJob
+    -> ExtractSortedSectorEntityStatesJob
+    -> CompressSectorEntityStateJob
+```
+
+Completion rule:
+
+```text
+Tick:
+    if handle.IsCompleted == false:
+        do nothing
+    if same SectorHash has an earlier queued write:
+        do nothing
+    else:
+        TryCompleteIndexedSectorEntityStateOverrideWrite(ref handle)
+        write compressed temp block to MMF-backed temp path
+        dispose TempJob buffers
+```
+
+Shutdown rule:
+
+```text
+completed handles are flushed first
+uncompleted handles are disposed with NativeArray.Dispose(JobHandle)
+no mid-frame Complete() is allowed on the runtime dehydration lane
+```
+
+The compression job uses the static `64 KB` save dictionary copied into job-owned native scratch before scheduling. The job writes protected `16 KB` LZ4 sub-blocks and stores low-32-of-`XXHash3-64` for each raw sub-block.
+
+## Time-Sliced Hydration Apply
+
+Dense base restore is applied through the `SaveManager` load loop with a hard frame budget:
+
+```text
+LoadApplyFrameBudgetTicks = Stopwatch.Frequency / 250
+```
+
+That is a `4.0 ms` budget. During `ISaveable.LoadFromSaveData` application:
+
+```text
+deadline = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks
+for each saveable:
+    LoadFromSaveData(data)
+    if Stopwatch.GetTimestamp() >= deadline:
+        await Awaitable.NextFrameAsync()
+        deadline = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks
+```
+
+The rule is intentionally conservative: hydration may span frames, but it cannot monopolize the main thread during dense module/base restores.

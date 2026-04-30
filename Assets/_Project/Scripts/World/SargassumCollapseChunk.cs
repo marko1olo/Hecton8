@@ -86,7 +86,7 @@ namespace Hecton8.World
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Snag Joints Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [SerializeField]
         [Tooltip("Layers treated as snag targets when a collapse chunk slams into the seabed or surrounding wreckage.")]
-        private LayerMask snagLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        private LayerMask snagLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [SerializeField, Range(0.1f, 4f)]
         [Tooltip("Search radius used when probing nearby rock or chunk anchors after impact.")]

@@ -253,7 +253,7 @@ namespace NASAPunk.Visor
         private void OnEnable()
         {
 #if UNITY_EDITOR
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
                 return;
 #endif
 
@@ -344,7 +344,7 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EditorTick()
         {
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
             {
                 SuspendEditModeProjection();
                 UnregisterEditorTick();
@@ -377,7 +377,7 @@ namespace NASAPunk.Visor
         private void OnValidate()
         {
 #if UNITY_EDITOR
-            if (EditorApplication.isCompiling || !Application.isPlaying)
+            if (EditorApplication.isCompiling)
                 return;
 #endif
 
@@ -1572,7 +1572,11 @@ namespace NASAPunk.Visor
         public void SetProjectionMode(ProjectionMode projectionMode)
         {
             if (_projectionMode == projectionMode)
+            {
+                if (!IsProjectionBindingCurrent())
+                    RebuildProjection();
                 return;
+            }
 
             _projectionMode = projectionMode;
             RebuildProjection();
@@ -1581,12 +1585,27 @@ namespace NASAPunk.Visor
         public void SetSharedRenderTexture(RenderTexture sharedRenderTexture)
         {
             if (_sharedRenderTexture == sharedRenderTexture)
+            {
+                if (_projectionMode == ProjectionMode.SharedRenderTexture && !IsProjectionBindingCurrent())
+                    RebuildProjection();
                 return;
+            }
 
             _sharedRenderTexture = sharedRenderTexture;
             InvalidatePoseCache();
             if (_projectionMode == ProjectionMode.SharedRenderTexture)
                 RebuildProjection();
+        }
+
+        private bool IsProjectionBindingCurrent()
+        {
+            if (_projectionMode == ProjectionMode.Disabled)
+                return _hudCamera == null || _hudCamera.targetTexture == null;
+
+            if (_hudRT == null)
+                return false;
+
+            return _hudCamera == null || _hudCamera.targetTexture == _hudRT;
         }
 
         /// <summary>

@@ -46,6 +46,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (_registeredInActiveSet)
                 return;
 
@@ -197,6 +200,9 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             ActiveRuntimeInstance = this;
             ResolveReferences();
             QueueStartupReconcile();
@@ -204,13 +210,14 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            ActiveRuntimeInstance = this;
             ResolveReferences();
+            if (!CanUseRuntimeDispatcher())
+                return;
+
+            ActiveRuntimeInstance = this;
             EnsureLifetimeCancellation();
             RegisterRandomEventHooks();
             QueueStartupReconcile();
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
             if (!_registeredToFrameTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -226,8 +233,14 @@ namespace Hecton8.World
 
         private void Start()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            ResolveReferences();
+            if (!CanUseRuntimeDispatcher())
                 return;
+
+            ActiveRuntimeInstance = this;
+            EnsureLifetimeCancellation();
+            RegisterRandomEventHooks();
+            QueueStartupReconcile();
             if (!_registeredToFrameTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -272,12 +285,18 @@ namespace Hecton8.World
 
         public void Tick(float deltaTime)
         {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             TryRunStartupReconcile();
             FlushQueuedLaunches();
         }
 
         public void SlowTick()
         {
+            if (!CanUseRuntimeDispatcher())
+                return;
+
             if (TryRunStartupReconcile())
                 return;
 
@@ -1726,6 +1745,19 @@ namespace Hecton8.World
 
             _lifetimeCancellation.Dispose();
             _lifetimeCancellation = null;
+        }
+
+        private static bool CanUseRuntimeDispatcher()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return false;
+
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating)
+                return false;
+#endif
+
+            return true;
         }
     }
 }

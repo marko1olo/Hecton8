@@ -589,7 +589,12 @@ namespace Hecton8.World
 
         public void Tick(float dt)
         {
-            if (!Application.isPlaying || ShouldDeferUntilBootstrapReady())
+            if (!Application.isPlaying)
+                return;
+
+            CompleteMigratorySargassumJobIfReady();
+
+            if (ShouldDeferUntilBootstrapReady())
                 return;
 
             PumpScatterBackendShadowPass();
@@ -629,6 +634,8 @@ namespace Hecton8.World
             TryEnsureTickRegistration();
             RefreshRuntimeStreamingSettings();
             EnsureScatterBackendFacadeInitialized();
+            if (Application.isPlaying)
+                EnsureMigratorySargassumLane();
 
             EnsureCandidateMapsInitialized();
 #if UNITY_EDITOR
@@ -648,6 +655,8 @@ namespace Hecton8.World
             SubscribeToBootstrap();
             TryEnsureTickRegistration();
             EnsureScatterBackendFacadeInitialized();
+            if (Application.isPlaying)
+                EnsureMigratorySargassumLane();
 #if UNITY_EDITOR
             EnsureAssemblyReloadHook();
 #endif
@@ -679,6 +688,7 @@ namespace Hecton8.World
             UnsubscribeFromBootstrap();
             UnregisterProceduralStateRegistryCallbacks();
             CompleteSamplingJobIfNeeded();
+            DisposeMigratorySargassumLane();
             DisposeCellSamplingArrays();
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
@@ -701,6 +711,7 @@ namespace Hecton8.World
             if (ActiveRuntimeInstance == this)
                 ActiveRuntimeInstance = null;
             CompleteSamplingJobIfNeeded();
+            DisposeMigratorySargassumLane();
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
 
@@ -756,6 +767,7 @@ namespace Hecton8.World
             UnsubscribeFromBootstrap();
             UnregisterProceduralStateRegistryCallbacks();
             CompleteSamplingJobIfNeeded();
+            DisposeMigratorySargassumLane();
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
             DisposeCellSamplingArrays();
@@ -822,16 +834,19 @@ namespace Hecton8.World
                 _lifecycleRuntimeState.LoggedFirstSlowTick = true;
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
                 UnityEngine.Debug.Log(
-                    $"[WorldScatterRuntime] first-slow-tick bootstrapReady={BootstrapState.IsGameReady} defer={ShouldDeferUntilBootstrapReady()} invalidation={_debugLastScatterInvalidationReason}",
+                    "[WorldScatterRuntime] First slow tick reached.",
                     this);
             }
 #endif
             using (_scatterSlowTickProfilerMarker.Auto())
             {
                 PumpScatterBackendShadowPass();
+                CompleteMigratorySargassumJobIfReady();
 
                 if (ShouldDeferUntilBootstrapReady())
                     return;
+
+                TickMigratorySargassumLane(Time.unscaledTime);
 
                 if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning && !_samplingJobHandle.IsCompleted)
                     return;

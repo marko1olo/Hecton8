@@ -22,7 +22,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     public sealed class TetherInstance : MonoBehaviour
     {
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildVisualCatenaryJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> AnchorPositions;
@@ -260,7 +260,7 @@ namespace Hecton8.Physics
             _fullTensionExtension = owner != null ? owner.ResolveFullTensionExtension() : 1f;
             _maxBendPoints = owner != null ? owner.ResolveMaxBendPoints() : 0;
             _bendPointClearanceRadius = owner != null ? owner.ResolveBendPointClearanceRadius() : 0.3f;
-            _bendObstructionMask = owner != null ? owner.ResolveCableBendObstructionMask() : (1 << 8) | (1 << 9) | (1 << 10);
+            _bendObstructionMask = owner != null ? owner.ResolveCableBendObstructionMask() : Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
             _bendSurfaceOffset = owner != null ? owner.ResolveBendSurfaceOffset() : 0.12f;
             _bendEndpointInset = owner != null ? owner.ResolveBendEndpointInset() : 0.08f;
             _visualSegmentCount = owner != null ? owner.ResolveVisualSegmentCount() : 16;
@@ -1371,14 +1371,20 @@ namespace Hecton8.Physics
                 ? Vector3.zero
                 : _playerRigidbody.GetPointVelocity(anchorPositionWS);
             Vector3 payloadVelocity = _payloadBody.GetPointVelocity(payloadPositionWS);
-            float requestedAcceleration = HectonContactJob.ResolveProjectedPdAcceleration(
+            float3 requestedAcceleration3 = HectonContactJob.ResolveTractorBeamPdAcceleration(
                 constraintAnchorPosition,
                 payloadPositionWS,
                 anchorVelocity,
                 payloadVelocity,
-                directionTowardAnchor,
                 _springStiffness,
-                _dampingCoefficient);
+                _dampingCoefficient,
+                _reducedMass,
+                _maxCableAcceleration);
+            Vector3 requestedAccelerationVector = new Vector3(
+                requestedAcceleration3.x,
+                requestedAcceleration3.y,
+                requestedAcceleration3.z);
+            float requestedAcceleration = requestedAccelerationVector.magnitude;
             if (requestedAcceleration <= 0f)
             {
                 _primaryConstraintForceMagnitude = 0f;
@@ -1386,7 +1392,30 @@ namespace Hecton8.Physics
             }
 
             _primaryConstraintForceMagnitude = requestedAcceleration;
-            ApplyClampedAcceleration(_payloadBody, directionTowardAnchor * requestedAcceleration, _maxCableAcceleration);
+            ApplyReducedMassReactionForce(anchorPositionWS, requestedAccelerationVector);
+            ApplyClampedAcceleration(_payloadBody, requestedAccelerationVector, _maxCableAcceleration);
+        }
+
+        private void ApplyReducedMassReactionForce(Vector3 anchorPositionWS, Vector3 payloadAcceleration)
+        {
+            if (_tetherClass != TetherClass.TowCable ||
+                _bendPointCount > 0 ||
+                _playerRigidbody == null ||
+                _playerRigidbody.isKinematic ||
+                payloadAcceleration.sqrMagnitude <= MinVectorMagnitudeSq)
+            {
+                return;
+            }
+
+            Vector3 reactionForce = -payloadAcceleration * math.max(_reducedMass, 0.0001f);
+            if (reactionForce.sqrMagnitude <= MinVectorMagnitudeSq)
+                return;
+
+            PhysicsForceRouter.QueueForceAtPosition(
+                _playerRigidbody,
+                reactionForce,
+                anchorPositionWS,
+                ForceMode.Force);
         }
 
         private void RefreshPrimaryConstraintDrive()

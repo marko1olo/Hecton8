@@ -42,6 +42,22 @@ namespace Hecton8.Inventory
     }
 
     /// <summary>
+    /// Stable runtime item-state flags mirrored into inventory SOA arrays.
+    /// </summary>
+    public static class ItemRuntimeStateFlags
+    {
+        public const ushort Stackable = 1 << 0;
+        public const ushort Consumable = 1 << 2;
+        public const ushort Radioactive = 1 << 4;
+        public const ushort Biological = 1 << 6;
+        public const ushort Tool = 1 << 7;
+        public const ushort Degraded = 1 << 8;
+        public const ushort Rusted = 1 << 9;
+        public const ushort CraftingLocked = 1 << 10;
+        public const ushort Flammable = 1 << 11;
+    }
+
+    /// <summary>
     /// Cold-path physical metadata heuristics for item assets that have not been explicitly authored yet.
     /// </summary>
     public static class ItemPhysicalMetadataUtility
@@ -188,6 +204,25 @@ namespace Hecton8.Inventory
         public static bool IsMetal(byte materialId)
         {
             return materialId == (byte)ItemAudioMaterialId.Metal;
+        }
+
+        public static bool IsFlammable(ItemCategory category, ResourceFamily resourceFamily, string persistentId)
+        {
+            string safeId = persistentId ?? string.Empty;
+            if (safeId.IndexOf("Fuel", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                safeId.IndexOf("Oil", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                safeId.IndexOf("Solvent", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                safeId.IndexOf("Resin", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                safeId.IndexOf("Ethanol", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                safeId.IndexOf("Methane", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            return category == ItemCategory.Consumable ||
+                   category == ItemCategory.Organic ||
+                   resourceFamily == ResourceFamily.Organic ||
+                   resourceFamily == ResourceFamily.Chemical;
         }
 
         private static bool IsGlassLikeId(string persistentId)

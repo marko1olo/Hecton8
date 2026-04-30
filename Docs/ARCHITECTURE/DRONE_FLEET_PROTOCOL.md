@@ -1,178 +1,150 @@
 # DRONE FLEET PROTOCOL
 
+Status: PENDING VERIFICATION
+
 ## Scope
 
 Runtime owners:
-- `DroneFleetManager.cs`: central repair-task dispatcher, fleet snapshot publisher, emergency-overclock state, swarm avoidance input.
-- `RepairDroneHub.cs`: powered dock, logistics intake, pooled launch owner.
-- `RepairDroneEntity.cs`: mission execution, battery drain, route following, additive weld dispatch.
-- `ThreadSafeCommandQueue.cs`: main-thread structural command drain for storage-reservation commits.
-- `FloraInteractionManager.cs`: module parasite target resolution and plasma-cut dispatch into destructible organic runtime.
-- `HectonSubmarineOS.cs`: diegetic consumer of fleet snapshot telemetry.
+- `DroneFleetManager.cs`: native drone state pool, Burst cognition scheduling, task arbitration, fleet snapshot publisher, OS overclock latch, suicide-weld latch, Logic-Leech hijack latch, indirect rendering submission.
+- `DroneCognitionJob.cs`: Burst-compatible movement, battery drain, task scoring, atomic task claims, emergency scalar application, and boid separation.
+- `RepairDroneHub.cs`: powered dock, logistics intake, integer drone-slot lease owner. It no longer spawns per-drone GameObjects for sorties.
+- `RepairDroneEntity.cs`: retired source-name marker plus shared torch-audio event structs. It is not a `MonoBehaviour` and cannot be spawned as a drone body.
+- `BaseLogisticsNetwork.cs`: two-phase storage reservation and nearest supply endpoint resolver.
+- `ThreadSafeCommandQueue.cs`: main-thread structural command drain for `CommitStorageReservation`.
+- `FloraInteractionManager.cs`: parasite target resolution and plasma-cut bridge into `DestructibleOrganicManager`.
+- `HectonSubmarineOS.cs`: publishes emergency level snapshots consumed by the fleet.
 
-Relevant mandates followed:
-- `AI_DYNAMIC_NAVGRID_SDF_INTEGRATION.txt`
+Mandates followed:
 - `AI_Navigation_AStar_Funnel_Smoothing_Pathfinding.txt`
 - `AI_Flocking_Boids_Swarm_SpatialHash_Logic.txt`
-- `LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `DATA_Inventory_Resources_Items_SOA_Layout.txt`
+- `PHYS_Destructible_Organic_Entropy.txt`
 
-## Fleet Arbitration
+## Headless Runtime
 
-The fleet does not let every hub free-run a local target scan anymore.
+Drone sorties are represented by native slots. No per-drone GameObject or `MonoBehaviour` exists in the runtime sortie path:
+- `NativeArray<HeadlessDroneState>[512]` front buffer
+- `NativeArray<HeadlessDroneState>[512]` back buffer
+- `NativeArray<float4x4>[512]` render matrix buffer
+- `NativeParallelMultiHashMap<int, HeadlessDroneTask>[512]` hub-keyed task fanout
+- `NativeParallelMultiHashMap<int,int>[512]` spatial hash for 2 m boid separation
+- `NativeArray<int>[512]` task claim owners
 
-`DroneFleetManager` builds a bounded repair-task max-heap each dispatch window:
-- candidate source: `ConstructionManager.SpawnedModules`
-- eligibility gates:
-- same `PowerGrid` as the requesting hub
-- damaged below dispatch threshold, or flooded, or cascade-failed, or graph-ruptured
-- active-claim cap not exceeded
+Scheduling model:
+1. `RepairDroneHub.SlowTick()` queues launch/abort/release requests into managed fixed-capacity arrays.
+2. `DroneFleetManager.HeadlessFleetDriver.Tick()` schedules `DroneCognitionJob`.
+3. `LateFrameTick()` completes the job in the dispatcher swap window, swaps front/back buffers, applies managed-side repair/storage/organic/voxel commits, then applies queued hub requests.
+4. SRP render callback uploads `NativeArray<float4x4>` and calls `Graphics.RenderMeshIndirect`.
 
-Claim caps:
-- `NativeArray<int>` stores live claim counts by current module index.
-- max simultaneous claims per target: `2`
-- active counts are rebuilt from the currently spawned drone registry before each assignment pass
+The job never reads and writes the same drone state buffer in one pass.
 
-## Assignment Score
+## Task Arbitration
 
-Distance term:
+`DroneCognitionJob` evaluates tasks stored in `NativeParallelMultiHashMap<int, HeadlessDroneTask>`.
 
-```csharp
-float clampedDistance = Mathf.Max(0.75f, distanceMeters);
-```
-
-Criticality term:
-
-```csharp
-weight = 1f + ((1f - integrity01) * 4f);
-if (module.IsFlooded) weight += 2f;
-if (module.IsBreached) weight += 3f;
-if (module.HasCascadeFailure) weight += 1.5f;
-if (BaseDegradationSystem.IsModuleRuptured(module)) weight += 2.5f;
-weight += (1f - module.AirReserveNormalized) * 1.5f;
-if (EmergencyLevel == Evacuate) weight *= 1.35f;
-```
-
-Final score:
+Score:
 
 ```csharp
-Score = (1.0f / clampedDistance) * criticalityWeight;
+Score = (Criticality / max(distanceSq, 0.5625f)) * saturate(BatteryPercent * 0.01f);
 ```
 
-Meaning:
-- closer tasks rise naturally
-- flooded, breached, cascade-failed, and graph-ruptured modules jump ahead
-- stale-air compartments escalate even if raw integrity is not yet zero
-- `EMERGENCY_LEVEL_3` in Hecton-OS biases the entire fleet harder toward life-critical repair work
+Atomic claim:
+
+```csharp
+int priorOwner = Interlocked.CompareExchange(ref claimPtr[taskIndex], droneId, 0);
+bool claimed = priorOwner == 0 || priorOwner == droneId;
+```
+
+Before scheduling, `DroneFleetManager.ClearHeadlessTaskClaims()` clears the claim-owner array and seeds it with active drones that already hold a valid `TargetTaskIndex`. New idle drones can only claim still-unowned task indices.
+
+Emergency rule:
+- when OS level is `Evacuate`, parasite tasks are skipped by the job.
+- speed multiplier = `3x`.
+- battery drain multiplier = `5x`.
+
+Legacy hub assignment still exists as a compatibility front door for launch decisions, but active headless claims are included when rebuilding claim counts.
 
 ## Supply Cycle
 
-Repair work is no longer free.
+Launch load:
+1. hub resolves `Nanite_Solder`, then falls back to `Data_TitaniumScrap`.
+2. hub checks accessible stock through `BaseLogisticsNetwork.CountAccessibleItem`.
+3. hub queues a headless drone launch.
+4. hub commits launch stock through `BaseLogisticsNetwork.TryReserveResources` and `CommitReserved`.
 
-Hub launch flow:
-1. resolve repair supply item
-2. count accessible stock on the local `PowerGrid` through `BaseLogisticsNetwork`
-3. reserve units through the two-phase logistics reservation path
-4. commit the reservation only after the drone is actually spawned
-
-Field resupply flow:
-1. empty drone calls `RepairDroneHub.TryResolveNearestSupplyEndpoint`
-2. hub resolves nearest connected `StorageCrate` or `Fabricator` through `BaseLogisticsNetwork`
-3. drone routes there through `VoxelDynamicNavGridRuntime.TryBuildMacroPortalRouteNonAlloc`
-4. hub reserves refill units through `BaseLogisticsNetwork.TryReserveResources`
-5. `BaseLogisticsNetwork.CommitReservedViaCommandQueue` registers each touched crate with `ThreadSafeCommandQueue`
-6. queue drains `EntityCommandType.CommitStorageReservation` on the dispatcher main-thread window
-7. no stock means drone enables yellow warning light and enters `STASIS`
-
-Current fallback:
-- requested ID: `Nanite_Solder`
-- fallback ID: `Data_TitaniumScrap`
-
-Consumption model:
-- `1%` integrity repaired = `0.1` solder units
-- operationally: `1` discrete crate item covers `10%` restored integrity
-- the drone carries a mission load and decrements that load as restored integrity accumulates
-- no supply: dock slots report `STASIS`
+Field resupply:
+1. a drone with `SolderUnits <= 0` switches to `ResupplyTravel`.
+2. hub resolves the nearest connected `StorageCrate` or `Fabricator` through `BaseLogisticsNetwork.TryResolveNearestSupplyEndpoint`.
+3. when docked, hub calls `TryAcquireDroneResupply`.
+4. `BaseLogisticsNetwork.TryReserveResources` reserves one unit.
+5. `BaseLogisticsNetwork.CommitReservedViaCommandQueue` registers touched crates and enqueues `EntityCommandType.CommitStorageReservation`.
+6. `ThreadSafeCommandQueue.DrainMainThread` calls `StorageCrate.CommitReservation`.
+7. no supply leaves the drone in `Stasis`.
 
 ## Parasite Defense
 
-Base parasites are fleet tasks, not decorative flora state.
+Parasite tasks are high-priority fleet tasks:
+- source: `FloraInteractionManager.TryResolveNearestModuleParasite`
+- criticality: `4 + infection*6 + airRisk*1.5`, plus cascade and emergency modifiers
+- execution: `FloraInteractionManager.TryApplyDroneParasiteCut`
+- organic damage channel: `DestructibleOrganicManager.TryApplyToolHit(... PlasmaCut)`
 
-Candidate source:
-- module parasite anchors published by `FloraInteractionManager`
-- host `BaseModule.ParasiteInfectionLevel > 0`
-- same `PowerGrid` as the requesting hub
+Direct native organic health writes are not used because `DestructibleOrganicManager` owns those lanes.
 
-Criticality:
+## Logic-Leech Hijack
+
+External fauna code can call:
 
 ```csharp
-weight = 4f + (infection * 6f) + ((1f - module.AirReserveNormalized) * 1.5f);
-if (module.HasCascadeFailure) weight += 1.5f;
-if (EmergencyLevel == Evacuate) weight *= 1.35f;
+DroneFleetManager.ReportLogicLeechContact(contactPosition, radiusMeters);
 ```
 
-Execution:
-- drone routes to the parasite anchor position
-- nozzle direction is resolved from drone nozzle to anchor
-- `FloraInteractionManager.TryApplyDroneParasiteCut` calls `DestructibleOrganicManager.TryApplyToolHit(... PlasmaCut)`
-- one solder unit is consumed when the cut is applied
+The nearest drone inside the radius flips to `HeadlessDroneFactionBit.Hostile`.
+Hostile drones stop repairing and apply:
+- `BaseModule.ApplyDamage`
+- `HectonVoxelVolume.ApplyPlasmaCutDda`
 
-## Navigation And Swarm Motion
+Player damage is not wired here because no existing Logic-Leech/player damage contract exists in this task scope.
 
-Travel:
-- route requests use `VoxelDynamicNavGridRuntime.TryBuildMacroPortalRouteNonAlloc`
-- if no macro route exists, the drone falls back to direct movement
+## Boid Separation
 
-Swarm steering:
-- base vector: route or target direction, weight `1.0`
-- separation: inverse-square push away from other active repair drones
-- alignment: average active neighbor velocity, weight `0.35`
-- cohesion: average active neighbor center, `0.8` in open water and `0.1` in tight voxel corridors
-- player separation: same inverse-square model at `3x` the drone separation weight
+`DroneCognitionJob` samples neighboring drone indices through the native spatial hash:
+- cell size: `2 m`
+- sample area: 3x3x3 cells
+- separation: inverse-square push
+- alignment: average neighbor velocity, weight `0.25`
+- cohesion: `0.8` open water, `0.1` tight voxel corridor
+- player repulsion: 2.5 m radius, stronger than drone separation
 
-Corridor policy:
-- if hybrid nav sample resolves `HybridNavigationMode.CaveVoxel`, cohesion weight drops to `0.1`
-- otherwise cohesion stays at `0.8`
-
-This keeps narrow corridors from turning into a self-blocking clump.
-
-## Emergency Overclock
-
-Source:
-- `HectonSubmarineOsEvents.OnSnapshotUpdated`
-
-When OS emergency level reaches `Evacuate`:
-- thruster speed multiplier: `3x`
-- battery drain multiplier: `5x`
-- task criticality multiplier: `1.35x`
-
-The fleet snapshot mirrors this so diegetic UI can display it without scanning live scene objects.
-`HectonSubmarineOS` publishes a nominal shutdown snapshot on disable so fleet overclock cannot stay latched after OS unload.
+Corridor state is sampled on the main thread with `VoxelDynamicNavGridRuntime.TrySampleHybridNavigation` before scheduling.
 
 ## Suicide Weld
 
-External trigger:
-- `DroneFleetManager.RequestFleetSacrifice()`
-- `HectonSubmarineOS.RequestFleetSacrifice()`
+Trigger:
 
-Runtime behavior:
-- if the assigned target is below `5%` recoverable integrity and the command is armed
-- the drone force-repairs missing integrity, clears flood state, dispatches a final additive weld, reports itself destroyed, and does not return to service
+```csharp
+DroneFleetManager.RequestFleetSacrifice();
+```
 
-This is intentionally destructive and should be treated as a last-resort command path.
+Eligibility:
+- target is breached, or
+- target is flooded and integrity is at or below 20% recoverable integrity
+
+Effect:
+- repair target to recoverable integrity
+- clear flooded state through `ForceDrainComplete`
+- mark the drone `Sacrificed`
+- mark the native slot permanently destroyed
+- increment fleet destroyed count
 
 ## Verification Boundaries
 
-What this document does prove:
-- owner mapping
-- assignment score math
-- claim-cap model
-- logistics reservation path
-- emergency-overclock contract
+This document proves owner mapping and intended data flow only.
 
-What it does not prove:
-- global project compile-green state
-- fleet dispatch time under `0.2 ms`
-- live Unity console green state
-
-Status: `PENDING VERIFICATION`
+Not proven without Unity runtime logs:
+- project compile-green state
+- MCP console 0 errors
+- GCMonitor 0 B/frame
+- render shader support for `_DroneMatrices` or `_InstanceMatrices`

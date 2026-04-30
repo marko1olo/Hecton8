@@ -22,6 +22,9 @@ namespace Hecton8.SaveSystem
         private const string Extension = ".png";
         private const string LegacyExtension = ".jpg";
         private const int MaxCachedSprites = 12;
+        private const uint PngChunkIhdr = 0x49484452u;
+        private const uint PngChunkIdat = 0x49444154u;
+        private const uint PngChunkIend = 0x49454E44u;
 
         private struct CaptureRequest
         {
@@ -244,21 +247,21 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            NativeArray<byte> encodedPng = ImageConversion.EncodeNativeArrayToPNG<byte>(
-                request.GetData<byte>(),
-                GraphicsFormat.R8G8B8A8_SRGB,
-                (uint)Width,
-                (uint)Height,
-                0u);
+            NativeArray<byte> readbackData = request.GetData<byte>();
+            int expectedLength = Width * Height * 4;
+            if (!readbackData.IsCreated || readbackData.Length < expectedLength)
+            {
+                Debug.LogError($"[SaveThumbnailSystem] AsyncGPUReadback returned invalid thumbnail data for '{inflightRequest.SlotName}'.");
+                return;
+            }
 
-            // COLD ALLOC: NativeArray<byte>[encodedPng.Length] — persistent save-thumbnail write staging buffer — owner: SaveThumbnailSystem
-            NativeArray<byte> persistentPng = new NativeArray<byte>(encodedPng.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte>.Copy(encodedPng, persistentPng, encodedPng.Length);
-            encodedPng.Dispose();
-            _ = PersistThumbnailAsync(inflightRequest.SlotName, persistentPng);
+            // COLD ALLOC: NativeArray<byte>[Width * Height * 4] - persistent GPU readback staging buffer for background PNG write - owner: SaveThumbnailSystem
+            NativeArray<byte> persistentRgba = new NativeArray<byte>(expectedLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte>.Copy(readbackData, persistentRgba, expectedLength);
+            _ = PersistThumbnailAsync(inflightRequest.SlotName, persistentRgba, Width, Height);
         }
 
-        private static async Awaitable PersistThumbnailAsync(string slotName, NativeArray<byte> pngBytes)
+        private static async Awaitable PersistThumbnailAsync(string slotName, NativeArray<byte> rgbaBytes, int width, int height)
         {
             string path = GetThumbnailPath(slotName);
             string tempPath = GetTempThumbnailPath(slotName);
@@ -276,9 +279,9 @@ namespace Hecton8.SaveSystem
 
                 unsafe
                 {
-                    void* dataPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(pngBytes);
+                    void* dataPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(rgbaBytes);
                     using var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    stream.Write(new ReadOnlySpan<byte>(dataPtr, pngBytes.Length));
+                    WritePngRgba32(stream, (byte*)dataPtr, rgbaBytes.Length, width, height);
                 }
 
                 if (File.Exists(path))
@@ -302,9 +305,169 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                if (pngBytes.IsCreated)
-                    pngBytes.Dispose();
+                if (rgbaBytes.IsCreated)
+                    rgbaBytes.Dispose();
             }
+        }
+
+        private static unsafe void WritePngRgba32(Stream stream, byte* rgbaBytes, int rgbaLength, int width, int height)
+        {
+            if (stream == null || rgbaBytes == null || width <= 0 || height <= 0)
+                return;
+
+            int stride = width * 4;
+            int expectedLength = stride * height;
+            if (rgbaLength < expectedLength)
+                return;
+
+            Span<byte> signature = stackalloc byte[8];
+            signature[0] = 137;
+            signature[1] = 80;
+            signature[2] = 78;
+            signature[3] = 71;
+            signature[4] = 13;
+            signature[5] = 10;
+            signature[6] = 26;
+            signature[7] = 10;
+            stream.Write(signature);
+
+            // COLD ALLOC: byte[13] - PNG IHDR payload generated off main thread - owner: SaveThumbnailSystem
+            byte[] ihdr = new byte[13];
+            WriteUInt32BigEndian(ihdr, 0, (uint)width);
+            WriteUInt32BigEndian(ihdr, 4, (uint)height);
+            ihdr[8] = 8;
+            ihdr[9] = 6;
+            ihdr[10] = 0;
+            ihdr[11] = 0;
+            ihdr[12] = 0;
+            WritePngChunk(stream, PngChunkIhdr, ihdr, ihdr.Length);
+
+            int filteredLength = height * (stride + 1);
+            // COLD ALLOC: byte[height * (stride + 1)] - PNG scanline filter buffer generated off main thread - owner: SaveThumbnailSystem
+            byte[] filtered = new byte[filteredLength];
+            fixed (byte* filteredPtr = filtered)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int destinationOffset = y * (stride + 1);
+                    filteredPtr[destinationOffset] = 0;
+                    Buffer.MemoryCopy(rgbaBytes + (y * stride), filteredPtr + destinationOffset + 1, stride, stride);
+                }
+            }
+
+            byte[] idat = BuildUncompressedZlibPayload(filtered);
+            WritePngChunk(stream, PngChunkIdat, idat, idat.Length);
+            WritePngChunk(stream, PngChunkIend, null, 0);
+        }
+
+        private static byte[] BuildUncompressedZlibPayload(byte[] filtered)
+        {
+            int filteredLength = filtered != null ? filtered.Length : 0;
+            int blockCount = Math.Max(1, (filteredLength + ushort.MaxValue - 1) / ushort.MaxValue);
+            // COLD ALLOC: byte[zlib payload] - uncompressed PNG IDAT payload generated off main thread - owner: SaveThumbnailSystem
+            byte[] payload = new byte[2 + (blockCount * 5) + filteredLength + 4];
+            int cursor = 0;
+            payload[cursor++] = 0x78;
+            payload[cursor++] = 0x01;
+
+            int sourceOffset = 0;
+            int remaining = filteredLength;
+            for (int block = 0; block < blockCount; block++)
+            {
+                int blockLength = Math.Min(ushort.MaxValue, remaining);
+                bool isFinalBlock = block == blockCount - 1;
+                payload[cursor++] = isFinalBlock ? (byte)1 : (byte)0;
+                payload[cursor++] = (byte)(blockLength & 0xFF);
+                payload[cursor++] = (byte)((blockLength >> 8) & 0xFF);
+                int invertedLength = (~blockLength) & 0xFFFF;
+                payload[cursor++] = (byte)(invertedLength & 0xFF);
+                payload[cursor++] = (byte)((invertedLength >> 8) & 0xFF);
+                if (blockLength > 0)
+                    Buffer.BlockCopy(filtered, sourceOffset, payload, cursor, blockLength);
+
+                cursor += blockLength;
+                sourceOffset += blockLength;
+                remaining -= blockLength;
+            }
+
+            uint adler = ComputeAdler32(filtered, filteredLength);
+            payload[cursor++] = (byte)((adler >> 24) & 0xFF);
+            payload[cursor++] = (byte)((adler >> 16) & 0xFF);
+            payload[cursor++] = (byte)((adler >> 8) & 0xFF);
+            payload[cursor] = (byte)(adler & 0xFF);
+            return payload;
+        }
+
+        private static uint ComputeAdler32(byte[] data, int length)
+        {
+            const uint ModAdler = 65521u;
+            uint a = 1u;
+            uint b = 0u;
+            for (int i = 0; i < length; i++)
+            {
+                a = (a + data[i]) % ModAdler;
+                b = (b + a) % ModAdler;
+            }
+
+            return (b << 16) | a;
+        }
+
+        private static void WritePngChunk(Stream stream, uint chunkType, byte[] data, int length)
+        {
+            WriteUInt32BigEndian(stream, (uint)Math.Max(0, length));
+            WriteUInt32BigEndian(stream, chunkType);
+            if (data != null && length > 0)
+                stream.Write(data, 0, length);
+
+            WriteUInt32BigEndian(stream, ComputeChunkCrc(chunkType, data, length));
+        }
+
+        private static uint ComputeChunkCrc(uint chunkType, byte[] data, int length)
+        {
+            uint crc = 0xFFFFFFFFu;
+            crc = UpdateCrc(crc, (byte)((chunkType >> 24) & 0xFF));
+            crc = UpdateCrc(crc, (byte)((chunkType >> 16) & 0xFF));
+            crc = UpdateCrc(crc, (byte)((chunkType >> 8) & 0xFF));
+            crc = UpdateCrc(crc, (byte)(chunkType & 0xFF));
+            if (data != null)
+            {
+                for (int i = 0; i < length; i++)
+                    crc = UpdateCrc(crc, data[i]);
+            }
+
+            return ~crc;
+        }
+
+        private static uint UpdateCrc(uint crc, byte value)
+        {
+            crc ^= value;
+            for (int i = 0; i < 8; i++)
+                crc = (crc & 1u) != 0u ? (crc >> 1) ^ 0xEDB88320u : crc >> 1;
+
+            return crc;
+        }
+
+        private static void WriteUInt32BigEndian(Stream stream, uint value)
+        {
+            Span<byte> buffer = stackalloc byte[4];
+            WriteUInt32BigEndian(buffer, 0, value);
+            stream.Write(buffer);
+        }
+
+        private static void WriteUInt32BigEndian(byte[] buffer, int offset, uint value)
+        {
+            buffer[offset] = (byte)((value >> 24) & 0xFF);
+            buffer[offset + 1] = (byte)((value >> 16) & 0xFF);
+            buffer[offset + 2] = (byte)((value >> 8) & 0xFF);
+            buffer[offset + 3] = (byte)(value & 0xFF);
+        }
+
+        private static void WriteUInt32BigEndian(Span<byte> buffer, int offset, uint value)
+        {
+            buffer[offset] = (byte)((value >> 24) & 0xFF);
+            buffer[offset + 1] = (byte)((value >> 16) & 0xFF);
+            buffer[offset + 2] = (byte)((value >> 8) & 0xFF);
+            buffer[offset + 3] = (byte)(value & 0xFF);
         }
 
         private static string ResolveExistingThumbnailPath(string slotName)

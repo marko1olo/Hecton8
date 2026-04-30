@@ -1,0 +1,2563 @@
+﻿diff --git a/Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader b/Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader
+index 7e37d7e6..484023ae 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader
+@@ -189,6 +189,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
+             float4 _HectonFloraCascadeParams;
+             float4 _HectonSubmarineWashSphere;
+             float4 _HectonSubmarineWashVelocity;
++            float4 _HectonSubmarineWashAupGrid;
++            float4 _HectonSubmarineWashAupLocal;
+             float4 _HectonFlowSynchronyParams;
+             float _HectonSeasonCycle;
+             float _HectonVegetationDepth;
+@@ -633,9 +635,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
+                 velocityDirection = SafeNormalize3(velocityDirection);
+                 float3 bendDirection = SafeNormalize3(lerp(awayDirection, velocityDirection, 0.65));
+                 float speedFactor = saturate(_HectonSubmarineWashVelocity.w * 0.045);
++                float shockwave01 = saturate((_HectonSubmarineWashVelocity.w - 15.0) * 0.10);
+                 float typeScale = instanceType < 0.5 ? 0.55 : (instanceType < 1.5 ? 1.25 : 0.72);
+-                float flattening = proximity * speedFactor * bendMask * typeScale * lerp(0.35, 1.0, heightMask);
+-                float downwardBias = lerp(0.02, 0.12, heightMask) * flattening;
++                float flattening = proximity * bendMask * typeScale * (speedFactor * lerp(0.35, 1.0, heightMask) + shockwave01 * lerp(0.55, 1.45, heightMask));
++                float downwardBias = lerp(0.02, 0.12 + shockwave01 * 0.26, heightMask) * flattening;
+                 return bendDirection * flattening + float3(0.0, -downwardBias, 0.0);
+             }
+ 
+@@ -977,7 +980,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
+                 float3 baseNormalWS = TransformDirection(instanceMatrix, input.normalOS);
+                 float3 driftOffsetWS = instanceType > 1.5 ? _SargassumGlobalDriftOffset.xyz : float3(0.0, 0.0, 0.0);
+                 float3 renderOriginWS = originWS + driftOffsetWS;
+-                float growthHeightScale = lerp(0.08, 1.0, growth01);
++                float growthHeightScale = growth01;
+ 
+                 if (instanceType < 0.5)
+                 {
+@@ -1195,7 +1198,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
+                 output.parasiteMask = parasiteMask;
+                 output.runtimeState = instanceData.RuntimeState;
+                 output.pulseFrequency = max(0.05, instanceData.PulseFrequency);
+-                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, instanceData.BioluminescenceColor.a * normalizedHealth);
++                output.biolumColor = half4(instanceData.BioluminescenceColor.rgb, instanceData.BioluminescenceColor.a);
+                 output.flowMagnitude = flowMagnitude;
+                 output.biomeLayer = biomeLayer;
+                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
+@@ -1253,6 +1256,16 @@ Shader "Hecton8/Vegetation/IndirectStrip"
+                 half3 decayColor = lerp(half3(gradientLuma, gradientLuma, gradientLuma), half3(0.32h, 0.29h, 0.24h), 0.55h);
+                 gradientColor = lerp(gradientColor, decayColor, input.entropyProgress * 0.92h);
+                 half necrosisMask = ResolveEdgeInwardNecrosisMask(input);
++                if (input.health01 < 0.985h)
++                {
++                    half edgeSignal = saturate(max(input.edgeMask, input.curvatureMask * 0.82h));
++                    edgeSignal = saturate(edgeSignal + smoothstep(0.72h, 1.0h, input.heightMask) * 0.14h);
++                    half necrosisClipNoise = (half)ValueNoise3D(
++                        input.positionWS * 4.7 +
++                        float3(input.cascadeSeed * 11.0h, _Time.y * 0.021h, input.pulseFrequency * 3.0h));
++                    half inwardThreshold = saturate(1.0h - input.health01 + (necrosisClipNoise - 0.5h) * 0.18h);
++                    clip(edgeSignal - inwardThreshold);
++                }
+                 half necrosisNoise = (half)ValueNoise3D(input.positionWS * 5.6 + float3(0.0, input.cascadeSeed * 7.0h, _Time.y * 0.025));
+                 half3 necrosisColor = lerp(half3(0.025h, 0.018h, 0.012h), half3(0.20h, 0.10h, 0.035h), necrosisNoise);
+                 gradientColor = lerp(gradientColor, necrosisColor, necrosisMask);
+@@ -1260,8 +1273,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
+                     ? half3(0.18h, 0.95h, 0.72h)
+                     : half3(0.14h, 0.78h, 1.00h);
+                 gradientColor = lerp(gradientColor, gradientColor + parasiteGlowTint * 0.38h, input.parasiteMask * saturate(1.0h - input.entropyProgress * 0.65h));
+-                half biomeWeight = saturate(input.biomeLayer / 3.0h);
+-                half biomeTintStrength = lerp(0.04h, 0.16h, biomeWeight);
++                half biomeTintStrength = 0.10h;
+                 half3 biomeAmbientTint = lerp(half3(1.0h, 1.0h, 1.0h), saturate(_HectonVegetationAmbientColor.rgb + 0.16h), biomeTintStrength);
+                 gradientColor *= biomeAmbientTint;
+                 if (input.biomeLayer > 2.5h)
+@@ -1338,7 +1350,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
+                 half cascadeEmissionScale = 1.0h + ResolveCascadeEmissionScale(input.cascadeSeed);
+                 half3 biolumEmission = input.biolumColor.rgb *
+                     (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale);
+-                biolumEmission *= input.growth01;
++                biolumEmission *= input.growth01 * input.health01;
+                 half3 decayTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(0.92h, 0.84h, 0.68h), decaySeasonWeight * 0.22h);
+                 finalColor *= decayTint;
+                 finalColor += biolumEmission;
+diff --git a/Assets/_Project/Scripts/Editor/WorldProceduralProxySceneBuilder.cs b/Assets/_Project/Scripts/Editor/WorldProceduralProxySceneBuilder.cs
+index 4cdacd7f..501909aa 100644
+--- a/Assets/_Project/Scripts/Editor/WorldProceduralProxySceneBuilder.cs
++++ b/Assets/_Project/Scripts/Editor/WorldProceduralProxySceneBuilder.cs
+@@ -1,9 +1,12 @@
+ using System;
+ using System.Collections.Generic;
++using Hecton8.Core;
+ using Hecton8.Environment;
+ using Hecton8.World;
++using Unity.Collections;
+ using UnityEditor;
+ using UnityEditor.SceneManagement;
++using Unity.Jobs;
+ using UnityEngine;
+ using UnityEngine.SceneManagement;
+ 
+@@ -13,6 +16,9 @@ namespace Hecton8.EditorTools
+     {
+         private const string RuleFolder = "Assets/_Project/Data/World/ProceduralPlacementRules";
+         private const string ProxyRootName = "__PROCEDURAL_PROXY_WORLD";
++        private const float ProxySnapRaycastElevationMeters = 80f;
++        private const float ProxySnapRaycastDistanceMeters = 240f;
++        private const float ProxySnapMaxTiltDegrees = 35f;
+ 
+         [MenuItem("Hecton/Authoring/Rebuild Procedural Proxy Scene", priority = 179)]
+         public static void RebuildProceduralProxyScene()
+@@ -230,8 +236,15 @@ namespace Hecton8.EditorTools
+ 
+             instance.name = $"{family.familyLabel}_{instanceIndex:00}";
+             instance.transform.SetParent(parent, false);
+-            instance.transform.position = ResolvePosition(socket.transform.position, family, instanceIndex, instanceCount);
+-            instance.transform.rotation = Quaternion.Euler(0f, ResolveYaw(socket, instanceIndex), 0f);
++            Vector3 position = ResolvePosition(socket.transform.position, family, instanceIndex, instanceCount);
++            Quaternion rotation = Quaternion.Euler(0f, ResolveYaw(socket, instanceIndex), 0f);
++            if (TrySnapProxyToScatterSurface(position, out Vector3 snappedPosition, out Vector3 snappedNormal))
++            {
++                position = snappedPosition;
++                rotation = ResolveTerrainAlignedRotation(rotation, snappedNormal);
++            }
++
++            instance.transform.SetPositionAndRotation(position, rotation);
+             float scale = ResolveScaleMultiplier(family, variant, instanceIndex);
+             instance.transform.localScale *= scale;
+ 
+@@ -250,6 +263,56 @@ namespace Hecton8.EditorTools
+                 instanceIndex);
+         }
+ 
++        private static bool TrySnapProxyToScatterSurface(Vector3 position, out Vector3 point, out Vector3 normal)
++        {
++            point = position;
++            normal = Vector3.up;
++            Vector3 origin = position + (Vector3.up * ProxySnapRaycastElevationMeters);
++            float distance = ProxySnapRaycastElevationMeters + ProxySnapRaycastDistanceMeters;
++            NativeArray<RaycastCommand> commands = new NativeArray<RaycastCommand>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++            NativeArray<RaycastHit> hits = new NativeArray<RaycastHit>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++
++            try
++            {
++                commands[0] = new RaycastCommand(
++                    origin,
++                    Vector3.down,
++                    new QueryParameters(HectonLayerMasks.DefaultRaycastLayerMask, false, QueryTriggerInteraction.Ignore),
++                    distance);
++                // COLD SYNC JOB: editor-only proxy rebuild uses the same batched down-snap primitive as runtime scatter snapping.
++                JobHandle handle = RaycastCommand.ScheduleBatch(commands, hits, 1, default);
++                handle.Complete();
++
++                RaycastHit hit = hits[0];
++                if (hit.collider == null)
++                    return false;
++
++                point = hit.point;
++                normal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
++                return true;
++            }
++            finally
++            {
++                if (commands.IsCreated)
++                    commands.Dispose();
++                if (hits.IsCreated)
++                    hits.Dispose();
++            }
++        }
++
++        private static Quaternion ResolveTerrainAlignedRotation(Quaternion yawRotation, Vector3 normal)
++        {
++            Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
++            float angle = Vector3.Angle(Vector3.up, safeNormal);
++            if (angle > ProxySnapMaxTiltDegrees)
++            {
++                float t = ProxySnapMaxTiltDegrees / Mathf.Max(0.001f, angle);
++                safeNormal = Vector3.Slerp(Vector3.up, safeNormal, t).normalized;
++            }
++
++            return Quaternion.FromToRotation(Vector3.up, safeNormal) * yawRotation;
++        }
++
+         private static WorldPrefabFamilyProfile.VariantEntry ResolveVariant(WorldPrefabFamilyProfile family, int instanceIndex)
+         {
+             if (family == null || family.variants == null || family.variants.Length == 0)
+diff --git a/Assets/_Project/Scripts/Fabricator.cs b/Assets/_Project/Scripts/Fabricator.cs
+index 5c5f30e0..f31a0e3b 100644
+--- a/Assets/_Project/Scripts/Fabricator.cs
++++ b/Assets/_Project/Scripts/Fabricator.cs
+@@ -168,6 +168,7 @@ namespace Hecton8.Crafting
+         private NativeParallelHashMap<int, int> _craftInventoryCounts;
+         private NativeArray<int2> _craftRecipeCosts;
+         private NativeArray<byte> _craftRecipeEvaluationResult;
++        private NativeArray<int2> _deconstructionFlattenedCosts;
+         private NativeArray<int2> _deconstructionRecipeOutputs;
+         private NativeArray<int> _deconstructionOutputCount;
+ 
+@@ -430,7 +431,7 @@ namespace Hecton8.Crafting
+             int itemHashId = ComputeItemHash(cost.item);
+             ResourceScarcityDirector scarcityDirector = ResourceScarcityDirector.Instance;
+             return scarcityDirector != null
+-                ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, transform.position)
++                ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, transform.position, CountAccessibleItem(cost.item))
+                 : cost.amount;
+         }
+ 
+@@ -724,13 +725,21 @@ namespace Hecton8.Crafting
+                 _craftRecipeEvaluationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+             }
+ 
++            if (!_deconstructionFlattenedCosts.IsCreated)
++            {
++                // COLD ALLOC: NativeArray<int2>[64] — recursive deconstruction flattened ingredient scratch — owner: Fabricator
++                _deconstructionFlattenedCosts = new NativeArray<int2>(CraftingSystem.MaxRecursiveDeconstructionNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            }
++
+             if (!_deconstructionRecipeOutputs.IsCreated)
+             {
++                // COLD ALLOC: NativeArray<int2>[32] — deconstruction output yield scratch — owner: Fabricator
+                 _deconstructionRecipeOutputs = new NativeArray<int2>(CraftingSystem.MaxDeconstructionOutputCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+             }
+ 
+             if (!_deconstructionOutputCount.IsCreated)
+             {
++                // COLD ALLOC: NativeArray<int>[1] — deconstruction output count cell — owner: Fabricator
+                 _deconstructionOutputCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+             }
+         }
+@@ -752,6 +761,9 @@ namespace Hecton8.Crafting
+             if (_craftRecipeEvaluationResult.IsCreated)
+                 _craftRecipeEvaluationResult.Dispose();
+ 
++            if (_deconstructionFlattenedCosts.IsCreated)
++                _deconstructionFlattenedCosts.Dispose();
++
+             if (_deconstructionRecipeOutputs.IsCreated)
+                 _deconstructionRecipeOutputs.Dispose();
+ 
+@@ -799,15 +811,22 @@ namespace Hecton8.Crafting
+                 return false;
+ 
+             EnsureCraftingScratch();
++            int normalizedQualityMilli = qualityMilli > 0 ? qualityMilli : 1000;
+             bool isDegraded = (stateFlags & PlayerInventory.DegradedItemStateMask) != 0 ||
+-                              qualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
++                              normalizedQualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
++            bool forceScrapYield = normalizedQualityMilli < 200;
++            int reclaimPercent = isDegraded ? 30 : 80;
+             if (!CraftingSystem.TryBuildDeconstructionYieldBuffer(
+                     sourceRecipe,
+                     this,
+-                    isDegraded,
++                    itemCatalog,
++                    forceScrapYield,
++                    reclaimPercent,
+                     _craftRecipeCosts,
++                    _deconstructionFlattenedCosts,
+                     _deconstructionRecipeOutputs,
+-                    _deconstructionOutputCount))
++                    _deconstructionOutputCount,
++                    ResolveScrapMetalHashId(itemCatalog)))
+             {
+                 _playerInventory.TryAddItem(itemHashId, 1);
+                 return false;
+@@ -1172,6 +1191,23 @@ namespace Hecton8.Crafting
+             return false;
+         }
+ 
++        internal static bool TryResolveRecipeForResultHash(ItemCatalog itemCatalog, int resultHashId, out RecipeData recipe)
++        {
++            ItemData resultItem = itemCatalog != null && resultHashId != 0
++                ? itemCatalog.FindByHash(resultHashId)
++                : null;
++            return TryResolveRecipeForResultItem(resultItem, out recipe);
++        }
++
++        private static int ResolveScrapMetalHashId(ItemCatalog itemCatalog)
++        {
++            int scrapMetalHashId = LocHash.Compute("Data_ScrapMetal");
++            if (itemCatalog != null && itemCatalog.FindByHash(scrapMetalHashId) != null)
++                return scrapMetalHashId;
++
++            return LocHash.Compute("Data_TitaniumScrap");
++        }
++
+         private static bool TryResolveRecipeForResultItem(List<RecipeData> recipes, ItemData resultItem, out RecipeData recipe)
+         {
+             if (recipes != null && resultItem != null)
+diff --git a/Assets/_Project/Scripts/World/FloraInteractionManager.cs b/Assets/_Project/Scripts/World/FloraInteractionManager.cs
+index 71fbabb9..8d7c29c9 100644
+--- a/Assets/_Project/Scripts/World/FloraInteractionManager.cs
++++ b/Assets/_Project/Scripts/World/FloraInteractionManager.cs
+@@ -24,7 +24,7 @@ namespace Hecton8.World
+     /// </summary>
+     [DisallowMultipleComponent]
+     [DefaultExecutionOrder(-105)]
+-    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
++    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+     {
+         private static FloraInteractionManager s_ActiveRuntimeInstance;
+ 
+@@ -50,6 +50,24 @@ namespace Hecton8.World
+             public int ParasiteCount;
+         }
+ 
++        [StructLayout(LayoutKind.Sequential)]
++        private struct ParasiteNode
++        {
++            public float3 PositionWS;
++            public int HostModuleRuntimeId;
++            public float GrowthLevel;
++            public float PowerDrainWatts;
++            public float InfectionStrength;
++            public float RootDrainMultiplier;
++            public float RadiusMeters;
++            public float PulseFrequency;
++            public float ThermalGrowthFlag;
++            public byte State;
++            public byte Padding0;
++            public byte Padding1;
++            public byte Padding2;
++        }
++
+         internal readonly struct ModuleParasiteTarget
+         {
+             public ModuleParasiteTarget(BaseModule hostModule, Vector3 position, float radius, float infectionLevel, float criticalityWeight)
+@@ -85,7 +103,7 @@ namespace Hecton8.World
+             public float ExpireTimeSeconds;
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct PopulateCascadePhaseSeedsJob : IJobParallelFor
+         {
+             [ReadOnly] public NativeArray<Matrix4x4> Matrices;
+@@ -150,11 +168,89 @@ namespace Hecton8.World
+             }
+         }
+ 
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++        private struct ParasiteGrowthJob : IJobParallelFor
++        {
++            public NativeArray<ParasiteNode> Nodes;
++            public int NodeCount;
++            public float DeltaTime;
++            public float GrowthPerSecond;
++            public float DefoliantKillThreshold;
++            [ReadOnly] public NativeArray<float4> ChemicalFrontGrid;
++            [ReadOnly] public NativeArray<float4> ChemicalOverlayGrid;
++            public int3 ChemicalDimensions;
++            public float3 ChemicalOrigin;
++            public float3 ChemicalCellSize;
++
++            public void Execute(int index)
++            {
++                if (index < 0 || index >= NodeCount || index >= Nodes.Length)
++                    return;
++
++                ParasiteNode node = Nodes[index];
++                if (node.State == ParasiteNodeStateDead)
++                    return;
++
++                float defoliant = SampleDefoliant(node.PositionWS);
++                if (defoliant >= DefoliantKillThreshold)
++                {
++                    node.GrowthLevel = 0f;
++                    node.State = ParasiteNodeStateDead;
++                    Nodes[index] = node;
++                    return;
++                }
++
++                node.State = ParasiteNodeStateAlive;
++                node.GrowthLevel = math.saturate(node.GrowthLevel + math.max(0f, GrowthPerSecond) * math.max(0f, DeltaTime));
++                Nodes[index] = node;
++            }
++
++            private float SampleDefoliant(float3 positionWS)
++            {
++                if (!ChemicalFrontGrid.IsCreated ||
++                    !ChemicalOverlayGrid.IsCreated ||
++                    ChemicalDimensions.x <= 0 ||
++                    ChemicalDimensions.y <= 0 ||
++                    ChemicalDimensions.z <= 0 ||
++                    ChemicalCellSize.x <= 0f ||
++                    ChemicalCellSize.y <= 0f ||
++                    ChemicalCellSize.z <= 0f)
++                {
++                    return 0f;
++                }
++
++                int index = ResolveChemicalIndex(positionWS);
++                if (index < 0 || index >= ChemicalFrontGrid.Length || index >= ChemicalOverlayGrid.Length)
++                    return 0f;
++
++                float toxicityLane = ChemicalFrontGrid[index].w + ChemicalOverlayGrid[index].w;
++                return math.max(0f, -toxicityLane);
++            }
++
++            private int ResolveChemicalIndex(float3 positionWS)
++            {
++                float3 cell = (positionWS - ChemicalOrigin) / ChemicalCellSize;
++                int x = (int)math.floor(cell.x);
++                int y = (int)math.floor(cell.y);
++                int z = (int)math.floor(cell.z);
++                if (x < 0 || y < 0 || z < 0 ||
++                    x >= ChemicalDimensions.x ||
++                    y >= ChemicalDimensions.y ||
++                    z >= ChemicalDimensions.z)
++                {
++                    return -1;
++                }
++
++                return x + (y * ChemicalDimensions.x) + (z * ChemicalDimensions.x * ChemicalDimensions.y);
++            }
++        }
++
+         private const int MaxPublishedInteractionPoints = 12;
+         private const int MaxExternalInteractionPoints = 4;
+         private const int MaxQueryColliders = 32;
+         private const int MaxModuleQueryHits = 32;
+         private const int MaxParasiteAnchors = 16;
++        private const int DefaultHeadlessParasiteCapacity = 256;
+         private const int MaxCascadeEvents = 4;
+         private const int MaxDefensiveSporeBursts = 6;
+         private const int InteractionPointStride = 32;
+@@ -169,6 +265,9 @@ namespace Hecton8.World
+         private const int ToxicSporeHazardSourceId = unchecked((int)0x6B13A7F1);
+         private const int DefensiveSporeHazardSourceId = unchecked((int)0x52F1063A);
+         private const float MinimumAllelopathicToxicity01 = 0.005f;
++        private const float ParasiteSlowTickDeltaSeconds = 0.5f;
++        private const byte ParasiteNodeStateAlive = 1;
++        private const byte ParasiteNodeStateDead = 2;
+ #if UNITY_EDITOR
+         private const string WakeTrailSimulationComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute";
+ #endif
+@@ -200,6 +299,8 @@ namespace Hecton8.World
+         private static readonly int _SeasonCycleId = Shader.PropertyToID("_HectonSeasonCycle");
+         private static readonly int _SubmarineWashSphereId = Shader.PropertyToID("_HectonSubmarineWashSphere");
+         private static readonly int _SubmarineWashVelocityId = Shader.PropertyToID("_HectonSubmarineWashVelocity");
++        private static readonly int _SubmarineWashAupGridId = Shader.PropertyToID("_HectonSubmarineWashAupGrid");
++        private static readonly int _SubmarineWashAupLocalId = Shader.PropertyToID("_HectonSubmarineWashAupLocal");
+         private static readonly int _WakeTrailTextureId = Shader.PropertyToID("_HectonVegetationWakeTrailRT");
+         private static readonly int _WakeTrailWorldRectId = Shader.PropertyToID("_HectonVegetationWakeTrailWorldRect");
+         private static readonly int _WakeTrailActiveId = Shader.PropertyToID("_HectonVegetationWakeTrailActive");
+@@ -472,6 +573,18 @@ namespace Hecton8.World
+         [Tooltip("Stable thermophilic flora id resolved for overheated module growth when the authored template is present.")]
+         private string _thermalTubewormStableId = "flora.thermal_tubeworm";
+ 
++        [SerializeField, Range(1, 4096)]
++        [Tooltip("Maximum number of headless parasite nodes evaluated during one slow-tick job.")]
++        private int _headlessParasiteCapacity = DefaultHeadlessParasiteCapacity;
++
++        [SerializeField, Range(0f, 1f)]
++        [Tooltip("Growth added per second to native parasite nodes before they expose CSR root drains.")]
++        private float _headlessParasiteGrowthPerSecond = 0.035f;
++
++        [SerializeField, Range(0.01f, 32f)]
++        [Tooltip("Raw negative toxicity lane magnitude that kills a native parasite node as chemical defoliant.")]
++        private float _headlessParasiteDefoliantKillThreshold = 1f;
++
+         [Header("Defensive Spore Bursts")]
+         [SerializeField]
+         [Tooltip("Stable flora template ids that detonate into a defensive toxicity cloud when cut or drilled.")]
+@@ -635,6 +748,7 @@ namespace Hecton8.World
+         private bool _hasActiveSubmarineWake;
+         private bool _isRegistered;
+         private bool _isSlowTickRegistered;
++        private bool _isLateFrameRegistered;
+         private int _lastPublishedInteractionCount;
+         private int _externalInteractionCount;
+ 
+@@ -690,6 +804,10 @@ namespace Hecton8.World
+         private Dictionary<BaseModule, ModuleParasiteState> _moduleParasiteStateBack = new Dictionary<BaseModule, ModuleParasiteState>(16);
+         private readonly Dictionary<BaseModule, float> _thermophileDwellSeconds = new Dictionary<BaseModule, float>(8);
+         private readonly List<BaseModule> _staleParasiticModules = new List<BaseModule>(16);
++        private NativeArray<ParasiteNode> _parasiteNodes;
++        private JobHandle _parasiteGrowthHandle;
++        private int _parasiteNodeCount;
++        private bool _parasiteGrowthScheduled;
+         private int[] _cascadeReactiveStableHashIds = Array.Empty<int>();
+         private int[] _defensiveSporeBurstStableHashIds = Array.Empty<int>();
+         private int _cachedCascadeReactiveTemplateCount = -1;
+@@ -795,6 +913,9 @@ namespace Hecton8.World
+             _moduleParasiteAttachmentRadius = Mathf.Max(0.5f, _moduleParasiteAttachmentRadius);
+             _matureParasiteRootDrainMultiplier = Mathf.Max(1f, _matureParasiteRootDrainMultiplier);
+             _thermophileReactorValidationRadius = Mathf.Max(0.5f, _thermophileReactorValidationRadius);
++            _headlessParasiteCapacity = Mathf.Clamp(_headlessParasiteCapacity, 1, 4096);
++            _headlessParasiteGrowthPerSecond = Mathf.Clamp01(_headlessParasiteGrowthPerSecond);
++            _headlessParasiteDefoliantKillThreshold = Mathf.Max(0.01f, _headlessParasiteDefoliantKillThreshold);
+             _defensiveSporeBurstRadius = Mathf.Max(1f, _defensiveSporeBurstRadius);
+             _defensiveSporeBurstDose = Mathf.Max(0.25f, _defensiveSporeBurstDose);
+             _defensiveSporeBurstLifetimeSeconds = Mathf.Max(1f, _defensiveSporeBurstLifetimeSeconds);
+@@ -834,6 +955,7 @@ namespace Hecton8.World
+             _underwaterReactiveFloraHandles = new NativeList<int>(64, Allocator.Persistent); // COLD ALLOC: NativeList<int>[64] - registered underwater reactive-flora spatial handles - owner: FloraInteractionManager
+             _surfaceCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active surface cascade wavefront descriptors - owner: FloraInteractionManager
+             _underwaterCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active underwater cascade wavefront descriptors - owner: FloraInteractionManager
++            _parasiteNodes = new NativeArray<ParasiteNode>(_headlessParasiteCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ParasiteNode>[_headlessParasiteCapacity] - headless module parasite simulation state - owner: FloraInteractionManager
+             _defensiveSporeBursts = new DefensiveSporeBurstState[MaxDefensiveSporeBursts]; // COLD ALLOC: DefensiveSporeBurstState[6] - bounded active toxicity cloud descriptors - owner: FloraInteractionManager
+ 
+             Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
+@@ -904,6 +1026,7 @@ namespace Hecton8.World
+             DisposeNativeArray(ref _underwaterCascadePhaseSeeds);
+             DisposeNativeArray(ref _surfaceCascadeEvents);
+             DisposeNativeArray(ref _underwaterCascadeEvents);
++            DisposeParasiteNodeArray();
+             DisposeNativeList(ref _reactiveFloraQueryHandles);
+             DisposeNativeList(ref _surfaceReactiveFloraHandles);
+             DisposeNativeList(ref _underwaterReactiveFloraHandles);
+@@ -946,7 +1069,6 @@ namespace Hecton8.World
+             PublishEnvironmentGlobals(runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero);
+             PublishSubmarineWashGlobals();
+             RefreshFlowFieldGlobals(deltaTime);
+-            RefreshModuleParasiteState(deltaTime);
+             if (runtimePlayerTransform == null)
+             {
+                 ClearToxicSporeHazard();
+@@ -1008,6 +1130,14 @@ namespace Hecton8.World
+             ResetExternalInteractions();
+         }
+ 
++        /// <summary>
++        /// Commits deferred native parasite simulation results after Burst work has left the hot update lane.
++        /// </summary>
++        public void LateFrameTick()
++        {
++            CompleteHeadlessParasiteSimulation(force: false);
++        }
++
+         /// <summary>
+         /// Emits persistent plant-competition chemistry and applies chemical-cell suppression.
+         /// </summary>
+@@ -1016,6 +1146,8 @@ namespace Hecton8.World
+             if (_vegetationBridge == null)
+                 _vegetationBridge = ResolveVegetationBridge();
+ 
++            RefreshModuleParasiteState(ParasiteSlowTickDeltaSeconds);
++
+             if (_destructibleOrganicManager == null)
+                 _destructibleOrganicManager = ResolveDestructibleOrganicManager();
+ 
+@@ -1639,6 +1771,8 @@ namespace Hecton8.World
+             {
+                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+                 Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
++                Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
++                Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
+                 return;
+             }
+ 
+@@ -1648,9 +1782,13 @@ namespace Hecton8.World
+             {
+                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+                 Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
++                Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
++                Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
+                 return;
+             }
+ 
++            Vector3 worldCenterOfMass = submarineHull.worldCenterOfMass;
++            AbsoluteUniversePosition submarineAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenterOfMass);
+             float radius = Mathf.Clamp(
+                 _wakeTrailSubmarineRadius + speed * 0.16f,
+                 _wakeTrailSubmarineRadius,
+@@ -1658,9 +1796,9 @@ namespace Hecton8.World
+             Shader.SetGlobalVector(
+                 _SubmarineWashSphereId,
+                 new Vector4(
+-                    submarineHull.worldCenterOfMass.x,
+-                    submarineHull.worldCenterOfMass.y,
+-                    submarineHull.worldCenterOfMass.z,
++                    worldCenterOfMass.x,
++                    worldCenterOfMass.y,
++                    worldCenterOfMass.z,
+                     radius));
+             Shader.SetGlobalVector(
+                 _SubmarineWashVelocityId,
+@@ -1669,6 +1807,20 @@ namespace Hecton8.World
+                     velocity.y,
+                     velocity.z,
+                     speed));
++            Shader.SetGlobalVector(
++                _SubmarineWashAupGridId,
++                new Vector4(
++                    (float)submarineAup.GridX,
++                    (float)submarineAup.GridY,
++                    (float)submarineAup.GridZ,
++                    AbsoluteUniversePosition.CellSizeMeters));
++            Shader.SetGlobalVector(
++                _SubmarineWashAupLocalId,
++                new Vector4(
++                    submarineAup.LocalX,
++                    submarineAup.LocalY,
++                    submarineAup.LocalZ,
++                    radius));
+         }
+ 
+         private void UpdateToxicSporeExposure(Vector3 playerPositionWS, float deltaTime)
+@@ -1949,6 +2101,12 @@ namespace Hecton8.World
+ 
+         private void RefreshModuleParasiteState(float deltaTime)
+         {
++            if (_parasiteGrowthScheduled)
++                CompleteHeadlessParasiteSimulation(force: false);
++
++            if (_parasiteGrowthScheduled)
++                return;
++
+             _moduleParasiteScanTimer -= deltaTime;
+             if (_moduleParasiteScanTimer > 0f)
+                 return;
+@@ -1957,6 +2115,7 @@ namespace Hecton8.World
+             _moduleParasiteScanTimer = Mathf.Max(0.1f, _moduleParasiteScanIntervalSeconds);
+             _moduleParasiteStateBack.Clear();
+             _publishedParasiteAnchorCount = 0;
++            _parasiteNodeCount = 0;
+ 
+             if (_vegetationBridge == null)
+                 _vegetationBridge = ResolveVegetationBridge();
+@@ -1964,8 +2123,7 @@ namespace Hecton8.World
+             ScanActiveModuleParasites(underwater: true);
+             ScanActiveModuleParasites(underwater: false);
+             EvaluateThermophilicModuleGrowth(scanDeltaTime);
+-            ApplyModuleParasiteStateDiff();
+-            PublishParasiteInfectionGlobals();
++            ScheduleHeadlessParasiteSimulation(scanDeltaTime);
+         }
+ 
+         private void ScanActiveModuleParasites(bool underwater)
+@@ -2014,19 +2172,13 @@ namespace Hecton8.World
+                     continue;
+ 
+                 float growth01 = ResolveParasiteGrowth01(in instanceData);
+-                float rootDrainWatts = growth01 >= 0.999f
+-                    ? template.ModulePowerDrainWatts * _matureParasiteRootDrainMultiplier
+-                    : 0f;
+-                AccumulateModuleParasiteState(
++                AppendHeadlessParasiteNode(
+                     module,
++                    instancePositionWS,
++                    growth01,
+                     template.ModulePowerDrainWatts,
+                     template.ModuleInfectionStrength,
+-                    rootDrainWatts,
+-                    growth01);
+-                AppendParasiteAnchor(
+-                    instancePositionWS,
+                     template.ModuleInfectionRadiusMeters,
+-                    template.ModuleInfectionStrength,
+                     template.ModuleInfectionPulseFrequency,
+                     0f);
+             }
+@@ -2094,16 +2246,13 @@ namespace Hecton8.World
+                 if (nextDwellSeconds < dwellThresholdSeconds)
+                     continue;
+ 
+-                AccumulateModuleParasiteState(
++                AppendHeadlessParasiteNode(
+                     module,
++                    module.ResolveBotanyAnchorWorldPosition(),
++                    1f,
+                     template.ModulePowerDrainWatts,
+                     template.ModuleInfectionStrength,
+-                    template.ModulePowerDrainWatts * _matureParasiteRootDrainMultiplier,
+-                    1f);
+-                AppendParasiteAnchor(
+-                    module.ResolveBotanyAnchorWorldPosition(),
+                     template.ModuleInfectionRadiusMeters,
+-                    template.ModuleInfectionStrength,
+                     template.ModuleInfectionPulseFrequency,
+                     1f);
+             }
+@@ -2142,6 +2291,137 @@ namespace Hecton8.World
+             return Mathf.Clamp01(Mathf.Abs(instanceData.HeightScale));
+         }
+ 
++        private void AppendHeadlessParasiteNode(
++            BaseModule module,
++            Vector3 positionWS,
++            float authoredGrowth01,
++            float drainWatts,
++            float infectionLevel,
++            float radiusMeters,
++            float pulseFrequency,
++            float thermalGrowthFlag)
++        {
++            if (module == null || !_parasiteNodes.IsCreated || _parasiteNodeCount >= _parasiteNodes.Length)
++                return;
++
++            int moduleRuntimeId = ResolveModuleRuntimeId(module);
++            if (moduleRuntimeId == 0)
++                return;
++
++            int writeIndex = _parasiteNodeCount;
++            ParasiteNode previous = _parasiteNodes[writeIndex];
++            float growth01 = Mathf.Clamp01(authoredGrowth01);
++            byte state = ParasiteNodeStateAlive;
++            float3 nextPosition = new float3(positionWS.x, positionWS.y, positionWS.z);
++            if (previous.HostModuleRuntimeId == moduleRuntimeId &&
++                math.lengthsq(previous.PositionWS - nextPosition) <= 0.25f)
++            {
++                growth01 = Mathf.Max(growth01, Mathf.Clamp01(previous.GrowthLevel));
++                if (previous.State == ParasiteNodeStateDead)
++                    state = ParasiteNodeStateDead;
++            }
++
++            _parasiteNodes[writeIndex] = new ParasiteNode
++            {
++                PositionWS = nextPosition,
++                HostModuleRuntimeId = moduleRuntimeId,
++                GrowthLevel = growth01,
++                PowerDrainWatts = Mathf.Max(0f, drainWatts),
++                InfectionStrength = Mathf.Clamp01(infectionLevel),
++                RootDrainMultiplier = Mathf.Max(1f, _matureParasiteRootDrainMultiplier),
++                RadiusMeters = Mathf.Max(0.25f, radiusMeters),
++                PulseFrequency = Mathf.Max(0.05f, pulseFrequency),
++                ThermalGrowthFlag = Mathf.Clamp01(thermalGrowthFlag),
++                State = state
++            };
++            _parasiteNodeCount++;
++        }
++
++        private void ScheduleHeadlessParasiteSimulation(float deltaTime)
++        {
++            if (!_parasiteNodes.IsCreated || _parasiteNodeCount <= 0)
++            {
++                ApplyHeadlessParasiteStateFromNodes();
++                return;
++            }
++
++            ChemicalInfluenceGrid.TryGetActivePublishedSnapshot(
++                out NativeArray<float4> frontGrid,
++                out NativeArray<float4> overlayGrid,
++                out int3 dimensions,
++                out float3 origin,
++                out float3 cellSize);
++
++            _parasiteGrowthHandle = new ParasiteGrowthJob
++            {
++                Nodes = _parasiteNodes,
++                NodeCount = _parasiteNodeCount,
++                DeltaTime = Mathf.Max(0f, deltaTime),
++                GrowthPerSecond = Mathf.Max(0f, _headlessParasiteGrowthPerSecond),
++                DefoliantKillThreshold = Mathf.Max(0.01f, _headlessParasiteDefoliantKillThreshold),
++                ChemicalFrontGrid = frontGrid,
++                ChemicalOverlayGrid = overlayGrid,
++                ChemicalDimensions = dimensions,
++                ChemicalOrigin = origin,
++                ChemicalCellSize = cellSize
++            }.Schedule(_parasiteNodeCount, 32);
++            _parasiteGrowthScheduled = true;
++        }
++
++        private void CompleteHeadlessParasiteSimulation(bool force)
++        {
++            if (!_parasiteGrowthScheduled)
++                return;
++
++            if (!force && !_parasiteGrowthHandle.IsCompleted)
++                return;
++
++            _parasiteGrowthHandle.Complete();
++            _parasiteGrowthScheduled = false;
++            ApplyHeadlessParasiteStateFromNodes();
++        }
++
++        private void ApplyHeadlessParasiteStateFromNodes()
++        {
++            _moduleParasiteStateBack.Clear();
++            _publishedParasiteAnchorCount = 0;
++
++            if (_parasiteNodes.IsCreated)
++            {
++                int safeCount = math.min(_parasiteNodeCount, _parasiteNodes.Length);
++                for (int i = 0; i < safeCount; i++)
++                {
++                    ParasiteNode node = _parasiteNodes[i];
++                    if (node.State == ParasiteNodeStateDead || node.GrowthLevel <= 0.001f)
++                        continue;
++
++                    BaseModule module = ResolveBaseModuleByRuntimeId(node.HostModuleRuntimeId);
++                    if (module == null || !module.isActiveAndEnabled)
++                        continue;
++
++                    float growth01 = Mathf.Clamp01(node.GrowthLevel);
++                    float rootDrainWatts = growth01 >= 0.999f
++                        ? node.PowerDrainWatts * Mathf.Max(1f, node.RootDrainMultiplier)
++                        : 0f;
++                    AccumulateModuleParasiteState(
++                        module,
++                        node.PowerDrainWatts,
++                        node.InfectionStrength,
++                        rootDrainWatts,
++                        growth01);
++                    AppendParasiteAnchor(
++                        new Vector3(node.PositionWS.x, node.PositionWS.y, node.PositionWS.z),
++                        node.RadiusMeters,
++                        node.InfectionStrength,
++                        node.PulseFrequency,
++                        node.ThermalGrowthFlag);
++                }
++            }
++
++            ApplyModuleParasiteStateDiff();
++            PublishParasiteInfectionGlobals();
++        }
++
+         private void AccumulateModuleParasiteState(
+             BaseModule module,
+             float drainWatts,
+@@ -2285,6 +2565,36 @@ namespace Hecton8.World
+             return module != null;
+         }
+ 
++        private static BaseModule ResolveBaseModuleByRuntimeId(int moduleRuntimeId)
++        {
++            if (moduleRuntimeId == 0)
++                return null;
++
++            IReadOnlyList<BaseModule> activeModules = BaseModule.ActiveModules;
++            if (activeModules == null)
++                return null;
++
++            int count = activeModules.Count;
++            for (int i = 0; i < count; i++)
++            {
++                BaseModule module = activeModules[i];
++                if (module == null)
++                    continue;
++
++                if (ResolveModuleRuntimeId(module) == moduleRuntimeId)
++                    return module;
++            }
++
++            return null;
++        }
++
++        private static int ResolveModuleRuntimeId(BaseModule module)
++        {
++            return module != null
++                ? unchecked((int)EntityId.ToULong(module.GetEntityId()))
++                : 0;
++        }
++
+         private void ApplyModuleParasiteStateDiff()
+         {
+             _staleParasiticModules.Clear();
+@@ -3094,6 +3404,26 @@ namespace Hecton8.World
+             array = default;
+         }
+ 
++        private void DisposeParasiteNodeArray()
++        {
++            if (!_parasiteNodes.IsCreated)
++                return;
++
++            if (_parasiteGrowthScheduled)
++            {
++                _parasiteNodes.Dispose(_parasiteGrowthHandle);
++                _parasiteGrowthScheduled = false;
++                _parasiteGrowthHandle = default;
++                _parasiteNodeCount = 0;
++                _parasiteNodes = default;
++                return;
++            }
++
++            _parasiteNodes.Dispose();
++            _parasiteNodeCount = 0;
++            _parasiteNodes = default;
++        }
++
+         private static void DisposeNativeList<T>(ref NativeList<T> list) where T : unmanaged
+         {
+             if (!list.IsCreated)
+@@ -3671,6 +4001,18 @@ namespace Hecton8.World
+                 PublishParasiteInfectionGlobals();
+             }
+ 
++            if (!_parasiteGrowthScheduled && _parasiteNodes.IsCreated && _parasiteNodeCount > 0)
++            {
++                float3 offset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
++                int safeCount = math.min(_parasiteNodeCount, _parasiteNodes.Length);
++                for (int i = 0; i < safeCount; i++)
++                {
++                    ParasiteNode node = _parasiteNodes[i];
++                    node.PositionWS += offset;
++                    _parasiteNodes[i] = node;
++                }
++            }
++
+             PublishEnvironmentGlobals(_playerTransform != null ? _playerTransform.position : _smoothPosition);
+         }
+ 
+@@ -3689,6 +4031,8 @@ namespace Hecton8.World
+             Shader.SetGlobalFloat(_SeasonCycleId, 0f);
+             Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+             Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
++            Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
++            Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
+             Shader.SetGlobalVector(_MarineSnowFlowFieldCenterCellSizeId, Vector4.zero);
+             Shader.SetGlobalInt(_FloraFlowFieldResolutionId, 0);
+             Shader.SetGlobalVector(_ParasiteGlobalsId, Vector4.zero);
+@@ -3744,6 +4088,12 @@ namespace Hecton8.World
+                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                 _isSlowTickRegistered = true;
+             }
++
++            if (!_isLateFrameRegistered)
++            {
++                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
++                _isLateFrameRegistered = true;
++            }
+         }
+ 
+         private void TryUnregister()
+@@ -3759,6 +4109,12 @@ namespace Hecton8.World
+                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                 _isSlowTickRegistered = false;
+             }
++
++            if (_isLateFrameRegistered)
++            {
++                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
++                _isLateFrameRegistered = false;
++            }
+         }
+ 
+         private static long EstimateGraphicsBufferBytes(GraphicsBuffer buffer)
+diff --git a/Assets/_Project/Scripts/World/FloraRegrowthDirector.cs b/Assets/_Project/Scripts/World/FloraRegrowthDirector.cs
+index 6862db66..3411925f 100644
+--- a/Assets/_Project/Scripts/World/FloraRegrowthDirector.cs
++++ b/Assets/_Project/Scripts/World/FloraRegrowthDirector.cs
+@@ -31,6 +31,13 @@ namespace Hecton8.World
+         private const float CanopyVerticalMaxMeters = 28f;
+         private const float CanopyMinHeightScale = 0.45f;
+         private const float LightStarvationStrength = 0.85f;
++        private const int MaxSymbioticFungalNodes = 128;
++        private const float SymbioticFungalMaxEdgeDistanceMeters = 1000f;
++        private const float DefaultSymbioticGrowthMultiplier = 1.35f;
++        private const float DefaultSymbioticBuffDurationSeconds = 900f;
++        private const ulong FungalStalkTemplateHash = 0xFD5A46CCUL;
++        private const ulong AcidShroomTemplateHash = 0xB796CF49UL;
++        private const ulong BlindcapTemplateHash = 0x1FB3740AUL;
+         private const byte StateWaiting = 0;
+         private const byte StateActive = 1;
+ 
+@@ -64,11 +71,13 @@ namespace Hecton8.World
+         private struct FloraMaturationState
+         {
+             public uint InstanceUid;
++            public ulong TemplateHash;
+             public float3 RuntimePosition;
+             public float SpawnPlayTimeSeconds;
+             public float GrowthDurationSeconds;
+             public float HeightScale;
+             public float WidthScale;
++            public float ExternalShadeOcclusion01;
+             public int TypeId;
+             public byte SeenThisScan;
+             public byte Reserved0;
+@@ -85,10 +94,42 @@ namespace Hecton8.World
+             public float ResourceYieldMultiplier;
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
++        [StructLayout(LayoutKind.Sequential, Pack = 4)]
++        private struct SymbioticFungalNodeState
++        {
++            public uint InstanceUid;
++            public ulong TemplateHash;
++            public float3 RuntimePosition;
++            public byte Active;
++            public byte Reserved0;
++            public ushort Reserved1;
++        }
++
++        [StructLayout(LayoutKind.Sequential, Pack = 4)]
++        private struct SymbioticFungalBuffState
++        {
++            public uint InstanceUid;
++            public float ExpirePlayTimeSeconds;
++            public float GrowthMultiplier;
++            public float Reserved0;
++        }
++
++        [StructLayout(LayoutKind.Sequential, Pack = 4)]
++        private struct SymbioticFungalMstResult
++        {
++            public uint InstanceUid;
++            public float ExpirePlayTimeSeconds;
++            public float GrowthMultiplier;
++            public byte Connected;
++            public byte Reserved0;
++            public ushort Reserved1;
++        }
++
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct EvaluateMaturationJob : IJobParallelFor
+         {
+             [ReadOnly] public NativeArray<FloraMaturationState> States;
++            [ReadOnly] public NativeArray<SymbioticFungalBuffState> SymbioticBuffs;
+             public float CurrentPlayTimeSeconds;
+             public float CanopyShadowRadiusMeters;
+             public float CanopyVerticalMinMeters;
+@@ -111,7 +152,7 @@ namespace Hecton8.World
+                 FloraMaturationState state = States[index];
+                 float durationSeconds = math.max(1f, state.GrowthDurationSeconds);
+                 float ageSeconds = math.max(0f, CurrentPlayTimeSeconds - state.SpawnPlayTimeSeconds);
+-                float progress01 = math.saturate(ageSeconds / durationSeconds);
++                float progress01 = math.saturate((ageSeconds / durationSeconds) * ResolveSymbioticGrowthMultiplier(state.InstanceUid));
+                 float maturationMultiplier = ResolveMaturationMultiplier(progress01);
+                 float growthMultiplier = ResolveLightStarvationGrowthMultiplier(index, state, progress01);
+                 Results[index] = new FloraMaturationResult
+@@ -131,8 +172,29 @@ namespace Hecton8.World
+                 return math.lerp(0.1f, 1f, smoothProgress);
+             }
+ 
++            private float ResolveSymbioticGrowthMultiplier(uint instanceUid)
++            {
++                if (instanceUid == 0u || !SymbioticBuffs.IsCreated)
++                    return 1f;
++
++                float multiplier = 1f;
++                for (int i = 0; i < SymbioticBuffs.Length; i++)
++                {
++                    SymbioticFungalBuffState buff = SymbioticBuffs[i];
++                    if (buff.InstanceUid != instanceUid || CurrentPlayTimeSeconds > buff.ExpirePlayTimeSeconds)
++                        continue;
++
++                    multiplier = math.max(multiplier, math.max(1f, buff.GrowthMultiplier));
++                }
++
++                return multiplier;
++            }
++
+             private float ResolveLightStarvationGrowthMultiplier(int index, FloraMaturationState undergrowth, float progress01)
+             {
++                if (undergrowth.ExternalShadeOcclusion01 > 0.01f && !IsCanopyType(undergrowth.TypeId))
++                    return -math.saturate(math.max(undergrowth.ExternalShadeOcclusion01, LightStarvationStrength));
++
+                 if (undergrowth.TypeId != (int)HectonVegetationInstanceType.Grass ||
+                     math.abs(undergrowth.HeightScale) <= 0.0001f)
+                 {
+@@ -185,6 +247,94 @@ namespace Hecton8.World
+             }
+         }
+ 
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++        private struct BuildSymbioticFungalMstJob : IJob
++        {
++            [ReadOnly] public NativeArray<SymbioticFungalNodeState> Nodes;
++            public NativeArray<byte> Visited;
++            public NativeArray<int> Parent;
++            public NativeArray<float> BestDistanceSq;
++            public NativeArray<SymbioticFungalMstResult> Results;
++            public uint RootInstanceUid;
++            public int NodeCount;
++            public float MaxEdgeDistanceSq;
++            public float ExpirePlayTimeSeconds;
++            public float GrowthMultiplier;
++
++            public void Execute()
++            {
++                int safeNodeCount = math.min(NodeCount, math.min(Nodes.Length, Results.Length));
++                for (int i = 0; i < safeNodeCount; i++)
++                {
++                    Visited[i] = 0;
++                    Parent[i] = -1;
++                    BestDistanceSq[i] = float.MaxValue;
++                    Results[i] = default;
++                }
++
++                int rootIndex = -1;
++                for (int i = 0; i < safeNodeCount; i++)
++                {
++                    SymbioticFungalNodeState node = Nodes[i];
++                    if (node.Active == 0 || node.InstanceUid != RootInstanceUid)
++                        continue;
++
++                    rootIndex = i;
++                    break;
++                }
++
++                if (rootIndex < 0)
++                    return;
++
++                BestDistanceSq[rootIndex] = 0f;
++                for (int step = 0; step < safeNodeCount; step++)
++                {
++                    int currentIndex = -1;
++                    float currentBestSq = float.MaxValue;
++                    for (int i = 0; i < safeNodeCount; i++)
++                    {
++                        if (Visited[i] != 0 || BestDistanceSq[i] >= currentBestSq)
++                            continue;
++
++                        currentBestSq = BestDistanceSq[i];
++                        currentIndex = i;
++                    }
++
++                    if (currentIndex < 0 || (currentIndex != rootIndex && currentBestSq > MaxEdgeDistanceSq))
++                        break;
++
++                    Visited[currentIndex] = 1;
++                    SymbioticFungalNodeState currentNode = Nodes[currentIndex];
++                    Results[currentIndex] = new SymbioticFungalMstResult
++                    {
++                        InstanceUid = currentNode.InstanceUid,
++                        ExpirePlayTimeSeconds = ExpirePlayTimeSeconds,
++                        GrowthMultiplier = math.max(1f, GrowthMultiplier),
++                        Connected = 1,
++                        Reserved0 = 0,
++                        Reserved1 = 0
++                    };
++
++                    for (int candidateIndex = 0; candidateIndex < safeNodeCount; candidateIndex++)
++                    {
++                        if (Visited[candidateIndex] != 0)
++                            continue;
++
++                        SymbioticFungalNodeState candidate = Nodes[candidateIndex];
++                        if (candidate.Active == 0)
++                            continue;
++
++                        float distanceSq = math.distancesq(currentNode.RuntimePosition, candidate.RuntimePosition);
++                        if (distanceSq > MaxEdgeDistanceSq || distanceSq >= BestDistanceSq[candidateIndex])
++                            continue;
++
++                        BestDistanceSq[candidateIndex] = distanceSq;
++                        Parent[candidateIndex] = currentIndex;
++                    }
++                }
++            }
++        }
++
+         [SerializeField]
+         [Tooltip("Runtime owner that mutates streamed flora metadata and harvest health state.")]
+         private DestructibleOrganicManager destructibleOrganicManager;
+@@ -203,8 +353,17 @@ namespace Hecton8.World
+         private NativeList<FloraMaturationState> _maturationStates;
+         private NativeHashMap<uint, int> _maturationIndexByInstanceUid;
+         private NativeArray<FloraMaturationResult> _maturationResults;
++        private NativeList<SymbioticFungalNodeState> _symbioticFungalNodes;
++        private NativeList<SymbioticFungalBuffState> _symbioticFungalBuffs;
++        private NativeArray<SymbioticFungalMstResult> _symbioticMstResults;
++        private NativeArray<byte> _symbioticMstVisited;
++        private NativeArray<int> _symbioticMstParent;
++        private NativeArray<float> _symbioticMstBestDistanceSq;
+         private JobHandle _maturationJobHandle;
++        private JobHandle _symbioticMstJobHandle;
+         private bool _maturationJobScheduled;
++        private bool _symbioticMstJobScheduled;
++        private int _symbioticMstResultCount;
+         private float _lastSeedPlayTime;
+         private bool _tickRegistered;
+         private bool _slowTickRegistered;
+@@ -244,6 +403,28 @@ namespace Hecton8.World
+             _maturationIndexByInstanceUid = new NativeHashMap<uint, int>(
+                 DefaultTrackedRegrowthCapacity,
+                 Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[2048] - maturation state lookup keyed by deterministic flora uid - owner: FloraRegrowthDirector
++            _symbioticFungalNodes = new NativeList<SymbioticFungalNodeState>(
++                MaxSymbioticFungalNodes,
++                Allocator.Persistent); // COLD ALLOC: NativeList<SymbioticFungalNodeState>[128] - bounded fungal graph nodes for MST nutrient sharing - owner: FloraRegrowthDirector
++            _symbioticFungalBuffs = new NativeList<SymbioticFungalBuffState>(
++                MaxSymbioticFungalNodes,
++                Allocator.Persistent); // COLD ALLOC: NativeList<SymbioticFungalBuffState>[128] - active fungal growth buffs consumed by maturation Burst job - owner: FloraRegrowthDirector
++            _symbioticMstResults = new NativeArray<SymbioticFungalMstResult>(
++                MaxSymbioticFungalNodes,
++                Allocator.Persistent,
++                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SymbioticFungalMstResult>[128] - MST connected-component results - owner: FloraRegrowthDirector
++            _symbioticMstVisited = new NativeArray<byte>(
++                MaxSymbioticFungalNodes,
++                Allocator.Persistent,
++                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[128] - MST visited flags - owner: FloraRegrowthDirector
++            _symbioticMstParent = new NativeArray<int>(
++                MaxSymbioticFungalNodes,
++                Allocator.Persistent,
++                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[128] - MST parent indices for nutrient graph solve - owner: FloraRegrowthDirector
++            _symbioticMstBestDistanceSq = new NativeArray<float>(
++                MaxSymbioticFungalNodes,
++                Allocator.Persistent,
++                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[128] - MST best squared edge distances - owner: FloraRegrowthDirector
+             _lastSeedPlayTime = GetCurrentPlayTimeSeconds();
+         }
+ 
+@@ -283,6 +464,7 @@ namespace Hecton8.World
+         private void OnDestroy()
+         {
+             JobHandle disposeHandle = _maturationJobScheduled ? _maturationJobHandle : default;
++            JobHandle symbioticDisposeHandle = _symbioticMstJobScheduled ? _symbioticMstJobHandle : default;
+             if (_destroyedFloraScratch.IsCreated)
+                 _destroyedFloraScratch.Dispose();
+ 
+@@ -328,6 +510,54 @@ namespace Hecton8.World
+                 else
+                     _maturationIndexByInstanceUid.Dispose();
+             }
++
++            if (_symbioticFungalBuffs.IsCreated)
++            {
++                if (_maturationJobScheduled)
++                    _symbioticFungalBuffs.Dispose(disposeHandle);
++                else
++                    _symbioticFungalBuffs.Dispose();
++            }
++
++            if (_symbioticFungalNodes.IsCreated)
++            {
++                if (_symbioticMstJobScheduled)
++                    _symbioticFungalNodes.Dispose(symbioticDisposeHandle);
++                else
++                    _symbioticFungalNodes.Dispose();
++            }
++
++            if (_symbioticMstResults.IsCreated)
++            {
++                if (_symbioticMstJobScheduled)
++                    _symbioticMstResults.Dispose(symbioticDisposeHandle);
++                else
++                    _symbioticMstResults.Dispose();
++            }
++
++            if (_symbioticMstVisited.IsCreated)
++            {
++                if (_symbioticMstJobScheduled)
++                    _symbioticMstVisited.Dispose(symbioticDisposeHandle);
++                else
++                    _symbioticMstVisited.Dispose();
++            }
++
++            if (_symbioticMstParent.IsCreated)
++            {
++                if (_symbioticMstJobScheduled)
++                    _symbioticMstParent.Dispose(symbioticDisposeHandle);
++                else
++                    _symbioticMstParent.Dispose();
++            }
++
++            if (_symbioticMstBestDistanceSq.IsCreated)
++            {
++                if (_symbioticMstJobScheduled)
++                    _symbioticMstBestDistanceSq.Dispose(symbioticDisposeHandle);
++                else
++                    _symbioticMstBestDistanceSq.Dispose();
++            }
+         }
+ 
+         private void SyncMaturationStates(PersistentWorldRegistry registry, float currentPlayTime)
+@@ -348,6 +578,9 @@ namespace Hecton8.World
+                 _maturationStates[i] = state;
+             }
+ 
++            if (_symbioticFungalNodes.IsCreated)
++                _symbioticFungalNodes.Clear();
++
+             SyncMaturationStatesForPayload(registry, currentPlayTime, underwater: false);
+             SyncMaturationStatesForPayload(registry, currentPlayTime, underwater: true);
+ 
+@@ -390,7 +623,7 @@ namespace Hecton8.World
+                         types[i],
+                         semanticTypes[i],
+                         out uint instanceUid,
+-                        out _,
++                        out ulong templateHash,
+                         out float growthTimeSeconds))
+                 {
+                     continue;
+@@ -403,6 +636,7 @@ namespace Hecton8.World
+                 }
+ 
+                 Vector3 runtimePosition = ExtractTranslation(matrices[i]);
++                float externalShadeOcclusion01 = ResolveMigratorySargassumShadeOcclusion(runtimePosition);
+                 float spawnPlayTimeSeconds;
+                 if (!registry.TryGetFloraSpawnTimestamp(instanceUid, out spawnPlayTimeSeconds))
+                 {
+@@ -413,14 +647,17 @@ namespace Hecton8.World
+                 if (_maturationIndexByInstanceUid.TryGetValue(instanceUid, out int existingIndex))
+                 {
+                     FloraMaturationState state = _maturationStates[existingIndex];
++                    state.TemplateHash = templateHash;
+                     state.RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                     state.SpawnPlayTimeSeconds = spawnPlayTimeSeconds;
+                     state.GrowthDurationSeconds = Mathf.Max(1f, growthTimeSeconds);
+                     state.HeightScale = Mathf.Abs(metadata[i].HeightScale);
+                     state.WidthScale = Mathf.Abs(metadata[i].WidthScale);
++                    state.ExternalShadeOcclusion01 = externalShadeOcclusion01;
+                     state.TypeId = types[i];
+                     state.SeenThisScan = 1;
+                     _maturationStates[existingIndex] = state;
++                    TryRegisterSymbioticFungalNode(in state);
+                     continue;
+                 }
+ 
+@@ -430,11 +667,13 @@ namespace Hecton8.World
+                 FloraMaturationState newState = new FloraMaturationState
+                 {
+                     InstanceUid = instanceUid,
++                    TemplateHash = templateHash,
+                     RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                     SpawnPlayTimeSeconds = spawnPlayTimeSeconds,
+                     GrowthDurationSeconds = Mathf.Max(1f, growthTimeSeconds),
+                     HeightScale = Mathf.Abs(metadata[i].HeightScale),
+                     WidthScale = Mathf.Abs(metadata[i].WidthScale),
++                    ExternalShadeOcclusion01 = externalShadeOcclusion01,
+                     TypeId = types[i],
+                     SeenThisScan = 1,
+                     Reserved0 = 0,
+@@ -442,6 +681,7 @@ namespace Hecton8.World
+                 };
+                 _maturationIndexByInstanceUid.TryAdd(instanceUid, _maturationStates.Length);
+                 _maturationStates.AddNoResize(newState);
++                TryRegisterSymbioticFungalNode(in newState);
+             }
+         }
+ 
+@@ -454,9 +694,11 @@ namespace Hecton8.World
+             if (!_maturationResults.IsCreated || _maturationResults.Length < _maturationStates.Length)
+                 return;
+ 
++            PruneExpiredSymbioticBuffs(currentPlayTime);
+             _maturationJobHandle = new EvaluateMaturationJob
+             {
+                 States = _maturationStates.AsArray(),
++                SymbioticBuffs = _symbioticFungalBuffs.IsCreated ? _symbioticFungalBuffs.AsArray() : default,
+                 CurrentPlayTimeSeconds = currentPlayTime,
+                 CanopyShadowRadiusMeters = CanopyShadowRadiusMeters,
+                 CanopyVerticalMinMeters = CanopyVerticalMinMeters,
+@@ -468,6 +710,215 @@ namespace Hecton8.World
+             _maturationJobScheduled = true;
+         }
+ 
++        private float ResolveMigratorySargassumShadeOcclusion(Vector3 runtimePosition)
++        {
++            WorldProceduralScatterDirector scatterDirector = WorldProceduralScatterDirector.ActiveRuntimeInstance;
++            if (scatterDirector == null ||
++                !scatterDirector.TryEvaluateMigratorySargassumShade(runtimePosition, out float occlusion01))
++            {
++                return 0f;
++            }
++
++            return Mathf.Clamp01(occlusion01);
++        }
++
++        private void TryRegisterSymbioticFungalNode(in FloraMaturationState state)
++        {
++            if (!_symbioticFungalNodes.IsCreated ||
++                _symbioticFungalNodes.Length >= _symbioticFungalNodes.Capacity ||
++                !IsSymbioticFungalTemplateHash(state.TemplateHash))
++            {
++                return;
++            }
++
++            _symbioticFungalNodes.AddNoResize(new SymbioticFungalNodeState
++            {
++                InstanceUid = state.InstanceUid,
++                TemplateHash = state.TemplateHash,
++                RuntimePosition = state.RuntimePosition,
++                Active = 1,
++                Reserved0 = 0,
++                Reserved1 = 0
++            });
++        }
++
++        private static bool IsSymbioticFungalTemplateHash(ulong templateHash)
++        {
++            return templateHash == FungalStalkTemplateHash ||
++                   templateHash == AcidShroomTemplateHash ||
++                   templateHash == BlindcapTemplateHash;
++        }
++
++        /// <summary>
++        /// Schedules a bounded Burst MST solve from the fertilized fungal node and applies connected growth buffs when the job completes.
++        /// </summary>
++        /// <param name="instanceUid">Stable flora instance uid of the fertilized fungal node.</param>
++        /// <param name="growthMultiplier">Maturation-rate multiplier applied to connected fungal nodes.</param>
++        /// <param name="durationSeconds">Buff duration in play-time seconds.</param>
++        /// <returns>True when a graph solve was scheduled.</returns>
++        public bool TryApplySymbioticFungalFertilizer(uint instanceUid, float growthMultiplier = DefaultSymbioticGrowthMultiplier, float durationSeconds = DefaultSymbioticBuffDurationSeconds)
++        {
++            CompleteSymbioticMstJobIfReady();
++            if (instanceUid == 0u ||
++                _symbioticMstJobScheduled ||
++                !_symbioticFungalNodes.IsCreated ||
++                _symbioticFungalNodes.Length <= 0)
++            {
++                return false;
++            }
++
++            bool found = false;
++            for (int i = 0; i < _symbioticFungalNodes.Length; i++)
++            {
++                if (_symbioticFungalNodes[i].InstanceUid != instanceUid)
++                    continue;
++
++                found = true;
++                break;
++            }
++
++            if (!found)
++                return false;
++
++            ScheduleSymbioticMstJob(
++                instanceUid,
++                Mathf.Max(1f, growthMultiplier),
++                Mathf.Max(0.1f, durationSeconds));
++            return true;
++        }
++
++        /// <summary>
++        /// Resolves the nearest fungal node in a runtime radius and schedules the symbiotic MST fertilizer solve.
++        /// </summary>
++        /// <param name="runtimePosition">Runtime-space fertilization point.</param>
++        /// <param name="radiusMeters">Search radius for the nearest fungal node.</param>
++        /// <param name="growthMultiplier">Maturation-rate multiplier applied to connected fungal nodes.</param>
++        /// <param name="durationSeconds">Buff duration in play-time seconds.</param>
++        /// <returns>True when a graph solve was scheduled.</returns>
++        public bool TryApplySymbioticFungalFertilizer(Vector3 runtimePosition, float radiusMeters, float growthMultiplier = DefaultSymbioticGrowthMultiplier, float durationSeconds = DefaultSymbioticBuffDurationSeconds)
++        {
++            CompleteSymbioticMstJobIfReady();
++            if (radiusMeters <= 0f || !_symbioticFungalNodes.IsCreated || _symbioticFungalNodes.Length <= 0)
++                return false;
++
++            float3 origin = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
++            float bestDistanceSq = radiusMeters * radiusMeters;
++            uint bestInstanceUid = 0u;
++            for (int i = 0; i < _symbioticFungalNodes.Length; i++)
++            {
++                SymbioticFungalNodeState node = _symbioticFungalNodes[i];
++                if (node.Active == 0)
++                    continue;
++
++                float distanceSq = math.distancesq(origin, node.RuntimePosition);
++                if (distanceSq >= bestDistanceSq)
++                    continue;
++
++                bestDistanceSq = distanceSq;
++                bestInstanceUid = node.InstanceUid;
++            }
++
++            return bestInstanceUid != 0u &&
++                   TryApplySymbioticFungalFertilizer(bestInstanceUid, growthMultiplier, durationSeconds);
++        }
++
++        private void ScheduleSymbioticMstJob(uint rootInstanceUid, float growthMultiplier, float durationSeconds)
++        {
++            if (!_symbioticFungalNodes.IsCreated ||
++                !_symbioticMstResults.IsCreated ||
++                !_symbioticMstVisited.IsCreated ||
++                !_symbioticMstParent.IsCreated ||
++                !_symbioticMstBestDistanceSq.IsCreated)
++            {
++                return;
++            }
++
++            _symbioticMstResultCount = math.min(_symbioticFungalNodes.Length, MaxSymbioticFungalNodes);
++            float edgeDistance = Mathf.Max(1f, SymbioticFungalMaxEdgeDistanceMeters);
++            _symbioticMstJobHandle = new BuildSymbioticFungalMstJob
++            {
++                Nodes = _symbioticFungalNodes.AsArray(),
++                Visited = _symbioticMstVisited,
++                Parent = _symbioticMstParent,
++                BestDistanceSq = _symbioticMstBestDistanceSq,
++                Results = _symbioticMstResults,
++                RootInstanceUid = rootInstanceUid,
++                NodeCount = _symbioticMstResultCount,
++                MaxEdgeDistanceSq = edgeDistance * edgeDistance,
++                ExpirePlayTimeSeconds = GetCurrentPlayTimeSeconds() + durationSeconds,
++                GrowthMultiplier = growthMultiplier
++            }.Schedule();
++            _symbioticMstJobScheduled = true;
++        }
++
++        private void CompleteSymbioticMstJobIfReady()
++        {
++            if (!_symbioticMstJobScheduled || !_symbioticMstJobHandle.IsCompleted)
++                return;
++
++            if (_maturationJobScheduled)
++            {
++                CompleteMaturationJobIfNeeded();
++                if (_maturationJobScheduled)
++                    return;
++            }
++
++            _symbioticMstJobHandle.Complete();
++            _symbioticMstJobScheduled = false;
++            ApplySymbioticMstResults(GetCurrentPlayTimeSeconds());
++        }
++
++        private void ApplySymbioticMstResults(float currentPlayTime)
++        {
++            if (!_symbioticMstResults.IsCreated || !_symbioticFungalBuffs.IsCreated)
++                return;
++
++            PruneExpiredSymbioticBuffs(currentPlayTime);
++            int resultCount = math.min(_symbioticMstResultCount, _symbioticMstResults.Length);
++            for (int i = 0; i < resultCount; i++)
++            {
++                SymbioticFungalMstResult result = _symbioticMstResults[i];
++                if (result.Connected == 0 || result.InstanceUid == 0u)
++                    continue;
++
++                UpsertSymbioticFungalBuff(new SymbioticFungalBuffState
++                {
++                    InstanceUid = result.InstanceUid,
++                    ExpirePlayTimeSeconds = result.ExpirePlayTimeSeconds,
++                    GrowthMultiplier = result.GrowthMultiplier,
++                    Reserved0 = 0f
++                });
++            }
++        }
++
++        private void UpsertSymbioticFungalBuff(SymbioticFungalBuffState buff)
++        {
++            for (int i = 0; i < _symbioticFungalBuffs.Length; i++)
++            {
++                if (_symbioticFungalBuffs[i].InstanceUid != buff.InstanceUid)
++                    continue;
++
++                _symbioticFungalBuffs[i] = buff;
++                return;
++            }
++
++            if (_symbioticFungalBuffs.Length < _symbioticFungalBuffs.Capacity)
++                _symbioticFungalBuffs.AddNoResize(buff);
++        }
++
++        private void PruneExpiredSymbioticBuffs(float currentPlayTime)
++        {
++            if (!_symbioticFungalBuffs.IsCreated)
++                return;
++
++            for (int i = _symbioticFungalBuffs.Length - 1; i >= 0; i--)
++            {
++                SymbioticFungalBuffState buff = _symbioticFungalBuffs[i];
++                if (buff.InstanceUid == 0u || currentPlayTime > buff.ExpirePlayTimeSeconds)
++                    _symbioticFungalBuffs.RemoveAtSwapBack(i);
++            }
++        }
++
+         private void CompleteMaturationJobIfNeeded()
+         {
+             if (!_maturationJobScheduled || !_maturationJobHandle.IsCompleted)
+@@ -545,6 +996,7 @@ namespace Hecton8.World
+ 
+             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+             float currentPlayTime = GetCurrentPlayTimeSeconds();
++            CompleteSymbioticMstJobIfReady();
+             CompleteMaturationJobIfNeeded();
+             UpdateSeedFlights(deltaTime);
+             for (int i = _regrowthStates.Length - 1; i >= 0; i--)
+@@ -580,6 +1032,11 @@ namespace Hecton8.World
+             if (registry == null || destructibleOrganicManager == null)
+                 return;
+ 
++            CompleteSymbioticMstJobIfReady();
++            CompleteMaturationJobIfNeeded();
++            if (_symbioticMstJobScheduled || _maturationJobScheduled)
++                return;
++
+             float currentPlayTime = GetCurrentPlayTimeSeconds();
+             UpdatePendingSeedTimers(registry, currentPlayTime);
+             for (int i = 0; i < _regrowthStates.Length; i++)
+diff --git a/Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs b/Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs
+index 55a64938..16eeecab 100644
+--- a/Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs
++++ b/Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs
+@@ -10,6 +10,8 @@ namespace Hecton8.World
+ {
+     public sealed partial class WorldProceduralScatterDirector
+     {
++        private const int FloraChunkInstanceHardCap = 4096;
++
+         internal readonly struct ScatterPlacementSpatialMetadata
+         {
+             public ScatterPlacementSpatialMetadata(
+@@ -221,7 +223,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct CanAcceptCandidateJob : IJob
+         {
+             [ReadOnly] public NativeParallelMultiHashMap<int, float3> PositionBuckets;
+@@ -241,11 +243,24 @@ namespace Hecton8.World
+             public int FloraDensityClampSearchRadiusCells;
+             public int FloraDensityClampMicroCap;
+             public int FloraDensityClampMacroCap;
++            public int FloraChunkHardCap;
+             public byte CandidateFloraBudgetClass;
+             public byte FloraDensityClampEnabled;
+ 
+             public void Execute()
+             {
++                if (CandidateFloraBudgetClass != (byte)FloraBudgetClass.None &&
++                    ExceedsFloraChunkHardCap(
++                        CandidateCellX,
++                        CandidateCellZ,
++                        FloraChunkHardCap,
++                        MetadataBuckets,
++                        SpatialMetadata))
++                {
++                    Result[0] = 0;
++                    return;
++                }
++
+                 if (FloraDensityClampEnabled != 0 &&
+                     CandidateFloraBudgetClass != (byte)FloraBudgetClass.None &&
+                     WorldProceduralScatterDirector.ExceedsFloraDensityBudget(
+@@ -315,7 +330,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct EvaluateScatterCellCandidateBatchJob : IJob
+         {
+             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;
+@@ -365,6 +380,7 @@ namespace Hecton8.World
+             public int FloraDensityClampSearchRadiusCells;
+             public int FloraDensityClampMicroCap;
+             public int FloraDensityClampMacroCap;
++            public int FloraChunkHardCap;
+ 
+             public void Execute()
+             {
+@@ -394,6 +410,12 @@ namespace Hecton8.World
+                     if (candidate.ExternalBlock != 0)
+                         continue;
+ 
++                    if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
++                        ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
++                    {
++                        continue;
++                    }
++
+                     if (!HasPatternLayerBudget(
+                             candidate.ScatterLayer,
+                             globalGroundCount,
+@@ -564,6 +586,18 @@ namespace Hecton8.World
+                         PendingSpatialMetadata.AsArray());
+             }
+ 
++            private bool ExceedsFloraChunkHardCap(in ScatterCellCandidateAcceptanceInput candidate, int hardCap)
++            {
++                return WorldProceduralScatterDirector.ExceedsFloraChunkHardCap(
++                    candidate.CellX,
++                    candidate.CellZ,
++                    hardCap,
++                    ExistingMetadataBuckets,
++                    ExistingSpatialMetadata,
++                    PendingMetadataBuckets,
++                    PendingSpatialMetadata.AsArray());
++            }
++
+             private static bool HasSpatialConflictInBuckets(
+                 in ScatterCellCandidateAcceptanceInput candidate,
+                 float maxRelevantDistanceSq,
+@@ -835,7 +869,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct EvaluateScatterRescueCandidateBatchJob : IJob
+         {
+             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;
+@@ -867,6 +901,7 @@ namespace Hecton8.World
+             public int FloraDensityClampSearchRadiusCells;
+             public int FloraDensityClampMicroCap;
+             public int FloraDensityClampMacroCap;
++            public int FloraChunkHardCap;
+ 
+             public void Execute()
+             {
+@@ -887,6 +922,12 @@ namespace Hecton8.World
+                     if (acceptedCount >= AcceptLimit)
+                         continue;
+ 
++                    if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
++                        ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
++                    {
++                        continue;
++                    }
++
+                     if (LayerTargetMax > 0 && layerCount >= LayerTargetMax)
+                         continue;
+ 
+@@ -1033,6 +1074,18 @@ namespace Hecton8.World
+                         PendingSpatialMetadata.AsArray());
+             }
+ 
++            private bool ExceedsFloraChunkHardCap(in ScatterCellCandidateAcceptanceInput candidate, int hardCap)
++            {
++                return WorldProceduralScatterDirector.ExceedsFloraChunkHardCap(
++                    candidate.CellX,
++                    candidate.CellZ,
++                    hardCap,
++                    ExistingMetadataBuckets,
++                    ExistingSpatialMetadata,
++                    PendingMetadataBuckets,
++                    PendingSpatialMetadata.AsArray());
++            }
++
+             private static bool HasSpatialConflictInBuckets(
+                 in ScatterCellCandidateAcceptanceInput candidate,
+                 float maxRelevantDistanceSq,
+@@ -1256,6 +1309,66 @@ namespace Hecton8.World
+             return false;
+         }
+ 
++        private static bool ExceedsFloraChunkHardCap(
++            int candidateCellX,
++            int candidateCellZ,
++            int hardCap,
++            NativeParallelMultiHashMap<int, int> metadataBuckets,
++            NativeArray<ScatterPlacementSpatialMetadata> spatialMetadata)
++        {
++            if (hardCap <= 0)
++                return false;
++
++            int cellKey = ComposeScatterGridNativeKey(candidateCellX, candidateCellZ);
++            return CountFloraInChunkCell(cellKey, metadataBuckets, spatialMetadata) >= hardCap;
++        }
++
++        private static bool ExceedsFloraChunkHardCap(
++            int candidateCellX,
++            int candidateCellZ,
++            int hardCap,
++            NativeParallelMultiHashMap<int, int> existingMetadataBuckets,
++            NativeArray<ScatterPlacementSpatialMetadata> existingSpatialMetadata,
++            NativeParallelMultiHashMap<int, int> pendingMetadataBuckets,
++            NativeArray<ScatterPlacementSpatialMetadata> pendingSpatialMetadata)
++        {
++            if (hardCap <= 0)
++                return false;
++
++            int cellKey = ComposeScatterGridNativeKey(candidateCellX, candidateCellZ);
++            int existingCount = CountFloraInChunkCell(cellKey, existingMetadataBuckets, existingSpatialMetadata);
++            if (existingCount >= hardCap)
++                return true;
++
++            int pendingCount = CountFloraInChunkCell(cellKey, pendingMetadataBuckets, pendingSpatialMetadata);
++            return existingCount + pendingCount >= hardCap;
++        }
++
++        private static int CountFloraInChunkCell(
++            int cellKey,
++            NativeParallelMultiHashMap<int, int> metadataBuckets,
++            NativeArray<ScatterPlacementSpatialMetadata> spatialMetadata)
++        {
++            if (!metadataBuckets.IsCreated || !spatialMetadata.IsCreated)
++                return 0;
++
++            int count = 0;
++            if (!metadataBuckets.TryGetFirstValue(cellKey, out int metadataIndex, out NativeParallelMultiHashMapIterator<int> metadataIterator))
++                return 0;
++
++            do
++            {
++                if (metadataIndex < 0 || metadataIndex >= spatialMetadata.Length)
++                    continue;
++
++                if (spatialMetadata[metadataIndex].FloraBudgetClass != (byte)FloraBudgetClass.None)
++                    count++;
++            }
++            while (metadataBuckets.TryGetNextValue(out metadataIndex, ref metadataIterator));
++
++            return count;
++        }
++
+         private static int ResolveFloraDensityCap(byte floraBudgetClass, int microCap, int macroCap)
+         {
+             if (floraBudgetClass == (byte)FloraBudgetClass.Micro)
+@@ -1350,7 +1463,8 @@ namespace Hecton8.World
+                 FloraDensityClampRadiusSq = floraDensityClampRadiusMeters * floraDensityClampRadiusMeters,
+                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
+                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
+-                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap)
++                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
++                FloraChunkHardCap = FloraChunkInstanceHardCap
+             };
+ 
+             JobHandle handle = job.Schedule();
+@@ -1508,7 +1622,8 @@ namespace Hecton8.World
+                 FloraDensityClampRadiusSq = floraDensityClampRadiusMeters * floraDensityClampRadiusMeters,
+                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
+                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
+-                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap)
++                FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
++                FloraChunkHardCap = FloraChunkInstanceHardCap
+             };
+ 
+             JobHandle handle = job.Schedule();
+@@ -1680,6 +1795,7 @@ namespace Hecton8.World
+                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
+                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
+                 FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
++                FloraChunkHardCap = FloraChunkInstanceHardCap,
+                 CandidateFloraBudgetClass = (byte)ResolveFloraBudgetClass(family),
+                 FloraDensityClampEnabled = enableFloraDensityClamp ? (byte)1 : (byte)0
+             };
+
+
+diff --git a/Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs b/Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs
+new file mode 100644
+index 00000000..6eb2b749
+--- /dev/null
++++ b/Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs
+@@ -0,0 +1,666 @@
++using Hecton8.Gameplay;
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using Unity.Profiling;
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    public sealed partial class WorldProceduralScatterDirector
++    {
++        private const int MaxMigratorySargassumIslandCount = 24;
++        private const float MigratorySargassumMinimumSpatialRadiusMeters = 1f;
++        private const float MigratorySargassumMaximumDeltaTimeSeconds = 2f;
++
++        private static readonly int _MigratorySargassumSpeciesHash = ComputeStableStringHash("flora.halo_sargassum");
++        private static readonly ProfilerMarker _migratorySargassumProfilerMarker = new("WorldScatter.MigratorySargassum");
++
++        [Header("Migratory Sargassum Islands")]
++        [SerializeField]
++        [Tooltip("Moves canopy kelp clusters as data-only migratory Sargassum islands and publishes them into the AUP spatial hash.")]
++        private bool enableMigratorySargassumIslands = true;
++
++        [SerializeField, Min(1f)]
++        [Tooltip("Minimum source family cluster radius before a kelp placement can seed a migratory island.")]
++        private float migratorySargassumMinimumSourceRadiusMeters = 18f;
++
++        [SerializeField, Min(1f)]
++        [Tooltip("Minimum water-column depth required before a canopy kelp placement can become a migratory Sargassum island.")]
++        private float migratorySargassumMinimumWaterDepthMeters = 80f;
++
++        [SerializeField, Min(1f)]
++        [Tooltip("Minimum vertical lift from seabed to the drifting Sargassum canopy.")]
++        private float migratorySargassumMinimumLiftMeters = 18f;
++
++        [SerializeField, Min(0f)]
++        [Tooltip("Meters below the sampled water surface where migratory islands should drift.")]
++        private float migratorySargassumSurfaceClearanceMeters = 14f;
++
++        [SerializeField, Min(1f)]
++        [Tooltip("Minimum radius for migratory island spatial registration and photosynthetic shade.")]
++        private float migratorySargassumMinimumRadiusMeters = 22f;
++
++        [SerializeField, Min(1f)]
++        [Tooltip("Maximum radius for migratory island spatial registration and photosynthetic shade.")]
++        private float migratorySargassumMaximumRadiusMeters = 85f;
++
++        [SerializeField, Min(0.1f)]
++        [Tooltip("Vertical half-height used by the AUP spatial hash for migratory island canopy volume.")]
++        private float migratorySargassumHalfHeightMeters = 12f;
++
++        [SerializeField, Min(0f)]
++        [Tooltip("Multiplier applied to AbyssalFlow velocity before the Burst drift solve.")]
++        private float migratorySargassumFlowDriftScale = 0.35f;
++
++        [SerializeField, Min(0f)]
++        [Tooltip("Maximum horizontal drift speed in meters per second.")]
++        private float migratorySargassumMaxSpeedMetersPerSecond = 2.5f;
++
++        [SerializeField, Min(0f)]
++        [Tooltip("Velocity damping for the Burst drift solve.")]
++        private float migratorySargassumVelocityDamping = 1.8f;
++
++        [SerializeField, Min(0.1f)]
++        [Tooltip("Cadence in seconds for applying photosynthetic kill-zone decomposition under migratory islands.")]
++        private float migratorySargassumKillZoneCadenceSeconds = 2f;
++
++        [SerializeField, Range(0.1f, 2f)]
++        [Tooltip("Radius multiplier used when decomposing seabed flora under migratory island shade.")]
++        private float migratorySargassumKillZoneRadiusScale = 0.85f;
++
++        [SerializeField, Range(0f, 1f)]
++        [Tooltip("Chemical transient intensity published into the spatial hash so fauna can follow drifting islands.")]
++        private float migratorySargassumChemicalSignalIntensity = 0.45f;
++
++        [SerializeField, Min(0.5f)]
++        [Tooltip("Small local chemical beacon radius. Kept below canopy radius to avoid large transient-cell expansion.")]
++        private float migratorySargassumChemicalSignalRadiusMeters = 6f;
++
++        [SerializeField, Min(0.1f)]
++        [Tooltip("Lifetime in seconds for migratory island chemical spatial-hash transients.")]
++        private float migratorySargassumChemicalSignalLifetimeSeconds = 1.25f;
++
++        [SerializeField]
++        [Tooltip("Organic manager that receives photosynthetic kill-zone decomposition. If unset, the director resolves a sibling component once.")]
++        private DestructibleOrganicManager migratorySargassumOrganicManager;
++
++        private NativeArray<MigratorySargassumIslandState> _migratorySargassumIslands;
++        private NativeArray<MigratorySargassumIslandState> _migratorySargassumScratchIslands;
++        private NativeArray<MigratorySargassumSourceState> _migratorySargassumSelectedSources;
++        private NativeArray<float3> _migratorySargassumFlowSamples;
++        private NativeArray<int> _migratorySargassumSpatialHandles;
++        private NativeArray<int> _migratorySargassumScratchSpatialHandles;
++        private HectonSpatialHash _migratorySargassumSpatialHash;
++        private JobHandle _migratorySargassumJobHandle;
++        private bool _migratorySargassumJobRunning;
++        private int _migratorySargassumIslandCount;
++        private float _lastMigratorySargassumTickTime;
++        private float _nextMigratorySargassumKillZoneTime;
++
++        private struct MigratorySargassumSourceState
++        {
++            public long SourceKey;
++            public int SourceHash;
++            public AbsoluteUniversePosition Position;
++            public float RadiusMeters;
++            public byte Active;
++        }
++
++        private struct MigratorySargassumIslandState
++        {
++            public long SourceKey;
++            public int SourceHash;
++            public AbsoluteUniversePosition Position;
++            public float3 Velocity;
++            public float RadiusMeters;
++            public byte Active;
++        }
++
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++        private struct UpdateMigratorySargassumIslandsJob : IJobParallelFor
++        {
++            public NativeArray<MigratorySargassumIslandState> Islands;
++            [ReadOnly] public NativeArray<float3> FlowSamples;
++            public float DeltaTime;
++            public float DriftScale;
++            public float MaxSpeed;
++            public float VelocityDamping;
++
++            public void Execute(int index)
++            {
++                MigratorySargassumIslandState island = Islands[index];
++                if (island.Active == 0)
++                    return;
++
++                float3 flow = FlowSamples[index];
++                flow.y = 0f;
++                float flowMagnitudeSq = math.lengthsq(flow);
++                float3 desiredVelocity = float3.zero;
++                if (flowMagnitudeSq > 0.0001f)
++                {
++                    float flowMagnitude = math.sqrt(flowMagnitudeSq);
++                    float desiredSpeed = math.min(MaxSpeed, flowMagnitude * DriftScale);
++                    desiredVelocity = (flow / flowMagnitude) * desiredSpeed;
++                }
++
++                float blend = math.saturate(DeltaTime * VelocityDamping);
++                island.Velocity = math.lerp(island.Velocity, desiredVelocity, blend);
++                float3 localPosition = new float3(island.Position.LocalX, island.Position.LocalY, island.Position.LocalZ);
++                NormalizeAupAfterDrift(ref island.Position, localPosition + island.Velocity * DeltaTime);
++                Islands[index] = island;
++            }
++
++            private static void NormalizeAupAfterDrift(ref AbsoluteUniversePosition position, float3 localPosition)
++            {
++                const float cellSize = AbsoluteUniversePosition.CellSizeMeters;
++                if (localPosition.x < 0f || localPosition.x >= cellSize)
++                {
++                    long gridDelta = (long)math.floor(localPosition.x / cellSize);
++                    position.GridX += gridDelta;
++                    localPosition.x -= gridDelta * cellSize;
++                }
++
++                if (localPosition.y < 0f || localPosition.y >= cellSize)
++                {
++                    long gridDelta = (long)math.floor(localPosition.y / cellSize);
++                    position.GridY += gridDelta;
++                    localPosition.y -= gridDelta * cellSize;
++                }
++
++                if (localPosition.z < 0f || localPosition.z >= cellSize)
++                {
++                    long gridDelta = (long)math.floor(localPosition.z / cellSize);
++                    position.GridZ += gridDelta;
++                    localPosition.z -= gridDelta * cellSize;
++                }
++
++                position.LocalX = localPosition.x;
++                position.LocalY = localPosition.y;
++                position.LocalZ = localPosition.z;
++            }
++        }
++
++        private void EnsureMigratorySargassumLane()
++        {
++            if (_migratorySargassumIslands.IsCreated)
++                return;
++
++            // COLD ALLOC: NativeArray<MigratorySargassumIslandState>[MaxMigratorySargassumIslandCount] — persistent data-only migratory canopy state — owner: WorldProceduralScatterDirector
++            _migratorySargassumIslands = new NativeArray<MigratorySargassumIslandState>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
++            // COLD ALLOC: NativeArray<MigratorySargassumIslandState>[MaxMigratorySargassumIslandCount] — stable source reconciliation scratch — owner: WorldProceduralScatterDirector
++            _migratorySargassumScratchIslands = new NativeArray<MigratorySargassumIslandState>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
++            // COLD ALLOC: NativeArray<MigratorySargassumSourceState>[MaxMigratorySargassumIslandCount] — deterministic source selection scratch — owner: WorldProceduralScatterDirector
++            _migratorySargassumSelectedSources = new NativeArray<MigratorySargassumSourceState>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
++            // COLD ALLOC: NativeArray<float3>[MaxMigratorySargassumIslandCount] — AbyssalFlow samples for Burst drift solve — owner: WorldProceduralScatterDirector
++            _migratorySargassumFlowSamples = new NativeArray<float3>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
++            // COLD ALLOC: NativeArray<int>[MaxMigratorySargassumIslandCount] — AUP spatial hash handles — owner: WorldProceduralScatterDirector
++            _migratorySargassumSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
++            // COLD ALLOC: NativeArray<int>[MaxMigratorySargassumIslandCount] — AUP spatial hash handle reconciliation scratch — owner: WorldProceduralScatterDirector
++            _migratorySargassumScratchSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
++            // COLD ALLOC: HectonSpatialHash[MaxMigratorySargassumIslandCount] — AUP broadphase for migratory Sargassum island volumes — owner: WorldProceduralScatterDirector
++            _migratorySargassumSpatialHash = new HectonSpatialHash(MaxMigratorySargassumIslandCount, MaxMigratorySargassumIslandCount * 128, 32d);
++        }
++
++        private void DisposeMigratorySargassumLane()
++        {
++            CompleteMigratorySargassumJobIfNeeded();
++
++            if (_migratorySargassumSpatialHash != null)
++            {
++                _migratorySargassumSpatialHash.Dispose();
++                _migratorySargassumSpatialHash = null;
++            }
++
++            if (_migratorySargassumIslands.IsCreated)
++                _migratorySargassumIslands.Dispose();
++            if (_migratorySargassumScratchIslands.IsCreated)
++                _migratorySargassumScratchIslands.Dispose();
++            if (_migratorySargassumSelectedSources.IsCreated)
++                _migratorySargassumSelectedSources.Dispose();
++            if (_migratorySargassumFlowSamples.IsCreated)
++                _migratorySargassumFlowSamples.Dispose();
++            if (_migratorySargassumSpatialHandles.IsCreated)
++                _migratorySargassumSpatialHandles.Dispose();
++            if (_migratorySargassumScratchSpatialHandles.IsCreated)
++                _migratorySargassumScratchSpatialHandles.Dispose();
++
++            _migratorySargassumIslandCount = 0;
++            _lastMigratorySargassumTickTime = 0f;
++            _nextMigratorySargassumKillZoneTime = 0f;
++        }
++
++        private void TickMigratorySargassumLane(float now)
++        {
++            if (!enableMigratorySargassumIslands)
++                return;
++
++            using (_migratorySargassumProfilerMarker.Auto())
++            {
++                CompleteMigratorySargassumJobIfReady();
++                EnsureMigratorySargassumLane();
++                RefreshMigratorySargassumIslandsFromDesiredPlacements();
++                ApplyMigratorySargassumKillZones(now);
++                ScheduleMigratorySargassumJob(now);
++            }
++        }
++
++        private void CompleteMigratorySargassumJobIfReady()
++        {
++            if (!_migratorySargassumJobRunning || !_migratorySargassumJobHandle.IsCompleted)
++                return;
++
++            _migratorySargassumJobHandle.Complete();
++            _migratorySargassumJobRunning = false;
++            PublishMigratorySargassumSpatialState();
++        }
++
++        private void CompleteMigratorySargassumJobIfNeeded()
++        {
++            if (!_migratorySargassumJobRunning)
++                return;
++
++            _migratorySargassumJobHandle.Complete();
++            _migratorySargassumJobRunning = false;
++            PublishMigratorySargassumSpatialState();
++        }
++
++        private void RefreshMigratorySargassumIslandsFromDesiredPlacements()
++        {
++            if (!_migratorySargassumIslands.IsCreated || _desiredPlacements == null)
++                return;
++
++            for (int i = 0; i < MaxMigratorySargassumIslandCount; i++)
++                _migratorySargassumSelectedSources[i] = default;
++
++            int selectedCount = 0;
++            var enumerator = _desiredPlacements.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                ScatterPlacement placement = enumerator.Current.Value;
++                if (!TryBuildMigratorySargassumSource(placement, out MigratorySargassumSourceState source))
++                    continue;
++
++                selectedCount = InsertMigratorySargassumSourceSorted(source, selectedCount);
++            }
++
++            ReconcileMigratorySargassumSources(selectedCount);
++        }
++
++        private bool TryBuildMigratorySargassumSource(ScatterPlacement placement, out MigratorySargassumSourceState source)
++        {
++            source = default;
++            if (placement == null || placement.Family == null)
++                return false;
++
++            if (!IsMigratorySargassumSourceFamily(placement.Family))
++                return false;
++
++            float sourceRadius = Mathf.Max(placement.Family.clusterRadiusMeters, placement.EffectiveSpacing);
++            if (sourceRadius < Mathf.Max(1f, migratorySargassumMinimumSourceRadiusMeters))
++                return false;
++
++            if (placement.DepthMeters < Mathf.Max(1f, migratorySargassumMinimumWaterDepthMeters))
++                return false;
++
++            float waterColumnLift = Mathf.Max(
++                Mathf.Max(1f, migratorySargassumMinimumLiftMeters),
++                placement.DepthMeters - Mathf.Max(0f, migratorySargassumSurfaceClearanceMeters));
++            Vector3 absolutePosition = placement.Position;
++            absolutePosition.y += waterColumnLift;
++
++            source = new MigratorySargassumSourceState
++            {
++                SourceKey = placement.Key,
++                SourceHash = _MigratorySargassumSpeciesHash,
++                Position = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
++                    absolutePosition.x,
++                    absolutePosition.y,
++                    absolutePosition.z)),
++                RadiusMeters = Mathf.Clamp(sourceRadius, migratorySargassumMinimumRadiusMeters, migratorySargassumMaximumRadiusMeters),
++                Active = 1
++            };
++            return true;
++        }
++
++        private int InsertMigratorySargassumSourceSorted(MigratorySargassumSourceState source, int selectedCount)
++        {
++            int capacity = MaxMigratorySargassumIslandCount;
++            if (selectedCount >= capacity && source.SourceKey >= _migratorySargassumSelectedSources[capacity - 1].SourceKey)
++                return selectedCount;
++
++            int insertIndex = selectedCount < capacity ? selectedCount : capacity - 1;
++            while (insertIndex > 0 && _migratorySargassumSelectedSources[insertIndex - 1].SourceKey > source.SourceKey)
++            {
++                if (insertIndex < capacity)
++                    _migratorySargassumSelectedSources[insertIndex] = _migratorySargassumSelectedSources[insertIndex - 1];
++                insertIndex--;
++            }
++
++            _migratorySargassumSelectedSources[insertIndex] = source;
++            return selectedCount < capacity ? selectedCount + 1 : selectedCount;
++        }
++
++        private void ReconcileMigratorySargassumSources(int selectedCount)
++        {
++            for (int i = 0; i < MaxMigratorySargassumIslandCount; i++)
++            {
++                _migratorySargassumScratchIslands[i] = default;
++                _migratorySargassumScratchSpatialHandles[i] = 0;
++            }
++
++            for (int i = 0; i < selectedCount; i++)
++            {
++                MigratorySargassumSourceState source = _migratorySargassumSelectedSources[i];
++                if (TryFindMigratorySargassumIsland(source.SourceKey, out int existingIndex))
++                {
++                    MigratorySargassumIslandState island = _migratorySargassumIslands[existingIndex];
++                    island.SourceHash = source.SourceHash;
++                    island.RadiusMeters = source.RadiusMeters;
++                    island.Active = 1;
++                    if (!IsFinite(in island.Position))
++                        island.Position = source.Position;
++
++                    _migratorySargassumScratchIslands[i] = island;
++                    _migratorySargassumScratchSpatialHandles[i] = _migratorySargassumSpatialHandles[existingIndex];
++                    _migratorySargassumSpatialHandles[existingIndex] = 0;
++                }
++                else
++                {
++                    _migratorySargassumScratchIslands[i] = new MigratorySargassumIslandState
++                    {
++                        SourceKey = source.SourceKey,
++                        SourceHash = source.SourceHash,
++                        Position = source.Position,
++                        Velocity = float3.zero,
++                        RadiusMeters = source.RadiusMeters,
++                        Active = 1
++                    };
++                }
++            }
++
++            for (int i = 0; i < MaxMigratorySargassumIslandCount; i++)
++            {
++                int staleHandle = _migratorySargassumSpatialHandles[i];
++                if (staleHandle != 0)
++                    _migratorySargassumSpatialHash.Unregister(staleHandle);
++
++                _migratorySargassumIslands[i] = _migratorySargassumScratchIslands[i];
++                _migratorySargassumSpatialHandles[i] = _migratorySargassumScratchSpatialHandles[i];
++            }
++
++            _migratorySargassumIslandCount = selectedCount;
++            PublishMigratorySargassumSpatialState();
++        }
++
++        private bool TryFindMigratorySargassumIsland(long sourceKey, out int index)
++        {
++            for (int i = 0; i < _migratorySargassumIslandCount; i++)
++            {
++                MigratorySargassumIslandState island = _migratorySargassumIslands[i];
++                if (island.Active != 0 && island.SourceKey == sourceKey)
++                {
++                    index = i;
++                    return true;
++                }
++            }
++
++            index = -1;
++            return false;
++        }
++
++        private void ScheduleMigratorySargassumJob(float now)
++        {
++            if (_migratorySargassumJobRunning || _migratorySargassumIslandCount <= 0)
++                return;
++
++            if (!EnsureEnvironmentalVegetationBridgeResolved())
++                return;
++
++            float deltaTime = _lastMigratorySargassumTickTime > 0f
++                ? Mathf.Clamp(now - _lastMigratorySargassumTickTime, 0f, MigratorySargassumMaximumDeltaTimeSeconds)
++                : 0f;
++            _lastMigratorySargassumTickTime = now;
++
++            for (int i = 0; i < _migratorySargassumIslandCount; i++)
++            {
++                MigratorySargassumIslandState island = _migratorySargassumIslands[i];
++                Vector3 runtimePosition = ToRuntimeMigratorySargassumPosition(in island.Position);
++                _migratorySargassumFlowSamples[i] =
++                    environmentalVegetationBridge.TrySampleAbyssalFlow(runtimePosition, out Vector3 flowVector)
++                        ? new float3(flowVector.x, flowVector.y, flowVector.z)
++                        : float3.zero;
++            }
++
++            UpdateMigratorySargassumIslandsJob job = new UpdateMigratorySargassumIslandsJob
++            {
++                Islands = _migratorySargassumIslands,
++                FlowSamples = _migratorySargassumFlowSamples,
++                DeltaTime = deltaTime,
++                DriftScale = Mathf.Max(0f, migratorySargassumFlowDriftScale),
++                MaxSpeed = Mathf.Max(0f, migratorySargassumMaxSpeedMetersPerSecond),
++                VelocityDamping = Mathf.Max(0f, migratorySargassumVelocityDamping)
++            };
++            _migratorySargassumJobHandle = job.Schedule(_migratorySargassumIslandCount, 8);
++            _migratorySargassumJobRunning = true;
++        }
++
++        private void PublishMigratorySargassumSpatialState()
++        {
++            if (!_migratorySargassumIslands.IsCreated || _migratorySargassumSpatialHash == null)
++                return;
++
++            float halfHeight = Mathf.Max(0.1f, migratorySargassumHalfHeightMeters);
++            for (int i = 0; i < _migratorySargassumIslandCount; i++)
++            {
++                MigratorySargassumIslandState island = _migratorySargassumIslands[i];
++                if (island.Active == 0)
++                    continue;
++
++                float radius = Mathf.Max(MigratorySargassumMinimumSpatialRadiusMeters, island.RadiusMeters);
++                AbsoluteUniversePosition position = island.Position;
++                float3 halfExtents = new float3(radius, halfHeight, radius);
++                ulong flags = (ulong)(SpatialInteractionFlags.Signal | SpatialInteractionFlags.ChemicalReceiver);
++                int handle = _migratorySargassumSpatialHandles[i];
++                if (handle == 0)
++                {
++                    _migratorySargassumSpatialHandles[i] = _migratorySargassumSpatialHash.Register(
++                        in position,
++                        halfExtents,
++                        (int)SpatialTargetKind.Signal,
++                        flags,
++                        island.SourceHash);
++                }
++                else
++                {
++                    _migratorySargassumSpatialHash.UpdateEntry(
++                        handle,
++                        in position,
++                        halfExtents,
++                        (int)SpatialTargetKind.Signal,
++                        flags,
++                        island.SourceHash);
++                }
++
++                Vector3 runtimePosition = ToRuntimeMigratorySargassumPosition(in island.Position);
++                WorldSpatialHashGrid.RegisterTransientEvent(
++                    runtimePosition,
++                    Mathf.Min(radius, Mathf.Max(0.5f, migratorySargassumChemicalSignalRadiusMeters)),
++                    migratorySargassumChemicalSignalIntensity,
++                    migratorySargassumChemicalSignalLifetimeSeconds,
++                    SpatialTransientEventType.ChemicalCloud,
++                    SpatialInteractionFlags.ChemicalReceiver,
++                    FieldTargetRole.BioformDormant,
++                    island.SourceHash);
++            }
++        }
++
++        private void ApplyMigratorySargassumKillZones(float now)
++        {
++            if (now < _nextMigratorySargassumKillZoneTime || _migratorySargassumIslandCount <= 0)
++                return;
++
++            _nextMigratorySargassumKillZoneTime = now + Mathf.Max(0.1f, migratorySargassumKillZoneCadenceSeconds);
++            if (!TryResolveMigratorySargassumOrganicManager(out DestructibleOrganicManager organicManager))
++                return;
++
++            float radiusScale = Mathf.Max(0.1f, migratorySargassumKillZoneRadiusScale);
++            for (int i = 0; i < _migratorySargassumIslandCount; i++)
++            {
++                MigratorySargassumIslandState island = _migratorySargassumIslands[i];
++                if (island.Active == 0)
++                    continue;
++
++                Vector3 runtimePosition = ToRuntimeMigratorySargassumPosition(in island.Position);
++                organicManager.ApplyConstructionDecomposition(runtimePosition, island.RadiusMeters * radiusScale);
++            }
++        }
++
++        private bool TryResolveMigratorySargassumOrganicManager(out DestructibleOrganicManager organicManager)
++        {
++            if (migratorySargassumOrganicManager == null && Application.isPlaying)
++                TryGetComponent<DestructibleOrganicManager>(out migratorySargassumOrganicManager);
++
++            organicManager = migratorySargassumOrganicManager;
++            return organicManager != null;
++        }
++
++        private bool TryRaycastUpMigratorySargassumCanopy(Vector3 absoluteSeabedPosition, out float occlusion01)
++        {
++            occlusion01 = 0f;
++            if (!enableMigratorySargassumIslands ||
++                !_migratorySargassumIslands.IsCreated ||
++                _migratorySargassumIslandCount <= 0)
++            {
++                return false;
++            }
++
++            float bestOcclusion = 0f;
++            for (int i = 0; i < _migratorySargassumIslandCount; i++)
++            {
++                MigratorySargassumIslandState island = _migratorySargassumIslands[i];
++                if (island.Active == 0)
++                    continue;
++
++                float3 islandAbsolutePosition = ToAbsoluteFloat3(in island.Position);
++                float verticalDelta = islandAbsolutePosition.y - absoluteSeabedPosition.y;
++                if (verticalDelta <= 0f)
++                    continue;
++
++                float radius = Mathf.Max(MigratorySargassumMinimumSpatialRadiusMeters, island.RadiusMeters);
++                float dx = islandAbsolutePosition.x - absoluteSeabedPosition.x;
++                float dz = islandAbsolutePosition.z - absoluteSeabedPosition.z;
++                float radiusSq = radius * radius;
++                float planarSq = (dx * dx) + (dz * dz);
++                if (planarSq > radiusSq)
++                    continue;
++
++                float planarOcclusion = 1f - Mathf.Clamp01(planarSq / Mathf.Max(0.001f, radiusSq));
++                float verticalOcclusion = Mathf.Clamp01(verticalDelta / Mathf.Max(1f, migratorySargassumMinimumWaterDepthMeters));
++                bestOcclusion = Mathf.Max(bestOcclusion, planarOcclusion * verticalOcclusion);
++            }
++
++            occlusion01 = bestOcclusion;
++            return bestOcclusion > 0.01f;
++        }
++
++        internal bool TryEvaluateMigratorySargassumShade(Vector3 runtimeSeabedPosition, out float occlusion01)
++        {
++            return TryRaycastUpMigratorySargassumCanopy(ToAbsoluteScatterPosition(runtimeSeabedPosition), out occlusion01);
++        }
++
++        internal bool TryGetNearestMigratorySargassumIsland(
++            Vector3 runtimeOrigin,
++            float radiusMeters,
++            out Vector3 runtimePosition,
++            out float islandRadiusMeters)
++        {
++            runtimePosition = default;
++            islandRadiusMeters = 0f;
++            if (!_migratorySargassumIslands.IsCreated || radiusMeters <= 0f || _migratorySargassumIslandCount <= 0)
++                return false;
++
++            Vector3 absoluteOrigin = ToAbsoluteScatterPosition(runtimeOrigin);
++            float radiusSq = radiusMeters * radiusMeters;
++            float bestSq = radiusSq;
++            int bestIndex = -1;
++            for (int i = 0; i < _migratorySargassumIslandCount; i++)
++            {
++                MigratorySargassumIslandState island = _migratorySargassumIslands[i];
++                if (island.Active == 0)
++                    continue;
++
++                float3 islandAbsolutePosition = ToAbsoluteFloat3(in island.Position);
++                float dx = islandAbsolutePosition.x - absoluteOrigin.x;
++                float dy = islandAbsolutePosition.y - absoluteOrigin.y;
++                float dz = islandAbsolutePosition.z - absoluteOrigin.z;
++                float distanceSq = (dx * dx) + (dy * dy) + (dz * dz);
++                if (distanceSq >= bestSq)
++                    continue;
++
++                bestSq = distanceSq;
++                bestIndex = i;
++            }
++
++            if (bestIndex < 0)
++                return false;
++
++            MigratorySargassumIslandState bestIsland = _migratorySargassumIslands[bestIndex];
++            runtimePosition = ToRuntimeMigratorySargassumPosition(in bestIsland.Position);
++            islandRadiusMeters = bestIsland.RadiusMeters;
++            return true;
++        }
++
++        private bool ShouldRejectForMigratorySargassumShade(
++            WorldPrefabFamilyProfile family,
++            in ScatterCandidatePreview candidatePreview)
++        {
++            if (family == null || IsMigratorySargassumSourceFamily(family))
++                return false;
++
++            if (candidatePreview.HeightLayerIndex != 0)
++                return false;
++
++            if (family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Ground &&
++                family.scatterLayer != WorldPrefabFamilyProfile.ScatterLayer.Cluster)
++            {
++                return false;
++            }
++
++            if (ResolveFloraBudgetClass(family) == FloraBudgetClass.None)
++                return false;
++
++            return TryRaycastUpMigratorySargassumCanopy(candidatePreview.Position, out _);
++        }
++
++        private static bool IsMigratorySargassumSourceFamily(WorldPrefabFamilyProfile family)
++        {
++            if (family == null)
++                return false;
++
++            return family.FamilyHash == _FamilyKelpCanopyHash ||
++                   family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Kelp &&
++                   family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Cluster;
++        }
++
++        private static bool IsFinite(in AbsoluteUniversePosition position)
++        {
++            return math.isfinite(position.LocalX) &&
++                   math.isfinite(position.LocalY) &&
++                   math.isfinite(position.LocalZ);
++        }
++
++        private static float3 ToAbsoluteFloat3(in AbsoluteUniversePosition position)
++        {
++            double3 absolute = position.ToAbsoluteDouble3();
++            return new float3((float)absolute.x, (float)absolute.y, (float)absolute.z);
++        }
++
++        private static Vector3 ToRuntimeMigratorySargassumPosition(in AbsoluteUniversePosition position)
++        {
++            float3 runtimePosition = position.ToRuntimeFloat3();
++            return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
++        }
++    }
++}
+
+
+diff --git a/Docs/ARCHITECTURE/MIGRATORY_FLORA_SYSTEM.md b/Docs/ARCHITECTURE/MIGRATORY_FLORA_SYSTEM.md
+new file mode 100644
+index 00000000..b985a2f6
+--- /dev/null
++++ b/Docs/ARCHITECTURE/MIGRATORY_FLORA_SYSTEM.md
+@@ -0,0 +1,82 @@
++# Migratory Flora System
++
++## Runtime Owners
++
++`WorldProceduralScatterDirectorMigratorySargassum` owns drifting Sargassum islands as data-only records. It does not spawn runtime flora GameObjects. Islands are selected from deterministic canopy-kelp scatter placements, lifted into the water column, and registered into `HectonSpatialHash` as signal volumes so fauna systems can query the moving canopy.
++
++`FloraRegrowthDirector` consumes the island shade query during SlowTick maturation scans. Seabed flora under a migratory canopy receives external shade occlusion and the Burst maturation job returns negative growth, which routes through `DestructibleOrganicManager.TryApplyLightStarvation` until the instance enters decomposition/tombstone state.
++
++## AUP Drift Logic
++
++Each island stores `AbsoluteUniversePosition` directly:
++
++```text
++AUP = (GridX, GridY, GridZ, LocalX, LocalY, LocalZ)
++absolute = grid * 5000m + local
++```
++
++The Burst drift job receives an AbyssalFlow sample for each active island. Vertical flow is discarded because migratory islands are canopy-drift masses, not buoyancy simulation bodies.
++
++```text
++flow.xz = AbyssalFlow(runtimeIslandPosition).xz
++desiredSpeed = min(MaxSpeed, length(flow.xz) * DriftScale)
++desiredVelocity = normalize(flow.xz) * desiredSpeed
++velocity = lerp(velocity, desiredVelocity, saturate(dt * VelocityDamping))
++local += velocity * dt
++if local component crosses [0, 5000), shift Grid component and re-normalize local
++```
++
++The spatial hash is updated after the job completes. Stale handles are unregistered during source reconciliation; active handles are updated in place to keep boid/fish followers bound to the moving island volume.
++
++## Photosynthetic Kill-Zones
++
++Spawn rejection and maturation both use the same vertical canopy test:
++
++```text
++verticalDelta = islandY - seabedY
++reject if verticalDelta <= 0
++planarSq = (islandX - seabedX)^2 + (islandZ - seabedZ)^2
++reject if planarSq > radius^2
++occlusion = (1 - planarSq / radius^2) * saturate(verticalDelta / MinimumWaterDepth)
++```
++
++Spawn candidates in ground/cluster flora layers are rejected under shade. Existing seabed flora receives negative growth in `EvaluateMaturationJob`, preserving the delta-save protocol through the existing decomposition/tombstone path.
++
++## Symbiotic Fungal MST
++
++Fungal nodes are bounded to 128 active entries and resolved from authored flora HashIDs:
++
++```text
++Fungal Stalk = 0xFD5A46CC
++Acid Shroom  = 0xB796CF49
++Blindcap     = 0x1FB3740A
++```
++
++Fertilizer calls schedule `BuildSymbioticFungalMstJob`. The job runs Prim's algorithm over squared distances only:
++
++```text
++best[root] = 0
++for each step:
++    current = unvisited node with lowest best distance
++    stop if current is disconnected or best > 1000m^2 edge cap
++    mark current connected
++    for every unvisited candidate:
++        d2 = distancesq(current.position, candidate.position)
++        if d2 <= maxEdgeDistanceSq and d2 < best[candidate]:
++            best[candidate] = d2
++            parent[candidate] = current
++```
++
++Connected results upsert growth buffs into a persistent native buff list. `EvaluateMaturationJob` reads that list and multiplies age progress before the 0.1 to 1.0 smoothstep maturation curve.
++
++## Proxy Alignment
++
++`WorldProceduralProxySceneBuilder` snaps editor proxies with `RaycastCommand.ScheduleBatch` using the same downward ray primitive as runtime scatter snapping. Rotation aligns proxy up to the hit normal, clamped to 35 degrees so tall flora proxies do not lie sideways on steep slopes.
++
++## Constraints
++
++- No runtime micro-flora GameObjects.
++- Migratory state uses AUP grid/local data, not accumulated float world coordinates.
++- Scatter acceptance rejects flora above 4096 instances per stream cell.
++- No managed allocations are introduced inside Burst jobs.
++- Verification remains `PENDING VERIFICATION` until Unity compile and console logs are supplied.

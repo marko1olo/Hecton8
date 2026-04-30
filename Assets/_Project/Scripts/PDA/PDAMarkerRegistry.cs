@@ -155,6 +155,7 @@ namespace Hecton8.PDA
             _markerIndexById[markerId] = _markers.Count;
             _markers.Add(record);
             marker = ToSnapshot(record);
+            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
             MarkersChanged?.Invoke();
             return true;
         }
@@ -178,6 +179,7 @@ namespace Hecton8.PDA
                 _markerIndexById[lastRecord.markerId] = markerIndex;
             }
 
+            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
             MarkersChanged?.Invoke();
             return true;
         }
@@ -193,6 +195,7 @@ namespace Hecton8.PDA
             MarkerRecord record = _markers[markerIndex];
             record.position = position;
             _markers[markerIndex] = record;
+            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
             MarkersChanged?.Invoke();
             return true;
         }
@@ -211,6 +214,7 @@ namespace Hecton8.PDA
 
             record.visibleOnHud = visibleOnHud;
             _markers[markerIndex] = record;
+            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
             MarkersChanged?.Invoke();
             return true;
         }

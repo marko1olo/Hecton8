@@ -150,3 +150,39 @@ They are strongest on orientation, interfaces, event topology, registry/runtime 
 They are still weaker on measured runtime proof and graph-level exhaustive ownership down to every minor subsystem.
 
 STATUS: PENDING VERIFICATION
+
+## 2026-05-01 Coverage Delta
+
+Current doc counts:
+
+| Scope | Current Count |
+|---|---:|
+| `Docs` non-meta files | 544 |
+| `Docs/ARCHIVARIUS REPORTS` non-meta files | 117 |
+| `01_GENERAL_INFO` direct files | 22 |
+| `02_ACTUAL_REPORTS` direct non-meta files | 56 |
+| `02_ACTUAL_REPORTS` markdown files | 46 |
+| `02_ACTUAL_REPORTS` patch files | 9 |
+| `02_ACTUAL_REPORTS` csv files | 1 |
+| `03_OBSOLETE` recursive non-meta files | 39 |
+| `2026-04-30_Codex_Full_Project_Forensic_Audit` markdown files | 29 |
+
+New high-authority May 1 report inputs:
+
+| Report | Authority Level | Use |
+|---|---|---|
+| `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` | PRIMARY | current concurrency, headless, AUP, physics-mask, event-cascade risk map |
+| `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` | PRIMARY | current coroutine migration and object-pool exhaustion state |
+| `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md` | PRIMARY WITH CAUTION | Burst/loop/static scan state, but explicit refusal to claim clean MCP verification |
+| `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md` | SECONDARY | validator implementation notes; some compile-state notes are superseded by later reports |
+| `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | PRIMARY | updated reality matrix with May 1 delta |
+| `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY | updated current remediation queue |
+
+Coverage corrections:
+
+- The older trust boundary remains valid only as a read-order policy. For current runtime risk, read the May 1 reports first.
+- `EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but `DOOMSDAY_FLAW_REPORT.md` adds the missing risk statement: no proven hard max-depth/generation split for all event cascade paths.
+- `PROJECT_CONTENT_LEDGER.md` remains the content ledger, but validator execution proof is still not a live runtime proof.
+- `DEAD_CODE_GRAVEYARD.md` remains the deletion ledger. Its conclusions must be cross-checked before deleting additional code because the worktree is currently heavily modified by multiple agents.
+
+STATUS: PENDING VERIFICATION

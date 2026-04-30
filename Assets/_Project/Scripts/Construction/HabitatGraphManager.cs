@@ -11,6 +11,32 @@ using UnityEngine;
 
 namespace Hecton8.Construction
 {
+    [Flags]
+    internal enum HabitatSiegeTargetFlags : byte
+    {
+        None = 0,
+        Vulnerable = 1 << 0,
+        EmergencyAirlock = 1 << 1,
+        Flooded = 1 << 2,
+        Ruptured = 1 << 3,
+        Brownout = 1 << 4,
+        Isolated = 1 << 5,
+        CascadeFailure = 1 << 6
+    }
+
+    internal struct HabitatSiegeTargetSnapshot
+    {
+        public float3 ModuleCenter;
+        public float3 WeakPoint;
+        public float Integrity01;
+        public float Vulnerability01;
+        public uint NodeId;
+        public byte Flags;
+        public byte Reserved0;
+        public byte Reserved1;
+        public byte Reserved2;
+    }
+
     /// <summary>
     /// Rebuilds the placed habitat into a CSR adjacency graph for downstream power and atmosphere solvers.
     /// Owns only base-module topology. Point-to-point crate pipes remain under LogisticsPipeNode.
@@ -32,6 +58,8 @@ namespace Hecton8.Construction
         private const int InitialNodeCapacity = 64;
         private const int InitialEdgeCapacity = 128;
         private const int InitialTemporaryBypassCapacity = 16;
+        internal const int MaxSiegeTargetCount = 64;
+        private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
         private const uint ParasiteRootNodeIdSalt = 0x8F3A5C7Du;
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
 
@@ -50,10 +78,14 @@ namespace Hecton8.Construction
         private NativeArray<int> _edgeWriteCursor;
         private NativeArray<byte> _anchorReachability;
         private NativeArray<int> _anchorTraversalQueue;
+        private NativeArray<HabitatSiegeTargetSnapshot> _siegeTargets;
+        private static NativeArray<HabitatSiegeTargetSnapshot> s_latestSiegeTargets;
+        private static int s_latestSiegeTargetCount;
 
         private readonly LogisticsNetworkGraph _graph;
         private int _nodeCount;
         private int _edgeCount;
+        private int _siegeTargetCount;
 
         internal HabitatGraphManager(int initialModuleCapacity)
         {
@@ -85,6 +117,13 @@ namespace Hecton8.Construction
         internal NativeArray<float> EdgeResistance => _edgeResistance;
         internal LogisticsNetworkGraph Graph => _graph;
 
+        internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> targets, out int count)
+        {
+            targets = s_latestSiegeTargets;
+            count = s_latestSiegeTargetCount;
+            return targets.IsCreated && count > 0;
+        }
+
         public void Dispose()
         {
             ClearVisualLinks();
@@ -107,6 +146,7 @@ namespace Hecton8.Construction
 
             if (modules == null || modules.Count <= 0)
             {
+                ClearSiegeTargetSnapshot();
                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
                 BaseDegradationSystem.EndRuptureSync();
                 return;
@@ -117,6 +157,7 @@ namespace Hecton8.Construction
             _nodeCount = _moduleBuffer.Count;
             if (_nodeCount <= 0)
             {
+                ClearSiegeTargetSnapshot();
                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
                 BaseDegradationSystem.EndRuptureSync();
                 return;
@@ -132,6 +173,7 @@ namespace Hecton8.Construction
             PublishComponentPowerState();
             PublishEmergencyLockdownState();
             PublishDegradationState();
+            PublishSiegeTargetSnapshot();
             PublishGraphKernel();
             PublishVisualLinks();
             BaseDegradationSystem.EndRuptureSync();
@@ -143,11 +185,15 @@ namespace Hecton8.Construction
                 return;
 
             QueueFloodMassLoads(deltaTime);
+            ApplyIslandFloodCenterOfMassShifts(deltaTime);
             EvaluateBulkheadFloodStress(deltaTime);
 
             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (bridge == null)
+            {
+                PublishSiegeTargetSnapshot();
                 return;
+            }
 
             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
             {
@@ -182,6 +228,8 @@ namespace Hecton8.Construction
 
                 baseModule.ApplyDamage(damageAmount);
             }
+
+            PublishSiegeTargetSnapshot();
         }
 
         private void QueueFloodMassLoads(float deltaTime)
@@ -193,10 +241,86 @@ namespace Hecton8.Construction
                     continue;
 
                 float floodWaterMassKilograms = baseModule.ResolveFloodWaterMassKilograms();
-                if (floodWaterMassKilograms <= 0f || !math.isfinite(floodWaterMassKilograms))
+                float parasiteMassKilograms = baseModule.ResolveParasiteAddedMassKilograms();
+                float structuralMassKilograms = floodWaterMassKilograms + parasiteMassKilograms;
+                if (structuralMassKilograms <= 0f || !math.isfinite(structuralMassKilograms))
                     continue;
 
-                baseModule.QueueHydroStructuralLoad(floodWaterMassKilograms, baseModule.transform.position, deltaTime);
+                baseModule.QueueHydroStructuralLoad(structuralMassKilograms, baseModule.transform.position, deltaTime);
+            }
+        }
+
+        private void ApplyIslandFloodCenterOfMassShifts(float deltaTime)
+        {
+            if (deltaTime <= 0f ||
+                _nodeCount <= 0 ||
+                !_anchorReachability.IsCreated ||
+                !_anchorTraversalQueue.IsCreated ||
+                !_edgeOffsets.IsCreated ||
+                !_edgeDestinations.IsCreated)
+            {
+                return;
+            }
+
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+                _anchorReachability[nodeIndex] = 0;
+
+            for (int seedIndex = 0; seedIndex < _nodeCount; seedIndex++)
+            {
+                if (_anchorReachability[seedIndex] != 0)
+                    continue;
+
+                int islandStart = 0;
+                int queueHead = 0;
+                int queueTail = 0;
+                _anchorReachability[seedIndex] = 1;
+                _anchorTraversalQueue[queueTail++] = seedIndex;
+
+                float totalFloodMassKilograms = 0f;
+                Vector3 weightedFloodCentroid = Vector3.zero;
+
+                while (queueHead < queueTail)
+                {
+                    int currentNodeIndex = _anchorTraversalQueue[queueHead++];
+                    BaseModule currentModule = _moduleBuffer[currentNodeIndex].BaseModule;
+                    if (currentModule != null && currentModule.isActiveAndEnabled)
+                    {
+                        float floodMassKilograms = currentModule.ResolveFloodWaterMassKilograms();
+                        float parasiteMassKilograms = currentModule.ResolveParasiteAddedMassKilograms();
+                        float structuralMassKilograms = floodMassKilograms + parasiteMassKilograms;
+                        if (structuralMassKilograms > 0f && math.isfinite(structuralMassKilograms))
+                        {
+                            totalFloodMassKilograms += structuralMassKilograms;
+                            weightedFloodCentroid += currentModule.transform.position * structuralMassKilograms;
+                        }
+                    }
+
+                    int edgeStart = _edgeOffsets[currentNodeIndex];
+                    int edgeEnd = _edgeOffsets[currentNodeIndex + 1];
+                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                    {
+                        int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                        if (neighborNodeIndex < 0 ||
+                            neighborNodeIndex >= _nodeCount ||
+                            _anchorReachability[neighborNodeIndex] != 0)
+                        {
+                            continue;
+                        }
+
+                        _anchorReachability[neighborNodeIndex] = 1;
+                        _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
+                    }
+                }
+
+                Vector3 centroid = totalFloodMassKilograms > 0f
+                    ? weightedFloodCentroid / totalFloodMassKilograms
+                    : Vector3.zero;
+                for (int islandNodeOffset = islandStart; islandNodeOffset < queueTail; islandNodeOffset++)
+                {
+                    BaseModule islandModule = _moduleBuffer[_anchorTraversalQueue[islandNodeOffset]].BaseModule;
+                    if (islandModule != null && islandModule.isActiveAndEnabled)
+                        islandModule.ApplyIslandFloodCenterOfMassShift(centroid, totalFloodMassKilograms, deltaTime);
+                }
             }
         }
 
@@ -245,6 +369,89 @@ namespace Hecton8.Construction
                 return;
 
             PublishEmergencyLockdownState();
+            PublishSiegeTargetSnapshot();
+        }
+
+        internal bool TryResolveFungalMindTarget(BaseModule sourceModule, out BaseModule targetModule, out float targetPotential)
+        {
+            targetModule = null;
+            targetPotential = 0f;
+            if (sourceModule == null ||
+                _nodeCount <= 0 ||
+                !_edgeOffsets.IsCreated ||
+                !_edgeDestinations.IsCreated ||
+                !_anchorReachability.IsCreated ||
+                !_anchorTraversalQueue.IsCreated)
+            {
+                return false;
+            }
+
+            uint sourceNodeId = unchecked((uint)EntityId.ToULong(sourceModule.GetEntityId()));
+            if (sourceNodeId == 0u ||
+                !_moduleIndexByNodeId.TryGetValue(sourceNodeId, out int startNodeIndex) ||
+                startNodeIndex < 0 ||
+                startNodeIndex >= _nodeCount)
+            {
+                return false;
+            }
+
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+                _anchorReachability[nodeIndex] = 0;
+
+            int queueHead = 0;
+            int queueTail = 0;
+            _anchorReachability[startNodeIndex] = 1;
+            _anchorTraversalQueue[queueTail++] = startNodeIndex;
+
+            float bestScore = 0f;
+            float bestPotential = 0f;
+            BaseModule bestModule = null;
+            while (queueHead < queueTail)
+            {
+                int currentNodeIndex = _anchorTraversalQueue[queueHead++];
+                byte currentDepth = _anchorReachability[currentNodeIndex];
+                ModuleRecord currentRecord = _moduleBuffer[currentNodeIndex];
+                if (currentNodeIndex != startNodeIndex && !currentRecord.IsSyntheticParasiteRoot)
+                {
+                    BaseModule currentModule = currentRecord.BaseModule;
+                    if (currentModule != null && currentModule.isActiveAndEnabled)
+                    {
+                        float rawPotential = ResolveFungalMindPotentialScore(currentRecord, _nodes[currentNodeIndex]);
+                        float depthPenalty = 1f + (math.max(0, currentDepth - 1) * 0.08f);
+                        float score = rawPotential / depthPenalty;
+                        if (score > bestScore && math.isfinite(score))
+                        {
+                            bestScore = score;
+                            bestPotential = rawPotential;
+                            bestModule = currentModule;
+                        }
+                    }
+                }
+
+                int edgeStart = _edgeOffsets[currentNodeIndex];
+                int edgeEnd = _edgeOffsets[currentNodeIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                    if (neighborNodeIndex < 0 ||
+                        neighborNodeIndex >= _nodeCount ||
+                        _anchorReachability[neighborNodeIndex] != 0 ||
+                        _moduleBuffer[neighborNodeIndex].IsSyntheticParasiteRoot)
+                    {
+                        continue;
+                    }
+
+                    _anchorReachability[neighborNodeIndex] = (byte)math.min(255, currentDepth + 1);
+                    _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
+                }
+            }
+
+            if (bestModule == null || bestScore <= 0f)
+                return false;
+
+            targetModule = bestModule;
+            targetPotential = bestPotential;
+            return true;
         }
 
         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
@@ -504,7 +711,7 @@ namespace Hecton8.Construction
                                    distance > LogisticsPipeBuilder.UnsupportedSpanMeters &&
                                    !HasIntermediateSupport(edge.SourceIndex, edge.DestinationIndex, edge.StartSocketPosition, edge.EndSocketPosition);
 
-                if (unsupported)
+                if (unsupported || HasImplodedEndpoint(edge))
                     MarkEdgeRuptured(ref edge);
 
                 if (!edge.IsSyntheticParasiteRoot && !edge.Severed && TryApplyHydroShearRupture(ref edge))
@@ -576,6 +783,14 @@ namespace Hecton8.Construction
 
             float shearThresholdKilograms = ResolveHydroShearThresholdKilograms(sourceModule, destinationModule);
             return massDeltaKilograms > shearThresholdKilograms;
+        }
+
+        private bool HasImplodedEndpoint(EdgeRecord edge)
+        {
+            BaseModule sourceModule = _moduleBuffer[edge.SourceIndex].BaseModule;
+            BaseModule destinationModule = _moduleBuffer[edge.DestinationIndex].BaseModule;
+            return (sourceModule != null && sourceModule.HasImploded) ||
+                   (destinationModule != null && destinationModule.HasImploded);
         }
 
         private void MarkEdgeRuptured(ref EdgeRecord edge)
@@ -775,6 +990,60 @@ namespace Hecton8.Construction
             }
         }
 
+        private void PublishSiegeTargetSnapshot()
+        {
+            if (!_siegeTargets.IsCreated)
+                return;
+
+            int writeCount = 0;
+            int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int nodeIndex = 0; nodeIndex < maxNodeCount && writeCount < MaxSiegeTargetCount; nodeIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[nodeIndex];
+                BaseModule baseModule = module.BaseModule;
+                if (module.IsSyntheticParasiteRoot || baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                LogisticsNodeFlags nodeFlags = _nodes.IsCreated && nodeIndex < _nodes.Length
+                    ? _nodes[nodeIndex].Flags
+                    : LogisticsNodeFlags.None;
+                float integrity01 = math.saturate(baseModule.IntegrityStateNormalized);
+                HabitatSiegeTargetFlags siegeFlags = ResolveSiegeTargetFlags(module, baseModule, nodeFlags, integrity01);
+                if ((siegeFlags & HabitatSiegeTargetFlags.Vulnerable) == 0)
+                    continue;
+
+                _siegeTargets[writeCount++] = new HabitatSiegeTargetSnapshot
+                {
+                    ModuleCenter = module.Position,
+                    WeakPoint = ResolveNodeRuptureWorldPoint(nodeIndex),
+                    Integrity01 = integrity01,
+                    Vulnerability01 = ResolveSiegeVulnerability01(baseModule, nodeFlags, integrity01),
+                    NodeId = module.NodeId,
+                    Flags = (byte)siegeFlags
+                };
+            }
+
+            for (int i = writeCount; i < _siegeTargetCount; i++)
+                _siegeTargets[i] = default;
+
+            _siegeTargetCount = writeCount;
+            s_latestSiegeTargets = _siegeTargets;
+            s_latestSiegeTargetCount = writeCount;
+        }
+
+        private void ClearSiegeTargetSnapshot()
+        {
+            if (_siegeTargets.IsCreated)
+            {
+                for (int i = 0; i < _siegeTargetCount; i++)
+                    _siegeTargets[i] = default;
+            }
+
+            _siegeTargetCount = 0;
+            s_latestSiegeTargets = default;
+            s_latestSiegeTargetCount = 0;
+        }
+
         private void PublishGraphKernel()
         {
             _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, _nodeCount, math.max(1, _edgeCount), 0);
@@ -906,10 +1175,12 @@ namespace Hecton8.Construction
                 return 0f;
 
             float floodWaterMassKilograms = baseModule.ResolveFloodWaterMassKilograms();
-            if (floodWaterMassKilograms <= 0f || !math.isfinite(floodWaterMassKilograms))
+            float parasiteMassKilograms = baseModule.ResolveParasiteAddedMassKilograms();
+            float structuralMassKilograms = floodWaterMassKilograms + parasiteMassKilograms;
+            if (structuralMassKilograms <= 0f || !math.isfinite(structuralMassKilograms))
                 return 0f;
 
-            float loadNewtons = floodWaterMassKilograms * GravityAccelerationMetersPerSecondSquared;
+            float loadNewtons = structuralMassKilograms * GravityAccelerationMetersPerSecondSquared;
             return math.isfinite(loadNewtons) ? math.max(0f, loadNewtons) : 0f;
         }
 
@@ -1008,8 +1279,19 @@ namespace Hecton8.Construction
             LogisticsNodeFlags flags = LogisticsNodeFlags.Active;
             if (baseModule != null && baseModule.HasCascadeFailure)
                 flags |= LogisticsNodeFlags.Dirty;
+            if (baseModule != null && (baseModule.HasImploded || BaseDegradationSystem.IsModuleRuptured(baseModule)))
+                flags |= LogisticsNodeFlags.Ruptured;
 
             return flags;
+        }
+
+        private static float ResolveFungalMindPotentialScore(ModuleRecord module, LogisticsNetworkGraph.LogisticsNode node)
+        {
+            float nodePotential = math.abs(node.Potential);
+            float nodeLoad = math.abs(node.CurrentLoad);
+            float modulePower = math.abs(ResolveModulePowerRating(module));
+            float score = math.max(nodePotential, math.max(nodeLoad, modulePower));
+            return math.isfinite(score) ? score : 0f;
         }
 
         private static float ResolveModulePowerRating(ModuleRecord module)
@@ -1045,6 +1327,65 @@ namespace Hecton8.Construction
                 bits |= LogisticsModuleStatusBits.EmergencyLockdown;
 
             return bits;
+        }
+
+        private static HabitatSiegeTargetFlags ResolveSiegeTargetFlags(
+            ModuleRecord module,
+            BaseModule baseModule,
+            LogisticsNodeFlags nodeFlags,
+            float integrity01)
+        {
+            HabitatSiegeTargetFlags flags = HabitatSiegeTargetFlags.None;
+            if (module.IsEmergencyAirlock)
+                flags |= HabitatSiegeTargetFlags.EmergencyAirlock;
+
+            if (baseModule.IsFlooded || baseModule.IntegrityState == BaseModuleIntegrityState.Flooded)
+                flags |= HabitatSiegeTargetFlags.Flooded;
+
+            if (baseModule.IsBreached || baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured)
+                flags |= HabitatSiegeTargetFlags.Ruptured;
+
+            if (baseModule.HasCascadeFailure || baseModule.CurrentFailureMode != BaseModuleFailureMode.None)
+                flags |= HabitatSiegeTargetFlags.CascadeFailure;
+
+            if ((nodeFlags & LogisticsNodeFlags.Brownout) != 0 || !baseModule.HasPower)
+                flags |= HabitatSiegeTargetFlags.Brownout;
+
+            if ((nodeFlags & LogisticsNodeFlags.Isolated) != 0)
+                flags |= HabitatSiegeTargetFlags.Isolated;
+
+            bool vulnerable =
+                integrity01 <= SiegeVulnerableIntegrityThreshold01 ||
+                (flags & (HabitatSiegeTargetFlags.Flooded |
+                          HabitatSiegeTargetFlags.Ruptured |
+                          HabitatSiegeTargetFlags.Brownout |
+                          HabitatSiegeTargetFlags.Isolated |
+                          HabitatSiegeTargetFlags.CascadeFailure)) != 0;
+            if (vulnerable)
+                flags |= HabitatSiegeTargetFlags.Vulnerable;
+
+            return flags;
+        }
+
+        private static float ResolveSiegeVulnerability01(BaseModule baseModule, LogisticsNodeFlags nodeFlags, float integrity01)
+        {
+            float vulnerability = 1f - integrity01;
+            if (baseModule.IsFlooded || baseModule.IntegrityState == BaseModuleIntegrityState.Flooded)
+                vulnerability += 0.35f;
+
+            if (baseModule.IsBreached || baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured)
+                vulnerability += 0.55f;
+
+            if (baseModule.HasCascadeFailure || baseModule.CurrentFailureMode != BaseModuleFailureMode.None)
+                vulnerability += 0.2f;
+
+            if ((nodeFlags & LogisticsNodeFlags.Brownout) != 0 || !baseModule.HasPower)
+                vulnerability += 0.15f;
+
+            if ((nodeFlags & LogisticsNodeFlags.Isolated) != 0)
+                vulnerability += 0.15f;
+
+            return math.saturate(vulnerability);
         }
 
         private static bool ResolveStructuralAnchorState(BaseModule baseModule, ModuleMarker marker)
@@ -1117,6 +1458,8 @@ namespace Hecton8.Construction
             _edgeWriteCursor = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _anchorReachability = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _anchorTraversalQueue = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] — capped habitat weak-point snapshot for headless predator siege jobs — owner: HabitatGraphManager
+            _siegeTargets = new NativeArray<HabitatSiegeTargetSnapshot>(MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 
         private void EnsureNodeCapacity(int requiredLength)
@@ -1127,7 +1470,9 @@ namespace Hecton8.Construction
                 _edgeOffsets.Length >= safeLength + 1 &&
                 _edgeWriteCursor.Length >= safeLength &&
                 _anchorReachability.Length >= safeLength &&
-                _anchorTraversalQueue.Length >= safeLength)
+                _anchorTraversalQueue.Length >= safeLength &&
+                _siegeTargets.IsCreated &&
+                _siegeTargets.Length >= MaxSiegeTargetCount)
                 return;
 
             DisposeNativeBuffers();
@@ -1149,6 +1494,8 @@ namespace Hecton8.Construction
 
         private void DisposeNativeBuffers()
         {
+            ClearSiegeTargetSnapshot();
+
             if (_nodes.IsCreated)
                 _nodes.Dispose();
 
@@ -1169,6 +1516,9 @@ namespace Hecton8.Construction
 
             if (_anchorTraversalQueue.IsCreated)
                 _anchorTraversalQueue.Dispose();
+
+            if (_siegeTargets.IsCreated)
+                _siegeTargets.Dispose();
         }
 
         private static int NextPowerOfTwo(int value)

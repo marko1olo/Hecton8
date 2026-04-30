@@ -3,6 +3,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using Hecton8.Physics;
 using Hecton8.World;
 
 namespace Hecton8.Gameplay
@@ -14,6 +15,15 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Motor")]
     public sealed class VehicleMotor : MonoBehaviour
     {
+        internal struct SubmarineState
+        {
+            public float3 RuntimePosition;
+            public quaternion RuntimeRotation;
+            public float3 LinearVelocity;
+            public float3 AngularVelocityRadians;
+            public AbsoluteUniversePositionBlit128 Aup;
+        }
+
         private struct ScheduledSweepState
         {
             public Vector3 StartPosition;
@@ -23,17 +33,32 @@ namespace Hecton8.Gameplay
             public int SelfColliderInstanceId;
         }
 
+        private struct HydrodynamicWakeSample
+        {
+            public float3 Position;
+            public float3 Acceleration;
+            public float RadiusMeters;
+            public float RemainingSeconds;
+        }
+
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const int ScheduledSweepCommandCount = 1;
         private const int ScheduledSweepMaxHits = 8;
+        private const int HydrodynamicWakeSampleCount = 4;
+        private const int MaxRegisteredWakeMotors = 32;
         private const float DefaultGroundSlopeLimitDegrees = 45f;
         private const float TractionLossStartDegrees = 45f;
         private const float GroundContactHoldSeconds = 0.2f;
         private const float VehicleGravityAcceleration = 9.81f;
         private const float SlopeDot45Degrees = 0.70710678f;
         private const float GroundAlignmentSharpness = 10f;
-        private const float MaxHydrodynamicGhostBlend = 0.15f;
         private const float MinDepthViscosityReferenceMeters = 100f;
+        private const float WakeEmissionSpeedThresholdMetersPerSecond = 15f;
+        private const float WakeLifetimeSeconds = 0.45f;
+        private const float WakeRadiusMeters = 5.5f;
+        private const float WakeEmitterOffsetMeters = 4f;
+        private const float WakeAccelerationPerExcessMeterPerSecond = 0.85f;
+        private const float WakeMaxAccelerationMetersPerSecondSq = 24f;
         private const float MinEntanglementTetherMeters = 1.25f;
         private const float EntanglementFacingSharpness = 8f;
         private const float KelpPushbackProbeRadiusMeters = 6f;
@@ -41,13 +66,26 @@ namespace Hecton8.Gameplay
         private const float KelpDragScale = 1.35f;
         private const float KelpMaxDragCoefficient = 2.8f;
 
+        private static readonly VehicleMotor[] _registeredWakeMotors = new VehicleMotor[MaxRegisteredWakeMotors];
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
         private static readonly ProfilerMarker _driveProfilerMarker = new ProfilerMarker("H8.VehicleMotor.Drive");
 
+        [Header("-- Hydrodynamic Drag ---------------")]
+        [Tooltip("Forward-axis multiplier applied to depth-scaled quadratic drag. Lower values let the hull slice through water.")]
+        [SerializeField, Min(0f)] private float hydrodynamicForwardDragScale = 0.42f;
+
+        [Tooltip("Side-axis multiplier applied to depth-scaled quadratic drag. Higher values resist sideways sliding.")]
+        [SerializeField, Min(0f)] private float hydrodynamicLateralDragScale = 2.6f;
+
+        [Tooltip("Vertical-axis multiplier applied to depth-scaled quadratic drag. Keeps ballast motion heavier than forward drive.")]
+        [SerializeField, Min(0f)] private float hydrodynamicVerticalDragScale = 1.25f;
+
         private Rigidbody _body;
         private CapsuleCollider _capsule;
+        private NativeArray<SubmarineState> _submarineState;
         private NativeArray<float3> _hydrodynamicGhostVelocityHistory;
+        private NativeArray<HydrodynamicWakeSample> _hydrodynamicWakeSamples;
         private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
         private NativeArray<RaycastHit> _scheduledSweepResults;
         private JobHandle _scheduledSweepHandle;
@@ -60,9 +98,11 @@ namespace Hecton8.Gameplay
         private float _groundContactTimer;
         private int _hydrodynamicGhostWriteIndex;
         private int _hydrodynamicGhostSampleCount;
+        private int _hydrodynamicWakeWriteIndex;
         private float _hydrodynamicSubmersionFactor;
         private float _hydrodynamicDepthMeters;
         private bool _isEntangled;
+        private bool _wakeRegistryRegistered;
         private Vector3 _entanglementAnchorPosition;
         private float _entanglementTetherLength;
         private float _lastEntanglementTensionNewtons;
@@ -73,6 +113,11 @@ namespace Hecton8.Gameplay
 
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
+
+        /// <summary>Hydrodynamically damped presentation velocity. Do not feed back into kinematic integration.</summary>
+        public Vector3 PerceivedLinearVelocity => ResolveHydrodynamicPerceivedVelocity(_linearVelocity);
+
+        internal NativeArray<SubmarineState> SubmarineStateNative => _submarineState;
 
         /// <summary>True while a deferred capsule sweep is waiting for consumption.</summary>
         public bool HasPendingSweep => _scheduledSweepPending;
@@ -100,20 +145,34 @@ namespace Hecton8.Gameplay
         {
             _body = body;
             _capsule = capsule;
+            EnsureSubmarineState();
             EnsureHydrodynamicGhostState();
+            EnsureHydrodynamicWakeState();
+            RegisterWakeMotor();
             ResetRuntimeState();
+        }
+
+        private void OnEnable()
+        {
+            RegisterWakeMotor();
         }
 
         private void OnDisable()
         {
+            UnregisterWakeMotor();
             DisposeScheduledSweepState();
+            DisposeHydrodynamicWakeState();
             DisposeHydrodynamicGhostState();
+            DisposeSubmarineState();
         }
 
         private void OnDestroy()
         {
+            UnregisterWakeMotor();
             DisposeScheduledSweepState();
+            DisposeHydrodynamicWakeState();
             DisposeHydrodynamicGhostState();
+            DisposeSubmarineState();
         }
 
         /// <summary>Clears all accumulated transport motion state.</summary>
@@ -134,6 +193,14 @@ namespace Hecton8.Gameplay
             _lastBlockingImpactPoint = Vector3.zero;
             _lastBlockingImpactNormal = Vector3.up;
             ResetHydrodynamicGhostState();
+            ResetHydrodynamicWakeState();
+            WriteSubmarineState(_body != null ? _body.position : Vector3.zero, _body != null ? _body.rotation : Quaternion.identity);
+        }
+
+        /// <summary>Clears vehicle presentation-only added-mass velocity history after teleport or hard rebase.</summary>
+        public void ResetHydrodynamicPresentationState()
+        {
+            ResetHydrodynamicGhostState();
         }
 
         /// <summary>Configures the maximum climbable ground slope before vehicle drive is flattened against world up.</summary>
@@ -146,6 +213,8 @@ namespace Hecton8.Gameplay
         public void ConfigureHydrodynamicSubmersion(float submersionFactor)
         {
             _hydrodynamicSubmersionFactor = math.saturate(submersionFactor);
+            if (_body != null)
+                GlobalPhysicsStateManager.SetHydrodynamicSubmersion(_body, _hydrodynamicSubmersionFactor);
         }
 
         /// <summary>Sets the current water depth used to scale analytical viscosity drag.</summary>
@@ -208,6 +277,11 @@ namespace Hecton8.Gameplay
 
             if (_lastBlockingImpactPoint.sqrMagnitude > MinVectorMagnitudeSq)
                 _lastBlockingImpactPoint -= shiftOffset;
+
+            RebaseHydrodynamicWakeState(shiftOffset);
+
+            if (_body != null)
+                WriteSubmarineState(_body.position, _body.rotation);
         }
 
         /// <summary>Advances tethered current-driven motion while propulsion is locked out by macro-flora entanglement.</summary>
@@ -227,7 +301,7 @@ namespace Hecton8.Gameplay
                 float tetherLength = math.max(MinEntanglementTetherMeters, _entanglementTetherLength);
                 Vector3 safeFlowVelocity = HectonPlayerMotor.SafeVelocity(currentFlowVelocity);
                 Vector3 candidateVelocity = _linearVelocity + (safeFlowVelocity * math.max(0f, currentAcceleration) * safeDeltaTime);
-                candidateVelocity = ApplyAnalyticalDrag(candidateVelocity, math.max(0f, linearDamping), safeDeltaTime);
+                candidateVelocity = ApplyDirectionalAnalyticalDrag(candidateVelocity, _body.rotation, math.max(0f, linearDamping), safeDeltaTime);
 
                 Vector3 predictedRelative = relative + (candidateVelocity * safeDeltaTime);
                 if (predictedRelative.sqrMagnitude <= MinVectorMagnitudeSq)
@@ -250,6 +324,7 @@ namespace Hecton8.Gameplay
                     _lastEntanglementTensionNewtons = 0f;
 
                 _linearVelocity = HectonPlayerMotor.SafeVelocity(constrainedVelocity);
+                RecordHydrodynamicGhostVelocity(_linearVelocity);
 
                 if (_linearVelocity.sqrMagnitude > MinVectorMagnitudeSq)
                 {
@@ -258,6 +333,9 @@ namespace Hecton8.Gameplay
                     float facingBlend = 1f - math.exp(-EntanglementFacingSharpness * safeDeltaTime);
                     _body.MoveRotation(Quaternion.Slerp(_body.rotation, targetRotation, facingBlend));
                 }
+
+                UpdateHydrodynamicWake(_body.rotation, safeDeltaTime);
+                WriteSubmarineState(targetPosition, _body.rotation);
             }
         }
 
@@ -310,7 +388,7 @@ namespace Hecton8.Gameplay
                     candidateVelocity += Vector3.down * (downwardAcceleration * safeDeltaTime);
 
                 float effectiveDragCoefficient = ResolveDepthScaledDragCoefficient(linearDamping);
-                candidateVelocity = ApplyAnalyticalDrag(candidateVelocity, effectiveDragCoefficient, safeDeltaTime);
+                candidateVelocity = ApplyDirectionalAnalyticalDrag(candidateVelocity, targetRotation, effectiveDragCoefficient, safeDeltaTime);
                 candidateVelocity = ApplyKelpPushback(candidateVelocity, safeDeltaTime);
 
                 float safeMaxSpeed = math.max(0.1f, maxSpeed);
@@ -318,7 +396,10 @@ namespace Hecton8.Gameplay
                 if (sqrMagnitude > (safeMaxSpeed * safeMaxSpeed))
                     candidateVelocity = candidateVelocity.normalized * safeMaxSpeed;
 
-                _linearVelocity = ResolveHydrodynamicAddedMassVelocity(candidateVelocity);
+                _linearVelocity = HectonPlayerMotor.SafeVelocity(candidateVelocity);
+                RecordHydrodynamicGhostVelocity(_linearVelocity);
+                UpdateHydrodynamicWake(targetRotation, safeDeltaTime);
+                WriteSubmarineState(_body.position + (_linearVelocity * safeDeltaTime), targetRotation);
             }
         }
 
@@ -426,6 +507,7 @@ namespace Hecton8.Gameplay
 
                 _linearVelocity = projectedVelocity;
                 _linearVelocity = HectonPlayerMotor.SafeVelocity(_linearVelocity);
+                WriteSubmarineState(resolvedPosition, _body.rotation);
                 return true;
             }
         }
@@ -513,28 +595,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _body.MovePosition(position);
-        }
-
-        private Vector3 ResolveHydrodynamicAddedMassVelocity(Vector3 actualVelocity)
-        {
-            Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
-            float ghostBlend = MaxHydrodynamicGhostBlend * _hydrodynamicSubmersionFactor;
-            if (ghostBlend <= 0.0001f)
-            {
-                ResetHydrodynamicGhostState();
-                return safeActualVelocity;
-            }
-
-            RecordHydrodynamicGhostVelocity(safeActualVelocity);
-            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
-                return safeActualVelocity;
-
-            float3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
-            Vector3 perceivedVelocity = (Vector3)math.lerp(
-                new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z),
-                oldestVelocity,
-                ghostBlend);
-            return HectonPlayerMotor.SafeVelocity(perceivedVelocity, safeActualVelocity);
+            WriteSubmarineState(position, _body.rotation);
         }
 
         private float ResolveDepthScaledDragCoefficient(float baseDragCoefficient)
@@ -545,7 +606,7 @@ namespace Hecton8.Gameplay
 
             float depthViscosityScale = math.log10(1f + (_hydrodynamicDepthMeters / MinDepthViscosityReferenceMeters));
             float depthDragCoefficient = safeBaseDrag * math.max(0f, depthViscosityScale);
-            return safeBaseDrag + depthDragCoefficient;
+            return depthDragCoefficient;
         }
 
         private Vector3 ApplyKelpPushback(Vector3 velocity, float deltaTime)
@@ -594,6 +655,258 @@ namespace Hecton8.Gameplay
             return new Vector3(result.x, result.y, result.z);
         }
 
+        private Vector3 ApplyDirectionalAnalyticalDrag(Vector3 velocity, Quaternion hullRotation, float dragCoefficient, float deltaTime)
+        {
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            float speed = math.length(velocity3);
+            if (speed <= 0.0001f || dragCoefficient <= 0f)
+                return velocity;
+
+            Vector3 localVelocity = Quaternion.Inverse(hullRotation) * velocity;
+            float safeDeltaTime = math.max(deltaTime, 0.0001f);
+            float lateralCoefficient = dragCoefficient * math.max(0f, hydrodynamicLateralDragScale);
+            float verticalCoefficient = dragCoefficient * math.max(0f, hydrodynamicVerticalDragScale);
+            float forwardCoefficient = dragCoefficient * math.max(0f, hydrodynamicForwardDragScale);
+            localVelocity.x /= math.max(1f, 1f + (lateralCoefficient * speed * safeDeltaTime));
+            localVelocity.y /= math.max(1f, 1f + (verticalCoefficient * speed * safeDeltaTime));
+            localVelocity.z /= math.max(1f, 1f + (forwardCoefficient * speed * safeDeltaTime));
+            return HectonPlayerMotor.SafeVelocity(hullRotation * localVelocity);
+        }
+
+        internal static bool TrySampleAnyHydrodynamicWake(Vector3 worldPosition, out Vector3 acceleration)
+        {
+            acceleration = Vector3.zero;
+            float3 totalAcceleration = float3.zero;
+            for (int i = 0; i < _registeredWakeMotors.Length; i++)
+            {
+                VehicleMotor motor = _registeredWakeMotors[i];
+                if (motor == null || !motor.isActiveAndEnabled)
+                    continue;
+
+                if (!motor.TrySampleHydrodynamicWake(worldPosition, out Vector3 motorAcceleration))
+                    continue;
+
+                totalAcceleration += new float3(motorAcceleration.x, motorAcceleration.y, motorAcceleration.z);
+            }
+
+            float accelerationSq = math.lengthsq(totalAcceleration);
+            if (accelerationSq <= MinVectorMagnitudeSq || !math.all(math.isfinite(totalAcceleration)))
+                return false;
+
+            float maxAccelerationSq = WakeMaxAccelerationMetersPerSecondSq * WakeMaxAccelerationMetersPerSecondSq;
+            if (accelerationSq > maxAccelerationSq)
+                totalAcceleration *= WakeMaxAccelerationMetersPerSecondSq * math.rsqrt(accelerationSq);
+
+            acceleration = new Vector3(totalAcceleration.x, totalAcceleration.y, totalAcceleration.z);
+            return true;
+        }
+
+        private bool TrySampleHydrodynamicWake(Vector3 worldPosition, out Vector3 acceleration)
+        {
+            acceleration = Vector3.zero;
+            if (!_hydrodynamicWakeSamples.IsCreated)
+                return false;
+
+            float3 samplePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            if (!math.all(math.isfinite(samplePosition)))
+                return false;
+
+            float3 accumulatedAcceleration = float3.zero;
+            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
+            {
+                HydrodynamicWakeSample sample = _hydrodynamicWakeSamples[i];
+                if (sample.RemainingSeconds <= 0f || sample.RadiusMeters <= 0.001f)
+                    continue;
+
+                float3 delta = samplePosition - sample.Position;
+                float distanceSq = math.lengthsq(delta);
+                float radiusSq = sample.RadiusMeters * sample.RadiusMeters;
+                if (distanceSq > radiusSq)
+                    continue;
+
+                float distance01 = math.sqrt(distanceSq) / math.max(sample.RadiusMeters, 0.001f);
+                float radiusWeight = 1f - math.saturate(distance01);
+                float lifeWeight = math.saturate(sample.RemainingSeconds / WakeLifetimeSeconds);
+                accumulatedAcceleration += sample.Acceleration * radiusWeight * radiusWeight * lifeWeight;
+            }
+
+            if (!math.all(math.isfinite(accumulatedAcceleration)) ||
+                math.lengthsq(accumulatedAcceleration) <= MinVectorMagnitudeSq)
+            {
+                return false;
+            }
+
+            acceleration = new Vector3(accumulatedAcceleration.x, accumulatedAcceleration.y, accumulatedAcceleration.z);
+            return true;
+        }
+
+        private void UpdateHydrodynamicWake(Quaternion bodyRotation, float deltaTime)
+        {
+            EnsureHydrodynamicWakeState();
+            DecayHydrodynamicWakeSamples(deltaTime);
+            if (_body == null || _hydrodynamicSubmersionFactor <= 0.01f)
+                return;
+
+            float speed = _linearVelocity.magnitude;
+            if (speed <= WakeEmissionSpeedThresholdMetersPerSecond)
+                return;
+
+            Vector3 forward = bodyRotation * Vector3.forward;
+            if (forward.sqrMagnitude <= MinVectorMagnitudeSq)
+                forward = _linearVelocity.sqrMagnitude > MinVectorMagnitudeSq ? _linearVelocity.normalized : Vector3.forward;
+
+            float excessSpeed = speed - WakeEmissionSpeedThresholdMetersPerSecond;
+            float accelerationMagnitude = math.min(
+                WakeMaxAccelerationMetersPerSecondSq,
+                excessSpeed * WakeAccelerationPerExcessMeterPerSecond * math.saturate(_hydrodynamicSubmersionFactor));
+            if (accelerationMagnitude <= 0.001f)
+                return;
+
+            Vector3 emitterPosition = _body.worldCenterOfMass - (forward.normalized * WakeEmitterOffsetMeters);
+            Vector3 wakeAcceleration = -forward.normalized * accelerationMagnitude;
+            HydrodynamicWakeSample sample = new HydrodynamicWakeSample
+            {
+                Position = new float3(emitterPosition.x, emitterPosition.y, emitterPosition.z),
+                Acceleration = new float3(wakeAcceleration.x, wakeAcceleration.y, wakeAcceleration.z),
+                RadiusMeters = WakeRadiusMeters + (speed * 0.05f),
+                RemainingSeconds = WakeLifetimeSeconds
+            };
+
+            _hydrodynamicWakeSamples[_hydrodynamicWakeWriteIndex] = sample;
+            _hydrodynamicWakeWriteIndex = (_hydrodynamicWakeWriteIndex + 1) % _hydrodynamicWakeSamples.Length;
+        }
+
+        private void DecayHydrodynamicWakeSamples(float deltaTime)
+        {
+            if (!_hydrodynamicWakeSamples.IsCreated)
+                return;
+
+            float safeDeltaTime = math.max(0f, deltaTime);
+            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
+            {
+                HydrodynamicWakeSample sample = _hydrodynamicWakeSamples[i];
+                if (sample.RemainingSeconds <= 0f)
+                    continue;
+
+                sample.RemainingSeconds = math.max(0f, sample.RemainingSeconds - safeDeltaTime);
+                _hydrodynamicWakeSamples[i] = sample;
+            }
+        }
+
+        private void EnsureHydrodynamicWakeState()
+        {
+            if (_hydrodynamicWakeSamples.IsCreated)
+                return;
+
+            // COLD ALLOC: NativeArray<HydrodynamicWakeSample>[4] - local prop-wash turbulence samples for KCC wake sampling - owner: VehicleMotor
+            _hydrodynamicWakeSamples = new NativeArray<HydrodynamicWakeSample>(HydrodynamicWakeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void ResetHydrodynamicWakeState()
+        {
+            EnsureHydrodynamicWakeState();
+            _hydrodynamicWakeWriteIndex = 0;
+            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
+                _hydrodynamicWakeSamples[i] = default;
+        }
+
+        private void RebaseHydrodynamicWakeState(Vector3 shiftOffset)
+        {
+            if (!_hydrodynamicWakeSamples.IsCreated)
+                return;
+
+            float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
+            {
+                HydrodynamicWakeSample sample = _hydrodynamicWakeSamples[i];
+                if (sample.RemainingSeconds <= 0f)
+                    continue;
+
+                sample.Position -= shift;
+                _hydrodynamicWakeSamples[i] = sample;
+            }
+        }
+
+        private void DisposeHydrodynamicWakeState()
+        {
+            if (!_hydrodynamicWakeSamples.IsCreated)
+                return;
+
+            _hydrodynamicWakeSamples.Dispose();
+            _hydrodynamicWakeSamples = default;
+            _hydrodynamicWakeWriteIndex = 0;
+        }
+
+        private void RegisterWakeMotor()
+        {
+            if (_wakeRegistryRegistered)
+                return;
+
+            for (int i = 0; i < _registeredWakeMotors.Length; i++)
+            {
+                if (_registeredWakeMotors[i] != null && !ReferenceEquals(_registeredWakeMotors[i], this))
+                    continue;
+
+                _registeredWakeMotors[i] = this;
+                _wakeRegistryRegistered = true;
+                return;
+            }
+        }
+
+        private void UnregisterWakeMotor()
+        {
+            if (!_wakeRegistryRegistered)
+                return;
+
+            for (int i = 0; i < _registeredWakeMotors.Length; i++)
+            {
+                if (!ReferenceEquals(_registeredWakeMotors[i], this))
+                    continue;
+
+                _registeredWakeMotors[i] = null;
+                break;
+            }
+
+            _wakeRegistryRegistered = false;
+        }
+
+        private void EnsureSubmarineState()
+        {
+            if (_submarineState.IsCreated)
+                return;
+
+            // COLD ALLOC: NativeArray<SubmarineState>[1] - authoritative headless submarine kinematic state lane - owner: VehicleMotor
+            _submarineState = new NativeArray<SubmarineState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private void WriteSubmarineState(Vector3 runtimePosition, Quaternion runtimeRotation)
+        {
+            EnsureSubmarineState();
+            float3 position3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            float4 rotation4 = new float4(runtimeRotation.x, runtimeRotation.y, runtimeRotation.z, runtimeRotation.w);
+            if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(rotation4)))
+                return;
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            _submarineState[0] = new SubmarineState
+            {
+                RuntimePosition = position3,
+                RuntimeRotation = new quaternion(runtimeRotation.x, runtimeRotation.y, runtimeRotation.z, runtimeRotation.w),
+                LinearVelocity = new float3(_linearVelocity.x, _linearVelocity.y, _linearVelocity.z),
+                AngularVelocityRadians = math.radians(new float3(_localAngularVelocityDegrees.x, _localAngularVelocityDegrees.y, _localAngularVelocityDegrees.z)),
+                Aup = aup.ToAlignedBlit()
+            };
+        }
+
+        private void DisposeSubmarineState()
+        {
+            if (!_submarineState.IsCreated)
+                return;
+
+            _submarineState.Dispose();
+            _submarineState = default;
+        }
+
         private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
         {
             EnsureHydrodynamicGhostState();
@@ -602,6 +915,23 @@ namespace Hecton8.Gameplay
             _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
             if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
                 _hydrodynamicGhostSampleCount++;
+        }
+
+        private Vector3 ResolveHydrodynamicPerceivedVelocity(Vector3 actualVelocity)
+        {
+            Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
+            EnsureHydrodynamicGhostState();
+            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
+                return safeActualVelocity;
+
+            float ghostBlend = 0.15f * math.saturate(_hydrodynamicSubmersionFactor);
+            if (ghostBlend <= 0.0001f)
+                return safeActualVelocity;
+
+            float3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
+            float3 currentVelocity = new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z);
+            float3 perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
+            return HectonPlayerMotor.SafeVelocity(new Vector3(perceivedVelocity.x, perceivedVelocity.y, perceivedVelocity.z), safeActualVelocity);
         }
 
         private void ResetHydrodynamicGhostState()

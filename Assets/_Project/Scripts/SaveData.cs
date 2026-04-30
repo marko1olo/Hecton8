@@ -45,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 51; // v51: cultivation quality persistence
+        public const int CurrentVersion = 54; // v54: PDA logbook stores event/localization hashes, not persistent strings
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -370,7 +370,7 @@ namespace Hecton8.SaveSystem
         public uint[] packedCellCoordinates;
         public ushort[] stackCounts;
         public ushort[] itemStateFlags;
-        public uint[] itemGeneticsWords;
+        public ulong[] itemGeneticsWords;
         public ushort[] qualityMilli;
         public uint[] lastUpdateUnixSeconds;
         public float totalWeight;
@@ -394,7 +394,7 @@ namespace Hecton8.SaveSystem
                 itemStateFlags = new ushort[MaxCells];
 
             if (itemGeneticsWords == null || itemGeneticsWords.Length < MaxCells)
-                itemGeneticsWords = new uint[MaxCells];
+                itemGeneticsWords = new ulong[MaxCells];
 
             if (qualityMilli == null || qualityMilli.Length < MaxCells)
                 qualityMilli = new ushort[MaxCells];
@@ -752,6 +752,8 @@ namespace Hecton8.SaveSystem
         public int mortonMaskOriginOffset;
         public int exploredMortonWordCount;
         public long[] exploredMortonMaskWords;
+        public int exploredMortonByteCount;
+        public byte[] exploredMortonMaskBytes;
 
         public const int MaxExploredChunks = 16384;
         public const int DenseChunkSizeMeters = 16;
@@ -760,6 +762,7 @@ namespace Hecton8.SaveSystem
         public const int MortonMaskOriginOffset = MortonMaskAxisLength >> 1;
         public const int MortonMaskBitCount = MortonMaskAxisLength * MortonMaskAxisLength * MortonMaskAxisLength;
         public const int MortonMaskWordCount = MortonMaskBitCount >> 6;
+        public const int MortonMaskByteCount = MortonMaskBitCount >> 3;
 
         public void EnsureCapacity()
         {
@@ -769,11 +772,25 @@ namespace Hecton8.SaveSystem
             if (exploredMortonMaskWords == null || exploredMortonMaskWords.Length < MortonMaskWordCount)
                 exploredMortonMaskWords = new long[MortonMaskWordCount];
 
+            if (exploredMortonMaskBytes == null)
+            {
+                exploredMortonMaskBytes = new byte[MortonMaskByteCount];
+            }
+            else if (exploredMortonMaskBytes.Length < MortonMaskByteCount)
+            {
+                byte[] expandedBytes = new byte[MortonMaskByteCount];
+                Array.Copy(exploredMortonMaskBytes, expandedBytes, exploredMortonMaskBytes.Length);
+                exploredMortonMaskBytes = expandedBytes;
+            }
+
             chunkSizeMeters = DenseChunkSizeMeters;
             mortonMaskAxisBits = MortonMaskAxisBits;
             mortonMaskOriginOffset = MortonMaskOriginOffset;
             if (exploredMortonWordCount < 0 || exploredMortonWordCount > MortonMaskWordCount)
                 exploredMortonWordCount = 0;
+
+            if (exploredMortonByteCount < 0 || exploredMortonByteCount > MortonMaskByteCount)
+                exploredMortonByteCount = 0;
         }
     }
 
@@ -784,8 +801,14 @@ namespace Hecton8.SaveSystem
         public int dayIndex;
         public float dayTimeHours;
         public float playTimeSeconds;
+        public int titleHash;
+        public int messageHash;
+        public int originHash;
+        /// <summary>Legacy string field retained only for v53-and-older migration reads.</summary>
         public string title;
+        /// <summary>Legacy string field retained only for v53-and-older migration reads.</summary>
         public string message;
+        /// <summary>Legacy string field retained only for v53-and-older migration reads.</summary>
         public string originKey;
     }
 
@@ -796,6 +819,8 @@ namespace Hecton8.SaveSystem
         public int nextSequence;
         public PDALogbookEntryDTO[] entries;
         public int seenOriginCount;
+        public int[] seenOriginHashes;
+        /// <summary>Legacy string field retained only for v53-and-older migration reads.</summary>
         public string[] seenOriginKeys;
 
         public const int MaxEntries = 256;
@@ -808,6 +833,9 @@ namespace Hecton8.SaveSystem
 
             if (seenOriginKeys == null || seenOriginKeys.Length < MaxSeenOrigins)
                 seenOriginKeys = new string[MaxSeenOrigins];
+
+            if (seenOriginHashes == null || seenOriginHashes.Length < MaxSeenOrigins)
+                seenOriginHashes = new int[MaxSeenOrigins];
         }
     }
 
@@ -1044,7 +1072,7 @@ namespace Hecton8.SaveSystem
         public bool interiorReefInfestationActive;
         public int cultivationSlotCount;
         public string[] cultivationSeedItemIds;
-        public uint[] cultivationGeneticsMasks;
+        public ulong[] cultivationGeneticsMasks;
         public float[] cultivationGrowth01;
         public float[] cultivationQuality01;
 

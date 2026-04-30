@@ -193,7 +193,9 @@ namespace Hecton8.Gameplay
         public void OnScanEvent(in ScanEventPayload payload)
         {
             ScanEventType eventType = (ScanEventType)payload.EventType;
-            if (payload.EntryHash == 0u || eventType != ScanEventType.FaunaFeedingObserved)
+            if (payload.EntryHash == 0u ||
+                (eventType != ScanEventType.FaunaFeedingObserved &&
+                 eventType != ScanEventType.FaunaMatingObserved))
             {
                 return;
             }

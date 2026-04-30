@@ -11,6 +11,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.World
 {
@@ -286,7 +289,7 @@ namespace Hecton8.World
         public float2 UV;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct XorShift32State
     {
         public uint State;
@@ -312,7 +315,7 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct CombineMeshDataJob : IJob
     {
         [ReadOnly] public Mesh.MeshData SourceMeshData;
@@ -397,7 +400,7 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BuildProxyMeshJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<WreckModulePlacement> Placements;
@@ -450,7 +453,7 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast)]
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BuildDamageDecalMeshJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<WreckDamageDecalStamp> Stamps;
@@ -514,6 +517,7 @@ namespace Hecton8.World
         private const int ProxyIndicesPerPlacement = 36;
         private const int AsyncGenerationStageYieldThresholdFrames = 1;
         private const int AsyncMeshBuildSliceCheckInterval = 4;
+        private const int AsyncJobWaitWatchdogFrames = 600;
         private const double AsyncMeshBuildMainThreadBudgetSeconds = 0.0045d;
         private const int MaxEditorPreviewCellBudget = 256;
         private const uint FallbackSectionSalt = 0xA511E9B3u;
@@ -675,6 +679,20 @@ namespace Hecton8.World
         }
 
 #if UNITY_EDITOR
+        [ContextMenu("Bake Compound Colliders From Child Meshes")]
+        private void BakeCompoundCollidersFromChildMeshes()
+        {
+            Hecton8.World.HectonCompoundColliderAutoFitter.BakeSelectionRoot(gameObject);
+        }
+
+        [MenuItem("Hecton/Physics/Bake Compound Colliders From Selection", priority = 217)]
+        private static void BakeSelectedCompoundColliders()
+        {
+            GameObject[] selected = Selection.gameObjects;
+            for (int i = 0; i < selected.Length; i++)
+                Hecton8.World.HectonCompoundColliderAutoFitter.BakeSelectionRoot(selected[i]);
+        }
+
         private void OnDrawGizmos()
         {
             if (!drawEditorPreviewGizmos)
@@ -1088,12 +1106,24 @@ namespace Hecton8.World
             return (Time.realtimeSinceStartupAsDouble - sliceStartTime) >= AsyncMeshBuildMainThreadBudgetSeconds;
         }
 
-        private static async Awaitable WaitForJobHandleAsync(JobHandle handle)
+        private static async Awaitable<bool> WaitForJobHandleAsync(JobHandle handle, string context)
         {
+            int waitFrames = 0;
             while (!handle.IsCompleted)
+            {
+                if (waitFrames >= AsyncJobWaitWatchdogFrames)
+                {
+                    Debug.LogError($"[ProceduralWreckGenerator] Async job wait timeout in {context} after {waitFrames} frames. Forcing cleanup completion and aborting stage.");
+                    handle.Complete();
+                    return false;
+                }
+
+                waitFrames++;
                 await Awaitable.NextFrameAsync();
+            }
 
             handle.Complete();
+            return true;
         }
 
         private JobHandle CombineScheduledCopyHandles(int handleCount)
@@ -1663,7 +1693,8 @@ namespace Hecton8.World
                 {
                     JobHandle dependency = CombineScheduledCopyHandles(scheduledJobCount);
                     JobHandle.ScheduleBatchedJobs();
-                    await WaitForJobHandleAsync(dependency);
+                    if (!await WaitForJobHandleAsync(dependency, "merged mesh copy"))
+                        return null;
 
                     for (int snapshotIndex = 0; snapshotIndex < acquiredSnapshotCount; snapshotIndex++)
                     {
@@ -1978,7 +2009,8 @@ namespace Hecton8.World
 
                 JobHandle handle = job.Schedule(proxyPlacementCount, 32);
                 JobHandle.ScheduleBatchedJobs();
-                await WaitForJobHandleAsync(handle);
+                if (!await WaitForJobHandleAsync(handle, "proxy mesh build"))
+                    return null;
 
                 Bounds localBounds = CalculateLocalBounds(_filteredPlacements);
                 meshData.subMeshCount = 1;
@@ -2584,4 +2616,362 @@ namespace Hecton8.World
             return (int)x;
         }
     }
+
+#if UNITY_EDITOR
+    internal static class HectonCompoundColliderAutoFitter
+    {
+        private const string GeneratedRootName = "__CompoundCollider_AUTO";
+        private const float MinimumColliderSize = 0.025f;
+        private const float CapsuleAspectThreshold = 2.25f;
+        private const float CapsuleCircularityTolerance = 0.35f;
+        private const int PowerIterationCount = 12;
+
+        private struct SymmetricCovariance
+        {
+            public float XX;
+            public float XY;
+            public float XZ;
+            public float YY;
+            public float YZ;
+            public float ZZ;
+
+            public Vector3 Multiply(Vector3 value)
+            {
+                return new Vector3(
+                    XX * value.x + XY * value.y + XZ * value.z,
+                    XY * value.x + YY * value.y + YZ * value.z,
+                    XZ * value.x + YZ * value.y + ZZ * value.z);
+            }
+        }
+
+        private struct OrientedColliderFit
+        {
+            public Vector3 Center;
+            public Quaternion Rotation;
+            public Vector3 Size;
+            public bool UseCapsule;
+            public int CapsuleDirection;
+            public float CapsuleRadius;
+            public float CapsuleHeight;
+        }
+
+        public static int BakeSelectionRoot(GameObject root)
+        {
+            if (root == null)
+                return 0;
+
+            Undo.RegisterFullObjectHierarchyUndo(root, "Bake compound primitive colliders");
+            Transform rootTransform = root.transform;
+            Transform existingGeneratedRoot = rootTransform.Find(GeneratedRootName);
+            if (existingGeneratedRoot != null)
+                Undo.DestroyObjectImmediate(existingGeneratedRoot.gameObject);
+
+            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+            for (int i = 0; i < meshColliders.Length; i++)
+            {
+                MeshCollider meshCollider = meshColliders[i];
+                if (meshCollider != null)
+                    Undo.DestroyObjectImmediate(meshCollider);
+            }
+
+            GameObject generatedRootObject = new GameObject(GeneratedRootName);
+            Undo.RegisterCreatedObjectUndo(generatedRootObject, "Create compound collider root");
+            generatedRootObject.layer = root.layer;
+            Transform generatedRoot = generatedRootObject.transform;
+            generatedRoot.SetParent(rootTransform, false);
+            generatedRoot.localPosition = Vector3.zero;
+            generatedRoot.localRotation = Quaternion.identity;
+            generatedRoot.localScale = Vector3.one;
+
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+            int fittedCount = 0;
+            for (int filterIndex = 0; filterIndex < meshFilters.Length; filterIndex++)
+            {
+                MeshFilter meshFilter = meshFilters[filterIndex];
+                if (meshFilter == null ||
+                    meshFilter.transform == generatedRoot ||
+                    meshFilter.transform.IsChildOf(generatedRoot))
+                {
+                    continue;
+                }
+
+                Mesh mesh = meshFilter.sharedMesh;
+                if (mesh == null || mesh.vertexCount <= 0)
+                    continue;
+
+                Matrix4x4 sourceToRoot = rootTransform.worldToLocalMatrix * meshFilter.transform.localToWorldMatrix;
+                int subMeshCount = Mathf.Max(1, mesh.subMeshCount);
+                for (int subMeshIndex = 0; subMeshIndex < subMeshCount; subMeshIndex++)
+                {
+                    if (!TryFitSubMesh(mesh, subMeshIndex, sourceToRoot, out OrientedColliderFit fit))
+                        continue;
+
+                    CreateColliderChild(generatedRoot, meshFilter.name, subMeshIndex, fit, root.layer);
+                    fittedCount++;
+                }
+            }
+
+            if (fittedCount <= 0)
+                Undo.DestroyObjectImmediate(generatedRootObject);
+
+            EditorUtility.SetDirty(root);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(root);
+            Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
+            return fittedCount;
+        }
+
+        private static bool TryFitSubMesh(Mesh mesh, int subMeshIndex, Matrix4x4 sourceToRoot, out OrientedColliderFit fit)
+        {
+            fit = default;
+            Vector3[] vertices = mesh.vertices;
+            int[] indices = mesh.GetIndices(subMeshIndex);
+            if (vertices == null || vertices.Length <= 0 || indices == null || indices.Length <= 0)
+                return false;
+
+            Vector3 centroid = Vector3.zero;
+            Vector3 aabbMin = default;
+            Vector3 aabbMax = default;
+            bool hasPoint = false;
+            int pointCount = 0;
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int vertexIndex = indices[i];
+                if ((uint)vertexIndex >= (uint)vertices.Length)
+                    continue;
+
+                Vector3 point = sourceToRoot.MultiplyPoint3x4(vertices[vertexIndex]);
+                if (!IsFinite(point))
+                    continue;
+
+                centroid += point;
+                pointCount++;
+                if (!hasPoint)
+                {
+                    aabbMin = point;
+                    aabbMax = point;
+                    hasPoint = true;
+                    continue;
+                }
+
+                aabbMin = Vector3.Min(aabbMin, point);
+                aabbMax = Vector3.Max(aabbMax, point);
+            }
+
+            if (pointCount <= 2)
+                return false;
+
+            centroid /= pointCount;
+            SymmetricCovariance covariance = default;
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int vertexIndex = indices[i];
+                if ((uint)vertexIndex >= (uint)vertices.Length)
+                    continue;
+
+                Vector3 point = sourceToRoot.MultiplyPoint3x4(vertices[vertexIndex]);
+                if (!IsFinite(point))
+                    continue;
+
+                Vector3 d = point - centroid;
+                covariance.XX += d.x * d.x;
+                covariance.XY += d.x * d.y;
+                covariance.XZ += d.x * d.z;
+                covariance.YY += d.y * d.y;
+                covariance.YZ += d.y * d.z;
+                covariance.ZZ += d.z * d.z;
+            }
+
+            float invCount = 1f / pointCount;
+            covariance.XX *= invCount;
+            covariance.XY *= invCount;
+            covariance.XZ *= invCount;
+            covariance.YY *= invCount;
+            covariance.YZ *= invCount;
+            covariance.ZZ *= invCount;
+
+            Vector3 seed = ResolveLargestAabbAxis(aabbMax - aabbMin);
+            Vector3 axis0 = ResolvePrincipalAxis(covariance, seed, Vector3.zero);
+            Vector3 axis1 = ResolvePrincipalAxis(covariance, ResolveFallbackAxis(axis0), axis0);
+            Vector3 axis2 = Vector3.Cross(axis0, axis1);
+            if (axis2.sqrMagnitude <= 0.000001f)
+                return false;
+
+            axis2.Normalize();
+            axis1 = Vector3.Cross(axis2, axis0).normalized;
+            if (!IsFinite(axis0) || !IsFinite(axis1) || !IsFinite(axis2))
+                return false;
+
+            float min0 = float.PositiveInfinity;
+            float min1 = float.PositiveInfinity;
+            float min2 = float.PositiveInfinity;
+            float max0 = float.NegativeInfinity;
+            float max1 = float.NegativeInfinity;
+            float max2 = float.NegativeInfinity;
+            for (int i = 0; i < indices.Length; i++)
+            {
+                int vertexIndex = indices[i];
+                if ((uint)vertexIndex >= (uint)vertices.Length)
+                    continue;
+
+                Vector3 point = sourceToRoot.MultiplyPoint3x4(vertices[vertexIndex]);
+                if (!IsFinite(point))
+                    continue;
+
+                float d0 = Vector3.Dot(point, axis0);
+                float d1 = Vector3.Dot(point, axis1);
+                float d2 = Vector3.Dot(point, axis2);
+                min0 = Mathf.Min(min0, d0);
+                min1 = Mathf.Min(min1, d1);
+                min2 = Mathf.Min(min2, d2);
+                max0 = Mathf.Max(max0, d0);
+                max1 = Mathf.Max(max1, d1);
+                max2 = Mathf.Max(max2, d2);
+            }
+
+            Vector3 size = new Vector3(
+                Mathf.Max(MinimumColliderSize, max0 - min0),
+                Mathf.Max(MinimumColliderSize, max1 - min1),
+                Mathf.Max(MinimumColliderSize, max2 - min2));
+            if (!IsFinite(size) || size.sqrMagnitude <= MinimumColliderSize * MinimumColliderSize)
+                return false;
+
+            Vector3 center =
+                axis0 * ((min0 + max0) * 0.5f) +
+                axis1 * ((min1 + max1) * 0.5f) +
+                axis2 * ((min2 + max2) * 0.5f);
+            Quaternion rotation = Quaternion.LookRotation(axis2, axis1);
+            if (!IsFinite(rotation))
+                rotation = Quaternion.identity;
+
+            fit.Center = center;
+            fit.Rotation = rotation;
+            fit.Size = size;
+            ResolveCapsuleFit(size, out fit.UseCapsule, out fit.CapsuleDirection, out fit.CapsuleRadius, out fit.CapsuleHeight);
+            return true;
+        }
+
+        private static void CreateColliderChild(Transform generatedRoot, string sourceName, int subMeshIndex, OrientedColliderFit fit, int layer)
+        {
+            GameObject child = new GameObject($"{sourceName}_SM{subMeshIndex:00}_Collider");
+            Undo.RegisterCreatedObjectUndo(child, "Create primitive collider");
+            child.layer = layer;
+            Transform childTransform = child.transform;
+            childTransform.SetParent(generatedRoot, false);
+            childTransform.localPosition = fit.Center;
+            childTransform.localRotation = fit.Rotation;
+            childTransform.localScale = Vector3.one;
+
+            if (fit.UseCapsule)
+            {
+                CapsuleCollider capsule = child.AddComponent<CapsuleCollider>();
+                capsule.center = Vector3.zero;
+                capsule.direction = fit.CapsuleDirection;
+                capsule.radius = fit.CapsuleRadius;
+                capsule.height = fit.CapsuleHeight;
+                capsule.isTrigger = false;
+                return;
+            }
+
+            BoxCollider box = child.AddComponent<BoxCollider>();
+            box.center = Vector3.zero;
+            box.size = fit.Size;
+            box.isTrigger = false;
+        }
+
+        private static Vector3 ResolvePrincipalAxis(SymmetricCovariance covariance, Vector3 seed, Vector3 rejectAxis)
+        {
+            Vector3 axis = Orthogonalize(seed, rejectAxis);
+            if (axis.sqrMagnitude <= 0.000001f)
+                axis = Orthogonalize(Vector3.right, rejectAxis);
+            if (axis.sqrMagnitude <= 0.000001f)
+                axis = Orthogonalize(Vector3.up, rejectAxis);
+            if (axis.sqrMagnitude <= 0.000001f)
+                axis = Vector3.forward;
+
+            axis.Normalize();
+            for (int i = 0; i < PowerIterationCount; i++)
+            {
+                Vector3 next = Orthogonalize(covariance.Multiply(axis), rejectAxis);
+                if (next.sqrMagnitude <= 0.000001f)
+                    break;
+
+                axis = next.normalized;
+            }
+
+            return axis.sqrMagnitude > 0.000001f ? axis.normalized : Vector3.right;
+        }
+
+        private static Vector3 Orthogonalize(Vector3 value, Vector3 rejectAxis)
+        {
+            if (rejectAxis.sqrMagnitude <= 0.000001f)
+                return value;
+
+            Vector3 normalizedReject = rejectAxis.normalized;
+            return value - normalizedReject * Vector3.Dot(value, normalizedReject);
+        }
+
+        private static Vector3 ResolveLargestAabbAxis(Vector3 size)
+        {
+            if (size.x >= size.y && size.x >= size.z)
+                return Vector3.right;
+            if (size.y >= size.z)
+                return Vector3.up;
+            return Vector3.forward;
+        }
+
+        private static Vector3 ResolveFallbackAxis(Vector3 axis)
+        {
+            float x = Mathf.Abs(Vector3.Dot(axis, Vector3.right));
+            float y = Mathf.Abs(Vector3.Dot(axis, Vector3.up));
+            float z = Mathf.Abs(Vector3.Dot(axis, Vector3.forward));
+            if (x <= y && x <= z)
+                return Vector3.right;
+            if (y <= z)
+                return Vector3.up;
+            return Vector3.forward;
+        }
+
+        private static void ResolveCapsuleFit(Vector3 size, out bool useCapsule, out int direction, out float radius, out float height)
+        {
+            direction = ResolveDominantAxis(size);
+            float dominant = GetAxis(size, direction);
+            int axisA = (direction + 1) % 3;
+            int axisB = (direction + 2) % 3;
+            float secondaryA = GetAxis(size, axisA);
+            float secondaryB = GetAxis(size, axisB);
+            float secondaryMax = Mathf.Max(secondaryA, secondaryB);
+            float circularity = Mathf.Abs(secondaryA - secondaryB) / Mathf.Max(secondaryMax, MinimumColliderSize);
+            useCapsule = dominant >= secondaryMax * CapsuleAspectThreshold && circularity <= CapsuleCircularityTolerance;
+            radius = Mathf.Max(MinimumColliderSize, secondaryMax * 0.5f);
+            height = Mathf.Max(radius * 2f, dominant);
+        }
+
+        private static int ResolveDominantAxis(Vector3 size)
+        {
+            if (size.x >= size.y && size.x >= size.z)
+                return 0;
+            if (size.y >= size.z)
+                return 1;
+            return 2;
+        }
+
+        private static float GetAxis(Vector3 value, int axis)
+        {
+            return axis == 0 ? value.x : (axis == 1 ? value.y : value.z);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
+        }
+    }
+#endif
 }

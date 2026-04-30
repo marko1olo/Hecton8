@@ -436,6 +436,11 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 return float2(agitated, dying);
             }
 
+            float ResolveGrowth01(float encodedGrowth01)
+            {
+                return encodedGrowth01 > 0.0001 ? saturate(encodedGrowth01) : 1.0;
+            }
+
             float3 AnimatePositionWS(float3 localPosition, float3 normalOS, float2 uv, float4x4 instanceMatrix, HectonVegetationInstanceGpuData instanceData)
             {
                 float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)) + _GlobalFloatingOffset.xyz;
@@ -453,6 +458,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float instanceHeight;
                 float instanceWidth;
                 ResolveInstanceShape(instanceType, heightScale, widthScale, instanceHeight, instanceWidth);
+                instanceHeight *= ResolveGrowth01(instanceData.Reserved0);
 
                 if (instanceType < 0.5)
                 {

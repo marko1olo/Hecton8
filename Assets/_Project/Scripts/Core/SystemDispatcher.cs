@@ -27,6 +27,13 @@ namespace Hecton8.Core
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
         private const int MaxQueuedDispatcherRaycasts = 256;
         private const int DispatcherRaycastMinCommandsPerJob = 1;
+        private const float FixedStepSeconds = 0.02f;
+        private const int MaxFixedSubstepsPerFrame = 3;
+        private const int MaxLateFrameEventsPerFrame = 1000;
+        private const float CircuitBreakerLogIntervalSeconds = 5f;
+        private const string SlowDispatcherPhaseWarningMessage = "[SystemDispatcher] Dispatcher phase exceeded slow threshold.";
+        private const string FoveatedFrameCompleteWarningMessage = "[SystemDispatcher] Foveated frame completion exceeded slow threshold.";
+        private const string JobHandleCompleteWarningMessage = "[SystemDispatcher] Job handle completion exceeded slow threshold.";
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
@@ -105,7 +112,12 @@ namespace Hecton8.Core
         // COLD ALLOC: int[256] — dispatcher-owned scheduled raycast request ids — owner: SystemDispatcher
         private static readonly int[] _scheduledDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
         private float _slowTickAccumulator;
+        private float _fixedStepAccumulator;
         private bool _serviceRegistered;
+        private static int _lateFrameEventDispatchBudget;
+        private static bool _lateFrameEventBudgetActive;
+        private static bool _lateFrameCircuitBreakerTripped;
+        private static float _nextCircuitBreakerLogTime;
         private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
         private static NativeList<RaycastCommand> _scheduledDispatcherRaycastCommands;
         private static NativeArray<RaycastHit> _scheduledDispatcherRaycastHits;
@@ -122,6 +134,10 @@ namespace Hecton8.Core
             DisposeDispatcherRaycastBuffers();
             ThreadSafeCommandQueue.Shutdown();
             ClearAllLanes();
+            _lateFrameEventDispatchBudget = 0;
+            _lateFrameEventBudgetActive = false;
+            _lateFrameCircuitBreakerTripped = false;
+            _nextCircuitBreakerLogTime = 0f;
         }
 
         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
@@ -350,6 +366,7 @@ namespace Hecton8.Core
         private void Awake()
         {
             _slowTickAccumulator = 0f;
+            _fixedStepAccumulator = 0f;
         }
 
         private void OnDestroy()
@@ -424,6 +441,7 @@ namespace Hecton8.Core
 
                 PredatorCognitionDomain.ScheduleFrameEvaluation(Time.frameCount);
                 _foveatedSimulationManager.ScheduleFrameJobs();
+                RunFixedStepAccumulator(Time.unscaledDeltaTime, blockGameplayLanes);
                 RunSlowTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
             }
@@ -448,9 +466,11 @@ namespace Hecton8.Core
                         rawArray[itemIndex].LateFrameTick();
                 }
             }
+            BeginLateFrameEventBudget();
             using (_lateFrameCommandQueueDrainProfilerMarker.Auto())
             {
-                ThreadSafeCommandQueue.DrainMainThread();
+                if (!ThreadSafeCommandQueue.DrainMainThread())
+                    MarkLateFrameEventDispatchDeferred();
             }
             NarrativeEvents.FlushPending();
             Hecton8.Interaction.InteractionEvents.FlushPending();
@@ -465,21 +485,90 @@ namespace Hecton8.Core
             Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
             ObjectPoolDiagnostics.FlushPending();
             Hecton8.AtlasSignal.Atlas6Events.FlushPending();
+            EndLateFrameEventBudget();
             GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
             WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
             NativeArenaAllocator.Reset();
             EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
         }
 
+        /// <summary>
+        /// Consumes one deferred event dispatch slot from the current LateUpdate budget.
+        /// </summary>
+        /// <returns>True when an event queue may dispatch one payload this frame.</returns>
+        internal static bool TryConsumeLateFrameEventDispatch()
+        {
+            if (!_lateFrameEventBudgetActive)
+                return true;
+
+            if (_lateFrameEventDispatchBudget > 0)
+            {
+                _lateFrameEventDispatchBudget--;
+                return true;
+            }
+
+            _lateFrameCircuitBreakerTripped = true;
+            return false;
+        }
+
+        internal static void MarkLateFrameEventDispatchDeferred()
+        {
+            if (_lateFrameEventBudgetActive)
+                _lateFrameCircuitBreakerTripped = true;
+        }
+
+        private static void BeginLateFrameEventBudget()
+        {
+            _lateFrameEventDispatchBudget = MaxLateFrameEventsPerFrame;
+            _lateFrameCircuitBreakerTripped = false;
+            _lateFrameEventBudgetActive = true;
+        }
+
+        private static void EndLateFrameEventBudget()
+        {
+            bool circuitBreakerTripped = _lateFrameCircuitBreakerTripped;
+            _lateFrameEventBudgetActive = false;
+            _lateFrameEventDispatchBudget = 0;
+            _lateFrameCircuitBreakerTripped = false;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float now = Time.unscaledTime;
+            if (circuitBreakerTripped && now >= _nextCircuitBreakerLogTime)
+            {
+                _nextCircuitBreakerLogTime = now + CircuitBreakerLogIntervalSeconds;
+                Debug.LogWarning("[SystemDispatcher] CircuitBreakerTripped: late-frame event budget exceeded; remaining events deferred.");
+            }
+#endif
+        }
+
         private void FixedUpdate()
+        {
+        }
+
+        private void RunFixedStepAccumulator(float unscaledDeltaTime, bool blockGameplayLanes)
+        {
+            if (unscaledDeltaTime <= 0f)
+                return;
+
+            float maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+            _fixedStepAccumulator = Mathf.Min(_fixedStepAccumulator + unscaledDeltaTime, maxAccumulatedTime);
+
+            int substepCount = 0;
+            while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+            {
+                DispatchFixedStep(FixedStepSeconds, blockGameplayLanes);
+                _fixedStepAccumulator -= FixedStepSeconds;
+                substepCount++;
+            }
+
+            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+                _fixedStepAccumulator = 0f;
+        }
+
+        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
         {
             using (_fixedUpdateProfilerMarker.Auto())
             {
-                float fixedDeltaTime = Time.fixedDeltaTime;
-                bool blockGameplayLanes = Application.isPlaying &&
-                                          BootstrapState.HasActiveInstance &&
-                                          !BootstrapState.IsGameReady;
-
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
@@ -550,6 +639,8 @@ namespace Hecton8.Core
                             rawArray[itemIndex].SlowTick();
                     }
                 }
+
+                WorldSpatialHashGrid.SlowTickMaintenance(DefaultSlowTickIntervalSeconds);
             }
         }
 
@@ -713,8 +804,7 @@ namespace Hecton8.Core
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowDispatcherPhaseWarningMilliseconds)
             {
-                Debug.LogWarning(
-                    $"[SystemDispatcher] {phaseName} exceeded {SlowDispatcherPhaseWarningMilliseconds:F0}ms ({elapsedMilliseconds:F2}ms).");
+                Debug.LogWarning(SlowDispatcherPhaseWarningMessage);
             }
 #endif
         }
@@ -736,8 +826,7 @@ namespace Hecton8.Core
                     "FoveatedSimulationManager",
                     "LateFrameComplete",
                     (float)elapsedMilliseconds);
-                Debug.LogWarning(
-                    $"[SystemDispatcher] Late-frame stall: FoveatedSimulationManager.CompleteFrameJobs took {elapsedMilliseconds:F2}ms.");
+                Debug.LogWarning(FoveatedFrameCompleteWarningMessage);
             }
 #else
             using (_foveatedCompleteProfilerMarker.Auto())
@@ -760,7 +849,7 @@ namespace Hecton8.Core
                     systemName,
                     "LateFrameComplete",
                     (float)elapsedMilliseconds);
-                Debug.LogWarning($"[SystemDispatcher] Late-frame stall: {systemName} took {elapsedMilliseconds:F2}ms.");
+                Debug.LogWarning(JobHandleCompleteWarningMessage);
             }
 #else
             handle.Complete();

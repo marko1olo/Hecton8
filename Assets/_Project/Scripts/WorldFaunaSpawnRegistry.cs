@@ -25,6 +25,7 @@ namespace Hecton8.World
 
         private readonly Dictionary<long, Anchor> _ordinaryAnchors = new Dictionary<long, Anchor>(128);
         private readonly Dictionary<long, Anchor> _largeThreatZones = new Dictionary<long, Anchor>(32);
+        private readonly Dictionary<long, Anchor> _runtimeReefAnchors = new Dictionary<long, Anchor>(16);
         private readonly Dictionary<long, List<Anchor>> _ordinaryAnchorsByChunk = new Dictionary<long, List<Anchor>>(128);
         private readonly Dictionary<long, List<Anchor>> _largeThreatZonesByMacroZone = new Dictionary<long, List<Anchor>>(32);
         private readonly Stack<List<Anchor>> _anchorBucketPool = new Stack<List<Anchor>>(64);
@@ -54,6 +55,7 @@ namespace Hecton8.World
         {
             _ordinaryAnchors.Clear();
             _largeThreatZones.Clear();
+            _runtimeReefAnchors.Clear();
             ReleaseBucketDictionary(_ordinaryAnchorsByChunk);
             ReleaseBucketDictionary(_largeThreatZonesByMacroZone);
             UpdateDiagnostics();
@@ -84,6 +86,45 @@ namespace Hecton8.World
                 }
             }
 
+            AppendRuntimeReefAnchors();
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Registers a flooded habitat module as a runtime fauna spawn anchor.
+        /// </summary>
+        public void RegisterRuntimeReefAnchor(long runtimeKey, Vector3 position, float radius, string familyId)
+        {
+            if (runtimeKey == 0L)
+                return;
+
+            Anchor anchor = new Anchor
+            {
+                runtimeKey = runtimeKey,
+                position = position,
+                radius = Mathf.Max(2f, radius),
+                chunkCoord = WorldChunkCoordinate.FromWorldPosition(position, 1f),
+                macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(position, 1f),
+                streamingLayer = WorldStreamingLayer.Fauna,
+                familyId = string.IsNullOrWhiteSpace(familyId) ? "fauna.family.reef_small" : familyId,
+                isLargeThreatZone = false
+            };
+
+            _runtimeReefAnchors[runtimeKey] = anchor;
+            _ordinaryAnchors[runtimeKey] = anchor;
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Removes a runtime fauna spawn anchor owned by a flooded habitat module.
+        /// </summary>
+        public void UnregisterRuntimeReefAnchor(long runtimeKey)
+        {
+            if (runtimeKey == 0L)
+                return;
+
+            _runtimeReefAnchors.Remove(runtimeKey);
+            _ordinaryAnchors.Remove(runtimeKey);
             UpdateDiagnostics();
         }
 
@@ -175,7 +216,27 @@ namespace Hecton8.World
                 }
             }
 
+            Dictionary<long, Anchor>.ValueCollection.Enumerator reefEnumerator = _runtimeReefAnchors.Values.GetEnumerator();
+            while (reefEnumerator.MoveNext())
+            {
+                Anchor candidate = reefEnumerator.Current;
+                float distanceSqr = (candidate.position - observerPosition).sqrMagnitude;
+                if (distanceSqr >= bestDistanceSqr)
+                    continue;
+
+                bestDistanceSqr = distanceSqr;
+                anchor = candidate;
+                hasBest = true;
+            }
+
             return hasBest;
+        }
+
+        private void AppendRuntimeReefAnchors()
+        {
+            Dictionary<long, Anchor>.Enumerator enumerator = _runtimeReefAnchors.GetEnumerator();
+            while (enumerator.MoveNext())
+                _ordinaryAnchors[enumerator.Current.Key] = enumerator.Current.Value;
         }
 
         private void UpdateDiagnostics()

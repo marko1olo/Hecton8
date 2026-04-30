@@ -448,7 +448,9 @@ namespace Hecton8.Modding
                     Instance = modInstance
                 };
 
-                ExecuteModCallback(loadedMod.Metadata.Id, loadedMod.Instance.OnLoad, "OnLoad");
+                if (!ExecuteModCallback(loadedMod.Metadata.Id, loadedMod.Instance.OnLoad, "OnLoad"))
+                    return;
+
                 _loadedMods.Add(loadedMod);
 
                 RecordRuntimeInfo(new ModRuntimeInfo
@@ -484,6 +486,56 @@ namespace Hecton8.Modding
                 HasManagedEntry = candidate.HasManagedEntry,
                 HasLocalizationFiles = candidate.LocalizationFiles != null && candidate.LocalizationFiles.Length > 0
             });
+        }
+
+        internal static void DisableManagedMod(string modId, string reason)
+        {
+            DisableManagedMod(modId, reason, true);
+        }
+
+        private static void DisableManagedMod(string modId, string reason, bool invokeUnload)
+        {
+            if (string.IsNullOrWhiteSpace(modId))
+                return;
+
+            HectonEventBus.DisableSubscriber(modId);
+
+            for (int i = _loadedMods.Count - 1; i >= 0; i--)
+            {
+                LoadedMod loadedMod = _loadedMods[i];
+                if (loadedMod == null || loadedMod.Metadata.Id != modId)
+                    continue;
+
+                if (invokeUnload && loadedMod.Instance != null)
+                {
+                    try
+                    {
+                        using (ModExecutionScope.Enter(modId))
+                        {
+                            loadedMod.Instance.OnUnload();
+                        }
+                    }
+                    catch (Exception unloadException)
+                    {
+                        Debug.LogWarning($"[ModLoader] Disabled mod '{modId}' threw during isolation unload: {unloadException}");
+                    }
+                }
+
+                _loadedMods.RemoveAt(i);
+                ModRuntimeInfo info = new ModRuntimeInfo
+                {
+                    Metadata = loadedMod.Metadata,
+                    Status = ModLoadStatus.Disabled,
+                    DirectoryPath = TryGetModDirectory(modId, out string directoryPath) ? directoryPath : string.Empty,
+                    StatusMessage = reason ?? "Disabled after managed callback failure.",
+                    AssetBundlePath = string.Empty,
+                    HasManagedEntry = true,
+                    HasLocalizationFiles = false
+                };
+                RecordRuntimeInfo(info);
+                Debug.LogWarning($"[ModLoader] Disabled mod '{modId}': {info.StatusMessage}");
+                return;
+            }
         }
 
         private static bool TryCreateRegisteredManagedMod(
@@ -538,7 +590,7 @@ namespace Hecton8.Modding
 
             if (!_modsInitialized)
             {
-                for (int i = 0; i < _loadedMods.Count; i++)
+                for (int i = _loadedMods.Count - 1; i >= 0; i--)
                     ExecuteModCallback(_loadedMods[i].Metadata.Id, _loadedMods[i].Instance.OnInitialize, "OnInitialize");
 
                 _modsInitialized = true;
@@ -567,12 +619,14 @@ namespace Hecton8.Modding
 
             for (int i = _loadedMods.Count - 1; i >= 0; i--)
                 ExecuteModCallback(_loadedMods[i].Metadata.Id, _loadedMods[i].Instance.OnUnload, "OnUnload");
+
+            _loadedMods.Clear();
         }
 
-        private static void ExecuteModCallback(string modId, Action callback, string callbackName)
+        private static bool ExecuteModCallback(string modId, Action callback, string callbackName)
         {
             if (callback == null)
-                return;
+                return true;
 
             try
             {
@@ -580,10 +634,14 @@ namespace Hecton8.Modding
                 {
                     callback();
                 }
+
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.LogWarning($"[ModLoader] Mod '{modId}' failed during {callbackName}: {ex}");
+                DisableManagedMod(modId, $"{callbackName} threw '{ex.Message}'.", false);
+                return false;
             }
         }
 

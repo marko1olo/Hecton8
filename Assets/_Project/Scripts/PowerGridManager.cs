@@ -15,26 +15,12 @@ namespace Hecton8.Power
     [DefaultExecutionOrder(-5500)]
     public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, IPowerGridService
     {
-        private static PowerGridManager _instance;
         private static List<PowerGrid> _allGrids;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             DisposeAllGrids();
-        }
-
-        public static PowerGridManager Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                return _instance;
-            }
         }
 
         internal static List<PowerGrid> RuntimeGrids => _allGrids;
@@ -67,6 +53,16 @@ namespace Hecton8.Power
             ChargeNormalized = _debugBatteryChargeNormalized,
             EmergencyReserveActive = _debugEmergencyReserveGridCount > 0
         };
+
+        /// <summary>
+        /// Explicit bootstrap entry point. Service lifetime is owned by <see cref="Hecton8.Bootstrap.GameBootstrapper"/>.
+        /// </summary>
+        public void InitializeService()
+        {
+            EnsureStorage();
+            TryRegister();
+            TryRegisterService();
+        }
 
         internal static LogisticsBrownoutTier ResolveProjectedBrownoutTier(float supplyWatts, float demandWatts)
         {
@@ -104,15 +100,6 @@ namespace Hecton8.Power
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-
             if (_allGrids == null)
                 _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
         }
@@ -232,12 +219,7 @@ namespace Hecton8.Power
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (_instance == this)
-            {
-                _instance = null;
-                DisposeAllGrids();
-            }
+            DisposeAllGrids();
         }
 
         public static PowerGrid CreateGrid(PowerNode initialNode)

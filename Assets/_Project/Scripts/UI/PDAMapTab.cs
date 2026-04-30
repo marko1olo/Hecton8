@@ -1,13 +1,19 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.PDA;
 using Hecton8.World;
 using TMPro;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -17,11 +23,18 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Map Tab")]
-    public sealed class PDAMapTab : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PDAMapTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable
     {
         private const string SonarMapShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader";
+        private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
         private const int MaxThreatPings = 8;
         private const int MaxStatusChars = 64;
+        private static readonly bool UseHeadlessCartography = true;
+        private const int CartographyTextureSize = 128;
+        private const float AcousticOverlayRadiusMeters = 160f;
+        private const int PointCloudAxis = 16;
+        private const int PointCloudCapacity = PointCloudAxis * PointCloudAxis * PointCloudAxis;
+        private const int SonarPointStrideBytes = 32;
 
         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
@@ -30,10 +43,202 @@ namespace Hecton8.UI
         private static readonly int ThreatPingCountId = Shader.PropertyToID("_ThreatPingCount");
         private static readonly int ThreatPingsId = Shader.PropertyToID("_ThreatPings");
         private static readonly int TimePhaseId = Shader.PropertyToID("_TimePhase");
+        private static readonly int SonarPointsId = Shader.PropertyToID("_SonarPoints");
+        private static readonly int PointCloudLocalToWorldId = Shader.PropertyToID("_PointCloudLocalToWorld");
+        private static readonly int PointSizeId = Shader.PropertyToID("_PointSize");
+        private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct BuildCartographyTextureJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<byte> Passability;
+            [ReadOnly] public NativeArray<ulong> ExplorationWords;
+            [ReadOnly] public NativeArray<float> AcousticDensity;
+            [WriteOnly] public NativeArray<Color32> Pixels;
+            public int3 VoxelDimensions;
+            public float3 VoxelOrigin;
+            public float VoxelCellSize;
+            public float3 PlayerPosition;
+            public int TextureSize;
+            public int ExplorationAxisLength;
+            public int ExplorationOriginOffset;
+            public int ExplorationChunkSizeMeters;
+            public int3 AcousticDimensions;
+            public float AcousticRadiusMeters;
+            public byte SolidCell;
+            public byte HasExplorationMask;
+            public byte HasAcousticDensity;
+
+            public void Execute(int index)
+            {
+                int width = math.max(1, TextureSize);
+                int pixelX = index % width;
+                int pixelY = index / width;
+                float u = (pixelX + 0.5f) / width;
+                float v = (pixelY + 0.5f) / width;
+                int vx = math.clamp((int)math.floor(u * VoxelDimensions.x), 0, math.max(0, VoxelDimensions.x - 1));
+                int vz = math.clamp((int)math.floor(v * VoxelDimensions.z), 0, math.max(0, VoxelDimensions.z - 1));
+                int vy = math.clamp((int)math.floor((PlayerPosition.y - VoxelOrigin.y) / math.max(0.001f, VoxelCellSize)), 0, math.max(0, VoxelDimensions.y - 1));
+                int voxelIndex = vx + (vy * VoxelDimensions.x) + (vz * VoxelDimensions.x * VoxelDimensions.y);
+                float3 worldPosition = VoxelOrigin + new float3(vx * VoxelCellSize, vy * VoxelCellSize, vz * VoxelCellSize);
+                bool explored = IsExplored(worldPosition.x, worldPosition.z);
+                if (!explored || voxelIndex < 0 || voxelIndex >= Passability.Length)
+                {
+                    Pixels[index] = new Color32(0, 6, 8, 255);
+                    return;
+                }
+
+                byte passability = Passability[voxelIndex];
+                bool solid = passability == SolidCell;
+                float acoustic = SampleAcoustic(worldPosition);
+                byte r = (byte)math.clamp((solid ? 18 : 4) + (int)math.round(acoustic * 190f), 0, 255);
+                byte g = (byte)math.clamp((solid ? 168 : 54) + (int)math.round(acoustic * 42f), 0, 255);
+                byte b = (byte)math.clamp((solid ? 190 : 64) + (int)math.round(acoustic * 18f), 0, 255);
+                Pixels[index] = new Color32(r, g, b, 255);
+            }
+
+            private bool IsExplored(float worldX, float worldZ)
+            {
+                if (HasExplorationMask == 0 || ExplorationWords.Length <= 0)
+                    return true;
+
+                int chunkX = (int)math.floor(worldX / math.max(1, ExplorationChunkSizeMeters));
+                int chunkZ = (int)math.floor(worldZ / math.max(1, ExplorationChunkSizeMeters));
+                int localX = chunkX + ExplorationOriginOffset;
+                int localY = ExplorationOriginOffset;
+                int localZ = chunkZ + ExplorationOriginOffset;
+                if ((uint)localX >= (uint)ExplorationAxisLength ||
+                    (uint)localY >= (uint)ExplorationAxisLength ||
+                    (uint)localZ >= (uint)ExplorationAxisLength)
+                {
+                    return false;
+                }
+
+                int bitIndex = EncodeLocalMortonIndex(localX, localY, localZ);
+                int wordIndex = bitIndex >> 6;
+                int bit = bitIndex & 63;
+                if ((uint)wordIndex >= (uint)ExplorationWords.Length)
+                    return false;
+
+                return (ExplorationWords[wordIndex] & (1UL << bit)) != 0UL;
+            }
+
+            private float SampleAcoustic(float3 worldPosition)
+            {
+                if (HasAcousticDensity == 0 || AcousticDensity.Length <= 0)
+                    return 0f;
+
+                float radius = math.max(0.001f, AcousticRadiusMeters);
+                float3 normalized = ((worldPosition - PlayerPosition) + new float3(radius, radius, radius)) / (radius * 2f);
+                if (math.any(normalized < 0f) || math.any(normalized > 1f))
+                    return 0f;
+
+                int ax = math.clamp((int)math.floor(normalized.x * AcousticDimensions.x), 0, math.max(0, AcousticDimensions.x - 1));
+                int ay = math.clamp((int)math.floor(normalized.y * AcousticDimensions.y), 0, math.max(0, AcousticDimensions.y - 1));
+                int az = math.clamp((int)math.floor(normalized.z * AcousticDimensions.z), 0, math.max(0, AcousticDimensions.z - 1));
+                int acousticIndex = ax + (ay * AcousticDimensions.x) + (az * AcousticDimensions.x * AcousticDimensions.y);
+                return (uint)acousticIndex < (uint)AcousticDensity.Length ? math.saturate(AcousticDensity[acousticIndex]) : 0f;
+            }
+
+            private int EncodeLocalMortonIndex(int x, int y, int z)
+            {
+                uint mask = (uint)math.max(1, ExplorationAxisLength - 1);
+                uint ux = Part1By2((uint)x & mask);
+                uint uy = Part1By2((uint)y & mask);
+                uint uz = Part1By2((uint)z & mask);
+                return (int)(ux | (uy << 1) | (uz << 2));
+            }
+
+            private static uint Part1By2(uint value)
+            {
+                value &= 0x0000007Fu;
+                value = (value | (value << 16)) & 0x030000FFu;
+                value = (value | (value << 8)) & 0x0300F00Fu;
+                value = (value | (value << 4)) & 0x030C30C3u;
+                value = (value | (value << 2)) & 0x09249249u;
+                return value;
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SonarPointCloudPoint
+        {
+            public float4 LocalPositionIntensity;
+            public float4 Color;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct BuildSonarPointCloudJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<byte> Passability;
+            [ReadOnly] public NativeArray<float> AcousticDensity;
+            [WriteOnly] public NativeArray<SonarPointCloudPoint> Points;
+            public int3 VoxelDimensions;
+            public float3 VoxelOrigin;
+            public float VoxelCellSize;
+            public float3 PlayerPosition;
+            public int3 AcousticDimensions;
+            public float AcousticRadiusMeters;
+            public byte SolidCell;
+            public byte HasAcousticDensity;
+
+            public void Execute(int index)
+            {
+                int sx = index % PointCloudAxis;
+                int sy = (index / PointCloudAxis) % PointCloudAxis;
+                int sz = index / (PointCloudAxis * PointCloudAxis);
+                float3 sample01 = new float3(
+                    (sx + 0.5f) / PointCloudAxis,
+                    (sy + 0.5f) / PointCloudAxis,
+                    (sz + 0.5f) / PointCloudAxis);
+
+                int vx = math.clamp((int)math.floor(sample01.x * VoxelDimensions.x), 0, math.max(0, VoxelDimensions.x - 1));
+                int vy = math.clamp((int)math.floor(sample01.y * VoxelDimensions.y), 0, math.max(0, VoxelDimensions.y - 1));
+                int vz = math.clamp((int)math.floor(sample01.z * VoxelDimensions.z), 0, math.max(0, VoxelDimensions.z - 1));
+                int voxelIndex = vx + (vy * VoxelDimensions.x) + (vz * VoxelDimensions.x * VoxelDimensions.y);
+                float3 worldPosition = VoxelOrigin + new float3(vx, vy, vz) * math.max(0.001f, VoxelCellSize);
+                float acoustic = SampleAcoustic(worldPosition);
+                bool solid = (uint)voxelIndex < (uint)Passability.Length && Passability[voxelIndex] == SolidCell;
+                float visibility = solid ? 0.72f : acoustic;
+                if (!solid && acoustic <= 0.01f)
+                    visibility = 0f;
+
+                float3 localPosition = math.clamp((worldPosition - PlayerPosition) / math.max(1f, AcousticRadiusMeters), -0.5f, 0.5f);
+                float3 baseColor = solid
+                    ? new float3(0.22f, 0.95f, 1f)
+                    : new float3(1f, 0.24f, 0.12f);
+                float3 acousticColor = math.lerp(baseColor, new float3(1f, 0.55f, 0.08f), math.saturate(acoustic));
+
+                Points[index] = new SonarPointCloudPoint
+                {
+                    LocalPositionIntensity = new float4(localPosition, visibility),
+                    Color = new float4(acousticColor, math.saturate(visibility))
+                };
+            }
+
+            private float SampleAcoustic(float3 worldPosition)
+            {
+                if (HasAcousticDensity == 0 || AcousticDensity.Length <= 0)
+                    return 0f;
+
+                float radius = math.max(0.001f, AcousticRadiusMeters);
+                float3 normalized = ((worldPosition - PlayerPosition) + new float3(radius, radius, radius)) / (radius * 2f);
+                if (math.any(normalized < 0f) || math.any(normalized > 1f))
+                    return 0f;
+
+                int ax = math.clamp((int)math.floor(normalized.x * AcousticDimensions.x), 0, math.max(0, AcousticDimensions.x - 1));
+                int ay = math.clamp((int)math.floor(normalized.y * AcousticDimensions.y), 0, math.max(0, AcousticDimensions.y - 1));
+                int az = math.clamp((int)math.floor(normalized.z * AcousticDimensions.z), 0, math.max(0, AcousticDimensions.z - 1));
+                int acousticIndex = ax + (ay * AcousticDimensions.x) + (az * AcousticDimensions.x * AcousticDimensions.y);
+                return (uint)acousticIndex < (uint)AcousticDensity.Length ? math.saturate(AcousticDensity[acousticIndex]) : 0f;
+            }
+        }
 
         [Header("References")]
         [SerializeField, Tooltip("Optional explicit raymarched-map shader. Editor fallback resolves the first-party asset path when left null.")]
         private Shader sonarMapShader;
+        [SerializeField, Tooltip("Optional explicit GPU point-cloud shader. Editor fallback resolves the first-party asset path when left null.")]
+        private Shader sonarPointCloudShader;
         [SerializeField, Tooltip("Optional explicit RawImage target. When null, the component builds its own viewport.")]
         private RawImage mapImage;
         [SerializeField, Tooltip("Optional explicit status label. When null, the component builds its own label.")]
@@ -48,19 +253,38 @@ namespace Hecton8.UI
         private Color edgeTint = new Color(0.62f, 0.98f, 1f, 0.86f);
         [SerializeField, Tooltip("Tint used for Leviathan threat pings.")]
         private Color threatTint = new Color(1f, 0.18f, 0.14f, 0.82f);
+        [SerializeField, Range(0.25f, 8f), Tooltip("GPU point size for PDA sonar point-cloud primitives.")]
+        private float pointCloudPointSize = 2.6f;
+        [SerializeField, Range(0.05f, 1f), Tooltip("Opacity multiplier for GPU sonar point-cloud primitives.")]
+        private float pointCloudOpacity = 0.82f;
+        [SerializeField, Range(0.005f, 0.25f), Tooltip("World depth of the PDA point-cloud volume above the map plane.")]
+        private float pointCloudDepthMeters = 0.08f;
         [SerializeField, Range(0.05f, 2f), Tooltip("Seconds between sonar-source refreshes while the PDA tab remains open.")]
         private float sourceRefreshInterval = 0.2f;
 
         private readonly Vector4[] _threatPings = new Vector4[MaxThreatPings]; // COLD ALLOC: Vector4[8] - PDA sonar-map threat ping upload cache - owner: PDAMapTab
         private bool _registered;
+        private bool _registeredLateFrame;
         private float _refreshCountdown;
         private float _animationTime;
         private int _activeVolumeVersion = -1;
         private int _activeThreatPingCount;
         private Texture3D _sdfTexture;
+        private Texture2D _cartographyTexture;
+        private NativeArray<Color32> _cartographyPixels;
+        private NativeArray<ulong> _emptyExplorationWords;
+        private NativeArray<float> _emptyAcousticDensity;
+        private NativeArray<SonarPointCloudPoint> _pointCloudPoints;
+        private JobHandle _cartographyJobHandle;
+        private bool _cartographyJobScheduled;
+        private bool _pointCloudUploadPending;
+        private int _pointCloudVertexCount;
+        private GraphicsBuffer _pointCloudBuffer;
+        private Material _pointCloudMaterial;
         private Material _runtimeMapMaterial;
         private HectonVoxelVolume _activeVolume;
         private CharBufferPool.Lease _statusBufferLease;
+        private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] - PDA map point-cloud basis corners - owner: PDAMapTab
 
         private void Awake()
         {
@@ -78,12 +302,14 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            CompleteCartographyJobIfNeeded(applyTexture: false);
             ReleaseStatusBuffer();
         }
 
         private void OnDestroy()
         {
             UnregisterFromTickManager();
+            CompleteCartographyJobIfNeeded(applyTexture: false);
             ReleaseStatusBuffer();
             ReleaseResources();
         }
@@ -106,25 +332,53 @@ namespace Hecton8.UI
             PushMaterialState();
         }
 
+        /// <summary>
+        /// Applies completed headless cartography jobs during the dispatcher LateUpdate lane.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            CompleteCartographyJobIfNeeded(applyTexture: true);
+            RenderPointCloud();
+        }
+
         private void RegisterToTickManager()
         {
             if (_registered || !Application.isPlaying)
+            {
+                TryRegisterLateFrame();
                 return;
+            }
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = true;
+            TryRegisterLateFrame();
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registered)
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registered = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = true;
         }
 
         private void EnsureBuilt()
@@ -180,6 +434,19 @@ namespace Hecton8.UI
                 statusLabel.color = edgeTint;
             }
 
+            if (UseHeadlessCartography)
+            {
+                EnsureCartographyResources();
+                EnsurePointCloudResources();
+                if (mapImage != null && _cartographyTexture != null)
+                {
+                    mapImage.texture = _cartographyTexture;
+                    mapImage.material = null;
+                }
+
+                return;
+            }
+
             if (_runtimeMapMaterial == null)
             {
 #if UNITY_EDITOR
@@ -223,6 +490,22 @@ namespace Hecton8.UI
             }
 
             Vector3 playerPosition = ResolvePlayerPosition();
+            if (UseHeadlessCartography)
+            {
+                if (!ScheduleHeadlessCartography(playerPosition, force))
+                {
+                    _activeVolume = null;
+                    _activeVolumeVersion = -1;
+                    _activeThreatPingCount = 0;
+                    WriteOfflineStatus();
+                    return;
+                }
+
+                RefreshThreatPings();
+                WriteOnlineStatus(new Vector3Int(CartographyTextureSize, 1, CartographyTextureSize));
+                return;
+            }
+
             HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
             if (engine == null || !engine.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume volume))
             {
@@ -272,6 +555,281 @@ namespace Hecton8.UI
 
             RefreshThreatPings();
             WriteOnlineStatus(gridDimensions);
+        }
+
+        private bool ScheduleHeadlessCartography(Vector3 playerPosition, bool force)
+        {
+            if (_cartographyJobScheduled)
+                return true;
+
+            EnsureCartographyResources();
+            if (!_cartographyPixels.IsCreated)
+                return false;
+
+            if (!VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
+                    (float3)playerPosition,
+                    out NativeArray<byte> passability,
+                    out int3 voxelDimensions,
+                    out float3 voxelOrigin,
+                    out float voxelCellSize))
+            {
+                return _cartographyTexture != null && !force;
+            }
+
+            PlayerExplorationTracker explorationTracker = PlayerExplorationTracker.Instance;
+            NativeArray<ulong> explorationWords = _emptyExplorationWords;
+            int explorationAxisLength = 0;
+            int explorationOriginOffset = 0;
+            int explorationChunkSize = 0;
+            byte hasExplorationMask = 0;
+            if (explorationTracker != null)
+            {
+                if (explorationTracker.TryGetExplorationMaskPayload(
+                    out explorationWords,
+                    out explorationAxisLength,
+                    out explorationOriginOffset,
+                    out explorationChunkSize))
+                {
+                    hasExplorationMask = (byte)(explorationWords.IsCreated ? 1 : 0);
+                    if (!explorationWords.IsCreated)
+                        explorationWords = _emptyExplorationWords;
+                }
+                else
+                {
+                    explorationWords = _emptyExplorationWords;
+                }
+            }
+
+            NativeArray<float> acousticDensity = _emptyAcousticDensity;
+            int3 acousticDimensions = int3.zero;
+            byte hasAcousticDensity = 0;
+            if (WorldSpatialHashGrid.TryGetAcousticDensityMap(out acousticDensity, out Vector3Int acousticDimensionVector))
+            {
+                acousticDimensions = new int3(acousticDimensionVector.x, acousticDimensionVector.y, acousticDimensionVector.z);
+                hasAcousticDensity = (byte)(acousticDensity.IsCreated ? 1 : 0);
+                if (!acousticDensity.IsCreated)
+                    acousticDensity = _emptyAcousticDensity;
+            }
+            else
+            {
+                acousticDensity = _emptyAcousticDensity;
+            }
+
+            _cartographyJobHandle = new BuildCartographyTextureJob
+            {
+                Passability = passability,
+                ExplorationWords = explorationWords,
+                AcousticDensity = acousticDensity,
+                Pixels = _cartographyPixels,
+                VoxelDimensions = voxelDimensions,
+                VoxelOrigin = voxelOrigin,
+                VoxelCellSize = math.max(0.001f, voxelCellSize),
+                PlayerPosition = (float3)playerPosition,
+                TextureSize = CartographyTextureSize,
+                ExplorationAxisLength = explorationAxisLength,
+                ExplorationOriginOffset = explorationOriginOffset,
+                ExplorationChunkSizeMeters = explorationChunkSize,
+                AcousticDimensions = acousticDimensions,
+                AcousticRadiusMeters = AcousticOverlayRadiusMeters,
+                SolidCell = VoxelDynamicNavGridRuntime.SolidCell,
+                HasExplorationMask = hasExplorationMask,
+                HasAcousticDensity = hasAcousticDensity
+            }.Schedule(_cartographyPixels.Length, 64);
+
+            EnsurePointCloudResources();
+            if (_pointCloudPoints.IsCreated)
+            {
+                JobHandle pointCloudHandle = new BuildSonarPointCloudJob
+                {
+                    Passability = passability,
+                    AcousticDensity = acousticDensity,
+                    Points = _pointCloudPoints,
+                    VoxelDimensions = voxelDimensions,
+                    VoxelOrigin = voxelOrigin,
+                    VoxelCellSize = math.max(0.001f, voxelCellSize),
+                    PlayerPosition = (float3)playerPosition,
+                    AcousticDimensions = acousticDimensions,
+                    AcousticRadiusMeters = AcousticOverlayRadiusMeters,
+                    SolidCell = VoxelDynamicNavGridRuntime.SolidCell,
+                    HasAcousticDensity = hasAcousticDensity
+                }.Schedule(_pointCloudPoints.Length, 64);
+                _cartographyJobHandle = JobHandle.CombineDependencies(_cartographyJobHandle, pointCloudHandle);
+                _pointCloudVertexCount = _pointCloudPoints.Length;
+                _pointCloudUploadPending = true;
+            }
+
+            _cartographyJobScheduled = true;
+            return true;
+        }
+
+        private void EnsureCartographyResources()
+        {
+            if (_cartographyTexture == null)
+            {
+                _cartographyTexture = new Texture2D(
+                    CartographyTextureSize,
+                    CartographyTextureSize,
+                    TextureFormat.RGBA32,
+                    false,
+                    true)
+                {
+                    name = "__PDAHeadlessCartography",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Point,
+                    anisoLevel = 0
+                }; // COLD ALLOC: Texture2D[128x128 RGBA32] - headless PDA cartography output - owner: PDAMapTab
+            }
+
+            if (!_cartographyPixels.IsCreated)
+            {
+                _cartographyPixels = new NativeArray<Color32>(
+                    CartographyTextureSize * CartographyTextureSize,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<Color32>[16384] - headless PDA cartography pixel buffer - owner: PDAMapTab
+            }
+
+            if (!_emptyExplorationWords.IsCreated)
+            {
+                _emptyExplorationWords = new NativeArray<ulong>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ulong>[1] - created empty exploration-mask fallback for PDA cartography jobs - owner: PDAMapTab
+            }
+
+            if (!_emptyAcousticDensity.IsCreated)
+            {
+                _emptyAcousticDensity = new NativeArray<float>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - created empty acoustic-density fallback for PDA cartography jobs - owner: PDAMapTab
+            }
+        }
+
+        private void EnsurePointCloudResources()
+        {
+            if (!_pointCloudPoints.IsCreated)
+            {
+                _pointCloudPoints = new NativeArray<SonarPointCloudPoint>(
+                    PointCloudCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarPointCloudPoint>[4096] - PDA sonar point-cloud upload payload - owner: PDAMapTab
+            }
+
+            if (_pointCloudBuffer == null || !_pointCloudBuffer.IsValid())
+            {
+                _pointCloudBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    PointCloudCapacity,
+                    SonarPointStrideBytes); // COLD ALLOC: GraphicsBuffer[4096 x 32B] - GPU-resident PDA sonar point cloud - owner: PDAMapTab
+            }
+
+            if (_pointCloudMaterial != null)
+                return;
+
+#if UNITY_EDITOR
+            if (sonarPointCloudShader == null)
+                sonarPointCloudShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(SonarPointCloudShaderPath);
+#endif
+            if (sonarPointCloudShader == null)
+                sonarPointCloudShader = Shader.Find("Hecton8/UI/PDA Sonar Point Cloud");
+
+            if (sonarPointCloudShader == null)
+                return;
+
+            _pointCloudMaterial = new Material(sonarPointCloudShader)
+            {
+                name = "Runtime_PDASonarPointCloud"
+            }; // COLD ALLOC: Material[1] - GPU-resident PDA sonar point-cloud draw material - owner: PDAMapTab
+            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudBuffer);
+        }
+
+        private void CompleteCartographyJobIfNeeded(bool applyTexture)
+        {
+            if (!_cartographyJobScheduled)
+                return;
+
+            if (applyTexture && !_cartographyJobHandle.IsCompleted)
+                return;
+
+            _cartographyJobHandle.Complete();
+            _cartographyJobScheduled = false;
+            if (!applyTexture || _cartographyTexture == null || !_cartographyPixels.IsCreated)
+                return;
+
+            _cartographyTexture.SetPixelData(_cartographyPixels, 0);
+            _cartographyTexture.Apply(false, false);
+            if (mapImage != null)
+            {
+                mapImage.texture = _cartographyTexture;
+                mapImage.material = null;
+            }
+
+            UploadPointCloudIfNeeded();
+        }
+
+        private void UploadPointCloudIfNeeded()
+        {
+            if (!_pointCloudUploadPending ||
+                _pointCloudBuffer == null ||
+                !_pointCloudBuffer.IsValid() ||
+                !_pointCloudPoints.IsCreated)
+            {
+                return;
+            }
+
+            _pointCloudBuffer.SetData(_pointCloudPoints, 0, 0, _pointCloudPoints.Length);
+            _pointCloudUploadPending = false;
+        }
+
+        private void RenderPointCloud()
+        {
+            if (_pointCloudVertexCount <= 0 ||
+                _pointCloudMaterial == null ||
+                _pointCloudBuffer == null ||
+                !_pointCloudBuffer.IsValid() ||
+                mapImage == null ||
+                !isActiveAndEnabled)
+            {
+                return;
+            }
+
+            RectTransform mapRect = mapImage.rectTransform;
+            if (mapRect == null)
+                return;
+
+            mapRect.GetWorldCorners(_mapWorldCorners);
+            Vector3 bottomLeft = _mapWorldCorners[0];
+            Vector3 topLeft = _mapWorldCorners[1];
+            Vector3 topRight = _mapWorldCorners[2];
+            Vector3 bottomRight = _mapWorldCorners[3];
+            Vector3 right = bottomRight - bottomLeft;
+            Vector3 up = topLeft - bottomLeft;
+            Vector3 center = (bottomLeft + topLeft + topRight + bottomRight) * 0.25f;
+            Vector3 normal = Vector3.Cross(right, up);
+            if (normal.sqrMagnitude < 0.000001f)
+                return;
+
+            normal.Normalize();
+            Matrix4x4 localToWorld = Matrix4x4.identity;
+            localToWorld.SetColumn(0, new Vector4(right.x, right.y, right.z, 0f));
+            localToWorld.SetColumn(1, new Vector4(up.x, up.y, up.z, 0f));
+            localToWorld.SetColumn(2, new Vector4(normal.x * pointCloudDepthMeters, normal.y * pointCloudDepthMeters, normal.z * pointCloudDepthMeters, 0f));
+            localToWorld.SetColumn(3, new Vector4(center.x, center.y, center.z, 1f));
+
+            _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudBuffer);
+            _pointCloudMaterial.SetMatrix(PointCloudLocalToWorldId, localToWorld);
+            _pointCloudMaterial.SetFloat(PointSizeId, pointCloudPointSize);
+            _pointCloudMaterial.SetFloat(OpacityId, pointCloudOpacity);
+
+            Bounds bounds = new Bounds(center, new Vector3(right.magnitude, up.magnitude, pointCloudDepthMeters + 0.01f));
+            RenderParams renderParams = new RenderParams(_pointCloudMaterial)
+            {
+                worldBounds = bounds,
+                layer = gameObject.layer,
+                shadowCastingMode = ShadowCastingMode.Off,
+                receiveShadows = false
+            };
+            Graphics.RenderPrimitives(renderParams, MeshTopology.Points, _pointCloudVertexCount);
         }
 
         private void EnsureSdfTexture(Vector3Int gridDimensions)
@@ -560,11 +1118,56 @@ namespace Hecton8.UI
                 _sdfTexture = null;
             }
 
+            if (_cartographyTexture != null)
+            {
+                Destroy(_cartographyTexture);
+                _cartographyTexture = null;
+            }
+
+            if (_cartographyPixels.IsCreated)
+            {
+                _cartographyPixels.Dispose();
+                _cartographyPixels = default;
+            }
+
+            if (_emptyExplorationWords.IsCreated)
+            {
+                _emptyExplorationWords.Dispose();
+                _emptyExplorationWords = default;
+            }
+
+            if (_emptyAcousticDensity.IsCreated)
+            {
+                _emptyAcousticDensity.Dispose();
+                _emptyAcousticDensity = default;
+            }
+
+            if (_pointCloudPoints.IsCreated)
+            {
+                _pointCloudPoints.Dispose();
+                _pointCloudPoints = default;
+            }
+
+            if (_pointCloudBuffer != null)
+            {
+                _pointCloudBuffer.Release();
+                _pointCloudBuffer = null;
+            }
+
+            if (_pointCloudMaterial != null)
+            {
+                Destroy(_pointCloudMaterial);
+                _pointCloudMaterial = null;
+            }
+
             if (_runtimeMapMaterial != null)
             {
                 Destroy(_runtimeMapMaterial);
                 _runtimeMapMaterial = null;
             }
+
+            _pointCloudUploadPending = false;
+            _pointCloudVertexCount = 0;
         }
     }
 }

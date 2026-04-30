@@ -5,6 +5,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -34,6 +35,12 @@ namespace Hecton8.World
         private const float MaximumCoralObstacleHalfHeightMeters = 5.5f;
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const float DynamicObstacleChunkSizeMeters = 16f;
+        private const double PartialClearanceDilationBudgetMilliseconds = 1.0d;
+        private const int DynamicClearanceFallbackScheduleCount = 1;
+        private const float DynamicClearanceWarningCooldownSeconds = 5f;
+        private const int MaxPersistentDynamicObstacleCount = 512;
+        private const float PersistentObstacleMergeDistanceMeters = 2f;
+        private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
 
         // COLD ALLOC: Dictionary<int, VolumeRecord>(16) - voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
         private static readonly Dictionary<int, VolumeRecord> _records = new Dictionary<int, VolumeRecord>(16);
@@ -51,12 +58,20 @@ namespace Hecton8.World
         private static readonly List<int> _recordRemovalScratch = new List<int>(16);
         // COLD ALLOC: Dictionary<int,ObstacleRegistration>(64) - registered habitat obstacle collider sources - owner: VoxelDynamicNavGridRuntime
         private static readonly Dictionary<int, ObstacleRegistration> _registeredObstacles = new Dictionary<int, ObstacleRegistration>(64);
+        private static readonly ProfilerMarker _partialClearanceDilationScheduleMarker = new ProfilerMarker("H8/NavGrid/PartialClearanceDilationJob.Schedule");
+        private static readonly ProfilerMarker _partialClearanceDilationCompleteMarker = new ProfilerMarker("H8/NavGrid/PartialClearanceDilationJob.Complete");
         private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;
         private static NativeQueue<DynamicObstacleClearRequest> _pendingObstacleClears;
+        private static NativeList<NavObstaclePrimitive> _persistentDynamicObstacles;
         private static VoxelDynamicNavGridRuntimeLifecycle _lifecycleOwner;
         private static bool _portalGraphDirty = true;
         private static bool _teardownPending;
         private static bool _clearRuntimeContainersWhenTeardownCompletes;
+        private static int _persistentDynamicObstacleWriteCursor;
+        private static int _dynamicClearanceFallbackSchedulesRemaining;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static float _nextDynamicClearanceWarningTime = float.NegativeInfinity;
+#endif
 
         internal enum HybridNavigationMode : byte
         {
@@ -65,7 +80,7 @@ namespace Hecton8.World
             SolidVoxel = 2,
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct PassabilityBuildJob : Unity.Jobs.IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> DensityField;
@@ -78,7 +93,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct ClearanceDilationJob : Unity.Jobs.IJob
         {
             public NativeArray<byte> Passability;
@@ -151,7 +166,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct ObstacleStampJob : Unity.Jobs.IJobParallelFor
         {
             public NativeArray<byte> Passability;
@@ -195,7 +210,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct CopyByteBufferJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<byte> Source;
@@ -210,7 +225,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct PartialObstacleResetAndStampJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<byte> BasePassability;
@@ -275,7 +290,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct PartialClearanceDilationJob : IJob
         {
             public NativeArray<byte> Passability;
@@ -693,6 +708,7 @@ namespace Hecton8.World
 
             HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             obstacleCount += CountMacroFloraObstacles(activeBridge);
+            obstacleCount += _persistentDynamicObstacles.IsCreated ? _persistentDynamicObstacles.Length : 0;
 
             if (obstacleCount <= 0)
                 return default;
@@ -711,8 +727,26 @@ namespace Hecton8.World
             }
 
             WriteMacroFloraObstacles(activeBridge, ref snapshot, ref writeIndex);
+            WritePersistentDynamicObstacles(ref snapshot, ref writeIndex);
 
             return snapshot;
+        }
+
+        internal static void EnqueueDynamicObstacleGrowth(float3 center, float3 extents, float expansionMeters)
+        {
+            if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
+                return;
+
+            EnsureInitialized();
+            float lateralExpansion = math.max(0f, expansionMeters);
+            float3 expandedExtents = extents + new float3(lateralExpansion, math.max(0f, lateralExpansion * 0.25f), lateralExpansion);
+            RegisterPersistentDynamicObstacle(center, expandedExtents);
+            MarkAllVolumesDirty();
+            _pendingObstacleClears.Enqueue(new DynamicObstacleClearRequest
+            {
+                Center = center,
+                Extents = expandedExtents
+            });
         }
 
         internal static void EnqueueDestroyedOrganicEvents(NativeList<DestroyedOrganicEvent> destroyedEvents)
@@ -728,6 +762,7 @@ namespace Hecton8.World
                 if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
                     continue;
 
+                RemovePersistentDynamicObstacles(destroyedEvent.NavObstacleCenter, extents);
                 _pendingObstacleClears.Enqueue(new DynamicObstacleClearRequest
                 {
                     Center = destroyedEvent.NavObstacleCenter,
@@ -745,7 +780,13 @@ namespace Hecton8.World
                 if (record == null || !record.HasPendingDynamicUpdate || !record.PendingDynamicUpdateHandle.IsCompleted)
                     continue;
 
-                record.PendingDynamicUpdateHandle.Complete();
+                long completionStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                using (_partialClearanceDilationCompleteMarker.Auto())
+                {
+                    record.PendingDynamicUpdateHandle.Complete();
+                }
+
+                EvaluateDynamicClearanceBudget(completionStartTimestamp);
                 record.PendingDynamicUpdateHandle = default;
                 record.HasPendingDynamicUpdate = false;
 
@@ -786,6 +827,8 @@ namespace Hecton8.World
             if (!TryDequeueValidDynamicClearRequest(out DynamicObstacleClearRequest clearRequest))
                 return;
 
+            bool useReducedClearance = _dynamicClearanceFallbackSchedulesRemaining > 0;
+            bool scheduledAnyRecord = false;
             Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
             while (enumerator.MoveNext())
             {
@@ -820,6 +863,7 @@ namespace Hecton8.World
                 if (regionPointCount <= 0)
                     continue;
 
+                int clearanceRadiusCells = ResolveDynamicClearanceRadiusCells(record.CellSize, useReducedClearance);
                 JobHandle resetHandle = new PartialObstacleResetAndStampJob
                 {
                     BasePassability = record.BaseCurrent,
@@ -832,18 +876,26 @@ namespace Hecton8.World
                     CellSize = record.CellSize
                 }.Schedule(regionPointCount, 64);
 
-                record.PendingDynamicUpdateHandle = new PartialClearanceDilationJob
+                using (_partialClearanceDilationScheduleMarker.Auto())
                 {
-                    Passability = record.Next,
-                    ReferenceDistanceMap = record.CurrentDistance,
-                    DistanceMap = record.NextDistance,
-                    Dimensions = record.Dimensions,
-                    RegionMin = regionMin,
-                    RegionMax = regionMax,
-                    AgentRadiusCells = ResolveClearanceRadiusCells(record.CellSize)
-                }.Schedule(resetHandle);
+                    record.PendingDynamicUpdateHandle = new PartialClearanceDilationJob
+                    {
+                        Passability = record.Next,
+                        ReferenceDistanceMap = record.CurrentDistance,
+                        DistanceMap = record.NextDistance,
+                        Dimensions = record.Dimensions,
+                        RegionMin = regionMin,
+                        RegionMax = regionMax,
+                        AgentRadiusCells = clearanceRadiusCells
+                    }.Schedule(resetHandle);
+                }
+
                 record.HasPendingDynamicUpdate = true;
+                scheduledAnyRecord = true;
             }
+
+            if (scheduledAnyRecord && useReducedClearance)
+                _dynamicClearanceFallbackSchedulesRemaining--;
         }
 
         private static bool HasPendingDynamicObstacleUpdate()
@@ -1246,6 +1298,14 @@ namespace Hecton8.World
                 _pendingObstacleClears.Dispose();
                 _pendingObstacleClears = default;
             }
+
+            if (_persistentDynamicObstacles.IsCreated)
+            {
+                _persistentDynamicObstacles.Dispose();
+                _persistentDynamicObstacles = default;
+            }
+
+            _persistentDynamicObstacleWriteCursor = 0;
         }
 
         private static void EnsureInitialized()
@@ -1259,6 +1319,9 @@ namespace Hecton8.World
 
             if (!_pendingObstacleClears.IsCreated)
                 _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
+
+            if (!_persistentDynamicObstacles.IsCreated)
+                _persistentDynamicObstacles = new NativeList<NavObstaclePrimitive>(MaxPersistentDynamicObstacleCount, Allocator.Persistent); // COLD ALLOC: NativeList<NavObstaclePrimitive>[512] - overgrowth/vine dynamic obstacle snapshot lane - owner: VoxelDynamicNavGridRuntime
         }
 
         private static void EnsureLifecycleOwner()
@@ -1285,6 +1348,38 @@ namespace Hecton8.World
         internal static int ResolveClearanceRadiusCells(float cellSize)
         {
             return math.max(1, (int)math.ceil(DefaultPredatorClearanceRadiusMeters / math.max(cellSize, 0.0001f)));
+        }
+
+        private static int ResolveDynamicClearanceRadiusCells(float cellSize, bool useReducedClearance)
+        {
+            int fullRadiusCells = ResolveClearanceRadiusCells(cellSize);
+            return useReducedClearance
+                ? math.max(1, (fullRadiusCells + 1) >> 1)
+                : fullRadiusCells;
+        }
+
+        private static void EvaluateDynamicClearanceBudget(long completionStartTimestamp)
+        {
+            if (completionStartTimestamp <= 0L)
+                return;
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - completionStartTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds <= PartialClearanceDilationBudgetMilliseconds)
+                return;
+
+            _dynamicClearanceFallbackSchedulesRemaining = math.max(
+                _dynamicClearanceFallbackSchedulesRemaining,
+                DynamicClearanceFallbackScheduleCount);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float now = Time.unscaledTime;
+            if (now >= _nextDynamicClearanceWarningTime)
+            {
+                _nextDynamicClearanceWarningTime = now + DynamicClearanceWarningCooldownSeconds;
+                Debug.LogWarning(DynamicClearanceBudgetWarningMessage);
+            }
+#endif
         }
 
         private static int GetStableVolumeEntityId(HectonVoxelVolume volume)
@@ -1534,6 +1629,75 @@ namespace Hecton8.World
                     math.min(surfaceCount, surfaceSemanticCount),
                     ref snapshot,
                     ref writeIndex);
+            }
+        }
+
+        private static void WritePersistentDynamicObstacles(ref NativeArray<NavObstaclePrimitive> snapshot, ref int writeIndex)
+        {
+            if (!_persistentDynamicObstacles.IsCreated || !snapshot.IsCreated)
+                return;
+
+            int safeCount = math.min(_persistentDynamicObstacles.Length, snapshot.Length - writeIndex);
+            for (int i = 0; i < safeCount; i++)
+            {
+                snapshot[writeIndex] = _persistentDynamicObstacles[i];
+                writeIndex++;
+            }
+        }
+
+        private static void RegisterPersistentDynamicObstacle(float3 center, float3 extents)
+        {
+            if (!_persistentDynamicObstacles.IsCreated)
+                return;
+
+            float mergeDistanceSq = PersistentObstacleMergeDistanceMeters * PersistentObstacleMergeDistanceMeters;
+            for (int i = 0; i < _persistentDynamicObstacles.Length; i++)
+            {
+                NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
+                if (math.lengthsq(obstacle.Center - center) > mergeDistanceSq)
+                    continue;
+
+                obstacle.Center = (obstacle.Center + center) * 0.5f;
+                obstacle.Extents = math.max(obstacle.Extents, extents);
+                _persistentDynamicObstacles[i] = obstacle;
+                return;
+            }
+
+            if (_persistentDynamicObstacles.Length < _persistentDynamicObstacles.Capacity)
+            {
+                _persistentDynamicObstacles.AddNoResize(new NavObstaclePrimitive
+                {
+                    Center = center,
+                    Extents = extents
+                });
+                return;
+            }
+
+            int writeIndex = math.clamp(_persistentDynamicObstacleWriteCursor, 0, math.max(0, _persistentDynamicObstacles.Length - 1));
+            _persistentDynamicObstacles[writeIndex] = new NavObstaclePrimitive
+            {
+                Center = center,
+                Extents = extents
+            };
+            _persistentDynamicObstacleWriteCursor = (_persistentDynamicObstacleWriteCursor + 1) % math.max(1, _persistentDynamicObstacles.Length);
+        }
+
+        private static void RemovePersistentDynamicObstacles(float3 center, float3 extents)
+        {
+            if (!_persistentDynamicObstacles.IsCreated || _persistentDynamicObstacles.Length <= 0)
+                return;
+
+            float removeRadius = math.max(
+                PersistentObstacleMergeDistanceMeters,
+                math.max(extents.x, math.max(extents.y, extents.z)) + PersistentObstacleMergeDistanceMeters);
+            float removeRadiusSq = removeRadius * removeRadius;
+            for (int i = _persistentDynamicObstacles.Length - 1; i >= 0; i--)
+            {
+                NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
+                if (math.lengthsq(obstacle.Center - center) > removeRadiusSq)
+                    continue;
+
+                _persistentDynamicObstacles.RemoveAtSwapBack(i);
             }
         }
 

@@ -1,0 +1,2557 @@
+﻿diff --git a/Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset b/Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset
+index 9e6c2661..dafc3182 100644
+--- a/Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset
++++ b/Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset
+@@ -50,5 +50,5 @@ MonoBehaviour:
+     tableKey: ITEM_INTERACT_TAKE
+     fallbackText: Collect
+     variants: []
+-  worldPrefab: {fileID: 0}
++  worldPrefab: {fileID: 100100000, guid: 8c3267ce473acfc4ea806ee87fe3e090, type: 3}
+   worldBuoyancyProfile: {fileID: 0}
+diff --git a/Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs b/Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs
+index fdcf4737..61c2868d 100644
+--- a/Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs
++++ b/Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs
+@@ -1,6 +1,7 @@
+ using System.Collections.Generic;
+ using Hecton8.Building;
+ using Hecton8.Core;
++using Hecton8.Items;
+ using Hecton8.Power;
+ using Hecton8.Scavenging;
+ using Unity.Burst;
+@@ -42,7 +43,7 @@ namespace Hecton8.Construction
+             public byte IsOperating;
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct AdvanceExtractionJob : IJobParallelFor
+         {
+             [ReadOnly] public NativeArray<ExtractorJobInput> Inputs;
+@@ -257,16 +258,31 @@ namespace Hecton8.Construction
+                 ExtractorJobResult result = _jobResults[i];
+                 _cycleTimers[i] = result.NextCycleTimerSeconds;
+                 _bufferedItemHashIds[i] = result.BufferedItemHashId;
+-                _bufferedUnitCounts[i] = result.NextBufferedUnitCount;
+                 _completedCycleCounts[i] += result.CompletedCycleDelta;
+ 
+                 AutonomousExtractorModule module = i < _modules.Count ? _modules[i] : null;
+                 if (module == null)
++                {
++                    _bufferedUnitCounts[i] = result.NextBufferedUnitCount;
+                     continue;
++                }
++
++                int bufferedUnitCount = result.NextBufferedUnitCount;
++                ResourceNode hostNode = module.BoundNode;
++                ResourceNodeTemplate template = hostNode != null ? hostNode.ResourceTemplate : null;
++                ItemData routedItem = template != null ? template.ExtractorYieldItem : null;
++                if (bufferedUnitCount > 0 &&
++                    routedItem != null &&
++                    module.TryRouteBufferedOutput(routedItem, bufferedUnitCount, out int routedCount))
++                {
++                    bufferedUnitCount = math.max(0, bufferedUnitCount - routedCount);
++                }
++
++                _bufferedUnitCounts[i] = bufferedUnitCount;
+ 
+                 module.ApplyRuntimeTelemetry(
+                     result.BufferedItemHashId,
+-                    result.NextBufferedUnitCount,
++                    bufferedUnitCount,
+                     _completedCycleCounts[i],
+                     result.IsOperating != 0);
+             }
+@@ -636,6 +652,16 @@ namespace Hecton8.Construction
+             _runtimeIndex = runtimeIndex;
+         }
+ 
++        internal bool TryRouteBufferedOutput(ItemData item, int bufferedUnitCount, out int routedCount)
++        {
++            routedCount = 0;
++            if (item == null || bufferedUnitCount <= 0 || _powerNode == null)
++                return false;
++
++            PowerGrid grid = _powerNode.Grid;
++            return BaseLogisticsNetwork.TryDepositItem(grid, item, bufferedUnitCount, out routedCount);
++        }
++
+         private void TryRegister()
+         {
+             if (_registered || !Application.isPlaying)
+diff --git a/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs b/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
+index d81bbbb1..6350071b 100644
+--- a/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
++++ b/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
+@@ -217,6 +217,25 @@ namespace Hecton8.Construction
+             return count;
+         }
+ 
++        public static bool TryDepositItem(PowerGrid grid, ItemData item, int amount, out int deposited)
++        {
++            deposited = 0;
++            if (grid == null || item == null || amount <= 0)
++                return false;
++
++            for (int i = 0; i < s_StorageEndpoints.Count && deposited < amount; i++)
++            {
++                StorageEndpoint endpoint = s_StorageEndpoints[i];
++                if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
++                    continue;
++
++                while (deposited < amount && endpoint.Crate.TryAddAutomatedItem(item))
++                    deposited++;
++            }
++
++            return deposited > 0;
++        }
++
+         public static bool TryResolveNearestSupplyEndpoint(PowerGrid grid, int itemHashId, Vector3 origin, out Vector3 position)
+         {
+             position = Vector3.zero;
+diff --git a/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs b/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs
+index eaca61c5..329fc082 100644
+--- a/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs
++++ b/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs
+@@ -87,7 +87,16 @@ namespace Hecton8.Gameplay
+             => OnEventEnded?.Invoke(type);
+ 
+         public static void RaiseSeismicShockwave(in SeismicShockwaveEvent payload)
+-            => OnSeismicShockwave?.Invoke(payload);
++        {
++            PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
++                payload.EpicenterWS,
++                Mathf.Max(payload.ImpulseRadiusMeters, payload.ImpulseRadiusMeters * 4f),
++                Mathf.Clamp01(payload.ImpulseMagnitude / 48f),
++                8f,
++                FieldTargetRole.HazardProbe,
++                0));
++            OnSeismicShockwave?.Invoke(payload);
++        }
+     }
+ 
+     [DisallowMultipleComponent]
+@@ -487,7 +496,7 @@ namespace Hecton8.Gameplay
+                 epicenter,
+                 Mathf.Max(1f, radius),
+                 _seismicOverlapBuffer,
+-                ~0,
++                HectonLayerMasks.DefaultRaycastLayerMask,
+                 QueryTriggerInteraction.Ignore);
+             if (hitCount <= 0)
+                 return;
+diff --git a/Assets/_Project/Scripts/HectonVoxelVolume.cs b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+index 2916328c..73c607b5 100644
+--- a/Assets/_Project/Scripts/HectonVoxelVolume.cs
++++ b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+@@ -62,6 +62,7 @@ namespace Hecton8.Caves
+         private const float MinPlasmaCutPower = 0.02f;
+         private const float PlasmaCutAttenuationPerMeter = 1f;
+         private const byte DefaultDeltaMaterialId = 0;
++        private const byte SedimentDeltaMaterialId = 1;
+ 
+         private HectonVoxelEngine _engine;
+         private VoxelDeltaProcessor _deltaProcessor;
+@@ -890,6 +891,19 @@ namespace Hecton8.Caves
+             CarveCrater(pos, radius);
+         }
+ 
++        /// <summary>
++        /// Applies a persistent additive organic root mound through the voxel delta owner.
++        /// </summary>
++        internal void ApplyOrganicRootMound(Vector3 pos, float radius, float strength)
++        {
++            if (!_runtimeDataReady || radius <= 0f || strength <= 0f || _deltaProcessor == null)
++                return;
++
++            SetBakeState(VoxelBakeState.Pending);
++            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
++            _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, radius, strength, DefaultDeltaMaterialId);
++        }
++
+         /// <summary>
+         /// Executes the authoritative persistent resource-depletion crater pass.
+         /// Kept explicit so tombstoned geology callers route through the volume owner instead of the delta processor.
+@@ -904,6 +918,44 @@ namespace Hecton8.Caves
+             TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
+         }
+ 
++        /// <summary>
++        /// Applies the sediment-layer depletion-rot crater path for soft ore veins.
++        /// Basalt-profile nodes must keep using <see cref="ApplyPersistentResourceCrater"/>.
++        /// </summary>
++        public void ApplyPersistentResourceSedimentRotCrater(Vector3 pos, float radius)
++        {
++            if (!_runtimeDataReady || radius <= 0f)
++                return;
++
++            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
++            if (_deltaProcessor != null)
++            {
++                SetBakeState(VoxelBakeState.Pending);
++                _deltaProcessor.ApplyImmediateCrater(this, pos, radius, SedimentDeltaMaterialId);
++            }
++            else
++            {
++                AppendCraterStamp(absolutePosition, radius, true);
++            }
++
++            TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
++        }
++
++        /// <summary>
++        /// Applies a subtractive meteor-impact sphere stamp through the authoritative voxel delta owner.
++        /// </summary>
++        /// <param name="pos">Runtime-space seabed impact point.</param>
++        /// <param name="radius">Sphere carve radius in meters.</param>
++        /// <returns>True when the volume accepted the impact stamp.</returns>
++        public bool TryApplyExtraterrestrialImpactCrater(Vector3 pos, float radius)
++        {
++            if (!_runtimeDataReady || radius <= 0f)
++                return false;
++
++            CarveCrater(pos, radius);
++            return true;
++        }
++
+         /// <summary>
+         /// Resolves ceiling-adjacent crater anchors around the supplied epicenter and pushes them
+         /// through the authoritative crater/delta pipeline.
+diff --git a/Assets/_Project/Scripts/ResourceNode.cs b/Assets/_Project/Scripts/ResourceNode.cs
+index 58be9113..0e59ee4b 100644
+--- a/Assets/_Project/Scripts/ResourceNode.cs
++++ b/Assets/_Project/Scripts/ResourceNode.cs
+@@ -127,6 +127,7 @@ namespace Hecton8.Scavenging
+         private ulong _persistentTombstoneId;
+         private HectonVoxelEngine _cachedVoxelEngine;
+         private float _lastYieldSampleTimeSeconds;
++        private float _pressureMetamorphismProgressSeconds;
+         private float _fractionalYieldAccumulator;
+         private int _yieldDropCount;
+ 
+@@ -148,6 +149,9 @@ namespace Hecton8.Scavenging
+         /// <summary>AUP-derived persistence tombstone key used by PersistentWorldRegistry.</summary>
+         public ulong PersistentTombstoneId => _persistentTombstoneId;
+ 
++        /// <summary>Accumulated deep-pressure metamorphism progress in in-game seconds.</summary>
++        public float PressureMetamorphismProgressSeconds => Mathf.Max(0f, _pressureMetamorphismProgressSeconds);
++
+         /// <summary>Half extents registered into the AUP spatial hash.</summary>
+         public Vector3 SpatialHalfExtents
+         {
+@@ -254,6 +258,15 @@ namespace Hecton8.Scavenging
+                 WorldSpatialHashGrid.SetResourceHalfExtents(_spatialHandle, SpatialHalfExtents);
+         }
+ 
++        /// <summary>
++        /// Updates the resident metamorphism progress lane without mutating the authored template.
++        /// </summary>
++        /// <param name="progressSeconds">Accumulated compression progress in in-game seconds.</param>
++        public void SetPressureMetamorphismProgressSeconds(float progressSeconds)
++        {
++            _pressureMetamorphismProgressSeconds = Mathf.Max(0f, progressSeconds);
++        }
++
+         /// <summary>
+         /// Re-evaluates the node's AUP identity and spatial registration after a runtime template update.
+         /// </summary>
+@@ -592,7 +605,10 @@ namespace Hecton8.Scavenging
+                 return;
+             }
+ 
+-            volume.ApplyPersistentResourceCrater(_cachedTransform.position, craterRadiusMeters);
++            if (ResolveDebrisPhysicalProfile() == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment)
++                volume.ApplyPersistentResourceSedimentRotCrater(_cachedTransform.position, craterRadiusMeters);
++            else
++                volume.ApplyPersistentResourceCrater(_cachedTransform.position, craterRadiusMeters);
+         }
+ 
+         private void DespawnSelf()
+@@ -619,6 +635,7 @@ namespace Hecton8.Scavenging
+             _despawnRequested = false;
+             _lootSpawnBlockedLogged = false;
+             _lastYieldSampleTimeSeconds = -1f;
++            _pressureMetamorphismProgressSeconds = 0f;
+             _fractionalYieldAccumulator = 0f;
+             _yieldDropCount = 0;
+             ResetMeltProperties();
+diff --git a/Assets/_Project/Scripts/ThermalGeyser.cs b/Assets/_Project/Scripts/ThermalGeyser.cs
+index 516e4a2f..9961a2c5 100644
+--- a/Assets/_Project/Scripts/ThermalGeyser.cs
++++ b/Assets/_Project/Scripts/ThermalGeyser.cs
+@@ -1,5 +1,6 @@
+ using Hecton8.Core;
+ using Hecton8.Gameplay;
++using Hecton8.Items;
+ using Hecton8.Physics;
+ using Hecton8.World;
+ using UnityEngine;
+@@ -17,6 +18,9 @@ namespace Hecton8.Caves
+         private const float MinimumCylinderHeightMeters = 1f;
+         private const float EruptionCylinderHeightMultiplier = 2.25f;
+         private const float CavitationCylinderHeightMultiplier = 1.5f;
++        private const float DefaultMineralEjectionIntervalSeconds = 600f;
++        private const int MinimumEjectedMineralCount = 3;
++        private const int MaximumEjectedMineralCount = 5;
+ 
+         [Header("── Runtime Wiring ──────────────────")]
+         [SerializeField]
+@@ -36,6 +40,19 @@ namespace Hecton8.Caves
+         [Tooltip("Layers sampled when applying eruption shock and cavitation to nearby rigidbodies.")]
+         private LayerMask affectedLayers = (1 << 8) | (1 << 9) | (1 << 10);
+ 
++        [Header("Mineral Ejection")]
++        [SerializeField]
++        [Tooltip("Low-tier mineral item emitted as physical loot during long-lived geyser activity.")]
++        private ItemData ejectedMineralItem;
++
++        [SerializeField, Range(60f, 1800f)]
++        [Tooltip("Seconds between mineral ejection bursts while the geyser is erupting.")]
++        private float mineralEjectionIntervalSeconds = DefaultMineralEjectionIntervalSeconds;
++
++        [SerializeField, Range(0.1f, 30f)]
++        [Tooltip("Impulse magnitude stored on ejected item records and applied when their Rigidbody hydrates.")]
++        private float mineralEjectionImpulse = 8f;
++
+         private float _quietDuration = 10f;
+         private float _eruptionDuration = 3f;
+         private float _eruptionRadius = 4f;
+@@ -51,6 +68,8 @@ namespace Hecton8.Caves
+         private Transform _playerTransform;
+         private Rigidbody _playerRigidbody;
+         private HectonPlayerMovement _playerMovement;
++        private float _mineralEjectionTimer = DefaultMineralEjectionIntervalSeconds;
++        private uint _mineralEjectionSeed;
+         private readonly Collider[] _affectedColliders = new Collider[24]; // COLD ALLOC: Collider[24] — bounded geyser influence query buffer — owner: ThermalGeyser
+ 
+         /// <summary>
+@@ -74,6 +93,7 @@ namespace Hecton8.Caves
+             ConfigureCurrentVolume(isErupting: false);
+             _phaseTimer = _quietDuration;
+             _isErupting = false;
++            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
+         }
+ 
+         /// <summary>
+@@ -81,7 +101,10 @@ namespace Hecton8.Caves
+         /// </summary>
+         public void Tick(float dt)
+         {
+-            _phaseTimer -= Mathf.Max(0f, dt);
++            float safeDt = Mathf.Max(0f, dt);
++            TickMineralEjection(safeDt);
++
++            _phaseTimer -= safeDt;
+             if (_phaseTimer > 0f)
+                 return;
+ 
+@@ -193,9 +216,25 @@ namespace Hecton8.Caves
+             return radialFactor * verticalFactor;
+         }
+ 
++        private static uint Mix(uint hash, uint value)
++        {
++            hash ^= value + 0x9E3779B9u + (hash << 6) + (hash >> 2);
++            return hash != 0u ? hash : 0xA341316Cu;
++        }
++
++        private static float Next01(ref uint state)
++        {
++            state ^= state << 13;
++            state ^= state >> 17;
++            state ^= state << 5;
++            return (state & 0x00FFFFFFu) * (1f / 16777215f);
++        }
++
+         private void Awake()
+         {
+             ResolveRuntimeWiring();
++            _mineralEjectionSeed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x9E3779B9u;
++            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
+         }
+ 
+         private void OnEnable()
+@@ -213,6 +252,44 @@ namespace Hecton8.Caves
+             TryUnregister();
+         }
+ 
++        private void TickMineralEjection(float dt)
++        {
++            if (dt <= 0f || ejectedMineralItem == null)
++                return;
++
++            _mineralEjectionTimer -= dt;
++            if (_mineralEjectionTimer > 0f || !_isErupting)
++                return;
++
++            _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
++            EjectMineralBurst();
++        }
++
++        private void EjectMineralBurst()
++        {
++            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
++            if (registry == null || ejectedMineralItem == null)
++                return;
++
++            uint state = _mineralEjectionSeed;
++            _mineralEjectionSeed = Mix(_mineralEjectionSeed, 0xA511E9B3u);
++            int count = MinimumEjectedMineralCount + (int)Mathf.Floor(Next01(ref state) * (MaximumEjectedMineralCount - MinimumEjectedMineralCount + 1));
++            count = Mathf.Clamp(count, MinimumEjectedMineralCount, MaximumEjectedMineralCount);
++            Vector3 origin = transform.position;
++            for (int i = 0; i < count; i++)
++            {
++                Vector3 lateral = new Vector3((Next01(ref state) * 2f) - 1f, 0f, (Next01(ref state) * 2f) - 1f);
++                if (lateral.sqrMagnitude <= 0.0001f)
++                    lateral = Vector3.right;
++                lateral.Normalize();
++
++                Vector3 spawnPosition = origin + (Vector3.up * 0.25f) + (lateral * Mathf.Lerp(0.15f, 0.6f, Next01(ref state)));
++                Vector3 impulse = (Vector3.up * Mathf.Lerp(0.85f, 1.25f, Next01(ref state)) * mineralEjectionImpulse) +
++                                  (lateral * (mineralEjectionImpulse * 0.25f));
++                registry.TryRegisterDroppedItem(ejectedMineralItem, 1, spawnPosition, impulse);
++            }
++        }
++
+         private void ResolveRuntimeWiring()
+         {
+             if (currentVolume == null)
+diff --git a/Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs b/Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs
+index 91c5ef91..821db598 100644
+--- a/Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs
++++ b/Assets/_Project/Scripts/Tools/ToolDurabilitySystem.cs
+@@ -6,6 +6,7 @@ using Hecton8.Core;
+ using Hecton8.Gameplay;
+ using Hecton8.Inventory;
+ using Hecton8.SaveSystem;
++using Hecton8.World;
+ using Unity.Burst;
+ using Unity.Collections;
+ using Unity.Jobs;
+@@ -23,6 +24,8 @@ namespace Hecton8.Tools
+         private const float UnderwaterDepthThreshold = 0.5f;
+         private const float ActiveUseWindowSeconds = 0.7f;
+         private const float DegradedThreshold = 0.25f;
++        private const float BrineCorrosionPerSecond = 0.05f;
++        private const float BrineDensityThresholdKgPerCubicMeter = 1249f;
+         private const ushort DegradedFlag = 1 << 0;
+         private const ushort BrokenFlag = 1 << 1;
+ 
+@@ -102,7 +105,7 @@ namespace Hecton8.Tools
+             Instance = null;
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct DurabilityDecayJob : IJobParallelFor
+         {
+             public NativeArray<ItemState> States;
+@@ -488,6 +491,10 @@ namespace Hecton8.Tools
+             if (_playerSurvivalSystem == null || _playerToolManager == null || _playerSurvivalSystem.Depth <= UnderwaterDepthThreshold)
+                 return;
+ 
++            bool playerInBrinePool = IsPlayerInBrinePool();
++            if (playerInBrinePool)
++                ApplyBrineCorrosionToTrackedTools();
++
+             PlayerTool currentTool = _playerToolManager.CurrentTool;
+             if (currentTool == null || !currentTool.IsEquipped || currentTool.IsBroken)
+                 return;
+@@ -515,6 +522,33 @@ namespace Hecton8.Tools
+             DrainDurabilityByTime(metadata.toolID, itemHashId, scaledDeltaTime, metadata.maxDurability);
+         }
+ 
++        private void ApplyBrineCorrosionToTrackedTools()
++        {
++            if (!_pendingDecayDt.IsCreated || !_slotActive.IsCreated)
++                return;
++
++            float scaledDeltaTime = BrineCorrosionPerSecond * SlowTickDeltaTime * Mathf.Max(0.1f, globalDurabilityMultiplier);
++            if (scaledDeltaTime <= 0f)
++                return;
++
++            for (int i = 0; i < MaxTrackedTools; i++)
++            {
++                if (_slotActive[i] == 0)
++                    continue;
++
++                _pendingDecayDt[i] += scaledDeltaTime;
++            }
++        }
++
++        private bool IsPlayerInBrinePool()
++        {
++            ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;
++            return director != null &&
++                   _playerRoot != null &&
++                   director.TrySampleBrineFluidDensity(_playerRoot.position, out float densityKgPerCubicMeter) &&
++                   densityKgPerCubicMeter >= BrineDensityThresholdKgPerCubicMeter;
++        }
++
+         private bool ResolvePlayerOwners()
+         {
+             if (_playerRoot == null)
+diff --git a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+index 0aab206f..4b8265cf 100644
+--- a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
++++ b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+@@ -5,11 +5,13 @@ using System.Runtime.InteropServices;
+ using Stopwatch = System.Diagnostics.Stopwatch;
+ using System.Threading;
+ using Hecton8.Core;
++using Hecton8.Gameplay;
+ using Hecton8.Inventory;
+ using Hecton8.Interaction;
+ using Hecton8.Items;
+ using Hecton8.Physics;
+ using Hecton8.SaveSystem;
++using Unity.Burst;
+ using Unity.Collections;
+ using Unity.Collections.LowLevel.Unsafe;
+ using Unity.Mathematics;
+@@ -118,6 +120,25 @@ namespace Hecton8.World
+             return new float3((float)runtimeX, (float)runtimeY, (float)runtimeZ);
+         }
+ 
++        /// <summary>
++        /// Converts an AUP into camera-relative view space without truncating sector deltas to float first.
++        /// </summary>
++        /// <param name="position">World entity AUP.</param>
++        /// <param name="cameraPosition">Camera AUP used as the local origin.</param>
++        /// <returns>Camera-relative float position for rendering and culling.</returns>
++        [BurstCompile]
++        public static float3 ToCameraRelativeFloat3(in AbsoluteUniversePosition position, in AbsoluteUniversePosition cameraPosition)
++        {
++            const double cellSize = CellSizeMeters;
++            long gridDeltaX = position.GridX - cameraPosition.GridX;
++            long gridDeltaY = position.GridY - cameraPosition.GridY;
++            long gridDeltaZ = position.GridZ - cameraPosition.GridZ;
++            double deltaX = (gridDeltaX * cellSize) + ((double)position.LocalX - cameraPosition.LocalX);
++            double deltaY = (gridDeltaY * cellSize) + ((double)position.LocalY - cameraPosition.LocalY);
++            double deltaZ = (gridDeltaZ * cellSize) + ((double)position.LocalZ - cameraPosition.LocalZ);
++            return new float3((float)deltaX, (float)deltaY, (float)deltaZ);
++        }
++
+         public static int3 ResolveChunkId(in AbsoluteUniversePosition position, int chunkSizeMeters)
+         {
+             double3 absolutePosition = position.ToAbsoluteDouble3();
+@@ -169,7 +190,8 @@ namespace Hecton8.World
+         FloraSeedPending = 1 << 3,
+         FloraSeedReady = 1 << 4,
+         FloraStateOverride = 1 << 5,
+-        ResourceNodeDestroyed = 1 << 6
++        ResourceNodeDestroyed = 1 << 6,
++        ResourceNodeMetamorphosed = 1 << 7
+     }
+ 
+     [Flags]
+@@ -260,6 +282,8 @@ namespace Hecton8.World
+ 
+         public bool IsResourceNodeDestroyed => (Flags & PersistentWorldItemFlags.ResourceNodeDestroyed) != 0;
+ 
++        public bool IsResourceNodeMetamorphosed => (Flags & PersistentWorldItemFlags.ResourceNodeMetamorphosed) != 0;
++
+         public void MarkCollected()
+         {
+             Flags |= PersistentWorldItemFlags.Collected;
+@@ -295,6 +319,8 @@ namespace Hecton8.World
+ 
+         public bool IsResourceNodeDestroyed => ((PersistentWorldItemFlags)ItemFlags & PersistentWorldItemFlags.ResourceNodeDestroyed) != 0;
+ 
++        public bool IsResourceNodeMetamorphosed => ((PersistentWorldItemFlags)ItemFlags & PersistentWorldItemFlags.ResourceNodeMetamorphosed) != 0;
++
+         public bool IsValid => InstanceUid != 0u && (IsDeleted || (ItemPersistentIdHash != 0UL && Quantity > 0));
+ 
+         public static PersistentWorldDeltaRecord FromRecord(in PersistentWorldItemRecord record, int chunkSizeMeters)
+@@ -431,6 +457,9 @@ namespace Hecton8.World
+         private const float DropScatterRadiusMeters = 0.55f;
+         private const float DropScatterMinLiftMeters = 0.06f;
+         private const float DropScatterMaxLiftMeters = 0.22f;
++        private const float PlatformVelocityInheritanceFallbackHalfX = 18f;
++        private const float PlatformVelocityInheritanceFallbackHalfY = 12f;
++        private const float PlatformVelocityInheritanceFallbackHalfZ = 45f;
+         private const ushort DefaultItemQualityMilli = 1000;
+         private const float DefaultItemQuality01 = 1f;
+         private const ulong FnvOffsetBasis64 = 14695981039346656037UL;
+@@ -455,6 +484,7 @@ namespace Hecton8.World
+         private const float SectorOverrideCommitDelaySeconds = 300f;
+         private const float FloraStateQuantizationScale = 255f;
+         private const uint FaunaHibernationStateTypeMask = 0xF9000000u;
++        private const uint WhaleFallStateTypeMask = 0xF8000000u;
+         private const int FaunaHibernationStateValueMask = 0x00FFFFFF;
+         private const int FaunaStateFlagLargeThreat = 1 << 0;
+         private const int FaunaStateFlagPredator = 1 << 1;
+@@ -462,8 +492,11 @@ namespace Hecton8.World
+         private const int FaunaSleepStartShift = 2;
+         private const int FaunaSleepStartMaxEncoded = (1 << 22) - 1;
+         private const float FaunaSleepStartQuantumSeconds = 0.25f;
++        private const float WhaleFallDurationSeconds = 259200f;
+         private const int EcosystemFaunaRecordBirthLimitPerSectorPass = 4;
+         private const float EcosystemFaunaCloneJitterRadiusMeters = 180f;
++        private const float HibernatedApexPredationBasePower = 0.65f;
++        private const float HibernatedPreyEscapeBasePower = 0.15f;
+         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
+         private const long PersistentMemoryBudgetBytes = 10485760L;
+         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
+@@ -534,6 +567,7 @@ namespace Hecton8.World
+         private NativeHashMap<uint, int> _deltaRecordIndexByEntityId;
+         private NativeParallelHashSet<uint> _deletedInstanceUids;
+         private NativeParallelHashSet<ulong> _resourceNodeTombstoneIds;
++        private NativeParallelHashSet<ulong> _resourceNodeMetamorphosedIds;
+         private NativeHashMap<int3, ushort> _deltaChunkIndexByChunkId;
+         private NativeList<int3> _deltaChunkIds;
+         private NativeHashMap<ulong, ushort> _deltaItemIndexByHash;
+@@ -563,6 +597,7 @@ namespace Hecton8.World
+         private ItemCatalog _resolvedItemCatalog;
+         private bool _tickRegistered;
+         private bool _slowTickRegistered;
++        private bool _serviceRegistered;
+         private bool _hydrationSessionRunning;
+         private bool _playerChunkValid;
+         private bool _hasLastHydrationScanAup;
+@@ -643,6 +678,7 @@ namespace Hecton8.World
+             }
+ 
+             _instance = this;
++            TryRegisterService();
+ 
+             maxTrackedItems = math.max(256, maxTrackedItems);
+             chunkSizeMeters = math.max(16, chunkSizeMeters);
+@@ -661,6 +697,8 @@ namespace Hecton8.World
+             _deletedInstanceUids = new NativeParallelHashSet<uint>(maxTrackedItems, Allocator.Persistent);
+             // COLD ALLOC: NativeParallelHashSet<ulong>[maxTrackedItems] — AUP-derived resource-node tombstones preventing procedural respawn — owner: PersistentWorldRegistry
+             _resourceNodeTombstoneIds = new NativeParallelHashSet<ulong>(maxTrackedItems, Allocator.Persistent);
++            // COLD ALLOC: NativeParallelHashSet<ulong>[maxTrackedItems] — AUP-derived resource-node metamorphosis overrides — owner: PersistentWorldRegistry
++            _resourceNodeMetamorphosedIds = new NativeParallelHashSet<ulong>(maxTrackedItems, Allocator.Persistent);
+             // COLD ALLOC: NativeHashMap<int3,ushort>[maxTrackedItems] — chunk-id to compact delta table index — owner: PersistentWorldRegistry
+             _deltaChunkIndexByChunkId = new NativeHashMap<int3, ushort>(maxTrackedItems, Allocator.Persistent);
+             // COLD ALLOC: NativeList<int3>[maxTrackedItems] — compact delta chunk table — owner: PersistentWorldRegistry
+@@ -722,6 +760,7 @@ namespace Hecton8.World
+ 
+         private void OnEnable()
+         {
++            TryRegisterService();
+             TryRegisterRuntimeLoops();
+         }
+ 
+@@ -734,6 +773,7 @@ namespace Hecton8.World
+         {
+             CancelHydrationSession(clearQueue: false);
+             TryUnregisterRuntimeLoops();
++            TryUnregisterService();
+             DehydrateAll(syncTransformsBackToRecords: false);
+         }
+ 
+@@ -741,6 +781,7 @@ namespace Hecton8.World
+         {
+             CancelHydrationSession(clearQueue: false);
+             TryUnregisterRuntimeLoops();
++            TryUnregisterService();
+             DehydrateAll(syncTransformsBackToRecords: false);
+ 
+             if (_records.IsCreated)
+@@ -761,6 +802,9 @@ namespace Hecton8.World
+             if (_resourceNodeTombstoneIds.IsCreated)
+                 _resourceNodeTombstoneIds.Dispose();
+ 
++            if (_resourceNodeMetamorphosedIds.IsCreated)
++                _resourceNodeMetamorphosedIds.Dispose();
++
+             if (_deltaChunkIndexByChunkId.IsCreated)
+                 _deltaChunkIndexByChunkId.Dispose();
+ 
+@@ -808,6 +852,36 @@ namespace Hecton8.World
+                 _instance = null;
+         }
+ 
++        private void TryRegisterService()
++        {
++            if (_serviceRegistered)
++                return;
++
++            if (GlobalRegistry.PersistentWorldRegistry != null &&
++                !ReferenceEquals(GlobalRegistry.PersistentWorldRegistry, this))
++            {
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                Debug.LogError("[PersistentWorldRegistry] Duplicate registry owner detected. Disabling duplicate.");
++#endif
++                enabled = false;
++                return;
++            }
++
++            GlobalRegistry.RegisterPersistentWorldRegistry(this);
++            _serviceRegistered = true;
++        }
++
++        private void TryUnregisterService()
++        {
++            if (!_serviceRegistered)
++                return;
++
++            if (ReferenceEquals(GlobalRegistry.PersistentWorldRegistry, this))
++                GlobalRegistry.UnregisterPersistentWorldRegistry(this);
++
++            _serviceRegistered = false;
++        }
++
+         public void Tick(float dt)
+         {
+             _resolvedItemCatalog?.DrainDeferredWorldPrefabReleases(4);
+@@ -859,7 +933,7 @@ namespace Hecton8.World
+             return TryRegisterDroppedItem(itemData, quantity, runtimePosition, initialImpulse, Vector3.zero);
+         }
+ 
+-        internal bool TryRegisterDroppedItemWithState(ItemData itemData, int quantity, Vector3 runtimePosition, uint geneticsMask, ushort qualityMilli)
++        internal bool TryRegisterDroppedItemWithState(ItemData itemData, int quantity, Vector3 runtimePosition, ulong geneticsMask, ushort qualityMilli)
+         {
+             return TryRegisterDroppedItemStateful(itemData, quantity, runtimePosition, Vector3.zero, Vector3.zero, geneticsMask, qualityMilli);
+         }
+@@ -880,7 +954,7 @@ namespace Hecton8.World
+             Vector3 runtimePosition,
+             Vector3 initialImpulse,
+             Vector3 inheritedVelocityChange,
+-            uint geneticsMask,
++            ulong geneticsMask,
+             ushort qualityMilli)
+         {
+             if (itemData == null || quantity <= 0 || !_records.IsCreated || _records.Length >= _records.Capacity)
+@@ -915,7 +989,14 @@ namespace Hecton8.World
+             RegisterOrUpdatePoolSlot(recordIndex, in record);
+             RegisterOrUpdateEntityState(in record, CreateEntityStateFromRecord(in record, geneticsMask, qualityMilli));
+             RegisterSpawnImpulse(record.InstanceUid, initialImpulse);
+-            RegisterSpawnVelocityChange(record.InstanceUid, inheritedVelocityChange);
++            Vector3 resolvedInheritedVelocityChange = inheritedVelocityChange;
++            if (!IsFiniteNonZero(resolvedInheritedVelocityChange) &&
++                TryResolvePlatformInheritedVelocity(scatteredRuntimePosition, out Vector3 platformVelocity))
++            {
++                resolvedInheritedVelocityChange = platformVelocity;
++            }
++
++            RegisterSpawnVelocityChange(record.InstanceUid, resolvedInheritedVelocityChange);
+             UpsertDeltaRecord(in record);
+ 
+             if (_hasLastHydrationScanAup && ShouldHydrateDehydratedRecord(in record, in _lastHydrationScanAup))
+@@ -1078,6 +1159,42 @@ namespace Hecton8.World
+             return true;
+         }
+ 
++        internal bool TryRegisterResourceNodeMetamorphosis(ulong tombstoneId, Vector3 runtimePosition)
++        {
++            if (tombstoneId == 0UL ||
++                !_records.IsCreated ||
++                _records.Length >= _records.Capacity)
++            {
++                return false;
++            }
++
++            if (IsResourceNodeMetamorphosed(tombstoneId))
++                return true;
++
++            if (!TryGenerateResourceNodeMetamorphosisInstanceUid(tombstoneId, out uint instanceUid))
++                return false;
++
++            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
++            int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
++            PersistentWorldItemRecord record = new PersistentWorldItemRecord
++            {
++                Position = position,
++                ChunkId = chunkId,
++                ItemPersistentIdHash = tombstoneId,
++                ItemPersistentId = default,
++                Quantity = 1,
++                Flags = PersistentWorldItemFlags.ResourceNodeMetamorphosed,
++                InstanceUid = instanceUid
++            };
++
++            _records.AddNoResize(record);
++            _recordsByChunk.Add(chunkId, _records.Length - 1);
++            RegisterResourceNodeMetamorphosis(tombstoneId);
++            UpsertDeltaRecord(in record);
++            UpdateDiagnostics();
++            return true;
++        }
++
+         internal bool TryRegisterPendingFloraSeed(ulong floraPersistentIdHash, uint instanceUid, Vector3 runtimePosition, ushort remainingSeconds)
+         {
+             if (floraPersistentIdHash == 0UL ||
+@@ -1220,6 +1337,13 @@ namespace Hecton8.World
+                    _resourceNodeTombstoneIds.Contains(tombstoneId);
+         }
+ 
++        internal bool IsResourceNodeMetamorphosed(ulong tombstoneId)
++        {
++            return tombstoneId != 0UL &&
++                   _resourceNodeMetamorphosedIds.IsCreated &&
++                   _resourceNodeMetamorphosedIds.Contains(tombstoneId);
++        }
++
+         internal bool TryRegisterFaunaTombstone(uint instanceUid)
+         {
+             if (instanceUid == 0u || !_deletedInstanceUids.IsCreated || !_deltaRecords.IsCreated || !_deltaRecordIndexByEntityId.IsCreated)
+@@ -1490,6 +1614,7 @@ namespace Hecton8.World
+             _deltaRecordIndexByEntityId.Clear();
+             _deletedInstanceUids.Clear();
+             _resourceNodeTombstoneIds.Clear();
++            _resourceNodeMetamorphosedIds.Clear();
+             _deltaChunkIndexByChunkId.Clear();
+             _deltaChunkIds.Clear();
+             _deltaItemIndexByHash.Clear();
+@@ -1532,6 +1657,18 @@ namespace Hecton8.World
+                         continue;
+                     }
+ 
++                    if (deltaRecord.IsResourceNodeMetamorphosed)
++                    {
++                        RegisterResourceNodeMetamorphosis(deltaRecord.ItemPersistentIdHash);
++                        if (TryBuildCompactDeltaRecord(deltaRecord, out PersistentWorldCompactDeltaRecord metamorphosisCompactRecord))
++                        {
++                            _deltaRecordIndexByEntityId.TryAdd(deltaRecord.InstanceUid, _deltaRecords.Length);
++                            _deltaRecords.AddNoResize(metamorphosisCompactRecord);
++                        }
++
++                        continue;
++                    }
++
+                     PersistentWorldItemRecord record = deltaRecord.ToRecord(chunkSizeMeters);
+                     if (record.IsCollected || IsDeletedInstanceUid(record.InstanceUid))
+                         continue;
+@@ -1544,7 +1681,7 @@ namespace Hecton8.World
+                             RemoveRecordIndexFromChunk(existingRecord.ChunkId, existingRecordIndex);
+                             _records[existingRecordIndex] = record;
+                             _recordsByChunk.Add(record.ChunkId, existingRecordIndex);
+-                            if (!record.IsFloraDestroyed && !record.IsFloraSeedPending && !record.IsFloraSeedReady && !record.IsFloraStateOverride)
++                            if (!record.IsFloraDestroyed && !record.IsFloraSeedPending && !record.IsFloraSeedReady && !record.IsFloraStateOverride && !record.IsResourceNodeMetamorphosed)
+                             {
+                                 RegisterOrUpdatePoolSlot(existingRecordIndex, in record);
+                                 RegisterOrUpdateEntityState(in record);
+@@ -1564,7 +1701,7 @@ namespace Hecton8.World
+                     _records.AddNoResize(record);
+                     int recordIndex = _records.Length - 1;
+                     _recordsByChunk.Add(record.ChunkId, recordIndex);
+-                    if (!record.IsFloraDestroyed && !record.IsFloraSeedPending && !record.IsFloraSeedReady && !record.IsFloraStateOverride)
++                    if (!record.IsFloraDestroyed && !record.IsFloraSeedPending && !record.IsFloraSeedReady && !record.IsFloraStateOverride && !record.IsResourceNodeMetamorphosed)
+                     {
+                         RegisterOrUpdatePoolSlot(recordIndex, in record);
+                         RegisterOrUpdateEntityState(in record);
+@@ -1827,7 +1964,7 @@ namespace Hecton8.World
+                 }
+ 
+                 PersistentWorldItemRecord record = _records[recordIndex];
+-                if (record.IsCollected || record.IsFloraDestroyed || record.IsFloraSeedPending || record.IsFloraSeedReady || record.IsFloraStateOverride || !ShouldKeepHydratedRecord(in record, in playerAup))
++                if (record.IsCollected || record.IsFloraDestroyed || record.IsFloraSeedPending || record.IsFloraSeedReady || record.IsFloraStateOverride || record.IsResourceNodeMetamorphosed || !ShouldKeepHydratedRecord(in record, in playerAup))
+                     QueueRecordForDehydration(recordIndex);
+             }
+ 
+@@ -1860,6 +1997,7 @@ namespace Hecton8.World
+                                 record.IsFloraSeedPending ||
+                                 record.IsFloraSeedReady ||
+                                 record.IsFloraStateOverride ||
++                                record.IsResourceNodeMetamorphosed ||
+                                 _hydratedInstancesByRecordIndex.ContainsKey(recordIndex) ||
+                                 !ShouldHydrateDehydratedRecord(in record, in playerAup))
+                             {
+@@ -1908,6 +2046,7 @@ namespace Hecton8.World
+                 record.IsFloraSeedPending ||
+                 record.IsFloraSeedReady ||
+                 record.IsFloraStateOverride ||
++                record.IsResourceNodeMetamorphosed ||
+                 _hydratedInstancesByRecordIndex.ContainsKey(recordIndex))
+             {
+                 return false;
+@@ -1942,7 +2081,7 @@ namespace Hecton8.World
+             EntityDataRecord state = ResolveEntityState(in record);
+             AbsoluteUniversePosition hydratedPosition = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
+             int hydratedQuantity = math.max(1, state.Quantity);
+-            uint itemGeneticsMask = ResolveItemGeneticsMask(in state);
++            ulong itemGeneticsMask = ResolveItemGeneticsMask(in state);
+             ushort itemQualityMilli = ResolveItemQualityMilli(in state);
+             float3 runtimePosition = hydratedPosition.ToRuntimeFloat3();
+             GameObject instance = pool.Spawn(prefab, new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z), Quaternion.identity, allowExpand: false);
+@@ -2130,7 +2269,7 @@ namespace Hecton8.World
+ 
+         private bool ShouldHydrateDehydratedRecord(in PersistentWorldItemRecord record, in AbsoluteUniversePosition playerAup)
+         {
+-            if (record.IsCollected || record.IsFloraDestroyed || record.IsFloraSeedPending || record.IsFloraSeedReady || record.IsFloraStateOverride)
++            if (record.IsCollected || record.IsFloraDestroyed || record.IsFloraSeedPending || record.IsFloraSeedReady || record.IsFloraStateOverride || record.IsResourceNodeMetamorphosed)
+                 return false;
+ 
+             AbsoluteUniversePosition recordAup = ResolveResidencyPosition(in record);
+@@ -2139,7 +2278,7 @@ namespace Hecton8.World
+ 
+         private bool ShouldKeepHydratedRecord(in PersistentWorldItemRecord record, in AbsoluteUniversePosition playerAup)
+         {
+-            if (record.IsCollected || record.IsFloraDestroyed || record.IsFloraSeedPending || record.IsFloraSeedReady || record.IsFloraStateOverride)
++            if (record.IsCollected || record.IsFloraDestroyed || record.IsFloraSeedPending || record.IsFloraSeedReady || record.IsFloraStateOverride || record.IsResourceNodeMetamorphosed)
+                 return false;
+ 
+             AbsoluteUniversePosition recordAup = ResolveResidencyPosition(in record);
+@@ -2864,11 +3003,58 @@ namespace Hecton8.World
+             if (!IsFaunaHibernationState(in faunaState))
+                 return false;
+ 
+-            RegisterFaunaHibernationStateInMemory(in faunaState);
++            return TryCacheSpecialEntityState(in faunaState);
++        }
++
++        internal bool TryCacheWhaleFallPoiState(uint instanceUid, int speciesId, in AbsoluteUniversePosition position, float currentTimeSeconds)
++        {
++            EntityDataRecord whaleFallState = CreateWhaleFallPoiState(instanceUid, speciesId, in position, currentTimeSeconds);
++            return TryCacheSpecialEntityState(in whaleFallState);
++        }
++
++        internal float ResolveWhaleFallSpawnInfluence01(Vector3 worldPosition, float currentTimeSeconds, float radiusMeters)
++        {
++            if (!_entityStateByInstanceUid.IsCreated || radiusMeters <= 0f)
++                return 0f;
++
++            float radiusSq = radiusMeters * radiusMeters;
++            float bestInfluence01 = 0f;
++            NativeHashMap<uint, EntityDataRecord>.Enumerator enumerator = _entityStateByInstanceUid.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                EntityDataRecord state = enumerator.Current.Value;
++                if (!IsWhaleFallPoiState(in state))
++                    continue;
++
++                float expireTimeSeconds = GetWhaleFallExpireTimeSeconds(in state);
++                if (expireTimeSeconds <= currentTimeSeconds)
++                    continue;
++
++                AbsoluteUniversePosition whaleFallAup = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
++                Vector3 whaleFallPosition = whaleFallAup.ToRuntimeFloat3();
++                float distanceSq = (whaleFallPosition - worldPosition).sqrMagnitude;
++                if (distanceSq > radiusSq)
++                    continue;
++
++                float distance01 = 1f - math.saturate(distanceSq / math.max(0.001f, radiusSq));
++                float life01 = math.saturate((expireTimeSeconds - currentTimeSeconds) / WhaleFallDurationSeconds);
++                bestInfluence01 = math.max(bestInfluence01, distance01 * math.max(0.25f, life01));
++            }
++
++            enumerator.Dispose();
++            return bestInfluence01;
++        }
++
++        private bool TryCacheSpecialEntityState(in EntityDataRecord entityState)
++        {
++            if (!IsFaunaHibernationState(in entityState) && !IsWhaleFallPoiState(in entityState))
++                return false;
++
++            RegisterSpecialEntityStateInMemory(in entityState);
+             if (!_indexedSectorPagingEnabled || string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
+                 return false;
+ 
+-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in faunaState.Position);
++            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in entityState.Position);
+             long sectorHash = ComputeSectorHash(in position);
+             string entityStateTempPath = ResolveSectorEntityStateTempPath(sectorHash);
+             if (string.IsNullOrEmpty(entityStateTempPath))
+@@ -2884,14 +3070,14 @@ namespace Hecton8.World
+                 for (int i = 0; i < entityStates.Length; i++)
+                 {
+                     EntityDataRecord existingState = entityStates[i];
+-                    if (existingState.InstanceUid == faunaState.InstanceUid)
++                    if (existingState.InstanceUid == entityState.InstanceUid)
+                         continue;
+ 
+                     _entityStateScratch.Add(existingState);
+                 }
+             }
+ 
+-            _entityStateScratch.Add(faunaState);
++            _entityStateScratch.Add(entityState);
+             if (!TryWriteEntityStateTempBlock(sectorHash, entityStateTempPath, _entityStateScratch, chunkSizeMeters))
+                 return false;
+ 
+@@ -2999,16 +3185,33 @@ namespace Hecton8.World
+             int predatorRecordCount = 0;
+             EntityDataRecord preyTemplate = default;
+             EntityDataRecord predatorTemplate = default;
++            EntityDataRecord apexPredatorCandidate = default;
++            EntityDataRecord preyVictimCandidate = default;
+             bool hasPreyTemplate = false;
+             bool hasPredatorTemplate = false;
++            bool hasApexPredatorCandidate = false;
++            bool hasPreyVictimCandidate = false;
+ 
+             for (int i = 0; i < entityStates.Length; i++)
+             {
+                 EntityDataRecord state = entityStates[i];
+-                if (!IsFaunaHibernationState(in state) || GetFaunaHibernationLargeThreatFlag(in state))
++                if (!IsFaunaHibernationState(in state))
+                     continue;
+ 
+-                if (GetFaunaHibernationPredatorFlag(in state))
++                bool largeThreat = GetFaunaHibernationLargeThreatFlag(in state);
++                bool predator = GetFaunaHibernationPredatorFlag(in state);
++                if (largeThreat)
++                {
++                    if (predator && !hasApexPredatorCandidate)
++                    {
++                        apexPredatorCandidate = state;
++                        hasApexPredatorCandidate = true;
++                    }
++
++                    continue;
++                }
++
++                if (predator)
+                 {
+                     predatorRecordCount++;
+                     if (!hasPredatorTemplate)
+@@ -3020,6 +3223,12 @@ namespace Hecton8.World
+                 else
+                 {
+                     preyRecordCount++;
++                    if (!hasPreyVictimCandidate)
++                    {
++                        preyVictimCandidate = state;
++                        hasPreyVictimCandidate = true;
++                    }
++
+                     if (!hasPreyTemplate)
+                     {
+                         preyTemplate = state;
+@@ -3030,6 +3239,17 @@ namespace Hecton8.World
+ 
+             int preyTarget = ResolveEquilibriumRecordTarget(preyRecordCount, preyPopulation, maxPreyPopulation);
+             int predatorTarget = ResolveEquilibriumRecordTarget(predatorRecordCount, predatorPopulation, maxPredatorPopulation);
++            uint hibernatedPredationVictimUid = ResolveHibernatedPredationVictimUid(
++                sectorHash,
++                preyPopulation,
++                predatorPopulation,
++                in apexPredatorCandidate,
++                hasApexPredatorCandidate,
++                in preyVictimCandidate,
++                hasPreyVictimCandidate);
++            if (hibernatedPredationVictimUid != 0u && preyTarget > 0)
++                preyTarget--;
++
+             int keptPrey = 0;
+             int keptPredators = 0;
+             int changedRecords = 0;
+@@ -3044,6 +3264,13 @@ namespace Hecton8.World
+                     continue;
+                 }
+ 
++                if (state.InstanceUid == hibernatedPredationVictimUid)
++                {
++                    TombstoneHibernatedFaunaVictim(in state);
++                    changedRecords++;
++                    continue;
++                }
++
+                 if (GetFaunaHibernationPredatorFlag(in state))
+                 {
+                     if (keptPredators < predatorTarget)
+@@ -3176,7 +3403,7 @@ namespace Hecton8.World
+                         AbsoluteUniversePosition migratedAup = AbsoluteUniversePosition.FromRuntimePosition(migratedPosition);
+                         state.Position = migratedAup.ToAlignedBlit();
+                         _entityStateScratch.Add(state);
+-                        RegisterFaunaHibernationStateInMemory(in state);
++                        RegisterSpecialEntityStateInMemory(in state);
+                         changedSector = true;
+                         migratedCount++;
+                     }
+@@ -3201,13 +3428,56 @@ namespace Hecton8.World
+             return migratedCount;
+         }
+ 
+-        private void RegisterFaunaHibernationStateInMemory(in EntityDataRecord faunaState)
++        private void RegisterSpecialEntityStateInMemory(in EntityDataRecord entityState)
+         {
+-            if (!_entityStateByInstanceUid.IsCreated || faunaState.InstanceUid == 0u)
++            if (!_entityStateByInstanceUid.IsCreated || entityState.InstanceUid == 0u)
+                 return;
+ 
+-            _entityStateByInstanceUid.Remove(faunaState.InstanceUid);
+-            _entityStateByInstanceUid.TryAdd(faunaState.InstanceUid, faunaState);
++            _entityStateByInstanceUid.Remove(entityState.InstanceUid);
++            _entityStateByInstanceUid.TryAdd(entityState.InstanceUid, entityState);
++        }
++
++        private void TombstoneHibernatedFaunaVictim(in EntityDataRecord entityState)
++        {
++            if (_entityStateByInstanceUid.IsCreated)
++                _entityStateByInstanceUid.Remove(entityState.InstanceUid);
++
++            TryRegisterFaunaTombstone(entityState.InstanceUid);
++        }
++
++        private static uint ResolveHibernatedPredationVictimUid(
++            long sectorHash,
++            int preyPopulation,
++            int predatorPopulation,
++            in EntityDataRecord apexPredatorCandidate,
++            bool hasApexPredatorCandidate,
++            in EntityDataRecord preyVictimCandidate,
++            bool hasPreyVictimCandidate)
++        {
++            if (!hasApexPredatorCandidate ||
++                !hasPreyVictimCandidate ||
++                apexPredatorCandidate.InstanceUid == 0u ||
++                preyVictimCandidate.InstanceUid == 0u)
++            {
++                return 0u;
++            }
++
++            uint sectorLow = (uint)sectorHash;
++            uint sectorHigh = (uint)((ulong)sectorHash >> 32);
++            uint rollHash = math.hash(new uint4(
++                sectorLow,
++                sectorHigh,
++                apexPredatorCandidate.InstanceUid,
++                preyVictimCandidate.InstanceUid));
++
++            float roll01 = (rollHash & 0xFFFFu) * (1f / 65535f);
++            int safePreyPopulation = math.max(0, preyPopulation);
++            int safePredatorPopulation = math.max(1, predatorPopulation);
++            float pressureDenominator = math.max(1f, safePreyPopulation + safePredatorPopulation);
++            float predatorPressure01 = math.saturate(safePredatorPopulation / pressureDenominator);
++            float apexPower = HibernatedApexPredationBasePower + predatorPressure01 * 0.25f + roll01 * 0.1f;
++            float preyEscapePower = HibernatedPreyEscapeBasePower + (1f - predatorPressure01) * 0.2f;
++            return apexPower >= preyEscapePower ? preyVictimCandidate.InstanceUid : 0u;
+         }
+ 
+         private int SeedEquilibriumFaunaRecords(long sectorHash, in EntityDataRecord template, bool hasTemplate, int missingCount, bool predator)
+@@ -3240,10 +3510,11 @@ namespace Hecton8.World
+                     in seededAup,
+                     false,
+                     predator,
+-                    Time.time);
++                    Time.time,
++                    GetFaunaHibernationHunger01(in template));
+ 
+                 _entityStateScratch.Add(seededState);
+-                RegisterFaunaHibernationStateInMemory(in seededState);
++                RegisterSpecialEntityStateInMemory(in seededState);
+                 seededCount++;
+             }
+ 
+@@ -3367,14 +3638,16 @@ namespace Hecton8.World
+ 
+         private static EntityDataRecord CreateEntityStateFromRecord(in PersistentWorldItemRecord record)
+         {
+-            return CreateEntityStateFromRecord(in record, 0u, DefaultItemQualityMilli);
++            return CreateEntityStateFromRecord(in record, 0UL, DefaultItemQualityMilli);
+         }
+ 
+-        private static EntityDataRecord CreateEntityStateFromRecord(in PersistentWorldItemRecord record, uint geneticsMask, ushort qualityMilli)
++        private static EntityDataRecord CreateEntityStateFromRecord(in PersistentWorldItemRecord record, ulong geneticsMask, ushort qualityMilli)
+         {
++            AbsoluteUniversePositionBlit128 position = record.Position.ToAlignedBlit();
++            position.Reserved = geneticsMask;
+             return new EntityDataRecord
+             {
+-                Position = record.Position.ToAlignedBlit(),
++                Position = position,
+                 Quantity = math.max(1, record.Quantity),
+                 Integrity01 = ResolveItemQuality01(qualityMilli),
+                 InventoryHash = unchecked((int)geneticsMask),
+@@ -3384,12 +3657,14 @@ namespace Hecton8.World
+ 
+         private static bool IsSpecialEntityState(in EntityDataRecord state)
+         {
+-            return IsFaunaHibernationState(in state) || IsFloraSpawnTimestampState(in state);
++            return IsFaunaHibernationState(in state) || IsFloraSpawnTimestampState(in state) || IsWhaleFallPoiState(in state);
+         }
+ 
+-        private static uint ResolveItemGeneticsMask(in EntityDataRecord state)
++        private static ulong ResolveItemGeneticsMask(in EntityDataRecord state)
+         {
+-            return IsSpecialEntityState(in state) ? 0u : (uint)state.InventoryHash;
++            return IsSpecialEntityState(in state)
++                ? 0UL
++                : (state.Position.Reserved != 0UL ? state.Position.Reserved : (uint)state.InventoryHash);
+         }
+ 
+         private static ushort ResolveItemQualityMilli(in EntityDataRecord state)
+@@ -3415,7 +3690,8 @@ namespace Hecton8.World
+             in AbsoluteUniversePosition position,
+             bool isLargeThreat,
+             bool isPredator,
+-            float sleepStartTimeSeconds)
++            float sleepStartTimeSeconds,
++            float hunger01 = 0f)
+         {
+             int flags = 0;
+             if (isLargeThreat)
+@@ -3427,10 +3703,12 @@ namespace Hecton8.World
+             uint packedState = FaunaHibernationStateTypeMask |
+                                ((packedSleepStart & (uint)FaunaSleepStartMaxEncoded) << FaunaSleepStartShift) |
+                                (uint)(flags & FaunaStateFlagsMask);
++            AbsoluteUniversePositionBlit128 packedPosition = position.ToAlignedBlit();
++            packedPosition.Reserved = PackFaunaVitals(health, hunger01);
+ 
+             return new EntityDataRecord
+             {
+-                Position = position.ToAlignedBlit(),
++                Position = packedPosition,
+                 Quantity = math.max(1, speciesId),
+                 Integrity01 = health,
+                 InventoryHash = unchecked((int)packedState),
+@@ -3445,6 +3723,29 @@ namespace Hecton8.World
+                    (((uint)state.InventoryHash & 0xFF000000u) == FaunaHibernationStateTypeMask);
+         }
+ 
++        internal static EntityDataRecord CreateWhaleFallPoiState(
++            uint instanceUid,
++            int speciesId,
++            in AbsoluteUniversePosition position,
++            float currentTimeSeconds)
++        {
++            return new EntityDataRecord
++            {
++                Position = position.ToAlignedBlit(),
++                Quantity = math.max(1, speciesId),
++                Integrity01 = math.max(0f, currentTimeSeconds) + WhaleFallDurationSeconds,
++                InventoryHash = unchecked((int)WhaleFallStateTypeMask),
++                InstanceUid = instanceUid
++            };
++        }
++
++        internal static bool IsWhaleFallPoiState(in EntityDataRecord state)
++        {
++            return state.InstanceUid != 0u &&
++                   state.Quantity > 0 &&
++                   (((uint)state.InventoryHash & 0xFF000000u) == WhaleFallStateTypeMask);
++        }
++
+         internal static EntityDataRecord CreateFloraSpawnTimestampState(
+             uint instanceUid,
+             float spawnPlayTimeSeconds,
+@@ -3479,7 +3780,16 @@ namespace Hecton8.World
+ 
+         internal static float GetFaunaHibernationHealth(in EntityDataRecord state)
+         {
+-            return state.Integrity01;
++            return TryUnpackFaunaVitals(state.Position.Reserved, out float health, out _)
++                ? health
++                : state.Integrity01;
++        }
++
++        internal static float GetFaunaHibernationHunger01(in EntityDataRecord state)
++        {
++            return TryUnpackFaunaVitals(state.Position.Reserved, out _, out float hunger01)
++                ? hunger01
++                : 0f;
+         }
+ 
+         internal static bool GetFaunaHibernationLargeThreatFlag(in EntityDataRecord state)
+@@ -3498,6 +3808,98 @@ namespace Hecton8.World
+             return encoded <= 0u ? 0f : encoded * FaunaSleepStartQuantumSeconds;
+         }
+ 
++        internal static float GetWhaleFallExpireTimeSeconds(in EntityDataRecord state)
++        {
++            return IsWhaleFallPoiState(in state) && math.isfinite(state.Integrity01)
++                ? state.Integrity01
++                : 0f;
++        }
++
++        private static ulong PackFaunaVitals(float health, float hunger01)
++        {
++            uint packedHealth = math.asuint(math.max(0f, health));
++            uint packedHunger = math.asuint(math.saturate(hunger01));
++            return ((ulong)packedHealth << 32) | packedHunger;
++        }
++
++        private static bool TryUnpackFaunaVitals(ulong packedVitals, out float health, out float hunger01)
++        {
++            if (packedVitals == 0UL)
++            {
++                health = 0f;
++                hunger01 = 0f;
++                return false;
++            }
++
++            uint packedHealth = (uint)(packedVitals >> 32);
++            uint packedHunger = (uint)(packedVitals & 0xFFFFFFFFUL);
++            health = math.max(0f, math.asfloat(packedHealth));
++            hunger01 = math.saturate(math.asfloat(packedHunger));
++            if (!math.isfinite(health))
++                health = 0f;
++            if (!math.isfinite(hunger01))
++                hunger01 = 0f;
++
++            return true;
++        }
++
++        private static bool TryResolvePlatformInheritedVelocity(Vector3 runtimePosition, out Vector3 inheritedVelocity)
++        {
++            inheritedVelocity = Vector3.zero;
++            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
++            if (submarine == null || !submarine.IsTransportPlatformActive)
++                return false;
++
++            if (!IsInsideActiveModuleInterior(runtimePosition) &&
++                !IsInsideSubmarineFallbackBounds(submarine, runtimePosition))
++            {
++                return false;
++            }
++
++            inheritedVelocity = submarine.GetPlatformPointVelocity(runtimePosition);
++            return IsFiniteNonZero(inheritedVelocity);
++        }
++
++        private static bool IsInsideActiveModuleInterior(Vector3 runtimePosition)
++        {
++            IReadOnlyList<BaseModule> modules = BaseModule.ActiveModules;
++            if (modules == null || modules.Count <= 0)
++                return false;
++
++            for (int i = 0; i < modules.Count; i++)
++            {
++                BaseModule module = modules[i];
++                if (module == null)
++                    continue;
++
++                if (!module.TryGetInteriorHazardBounds(out Vector3 worldCenter, out float radius))
++                    continue;
++
++                if ((runtimePosition - worldCenter).sqrMagnitude <= radius * radius)
++                    return true;
++            }
++
++            return false;
++        }
++
++        private static bool IsInsideSubmarineFallbackBounds(ISubmarineRuntimeContext submarine, Vector3 runtimePosition)
++        {
++            Transform platformTransform = submarine.PlatformTransform;
++            if (platformTransform == null)
++                return false;
++
++            Vector3 localPosition = platformTransform.InverseTransformPoint(runtimePosition);
++            return math.abs(localPosition.x) <= PlatformVelocityInheritanceFallbackHalfX &&
++                   math.abs(localPosition.y) <= PlatformVelocityInheritanceFallbackHalfY &&
++                   math.abs(localPosition.z) <= PlatformVelocityInheritanceFallbackHalfZ;
++        }
++
++        private static bool IsFiniteNonZero(Vector3 value)
++        {
++            float3 value3 = new float3(value.x, value.y, value.z);
++            return math.all(math.isfinite(value3)) && math.lengthsq(value3) > 0.000001f;
++        }
++
+         private void RegisterSpawnImpulse(uint instanceUid, Vector3 initialImpulse)
+         {
+             if (!_spawnImpulseByInstanceUid.IsCreated || instanceUid == 0u)
+@@ -3573,12 +3975,14 @@ namespace Hecton8.World
+                 if (instance.TryGetComponent(out PickupItem pickupItem))
+                 {
+                     state.Quantity = math.max(1, pickupItem.Quantity);
++                    state.Position.Reserved = pickupItem.GeneticsMask;
+                     state.InventoryHash = unchecked((int)pickupItem.GeneticsMask);
+                     state.Integrity01 = ResolveItemQuality01(pickupItem.QualityMilli);
+                 }
+                 else if (instance.TryGetComponent(out HectonItem hectonItem))
+                 {
+                     state.Quantity = math.max(1, hectonItem.Quantity);
++                    state.Position.Reserved = hectonItem.GeneticsMask;
+                     state.InventoryHash = unchecked((int)hectonItem.GeneticsMask);
+                     state.Integrity01 = ResolveItemQuality01(hectonItem.QualityMilli);
+                 }
+@@ -3884,6 +4288,9 @@ namespace Hecton8.World
+             if (_resourceNodeTombstoneIds.IsCreated)
+                 _resourceNodeTombstoneIds.Clear();
+ 
++            if (_resourceNodeMetamorphosedIds.IsCreated)
++                _resourceNodeMetamorphosedIds.Clear();
++
+             if (_deltaChunkIndexByChunkId.IsCreated)
+                 _deltaChunkIndexByChunkId.Clear();
+ 
+@@ -3952,6 +4359,7 @@ namespace Hecton8.World
+                 GetNativeHashMapBytes(_deltaRecordIndexByEntityId) +
+                 GetNativeParallelHashSetBytes(_deletedInstanceUids) +
+                 GetNativeParallelHashSetBytes(_resourceNodeTombstoneIds) +
++                GetNativeParallelHashSetBytes(_resourceNodeMetamorphosedIds) +
+                 GetNativeHashMapBytes(_deltaChunkIndexByChunkId) +
+                 GetNativeListBytes(_deltaChunkIds) +
+                 GetNativeHashMapBytes(_deltaItemIndexByHash) +
+@@ -4369,6 +4777,14 @@ namespace Hecton8.World
+             _resourceNodeTombstoneIds.Add(tombstoneId);
+         }
+ 
++        private void RegisterResourceNodeMetamorphosis(ulong tombstoneId)
++        {
++            if (tombstoneId == 0UL || !_resourceNodeMetamorphosedIds.IsCreated)
++                return;
++
++            _resourceNodeMetamorphosedIds.Add(tombstoneId);
++        }
++
+         private void UnregisterDeletedInstanceUid(uint instanceUid)
+         {
+             if (instanceUid == 0u || !_deletedInstanceUids.IsCreated)
+@@ -4511,6 +4927,36 @@ namespace Hecton8.World
+             return false;
+         }
+ 
++        private bool TryGenerateResourceNodeMetamorphosisInstanceUid(ulong tombstoneId, out uint instanceUid)
++        {
++            instanceUid = 0u;
++            if (tombstoneId == 0UL || !_records.IsCreated)
++                return false;
++
++            const uint resourceNodeMetamorphosisTypeId = 0xFDu;
++            uint sequence = (((uint)tombstoneId) ^ ((uint)(tombstoneId >> 32)) ^ 0x7F4A7C15u) & InstanceUidCounterMask;
++            if (sequence == 0u)
++                sequence = 1u;
++
++            int probeBudget = math.max(1, maxTrackedItems);
++            for (int i = 0; i < probeBudget; i++)
++            {
++                uint candidate = (resourceNodeMetamorphosisTypeId << InstanceUidTypeShift) | sequence;
++                if (!ContainsRecordInstanceUid(candidate))
++                {
++                    instanceUid = candidate;
++                    return true;
++                }
++
++                sequence++;
++                if (sequence > InstanceUidCounterMask)
++                    sequence = 1u;
++            }
++
++            Debug.LogError($"[PersistentWorldRegistry] Failed to reserve resource-node metamorphosis UID. tombstoneId={tombstoneId:X16}");
++            return false;
++        }
++
+         private static uint ResolveInstanceUidTypeId(ItemData itemData, ulong persistentIdHash)
+         {
+             if (itemData != null)
+diff --git a/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs b/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
+index 5b9a18d9..c73f8c16 100644
+--- a/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
++++ b/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
+@@ -3,6 +3,9 @@ using Hecton8.Caves;
+ using Hecton8.Core;
+ using Hecton8.Gameplay;
+ using Hecton8.Scavenging;
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Jobs;
+ using Unity.Mathematics;
+ using UnityEngine;
+ using UnityEngine.Rendering;
+@@ -16,11 +19,13 @@ namespace Hecton8.World
+     /// </summary>
+     [DisallowMultipleComponent]
+     [DefaultExecutionOrder(-4042)]
+-    public sealed class ResourceDistributionDirector : MonoBehaviour, ISlowTickable
++    public sealed class ResourceDistributionDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable
+     {
+         private const int DefaultSectorSizeMeters = 128;
+         private const int DefaultMaxPendingSpawnRequests = 1024;
+         private const int DefaultPoolWarmupFloor = 64;
++        private const int InitialMetamorphismCapacity = 128;
++        private const float GameSecondsPerDay = 86400f;
+         private const float DefaultSlopeSampleDistanceMeters = 4f;
+         private const float DefaultVoxelSolidThreshold = 0.08f;
+         private const float DefaultSectorMarginMeters = 2f;
+@@ -35,13 +40,26 @@ namespace Hecton8.World
+         private const float DefaultBrinePoolFluidDensityKgPerCubicMeter = 1250f;
+         private const float DefaultUpwellingRespawnRate = 0.05f;
+         private const float DefaultMagmaVentLifetimeSeconds = 6f;
++        private const float DefaultMeteorImpactIntervalSeconds = 600f;
++        private const float DefaultMeteorImpactSearchRadiusMeters = 96f;
++        private const float DefaultMeteorImpactCraterRadiusMeters = 5f;
++        private const float DefaultMeteoriteRadiationIntensity = 0.85f;
++        private const float DefaultMeteoriteRadiationRadiusMeters = 30f;
++        private const float DefaultMeteoriteRadiationVisorBias = 1.35f;
++        private const float DefaultPressureMetamorphismDepthMeters = 3500f;
++        private const float DefaultPressureMetamorphismDays = 5f;
+         private const float GhostAlpha = 0.24f;
+         private const string RuntimePrefabName = "PFB_RuntimeResourceNode_Generic";
+         private const string RuntimeMagmaVentPrefabName = "PFB_RuntimeMagmaVent_Generic";
++        private const string CarbonMetamorphismStableId = "resource.node.carbon_graphite_nodule";
++        private const string PressureDiamondStableId = "resource.node.pressure_diamond";
+         private const string ThermalDiamondStableId = "resource.node.thermal_diamond";
++        private const string VoidGlassMeteoriteStableId = "resource.node.void_glass_meteorite";
+         private const int BrinePoolSeedSalt = unchecked((int)0x4252494E);
+         private const int BrinePoolHazardIdSalt = unchecked((int)0x52494E45);
+         private const int MagmaVentSeedSalt = unchecked((int)0x56454E54);
++        private const int MeteorImpactSeedSalt = unchecked((int)0x4D45544F);
++        private const int MeteorRadiationHazardIdSalt = unchecked((int)0x524144);
+ 
+         internal static ResourceDistributionDirector ActiveRuntimeInstance { get; private set; }
+ 
+@@ -87,6 +105,55 @@ namespace Hecton8.World
+             public ulong TombstoneId;
+         }
+ 
++        private struct PressureMetamorphismInput
++        {
++            public float DepthMeters;
++            public float ProgressSeconds;
++            public int TemplateHashId;
++            public byte Active;
++        }
++
++        private struct PressureMetamorphismResult
++        {
++            public float ProgressSeconds;
++            public byte TransformToDiamond;
++        }
++
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++        private struct PressureMetamorphismJob : IJobParallelFor
++        {
++            [ReadOnly] public NativeArray<PressureMetamorphismInput> Inputs;
++            public NativeArray<PressureMetamorphismResult> Results;
++            public float DeltaSeconds;
++            public float DepthThresholdMeters;
++            public float RequiredSeconds;
++            public int CarbonTemplateHashId;
++
++            public void Execute(int index)
++            {
++                PressureMetamorphismInput input = Inputs[index];
++                PressureMetamorphismResult result = new PressureMetamorphismResult
++                {
++                    ProgressSeconds = math.max(0f, input.ProgressSeconds),
++                    TransformToDiamond = 0
++                };
++
++                bool eligible = input.Active != 0 &&
++                                input.TemplateHashId == CarbonTemplateHashId &&
++                                input.DepthMeters > DepthThresholdMeters &&
++                                RequiredSeconds > 0f;
++                if (!eligible)
++                {
++                    Results[index] = result;
++                    return;
++                }
++
++                result.ProgressSeconds = math.min(RequiredSeconds, result.ProgressSeconds + math.max(0f, DeltaSeconds));
++                result.TransformToDiamond = result.ProgressSeconds >= RequiredSeconds ? (byte)1 : (byte)0;
++                Results[index] = result;
++            }
++        }
++
+         [Header("References")]
+         [SerializeField]
+         [Tooltip("Authored resource-node templates consumed by the environmental-envelope spawner.")]
+@@ -96,6 +163,18 @@ namespace Hecton8.World
+         [Tooltip("Optional explicit template spawned by flash-freeze crystallization. If empty, the director resolves resource.node.thermal_diamond from resourceTemplates.")]
+         private ResourceNodeTemplate thermalDiamondTemplate;
+ 
++        [SerializeField]
++        [Tooltip("Optional explicit template spawned at extraterrestrial impact epicenters. If empty, the director resolves resource.node.void_glass_meteorite from resourceTemplates.")]
++        private ResourceNodeTemplate voidGlassMeteoriteTemplate;
++
++        [SerializeField]
++        [Tooltip("Optional explicit carbon source template for deep-pressure metamorphism. If empty, resolves resource.node.carbon_graphite_nodule.")]
++        private ResourceNodeTemplate pressureCarbonTemplate;
++
++        [SerializeField]
++        [Tooltip("Optional explicit diamond output template for deep-pressure metamorphism. If empty, resolves resource.node.pressure_diamond then thermal diamond.")]
++        private ResourceNodeTemplate pressureDiamondTemplate;
++
+         [SerializeField]
+         [Tooltip("Optional explicit player transform. Runtime falls back to WorldRuntimeReferenceUtility when empty.")]
+         private Transform playerTransform;
+@@ -188,6 +267,52 @@ namespace Hecton8.World
+         [Tooltip("Lifetime in seconds of the temporary magma-vent marker spawned during upwelling reinstatement.")]
+         private float magmaVentLifetimeSeconds = DefaultMagmaVentLifetimeSeconds;
+ 
++        [Header("Extraterrestrial Impacts")]
++        [SerializeField]
++        [Tooltip("Allows rare deterministic meteor impacts to carve the seabed and spawn Void-Glass Meteorite nodes.")]
++        private bool enableMeteorImpacts = true;
++
++        [SerializeField, Range(60f, 1800f)]
++        [Tooltip("Base seconds between meteor-impact eligibility windows. Actual windows use deterministic jitter.")]
++        private float meteorImpactIntervalSeconds = DefaultMeteorImpactIntervalSeconds;
++
++        [SerializeField, Range(0f, 1f)]
++        [Tooltip("Chance evaluated when a meteor-impact window opens near the resident player sector.")]
++        private float meteorImpactChancePerWindow = 0.35f;
++
++        [SerializeField, Range(24f, 256f)]
++        [Tooltip("Horizontal radius around the player used to resolve an impactable seabed epicenter.")]
++        private float meteorImpactSearchRadiusMeters = DefaultMeteorImpactSearchRadiusMeters;
++
++        [SerializeField, Range(1f, 16f)]
++        [Tooltip("Subtractive SDF sphere radius applied to the voxel volume at the meteor epicenter.")]
++        private float meteorImpactCraterRadiusMeters = DefaultMeteorImpactCraterRadiusMeters;
++
++        [SerializeField, Range(0f, 1f)]
++        [Tooltip("Radiation hazard intensity registered at the Void-Glass Meteorite epicenter.")]
++        private float meteoriteRadiationIntensity = DefaultMeteoriteRadiationIntensity;
++
++        [SerializeField, Range(4f, 40f)]
++        [Tooltip("Radiation hazard radius registered around the Void-Glass Meteorite epicenter.")]
++        private float meteoriteRadiationRadiusMeters = DefaultMeteoriteRadiationRadiusMeters;
++
++        [SerializeField, Range(0f, 2f)]
++        [Tooltip("Visor glitch bias forwarded with the meteorite radiation hazard.")]
++        private float meteoriteRadiationVisorBias = DefaultMeteoriteRadiationVisorBias;
++
++        [Header("Pressure Metamorphism")]
++        [SerializeField]
++        [Tooltip("Enables slow deep-pressure carbon-to-diamond metamorphism on resident resource nodes.")]
++        private bool enablePressureMetamorphism = true;
++
++        [SerializeField, Min(0f)]
++        [Tooltip("Depth in meters below which carbon nodes start metamorphic compression.")]
++        private float pressureMetamorphismDepthMeters = DefaultPressureMetamorphismDepthMeters;
++
++        [SerializeField, Min(0.01f)]
++        [Tooltip("In-game days required for eligible carbon nodes to become pressure diamonds.")]
++        private float pressureMetamorphismDays = DefaultPressureMetamorphismDays;
++
+         [Header("Diagnostics")]
+         [SerializeField] private int _debugResidentSectorCount;
+         [SerializeField] private int _debugActiveNodeCount;
+@@ -195,6 +320,10 @@ namespace Hecton8.World
+         [SerializeField] private int _debugLastAcceptedTemplateHash;
+         [SerializeField] private Vector2Int _debugPlayerSector;
+         [SerializeField] private int _debugActiveBrinePoolCount;
++        [SerializeField] private float _debugMeteorImpactTimerSeconds;
++        [SerializeField] private int _debugMeteorImpactCount;
++        [SerializeField] private int _debugLastMeteorHazardZoneId;
++        [SerializeField] private int _debugMetamorphosedNodeCount;
+ 
+         // COLD ALLOC: Dictionary<long,SectorState>[32] — resident sector registry keyed by AUP sector hash — owner: ResourceDistributionDirector
+         private Dictionary<long, SectorState> _residentSectors;
+@@ -211,10 +340,20 @@ namespace Hecton8.World
+         private Material _magmaVentMaterial;
+         private bool _runtimePoolReady;
+         private bool _slowTickRegistered;
++        private bool _lateFrameRegistered;
+         private bool _seismicHookRegistered;
+         private int _computedPoolWarmupCount;
++        private float _meteorImpactTimerSeconds;
++        private uint _meteorImpactSequence;
++        private NativeArray<PressureMetamorphismInput> _metamorphismInputs;
++        private NativeArray<PressureMetamorphismResult> _metamorphismResults;
++        private JobHandle _metamorphismJobHandle;
++        private bool _metamorphismJobActive;
++        private int _scheduledMetamorphismCount;
+         // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
+         private List<ResourceNodeTombstoneRecord> _resourceTombstoneScratch;
++        // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism job node mapping — owner: ResourceDistributionDirector
++        private List<ResourceNode> _metamorphismNodeScratch;
+ 
+         private void Awake()
+         {
+@@ -235,6 +374,18 @@ namespace Hecton8.World
+             brinePoolFluidDensityKgPerCubicMeter = math.max(1025f, brinePoolFluidDensityKgPerCubicMeter);
+             tectonicUpwellingRespawnRate = math.clamp(tectonicUpwellingRespawnRate, 0f, 0.25f);
+             magmaVentLifetimeSeconds = math.max(1f, magmaVentLifetimeSeconds);
++            meteorImpactIntervalSeconds = math.clamp(meteorImpactIntervalSeconds, 60f, 1800f);
++            meteorImpactChancePerWindow = math.saturate(meteorImpactChancePerWindow);
++            meteorImpactSearchRadiusMeters = math.clamp(meteorImpactSearchRadiusMeters, 24f, 256f);
++            meteorImpactCraterRadiusMeters = math.clamp(meteorImpactCraterRadiusMeters, 1f, 16f);
++            meteoriteRadiationIntensity = math.saturate(meteoriteRadiationIntensity);
++            meteoriteRadiationRadiusMeters = math.clamp(meteoriteRadiationRadiusMeters, 4f, 40f);
++            meteoriteRadiationVisorBias = math.clamp(meteoriteRadiationVisorBias, 0f, 2f);
++            pressureMetamorphismDepthMeters = math.max(0f, pressureMetamorphismDepthMeters);
++            pressureMetamorphismDays = math.max(0.01f, pressureMetamorphismDays);
++            uint meteorSeed = Mix(unchecked((uint)EntityId.ToULong(GetEntityId())), (uint)MeteorImpactSeedSalt);
++            _meteorImpactTimerSeconds = ResolveNextMeteorImpactDelay(ref meteorSeed);
++            _meteorImpactSequence = meteorSeed;
+ 
+             // COLD ALLOC: Dictionary<long,SectorState>[32] — resident sector registry keyed by AUP sector hash — owner: ResourceDistributionDirector
+             _residentSectors = new Dictionary<long, SectorState>(32);
+@@ -244,6 +395,8 @@ namespace Hecton8.World
+             _sectorEvictionScratch = new List<long>(32);
+             // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
+             _resourceTombstoneScratch = new List<ResourceNodeTombstoneRecord>(64);
++            // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism node mapping for Burst result commit — owner: ResourceDistributionDirector
++            _metamorphismNodeScratch = new List<ResourceNode>(InitialMetamorphismCapacity);
+ 
+             EnsureRuntimePrefab();
+             UpdateDiagnostics(default);
+@@ -262,6 +415,12 @@ namespace Hecton8.World
+                 _slowTickRegistered = true;
+             }
+ 
++            if (!_lateFrameRegistered && GlobalRegistry.Dispatcher != null)
++            {
++                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
++                _lateFrameRegistered = true;
++            }
++
+             if (!_seismicHookRegistered)
+             {
+                 RandomEventEvents.OnSeismicShockwave += HandleSeismicShockwave;
+@@ -283,6 +442,13 @@ namespace Hecton8.World
+                 _slowTickRegistered = false;
+             }
+ 
++            if (_lateFrameRegistered)
++            {
++                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
++                _lateFrameRegistered = false;
++            }
++
++            CompleteMetamorphismJob();
+             DespawnAllResidentNodes();
+             _residentSectors?.Clear();
+             _pendingSpawns?.Clear();
+@@ -291,6 +457,12 @@ namespace Hecton8.World
+             UpdateDiagnostics(default);
+         }
+ 
++        private void OnDestroy()
++        {
++            CompleteMetamorphismJob();
++            DisposeMetamorphismBuffers();
++        }
++
+         /// <summary>
+         /// Slow-tick residency pass. Maintains deterministic resource sectors around the player.
+         /// </summary>
+@@ -307,9 +479,22 @@ namespace Hecton8.World
+ 
+             RefreshResidentSectors(playerSector);
+             ProcessPendingSpawns();
++            SchedulePressureMetamorphismJob();
++            TickMeteorImpacts(0.5f, in playerAup, playerSector);
+             UpdateDiagnostics(playerSector);
+         }
+ 
++        /// <summary>
++        /// Commits pressure-metamorphism Burst results during the end-of-frame swap window.
++        /// </summary>
++        public void LateFrameTick()
++        {
++            if (!_metamorphismJobActive || !_metamorphismJobHandle.IsCompleted)
++                return;
++
++            CompleteAndApplyMetamorphismJob();
++        }
++
+         /// <summary>
+         /// Spawns one Thermal Diamond node at a flash-freeze crystallization boundary.
+         /// </summary>
+@@ -392,6 +577,138 @@ namespace Hecton8.World
+             return runtimePosition + Vector3.up * spawnOffset;
+         }
+ 
++        private void TickMeteorImpacts(float deltaSeconds, in AbsoluteUniversePosition playerAup, int2 playerSector)
++        {
++            _debugMeteorImpactTimerSeconds = _meteorImpactTimerSeconds;
++            if (!enableMeteorImpacts ||
++                meteorImpactChancePerWindow <= 0f ||
++                !_runtimePoolReady ||
++                _runtimePrefab == null)
++            {
++                return;
++            }
++
++            _meteorImpactTimerSeconds = math.max(0f, _meteorImpactTimerSeconds - math.max(0f, deltaSeconds));
++            _debugMeteorImpactTimerSeconds = _meteorImpactTimerSeconds;
++            if (_meteorImpactTimerSeconds > 0f)
++                return;
++
++            uint sequence = _meteorImpactSequence + 1u;
++            _meteorImpactSequence = sequence;
++            uint state = SeedSectorCandidate(playerSector, MeteorImpactSeedSalt, (int)(sequence & 0x7FFFFFFFu));
++            state = Mix(state, sequence);
++            if (TryResolveVoidGlassMeteoriteTemplate(out ResourceNodeTemplate template) &&
++                Next01(ref state) <= meteorImpactChancePerWindow)
++            {
++                TryExecuteMeteorImpact(in playerAup, template, ref state);
++            }
++
++            _meteorImpactTimerSeconds = ResolveNextMeteorImpactDelay(ref state);
++            _debugMeteorImpactTimerSeconds = _meteorImpactTimerSeconds;
++        }
++
++        private bool TryExecuteMeteorImpact(
++            in AbsoluteUniversePosition playerAup,
++            ResourceNodeTemplate template,
++            ref uint state)
++        {
++            if (template == null || mapMagicBridge == null)
++                return false;
++
++            double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
++            float angleRadians = Next01(ref state) * math.PI * 2f;
++            float radialDistance = math.sqrt(Next01(ref state)) * math.max(1f, meteorImpactSearchRadiusMeters);
++            double absoluteX = playerAbsolute.x + (math.cos(angleRadians) * radialDistance);
++            double absoluteZ = playerAbsolute.z + (math.sin(angleRadians) * radialDistance);
++            Vector3 runtimeProbe = AbsoluteToRuntime(absoluteX, playerAbsolute.y, absoluteZ);
++            if (!mapMagicBridge.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out float seabedHeight))
++                return false;
++
++            Vector3 surfaceAnchorPosition = new Vector3(runtimeProbe.x, seabedHeight, runtimeProbe.z);
++            if (!TryApplyMeteorImpactCrater(surfaceAnchorPosition, meteorImpactCraterRadiusMeters))
++                return false;
++
++            float yawDegrees = Next01(ref state) * 360f;
++            if (!TryResolveSurfacePlacement(surfaceAnchorPosition, template.SpawnOffsetMeters, yawDegrees, out Vector3 runtimePosition, out Quaternion rotation))
++                return false;
++
++            ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(runtimePosition);
++            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
++            if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
++                return false;
++
++            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
++            int2 sector = QuantizeSector(in spawnAup);
++            long sectorKey = ComposeSectorKey(sector);
++            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
++            if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
++                return false;
++
++            ObjectPoolManager pool = ObjectPoolManager.Instance;
++            if (pool == null)
++                return false;
++
++            GameObject instance = pool.Spawn(_runtimePrefab, runtimePosition, rotation);
++            if (instance == null)
++                return false;
++
++            if (!instance.TryGetComponent(out ResourceNode node))
++            {
++                pool.Despawn(instance);
++                return false;
++            }
++
++            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
++            node.RefreshRuntimeSpatialRegistration();
++            sectorState.ActiveNodes.Add(node);
++            _debugLastAcceptedTemplateHash = template.StableHashId;
++            _debugMeteorImpactCount++;
++            RegisterMeteoriteRadiationHazard(runtimePosition, state);
++            return true;
++        }
++
++        private bool TryApplyMeteorImpactCrater(Vector3 runtimeEpicenter, float radiusMeters)
++        {
++            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
++            if (voxelEngine == null ||
++                !voxelEngine.TryGetNearestActiveVolume(runtimeEpicenter, out HectonVoxelVolume volume) ||
++                volume == null)
++            {
++                return false;
++            }
++
++            return volume.TryApplyExtraterrestrialImpactCrater(runtimeEpicenter, radiusMeters);
++        }
++
++        private void RegisterMeteoriteRadiationHazard(Vector3 runtimePosition, uint stableSeed)
++        {
++            if (meteoriteRadiationIntensity <= 0f || meteoriteRadiationRadiusMeters <= 0f)
++                return;
++
++            HazardZoneManager hazardManager = HazardZoneManager.EnsureRuntimeInstance();
++            if (hazardManager == null)
++                return;
++
++            int zoneId = ResolveMeteorRadiationHazardZoneId(stableSeed);
++            if (!hazardManager.RegisterZone(
++                    zoneId,
++                    runtimePosition,
++                    meteoriteRadiationIntensity,
++                    meteoriteRadiationRadiusMeters,
++                    HazardType.Radiation,
++                    meteoriteRadiationVisorBias))
++            {
++                return;
++            }
++
++            _debugLastMeteorHazardZoneId = zoneId;
++        }
++
++        private float ResolveNextMeteorImpactDelay(ref uint state)
++        {
++            return meteorImpactIntervalSeconds * math.lerp(0.75f, 1.25f, Next01(ref state));
++        }
++
+         private bool TryResolveRuntimeDependencies()
+         {
+             if (resourceTemplates == null || resourceTemplates.Length == 0)
+@@ -718,6 +1035,8 @@ namespace Hecton8.World
+                     continue;
+                 }
+ 
++                template = ResolveMetamorphosedTemplateOverride(request.TombstoneId, template);
++
+                 GameObject instance = pool.Spawn(_runtimePrefab, request.RuntimePosition, request.Rotation);
+                 if (instance == null)
+                     break;
+@@ -739,19 +1058,230 @@ namespace Hecton8.World
+             }
+         }
+ 
++        private void SchedulePressureMetamorphismJob()
++        {
++            if (!enablePressureMetamorphism ||
++                _metamorphismJobActive ||
++                _residentSectors == null ||
++                _residentSectors.Count == 0 ||
++                mapMagicBridge == null ||
++                !TryResolvePressureCarbonTemplate(out ResourceNodeTemplate carbonTemplate) ||
++                !TryResolvePressureDiamondTemplate(out _))
++            {
++                return;
++            }
++
++            int nodeCount = BuildPressureMetamorphismInputs(carbonTemplate.StableHashId);
++            if (nodeCount <= 0)
++                return;
++
++            PressureMetamorphismJob job = new PressureMetamorphismJob
++            {
++                Inputs = _metamorphismInputs,
++                Results = _metamorphismResults,
++                DeltaSeconds = 0.5f,
++                DepthThresholdMeters = pressureMetamorphismDepthMeters,
++                RequiredSeconds = pressureMetamorphismDays * GameSecondsPerDay,
++                CarbonTemplateHashId = carbonTemplate.StableHashId
++            };
++
++            _scheduledMetamorphismCount = nodeCount;
++            _metamorphismJobHandle = job.Schedule(nodeCount, 16);
++            _metamorphismJobActive = true;
++        }
++
++        private int BuildPressureMetamorphismInputs(int carbonTemplateHashId)
++        {
++            _metamorphismNodeScratch.Clear();
++
++            int estimatedCount = 0;
++            Dictionary<long, SectorState>.Enumerator estimateEnumerator = _residentSectors.GetEnumerator();
++            while (estimateEnumerator.MoveNext())
++            {
++                SectorState state = estimateEnumerator.Current.Value;
++                if (state != null && state.ActiveNodes != null)
++                    estimatedCount += state.ActiveNodes.Count;
++            }
++            estimateEnumerator.Dispose();
++
++            EnsureMetamorphismCapacity(math.max(1, estimatedCount));
++            if (!_metamorphismInputs.IsCreated || !_metamorphismResults.IsCreated)
++                return 0;
++
++            int writeIndex = 0;
++            float waterSurface = mapMagicBridge.WaterSurfaceLevel;
++            Dictionary<long, SectorState>.Enumerator sectorEnumerator = _residentSectors.GetEnumerator();
++            while (sectorEnumerator.MoveNext())
++            {
++                SectorState state = sectorEnumerator.Current.Value;
++                if (state == null || state.ActiveNodes == null)
++                    continue;
++
++                for (int i = 0; i < state.ActiveNodes.Count && writeIndex < _metamorphismInputs.Length; i++)
++                {
++                    ResourceNode node = state.ActiveNodes[i];
++                    if (node == null || node.IsDepleted || !node.gameObject.activeInHierarchy)
++                        continue;
++
++                    ResourceNodeTemplate template = node.ResourceTemplate;
++                    if (template == null || template.StableHashId != carbonTemplateHashId)
++                        continue;
++
++                    Vector3 runtimePosition = node.transform.position;
++                    float depthMeters = math.max(0f, waterSurface - runtimePosition.y);
++                    _metamorphismInputs[writeIndex] = new PressureMetamorphismInput
++                    {
++                        DepthMeters = depthMeters,
++                        ProgressSeconds = node.PressureMetamorphismProgressSeconds,
++                        TemplateHashId = template.StableHashId,
++                        Active = (byte)(depthMeters > pressureMetamorphismDepthMeters ? 1 : 0)
++                    };
++                    _metamorphismResults[writeIndex] = default;
++                    _metamorphismNodeScratch.Add(node);
++                    writeIndex++;
++                }
++            }
++            sectorEnumerator.Dispose();
++
++            return writeIndex;
++        }
++
++        private void CompleteAndApplyMetamorphismJob()
++        {
++            _metamorphismJobHandle.Complete();
++            _metamorphismJobHandle = default;
++            _metamorphismJobActive = false;
++
++            if (!TryResolvePressureDiamondTemplate(out ResourceNodeTemplate diamondTemplate))
++            {
++                _scheduledMetamorphismCount = 0;
++                _metamorphismNodeScratch.Clear();
++                return;
++            }
++
++            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
++            int count = math.min(_scheduledMetamorphismCount, _metamorphismNodeScratch.Count);
++            for (int i = 0; i < count; i++)
++            {
++                ResourceNode node = _metamorphismNodeScratch[i];
++                if (node == null || node.IsDepleted || !node.gameObject.activeInHierarchy)
++                    continue;
++
++                PressureMetamorphismResult result = _metamorphismResults[i];
++                if (result.TransformToDiamond == 0)
++                {
++                    node.SetPressureMetamorphismProgressSeconds(result.ProgressSeconds);
++                    continue;
++                }
++
++                node.SetPressureMetamorphismProgressSeconds(0f);
++                node.ApplyRuntimeTemplate(diamondTemplate, _ghostCubeMesh, _ghostMaterial);
++                node.RefreshRuntimeSpatialRegistration();
++                if (registry != null)
++                    registry.TryRegisterResourceNodeMetamorphosis(node.PersistentTombstoneId, node.transform.position);
++                _debugMetamorphosedNodeCount++;
++            }
++
++            _scheduledMetamorphismCount = 0;
++            _metamorphismNodeScratch.Clear();
++        }
++
++        private void CompleteMetamorphismJob()
++        {
++            if (!_metamorphismJobActive)
++                return;
++
++            _metamorphismJobHandle.Complete();
++            _metamorphismJobHandle = default;
++            _metamorphismJobActive = false;
++            _scheduledMetamorphismCount = 0;
++            _metamorphismNodeScratch?.Clear();
++        }
++
++        private void EnsureMetamorphismCapacity(int requiredCount)
++        {
++            if (requiredCount <= 0)
++                return;
++
++            int currentCapacity = _metamorphismInputs.IsCreated ? _metamorphismInputs.Length : 0;
++            if (currentCapacity >= requiredCount)
++                return;
++
++            int nextCapacity = math.max(requiredCount, math.max(InitialMetamorphismCapacity, currentCapacity * 2));
++            DisposeMetamorphismBuffers();
++            _metamorphismInputs = new NativeArray<PressureMetamorphismInput>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PressureMetamorphismInput>[capacity] — pressure metamorphism Burst input lane — owner: ResourceDistributionDirector
++            _metamorphismResults = new NativeArray<PressureMetamorphismResult>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PressureMetamorphismResult>[capacity] — pressure metamorphism Burst result lane — owner: ResourceDistributionDirector
++        }
++
++        private void DisposeMetamorphismBuffers()
++        {
++            if (_metamorphismInputs.IsCreated)
++                _metamorphismInputs.Dispose();
++
++            if (_metamorphismResults.IsCreated)
++                _metamorphismResults.Dispose();
++        }
++
++        private ResourceNodeTemplate ResolveMetamorphosedTemplateOverride(ulong tombstoneId, ResourceNodeTemplate fallback)
++        {
++            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
++            if (registry == null || !registry.IsResourceNodeMetamorphosed(tombstoneId))
++                return fallback;
++
++            return TryResolvePressureDiamondTemplate(out ResourceNodeTemplate diamondTemplate)
++                ? diamondTemplate
++                : fallback;
++        }
++
++        private bool TryResolvePressureCarbonTemplate(out ResourceNodeTemplate template)
++        {
++            template = pressureCarbonTemplate;
++            if (template != null)
++                return true;
++
++            return TryResolveTemplateByStableId(CarbonMetamorphismStableId, out template);
++        }
++
++        private bool TryResolvePressureDiamondTemplate(out ResourceNodeTemplate template)
++        {
++            template = pressureDiamondTemplate;
++            if (template != null)
++                return true;
++
++            if (TryResolveTemplateByStableId(PressureDiamondStableId, out template))
++                return true;
++
++            return TryResolveThermalDiamondTemplate(out template);
++        }
++
+         private bool TryResolveThermalDiamondTemplate(out ResourceNodeTemplate template)
+         {
+             template = thermalDiamondTemplate;
+             if (template != null)
+                 return true;
+ 
+-            if (resourceTemplates == null)
++            return TryResolveTemplateByStableId(ThermalDiamondStableId, out template);
++        }
++
++        private bool TryResolveVoidGlassMeteoriteTemplate(out ResourceNodeTemplate template)
++        {
++            template = voidGlassMeteoriteTemplate;
++            if (template != null)
++                return true;
++
++            return TryResolveTemplateByStableId(VoidGlassMeteoriteStableId, out template);
++        }
++
++        private bool TryResolveTemplateByStableId(string stableId, out ResourceNodeTemplate template)
++        {
++            template = null;
++            if (resourceTemplates == null || string.IsNullOrEmpty(stableId))
+                 return false;
+ 
+             for (int i = 0; i < resourceTemplates.Length; i++)
+             {
+                 ResourceNodeTemplate candidate = resourceTemplates[i];
+-                if (candidate == null || !string.Equals(candidate.StableId, ThermalDiamondStableId, System.StringComparison.Ordinal))
++                if (candidate == null || !string.Equals(candidate.StableId, stableId, System.StringComparison.Ordinal))
+                     continue;
+ 
+                 template = candidate;
+@@ -1062,6 +1592,11 @@ namespace Hecton8.World
+             return (int)(stableSeed ^ BrinePoolHazardIdSalt);
+         }
+ 
++        private static int ResolveMeteorRadiationHazardZoneId(uint stableSeed)
++        {
++            return (int)(stableSeed ^ MeteorRadiationHazardIdSalt);
++        }
++
+         private void CompactSectorNodes(SectorState state)
+         {
+             if (state == null)
+@@ -1403,6 +1938,9 @@ namespace Hecton8.World
+         }
+ 
+ #if UNITY_EDITOR
++        private const string EditorVoidGlassMeteoriteTemplatePath =
++            "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_VoidGlassMeteorite.asset";
++
+         private void OnValidate()
+         {
+             sectorSizeMeters = math.max(32, sectorSizeMeters);
+@@ -1423,6 +1961,16 @@ namespace Hecton8.World
+             brinePoolFluidDensityKgPerCubicMeter = math.max(1025f, brinePoolFluidDensityKgPerCubicMeter);
+             tectonicUpwellingRespawnRate = math.clamp(tectonicUpwellingRespawnRate, 0f, 0.25f);
+             magmaVentLifetimeSeconds = math.max(1f, magmaVentLifetimeSeconds);
++            meteorImpactIntervalSeconds = math.clamp(meteorImpactIntervalSeconds, 60f, 1800f);
++            meteorImpactChancePerWindow = math.saturate(meteorImpactChancePerWindow);
++            meteorImpactSearchRadiusMeters = math.clamp(meteorImpactSearchRadiusMeters, 24f, 256f);
++            meteorImpactCraterRadiusMeters = math.clamp(meteorImpactCraterRadiusMeters, 1f, 16f);
++            meteoriteRadiationIntensity = math.saturate(meteoriteRadiationIntensity);
++            meteoriteRadiationRadiusMeters = math.clamp(meteoriteRadiationRadiusMeters, 4f, 40f);
++            meteoriteRadiationVisorBias = math.clamp(meteoriteRadiationVisorBias, 0f, 2f);
++
++            if (voidGlassMeteoriteTemplate == null)
++                voidGlassMeteoriteTemplate = UnityEditor.AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(EditorVoidGlassMeteoriteTemplatePath);
+         }
+ #endif
+     }
+diff --git a/Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md b/Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md
+index a32029f3..f83835e2 100644
+--- a/Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md
++++ b/Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md
+@@ -47,6 +47,8 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
+ | `ResourceNodeTemplate_XenonOmegaVentCache.asset` | `resource.node.xenon_omega_vent_cache` | -779526194 | `0xD1895FCE` | `Data_RareEarthDust` | 1997058338 | `NONE` |
+ | `ResourceNodeTemplate_Silicon7BGlassVein.asset` | `resource.node.silicon_7b_glass_vein` | 1566735374 | `0x5D627C0E` | `Data_SilicaShards` | -374612680 | `NONE` |
+ | `ResourceNodeTemplate_AegiriumCrustNodule.asset` | `resource.node.aegirium_crust_nodule` | 174837396 | `0x0A6BCE94` | `Data_CobaltAlloy` | 857583970 | `NONE` |
++| `ResourceNodeTemplate_CarbonGraphiteNodule.asset` | `resource.node.carbon_graphite_nodule` | -645249103 | `0xD98A47B1` | `Data_CarbonGraphite` | 2008184373 | `NONE` |
++| `ResourceNodeTemplate_PressureDiamond.asset` | `resource.node.pressure_diamond` | -1829783455 | `0x92EFB861` | `Data_PressureDiamond` | -1593575957 | `NONE` |
+ 
+ ### Extreme-Depth Notes
+ 
+@@ -55,6 +57,8 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
+ - `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_ToxicSulfurDeposit.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` are deterministic hadal brine-pool resources. Runtime gate: `RequiresBrinePool = true`, brine density override `1250 kg/m3`, toxicity hazard routing, and seismic upwelling reinstatement.
+ - `ResourceNodeTemplate_TitaniumBasaltMass.asset` is the new hadal titanium vein for autonomous production scaling.
+ - `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_XenonOmegaVentCache.asset`, `ResourceNodeTemplate_Silicon7BGlassVein.asset`, `ResourceNodeTemplate_AegiriumCrustNodule.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` currently route into placeholder item assets until dedicated isotope item records exist. Lore IDs are `crystallized_osmium`, `xenon_omega`, `silicon_7b`, `aegirium`, and `brine_isotope`.
++- `ResourceNodeTemplate_CarbonGraphiteNodule.asset` is the pressure-metamorphism source. Runtime gate: resident node, depth `>3500m`, `ResourceNode.PressureMetamorphismProgressSeconds` accumulates in the Burst slow-tick lane.
++- `ResourceNodeTemplate_PressureDiamond.asset` is the pressure-metamorphism output. Runtime owner: `ResourceDistributionDirector.PressureMetamorphismJob`, persistence marker: `PersistentWorldItemFlags.ResourceNodeMetamorphosed`, stable entity remains alive and changes template without destruction.
+ 
+ ## Flora Template HashIDs
+ 
+@@ -92,6 +96,22 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
+ - `Attachment Surface`: `Any = floating/freeform`, `Seabed = terrain-anchored`, `Metal = artificial-structure overgrowth`
+ - `Cable Bloom` and `Rust Moss` are authored as parasitic module flora. `Thermal Tubeworm` is authored as thermophilic module flora with a 100 C / 300 s activation gate.
+ 
++## 64-bit Flora Genetic Trait Definitions
++
++- Authoring/runtime owner: `FloraDataTemplate.GeneticsMask` and `CultivationManager.CultivationSlotState.GeneticsMask`.
++- Persistence owner: `InventoryDTO.itemGeneticsWords : ulong[]` and `ModuleDTO.cultivationGeneticsMasks : ulong[]`.
++- Save format: v53 introduced 64-bit genetics; v54 keeps the same layout and migrates v48-v52 legacy `uint[]` masks into `ulong[]`.
++- Splice equation: `result = (maskA | maskB) ^ (XorShift32(seed) & 0x000000000000000FUL)`.
++
++| Bit | Mask | Trait | Runtime effect |
++|---:|---:|---|---|
++| 0 | `0x0000000000000001` | `Biolum` | Enables biolum lighting credit and shader emission trait inheritance. |
++| 1 | `0x0000000000000002` | `O2_Produce` | Mature cultivation slots inject oxygen into the owning module atmosphere. |
++| 2 | `0x0000000000000004` | `Toxic` | Adds scrubber load, hazard contribution, and mature spore acoustic behavior. |
++| 3 | `0x0000000000000008` | `RapidGrowth` | Applies cultivation growth-rate multiplier during slow tick. |
++
++- Bits `4-63` remain 64-bit reserved space for authored `GeneticTraitProfile` rows; mutation currently toggles only bits `0-3`.
++
+ ## Ghost Mesh Standard
+ 
+ - If `ResourceNodeTemplate.nodeMesh == null`, runtime uses a transparent red cube ghost with exact `physicalSize`.
+@@ -104,6 +124,8 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
+ - Legacy display string bridge: `PersistentWorldRegistry.FormatResourceNodeTombstoneId(...)`
+ - Save-path flag: `PersistentWorldItemFlags.ResourceNodeDestroyed`
+ - Resident tombstone set: `NativeParallelHashSet<ulong> _resourceNodeTombstoneIds`
++- Metamorphosis flag: `PersistentWorldItemFlags.ResourceNodeMetamorphosed`
++- Resident metamorphosis set: `NativeParallelHashSet<ulong> _resourceNodeMetamorphosedIds`
+ 
+ ## Fauna Scavenging States
+ 
+
+diff --git a/Assets/_Project/Data/Items/Resources/Raw/Data_CarbonGraphite.asset b/Assets/_Project/Data/Items/Resources/Raw/Data_CarbonGraphite.asset
+new file mode 100644
+index 00000000..20d315f6
+--- /dev/null
++++ b/Assets/_Project/Data/Items/Resources/Raw/Data_CarbonGraphite.asset
+@@ -0,0 +1,60 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
++  m_Name: Data_CarbonGraphite
++  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
++  legacyItemName: Carbon Graphite
++  stableId: Data_CarbonGraphite
++  localizedItemName:
++    tableKey: ITEM_CARBON_GRAPHITE_NAME
++    fallbackText: Carbon Graphite
++    variants: []
++  icon: {fileID: 0}
++  legacyDescription: Dense abyssal carbon feedstock that can metamorphose under extreme crust pressure.
++  localizedDescription:
++    tableKey: ITEM_CARBON_GRAPHITE_DESCRIPTION
++    fallbackText: Dense abyssal carbon feedstock that can metamorphose under extreme crust pressure.
++    variants: []
++  weight: 1.6
++  stackable: 1
++  maxStack: 16
++  autoResolvePhysicalMetadata: 0
++  vulnerabilityMask: 102
++  audioMaterialId: 2
++  massKg: 1.6
++  volumeM3: 0.0007
++  physicsMaterialTag: 3
++  worldPhysicMaterial: {fileID: 0}
++  radiationSvPerSecond: 0
++  category: 1
++  resourceFamily: 6
++  progressionTier: 4
++  isRawResource: 1
++  minDepth: 3200
++  maxDepth: 6000
++  width: 1
++  height: 1
++  isConsumable: 0
++  useDuration: 0
++  oxygenRestore: 0
++  energyRestore: 0
++  integrityRestore: 0
++  hungerRestore: 0
++  thirstRestore: 0
++  useSound: {fileID: 0}
++  legacyInteractVerb: Collect
++  localizedInteractVerb:
++    tableKey: ITEM_INTERACT_TAKE
++    fallbackText: Collect
++    variants: []
++  worldPrefab: {fileID: 0}
++  worldBuoyancyProfile: {fileID: 0}
+
+diff --git a/Assets/_Project/Data/Items/Resources/Raw/Data_CarbonGraphite.asset.meta b/Assets/_Project/Data/Items/Resources/Raw/Data_CarbonGraphite.asset.meta
+new file mode 100644
+index 00000000..3920cc55
+--- /dev/null
++++ b/Assets/_Project/Data/Items/Resources/Raw/Data_CarbonGraphite.asset.meta
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d11
++NativeFormatImporter:
++  externalObjects: {}
++  mainObjectFileID: 11400000
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+
+diff --git a/Assets/_Project/Data/Items/Resources/Raw/Data_PressureDiamond.asset b/Assets/_Project/Data/Items/Resources/Raw/Data_PressureDiamond.asset
+new file mode 100644
+index 00000000..9f82f202
+--- /dev/null
++++ b/Assets/_Project/Data/Items/Resources/Raw/Data_PressureDiamond.asset
+@@ -0,0 +1,60 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
++  m_Name: Data_PressureDiamond
++  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
++  legacyItemName: Pressure Diamond
++  stableId: Data_PressureDiamond
++  localizedItemName:
++    tableKey: ITEM_PRESSURE_DIAMOND_NAME
++    fallbackText: Pressure Diamond
++    variants: []
++  icon: {fileID: 0}
++  legacyDescription: Carbon lattice compressed by hadal pressure over multiple in-game days.
++  localizedDescription:
++    tableKey: ITEM_PRESSURE_DIAMOND_DESCRIPTION
++    fallbackText: Carbon lattice compressed by hadal pressure over multiple in-game days.
++    variants: []
++  weight: 1.8
++  stackable: 1
++  maxStack: 8
++  autoResolvePhysicalMetadata: 0
++  vulnerabilityMask: 102
++  audioMaterialId: 2
++  massKg: 1.8
++  volumeM3: 0.00055
++  physicsMaterialTag: 3
++  worldPhysicMaterial: {fileID: 0}
++  radiationSvPerSecond: 0
++  category: 1
++  resourceFamily: 6
++  progressionTier: 4
++  isRawResource: 1
++  minDepth: 3500
++  maxDepth: 6000
++  width: 1
++  height: 1
++  isConsumable: 0
++  useDuration: 0
++  oxygenRestore: 0
++  energyRestore: 0
++  integrityRestore: 0
++  hungerRestore: 0
++  thirstRestore: 0
++  useSound: {fileID: 0}
++  legacyInteractVerb: Collect
++  localizedInteractVerb:
++    tableKey: ITEM_INTERACT_TAKE
++    fallbackText: Collect
++    variants: []
++  worldPrefab: {fileID: 0}
++  worldBuoyancyProfile: {fileID: 0}
+
+diff --git a/Assets/_Project/Data/Items/Resources/Raw/Data_PressureDiamond.asset.meta b/Assets/_Project/Data/Items/Resources/Raw/Data_PressureDiamond.asset.meta
+new file mode 100644
+index 00000000..56fe256d
+--- /dev/null
++++ b/Assets/_Project/Data/Items/Resources/Raw/Data_PressureDiamond.asset.meta
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d12
++NativeFormatImporter:
++  externalObjects: {}
++  mainObjectFileID: 11400000
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+
+diff --git a/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CarbonGraphiteNodule.asset b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CarbonGraphiteNodule.asset
+new file mode 100644
+index 00000000..32e62452
+--- /dev/null
++++ b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CarbonGraphiteNodule.asset
+@@ -0,0 +1,71 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
++  m_Name: ResourceNodeTemplate_CarbonGraphiteNodule
++  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
++  stableId: resource.node.carbon_graphite_nodule
++  displayName: Carbon Graphite Nodule
++  toolResistance: 1.4
++  harvestDurationSeconds: 2.1
++  requiredToolClass: 3
++  maxIntegrity: 160
++  defaultLootCount: 1
++  lootPickupPrefab: {fileID: 0}
++  minimumDepthMeters: 3200
++  maximumDepthMeters: 6000
++  minimumTemperatureCelsius: -4
++  maximumTemperatureCelsius: 22
++  minimumSlopeDegrees: 0
++  maximumSlopeDegrees: 68
++  spawnOffsetMeters: 0.08
++  candidateBudgetPerSector: 1
++  maxInstancesPerSector: 1
++  placementProbability: 0.18
++  minimumDensity: 1.8
++  maximumDensity: 3.2
++  validLayers:
++    serializedVersion: 2
++    m_Bits: 1792
++  acousticResonance: 0.82
++  debrisPhysicalProfile: 2
++  basaltDensityThreshold: 1.25
++  sedimentDebrisPhysicsMaterial: {fileID: 0}
++  basaltDebrisPhysicsMaterial: {fileID: 0}
++  nodeMesh: {fileID: 0}
++  nodeMaterial: {fileID: 0}
++  colliderShape: 1
++  physicalSize: {x: 1.25, y: 0.9, z: 1.25}
++  supportsAutonomousExtraction: 1
++  extractorYieldItem: {fileID: 11400000, guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d11, type: 2}
++  extractorCycleSeconds: 54
++  extractorInventoryCapacity: 24
++  requiresHydrothermalVent: 0
++  hydrothermalVentTemperatureThresholdCelsius: 80
++  triggersSteamExplosionWithoutThermalShield: 0
++  steamExplosionRadiusMeters: 5
++  steamExplosionImpulse: 12
++  leaveDepletionCrater: 1
++  depletionCraterRadiusMeters: 2.6
++  requiresBrinePool: 0
++  brineDensityKgPerCubicMeter: 1250
++  brineToxicityIntensity: 0.92
++  embedInVoxelRock: 1
++  embeddedVeinStampCount: 6
++  embeddedVeinLengthMeters: 8
++  embeddedVeinRadiusMeters: 1.2
++  embeddedVeinNoiseAmplitudeMeters: 0.45
++  harvestYield:
++  - item: {fileID: 11400000, guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d11, type: 2}
++    minimumAmount: 1
++    maximumAmount: 2
++    weight: 1
++  rarityDrops: []
+
+diff --git a/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CarbonGraphiteNodule.asset.meta b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CarbonGraphiteNodule.asset.meta
+new file mode 100644
+index 00000000..de5588a3
+--- /dev/null
++++ b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_CarbonGraphiteNodule.asset.meta
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d21
++NativeFormatImporter:
++  externalObjects: {}
++  mainObjectFileID: 11400000
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+
+diff --git a/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_PressureDiamond.asset b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_PressureDiamond.asset
+new file mode 100644
+index 00000000..6f8cab9a
+--- /dev/null
++++ b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_PressureDiamond.asset
+@@ -0,0 +1,71 @@
++%YAML 1.1
++%TAG !u! tag:unity3d.com,2011:
++--- !u!114 &11400000
++MonoBehaviour:
++  m_ObjectHideFlags: 0
++  m_CorrespondingSourceObject: {fileID: 0}
++  m_PrefabInstance: {fileID: 0}
++  m_PrefabAsset: {fileID: 0}
++  m_GameObject: {fileID: 0}
++  m_Enabled: 1
++  m_EditorHideFlags: 0
++  m_Script: {fileID: 11500000, guid: 1c0afa3a37d13f24f8cbd079ba3b5413, type: 3}
++  m_Name: ResourceNodeTemplate_PressureDiamond
++  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Scavenging.ResourceNodeTemplate
++  stableId: resource.node.pressure_diamond
++  displayName: Pressure Diamond
++  toolResistance: 1.9
++  harvestDurationSeconds: 2.8
++  requiredToolClass: 3
++  maxIntegrity: 210
++  defaultLootCount: 1
++  lootPickupPrefab: {fileID: 0}
++  minimumDepthMeters: 3500
++  maximumDepthMeters: 6000
++  minimumTemperatureCelsius: -4
++  maximumTemperatureCelsius: 18
++  minimumSlopeDegrees: 0
++  maximumSlopeDegrees: 72
++  spawnOffsetMeters: 0.08
++  candidateBudgetPerSector: 1
++  maxInstancesPerSector: 1
++  placementProbability: 0
++  minimumDensity: 3.4
++  maximumDensity: 5.8
++  validLayers:
++    serializedVersion: 2
++    m_Bits: 1792
++  acousticResonance: 1.44
++  debrisPhysicalProfile: 2
++  basaltDensityThreshold: 1.25
++  sedimentDebrisPhysicsMaterial: {fileID: 0}
++  basaltDebrisPhysicsMaterial: {fileID: 0}
++  nodeMesh: {fileID: 0}
++  nodeMaterial: {fileID: 0}
++  colliderShape: 1
++  physicalSize: {x: 1.1, y: 1.25, z: 1.1}
++  supportsAutonomousExtraction: 1
++  extractorYieldItem: {fileID: 11400000, guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d12, type: 2}
++  extractorCycleSeconds: 96
++  extractorInventoryCapacity: 8
++  requiresHydrothermalVent: 0
++  hydrothermalVentTemperatureThresholdCelsius: 80
++  triggersSteamExplosionWithoutThermalShield: 0
++  steamExplosionRadiusMeters: 5
++  steamExplosionImpulse: 12
++  leaveDepletionCrater: 1
++  depletionCraterRadiusMeters: 2.8
++  requiresBrinePool: 0
++  brineDensityKgPerCubicMeter: 1250
++  brineToxicityIntensity: 0.92
++  embedInVoxelRock: 1
++  embeddedVeinStampCount: 5
++  embeddedVeinLengthMeters: 6
++  embeddedVeinRadiusMeters: 1
++  embeddedVeinNoiseAmplitudeMeters: 0.35
++  harvestYield:
++  - item: {fileID: 11400000, guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d12, type: 2}
++    minimumAmount: 1
++    maximumAmount: 1
++    weight: 1
++  rarityDrops: []
+
+diff --git a/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_PressureDiamond.asset.meta b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_PressureDiamond.asset.meta
+new file mode 100644
+index 00000000..c97736a5
+--- /dev/null
++++ b/Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_PressureDiamond.asset.meta
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: 7f9c8a3a9cbb4ef0b7dd9a315d310d22
++NativeFormatImporter:
++  externalObjects: {}
++  mainObjectFileID: 11400000
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 

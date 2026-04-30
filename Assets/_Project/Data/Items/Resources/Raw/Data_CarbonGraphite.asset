@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a49e6475ccf8054419a7fba4c7a78a5c, type: 3}
+  m_Name: Data_CarbonGraphite
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Items.ItemData
+  legacyItemName: Carbon Graphite
+  stableId: Data_CarbonGraphite
+  localizedItemName:
+    tableKey: ITEM_CARBON_GRAPHITE_NAME
+    fallbackText: Carbon Graphite
+    variants: []
+  icon: {fileID: 0}
+  legacyDescription: Dense abyssal carbon feedstock that can metamorphose under extreme crust pressure.
+  localizedDescription:
+    tableKey: ITEM_CARBON_GRAPHITE_DESCRIPTION
+    fallbackText: Dense abyssal carbon feedstock that can metamorphose under extreme crust pressure.
+    variants: []
+  weight: 1.6
+  stackable: 1
+  maxStack: 16
+  autoResolvePhysicalMetadata: 0
+  vulnerabilityMask: 102
+  audioMaterialId: 2
+  massKg: 1.6
+  volumeM3: 0.0007
+  physicsMaterialTag: 3
+  worldPhysicMaterial: {fileID: 0}
+  radiationSvPerSecond: 0
+  category: 1
+  resourceFamily: 6
+  progressionTier: 4
+  isRawResource: 1
+  minDepth: 3200
+  maxDepth: 6000
+  width: 1
+  height: 1
+  isConsumable: 0
+  useDuration: 0
+  oxygenRestore: 0
+  energyRestore: 0
+  integrityRestore: 0
+  hungerRestore: 0
+  thirstRestore: 0
+  useSound: {fileID: 0}
+  legacyInteractVerb: Collect
+  localizedInteractVerb:
+    tableKey: ITEM_INTERACT_TAKE
+    fallbackText: Collect
+    variants: []
+  worldPrefab: {fileID: 0}
+  worldBuoyancyProfile: {fileID: 0}

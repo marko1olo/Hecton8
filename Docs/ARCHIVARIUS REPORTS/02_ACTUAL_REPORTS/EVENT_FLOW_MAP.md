@@ -1,248 +1,170 @@
 # HECTON-8 EVENT FLOW MAP
 
-Date: 2026-04-29
+Date: 2026-05-01
 Status: PENDING VERIFICATION
-Scope: source-backed event topology visible in first-party code
-Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
+Scope: source-backed event topology visible in first-party code; no profiler or play-mode proof in this document.
+
+Mandates followed:
+- `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
+- `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+- `UI_Data_Streaming_ZeroGC_Optimization.txt`
 
 ## 1. Audit Standard
 
-This file records only event flows directly rechecked in current source.
-It does not claim runtime replay, scene-wiring proof, or exhaustive subscriber coverage.
+This file records event flows directly rechecked in source.
 
-Evidence basis for this pass:
-
+Evidence basis:
 - direct reads of bus definitions
+- direct scan of `SystemDispatcher.LateUpdate()`
 - direct scans for `NativeQueue<TPayload>` ownership
-- direct scans for `Raise*` and `FlushPending()` paths
-- direct scans for remaining static `Action` buses
+- direct scans for `Raise*`, `Register`, `Unregister`, and `FlushPending()` paths
+- direct scan for remaining static `Action` surfaces in the two migrated buses
+
+No runtime replay, scene wiring proof, or GCMonitor capture is claimed here.
+
+## 2. Dispatcher Flush Topology
+
+`SystemDispatcher.LateUpdate()` is the current deferred-event drain owner.
+
+Flush order visible in source:
+1. `ThreadSafeCommandQueue.DrainMainThread()`
+2. `NarrativeEvents.FlushPending()`
+3. `InteractionEvents.FlushPending()`
+4. `CraftingEvents.FlushPending()`
+5. `ScanEvents.FlushPending()`
+6. `SaveEvents.FlushPending()`
+7. `QuestEvents.FlushPending()`
+8. `AudioLogEvents.FlushPending()`
+9. `AtlasSignalEvents.FlushPending()`
+10. `NotificationEvents.FlushPending()`
+11. `PDAEvents.FlushPending()`
+12. `SceneBootstrap.FlushPendingEvents()`
+13. `ObjectPoolDiagnostics.FlushPending()`
+14. `Atlas6Events.FlushPending()`
+15. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
+
+`SystemDispatcher.TryConsumeLateFrameEventDispatch()` enforces the shared late-frame event budget. If the budget is exhausted, queues retain remaining events for a later frame instead of draining unbounded work.
+
+## 3. Queue-Backed Buses
+
+Confirmed queue-backed deferred buses:
+
+| Bus | Payload | Notes |
+| --- | --- | --- |
+| `SaveEvents` | `SaveEventPayload` | NativeQueue; fixed-string slot/message fields. |
+| `QuestEvents` | `QuestEventPayload` | NativeQueue; quest hash + event type. |
+| `ScanEvents` | `ScanEventPayload` | NativeQueue; hash payload plus cold metadata table. |
+| `NarrativeEvents` | `NarrativeEventPayload` | NativeQueue for discovery/depth lane; POI callback lane remains separate. |
+| `AudioLogEvents` | `AudioLogEventPayload` | NativeQueue; audio-log listener registry. |
+| `InteractionEvents` | `InteractionEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
+| `CraftingEvents` | `CraftingEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
+| `AtlasSignalEvents` | `AtlasSignalEventPayload` | NativeQueue; hash payload plus cold decoded-message table. |
+| `NotificationEvents` | `NotificationEventPayload` | NativeQueue; message hash plus cold message table. |
+| `ObjectPoolDiagnostics` | `PoolDiagnosticsEventPayload` | NativeQueue; pool hash + metric payload. |
+
+## 4. Interaction Lane
+
+Definition: `Assets/_Project/Scripts/Interaction/InteractionEvents.cs`
+
+Current shape:
+- `NativeQueue<InteractionEventPayload>`
+- `RegistryBucket<IInteractionEventListener>`
+- `InteractionEventPayload` is blittable
+- payload carries `uint` hash IDs:
+  - `ItemHashId`
+  - `TargetHashId`
+  - `InteractorHashId`
+- managed references are not stored in the payload
+- first-party managed reference resolution uses a fixed `InteractionReferenceSlot[128]` sidecar
+- sidecar occupancy is tracked by `bool[128]` to prevent wrap overwrite before deferred flush
+
+There are no public static `Action` events in this file.
+
+## 5. Crafting Lane
+
+Definition: `Assets/_Project/Scripts/CraftingEvents.cs`
+
+Current shape:
+- `NativeQueue<CraftingEventPayload>`
+- `RegistryBucket<ICraftingEventListener>`
+- `CraftingEventPayload` is blittable
+- payload carries `uint` hash IDs:
+  - `FabricatorHashId`
+  - `RecipeHashId`
+  - `ResultItemHashId`
+- managed references are not stored in the payload
+- first-party managed reference resolution uses a fixed `CraftingReferenceSlot[128]` sidecar
+- sidecar occupancy is tracked by `bool[128]` to prevent wrap overwrite before deferred flush
+- progress/closed/cancelled events do not reserve sidecar slots
+
+There are no public static `Action` events in this file.
+
+## 6. Modding Boundary
+
+Definition: `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs`
+
+Current shape:
+- `ModLoader.InstallHooks()` installs the native queue bridge.
+- `HectonEventBus.InstallNativeQueueBindings()` registers one internal bridge listener to `InteractionEvents` and `CraftingEvents`.
+- Mods receive immutable `ReadOnlySpan<byte>` payload copies through `SubscribeNative(...)`.
+- Mods never receive `NativeQueue`, `NativeArray`, sidecar slot arrays, or mutable first-party references.
+- Subscriber exceptions isolate and disable the offending mod through `ModLoader.DisableManagedMod(...)`.
+
+This bridge is a projection layer. It is not the owner of first-party event queues.
+
+## 7. Listener Lifecycle
+
+Confirmed listener registration pattern for the migrated lanes:
+- `FirstHourDirector`: registers `CraftingEvents` and `InteractionEvents` in `OnEnable`; unregisters both in `OnDisable`.
+- `HectonFabricatorUI`: registers `CraftingEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `InteractionUI`: registers `InteractionEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `DiegeticTooltipSystem`: registers `InteractionEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `CameraJuiceSystem`: registers `InteractionEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `HectonEventBus` bridge: installed/uninstalled by `ModLoader` hook lifecycle.
 
-## 2. Core Finding
+Scene/prefab UnityEvent bindings are outside this source-only scan.
 
-The project is in a mixed event architecture state.
+## 8. Remaining Drift
 
-It currently contains:
-
-- queue-backed deferred buses
-- direct static `Action` buses
-- feature-local direct callbacks
-- a separate managed modding bus
-
-There is no single event model yet.
-There is a partial migration plus legacy/static residue.
-
-## 3. Queue-Backed Deferred Buses Rechecked
-
-### 3.1 `SaveEvents`
-
-Definition rechecked in `Assets/_Project/Scripts/SaveEvents.cs`
-
-Confirmed properties:
-
-- `NativeQueue<SaveEventPayload>` backing store
-- `RegistryBucket<ISaveEventListener>` listener registry
-- `FlushPending()` fanout path
-- `SaveEventPayload` uses:
-  - `SaveEventType`
-  - `FixedString64Bytes SlotName`
-  - `FixedString128Bytes Message`
-
-Correction:
-
-- older doc claim that this bus was direct static `Action` dispatch was false
-
-### 3.2 `QuestEvents`
-
-Definition rechecked in `Assets/_Project/Scripts/Quest/QuestEvents.cs`
-
-Confirmed properties:
-
-- `NativeQueue<QuestEventPayload>` backing store
-- `RegistryBucket<IQuestEventListener>` listener registry
-- `FlushPending()` fanout path
-- compact payload with quest hash + event type
-
-### 3.3 `ScanEvents`
-
-Definition rechecked in `Assets/_Project/Scripts/ScanEvents.cs`
-
-Confirmed properties:
-
-- `NativeQueue<ScanEventPayload>` backing store
-- `RegistryBucket<IScanEventListener>` listener registry
-- hash-based payload fields for entry/title/category/summary
-- cold-path `Dictionary<uint, ScanEntryMetadata>` used for authored string recovery
-
-Correction:
-
-- older claim that `OnEntryDiscovered` was a public direct `Action<string, string, string, string>` is false in current source
-
-### 3.4 `NarrativeEvents`
-
-Definition rechecked in `Assets/_Project/Scripts/NarrativeEvents.cs`
-
-Confirmed properties:
-
-- `NativeQueue<NarrativeEventPayload>` backing store for discovery/depth events
-- `RegistryBucket<INarrativeEventListener>` listener registry
-- hashed discovery payload via `DiscoveryHash`
-- cold-path `Dictionary<uint, string>` for authored discovery id recovery
-
-Important nuance:
-
-- `NarrativeEvents` also contains a separate direct point-of-interest callback lane:
-  - `RegisterPointOfInterestListener`
-  - `RaiseNarrativePOIRegistered`
-  - `RaiseNarrativePOIDisposed`
-
-So this file is not pure queue-only architecture.
-It is a hybrid event owner.
-
-### 3.5 `AudioLogEvents`
-
-Definition rechecked indirectly by file readback and direct search hits in `Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs`
-
-Confirmed properties:
-
-- `NativeQueue<AudioLogEventPayload>` backing store
-- `RegistryBucket<IAudioLogEventListener>` listener registry
-- `FlushPending()` deferred dispatch path
-
-## 4. Direct Static `Action` Buses Still Present
-
-### 4.1 `InteractionEvents`
-
-Definition rechecked in `Assets/_Project/Scripts/Interaction/InteractionEvents.cs`
-
-Confirmed properties:
-
-- direct static `event Action<ItemData, int, Transform> OnItemCollected`
-- direct static `event Action<IInteractable, Transform> OnInteractionStarted`
-- direct static `event Action<IInteractable> OnHoverChanged`
-- immediate delegate invocation in `Raise*` methods
-
-### 4.2 `CraftingEvents`
-
-Definition rechecked in `Assets/_Project/Scripts/CraftingEvents.cs`
-
-Confirmed properties:
-
-- direct static `Action` events
-- immediate `Raise*` delegate invocation
-- not queue-backed
-
-Signals visible in current source:
-
-- `OnFabricatorOpened`
-- `OnFabricatorClosed`
-- `OnCraftStarted`
-- `OnCraftProgressUpdated`
-- `OnCraftCompleted`
-- `OnCraftCancelled`
-
-### 4.3 `HectonSubmarineOsEvents`
-
-Definition rechecked in `Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs`
-
-Confirmed properties:
-
-- direct static delegate events
-- `OnSnapshotUpdated`
-- `OnLogRequested`
-- direct invocation, not queue-backed
-
-### 4.4 Other Feature-Embedded Buses
-
-Current codebase still contains multiple feature-local event surfaces such as:
-
-- `PDAEvents`
-- `FlashlightEvents`
-- `RandomEventEvents`
-- celestial/weather feature buses
-
-Not all of those were fully re-mapped in this pass.
-Their existence is confirmed.
-Their full subscriber tables were not re-authored here because this pass prioritized factual correction over speculative completeness.
-
-## 5. Separate Modding Bus
-
-`Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs` remains a separate typed managed bus.
-
-Observed boundary:
-
-- it is not the owner of first-party queue-backed gameplay buses
-- it is not the canonical replacement for `SaveEvents`, `QuestEvents`, `ScanEvents`, or `NarrativeEvents`
-- it remains an additional communication surface, not the central one
-
-## 6. Conformity Findings Against `AGENTS.md`
-
-### 6.1 What Already Moved Toward The Mandate
-
-These buses now match the direction required by `AGENTS.md` much better than older docs admitted:
-
-- `SaveEvents`
-- `QuestEvents`
-- `ScanEvents`
-- `NarrativeEvents`
-- `AudioLogEvents`
-
-They are queue-backed and late-flush oriented.
-
-### 6.2 What Still Drifts
-
-Direct static delegate buses still remain in first-party gameplay/UI surfaces:
-
-- `InteractionEvents`
-- `CraftingEvents`
+Known remaining direct/static event surfaces still need separate audits:
 - `HectonSubmarineOsEvents`
-- several feature-local embedded buses
+- feature-local celestial/weather/direct callback surfaces
+- any UI-only UnityEvent inspector binding not visible in class scans
 
-So the event architecture is still only partially normalized.
+This document does not certify those surfaces.
 
-### 6.3 String-Payload Risk Was Overstated In Older Docs
+## 9. Regression Model
 
-Older docs described several migrated buses as still string-heavy direct-action surfaces.
-Current source shows the more accurate picture:
+CPU: event drains remain bounded by the dispatcher late-frame budget; sidecar occupancy scans are capped at 128 probes on publish only.
 
-- `SaveEvents` payload is fixed-string based
-- `QuestEvents` payload is hash/ushort based
-- `ScanEvents` payload is hash-based with cold metadata cache
-- `NarrativeEvents` payload is hash-based with cold id cache
+GC: queued payloads are blittable structs; listener dispatch uses preallocated `RegistryBucket` arrays; no queued payload strings were added.
 
-This does not prove zero runtime alloc everywhere.
-It does prove the older doc description was stale.
+Memory: two fixed `bool[128]` occupancy arrays were added for sidecar safety; no unbounded event cache was introduced.
 
-## 7. What Was Removed From The Old Version
+Cadence: event flush cadence remains `SystemDispatcher.LateUpdate()`.
 
-Removed as unsupported or stale:
+Correctness: stale claims that `InteractionEvents` and `CraftingEvents` are direct static `Action` buses were removed.
 
-- claim that `SaveEvents` was static direct `Action`
-- claim that `ScanEvents` published public string-based delegate payloads
-- claim that `NarrativeEvents.OnDiscoveryMade` remained direct string dispatch
-- inflated certainty about complete subscriber maps not revalidated in this pass
+## 10. Hot Path Impact
 
-## 8. Regression Model
+No per-frame allocation is introduced.
 
-CPU: no runtime code changed
-GC: no runtime code changed
-Memory: no runtime code changed
-Cadence: no runtime cadence changed
-Correctness: documentation accuracy improved by separating migrated queue buses from legacy direct static buses
+The changed work is in event publish and late-frame drain paths:
+- publish: bounded native enqueue plus fixed sidecar reservation when a first-party reference is required
+- drain: reverse `for` over listener registry, then sidecar release
 
-## 9. Hot Path Impact
+## 11. Failure Modes
 
-None. Markdown-only change.
+- If more than 128 unresolved sidecar-backed interaction or crafting events are queued before flush, `TryReserveReferenceSlot` returns false and that sidecar-backed event is dropped.
+- If late-frame budget is exhausted, remaining queue entries stay pending for a later frame.
+- Hash fields expose stable payload data to mods, but first-party listeners that need Unity references still depend on dispatch-time sidecar resolution.
+- Runtime GC and listener leak proof still require MCP/Profiler validation.
 
-## 10. Failure Modes
+## 12. Why This Version Was Kept
 
-- some subscriber hookups remain outside this static source pass
-- scene/prefab wiring can still add listeners not visible in class-only scans
-- live event cadence and leak behavior still require Unity-side validation
-
-## 11. Why This Version Was Kept
-
-Kept because it removes false negatives and false positives at the same time.
-It does not pretend the event layer is clean.
-It records the actual mixed state visible in source.
+Kept because it matches current source after the interaction/crafting queue migration and sidecar hardening.
 
 STATUS: PENDING VERIFICATION

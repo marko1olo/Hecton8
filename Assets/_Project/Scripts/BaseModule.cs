@@ -130,9 +130,23 @@ namespace Hecton8.Gameplay
         private const float DefaultBulkheadFailureWaterMassKilograms = 18000f;
         private const float DefaultBulkheadStressRatePerSecond = 0.035f;
         private const float DefaultBulkheadStressRecoveryPerSecond = 0.01f;
+        private const float SurfacePressureKPa = 101.325f;
+        private const float DefaultDeepCompressionStartDepthMeters = 4000f;
+        private const float DefaultDeepCompressionFullPressureKPa = 60000f;
+        private const float DefaultMaximumDeepCompressionAxisLoss = 0.001f;
+        private const float DefaultBreachVortexDurationSeconds = 5f;
+        private const float DefaultBreachVortexReferenceMassKilograms = 80f;
+        private const float DefaultBreachVortexMaximumAccelerationMetersPerSecondSquared = 45f;
+        private const float DefaultBreachVortexRadiusPaddingMeters = 1.25f;
+        private const float DefaultImplosionDepthThresholdMeters = 2000f;
+        private const float DefaultImplosionImpulseRadiusMeters = 30f;
+        private const float DefaultImplosionMaximumImpulseNewtonSeconds = 65000f;
+        private const float DefaultLocalGravityHoldSeconds = 0.75f;
         private const float DefaultInGameDaySeconds = 3600f;
         private const float DefaultFloodedReefActivationDays = 3f;
+        private const int FloodedReefFaunaAnchorSalt = unchecked((int)0x52EF0A11);
         private const int ParasiteSporeHazardThreshold = 5;
+        private const string FloodedReefFaunaFamilyId = "fauna.family.reef_small";
         private const string FoundationPersistentId = "Build_Foundation_Platform";
         private const string PylonPersistentId = "Build_Utility_Pylon";
         private const string AirlockPersistentId = "Build_Airlock_Hatch";
@@ -198,6 +212,55 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Absolute cap for graph-driven hydro-structural downward load queued into an unmoored module body.")]
         [SerializeField, Min(1f)] private float maximumHydroStructuralLoadNewtons = DefaultMaximumHydroStructuralLoadNewtons;
+
+        [Header("Abyssal Pressure Compression")]
+        [Tooltip("Optional visual root scaled by abyssal pressure. Leave null to keep colliders and socket transforms authoritative.")]
+        [SerializeField] private Transform pressureCompressionVisualRoot;
+
+        [Tooltip("Depth in meters where deep-sea pressure begins reducing room volume.")]
+        [SerializeField, Min(0f)] private float deepCompressionStartDepthMeters = DefaultDeepCompressionStartDepthMeters;
+
+        [Tooltip("Hydrostatic pressure in kPa where the authored maximum compression is reached.")]
+        [SerializeField, Min(1f)] private float deepCompressionFullPressureKPa = DefaultDeepCompressionFullPressureKPa;
+
+        [Tooltip("Maximum X/Y visual axis loss at full crush pressure. 0.001 = one millimeter per meter.")]
+        [SerializeField, Range(0f, 0.01f)] private float maximumDeepCompressionAxisLoss = DefaultMaximumDeepCompressionAxisLoss;
+
+        [Header("Breach Vortex")]
+        [Tooltip("Duration in seconds for the transient depressurization vortex emitted on module breach.")]
+        [SerializeField, Min(0f)] private float breachVortexDurationSeconds = DefaultBreachVortexDurationSeconds;
+
+        [Tooltip("Reference mass used to convert pressure force into vortex acceleration.")]
+        [SerializeField, Min(1f)] private float breachVortexReferenceMassKilograms = DefaultBreachVortexReferenceMassKilograms;
+
+        [Tooltip("Maximum acceleration applied to loose bodies by the breach vortex.")]
+        [SerializeField, Min(0f)] private float breachVortexMaximumAccelerationMetersPerSecondSquared = DefaultBreachVortexMaximumAccelerationMetersPerSecondSquared;
+
+        [Tooltip("Extra radius added around the interior trigger bounds for vortex spatial-hash queries.")]
+        [SerializeField, Min(0f)] private float breachVortexRadiusPaddingMeters = DefaultBreachVortexRadiusPaddingMeters;
+
+        [Header("Catastrophic Implosion")]
+        [Tooltip("External depth where an abandoned submerged module implodes instead of remaining as static wreckage.")]
+        [SerializeField, Min(0f)] private float implosionDepthThresholdMeters = DefaultImplosionDepthThresholdMeters;
+
+        [Tooltip("Radius in meters affected by the one-shot implosion impulse.")]
+        [SerializeField, Min(0.5f)] private float implosionImpulseRadiusMeters = DefaultImplosionImpulseRadiusMeters;
+
+        [Tooltip("Maximum impulse routed to loose entities by catastrophic implosion.")]
+        [SerializeField, Min(0f)] private float implosionMaximumImpulseNewtonSeconds = DefaultImplosionMaximumImpulseNewtonSeconds;
+
+        [Header("Local Gravity Anomaly")]
+        [Tooltip("When enabled, players inside this module receive a local gravity vector request from the interior volume.")]
+        [SerializeField] private bool localGravityAnomalyEnabled;
+
+        [Tooltip("Module-local direction used by relic gravity anomaly volumes.")]
+        [SerializeField] private Vector3 localGravityDirection = Vector3.down;
+
+        [Tooltip("Acceleration magnitude in meters per second squared for local module gravity.")]
+        [SerializeField, Min(0f)] private float localGravityAccelerationMetersPerSecondSquared = GravityAccelerationMetersPerSecondSquared;
+
+        [Tooltip("How long each slow-tick gravity request remains authoritative on the player controller.")]
+        [SerializeField, Min(0.1f)] private float localGravityHoldSeconds = DefaultLocalGravityHoldSeconds;
 
         [Header("── Flood / Drain ─────────────────────────────")]
         [Tooltip("Сколько секунд требуется на полную откачку воды.")]
@@ -359,6 +422,9 @@ namespace Hecton8.Gameplay
         private float _parasiteRootPowerDrainWatts;
         private float _cultivationScrubberPowerDrainWatts;
         private float _cultivationLightingPowerCreditWatts;
+        private float _parasiteAddedMassKilograms;
+        private float _parasiteThermalInsulation01;
+        private float _parasiteBioReactorOverheatMultiplier = 1f;
         private float _parasiteInfectionLevel;
         private float _parasiteRootInfectionLevel;
         private int _attachedParasiteCount;
@@ -377,7 +443,10 @@ namespace Hecton8.Gameplay
         private int _cachedAtmosphereRoomIndex = -1;
         private Vector3 _defaultCenterOfMassLocal;
         private Vector3 _breachCenterOfMassTargetLocal;
+        private Vector3 _islandFloodCenterOfMassTargetLocal;
         private bool _hasBreachCenterOfMassTarget;
+        private bool _hasIslandFloodCenterOfMassTarget;
+        private float _islandFloodCenterOfMassWeight01;
         private float _defaultBodyMass;
         private float _defaultLinearDamping;
         private float _defaultAngularDamping;
@@ -389,12 +458,18 @@ namespace Hecton8.Gameplay
         private Vector3 _queuedHydroStructuralLoadPointWorld;
         private bool _bulkheadFailureLatched;
         private bool _emergencyBulkheadLockedDown;
+        private bool _implosionTriggered;
         private bool _defaultBodyIsKinematic;
         private bool _defaultBodyUseGravity;
         private CollisionDetectionMode _defaultCollisionDetectionMode;
         private RigidbodyInterpolation _defaultInterpolation;
         private bool _moduleBodyDefaultsCaptured;
         private bool _floodSurfaceDefaultsCaptured;
+        private Vector3 _defaultPressureCompressionVisualScale = Vector3.one;
+        private bool _pressureCompressionDefaultsCaptured;
+        private float _pressureCompressionAxisScale = 1f;
+        private float _pressureCompressionVolumeScale = 1f;
+        private float _pressureCompressionDepthMeters;
 
         /// <summary>
         /// Предыдущее состояние isFlooded, используемое для определения
@@ -416,6 +491,7 @@ namespace Hecton8.Gameplay
         /// Null = player is not inside this module.
         /// </summary>
         private HectonSurvivalSystem _trackedPlayerSurvival;
+        private HectonPlayerMovement _trackedPlayerMovement;
         private readonly ModuleIntegrityComponent _integrityComponent = new ModuleIntegrityComponent();
         private readonly ModuleLifeSupportComponent _lifeSupportComponent = new ModuleLifeSupportComponent();
         // ══════════════════════════════════════════════════════════
@@ -558,11 +634,20 @@ namespace Hecton8.Gameplay
         public bool InteriorReefInfestationActive => _interiorReefInfestationActive;
         /// <summary>True when the habitat graph has cut this module off from every anchor.</summary>
         public bool IsUnmoored => _isUnmoored;
+        /// <summary>True after catastrophic pressure implosion has latched for this module.</summary>
+        public bool HasImploded => _implosionTriggered;
         internal float BreathableReserve => _lifeSupportComponent.BreathableReserve;
         internal float BreathableReserveCapacity => _lifeSupportComponent.BreathableReserveCapacity;
+        internal float PressureCompressionVolumeScale => _pressureCompressionVolumeScale;
+        internal float PressureCompressionDepthMeters => _pressureCompressionDepthMeters;
         internal int AttachedParasiteCount => _attachedParasiteCount;
         internal float ParasiteRootPowerDrainWatts => _parasiteRootPowerDrainWatts;
-        internal float PowerRatingForHabitatGraph => _basePowerRating + _cultivationLightingPowerCreditWatts - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
+        internal float ParasiteAddedMassKilograms => _parasiteAddedMassKilograms;
+        internal float ParasiteThermalInsulation01 => _parasiteThermalInsulation01;
+        internal float ParasiteBioReactorOverheatMultiplier => _parasiteBioReactorOverheatMultiplier;
+        internal float PowerRatingForHabitatGraph => _interiorReefInfestationActive
+            ? 0f
+            : _basePowerRating + _cultivationLightingPowerCreditWatts - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent
@@ -572,7 +657,9 @@ namespace Hecton8.Gameplay
         /// Базовое энергопотребление модуля.
         /// Источник: BuildableData.powerRating → fallback.
         /// </summary>
-        public float PowerRating => PowerRatingForHabitatGraph - _parasiteRootPowerDrainWatts;
+        public float PowerRating => _interiorReefInfestationActive
+            ? 0f
+            : PowerRatingForHabitatGraph - _parasiteRootPowerDrainWatts;
 
         public int PowerPriority => powerPriority;
 
@@ -634,17 +721,27 @@ namespace Hecton8.Gameplay
             _breachLatched = IsBreached;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
+            _hasIslandFloodCenterOfMassTarget = false;
+            _islandFloodCenterOfMassWeight01 = 0f;
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
             _bulkheadFailureLatched = false;
             _emergencyBulkheadLockedDown = false;
+            _implosionTriggered = false;
+            _trackedPlayerMovement = null;
             _cultivationScrubberPowerDrainWatts = 0f;
             _cultivationLightingPowerCreditWatts = 0f;
+            _parasiteAddedMassKilograms = 0f;
+            _parasiteThermalInsulation01 = 0f;
+            _parasiteBioReactorOverheatMultiplier = 1f;
             _floodedReefFloodSeconds = Mathf.Max(0f, _floodedReefFloodSeconds);
             ClearQueuedHydroStructuralLoad();
+            ApplyDeepSeaCompressionState(true);
 
             RefreshVisualStateImmediate();
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
+            if (_interiorReefInfestationActive)
+                RegisterFloodedReefFaunaAnchor();
             ResyncInteriorOccupants(true);
             _integrityComponent.TryStartDrain(_hasPower);
             UpdateDrainDiagnostics();
@@ -671,22 +768,31 @@ namespace Hecton8.Gameplay
             _breachLatched = false;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
+            _hasIslandFloodCenterOfMassTarget = false;
+            _islandFloodCenterOfMassWeight01 = 0f;
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
             _bulkheadFailureLatched = false;
             _emergencyBulkheadLockedDown = false;
+            _implosionTriggered = false;
             ClearQueuedHydroStructuralLoad();
             _trackedPlayerSurvival = null;
+            _trackedPlayerMovement = null;
             _parasitePowerDrainWatts = 0f;
             _parasiteRootPowerDrainWatts = 0f;
+            _parasiteAddedMassKilograms = 0f;
+            _parasiteThermalInsulation01 = 0f;
+            _parasiteBioReactorOverheatMultiplier = 1f;
             _parasiteInfectionLevel = 0f;
             _parasiteRootInfectionLevel = 0f;
             _attachedParasiteCount = 0;
             _cultivationScrubberPowerDrainWatts = 0f;
             _cultivationLightingPowerCreditWatts = 0f;
             _floodedReefFloodSeconds = 0f;
+            UnregisterFloodedReefFaunaAnchor();
             _interiorReefInfestationActive = false;
             SetInteriorReefVisualActive(false);
+            ResetPressureCompressionVisualState();
             _integrityComponent.ResetForDespawn();
             _lifeSupportComponent.ResetForDespawn();
             TryUnregisterFixedTick();
@@ -694,6 +800,8 @@ namespace Hecton8.Gameplay
             SyncSpatialRole();
             BaseDegradationSystem.ClearIntegrityState(this);
             BaseDegradationSystem.ClearParasiteSporeHazard(this);
+            Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
+            BaseDegradationSystem.ClearPressureCompressionState(this);
 
             ReleaseAllTrackedObjects();
         }
@@ -712,9 +820,12 @@ namespace Hecton8.Gameplay
         public void SlowTick()
         {
             ApplyCascadeFailureEffects();
+            ApplyDeepSeaCompressionState(false);
             UpdateLifeSupport(SLOW_TICK_DT);
             UpdateFloodVisualStateImmediate();
             UpdateFloodedReefGrowth(SLOW_TICK_DT);
+            ApplyLocalGravityAnomalyRequest();
+            EvaluateCatastrophicImplosion();
             if (!HasOperationalPower)
                 return;
 
@@ -764,9 +875,10 @@ namespace Hecton8.Gameplay
             float floodFill01 = ResolveUnmooredFloodFillNormalized();
             float displacementVolume = ResolveBuoyancyDisplacementVolumeCubicMeters();
             float dryMass = ResolveDryMassKilograms();
+            float parasiteMass = ResolveParasiteAddedMassKilograms();
             float effectiveMass = Mathf.Max(
                 MinimumMassKilograms,
-                dryMass + (floodFill01 * displacementVolume * SeawaterDensityKilogramsPerCubicMeter));
+                dryMass + parasiteMass + (floodFill01 * displacementVolume * SeawaterDensityKilogramsPerCubicMeter));
             if (Mathf.Abs(_moduleRigidbody.mass - effectiveMass) >= BuoyancyMassUpdateThresholdKilograms)
                 _moduleRigidbody.mass = effectiveMass;
 
@@ -808,6 +920,7 @@ namespace Hecton8.Gameplay
             CacheOwnedBulkheadComponents();
             CaptureModuleRigidbodyDefaults();
             CaptureFloodSurfaceDefaults();
+            CapturePressureCompressionDefaults();
         }
 
         private void OnEnable()
@@ -824,6 +937,7 @@ namespace Hecton8.Gameplay
                 TryRegisterFixedTick();
             }
 
+            ApplyDeepSeaCompressionState(true);
             UpdateFloodVisualStateImmediate();
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
         }
@@ -834,6 +948,9 @@ namespace Hecton8.Gameplay
             TryUnregister();
             TryUnregisterFixedTick();
             BaseDegradationSystem.ClearIntegrityState(this);
+            BaseDegradationSystem.ClearParasiteSporeHazard(this);
+            Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
+            BaseDegradationSystem.ClearPressureCompressionState(this);
 
             NotifyModuleExitIfNeeded();
             ReleaseAllTrackedObjects();
@@ -846,6 +963,10 @@ namespace Hecton8.Gameplay
             s_activeModules.Remove(this);
             TryUnregister();
             TryUnregisterFixedTick();
+            BaseDegradationSystem.ClearIntegrityState(this);
+            BaseDegradationSystem.ClearParasiteSporeHazard(this);
+            Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
+            BaseDegradationSystem.ClearPressureCompressionState(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1037,6 +1158,18 @@ namespace Hecton8.Gameplay
             PlaySpatialSfx(floodClip);
             if (!wasFlooded)
                 NotifyEmergencyLockdownStateChanged();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
+        }
+
+        internal void ForceFloodFromBulkheadOverride(Vector3 breachWorldPoint)
+        {
+            Vector3 localBreachPoint = IsFiniteVector(breachWorldPoint)
+                ? transform.InverseTransformPoint(breachWorldPoint)
+                : ResolveDefaultBreachLocalPoint();
+            _breachCenterOfMassTargetLocal = localBreachPoint;
+            _hasBreachCenterOfMassTarget = true;
+            ForceFlood();
+            TriggerBreachDepressurizationVortex(localBreachPoint);
         }
 
         /// <summary>
@@ -1050,6 +1183,7 @@ namespace Hecton8.Gameplay
             SetFloodedVisual(false);
             SyncTrackedObjectsFloodState();
             SyncSpatialRole();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         /// <summary>
@@ -1061,9 +1195,12 @@ namespace Hecton8.Gameplay
             if (normalizedAmount <= 0f || !float.IsFinite(normalizedAmount))
                 return;
 
+            float previousStress = _bulkheadFloodStress01;
             _bulkheadFloodStress01 = Mathf.Max(0f, _bulkheadFloodStress01 - normalizedAmount);
             if (_bulkheadFloodStress01 <= 0f && !_integrityComponent.IsFlooded && !IsBreached)
                 _bulkheadFailureLatched = false;
+            if (Mathf.Abs(previousStress - _bulkheadFloodStress01) > 0.0001f)
+                BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         internal float ResolveFloodWaterVolumeCubicMeters()
@@ -1084,6 +1221,13 @@ namespace Hecton8.Gameplay
 
             float floodMassKilograms = floodVolumeCubicMeters * SeawaterDensityKilogramsPerCubicMeter;
             return float.IsFinite(floodMassKilograms) ? Mathf.Max(0f, floodMassKilograms) : 0f;
+        }
+
+        internal float ResolveParasiteAddedMassKilograms()
+        {
+            return float.IsFinite(_parasiteAddedMassKilograms)
+                ? Mathf.Max(0f, _parasiteAddedMassKilograms)
+                : 0f;
         }
 
         internal void QueueHydroStructuralLoad(float floodWaterMassKilograms, Vector3 applicationWorldPoint, float durationSeconds)
@@ -1110,6 +1254,32 @@ namespace Hecton8.Gameplay
             _queuedHydroStructuralLoadPointWorld = applicationWorldPoint;
         }
 
+        internal void ApplyIslandFloodCenterOfMassShift(Vector3 floodCentroidWorld, float islandFloodMassKilograms, float deltaTime)
+        {
+            if (!_isUnmoored ||
+                islandFloodMassKilograms <= 0f ||
+                deltaTime <= 0f ||
+                !float.IsFinite(islandFloodMassKilograms) ||
+                !float.IsFinite(deltaTime) ||
+                !IsFiniteVector(floodCentroidWorld))
+            {
+                _hasIslandFloodCenterOfMassTarget = false;
+                _islandFloodCenterOfMassWeight01 = 0f;
+                return;
+            }
+
+            Vector3 localCentroid = transform.InverseTransformPoint(floodCentroidWorld);
+            Vector3 offsetFromCenter = localCentroid - _defaultCenterOfMassLocal;
+            float maxShift = ResolveMaximumCenterOfMassShiftMeters();
+            if (offsetFromCenter.sqrMagnitude > (maxShift * maxShift))
+                offsetFromCenter = offsetFromCenter.normalized * maxShift;
+
+            float effectiveMass = ResolveDryMassKilograms() + islandFloodMassKilograms;
+            _islandFloodCenterOfMassTargetLocal = _defaultCenterOfMassLocal + offsetFromCenter;
+            _islandFloodCenterOfMassWeight01 = Mathf.Clamp01(islandFloodMassKilograms / Mathf.Max(MinimumMassKilograms, effectiveMass));
+            _hasIslandFloodCenterOfMassTarget = _islandFloodCenterOfMassWeight01 > 0.001f;
+        }
+
         internal void DecayBulkheadFloodStress(float deltaTime)
         {
             if (deltaTime <= 0f || !float.IsFinite(deltaTime) || _bulkheadFloodStress01 <= 0f)
@@ -1122,7 +1292,10 @@ namespace Hecton8.Gameplay
             if (recovery <= 0f || !float.IsFinite(recovery))
                 return;
 
+            float previousStress = _bulkheadFloodStress01;
             _bulkheadFloodStress01 = Mathf.Max(0f, _bulkheadFloodStress01 - recovery);
+            if (Mathf.Abs(previousStress - _bulkheadFloodStress01) > 0.0001f)
+                BaseDegradationSystem.SynchronizeIntegrityState(this);
             if (_bulkheadFloodStress01 <= 0f)
                 _bulkheadFailureLatched = false;
         }
@@ -1154,7 +1327,10 @@ namespace Hecton8.Gameplay
             if (stressDelta <= 0f || !float.IsFinite(stressDelta))
                 return false;
 
+            float previousStress = _bulkheadFloodStress01;
             _bulkheadFloodStress01 = Mathf.Clamp01(_bulkheadFloodStress01 + stressDelta);
+            if (Mathf.Abs(previousStress - _bulkheadFloodStress01) > 0.0001f)
+                BaseDegradationSystem.SynchronizeIntegrityState(this);
             if (_bulkheadFloodStress01 < 1f || _bulkheadFailureLatched)
                 return false;
 
@@ -1233,7 +1409,7 @@ namespace Hecton8.Gameplay
 
                 case BaseModuleIntegrityState.Abandoned:
                     normalizedIntegrity = moduleTemplate != null
-                        ? Mathf.Clamp01(moduleTemplate.DefaultIntegrityState)
+                        ? Mathf.Min(0.4f, Mathf.Clamp01(moduleTemplate.DefaultIntegrityState))
                         : 0.2f;
                     flooded = moduleTemplate == null || normalizedIntegrity <= moduleTemplate.FloodedBelowIntegrityState;
                     break;
@@ -1337,6 +1513,10 @@ namespace Hecton8.Gameplay
             _floodedReefFloodSeconds = Mathf.Max(0f, floodedReefFloodSeconds);
             _interiorReefInfestationActive = interiorReefInfestationActive;
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
+            if (_interiorReefInfestationActive)
+                RegisterFloodedReefFaunaAnchor();
+            else
+                UnregisterFloodedReefFaunaAnchor();
             if (!flooded)
                 ResetBulkheadFloodStress();
             RefreshVisualStateImmediate();
@@ -1729,6 +1909,23 @@ namespace Hecton8.Gameplay
                 SLOW_TICK_DT);
         }
 
+        private void ApplyLocalGravityAnomalyRequest()
+        {
+            if (!localGravityAnomalyEnabled || _trackedPlayerMovement == null)
+                return;
+
+            float acceleration = Mathf.Max(0f, localGravityAccelerationMetersPerSecondSquared);
+            if (acceleration <= 0f)
+                return;
+
+            Vector3 localDirection = localGravityDirection.sqrMagnitude > 0.0001f
+                ? localGravityDirection.normalized
+                : Vector3.down;
+            Vector3 worldGravity = transform.TransformDirection(localDirection) * acceleration;
+            if (IsFiniteVector(worldGravity))
+                _trackedPlayerMovement.RequestLocalGravityOverride(worldGravity, Mathf.Max(0.1f, localGravityHoldSeconds));
+        }
+
         private void UpdateLifeSupport(float dt)
         {
             ModuleLifeSupportSignals signals = _lifeSupportComponent.Tick(
@@ -1882,7 +2079,7 @@ namespace Hecton8.Gameplay
                 halfExtents,
                 _interiorOverlapBuffer,
                 worldRotation,
-                ~0,
+                HectonLayerMasks.DefaultRaycastLayerMask,
                 QueryTriggerInteraction.Collide);
 
             for (int i = 0; i < overlapCount; i++)
@@ -1999,6 +2196,77 @@ namespace Hecton8.Gameplay
             return transform.TransformPoint(new Vector3(0f, localY, 0f)).y;
         }
 
+        private void ApplyDeepSeaCompressionState(bool force)
+        {
+            float depthMeters = ResolveExternalDepthMeters();
+            float axisScale = ResolvePressureCompressionAxisScale(depthMeters);
+            float volumeScale = Mathf.Clamp(axisScale * axisScale, 0.1f, 1f);
+
+            if (!force &&
+                Mathf.Abs(_pressureCompressionAxisScale - axisScale) <= 0.00001f &&
+                Mathf.Abs(_pressureCompressionVolumeScale - volumeScale) <= 0.00001f &&
+                Mathf.Abs(_pressureCompressionDepthMeters - depthMeters) <= 0.25f)
+            {
+                return;
+            }
+
+            _pressureCompressionAxisScale = axisScale;
+            _pressureCompressionVolumeScale = volumeScale;
+            _pressureCompressionDepthMeters = depthMeters;
+            _lifeSupportComponent.ApplyPressureCompressionScale(volumeScale);
+            ApplyPressureCompressionVisualScale(axisScale);
+
+            BaseDegradationSystem.SynchronizePressureCompression(
+                this,
+                Matrix4x4.Scale(new Vector3(axisScale, axisScale, 1f)),
+                volumeScale,
+                depthMeters);
+        }
+
+        private float ResolvePressureCompressionAxisScale(float depthMeters)
+        {
+            float startDepthMeters = Mathf.Max(0f, deepCompressionStartDepthMeters);
+            if (depthMeters <= startDepthMeters)
+                return 1f;
+
+            float hydrostaticPressureKPa = ResolveHydrostaticPressureKPa(depthMeters);
+            float startPressureKPa = ResolveHydrostaticPressureKPa(startDepthMeters);
+            float pressureRangeKPa = Mathf.Max(1f, deepCompressionFullPressureKPa - startPressureKPa);
+            float compression01 = Mathf.Clamp01((hydrostaticPressureKPa - startPressureKPa) / pressureRangeKPa);
+            return 1f - (compression01 * Mathf.Clamp(maximumDeepCompressionAxisLoss, 0f, 0.01f));
+        }
+
+        private static float ResolveHydrostaticPressureKPa(float depthMeters)
+        {
+            return SurfacePressureKPa + (Mathf.Max(0f, depthMeters) * SeawaterDensityKilogramsPerCubicMeter * GravityAccelerationMetersPerSecondSquared * 0.001f);
+        }
+
+        private void ApplyPressureCompressionVisualScale(float axisScale)
+        {
+            if (pressureCompressionVisualRoot == null)
+                return;
+
+            CapturePressureCompressionDefaults();
+            Vector3 nextScale = _defaultPressureCompressionVisualScale;
+            nextScale.x *= axisScale;
+            nextScale.y *= axisScale;
+            pressureCompressionVisualRoot.localScale = nextScale;
+        }
+
+        private void ResetPressureCompressionVisualState()
+        {
+            _pressureCompressionAxisScale = 1f;
+            _pressureCompressionVolumeScale = 1f;
+            _pressureCompressionDepthMeters = 0f;
+            _lifeSupportComponent.ApplyPressureCompressionScale(1f);
+
+            if (pressureCompressionVisualRoot == null)
+                return;
+
+            CapturePressureCompressionDefaults();
+            pressureCompressionVisualRoot.localScale = _defaultPressureCompressionVisualScale;
+        }
+
         private float ResolveRuntimeFloodLevel01()
         {
             if (_integrityComponent.IsFlooded)
@@ -2030,6 +2298,15 @@ namespace Hecton8.Gameplay
 
             _defaultFloodSurfaceLocalPosition = floodSurfacePlane.localPosition;
             _floodSurfaceDefaultsCaptured = true;
+        }
+
+        private void CapturePressureCompressionDefaults()
+        {
+            if (_pressureCompressionDefaultsCaptured || pressureCompressionVisualRoot == null)
+                return;
+
+            _defaultPressureCompressionVisualScale = pressureCompressionVisualRoot.localScale;
+            _pressureCompressionDefaultsCaptured = true;
         }
 
         private float ResolveFloodSurfaceMinimumLocalY()
@@ -2185,10 +2462,14 @@ namespace Hecton8.Gameplay
             _moduleRigidbody.mass = Mathf.Max(MinimumMassKilograms, ResolveDryMassKilograms());
             _moduleRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
             _moduleRigidbody.centerOfMass = _defaultCenterOfMassLocal;
+            _hasIslandFloodCenterOfMassTarget = false;
+            _islandFloodCenterOfMassWeight01 = 0f;
         }
 
         private void DisableUnmooredPhysics()
         {
+            _hasIslandFloodCenterOfMassTarget = false;
+            _islandFloodCenterOfMassWeight01 = 0f;
             if (_moduleRigidbody == null || !_moduleBodyDefaultsCaptured)
                 return;
 
@@ -2283,6 +2564,10 @@ namespace Hecton8.Gameplay
             if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
                 return atmosphereSystem.ResolveExternalDepthMeters();
 
+            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+            if (atmosphereManager != null)
+                return Mathf.Max(0f, atmosphereManager.SeaLevelY - transform.position.y);
+
             return 0f;
         }
 
@@ -2296,10 +2581,11 @@ namespace Hecton8.Gameplay
 
         private float ResolveBuoyancyDisplacementVolumeCubicMeters()
         {
+            float volumeScale = Mathf.Clamp(_pressureCompressionVolumeScale, 0.1f, 1f);
             if (moduleTemplate != null)
-                return Mathf.Max(0.1f, moduleTemplate.BuoyancyDisplacementVolumeCubicMeters);
+                return Mathf.Max(0.1f, moduleTemplate.BuoyancyDisplacementVolumeCubicMeters * volumeScale);
 
-            return Mathf.Max(0.1f, buoyancyDisplacementVolumeCubicMeters);
+            return Mathf.Max(0.1f, buoyancyDisplacementVolumeCubicMeters * volumeScale);
         }
 
         private float ResolveMaximumUnmooredAccelerationMetersPerSecondSquared()
@@ -2379,6 +2665,14 @@ namespace Hecton8.Gameplay
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
+        }
+
         private float ResolveMaximumCenterOfMassShiftMeters()
         {
             if (moduleTemplate != null)
@@ -2409,6 +2703,16 @@ namespace Hecton8.Gameplay
                     offsetFromCenter = offsetFromCenter.normalized * maxShift;
 
                 targetCenterOfMass += offsetFromCenter * floodFill01;
+            }
+
+            if (_hasIslandFloodCenterOfMassTarget && _islandFloodCenterOfMassWeight01 > 0.001f)
+            {
+                Vector3 islandOffset = _islandFloodCenterOfMassTargetLocal - _defaultCenterOfMassLocal;
+                float maxShift = ResolveMaximumCenterOfMassShiftMeters();
+                if (islandOffset.sqrMagnitude > (maxShift * maxShift))
+                    islandOffset = islandOffset.normalized * maxShift;
+
+                targetCenterOfMass += islandOffset * _islandFloodCenterOfMassWeight01;
             }
 
             float tauSeconds = ResolveCenterOfMassShiftTauSeconds();
@@ -2442,6 +2746,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _trackedPlayerSurvival = resolvedSurvival;
+            _trackedPlayerMovement = other.GetComponentInParent<HectonPlayerMovement>();
             if (notifyEnter)
                 ModuleStatusEvents.NotifyEnter(this);
         }
@@ -2475,6 +2780,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _trackedPlayerSurvival = null;
+            _trackedPlayerMovement = null;
             ModuleStatusEvents.NotifyExit(this);
         }
 
@@ -2586,6 +2892,33 @@ namespace Hecton8.Gameplay
             DisableUnmooredPhysics();
         }
 
+        internal void ApplyConstructedWeldSnap(Vector3 targetPosition, Quaternion targetRotation)
+        {
+            if (!IsFiniteVector(targetPosition) || !IsFiniteQuaternion(targetRotation))
+                return;
+
+            CacheReferences();
+            _isUnmoored = false;
+            TryUnregisterFixedTick();
+            ClearQueuedHydroStructuralLoad();
+
+            if (_moduleRigidbody == null)
+            {
+                transform.SetPositionAndRotation(targetPosition, targetRotation);
+                return;
+            }
+
+            CaptureModuleRigidbodyDefaults();
+            if (!PhysicsForceRouter.ApplyKinematicWeldSnap(_moduleRigidbody, targetPosition, targetRotation))
+                transform.SetPositionAndRotation(targetPosition, targetRotation);
+
+            _defaultBodyIsKinematic = true;
+            _defaultBodyUseGravity = false;
+            _defaultCollisionDetectionMode = _moduleRigidbody.collisionDetectionMode;
+            _defaultInterpolation = _moduleRigidbody.interpolation;
+            _moduleBodyDefaultsCaptured = true;
+        }
+
         internal void SetEmergencyBulkheadLockdown(bool lockedDown)
         {
             if (!ResolveEmergencyAirlockRole())
@@ -2676,6 +3009,29 @@ namespace Hecton8.Gameplay
             atmosphereSystem.InjectOxygenUnits(roomIndex, oxygenUnits);
         }
 
+        /// <summary>
+        /// Allows the atmosphere owner to sum mature oxygen-producing cultivation slots directly from the native slot lane.
+        /// </summary>
+        public void ApplyCultivationOxygen(CultivationManager cultivationManager, float oxygenUnitsPerMaturePlant)
+        {
+            if (cultivationManager == null ||
+                oxygenUnitsPerMaturePlant <= 0f ||
+                !TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) ||
+                atmosphereSystem == null)
+            {
+                return;
+            }
+
+            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            if (roomIndex < 0)
+                return;
+
+            atmosphereSystem.InjectCultivationOxygenFromSlots(
+                roomIndex,
+                cultivationManager.SlotStateReadOnly,
+                oxygenUnitsPerMaturePlant);
+        }
+
         internal float ParasiteInfectionLevel => _parasiteInfectionLevel;
 
         internal bool SetParasiteInfestation(float powerDrainWatts, float infectionLevel)
@@ -2722,6 +3078,24 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        internal bool SetParasiteStructuralEffects(float addedMassKilograms, float thermalInsulation01, float bioReactorOverheatMultiplier)
+        {
+            float sanitizedMass = Mathf.Max(0f, addedMassKilograms);
+            float sanitizedInsulation = Mathf.Clamp01(thermalInsulation01);
+            float sanitizedOverheatMultiplier = Mathf.Max(1f, bioReactorOverheatMultiplier);
+            if (Mathf.Abs(_parasiteAddedMassKilograms - sanitizedMass) <= 0.1f &&
+                Mathf.Abs(_parasiteThermalInsulation01 - sanitizedInsulation) <= 0.001f &&
+                Mathf.Abs(_parasiteBioReactorOverheatMultiplier - sanitizedOverheatMultiplier) <= 0.001f)
+            {
+                return false;
+            }
+
+            _parasiteAddedMassKilograms = sanitizedMass;
+            _parasiteThermalInsulation01 = sanitizedInsulation;
+            _parasiteBioReactorOverheatMultiplier = sanitizedOverheatMultiplier;
+            return true;
+        }
+
         internal bool SetCultivationScrubberLoad(float powerDrainWatts)
         {
             float sanitizedDrain = Mathf.Max(0f, powerDrainWatts);
@@ -2760,6 +3134,13 @@ namespace Hecton8.Gameplay
 
         internal bool TryGetMatureParasiteRootLoad(out float drainWatts, out float infectionLevel)
         {
+            if (_interiorReefInfestationActive)
+            {
+                drainWatts = 0f;
+                infectionLevel = 0f;
+                return false;
+            }
+
             drainWatts = _parasiteRootPowerDrainWatts;
             infectionLevel = _parasiteRootInfectionLevel;
             return drainWatts > 0.01f;
@@ -2821,6 +3202,22 @@ namespace Hecton8.Gameplay
                 : 0f;
         }
 
+        internal bool TryInjectHostRoomTemperatureDeltaCelsius(float deltaCelsius)
+        {
+            if (!(deltaCelsius > 0f) || !float.IsFinite(deltaCelsius))
+                return false;
+
+            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
+                return false;
+
+            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            if (roomIndex < 0)
+                return false;
+
+            atmosphereSystem.InjectRoomTemperatureDeltaCelsius(roomIndex, deltaCelsius);
+            return true;
+        }
+
         internal bool TryGetHostedBioReactor(out BioReactor reactor)
         {
             if (TryGetComponent(out reactor))
@@ -2864,7 +3261,10 @@ namespace Hecton8.Gameplay
             }
 
             if (_interiorReefInfestationActive)
+            {
+                RegisterFloodedReefFaunaAnchor();
                 return;
+            }
 
             _floodedReefFloodSeconds += Mathf.Max(0f, deltaTime);
             if (_floodedReefFloodSeconds < ResolveFloodedReefActivationSeconds())
@@ -2872,7 +3272,45 @@ namespace Hecton8.Gameplay
 
             _interiorReefInfestationActive = true;
             SetInteriorReefVisualActive(true);
+            TryMarkPowerGridDirty();
+            NotifyParasiteRootGraphChanged();
+            RegisterFloodedReefFaunaAnchor();
             BaseDegradationSystem.SynchronizeIntegrityState(this);
+        }
+
+        private void RegisterFloodedReefFaunaAnchor()
+        {
+            WorldFaunaSpawnRegistry registry = WorldFaunaSpawnRegistry.ActiveRuntimeInstance;
+            if (registry == null)
+                return;
+
+            Vector3 anchorPosition = ResolveInteriorHazardWorldPosition();
+            float anchorRadius = parasiteSporeHazardRadius;
+            if (TryGetInteriorHazardBounds(out Vector3 interiorCenter, out float interiorRadius))
+            {
+                anchorPosition = interiorCenter;
+                anchorRadius = interiorRadius;
+            }
+
+            registry.RegisterRuntimeReefAnchor(
+                ResolveFloodedReefFaunaAnchorKey(),
+                anchorPosition,
+                Mathf.Max(4f, anchorRadius),
+                FloodedReefFaunaFamilyId);
+        }
+
+        private void UnregisterFloodedReefFaunaAnchor()
+        {
+            WorldFaunaSpawnRegistry registry = WorldFaunaSpawnRegistry.ActiveRuntimeInstance;
+            if (registry == null)
+                return;
+
+            registry.UnregisterRuntimeReefAnchor(ResolveFloodedReefFaunaAnchorKey());
+        }
+
+        private long ResolveFloodedReefFaunaAnchorKey()
+        {
+            return unchecked((long)EntityId.ToULong(GetEntityId()) ^ FloodedReefFaunaAnchorSalt);
         }
 
         private void SetInteriorReefVisualActive(bool active)
@@ -2999,6 +3437,53 @@ namespace Hecton8.Gameplay
             return radius > 0.01f;
         }
 
+        private void EvaluateCatastrophicImplosion()
+        {
+            bool abandonedFailure = IntegrityState == BaseModuleIntegrityState.Abandoned ||
+                                    (!IsBreached && IntegrityStateNormalized <= 0.4f);
+            if (_implosionTriggered ||
+                !abandonedFailure ||
+                ResolveExternalDepthMeters() < ResolveImplosionDepthThresholdMeters())
+            {
+                return;
+            }
+
+            TriggerCatastrophicImplosion();
+        }
+
+        private void TriggerCatastrophicImplosion()
+        {
+            if (_implosionTriggered)
+                return;
+
+            _implosionTriggered = true;
+            ForceFlood();
+
+            Vector3 roomCenter = transform.position;
+            float influenceRadius = ResolveImplosionImpulseRadiusMeters();
+            if (TryGetInteriorHazardBounds(out Vector3 resolvedCenter, out float resolvedRadius))
+            {
+                roomCenter = resolvedCenter;
+                influenceRadius = Mathf.Max(influenceRadius, resolvedRadius);
+            }
+
+            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(ResolveExternalDepthMeters()) - SurfacePressureKPa);
+            float rawImpulse = pressureDeltaKPa * 1000f * ResolveBuoyancyDisplacementVolumeCubicMeters() * 0.001f;
+            if (rawImpulse > 0f && float.IsFinite(rawImpulse))
+            {
+                PhysicsApplySystem.TriggerImplosionImpulse(
+                    roomCenter,
+                    influenceRadius,
+                    rawImpulse,
+                    ResolveImplosionMaximumImpulseNewtonSeconds());
+            }
+
+            SetAnchoredState(false);
+            NotifyModuleImploded();
+            NotifyEmergencyLockdownStateChanged();
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
+        }
+
         private void HandleIntegrityCollapse(Vector3 localBreachPoint)
         {
             if (_breachLatched)
@@ -3007,6 +3492,7 @@ namespace Hecton8.Gameplay
             _breachLatched = true;
             _breachCenterOfMassTargetLocal = localBreachPoint;
             _hasBreachCenterOfMassTarget = true;
+            TriggerBreachDepressurizationVortex(localBreachPoint);
             if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
             {
                 NotifyEmergencyLockdownStateChanged();
@@ -3017,6 +3503,43 @@ namespace Hecton8.Gameplay
                 transform.TransformPoint(localBreachPoint),
                 ResolveBreachAreaSquareMeters());
             NotifyEmergencyLockdownStateChanged();
+        }
+
+        private void NotifyModuleImploded()
+        {
+            ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            if (manager != null)
+                manager.NotifyModuleImploded(this);
+        }
+
+        private void TriggerBreachDepressurizationVortex(Vector3 localBreachPoint)
+        {
+            if (breachVortexDurationSeconds <= 0f || breachVortexMaximumAccelerationMetersPerSecondSquared <= 0f)
+                return;
+
+            Vector3 breachWorldPosition = transform.TransformPoint(localBreachPoint);
+            Vector3 roomCenter = transform.position;
+            float influenceRadius = 3f;
+            if (TryGetInteriorHazardBounds(out Vector3 resolvedCenter, out float resolvedRadius))
+            {
+                roomCenter = resolvedCenter;
+                influenceRadius = resolvedRadius;
+            }
+
+            influenceRadius = Mathf.Max(0.5f, influenceRadius + Mathf.Max(0f, breachVortexRadiusPaddingMeters));
+            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(ResolveExternalDepthMeters()) - SurfacePressureKPa);
+            float rawForceNewtons = pressureDeltaKPa * 1000f * ResolveBreachAreaSquareMeters();
+            float baseAcceleration = rawForceNewtons / Mathf.Max(1f, breachVortexReferenceMassKilograms);
+            if (baseAcceleration <= 0.0001f || !float.IsFinite(baseAcceleration))
+                return;
+
+            PhysicsApplySystem.TriggerDepressurizationVortex(
+                roomCenter,
+                breachWorldPosition,
+                influenceRadius,
+                baseAcceleration,
+                breachVortexMaximumAccelerationMetersPerSecondSquared,
+                breachVortexDurationSeconds);
         }
 
         private bool TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem)
@@ -3034,6 +3557,21 @@ namespace Hecton8.Gameplay
                 return Mathf.Max(0.05f, moduleTemplate.BreachAreaSquareMeters);
 
             return 1.2f;
+        }
+
+        private float ResolveImplosionDepthThresholdMeters()
+        {
+            return Mathf.Max(0f, implosionDepthThresholdMeters);
+        }
+
+        private float ResolveImplosionImpulseRadiusMeters()
+        {
+            return Mathf.Max(0.5f, implosionImpulseRadiusMeters);
+        }
+
+        private float ResolveImplosionMaximumImpulseNewtonSeconds()
+        {
+            return Mathf.Max(0f, implosionMaximumImpulseNewtonSeconds);
         }
 
         private Vector3 ResolveDefaultBreachLocalPoint()
@@ -3072,6 +3610,7 @@ namespace Hecton8.Gameplay
                 co2Level,
                 co2GenerationRate,
                 co2CriticalThreshold);
+            _lifeSupportComponent.ApplyPressureCompressionScale(_pressureCompressionVolumeScale);
         }
 
         private void UpdateDrainDiagnostics()
@@ -3094,6 +3633,18 @@ namespace Hecton8.Gameplay
 
             if (signals.Co2CriticalRaised)
                 RecordCascadeFailure("CO2 SCRUBBER LOCKOUT", _lifeSupportComponent.BuildCo2CriticalSummary());
+
+            if (signals.Co2HypoxiaRaised)
+                TriggerCo2HypoxiaDistortion();
+        }
+
+        private void TriggerCo2HypoxiaDistortion()
+        {
+            if (_trackedPlayerMovement == null)
+                return;
+
+            float intensity = Mathf.InverseLerp(0.8f, 1f, Co2Normalized);
+            _trackedPlayerMovement.TriggerHypoxiaVisorDistortion(Mathf.Clamp01(intensity), 0.45f, 2.5f);
         }
 
 #if UNITY_EDITOR
@@ -3133,6 +3684,19 @@ namespace Hecton8.Gameplay
             if (maxCenterOfMassShiftPerTickMeters < 0.001f) maxCenterOfMassShiftPerTickMeters = 0.001f;
             if (hullCrushDepthMeters < 1f) hullCrushDepthMeters = 1f;
             if (maximumHydroStructuralLoadNewtons < 1f) maximumHydroStructuralLoadNewtons = 1f;
+            if (deepCompressionStartDepthMeters < 0f) deepCompressionStartDepthMeters = 0f;
+            if (deepCompressionFullPressureKPa < 1f) deepCompressionFullPressureKPa = 1f;
+            if (maximumDeepCompressionAxisLoss < 0f) maximumDeepCompressionAxisLoss = 0f;
+            if (maximumDeepCompressionAxisLoss > 0.01f) maximumDeepCompressionAxisLoss = 0.01f;
+            if (breachVortexDurationSeconds < 0f) breachVortexDurationSeconds = 0f;
+            if (breachVortexReferenceMassKilograms < 1f) breachVortexReferenceMassKilograms = 1f;
+            if (breachVortexMaximumAccelerationMetersPerSecondSquared < 0f) breachVortexMaximumAccelerationMetersPerSecondSquared = 0f;
+            if (breachVortexRadiusPaddingMeters < 0f) breachVortexRadiusPaddingMeters = 0f;
+            if (implosionDepthThresholdMeters < 0f) implosionDepthThresholdMeters = 0f;
+            if (implosionImpulseRadiusMeters < 0.5f) implosionImpulseRadiusMeters = 0.5f;
+            if (implosionMaximumImpulseNewtonSeconds < 0f) implosionMaximumImpulseNewtonSeconds = 0f;
+            if (localGravityAccelerationMetersPerSecondSquared < 0f) localGravityAccelerationMetersPerSecondSquared = 0f;
+            if (localGravityHoldSeconds < 0.1f) localGravityHoldSeconds = 0.1f;
             if (bulkheadFailureWaterMassKilograms < 1f) bulkheadFailureWaterMassKilograms = 1f;
             if (bulkheadStressRatePerSecond < 0.001f) bulkheadStressRatePerSecond = 0.001f;
             if (bulkheadStressRecoveryPerSecond < 0f) bulkheadStressRecoveryPerSecond = 0f;

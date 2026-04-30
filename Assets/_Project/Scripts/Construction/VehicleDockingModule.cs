@@ -24,6 +24,24 @@ namespace Hecton8.Construction
         [Tooltip("Deterministic docking travel duration in seconds from trigger capture to hard-lock.")]
         [SerializeField, Range(0.25f, 8f)] private float dockingDurationSeconds = 2f;
 
+        [Tooltip("PD position spring gain used to pull the transport toward the moonpool anchor.")]
+        [SerializeField, Min(0f)] private float dockingPositionSpring = 20f;
+
+        [Tooltip("PD position damping gain used to suppress overshoot during magnetic capture.")]
+        [SerializeField, Min(0f)] private float dockingPositionDamping = 8f;
+
+        [Tooltip("PD rotation spring gain used to align the transport to the moonpool anchor.")]
+        [SerializeField, Min(0f)] private float dockingRotationSpring = 18f;
+
+        [Tooltip("PD rotation damping gain used to suppress angular overshoot during magnetic capture.")]
+        [SerializeField, Min(0f)] private float dockingRotationDamping = 7f;
+
+        [Tooltip("Position error below which the dock can hard-lock before the duration cap.")]
+        [SerializeField, Min(0.001f)] private float dockingCaptureDistanceEpsilon = 0.025f;
+
+        [Tooltip("Rotation error in degrees below which the dock can hard-lock before the duration cap.")]
+        [SerializeField, Min(0.01f)] private float dockingCaptureAngleEpsilonDegrees = 1f;
+
         [Tooltip("Normalized transport charge restored per second while the dock is powered.")]
         [SerializeField, Range(0f, 1f)] private float chargeRatePerSecond = 0.2f;
 
@@ -63,6 +81,8 @@ namespace Hecton8.Construction
         private RigidbodyConstraints _cachedBodyConstraints;
         private Vector3 _dockingStartPosition;
         private Quaternion _dockingStartRotation = Quaternion.identity;
+        private Vector3 _dockingLinearVelocity;
+        private Vector3 _dockingAngularVelocityRadians;
         private float _dockingElapsedSeconds;
         private MountablePlayerTransport _mountedTransportLockOwner;
 
@@ -108,6 +128,9 @@ namespace Hecton8.Construction
             _activelyCharging = false;
             _dockingInProgress = false;
             _isDocked = false;
+            _dockingElapsedSeconds = 0f;
+            _dockingLinearVelocity = Vector3.zero;
+            _dockingAngularVelocityRadians = Vector3.zero;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryRegister();
@@ -121,6 +144,9 @@ namespace Hecton8.Construction
             _activelyCharging = false;
             _dockingInProgress = false;
             _isDocked = false;
+            _dockingElapsedSeconds = 0f;
+            _dockingLinearVelocity = Vector3.zero;
+            _dockingAngularVelocityRadians = Vector3.zero;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryUnregister();
@@ -246,6 +272,11 @@ namespace Hecton8.Construction
             ResolveDockedBody(transportBehaviour);
             BeginDockingControlLock(transportBehaviour);
             _dockingElapsedSeconds = 0f;
+            if (_dockedBody == null)
+            {
+                _dockingLinearVelocity = Vector3.zero;
+                _dockingAngularVelocityRadians = Vector3.zero;
+            }
             _dockingInProgress = true;
             _isDocked = false;
         }
@@ -272,6 +303,8 @@ namespace Hecton8.Construction
             _dockingInProgress = false;
             _isDocked = false;
             _dockingElapsedSeconds = 0f;
+            _dockingLinearVelocity = Vector3.zero;
+            _dockingAngularVelocityRadians = Vector3.zero;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
         }
@@ -293,6 +326,8 @@ namespace Hecton8.Construction
             _cachedBodyConstraints = _dockedBody.constraints;
             _dockingStartPosition = _dockedBody.position;
             _dockingStartRotation = _dockedBody.rotation;
+            _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockedBody.linearVelocity);
+            _dockingAngularVelocityRadians = HectonPlayerMotor.SafeVelocity(_dockedBody.angularVelocity);
             _dockedBody.linearVelocity = Vector3.zero;
             _dockedBody.angularVelocity = Vector3.zero;
             _dockedBody.useGravity = false;
@@ -318,26 +353,52 @@ namespace Hecton8.Construction
         private void AdvanceDockingPose(float fixedDeltaTime)
         {
             float duration = Mathf.Max(0.25f, dockingDurationSeconds);
-            _dockingElapsedSeconds = Mathf.Min(duration, _dockingElapsedSeconds + Mathf.Max(0f, fixedDeltaTime));
+            float safeDeltaTime = Mathf.Max(0.0001f, fixedDeltaTime);
+            _dockingElapsedSeconds = Mathf.Min(duration, _dockingElapsedSeconds + safeDeltaTime);
             Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
-            float normalizedTime = Mathf.Clamp01(_dockingElapsedSeconds / duration);
-            float smoothTime = normalizedTime * normalizedTime * (3f - 2f * normalizedTime);
-            Vector3 targetPosition = Vector3.LerpUnclamped(_dockingStartPosition, anchor.position, smoothTime);
-            Quaternion targetRotation = Quaternion.Slerp(_dockingStartRotation, anchor.rotation, smoothTime);
+            Vector3 anchorPosition = anchor.position;
+            Quaternion anchorRotation = anchor.rotation;
 
             if (_dockedBody != null)
             {
-                _dockedBody.linearVelocity = Vector3.zero;
-                _dockedBody.angularVelocity = Vector3.zero;
-                _dockedBody.MovePosition(targetPosition);
-                _dockedBody.MoveRotation(targetRotation);
+                Vector3 currentPosition = _dockedBody.position;
+                Quaternion currentRotation = _dockedBody.rotation;
+                Vector3 positionError = anchorPosition - currentPosition;
+                Vector3 positionAcceleration = (positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping);
+                _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockingLinearVelocity + (positionAcceleration * safeDeltaTime));
+                Vector3 nextPosition = currentPosition + (_dockingLinearVelocity * safeDeltaTime);
+
+                Vector3 rotationErrorRadians = ResolveRotationErrorRadians(currentRotation, anchorRotation);
+                Vector3 angularAcceleration = (rotationErrorRadians * dockingRotationSpring) - (_dockingAngularVelocityRadians * dockingRotationDamping);
+                _dockingAngularVelocityRadians = HectonPlayerMotor.SafeVelocity(_dockingAngularVelocityRadians + (angularAcceleration * safeDeltaTime));
+                Quaternion nextRotation = IntegrateAngularVelocity(currentRotation, _dockingAngularVelocityRadians, safeDeltaTime);
+
+                _dockedBody.linearVelocity = _dockingLinearVelocity;
+                _dockedBody.angularVelocity = _dockingAngularVelocityRadians;
+                _dockedBody.MovePosition(nextPosition);
+                _dockedBody.MoveRotation(nextRotation);
             }
             else if (_dockedBehaviour != null)
             {
-                _dockedBehaviour.transform.SetPositionAndRotation(targetPosition, targetRotation);
+                Transform transportTransform = _dockedBehaviour.transform;
+                Vector3 positionError = anchorPosition - transportTransform.position;
+                Vector3 positionAcceleration = (positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping);
+                _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockingLinearVelocity + (positionAcceleration * safeDeltaTime));
+                Vector3 rotationErrorRadians = ResolveRotationErrorRadians(transportTransform.rotation, anchorRotation);
+                Vector3 angularAcceleration = (rotationErrorRadians * dockingRotationSpring) - (_dockingAngularVelocityRadians * dockingRotationDamping);
+                _dockingAngularVelocityRadians = HectonPlayerMotor.SafeVelocity(_dockingAngularVelocityRadians + (angularAcceleration * safeDeltaTime));
+                transportTransform.SetPositionAndRotation(
+                    transportTransform.position + (_dockingLinearVelocity * safeDeltaTime),
+                    IntegrateAngularVelocity(transportTransform.rotation, _dockingAngularVelocityRadians, safeDeltaTime));
             }
 
-            if (normalizedTime < 0.9999f)
+            bool durationElapsed = _dockingElapsedSeconds >= duration - 0.0001f;
+            bool positionCaptured = _dockedBehaviour != null &&
+                                    Vector3.SqrMagnitude(anchorPosition - _dockedBehaviour.transform.position) <=
+                                    dockingCaptureDistanceEpsilon * dockingCaptureDistanceEpsilon;
+            bool rotationCaptured = _dockedBehaviour != null &&
+                                    Quaternion.Angle(_dockedBehaviour.transform.rotation, anchorRotation) <= dockingCaptureAngleEpsilonDegrees;
+            if (!durationElapsed && (!positionCaptured || !rotationCaptured))
                 return;
 
             FinalizeDockedTransport();
@@ -358,6 +419,37 @@ namespace Hecton8.Construction
             ConnectDockedCargoCrates();
             _dockingInProgress = false;
             _isDocked = true;
+            _dockingLinearVelocity = Vector3.zero;
+            _dockingAngularVelocityRadians = Vector3.zero;
+        }
+
+        private static Vector3 ResolveRotationErrorRadians(Quaternion currentRotation, Quaternion targetRotation)
+        {
+            Quaternion error = targetRotation * Quaternion.Inverse(currentRotation);
+            error.ToAngleAxis(out float angleDegrees, out Vector3 axis);
+            if (angleDegrees > 180f)
+                angleDegrees -= 360f;
+
+            if (!IsFiniteVector(axis) || axis.sqrMagnitude <= 0.000001f || !float.IsFinite(angleDegrees))
+                return Vector3.zero;
+
+            return axis.normalized * (angleDegrees * Mathf.Deg2Rad);
+        }
+
+        private static Quaternion IntegrateAngularVelocity(Quaternion currentRotation, Vector3 angularVelocityRadians, float deltaTime)
+        {
+            float angularSpeed = angularVelocityRadians.magnitude;
+            if (angularSpeed <= 0.0001f || !float.IsFinite(angularSpeed))
+                return currentRotation;
+
+            Vector3 axis = angularVelocityRadians / angularSpeed;
+            return Quaternion.AngleAxis(angularSpeed * Mathf.Rad2Deg * Mathf.Max(0f, deltaTime), axis) * currentRotation;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
+                     float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
         }
 
         private void BeginDockingControlLock(MonoBehaviour transportBehaviour)

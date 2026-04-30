@@ -130,6 +130,34 @@ Unmoored consequences:
 
 If no anchor nodes exist in the current habitat island, the entire island becomes unmoored on the same rebuild.
 
+## Synthetic Parasite Root Nodes
+
+Parasite power drain is represented inside the habitat CSR snapshot as a synthetic module node. The parasite does not write directly into the power solver and does not mutate authored module templates.
+
+Ownership:
+
+- `Assets/_Project/Scripts/World/FloraInteractionManager.cs` owns root exposure, cutting, and parasite lifecycle state.
+- `Assets/_Project/Scripts/BaseModule.cs` stores the host module's runtime infestation level and `RootPowerDrainWatts`.
+- `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` owns synthetic node injection during graph rebuild.
+
+Injection sequence:
+
+1. A parasite attaches to a concrete `BaseModule` and calls `SetParasiteInfestation(level, rootPowerDrainWatts)`.
+2. The construction manager requests a habitat graph rebuild for the affected module.
+3. `HabitatGraphManager.AppendParasiteRootNodes()` appends one synthetic `ModuleRecord` for each infected host with non-zero root drain.
+4. The synthetic record stores `IsSyntheticParasiteRoot = true`, `HostModuleInstanceId`, and `SyntheticPowerDrainWatts`.
+5. `BuildNodeRecords()` publishes that record into CSR with `CurrentLoad = -SyntheticPowerDrainWatts`.
+6. Cutting the parasite clears the host infestation state, requests another CSR rebuild, and the synthetic node disappears on the next graph publication.
+
+Sign convention:
+
+```csharp
+if (record.IsSyntheticParasiteRoot)
+    node.CurrentLoad = -record.SyntheticPowerDrainWatts;
+```
+
+Negative load is a consumer drain. It is not generation and must not be offset before the logistics solver evaluates the island.
+
 ## Emergency Bulkhead Adjacency
 
 Emergency airlock lockdown is driven from the same CSR snapshot.
@@ -148,6 +176,85 @@ For each airlock node:
 - mirror that state into `LogisticsModuleStatusBits.EmergencyLockdown`
 
 This keeps structural anchor detection, rupture isolation, and emergency door response on one authoritative topology rebuild.
+
+Manual override:
+
+- quarantined `BaseAirlock` instances expose `Weld` and `PlasmaCut` interaction vulnerability masks
+- continuous laser / weld heat accumulates for the authored override duration
+- completion calls `SetEmergencyBulkheadLockdown(false)` and floods the protected module from the door point
+- the breach point is reused as the flooding center-of-mass target and as the source of the transient depressurization vortex
+
+## Hydro-Structural Flood Mass
+
+Flooded rooms contribute physical mass to the graph:
+
+```csharp
+FloodMassKg = FloodLevel01 * VolumeM3 * 1025
+DownwardLoadN = FloodMassKg * 9.81
+```
+
+`HabitatGraphManager.ApplyHydrodynamicStress()` performs two passes:
+
+1. queue the local downward hydro load into each unmoored `BaseModule`
+2. traverse each CSR island and compute the weighted flood centroid
+
+Island centroid:
+
+```csharp
+weighted = sum(module.position * module.FloodMassKg)
+centroid = weighted / sum(FloodMassKg)
+```
+
+The centroid is sent back to each unmoored module. `BaseModule.FixedTick()` then blends its Rigidbody `centerOfMass` toward that centroid, clamped by the authored maximum center-of-mass shift and per-tick solver limit. This makes flooded wings tilt toward the flooded mass instead of sinking as perfectly vertical blocks.
+
+Hydro-shear rupture remains edge-local:
+
+```csharp
+if abs(FloodMassA - FloodMassB) > ShearThreshold:
+    edge.Severed = true
+    nodeA.Flags |= Ruptured
+    nodeB.Flags |= Ruptured
+```
+
+## Catastrophic Implosion
+
+Deep abandoned modules implode when:
+
+```csharp
+IntegrityState == Abandoned || IntegrityStateNormalized <= 0.4
+ExternalDepthMeters >= 2000
+```
+
+Implosion is one-shot per module. Runtime effects:
+
+- force the module flooded
+- dispatch a `ForceMode.Impulse` packet through `PhysicsApplySystem`
+- pull player, loose pickups, resources, scannables, and bioforms within `30m` toward the module center
+- force the module unmoored
+- mark the module as imploded
+- rebuild the habitat graph
+
+Unity joint destruction is intentionally not used. Project physics mandate forbids Unity joints, including `ConfigurableJoint`. The authoritative equivalent is CSR edge severing: during the next rebuild, any edge connected to an imploded module is marked ruptured and excluded from CSR publication.
+
+## Emergency Power Rerouting
+
+Power routing uses the same logistics graph principles, but the owner is `PowerGrid`.
+
+Reroute rule:
+
+- ruptured `PowerNode` endpoints do not publish power edges
+- consumers on ruptured nodes are rejected by `LogisticsNetworkGraph.CanServeConsumer`
+- the remaining CSR graph naturally performs BFS / component traversal around the failed node if an alternate physical path exists
+- if no alternate path exists, the consumer becomes isolated and brownout is applied
+
+Resistance remains part of the scheduled distribution solve:
+
+```csharp
+CombinedResistance = EdgeResistance + SourceNode.Resistance + DestinationNode.Resistance
+Conductance = 1 / CombinedResistance
+```
+
+High-resistance alternate paths reduce propagated potential and increase node load. Overloaded nodes inherit `LogisticsNodeFlags.Overloaded`; consumer priority and component supply ratio then determine the brownout tier.
 
 ## Bishop Frame Spline Contract
 

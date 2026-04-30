@@ -24,7 +24,7 @@ namespace Hecton8.Caves
         [Header("── Ceiling Sampling ──────────────────")]
         [SerializeField]
         [Tooltip("Layer mask sampled when probing cave ceilings with Physics.RaycastNonAlloc.")]
-        private LayerMask ceilingMask = (1 << 8) | (1 << 9) | (1 << 10);
+        private LayerMask ceilingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [SerializeField, Range(0.05f, 4f)]
         [Tooltip("Distance above the predicted ceiling plane where anchor-cast rays begin.")]

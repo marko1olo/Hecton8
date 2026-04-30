@@ -1,0 +1,3293 @@
+﻿diff --git a/Assets/_Project/Scripts/BaseModule.cs b/Assets/_Project/Scripts/BaseModule.cs
+index 2bf693ad..2d22bc13 100644
+--- a/Assets/_Project/Scripts/BaseModule.cs
++++ b/Assets/_Project/Scripts/BaseModule.cs
+@@ -130,9 +130,23 @@ namespace Hecton8.Gameplay
+         private const float DefaultBulkheadFailureWaterMassKilograms = 18000f;
+         private const float DefaultBulkheadStressRatePerSecond = 0.035f;
+         private const float DefaultBulkheadStressRecoveryPerSecond = 0.01f;
++        private const float SurfacePressureKPa = 101.325f;
++        private const float DefaultDeepCompressionStartDepthMeters = 4000f;
++        private const float DefaultDeepCompressionFullPressureKPa = 60000f;
++        private const float DefaultMaximumDeepCompressionAxisLoss = 0.001f;
++        private const float DefaultBreachVortexDurationSeconds = 5f;
++        private const float DefaultBreachVortexReferenceMassKilograms = 80f;
++        private const float DefaultBreachVortexMaximumAccelerationMetersPerSecondSquared = 45f;
++        private const float DefaultBreachVortexRadiusPaddingMeters = 1.25f;
++        private const float DefaultImplosionDepthThresholdMeters = 2000f;
++        private const float DefaultImplosionImpulseRadiusMeters = 30f;
++        private const float DefaultImplosionMaximumImpulseNewtonSeconds = 65000f;
++        private const float DefaultLocalGravityHoldSeconds = 0.75f;
+         private const float DefaultInGameDaySeconds = 3600f;
+         private const float DefaultFloodedReefActivationDays = 3f;
++        private const int FloodedReefFaunaAnchorSalt = unchecked((int)0x52EF0A11);
+         private const int ParasiteSporeHazardThreshold = 5;
++        private const string FloodedReefFaunaFamilyId = "fauna.family.reef_small";
+         private const string FoundationPersistentId = "Build_Foundation_Platform";
+         private const string PylonPersistentId = "Build_Utility_Pylon";
+         private const string AirlockPersistentId = "Build_Airlock_Hatch";
+@@ -199,6 +213,55 @@ namespace Hecton8.Gameplay
+         [Tooltip("Absolute cap for graph-driven hydro-structural downward load queued into an unmoored module body.")]
+         [SerializeField, Min(1f)] private float maximumHydroStructuralLoadNewtons = DefaultMaximumHydroStructuralLoadNewtons;
+ 
++        [Header("Abyssal Pressure Compression")]
++        [Tooltip("Optional visual root scaled by abyssal pressure. Leave null to keep colliders and socket transforms authoritative.")]
++        [SerializeField] private Transform pressureCompressionVisualRoot;
++
++        [Tooltip("Depth in meters where deep-sea pressure begins reducing room volume.")]
++        [SerializeField, Min(0f)] private float deepCompressionStartDepthMeters = DefaultDeepCompressionStartDepthMeters;
++
++        [Tooltip("Hydrostatic pressure in kPa where the authored maximum compression is reached.")]
++        [SerializeField, Min(1f)] private float deepCompressionFullPressureKPa = DefaultDeepCompressionFullPressureKPa;
++
++        [Tooltip("Maximum X/Y visual axis loss at full crush pressure. 0.001 = one millimeter per meter.")]
++        [SerializeField, Range(0f, 0.01f)] private float maximumDeepCompressionAxisLoss = DefaultMaximumDeepCompressionAxisLoss;
++
++        [Header("Breach Vortex")]
++        [Tooltip("Duration in seconds for the transient depressurization vortex emitted on module breach.")]
++        [SerializeField, Min(0f)] private float breachVortexDurationSeconds = DefaultBreachVortexDurationSeconds;
++
++        [Tooltip("Reference mass used to convert pressure force into vortex acceleration.")]
++        [SerializeField, Min(1f)] private float breachVortexReferenceMassKilograms = DefaultBreachVortexReferenceMassKilograms;
++
++        [Tooltip("Maximum acceleration applied to loose bodies by the breach vortex.")]
++        [SerializeField, Min(0f)] private float breachVortexMaximumAccelerationMetersPerSecondSquared = DefaultBreachVortexMaximumAccelerationMetersPerSecondSquared;
++
++        [Tooltip("Extra radius added around the interior trigger bounds for vortex spatial-hash queries.")]
++        [SerializeField, Min(0f)] private float breachVortexRadiusPaddingMeters = DefaultBreachVortexRadiusPaddingMeters;
++
++        [Header("Catastrophic Implosion")]
++        [Tooltip("External depth where an abandoned submerged module implodes instead of remaining as static wreckage.")]
++        [SerializeField, Min(0f)] private float implosionDepthThresholdMeters = DefaultImplosionDepthThresholdMeters;
++
++        [Tooltip("Radius in meters affected by the one-shot implosion impulse.")]
++        [SerializeField, Min(0.5f)] private float implosionImpulseRadiusMeters = DefaultImplosionImpulseRadiusMeters;
++
++        [Tooltip("Maximum impulse routed to loose entities by catastrophic implosion.")]
++        [SerializeField, Min(0f)] private float implosionMaximumImpulseNewtonSeconds = DefaultImplosionMaximumImpulseNewtonSeconds;
++
++        [Header("Local Gravity Anomaly")]
++        [Tooltip("When enabled, players inside this module receive a local gravity vector request from the interior volume.")]
++        [SerializeField] private bool localGravityAnomalyEnabled;
++
++        [Tooltip("Module-local direction used by relic gravity anomaly volumes.")]
++        [SerializeField] private Vector3 localGravityDirection = Vector3.down;
++
++        [Tooltip("Acceleration magnitude in meters per second squared for local module gravity.")]
++        [SerializeField, Min(0f)] private float localGravityAccelerationMetersPerSecondSquared = GravityAccelerationMetersPerSecondSquared;
++
++        [Tooltip("How long each slow-tick gravity request remains authoritative on the player controller.")]
++        [SerializeField, Min(0.1f)] private float localGravityHoldSeconds = DefaultLocalGravityHoldSeconds;
++
+         [Header("── Flood / Drain ─────────────────────────────")]
+         [Tooltip("Сколько секунд требуется на полную откачку воды.")]
+         [SerializeField] private float drainDuration = 8f;
+@@ -359,6 +422,9 @@ namespace Hecton8.Gameplay
+         private float _parasiteRootPowerDrainWatts;
+         private float _cultivationScrubberPowerDrainWatts;
+         private float _cultivationLightingPowerCreditWatts;
++        private float _parasiteAddedMassKilograms;
++        private float _parasiteThermalInsulation01;
++        private float _parasiteBioReactorOverheatMultiplier = 1f;
+         private float _parasiteInfectionLevel;
+         private float _parasiteRootInfectionLevel;
+         private int _attachedParasiteCount;
+@@ -377,7 +443,10 @@ namespace Hecton8.Gameplay
+         private int _cachedAtmosphereRoomIndex = -1;
+         private Vector3 _defaultCenterOfMassLocal;
+         private Vector3 _breachCenterOfMassTargetLocal;
++        private Vector3 _islandFloodCenterOfMassTargetLocal;
+         private bool _hasBreachCenterOfMassTarget;
++        private bool _hasIslandFloodCenterOfMassTarget;
++        private float _islandFloodCenterOfMassWeight01;
+         private float _defaultBodyMass;
+         private float _defaultLinearDamping;
+         private float _defaultAngularDamping;
+@@ -389,12 +458,18 @@ namespace Hecton8.Gameplay
+         private Vector3 _queuedHydroStructuralLoadPointWorld;
+         private bool _bulkheadFailureLatched;
+         private bool _emergencyBulkheadLockedDown;
++        private bool _implosionTriggered;
+         private bool _defaultBodyIsKinematic;
+         private bool _defaultBodyUseGravity;
+         private CollisionDetectionMode _defaultCollisionDetectionMode;
+         private RigidbodyInterpolation _defaultInterpolation;
+         private bool _moduleBodyDefaultsCaptured;
+         private bool _floodSurfaceDefaultsCaptured;
++        private Vector3 _defaultPressureCompressionVisualScale = Vector3.one;
++        private bool _pressureCompressionDefaultsCaptured;
++        private float _pressureCompressionAxisScale = 1f;
++        private float _pressureCompressionVolumeScale = 1f;
++        private float _pressureCompressionDepthMeters;
+ 
+         /// <summary>
+         /// Предыдущее состояние isFlooded, используемое для определения
+@@ -416,6 +491,7 @@ namespace Hecton8.Gameplay
+         /// Null = player is not inside this module.
+         /// </summary>
+         private HectonSurvivalSystem _trackedPlayerSurvival;
++        private HectonPlayerMovement _trackedPlayerMovement;
+         private readonly ModuleIntegrityComponent _integrityComponent = new ModuleIntegrityComponent();
+         private readonly ModuleLifeSupportComponent _lifeSupportComponent = new ModuleLifeSupportComponent();
+         // ══════════════════════════════════════════════════════════
+@@ -558,11 +634,20 @@ namespace Hecton8.Gameplay
+         public bool InteriorReefInfestationActive => _interiorReefInfestationActive;
+         /// <summary>True when the habitat graph has cut this module off from every anchor.</summary>
+         public bool IsUnmoored => _isUnmoored;
++        /// <summary>True after catastrophic pressure implosion has latched for this module.</summary>
++        public bool HasImploded => _implosionTriggered;
+         internal float BreathableReserve => _lifeSupportComponent.BreathableReserve;
+         internal float BreathableReserveCapacity => _lifeSupportComponent.BreathableReserveCapacity;
++        internal float PressureCompressionVolumeScale => _pressureCompressionVolumeScale;
++        internal float PressureCompressionDepthMeters => _pressureCompressionDepthMeters;
+         internal int AttachedParasiteCount => _attachedParasiteCount;
+         internal float ParasiteRootPowerDrainWatts => _parasiteRootPowerDrainWatts;
+-        internal float PowerRatingForHabitatGraph => _basePowerRating + _cultivationLightingPowerCreditWatts - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
++        internal float ParasiteAddedMassKilograms => _parasiteAddedMassKilograms;
++        internal float ParasiteThermalInsulation01 => _parasiteThermalInsulation01;
++        internal float ParasiteBioReactorOverheatMultiplier => _parasiteBioReactorOverheatMultiplier;
++        internal float PowerRatingForHabitatGraph => _interiorReefInfestationActive
++            ? 0f
++            : _basePowerRating + _cultivationLightingPowerCreditWatts - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
+ 
+         // ══════════════════════════════════════════════════════════
+         //  IPowerComponent
+@@ -572,7 +657,9 @@ namespace Hecton8.Gameplay
+         /// Базовое энергопотребление модуля.
+         /// Источник: BuildableData.powerRating → fallback.
+         /// </summary>
+-        public float PowerRating => PowerRatingForHabitatGraph - _parasiteRootPowerDrainWatts;
++        public float PowerRating => _interiorReefInfestationActive
++            ? 0f
++            : PowerRatingForHabitatGraph - _parasiteRootPowerDrainWatts;
+ 
+         public int PowerPriority => powerPriority;
+ 
+@@ -634,17 +721,27 @@ namespace Hecton8.Gameplay
+             _breachLatched = IsBreached;
+             _cachedAtmosphereRoomIndex = -1;
+             _hasBreachCenterOfMassTarget = false;
++            _hasIslandFloodCenterOfMassTarget = false;
++            _islandFloodCenterOfMassWeight01 = 0f;
+             _cachedFloodLevel01 = 0f;
+             _bulkheadFloodStress01 = 0f;
+             _bulkheadFailureLatched = false;
+             _emergencyBulkheadLockedDown = false;
++            _implosionTriggered = false;
++            _trackedPlayerMovement = null;
+             _cultivationScrubberPowerDrainWatts = 0f;
+             _cultivationLightingPowerCreditWatts = 0f;
++            _parasiteAddedMassKilograms = 0f;
++            _parasiteThermalInsulation01 = 0f;
++            _parasiteBioReactorOverheatMultiplier = 1f;
+             _floodedReefFloodSeconds = Mathf.Max(0f, _floodedReefFloodSeconds);
+             ClearQueuedHydroStructuralLoad();
++            ApplyDeepSeaCompressionState(true);
+ 
+             RefreshVisualStateImmediate();
+             SetInteriorReefVisualActive(_interiorReefInfestationActive);
++            if (_interiorReefInfestationActive)
++                RegisterFloodedReefFaunaAnchor();
+             ResyncInteriorOccupants(true);
+             _integrityComponent.TryStartDrain(_hasPower);
+             UpdateDrainDiagnostics();
+@@ -671,22 +768,31 @@ namespace Hecton8.Gameplay
+             _breachLatched = false;
+             _cachedAtmosphereRoomIndex = -1;
+             _hasBreachCenterOfMassTarget = false;
++            _hasIslandFloodCenterOfMassTarget = false;
++            _islandFloodCenterOfMassWeight01 = 0f;
+             _cachedFloodLevel01 = 0f;
+             _bulkheadFloodStress01 = 0f;
+             _bulkheadFailureLatched = false;
+             _emergencyBulkheadLockedDown = false;
++            _implosionTriggered = false;
+             ClearQueuedHydroStructuralLoad();
+             _trackedPlayerSurvival = null;
++            _trackedPlayerMovement = null;
+             _parasitePowerDrainWatts = 0f;
+             _parasiteRootPowerDrainWatts = 0f;
++            _parasiteAddedMassKilograms = 0f;
++            _parasiteThermalInsulation01 = 0f;
++            _parasiteBioReactorOverheatMultiplier = 1f;
+             _parasiteInfectionLevel = 0f;
+             _parasiteRootInfectionLevel = 0f;
+             _attachedParasiteCount = 0;
+             _cultivationScrubberPowerDrainWatts = 0f;
+             _cultivationLightingPowerCreditWatts = 0f;
+             _floodedReefFloodSeconds = 0f;
++            UnregisterFloodedReefFaunaAnchor();
+             _interiorReefInfestationActive = false;
+             SetInteriorReefVisualActive(false);
++            ResetPressureCompressionVisualState();
+             _integrityComponent.ResetForDespawn();
+             _lifeSupportComponent.ResetForDespawn();
+             TryUnregisterFixedTick();
+@@ -694,6 +800,8 @@ namespace Hecton8.Gameplay
+             SyncSpatialRole();
+             BaseDegradationSystem.ClearIntegrityState(this);
+             BaseDegradationSystem.ClearParasiteSporeHazard(this);
++            Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
++            BaseDegradationSystem.ClearPressureCompressionState(this);
+ 
+             ReleaseAllTrackedObjects();
+         }
+@@ -712,9 +820,12 @@ namespace Hecton8.Gameplay
+         public void SlowTick()
+         {
+             ApplyCascadeFailureEffects();
++            ApplyDeepSeaCompressionState(false);
+             UpdateLifeSupport(SLOW_TICK_DT);
+             UpdateFloodVisualStateImmediate();
+             UpdateFloodedReefGrowth(SLOW_TICK_DT);
++            ApplyLocalGravityAnomalyRequest();
++            EvaluateCatastrophicImplosion();
+             if (!HasOperationalPower)
+                 return;
+ 
+@@ -764,9 +875,10 @@ namespace Hecton8.Gameplay
+             float floodFill01 = ResolveUnmooredFloodFillNormalized();
+             float displacementVolume = ResolveBuoyancyDisplacementVolumeCubicMeters();
+             float dryMass = ResolveDryMassKilograms();
++            float parasiteMass = ResolveParasiteAddedMassKilograms();
+             float effectiveMass = Mathf.Max(
+                 MinimumMassKilograms,
+-                dryMass + (floodFill01 * displacementVolume * SeawaterDensityKilogramsPerCubicMeter));
++                dryMass + parasiteMass + (floodFill01 * displacementVolume * SeawaterDensityKilogramsPerCubicMeter));
+             if (Mathf.Abs(_moduleRigidbody.mass - effectiveMass) >= BuoyancyMassUpdateThresholdKilograms)
+                 _moduleRigidbody.mass = effectiveMass;
+ 
+@@ -808,6 +920,7 @@ namespace Hecton8.Gameplay
+             CacheOwnedBulkheadComponents();
+             CaptureModuleRigidbodyDefaults();
+             CaptureFloodSurfaceDefaults();
++            CapturePressureCompressionDefaults();
+         }
+ 
+         private void OnEnable()
+@@ -824,6 +937,7 @@ namespace Hecton8.Gameplay
+                 TryRegisterFixedTick();
+             }
+ 
++            ApplyDeepSeaCompressionState(true);
+             UpdateFloodVisualStateImmediate();
+             SetInteriorReefVisualActive(_interiorReefInfestationActive);
+         }
+@@ -834,6 +948,9 @@ namespace Hecton8.Gameplay
+             TryUnregister();
+             TryUnregisterFixedTick();
+             BaseDegradationSystem.ClearIntegrityState(this);
++            BaseDegradationSystem.ClearParasiteSporeHazard(this);
++            Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
++            BaseDegradationSystem.ClearPressureCompressionState(this);
+ 
+             NotifyModuleExitIfNeeded();
+             ReleaseAllTrackedObjects();
+@@ -846,6 +963,10 @@ namespace Hecton8.Gameplay
+             s_activeModules.Remove(this);
+             TryUnregister();
+             TryUnregisterFixedTick();
++            BaseDegradationSystem.ClearIntegrityState(this);
++            BaseDegradationSystem.ClearParasiteSporeHazard(this);
++            Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
++            BaseDegradationSystem.ClearPressureCompressionState(this);
+         }
+ 
+         // ══════════════════════════════════════════════════════════
+@@ -1037,6 +1158,18 @@ namespace Hecton8.Gameplay
+             PlaySpatialSfx(floodClip);
+             if (!wasFlooded)
+                 NotifyEmergencyLockdownStateChanged();
++            BaseDegradationSystem.SynchronizeIntegrityState(this);
++        }
++
++        internal void ForceFloodFromBulkheadOverride(Vector3 breachWorldPoint)
++        {
++            Vector3 localBreachPoint = IsFiniteVector(breachWorldPoint)
++                ? transform.InverseTransformPoint(breachWorldPoint)
++                : ResolveDefaultBreachLocalPoint();
++            _breachCenterOfMassTargetLocal = localBreachPoint;
++            _hasBreachCenterOfMassTarget = true;
++            ForceFlood();
++            TriggerBreachDepressurizationVortex(localBreachPoint);
+         }
+ 
+         /// <summary>
+@@ -1050,6 +1183,7 @@ namespace Hecton8.Gameplay
+             SetFloodedVisual(false);
+             SyncTrackedObjectsFloodState();
+             SyncSpatialRole();
++            BaseDegradationSystem.SynchronizeIntegrityState(this);
+         }
+ 
+         /// <summary>
+@@ -1061,9 +1195,12 @@ namespace Hecton8.Gameplay
+             if (normalizedAmount <= 0f || !float.IsFinite(normalizedAmount))
+                 return;
+ 
++            float previousStress = _bulkheadFloodStress01;
+             _bulkheadFloodStress01 = Mathf.Max(0f, _bulkheadFloodStress01 - normalizedAmount);
+             if (_bulkheadFloodStress01 <= 0f && !_integrityComponent.IsFlooded && !IsBreached)
+                 _bulkheadFailureLatched = false;
++            if (Mathf.Abs(previousStress - _bulkheadFloodStress01) > 0.0001f)
++                BaseDegradationSystem.SynchronizeIntegrityState(this);
+         }
+ 
+         internal float ResolveFloodWaterVolumeCubicMeters()
+@@ -1086,6 +1223,13 @@ namespace Hecton8.Gameplay
+             return float.IsFinite(floodMassKilograms) ? Mathf.Max(0f, floodMassKilograms) : 0f;
+         }
+ 
++        internal float ResolveParasiteAddedMassKilograms()
++        {
++            return float.IsFinite(_parasiteAddedMassKilograms)
++                ? Mathf.Max(0f, _parasiteAddedMassKilograms)
++                : 0f;
++        }
++
+         internal void QueueHydroStructuralLoad(float floodWaterMassKilograms, Vector3 applicationWorldPoint, float durationSeconds)
+         {
+             if (!_isUnmoored ||
+@@ -1110,6 +1254,32 @@ namespace Hecton8.Gameplay
+             _queuedHydroStructuralLoadPointWorld = applicationWorldPoint;
+         }
+ 
++        internal void ApplyIslandFloodCenterOfMassShift(Vector3 floodCentroidWorld, float islandFloodMassKilograms, float deltaTime)
++        {
++            if (!_isUnmoored ||
++                islandFloodMassKilograms <= 0f ||
++                deltaTime <= 0f ||
++                !float.IsFinite(islandFloodMassKilograms) ||
++                !float.IsFinite(deltaTime) ||
++                !IsFiniteVector(floodCentroidWorld))
++            {
++                _hasIslandFloodCenterOfMassTarget = false;
++                _islandFloodCenterOfMassWeight01 = 0f;
++                return;
++            }
++
++            Vector3 localCentroid = transform.InverseTransformPoint(floodCentroidWorld);
++            Vector3 offsetFromCenter = localCentroid - _defaultCenterOfMassLocal;
++            float maxShift = ResolveMaximumCenterOfMassShiftMeters();
++            if (offsetFromCenter.sqrMagnitude > (maxShift * maxShift))
++                offsetFromCenter = offsetFromCenter.normalized * maxShift;
++
++            float effectiveMass = ResolveDryMassKilograms() + islandFloodMassKilograms;
++            _islandFloodCenterOfMassTargetLocal = _defaultCenterOfMassLocal + offsetFromCenter;
++            _islandFloodCenterOfMassWeight01 = Mathf.Clamp01(islandFloodMassKilograms / Mathf.Max(MinimumMassKilograms, effectiveMass));
++            _hasIslandFloodCenterOfMassTarget = _islandFloodCenterOfMassWeight01 > 0.001f;
++        }
++
+         internal void DecayBulkheadFloodStress(float deltaTime)
+         {
+             if (deltaTime <= 0f || !float.IsFinite(deltaTime) || _bulkheadFloodStress01 <= 0f)
+@@ -1122,7 +1292,10 @@ namespace Hecton8.Gameplay
+             if (recovery <= 0f || !float.IsFinite(recovery))
+                 return;
+ 
++            float previousStress = _bulkheadFloodStress01;
+             _bulkheadFloodStress01 = Mathf.Max(0f, _bulkheadFloodStress01 - recovery);
++            if (Mathf.Abs(previousStress - _bulkheadFloodStress01) > 0.0001f)
++                BaseDegradationSystem.SynchronizeIntegrityState(this);
+             if (_bulkheadFloodStress01 <= 0f)
+                 _bulkheadFailureLatched = false;
+         }
+@@ -1154,7 +1327,10 @@ namespace Hecton8.Gameplay
+             if (stressDelta <= 0f || !float.IsFinite(stressDelta))
+                 return false;
+ 
++            float previousStress = _bulkheadFloodStress01;
+             _bulkheadFloodStress01 = Mathf.Clamp01(_bulkheadFloodStress01 + stressDelta);
++            if (Mathf.Abs(previousStress - _bulkheadFloodStress01) > 0.0001f)
++                BaseDegradationSystem.SynchronizeIntegrityState(this);
+             if (_bulkheadFloodStress01 < 1f || _bulkheadFailureLatched)
+                 return false;
+ 
+@@ -1233,7 +1409,7 @@ namespace Hecton8.Gameplay
+ 
+                 case BaseModuleIntegrityState.Abandoned:
+                     normalizedIntegrity = moduleTemplate != null
+-                        ? Mathf.Clamp01(moduleTemplate.DefaultIntegrityState)
++                        ? Mathf.Min(0.4f, Mathf.Clamp01(moduleTemplate.DefaultIntegrityState))
+                         : 0.2f;
+                     flooded = moduleTemplate == null || normalizedIntegrity <= moduleTemplate.FloodedBelowIntegrityState;
+                     break;
+@@ -1337,6 +1513,10 @@ namespace Hecton8.Gameplay
+             _floodedReefFloodSeconds = Mathf.Max(0f, floodedReefFloodSeconds);
+             _interiorReefInfestationActive = interiorReefInfestationActive;
+             SetInteriorReefVisualActive(_interiorReefInfestationActive);
++            if (_interiorReefInfestationActive)
++                RegisterFloodedReefFaunaAnchor();
++            else
++                UnregisterFloodedReefFaunaAnchor();
+             if (!flooded)
+                 ResetBulkheadFloodStress();
+             RefreshVisualStateImmediate();
+@@ -1729,6 +1909,23 @@ namespace Hecton8.Gameplay
+                 SLOW_TICK_DT);
+         }
+ 
++        private void ApplyLocalGravityAnomalyRequest()
++        {
++            if (!localGravityAnomalyEnabled || _trackedPlayerMovement == null)
++                return;
++
++            float acceleration = Mathf.Max(0f, localGravityAccelerationMetersPerSecondSquared);
++            if (acceleration <= 0f)
++                return;
++
++            Vector3 localDirection = localGravityDirection.sqrMagnitude > 0.0001f
++                ? localGravityDirection.normalized
++                : Vector3.down;
++            Vector3 worldGravity = transform.TransformDirection(localDirection) * acceleration;
++            if (IsFiniteVector(worldGravity))
++                _trackedPlayerMovement.RequestLocalGravityOverride(worldGravity, Mathf.Max(0.1f, localGravityHoldSeconds));
++        }
++
+         private void UpdateLifeSupport(float dt)
+         {
+             ModuleLifeSupportSignals signals = _lifeSupportComponent.Tick(
+@@ -1882,7 +2079,7 @@ namespace Hecton8.Gameplay
+                 halfExtents,
+                 _interiorOverlapBuffer,
+                 worldRotation,
+-                ~0,
++                HectonLayerMasks.DefaultRaycastLayerMask,
+                 QueryTriggerInteraction.Collide);
+ 
+             for (int i = 0; i < overlapCount; i++)
+@@ -1999,6 +2196,77 @@ namespace Hecton8.Gameplay
+             return transform.TransformPoint(new Vector3(0f, localY, 0f)).y;
+         }
+ 
++        private void ApplyDeepSeaCompressionState(bool force)
++        {
++            float depthMeters = ResolveExternalDepthMeters();
++            float axisScale = ResolvePressureCompressionAxisScale(depthMeters);
++            float volumeScale = Mathf.Clamp(axisScale * axisScale, 0.1f, 1f);
++
++            if (!force &&
++                Mathf.Abs(_pressureCompressionAxisScale - axisScale) <= 0.00001f &&
++                Mathf.Abs(_pressureCompressionVolumeScale - volumeScale) <= 0.00001f &&
++                Mathf.Abs(_pressureCompressionDepthMeters - depthMeters) <= 0.25f)
++            {
++                return;
++            }
++
++            _pressureCompressionAxisScale = axisScale;
++            _pressureCompressionVolumeScale = volumeScale;
++            _pressureCompressionDepthMeters = depthMeters;
++            _lifeSupportComponent.ApplyPressureCompressionScale(volumeScale);
++            ApplyPressureCompressionVisualScale(axisScale);
++
++            BaseDegradationSystem.SynchronizePressureCompression(
++                this,
++                Matrix4x4.Scale(new Vector3(axisScale, axisScale, 1f)),
++                volumeScale,
++                depthMeters);
++        }
++
++        private float ResolvePressureCompressionAxisScale(float depthMeters)
++        {
++            float startDepthMeters = Mathf.Max(0f, deepCompressionStartDepthMeters);
++            if (depthMeters <= startDepthMeters)
++                return 1f;
++
++            float hydrostaticPressureKPa = ResolveHydrostaticPressureKPa(depthMeters);
++            float startPressureKPa = ResolveHydrostaticPressureKPa(startDepthMeters);
++            float pressureRangeKPa = Mathf.Max(1f, deepCompressionFullPressureKPa - startPressureKPa);
++            float compression01 = Mathf.Clamp01((hydrostaticPressureKPa - startPressureKPa) / pressureRangeKPa);
++            return 1f - (compression01 * Mathf.Clamp(maximumDeepCompressionAxisLoss, 0f, 0.01f));
++        }
++
++        private static float ResolveHydrostaticPressureKPa(float depthMeters)
++        {
++            return SurfacePressureKPa + (Mathf.Max(0f, depthMeters) * SeawaterDensityKilogramsPerCubicMeter * GravityAccelerationMetersPerSecondSquared * 0.001f);
++        }
++
++        private void ApplyPressureCompressionVisualScale(float axisScale)
++        {
++            if (pressureCompressionVisualRoot == null)
++                return;
++
++            CapturePressureCompressionDefaults();
++            Vector3 nextScale = _defaultPressureCompressionVisualScale;
++            nextScale.x *= axisScale;
++            nextScale.y *= axisScale;
++            pressureCompressionVisualRoot.localScale = nextScale;
++        }
++
++        private void ResetPressureCompressionVisualState()
++        {
++            _pressureCompressionAxisScale = 1f;
++            _pressureCompressionVolumeScale = 1f;
++            _pressureCompressionDepthMeters = 0f;
++            _lifeSupportComponent.ApplyPressureCompressionScale(1f);
++
++            if (pressureCompressionVisualRoot == null)
++                return;
++
++            CapturePressureCompressionDefaults();
++            pressureCompressionVisualRoot.localScale = _defaultPressureCompressionVisualScale;
++        }
++
+         private float ResolveRuntimeFloodLevel01()
+         {
+             if (_integrityComponent.IsFlooded)
+@@ -2032,6 +2300,15 @@ namespace Hecton8.Gameplay
+             _floodSurfaceDefaultsCaptured = true;
+         }
+ 
++        private void CapturePressureCompressionDefaults()
++        {
++            if (_pressureCompressionDefaultsCaptured || pressureCompressionVisualRoot == null)
++                return;
++
++            _defaultPressureCompressionVisualScale = pressureCompressionVisualRoot.localScale;
++            _pressureCompressionDefaultsCaptured = true;
++        }
++
+         private float ResolveFloodSurfaceMinimumLocalY()
+         {
+             if (!TryResolveInteriorFloodBounds(out float minimumLocalY, out _))
+@@ -2185,10 +2462,14 @@ namespace Hecton8.Gameplay
+             _moduleRigidbody.mass = Mathf.Max(MinimumMassKilograms, ResolveDryMassKilograms());
+             _moduleRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+             _moduleRigidbody.centerOfMass = _defaultCenterOfMassLocal;
++            _hasIslandFloodCenterOfMassTarget = false;
++            _islandFloodCenterOfMassWeight01 = 0f;
+         }
+ 
+         private void DisableUnmooredPhysics()
+         {
++            _hasIslandFloodCenterOfMassTarget = false;
++            _islandFloodCenterOfMassWeight01 = 0f;
+             if (_moduleRigidbody == null || !_moduleBodyDefaultsCaptured)
+                 return;
+ 
+@@ -2283,6 +2564,10 @@ namespace Hecton8.Gameplay
+             if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
+                 return atmosphereSystem.ResolveExternalDepthMeters();
+ 
++            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
++            if (atmosphereManager != null)
++                return Mathf.Max(0f, atmosphereManager.SeaLevelY - transform.position.y);
++
+             return 0f;
+         }
+ 
+@@ -2296,10 +2581,11 @@ namespace Hecton8.Gameplay
+ 
+         private float ResolveBuoyancyDisplacementVolumeCubicMeters()
+         {
++            float volumeScale = Mathf.Clamp(_pressureCompressionVolumeScale, 0.1f, 1f);
+             if (moduleTemplate != null)
+-                return Mathf.Max(0.1f, moduleTemplate.BuoyancyDisplacementVolumeCubicMeters);
++                return Mathf.Max(0.1f, moduleTemplate.BuoyancyDisplacementVolumeCubicMeters * volumeScale);
+ 
+-            return Mathf.Max(0.1f, buoyancyDisplacementVolumeCubicMeters);
++            return Mathf.Max(0.1f, buoyancyDisplacementVolumeCubicMeters * volumeScale);
+         }
+ 
+         private float ResolveMaximumUnmooredAccelerationMetersPerSecondSquared()
+@@ -2379,6 +2665,14 @@ namespace Hecton8.Gameplay
+             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+         }
+ 
++        private static bool IsFiniteQuaternion(Quaternion value)
++        {
++            return float.IsFinite(value.x) &&
++                   float.IsFinite(value.y) &&
++                   float.IsFinite(value.z) &&
++                   float.IsFinite(value.w);
++        }
++
+         private float ResolveMaximumCenterOfMassShiftMeters()
+         {
+             if (moduleTemplate != null)
+@@ -2411,6 +2705,16 @@ namespace Hecton8.Gameplay
+                 targetCenterOfMass += offsetFromCenter * floodFill01;
+             }
+ 
++            if (_hasIslandFloodCenterOfMassTarget && _islandFloodCenterOfMassWeight01 > 0.001f)
++            {
++                Vector3 islandOffset = _islandFloodCenterOfMassTargetLocal - _defaultCenterOfMassLocal;
++                float maxShift = ResolveMaximumCenterOfMassShiftMeters();
++                if (islandOffset.sqrMagnitude > (maxShift * maxShift))
++                    islandOffset = islandOffset.normalized * maxShift;
++
++                targetCenterOfMass += islandOffset * _islandFloodCenterOfMassWeight01;
++            }
++
+             float tauSeconds = ResolveCenterOfMassShiftTauSeconds();
+             float alpha = 1f - Mathf.Exp(-fixedDeltaTime / tauSeconds);
+             Vector3 nextCenterOfMass = Vector3.Lerp(_moduleRigidbody.centerOfMass, targetCenterOfMass, alpha);
+@@ -2442,6 +2746,7 @@ namespace Hecton8.Gameplay
+                 return;
+ 
+             _trackedPlayerSurvival = resolvedSurvival;
++            _trackedPlayerMovement = other.GetComponentInParent<HectonPlayerMovement>();
+             if (notifyEnter)
+                 ModuleStatusEvents.NotifyEnter(this);
+         }
+@@ -2475,6 +2780,7 @@ namespace Hecton8.Gameplay
+                 return;
+ 
+             _trackedPlayerSurvival = null;
++            _trackedPlayerMovement = null;
+             ModuleStatusEvents.NotifyExit(this);
+         }
+ 
+@@ -2586,6 +2892,33 @@ namespace Hecton8.Gameplay
+             DisableUnmooredPhysics();
+         }
+ 
++        internal void ApplyConstructedWeldSnap(Vector3 targetPosition, Quaternion targetRotation)
++        {
++            if (!IsFiniteVector(targetPosition) || !IsFiniteQuaternion(targetRotation))
++                return;
++
++            CacheReferences();
++            _isUnmoored = false;
++            TryUnregisterFixedTick();
++            ClearQueuedHydroStructuralLoad();
++
++            if (_moduleRigidbody == null)
++            {
++                transform.SetPositionAndRotation(targetPosition, targetRotation);
++                return;
++            }
++
++            CaptureModuleRigidbodyDefaults();
++            if (!PhysicsForceRouter.ApplyKinematicWeldSnap(_moduleRigidbody, targetPosition, targetRotation))
++                transform.SetPositionAndRotation(targetPosition, targetRotation);
++
++            _defaultBodyIsKinematic = true;
++            _defaultBodyUseGravity = false;
++            _defaultCollisionDetectionMode = _moduleRigidbody.collisionDetectionMode;
++            _defaultInterpolation = _moduleRigidbody.interpolation;
++            _moduleBodyDefaultsCaptured = true;
++        }
++
+         internal void SetEmergencyBulkheadLockdown(bool lockedDown)
+         {
+             if (!ResolveEmergencyAirlockRole())
+@@ -2676,6 +3009,29 @@ namespace Hecton8.Gameplay
+             atmosphereSystem.InjectOxygenUnits(roomIndex, oxygenUnits);
+         }
+ 
++        /// <summary>
++        /// Allows the atmosphere owner to sum mature oxygen-producing cultivation slots directly from the native slot lane.
++        /// </summary>
++        public void ApplyCultivationOxygen(CultivationManager cultivationManager, float oxygenUnitsPerMaturePlant)
++        {
++            if (cultivationManager == null ||
++                oxygenUnitsPerMaturePlant <= 0f ||
++                !TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) ||
++                atmosphereSystem == null)
++            {
++                return;
++            }
++
++            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
++            if (roomIndex < 0)
++                return;
++
++            atmosphereSystem.InjectCultivationOxygenFromSlots(
++                roomIndex,
++                cultivationManager.SlotStateReadOnly,
++                oxygenUnitsPerMaturePlant);
++        }
++
+         internal float ParasiteInfectionLevel => _parasiteInfectionLevel;
+ 
+         internal bool SetParasiteInfestation(float powerDrainWatts, float infectionLevel)
+@@ -2722,6 +3078,24 @@ namespace Hecton8.Gameplay
+             return true;
+         }
+ 
++        internal bool SetParasiteStructuralEffects(float addedMassKilograms, float thermalInsulation01, float bioReactorOverheatMultiplier)
++        {
++            float sanitizedMass = Mathf.Max(0f, addedMassKilograms);
++            float sanitizedInsulation = Mathf.Clamp01(thermalInsulation01);
++            float sanitizedOverheatMultiplier = Mathf.Max(1f, bioReactorOverheatMultiplier);
++            if (Mathf.Abs(_parasiteAddedMassKilograms - sanitizedMass) <= 0.1f &&
++                Mathf.Abs(_parasiteThermalInsulation01 - sanitizedInsulation) <= 0.001f &&
++                Mathf.Abs(_parasiteBioReactorOverheatMultiplier - sanitizedOverheatMultiplier) <= 0.001f)
++            {
++                return false;
++            }
++
++            _parasiteAddedMassKilograms = sanitizedMass;
++            _parasiteThermalInsulation01 = sanitizedInsulation;
++            _parasiteBioReactorOverheatMultiplier = sanitizedOverheatMultiplier;
++            return true;
++        }
++
+         internal bool SetCultivationScrubberLoad(float powerDrainWatts)
+         {
+             float sanitizedDrain = Mathf.Max(0f, powerDrainWatts);
+@@ -2760,6 +3134,13 @@ namespace Hecton8.Gameplay
+ 
+         internal bool TryGetMatureParasiteRootLoad(out float drainWatts, out float infectionLevel)
+         {
++            if (_interiorReefInfestationActive)
++            {
++                drainWatts = 0f;
++                infectionLevel = 0f;
++                return false;
++            }
++
+             drainWatts = _parasiteRootPowerDrainWatts;
+             infectionLevel = _parasiteRootInfectionLevel;
+             return drainWatts > 0.01f;
+@@ -2821,6 +3202,22 @@ namespace Hecton8.Gameplay
+                 : 0f;
+         }
+ 
++        internal bool TryInjectHostRoomTemperatureDeltaCelsius(float deltaCelsius)
++        {
++            if (!(deltaCelsius > 0f) || !float.IsFinite(deltaCelsius))
++                return false;
++
++            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
++                return false;
++
++            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
++            if (roomIndex < 0)
++                return false;
++
++            atmosphereSystem.InjectRoomTemperatureDeltaCelsius(roomIndex, deltaCelsius);
++            return true;
++        }
++
+         internal bool TryGetHostedBioReactor(out BioReactor reactor)
+         {
+             if (TryGetComponent(out reactor))
+@@ -2864,7 +3261,10 @@ namespace Hecton8.Gameplay
+             }
+ 
+             if (_interiorReefInfestationActive)
++            {
++                RegisterFloodedReefFaunaAnchor();
+                 return;
++            }
+ 
+             _floodedReefFloodSeconds += Mathf.Max(0f, deltaTime);
+             if (_floodedReefFloodSeconds < ResolveFloodedReefActivationSeconds())
+@@ -2872,9 +3272,47 @@ namespace Hecton8.Gameplay
+ 
+             _interiorReefInfestationActive = true;
+             SetInteriorReefVisualActive(true);
++            TryMarkPowerGridDirty();
++            NotifyParasiteRootGraphChanged();
++            RegisterFloodedReefFaunaAnchor();
+             BaseDegradationSystem.SynchronizeIntegrityState(this);
+         }
+ 
++        private void RegisterFloodedReefFaunaAnchor()
++        {
++            WorldFaunaSpawnRegistry registry = WorldFaunaSpawnRegistry.ActiveRuntimeInstance;
++            if (registry == null)
++                return;
++
++            Vector3 anchorPosition = ResolveInteriorHazardWorldPosition();
++            float anchorRadius = parasiteSporeHazardRadius;
++            if (TryGetInteriorHazardBounds(out Vector3 interiorCenter, out float interiorRadius))
++            {
++                anchorPosition = interiorCenter;
++                anchorRadius = interiorRadius;
++            }
++
++            registry.RegisterRuntimeReefAnchor(
++                ResolveFloodedReefFaunaAnchorKey(),
++                anchorPosition,
++                Mathf.Max(4f, anchorRadius),
++                FloodedReefFaunaFamilyId);
++        }
++
++        private void UnregisterFloodedReefFaunaAnchor()
++        {
++            WorldFaunaSpawnRegistry registry = WorldFaunaSpawnRegistry.ActiveRuntimeInstance;
++            if (registry == null)
++                return;
++
++            registry.UnregisterRuntimeReefAnchor(ResolveFloodedReefFaunaAnchorKey());
++        }
++
++        private long ResolveFloodedReefFaunaAnchorKey()
++        {
++            return unchecked((long)EntityId.ToULong(GetEntityId()) ^ FloodedReefFaunaAnchorSalt);
++        }
++
+         private void SetInteriorReefVisualActive(bool active)
+         {
+             if (active)
+@@ -2999,6 +3437,53 @@ namespace Hecton8.Gameplay
+             return radius > 0.01f;
+         }
+ 
++        private void EvaluateCatastrophicImplosion()
++        {
++            bool abandonedFailure = IntegrityState == BaseModuleIntegrityState.Abandoned ||
++                                    (!IsBreached && IntegrityStateNormalized <= 0.4f);
++            if (_implosionTriggered ||
++                !abandonedFailure ||
++                ResolveExternalDepthMeters() < ResolveImplosionDepthThresholdMeters())
++            {
++                return;
++            }
++
++            TriggerCatastrophicImplosion();
++        }
++
++        private void TriggerCatastrophicImplosion()
++        {
++            if (_implosionTriggered)
++                return;
++
++            _implosionTriggered = true;
++            ForceFlood();
++
++            Vector3 roomCenter = transform.position;
++            float influenceRadius = ResolveImplosionImpulseRadiusMeters();
++            if (TryGetInteriorHazardBounds(out Vector3 resolvedCenter, out float resolvedRadius))
++            {
++                roomCenter = resolvedCenter;
++                influenceRadius = Mathf.Max(influenceRadius, resolvedRadius);
++            }
++
++            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(ResolveExternalDepthMeters()) - SurfacePressureKPa);
++            float rawImpulse = pressureDeltaKPa * 1000f * ResolveBuoyancyDisplacementVolumeCubicMeters() * 0.001f;
++            if (rawImpulse > 0f && float.IsFinite(rawImpulse))
++            {
++                PhysicsApplySystem.TriggerImplosionImpulse(
++                    roomCenter,
++                    influenceRadius,
++                    rawImpulse,
++                    ResolveImplosionMaximumImpulseNewtonSeconds());
++            }
++
++            SetAnchoredState(false);
++            NotifyModuleImploded();
++            NotifyEmergencyLockdownStateChanged();
++            BaseDegradationSystem.SynchronizeIntegrityState(this);
++        }
++
+         private void HandleIntegrityCollapse(Vector3 localBreachPoint)
+         {
+             if (_breachLatched)
+@@ -3007,6 +3492,7 @@ namespace Hecton8.Gameplay
+             _breachLatched = true;
+             _breachCenterOfMassTargetLocal = localBreachPoint;
+             _hasBreachCenterOfMassTarget = true;
++            TriggerBreachDepressurizationVortex(localBreachPoint);
+             if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
+             {
+                 NotifyEmergencyLockdownStateChanged();
+@@ -3019,6 +3505,43 @@ namespace Hecton8.Gameplay
+             NotifyEmergencyLockdownStateChanged();
+         }
+ 
++        private void NotifyModuleImploded()
++        {
++            ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
++            if (manager != null)
++                manager.NotifyModuleImploded(this);
++        }
++
++        private void TriggerBreachDepressurizationVortex(Vector3 localBreachPoint)
++        {
++            if (breachVortexDurationSeconds <= 0f || breachVortexMaximumAccelerationMetersPerSecondSquared <= 0f)
++                return;
++
++            Vector3 breachWorldPosition = transform.TransformPoint(localBreachPoint);
++            Vector3 roomCenter = transform.position;
++            float influenceRadius = 3f;
++            if (TryGetInteriorHazardBounds(out Vector3 resolvedCenter, out float resolvedRadius))
++            {
++                roomCenter = resolvedCenter;
++                influenceRadius = resolvedRadius;
++            }
++
++            influenceRadius = Mathf.Max(0.5f, influenceRadius + Mathf.Max(0f, breachVortexRadiusPaddingMeters));
++            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(ResolveExternalDepthMeters()) - SurfacePressureKPa);
++            float rawForceNewtons = pressureDeltaKPa * 1000f * ResolveBreachAreaSquareMeters();
++            float baseAcceleration = rawForceNewtons / Mathf.Max(1f, breachVortexReferenceMassKilograms);
++            if (baseAcceleration <= 0.0001f || !float.IsFinite(baseAcceleration))
++                return;
++
++            PhysicsApplySystem.TriggerDepressurizationVortex(
++                roomCenter,
++                breachWorldPosition,
++                influenceRadius,
++                baseAcceleration,
++                breachVortexMaximumAccelerationMetersPerSecondSquared,
++                breachVortexDurationSeconds);
++        }
++
+         private bool TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem)
+         {
+             if (_submarineAtmosphereSystem == null || !_submarineAtmosphereSystem.isActiveAndEnabled)
+@@ -3036,6 +3559,21 @@ namespace Hecton8.Gameplay
+             return 1.2f;
+         }
+ 
++        private float ResolveImplosionDepthThresholdMeters()
++        {
++            return Mathf.Max(0f, implosionDepthThresholdMeters);
++        }
++
++        private float ResolveImplosionImpulseRadiusMeters()
++        {
++            return Mathf.Max(0.5f, implosionImpulseRadiusMeters);
++        }
++
++        private float ResolveImplosionMaximumImpulseNewtonSeconds()
++        {
++            return Mathf.Max(0f, implosionMaximumImpulseNewtonSeconds);
++        }
++
+         private Vector3 ResolveDefaultBreachLocalPoint()
+         {
+             if (TryGetDegradationSockets(out BaseModuleTemplate.VfxSocket[] sockets))
+@@ -3072,6 +3610,7 @@ namespace Hecton8.Gameplay
+                 co2Level,
+                 co2GenerationRate,
+                 co2CriticalThreshold);
++            _lifeSupportComponent.ApplyPressureCompressionScale(_pressureCompressionVolumeScale);
+         }
+ 
+         private void UpdateDrainDiagnostics()
+@@ -3094,6 +3633,18 @@ namespace Hecton8.Gameplay
+ 
+             if (signals.Co2CriticalRaised)
+                 RecordCascadeFailure("CO2 SCRUBBER LOCKOUT", _lifeSupportComponent.BuildCo2CriticalSummary());
++
++            if (signals.Co2HypoxiaRaised)
++                TriggerCo2HypoxiaDistortion();
++        }
++
++        private void TriggerCo2HypoxiaDistortion()
++        {
++            if (_trackedPlayerMovement == null)
++                return;
++
++            float intensity = Mathf.InverseLerp(0.8f, 1f, Co2Normalized);
++            _trackedPlayerMovement.TriggerHypoxiaVisorDistortion(Mathf.Clamp01(intensity), 0.45f, 2.5f);
+         }
+ 
+ #if UNITY_EDITOR
+@@ -3133,6 +3684,19 @@ namespace Hecton8.Gameplay
+             if (maxCenterOfMassShiftPerTickMeters < 0.001f) maxCenterOfMassShiftPerTickMeters = 0.001f;
+             if (hullCrushDepthMeters < 1f) hullCrushDepthMeters = 1f;
+             if (maximumHydroStructuralLoadNewtons < 1f) maximumHydroStructuralLoadNewtons = 1f;
++            if (deepCompressionStartDepthMeters < 0f) deepCompressionStartDepthMeters = 0f;
++            if (deepCompressionFullPressureKPa < 1f) deepCompressionFullPressureKPa = 1f;
++            if (maximumDeepCompressionAxisLoss < 0f) maximumDeepCompressionAxisLoss = 0f;
++            if (maximumDeepCompressionAxisLoss > 0.01f) maximumDeepCompressionAxisLoss = 0.01f;
++            if (breachVortexDurationSeconds < 0f) breachVortexDurationSeconds = 0f;
++            if (breachVortexReferenceMassKilograms < 1f) breachVortexReferenceMassKilograms = 1f;
++            if (breachVortexMaximumAccelerationMetersPerSecondSquared < 0f) breachVortexMaximumAccelerationMetersPerSecondSquared = 0f;
++            if (breachVortexRadiusPaddingMeters < 0f) breachVortexRadiusPaddingMeters = 0f;
++            if (implosionDepthThresholdMeters < 0f) implosionDepthThresholdMeters = 0f;
++            if (implosionImpulseRadiusMeters < 0.5f) implosionImpulseRadiusMeters = 0.5f;
++            if (implosionMaximumImpulseNewtonSeconds < 0f) implosionMaximumImpulseNewtonSeconds = 0f;
++            if (localGravityAccelerationMetersPerSecondSquared < 0f) localGravityAccelerationMetersPerSecondSquared = 0f;
++            if (localGravityHoldSeconds < 0.1f) localGravityHoldSeconds = 0.1f;
+             if (bulkheadFailureWaterMassKilograms < 1f) bulkheadFailureWaterMassKilograms = 1f;
+             if (bulkheadStressRatePerSecond < 0.001f) bulkheadStressRatePerSecond = 0.001f;
+             if (bulkheadStressRecoveryPerSecond < 0f) bulkheadStressRecoveryPerSecond = 0f;
+diff --git a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
+index 78d46400..cd03dfa2 100644
+--- a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
++++ b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
+@@ -11,6 +11,32 @@ using UnityEngine;
+ 
+ namespace Hecton8.Construction
+ {
++    [Flags]
++    internal enum HabitatSiegeTargetFlags : byte
++    {
++        None = 0,
++        Vulnerable = 1 << 0,
++        EmergencyAirlock = 1 << 1,
++        Flooded = 1 << 2,
++        Ruptured = 1 << 3,
++        Brownout = 1 << 4,
++        Isolated = 1 << 5,
++        CascadeFailure = 1 << 6
++    }
++
++    internal struct HabitatSiegeTargetSnapshot
++    {
++        public float3 ModuleCenter;
++        public float3 WeakPoint;
++        public float Integrity01;
++        public float Vulnerability01;
++        public uint NodeId;
++        public byte Flags;
++        public byte Reserved0;
++        public byte Reserved1;
++        public byte Reserved2;
++    }
++
+     /// <summary>
+     /// Rebuilds the placed habitat into a CSR adjacency graph for downstream power and atmosphere solvers.
+     /// Owns only base-module topology. Point-to-point crate pipes remain under LogisticsPipeNode.
+@@ -32,6 +58,8 @@ namespace Hecton8.Construction
+         private const int InitialNodeCapacity = 64;
+         private const int InitialEdgeCapacity = 128;
+         private const int InitialTemporaryBypassCapacity = 16;
++        internal const int MaxSiegeTargetCount = 64;
++        private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
+         private const uint ParasiteRootNodeIdSalt = 0x8F3A5C7Du;
+         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
+ 
+@@ -50,10 +78,14 @@ namespace Hecton8.Construction
+         private NativeArray<int> _edgeWriteCursor;
+         private NativeArray<byte> _anchorReachability;
+         private NativeArray<int> _anchorTraversalQueue;
++        private NativeArray<HabitatSiegeTargetSnapshot> _siegeTargets;
++        private static NativeArray<HabitatSiegeTargetSnapshot> s_latestSiegeTargets;
++        private static int s_latestSiegeTargetCount;
+ 
+         private readonly LogisticsNetworkGraph _graph;
+         private int _nodeCount;
+         private int _edgeCount;
++        private int _siegeTargetCount;
+ 
+         internal HabitatGraphManager(int initialModuleCapacity)
+         {
+@@ -85,6 +117,13 @@ namespace Hecton8.Construction
+         internal NativeArray<float> EdgeResistance => _edgeResistance;
+         internal LogisticsNetworkGraph Graph => _graph;
+ 
++        internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot> targets, out int count)
++        {
++            targets = s_latestSiegeTargets;
++            count = s_latestSiegeTargetCount;
++            return targets.IsCreated && count > 0;
++        }
++
+         public void Dispose()
+         {
+             ClearVisualLinks();
+@@ -107,6 +146,7 @@ namespace Hecton8.Construction
+ 
+             if (modules == null || modules.Count <= 0)
+             {
++                ClearSiegeTargetSnapshot();
+                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
+                 BaseDegradationSystem.EndRuptureSync();
+                 return;
+@@ -117,6 +157,7 @@ namespace Hecton8.Construction
+             _nodeCount = _moduleBuffer.Count;
+             if (_nodeCount <= 0)
+             {
++                ClearSiegeTargetSnapshot();
+                 _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
+                 BaseDegradationSystem.EndRuptureSync();
+                 return;
+@@ -132,6 +173,7 @@ namespace Hecton8.Construction
+             PublishComponentPowerState();
+             PublishEmergencyLockdownState();
+             PublishDegradationState();
++            PublishSiegeTargetSnapshot();
+             PublishGraphKernel();
+             PublishVisualLinks();
+             BaseDegradationSystem.EndRuptureSync();
+@@ -143,11 +185,15 @@ namespace Hecton8.Construction
+                 return;
+ 
+             QueueFloodMassLoads(deltaTime);
++            ApplyIslandFloodCenterOfMassShifts(deltaTime);
+             EvaluateBulkheadFloodStress(deltaTime);
+ 
+             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+             if (bridge == null)
++            {
++                PublishSiegeTargetSnapshot();
+                 return;
++            }
+ 
+             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
+             {
+@@ -182,6 +228,8 @@ namespace Hecton8.Construction
+ 
+                 baseModule.ApplyDamage(damageAmount);
+             }
++
++            PublishSiegeTargetSnapshot();
+         }
+ 
+         private void QueueFloodMassLoads(float deltaTime)
+@@ -193,10 +241,86 @@ namespace Hecton8.Construction
+                     continue;
+ 
+                 float floodWaterMassKilograms = baseModule.ResolveFloodWaterMassKilograms();
+-                if (floodWaterMassKilograms <= 0f || !math.isfinite(floodWaterMassKilograms))
++                float parasiteMassKilograms = baseModule.ResolveParasiteAddedMassKilograms();
++                float structuralMassKilograms = floodWaterMassKilograms + parasiteMassKilograms;
++                if (structuralMassKilograms <= 0f || !math.isfinite(structuralMassKilograms))
+                     continue;
+ 
+-                baseModule.QueueHydroStructuralLoad(floodWaterMassKilograms, baseModule.transform.position, deltaTime);
++                baseModule.QueueHydroStructuralLoad(structuralMassKilograms, baseModule.transform.position, deltaTime);
++            }
++        }
++
++        private void ApplyIslandFloodCenterOfMassShifts(float deltaTime)
++        {
++            if (deltaTime <= 0f ||
++                _nodeCount <= 0 ||
++                !_anchorReachability.IsCreated ||
++                !_anchorTraversalQueue.IsCreated ||
++                !_edgeOffsets.IsCreated ||
++                !_edgeDestinations.IsCreated)
++            {
++                return;
++            }
++
++            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
++                _anchorReachability[nodeIndex] = 0;
++
++            for (int seedIndex = 0; seedIndex < _nodeCount; seedIndex++)
++            {
++                if (_anchorReachability[seedIndex] != 0)
++                    continue;
++
++                int islandStart = 0;
++                int queueHead = 0;
++                int queueTail = 0;
++                _anchorReachability[seedIndex] = 1;
++                _anchorTraversalQueue[queueTail++] = seedIndex;
++
++                float totalFloodMassKilograms = 0f;
++                Vector3 weightedFloodCentroid = Vector3.zero;
++
++                while (queueHead < queueTail)
++                {
++                    int currentNodeIndex = _anchorTraversalQueue[queueHead++];
++                    BaseModule currentModule = _moduleBuffer[currentNodeIndex].BaseModule;
++                    if (currentModule != null && currentModule.isActiveAndEnabled)
++                    {
++                        float floodMassKilograms = currentModule.ResolveFloodWaterMassKilograms();
++                        float parasiteMassKilograms = currentModule.ResolveParasiteAddedMassKilograms();
++                        float structuralMassKilograms = floodMassKilograms + parasiteMassKilograms;
++                        if (structuralMassKilograms > 0f && math.isfinite(structuralMassKilograms))
++                        {
++                            totalFloodMassKilograms += structuralMassKilograms;
++                            weightedFloodCentroid += currentModule.transform.position * structuralMassKilograms;
++                        }
++                    }
++
++                    int edgeStart = _edgeOffsets[currentNodeIndex];
++                    int edgeEnd = _edgeOffsets[currentNodeIndex + 1];
++                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
++                    {
++                        int neighborNodeIndex = _edgeDestinations[edgeIndex];
++                        if (neighborNodeIndex < 0 ||
++                            neighborNodeIndex >= _nodeCount ||
++                            _anchorReachability[neighborNodeIndex] != 0)
++                        {
++                            continue;
++                        }
++
++                        _anchorReachability[neighborNodeIndex] = 1;
++                        _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
++                    }
++                }
++
++                Vector3 centroid = totalFloodMassKilograms > 0f
++                    ? weightedFloodCentroid / totalFloodMassKilograms
++                    : Vector3.zero;
++                for (int islandNodeOffset = islandStart; islandNodeOffset < queueTail; islandNodeOffset++)
++                {
++                    BaseModule islandModule = _moduleBuffer[_anchorTraversalQueue[islandNodeOffset]].BaseModule;
++                    if (islandModule != null && islandModule.isActiveAndEnabled)
++                        islandModule.ApplyIslandFloodCenterOfMassShift(centroid, totalFloodMassKilograms, deltaTime);
++                }
+             }
+         }
+ 
+@@ -245,6 +369,89 @@ namespace Hecton8.Construction
+                 return;
+ 
+             PublishEmergencyLockdownState();
++            PublishSiegeTargetSnapshot();
++        }
++
++        internal bool TryResolveFungalMindTarget(BaseModule sourceModule, out BaseModule targetModule, out float targetPotential)
++        {
++            targetModule = null;
++            targetPotential = 0f;
++            if (sourceModule == null ||
++                _nodeCount <= 0 ||
++                !_edgeOffsets.IsCreated ||
++                !_edgeDestinations.IsCreated ||
++                !_anchorReachability.IsCreated ||
++                !_anchorTraversalQueue.IsCreated)
++            {
++                return false;
++            }
++
++            uint sourceNodeId = unchecked((uint)EntityId.ToULong(sourceModule.GetEntityId()));
++            if (sourceNodeId == 0u ||
++                !_moduleIndexByNodeId.TryGetValue(sourceNodeId, out int startNodeIndex) ||
++                startNodeIndex < 0 ||
++                startNodeIndex >= _nodeCount)
++            {
++                return false;
++            }
++
++            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
++                _anchorReachability[nodeIndex] = 0;
++
++            int queueHead = 0;
++            int queueTail = 0;
++            _anchorReachability[startNodeIndex] = 1;
++            _anchorTraversalQueue[queueTail++] = startNodeIndex;
++
++            float bestScore = 0f;
++            float bestPotential = 0f;
++            BaseModule bestModule = null;
++            while (queueHead < queueTail)
++            {
++                int currentNodeIndex = _anchorTraversalQueue[queueHead++];
++                byte currentDepth = _anchorReachability[currentNodeIndex];
++                ModuleRecord currentRecord = _moduleBuffer[currentNodeIndex];
++                if (currentNodeIndex != startNodeIndex && !currentRecord.IsSyntheticParasiteRoot)
++                {
++                    BaseModule currentModule = currentRecord.BaseModule;
++                    if (currentModule != null && currentModule.isActiveAndEnabled)
++                    {
++                        float rawPotential = ResolveFungalMindPotentialScore(currentRecord, _nodes[currentNodeIndex]);
++                        float depthPenalty = 1f + (math.max(0, currentDepth - 1) * 0.08f);
++                        float score = rawPotential / depthPenalty;
++                        if (score > bestScore && math.isfinite(score))
++                        {
++                            bestScore = score;
++                            bestPotential = rawPotential;
++                            bestModule = currentModule;
++                        }
++                    }
++                }
++
++                int edgeStart = _edgeOffsets[currentNodeIndex];
++                int edgeEnd = _edgeOffsets[currentNodeIndex + 1];
++                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
++                {
++                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
++                    if (neighborNodeIndex < 0 ||
++                        neighborNodeIndex >= _nodeCount ||
++                        _anchorReachability[neighborNodeIndex] != 0 ||
++                        _moduleBuffer[neighborNodeIndex].IsSyntheticParasiteRoot)
++                    {
++                        continue;
++                    }
++
++                    _anchorReachability[neighborNodeIndex] = (byte)math.min(255, currentDepth + 1);
++                    _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
++                }
++            }
++
++            if (bestModule == null || bestScore <= 0f)
++                return false;
++
++            targetModule = bestModule;
++            targetPotential = bestPotential;
++            return true;
+         }
+ 
+         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
+@@ -504,7 +711,7 @@ namespace Hecton8.Construction
+                                    distance > LogisticsPipeBuilder.UnsupportedSpanMeters &&
+                                    !HasIntermediateSupport(edge.SourceIndex, edge.DestinationIndex, edge.StartSocketPosition, edge.EndSocketPosition);
+ 
+-                if (unsupported)
++                if (unsupported || HasImplodedEndpoint(edge))
+                     MarkEdgeRuptured(ref edge);
+ 
+                 if (!edge.IsSyntheticParasiteRoot && !edge.Severed && TryApplyHydroShearRupture(ref edge))
+@@ -578,6 +785,14 @@ namespace Hecton8.Construction
+             return massDeltaKilograms > shearThresholdKilograms;
+         }
+ 
++        private bool HasImplodedEndpoint(EdgeRecord edge)
++        {
++            BaseModule sourceModule = _moduleBuffer[edge.SourceIndex].BaseModule;
++            BaseModule destinationModule = _moduleBuffer[edge.DestinationIndex].BaseModule;
++            return (sourceModule != null && sourceModule.HasImploded) ||
++                   (destinationModule != null && destinationModule.HasImploded);
++        }
++
+         private void MarkEdgeRuptured(ref EdgeRecord edge)
+         {
+             edge.Flags |= PipeRenderFlags.MaskRuptured;
+@@ -775,6 +990,60 @@ namespace Hecton8.Construction
+             }
+         }
+ 
++        private void PublishSiegeTargetSnapshot()
++        {
++            if (!_siegeTargets.IsCreated)
++                return;
++
++            int writeCount = 0;
++            int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
++            for (int nodeIndex = 0; nodeIndex < maxNodeCount && writeCount < MaxSiegeTargetCount; nodeIndex++)
++            {
++                ModuleRecord module = _moduleBuffer[nodeIndex];
++                BaseModule baseModule = module.BaseModule;
++                if (module.IsSyntheticParasiteRoot || baseModule == null || !baseModule.isActiveAndEnabled)
++                    continue;
++
++                LogisticsNodeFlags nodeFlags = _nodes.IsCreated && nodeIndex < _nodes.Length
++                    ? _nodes[nodeIndex].Flags
++                    : LogisticsNodeFlags.None;
++                float integrity01 = math.saturate(baseModule.IntegrityStateNormalized);
++                HabitatSiegeTargetFlags siegeFlags = ResolveSiegeTargetFlags(module, baseModule, nodeFlags, integrity01);
++                if ((siegeFlags & HabitatSiegeTargetFlags.Vulnerable) == 0)
++                    continue;
++
++                _siegeTargets[writeCount++] = new HabitatSiegeTargetSnapshot
++                {
++                    ModuleCenter = module.Position,
++                    WeakPoint = ResolveNodeRuptureWorldPoint(nodeIndex),
++                    Integrity01 = integrity01,
++                    Vulnerability01 = ResolveSiegeVulnerability01(baseModule, nodeFlags, integrity01),
++                    NodeId = module.NodeId,
++                    Flags = (byte)siegeFlags
++                };
++            }
++
++            for (int i = writeCount; i < _siegeTargetCount; i++)
++                _siegeTargets[i] = default;
++
++            _siegeTargetCount = writeCount;
++            s_latestSiegeTargets = _siegeTargets;
++            s_latestSiegeTargetCount = writeCount;
++        }
++
++        private void ClearSiegeTargetSnapshot()
++        {
++            if (_siegeTargets.IsCreated)
++            {
++                for (int i = 0; i < _siegeTargetCount; i++)
++                    _siegeTargets[i] = default;
++            }
++
++            _siegeTargetCount = 0;
++            s_latestSiegeTargets = default;
++            s_latestSiegeTargetCount = 0;
++        }
++
+         private void PublishGraphKernel()
+         {
+             _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, _nodeCount, math.max(1, _edgeCount), 0);
+@@ -906,10 +1175,12 @@ namespace Hecton8.Construction
+                 return 0f;
+ 
+             float floodWaterMassKilograms = baseModule.ResolveFloodWaterMassKilograms();
+-            if (floodWaterMassKilograms <= 0f || !math.isfinite(floodWaterMassKilograms))
++            float parasiteMassKilograms = baseModule.ResolveParasiteAddedMassKilograms();
++            float structuralMassKilograms = floodWaterMassKilograms + parasiteMassKilograms;
++            if (structuralMassKilograms <= 0f || !math.isfinite(structuralMassKilograms))
+                 return 0f;
+ 
+-            float loadNewtons = floodWaterMassKilograms * GravityAccelerationMetersPerSecondSquared;
++            float loadNewtons = structuralMassKilograms * GravityAccelerationMetersPerSecondSquared;
+             return math.isfinite(loadNewtons) ? math.max(0f, loadNewtons) : 0f;
+         }
+ 
+@@ -1008,10 +1279,21 @@ namespace Hecton8.Construction
+             LogisticsNodeFlags flags = LogisticsNodeFlags.Active;
+             if (baseModule != null && baseModule.HasCascadeFailure)
+                 flags |= LogisticsNodeFlags.Dirty;
++            if (baseModule != null && (baseModule.HasImploded || BaseDegradationSystem.IsModuleRuptured(baseModule)))
++                flags |= LogisticsNodeFlags.Ruptured;
+ 
+             return flags;
+         }
+ 
++        private static float ResolveFungalMindPotentialScore(ModuleRecord module, LogisticsNetworkGraph.LogisticsNode node)
++        {
++            float nodePotential = math.abs(node.Potential);
++            float nodeLoad = math.abs(node.CurrentLoad);
++            float modulePower = math.abs(ResolveModulePowerRating(module));
++            float score = math.max(nodePotential, math.max(nodeLoad, modulePower));
++            return math.isfinite(score) ? score : 0f;
++        }
++
+         private static float ResolveModulePowerRating(ModuleRecord module)
+         {
+             if (module.IsSyntheticParasiteRoot)
+@@ -1047,6 +1329,65 @@ namespace Hecton8.Construction
+             return bits;
+         }
+ 
++        private static HabitatSiegeTargetFlags ResolveSiegeTargetFlags(
++            ModuleRecord module,
++            BaseModule baseModule,
++            LogisticsNodeFlags nodeFlags,
++            float integrity01)
++        {
++            HabitatSiegeTargetFlags flags = HabitatSiegeTargetFlags.None;
++            if (module.IsEmergencyAirlock)
++                flags |= HabitatSiegeTargetFlags.EmergencyAirlock;
++
++            if (baseModule.IsFlooded || baseModule.IntegrityState == BaseModuleIntegrityState.Flooded)
++                flags |= HabitatSiegeTargetFlags.Flooded;
++
++            if (baseModule.IsBreached || baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured)
++                flags |= HabitatSiegeTargetFlags.Ruptured;
++
++            if (baseModule.HasCascadeFailure || baseModule.CurrentFailureMode != BaseModuleFailureMode.None)
++                flags |= HabitatSiegeTargetFlags.CascadeFailure;
++
++            if ((nodeFlags & LogisticsNodeFlags.Brownout) != 0 || !baseModule.HasPower)
++                flags |= HabitatSiegeTargetFlags.Brownout;
++
++            if ((nodeFlags & LogisticsNodeFlags.Isolated) != 0)
++                flags |= HabitatSiegeTargetFlags.Isolated;
++
++            bool vulnerable =
++                integrity01 <= SiegeVulnerableIntegrityThreshold01 ||
++                (flags & (HabitatSiegeTargetFlags.Flooded |
++                          HabitatSiegeTargetFlags.Ruptured |
++                          HabitatSiegeTargetFlags.Brownout |
++                          HabitatSiegeTargetFlags.Isolated |
++                          HabitatSiegeTargetFlags.CascadeFailure)) != 0;
++            if (vulnerable)
++                flags |= HabitatSiegeTargetFlags.Vulnerable;
++
++            return flags;
++        }
++
++        private static float ResolveSiegeVulnerability01(BaseModule baseModule, LogisticsNodeFlags nodeFlags, float integrity01)
++        {
++            float vulnerability = 1f - integrity01;
++            if (baseModule.IsFlooded || baseModule.IntegrityState == BaseModuleIntegrityState.Flooded)
++                vulnerability += 0.35f;
++
++            if (baseModule.IsBreached || baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured)
++                vulnerability += 0.55f;
++
++            if (baseModule.HasCascadeFailure || baseModule.CurrentFailureMode != BaseModuleFailureMode.None)
++                vulnerability += 0.2f;
++
++            if ((nodeFlags & LogisticsNodeFlags.Brownout) != 0 || !baseModule.HasPower)
++                vulnerability += 0.15f;
++
++            if ((nodeFlags & LogisticsNodeFlags.Isolated) != 0)
++                vulnerability += 0.15f;
++
++            return math.saturate(vulnerability);
++        }
++
+         private static bool ResolveStructuralAnchorState(BaseModule baseModule, ModuleMarker marker)
+         {
+             if (baseModule != null && baseModule.ResolveStructuralAnchorRole(marker))
+@@ -1117,6 +1458,8 @@ namespace Hecton8.Construction
+             _edgeWriteCursor = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+             _anchorReachability = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+             _anchorTraversalQueue = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] — capped habitat weak-point snapshot for headless predator siege jobs — owner: HabitatGraphManager
++            _siegeTargets = new NativeArray<HabitatSiegeTargetSnapshot>(MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+         }
+ 
+         private void EnsureNodeCapacity(int requiredLength)
+@@ -1127,7 +1470,9 @@ namespace Hecton8.Construction
+                 _edgeOffsets.Length >= safeLength + 1 &&
+                 _edgeWriteCursor.Length >= safeLength &&
+                 _anchorReachability.Length >= safeLength &&
+-                _anchorTraversalQueue.Length >= safeLength)
++                _anchorTraversalQueue.Length >= safeLength &&
++                _siegeTargets.IsCreated &&
++                _siegeTargets.Length >= MaxSiegeTargetCount)
+                 return;
+ 
+             DisposeNativeBuffers();
+@@ -1149,6 +1494,8 @@ namespace Hecton8.Construction
+ 
+         private void DisposeNativeBuffers()
+         {
++            ClearSiegeTargetSnapshot();
++
+             if (_nodes.IsCreated)
+                 _nodes.Dispose();
+ 
+@@ -1169,6 +1516,9 @@ namespace Hecton8.Construction
+ 
+             if (_anchorTraversalQueue.IsCreated)
+                 _anchorTraversalQueue.Dispose();
++
++            if (_siegeTargets.IsCreated)
++                _siegeTargets.Dispose();
+         }
+ 
+         private static int NextPowerOfTwo(int value)
+diff --git a/Assets/_Project/Scripts/HectonVoxelVolume.cs b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+index 2916328c..e2813e08 100644
+--- a/Assets/_Project/Scripts/HectonVoxelVolume.cs
++++ b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+@@ -56,12 +56,15 @@ namespace Hecton8.Caves
+         private const int MaxColliderChunkCount = 8;
+         private const int MaxPlasmaCutSteps = 24;
+         private const int MaxQueuedRebuildPassesPerKick = 4;
++        private const int MaxMagmaVeinBurnSamplesPerSegment = 16;
+         private const float ResourceCraterClusterRadiusMeters = 20f;
+         private const float CollapseBoxHorizontalPaddingMeters = 4f;
+         private const float CollapseImpulseVerticalBias = 0.45f;
+         private const float MinPlasmaCutPower = 0.02f;
+         private const float PlasmaCutAttenuationPerMeter = 1f;
+         private const byte DefaultDeltaMaterialId = 0;
++        private const byte SedimentDeltaMaterialId = 1;
++        private const byte MagmaDeltaMaterialId = 2;
+ 
+         private HectonVoxelEngine _engine;
+         private VoxelDeltaProcessor _deltaProcessor;
+@@ -890,6 +893,19 @@ namespace Hecton8.Caves
+             CarveCrater(pos, radius);
+         }
+ 
++        /// <summary>
++        /// Applies a persistent additive organic root mound through the voxel delta owner.
++        /// </summary>
++        internal void ApplyOrganicRootMound(Vector3 pos, float radius, float strength)
++        {
++            if (!_runtimeDataReady || radius <= 0f || strength <= 0f || _deltaProcessor == null)
++                return;
++
++            SetBakeState(VoxelBakeState.Pending);
++            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
++            _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, radius, strength, DefaultDeltaMaterialId);
++        }
++
+         /// <summary>
+         /// Executes the authoritative persistent resource-depletion crater pass.
+         /// Kept explicit so tombstoned geology callers route through the volume owner instead of the delta processor.
+@@ -904,6 +920,131 @@ namespace Hecton8.Caves
+             TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
+         }
+ 
++        /// <summary>
++        /// Applies a parasite-triggered subtractive box collapse through the persistent voxel delta lane.
++        /// </summary>
++        internal bool ApplyParasiteCollapseBox(Vector3 runtimeCenter, Vector3 halfExtents)
++        {
++            if (!_runtimeDataReady || _deltaProcessor == null)
++                return false;
++
++            Vector3 safeHalfExtents = new Vector3(
++                Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.x)),
++                Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.y)),
++                Mathf.Max(_voxelSize, Mathf.Abs(halfExtents.z)));
++            if (safeHalfExtents.sqrMagnitude <= 0.0001f)
++                return false;
++
++            Vector3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeCenter);
++            SetBakeState(VoxelBakeState.Pending);
++            _deltaProcessor.ApplyImmediateAbsoluteBoxCrater(this, absoluteCenter, safeHalfExtents, DefaultDeltaMaterialId);
++
++            float impulseRadius = Mathf.Max(
++                safeHalfExtents.x,
++                Mathf.Max(safeHalfExtents.y, safeHalfExtents.z)) * 1.8f;
++            float impulseMagnitude = Mathf.Clamp(safeHalfExtents.y * 4f + safeHalfExtents.x + safeHalfExtents.z, 12f, 48f);
++            ApplyCollapseImpulse(runtimeCenter, safeHalfExtents, impulseRadius, impulseMagnitude);
++            return true;
++        }
++
++        /// <summary>
++        /// Applies the sediment-layer depletion-rot crater path for soft ore veins.
++        /// Basalt-profile nodes must keep using <see cref="ApplyPersistentResourceCrater"/>.
++        /// </summary>
++        public void ApplyPersistentResourceSedimentRotCrater(Vector3 pos, float radius)
++        {
++            if (!_runtimeDataReady || radius <= 0f)
++                return;
++
++            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
++            if (_deltaProcessor != null)
++            {
++                SetBakeState(VoxelBakeState.Pending);
++                _deltaProcessor.ApplyImmediateCrater(this, pos, radius, SedimentDeltaMaterialId);
++            }
++            else
++            {
++                AppendCraterStamp(absolutePosition, radius, true);
++            }
++
++            TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
++        }
++
++        /// <summary>
++        /// Applies a subtractive meteor-impact sphere stamp through the authoritative voxel delta owner.
++        /// </summary>
++        /// <param name="pos">Runtime-space seabed impact point.</param>
++        /// <param name="radius">Sphere carve radius in meters.</param>
++        /// <returns>True when the volume accepted the impact stamp.</returns>
++        public bool TryApplyExtraterrestrialImpactCrater(Vector3 pos, float radius)
++        {
++            if (!_runtimeDataReady || radius <= 0f)
++                return false;
++
++            CarveCrater(pos, radius);
++            return true;
++        }
++
++        /// <summary>
++        /// Applies an additive magma-vein CSG capsule chain through the persistent voxel delta owner.
++        /// </summary>
++        /// <param name="splinePoints">Caller-owned runtime-space spline point buffer.</param>
++        /// <param name="pointCount">Valid point count inside <paramref name="splinePoints"/>.</param>
++        /// <param name="radiusMeters">Magma capsule radius in meters.</param>
++        /// <param name="burnRadiusMeters">Organic burn radius around each accepted segment.</param>
++        /// <returns>Accepted segment count.</returns>
++        public int ApplyMagmaVeinSpline(Vector3[] splinePoints, int pointCount, float radiusMeters, float burnRadiusMeters)
++        {
++            if (!_runtimeDataReady ||
++                _deltaProcessor == null ||
++                splinePoints == null ||
++                pointCount < 2 ||
++                radiusMeters <= 0f)
++            {
++                return 0;
++            }
++
++            int safePointCount = Mathf.Min(pointCount, splinePoints.Length);
++            if (safePointCount < 2)
++                return 0;
++
++            float safeRadius = Mathf.Max(_voxelSize, radiusMeters);
++            float safeBurnRadius = Mathf.Max(safeRadius, burnRadiusMeters);
++            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
++            int acceptedSegments = 0;
++            SetBakeState(VoxelBakeState.Pending);
++
++            for (int i = 1; i < safePointCount; i++)
++            {
++                Vector3 start = splinePoints[i - 1];
++                Vector3 end = splinePoints[i];
++                if (!IsFinite(start) || !IsFinite(end))
++                    continue;
++
++                Vector3 segment = end - start;
++                float segmentLengthSq = segment.sqrMagnitude;
++                if (segmentLengthSq <= _voxelSize * _voxelSize * 0.01f)
++                    continue;
++
++                Vector3 absoluteStart = HectonFloatingOrigin.ToAbsoluteUniversePosition(start);
++                Vector3 absoluteEnd = HectonFloatingOrigin.ToAbsoluteUniversePosition(end);
++                _deltaProcessor.ApplyImmediateAbsoluteCapsuleWeld(
++                    this,
++                    absoluteStart,
++                    absoluteEnd,
++                    safeRadius,
++                    safeRadius,
++                    MagmaDeltaMaterialId);
++
++                if (organicManager != null && safeBurnRadius > 0f)
++                    BurnFloraAlongMagmaSegment(organicManager, start, end, Mathf.Sqrt(segmentLengthSq), safeBurnRadius);
++
++                acceptedSegments++;
++            }
++
++            return acceptedSegments;
++        }
++
+         /// <summary>
+         /// Resolves ceiling-adjacent crater anchors around the supplied epicenter and pushes them
+         /// through the authoritative crater/delta pipeline.
+@@ -1838,6 +1979,35 @@ namespace Hecton8.Caves
+             return false;
+         }
+ 
++        private static void BurnFloraAlongMagmaSegment(
++            DestructibleOrganicManager organicManager,
++            Vector3 start,
++            Vector3 end,
++            float segmentLength,
++            float burnRadius)
++        {
++            if (organicManager == null || segmentLength <= 0f || burnRadius <= 0f)
++                return;
++
++            int sampleCount = Mathf.Clamp(
++                Mathf.CeilToInt(segmentLength / Mathf.Max(0.5f, burnRadius)),
++                1,
++                MaxMagmaVeinBurnSamplesPerSegment);
++            for (int i = 0; i <= sampleCount; i++)
++            {
++                float t = sampleCount > 0 ? i / (float)sampleCount : 0f;
++                Vector3 samplePosition = Vector3.LerpUnclamped(start, end, t);
++                organicManager.ApplyDefoliantDeadZone(samplePosition, burnRadius);
++            }
++        }
++
++        private static bool IsFinite(Vector3 value)
++        {
++            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
++                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
++                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
++        }
++
+         private bool AppendCraterStamp(Vector3 absolutePosition, float radius, bool queueRebuild)
+         {
+             if (!_runtimeDataReady || radius <= 0f)
+diff --git a/Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs b/Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs
+index 6e591822..7d466fb0 100644
+--- a/Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs
++++ b/Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs
+@@ -15,17 +15,18 @@ namespace Hecton8.Interaction
+     /// </summary>
+     [DisallowMultipleComponent]
+     [DefaultExecutionOrder(-9935)]
+-    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, IUpdatable
++    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, IUpdatable, ILateFrameTickable
+     {
+         private const int MaxQueuedSignals = 256;
+         private const int MaxQueuedRayRequests = 64;
++        private const int MaxHitArbitrationHits = 8;
+         private const int MinCommandsPerJob = 1;
+         private const float MinDirectionSqr = 0.0001f;
+         private const float MinHitDistance = 0.05f;
+         private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
+         private static int _baseModuleLayer = int.MinValue;
+-
+-        private static EquipmentInteractionHandler _instance;
++        private static int _interactableLayer = int.MinValue;
++        private static int _voxelLayer = int.MinValue;
+ 
+         // COLD ALLOC: Collider[256] - queued target side-channel aligned with the native interaction queue - owner: EquipmentInteractionHandler
+         private readonly Collider[] _queuedTargetColliders = new Collider[MaxQueuedSignals];
+@@ -39,6 +40,8 @@ namespace Hecton8.Interaction
+         private readonly RaycastHit[] _completedHits = new RaycastHit[MaxQueuedRayRequests];
+         // COLD ALLOC: bool[64] - validity bits for completed frame-latent tool raycast results - owner: EquipmentInteractionHandler
+         private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
++        // COLD ALLOC: RaycastHit[8] - fixed flora/base overlap arbitration buffer - owner: EquipmentInteractionHandler
++        private static readonly RaycastHit[] _hitArbitrationHits = new RaycastHit[MaxHitArbitrationHits];
+ 
+         private NativeQueue<InteractionSignal> _signalQueue;
+         private NativeArray<RaycastCommand> _scheduledCommands;
+@@ -55,30 +58,11 @@ namespace Hecton8.Interaction
+         private bool _scheduledRaycastActive;
+         private bool _isInitialized;
+         private bool _dispatcherRegistered;
++        private bool _serviceRegistered;
+ 
+         /// <inheritdoc />
+         public bool IsInitialized => _isInitialized;
+ 
+-        /// <summary>
+-        /// Ensures a runtime signal handler exists.
+-        /// </summary>
+-        /// <returns>Live handler instance.</returns>
+-        public static EquipmentInteractionHandler EnsureRuntimeInstance()
+-        {
+-            if (_instance != null)
+-                return _instance;
+-
+-            GameObject runtimeRoot = new GameObject("[EquipmentInteractionHandler]");
+-            EquipmentInteractionHandler handler = runtimeRoot.AddComponent<EquipmentInteractionHandler>();
+-            return handler;
+-        }
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            _instance = null;
+-        }
+-
+         /// <summary>
+         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
+         /// </summary>
+@@ -86,12 +70,13 @@ namespace Hecton8.Interaction
+         {
+             if (_isInitialized)
+             {
++                TryRegisterSignalService();
+                 TryRegisterToDispatcher();
+                 return;
+             }
+ 
+-            GlobalRegistry.RegisterInteractionSignalService(this);
+             _isInitialized = true;
++            TryRegisterSignalService();
+             TryRegisterToDispatcher();
+         }
+ 
+@@ -108,6 +93,14 @@ namespace Hecton8.Interaction
+             return true;
+         }
+ 
++        /// <inheritdoc />
++        public bool TryRaycastPrimary(ulong requesterId, in InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
++        {
++            Vector3 origin = new Vector3(packet.Origin.x, packet.Origin.y, packet.Origin.z);
++            Vector3 direction = new Vector3(packet.Direction.x, packet.Direction.y, packet.Direction.z);
++            return TryRaycastPrimary(requesterId, origin, direction, packet.Range, layerMask, queryTriggerInteraction, out hit);
++        }
++
+         /// <inheritdoc />
+         public bool TryRaycastPrimary(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
+         {
+@@ -147,13 +140,6 @@ namespace Hecton8.Interaction
+ 
+         private void Awake()
+         {
+-            if (_instance != null && _instance != this)
+-            {
+-                Destroy(gameObject);
+-                return;
+-            }
+-
+-            _instance = this;
+             EnsureLayerCache();
+ 
+             if (!_signalQueue.IsCreated)
+@@ -170,23 +156,53 @@ namespace Hecton8.Interaction
+                 ResetCommandLane(_scheduledCommands);
+                 ResetCommandLane(_stagingCommands);
+             }
++        }
+ 
+-            if (Application.isPlaying)
+-            {
+-                if (transform.parent != null)
+-                    transform.SetParent(null, true);
++        private void OnEnable()
++        {
++            if (!_isInitialized)
++                return;
+ 
+-                DontDestroyOnLoad(gameObject);
+-            }
++            TryRegisterSignalService();
++            TryRegisterToDispatcher();
++        }
++
++        private void OnDisable()
++        {
++            TryUnregisterFromDispatcher();
++            TryUnregisterSignalService();
+         }
+ 
+         private static void EnsureLayerCache()
+         {
+             if (_baseModuleLayer == int.MinValue)
++            {
+                 _baseModuleLayer = LayerMask.NameToLayer("BaseModule");
++                if (_baseModuleLayer < 0)
++                    _baseModuleLayer = LayerMask.NameToLayer("BaseModule  ");
++                if (_baseModuleLayer < 0)
++                    _baseModuleLayer = 8;
++            }
++
++            if (_interactableLayer == int.MinValue)
++            {
++                _interactableLayer = LayerMask.NameToLayer("Interactable");
++                if (_interactableLayer < 0)
++                    _interactableLayer = 3;
++            }
++
++            if (_voxelLayer == int.MinValue)
++            {
++                _voxelLayer = LayerMask.NameToLayer("VoxelCave");
++                if (_voxelLayer < 0)
++                    _voxelLayer = LayerMask.NameToLayer("VoxelCave ");
++                if (_voxelLayer < 0)
++                    _voxelLayer = 12;
++            }
+         }
+ 
+-        private void LateUpdate()
++        /// <inheritdoc />
++        public void LateFrameTick()
+         {
+             FlushSignals();
+             ScheduleStagedRaycasts();
+@@ -194,26 +210,15 @@ namespace Hecton8.Interaction
+ 
+         private void OnDestroy()
+         {
+-            if (_isInitialized)
+-            {
+-                GlobalRegistry.UnregisterInteractionSignalService(this);
+-                _isInitialized = false;
+-            }
+-
+-            if (_dispatcherRegistered)
+-            {
+-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+-                _dispatcherRegistered = false;
+-            }
++            TryUnregisterFromDispatcher();
++            TryUnregisterSignalService();
++            _isInitialized = false;
+ 
+             ClearQueuedSignals();
+             if (_signalQueue.IsCreated)
+                 _signalQueue.Dispose();
+ 
+             DisposeRaycastBuffers();
+-
+-            if (_instance == this)
+-                _instance = null;
+         }
+ 
+         private void FlushSignals()
+@@ -242,9 +247,38 @@ namespace Hecton8.Interaction
+                 return;
+ 
+             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
++            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+             _dispatcherRegistered = true;
+         }
+ 
++        private void TryUnregisterFromDispatcher()
++        {
++            if (!_dispatcherRegistered)
++                return;
++
++            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
++            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
++            _dispatcherRegistered = false;
++        }
++
++        private void TryRegisterSignalService()
++        {
++            if (_serviceRegistered || !Application.isPlaying)
++                return;
++
++            GlobalRegistry.RegisterInteractionSignalService(this);
++            _serviceRegistered = true;
++        }
++
++        private void TryUnregisterSignalService()
++        {
++            if (!_serviceRegistered)
++                return;
++
++            GlobalRegistry.UnregisterInteractionSignalService(this);
++            _serviceRegistered = false;
++        }
++
+         private static void DispatchSignal(InteractionSignal signal, Collider targetCollider)
+         {
+             if (!CanApplyInteraction(in signal, targetCollider))
+@@ -308,7 +342,7 @@ namespace Hecton8.Interaction
+                 return;
+ 
+             Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
+-            if (ShouldSuppressBaseModuleCutDamage(targetCollider, runtimeHitPoint))
++            if (ShouldSuppressBaseModuleCutDamage(targetCollider, runtimeHitPoint, in signal))
+                 return;
+ 
+             if (TryResolveSignalConsumer(targetCollider, out IInteractionSignalConsumer signalConsumer))
+@@ -321,25 +355,79 @@ namespace Hecton8.Interaction
+                 cuttable.ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
+         }
+ 
+-        private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint)
++        private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint, in InteractionSignal signal)
+         {
+             EnsureLayerCache();
+             if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
+                 return false;
+ 
+             BaseModule module = targetCollider.GetComponentInParent<BaseModule>();
+-            if (module == null || module.ParasiteInfectionLevel <= 0.0001f)
++            if (module == null)
+                 return false;
+ 
+             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+             if (organicManager == null)
+                 return false;
+ 
+-            return organicManager.TryResolveNearestConsumableFlora(
++            if (!organicManager.TryResolveNearestConsumableFlora(
+                 runtimeHitPoint,
+                 AttachedFloraArbitrationRadiusMeters,
+                 out _,
+-                out _);
++                out _))
++            {
++                return false;
++            }
++
++            Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
++            if (direction.sqrMagnitude < MinDirectionSqr)
++                direction = Vector3.forward;
++            else
++                direction.Normalize();
++
++            int layerMask = BuildHitArbitrationLayerMask(targetCollider.gameObject.layer);
++            Vector3 castOrigin = runtimeHitPoint - direction * AttachedFloraArbitrationRadiusMeters;
++            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
++                castOrigin,
++                AttachedFloraArbitrationRadiusMeters,
++                direction,
++                _hitArbitrationHits,
++                AttachedFloraArbitrationRadiusMeters * 2f,
++                layerMask,
++                QueryTriggerInteraction.Collide);
++
++            if (hitCount <= 0)
++                return true;
++
++            for (int i = 0; i < hitCount; i++)
++            {
++                Collider hitCollider = _hitArbitrationHits[i].collider;
++                if (hitCollider == null)
++                    continue;
++
++                if (hitCollider == targetCollider)
++                    return true;
++
++                BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
++                if (hitModule == module)
++                    return true;
++            }
++
++            return true;
++        }
++
++        private static int BuildHitArbitrationLayerMask(int targetLayer)
++        {
++            EnsureLayerCache();
++            int layerMask = 0;
++            if (targetLayer >= 0 && targetLayer < 32)
++                layerMask |= 1 << targetLayer;
++            if (_baseModuleLayer >= 0 && _baseModuleLayer < 32)
++                layerMask |= 1 << _baseModuleLayer;
++            if (_interactableLayer >= 0 && _interactableLayer < 32)
++                layerMask |= 1 << _interactableLayer;
++            if (_voxelLayer >= 0 && _voxelLayer < 32)
++                layerMask |= 1 << _voxelLayer;
++            return layerMask;
+         }
+ 
+         private static bool CanApplyInteraction(in InteractionSignal signal, Collider targetCollider)
+diff --git a/Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs b/Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs
+index f1812b0c..147c0a7c 100644
+--- a/Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs
++++ b/Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs
+@@ -35,7 +35,7 @@ namespace Hecton8.World
+             public float4 Delta;
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct ChemicalDiffusionJob : IJobParallelFor
+         {
+             [ReadOnly] public NativeArray<float4> Source;
+@@ -65,7 +65,12 @@ namespace Hecton8.World
+                 float4 neighborAverage = (left + right + down + up + back + forward) / 6f;
+                 float4 retained = self * (new float4(1f, 1f, 1f, 1f) - DecayRates);
+                 float4 diffused = neighborAverage * DiffusionRates;
+-                Target[index] = math.min(math.max(retained + diffused, float4.zero), new float4(MaxChannelIntensity));
++                float4 next = retained + diffused;
++                Target[index] = new float4(
++                    math.clamp(next.x, 0f, MaxChannelIntensity),
++                    math.clamp(next.y, 0f, MaxChannelIntensity),
++                    math.clamp(next.z, 0f, MaxChannelIntensity),
++                    math.clamp(next.w, -MaxChannelIntensity, MaxChannelIntensity));
+             }
+         }
+ 
+@@ -78,6 +83,8 @@ namespace Hecton8.World
+         private const float MinimumTransportSignal = 0.05f;
+         private const float ChemicalTransientRadiusMeters = 18f;
+         private const float ChemicalTransientLifetimeSeconds = 12f;
++        private const float DefaultDefoliantDeadZoneRadiusMeters = 30f;
++        private const int MaxDefoliantDeadZones = 64;
+ 
+         private static readonly int _ChemicalGridSourceId = Shader.PropertyToID("_ChemicalGridSource");
+         private static readonly int _ChemicalGridTargetId = Shader.PropertyToID("_ChemicalGridTarget");
+@@ -114,6 +121,8 @@ namespace Hecton8.World
+ 
+         // COLD ALLOC: InfluenceWrite[1024] - bounded scent write ring consumed by ChemicalInfluenceGrid - owner: ChemicalInfluenceGrid
+         private readonly InfluenceWrite[] _pendingWrites = new InfluenceWrite[PendingWriteCapacity];
++        // COLD ALLOC: Vector4[64] - permanent defoliant dead-zone registry in absolute-universe space - owner: ChemicalInfluenceGrid
++        private readonly Vector4[] _defoliantDeadZones = new Vector4[MaxDefoliantDeadZones];
+ 
+         private NativeArray<float4> _frontGrid;
+         private NativeArray<float4> _backGrid;
+@@ -131,6 +140,7 @@ namespace Hecton8.World
+         private GraphicsBuffer _gpuFrontBuffer;
+         private GraphicsBuffer _gpuBackBuffer;
+         private int _diffusionKernelIndex = -1;
++        private int _defoliantDeadZoneCount;
+ 
+         /// <summary>
+         /// Active runtime instance when the scent field is live.
+@@ -177,6 +187,31 @@ namespace Hecton8.World
+             return frontGrid.IsCreated && overlayGrid.IsCreated;
+         }
+ 
++        internal static bool TryGetActivePublishedSnapshot(
++            out NativeArray<float4> frontGrid,
++            out NativeArray<float4> overlayGrid,
++            out int3 dimensions,
++            out float3 origin,
++            out float3 cellSize)
++        {
++            frontGrid = default;
++            overlayGrid = default;
++            dimensions = int3.zero;
++            origin = float3.zero;
++            cellSize = float3.zero;
++            ChemicalInfluenceGrid instance = _activeRuntimeInstance;
++            if (instance == null)
++                return false;
++
++            instance.PublishFrame(Time.frameCount);
++            frontGrid = instance._frontGrid;
++            overlayGrid = instance._overlayGrid;
++            dimensions = instance.ResolveDimensions();
++            origin = instance._gridOriginWS;
++            cellSize = instance._cellSizeWS;
++            return frontGrid.IsCreated && overlayGrid.IsCreated;
++        }
++
+         internal static bool TrySampleNormalizedChannels(Vector3 worldPosition, out float4 normalizedChannels)
+         {
+             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+@@ -214,6 +249,40 @@ namespace Hecton8.World
+             RegisterChemicalTransient(worldPosition, clampedIntensity);
+         }
+ 
++        internal static void QueueDefoliantBurst(Vector3 worldPosition, float intensity)
++        {
++            float clampedIntensity = math.max(0f, intensity);
++            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity));
++            RegisterChemicalTransient(worldPosition, clampedIntensity);
++        }
++
++        internal static void QueueDefoliantDeadZone(Vector3 worldPosition, float radiusMeters = DefaultDefoliantDeadZoneRadiusMeters, float intensity = DefaultMaximumChannelIntensity)
++        {
++            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
++            float clampedIntensity = math.max(0f, intensity);
++            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
++            instance.RegisterDefoliantDeadZone(worldPosition, safeRadius);
++            instance.Enqueue(worldPosition, new float4(0f, 0f, 0f, -math.max(1f, clampedIntensity)));
++            RegisterChemicalTransient(worldPosition, clampedIntensity);
++
++            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
++            if (organicManager != null)
++                organicManager.ApplyDefoliantDeadZone(worldPosition, safeRadius);
++        }
++
++        internal static bool IsInsidePermanentDefoliantDeadZone(Vector3 worldPosition)
++        {
++            ChemicalInfluenceGrid instance = _activeRuntimeInstance;
++            return instance != null &&
++                   instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition));
++        }
++
++        internal static bool IsInsidePermanentDefoliantDeadZoneAbsolute(Vector3 absolutePosition)
++        {
++            ChemicalInfluenceGrid instance = _activeRuntimeInstance;
++            return instance != null && instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(absolutePosition);
++        }
++
+         private static void RegisterChemicalTransient(Vector3 worldPosition, float intensity)
+         {
+             if (intensity <= 0f)
+@@ -382,6 +451,44 @@ namespace Hecton8.World
+             _pendingWriteCount++;
+         }
+ 
++        private void RegisterDefoliantDeadZone(Vector3 worldPosition, float radiusMeters)
++        {
++            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
++            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
++            float mergeRadiusSq = safeRadius * safeRadius;
++            for (int i = 0; i < _defoliantDeadZoneCount; i++)
++            {
++                Vector4 zone = _defoliantDeadZones[i];
++                Vector3 zoneCenter = new Vector3(zone.x, zone.y, zone.z);
++                if ((zoneCenter - absolutePosition).sqrMagnitude > mergeRadiusSq)
++                    continue;
++
++                Vector3 mergedCenter = Vector3.Lerp(zoneCenter, absolutePosition, 0.5f);
++                _defoliantDeadZones[i] = new Vector4(
++                    mergedCenter.x,
++                    mergedCenter.y,
++                    mergedCenter.z,
++                    Mathf.Max(zone.w, safeRadius));
++                return;
++            }
++
++            if (_defoliantDeadZoneCount < _defoliantDeadZones.Length)
++            {
++                _defoliantDeadZones[_defoliantDeadZoneCount++] = new Vector4(
++                    absolutePosition.x,
++                    absolutePosition.y,
++                    absolutePosition.z,
++                    safeRadius);
++                return;
++            }
++
++            _defoliantDeadZones[_defoliantDeadZoneCount - 1] = new Vector4(
++                absolutePosition.x,
++                absolutePosition.y,
++                absolutePosition.z,
++                safeRadius);
++        }
++
+         private void FlushPendingWritesToOverlay()
+         {
+             if (!_overlayGrid.IsCreated || _pendingWriteCount <= 0)
+@@ -395,7 +502,7 @@ namespace Hecton8.World
+ 
+                 int flatIndex = Flatten(cell);
+                 float4 next = _overlayGrid[flatIndex] + write.Delta;
+-                _overlayGrid[flatIndex] = math.min(next, new float4(math.max(0.1f, maximumChannelIntensity)));
++                _overlayGrid[flatIndex] = ClampChemicalChannels(next, math.max(0.1f, maximumChannelIntensity));
+             }
+ 
+             _pendingWriteCount = 0;
+@@ -412,7 +519,7 @@ namespace Hecton8.World
+                 if (math.lengthsq(overlay) <= 0f)
+                     continue;
+ 
+-                _frontGrid[i] = math.min(_frontGrid[i] + overlay, new float4(math.max(0.1f, maximumChannelIntensity)));
++                _frontGrid[i] = ClampChemicalChannels(_frontGrid[i] + overlay, math.max(0.1f, maximumChannelIntensity));
+                 _overlayGrid[i] = float4.zero;
+             }
+         }
+@@ -573,18 +680,61 @@ namespace Hecton8.World
+         private bool TrySampleNormalizedChannelsInternal(float3 worldPosition, out float4 normalizedChannels)
+         {
+             normalizedChannels = float4.zero;
++            Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
++            bool insideDeadZone = IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition));
+             if (!_frontGrid.IsCreated || !_overlayGrid.IsCreated)
+-                return false;
++            {
++                if (!insideDeadZone)
++                    return false;
++
++                normalizedChannels = new float4(0f, 0f, 0f, -1f);
++                return true;
++            }
+ 
+             if (!TryWorldToCell(worldPosition, out int3 cell))
+-                return false;
++            {
++                if (!insideDeadZone)
++                    return false;
++
++                normalizedChannels = new float4(0f, 0f, 0f, -1f);
++                return true;
++            }
+ 
+             float4 combinedChannels = _frontGrid[Flatten(cell)] + _overlayGrid[Flatten(cell)];
+             float inverseMaxIntensity = 1f / math.max(0.1f, maximumChannelIntensity);
+-            normalizedChannels = math.saturate(combinedChannels * inverseMaxIntensity);
++            float4 normalized = combinedChannels * inverseMaxIntensity;
++            normalizedChannels = new float4(
++                math.saturate(normalized.x),
++                math.saturate(normalized.y),
++                math.saturate(normalized.z),
++                insideDeadZone ? -1f : math.clamp(normalized.w, -1f, 1f));
+             return true;
+         }
+ 
++        private bool IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(Vector3 absolutePosition)
++        {
++            for (int i = 0; i < _defoliantDeadZoneCount; i++)
++            {
++                Vector4 zone = _defoliantDeadZones[i];
++                float radiusSq = zone.w * zone.w;
++                Vector3 zoneCenter = new Vector3(zone.x, zone.y, zone.z);
++                if ((absolutePosition - zoneCenter).sqrMagnitude <= radiusSq)
++                    return true;
++            }
++
++            return false;
++        }
++
++        private static float4 ClampChemicalChannels(float4 value, float maxChannelIntensity)
++        {
++            float safeMax = math.max(0.1f, maxChannelIntensity);
++            return new float4(
++                math.clamp(value.x, 0f, safeMax),
++                math.clamp(value.y, 0f, safeMax),
++                math.clamp(value.z, 0f, safeMax),
++                math.clamp(value.w, -safeMax, safeMax));
++        }
++
+         private void TryRegisterSlowTick()
+         {
+             if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+diff --git a/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs b/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
+index 46668378..48188892 100644
+--- a/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
++++ b/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
+@@ -1,6 +1,7 @@
+ using System.Runtime.InteropServices;
+ using System;
+ using Hecton8.Audio;
++using Hecton8.Caves;
+ using Hecton8.Core;
+ using Hecton8.Gameplay;
+ using Hecton8.Interaction;
+@@ -45,6 +46,12 @@ namespace Hecton8.World
+         private const float LightStarvationDeathHealth01 = 0.015f;
+         private const float AllelopathicBareHealth01 = 0.08f;
+         private const float AllelopathicDeathThreshold01 = 0.85f;
++        private const float OvergrowthUntouchedSeconds = 3f * 24f * 60f * 60f;
++        private const float OvergrowthExpansionMeters = 2f;
++        private const int OvergrowthScanBudgetPerSlowTick = 64;
++        private const float TitanRootMoundRadiusMeters = 5f;
++        private const float TitanRootMoundStrengthMeters = 2.25f;
++        private const float TitanRootMoundMatureThreshold01 = 0.999f;
+         private const byte FloraRuntimeFlagHasParasite = (byte)HectonVegetationRuntimeFlags.Parasite;
+         private const byte FloraRuntimeFlagDead = 1 << 6;
+         private const int DefaultCorpseNodeCapacity = 96;
+@@ -96,6 +103,92 @@ namespace Hecton8.World
+             }
+         }
+ 
++        private void EvaluateAggressiveOvergrowth(float currentTime)
++        {
++            EvaluateAggressiveOvergrowthInLane(false, currentTime, ref _surfaceOvergrowthScanCursor);
++            EvaluateAggressiveOvergrowthInLane(true, currentTime, ref _underwaterOvergrowthScanCursor);
++        }
++
++        private void EvaluateAggressiveOvergrowthInLane(bool underwater, float currentTime, ref int cursor)
++        {
++            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
++            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
++            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
++            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
++            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
++            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
++            NativeArray<Unity.Mathematics.half> health = underwater ? _underwaterHealth : _surfaceHealth;
++            int count = underwater ? _underwaterCount : _surfaceCount;
++            if (!matrices.IsCreated ||
++                !metadata.IsCreated ||
++                !types.IsCreated ||
++                !semanticTypes.IsCreated ||
++                !instanceUids.IsCreated ||
++                !materialClasses.IsCreated ||
++                !health.IsCreated ||
++                !_lastOrganicTouchTimeByInstanceUid.IsCreated ||
++                !_overgrownByInstanceUid.IsCreated ||
++                count <= 0)
++            {
++                cursor = 0;
++                return;
++            }
++
++            int safeCount = math.min(
++                count,
++                math.min(
++                    math.min(matrices.Length, metadata.Length),
++                    math.min(
++                        math.min(types.Length, semanticTypes.Length),
++                        math.min(instanceUids.Length, math.min(materialClasses.Length, health.Length)))));
++            if (safeCount <= 0)
++            {
++                cursor = 0;
++                return;
++            }
++
++            cursor = math.clamp(cursor, 0, safeCount - 1);
++            int checks = math.min(OvergrowthScanBudgetPerSlowTick, safeCount);
++            for (int step = 0; step < checks; step++)
++            {
++                int activeIndex = (cursor + step) % safeCount;
++                uint instanceUid = instanceUids[activeIndex];
++                if (instanceUid == 0u ||
++                    (float)health[activeIndex] <= 0.0001f ||
++                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)) ||
++                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(instanceUid)) ||
++                    _overgrownByInstanceUid.ContainsKey(instanceUid))
++                {
++                    continue;
++                }
++
++                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
++                if (!IsConsumableFloraMaterialClass(materialClass))
++                    continue;
++
++                if (!_lastOrganicTouchTimeByInstanceUid.TryGetValue(instanceUid, out float lastTouchTime))
++                {
++                    _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
++                    continue;
++                }
++
++                if (currentTime - lastTouchTime < OvergrowthUntouchedSeconds)
++                    continue;
++
++                if (!TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents))
++                    continue;
++
++                VoxelDynamicNavGridRuntime.EnqueueDynamicObstacleGrowth(
++                    navObstacleCenter,
++                    navObstacleExtents,
++                    OvergrowthExpansionMeters);
++                _overgrownByInstanceUid.TryAdd(instanceUid, 1);
++                TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
++            }
++
++            cursor = (cursor + checks) % safeCount;
++        }
++
+         [Header("Runtime Wiring")]
+         [SerializeField]
+         [Tooltip("Authoritative indirect-flora bridge that owns the streamed native instance payloads.")]
+@@ -209,6 +302,9 @@ namespace Hecton8.World
+         private NativeHashMap<uint, float> _nextSporeAcousticTimeByInstanceUid;
+         private NativeHashMap<uint, float2> _baseScaleByInstanceUid;
+         private NativeHashMap<uint, byte> _runtimeFlagsByInstanceUid;
++        private NativeHashMap<uint, float> _lastOrganicTouchTimeByInstanceUid;
++        private NativeHashMap<uint, byte> _overgrownByInstanceUid;
++        private NativeHashMap<uint, byte> _rootMoundAppliedByInstanceUid;
+         private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
+         private NativeList<PersistentWorldDeltaRecord> _floraStateOverrideScratch;
+         private NativeHashMap<uint, Unity.Mathematics.half> _persistedHealth01ByInstanceUid;
+@@ -251,6 +347,8 @@ namespace Hecton8.World
+         private float[] _sporeAcousticVolumeByDescriptorIndex = Array.Empty<float>();
+         private int _surfaceMatureSporeScanCursor;
+         private int _underwaterMatureSporeScanCursor;
++        private int _surfaceOvergrowthScanCursor;
++        private int _underwaterOvergrowthScanCursor;
+         // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
+         private CorpseResourceNodeRecord[] _corpseResourceNodes = Array.Empty<CorpseResourceNodeRecord>();
+         private int _corpseResourceNodeCount;
+@@ -427,6 +525,12 @@ namespace Hecton8.World
+             _baseScaleByInstanceUid = new NativeHashMap<uint, float2>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+             // COLD ALLOC: NativeHashMap<uint,byte>[4096] - runtime flora bit-mask flags keyed by deterministic flora uid - owner: DestructibleOrganicManager
+             _runtimeFlagsByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
++            // COLD ALLOC: NativeHashMap<uint,float>[4096] - untouched flora clock keyed by deterministic flora uid - owner: DestructibleOrganicManager
++            _lastOrganicTouchTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, Allocator.Persistent);
++            // COLD ALLOC: NativeHashMap<uint,byte>[4096] - macro-flora overgrowth obstacle state keyed by deterministic flora uid - owner: DestructibleOrganicManager
++            _overgrownByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
++            // COLD ALLOC: NativeHashMap<uint,byte>[4096] - one-shot Titan root SDF mound state keyed by deterministic flora uid - owner: DestructibleOrganicManager
++            _rootMoundAppliedByInstanceUid = new NativeHashMap<uint, byte>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[2048] - destroyed flora tombstone restore scratch - owner: DestructibleOrganicManager
+             _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
+             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[4096] - partial flora-state restore scratch - owner: DestructibleOrganicManager
+@@ -551,6 +655,15 @@ namespace Hecton8.World
+             if (_runtimeFlagsByInstanceUid.IsCreated)
+                 _runtimeFlagsByInstanceUid.Dispose();
+ 
++            if (_lastOrganicTouchTimeByInstanceUid.IsCreated)
++                _lastOrganicTouchTimeByInstanceUid.Dispose();
++
++            if (_overgrownByInstanceUid.IsCreated)
++                _overgrownByInstanceUid.Dispose();
++
++            if (_rootMoundAppliedByInstanceUid.IsCreated)
++                _rootMoundAppliedByInstanceUid.Dispose();
++
+             if (_destroyedFloraScratch.IsCreated)
+                 _destroyedFloraScratch.Dispose();
+ 
+@@ -591,6 +704,7 @@ namespace Hecton8.World
+             RefreshActiveCachesIfNeeded(force: true);
+             RefreshCorpseResourceNodes(Time.time);
+             EvaluateAllelopathicRelease();
++            EvaluateAggressiveOvergrowth(Time.time);
+         }
+ 
+         /// <summary>
+@@ -639,6 +753,7 @@ namespace Hecton8.World
+             SetLaneHealth(underwater, activeIndex, nextHealth);
+             _healthByInstanceUid.Remove(instanceUid);
+             _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)nextHealth);
++            MarkOrganicTouched(instanceUid, Time.time);
+ 
+             PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
+             ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, Time.time);
+@@ -726,6 +841,29 @@ namespace Hecton8.World
+             return decomposedCount;
+         }
+ 
++        /// <summary>
++        /// Instantly tombstones active consumable flora inside a persistent chemical dead zone.
++        /// </summary>
++        internal int ApplyDefoliantDeadZone(Vector3 runtimePosition, float radiusMeters)
++        {
++            if (radiusMeters <= 0f)
++                return 0;
++
++            if (vegetationBridge == null)
++                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
++
++            if (vegetationBridge == null)
++                return 0;
++
++            RefreshActiveCachesIfNeeded(force: false);
++            Vector3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
++            float radiusSq = radiusMeters * radiusMeters;
++            int killedCount = 0;
++            killedCount += ApplyDefoliantDeadZoneInLane(false, universePosition, radiusSq);
++            killedCount += ApplyDefoliantDeadZoneInLane(true, universePosition, radiusSq);
++            return killedCount;
++        }
++
+         private bool ShouldDetonateDefensiveSporeBurst(int templateIndex, uint toolCapabilityMask)
+         {
+             if (floraInteractionManager == null || templateIndex < 0)
+@@ -1023,6 +1161,61 @@ namespace Hecton8.World
+             return decomposedCount;
+         }
+ 
++        private int ApplyDefoliantDeadZoneInLane(bool underwater, Vector3 centerUniversePosition, float radiusSq)
++        {
++            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
++            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
++            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
++            NativeArray<int> semanticTypes = underwater ? _underwaterSemanticTypes : _surfaceSemanticTypes;
++            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
++            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
++            int count = underwater ? _underwaterCount : _surfaceCount;
++            if (!matrices.IsCreated ||
++                !metadata.IsCreated ||
++                !types.IsCreated ||
++                !semanticTypes.IsCreated ||
++                !instanceUids.IsCreated ||
++                !materialClasses.IsCreated ||
++                count <= 0)
++            {
++                return 0;
++            }
++
++            int killedCount = 0;
++            int safeCount = math.min(
++                count,
++                math.min(
++                    math.min(matrices.Length, metadata.Length),
++                    math.min(
++                        math.min(types.Length, semanticTypes.Length),
++                        math.min(instanceUids.Length, materialClasses.Length))));
++            for (int i = 0; i < safeCount; i++)
++            {
++                uint instanceUid = instanceUids[i];
++                if (instanceUid == 0u)
++                    continue;
++
++                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
++                if (!IsConsumableFloraMaterialClass(materialClass))
++                    continue;
++
++                if (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid))
++                    continue;
++
++                Vector3 rootPosition = ExtractTranslation(matrices[i]);
++                if ((rootPosition - centerUniversePosition).sqrMagnitude > radiusSq)
++                    continue;
++
++                int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
++                ApplyPassiveDecomposition(underwater, i, instanceUid, materialClass, templateIndex, rootPosition);
++                PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
++                ApplyDecompositionToLaneInstance(underwater, i, instanceUid, 1f);
++                killedCount++;
++            }
++
++            return killedCount;
++        }
++
+         private void BuildFloraTemplateHarvestMap()
+         {
+             if (_harvestDescriptorIndexByFloraTemplateIndex != null && _harvestDescriptorIndexByFloraTemplateIndex.Length > 0)
+@@ -1209,6 +1402,7 @@ namespace Hecton8.World
+                 instanceUids[i] = instanceUid;
+                 materialClasses[i] = (byte)materialClass;
+                 CacheBaseScale(instanceUid, metadata[i]);
++                PrimeUntouchedClock(instanceUid, currentTime);
+                 byte runtimeFlags = ResolveRuntimeFlags(instanceUid, materialClass, semanticTypes[i], metadata[i].RuntimeFlags);
+                 ApplyRuntimeFlags(ref metadata, i, runtimeFlags);
+                 SetRuntimeState(ref metadata, i, HectonVegetationInstanceData.RuntimeStateIdle);
+@@ -1216,6 +1410,15 @@ namespace Hecton8.World
+                 float resolvedHealth = defaultHealth;
+                 bool hasPersistedFloraState = TryResolvePersistedFloraState(instanceUid, out float persistedHealth01, out float persistedHeightScale01);
+                 bool isDestroyed = _destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid);
++                bool isDefoliantSuppressed = !isDestroyed &&
++                                             IsConsumableFloraMaterialClass(materialClass) &&
++                                             ChemicalInfluenceGrid.IsInsidePermanentDefoliantDeadZoneAbsolute(ExtractTranslation(matrices[i]));
++                if (isDefoliantSuppressed)
++                {
++                    RegisterDefoliantDestroyedInstance(instanceUid, templateIndex, ExtractTranslation(matrices[i]));
++                    ApplyRuntimeFlags(ref metadata, i, MarkDeadRuntimeFlag(instanceUid));
++                    isDestroyed = true;
++                }
+                 float regrowthProgress = 0f;
+                 bool isRegrowing = _regrowthProgressByInstanceUid.IsCreated &&
+                                    _regrowthProgressByInstanceUid.TryGetValue(instanceUid, out regrowthProgress);
+@@ -1306,6 +1509,7 @@ namespace Hecton8.World
+                     continue;
+ 
+                 _destroyedByInstanceUid.TryAdd(record.InstanceUid, 1);
++                ClearOrganicLifecycleState(record.InstanceUid);
+                 PrimeDecompositionState(record.InstanceUid, Time.time - OrganicDecompositionDurationSeconds);
+                 _healthByInstanceUid.Remove(record.InstanceUid);
+                 _healthByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)0f);
+@@ -1877,6 +2081,7 @@ namespace Hecton8.World
+ 
+             bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
+             byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
++            ClearOrganicLifecycleState(instanceUid);
+ 
+             _destroyedByInstanceUid.TryAdd(instanceUid, 1);
+             _healthByInstanceUid.Remove(instanceUid);
+@@ -1926,6 +2131,7 @@ namespace Hecton8.World
+ 
+             bool hasNavObstacleBounds = TryResolveNavObstacleForLaneInstance(underwater, activeIndex, out float3 navObstacleCenter, out float3 navObstacleExtents);
+             byte runtimeFlags = MarkDeadRuntimeFlag(instanceUid);
++            ClearOrganicLifecycleState(instanceUid);
+ 
+             _destroyedByInstanceUid.TryAdd(instanceUid, 1);
+             _healthByInstanceUid.Remove(instanceUid);
+@@ -2088,6 +2294,58 @@ namespace Hecton8.World
+                     Mathf.Max(MinimumDecomposedWidthScale, Mathf.Clamp01(Mathf.Abs(metadata.WidthScale)))));
+         }
+ 
++        private void PrimeUntouchedClock(uint instanceUid, float currentTime)
++        {
++            if (instanceUid == 0u || !_lastOrganicTouchTimeByInstanceUid.IsCreated || _lastOrganicTouchTimeByInstanceUid.ContainsKey(instanceUid))
++                return;
++
++            _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
++        }
++
++        private void MarkOrganicTouched(uint instanceUid, float currentTime)
++        {
++            if (instanceUid == 0u || !_lastOrganicTouchTimeByInstanceUid.IsCreated)
++                return;
++
++            _lastOrganicTouchTimeByInstanceUid.Remove(instanceUid);
++            _lastOrganicTouchTimeByInstanceUid.TryAdd(instanceUid, currentTime);
++            if (_overgrownByInstanceUid.IsCreated)
++                _overgrownByInstanceUid.Remove(instanceUid);
++        }
++
++        private void ClearOrganicLifecycleState(uint instanceUid)
++        {
++            if (instanceUid == 0u)
++                return;
++
++            if (_lastOrganicTouchTimeByInstanceUid.IsCreated)
++                _lastOrganicTouchTimeByInstanceUid.Remove(instanceUid);
++            if (_overgrownByInstanceUid.IsCreated)
++                _overgrownByInstanceUid.Remove(instanceUid);
++            if (_rootMoundAppliedByInstanceUid.IsCreated)
++                _rootMoundAppliedByInstanceUid.Remove(instanceUid);
++        }
++
++        private void RegisterDefoliantDestroyedInstance(uint instanceUid, int templateIndex, Vector3 instancePosition)
++        {
++            if (instanceUid == 0u || !_destroyedByInstanceUid.IsCreated)
++                return;
++
++            _destroyedByInstanceUid.TryAdd(instanceUid, 1);
++            _healthByInstanceUid.Remove(instanceUid);
++            _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
++            PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
++            ClearOrganicLifecycleState(instanceUid);
++
++            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
++            if (registry != null)
++                registry.TryClearFloraStateOverride(instanceUid);
++
++            ClearPersistedFloraStateOverride(instanceUid);
++            if (registry != null && templateIndex >= 0 && templateIndex < _templateDescriptors.Length)
++                registry.TryRegisterDestroyedFlora((ulong)(uint)_templateDescriptors[templateIndex].StableHashId, instanceUid, instancePosition);
++        }
++
+         private byte ResolveRuntimeFlags(uint instanceUid, HarvestableTemplate.MaterialClass materialClass, int semanticType, float existingRuntimeFlags)
+         {
+             if (!_runtimeFlagsByInstanceUid.IsCreated || instanceUid == 0u)
+@@ -2520,7 +2778,7 @@ namespace Hecton8.World
+                 return;
+ 
+             float pulseFrequency = ResolveMatureSporePulseFrequency(templateIndex);
+-            float intervalSeconds = math.max(sporeAcousticMinimumIntervalSeconds, 1f / math.max(0.05f, pulseFrequency));
++            float intervalSeconds = 1f / math.max(0.05f, pulseFrequency);
+             float volume = ResolveMatureSporeAcousticVolume(templateIndex);
+             float pitch = ResolveMatureSporeAcousticPitch(pulseFrequency);
+             Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
+@@ -3127,8 +3385,56 @@ namespace Hecton8.World
+ 
+                 float exposure = 1f - Mathf.Clamp01(distance * inverseRadius);
+                 if (exposure > bestExposure)
+-                    bestExposure = exposure;
++                bestExposure = exposure;
++            }
++        }
++
++        private bool TryApplyTitanRootMound(bool underwater, int activeIndex, uint instanceUid)
++        {
++            if (instanceUid == 0u ||
++                !_rootMoundAppliedByInstanceUid.IsCreated ||
++                _rootMoundAppliedByInstanceUid.ContainsKey(instanceUid))
++            {
++                return false;
++            }
++
++            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
++            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
++            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
++            if (!matrices.IsCreated ||
++                !metadata.IsCreated ||
++                !types.IsCreated ||
++                activeIndex < 0 ||
++                activeIndex >= matrices.Length ||
++                activeIndex >= metadata.Length ||
++                activeIndex >= types.Length)
++            {
++                return false;
++            }
++
++            if ((HectonVegetationInstanceType)types[activeIndex] != HectonVegetationInstanceType.GiantKelp)
++                return false;
++
++            HectonVegetationInstanceData instanceData = metadata[activeIndex];
++            if (math.saturate(instanceData.Reserved0) < TitanRootMoundMatureThreshold01 &&
++                math.saturate(instanceData.HealthNormalized) < TitanRootMoundMatureThreshold01 &&
++                math.saturate(math.abs(instanceData.HeightScale)) < TitanRootMoundMatureThreshold01)
++            {
++                return false;
+             }
++
++            HectonVoxelEngine voxelEngine = HectonVoxelEngine.ActiveRuntimeInstance;
++            if (voxelEngine == null)
++                return false;
++
++            Vector3 universePosition = ExtractTranslation(matrices[activeIndex]);
++            Vector3 runtimePosition = HectonMapMagicVegetationBridge.ToRuntimeSpace(universePosition);
++            if (!voxelEngine.TryGetNearestActiveVolume(runtimePosition, out HectonVoxelVolume volume) || volume == null)
++                return false;
++
++            volume.ApplyOrganicRootMound(runtimePosition, TitanRootMoundRadiusMeters, TitanRootMoundStrengthMeters);
++            _rootMoundAppliedByInstanceUid.TryAdd(instanceUid, 1);
++            return true;
+         }
+ 
+         internal bool IsMaterialClassRegrowable(ulong floraPersistentIdHash)
+@@ -3215,6 +3521,8 @@ namespace Hecton8.World
+             {
+                 ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, scaleMultiplier);
+                 TryDispatchMatureSporeAcoustic(instanceUid, progress01, underwater, activeIndex, templateIndex, Time.time);
++                if (progress01 >= TitanRootMoundMatureThreshold01)
++                    TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
+             }
+             else if (progress01 < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
+             {
+@@ -3439,10 +3747,14 @@ namespace Hecton8.World
+                 return false;
+             }
+ 
++            if (ChemicalInfluenceGrid.IsInsidePermanentDefoliantDeadZone(runtimePosition))
++                return false;
++
+             progress01 = math.saturate(progress01);
+             if (_destroyedByInstanceUid.IsCreated)
+                 _destroyedByInstanceUid.Remove(instanceUid);
+             ClearDeadRuntimeFlag(instanceUid);
++            MarkOrganicTouched(instanceUid, Time.time);
+ 
+             if (_pendingWiltEndTimeByInstanceUid.IsCreated)
+                 _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
+@@ -3470,6 +3782,8 @@ namespace Hecton8.World
+                 SetLaneHealth(underwater, activeIndex, health);
+                 _healthByInstanceUid.Remove(instanceUid);
+                 _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)health);
++                if (progress01 >= TitanRootMoundMatureThreshold01)
++                    TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
+             }
+ 
+             if (progress01 >= 0.9999f)
+@@ -3488,6 +3802,7 @@ namespace Hecton8.World
+ 
+             if (_decompositionStartTimeByInstanceUid.IsCreated)
+                 _decompositionStartTimeByInstanceUid.Remove(instanceUid);
++            MarkOrganicTouched(instanceUid, Time.time);
+ 
+             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+             if (registry != null)
+diff --git a/Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs b/Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs
+index 0e90483a..57001348 100644
+--- a/Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs
++++ b/Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs
+@@ -5,6 +5,7 @@ using Unity.Burst;
+ using Unity.Collections;
+ using Unity.Jobs;
+ using Unity.Mathematics;
++using Unity.Profiling;
+ using UnityEngine;
+ 
+ namespace Hecton8.World
+@@ -34,6 +35,12 @@ namespace Hecton8.World
+         private const float MaximumCoralObstacleHalfHeightMeters = 5.5f;
+         private const byte FloraRuntimeFlagDead = 1 << 6;
+         private const float DynamicObstacleChunkSizeMeters = 16f;
++        private const double PartialClearanceDilationBudgetMilliseconds = 1.0d;
++        private const int DynamicClearanceFallbackScheduleCount = 1;
++        private const float DynamicClearanceWarningCooldownSeconds = 5f;
++        private const int MaxPersistentDynamicObstacleCount = 512;
++        private const float PersistentObstacleMergeDistanceMeters = 2f;
++        private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
+ 
+         // COLD ALLOC: Dictionary<int, VolumeRecord>(16) - voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
+         private static readonly Dictionary<int, VolumeRecord> _records = new Dictionary<int, VolumeRecord>(16);
+@@ -51,12 +58,20 @@ namespace Hecton8.World
+         private static readonly List<int> _recordRemovalScratch = new List<int>(16);
+         // COLD ALLOC: Dictionary<int,ObstacleRegistration>(64) - registered habitat obstacle collider sources - owner: VoxelDynamicNavGridRuntime
+         private static readonly Dictionary<int, ObstacleRegistration> _registeredObstacles = new Dictionary<int, ObstacleRegistration>(64);
++        private static readonly ProfilerMarker _partialClearanceDilationScheduleMarker = new ProfilerMarker("H8/NavGrid/PartialClearanceDilationJob.Schedule");
++        private static readonly ProfilerMarker _partialClearanceDilationCompleteMarker = new ProfilerMarker("H8/NavGrid/PartialClearanceDilationJob.Complete");
+         private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;
+         private static NativeQueue<DynamicObstacleClearRequest> _pendingObstacleClears;
++        private static NativeList<NavObstaclePrimitive> _persistentDynamicObstacles;
+         private static VoxelDynamicNavGridRuntimeLifecycle _lifecycleOwner;
+         private static bool _portalGraphDirty = true;
+         private static bool _teardownPending;
+         private static bool _clearRuntimeContainersWhenTeardownCompletes;
++        private static int _persistentDynamicObstacleWriteCursor;
++        private static int _dynamicClearanceFallbackSchedulesRemaining;
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++        private static float _nextDynamicClearanceWarningTime = float.NegativeInfinity;
++#endif
+ 
+         internal enum HybridNavigationMode : byte
+         {
+@@ -65,7 +80,7 @@ namespace Hecton8.World
+             SolidVoxel = 2,
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         internal struct PassabilityBuildJob : Unity.Jobs.IJobParallelFor
+         {
+             [ReadOnly] public NativeArray<float> DensityField;
+@@ -78,7 +93,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         internal struct ClearanceDilationJob : Unity.Jobs.IJob
+         {
+             public NativeArray<byte> Passability;
+@@ -151,7 +166,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         internal struct ObstacleStampJob : Unity.Jobs.IJobParallelFor
+         {
+             public NativeArray<byte> Passability;
+@@ -195,7 +210,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         internal struct CopyByteBufferJob : IJobParallelFor
+         {
+             [ReadOnly] public NativeArray<byte> Source;
+@@ -210,7 +225,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         internal struct PartialObstacleResetAndStampJob : IJobParallelFor
+         {
+             [ReadOnly] public NativeArray<byte> BasePassability;
+@@ -275,7 +290,7 @@ namespace Hecton8.World
+             }
+         }
+ 
+-        [BurstCompile(FloatMode = FloatMode.Fast)]
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         internal struct PartialClearanceDilationJob : IJob
+         {
+             public NativeArray<byte> Passability;
+@@ -693,6 +708,7 @@ namespace Hecton8.World
+ 
+             HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+             obstacleCount += CountMacroFloraObstacles(activeBridge);
++            obstacleCount += _persistentDynamicObstacles.IsCreated ? _persistentDynamicObstacles.Length : 0;
+ 
+             if (obstacleCount <= 0)
+                 return default;
+@@ -711,10 +727,28 @@ namespace Hecton8.World
+             }
+ 
+             WriteMacroFloraObstacles(activeBridge, ref snapshot, ref writeIndex);
++            WritePersistentDynamicObstacles(ref snapshot, ref writeIndex);
+ 
+             return snapshot;
+         }
+ 
++        internal static void EnqueueDynamicObstacleGrowth(float3 center, float3 extents, float expansionMeters)
++        {
++            if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
++                return;
++
++            EnsureInitialized();
++            float lateralExpansion = math.max(0f, expansionMeters);
++            float3 expandedExtents = extents + new float3(lateralExpansion, math.max(0f, lateralExpansion * 0.25f), lateralExpansion);
++            RegisterPersistentDynamicObstacle(center, expandedExtents);
++            MarkAllVolumesDirty();
++            _pendingObstacleClears.Enqueue(new DynamicObstacleClearRequest
++            {
++                Center = center,
++                Extents = expandedExtents
++            });
++        }
++
+         internal static void EnqueueDestroyedOrganicEvents(NativeList<DestroyedOrganicEvent> destroyedEvents)
+         {
+             if (!destroyedEvents.IsCreated || destroyedEvents.Length <= 0)
+@@ -728,6 +762,7 @@ namespace Hecton8.World
+                 if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
+                     continue;
+ 
++                RemovePersistentDynamicObstacles(destroyedEvent.NavObstacleCenter, extents);
+                 _pendingObstacleClears.Enqueue(new DynamicObstacleClearRequest
+                 {
+                     Center = destroyedEvent.NavObstacleCenter,
+@@ -745,7 +780,13 @@ namespace Hecton8.World
+                 if (record == null || !record.HasPendingDynamicUpdate || !record.PendingDynamicUpdateHandle.IsCompleted)
+                     continue;
+ 
+-                record.PendingDynamicUpdateHandle.Complete();
++                long completionStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
++                using (_partialClearanceDilationCompleteMarker.Auto())
++                {
++                    record.PendingDynamicUpdateHandle.Complete();
++                }
++
++                EvaluateDynamicClearanceBudget(completionStartTimestamp);
+                 record.PendingDynamicUpdateHandle = default;
+                 record.HasPendingDynamicUpdate = false;
+ 
+@@ -786,6 +827,8 @@ namespace Hecton8.World
+             if (!TryDequeueValidDynamicClearRequest(out DynamicObstacleClearRequest clearRequest))
+                 return;
+ 
++            bool useReducedClearance = _dynamicClearanceFallbackSchedulesRemaining > 0;
++            bool scheduledAnyRecord = false;
+             Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
+             while (enumerator.MoveNext())
+             {
+@@ -820,6 +863,7 @@ namespace Hecton8.World
+                 if (regionPointCount <= 0)
+                     continue;
+ 
++                int clearanceRadiusCells = ResolveDynamicClearanceRadiusCells(record.CellSize, useReducedClearance);
+                 JobHandle resetHandle = new PartialObstacleResetAndStampJob
+                 {
+                     BasePassability = record.BaseCurrent,
+@@ -832,18 +876,26 @@ namespace Hecton8.World
+                     CellSize = record.CellSize
+                 }.Schedule(regionPointCount, 64);
+ 
+-                record.PendingDynamicUpdateHandle = new PartialClearanceDilationJob
++                using (_partialClearanceDilationScheduleMarker.Auto())
+                 {
+-                    Passability = record.Next,
+-                    ReferenceDistanceMap = record.CurrentDistance,
+-                    DistanceMap = record.NextDistance,
+-                    Dimensions = record.Dimensions,
+-                    RegionMin = regionMin,
+-                    RegionMax = regionMax,
+-                    AgentRadiusCells = ResolveClearanceRadiusCells(record.CellSize)
+-                }.Schedule(resetHandle);
++                    record.PendingDynamicUpdateHandle = new PartialClearanceDilationJob
++                    {
++                        Passability = record.Next,
++                        ReferenceDistanceMap = record.CurrentDistance,
++                        DistanceMap = record.NextDistance,
++                        Dimensions = record.Dimensions,
++                        RegionMin = regionMin,
++                        RegionMax = regionMax,
++                        AgentRadiusCells = clearanceRadiusCells
++                    }.Schedule(resetHandle);
++                }
++
+                 record.HasPendingDynamicUpdate = true;
++                scheduledAnyRecord = true;
+             }
++
++            if (scheduledAnyRecord && useReducedClearance)
++                _dynamicClearanceFallbackSchedulesRemaining--;
+         }
+ 
+         private static bool HasPendingDynamicObstacleUpdate()
+@@ -1246,6 +1298,14 @@ namespace Hecton8.World
+                 _pendingObstacleClears.Dispose();
+                 _pendingObstacleClears = default;
+             }
++
++            if (_persistentDynamicObstacles.IsCreated)
++            {
++                _persistentDynamicObstacles.Dispose();
++                _persistentDynamicObstacles = default;
++            }
++
++            _persistentDynamicObstacleWriteCursor = 0;
+         }
+ 
+         private static void EnsureInitialized()
+@@ -1259,6 +1319,9 @@ namespace Hecton8.World
+ 
+             if (!_pendingObstacleClears.IsCreated)
+                 _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
++
++            if (!_persistentDynamicObstacles.IsCreated)
++                _persistentDynamicObstacles = new NativeList<NavObstaclePrimitive>(MaxPersistentDynamicObstacleCount, Allocator.Persistent); // COLD ALLOC: NativeList<NavObstaclePrimitive>[512] - overgrowth/vine dynamic obstacle snapshot lane - owner: VoxelDynamicNavGridRuntime
+         }
+ 
+         private static void EnsureLifecycleOwner()
+@@ -1287,6 +1350,38 @@ namespace Hecton8.World
+             return math.max(1, (int)math.ceil(DefaultPredatorClearanceRadiusMeters / math.max(cellSize, 0.0001f)));
+         }
+ 
++        private static int ResolveDynamicClearanceRadiusCells(float cellSize, bool useReducedClearance)
++        {
++            int fullRadiusCells = ResolveClearanceRadiusCells(cellSize);
++            return useReducedClearance
++                ? math.max(1, (fullRadiusCells + 1) >> 1)
++                : fullRadiusCells;
++        }
++
++        private static void EvaluateDynamicClearanceBudget(long completionStartTimestamp)
++        {
++            if (completionStartTimestamp <= 0L)
++                return;
++
++            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - completionStartTimestamp;
++            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
++            if (elapsedMilliseconds <= PartialClearanceDilationBudgetMilliseconds)
++                return;
++
++            _dynamicClearanceFallbackSchedulesRemaining = math.max(
++                _dynamicClearanceFallbackSchedulesRemaining,
++                DynamicClearanceFallbackScheduleCount);
++
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            float now = Time.unscaledTime;
++            if (now >= _nextDynamicClearanceWarningTime)
++            {
++                _nextDynamicClearanceWarningTime = now + DynamicClearanceWarningCooldownSeconds;
++                Debug.LogWarning(DynamicClearanceBudgetWarningMessage);
++            }
++#endif
++        }
++
+         private static int GetStableVolumeEntityId(HectonVoxelVolume volume)
+         {
+             return volume != null
+@@ -1537,6 +1632,75 @@ namespace Hecton8.World
+             }
+         }
+ 
++        private static void WritePersistentDynamicObstacles(ref NativeArray<NavObstaclePrimitive> snapshot, ref int writeIndex)
++        {
++            if (!_persistentDynamicObstacles.IsCreated || !snapshot.IsCreated)
++                return;
++
++            int safeCount = math.min(_persistentDynamicObstacles.Length, snapshot.Length - writeIndex);
++            for (int i = 0; i < safeCount; i++)
++            {
++                snapshot[writeIndex] = _persistentDynamicObstacles[i];
++                writeIndex++;
++            }
++        }
++
++        private static void RegisterPersistentDynamicObstacle(float3 center, float3 extents)
++        {
++            if (!_persistentDynamicObstacles.IsCreated)
++                return;
++
++            float mergeDistanceSq = PersistentObstacleMergeDistanceMeters * PersistentObstacleMergeDistanceMeters;
++            for (int i = 0; i < _persistentDynamicObstacles.Length; i++)
++            {
++                NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
++                if (math.lengthsq(obstacle.Center - center) > mergeDistanceSq)
++                    continue;
++
++                obstacle.Center = (obstacle.Center + center) * 0.5f;
++                obstacle.Extents = math.max(obstacle.Extents, extents);
++                _persistentDynamicObstacles[i] = obstacle;
++                return;
++            }
++
++            if (_persistentDynamicObstacles.Length < _persistentDynamicObstacles.Capacity)
++            {
++                _persistentDynamicObstacles.AddNoResize(new NavObstaclePrimitive
++                {
++                    Center = center,
++                    Extents = extents
++                });
++                return;
++            }
++
++            int writeIndex = math.clamp(_persistentDynamicObstacleWriteCursor, 0, math.max(0, _persistentDynamicObstacles.Length - 1));
++            _persistentDynamicObstacles[writeIndex] = new NavObstaclePrimitive
++            {
++                Center = center,
++                Extents = extents
++            };
++            _persistentDynamicObstacleWriteCursor = (_persistentDynamicObstacleWriteCursor + 1) % math.max(1, _persistentDynamicObstacles.Length);
++        }
++
++        private static void RemovePersistentDynamicObstacles(float3 center, float3 extents)
++        {
++            if (!_persistentDynamicObstacles.IsCreated || _persistentDynamicObstacles.Length <= 0)
++                return;
++
++            float removeRadius = math.max(
++                PersistentObstacleMergeDistanceMeters,
++                math.max(extents.x, math.max(extents.y, extents.z)) + PersistentObstacleMergeDistanceMeters);
++            float removeRadiusSq = removeRadius * removeRadius;
++            for (int i = _persistentDynamicObstacles.Length - 1; i >= 0; i--)
++            {
++                NavObstaclePrimitive obstacle = _persistentDynamicObstacles[i];
++                if (math.lengthsq(obstacle.Center - center) > removeRadiusSq)
++                    continue;
++
++                _persistentDynamicObstacles.RemoveAtSwapBack(i);
++            }
++        }
++
+         private static void WriteMacroFloraObstacles(
+             NativeArray<Matrix4x4> matrices,
+             NativeArray<HectonVegetationInstanceData> metadata,
+diff --git a/Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md b/Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md
+index 43746898..59bb53b1 100644
+--- a/Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md
++++ b/Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md
+@@ -130,6 +130,34 @@ Unmoored consequences:
+ 
+ If no anchor nodes exist in the current habitat island, the entire island becomes unmoored on the same rebuild.
+ 
++## Synthetic Parasite Root Nodes
++
++Parasite power drain is represented inside the habitat CSR snapshot as a synthetic module node. The parasite does not write directly into the power solver and does not mutate authored module templates.
++
++Ownership:
++
++- `Assets/_Project/Scripts/World/FloraInteractionManager.cs` owns root exposure, cutting, and parasite lifecycle state.
++- `Assets/_Project/Scripts/BaseModule.cs` stores the host module's runtime infestation level and `RootPowerDrainWatts`.
++- `Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` owns synthetic node injection during graph rebuild.
++
++Injection sequence:
++
++1. A parasite attaches to a concrete `BaseModule` and calls `SetParasiteInfestation(level, rootPowerDrainWatts)`.
++2. The construction manager requests a habitat graph rebuild for the affected module.
++3. `HabitatGraphManager.AppendParasiteRootNodes()` appends one synthetic `ModuleRecord` for each infected host with non-zero root drain.
++4. The synthetic record stores `IsSyntheticParasiteRoot = true`, `HostModuleInstanceId`, and `SyntheticPowerDrainWatts`.
++5. `BuildNodeRecords()` publishes that record into CSR with `CurrentLoad = -SyntheticPowerDrainWatts`.
++6. Cutting the parasite clears the host infestation state, requests another CSR rebuild, and the synthetic node disappears on the next graph publication.
++
++Sign convention:
++
++```csharp
++if (record.IsSyntheticParasiteRoot)
++    node.CurrentLoad = -record.SyntheticPowerDrainWatts;
++```
++
++Negative load is a consumer drain. It is not generation and must not be offset before the logistics solver evaluates the island.
++
+ ## Emergency Bulkhead Adjacency
+ 
+ Emergency airlock lockdown is driven from the same CSR snapshot.
+@@ -149,6 +177,85 @@ For each airlock node:
+ 
+ This keeps structural anchor detection, rupture isolation, and emergency door response on one authoritative topology rebuild.
+ 
++Manual override:
++
++- quarantined `BaseAirlock` instances expose `Weld` and `PlasmaCut` interaction vulnerability masks
++- continuous laser / weld heat accumulates for the authored override duration
++- completion calls `SetEmergencyBulkheadLockdown(false)` and floods the protected module from the door point
++- the breach point is reused as the flooding center-of-mass target and as the source of the transient depressurization vortex
++
++## Hydro-Structural Flood Mass
++
++Flooded rooms contribute physical mass to the graph:
++
++```csharp
++FloodMassKg = FloodLevel01 * VolumeM3 * 1025
++DownwardLoadN = FloodMassKg * 9.81
++```
++
++`HabitatGraphManager.ApplyHydrodynamicStress()` performs two passes:
++
++1. queue the local downward hydro load into each unmoored `BaseModule`
++2. traverse each CSR island and compute the weighted flood centroid
++
++Island centroid:
++
++```csharp
++weighted = sum(module.position * module.FloodMassKg)
++centroid = weighted / sum(FloodMassKg)
++```
++
++The centroid is sent back to each unmoored module. `BaseModule.FixedTick()` then blends its Rigidbody `centerOfMass` toward that centroid, clamped by the authored maximum center-of-mass shift and per-tick solver limit. This makes flooded wings tilt toward the flooded mass instead of sinking as perfectly vertical blocks.
++
++Hydro-shear rupture remains edge-local:
++
++```csharp
++if abs(FloodMassA - FloodMassB) > ShearThreshold:
++    edge.Severed = true
++    nodeA.Flags |= Ruptured
++    nodeB.Flags |= Ruptured
++```
++
++## Catastrophic Implosion
++
++Deep abandoned modules implode when:
++
++```csharp
++IntegrityState == Abandoned || IntegrityStateNormalized <= 0.4
++ExternalDepthMeters >= 2000
++```
++
++Implosion is one-shot per module. Runtime effects:
++
++- force the module flooded
++- dispatch a `ForceMode.Impulse` packet through `PhysicsApplySystem`
++- pull player, loose pickups, resources, scannables, and bioforms within `30m` toward the module center
++- force the module unmoored
++- mark the module as imploded
++- rebuild the habitat graph
++
++Unity joint destruction is intentionally not used. Project physics mandate forbids Unity joints, including `ConfigurableJoint`. The authoritative equivalent is CSR edge severing: during the next rebuild, any edge connected to an imploded module is marked ruptured and excluded from CSR publication.
++
++## Emergency Power Rerouting
++
++Power routing uses the same logistics graph principles, but the owner is `PowerGrid`.
++
++Reroute rule:
++
++- ruptured `PowerNode` endpoints do not publish power edges
++- consumers on ruptured nodes are rejected by `LogisticsNetworkGraph.CanServeConsumer`
++- the remaining CSR graph naturally performs BFS / component traversal around the failed node if an alternate physical path exists
++- if no alternate path exists, the consumer becomes isolated and brownout is applied
++
++Resistance remains part of the scheduled distribution solve:
++
++```csharp
++CombinedResistance = EdgeResistance + SourceNode.Resistance + DestinationNode.Resistance
++Conductance = 1 / CombinedResistance
++```
++
++High-resistance alternate paths reduce propagated potential and increase node load. Overloaded nodes inherit `LogisticsNodeFlags.Overloaded`; consumer priority and component supply ratio then determine the brownout tier.
++
+ ## Bishop Frame Spline Contract
+ 
+ Pipe visuals use a cubic Bezier derived from the two socket positions and their forward vectors.

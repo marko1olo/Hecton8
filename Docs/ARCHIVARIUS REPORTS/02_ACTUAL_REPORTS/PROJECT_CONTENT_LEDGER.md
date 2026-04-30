@@ -88,6 +88,22 @@ Important boundary:
 - Runtime owner: `HectonMapMagicVegetationBridge.floraTemplates`
 - Loot hash routing is mirrored from authored `FloraDataTemplate` assets and consumed through existing `HarvestableTemplate` drop authority.
 
+## 64-bit Flora Genetic Trait Definitions
+
+- Authoring/runtime owner: `FloraDataTemplate.GeneticsMask` and `CultivationManager.CultivationSlotState.GeneticsMask`.
+- Persistence owner: `InventoryDTO.itemGeneticsWords : ulong[]` and `ModuleDTO.cultivationGeneticsMasks : ulong[]`.
+- Save format: v53 introduced 64-bit genetics; v54 keeps the same layout and migrates v48-v52 legacy `uint[]` masks into `ulong[]`.
+- Splice equation: `result = (maskA | maskB) ^ (XorShift32(seed) & 0x000000000000000FUL)`.
+
+| Bit | Mask | Trait | Runtime effect |
+|---:|---:|---|---|
+| 0 | `0x0000000000000001` | `Biolum` | Enables biolum lighting credit and shader emission trait inheritance. |
+| 1 | `0x0000000000000002` | `O2_Produce` | Mature cultivation slots inject oxygen into the owning module atmosphere. |
+| 2 | `0x0000000000000004` | `Toxic` | Adds scrubber load, hazard contribution, and mature spore acoustic behavior. |
+| 3 | `0x0000000000000008` | `RapidGrowth` | Applies cultivation growth-rate multiplier during slow tick. |
+
+- Bits `4-63` remain 64-bit reserved space for authored `GeneticTraitProfile` rows; mutation currently toggles only bits `0-3`.
+
 ## Item Audio-Material Reality
 
 `ItemData` does not have a true null / missing-state `AudioMaterialID`.

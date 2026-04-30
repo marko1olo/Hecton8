@@ -131,8 +131,14 @@ namespace Hecton8.AtlasSignal
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out Atlas6EventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out Atlas6EventPayload payload))
+                    return;
+
                 IAtlas6EventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)

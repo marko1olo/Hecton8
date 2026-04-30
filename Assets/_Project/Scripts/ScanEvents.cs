@@ -12,7 +12,8 @@ namespace Hecton8.Gameplay
         ScanTriggered = 0,
         NodeFound = 1,
         EntryDiscovered = 2,
-        FaunaFeedingObserved = 3
+        FaunaFeedingObserved = 3,
+        FaunaMatingObserved = 4
     }
 
     public enum ScanEntryKind : byte
@@ -124,8 +125,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out ScanEventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out ScanEventPayload payload))
+                    return;
+
                 IScanEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
@@ -235,6 +242,26 @@ namespace Hecton8.Gameplay
                 CategoryHash = 0u,
                 SummaryHash = 0u,
                 EventType = (ushort)ScanEventType.FaunaFeedingObserved,
+                EntryKind = (byte)ScanEntryKind.Scannable,
+                Reserved = 0
+            });
+        }
+
+        public static void RaiseFaunaMatingObserved(uint entryHash, float3 worldPos)
+        {
+            if (entryHash == 0u)
+                return;
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new ScanEventPayload
+            {
+                Position = worldPos,
+                Radius = 0f,
+                EntryHash = entryHash,
+                TitleHash = 0u,
+                CategoryHash = 0u,
+                SummaryHash = 0u,
+                EventType = (ushort)ScanEventType.FaunaMatingObserved,
                 EntryKind = (byte)ScanEntryKind.Scannable,
                 Reserved = 0
             });

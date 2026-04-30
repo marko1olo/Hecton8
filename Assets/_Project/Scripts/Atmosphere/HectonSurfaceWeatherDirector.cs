@@ -192,7 +192,7 @@ namespace Hecton8.Atmosphere
 
         [Header("Local Shelter")]
         [Tooltip("Layers treated as overhead rain blockers for the local player weather rig.")]
-        [SerializeField] private LayerMask shelterOccluderMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask shelterOccluderMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Vertical offset from the follow target used as the shelter probe origin.")]
         [SerializeField, UnityEngine.Range(0.5f, 3f)] private float shelterProbeOriginOffset = 1.35f;
@@ -677,7 +677,7 @@ namespace Hecton8.Atmosphere
                 output = _weatherJobOutput
             };
 
-            job.Run(); // COLD SYNC JOB: one-time weather math priming to seed derived bindings before the first runtime tick.
+            job.Execute(); // COLD SYNC JOB: direct seed avoids Burst JIT/plugin resolution during Awake.
             CommitWeatherMathOutput(_weatherJobOutput[0]);
             _weatherJobPrimed = true;
         }

@@ -77,7 +77,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         float4 _HectonDamageVolumeInvSize;
         float4 _HectonFloatingOriginOffset;
         float4 _HectonNoirResolveSettings;
-        float4 _HectonNoirFogStratification;
         float4 _HectonNoirCausticsLayerA;
         float4 _HectonNoirCausticsLayerB;
         float4 _HectonNoirCausticsShape;

@@ -72,7 +72,9 @@ namespace Hecton8.World
         private void OnEnable()
         {
             ResolveReferences();
-            HectonFloatingOrigin.RegisterListener(this);
+            if (Application.isPlaying)
+                HectonFloatingOrigin.RegisterListener(this);
+
             TryRegister();
         }
 

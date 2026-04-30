@@ -4,7 +4,8 @@
 // Verifies unlock gate, offer execution, inventory delta, and execution count.
 // ============================================================================
 
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using UnityEngine;
@@ -48,7 +49,7 @@ namespace Hecton8.Dev
             if (!runOnStart || _isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
 #if UNITY_EDITOR
@@ -69,13 +70,13 @@ namespace Hecton8.Dev
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
-        private IEnumerator RunSmokePass()
+        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
-                yield break;
+                return;
 
             AutoResolve();
             _isRunning = true;
@@ -84,91 +85,107 @@ namespace Hecton8.Dev
             _debugLastIssue = string.Empty;
             _debugLastPhase = "Startup";
 
-            if (startupDelay > 0f)
-                yield return new WaitForSecondsRealtime(startupDelay);
-
-            if (exchangeSystem == null || playerInventory == null || scanLogSystem == null)
+            try
             {
-                Fail("Missing exchange/inventory/scan system references.");
+                if (startupDelay > 0f)
+                    await DelayRealtimeAsync(startupDelay, cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested || this == null)
+                    return;
+
+                if (exchangeSystem == null || playerInventory == null || scanLogSystem == null)
+                {
+                    Fail("Missing exchange/inventory/scan system references.");
+                    return;
+                }
+
+                if (_snapshotBuffer == null || _snapshotBuffer.Length < Mathf.Max(1, exchangeSystem.OfferCount))
+                    _snapshotBuffer = new PDAExchangeSystem.OfferSnapshot[Mathf.Max(1, exchangeSystem.OfferCount)];
+
+                BarterOfferData offer = exchangeSystem.GetOfferAt(offerIndex);
+                if (offer == null)
+                {
+                    Fail($"Offer index {offerIndex} is not available.");
+                    return;
+                }
+
+                _debugLastPhase = "Unlock";
+                if (!string.IsNullOrWhiteSpace(offer.requiredScanEntryId) && !scanLogSystem.ContainsEntry(offer.requiredScanEntryId))
+                {
+                    LogVerbose($"Archiving unlock entry {offer.requiredScanEntryId}");
+                    scanLogSystem.ArchiveEntry(
+                        offer.requiredScanEntryId,
+                        "SMOKE UNLOCK",
+                        "Debug",
+                        "Synthetic unlock for barter runtime smoke.",
+                        markRecent: false);
+                }
+
+                _debugLastPhase = "ProvisionCosts";
+                EnsureBundleAvailable(offer.costs);
+
+                _debugLastPhase = "SnapshotBefore";
+                int beforeExecutions = GetExecutionCountForOffer(offer.offerId);
+                int[] costBefore = CaptureBundleCounts(offer.costs);
+                int[] rewardBefore = CaptureBundleCounts(offer.rewards);
+
+                if (!exchangeSystem.CanExecute(offer, out string beforeStatus))
+                {
+                    Fail($"Offer not executable before smoke: {beforeStatus}");
+                    return;
+                }
+
+                _debugLastPhase = "Execute";
+                bool executed = exchangeSystem.TryExecuteOffer(offerIndex);
+                if (!executed)
+                {
+                    Fail("TryExecuteOffer returned false.");
+                    return;
+                }
+
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested || this == null)
+                    return;
+
+                _debugLastPhase = "Validate";
+                int afterExecutions = GetExecutionCountForOffer(offer.offerId);
+                if (afterExecutions != beforeExecutions + 1)
+                {
+                    Fail($"Execution count mismatch {beforeExecutions} -> {afterExecutions}.");
+                    return;
+                }
+
+                if (!ValidateBundleDelta(offer.costs, costBefore, shouldIncrease: false, "cost"))
+                    return;
+
+                if (!ValidateBundleDelta(offer.rewards, rewardBefore, shouldIncrease: true, "reward"))
+                    return;
+
+                _debugLastPhase = "Complete";
+                _debugLastPass = true;
+                _debugLastIssue = string.Empty;
+                Debug.Log($"[BarterSmoke] COMPLETE pass=True offer={offer.offerId}");
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception exception)
+            {
+                Fail(exception.Message);
+                Debug.LogException(exception);
+            }
+            finally
+            {
                 _isRunning = false;
-                yield break;
             }
+        }
 
-            if (_snapshotBuffer == null || _snapshotBuffer.Length < Mathf.Max(1, exchangeSystem.OfferCount))
-                _snapshotBuffer = new PDAExchangeSystem.OfferSnapshot[Mathf.Max(1, exchangeSystem.OfferCount)];
-
-            BarterOfferData offer = exchangeSystem.GetOfferAt(offerIndex);
-            if (offer == null)
-            {
-                Fail($"Offer index {offerIndex} is not available.");
-                _isRunning = false;
-                yield break;
-            }
-
-            _debugLastPhase = "Unlock";
-            if (!string.IsNullOrWhiteSpace(offer.requiredScanEntryId) && !scanLogSystem.ContainsEntry(offer.requiredScanEntryId))
-            {
-                LogVerbose($"Archiving unlock entry {offer.requiredScanEntryId}");
-                scanLogSystem.ArchiveEntry(
-                    offer.requiredScanEntryId,
-                    "SMOKE UNLOCK",
-                    "Debug",
-                    "Synthetic unlock for barter runtime smoke.",
-                    markRecent: false);
-            }
-
-            _debugLastPhase = "ProvisionCosts";
-            EnsureBundleAvailable(offer.costs);
-
-            _debugLastPhase = "SnapshotBefore";
-            int beforeExecutions = GetExecutionCountForOffer(offer.offerId);
-            int[] costBefore = CaptureBundleCounts(offer.costs);
-            int[] rewardBefore = CaptureBundleCounts(offer.rewards);
-
-            if (!exchangeSystem.CanExecute(offer, out string beforeStatus))
-            {
-                Fail($"Offer not executable before smoke: {beforeStatus}");
-                _isRunning = false;
-                yield break;
-            }
-
-            _debugLastPhase = "Execute";
-            bool executed = exchangeSystem.TryExecuteOffer(offerIndex);
-            if (!executed)
-            {
-                Fail("TryExecuteOffer returned false.");
-                _isRunning = false;
-                yield break;
-            }
-
-            yield return null;
-
-            _debugLastPhase = "Validate";
-            int afterExecutions = GetExecutionCountForOffer(offer.offerId);
-            if (afterExecutions != beforeExecutions + 1)
-            {
-                Fail($"Execution count mismatch {beforeExecutions} -> {afterExecutions}.");
-                _isRunning = false;
-                yield break;
-            }
-
-            if (!ValidateBundleDelta(offer.costs, costBefore, shouldIncrease: false, "cost"))
-            {
-                _isRunning = false;
-                yield break;
-            }
-
-            if (!ValidateBundleDelta(offer.rewards, rewardBefore, shouldIncrease: true, "reward"))
-            {
-                _isRunning = false;
-                yield break;
-            }
-
-            _debugLastPhase = "Complete";
-            _debugLastPass = true;
-            _debugLastIssue = string.Empty;
-            Debug.Log($"[BarterSmoke] COMPLETE pass=True offer={offer.offerId}");
-            _isRunning = false;
+        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (Time.realtimeSinceStartup < deadline)
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
         }
 
         private int GetExecutionCountForOffer(string offerId)

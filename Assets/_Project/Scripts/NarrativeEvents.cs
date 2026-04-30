@@ -96,8 +96,14 @@ namespace Hecton8.Core
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out NarrativeEventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out NarrativeEventPayload payload))
+                    return;
+
                 INarrativeEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)

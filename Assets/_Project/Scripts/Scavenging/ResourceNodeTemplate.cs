@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.Items;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -18,7 +19,7 @@ namespace Hecton8.Scavenging
         order = 112)]
     public sealed class ResourceNodeTemplate : ScriptableObject
     {
-        private const int DefaultValidLayerMask = (1 << 8) | (1 << 9) | (1 << 10);
+        private const int DefaultValidLayerMask = HectonLayerMasks.DataTemplateAuthoringMaskValue;
 
         public enum HarvestToolClass : byte
         {

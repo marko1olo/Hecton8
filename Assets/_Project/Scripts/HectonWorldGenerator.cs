@@ -263,7 +263,7 @@ public static class HectonNoise
 // ════════════════════════════════════════════════════════════════════════════════
 #region Jobs
 
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct HectonVertexJob : IJobParallelFor
 {
     public int resX, resZ;
@@ -387,7 +387,7 @@ public struct HectonVertexJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct HectonNormalJob : IJobParallelFor
 {
     public int resX, resZ;
@@ -409,7 +409,7 @@ public struct HectonNormalJob : IJobParallelFor
     }
 }
 
-[BurstCompile(FloatPrecision.Standard, FloatMode.Fast)]
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct HectonColorJob : IJobParallelFor
 {
     public float maxDepth, caveThresh, caveEdge;
@@ -472,6 +472,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
         public byte State;
     }
 
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     struct HectonPhysicsBakeJob : IJob
     {
         public EntityId MeshEntityId;
@@ -485,6 +486,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
     const byte PhysicsBakeStatePending = 0;
     const byte PhysicsBakeStateScheduled = 1;
     const byte PhysicsBakeStateCompleted = 2;
+    const byte PhysicsBakeStateCanceled = 3;
     private const float PhysicsBakeFrameBudgetMilliseconds = 2f;
     private static readonly double _physicsBakeTickToMilliseconds = 1000d / Stopwatch.Frequency;
 
@@ -721,10 +723,16 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
         for (int i = _pendingChunks.Count - 1; i >= 0; i--)
         {
             var pc = _pendingChunks[i];
+            if (!pc.combinedHandle.IsCompleted)
+            {
+                pc.cancelRequested = true;
+                continue;
+            }
+
             pc.combinedHandle.Complete();
             pc.DisposeArrays();
+            _pendingChunks.RemoveAt(i);
         }
-        _pendingChunks.Clear();
     }
 
     #endregion
@@ -1389,12 +1397,13 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
                     continue;
                 }
 
-                if (pending.State != PhysicsBakeStateScheduled || !pending.Handle.IsCompleted)
+                if ((pending.State != PhysicsBakeStateScheduled && pending.State != PhysicsBakeStateCanceled) ||
+                    !pending.Handle.IsCompleted)
                     break;
 
                 pending.Handle.Complete();
 
-                if (pending.Mesh != null && pending.Owner != null)
+                if (pending.State == PhysicsBakeStateScheduled && pending.Mesh != null && pending.Owner != null)
                 {
                     var mc = pending.Owner.GetComponent<MeshCollider>();
                     if (mc == null) mc = pending.Owner.AddComponent<MeshCollider>();
@@ -1424,7 +1433,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
         for (int i = 0; i < _pendingPhysicsBakes.Count; i++)
         {
             PendingPhysicsBake pending = _pendingPhysicsBakes[i];
-            if (pending.State == PhysicsBakeStateScheduled)
+            if (pending.State == PhysicsBakeStateScheduled || pending.State == PhysicsBakeStateCanceled)
                 pending.Handle.Complete();
 
             if (pending.Renderer != null && pending.DefaultMaterial != null)
@@ -1446,13 +1455,20 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             if (!ReferenceEquals(pending.Mesh, mesh) && !ReferenceEquals(pending.Owner, owner))
                 continue;
 
-            if (pending.State == PhysicsBakeStateScheduled && !pending.Handle.IsCompleted)
+            if ((pending.State == PhysicsBakeStateScheduled || pending.State == PhysicsBakeStateCanceled) &&
+                !pending.Handle.IsCompleted)
             {
+                pending.State = PhysicsBakeStateCanceled;
+                _pendingPhysicsBakes[i] = pending;
+
+                if (pending.Renderer != null && pending.DefaultMaterial != null)
+                    pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+
                 hasInFlightBake = true;
                 continue;
             }
 
-            if (pending.State == PhysicsBakeStateScheduled)
+            if (pending.State == PhysicsBakeStateScheduled || pending.State == PhysicsBakeStateCanceled)
                 pending.Handle.Complete();
 
             if (pending.Renderer != null && pending.DefaultMaterial != null)
@@ -1476,7 +1492,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             if (!ReferenceEquals(pending.Mesh, mesh) && !ReferenceEquals(pending.Owner, owner))
                 continue;
 
-            if (pending.State == PhysicsBakeStateScheduled && !pending.Handle.IsCompleted)
+            if ((pending.State == PhysicsBakeStateScheduled || pending.State == PhysicsBakeStateCanceled) &&
+                !pending.Handle.IsCompleted)
                 return true;
         }
 

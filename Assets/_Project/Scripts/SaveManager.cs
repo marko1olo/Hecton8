@@ -128,7 +128,7 @@ namespace Hecton8.SaveSystem
             Quick
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct IntegrityScanJob : IJob
         {
             [ReadOnly] public NativeArray<byte> PayloadBytes;
@@ -571,7 +571,7 @@ namespace Hecton8.SaveSystem
             var snapshotTimer = Stopwatch.StartNew();
             double playTime = ResolveCurrentPlayTimeSeconds();
             SaveData data = SaveData.CreateNew(playTime);
-            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshot = default;
             NativeArray<EcosystemSectorSaveRecord> ecosystemSectorSnapshot = default;
             NativeArray<uint> packedQuestStateSnapshot = default;
@@ -845,7 +845,7 @@ namespace Hecton8.SaveSystem
                 if (voxelDeltaProcessor != null && !voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
                     throw new Exception(voxelLoadError);
 
-                PersistentWorldRegistry persistentWorldRegistryForLoad = PersistentWorldRegistry.Instance;
+                PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;
                 if (persistentWorldRegistryForLoad != null)
                 {
                     string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);

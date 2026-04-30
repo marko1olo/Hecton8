@@ -1659,7 +1659,7 @@ namespace Hecton8.Quest
             };
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateQuestSignalJob : IJob
         {
             public QuestSignalPayload Signal;

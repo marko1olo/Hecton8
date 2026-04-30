@@ -41,6 +41,7 @@ using Hecton8.Items;
 using Hecton8.Input;
 using Hecton8.Modding;
 using Hecton8.Construction;
+using Hecton8.Physics;
 using Hecton8.UI;
 using Unity.Mathematics;
 using UnityEngine;
@@ -91,7 +92,7 @@ namespace Hecton8.Building
         [SerializeField] private float ghostFollowSpeed = 12f;
 
         [Tooltip("Слой поверхности для размещения (Terrain, Default)")]
-        [SerializeField] private LayerMask surfaceMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask surfaceMask = HectonLayerMasks.ConstructionSurfaceLayerMask;
         [Tooltip("Rigid world-space grid size used for free placement positions.")]
         [SerializeField] private float constructionGridSize = 2.5f;
         [Tooltip("Total structural integrity budget available to the current habitat graph.")]
@@ -124,7 +125,7 @@ namespace Hecton8.Building
         [Tooltip("Слой сокетов для OverlapSphereNonAlloc.\n" +
                  "Создай Layer 'Sockets' в Project Settings → Tags & Layers.\n" +
                  "На каждом ModuleSocket: SphereCollider(trigger) + Layer=Sockets.")]
-        [SerializeField] private LayerMask socketLayerMask;
+        [SerializeField] private LayerMask socketLayerMask = HectonLayerMasks.SocketsLayerMask;
 
         [Tooltip("Скорость прилипания к сокету (Lerp factor per second).\n" +
                  "Выше = резче snap. 20 = почти мгновенно.")]
@@ -282,6 +283,8 @@ namespace Hecton8.Building
                 Debug.LogWarning($"[BuilderDebug] DebugDeploy aborted: failed to spawn {activeBuildable.moduleName}.");
                 return false;
             }
+
+            ApplyConstructedModuleSnap(spawned, position, rotation);
 
             if (consumeCost)
             {
@@ -640,7 +643,7 @@ namespace Hecton8.Building
                         activeBuildable,
                         spawnPos,
                         Quaternion.identity,
-                        surfaceMask,
+                        ResolveSurfaceMask(),
                         out _currentGhostObj))
                 {
                     NotifyBuildBlocked("GHOST PROXY MISSING");
@@ -742,7 +745,7 @@ namespace Hecton8.Building
             Vector3 targetPos;
             Quaternion targetRot;
 
-            bool rayHit = TryGetBuildHit(ray, surfaceMask, out _hit);
+            bool rayHit = TryGetBuildHit(ray, ResolveSurfaceMask(), out _hit);
 
             // ── Точка луча (для поиска сокетов и fallback) ──
             Vector3 rawTargetPoint = rayHit
@@ -764,11 +767,12 @@ namespace Hecton8.Building
             // ═══════════════════════════════════════════════════
 
             float searchRadius = unsnapRadius; // ищем в большем радиусе
+            int resolvedSocketMask = ResolveSocketMask();
             int socketCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 rawTargetPoint,
                 searchRadius,
                 _socketBuffer,
-                socketLayerMask,
+                resolvedSocketMask,
                 QueryTriggerInteraction.Collide // сокеты = trigger colliders
             );
 
@@ -995,8 +999,9 @@ namespace Hecton8.Building
                 return;
             }
 
-            Vector3    placePos = _currentGhostObj.transform.position;
+            Vector3 placePos = _currentGhostObj.transform.position;
             Quaternion placeRot = _currentGhostObj.transform.rotation;
+            TryResolveExactSnappedPlacementPose(ref placePos, ref placeRot);
 
             if (!TryGetObjectPool(out ObjectPoolManager pool))
             {
@@ -1016,6 +1021,8 @@ namespace Hecton8.Building
                 PlaySound(errorSound);
                 return;
             }
+
+            ApplyConstructedModuleSnap(placedModule, placePos, placeRot);
 
             if (!ConsumeResources(activeBuildable))
             {
@@ -1251,6 +1258,69 @@ namespace Hecton8.Building
 
             LogBuilderDebug($"SpawnPlacedModule end result={(placedModule != null ? placedModule.name : "null")}");
             return placedModule;
+        }
+
+        private int ResolveSurfaceMask()
+        {
+            return surfaceMask.value != 0
+                ? surfaceMask.value
+                : HectonLayerMasks.ConstructionSurfaceLayerMask;
+        }
+
+        private int ResolveSocketMask()
+        {
+            return socketLayerMask.value != 0
+                ? socketLayerMask.value
+                : HectonLayerMasks.SocketsLayerMask;
+        }
+
+        private bool TryResolveExactSnappedPlacementPose(ref Vector3 placePos, ref Quaternion placeRot)
+        {
+            if (!_isSnapped ||
+                _snappedSocket == null ||
+                _currentGhostObj == null ||
+                _habitatConstructionManager == null)
+            {
+                return false;
+            }
+
+            if (!_habitatConstructionManager.TryResolveSocketAlignment(
+                    _currentGhostObj.transform,
+                    _ghostSocketBuffer,
+                    _snappedSocket,
+                    _ghostYawOffset,
+                    out Vector3 alignedPosition,
+                    out Quaternion alignedRotation,
+                    out ModuleSocket alignedGhostSocket))
+            {
+                return false;
+            }
+
+            placePos = alignedPosition;
+            placeRot = alignedRotation;
+            _snappedGhostSocket = alignedGhostSocket;
+            _currentGhostObj.transform.SetPositionAndRotation(placePos, placeRot);
+            return true;
+        }
+
+        private static void ApplyConstructedModuleSnap(GameObject placedModule, Vector3 placePos, Quaternion placeRot)
+        {
+            if (placedModule == null)
+                return;
+
+            if (placedModule.TryGetComponent(out BaseModule baseModule))
+            {
+                baseModule.ApplyConstructedWeldSnap(placePos, placeRot);
+                return;
+            }
+
+            if (placedModule.TryGetComponent(out Rigidbody body))
+            {
+                PhysicsForceRouter.ApplyKinematicWeldSnap(body, placePos, placeRot);
+                return;
+            }
+
+            placedModule.transform.SetPositionAndRotation(placePos, placeRot);
         }
 
         private void LogBuilderDebug(string message)
@@ -1593,7 +1663,7 @@ namespace Hecton8.Building
                 return null;
 
             Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
-            if (!TryGetBuildHit(ray, (1 << 8) | (1 << 9) | (1 << 10), out RaycastHit hit))
+            if (!TryGetBuildHit(ray, HectonLayerMasks.ConstructionSurfaceLayerMask, out RaycastHit hit))
                 return null;
 
             return hit.collider != null ? hit.collider.GetComponentInParent<BaseModule>() : null;

@@ -262,7 +262,7 @@ namespace Hecton8.Physics
         private bool _isCalculationJobRunning = false;
         private readonly List<CurrentVolume> _volumeScratch = new List<CurrentVolume>(32);
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CurrentVolumeJobData
         {
             public int Shape; // 0 = box, 1 = sphere
@@ -502,7 +502,7 @@ namespace Hecton8.Physics
         //  VISUALIZATION LOGIC
         // ══════════════════════════════════════════════════════════
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FlowSamplingJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> SamplePositions;

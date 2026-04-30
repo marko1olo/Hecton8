@@ -47,6 +47,7 @@ namespace Hecton8.Gameplay
         private const byte EntanglementStressHapticPriority = 2;
         private const byte EntanglementStressHapticMotorMask = 0b0011;
         private const byte EntanglementStressHapticBlendMode = 2;
+        private const float CavitationShockwaveMinRadiusMeters = 15f;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -76,7 +77,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.1f, 8f)] private float mountedLinearDamping = 1.15f;
 
         [Tooltip("Layer mask used by the mounted vehicle capsule sweep. Defaults to the project physics layers when omitted.")]
-        [SerializeField] private LayerMask mountedSweepMask = (1 << 0) | (1 << 3) | (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10) | (1 << 11) | (1 << 12) | (1 << 14);
+        [SerializeField] private LayerMask mountedSweepMask = Hecton8.Core.HectonLayerMasks.MountedSweepLayerMask;
 
         [Tooltip("Maximum world-up slope angle the mounted kinematic drive may climb before the sweep result is treated like a wall and flattened.")]
         [SerializeField, Range(5f, 89f)] private float mountedGroundSlopeLimitDegrees = 48f;
@@ -104,10 +105,19 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(100f)] private float entanglementTetherYieldLimit = 28000f;
 
         [Tooltip("Normalized throttle output required before tether fighting is treated as deliberate max thrust.")]
-        [SerializeField, Range(0.1f, 1f)] private float entanglementStressThrottleThreshold = 0.92f;
+        [SerializeField, Range(0.1f, 1f)] private float entanglementStressThrottleThreshold = 0.8f;
 
         [Tooltip("Hull integrity damage per second at full tether overload while the pilot keeps max thrust applied.")]
         [SerializeField, Min(0f)] private float entanglementShearDamagePerSecond = 7.5f;
+
+        [Tooltip("Micro-fracture load accumulated per second at full tether overload.")]
+        [SerializeField, Min(0f)] private float entanglementMicroFracturePerSecond = 18f;
+
+        [Tooltip("Micro-fracture load required to permanently reduce the transport safe-depth rating.")]
+        [SerializeField, Min(1f)] private float entanglementMicroFractureLimit = 100f;
+
+        [Tooltip("Permanent safe-depth penalty applied each time micro-fracture load crosses the limit.")]
+        [SerializeField, Min(0f)] private float entanglementDepthPenaltyPerMicroFractureMeters = 35f;
 
         [Tooltip("Minimum interval between shear-stress damage signals, groan one-shots, and haptic pulses.")]
         [SerializeField, Min(0.02f)] private float entanglementStressSignalInterval = 0.2f;
@@ -128,9 +138,9 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.02f)] private float cavitationEventInterval = 0.14f;
 
         [Tooltip("Radius of the localized cavitation shockwave emitted at the thrusters.")]
-        [SerializeField, Min(0.25f)] private float cavitationShockwaveRadius = 5f;
+        [SerializeField, Min(0.25f)] private float cavitationShockwaveRadius = 15f;
 
-        [Tooltip("Acceleration pushed through PhysicsApplySystem to nearby small rigidbodies hit by cavitation collapse.")]
+        [Tooltip("Velocity-change impulse pushed through PhysicsApplySystem to nearby small rigidbodies hit by cavitation collapse.")]
         [SerializeField, Min(0f)] private float cavitationShockwaveAcceleration = 7f;
 
         [Tooltip("Optional thruster anchors used for cavitation bubble and shockwave origins. Falls back to the transport stern when empty.")]
@@ -213,6 +223,8 @@ namespace Hecton8.Gameplay
         private float _cavitationEventTimer;
         private float _pendingEntanglementShearDamage;
         private float _pendingCavitationEngineDamage;
+        private float _microFractureLoad;
+        private float _permanentSafeDepthPenaltyMeters;
         // COLD ALLOC: List<IDamageSignalReceiver>[1] â€” mounted transport damage listeners (player trauma dispatcher) â€” owner: MountablePlayerTransport
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
         // COLD ALLOC: Vector3[4] Ã¢â‚¬â€ inertial ghost history for presentation-only transport boost carry Ã¢â‚¬â€ owner: MountablePlayerTransport
@@ -238,6 +250,12 @@ namespace Hecton8.Gameplay
 
         /// <summary>Current normalized local transport charge.</summary>
         public float TransportChargeNormalized => _currentChargeNormalized;
+
+        /// <summary>Current accumulated micro-fracture load from fighting macro-flora entanglement.</summary>
+        public float MicroFractureLoad => _microFractureLoad;
+
+        /// <summary>Permanent safe-depth penalty accumulated from micro-fracture threshold crossings.</summary>
+        public float PermanentSafeDepthPenaltyMeters => _permanentSafeDepthPenaltyMeters;
 
         /// <summary>Current normalized transport integrity.</summary>
         public float TransportIntegrityNormalized => ResolveIntegrityNormalized();
@@ -848,7 +866,7 @@ namespace Hecton8.Gameplay
                 int entanglementSelfColliderInstanceId = _interactionCollider != null
                     ? unchecked((int)EntityId.ToULong(_interactionCollider.GetEntityId()))
                     : 0;
-                int entanglementSweepMask = mountedSweepMask.value != 0 ? mountedSweepMask.value : UnityEngine.Physics.DefaultRaycastLayers;
+                int entanglementSweepMask = mountedSweepMask.value != 0 ? mountedSweepMask.value : HectonLayerMasks.DefaultRaycastLayerMask;
                 _vehicleMotor.ScheduleCapsuleSweepBatch(
                     entanglementSweepMask,
                     MountedDriveSkinWidth,
@@ -876,7 +894,7 @@ namespace Hecton8.Gameplay
             int selfColliderInstanceId = _interactionCollider != null
                 ? unchecked((int)EntityId.ToULong(_interactionCollider.GetEntityId()))
                 : 0;
-            int sweepLayerMask = mountedSweepMask.value != 0 ? mountedSweepMask.value : UnityEngine.Physics.DefaultRaycastLayers;
+            int sweepLayerMask = mountedSweepMask.value != 0 ? mountedSweepMask.value : HectonLayerMasks.DefaultRaycastLayerMask;
             _vehicleMotor.ScheduleCapsuleSweepBatch(
                 sweepLayerMask,
                 MountedDriveSkinWidth,
@@ -1020,6 +1038,7 @@ namespace Hecton8.Gameplay
                 float overload01 = math.saturate((tetherTension - entanglementTetherYieldLimit) /
                                                  math.max(entanglementTetherYieldLimit, 0.0001f));
                 _pendingEntanglementShearDamage += entanglementShearDamagePerSecond * overload01 * safeDeltaTime;
+                AccumulateMicroFractureLoad(overload01, safeDeltaTime);
                 _entanglementStressSignalTimer -= safeDeltaTime;
                 if (_entanglementStressSignalTimer <= 0f)
                 {
@@ -1027,7 +1046,7 @@ namespace Hecton8.Gameplay
                         _pendingEntanglementShearDamage,
                         tetherTension,
                         _transportBody.worldCenterOfMass,
-                        (uint)DamageTypeMask.Impact,
+                        (uint)(DamageTypeMask.Impact | DamageTypeMask.Pressure | DamageTypeMask.MicroFracture),
                         overload01,
                         dispatchPowerChange: false);
                     _pendingEntanglementShearDamage = 0f;
@@ -1079,10 +1098,32 @@ namespace Hecton8.Gameplay
                 _pendingEntanglementShearDamage,
                 tetherTension,
                 _transportBody.worldCenterOfMass,
-                (uint)DamageTypeMask.Impact,
+                (uint)(DamageTypeMask.Impact | DamageTypeMask.Pressure | DamageTypeMask.MicroFracture),
                 0.1f,
                 dispatchPowerChange: false);
             _pendingEntanglementShearDamage = 0f;
+        }
+
+        private void AccumulateMicroFractureLoad(float overload01, float safeDeltaTime)
+        {
+            if (entanglementMicroFracturePerSecond <= 0f ||
+                entanglementMicroFractureLimit <= 0f ||
+                entanglementDepthPenaltyPerMicroFractureMeters <= 0f)
+            {
+                return;
+            }
+
+            _microFractureLoad += entanglementMicroFracturePerSecond * math.saturate(overload01) * math.max(0f, safeDeltaTime);
+            float fractureLimit = math.max(1f, entanglementMicroFractureLimit);
+            if (_microFractureLoad < fractureLimit)
+                return;
+
+            _microFractureLoad -= fractureLimit;
+            float penaltyMeters = math.max(0f, entanglementDepthPenaltyPerMicroFractureMeters);
+            _permanentSafeDepthPenaltyMeters += penaltyMeters;
+            ResolveVehicleUpgradeModule();
+            if (_vehicleUpgradeModule != null)
+                _vehicleUpgradeModule.ApplyPermanentSafeDepthPenalty(penaltyMeters);
         }
 
         private void FlushPendingCavitationDamage()
@@ -1109,6 +1150,7 @@ namespace Hecton8.Gameplay
             int sourceBodyInstanceId = _transportBody != null ? unchecked((int)EntityId.ToULong(_transportBody.GetEntityId())) : 0;
             Vector3 direction = _cachedTransform != null ? -_cachedTransform.forward : Vector3.back;
             bool queuedAny = false;
+            float resolvedShockwaveRadius = math.max(CavitationShockwaveMinRadiusMeters, cavitationShockwaveRadius);
             if (cavitationThrusterAnchors != null)
             {
                 for (int i = 0; i < cavitationThrusterAnchors.Length; i++)
@@ -1121,7 +1163,7 @@ namespace Hecton8.Gameplay
                         anchor.position,
                         direction,
                         clampedIntensity,
-                        cavitationShockwaveRadius,
+                        resolvedShockwaveRadius,
                         cavitationShockwaveAcceleration,
                         sourceBodyInstanceId);
                     queuedAny = true;
@@ -1135,7 +1177,7 @@ namespace Hecton8.Gameplay
                 ResolveCavitationFallbackPosition(),
                 direction,
                 clampedIntensity,
-                cavitationShockwaveRadius,
+                resolvedShockwaveRadius,
                 cavitationShockwaveAcceleration,
                 sourceBodyInstanceId);
         }
@@ -1934,12 +1976,16 @@ namespace Hecton8.Gameplay
         private void OnValidate()
         {
             entanglementTetherYieldLimit = Mathf.Max(100f, entanglementTetherYieldLimit);
+            entanglementStressThrottleThreshold = Mathf.Clamp(entanglementStressThrottleThreshold, 0.1f, 1f);
             entanglementShearDamagePerSecond = Mathf.Max(0f, entanglementShearDamagePerSecond);
+            entanglementMicroFracturePerSecond = Mathf.Max(0f, entanglementMicroFracturePerSecond);
+            entanglementMicroFractureLimit = Mathf.Max(1f, entanglementMicroFractureLimit);
+            entanglementDepthPenaltyPerMicroFractureMeters = Mathf.Max(0f, entanglementDepthPenaltyPerMicroFractureMeters);
             entanglementStressSignalInterval = Mathf.Max(0.02f, entanglementStressSignalInterval);
             cavitationLowSpeedThreshold = Mathf.Max(0.05f, cavitationLowSpeedThreshold);
             cavitationEngineDamagePerSecond = Mathf.Max(0f, cavitationEngineDamagePerSecond);
             cavitationEventInterval = Mathf.Max(0.02f, cavitationEventInterval);
-            cavitationShockwaveRadius = Mathf.Max(0.25f, cavitationShockwaveRadius);
+            cavitationShockwaveRadius = Mathf.Max(CavitationShockwaveMinRadiusMeters, cavitationShockwaveRadius);
             cavitationShockwaveAcceleration = Mathf.Max(0f, cavitationShockwaveAcceleration);
             ResolveAnchorCache();
             BindPresetToFeelContract();

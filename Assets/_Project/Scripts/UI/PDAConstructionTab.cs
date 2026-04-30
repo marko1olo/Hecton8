@@ -232,6 +232,12 @@ namespace Hecton8.UI
             PDAEvents.Unregister(this);
         }
 
+        private void OnDestroy()
+        {
+            Unsubscribe();
+            PDAEvents.AssertUnregistered(this, nameof(PDAConstructionTab));
+        }
+
         private void RefreshSubscriptions()
         {
             if (!ReferenceEquals(_subscribedInventory, playerInventory))

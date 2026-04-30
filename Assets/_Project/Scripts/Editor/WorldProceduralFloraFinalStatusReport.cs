@@ -463,7 +463,7 @@ namespace Hecton8.EditorTools
                 return null;
 
             Camera camera = previewUtility.camera;
-            camera.cullingMask = (1 << 8) | (1 << 9) | (1 << 10);
+            camera.cullingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
             camera.nearClipPlane = 0.01f;
 
             Vector3 normalizedViewDirection = viewDirection.sqrMagnitude > 0.0001f

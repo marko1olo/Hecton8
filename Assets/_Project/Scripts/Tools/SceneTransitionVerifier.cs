@@ -1,4 +1,5 @@
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton.UI.MainMenu;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -66,11 +67,12 @@ namespace Hecton8.Tools
             if (!_verifyTransitions)
                 return;
 
-            StartCoroutine(VerifyTransition(
+            _ = VerifyTransitionAsync(
                 "New Game",
                 () => string.Equals(SceneManager.GetActiveScene().name, "02_HECTON_WORLD", System.StringComparison.Ordinal),
                 VerifyNewGameContext,
-                "GameStartContext.StartMode should be NewGame and bootstrap should be alive"));
+                "GameStartContext.StartMode should be NewGame and bootstrap should be alive",
+                destroyCancellationToken);
         }
 
         public void VerifyLoadGameTransition(string expectedSlot)
@@ -78,11 +80,12 @@ namespace Hecton8.Tools
             if (!_verifyTransitions)
                 return;
 
-            StartCoroutine(VerifyTransition(
+            _ = VerifyTransitionAsync(
                 $"Load Game (Slot {expectedSlot})",
                 () => string.Equals(SceneManager.GetActiveScene().name, "02_HECTON_WORLD", System.StringComparison.Ordinal),
                 () => VerifyLoadGameContext(expectedSlot),
-                $"GameStartContext should have LoadGame start mode and slot '{expectedSlot}'"));
+                $"GameStartContext should have LoadGame start mode and slot '{expectedSlot}'",
+                destroyCancellationToken);
         }
 
         public void VerifyReturnToMenu()
@@ -90,11 +93,12 @@ namespace Hecton8.Tools
             if (!_verifyTransitions)
                 return;
 
-            StartCoroutine(VerifyTransition(
+            _ = VerifyTransitionAsync(
                 "Return to Menu",
                 () => string.Equals(SceneManager.GetActiveScene().name, "01_MAIN_MENU", System.StringComparison.Ordinal),
                 VerifyMenuReturnContext,
-                "Menu should be active, bootstrap should be alive, and stale game-start context should be cleared"));
+                "Menu should be active, bootstrap should be alive, and stale game-start context should be cleared",
+                destroyCancellationToken);
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -117,33 +121,56 @@ namespace Hecton8.Tools
             LogVerification($"Active scene changed: {previous.name} -> {current.name}");
         }
 
-        private IEnumerator VerifyTransition(string transitionName, System.Func<bool> sceneCheck, System.Func<bool> contextCheck, string contextDescription)
+        private async Awaitable VerifyTransitionAsync(
+            string transitionName,
+            Func<bool> sceneCheck,
+            Func<bool> contextCheck,
+            string contextDescription,
+            CancellationToken cancellationToken)
         {
-            LogVerification($"Starting verification: {transitionName}");
-
-            float deadline = Time.unscaledTime + Mathf.Max(0.1f, _transitionTimeout);
-            while (_isTransitioning && Time.unscaledTime < deadline)
-                yield return null;
-
-            if (_isTransitioning)
+            try
             {
-                LogVerification($"FAIL {transitionName} - transition timeout after {_transitionTimeout:0.00}s");
-                yield break;
-            }
+                cancellationToken.ThrowIfCancellationRequested();
+                LogVerification($"Starting verification: {transitionName}");
 
-            if (!sceneCheck())
+                float deadline = Time.unscaledTime + Mathf.Max(0.1f, _transitionTimeout);
+                while (_isTransitioning && Time.unscaledTime < deadline)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await Awaitable.NextFrameAsync(cancellationToken);
+                }
+
+                if (_isTransitioning)
+                {
+                    LogVerification($"FAIL {transitionName} - transition timeout after {_transitionTimeout:0.00}s");
+                    return;
+                }
+
+                if (!sceneCheck())
+                {
+                    LogVerification($"FAIL {transitionName} - scene check failed (current: {SceneManager.GetActiveScene().name})");
+                    return;
+                }
+
+                if (!contextCheck())
+                {
+                    LogVerification($"FAIL {transitionName} - context check failed: {contextDescription}");
+                    return;
+                }
+
+                LogVerification($"PASS {transitionName} - verification passed");
+            }
+            catch (OperationCanceledException)
             {
-                LogVerification($"FAIL {transitionName} - scene check failed (current: {SceneManager.GetActiveScene().name})");
-                yield break;
+                LogVerification($"Verification cancelled: {transitionName}");
             }
-
-            if (!contextCheck())
+            catch (Exception exception)
             {
-                LogVerification($"FAIL {transitionName} - context check failed: {contextDescription}");
-                yield break;
+                LogVerification($"FAIL {transitionName} - exception {exception.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
             }
-
-            LogVerification($"PASS {transitionName} - verification passed");
         }
 
         private static bool VerifyNewGameContext()

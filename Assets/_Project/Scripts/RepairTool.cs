@@ -71,7 +71,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float repairSpeed = 20f;
 
         [Tooltip("Слои, по которым работает ремонтный луч.")]
-        [SerializeField] private LayerMask repairMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask repairMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Visuals ───────────────────────────────────")]
         [SerializeField] private LineRenderer repairLine;

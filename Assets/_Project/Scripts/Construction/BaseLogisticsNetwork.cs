@@ -217,6 +217,25 @@ namespace Hecton8.Construction
             return count;
         }
 
+        public static bool TryDepositItem(PowerGrid grid, ItemData item, int amount, out int deposited)
+        {
+            deposited = 0;
+            if (grid == null || item == null || amount <= 0)
+                return false;
+
+            for (int i = 0; i < s_StorageEndpoints.Count && deposited < amount; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
+                    continue;
+
+                while (deposited < amount && endpoint.Crate.TryAddAutomatedItem(item))
+                    deposited++;
+            }
+
+            return deposited > 0;
+        }
+
         public static bool TryResolveNearestSupplyEndpoint(PowerGrid grid, int itemHashId, Vector3 origin, out Vector3 position)
         {
             position = Vector3.zero;

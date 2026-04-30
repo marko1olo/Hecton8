@@ -62,7 +62,7 @@ namespace Hecton8.World
                    runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
         {
             float dx = a.x - b.x;
@@ -70,7 +70,7 @@ namespace Hecton8.World
             return (dx * dx) + (dz * dz);
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public static long ComposeScatterGridKey(int cellX, int cellZ)
         {
             return ((long)cellX << 32) | (uint)cellZ;
@@ -124,7 +124,7 @@ namespace Hecton8.World
             return family != null ? Mathf.Max(0.5f, family.minSpacingMeters) : 1f;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public static float EvaluateDepthLightProxy01(
             float depthMeters,
             float deepFloraMinDepthMeters,
@@ -136,7 +136,7 @@ namespace Hecton8.World
             return 1f - darkness01;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public static float EvaluateClusterPatchMask01(
             float worldX,
             float worldZ,
@@ -171,7 +171,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ValueNoise01(float2 p, int salt)
         {
             float2 cell = math.floor(p);
@@ -186,7 +186,7 @@ namespace Hecton8.World
             return math.lerp(math.lerp(a, b, t.x), math.lerp(c, d, t.x), t.y);
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float Hash01(uint value)
         {
             value ^= value >> 16;

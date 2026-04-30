@@ -76,6 +76,15 @@ namespace Hecton8.Core
         public event System.Action OnSecondaryAction;
 
         /// <inheritdoc />
+        public event System.Action OnPDA;
+
+        /// <inheritdoc />
+        public event System.Action OnInventory;
+
+        /// <inheritdoc />
+        public event System.Action OnCancel;
+
+        /// <inheritdoc />
         public event System.Action OnTabNext;
 
         /// <inheritdoc />
@@ -228,6 +237,20 @@ namespace Hecton8.Core
             return false;
         }
 
+        /// <inheritdoc />
+        public void SwitchToPlayerInput()
+        {
+            if (_nativeInputManager != null)
+                _nativeInputManager.SwitchToPlayerInput();
+        }
+
+        /// <inheritdoc />
+        public void SwitchToUIInput()
+        {
+            if (_nativeInputManager != null)
+                _nativeInputManager.SwitchToUIInput();
+        }
+
         private void EnsureInputBinding()
         {
             if (_nativeInputManager == null || _subscribedToNativeInput)
@@ -256,6 +279,9 @@ namespace Hecton8.Core
             _nativeInputManager.OnToolSlot4 += HandleToolSlot4Pressed;
             _nativeInputManager.OnPrimaryAction += HandlePrimaryActionPressed;
             _nativeInputManager.OnSecondaryAction += HandleSecondaryActionPressed;
+            _nativeInputManager.OnPDA += HandlePDAPressed;
+            _nativeInputManager.OnInventory += HandleInventoryPressed;
+            _nativeInputManager.OnCancel += HandleCancelPressed;
             _nativeInputManager.OnTabNext += HandleTabNextPressed;
             _nativeInputManager.OnTabPrevious += HandleTabPreviousPressed;
             _nativeInputManager.OnSprint += HandleSprintPressed;
@@ -276,6 +302,9 @@ namespace Hecton8.Core
             _nativeInputManager.OnToolSlot4 -= HandleToolSlot4Pressed;
             _nativeInputManager.OnPrimaryAction -= HandlePrimaryActionPressed;
             _nativeInputManager.OnSecondaryAction -= HandleSecondaryActionPressed;
+            _nativeInputManager.OnPDA -= HandlePDAPressed;
+            _nativeInputManager.OnInventory -= HandleInventoryPressed;
+            _nativeInputManager.OnCancel -= HandleCancelPressed;
             _nativeInputManager.OnTabNext -= HandleTabNextPressed;
             _nativeInputManager.OnTabPrevious -= HandleTabPreviousPressed;
             _nativeInputManager.OnSprint -= HandleSprintPressed;
@@ -478,6 +507,21 @@ namespace Hecton8.Core
         {
             _latchedActionBits |= (uint)PlayerInputAction.SecondaryFire;
             OnSecondaryAction?.Invoke();
+        }
+
+        private void HandlePDAPressed()
+        {
+            OnPDA?.Invoke();
+        }
+
+        private void HandleInventoryPressed()
+        {
+            OnInventory?.Invoke();
+        }
+
+        private void HandleCancelPressed()
+        {
+            OnCancel?.Invoke();
         }
 
         private void HandleTabNextPressed()

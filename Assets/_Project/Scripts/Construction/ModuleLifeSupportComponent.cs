@@ -8,6 +8,7 @@ namespace Hecton8.Construction
         public bool AirQualityWarningRaised;
         public bool AirReserveDepletedRaised;
         public bool Co2CriticalRaised;
+        public bool Co2HypoxiaRaised;
     }
 
     /// <summary>
@@ -18,8 +19,10 @@ namespace Hecton8.Construction
     internal sealed class ModuleLifeSupportComponent
     {
         private const float ToxicCo2ThresholdNormalized = 0.75f;
+        private const float HypoxiaCo2ThresholdNormalized = 0.80f;
 
         private float _oxygenRefillRate;
+        private float _baseBreathableReserveCapacity;
         private float _breathableReserveCapacity;
         private float _breathableReserve;
         private float _airRecycleRate;
@@ -27,13 +30,17 @@ namespace Hecton8.Construction
         private float _staleAirThreshold;
         private float _staleAirMinRefillScale;
         private float _staleAirSuitDrainRate;
+        private float _baseCo2Capacity;
         private float _co2Capacity;
         private float _co2Level;
         private float _co2GenerationRate;
         private float _co2CriticalThreshold;
+        private float _baseCo2CriticalThreshold;
+        private float _pressureCompressionVolumeScale = 1f;
         private bool _airReserveWarningLatched;
         private bool _airReserveDepletedLatched;
         private bool _co2CriticalLatched;
+        private bool _co2HypoxiaLatched;
 
         public float AirReserveNormalized => _breathableReserveCapacity > 0.01f ? Mathf.Clamp01(_breathableReserve / _breathableReserveCapacity) : 1f;
         public bool IsAirQualityLow => AirReserveNormalized <= _staleAirThreshold;
@@ -61,17 +68,21 @@ namespace Hecton8.Construction
             float co2CriticalThreshold)
         {
             _oxygenRefillRate = Mathf.Max(0f, oxygenRefillRate);
-            _breathableReserveCapacity = Mathf.Max(1f, breathableReserveCapacity);
+            _baseBreathableReserveCapacity = Mathf.Max(1f, breathableReserveCapacity);
+            _breathableReserveCapacity = _baseBreathableReserveCapacity;
             _breathableReserve = breathableReserve;
             _airRecycleRate = Mathf.Max(0f, airRecycleRate);
             _occupiedAirDrainRate = Mathf.Max(0f, occupiedAirDrainRate);
             _staleAirThreshold = Mathf.Clamp(staleAirThreshold, 0.05f, 0.8f);
             _staleAirMinRefillScale = Mathf.Clamp01(staleAirMinRefillScale);
             _staleAirSuitDrainRate = Mathf.Max(0f, staleAirSuitDrainRate);
-            _co2Capacity = Mathf.Max(1f, co2Capacity);
+            _baseCo2Capacity = Mathf.Max(1f, co2Capacity);
+            _co2Capacity = _baseCo2Capacity;
             _co2Level = Mathf.Max(0f, co2Level);
             _co2GenerationRate = Mathf.Max(0f, co2GenerationRate);
-            _co2CriticalThreshold = Mathf.Clamp(co2CriticalThreshold, 0.05f, _co2Capacity);
+            _baseCo2CriticalThreshold = Mathf.Clamp(co2CriticalThreshold, 0.05f, _baseCo2Capacity);
+            _co2CriticalThreshold = _baseCo2CriticalThreshold;
+            _pressureCompressionVolumeScale = 1f;
             InitializeCold();
         }
 
@@ -85,6 +96,7 @@ namespace Hecton8.Construction
             _airReserveWarningLatched = IsAirQualityLow;
             _airReserveDepletedLatched = _breathableReserve <= 0f;
             _co2CriticalLatched = IsCo2Critical;
+            _co2HypoxiaLatched = Co2Normalized >= HypoxiaCo2ThresholdNormalized;
         }
 
         public void RestoreState(float airReserveNormalized, float co2Normalized)
@@ -94,15 +106,45 @@ namespace Hecton8.Construction
             _airReserveWarningLatched = IsAirQualityLow;
             _airReserveDepletedLatched = _breathableReserve <= 0f;
             _co2CriticalLatched = IsCo2Critical;
+            _co2HypoxiaLatched = Co2Normalized >= HypoxiaCo2ThresholdNormalized;
+        }
+
+        /// <summary>
+        /// Scales breathable reserve and CO2 capacity by current pressure-compressed room volume.
+        /// </summary>
+        /// <param name="volumeScale">Normalized room volume scale in [0.1, 1.0].</param>
+        public void ApplyPressureCompressionScale(float volumeScale)
+        {
+            float sanitizedScale = Mathf.Clamp(volumeScale, 0.1f, 1f);
+            if (Mathf.Abs(_pressureCompressionVolumeScale - sanitizedScale) <= 0.00001f)
+                return;
+
+            _pressureCompressionVolumeScale = sanitizedScale;
+            _breathableReserveCapacity = Mathf.Max(1f, _baseBreathableReserveCapacity * sanitizedScale);
+            _co2Capacity = Mathf.Max(1f, _baseCo2Capacity * sanitizedScale);
+            _co2CriticalThreshold = Mathf.Clamp(_baseCo2CriticalThreshold * sanitizedScale, 0.05f, _co2Capacity);
+
+            if (_breathableReserve > _breathableReserveCapacity)
+                _breathableReserve = _breathableReserveCapacity;
+
+            if (_co2Level > _co2Capacity)
+                _co2Level = _co2Capacity;
+
+            _airReserveWarningLatched = IsAirQualityLow;
+            _airReserveDepletedLatched = _breathableReserve <= 0f;
+            _co2CriticalLatched = IsCo2Critical;
+            _co2HypoxiaLatched = Co2Normalized >= HypoxiaCo2ThresholdNormalized;
         }
 
         public void ResetForDespawn()
         {
+            ApplyPressureCompressionScale(1f);
             _breathableReserve = _breathableReserveCapacity;
             _co2Level = 0f;
             _airReserveWarningLatched = false;
             _airReserveDepletedLatched = false;
             _co2CriticalLatched = false;
+            _co2HypoxiaLatched = false;
         }
 
         public void ApplyCascadeFailureEffects(
@@ -220,6 +262,17 @@ namespace Hecton8.Construction
             else if (!IsCo2Critical && _co2CriticalLatched && Co2Normalized < 0.8f)
             {
                 _co2CriticalLatched = false;
+            }
+
+            bool hypoxia = Co2Normalized >= HypoxiaCo2ThresholdNormalized;
+            if (hypoxia && !_co2HypoxiaLatched)
+            {
+                _co2HypoxiaLatched = true;
+                signals.Co2HypoxiaRaised = true;
+            }
+            else if (!hypoxia && _co2HypoxiaLatched && Co2Normalized < HypoxiaCo2ThresholdNormalized - 0.08f)
+            {
+                _co2HypoxiaLatched = false;
             }
 
             return signals;

@@ -1,6 +1,7 @@
 using UnityEngine;
 using Hecton8.Bootstrap;
 using Hecton8.Atmosphere;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 
 #if UNITY_EDITOR
@@ -10,7 +11,7 @@ using UnityEditor;
 [ExecuteAlways]
 [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Environment/Sky System Follow Camera")]
-public sealed class SkySystemFollowCamera : MonoBehaviour
+public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
 {
     [Tooltip("Explicit runtime camera override. Falls back to the current player camera when empty.")]
     [SerializeField] private Camera runtimeCamera;
@@ -40,6 +41,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
     private Camera _editorLastTargetCamera;
     private Vector3 _editorLastAppliedPosition;
     private bool _editorPositionCached;
+    private bool _registeredForTick;
 
     private void OnEnable()
     {
@@ -51,6 +53,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
         CaptureFixedYPosition();
         ResolveSeaLevelOwners();
         ApplyFollowImmediately();
+        TryRegisterForTick();
 
 #if UNITY_EDITOR
         _editorPositionCached = false;
@@ -66,17 +69,37 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
 
     private void OnDisable()
     {
+        TryUnregisterFromTick();
 #if UNITY_EDITOR
         EditorApplication.update -= EditorTick;
 #endif
     }
 
-    private void LateUpdate()
+    /// <inheritdoc />
+    public void Tick(float deltaTime)
     {
         if (!Application.isPlaying || !followInPlayMode)
             return;
 
         ApplyFollow();
+    }
+
+    private void TryRegisterForTick()
+    {
+        if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            return;
+
+        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+        _registeredForTick = true;
+    }
+
+    private void TryUnregisterFromTick()
+    {
+        if (!_registeredForTick)
+            return;
+
+        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+        _registeredForTick = false;
     }
 
     private void ApplyFollow()

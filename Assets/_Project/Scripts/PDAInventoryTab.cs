@@ -316,6 +316,8 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            Unsubscribe();
+            PDAEvents.AssertUnregistered(this, nameof(PDAInventoryTab));
             if (_runtimeHologramMaterial != null)
             {
                 Destroy(_runtimeHologramMaterial);
@@ -1982,7 +1984,7 @@ namespace Hecton8.UI
                     _selectedY,
                     out int droppedHashId,
                     out _,
-                    out uint geneticsMask,
+                    out ulong geneticsMask,
                     out ushort qualityMilli))
             {
                 return;

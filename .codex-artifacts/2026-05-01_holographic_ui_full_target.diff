@@ -1,0 +1,915 @@
+﻿diff --git a/Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader b/Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader
+index 381fcb93..e48f2c1c 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader
+@@ -19,7 +19,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
+             "RenderPipeline" = "UniversalPipeline"
+         }
+ 
+-        Cull Back
++        Cull Off
+         ZWrite Off
+         ZTest LEqual
+         Blend SrcAlpha OneMinusSrcAlpha
+@@ -34,6 +34,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
+             #pragma fragment frag
+ 
+             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
++            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+ 
+             struct Attributes
+             {
+@@ -60,6 +61,40 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
+             TEXTURE2D(_MainTex);
+             SAMPLER(sampler_MainTex);
+ 
++            float Bayer4x4(float2 pixelCoord)
++            {
++                float2 cell = floor(frac(pixelCoord * 0.25) * 4.0);
++
++                if (cell.y < 0.5)
++                {
++                    if (cell.x < 0.5) return 0.0 / 16.0;
++                    if (cell.x < 1.5) return 8.0 / 16.0;
++                    if (cell.x < 2.5) return 2.0 / 16.0;
++                    return 10.0 / 16.0;
++                }
++
++                if (cell.y < 1.5)
++                {
++                    if (cell.x < 0.5) return 12.0 / 16.0;
++                    if (cell.x < 1.5) return 4.0 / 16.0;
++                    if (cell.x < 2.5) return 14.0 / 16.0;
++                    return 6.0 / 16.0;
++                }
++
++                if (cell.y < 2.5)
++                {
++                    if (cell.x < 0.5) return 3.0 / 16.0;
++                    if (cell.x < 1.5) return 11.0 / 16.0;
++                    if (cell.x < 2.5) return 1.0 / 16.0;
++                    return 9.0 / 16.0;
++                }
++
++                if (cell.x < 0.5) return 15.0 / 16.0;
++                if (cell.x < 1.5) return 7.0 / 16.0;
++                if (cell.x < 2.5) return 13.0 / 16.0;
++                return 5.0 / 16.0;
++            }
++
+             Varyings vert(Attributes input)
+             {
+                 Varyings output;
+@@ -73,9 +108,33 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
+                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                 half4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                 half4 screenSample = max(baseSample, mainSample);
++                float rgbAlpha = saturate(max(max(screenSample.r, screenSample.g), screenSample.b) * 2.0);
+                 float powerLevel = saturate(_PanelPowerLevel);
+                 float3 emissive = screenSample.rgb * _Color.rgb * lerp(0.45, 1.0, powerLevel);
+-                return half4(emissive, screenSample.a * _Color.a);
++                float alpha = max(screenSample.a, rgbAlpha) * _Color.a;
++
++                if (_OcclusionActive > 0.5 && alpha > 0.001)
++                {
++                    float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
++                    float fragRawDepth = saturate(input.positionCS.z / input.positionCS.w);
++                    float sceneRawDepth = SampleSceneDepth(screenUV);
++#if UNITY_REVERSED_Z
++                    float sceneDepthValid = step(0.0001, sceneRawDepth);
++#else
++                    float sceneDepthValid = step(sceneRawDepth, 0.9999);
++#endif
++                    float linearSceneDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
++                    float linearFragDepth = LinearEyeDepth(fragRawDepth, _ZBufferParams);
++                    float occluded = sceneDepthValid * step(linearSceneDepth + _DepthFadeRange, linearFragDepth);
++
++                    if (occluded > 0.5)
++                    {
++                        float bayer = Bayer4x4(screenUV * _ScaledScreenParams.xy);
++                        clip((alpha * 0.25) - bayer);
++                    }
++                }
++
++                return half4(emissive, alpha);
+             }
+             ENDHLSL
+         }
+diff --git a/Assets/_Project/Scripts/PDAInventoryTab.cs b/Assets/_Project/Scripts/PDAInventoryTab.cs
+index ec903dc4..81238c2d 100644
+--- a/Assets/_Project/Scripts/PDAInventoryTab.cs
++++ b/Assets/_Project/Scripts/PDAInventoryTab.cs
+@@ -316,6 +316,8 @@ namespace Hecton8.UI
+ 
+         private void OnDestroy()
+         {
++            Unsubscribe();
++            PDAEvents.AssertUnregistered(this, nameof(PDAInventoryTab));
+             if (_runtimeHologramMaterial != null)
+             {
+                 Destroy(_runtimeHologramMaterial);
+@@ -1982,7 +1984,7 @@ namespace Hecton8.UI
+                     _selectedY,
+                     out int droppedHashId,
+                     out _,
+-                    out uint geneticsMask,
++                    out ulong geneticsMask,
+                     out ushort qualityMilli))
+             {
+                 return;
+diff --git a/Assets/_Project/Scripts/SaveThumbnailSystem.cs b/Assets/_Project/Scripts/SaveThumbnailSystem.cs
+index 0088d364..6546f20b 100644
+--- a/Assets/_Project/Scripts/SaveThumbnailSystem.cs
++++ b/Assets/_Project/Scripts/SaveThumbnailSystem.cs
+@@ -22,6 +22,9 @@ namespace Hecton8.SaveSystem
+         private const string Extension = ".png";
+         private const string LegacyExtension = ".jpg";
+         private const int MaxCachedSprites = 12;
++        private const uint PngChunkIhdr = 0x49484452u;
++        private const uint PngChunkIdat = 0x49444154u;
++        private const uint PngChunkIend = 0x49454E44u;
+ 
+         private struct CaptureRequest
+         {
+@@ -244,21 +247,21 @@ namespace Hecton8.SaveSystem
+                 return;
+             }
+ 
+-            NativeArray<byte> encodedPng = ImageConversion.EncodeNativeArrayToPNG<byte>(
+-                request.GetData<byte>(),
+-                GraphicsFormat.R8G8B8A8_SRGB,
+-                (uint)Width,
+-                (uint)Height,
+-                0u);
+-
+-            // COLD ALLOC: NativeArray<byte>[encodedPng.Length] — persistent save-thumbnail write staging buffer — owner: SaveThumbnailSystem
+-            NativeArray<byte> persistentPng = new NativeArray<byte>(encodedPng.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+-            NativeArray<byte>.Copy(encodedPng, persistentPng, encodedPng.Length);
+-            encodedPng.Dispose();
+-            _ = PersistThumbnailAsync(inflightRequest.SlotName, persistentPng);
++            NativeArray<byte> readbackData = request.GetData<byte>();
++            int expectedLength = Width * Height * 4;
++            if (!readbackData.IsCreated || readbackData.Length < expectedLength)
++            {
++                Debug.LogError($"[SaveThumbnailSystem] AsyncGPUReadback returned invalid thumbnail data for '{inflightRequest.SlotName}'.");
++                return;
++            }
++
++            // COLD ALLOC: NativeArray<byte>[Width * Height * 4] - persistent GPU readback staging buffer for background PNG write - owner: SaveThumbnailSystem
++            NativeArray<byte> persistentRgba = new NativeArray<byte>(expectedLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            NativeArray<byte>.Copy(readbackData, persistentRgba, expectedLength);
++            _ = PersistThumbnailAsync(inflightRequest.SlotName, persistentRgba, Width, Height);
+         }
+ 
+-        private static async Awaitable PersistThumbnailAsync(string slotName, NativeArray<byte> pngBytes)
++        private static async Awaitable PersistThumbnailAsync(string slotName, NativeArray<byte> rgbaBytes, int width, int height)
+         {
+             string path = GetThumbnailPath(slotName);
+             string tempPath = GetTempThumbnailPath(slotName);
+@@ -276,9 +279,9 @@ namespace Hecton8.SaveSystem
+ 
+                 unsafe
+                 {
+-                    void* dataPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(pngBytes);
++                    void* dataPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(rgbaBytes);
+                     using var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
+-                    stream.Write(new ReadOnlySpan<byte>(dataPtr, pngBytes.Length));
++                    WritePngRgba32(stream, (byte*)dataPtr, rgbaBytes.Length, width, height);
+                 }
+ 
+                 if (File.Exists(path))
+@@ -302,9 +305,169 @@ namespace Hecton8.SaveSystem
+             }
+             finally
+             {
+-                if (pngBytes.IsCreated)
+-                    pngBytes.Dispose();
++                if (rgbaBytes.IsCreated)
++                    rgbaBytes.Dispose();
++            }
++        }
++
++        private static unsafe void WritePngRgba32(Stream stream, byte* rgbaBytes, int rgbaLength, int width, int height)
++        {
++            if (stream == null || rgbaBytes == null || width <= 0 || height <= 0)
++                return;
++
++            int stride = width * 4;
++            int expectedLength = stride * height;
++            if (rgbaLength < expectedLength)
++                return;
++
++            Span<byte> signature = stackalloc byte[8];
++            signature[0] = 137;
++            signature[1] = 80;
++            signature[2] = 78;
++            signature[3] = 71;
++            signature[4] = 13;
++            signature[5] = 10;
++            signature[6] = 26;
++            signature[7] = 10;
++            stream.Write(signature);
++
++            // COLD ALLOC: byte[13] - PNG IHDR payload generated off main thread - owner: SaveThumbnailSystem
++            byte[] ihdr = new byte[13];
++            WriteUInt32BigEndian(ihdr, 0, (uint)width);
++            WriteUInt32BigEndian(ihdr, 4, (uint)height);
++            ihdr[8] = 8;
++            ihdr[9] = 6;
++            ihdr[10] = 0;
++            ihdr[11] = 0;
++            ihdr[12] = 0;
++            WritePngChunk(stream, PngChunkIhdr, ihdr, ihdr.Length);
++
++            int filteredLength = height * (stride + 1);
++            // COLD ALLOC: byte[height * (stride + 1)] - PNG scanline filter buffer generated off main thread - owner: SaveThumbnailSystem
++            byte[] filtered = new byte[filteredLength];
++            fixed (byte* filteredPtr = filtered)
++            {
++                for (int y = 0; y < height; y++)
++                {
++                    int destinationOffset = y * (stride + 1);
++                    filteredPtr[destinationOffset] = 0;
++                    Buffer.MemoryCopy(rgbaBytes + (y * stride), filteredPtr + destinationOffset + 1, stride, stride);
++                }
+             }
++
++            byte[] idat = BuildUncompressedZlibPayload(filtered);
++            WritePngChunk(stream, PngChunkIdat, idat, idat.Length);
++            WritePngChunk(stream, PngChunkIend, null, 0);
++        }
++
++        private static byte[] BuildUncompressedZlibPayload(byte[] filtered)
++        {
++            int filteredLength = filtered != null ? filtered.Length : 0;
++            int blockCount = Math.Max(1, (filteredLength + ushort.MaxValue - 1) / ushort.MaxValue);
++            // COLD ALLOC: byte[zlib payload] - uncompressed PNG IDAT payload generated off main thread - owner: SaveThumbnailSystem
++            byte[] payload = new byte[2 + (blockCount * 5) + filteredLength + 4];
++            int cursor = 0;
++            payload[cursor++] = 0x78;
++            payload[cursor++] = 0x01;
++
++            int sourceOffset = 0;
++            int remaining = filteredLength;
++            for (int block = 0; block < blockCount; block++)
++            {
++                int blockLength = Math.Min(ushort.MaxValue, remaining);
++                bool isFinalBlock = block == blockCount - 1;
++                payload[cursor++] = isFinalBlock ? (byte)1 : (byte)0;
++                payload[cursor++] = (byte)(blockLength & 0xFF);
++                payload[cursor++] = (byte)((blockLength >> 8) & 0xFF);
++                int invertedLength = (~blockLength) & 0xFFFF;
++                payload[cursor++] = (byte)(invertedLength & 0xFF);
++                payload[cursor++] = (byte)((invertedLength >> 8) & 0xFF);
++                if (blockLength > 0)
++                    Buffer.BlockCopy(filtered, sourceOffset, payload, cursor, blockLength);
++
++                cursor += blockLength;
++                sourceOffset += blockLength;
++                remaining -= blockLength;
++            }
++
++            uint adler = ComputeAdler32(filtered, filteredLength);
++            payload[cursor++] = (byte)((adler >> 24) & 0xFF);
++            payload[cursor++] = (byte)((adler >> 16) & 0xFF);
++            payload[cursor++] = (byte)((adler >> 8) & 0xFF);
++            payload[cursor] = (byte)(adler & 0xFF);
++            return payload;
++        }
++
++        private static uint ComputeAdler32(byte[] data, int length)
++        {
++            const uint ModAdler = 65521u;
++            uint a = 1u;
++            uint b = 0u;
++            for (int i = 0; i < length; i++)
++            {
++                a = (a + data[i]) % ModAdler;
++                b = (b + a) % ModAdler;
++            }
++
++            return (b << 16) | a;
++        }
++
++        private static void WritePngChunk(Stream stream, uint chunkType, byte[] data, int length)
++        {
++            WriteUInt32BigEndian(stream, (uint)Math.Max(0, length));
++            WriteUInt32BigEndian(stream, chunkType);
++            if (data != null && length > 0)
++                stream.Write(data, 0, length);
++
++            WriteUInt32BigEndian(stream, ComputeChunkCrc(chunkType, data, length));
++        }
++
++        private static uint ComputeChunkCrc(uint chunkType, byte[] data, int length)
++        {
++            uint crc = 0xFFFFFFFFu;
++            crc = UpdateCrc(crc, (byte)((chunkType >> 24) & 0xFF));
++            crc = UpdateCrc(crc, (byte)((chunkType >> 16) & 0xFF));
++            crc = UpdateCrc(crc, (byte)((chunkType >> 8) & 0xFF));
++            crc = UpdateCrc(crc, (byte)(chunkType & 0xFF));
++            if (data != null)
++            {
++                for (int i = 0; i < length; i++)
++                    crc = UpdateCrc(crc, data[i]);
++            }
++
++            return ~crc;
++        }
++
++        private static uint UpdateCrc(uint crc, byte value)
++        {
++            crc ^= value;
++            for (int i = 0; i < 8; i++)
++                crc = (crc & 1u) != 0u ? (crc >> 1) ^ 0xEDB88320u : crc >> 1;
++
++            return crc;
++        }
++
++        private static void WriteUInt32BigEndian(Stream stream, uint value)
++        {
++            Span<byte> buffer = stackalloc byte[4];
++            WriteUInt32BigEndian(buffer, 0, value);
++            stream.Write(buffer);
++        }
++
++        private static void WriteUInt32BigEndian(byte[] buffer, int offset, uint value)
++        {
++            buffer[offset] = (byte)((value >> 24) & 0xFF);
++            buffer[offset + 1] = (byte)((value >> 16) & 0xFF);
++            buffer[offset + 2] = (byte)((value >> 8) & 0xFF);
++            buffer[offset + 3] = (byte)(value & 0xFF);
++        }
++
++        private static void WriteUInt32BigEndian(Span<byte> buffer, int offset, uint value)
++        {
++            buffer[offset] = (byte)((value >> 24) & 0xFF);
++            buffer[offset + 1] = (byte)((value >> 16) & 0xFF);
++            buffer[offset + 2] = (byte)((value >> 8) & 0xFF);
++            buffer[offset + 3] = (byte)(value & 0xFF);
+         }
+ 
+         private static string ResolveExistingThumbnailPath(string slotName)
+diff --git a/Assets/_Project/Scripts/UI/HectonUIScaler.cs b/Assets/_Project/Scripts/UI/HectonUIScaler.cs
+index e00ff53b..9fac781b 100644
+--- a/Assets/_Project/Scripts/UI/HectonUIScaler.cs
++++ b/Assets/_Project/Scripts/UI/HectonUIScaler.cs
+@@ -1,5 +1,11 @@
++using System.Collections.Generic;
+ using Hecton8.Core;
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
+ using UnityEngine;
++using UnityEngine.UI;
+ 
+ namespace Hecton8.UI
+ {
+@@ -13,6 +19,22 @@ namespace Hecton8.UI
+     {
+         private const string ContentRootName = "HectonUI_ScaledRoot";
+ 
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++        private struct LinearLayoutJob : IJobParallelFor
++        {
++            public float2 Origin;
++            public float2 Step;
++            public float2 ItemSize;
++            [WriteOnly] public NativeArray<float2> Positions;
++            [WriteOnly] public NativeArray<float2> Sizes;
++
++            public void Execute(int index)
++            {
++                Positions[index] = Origin + Step * index;
++                Sizes[index] = ItemSize;
++            }
++        }
++
+         [Header("â”€â”€ Scale Policy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+         [Tooltip("Reference UI resolution used by the root transform matrix.")]
+         [SerializeField] private Vector2 referenceResolution = new Vector2(1600f, 900f);
+@@ -29,6 +51,18 @@ namespace Hecton8.UI
+         [Tooltip("Mild X-axis matrix correction applied on ultrawide displays so the HUD does not feel stretched.")]
+         [SerializeField, Range(0.8f, 1f)] private float ultrawideScaleX = 0.94f;
+ 
++        [Header("Zero Layout Groups")]
++        [Tooltip("Disables Unity Horizontal/Vertical LayoutGroups under this content root. Runtime rows should use the manual linear layout below.")]
++        [SerializeField] private bool disableLayoutGroupsUnderContentRoot = true;
++        [Tooltip("Optional high-frequency UI items positioned by Burst-generated anchored positions instead of LayoutGroup rebuilds.")]
++        [SerializeField] private RectTransform[] manualLinearLayoutItems;
++        [Tooltip("Anchored position of manual item 0.")]
++        [SerializeField] private Vector2 manualLayoutOrigin = Vector2.zero;
++        [Tooltip("Per-item anchored-position delta.")]
++        [SerializeField] private Vector2 manualLayoutStep = new Vector2(0f, -24f);
++        [Tooltip("Size applied to each manual layout item.")]
++        [SerializeField] private Vector2 manualLayoutItemSize = new Vector2(240f, 22f);
++
+         private Canvas _targetCanvas;
+         private RectTransform _contentRoot;
+         private bool _registeredToTickManager;
+@@ -40,6 +74,11 @@ namespace Hecton8.UI
+         private Vector2 _lastAppliedReferenceResolution = Vector2.zero;
+         private float _lastAppliedMatch = -1f;
+         private Matrix4x4 _uiMatrix = Matrix4x4.identity;
++        private NativeArray<float2> _manualLayoutPositions;
++        private NativeArray<float2> _manualLayoutSizes;
++        private JobHandle _manualLayoutJobHandle;
++        private bool _manualLayoutJobScheduled;
++        private readonly List<HorizontalOrVerticalLayoutGroup> _layoutGroupDisableBuffer = new List<HorizontalOrVerticalLayoutGroup>(16); // COLD ALLOC: List<HorizontalOrVerticalLayoutGroup>[16] - scaler-owned layout group disable scratch - owner: HectonUIScaler
+ 
+         /// <summary>Current matrix applied to the scaled content root.</summary>
+         public Matrix4x4 CurrentMatrix => _uiMatrix;
+@@ -54,6 +93,8 @@ namespace Hecton8.UI
+         {
+             ResolveCanvas();
+             EnsureContentRoot();
++            DisableUnityLayoutGroupsIfConfigured();
++            ScheduleManualLinearLayout(force: true);
+             ApplyScale(force: true);
+             _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
+             if (!Application.isPlaying)
+@@ -73,11 +114,14 @@ namespace Hecton8.UI
+         {
+             HectonFloatingOrigin.UnregisterListener(this);
+             UnregisterFromTickManager();
++            DisposeManualLayoutBuffers();
+         }
+ 
+         /// <inheritdoc />
+         public void Tick(float dt)
+         {
++            CompleteManualLinearLayoutIfReady();
++
+             if (_pendingContentRootBootstrap)
+                 return;
+ 
+@@ -97,6 +141,8 @@ namespace Hecton8.UI
+                 return;
+ 
+             EnsureContentRoot();
++            DisableUnityLayoutGroupsIfConfigured();
++            ScheduleManualLinearLayout(force: false);
+             ApplyScale(force: true);
+             _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
+         }
+@@ -357,6 +403,141 @@ namespace Hecton8.UI
+             horizontalInset = ultrawideHorizontalInset * normalizedWide;
+         }
+ 
++        private void DisableUnityLayoutGroupsIfConfigured()
++        {
++            if (!disableLayoutGroupsUnderContentRoot)
++                return;
++
++            RectTransform contentRoot = ResolveContentRootInternal(createIfMissing: false);
++            if (contentRoot == null)
++                return;
++
++            _layoutGroupDisableBuffer.Clear();
++            contentRoot.GetComponentsInChildren(true, _layoutGroupDisableBuffer);
++            for (int i = 0; i < _layoutGroupDisableBuffer.Count; i++)
++            {
++                HorizontalOrVerticalLayoutGroup layoutGroup = _layoutGroupDisableBuffer[i];
++                if (layoutGroup != null && layoutGroup.enabled)
++                    layoutGroup.enabled = false;
++            }
++        }
++
++        private void ScheduleManualLinearLayout(bool force)
++        {
++            if (_manualLayoutJobScheduled || manualLinearLayoutItems == null || manualLinearLayoutItems.Length == 0)
++                return;
++
++            int itemCount = ResolveManualLayoutItemCount();
++            if (itemCount <= 0)
++                return;
++
++            EnsureManualLayoutCapacity(itemCount);
++            if (!_manualLayoutPositions.IsCreated || !_manualLayoutSizes.IsCreated)
++                return;
++
++            _manualLayoutJobHandle = new LinearLayoutJob
++            {
++                Origin = manualLayoutOrigin,
++                Step = manualLayoutStep,
++                ItemSize = manualLayoutItemSize,
++                Positions = _manualLayoutPositions,
++                Sizes = _manualLayoutSizes
++            }.Schedule(itemCount, 32);
++            _manualLayoutJobScheduled = true;
++
++            if (!Application.isPlaying && force)
++                CompleteManualLinearLayoutIfReady(forceCompleteInEditor: true);
++        }
++
++        private void CompleteManualLinearLayoutIfReady(bool forceCompleteInEditor = false)
++        {
++            if (!_manualLayoutJobScheduled)
++                return;
++
++            if (!_manualLayoutJobHandle.IsCompleted && !(forceCompleteInEditor && !Application.isPlaying))
++                return;
++
++            _manualLayoutJobHandle.Complete();
++            _manualLayoutJobScheduled = false;
++
++            int itemCount = ResolveManualLayoutItemCount();
++            for (int i = 0; i < itemCount; i++)
++            {
++                RectTransform item = manualLinearLayoutItems[i];
++                if (item == null)
++                    continue;
++
++                float2 position = _manualLayoutPositions[i];
++                float2 size = _manualLayoutSizes[i];
++                item.anchoredPosition = new Vector2(position.x, position.y);
++                item.sizeDelta = new Vector2(size.x, size.y);
++            }
++        }
++
++        private int ResolveManualLayoutItemCount()
++        {
++            if (manualLinearLayoutItems == null)
++                return 0;
++
++            return Mathf.Min(manualLinearLayoutItems.Length, _manualLayoutPositions.IsCreated ? _manualLayoutPositions.Length : manualLinearLayoutItems.Length);
++        }
++
++        private void EnsureManualLayoutCapacity(int requiredCapacity)
++        {
++            int safeCapacity = Mathf.Max(1, requiredCapacity);
++            if (_manualLayoutPositions.IsCreated && _manualLayoutPositions.Length >= safeCapacity)
++                return;
++
++            if (_manualLayoutJobScheduled)
++                return;
++
++            DisposeManualLayoutBuffers();
++            _manualLayoutPositions = new NativeArray<float2>(
++                safeCapacity,
++                Allocator.Persistent,
++                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float2>[manual item count] - Burst manual UI layout positions - owner: HectonUIScaler
++            _manualLayoutSizes = new NativeArray<float2>(
++                safeCapacity,
++                Allocator.Persistent,
++                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float2>[manual item count] - Burst manual UI layout sizes - owner: HectonUIScaler
++        }
++
++        private void DisposeManualLayoutBuffers()
++        {
++            if (_manualLayoutPositions.IsCreated)
++            {
++                if (_manualLayoutJobScheduled)
++                {
++                    JobHandle disposePositions = _manualLayoutPositions.Dispose(_manualLayoutJobHandle);
++                    _manualLayoutSizes.Dispose(disposePositions);
++                    _manualLayoutJobScheduled = false;
++                }
++                else
++                {
++                    _manualLayoutPositions.Dispose();
++                    if (_manualLayoutSizes.IsCreated)
++                        _manualLayoutSizes.Dispose();
++                }
++
++                _manualLayoutPositions = default;
++                _manualLayoutSizes = default;
++                _manualLayoutJobHandle = default;
++                return;
++            }
++
++            if (_manualLayoutSizes.IsCreated)
++            {
++                if (_manualLayoutJobScheduled)
++                    _manualLayoutSizes.Dispose(_manualLayoutJobHandle);
++                else
++                    _manualLayoutSizes.Dispose();
++
++                _manualLayoutSizes = default;
++                _manualLayoutJobHandle = default;
++                _manualLayoutJobScheduled = false;
++            }
++        }
++
+         private void RegisterToTickManager()
+         {
+             if (!Application.isPlaying)
+diff --git a/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs b/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+index c8034786..207af599 100644
+--- a/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
++++ b/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+@@ -28,7 +28,7 @@ namespace Hecton8.UI
+     [DisallowMultipleComponent]
+     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
+     [RequireComponent(typeof(Canvas))]
+-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener
++    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener
+     {
+         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
+         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
+@@ -146,7 +146,7 @@ namespace Hecton8.UI
+         private static readonly char[] s_statusLifeSupportNominalStableChars = DefaultStatusLifeSupportNominalStable.ToCharArray();
+         private static readonly char[] s_statusLifeSupportNominalAscendingChars = DefaultStatusLifeSupportNominalAscending.ToCharArray();
+         private static readonly char[] s_statusLifeSupportNominalDescendingChars = DefaultStatusLifeSupportNominalDescending.ToCharArray();
+-        private static readonly char[] s_loadPrefixChars = "LOAD: ".ToCharArray();
++        private static readonly char[] s_loadPrefixChars = "MASS: ".ToCharArray();
+         private static readonly char[] s_loadSeparatorChars = "/".ToCharArray();
+         private static readonly char[] s_loadKgSuffixChars = " KG".ToCharArray();
+         private static readonly char[] s_emptyHudChars = Array.Empty<char>();
+@@ -167,7 +167,7 @@ namespace Hecton8.UI
+             if (s_layerCacheInitialized)
+                 return;
+ 
+-            UiLayerIndex = LayerMask.NameToLayer("UI");
++            UiLayerIndex = HectonLayerMasks.UI;
+             s_layerCacheInitialized = true;
+         }
+         private static readonly int _StatusPressureLimitExceededKeyHash = LocHash.Compute(LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED);
+@@ -290,8 +290,8 @@ namespace Hecton8.UI
+ 
+         [Header("Reticle Dynamics")]
+         [SerializeField, Range(0f, 24f)] private float reticleBaseSpread = 16f;
+-        [SerializeField, Range(0f, 8f)] private float reticleVelocityFactor = 1.65f;
+-        [SerializeField, Range(0f, 24f)] private float reticleHeatSpread = 12f;
++        [SerializeField, Range(0f, 8f)] private float reticleVelocityFactor = 0.1f;
++        [SerializeField, Range(0f, 24f)] private float reticleHeatSpread = 2f;
+         [SerializeField, Range(0.25f, 24f)] private float reticleSpreadBlendSpeed = 8f;
+         [SerializeField, Range(8f, 36f)] private float reticleLineLength = 22f;
+         [SerializeField, Range(1f, 6f)] private float reticleLineThickness = 2f;
+@@ -509,6 +509,7 @@ namespace Hecton8.UI
+         private float _nextAutoResolveAt;
+         private bool _tickRegistered;
+         private bool _slowTickRegistered;
++        private bool _lateFrameTickRegistered;
+         private bool _pendingRuntimeCanvasRefresh = true;
+         private bool _forceResolveOnSlowTick = true;
+         private bool _pendingDepthSignalRefresh = true;
+@@ -538,6 +539,11 @@ namespace Hecton8.UI
+         private Color _appliedPressureColor;
+         private int _appliedLoadVersion = int.MinValue;
+         private Color _appliedLoadColor;
++        private int _loadMassCharStart = -1;
++        private int _loadMassCharLength;
++        private float _loadMassPulsePhase;
++        private bool _hasAppliedLoadMassVertexColor;
++        private Color32 _appliedLoadMassVertexColor;
+         private bool _styleApplied;
+         private bool _canvasStateApplied;
+         private bool _hasAppliedRootVisibility;
+@@ -1061,7 +1067,8 @@ namespace Hecton8.UI
+             }
+         }
+ 
+-        private void LateUpdate()
++        /// <inheritdoc />
++        public void LateFrameTick()
+         {
+             if (!Application.isPlaying || _root == null)
+                 return;
+@@ -1734,30 +1741,41 @@ namespace Hecton8.UI
+             if (_spatialAudioManager == null)
+                 _spatialAudioManager = Hecton8.Core.GlobalRegistry.Audio;
+ 
+-            if (_spatialAudioManager == null)
+-                return;
++            NativeArray<float> radarSamples = default;
++            int radarResolution = 0;
++            bool hasRadarPayload = _spatialAudioManager != null &&
++                                   _spatialAudioManager.TryGetAcousticRadarPayload(out radarSamples, out radarResolution) &&
++                                   radarSamples.IsCreated &&
++                                   radarResolution > 0;
++
++            if (!hasRadarPayload &&
++                WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float> densityMap, out Vector3Int densityDimensions) &&
++                densityMap.IsCreated)
++            {
++                int densityCellCount = densityDimensions.x * densityDimensions.y * densityDimensions.z;
++                radarSamples = densityMap;
++                radarResolution = math.min(densityMap.Length, densityCellCount);
++                hasRadarPayload = radarResolution > 0;
++            }
+ 
+-            if (_spatialAudioManager == null ||
+-                !_spatialAudioManager.TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution) ||
+-                !radialIntensityBins.IsCreated ||
+-                radialResolution <= 0)
++            if (!hasRadarPayload)
+             {
+                 _acousticRadarPeakIntensity = 0f;
+                 return;
+             }
+ 
+-            if (!EnsureAcousticRadarTexture(radialResolution))
++            if (!EnsureAcousticRadarTexture(radarResolution))
+                 return;
+ 
+-            _acousticRadarTexture.SetPixelData(radialIntensityBins, 0);
++            _acousticRadarTexture.SetPixelData(radarSamples, 0);
+             _acousticRadarTexture.Apply(false, false);
+             _acousticRadarMaterial.SetTexture(_AcousticRadarTexId, _acousticRadarTexture);
+ 
+             float peakIntensity = 0f;
+-            int sampleCount = math.min(radialIntensityBins.Length, radialResolution);
++            int sampleCount = math.min(radarSamples.Length, radarResolution);
+             for (int i = 0; i < sampleCount; i++)
+             {
+-                float sample = radialIntensityBins[i];
++                float sample = radarSamples[i];
+                 if (sample > peakIntensity)
+                     peakIntensity = sample;
+             }
+@@ -2815,7 +2833,7 @@ namespace Hecton8.UI
+                 _lastStreamedPressure = pressure;
+             }
+ 
+-            UpdateEncumbranceReadout(pulsedPrimary, pulsedDim, pulsedWarning, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion);
++            UpdateEncumbranceReadout(dt, pulsedPrimary, pulsedDim, pulsedWarning, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion);
+ 
+             Color statusColor = PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning);
+             if (_biosRecoveryMode)
+@@ -2878,6 +2896,7 @@ namespace Hecton8.UI
+         }
+ 
+         private void UpdateEncumbranceReadout(
++            float deltaTime,
+             Color primary,
+             Color dim,
+             Color warning,
+@@ -2889,7 +2908,7 @@ namespace Hecton8.UI
+                 return;
+ 
+             ResolveInventoryLoadValues(out float totalMassKg, out float carryCapacityKg, out float load01);
+-            Color loadColor = ResolveLoadColor(primary, dim, warning, load01);
++            Color loadColor = ResolveLoadBaseColor(primary, dim, warning, load01);
+ 
+             if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+             {
+@@ -2897,8 +2916,10 @@ namespace Hecton8.UI
+                 {
+                     _loadLabel.color = loadColor;
+                     _appliedLoadColor = loadColor;
++                    _hasAppliedLoadMassVertexColor = false;
+                 }
+ 
++                UpdateLoadMassVertexWarning(deltaTime, load01, loadColor, warning);
+                 return;
+             }
+ 
+@@ -2909,6 +2930,9 @@ namespace Hecton8.UI
+                     if (!TryBuildLoadBuffer(_loadDisplayFallbackBuffer, totalMassKg, carryCapacityKg, out length, out version))
+                         return;
+ 
++                    _loadMassCharStart = 0;
++                    _loadMassCharLength = length;
++                    bool forceMeshUpdate = PrepareLoadMassVertexRefresh(version, loadColor, corruptedMode, corruptionVersion, 229);
+                     SetDisplayBufferIfChanged(
+                         _loadLabel,
+                         _loadDisplayFallbackBuffer,
+@@ -2922,9 +2946,16 @@ namespace Hecton8.UI
+                         229,
+                         ref _appliedLoadVersion,
+                         ref _appliedLoadColor);
++                    if (forceMeshUpdate)
++                        _loadLabel.ForceMeshUpdate(false, false);
++
++                    UpdateLoadMassVertexWarning(deltaTime, load01, loadColor, warning);
+                     return;
+                 }
+ 
++                _loadMassCharStart = 0;
++                _loadMassCharLength = length;
++                bool forceLeaseMeshUpdate = PrepareLoadMassVertexRefresh(version, loadColor, corruptedMode, corruptionVersion, 229);
+                 SetDisplayBufferIfChanged(
+                     _loadLabel,
+                     lease.Buffer,
+@@ -2938,6 +2969,10 @@ namespace Hecton8.UI
+                     229,
+                     ref _appliedLoadVersion,
+                     ref _appliedLoadColor);
++                if (forceLeaseMeshUpdate)
++                    _loadLabel.ForceMeshUpdate(false, false);
++
++                UpdateLoadMassVertexWarning(deltaTime, load01, loadColor, warning);
+             }
+             finally
+             {
+@@ -2958,14 +2993,88 @@ namespace Hecton8.UI
+                 : Mathf.Clamp01(totalMassKg / carryCapacityKg);
+         }
+ 
+-        private static Color ResolveLoadColor(Color primary, Color dim, Color warning, float load01)
++        private bool PrepareLoadMassVertexRefresh(int version, Color loadColor, bool corruptedMode, int corruptionVersion, int corruptionSalt)
++        {
++            int displayVersion = corruptedMode
++                ? unchecked((version * 397) ^ corruptionVersion ^ corruptionSalt)
++                : version;
++            bool textWillChange = _appliedLoadVersion != displayVersion;
++            bool colorWillChange = _appliedLoadColor != loadColor;
++            if (!textWillChange && !colorWillChange)
++                return false;
++
++            _hasAppliedLoadMassVertexColor = false;
++            return textWillChange;
++        }
++
++        private void UpdateLoadMassVertexWarning(float deltaTime, float load01, Color loadBaseColor, Color warning)
++        {
++            if (_loadMassCharStart < 0 || _loadMassCharLength <= 0)
++                return;
++
++            if (load01 > 0.9f)
++            {
++                _loadMassPulsePhase += Mathf.Max(0f, deltaTime) * 10f;
++                if (_loadMassPulsePhase >= Mathf.PI * 2f)
++                    _loadMassPulsePhase -= Mathf.PI * 2f;
++
++                ApplyLoadMassVertexColor(ResolveLoadMassPulseColor(warning, _loadMassPulsePhase));
++                return;
++            }
++
++            _loadMassPulsePhase = 0f;
++            ApplyLoadMassVertexColor((Color32)loadBaseColor);
++        }
++
++        private void ApplyLoadMassVertexColor(Color32 color)
++        {
++            if (_loadLabel == null || _loadMassCharStart < 0 || _loadMassCharLength <= 0)
++                return;
++
++            if (_hasAppliedLoadMassVertexColor && _appliedLoadMassVertexColor.Equals(color))
++                return;
++
++            TMP_TextInfo textInfo = _loadLabel.textInfo;
++            if (textInfo == null || textInfo.characterCount <= 0 || _loadMassCharStart >= textInfo.characterCount)
++                return;
++
++            int end = Mathf.Min(textInfo.characterCount, _loadMassCharStart + _loadMassCharLength);
++            for (int i = _loadMassCharStart; i < end; i++)
++            {
++                TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
++                if (!characterInfo.isVisible)
++                    continue;
++
++                int meshIndex = characterInfo.materialReferenceIndex;
++                int vertexIndex = characterInfo.vertexIndex;
++                Color32[] colors = textInfo.meshInfo[meshIndex].colors32;
++                colors[vertexIndex] = color;
++                colors[vertexIndex + 1] = color;
++                colors[vertexIndex + 2] = color;
++                colors[vertexIndex + 3] = color;
++            }
++
++            _loadLabel.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
++            _appliedLoadMassVertexColor = color;
++            _hasAppliedLoadMassVertexColor = true;
++        }
++
++        private static Color ResolveLoadBaseColor(Color primary, Color dim, Color warning, float load01)
+         {
+             if (load01 <= 0.9f)
+                 return Alpha(Color.Lerp(dim, primary, Mathf.Clamp01(load01 * 0.65f)), 0.72f);
+ 
+-            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 10f);
+-            Color red = new Color(1f, 0.06f, 0.045f, 1f);
+-            return Alpha(Color.Lerp(warning, red, 0.42f + pulse * 0.48f), 0.95f);
++            return Alpha(warning, 0.95f);
++        }
++
++        private static Color32 ResolveLoadMassPulseColor(Color warning, float phase)
++        {
++            float pulse = 0.5f + (0.5f * Mathf.Sin(phase));
++            Color32 warning32 = warning;
++            byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(warning32.g, 14f, 0.5f + pulse * 0.35f)), 0, 255);
++            byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(warning32.b, 10f, 0.55f + pulse * 0.3f)), 0, 255);
++            byte alpha = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(224f, 255f, pulse)), 0, 255);
++            return new Color32(255, green, blue, alpha);
+         }
+ 
+         private static bool TryBuildLoadBuffer(char[] buffer, float totalMassKg, float carryCapacityKg, out int length, out int version)
+@@ -5094,6 +5203,12 @@ namespace Hecton8.UI
+                 _tickRegistered = true;
+             }
+ 
++            if (!_lateFrameTickRegistered)
++            {
++                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
++                _lateFrameTickRegistered = true;
++            }
++
+             if (_slowTickRegistered)
+                 return;
+ 
+@@ -5109,6 +5224,12 @@ namespace Hecton8.UI
+                 _tickRegistered = false;
+             }
+ 
++            if (_lateFrameTickRegistered)
++            {
++                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
++                _lateFrameTickRegistered = false;
++            }
++
+             if (!_slowTickRegistered)
+                 return;
+ 

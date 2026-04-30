@@ -148,6 +148,12 @@ namespace Hecton8.UI
             Unsubscribe();
         }
 
+        private void OnDestroy()
+        {
+            Unsubscribe();
+            PDAEvents.AssertUnregistered(this, nameof(PDAControlsRebindUI));
+        }
+
         private void Subscribe()
         {
             if (_subscribed) return;

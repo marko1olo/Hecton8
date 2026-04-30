@@ -70,11 +70,14 @@ namespace Hecton8.World
                     return false;
             }
 
-            if (!enableEnvironmentalEnvelopeGating)
-                return true;
-
             WorldPrefabFamilyProfile family = runtimeRule.Family;
             if (family == null)
+                return true;
+
+            if (ShouldRejectForMigratorySargassumShade(family, candidatePreview))
+                return false;
+
+            if (!enableEnvironmentalEnvelopeGating)
                 return true;
 
             int familyHash = family.FamilyHash;

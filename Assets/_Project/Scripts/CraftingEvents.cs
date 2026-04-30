@@ -4,6 +4,7 @@
 // ============================================================================
 
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Items;
 using Unity.Collections;
@@ -53,6 +54,9 @@ namespace Hecton8.Crafting
     {
         public Vector3 SpawnPosition;
         public Vector3 VelocityChange;
+        public uint FabricatorHashId;
+        public uint RecipeHashId;
+        public uint ResultItemHashId;
         public float Progress01;
         public int Quantity;
         public int ReferenceSlot;
@@ -94,6 +98,8 @@ namespace Hecton8.Crafting
         private static readonly RegistryBucket<ICraftingEventListener> _listeners = new RegistryBucket<ICraftingEventListener>(ListenerCapacity);
         // COLD ALLOC: CraftingReferenceSlot[128] - managed reference sidecar for unmanaged crafting payloads - owner: CraftingEvents
         private static readonly CraftingReferenceSlot[] _referenceSlots = new CraftingReferenceSlot[ReferenceSlotCapacity];
+        // COLD ALLOC: bool[128] - reference slot occupancy map prevents wrap overwrite before deferred flush - owner: CraftingEvents
+        private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<CraftingEventPayload> _pendingEvents;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
@@ -150,8 +156,14 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out CraftingEventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out CraftingEventPayload payload))
+                    return;
+
                 ICraftingEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
@@ -217,6 +229,9 @@ namespace Hecton8.Crafting
 
             Enqueue(new CraftingEventPayload
             {
+                FabricatorHashId = ComputeFabricatorHash(fabricator),
+                RecipeHashId = 0u,
+                ResultItemHashId = 0u,
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)CraftingEventType.FabricatorOpened
             });
@@ -227,12 +242,9 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseFabricatorClosed()
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
-
             Enqueue(new CraftingEventPayload
             {
-                ReferenceSlot = referenceSlot,
+                ReferenceSlot = -1,
                 EventType = (ushort)CraftingEventType.FabricatorClosed
             });
         }
@@ -251,6 +263,9 @@ namespace Hecton8.Crafting
 
             Enqueue(new CraftingEventPayload
             {
+                FabricatorHashId = 0u,
+                RecipeHashId = ComputeRecipeHash(recipe),
+                ResultItemHashId = ComputeItemHash(recipe != null ? recipe.resultItem : null),
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)CraftingEventType.CraftStarted
             });
@@ -261,13 +276,10 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseCraftProgressUpdated(float progress01)
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
-
             Enqueue(new CraftingEventPayload
             {
                 Progress01 = progress01,
-                ReferenceSlot = referenceSlot,
+                ReferenceSlot = -1,
                 EventType = (ushort)CraftingEventType.CraftProgressUpdated
             });
         }
@@ -289,6 +301,9 @@ namespace Hecton8.Crafting
 
             Enqueue(new CraftingEventPayload
             {
+                FabricatorHashId = 0u,
+                RecipeHashId = 0u,
+                ResultItemHashId = ComputeItemHash(resultItem),
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)CraftingEventType.CraftCompleted
             });
@@ -310,6 +325,9 @@ namespace Hecton8.Crafting
             {
                 SpawnPosition = synthesisEvent.SpawnPosition,
                 VelocityChange = synthesisEvent.VelocityChange,
+                FabricatorHashId = 0u,
+                RecipeHashId = 0u,
+                ResultItemHashId = ComputeItemHash(synthesisEvent.Item),
                 Quantity = synthesisEvent.Quantity,
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)CraftingEventType.CraftOutputSynthesized
@@ -321,12 +339,9 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseCraftCancelled()
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
-                return;
-
             Enqueue(new CraftingEventPayload
             {
-                ReferenceSlot = referenceSlot,
+                ReferenceSlot = -1,
                 EventType = (ushort)CraftingEventType.CraftCancelled
             });
         }
@@ -349,13 +364,23 @@ namespace Hecton8.Crafting
             if (_referencePendingCount >= ReferenceSlotCapacity)
                 return false;
 
-            referenceSlot = _referenceWriteIndex;
-            _referenceWriteIndex++;
-            if (_referenceWriteIndex >= ReferenceSlotCapacity)
-                _referenceWriteIndex = 0;
+            for (int probe = 0; probe < ReferenceSlotCapacity; probe++)
+            {
+                int candidateSlot = _referenceWriteIndex;
+                _referenceWriteIndex++;
+                if (_referenceWriteIndex >= ReferenceSlotCapacity)
+                    _referenceWriteIndex = 0;
 
-            _referencePendingCount++;
-            return true;
+                if (_referenceSlotOccupied[candidateSlot])
+                    continue;
+
+                referenceSlot = candidateSlot;
+                _referenceSlotOccupied[referenceSlot] = true;
+                _referencePendingCount++;
+                return true;
+            }
+
+            return false;
         }
 
         private static void ReleaseReferenceSlot(int referenceSlot)
@@ -363,7 +388,11 @@ namespace Hecton8.Crafting
             if (!IsValidReferenceSlot(referenceSlot))
                 return;
 
+            if (!_referenceSlotOccupied[referenceSlot])
+                return;
+
             _referenceSlots[referenceSlot].Clear();
+            _referenceSlotOccupied[referenceSlot] = false;
             if (_referencePendingCount > 0)
                 _referencePendingCount--;
         }
@@ -385,7 +414,31 @@ namespace Hecton8.Crafting
         private static void ClearReferenceSlots()
         {
             for (int i = 0; i < ReferenceSlotCapacity; i++)
+            {
                 _referenceSlots[i].Clear();
+                _referenceSlotOccupied[i] = false;
+            }
+        }
+
+        private static uint ComputeFabricatorHash(Fabricator fabricator)
+        {
+            return fabricator != null
+                ? unchecked((uint)fabricator.GetInstanceID())
+                : 0u;
+        }
+
+        private static uint ComputeRecipeHash(RecipeData recipe)
+        {
+            return recipe != null && !string.IsNullOrWhiteSpace(recipe.name)
+                ? unchecked((uint)LocHash.Compute(recipe.name))
+                : 0u;
+        }
+
+        private static uint ComputeItemHash(ItemData item)
+        {
+            return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
+                ? unchecked((uint)LocHash.Compute(item.PersistentId))
+                : 0u;
         }
     }
 }

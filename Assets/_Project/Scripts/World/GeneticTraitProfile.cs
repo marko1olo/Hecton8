@@ -10,25 +10,25 @@ namespace Hecton8.World
     public sealed class GeneticTraitProfile : ScriptableObject
     {
         [Flags]
-        public enum GeneticTraitMask : uint
+        public enum GeneticTraitMask : int
         {
-            None = 0u,
-            Bioluminescent = 1u << 0,
-            OxygenProducing = 1u << 1,
-            Toxic = 1u << 2,
-            FastGrowing = 1u << 3,
-            Medicinal = 1u << 4,
-            Conductive = 1u << 5,
-            Aquatic = 1u << 6,
+            None = 0,
+            Bioluminescent = 1 << 0,
+            OxygenProducing = 1 << 1,
+            Toxic = 1 << 2,
+            FastGrowing = 1 << 3,
+            Medicinal = 1 << 4,
+            Conductive = 1 << 5,
+            Aquatic = 1 << 6,
             Cryogenic = Aquatic,
-            Explosive = 1u << 7
+            Explosive = 1 << 7
         }
 
         [Serializable]
         public struct TraitDefinition
         {
             [Tooltip("Bit index in the cultivation genetics mask.")]
-            [Range(0, 31)]
+            [Range(0, 63)]
             public int bitIndex;
 
             [Tooltip("Editor-facing label used by diagnostics and UI.")]
@@ -85,13 +85,13 @@ namespace Hecton8.World
         }
 
         /// <summary>Resolves cumulative oxygen injection for the supplied active trait mask.</summary>
-        public float ResolveOxygenUnitsPerSlowTick(uint traitMask)
+        public float ResolveOxygenUnitsPerSlowTick(ulong traitMask)
         {
             float total = 0f;
-            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            for (int bitIndex = 0; bitIndex < 64; bitIndex++)
             {
-                uint bit = 1u << bitIndex;
-                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                ulong bit = 1UL << bitIndex;
+                if ((traitMask & bit) == 0UL || !TryResolveTrait(bitIndex, out TraitDefinition definition))
                     continue;
 
                 total += definition.oxygenUnitsPerSlowTick;
@@ -101,13 +101,13 @@ namespace Hecton8.World
         }
 
         /// <summary>Resolves cumulative lighting power credit for the supplied active trait mask.</summary>
-        public float ResolveLightingPowerCreditWatts(uint traitMask)
+        public float ResolveLightingPowerCreditWatts(ulong traitMask)
         {
             float total = 0f;
-            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            for (int bitIndex = 0; bitIndex < 64; bitIndex++)
             {
-                uint bit = 1u << bitIndex;
-                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                ulong bit = 1UL << bitIndex;
+                if ((traitMask & bit) == 0UL || !TryResolveTrait(bitIndex, out TraitDefinition definition))
                     continue;
 
                 total += definition.lightingPowerCreditWatts;
@@ -117,13 +117,13 @@ namespace Hecton8.World
         }
 
         /// <summary>Resolves cumulative scrubber power draw for the supplied active trait mask.</summary>
-        public float ResolveScrubberPowerWatts(uint traitMask)
+        public float ResolveScrubberPowerWatts(ulong traitMask)
         {
             float total = 0f;
-            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            for (int bitIndex = 0; bitIndex < 64; bitIndex++)
             {
-                uint bit = 1u << bitIndex;
-                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                ulong bit = 1UL << bitIndex;
+                if ((traitMask & bit) == 0UL || !TryResolveTrait(bitIndex, out TraitDefinition definition))
                     continue;
 
                 total += definition.scrubberPowerWatts;
@@ -133,13 +133,13 @@ namespace Hecton8.World
         }
 
         /// <summary>Resolves a multiplicative growth-rate modifier for the supplied trait mask.</summary>
-        public float ResolveGrowthRateMultiplier(uint traitMask)
+        public float ResolveGrowthRateMultiplier(ulong traitMask)
         {
             float multiplier = 1f;
-            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            for (int bitIndex = 0; bitIndex < 64; bitIndex++)
             {
-                uint bit = 1u << bitIndex;
-                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                ulong bit = 1UL << bitIndex;
+                if ((traitMask & bit) == 0UL || !TryResolveTrait(bitIndex, out TraitDefinition definition))
                     continue;
 
                 multiplier *= definition.growthRateMultiplier > 0f ? definition.growthRateMultiplier : 1f;
@@ -149,15 +149,15 @@ namespace Hecton8.World
         }
 
         /// <summary>Resolves the peak toxicity hazard profile emitted by the supplied trait mask.</summary>
-        public void ResolveHazardProfile(uint traitMask, out float intensity, out float radiusMeters)
+        public void ResolveHazardProfile(ulong traitMask, out float intensity, out float radiusMeters)
         {
             intensity = 0f;
             radiusMeters = 0f;
 
-            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            for (int bitIndex = 0; bitIndex < 64; bitIndex++)
             {
-                uint bit = 1u << bitIndex;
-                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                ulong bit = 1UL << bitIndex;
+                if ((traitMask & bit) == 0UL || !TryResolveTrait(bitIndex, out TraitDefinition definition))
                     continue;
 
                 intensity = Mathf.Max(intensity, definition.hazardIntensity);
@@ -166,12 +166,12 @@ namespace Hecton8.World
         }
 
         /// <summary>Returns true when any active trait row explicitly tolerates saltwater flooding.</summary>
-        public bool IsSaltwaterTolerant(uint traitMask)
+        public bool IsSaltwaterTolerant(ulong traitMask)
         {
-            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            for (int bitIndex = 0; bitIndex < 64; bitIndex++)
             {
-                uint bit = 1u << bitIndex;
-                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                ulong bit = 1UL << bitIndex;
+                if ((traitMask & bit) == 0UL || !TryResolveTrait(bitIndex, out TraitDefinition definition))
                     continue;
 
                 if (definition.saltwaterTolerant)
@@ -195,7 +195,7 @@ namespace Hecton8.World
 
         private static TraitDefinition Sanitize(TraitDefinition definition)
         {
-            definition.bitIndex = Mathf.Clamp(definition.bitIndex, 0, 31);
+            definition.bitIndex = Mathf.Clamp(definition.bitIndex, 0, 63);
             definition.oxygenUnitsPerSlowTick = Mathf.Clamp(definition.oxygenUnitsPerSlowTick, -32f, 32f);
             definition.lightingPowerCreditWatts = Mathf.Max(0f, definition.lightingPowerCreditWatts);
             definition.scrubberPowerWatts = Mathf.Max(0f, definition.scrubberPowerWatts);

@@ -50,7 +50,7 @@ namespace Hecton8.UI
             public int Visible;
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ProjectImpactBlipsJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<AcousticRadarBlipInput> Inputs;

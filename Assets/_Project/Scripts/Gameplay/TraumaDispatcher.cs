@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Physics;
 using Hecton.Localization;
@@ -28,6 +29,7 @@ namespace Hecton8.Gameplay
         private const float RadiationFatigueSignalThreshold = 0.05f;
         private const float EmpStressTransfer01 = 0.92f;
         private const float ParasiteSporeDamagePerSecond = 5f;
+        private const float ParasiteSporeDamageIntervalSeconds = 1f;
         private const float ParasiteSporeSealedResistanceThreshold = 500f;
 
         private HectonSurvivalSystem _survivalSystem;
@@ -54,6 +56,8 @@ namespace Hecton8.Gameplay
         private int _lastPublishedInteractionSignature = int.MinValue;
         private float _radiationExposureSeconds;
         private float _empSensorBlindTimer;
+        private float _parasiteSporeDamageAccumulator;
+        private int _lastPublishedParasiteAudioCount = int.MinValue;
 
         /// <summary>Current integrity trauma channel intensity.</summary>
         public float IntegrityChannel01 => _integrityChannel01;
@@ -167,6 +171,7 @@ namespace Hecton8.Gameplay
             _empSensorBlindTimer = Mathf.Max(0f, _empSensorBlindTimer - Mathf.Max(0f, deltaTime));
             UpdateRadiationFatigue(deltaTime);
             UpdateActiveParasiteSporeHazard(deltaTime);
+            UpdateActiveParasiteAudioState();
 
             if (IsEmpSensorBlindActive)
                 PromoteChannel(ref _clarityChannel01, 1f);
@@ -342,6 +347,7 @@ namespace Hecton8.Gameplay
             _activeHabitatModule = null;
             _activeHabitatEmitter = null;
             _activeHabitatEmitterBehaviour = null;
+            PublishParasiteAudioLoad(0);
         }
 
         private void BindTransport(IPlayerTransportLifecycleOwner lifecycleOwner)
@@ -387,6 +393,8 @@ namespace Hecton8.Gameplay
             _hazardThermalSignal01 = 0f;
             _hazardToxicSignal01 = 0f;
             _empSensorBlindTimer = 0f;
+            _parasiteSporeDamageAccumulator = 0f;
+            _lastPublishedParasiteAudioCount = int.MinValue;
             _lastPublishedTraumaSignature = int.MinValue;
             _lastPublishedInteractionSignature = int.MinValue;
         }
@@ -508,18 +516,49 @@ namespace Hecton8.Gameplay
         private void UpdateActiveParasiteSporeHazard(float deltaTime)
         {
             if (_activeHabitatModule == null || _survivalSystem == null)
+            {
+                _parasiteSporeDamageAccumulator = 0f;
                 return;
+            }
 
             if (!BaseDegradationSystem.TryGetParasiteSporeHazard(_activeHabitatModule, out float intensity, out _))
+            {
+                _parasiteSporeDamageAccumulator = 0f;
                 return;
+            }
 
             float hazardIntensity = Mathf.Clamp01(intensity);
             PromoteChannel(ref _hazardToxicSignal01, hazardIntensity);
             PromoteChannel(ref _clarityChannel01, hazardIntensity * 0.35f);
             if (HasSealedHelmetProtection())
+            {
+                _parasiteSporeDamageAccumulator = 0f;
+                return;
+            }
+
+            _parasiteSporeDamageAccumulator += Mathf.Max(0f, deltaTime);
+            if (_parasiteSporeDamageAccumulator < ParasiteSporeDamageIntervalSeconds)
                 return;
 
-            _survivalSystem.TakeDamage(ParasiteSporeDamagePerSecond * hazardIntensity * Mathf.Max(0f, deltaTime));
+            int intervals = Mathf.FloorToInt(_parasiteSporeDamageAccumulator / ParasiteSporeDamageIntervalSeconds);
+            _parasiteSporeDamageAccumulator -= intervals * ParasiteSporeDamageIntervalSeconds;
+            _survivalSystem.TakeDamage(ParasiteSporeDamagePerSecond * hazardIntensity * intervals);
+        }
+
+        private void UpdateActiveParasiteAudioState()
+        {
+            int parasiteCount = _activeHabitatModule != null ? _activeHabitatModule.AttachedParasiteCount : 0;
+            if (parasiteCount == _lastPublishedParasiteAudioCount)
+                return;
+
+            _lastPublishedParasiteAudioCount = parasiteCount;
+            PublishParasiteAudioLoad(parasiteCount);
+        }
+
+        private static void PublishParasiteAudioLoad(int parasiteCount)
+        {
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+                spatialAudioManager.SetParasiteRoomAcousticLoad(parasiteCount);
         }
 
         private bool HasSealedHelmetProtection()

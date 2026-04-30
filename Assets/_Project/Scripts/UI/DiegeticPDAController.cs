@@ -246,6 +246,7 @@ namespace Hecton8.UI
             {
                 diegeticPanel.OverridePanelInteractable(this);
                 diegeticPanel.OverrideFixedRenderTextureResolution(tabletRenderTextureResolution, retainOnDisable: true);
+                diegeticPanel.OverridePhosphorDecay(true, 0.85f);
                 diegeticPanel.OverridePanelPresentation(ResolveTabletScreenMaterial(), tabletScreenRenderer);
             }
             if (diegeticPanel != null)

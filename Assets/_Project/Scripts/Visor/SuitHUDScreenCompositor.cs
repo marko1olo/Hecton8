@@ -104,6 +104,12 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EditorTick()
         {
+            if (!IsEditorPreviewSafe())
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
             if (Application.isPlaying || !isActiveAndEnabled || !manageCanvasInEditMode)
             {
                 UnregisterEditorTick();
@@ -428,6 +434,12 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EvaluateEditorTickRegistration()
         {
+            if (!IsEditorPreviewSafe())
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
             if (Application.isPlaying)
             {
                 UnregisterEditorTick();
@@ -442,6 +454,9 @@ namespace NASAPunk.Visor
 
         private void RegisterEditorTick()
         {
+            if (!IsEditorPreviewSafe())
+                return;
+
             EditorApplication.update -= EditorTick;
             EditorApplication.update += EditorTick;
         }
@@ -449,6 +464,13 @@ namespace NASAPunk.Visor
         private void UnregisterEditorTick()
         {
             EditorApplication.update -= EditorTick;
+        }
+
+        private static bool IsEditorPreviewSafe()
+        {
+            return !EditorApplication.isCompiling &&
+                   !EditorApplication.isUpdating &&
+                   !EditorApplication.isPlayingOrWillChangePlaymode;
         }
 #endif
 

@@ -3,6 +3,7 @@ using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Inventory;
 using Hecton8.Power;
+using Hecton8.SaveSystem;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -17,8 +18,9 @@ namespace Hecton8.Crafting
     {
         public const int MaxRecipeIngredientCount = 32;
         public const int MaxDeconstructionOutputCount = MaxRecipeIngredientCount;
+        public const int MaxRecursiveDeconstructionNodeCount = 64;
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateRecipeAvailabilityJob : IJob
         {
             [ReadOnly] public NativeArray<int2> RecipeCosts;
@@ -47,7 +49,7 @@ namespace Hecton8.Crafting
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildDeconstructionYieldJob : IJob
         {
             [ReadOnly] public NativeArray<int2> RecipeCosts;
@@ -56,11 +58,14 @@ namespace Hecton8.Crafting
             public int RecipeCostCount;
             public int ResultQuantity;
             public int ReclaimPercent;
+            public int ScrapItemHashId;
+            public byte ForceScrapYield;
 
             public void Execute()
             {
                 int safeResultQuantity = math.max(1, ResultQuantity);
                 int resolvedCount = 0;
+                int scrapYield = 0;
 
                 for (int index = 0; index < OutputYields.Length; index++)
                     OutputYields[index] = int2.zero;
@@ -75,10 +80,22 @@ namespace Hecton8.Crafting
                     if (scaledYield <= 0 && ReclaimPercent > 0)
                         scaledYield = 1;
 
+                    if (ForceScrapYield != 0)
+                    {
+                        scrapYield += math.max(0, scaledYield);
+                        continue;
+                    }
+
                     if (scaledYield <= 0 || resolvedCount >= OutputYields.Length)
                         continue;
 
                     OutputYields[resolvedCount++] = new int2(cost.x, scaledYield);
+                }
+
+                if (ForceScrapYield != 0 && ScrapItemHashId != 0 && scrapYield > 0 && OutputYields.Length > 0)
+                {
+                    OutputYields[0] = new int2(ScrapItemHashId, math.max(1, scrapYield));
+                    resolvedCount = 1;
                 }
 
                 OutputCount[0] = resolvedCount;
@@ -171,17 +188,23 @@ namespace Hecton8.Crafting
         public static bool TryBuildDeconstructionYieldBuffer(
             RecipeData recipe,
             Fabricator fabricator,
-            bool isDegraded,
+            ItemCatalog itemCatalog,
+            bool forceScrapYield,
+            int reclaimPercent,
             NativeArray<int2> recipeCosts,
+            NativeArray<int2> flattenedCosts,
             NativeArray<int2> outputYields,
-            NativeArray<int> outputCount)
+            NativeArray<int> outputCount,
+            int scrapItemHashId)
         {
             if (recipe == null ||
                 fabricator == null ||
                 !recipeCosts.IsCreated ||
+                !flattenedCosts.IsCreated ||
                 !outputYields.IsCreated ||
                 !outputCount.IsCreated ||
                 outputCount.Length == 0 ||
+                flattenedCosts.Length < MaxDeconstructionOutputCount ||
                 outputYields.Length < MaxDeconstructionOutputCount)
             {
                 return false;
@@ -190,18 +213,141 @@ namespace Hecton8.Crafting
             if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out int recipeCostCount))
                 return false;
 
+            NativeArray<int2> sourceCosts = recipeCosts;
+            int sourceCostCount = recipeCostCount;
+            if (TryFlattenDeconstructionCosts(itemCatalog, fabricator, recipeCosts, recipeCostCount, flattenedCosts, out int flattenedCostCount))
+            {
+                sourceCosts = flattenedCosts;
+                sourceCostCount = flattenedCostCount;
+            }
+
             outputCount[0] = 0;
             new BuildDeconstructionYieldJob
             {
-                RecipeCosts = recipeCosts,
+                RecipeCosts = sourceCosts,
                 OutputYields = outputYields,
                 OutputCount = outputCount,
-                RecipeCostCount = recipeCostCount,
-                ResultQuantity = math.max(1, recipe.resultQuantity),
-                ReclaimPercent = isDegraded ? 30 : 80
+                RecipeCostCount = sourceCostCount,
+                ResultQuantity = 1,
+                ReclaimPercent = math.clamp(reclaimPercent, 0, 100),
+                ScrapItemHashId = scrapItemHashId,
+                ForceScrapYield = forceScrapYield ? (byte)1 : (byte)0
             }.Run();
 
             return outputCount[0] > 0;
+        }
+
+        private static bool TryFlattenDeconstructionCosts(
+            ItemCatalog itemCatalog,
+            Fabricator fabricator,
+            NativeArray<int2> recipeCosts,
+            int recipeCostCount,
+            NativeArray<int2> flattenedCosts,
+            out int flattenedCostCount)
+        {
+            flattenedCostCount = 0;
+            if (itemCatalog == null || fabricator == null || !recipeCosts.IsCreated || !flattenedCosts.IsCreated)
+                return false;
+
+            for (int index = 0; index < flattenedCosts.Length; index++)
+                flattenedCosts[index] = int2.zero;
+
+            int visitedNodeCount = 0;
+            for (int index = 0; index < recipeCostCount; index++)
+            {
+                int2 cost = recipeCosts[index];
+                if (cost.x == 0 || cost.y <= 0)
+                    continue;
+
+                if (!TryAddFlattenedCostRecursive(
+                        itemCatalog,
+                        fabricator,
+                        cost.x,
+                        cost.y,
+                        flattenedCosts,
+                        ref flattenedCostCount,
+                        ref visitedNodeCount))
+                {
+                    flattenedCostCount = 0;
+                    return false;
+                }
+            }
+
+            return flattenedCostCount > 0;
+        }
+
+        private static bool TryAddFlattenedCostRecursive(
+            ItemCatalog itemCatalog,
+            Fabricator fabricator,
+            int itemHashId,
+            int quantity,
+            NativeArray<int2> flattenedCosts,
+            ref int flattenedCostCount,
+            ref int visitedNodeCount)
+        {
+            if (itemHashId == 0 || quantity <= 0)
+                return true;
+
+            if (visitedNodeCount++ >= MaxRecursiveDeconstructionNodeCount)
+                return TryAddMergedCost(flattenedCosts, ref flattenedCostCount, itemHashId, quantity);
+
+            if (!Fabricator.TryResolveRecipeForResultHash(itemCatalog, itemHashId, out RecipeData subRecipe) ||
+                subRecipe == null ||
+                subRecipe.ingredients == null ||
+                subRecipe.ingredients.Count == 0)
+            {
+                return TryAddMergedCost(flattenedCosts, ref flattenedCostCount, itemHashId, quantity);
+            }
+
+            int safeResultQuantity = math.max(1, subRecipe.resultQuantity);
+            for (int ingredientIndex = 0; ingredientIndex < subRecipe.ingredients.Count; ingredientIndex++)
+            {
+                InventoryCost cost = subRecipe.ingredients[ingredientIndex];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                int ingredientHashId = LocHash.Compute(cost.item.PersistentId);
+                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                if (ingredientHashId == 0 || adjustedAmount <= 0)
+                    continue;
+
+                long scaledLong = ((long)adjustedAmount * quantity + safeResultQuantity - 1L) / safeResultQuantity;
+                int scaledQuantity = scaledLong > int.MaxValue ? int.MaxValue : (int)scaledLong;
+                if (!TryAddFlattenedCostRecursive(
+                        itemCatalog,
+                        fabricator,
+                        ingredientHashId,
+                        scaledQuantity,
+                        flattenedCosts,
+                        ref flattenedCostCount,
+                        ref visitedNodeCount))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryAddMergedCost(NativeArray<int2> costs, ref int costCount, int itemHashId, int quantity)
+        {
+            if (itemHashId == 0 || quantity <= 0)
+                return true;
+
+            int existingIndex = FindCostIndex(costs, costCount, itemHashId);
+            if (existingIndex >= 0)
+            {
+                int2 existing = costs[existingIndex];
+                existing.y = existing.y > int.MaxValue - quantity ? int.MaxValue : existing.y + quantity;
+                costs[existingIndex] = existing;
+                return true;
+            }
+
+            if (costCount >= costs.Length)
+                return false;
+
+            costs[costCount++] = new int2(itemHashId, quantity);
+            return true;
         }
 
         private static void MergeAccessibleNetworkCounts(

@@ -47,6 +47,7 @@ namespace Hecton8.Caves
         private const byte DeltaModeAdditive = 1 << 0;
         private const byte DeltaShapeSphere = 0;
         private const byte DeltaShapeBox = 1;
+        private const byte DeltaShapeCapsule = 2;
         private const int NativeSnapshotMagic = unchecked((int)0x48584432);
         private static readonly ProfilerMarker _carveScheduleProfilerMarker = new ProfilerMarker("H8.VoxelDelta.ScheduleCarve");
         private static readonly ProfilerMarker _carveCommitProfilerMarker = new ProfilerMarker("H8.VoxelDelta.CommitCarve");
@@ -380,6 +381,59 @@ namespace Hecton8.Caves
                 ExplicitBlendStrength = math.max(volume.VoxelSize, strength),
                 MaterialId = materialId,
                 DeltaFlags = DeltaModeAdditive
+            };
+        }
+
+        /// <summary>
+        /// Applies an explicit additive capsule weld in absolute-universe space and queues a rebuild on the dispatcher lane.
+        /// </summary>
+        /// <param name="volume">Target runtime volume.</param>
+        /// <param name="absoluteStart">Absolute-universe segment start.</param>
+        /// <param name="absoluteEnd">Absolute-universe segment end.</param>
+        /// <param name="radius">Requested capsule radius in meters.</param>
+        /// <param name="strength">Smooth-union strength scalar.</param>
+        /// <param name="materialId">Material palette index for the modified cells.</param>
+        public void ApplyImmediateAbsoluteCapsuleWeld(
+            HectonVoxelVolume volume,
+            Vector3 absoluteStart,
+            Vector3 absoluteEnd,
+            float radius,
+            float strength,
+            byte materialId = DefaultMaterialId)
+        {
+            if (volume == null || radius <= 0f || !volume.HasRuntimeData)
+                return;
+
+            if ((absoluteEnd - absoluteStart).sqrMagnitude <= 0.0001f)
+            {
+                ApplyImmediateAbsoluteWeld(volume, absoluteStart, radius, strength, materialId);
+                return;
+            }
+
+            if (_pendingCarveCount >= _pendingCarves.Length)
+            {
+                if (!_scheduledCarveRunning)
+                    TrySchedulePendingCarve();
+
+                if (_pendingCarveCount >= _pendingCarves.Length)
+                {
+                    for (int i = 1; i < _pendingCarveCount; i++)
+                        _pendingCarves[i - 1] = _pendingCarves[i];
+
+                    _pendingCarveCount = _pendingCarves.Length - 1;
+                }
+            }
+
+            _pendingCarves[_pendingCarveCount++] = new PendingCarveRequest
+            {
+                Volume = volume,
+                AbsoluteHitPoint = absoluteStart,
+                AbsoluteSegmentEnd = absoluteEnd,
+                ExplicitRadiusMeters = radius,
+                ExplicitBlendStrength = math.max(volume.VoxelSize, strength),
+                MaterialId = materialId,
+                DeltaFlags = DeltaModeAdditive,
+                Shape = DeltaShapeCapsule
             };
         }
 
@@ -857,9 +911,13 @@ namespace Hecton8.Caves
                 return;
 
             float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
-            byte shape = request.Shape == DeltaShapeBox ? DeltaShapeBox : DeltaShapeSphere;
+            byte shape = request.Shape == DeltaShapeBox
+                ? DeltaShapeBox
+                : request.Shape == DeltaShapeCapsule
+                    ? DeltaShapeCapsule
+                    : DeltaShapeSphere;
             float radius = shape == DeltaShapeBox ? 0f : ResolveCarveRadius(in request, volume);
-            if (shape == DeltaShapeSphere && radius <= 0f)
+            if (shape != DeltaShapeBox && radius <= 0f)
                 return;
 
             float blendRadius = shape == DeltaShapeBox
@@ -871,14 +929,25 @@ namespace Hecton8.Caves
                     math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.y)),
                     math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.z)))
                 : new float3(radius);
+            float3 segmentStart = new float3(request.AbsoluteHitPoint.x, request.AbsoluteHitPoint.y, request.AbsoluteHitPoint.z);
+            float3 segmentEnd = shape == DeltaShapeCapsule
+                ? new float3(request.AbsoluteSegmentEnd.x, request.AbsoluteSegmentEnd.y, request.AbsoluteSegmentEnd.z)
+                : segmentStart;
+            float3 boundsMin = shape == DeltaShapeCapsule
+                ? math.min(segmentStart, segmentEnd)
+                : segmentStart - halfExtents;
+            float3 boundsMax = shape == DeltaShapeCapsule
+                ? math.max(segmentStart, segmentEnd)
+                : segmentStart + halfExtents;
+            float boundsPadding = shape == DeltaShapeCapsule ? radius + blendRadius : blendRadius;
             int3 minCell = new int3(
-                Mathf.FloorToInt((request.AbsoluteHitPoint.x - halfExtents.x - blendRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.y - halfExtents.y - blendRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.z - halfExtents.z - blendRadius) / voxelSize));
+                Mathf.FloorToInt((boundsMin.x - boundsPadding) / voxelSize),
+                Mathf.FloorToInt((boundsMin.y - boundsPadding) / voxelSize),
+                Mathf.FloorToInt((boundsMin.z - boundsPadding) / voxelSize));
             int3 maxCell = new int3(
-                Mathf.FloorToInt((request.AbsoluteHitPoint.x + halfExtents.x + blendRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.y + halfExtents.y + blendRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.z + halfExtents.z + blendRadius) / voxelSize));
+                Mathf.FloorToInt((boundsMax.x + boundsPadding) / voxelSize),
+                Mathf.FloorToInt((boundsMax.y + boundsPadding) / voxelSize),
+                Mathf.FloorToInt((boundsMax.z + boundsPadding) / voxelSize));
 
             int3 span = (maxCell - minCell) + 1;
             int candidateCount = math.max(0, span.x) * math.max(0, span.y) * math.max(0, span.z);
@@ -896,7 +965,8 @@ namespace Hecton8.Caves
                 Radius = radius,
                 BlendRadius = blendRadius,
                 BlendStrength = ResolveBlendStrength(in request, voxelSize),
-                Center = new float3(request.AbsoluteHitPoint.x, request.AbsoluteHitPoint.y, request.AbsoluteHitPoint.z),
+                Center = segmentStart,
+                SegmentEnd = segmentEnd,
                 HalfExtents = halfExtents,
                 MaterialId = request.MaterialId,
                 DeltaFlags = request.DeltaFlags,
@@ -1390,6 +1460,7 @@ namespace Hecton8.Caves
         {
             public HectonVoxelVolume Volume;
             public Vector3 AbsoluteHitPoint;
+            public Vector3 AbsoluteSegmentEnd;
             public Vector3 AbsoluteHalfExtents;
             public float AccumulatedDamage;
             public float ExplicitRadiusMeters;
@@ -1399,7 +1470,7 @@ namespace Hecton8.Caves
             public byte Shape;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CarveSdfJob : IJobParallelFor
         {
             public int3 MinCell;
@@ -1409,6 +1480,7 @@ namespace Hecton8.Caves
             public float BlendRadius;
             public float BlendStrength;
             public float3 Center;
+            public float3 SegmentEnd;
             public float3 HalfExtents;
             public byte MaterialId;
             public byte DeltaFlags;
@@ -1426,7 +1498,9 @@ namespace Hecton8.Caves
                 float3 cellCenter = (new float3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5f) * VoxelSize;
                 float signedDistance = Shape == DeltaShapeBox
                     ? BoxSdf(cellCenter - Center, HalfExtents)
-                    : math.distance(cellCenter, Center) - Radius;
+                    : Shape == DeltaShapeCapsule
+                        ? CapsuleSdf(cellCenter, Center, SegmentEnd, Radius)
+                        : math.distance(cellCenter, Center) - Radius;
                 if (signedDistance >= BlendRadius)
                 {
                     Writes[index] = default;
@@ -1452,6 +1526,14 @@ namespace Hecton8.Caves
             {
                 float3 q = math.abs(local) - math.max(halfExtents, new float3(0.001f));
                 return math.length(math.max(q, 0f)) + math.min(math.cmax(q), 0f);
+            }
+
+            private static float CapsuleSdf(float3 point, float3 start, float3 end, float radius)
+            {
+                float3 segment = end - start;
+                float segmentLengthSq = math.max(math.lengthsq(segment), 0.0001f);
+                float t = math.saturate(math.dot(point - start, segment) / segmentLengthSq);
+                return math.distance(point, start + segment * t) - math.max(radius, 0.001f);
             }
         }
 

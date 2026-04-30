@@ -302,7 +302,7 @@ namespace Hecton8.Progression
             string message = AchievementLogPrefix + definition.Title;
             NotificationEvents.PushInfo(message);
 
-            PDALogbookManager logbookManager = PDALogbookManager.Instance;
+            IPDALogbookService logbookManager = GlobalRegistry.PDALogbook;
             if (logbookManager != null)
                 logbookManager.TryAppendEntry("achievement." + definition.Id, "ACHIEVEMENT", message);
 

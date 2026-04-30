@@ -281,7 +281,7 @@ namespace Hecton8.Audio
         [Header("Spatial Reverb")]
         [Tooltip("Layers considered valid enclosure geometry for the orthogonal reverb probes.")]
         [FormerlySerializedAs("ceilingProbeLayers")]
-        [SerializeField] private LayerMask enclosureProbeLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask enclosureProbeLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Maximum orthogonal probe distance used to classify open water vs. local enclosure coverage.")]
         [SerializeField, Range(5f, 80f)] private float ceilingProbeDistance = 48f;
@@ -2972,7 +2972,7 @@ namespace Hecton8.Audio
             _audioAbsoluteDepthMeters = endAbsoluteDepthMeters;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ApplyMasterSafetyLimiter(float sample)
         {
             float magnitude = math.abs(sample);
@@ -3013,7 +3013,7 @@ namespace Hecton8.Audio
                 _sampleRate);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float RenderAmbientCurrentFmKernel(
             ref AmbientCurrentSynthesisState state,
             uint sampleIndex,
@@ -3385,7 +3385,7 @@ namespace Hecton8.Audio
                     return false;
                 }
 
-                int writeIndex = _impactEventWriteIndex;
+                int writeIndex = Volatile.Read(ref _impactEventWriteIndex);
                 int nextWriteIndex = (writeIndex + 1) & ImpactEventQueueMask;
                 int readIndex = Volatile.Read(ref _impactEventReadIndex);
                 if (nextWriteIndex == readIndex)
@@ -3398,7 +3398,7 @@ namespace Hecton8.Audio
                 }
 
                 _impactEventQueue[writeIndex] = impactAudioEvent;
-                Volatile.Write(ref _impactEventWriteIndex, nextWriteIndex);
+                Interlocked.Exchange(ref _impactEventWriteIndex, nextWriteIndex);
                 SignalAudioProducerThread();
                 return true;
             }
@@ -3406,7 +3406,7 @@ namespace Hecton8.Audio
 
         private bool TryDequeueImpactAudioEvent(out ImpactAudioEvent impactAudioEvent)
         {
-            int readIndex = _impactEventReadIndex;
+            int readIndex = Volatile.Read(ref _impactEventReadIndex);
             if (readIndex == Volatile.Read(ref _impactEventWriteIndex))
             {
                 impactAudioEvent = default;
@@ -3414,7 +3414,7 @@ namespace Hecton8.Audio
             }
 
             impactAudioEvent = _impactEventQueue[readIndex];
-            Volatile.Write(ref _impactEventReadIndex, (readIndex + 1) & ImpactEventQueueMask);
+            Interlocked.Exchange(ref _impactEventReadIndex, (readIndex + 1) & ImpactEventQueueMask);
             return true;
         }
 
@@ -4091,7 +4091,7 @@ namespace Hecton8.Audio
             return highPass2 * decay * amount * math.saturate(stress * 1.35f);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float RenderHeartbeatEnvelope(float ageSeconds)
         {
             if (ageSeconds < 0f)
@@ -4366,7 +4366,7 @@ namespace Hecton8.Audio
                    (dreadSine * dreadAmplitude);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float RenderStructuralSnapTransientSample(
             ref HullSynthesisState state,
             uint sampleIndex,
@@ -4407,7 +4407,7 @@ namespace Hecton8.Audio
             return (sine + harmonic + noise) * amplitude;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float RenderStructuralFatigueRingSample(
             ref HullSynthesisState state,
             uint sampleIndex,
@@ -4435,7 +4435,7 @@ namespace Hecton8.Audio
             return (ring + harmonic) * amplitude * modulation;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ApplyDepthHullDistortion(float sample, float depthParam, float structuralStress)
         {
             float depthMeters = depthParam * PressureCreakDepthReferenceMeters;
@@ -4451,7 +4451,7 @@ namespace Hecton8.Audio
             return math.lerp(sample, distorted, distortionBlend);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float PeekPressureCreakEnvelope(in HullSynthesisState state)
         {
             if (state.GrainTotalSamples <= 0)
@@ -4506,7 +4506,7 @@ namespace Hecton8.Audio
             return phase;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ResolveDescendingNormalized01(float value, float start, float end)
         {
             if (value >= start)
@@ -4523,7 +4523,7 @@ namespace Hecton8.Audio
             return math.sin((float)(TwoPi * AdvancePhase(ref phase, frequencyHz, invSampleRate)));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ApplyPaulKelletPink(ref ThrusterSynthesisState state, float white)
         {
             state.PinkB0 = 0.99886f * state.PinkB0 + white * 0.0555179f;
@@ -4537,7 +4537,7 @@ namespace Hecton8.Audio
             return pink * 0.11f;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static void ComputeBandPassCoefficients(
             float centerHertz,
             float q,
@@ -4562,7 +4562,7 @@ namespace Hecton8.Audio
             a2 = (1f - alpha) * inverseA0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ProcessBiquad(
             float sample,
             float b0,
@@ -4674,7 +4674,7 @@ namespace Hecton8.Audio
             return HashSigned((sampleIndex >> shift) ^ seed);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float SampleSimplex01(float position, uint seed)
         {
             float seedX = (seed & 0xFFFFu) * 0.00006103515625f;
@@ -4683,7 +4683,7 @@ namespace Hecton8.Audio
             return math.saturate(simplex * 0.5f + 0.5f);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float ResolveMinnaertFrequency(float radiusMeters, float ambientPressurePascals)
         {
             float safeRadius = math.max(radiusMeters, 0.0001f);

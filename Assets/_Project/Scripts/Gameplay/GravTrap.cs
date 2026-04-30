@@ -120,7 +120,7 @@ namespace Hecton8.Gameplay
             // Set default layer mask if not assigned
             if (targetLayers == 0)
             {
-                targetLayers = LayerMask.GetMask("Default", "PhysicsObject");
+                targetLayers = HectonLayerMasks.DefaultLayerMask;
             }
         }
 

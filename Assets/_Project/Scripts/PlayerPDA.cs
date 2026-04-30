@@ -59,7 +59,10 @@ namespace Hecton8.UI
         Opened = 0,
         Closed = 1,
         TabChanged = 2,
-        LowBatteryShutdown = 3
+        LowBatteryShutdown = 3,
+        MapChunkExplored = 4,
+        MarkerChanged = 5,
+        LogbookChanged = 6
     }
 
     /// <summary>
@@ -71,6 +74,8 @@ namespace Hecton8.UI
         public float DurationSeconds;
         public int PreviousTab;
         public int CurrentTab;
+        public int PayloadA;
+        public int PayloadB;
         public ushort EventType;
         public ushort Reserved;
     }
@@ -111,6 +116,21 @@ namespace Hecton8.UI
                 _listeners.Unregister(listener);
         }
 
+        public static bool IsRegistered(IPDAEventListener listener)
+        {
+            return listener != null && _listeners.Contains(listener);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        public static void AssertUnregistered(IPDAEventListener listener, string ownerName)
+        {
+            if (listener == null || !_listeners.Contains(listener))
+                return;
+
+            Debug.LogError($"[PDAEvents] {ownerName} was destroyed while still registered as an IPDAEventListener.");
+        }
+
         public static void FlushPending()
         {
             if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
@@ -119,8 +139,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            while (_pendingEvents.TryDequeue(out PDAEventPayload payload))
+            while (!_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
+                    return;
+
                 IPDAEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
@@ -130,6 +156,7 @@ namespace Hecton8.UI
 
         internal static void RaiseOpened(int tab)
         {
+            UIStateStore.SetPDAOpenState(true, tab, 0f);
             Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
@@ -142,6 +169,7 @@ namespace Hecton8.UI
 
         internal static void RaiseClosed(float duration)
         {
+            UIStateStore.SetPDAOpenState(false, -1, duration);
             Enqueue(new PDAEventPayload
             {
                 DurationSeconds = duration,
@@ -154,6 +182,7 @@ namespace Hecton8.UI
 
         internal static void RaiseTabChanged(int oldTab, int newTab)
         {
+            UIStateStore.SetPDAActiveTab(oldTab, newTab);
             Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
@@ -171,7 +200,52 @@ namespace Hecton8.UI
                 DurationSeconds = 0f,
                 PreviousTab = -1,
                 CurrentTab = -1,
+                PayloadA = 0,
+                PayloadB = 0,
                 EventType = (ushort)PDAEventType.LowBatteryShutdown,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseMapChunkExplored(int chunkX, int chunkY)
+        {
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = 0f,
+                PreviousTab = -1,
+                CurrentTab = -1,
+                PayloadA = chunkX,
+                PayloadB = chunkY,
+                EventType = (ushort)PDAEventType.MapChunkExplored,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseMarkerChanged(int markerCount)
+        {
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = 0f,
+                PreviousTab = -1,
+                CurrentTab = -1,
+                PayloadA = markerCount,
+                PayloadB = 0,
+                EventType = (ushort)PDAEventType.MarkerChanged,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseLogbookChanged(int entryCount, uint latestEventHash = 0u)
+        {
+            UIStateStore.SetPDALogbookState(entryCount, latestEventHash);
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = 0f,
+                PreviousTab = -1,
+                CurrentTab = -1,
+                PayloadA = entryCount,
+                PayloadB = unchecked((int)latestEventHash),
+                EventType = (ushort)PDAEventType.LogbookChanged,
                 Reserved = 0
             });
         }
@@ -312,7 +386,8 @@ namespace Hecton8.UI
         private int _activeTab = -1;
         private bool _registered;
         private bool _inputSubscribed;
-        private InputManager _subscribedInputManager;
+        private uint _observedUIStateCommandSequence;
+        private IInputService _subscribedInputManager;
 
         // Fade animation
         private float _targetAlpha;
@@ -374,7 +449,10 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             if (Application.isPlaying)
+            {
                 ActiveRuntimeInstance = this;
+                UIStateStore.EnsureInitialized();
+            }
 
             TryRegister();
             SubscribeToInputManager();
@@ -393,10 +471,10 @@ namespace Hecton8.UI
                     "[PlayerPDA] PDA dispatcher registration failed at Start(). PDA tick loop will not run.");
             }
 
-            if (InputManager.Instance == null)
+            if (GlobalRegistry.Input == null)
             {
                 Debug.LogError(
-                    "[PlayerPDA] InputManager.Instance is null at Start(). " +
+                    "[PlayerPDA] GlobalRegistry.Input is null at Start(). " +
                     "PDA will not function.");
             }
         }
@@ -594,7 +672,7 @@ namespace Hecton8.UI
 
         private void SubscribeToInputManager()
         {
-            InputManager inputManager = InputManager.Instance;
+            IInputService inputManager = GlobalRegistry.Input;
             if (inputManager == null)
                 return;
 
@@ -658,6 +736,7 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             SubscribeToInputManager();
+            ApplyHeadlessUIState();
 
             // Input is now handled via events in HandlePDAInput, etc.
 
@@ -681,6 +760,30 @@ namespace Hecton8.UI
             UpdateDiagnostics();
         }
 
+        private void ApplyHeadlessUIState()
+        {
+            UIStateData state = UIStateStore.GetPDAState();
+            if (state.CommandSequence == _observedUIStateCommandSequence)
+                return;
+
+            bool wantsOpen = (state.Flags & (ushort)UIStateFlags.PDAOpen) != 0;
+            int requestedTab = Mathf.Clamp(state.ActiveTab, 0, tabs != null && tabs.Length > 0 ? tabs.Length - 1 : 0);
+
+            if (wantsOpen)
+            {
+                if (!IsOpen)
+                    Open(requestedTab);
+                else if (requestedTab != _activeTab)
+                    SetActiveTab(requestedTab);
+            }
+            else if (IsOpen)
+            {
+                Close();
+            }
+
+            _observedUIStateCommandSequence = UIStateStore.GetPDAState().CommandSequence;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
@@ -702,10 +805,7 @@ namespace Hecton8.UI
             _lowBatteryWarningPlayed = false;
 
             // Switch to UI input map
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.SwitchToUIInput();
-            }
+            GlobalRegistry.Input?.SwitchToUIInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -736,10 +836,7 @@ namespace Hecton8.UI
             IsOpen = false;
 
             // Switch back to Player input map
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.SwitchToPlayerInput();
-            }
+            GlobalRegistry.Input?.SwitchToPlayerInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
@@ -804,10 +901,7 @@ namespace Hecton8.UI
             }
 
             // Switch back to Player input map on force close
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.SwitchToPlayerInput();
-            }
+            GlobalRegistry.Input?.SwitchToPlayerInput();
 
             PDAEvents.RaiseClosed(duration);
             ClearTabHistory();
@@ -1164,6 +1258,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             PDAEvents.Unregister(this);
+            PDAEvents.AssertUnregistered(this, nameof(PDADiagnosticTerminal));
             UnregisterFromTickManager();
         }
 
@@ -1259,8 +1354,8 @@ namespace Hecton8.UI
             int hullStressPercent = _playerMovement != null
                 ? Mathf.RoundToInt(Mathf.Clamp01(_playerMovement.CurrentHullStress01) * 100f)
                 : 0;
-            Vector3 universeOffset = HectonFloatingOrigin.Instance != null
-                ? HectonFloatingOrigin.Instance.TotalUniverseOffset
+            Vector3 universeOffset = HectonFloatingOrigin.CurrentTotalOffset != Vector3.zero
+                ? HectonFloatingOrigin.CurrentTotalOffset
                 : HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
 
             if (!force &&

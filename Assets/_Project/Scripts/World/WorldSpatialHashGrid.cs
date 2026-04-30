@@ -32,22 +32,24 @@ namespace Hecton8.World
     {
         None = 0u,
         AcousticImpulse = 1u << 0,
-        ChemicalCloud = 1u << 1
+        ChemicalCloud = 1u << 1,
+        ThermalGradient = 1u << 2
     }
 
     [System.Flags]
-    internal enum SpatialInteractionFlags : uint
+    internal enum SpatialInteractionFlags : ulong
     {
-        None = 0u,
-        Resource = 1u << 0,
-        Bioform = 1u << 1,
-        Signal = 1u << 2,
-        Pickup = 1u << 3,
-        Scannable = 1u << 4,
-        Module = 1u << 5,
-        AcousticReceiver = 1u << 6,
-        ChemicalReceiver = 1u << 7,
-        Interactable = 1u << 8
+        None = 0UL,
+        Resource = 1UL << 0,
+        Bioform = 1UL << 1,
+        Signal = 1UL << 2,
+        Pickup = 1UL << 3,
+        Scannable = 1UL << 4,
+        Module = 1UL << 5,
+        AcousticReceiver = 1UL << 6,
+        ChemicalReceiver = 1UL << 7,
+        ThermalReceiver = 1UL << 8,
+        Interactable = 1UL << 9
     }
 
     internal readonly struct SpatialQueryHit
@@ -125,7 +127,7 @@ namespace Hecton8.World
             public int Layer;
             public float3 HalfExtents;
             public int PayloadId;
-            public uint EntityFlags;
+            public ulong EntityFlags;
             public bool IsResidentInNativeHash;
         }
 
@@ -137,7 +139,7 @@ namespace Hecton8.World
             public int SourceSpeciesId;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ValidateAupIntegrityJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> AbsolutePositions;
@@ -153,7 +155,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct RebuildAbsolutePositionsJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> RuntimePositions;
@@ -166,7 +168,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FarUnloadCandidatesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<double3> AbsolutePositions;
@@ -200,6 +202,10 @@ namespace Hecton8.World
         private const int AcousticDensityMapCellCount = AcousticDensityMapAxis * AcousticDensityMapAxis * AcousticDensityMapAxis;
         private const int AcousticDensityMapCadenceFrames = 10;
         private const float AcousticDensityMapRadiusMeters = 160f;
+        private const float AcousticTransientDecayScale = 0.85f;
+        private const float AcousticTransientMinimumIntensity = 0.01f;
+        private const int SpatialHashCompactionCapacityThreshold = 50000;
+        private const int SpatialHashCompactionTargetFloor = DefaultEntryCapacity * 4;
         private const int MaxTransientSignalCount = 16;
 
         private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Query");
@@ -584,12 +590,32 @@ namespace Hecton8.World
             SpatialInteractionFlags interactionFilter,
             SpatialQueryHit[] results)
         {
+            return CollectContactsNonAlloc(origin, radius, kindMask, (ulong)interactionFilter, results);
+        }
+
+        public static int CollectContactsNonAlloc(
+            Vector3 origin,
+            float radius,
+            SpatialTargetKind kindMask,
+            uint interactionFilter,
+            SpatialQueryHit[] results)
+        {
+            return CollectContactsNonAlloc(origin, radius, kindMask, (ulong)interactionFilter, results);
+        }
+
+        private static int CollectContactsNonAlloc(
+            Vector3 origin,
+            float radius,
+            SpatialTargetKind kindMask,
+            ulong interactionFilter,
+            SpatialQueryHit[] results)
+        {
             if (results == null || results.Length == 0 || kindMask == SpatialTargetKind.None)
                 return 0;
 
             int count = 0;
             float radiusSqr = radius * radius;
-            int handleCount = CollectCandidateHandles(origin, radius, kindMask, (uint)interactionFilter);
+            int handleCount = CollectCandidateHandles(origin, radius, kindMask, interactionFilter);
             for (int i = 0; i < handleCount; i++)
             {
                 if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
@@ -630,7 +656,8 @@ namespace Hecton8.World
             SpatialTransientEventType eventType,
             SpatialInteractionFlags eventFlags = SpatialInteractionFlags.None,
             FieldTargetRole signalRole = FieldTargetRole.Generic,
-            int sourceSpeciesId = 0)
+            int sourceSpeciesId = 0,
+            float temperature = 0f)
         {
             if (radiusMeters <= 0f || intensity <= 0f || lifetimeSeconds <= 0f || eventType == SpatialTransientEventType.None)
                 return;
@@ -646,9 +673,10 @@ namespace Hecton8.World
                 math.saturate(intensity),
                 expirationTimestamp,
                 (uint)eventType,
-                (uint)eventFlags,
+                (ulong)eventFlags,
                 currentTimestamp,
-                sourceKey);
+                sourceKey,
+                temperature);
 
             if (sourceKey != 0u)
                 TrackTransientSignal(worldPosition, expirationTimestamp, signalRole, sourceSpeciesId);
@@ -695,6 +723,35 @@ namespace Hecton8.World
             return _nativeHash.IsCurrentHandle(handle);
         }
 
+        public static bool QueryTemperatureGradient(
+            Vector3 origin,
+            float radiusMeters,
+            out float temperatureDeltaCelsius,
+            out Vector3 gradient)
+        {
+            EnsureInitialized();
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            bool hasGradient = _nativeHash.QueryTemperatureGradient(
+                in originAup,
+                radiusMeters,
+                Time.unscaledTimeAsDouble,
+                out temperatureDeltaCelsius,
+                out double3 gradientAup);
+            gradient = new Vector3((float)gradientAup.x, (float)gradientAup.y, (float)gradientAup.z);
+            return hasGradient;
+        }
+
+        internal static void SlowTickMaintenance(float deltaTime)
+        {
+            EnsureInitialized();
+            _nativeHash.DecayTransientEvents(
+                Time.unscaledTimeAsDouble,
+                deltaTime,
+                (uint)SpatialTransientEventType.AcousticImpulse,
+                AcousticTransientDecayScale,
+                AcousticTransientMinimumIntensity);
+        }
+
         internal static void LateFrameMaintenance(int frameCount)
         {
             EnsureInitialized();
@@ -720,6 +777,11 @@ namespace Hecton8.World
                     _nativeHash.PruneExpiredTransientEvents(Time.unscaledTimeAsDouble);
                     BuildAcousticDensityMap(frameCount);
                 }
+
+                _nativeHash.CompactIfOverCapacity(
+                    SpatialHashCompactionCapacityThreshold,
+                    SpatialHashCompactionTargetFloor,
+                    Time.unscaledTimeAsDouble);
             }
         }
 
@@ -783,8 +845,14 @@ namespace Hecton8.World
             EnsureInitialized();
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
             float3 safeHalfExtents = math.max(halfExtents, 0f);
-            uint entityFlags = ResolveEntityFlags(kind);
+            ulong entityFlags = ResolveEntityFlags(kind);
             int handle = _nativeHash.Register(positionAup, safeHalfExtents, (int)kind, entityFlags, 0);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Assert(handle > 0, "[WorldSpatialHashGrid] Native spatial hash returned an invalid managed-entry handle.");
+#endif
+            if (handle <= 0)
+                return 0;
+
             _entries[handle] = new Entry
             {
                 Transform = targetTransform,
@@ -814,7 +882,7 @@ namespace Hecton8.World
             entry.Layer = targetTransform.gameObject.layer;
             entry.RuntimePosition = targetTransform.position;
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
-            if (entry.EntityFlags == 0u)
+            if (entry.EntityFlags == 0UL)
                 entry.EntityFlags = ResolveEntityFlags(entry.Kind);
             _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId);
             entry.IsResidentInNativeHash = true;
@@ -837,7 +905,7 @@ namespace Hecton8.World
             return 0;
         }
 
-        private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, uint interactionFilter = 0u)
+        private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, ulong interactionFilter = 0UL)
         {
             EnsureInitialized();
             using (_queryProfilerMarker.Auto())
@@ -845,6 +913,11 @@ namespace Hecton8.World
                 AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
                 return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, interactionFilter, _queryHandles);
             }
+        }
+
+        private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, uint interactionFilter)
+        {
+            return CollectCandidateHandles(origin, radius, kindMask, (ulong)interactionFilter);
         }
 
         private static bool TryGetNearestMatch(
@@ -1079,7 +1152,7 @@ namespace Hecton8.World
 
                 entry.RuntimePosition = _originShiftRuntimePositions[i];
                 AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromAbsolutePosition(_originShiftAbsolutePositions[i]);
-                if (entry.EntityFlags == 0u)
+                if (entry.EntityFlags == 0UL)
                     entry.EntityFlags = ResolveEntityFlags(entry.Kind);
                 _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId);
             }
@@ -1287,21 +1360,21 @@ namespace Hecton8.World
             }
         }
 
-        private static uint ResolveEntityFlags(SpatialTargetKind kind)
+        private static ulong ResolveEntityFlags(SpatialTargetKind kind)
         {
-            uint flags = 0u;
+            ulong flags = 0UL;
             if ((kind & SpatialTargetKind.Resource) != 0)
-                flags |= (uint)(SpatialInteractionFlags.Resource | SpatialInteractionFlags.Interactable);
+                flags |= (ulong)(SpatialInteractionFlags.Resource | SpatialInteractionFlags.Interactable);
             if ((kind & SpatialTargetKind.Bioform) != 0)
-                flags |= (uint)(SpatialInteractionFlags.Bioform | SpatialInteractionFlags.AcousticReceiver | SpatialInteractionFlags.ChemicalReceiver);
+                flags |= (ulong)(SpatialInteractionFlags.Bioform | SpatialInteractionFlags.AcousticReceiver | SpatialInteractionFlags.ChemicalReceiver | SpatialInteractionFlags.ThermalReceiver);
             if ((kind & SpatialTargetKind.Signal) != 0)
-                flags |= (uint)SpatialInteractionFlags.Signal;
+                flags |= (ulong)SpatialInteractionFlags.Signal;
             if ((kind & SpatialTargetKind.Pickup) != 0)
-                flags |= (uint)(SpatialInteractionFlags.Pickup | SpatialInteractionFlags.Interactable);
+                flags |= (ulong)(SpatialInteractionFlags.Pickup | SpatialInteractionFlags.Interactable);
             if ((kind & SpatialTargetKind.Scannable) != 0)
-                flags |= (uint)(SpatialInteractionFlags.Scannable | SpatialInteractionFlags.Interactable);
+                flags |= (ulong)(SpatialInteractionFlags.Scannable | SpatialInteractionFlags.Interactable);
             if ((kind & SpatialTargetKind.Module) != 0)
-                flags |= (uint)(SpatialInteractionFlags.Module | SpatialInteractionFlags.Interactable);
+                flags |= (ulong)(SpatialInteractionFlags.Module | SpatialInteractionFlags.Interactable);
             return flags;
         }
 

@@ -708,7 +708,7 @@ namespace Hecton8.Construction
             IntegrityExceeded = 2
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct IntegrityValidationJob : IJob
         {
             [ReadOnly] public NativeArray<IntegrityNodeRecord> Nodes;

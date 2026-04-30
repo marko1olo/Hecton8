@@ -38,7 +38,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float pushForce = 85f;
         [SerializeField] private float pullForce = 62f;
         [SerializeField] private float maxTargetMass = 400f;
-        [SerializeField] private LayerMask targetMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask targetMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField] private float feedbackInterval = 0.35f;
         [SerializeField] private float holdDistance = 3.8f;
         [SerializeField] private float holdSpringForce = 92f;

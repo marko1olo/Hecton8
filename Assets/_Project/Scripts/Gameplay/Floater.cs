@@ -183,7 +183,7 @@ namespace Hecton8.Gameplay
             // Set default layer mask if not assigned
             if (attachableLayers == 0)
             {
-                attachableLayers = LayerMask.GetMask("Default", "PhysicsObject");
+                attachableLayers = HectonLayerMasks.DefaultLayerMask;
             }
 
             RebuildLocalizedTextCache();

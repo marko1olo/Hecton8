@@ -163,6 +163,9 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            Unsubscribe();
+            UnregisterFromTickManager();
+            PDAEvents.AssertUnregistered(this, nameof(PDAShellChrome));
             DestroyMaterialInstance(ref _headerMaterial);
             DestroyMaterialInstance(ref _footerMaterial);
             DestroyMaterialInstance(ref _titleMaterial);

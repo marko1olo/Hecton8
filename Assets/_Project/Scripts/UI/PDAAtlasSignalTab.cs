@@ -181,6 +181,9 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregister();
+            AtlasSignalEvents.Unregister(this);
+            PDAEvents.Unregister(this);
+            PDAEvents.AssertUnregistered(this, nameof(PDAAtlasSignalTab));
         }
 
         // ══════════════════════════════════════════════════════════

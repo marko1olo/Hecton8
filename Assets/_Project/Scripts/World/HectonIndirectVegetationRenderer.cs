@@ -33,7 +33,6 @@ namespace Hecton8.World
         private const int FrustumPlaneCount = 6;
         private const int MaxVegetationVisibilityPasses = 3;
         private const int MaxVegetationDrawCommands = 7;
-        private const uint StrictRenderingLayerMask = (1u << 8) | (1u << 9) | (1u << 10);
         private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
         private const byte VisibilityMaskNear = 1 << 0;
         private const byte VisibilityMaskFar = 1 << 1;
@@ -358,7 +357,7 @@ namespace Hecton8.World
 
         private HectonVegetationInstanceData[] _legacyInstanceData;
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildVegetationVisibilityMaskJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<Matrix4x4> Matrices;
@@ -517,7 +516,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct FinalizeVegetationDrawOutputJob : IJob
         {
             [ReadOnly] public NativeArray<byte> VisibilityMask;
@@ -723,7 +722,7 @@ namespace Hecton8.World
                     drawCommandsType = BatchDrawCommandType.Direct,
                     filterSettings = new BatchFilterSettings
                     {
-                        renderingLayerMask = StrictRenderingLayerMask,
+                        renderingLayerMask = HectonLayerMasks.AllDefinedProjectRenderingLayerMaskValue,
                         rendererPriority = 0,
                         layer = (byte)math.clamp(Layer, byte.MinValue, byte.MaxValue),
                         shadowCastingMode = shadowCastingMode,

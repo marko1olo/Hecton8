@@ -250,6 +250,10 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregister();
+            AudioLogEvents.Unregister(this);
+            PDAEvents.Unregister(this);
+            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            PDAEvents.AssertUnregistered(this, nameof(PDADataLogTab));
             if (_runtimeHologramMaterial != null)
             {
                 Destroy(_runtimeHologramMaterial);

@@ -178,3 +178,34 @@ The hard truth:
 
 This project has an evidence culture.
 It does not yet have lightweight certainty.
+
+## 2026-05-01 Verification Delta
+
+Current source/doc surface:
+
+- `Docs` now contains `544` non-meta files.
+- `Docs/ARCHIVARIUS REPORTS` now contains `117` non-meta files.
+- `ARCHIVARIUS REPORTS/01_GENERAL_INFO`: `22` direct files.
+- `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`: `56` direct non-meta files: `46` markdown, `9` patch files, `1` csv.
+- `ARCHIVARIUS REPORTS/03_OBSOLETE`: `39` recursive non-meta files.
+- `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit`: `29` markdown files.
+- `Docs/Reports`: active May 1 additions include `DOOMSDAY_FLAW_REPORT.md`, `OMEGA_CORE_ENFORCEMENT_2026-05-01.md`, `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`, and `CI_VALIDATION_HOOKS_SURGERY_LOG.md`.
+
+Smoke/verifier truth update:
+
+- Four old verifier/smoke files were removed in the recent purge path: `SaveSystemRuntimeSmokeTester`, `WeakToolsRuntimeSmokeTester`, `MantaAcousticRuntimeVerifier`, and `PhysicalInteractionRuntimeVerifier`.
+- Eight runtime smoke/verifier harnesses were migrated away from coroutines: `FabricationRuntimeSmokeTester`, `ScanRuntimeSmokeTester`, `BarterRuntimeSmokeTester`, `BuilderRuntimeSmokeTester`, `PauseSystemVerifier`, `SceneTransitionVerifier`, `UIRuntimeSmokeTester`, and `WorldGenerativeGeologyRuntimeSmokeTester`.
+- Strict current grep still finds `15` `StartCoroutine(` call sites under `Assets/_Project/Scripts`, all in remaining runtime smoke/verifier infrastructure.
+- Remaining coroutine owners: `FieldToolRuntimeSmokeTester`, `ToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, `Dev/ShellVerificationRuntimeSmokeTester`, and `Tools/StateRecoveryVerifier`.
+
+Verification boundary:
+
+- MCP console error query reported `0` entries during the previous May 1 report pass. This delta pass attempted `read_console` twice and MCP returned `no_unity_session`, so no fresh console proof exists for this edit.
+- Earlier May 1 `OMEGA_CORE_ENFORCEMENT_2026-05-01.md` correctly refused `MCP VERIFIED` because refresh timed out and warnings remained. That caution still applies unless a fresh clean compile/refresh run proves otherwise.
+- Play Mode was not launched because the user explicitly warned about potential deadlock. Therefore no runtime smoke, GCMonitor, frame-time, or memory-retention truth exists for this update.
+
+Trust conclusion:
+
+HECTON-8 has broad verification scaffolding, but the trust model remains fragmented. Current-source facts have improved; runtime certainty has not.
+
+STATUS: PENDING VERIFICATION

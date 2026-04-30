@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -23,6 +24,8 @@ namespace Hecton8.Tools
         private const float UnderwaterDepthThreshold = 0.5f;
         private const float ActiveUseWindowSeconds = 0.7f;
         private const float DegradedThreshold = 0.25f;
+        private const float BrineCorrosionPerSecond = 0.05f;
+        private const float BrineDensityThresholdKgPerCubicMeter = 1249f;
         private const ushort DegradedFlag = 1 << 0;
         private const ushort BrokenFlag = 1 << 1;
 
@@ -102,7 +105,7 @@ namespace Hecton8.Tools
             Instance = null;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DurabilityDecayJob : IJobParallelFor
         {
             public NativeArray<ItemState> States;
@@ -488,6 +491,10 @@ namespace Hecton8.Tools
             if (_playerSurvivalSystem == null || _playerToolManager == null || _playerSurvivalSystem.Depth <= UnderwaterDepthThreshold)
                 return;
 
+            bool playerInBrinePool = IsPlayerInBrinePool();
+            if (playerInBrinePool)
+                ApplyBrineCorrosionToTrackedTools();
+
             PlayerTool currentTool = _playerToolManager.CurrentTool;
             if (currentTool == null || !currentTool.IsEquipped || currentTool.IsBroken)
                 return;
@@ -513,6 +520,33 @@ namespace Hecton8.Tools
                 ? unchecked((uint)LocHash.Compute(currentTool.ToolData.PersistentId))
                 : unchecked((uint)Animator.StringToHash(metadata.toolID));
             DrainDurabilityByTime(metadata.toolID, itemHashId, scaledDeltaTime, metadata.maxDurability);
+        }
+
+        private void ApplyBrineCorrosionToTrackedTools()
+        {
+            if (!_pendingDecayDt.IsCreated || !_slotActive.IsCreated)
+                return;
+
+            float scaledDeltaTime = BrineCorrosionPerSecond * SlowTickDeltaTime * Mathf.Max(0.1f, globalDurabilityMultiplier);
+            if (scaledDeltaTime <= 0f)
+                return;
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (_slotActive[i] == 0)
+                    continue;
+
+                _pendingDecayDt[i] += scaledDeltaTime;
+            }
+        }
+
+        private bool IsPlayerInBrinePool()
+        {
+            ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;
+            return director != null &&
+                   _playerRoot != null &&
+                   director.TrySampleBrineFluidDensity(_playerRoot.position, out float densityKgPerCubicMeter) &&
+                   densityKgPerCubicMeter >= BrineDensityThresholdKgPerCubicMeter;
         }
 
         private bool ResolvePlayerOwners()

@@ -33,11 +33,12 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Solar Panel")]
     public sealed class SolarPanel : MonoBehaviour, IPowerComponent, ITickable, IUpdatable
     {
-        private static readonly int _WaterLayer;
+        private static int _WaterLayer = -1;
 
-        static SolarPanel()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void InitializeLayerCache()
         {
-            _WaterLayer = LayerMask.NameToLayer("Water");
+            _WaterLayer = Hecton8.Core.HectonLayerMasks.Water;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -75,7 +76,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(10f, 500f)] private float skyCheckDistance = 200f;
 
         [Tooltip("Layers considered as sky obstruction.")]
-        [SerializeField] private LayerMask obstructionLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask obstructionLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Status Indicator ───────────────────────────")]
         [Tooltip("Renderer for the status indicator light.")]

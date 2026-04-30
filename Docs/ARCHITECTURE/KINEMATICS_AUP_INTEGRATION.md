@@ -4,8 +4,10 @@ Mandates followed:
 - `CORE_Submarine_Vehicles_Kinematics_AUP.txt`
 - `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
 - `PHYS_Physics_Integrity_Determinism_ForceMode.txt`
+- `PHYS_Tether_Cable_Acceleration_Constraints.txt`
 - `VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt`
 - `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 
 ## Scope
 
@@ -14,6 +16,8 @@ This document is the canonical runtime map for:
 - transport-relative frames
 - AUP-to-runtime rebasing
 - hydrodynamic added mass
+- tractor-beam/tether reduced-mass force routing
+- prop-wash wake turbulence
 - voxel collider bake publication
 - pre-solver submarine contact modification
 
@@ -34,6 +38,15 @@ Current runtime ownership is `Rigidbody + CapsuleCollider + HectonPlayerMovement
 - `VehicleMotor`
   - mountable vehicle KCC owner
   - vehicle-added-mass and depth-scaled drag
+  - fixed-size hydrodynamic wake sample owner
+- `TetherInstance`
+  - tow-cable/tractor reduced-mass PD pull request owner
+  - reaction-force routing for tow anchors
+- `HectonContactJob`
+  - Burst-safe contact, reduced-mass, and PD math kernels
+- `GlobalPhysicsStateManager`
+  - active rigidbody registry
+  - underwater added-mass tensor baseline/restore owner
 - `HectonFloatingOrigin`
   - AUP/runtime rebase ownership
   - drift sentinel ownership
@@ -42,8 +55,54 @@ Current runtime ownership is `Rigidbody + CapsuleCollider + HectonPlayerMovement
   - async `Physics.BakeMesh` publish chain
 - `PhysicsApplySystem`
   - deferred force-packet application
+  - double-buffered force-packet queue ownership
   - pre-solver heavy-submarine contact modification
   - deferred submarine-impact trauma dispatch
+
+## Force Packet Double Buffer
+
+`PhysicsApplySystem` owns two persistent `NativeQueue<ForcePacket>` instances.
+Gameplay producers enqueue into the Back queue through `PhysicsApplySystem.QueueForce`, `QueueForceAtPosition`, `QueueTorque`, or the reduced-mass `QueueTractorBeamPd` helper.
+Burst producers request `TryGetForcePacketBackWriter(out NativeQueue<ForcePacket>.ParallelWriter writer)` during scheduling and pass that writer into the job.
+The apply system only drains the Front queue after the post-fixed swap boundary.
+
+Cadence:
+1. Fixed producers write Back.
+2. `SystemDispatcher.PostFixedTick` calls `PhysicsApplySystem.PostFixedTick`.
+3. Front and Back queue handles swap.
+4. The new Front queue drains into the Burst validation snapshot.
+5. `LateFrameTick` completes validation and applies only finite packets.
+
+Swap kernel:
+
+```csharp
+NativeQueue<ForcePacket> swap = _frontPacketQueue;
+_frontPacketQueue = _backPacketQueue;
+_backPacketQueue = swap;
+```
+
+No main-thread `.Clear()` is performed on a queue while it is the producer-visible Back queue.
+Teleport cleanup explicitly drains both queues after the validation handle is complete.
+
+## Tractor Beam PD Controller
+
+The tractor/tow controller is not allowed to call `Rigidbody.AddForce` directly.
+`TetherInstance` resolves the tow error and routes payload acceleration through `PhysicsForceRouter`.
+Tow-cable anchors receive the reduced-mass reaction force as a force packet so the towing vessel receives physically scaled recoil instead of infinite authority.
+
+Reference kernel:
+
+```csharp
+reducedMass = (m1 * m2) / max(m1 + m2, 0.0001f);
+kd = 2f * sqrt(kp * reducedMass) * overDamping;
+force = kp * (targetPosition - currentPosition)
+      - kd * (currentVelocity - targetVelocity);
+acceleration = force / reducedMass;
+```
+
+`HectonContactJob.ResolveTractorBeamPdForce` and `ResolveTractorBeamPdAcceleration` are Burst-safe.
+`PhysicsApplySystem.QueueTractorBeamPd` applies equal/opposite packet forces for explicit tractor-beam users.
+Primary cable acceleration remains clamped by the authored cable acceleration cap.
 
 ## AUP Rule
 
@@ -59,6 +118,39 @@ runtimePosition = absolutePosition - HectonFloatingOrigin.CurrentTotalOffset;
 Distance rules:
 - use `AbsoluteUniversePosition.DistanceSq(...)` for world-scale logic
 - convert to runtime `Vector3/float3` only at the last render/physics handoff point
+
+Burst downcast kernel:
+
+```csharp
+long gridDeltaX = position.GridX - cameraPosition.GridX;
+long gridDeltaY = position.GridY - cameraPosition.GridY;
+long gridDeltaZ = position.GridZ - cameraPosition.GridZ;
+
+double x = (gridDeltaX * AbsoluteUniversePosition.CellSizeMeters)
+    + ((double)position.LocalX - cameraPosition.LocalX);
+double y = (gridDeltaY * AbsoluteUniversePosition.CellSizeMeters)
+    + ((double)position.LocalY - cameraPosition.LocalY);
+double z = (gridDeltaZ * AbsoluteUniversePosition.CellSizeMeters)
+    + ((double)position.LocalZ - cameraPosition.LocalZ);
+
+float3 cameraRelative = new float3((float)x, (float)y, (float)z);
+```
+
+The sector delta is computed as `long` before any floating conversion.
+The local offset is accumulated in `double`; only the final camera-relative value is narrowed to `float3`.
+
+## Origin Shift And Safe Teleport
+
+`HectonFloatingOrigin` captures `CurrentFixedInterpolationAlpha` when creating `OriginShiftEventData`.
+`GlobalPhysicsStateManager` suspends rigidbody interpolation during the shift, writes the shifted body pose, then issues `MovePosition(targetPosition)` before interpolation is restored.
+Unity does not expose the internal interpolation target buffer; the supported mitigation is interpolation suspension plus one-frame pose publication.
+
+Safe teleport protocol:
+1. `HectonFloatingOrigin.BeginSafeTeleportProtocol()` pauses physics integration for the frame.
+2. `PhysicsApplySystem.ClearQueuedPacketsStatic()` completes pending packet validation and drains Front/Back queues.
+3. Player and vehicle inertial-ghost buffers are reset.
+4. Teleport/AUP mutation executes.
+5. `HectonFloatingOrigin.EndSafeTeleportProtocol()` releases the one-frame physics pause.
 
 ## Relative Transport Frames
 
@@ -92,10 +184,39 @@ Attached velocity sync uses:
 playerVelocity = platform.GetPlatformPointVelocity(playerPoint) + relativeVelocity;
 ```
 
+Rotational inheritance keeps the player's local hull-relative rotation invariant:
+
+```csharp
+dq = qCurrent * inverse(qLast);
+localRotationBeforeDelta = inverse(qLast) * playerWorldRotation;
+playerWorldRotationNew = qCurrent * localRotationBeforeDelta;
+```
+
+This is equivalent to multiplying by `dq` when the platform cache is coherent, but the explicit local-rotation form is the contract.
+
+Dropped items inside active `BaseModule` hazard bounds or submarine fallback bounds inherit platform point velocity before their spawn velocity-change packet is queued.
+
+## Hydrodynamic Wake Turbulence
+
+`VehicleMotor` owns a fixed-size `NativeArray<HydrodynamicWakeSample>` ring.
+When submerged vehicle speed exceeds 15 m/s, it writes a prop-wash sample behind the hull.
+Samples decay by lifetime, not managed timers.
+
+KCC consumption:
+
+```csharp
+if (VehicleMotor.TrySampleAnyHydrodynamicWake(playerCenter, out wakeAcceleration))
+    QueueSubsystemExternalAcceleration(wakeAcceleration);
+```
+
+The player samples wake acceleration before queued external kinematic forces are integrated.
+Dry interiors reject wake injection.
+No managed collection growth is allowed on the wake path.
+
 ## Inertial Ghost
 
 Purpose:
-- simulate added water mass without using `Rigidbody.drag`
+- simulate perceived added water mass without mutating `Rigidbody` mass or drag
 - keep dry-space KCC response immediate
 
 Owner:
@@ -123,9 +244,37 @@ perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
 
 Rules:
 - if `ghostBlend <= 0.0001f`, reset the history and use current velocity directly
-- this is locomotion-only inertia shaping, not a rigidbody mass mutation
+- this is presentation feedback for camera/audio/FOV and locomotion feel, not a rigidbody mass mutation
 - player `HectonPlayerMovement` only feeds submersion into the owner; it does not own the history buffer
 - contact-modification and impact-trauma math do not alter the inertial-ghost blend rule
+
+## Added Mass Tensor
+
+`GlobalPhysicsStateManager` owns underwater angular inertia scaling for registered rigidbodies.
+Vehicles publish submersion; the global manager captures dry baselines once, applies the tensor multiplier while submerged, and restores the baseline when submersion returns to zero or the body unregisters.
+
+Reference kernel:
+
+```csharp
+multiplier = 1f + 0.3f * submersionFactor;
+body.angularDamping = dryAngularDamping * multiplier;
+body.inertiaTensor = dryInertiaTensor * multiplier;
+body.inertiaTensorRotation = dryInertiaTensorRotation;
+```
+
+This is physical rigidbody inertia, separate from the presentation-only inertial ghost.
+
+## Analytical Depth Drag
+
+Vehicle hydrodynamic damping uses the analytical drag form rather than Unity linear drag:
+
+```csharp
+kDrag = baseK * math.log10(1f + depthMeters / 100f);
+velocity = velocity / (1f + kDrag * length(velocity) * fixedDeltaTime);
+```
+
+Depth scaling is clamped non-negative.
+At zero depth, this term contributes no depth-density drag.
 
 ## Heavy Impact Resolver
 
@@ -160,6 +309,45 @@ Hull-dent publication rule:
 - no dent logic is allowed to guess arbitrary child renderers
 - dent math is local-space Gaussian displacement along the struck face normal
 - inertial-ghost math remains unchanged
+- hull mesh capture uses `Mesh.AcquireReadOnlyMeshData`, never `mesh.vertices`
+- capture accepts both common 32-byte interleaved `Position/Normal/UV0` streams and strict separate Float32 streams
+- publication uses `Mesh.AllocateWritableMeshData(1)` and `Mesh.ApplyAndDisposeWritableMeshData`
+- if an explicit hull `MeshCollider` is bound, the collider reference is cleared and rebound after publication so PhysX sees the updated mesh instead of a stale same-reference assignment
+
+Gaussian dent kernel:
+
+```csharp
+safeNormal = normalizesafe(localNormal);
+delta = vertex - dentCenter;
+normalDistance = dot(delta, safeNormal);
+radial = delta - safeNormal * normalDistance;
+weight = exp(-lengthsq(radial) / (2f * sigma * sigma));
+vertex -= safeNormal * dentDepthMeters * weight;
+```
+
+The command is rejected when the vertex is behind the struck face tolerance or outside the authored dent radius.
+The job reads the front vertex buffer and writes the back vertex buffer; buffers swap only after `JobHandle.IsCompleted` and `Complete()` in the grid's fixed-step consume window.
+
+## Rigidbody Sleep And NaN Recovery
+
+`GlobalPhysicsStateManager` preserves sleeping rigidbody state across origin shifts and distance-based solver eviction.
+Distance kinematic sleep records whether the body was already sleeping before eviction; when the player returns inside the 500 m solver radius, the body is restored to its previous kinematic/collision mode but is not blindly woken if it was sleeping before eviction.
+
+NaN recovery rule:
+
+```csharp
+if (!isfinite(position) || !isfinite(rotation) || !isfinite(velocity))
+{
+    runtimePosition = lastKnownGoodAup.ToRuntimeFloat3();
+    rb.position = runtimePosition;
+    rb.linearVelocity = Vector3.zero;
+    rb.angularVelocity = Vector3.zero;
+    rb.Sleep();
+    CrashTelemetryBuffer.ReportNanPhysicsRecovery();
+}
+```
+
+The last-good runtime position remains as a fallback, but the authoritative recovery target is the last valid AUP so a post-rebase recovery does not snap to a stale camera-relative coordinate.
 
 ## Wall Slide And Depenetration
 

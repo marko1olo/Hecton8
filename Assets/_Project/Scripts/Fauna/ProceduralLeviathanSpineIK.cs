@@ -20,7 +20,7 @@ namespace Hecton8.AI
     [RequireComponent(typeof(FaunaBrain))]
     internal sealed class ProceduralLeviathanSpineIK : MonoBehaviour, IUpdatable, IOriginShiftListener
     {
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SolveSpineJob : IJobParallelForTransform
         {
             [ReadOnly] public NativeArray<float> NormalizedBoneT;

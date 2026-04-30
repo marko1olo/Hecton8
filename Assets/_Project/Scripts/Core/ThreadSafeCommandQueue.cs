@@ -18,6 +18,8 @@ namespace Hecton8.Core
         SpawnGameObject = 4,
         ModifyVoxel = 5,
         CommitStorageReservation = 6,
+        OpenPDATab = 7,
+        ClosePDA = 8,
     }
 
     /// <summary>
@@ -109,6 +111,32 @@ namespace Hecton8.Core
                 VectorValue = default
             };
         }
+
+        public static EntityCommand CreateOpenPDATab(int tabIndex)
+        {
+            return new EntityCommand
+            {
+                CommandType = EntityCommandType.OpenPDATab,
+                TargetToken = 0,
+                SecondaryToken = 0,
+                IntValue = tabIndex,
+                FloatValue = 0f,
+                VectorValue = default
+            };
+        }
+
+        public static EntityCommand CreateClosePDA()
+        {
+            return new EntityCommand
+            {
+                CommandType = EntityCommandType.ClosePDA,
+                TargetToken = 0,
+                SecondaryToken = 0,
+                IntValue = 0,
+                FloatValue = 0f,
+                VectorValue = default
+            };
+        }
     }
 
     /// <summary>
@@ -117,6 +145,8 @@ namespace Hecton8.Core
     /// </summary>
     public static class ThreadSafeCommandQueue
     {
+        private const int MaxMainThreadCommandsPerDrain = 256;
+
         // COLD ALLOC: Dictionary<int, GameObject>[256] - structural command target registry keyed by queue token - owner: ThreadSafeCommandQueue
         private static readonly Dictionary<int, GameObject> _targetsByToken = new Dictionary<int, GameObject>(256);
         // COLD ALLOC: Dictionary<ulong, int>[256] - GameObject entity-id to structural command token map - owner: ThreadSafeCommandQueue
@@ -126,6 +156,11 @@ namespace Hecton8.Core
 
         private static NativeQueue<EntityCommand> _pendingCommands;
         private static int _nextToken = 1;
+
+        /// <summary>
+        /// True once the structural command queue has allocated its persistent native storage.
+        /// </summary>
+        public static bool IsReady => _pendingCommands.IsCreated;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -147,9 +182,31 @@ namespace Hecton8.Core
             return _pendingCommands.AsParallelWriter();
         }
 
+        /// <summary>
+        /// Returns a producer writer for Burst/job authored structural commands.
+        /// The caller must capture this on the main thread while scheduling work.
+        /// </summary>
+        /// <param name="writer">Queue writer safe for concurrent job producers.</param>
+        /// <returns>True when the queue is ready.</returns>
+        public static bool TryGetParallelWriter(out NativeQueue<EntityCommand>.ParallelWriter writer)
+        {
+            Initialize();
+            if (!_pendingCommands.IsCreated)
+            {
+                writer = default;
+                return false;
+            }
+
+            writer = _pendingCommands.AsParallelWriter();
+            return true;
+        }
+
         public static void Enqueue(in EntityCommand command)
         {
-            if (command.CommandType == EntityCommandType.None || command.TargetToken <= 0)
+            if (command.CommandType == EntityCommandType.None)
+                return;
+
+            if (RequiresGameObjectTarget(command.CommandType) && command.TargetToken <= 0)
                 return;
 
             Initialize();
@@ -204,13 +261,19 @@ namespace Hecton8.Core
             _nextToken = 1;
         }
 
-        public static void DrainMainThread()
+        public static bool DrainMainThread()
         {
             if (!_pendingCommands.IsCreated)
-                return;
+                return true;
 
-            while (_pendingCommands.TryDequeue(out EntityCommand command))
+            int remainingBudget = MaxMainThreadCommandsPerDrain;
+            while (remainingBudget > 0 && _pendingCommands.TryDequeue(out EntityCommand command))
+            {
                 ExecuteCommand(in command);
+                remainingBudget--;
+            }
+
+            return _pendingCommands.IsEmpty();
         }
 
         public static void Shutdown()
@@ -243,6 +306,17 @@ namespace Hecton8.Core
 
         private static void ExecuteCommand(in EntityCommand command)
         {
+            switch (command.CommandType)
+            {
+                case EntityCommandType.OpenPDATab:
+                    UIStateStore.SetPDAOpenState(true, command.IntValue, 0f);
+                    return;
+
+                case EntityCommandType.ClosePDA:
+                    UIStateStore.SetPDAOpenState(false, 0, 0f);
+                    return;
+            }
+
             if (!TryResolveTarget(command.TargetToken, out GameObject instance))
                 return;
 
@@ -303,6 +377,19 @@ namespace Hecton8.Core
                     crate.CommitReservation(command.IntValue);
                     break;
                 }
+            }
+        }
+
+        private static bool RequiresGameObjectTarget(EntityCommandType commandType)
+        {
+            switch (commandType)
+            {
+                case EntityCommandType.OpenPDATab:
+                case EntityCommandType.ClosePDA:
+                    return false;
+
+                default:
+                    return true;
             }
         }
 

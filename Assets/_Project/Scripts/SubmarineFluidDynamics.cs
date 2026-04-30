@@ -92,6 +92,8 @@ namespace Hecton8.Physics
         private const float DefaultMaximumHydraulicViscosity = 1f;
         private const float DefaultViscositySloshDampingScale = 0.85f;
         private const float DefaultSludgePlayerDragMultiplier = 3.2f;
+        private const float DefaultFloraDragAddedMassAtFullDensityKilograms = 4000f;
+        private const float DefaultFloraCenterOfMassDownshiftMeters = 0.35f;
         private const float DefaultExteriorBuoyancyForceClampScale = 1.15f;
         private const float DefaultExteriorBuoyancyTorqueClampScale = 1.25f;
         private const int ExteriorBuoyancySampleCount = 8;
@@ -297,6 +299,12 @@ namespace Hecton8.Physics
         [Tooltip("Additional angular damping multiplier applied at full macro-flora density.")]
         [SerializeField, Range(1f, 3f)] private float floraDragAngularMultiplier = 1.3f;
 
+        [Tooltip("Additional hull mass applied at full macro-flora density to mimic overgrowth dragging the hull down.")]
+        [SerializeField, Min(0f)] private float floraDragAddedMassAtFullDensityKilograms = DefaultFloraDragAddedMassAtFullDensityKilograms;
+
+        [Tooltip("Maximum downward local center-of-mass shift caused by dense exterior overgrowth.")]
+        [SerializeField, Min(0f)] private float floraCenterOfMassDownshiftMeters = DefaultFloraCenterOfMassDownshiftMeters;
+
         [Header("â”€â”€ Exterior Buoyancy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional explicit collider used to derive exterior buoyancy sample points. Falls back to the first owned collider.")]
         [SerializeField] private Collider exteriorHullCollider;
@@ -333,6 +341,7 @@ namespace Hecton8.Physics
         [SerializeField] private float _debugExternalPressureKPa;
         [SerializeField] private float _debugCompressionScale = 1f;
         [SerializeField] private float _debugFloraDragDensity;
+        [SerializeField] private float _debugFloraAddedMassKilograms;
         [SerializeField] private Vector3 _debugLastThermalAnomalyCenter;
         [SerializeField] private float _debugLastThermalAnomalyTemperature;
         [SerializeField] private float _debugLastThermalAnomalyDepth;
@@ -361,6 +370,8 @@ namespace Hecton8.Physics
         private float _baseAngularDamping;
         private float _dryRigidbodyMass;
         private float _lastAppliedRigidbodyMass;
+        private float _currentFloraDragDensity01;
+        private float _currentFloraAddedMassKilograms;
         private float _dynamicCompressionScale = 1f;
         private float _lastAppliedLinearDamping;
         private float _lastAppliedAngularDamping;
@@ -429,8 +440,10 @@ namespace Hecton8.Physics
         private NativeArray<uint> _jobCompartmentFlags;
         private NativeArray<float> _bulkheadTransferDeltas;
         private NativeQueue<SplashEvent> _splashEventQueue;
+        private FluidMathCore _fluidMathCore;
+        private bool _fluidSimulationRegistered;
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct FluidTransferJob : IJob
         {
@@ -450,14 +463,6 @@ namespace Hecton8.Physics
 
             public void Execute()
             {
-                float safeDepth = math.max(0f, DepthMeters);
-                float ingressVelocity = math.sqrt(2f * GravityMetersPerSecondSquared * safeDepth);
-                if (!math.isfinite(ingressVelocity))
-                    ingressVelocity = 0f;
-
-                float maxIngressScale = math.max(0.01f, MaximumIngressPerSecondNormalized) * FixedDeltaTime;
-                float cd = math.clamp(DischargeCoefficient, 0.05f, 1f);
-
                 for (int i = 0; i < CompartmentCapacity; i++)
                 {
                     if (i >= CompartmentCount)
@@ -485,13 +490,16 @@ namespace Hecton8.Physics
                         float remainingCapacity = maxVolume - currentVolume;
                         if (remainingCapacity > Epsilon)
                         {
-                            float deltaVolume = ingressVelocity * breachArea * cd * FixedDeltaTime;
-                            if (!math.isfinite(deltaVolume))
-                                deltaVolume = 0f;
-
-                            float maxIngressThisStep = maxVolume * maxIngressScale;
-                            deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
-                            currentVolume += deltaVolume;
+                            currentVolume = FluidMathCore.ResolveIngressVolume(
+                                currentVolume,
+                                maxVolume,
+                                breachArea,
+                                DepthMeters,
+                                FixedDeltaTime,
+                                DischargeCoefficient,
+                                MaximumIngressPerSecondNormalized,
+                                GravityMetersPerSecondSquared,
+                                Epsilon);
                         }
                     }
                     else
@@ -505,7 +513,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct BulkheadTransferDeltaJob : IJobParallelFor
         {
@@ -542,59 +550,23 @@ namespace Hecton8.Physics
                 if (maxVolumeA <= Epsilon || maxVolumeB <= Epsilon)
                     return;
 
-                if (!TryResolveSafeNormalizedRatio(FloodVolumes[compartmentA], maxVolumeA, out float fillA) ||
-                    !TryResolveSafeNormalizedRatio(FloodVolumes[compartmentB], maxVolumeB, out float fillB))
-                {
-                    return;
-                }
-
-                float transferCoefficient = math.max(0f, BulkheadFlowCoefficient);
-                float perTickTransferCap = math.max(0.01f, MaxTransferPerTick);
-                float doorAreaSquareMeters = math.max(Epsilon, BulkheadDoorAreas[index]);
-                float characteristicHeightA = math.max(0.1f, SafeCubeRoot(maxVolumeA));
-                float characteristicHeightB = math.max(0.1f, SafeCubeRoot(maxVolumeB));
-                float headHeightA = fillA * characteristicHeightA;
-                float headHeightB = fillB * characteristicHeightB;
-                float headDifferenceMeters = headHeightA - headHeightB;
-                float absHeadDifferenceMeters = math.abs(headDifferenceMeters);
-                float dampingHeadMeters = math.max(Epsilon, NearZeroHeadDampingMeters);
-                float dampingFactor = math.smoothstep(0f, dampingHeadMeters, absHeadDifferenceMeters);
-                if (dampingFactor <= Epsilon)
-                    return;
-
-                float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * GravityMetersPerSecondSquared * math.abs(headDifferenceMeters)));
-                float signedDeltaVolume =
-                    math.sign(headDifferenceMeters) *
-                    doorAreaSquareMeters *
-                    math.max(0f, DischargeCoefficient) *
-                    velocityMetersPerSecond *
-                    transferCoefficient *
-                    FixedDeltaTime *
-                    dampingFactor;
-                float deltaVolume = math.clamp(signedDeltaVolume, -perTickTransferCap, perTickTransferCap);
-
-                if (deltaVolume > 0f)
-                {
-                    deltaVolume = math.min(
-                        deltaVolume,
-                        math.min(FloodVolumes[compartmentA], maxVolumeB - FloodVolumes[compartmentB]));
-                }
-                else if (deltaVolume < 0f)
-                {
-                    float transferMagnitude = math.min(
-                        -deltaVolume,
-                        math.min(FloodVolumes[compartmentB], maxVolumeA - FloodVolumes[compartmentA]));
-                    deltaVolume = -transferMagnitude;
-                }
-
-                if (math.abs(deltaVolume) <= Epsilon || !math.isfinite(deltaVolume))
-                    deltaVolume = 0f;
-
-                TransferDeltas[index] = deltaVolume;
+                TransferDeltas[index] = FluidMathCore.ResolveBulkheadTransferDelta(
+                    FloodVolumes[compartmentA],
+                    FloodVolumes[compartmentB],
+                    maxVolumeA,
+                    maxVolumeB,
+                    BulkheadDoorAreas[index],
+                    FixedDeltaTime,
+                    BulkheadFlowCoefficient,
+                    MaxTransferPerTick,
+                    DischargeCoefficient,
+                    NearZeroHeadDampingMeters,
+                    GravityMetersPerSecondSquared,
+                    Epsilon);
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct ApplyBulkheadTransferJob : IJob
         {
@@ -646,7 +618,7 @@ namespace Hecton8.Physics
             }
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct FloodMassPropertiesResult
         {
@@ -657,7 +629,7 @@ namespace Hecton8.Physics
             public float3 InertiaTensor;
         }
 
-        [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct FloodMassPropertiesJob : IJob
         {
@@ -749,6 +721,8 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
+            // COLD ALLOC: FluidMathCore[1] - data-only submarine fluid math service registered through GlobalRegistry - owner: SubmarineFluidDynamics
+            _fluidMathCore ??= new FluidMathCore();
             CacheReferences();
             RefreshResolvedInertiaTensors();
             RefreshDerivedConstants(DefaultFixedStepSeconds);
@@ -757,6 +731,7 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            TryRegisterFluidSimulationService();
             CacheReferences();
             RebuildExteriorBuoyancySampleLocalPoints();
             EnsureNativeState();
@@ -779,6 +754,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
+            TryUnregisterFluidSimulationService();
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
@@ -788,6 +764,7 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
+            TryUnregisterFluidSimulationService();
             TryUnregisterOriginShiftListener();
             TryUnregister();
             ClearExteriorThermalAnomalies();
@@ -1570,6 +1547,8 @@ namespace Hecton8.Physics
             _lastAppliedAngularDamping = safeAngularDamping;
             _externalSubmergedVolumeCubicMeters = 0f;
             _submersionFactor = 0f;
+            _currentFloraDragDensity01 = 0f;
+            _currentFloraAddedMassKilograms = 0f;
             _hullImplosionActive = false;
             _lastExternalBuoyancyForce = Vector3.zero;
             _lastExternalBuoyancyTorque = Vector3.zero;
@@ -1583,6 +1562,15 @@ namespace Hecton8.Physics
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
+        }
+
+        private void TryRegisterFluidSimulationService()
+        {
+            if (_fluidSimulationRegistered || _fluidMathCore == null || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterFluidSimulationService(_fluidMathCore);
+            _fluidSimulationRegistered = true;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -1602,6 +1590,15 @@ namespace Hecton8.Physics
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryUnregisterFluidSimulationService()
+        {
+            if (!_fluidSimulationRegistered || _fluidMathCore == null)
+                return;
+
+            GlobalRegistry.UnregisterFluidSimulationService(_fluidMathCore);
+            _fluidSimulationRegistered = false;
         }
 
         private void TryUnregisterOriginShiftListener()
@@ -2590,8 +2587,13 @@ namespace Hecton8.Physics
             float floodMass = _massPropertiesFront.IsCreated && _massPropertiesFront.Length > 0
                 ? math.max(0f, _massPropertiesFront[0].FloodMassKilograms)
                 : math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
+            _currentFloraDragDensity01 = SampleMacroFloraDragDensity();
+            _currentFloraAddedMassKilograms = math.max(0f, floraDragAddedMassAtFullDensityKilograms) *
+                                              math.saturate(_currentFloraDragDensity01);
             float maxFloodMass = math.max(0f, ResolveTotalCapacityCubicMeters()) * WaterDensityKgPerCubicMeter;
-            float targetMass = math.clamp(dryMass + floodMass, dryMass, dryMass + maxFloodMass);
+            float maxFloraMass = math.max(0f, floraDragAddedMassAtFullDensityKilograms);
+            float targetMass = math.clamp(dryMass + floodMass + _currentFloraAddedMassKilograms, dryMass, dryMass + maxFloodMass + maxFloraMass);
+            _debugFloraAddedMassKilograms = _currentFloraAddedMassKilograms;
             if (!math.isfinite(targetMass))
             {
                 EmergencyResetHydrodynamics("ApplyFloodMassPropertiesToRigidbody.TargetMass");
@@ -2615,27 +2617,17 @@ namespace Hecton8.Physics
                 return;
 
             float3 currentCenter = new float3(_appliedCenterOfMassLocal.x, _appliedCenterOfMassLocal.y, _appliedCenterOfMassLocal.z);
-            float3 blendedCenter = math.lerp(currentCenter, targetCenter, _centerOfMassBlendAlpha);
-            if (!math.all(math.isfinite(blendedCenter)))
+            float3 blendedCenter = FluidMathCore.ResolveCenterOfMassStep(
+                currentCenter,
+                targetCenter,
+                _centerOfMassBlendAlpha,
+                maxCenterOfMassDeltaPerTickMeters,
+                Epsilon,
+                out byte centerStepValid);
+            if (centerStepValid == 0)
             {
                 EmergencyResetHydrodynamics("ApplyCenterOfMassShift.BlendedCenter");
                 return;
-            }
-
-            float3 delta = blendedCenter - currentCenter;
-            float maxCenterDelta = math.max(0.001f, maxCenterOfMassDeltaPerTickMeters);
-            float deltaMagnitude = math.length(delta);
-            if (deltaMagnitude > maxCenterDelta)
-            {
-                if (!TryResolveSafeQuotient(maxCenterDelta, deltaMagnitude, out float centerClampScale))
-                {
-                    EmergencyResetHydrodynamics("ApplyCenterOfMassShift.Clamp");
-                    return;
-                }
-                else
-                {
-                    blendedCenter = currentCenter + (delta * centerClampScale);
-                }
             }
 
             Vector3 newCenter = HectonPlayerMotor.SafeVelocity(new Vector3(blendedCenter.x, blendedCenter.y, blendedCenter.z), _appliedCenterOfMassLocal);
@@ -2759,6 +2751,7 @@ namespace Hecton8.Physics
             }
 
             float3 targetCenter = math.lerp(dryCenter, floodCenter, floodMassRatio);
+            targetCenter = ApplyFloraOvergrowthCenterOfMassBias(targetCenter);
             if (!math.all(math.isfinite(targetCenter)))
                 targetCenter = dryCenter;
 
@@ -2776,9 +2769,25 @@ namespace Hecton8.Physics
             float3 targetCenter = math.all(math.isfinite(result.TargetCenterLocal))
                 ? result.TargetCenterLocal
                 : dryCenter;
+            targetCenter = ApplyFloraOvergrowthCenterOfMassBias(targetCenter);
 
             _currentFloodCenterOfMassLocal = new Vector3(targetCenter.x, targetCenter.y, targetCenter.z);
             return targetCenter;
+        }
+
+        private float3 ApplyFloraOvergrowthCenterOfMassBias(float3 targetCenter)
+        {
+            float floraDensity01 = math.saturate(_currentFloraDragDensity01);
+            if (floraDensity01 <= Epsilon)
+                return targetCenter;
+
+            float downshiftMeters = math.max(0f, floraCenterOfMassDownshiftMeters);
+            if (!math.isfinite(downshiftMeters))
+                return targetCenter;
+
+            float3 shiftedCenter = targetCenter;
+            shiftedCenter.y -= downshiftMeters * floraDensity01;
+            return math.all(math.isfinite(shiftedCenter)) ? shiftedCenter : targetCenter;
         }
 
         private float3 RecordAndSampleDelayedSloshAngularVelocityLocal(float internalFloodRatio)
@@ -3054,7 +3063,7 @@ namespace Hecton8.Physics
                 (1f + internalFloodRatio + (criticalFloodRatio * CriticalFloodAddedMassLinearBoost));
             float angularScale = math.max(0f, addedMassAngularDampingScale) *
                 (1f + (internalFloodRatio * 2f) + (criticalFloodRatio * CriticalFloodAddedMassAngularBoost));
-            float floraDensity01 = SampleMacroFloraDragDensity();
+            float floraDensity01 = math.saturate(_currentFloraDragDensity01);
             float floraLinearMultiplier = math.lerp(1f, math.max(1f, floraDragLinearMultiplier), floraDensity01);
             float floraAngularMultiplier = math.lerp(1f, math.max(1f, floraDragAngularMultiplier), floraDensity01);
             _debugFloraDragDensity = floraDensity01;
@@ -3105,14 +3114,23 @@ namespace Hecton8.Physics
             if (linearVelocity.sqrMagnitude < floraDragMinimumSpeedMetersPerSecond * floraDragMinimumSpeedMetersPerSecond)
                 return 0f;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (vegetationBridge == null)
-                return 0f;
-
             Bounds hullBounds = exteriorHullCollider != null
                 ? exteriorHullCollider.bounds
                 : new Bounds(_rigidbody.worldCenterOfMass, Vector3.one * 4f);
             Vector3 center = hullBounds.center;
+            float sampleRadius = math.max(floraDragMinimumSampleRadiusMeters, math.max(hullBounds.extents.x, hullBounds.extents.z));
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            if (floraInteractionManager != null &&
+                floraInteractionManager.TryResolveKelpPushback(center, sampleRadius, out float spatialHashDensity01, out float bendRadiusMeters))
+            {
+                floraInteractionManager.RegisterExternalInteraction(center, linearVelocity, math.max(sampleRadius, bendRadiusMeters));
+                return math.saturate(spatialHashDensity01);
+            }
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null)
+                return 0f;
+
             Vector3 forwardOffset = _cachedTransform.forward * (hullBounds.extents.z * 0.6f);
             Vector3 rightOffset = _cachedTransform.right * (hullBounds.extents.x * 0.6f);
 
@@ -3128,7 +3146,6 @@ namespace Hecton8.Physics
                 return 0f;
 
             float normalizedDensity = densitySum / densityCount;
-            float sampleRadius = math.max(floraDragMinimumSampleRadiusMeters, math.max(hullBounds.extents.x, hullBounds.extents.z));
             float radiusScale = math.saturate(sampleRadius / math.max(floraDragMinimumSampleRadiusMeters, 0.01f));
             return math.saturate(normalizedDensity * math.lerp(0.85f, 1.15f, math.saturate(radiusScale - 1f)));
         }
@@ -3489,6 +3506,8 @@ namespace Hecton8.Physics
 
             _externalSubmergedVolumeCubicMeters = 0f;
             _submersionFactor = 0f;
+            _currentFloraDragDensity01 = 0f;
+            _currentFloraAddedMassKilograms = 0f;
             _lastSloshTorqueLocal = Vector3.zero;
             _lastExternalBuoyancyForce = Vector3.zero;
             _lastExternalBuoyancyTorque = Vector3.zero;
@@ -3569,7 +3588,7 @@ namespace Hecton8.Physics
             if (!IsFiniteVector(absoluteUniversePosition))
                 return;
 
-            _splashEventQueue.Enqueue(new SplashEvent
+            SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(worldPoint.x, worldPoint.y, worldPoint.z),
                 AbsoluteUniversePosition = new float3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
@@ -3578,8 +3597,11 @@ namespace Hecton8.Physics
                 KineticEnergyJoules = kineticEnergyJoules,
                 SubmersionFactor = currentSubmersionFactor,
                 SampleIndex = sampleIndex
-            });
+            };
+
+            _splashEventQueue.Enqueue(splashEvent);
             _queuedSplashEventCount++;
+            FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
         }
 
         private void RebuildExteriorBuoyancySampleLocalPoints()
@@ -3826,6 +3848,8 @@ namespace Hecton8.Physics
             _debugSubmersionFactor = _submersionFactor;
             _debugHullImplosionActive = _hullImplosionActive;
             _debugExternalPressureKPa = ResolveExternalPressureKPa(_externalDepthMeters);
+            _debugFloraDragDensity = _currentFloraDragDensity01;
+            _debugFloraAddedMassKilograms = _currentFloraAddedMassKilograms;
         }
 
         private void SeedFloodMassPropertiesBuffers(float3 targetFloodCenter, float floodMassRatio)

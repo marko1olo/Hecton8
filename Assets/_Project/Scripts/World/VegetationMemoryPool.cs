@@ -26,6 +26,14 @@ namespace Hecton8.World
             public NativeArray<Vector2> FlowDirections;
             public NativeArray<Vector3> FlowVectors;
             public int Capacity;
+            public bool IsCreated => Matrices.IsCreated ||
+                                     Metadata.IsCreated ||
+                                     Types.IsCreated ||
+                                     SemanticTypes.IsCreated ||
+                                     BiomeLayers.IsCreated ||
+                                     EdgeDistances.IsCreated ||
+                                     FlowDirections.IsCreated ||
+                                     FlowVectors.IsCreated;
 
             public void Dispose()
             {
@@ -55,6 +63,13 @@ namespace Hecton8.World
             public NativeArray<byte> BiomeLayers;
             public NativeArray<Vector2> FlowDirections;
             public NativeArray<Vector3> FlowVectors;
+            public bool IsCreated => Matrices.IsCreated ||
+                                     Metadata.IsCreated ||
+                                     Types.IsCreated ||
+                                     SemanticTypes.IsCreated ||
+                                     BiomeLayers.IsCreated ||
+                                     FlowDirections.IsCreated ||
+                                     FlowVectors.IsCreated;
 
             public void Dispose()
             {
@@ -134,6 +149,15 @@ namespace Hecton8.World
             public NativeArray<ActiveAggregateCopyRecord> SurfaceAggregateCopyRecordsNative;
             public NativeArray<ActiveAggregateCopyRecord> UnderwaterAggregateCopyRecordsNative;
             public NativeArray<MegaWreckStreamSection> MegaWreckStreamSnapshotNative;
+            public bool IsCreated => DensityQueryChunksNative.IsCreated ||
+                                     DensityQueryGridNative.IsCreated ||
+                                     ThreatAttractorGridNative.IsCreated ||
+                                     EcosystemThreatGridCurrentNative.IsCreated ||
+                                     EcosystemThreatGridNextNative.IsCreated ||
+                                     AbyssalFlowVolumeCurrentNative.IsCreated ||
+                                     AbyssalFlowVolumeNextNative.IsCreated ||
+                                     HlodRegistrySnapshotNative.IsCreated ||
+                                     MegaWreckStreamSnapshotNative.IsCreated;
 
             public void Dispose()
             {
@@ -172,9 +196,9 @@ namespace Hecton8.World
                 DisposeNativeArray(ref TerrainHoleStreamingRecordsNative, dependency);
                 DisposeNativeArray(ref ArtificialStructureRecordsNative, dependency);
                 DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashFrontNative, dependency);
-                DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashBackNative, default);
+                DisposeNativeParallelMultiHashMap(ref ArtificialStructureHashBackNative, dependency);
                 DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashFrontNative, dependency);
-                DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashBackNative, default);
+                DisposeNativeParallelMultiHashMap(ref ThreatSamplingChunkHashBackNative, dependency);
                 DisposeNativeArray(ref AbyssalAnchorPositionsNative, dependency);
                 DisposeNativeArray(ref AbyssalNavNodeSnapshotNative, dependency);
                 DisposeNativeArray(ref AbyssalNavConduitVectorsSnapshotNative, dependency);

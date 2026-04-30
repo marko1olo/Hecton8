@@ -143,7 +143,7 @@ namespace Hecton8.Progression
                 return;
 
             NotificationEvents.PushWarning(message);
-            PDALogbookManager logbookManager = PDALogbookManager.Instance;
+            IPDALogbookService logbookManager = GlobalRegistry.PDALogbook;
             if (logbookManager != null)
                 logbookManager.TryAppendEntry("pda.context." + id, AdvisoryLogTitle, message);
 

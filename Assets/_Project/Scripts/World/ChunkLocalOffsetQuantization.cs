@@ -37,7 +37,7 @@ namespace Hecton8.World
             public SByte3 Packed;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct QuantizeChunkLocalOffsetsJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> SourceOffsets;
@@ -55,7 +55,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct DequantizeChunkLocalOffsetsJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<QuantizedLocalOffset> QuantizedOffsets;

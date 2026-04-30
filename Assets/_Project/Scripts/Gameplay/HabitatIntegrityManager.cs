@@ -6,6 +6,7 @@
 // ============================================================================
 
 using Hecton8.Atmosphere;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Power;
 using Hecton8.World;
@@ -40,7 +41,8 @@ namespace Hecton8.Gameplay
         Parasite = 1u << 3,
         Radioactive = 1u << 4,
         Toxic = 1u << 5,
-        Emp = 1u << 6
+        Emp = 1u << 6,
+        MicroFracture = 1u << 7
     }
 
     /// <summary>
@@ -681,6 +683,13 @@ namespace Hecton8.Gameplay
                 : 0f;
             float targetTemperature = Mathf.Lerp(dryAmbientTemperature, ExternalFloodWaterTemperatureCelsius, floodBlend);
             float tau = Mathf.Lerp(DryAmbientTemperatureTauSeconds, FloodedAmbientTemperatureTauSeconds, floodBlend);
+            if (_baseModule != null &&
+                BaseDegradationSystem.TryGetParasiteThermalModifier(_baseModule, out float insulation01, out _) &&
+                targetTemperature < _moduleAmbientTemperatureCelsius)
+            {
+                tau *= Mathf.Lerp(1f, 3f, insulation01);
+            }
+
             float temperatureDecay = Mathf.Exp(-dt / Mathf.Max(0.01f, tau));
             _moduleAmbientTemperatureCelsius = targetTemperature + (_moduleAmbientTemperatureCelsius - targetTemperature) * temperatureDecay;
         }

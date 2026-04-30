@@ -62,7 +62,7 @@ namespace Hecton8.Power
         [SerializeField] private float connectionRadius = 5f;
 
         [Tooltip("Слои, на которых ищутся соседние PowerNode.")]
-        [SerializeField] private LayerMask connectionMask = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask connectionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Fallback (если нет ModuleMarker) ──────────")]
         [Tooltip("Базовое потребление если ModuleMarker отсутствует. " +

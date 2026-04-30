@@ -12,6 +12,9 @@ namespace Hecton8.Core
     public sealed class ObjectPoolManager : MonoBehaviour
     {
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
+        private const uint PoolExhaustedReasonMissingPool = 1u;
+        private const uint PoolExhaustedReasonExpandRejected = 2u;
+        private const uint PoolExhaustedReasonEmptyPool = 3u;
 
         [Header("── Warmup Presets ────────────────────────────")]
         [Tooltip("Automatic warmup entries executed during Start.")]
@@ -95,6 +98,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterObjectPoolService(this);
+            GlobalTelemetryBus.Initialize();
             _serviceRegistered = true;
         }
 
@@ -167,7 +171,11 @@ namespace Hecton8.Core
             int prefabId = registry.GetOrRegisterPrefab(prefab);
             if (!_pools.TryGetValue(prefabId, out Pool pool))
             {
-                WarnExpand(prefab, "Pool missing. Pre-allocate via Warmup during bootstrap.");
+                WarnExpand(
+                    prefab,
+                    prefabId,
+                    PoolExhaustedReasonMissingPool,
+                    "Pool missing. Pre-allocate via Warmup during bootstrap.");
                 return null;
             }
 
@@ -186,9 +194,21 @@ namespace Hecton8.Core
             }
 
             if (allowExpand)
-                WarnExpand(prefab, "Pool exhausted. Expansion disabled by mandate; returning null.");
+            {
+                WarnExpand(
+                    prefab,
+                    prefabId,
+                    PoolExhaustedReasonExpandRejected,
+                    "Pool exhausted. Expansion disabled by mandate; returning null.");
+            }
             else
-                WarnExpand(prefab, "Pool exhausted. Pre-allocate a larger warmup count.");
+            {
+                WarnExpand(
+                    prefab,
+                    prefabId,
+                    PoolExhaustedReasonEmptyPool,
+                    "Pool exhausted. Pre-allocate a larger warmup count.");
+            }
 
             return null;
         }
@@ -470,8 +490,11 @@ namespace Hecton8.Core
             _debugTotalPooled = total;
         }
 
-        private static void WarnExpand(GameObject prefab, string reason)
+        private static void WarnExpand(GameObject prefab, int prefabId, uint reasonCode, string reason)
         {
+            if (Application.isPlaying)
+                GlobalTelemetryBus.PublishPoolExhausted(prefabId, reasonCode);
+
             string prefabName = prefab != null ? prefab.name : "NullPrefab";
             string report = $"[ObjectPoolManager] '{prefabName}': {reason} Consider increasing Warmup count.";
             RuntimeDiagnosticsTrace.WriteEvent("pool", report);

@@ -46,11 +46,15 @@ namespace Hecton8.Core
         private static IInteractionSignalService _interactionSignals;
         private static IDebrisService _debris;
         private static IEcosystemDirectorService _ecosystemDirector;
+        private static IFaunaSim _faunaSimulation;
         private static IThermodynamicsService _thermodynamicsService;
+        private static IFluidSim _fluidSimulation;
         private static ILogisticsService _logistics;
         private static IWorldGenService _worldGen;
         private static IEncounterDirectorService _encounterDirector;
         private static IQuestSystem _questSystem;
+        private static PersistentWorldRegistry _persistentWorldRegistry;
+        private static IPDALogbookService _pdaLogbook;
         private static HectonFluidEngine _fluidRuntime;
         private static AbyssalThermalManager _thermodynamicsRuntime;
         private static HectonNarrativeDirector _narrativeDirectorRuntime;
@@ -59,7 +63,14 @@ namespace Hecton8.Core
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
         private static GlobalPhysicsStateManager _physicsStateManager;
+        private static HectonHardwareProfile _hardwareProfile;
+        private static bool _hasHardwareProfile;
         private static bool _dispatcherRegistrationErrorLogged;
+
+        /// <summary>
+        /// Fired after a live service slot is safely rebound to a different instance.
+        /// </summary>
+        public static event Action<ServiceReboundEvent> ServiceRebound;
 
         /// <summary>
         /// Registered input service slot.
@@ -173,9 +184,19 @@ namespace Hecton8.Core
         public static IEcosystemDirectorService EcosystemDirector => _ecosystemDirector;
 
         /// <summary>
+        /// Registered data-only fauna simulation service slot.
+        /// </summary>
+        public static IFaunaSim FaunaSimulation => _faunaSimulation;
+
+        /// <summary>
         /// Registered thermodynamics service slot.
         /// </summary>
         public static IThermodynamicsService ThermodynamicsService => _thermodynamicsService;
+
+        /// <summary>
+        /// Registered data-only fluid simulation service slot.
+        /// </summary>
+        public static IFluidSim FluidSimulation => _fluidSimulation;
 
         /// <summary>
         /// Registered logistics/build-network service slot.
@@ -201,6 +222,16 @@ namespace Hecton8.Core
         /// Registered quest-system service slot.
         /// </summary>
         public static IQuestSystem QuestSystem => _questSystem;
+
+        /// <summary>
+        /// Registered persistent world registry owner.
+        /// </summary>
+        public static PersistentWorldRegistry PersistentWorldRegistry => _persistentWorldRegistry;
+
+        /// <summary>
+        /// Registered PDA logbook append service.
+        /// </summary>
+        public static IPDALogbookService PDALogbook => _pdaLogbook;
 
         /// <summary>
         /// Registered fluid simulation runtime owner.
@@ -241,6 +272,21 @@ namespace Hecton8.Core
         /// Registered global physics-state manager owner.
         /// </summary>
         public static GlobalPhysicsStateManager PhysicsStateManager => _physicsStateManager;
+
+        /// <summary>
+        /// True once boot captured immutable hardware facts.
+        /// </summary>
+        public static bool HasHardwareProfile => _hasHardwareProfile;
+
+        /// <summary>
+        /// Boot-time hardware profile captured before Environment services initialize.
+        /// </summary>
+        public static HectonHardwareProfile HardwareProfile => _hardwareProfile;
+
+        /// <summary>
+        /// Resolved quality tier captured during HardwareCheck.
+        /// </summary>
+        public static HectonQualityTier QualityTier => _hasHardwareProfile ? _hardwareProfile.QualityTier : HectonQualityTier.Unknown;
 
         /// <summary>
         /// Dense multi-instance update registry.
@@ -290,11 +336,15 @@ namespace Hecton8.Core
             _interactionSignals = null;
             _debris = null;
             _ecosystemDirector = null;
+            _faunaSimulation = null;
             _thermodynamicsService = null;
+            _fluidSimulation = null;
             _logistics = null;
             _worldGen = null;
             _encounterDirector = null;
             _questSystem = null;
+            _persistentWorldRegistry = null;
+            _pdaLogbook = null;
             _fluidRuntime = null;
             _thermodynamicsRuntime = null;
             _narrativeDirectorRuntime = null;
@@ -303,13 +353,26 @@ namespace Hecton8.Core
             _dispatcher = null;
             _renderDispatcher = null;
             _physicsStateManager = null;
+            _hardwareProfile = default;
+            _hasHardwareProfile = false;
             _dispatcherRegistrationErrorLogged = false;
+            ServiceRebound = null;
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
             _renderables.Clear();
             _hotSwapListeners.Clear();
             SystemDispatcher.ClearAllLanes();
+        }
+
+        /// <summary>
+        /// Registers the immutable boot-time hardware profile before Environment services initialize.
+        /// </summary>
+        /// <param name="profile">Captured hardware profile.</param>
+        public static void RegisterHardwareProfile(in HectonHardwareProfile profile)
+        {
+            _hardwareProfile = profile;
+            _hasHardwareProfile = true;
         }
 
         /// <summary>
@@ -537,12 +600,30 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative data-only fauna simulation service.
+        /// </summary>
+        /// <param name="instance">Fauna simulation service instance.</param>
+        public static void RegisterFaunaSimulationService(IFaunaSim instance)
+        {
+            RegisterService(ref _faunaSimulation, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative thermodynamics service.
         /// </summary>
         /// <param name="instance">Thermodynamics service instance.</param>
         public static void RegisterThermodynamicsService(IThermodynamicsService instance)
         {
             RegisterServiceAllowSameInstance(ref _thermodynamicsService, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative data-only fluid simulation service.
+        /// </summary>
+        /// <param name="instance">Fluid simulation service instance.</param>
+        public static void RegisterFluidSimulationService(IFluidSim instance)
+        {
+            RegisterService(ref _fluidSimulation, instance);
         }
 
         /// <summary>
@@ -579,6 +660,22 @@ namespace Hecton8.Core
         public static void RegisterQuestSystem(IQuestSystem instance)
         {
             RegisterServiceAllowSameInstance(ref _questSystem, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative persistent world registry owner.
+        /// </summary>
+        public static void RegisterPersistentWorldRegistry(PersistentWorldRegistry instance)
+        {
+            RegisterServiceAllowSameInstance(ref _persistentWorldRegistry, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative PDA logbook append service.
+        /// </summary>
+        public static void RegisterPDALogbookService(IPDALogbookService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _pdaLogbook, instance);
         }
 
         /// <summary>
@@ -808,12 +905,30 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current data-only fauna simulation service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterFaunaSimulationService(IFaunaSim instance)
+        {
+            UnregisterService(ref _faunaSimulation, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current thermodynamics service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
         public static void UnregisterThermodynamicsService(IThermodynamicsService instance)
         {
             UnregisterService(ref _thermodynamicsService, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current data-only fluid simulation service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterFluidSimulationService(IFluidSim instance)
+        {
+            UnregisterService(ref _fluidSimulation, instance);
         }
 
         /// <summary>
@@ -850,6 +965,22 @@ namespace Hecton8.Core
         public static void UnregisterQuestSystem(IQuestSystem instance)
         {
             UnregisterService(ref _questSystem, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current persistent world registry if the owner matches.
+        /// </summary>
+        public static void UnregisterPersistentWorldRegistry(PersistentWorldRegistry instance)
+        {
+            UnregisterService(ref _persistentWorldRegistry, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current PDA logbook service if the owner matches.
+        /// </summary>
+        public static void UnregisterPDALogbookService(IPDALogbookService instance)
+        {
+            UnregisterService(ref _pdaLogbook, instance);
         }
 
         /// <summary>
@@ -1188,12 +1319,6 @@ namespace Hecton8.Core
         private static void RegisterService<T>(ref T slot, T instance) where T : class
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (slot != null)
-            {
-                throw new InvalidOperationException(
-                    $"[GlobalRegistry] Service {typeof(T).Name} already registered.");
-            }
-
             if (instance == null)
             {
                 throw new ArgumentNullException(
@@ -1201,7 +1326,13 @@ namespace Hecton8.Core
                     $"[GlobalRegistry] Cannot register null as {typeof(T).Name}.");
             }
 #endif
+            T previousService = slot;
+            if (ReferenceEquals(previousService, instance))
+                return;
+
             slot = instance;
+            if (previousService != null)
+                PublishServiceRebound(ResolveServiceSlot<T>(), previousService, instance);
         }
 
         private static void RegisterServiceAllowSameInstance<T>(ref T slot, T instance) where T : class
@@ -1219,7 +1350,7 @@ namespace Hecton8.Core
                 return;
 
             slot = instance;
-            NotifyHotSwapListeners(serviceSlot, previousService, instance);
+            PublishServiceRebound(serviceSlot, previousService, instance);
         }
 
         private static void UnregisterService<T>(ref T slot, T instance) where T : class
@@ -1233,6 +1364,15 @@ namespace Hecton8.Core
             }
 
             slot = null;
+        }
+
+        private static void PublishServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            ServiceRebound?.Invoke(new ServiceReboundEvent(serviceSlot, previousService, currentService));
+            NotifyHotSwapListeners(serviceSlot, previousService, currentService);
         }
 
         private static void NotifyHotSwapListeners(
@@ -1249,6 +1389,50 @@ namespace Hecton8.Core
 
                 listener.OnGlobalRegistryServiceReplaced(serviceSlot, previousService, currentService);
             }
+        }
+
+        private static GlobalRegistryServiceSlot ResolveServiceSlot<T>() where T : class
+        {
+            Type serviceType = typeof(T);
+            if (serviceType == typeof(IInputService)) return GlobalRegistryServiceSlot.Input;
+            if (serviceType == typeof(IPhysicsService)) return GlobalRegistryServiceSlot.Physics;
+            if (serviceType == typeof(IAudioService)) return GlobalRegistryServiceSlot.Audio;
+            if (serviceType == typeof(ISceneService)) return GlobalRegistryServiceSlot.Scene;
+            if (serviceType == typeof(ISaveService)) return GlobalRegistryServiceSlot.Save;
+            if (serviceType == typeof(IUIService)) return GlobalRegistryServiceSlot.UI;
+            if (serviceType == typeof(ObjectPoolManager)) return GlobalRegistryServiceSlot.ObjectPool;
+            if (serviceType == typeof(IPlayerRuntimeContext)) return GlobalRegistryServiceSlot.Player;
+            if (serviceType == typeof(HectonPlayerMotor)) return GlobalRegistryServiceSlot.PlayerMotor;
+            if (serviceType == typeof(IPlayerInventoryService)) return GlobalRegistryServiceSlot.PlayerInventory;
+            if (serviceType == typeof(IModularEquipmentService)) return GlobalRegistryServiceSlot.ModularEquipment;
+            if (serviceType == typeof(IPlayerSensoryService)) return GlobalRegistryServiceSlot.PlayerSensory;
+            if (serviceType == typeof(IEnvironmentRuntimeContext)) return GlobalRegistryServiceSlot.Environment;
+            if (serviceType == typeof(IWeatherService)) return GlobalRegistryServiceSlot.Weather;
+            if (serviceType == typeof(IHectonOceanKinematicsService)) return GlobalRegistryServiceSlot.OceanKinematics;
+            if (serviceType == typeof(IPowerGridService)) return GlobalRegistryServiceSlot.PowerGrid;
+            if (serviceType == typeof(ISubmarineRuntimeContext)) return GlobalRegistryServiceSlot.Submarine;
+            if (serviceType == typeof(ISubmarineHullBreachReadModel)) return GlobalRegistryServiceSlot.SubmarineHullBreach;
+            if (serviceType == typeof(IInteractionSignalService)) return GlobalRegistryServiceSlot.InteractionSignals;
+            if (serviceType == typeof(IDebrisService)) return GlobalRegistryServiceSlot.Debris;
+            if (serviceType == typeof(IEcosystemDirectorService)) return GlobalRegistryServiceSlot.EcosystemDirector;
+            if (serviceType == typeof(IFaunaSim)) return GlobalRegistryServiceSlot.FaunaSimulation;
+            if (serviceType == typeof(IThermodynamicsService)) return GlobalRegistryServiceSlot.ThermodynamicsService;
+            if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
+            if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
+            if (serviceType == typeof(IWorldGenService)) return GlobalRegistryServiceSlot.WorldGen;
+            if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
+            if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
+            if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
+            if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
+            if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
+            if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
+            if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
+            if (serviceType == typeof(QuestManager)) return GlobalRegistryServiceSlot.QuestRuntime;
+            if (serviceType == typeof(GameTickManager)) return GlobalRegistryServiceSlot.TickManager;
+            if (serviceType == typeof(SystemDispatcher)) return GlobalRegistryServiceSlot.Dispatcher;
+            if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;
+            if (serviceType == typeof(GlobalPhysicsStateManager)) return GlobalRegistryServiceSlot.PhysicsStateManager;
+            return GlobalRegistryServiceSlot.Unknown;
         }
     }
 }

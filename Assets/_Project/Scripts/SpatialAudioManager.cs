@@ -116,6 +116,8 @@ namespace Hecton8.Audio
         private const float ThreatBusDuckMaximumDb = -10f;
         private const float ThreatBusDuckAttackSharpness = 18f;
         private const float ThreatBusDuckReleaseSharpness = 5f;
+        private const float ParasiteRoomAudioAttackSharpness = 8f;
+        private const float ParasiteRoomAudioReleaseSharpness = 3f;
         private const int MaxDelayedAudioEvents = 16;
         private const float FatalPressureImplosionEventVolume = 0.96f;
         private const float FatalPressureImplosionEventPitch = 0.84f;
@@ -132,7 +134,8 @@ namespace Hecton8.Audio
 
         private enum DelayedAudioEventKind : byte
         {
-            FatalPressureImplosion = 1
+            FatalPressureImplosion = 1,
+            InventoryRunawayExplosion = 2
         }
 
         internal struct ActiveEmitterSample
@@ -227,9 +230,33 @@ namespace Hecton8.Audio
         [Tooltip("Exposed mixer parameter that attenuates the Bed bus in dB while Threat is active.")]
         [SerializeField] private string _bedDuckDbParameter = "BedDuckDb";
 
+        [Tooltip("Exposed mixer parameter for room low-pass cutoff while parasite growth is active.")]
+        [SerializeField] private string _parasiteRoomLowPassCutoffParameter = "ParasiteRoomLowPassCutoffHz";
+
+        [Tooltip("Exposed mixer parameter for the organic squelch ambient layer gain in dB.")]
+        [SerializeField] private string _parasiteOrganicLayerGainParameter = "ParasiteOrganicLayerGainDb";
+
+        [Tooltip("Low-pass cutoff for a clean powered room.")]
+        [SerializeField, Range(1000f, 22000f)] private float _parasiteRoomHealthyCutoffHz = 18000f;
+
+        [Tooltip("Low-pass cutoff for a fully overgrown room.")]
+        [SerializeField, Range(250f, 8000f)] private float _parasiteRoomInfectedCutoffHz = 1400f;
+
+        [Tooltip("Organic squelch gain while no module parasites are present.")]
+        [SerializeField, Range(-80f, 0f)] private float _parasiteOrganicLayerSilentDb = -80f;
+
+        [Tooltip("Organic squelch gain at maximum parasite room load.")]
+        [SerializeField, Range(-40f, 0f)] private float _parasiteOrganicLayerMaxDb = -9f;
+
+        [Tooltip("Parasite count that maps to full sick-room acoustic intensity.")]
+        [SerializeField, Range(1, 16)] private int _parasiteRoomCountForFullInfection = 8;
+
         [Header("Delayed World Events")]
         [Tooltip("Threat-bus implosion clip fired after underwater propagation delay. Left null to keep the event trauma-only.")]
         [SerializeField] private AudioClip _fatalPressureImplosionClip;
+
+        [Tooltip("Muffled inventory runaway blast clip fired through the delayed underwater event path. Left null to keep damage-only.")]
+        [SerializeField] private AudioClip _inventoryRunawayExplosionClip;
 
         [Header("Authored Pool Roots")]
         [Tooltip("Pre-authored root containing world-space AudioSource + AudioLowPassFilter pool nodes. Runtime AddComponent is forbidden.")]
@@ -295,6 +322,11 @@ namespace Hecton8.Audio
         private int _listenerContainingCaveCount;
         private float _listenerCaveInterior01;
         private float _threatBusDuck01;
+        private float _parasiteRoomTarget01;
+        private float _parasiteRoomSmoothed01;
+        private float _lastParasiteRoomLowPassCutoffHz = -1f;
+        private float _lastParasiteOrganicLayerGainDb = float.PositiveInfinity;
+        private int _parasiteRoomAcousticCount;
         private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
         private HectonPlayerMovement _listenerPlayerMovement;
@@ -302,6 +334,8 @@ namespace Hecton8.Audio
         private NativeQueue<DelayedAudioEvent> _delayedAudioIngress;
         private NativeList<DelayedAudioEvent> _pendingDelayedAudioEvents;
         private bool _isInitialized;
+        private bool _runtimeResourcesInitialized;
+        private bool _eventsSubscribed;
         // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
         private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
 
@@ -311,26 +345,19 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            // Runtime service registration.
+            // Self-state only. Runtime resources are allocated by explicit bootstrap registration.
             _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
-
-            InitializePool();
-            InitializePool2D();
-            InitializeTelemetryCaches();
         }
 
         private void OnEnable()
         {
-            PhysicsEvents.OnImpact += HandlePhysicsImpact;
-            FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
-            RepairDroneTorchAcousticEvents.OnTorchAcoustic += HandleRepairDroneTorchAcoustic;
+            if (_isInitialized)
+                TrySubscribeAudioEvents();
         }
 
         private void OnDisable()
         {
-            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
-            FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
-            RepairDroneTorchAcousticEvents.OnTorchAcoustic -= HandleRepairDroneTorchAcoustic;
+            TryUnsubscribeAudioEvents();
             if (_isInitialized)
             {
                 GlobalRegistry.UnregisterAudioService(this);
@@ -351,7 +378,9 @@ namespace Hecton8.Audio
             ClearDelayedAudioEvents();
             _listenerPlayerMovement = null;
             _listenerWaterDensityMul = 0f;
+            SetParasiteRoomAcousticLoad(0);
             ApplyThreatBusDucking(0f, 0f);
+            ApplyParasiteRoomAcousticState(0f);
             _radarDecayAccumulator = 0f;
         }
 
@@ -370,6 +399,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void InitializeService()
         {
+            EnsureRuntimeResourcesInitialized();
+            TrySubscribeAudioEvents();
+
             if (_isInitialized)
             {
                 TryRegisterUpdatable();
@@ -379,6 +411,39 @@ namespace Hecton8.Audio
             GlobalRegistry.RegisterAudioService(this);
             TryRegisterUpdatable();
             _isInitialized = true;
+        }
+
+        private void EnsureRuntimeResourcesInitialized()
+        {
+            if (_runtimeResourcesInitialized)
+                return;
+
+            InitializePool();
+            InitializePool2D();
+            InitializeTelemetryCaches();
+            _runtimeResourcesInitialized = true;
+        }
+
+        private void TrySubscribeAudioEvents()
+        {
+            if (_eventsSubscribed)
+                return;
+
+            PhysicsEvents.OnImpact += HandlePhysicsImpact;
+            FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
+            RepairDroneTorchAcousticEvents.OnTorchAcoustic += HandleRepairDroneTorchAcoustic;
+            _eventsSubscribed = true;
+        }
+
+        private void TryUnsubscribeAudioEvents()
+        {
+            if (!_eventsSubscribed)
+                return;
+
+            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
+            FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
+            RepairDroneTorchAcousticEvents.OnTorchAcoustic -= HandleRepairDroneTorchAcoustic;
+            _eventsSubscribed = false;
         }
 
         /// <summary>
@@ -449,6 +514,21 @@ namespace Hecton8.Audio
             UploadAcousticRadarGridBuffer();
             UpdateDominantBinauralEmitterTelemetry(now, listener);
             ApplyThreatBusDucking(threatActivity, safeDeltaTime);
+            ApplyParasiteRoomAcousticState(safeDeltaTime);
+        }
+
+        /// <summary>
+        /// Publishes the current parasite load of the occupied module into mixer-level room filtering.
+        /// </summary>
+        /// <param name="parasiteCount">Attached parasite count for the player-occupied module.</param>
+        public void SetParasiteRoomAcousticLoad(int parasiteCount)
+        {
+            int sanitizedCount = math.max(0, parasiteCount);
+            if (_parasiteRoomAcousticCount == sanitizedCount)
+                return;
+
+            _parasiteRoomAcousticCount = sanitizedCount;
+            _parasiteRoomTarget01 = math.saturate(sanitizedCount / (float)math.max(1, _parasiteRoomCountForFullInfection));
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1161,6 +1241,31 @@ private int AcquireSourceIndex()
             TryEnqueueDelayedAudioEvent(in delayedEvent);
         }
 
+        /// <summary>
+        /// Queues the muffled backpack chemistry explosion through the same delayed underwater event bus.
+        /// </summary>
+        public void QueueInventoryRunawayExplosion(Vector3 runtimePosition, float volume01)
+        {
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            Vector3 listenerAbsolutePosition = _listenerTransform != null
+                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
+                : absolutePosition;
+            float distanceMeters = math.length(absolutePosition - listenerAbsolutePosition);
+            DelayedAudioEvent delayedEvent = new DelayedAudioEvent
+            {
+                Kind = DelayedAudioEventKind.InventoryRunawayExplosion,
+                Position = absolutePosition,
+                EventTimeSeconds = Time.time,
+                DelaySeconds = distanceMeters / SoundSpeedWaterMetersPerSecond,
+                Volume = math.saturate(volume01),
+                Pitch = 0.72f,
+                TraumaRangeMeters = 0f,
+                TraumaImpulse = 0f,
+                TraumaWeight = 0f
+            };
+            TryEnqueueDelayedAudioEvent(in delayedEvent);
+        }
+
         private void TryEnqueueDelayedAudioEvent(in DelayedAudioEvent delayedEvent)
         {
             if (!_delayedAudioIngress.IsCreated || !_pendingDelayedAudioEvents.IsCreated)
@@ -1225,6 +1330,18 @@ private int AcquireSourceIndex()
                     }
 
                     ApplyDelayedTrauma(in delayedEvent, listenerAbsolutePosition);
+                    break;
+
+                case DelayedAudioEventKind.InventoryRunawayExplosion:
+                    if (_inventoryRunawayExplosionClip != null)
+                    {
+                        PlayThreatAtPoint(
+                            _inventoryRunawayExplosionClip,
+                            delayedEvent.Position,
+                            delayedEvent.Volume,
+                            delayedEvent.Pitch);
+                    }
+
                     break;
             }
         }
@@ -1768,6 +1885,50 @@ private int AcquireSourceIndex()
             }
 
             mixer.SetFloat(_bedDuckDbParameter, math.lerp(0f, ThreatBusDuckMaximumDb, _threatBusDuck01));
+        }
+
+        private void ApplyParasiteRoomAcousticState(float deltaTime)
+        {
+            AudioMixer mixer = ResolveThreatDuckingMixer();
+            if (mixer == null)
+                return;
+
+            float target01 = math.saturate(_parasiteRoomTarget01);
+            if (deltaTime <= 0f)
+            {
+                _parasiteRoomSmoothed01 = target01;
+            }
+            else
+            {
+                float sharpness = target01 > _parasiteRoomSmoothed01
+                    ? ParasiteRoomAudioAttackSharpness
+                    : ParasiteRoomAudioReleaseSharpness;
+                float blend = 1f - math.exp(-sharpness * deltaTime);
+                _parasiteRoomSmoothed01 = math.lerp(_parasiteRoomSmoothed01, target01, blend);
+            }
+
+            float cutoffHz = math.lerp(
+                math.max(20f, _parasiteRoomHealthyCutoffHz),
+                math.max(20f, _parasiteRoomInfectedCutoffHz),
+                _parasiteRoomSmoothed01);
+            float organicGainDb = math.lerp(
+                _parasiteOrganicLayerSilentDb,
+                _parasiteOrganicLayerMaxDb,
+                _parasiteRoomSmoothed01);
+
+            if (!string.IsNullOrWhiteSpace(_parasiteRoomLowPassCutoffParameter) &&
+                math.abs(cutoffHz - _lastParasiteRoomLowPassCutoffHz) > 1f)
+            {
+                mixer.SetFloat(_parasiteRoomLowPassCutoffParameter, cutoffHz);
+                _lastParasiteRoomLowPassCutoffHz = cutoffHz;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_parasiteOrganicLayerGainParameter) &&
+                math.abs(organicGainDb - _lastParasiteOrganicLayerGainDb) > 0.05f)
+            {
+                mixer.SetFloat(_parasiteOrganicLayerGainParameter, organicGainDb);
+                _lastParasiteOrganicLayerGainDb = organicGainDb;
+            }
         }
 
         private AudioMixer ResolveThreatDuckingMixer()

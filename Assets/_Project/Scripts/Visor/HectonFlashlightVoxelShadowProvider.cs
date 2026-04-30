@@ -43,7 +43,7 @@ namespace Hecton8.Visor
         [SerializeField, Range(1, 8)] private int slicesPerTick = 4;
 
         [Tooltip("World layers sampled as occluders while voxelizing the flashlight volume.")]
-        [SerializeField] private LayerMask occluderLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [SerializeField] private LayerMask occluderLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Physics trigger policy used while voxelizing the flashlight shadow volume.")]
         [SerializeField] private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Ignore;

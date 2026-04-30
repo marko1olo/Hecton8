@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton.Localization;
+using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -138,6 +139,7 @@ namespace Hecton8.World
         private const int VentBufferRingSize = 3;
         private const float VentStateCompareEpsilon = 0.01f;
         private const uint ThermalHashSeed = 0xC6BC2796u;
+        private const float ThermalSpatialEventLifetimeSeconds = 1.25f;
 
         private static AbyssalThermalManager _instance;
 
@@ -563,6 +565,11 @@ namespace Hecton8.World
         /// </summary>
         public bool IsInitialized => ReferenceEquals(GlobalRegistry.ThermodynamicsService, this) &&
                                      ReferenceEquals(GlobalRegistry.Thermodynamics, this);
+
+        internal bool TryResolveParasiteThermalModifier(BaseModule baseModule, out float insulation01, out float bioReactorOverheatMultiplier)
+        {
+            return BaseDegradationSystem.TryGetParasiteThermalModifier(baseModule, out insulation01, out bioReactorOverheatMultiplier);
+        }
 
         internal static bool IsThermalBiomeFamilyId(string familyId)
         {
@@ -1729,12 +1736,30 @@ namespace Hecton8.World
                         vent.HeatIntensity * eruptiveHeatScale,
                         hazardRadius * Mathf.Lerp(1f, 1.45f, eruptionBlend),
                         HazardType.Heat);
+                    RegisterThermalSpatialEvent(vent.PositionWS, hazardRadius, vent.HeatIntensity * eruptiveHeatScale);
                 }
                 else
                 {
                     HectonHazardManager.Unregister(BuildHazardSourceId(i));
                 }
             }
+        }
+
+        private void RegisterThermalSpatialEvent(Vector3 positionWS, float radiusWS, float heatIntensity)
+        {
+            if (radiusWS <= 0f || heatIntensity <= 0f)
+                return;
+
+            WorldSpatialHashGrid.RegisterTransientEvent(
+                positionWS,
+                radiusWS,
+                Mathf.Clamp01(heatIntensity / Mathf.Max(1f, ventHeatIntensity * seismicEruptionHeatMultiplier)),
+                ThermalSpatialEventLifetimeSeconds,
+                SpatialTransientEventType.ThermalGradient,
+                SpatialInteractionFlags.ThermalReceiver,
+                FieldTargetRole.Generic,
+                0,
+                heatIntensity * ventHeatToCelsiusScale);
         }
 
         private void ClearHazardSources()
@@ -2759,7 +2784,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThermalCrystallizationBoundaryJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<ThermalCrystallizationSample> Samples;

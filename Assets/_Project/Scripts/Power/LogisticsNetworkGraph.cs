@@ -143,6 +143,7 @@ namespace Hecton8.Power
             public LogisticsConsumerFlags Flags;
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct PublishNodeStatesJob : IJobParallelFor
         {
             private const float PublishEpsilon = 0.0001f;
@@ -205,7 +206,7 @@ namespace Hecton8.Power
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateGraphJob : IJob
         {
             public LogisticsNetworkType NetworkType;
@@ -672,7 +673,7 @@ namespace Hecton8.Power
                     return false;
 
                 LogisticsNode node = Nodes[consumer.NodeIndex];
-                if ((node.Flags & LogisticsNodeFlags.Isolated) != 0)
+                if ((node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
                     return false;
 
                 switch (brownoutTier)
@@ -788,7 +789,7 @@ namespace Hecton8.Power
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct InitializePotentialBuffersJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> NodeNetInjection;
@@ -803,7 +804,7 @@ namespace Hecton8.Power
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct RelaxNodePotentialsJob : IJobParallelFor
         {
             private const float MinResistanceValue = 0.0001f;
@@ -881,7 +882,7 @@ namespace Hecton8.Power
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ApplyPotentialsAndLoadsJob : IJobParallelFor
         {
             private const float MinResistanceValue = 0.0001f;
@@ -2182,7 +2183,7 @@ namespace Hecton8.Power
                 return false;
 
             LogisticsNode node = _nodeBuffer[consumer.NodeIndex];
-            if ((node.Flags & LogisticsNodeFlags.Isolated) != 0)
+            if ((node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
                 return false;
 
             switch (brownoutTier)
