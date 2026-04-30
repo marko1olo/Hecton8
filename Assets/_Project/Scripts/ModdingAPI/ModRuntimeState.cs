@@ -352,7 +352,7 @@ namespace Hecton8.Modding
 
         internal static ModuleCatalog ResolveActiveCatalog()
         {
-            ConstructionManager constructionManager = ConstructionManager.Instance;
+            ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             return constructionManager != null ? constructionManager.Catalog : null;
         }
 

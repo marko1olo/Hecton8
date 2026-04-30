@@ -131,16 +131,16 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
 
             NarrativeEvents.Register(this);
         }
 
         private void OnDisable()
         {
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             NarrativeEvents.Unregister(this);
         }

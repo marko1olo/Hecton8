@@ -22,7 +22,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Loadout Tab")]
-    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable
+    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable, IPDAEventListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -49,7 +49,7 @@ namespace Hecton8.UI
         [SerializeField] private bool holsterBeforeApplyingPreset = true;
         [SerializeField] private ToolLoadoutPreset[] loadoutPresets = new ToolLoadoutPreset[4];
         [SerializeField] private float fieldAdviceRange = 18f;
-        [SerializeField] private LayerMask fieldAdviceMask = ~0;
+        [SerializeField] private LayerMask fieldAdviceMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         // ════════════════════════════════════════════════════════════
         //  CACHED FIELDS FOR ZERO-GC OPTIMIZATION
@@ -272,8 +272,7 @@ namespace Hecton8.UI
                 toolManager.ToolAssignmentsChanged += HandleToolAssignmentsChanged;
             }
 
-            PDAEvents.OnOpened += HandlePdaOpened;
-            PDAEvents.OnTabChanged += HandlePdaTabChanged;
+            PDAEvents.Register(this);
             PlayerExpressionEvents.OnProfileChanged += HandlePlayerExpressionChanged;
         }
 
@@ -287,8 +286,7 @@ namespace Hecton8.UI
                 toolManager.ToolAssignmentsChanged -= HandleToolAssignmentsChanged;
             }
 
-            PDAEvents.OnOpened -= HandlePdaOpened;
-            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            PDAEvents.Unregister(this);
             PlayerExpressionEvents.OnProfileChanged -= HandlePlayerExpressionChanged;
             UnsubscribeDurabilitySystem();
         }
@@ -367,6 +365,19 @@ namespace Hecton8.UI
             _refreshDirty = true;
             if (IsTabActive)
                 RefreshAll();
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    HandlePdaOpened(payload.CurrentTab);
+                    break;
+                case PDAEventType.TabChanged:
+                    HandlePdaTabChanged(payload.PreviousTab, payload.CurrentTab);
+                    break;
+            }
         }
 
         private void HandlePdaOpened(int tab)

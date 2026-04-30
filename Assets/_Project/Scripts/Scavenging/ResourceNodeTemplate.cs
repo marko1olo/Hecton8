@@ -18,6 +18,8 @@ namespace Hecton8.Scavenging
         order = 112)]
     public sealed class ResourceNodeTemplate : ScriptableObject
     {
+        private const int DefaultValidLayerMask = (1 << 8) | (1 << 9) | (1 << 10);
+
         public enum HarvestToolClass : byte
         {
             Any = 0,
@@ -214,7 +216,7 @@ namespace Hecton8.Scavenging
 
         [SerializeField]
         [Tooltip("Terrain or biome layers allowed to host this node family.")]
-        private LayerMask validLayers = ~0;
+        private LayerMask validLayers = DefaultValidLayerMask;
 
         [Header("Physical Response")]
         [SerializeField, Range(0.65f, 1.45f)]
@@ -539,7 +541,7 @@ namespace Hecton8.Scavenging
                 StableHashId = StableHashId,
                 ToolResistance = math.max(0.01f, toolResistance),
                 HarvestDurationSeconds = math.max(0f, harvestDurationSeconds),
-                ValidLayerMask = validLayers.value,
+                ValidLayerMask = SanitizeValidLayerMask(validLayers.value),
                 RequiredToolClass = (byte)requiredToolClass,
                 YieldCount = (byte)math.min(byte.MaxValue, harvestYield != null ? harvestYield.Length : 0),
                 RarityDropCount = (byte)math.min(byte.MaxValue, rarityDrops != null ? rarityDrops.Length : 0),
@@ -669,7 +671,13 @@ namespace Hecton8.Scavenging
             physicalSize.x = math.max(0.1f, physicalSize.x);
             physicalSize.y = math.max(0.1f, physicalSize.y);
             physicalSize.z = math.max(0.1f, physicalSize.z);
+            validLayers = SanitizeValidLayerMask(validLayers.value);
         }
 #endif
+
+        private static int SanitizeValidLayerMask(int layerMask)
+        {
+            return layerMask < 0 ? DefaultValidLayerMask : layerMask;
+        }
     }
 }

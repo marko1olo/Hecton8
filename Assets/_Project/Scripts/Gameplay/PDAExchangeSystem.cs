@@ -90,7 +90,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             AutoResolve();
-            SaveManager.Instance?.Register(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             if (playerInventory != null)
                 playerInventory.InventoryChanged += HandleInventoryChanged;
             if (scanLogSystem != null)
@@ -99,7 +99,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             if (playerInventory != null)
                 playerInventory.InventoryChanged -= HandleInventoryChanged;
             if (scanLogSystem != null)

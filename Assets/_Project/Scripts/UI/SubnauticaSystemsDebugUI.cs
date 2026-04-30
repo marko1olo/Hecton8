@@ -1066,7 +1066,7 @@ namespace Hecton8.UI
 
         private static string ResolveBootstrapLabel()
         {
-            if (!BootstrapController.AreAllSystemsReady())
+            if (!GameBootstrapper.AreAllSystemsReady())
                 return PendingLabel;
 
             if (SceneBootstrap.IsGameReady)

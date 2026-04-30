@@ -25,9 +25,9 @@ This index is path-accurate, not truth-uniform.
 | `01_GENERAL_INFO` markdown files | 22 |
 | `02_ACTUAL_REPORTS` markdown files | 46 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| `02_ACTUAL_REPORTS` patch artifacts | 6 |
+| `02_ACTUAL_REPORTS` patch artifacts | 8 |
 | **Total indexed docs/datasets** | **69** |
-| **Total physical non-meta files in folders `01` and `02`** | **75** |
+| **Total physical non-meta files in folders `01` and `02`** | **77** |
 
 Patch artifacts in `02_ACTUAL_REPORTS` physically exist but are not current narrative authority by themselves.
 Read the paired surgery log or audit note before treating a `.patch` file as implementation truth.

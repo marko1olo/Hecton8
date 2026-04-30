@@ -15,7 +15,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Interaction UI")]
-    public sealed class InteractionUI : MonoBehaviour
+    public sealed class InteractionUI : MonoBehaviour, IInteractionEventListener
     {
         [Header("UI References")]
         [SerializeField, Tooltip("The TextMeshProUGUI label that displays the interaction prompt.")]
@@ -44,7 +44,7 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
-            InteractionEvents.OnHoverChanged += HandleHoverChanged;
+            InteractionEvents.Register(this);
 
             RebindingManager rebindingManager = RebindingManager.Instance;
             if (rebindingManager != null)
@@ -68,7 +68,7 @@ namespace Hecton8.Interaction
 
         private void OnDisable()
         {
-            InteractionEvents.OnHoverChanged -= HandleHoverChanged;
+            InteractionEvents.Unregister(this);
 
             RebindingManager rebindingManager = RebindingManager.Instance;
             if (rebindingManager != null)
@@ -101,6 +101,15 @@ namespace Hecton8.Interaction
 
             _lastDisplayedTarget = null;
             HidePrompt();
+        }
+
+        public void OnInteractionEvent(in InteractionEventPayload payload)
+        {
+            if ((InteractionEventType)payload.EventType != InteractionEventType.HoverChanged)
+                return;
+
+            InteractionEvents.TryResolveTarget(in payload, out IInteractable target);
+            HandleHoverChanged(target);
         }
 
         private void HandleBindingChanged(string actionName, string actionMap, int bindingIndex, string display)

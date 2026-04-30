@@ -29,6 +29,7 @@ namespace Hecton8.Construction
             public int SeedItemHashId;
             public uint GeneticsMask;
             public float Growth01;
+            public float Quality01;
         }
 
         private struct XorShift32State
@@ -75,6 +76,9 @@ namespace Hecton8.Construction
         [Tooltip("Fallback scrubber power draw in watts per mature toxic trait before the 2x cultivation penalty is applied.")]
         [SerializeField, Min(0f)] private float fallbackToxicScrubberPowerWatts = 8f;
 
+        [Tooltip("Fallback lighting power credit in watts per mature bioluminescent trait when no authored trait profile is assigned.")]
+        [SerializeField, Min(0f)] private float fallbackBiolumLightingPowerCreditWatts = 4f;
+
         [Header("── Hazard ───────────────────")]
         [Tooltip("Optional authored hazard profile used when toxic cultivation overwhelms local scrubbers.")]
         [SerializeField] private HazardZoneProfile toxicHazardProfile;
@@ -85,17 +89,29 @@ namespace Hecton8.Construction
         [Tooltip("Fallback hazard radius in meters used when no authored profile or trait row supplies one.")]
         [SerializeField, Min(0.25f)] private float fallbackHazardRadiusMeters = 2.6f;
 
+        [Tooltip("Normalized toxic rot pulse emitted per dead non-aquatic plant into flooded module water.")]
+        [SerializeField, Range(0f, 1f)] private float floodedRotIntensityPerDeadPlant = 0.28f;
+
+        [Tooltip("Flooded-water rot hazard radius in meters when dead cultivated plants decay in saltwater.")]
+        [SerializeField, Min(0.25f)] private float floodedRotHazardRadiusMeters = 2.4f;
+
+        [Tooltip("CO2/flood exposure amplifier applied when dead cultivated plants rot in saltwater.")]
+        [SerializeField, Min(0f)] private float floodedRotCo2Amplifier = 1.4f;
+
         [Header("── Diagnostics ──────────────")]
         [SerializeField] private int _debugOccupiedSlotCount;
         [SerializeField] private int _debugMatureSlotCount;
         [SerializeField] private uint _debugCombinedTraitMask;
         [SerializeField] private float _debugScrubberLoadWatts;
+        [SerializeField] private float _debugLightingCreditWatts;
+        [SerializeField] private int _debugDeadSlotCount;
         [SerializeField] private bool _debugHazardActive;
 
         private CultivationSlotState[] _slots;
         private bool _registered;
         private uint _slowTickSequence;
         private int _hazardZoneId;
+        private int _rotHazardZoneId;
 
         /// <summary>True when at least one cultivation slot is occupied.</summary>
         public bool HasCultivatedPlants => CountOccupiedCultivationSlots() > 0;
@@ -113,6 +129,7 @@ namespace Hecton8.Construction
 
             _slots = new CultivationSlotState[MaxCultivationSlots]; // COLD ALLOC: CultivationSlotState[4] — fixed cultivation slot runtime state — owner: CultivationManager
             _hazardZoneId = unchecked((int)EntityId.ToULong(GetEntityId()) * 397) ^ 0x43554C54;
+            _rotHazardZoneId = _hazardZoneId ^ 0x524F54;
         }
 
         private void OnEnable()
@@ -123,8 +140,12 @@ namespace Hecton8.Construction
         private void OnDisable()
         {
             ClearHazardState();
+            ClearRotHazardState();
             if (targetModule != null)
+            {
                 targetModule.SetCultivationScrubberLoad(0f);
+                targetModule.SetCultivationLightingPowerCredit(0f);
+            }
 
             TryUnregister();
         }
@@ -189,7 +210,8 @@ namespace Hecton8.Construction
             {
                 SeedItemHashId = seedItemHashId,
                 GeneticsMask = ResolveEffectiveGeneticsMask(seedItemHashId, geneticsMask),
-                Growth01 = 0.02f
+                Growth01 = 0.02f,
+                Quality01 = 1f
             };
 
             return true;
@@ -236,6 +258,25 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
+        /// Copies genetics, growth, and quality data into caller-owned buffers for cultivation UI rendering.
+        /// </summary>
+        public int CopyTraitSnapshot(uint[] geneticsMasks, float[] growthValues, float[] qualityValues)
+        {
+            if (geneticsMasks == null || growthValues == null || qualityValues == null)
+                return 0;
+
+            int copyCount = Mathf.Min(Mathf.Min(Mathf.Min(geneticsMasks.Length, growthValues.Length), qualityValues.Length), _slots.Length);
+            for (int i = 0; i < copyCount; i++)
+            {
+                geneticsMasks[i] = _slots[i].GeneticsMask;
+                growthValues[i] = _slots[i].Growth01;
+                qualityValues[i] = NormalizeQuality01(_slots[i].Quality01);
+            }
+
+            return copyCount;
+        }
+
+        /// <summary>
         /// Persists cultivation slots into the construction module DTO.
         /// </summary>
         public void PopulateSaveData(ref ModuleDTO moduleDto, ItemCatalog itemCatalog)
@@ -244,6 +285,7 @@ namespace Hecton8.Construction
             moduleDto.cultivationSeedItemIds = null;
             moduleDto.cultivationGeneticsMasks = null;
             moduleDto.cultivationGrowth01 = null;
+            moduleDto.cultivationQuality01 = null;
 
             if (_slots == null)
                 return;
@@ -251,6 +293,7 @@ namespace Hecton8.Construction
             string[] seedIds = new string[MaxCultivationSlots];
             uint[] geneticsMasks = new uint[MaxCultivationSlots];
             float[] growthValues = new float[MaxCultivationSlots];
+            float[] qualityValues = new float[MaxCultivationSlots];
             int writeIndex = 0;
 
             for (int i = 0; i < _slots.Length && writeIndex < MaxCultivationSlots; i++)
@@ -266,6 +309,7 @@ namespace Hecton8.Construction
                 seedIds[writeIndex] = item.PersistentId;
                 geneticsMasks[writeIndex] = slot.GeneticsMask;
                 growthValues[writeIndex] = Mathf.Clamp01(slot.Growth01);
+                qualityValues[writeIndex] = NormalizeQuality01(slot.Quality01);
                 writeIndex++;
             }
 
@@ -276,6 +320,7 @@ namespace Hecton8.Construction
             moduleDto.cultivationSeedItemIds = seedIds;
             moduleDto.cultivationGeneticsMasks = geneticsMasks;
             moduleDto.cultivationGrowth01 = growthValues;
+            moduleDto.cultivationQuality01 = qualityValues;
         }
 
         /// <summary>
@@ -307,7 +352,10 @@ namespace Hecton8.Construction
                 {
                     SeedItemHashId = itemHashId,
                     GeneticsMask = moduleDto.cultivationGeneticsMasks[i],
-                    Growth01 = Mathf.Clamp01(moduleDto.cultivationGrowth01[i])
+                    Growth01 = Mathf.Clamp01(moduleDto.cultivationGrowth01[i]),
+                    Quality01 = moduleDto.cultivationQuality01 != null && i < moduleDto.cultivationQuality01.Length
+                        ? NormalizeQuality01(moduleDto.cultivationQuality01[i])
+                        : 1f
                 };
             }
         }
@@ -325,11 +373,15 @@ namespace Hecton8.Construction
             float oxygenUnits = 0f;
             float scrubAmount = 0f;
             float toxicScrubberPowerWatts = 0f;
+            float lightingPowerCreditWatts = 0f;
             float hazardIntensity = 0f;
             float hazardRadius = 0f;
             int occupiedCount = 0;
             int matureCount = 0;
+            int deadCount = 0;
+            int floodedRotDeathCount = 0;
             uint combinedTraitMask = 0u;
+            bool moduleFlooded = targetModule != null && targetModule.IsFlooded;
 
             for (int i = 0; i < _slots.Length; i++)
             {
@@ -338,6 +390,24 @@ namespace Hecton8.Construction
                     continue;
 
                 occupiedCount++;
+                slot.Quality01 = NormalizeQuality01(slot.Quality01);
+                if (slot.Quality01 <= 0f)
+                {
+                    deadCount++;
+                    _slots[i] = slot;
+                    continue;
+                }
+
+                if (moduleFlooded && !IsSaltwaterTolerant(slot.GeneticsMask))
+                {
+                    slot.Quality01 = 0f;
+                    slot.Growth01 = 0f;
+                    _slots[i] = slot;
+                    deadCount++;
+                    floodedRotDeathCount++;
+                    continue;
+                }
+
                 float growthMultiplier = ResolveGrowthRateMultiplier(slot.GeneticsMask);
                 slot.Growth01 = Mathf.Clamp01(slot.Growth01 + (SlowTickDt / GrowthDurationSeconds) * growthMultiplier);
                 _slots[i] = slot;
@@ -350,17 +420,21 @@ namespace Hecton8.Construction
                 oxygenUnits += ResolveOxygenContribution(slot.GeneticsMask);
                 scrubAmount += ResolveScrubContribution(slot.GeneticsMask);
                 toxicScrubberPowerWatts += ResolveToxicScrubberPower(slot.GeneticsMask);
+                lightingPowerCreditWatts += ResolveLightingPowerCredit(slot.GeneticsMask);
                 ResolveHazardContribution(slot.GeneticsMask, ref hazardIntensity, ref hazardRadius);
             }
 
             _debugOccupiedSlotCount = occupiedCount;
             _debugMatureSlotCount = matureCount;
             _debugCombinedTraitMask = combinedTraitMask;
+            _debugDeadSlotCount = deadCount;
 
             if (targetModule == null)
             {
                 ClearHazardState();
+                ClearRotHazardState();
                 _debugScrubberLoadWatts = 0f;
+                _debugLightingCreditWatts = 0f;
                 _debugHazardActive = false;
                 return;
             }
@@ -373,7 +447,9 @@ namespace Hecton8.Construction
 
             float requiredScrubberLoadWatts = toxicScrubberPowerWatts * 2f;
             targetModule.SetCultivationScrubberLoad(requiredScrubberLoadWatts);
+            targetModule.SetCultivationLightingPowerCredit(lightingPowerCreditWatts);
             _debugScrubberLoadWatts = requiredScrubberLoadWatts;
+            _debugLightingCreditWatts = lightingPowerCreditWatts;
 
             bool toxicHazardActive = requiredScrubberLoadWatts > 0.01f &&
                 (!targetModule.HasPower || targetModule.PowerSupplyRatio < MinimumOperationalSupplyRatio);
@@ -384,6 +460,17 @@ namespace Hecton8.Construction
             else
             {
                 ClearHazardState();
+            }
+
+            if (floodedRotDeathCount > 0)
+            {
+                float rotIntensity = Mathf.Clamp01(floodedRotDeathCount * floodedRotIntensityPerDeadPlant);
+                targetModule.EmitCultivationRotIntoFloodWater(rotIntensity, floodedRotCo2Amplifier);
+                RegisterRotHazard(rotIntensity, floodedRotHazardRadiusMeters);
+            }
+            else
+            {
+                ClearRotHazardState();
             }
 
             _debugHazardActive = toxicHazardActive;
@@ -480,6 +567,13 @@ namespace Hecton8.Construction
                 hazardZoneManager.UnregisterZone(_hazardZoneId);
         }
 
+        private void ClearRotHazardState()
+        {
+            HazardZoneManager hazardZoneManager = HazardZoneManager.Instance;
+            if (hazardZoneManager != null)
+                hazardZoneManager.UnregisterZone(_rotHazardZoneId);
+        }
+
         private void RegisterToxicHazard(float intensity, float radiusMeters)
         {
             if (targetModule == null)
@@ -504,6 +598,34 @@ namespace Hecton8.Construction
                 Mathf.Clamp01(intensity),
                 Mathf.Max(0.25f, resolvedRadius),
                 HazardType.Toxicity,
+                visorGlitchBias,
+                toxicHazardProfile);
+        }
+
+        private void RegisterRotHazard(float intensity, float radiusMeters)
+        {
+            if (targetModule == null || intensity <= 0f)
+                return;
+
+            Vector3 center = targetModule.ResolveBotanyAnchorWorldPosition();
+            float resolvedRadius = radiusMeters;
+            if (targetModule.TryGetInteriorHazardBounds(out Vector3 worldCenter, out float interiorRadius))
+            {
+                center = worldCenter;
+                resolvedRadius = Mathf.Max(radiusMeters, interiorRadius * 0.45f);
+            }
+
+            HazardZoneManager hazardZoneManager = HazardZoneManager.EnsureRuntimeInstance();
+            if (hazardZoneManager == null)
+                return;
+
+            float visorGlitchBias = toxicHazardProfile != null ? toxicHazardProfile.VisorGlitchBias : 1f;
+            hazardZoneManager.RegisterZone(
+                _rotHazardZoneId,
+                center,
+                Mathf.Clamp01(intensity),
+                Mathf.Max(0.25f, resolvedRadius),
+                HazardType.Biohazard,
                 visorGlitchBias,
                 toxicHazardProfile);
         }
@@ -560,10 +682,13 @@ namespace Hecton8.Construction
 
         private float ResolveGrowthRateMultiplier(uint geneticsMask)
         {
-            if (geneticTraitProfile != null)
-                return geneticTraitProfile.ResolveGrowthRateMultiplier(geneticsMask);
+            float multiplier = geneticTraitProfile != null
+                ? geneticTraitProfile.ResolveGrowthRateMultiplier(geneticsMask)
+                : 1f;
 
-            return (geneticsMask & (uint)GeneticTraitProfile.GeneticTraitMask.FastGrowing) != 0u ? 1.8f : 1f;
+            return (geneticsMask & (uint)GeneticTraitProfile.GeneticTraitMask.FastGrowing) != 0u
+                ? Mathf.Max(2f, multiplier)
+                : multiplier;
         }
 
         private float ResolveOxygenContribution(uint geneticsMask)
@@ -593,6 +718,24 @@ namespace Hecton8.Construction
                 : 0f;
         }
 
+        private float ResolveLightingPowerCredit(uint geneticsMask)
+        {
+            if (geneticTraitProfile != null)
+                return geneticTraitProfile.ResolveLightingPowerCreditWatts(geneticsMask);
+
+            return (geneticsMask & (uint)GeneticTraitProfile.GeneticTraitMask.Bioluminescent) != 0u
+                ? fallbackBiolumLightingPowerCreditWatts
+                : 0f;
+        }
+
+        private bool IsSaltwaterTolerant(uint geneticsMask)
+        {
+            if (geneticTraitProfile != null)
+                return geneticTraitProfile.IsSaltwaterTolerant(geneticsMask);
+
+            return (geneticsMask & (uint)GeneticTraitProfile.GeneticTraitMask.Aquatic) != 0u;
+        }
+
         private void ResolveHazardContribution(uint geneticsMask, ref float intensity, ref float radiusMeters)
         {
             if (geneticTraitProfile != null)
@@ -613,6 +756,11 @@ namespace Hecton8.Construction
         private ItemCatalog ResolveItemCatalog()
         {
             return PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null;
+        }
+
+        private static float NormalizeQuality01(float quality01)
+        {
+            return float.IsFinite(quality01) ? Mathf.Clamp01(quality01) : 0f;
         }
 
         private static int CountBits(uint value)

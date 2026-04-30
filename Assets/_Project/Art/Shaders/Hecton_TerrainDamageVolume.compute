@@ -26,23 +26,22 @@ void StampDamageVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
     }
 
-    float3 uvw = (float3(dispatchThreadId) + 0.5) * float3(
-        1.0 / max(_HectonDamageVolumeResolution.x, 1),
-        1.0 / max(_HectonDamageVolumeResolution.y, 1),
-        1.0 / max(_HectonDamageVolumeResolution.z, 1));
-    float3 worldPosition = _HectonDamageVolumeWorldMinParam.xyz + uvw / max(_HectonDamageVolumeInvSizeParam.xyz, 0.0001.xxx);
-    float current = max(0.0, _HectonDamageVolumeSource.Load(int4(dispatchThreadId, 0)).r - _HectonDamageVolumeRecovery);
+    float3 resolution = max((float3)_HectonDamageVolumeResolution, 1.0);
+    float3 volumeUv = ((float3)dispatchThreadId + 0.5) / resolution;
+    float3 worldPosition = _HectonDamageVolumeWorldMinParam.xyz + volumeUv / max(_HectonDamageVolumeInvSizeParam.xyz, 0.000001);
+
+    float current = _HectonDamageVolumeSource.Load(int4(dispatchThreadId.xyz, 0)).r;
+    current = max(0.0, current - _HectonDamageVolumeRecovery);
 
     [loop]
     for (int stampIndex = 0; stampIndex < _HectonDamageVolumeStampCount; stampIndex++)
     {
-        DamageVolumeStampCommand stamp = _HectonDamageVolumeStampCommands[stampIndex];
-        float3 delta = worldPosition - stamp.PositionRadius.xyz;
-        float radius = max(stamp.PositionRadius.w, 0.0001);
-        float normalized = saturate(1.0 - length(delta) / radius);
-        float stampValue = normalized * normalized * stamp.StrengthPadding.x;
-        current = max(current, stampValue);
+        float4 positionRadius = _HectonDamageVolumeStampCommands[stampIndex].PositionRadius;
+        float radius = max(positionRadius.w, 0.0001);
+        float normalized = saturate(1.0 - length(worldPosition - positionRadius.xyz) / radius);
+        float stamp = normalized * normalized * saturate(_HectonDamageVolumeStampCommands[stampIndex].StrengthPadding.x);
+        current = max(current, stamp);
     }
 
-    _HectonDamageVolumeResult[dispatchThreadId] = float4(current, current, current, 1.0);
+    _HectonDamageVolumeResult[dispatchThreadId.xyz] = float4(current, current, current, current);
 }

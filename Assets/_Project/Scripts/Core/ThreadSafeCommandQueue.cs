@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Unity.Collections;
 using Hecton8.Caves;
+using Hecton8.Gameplay;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -16,6 +17,7 @@ namespace Hecton8.Core
         SetGameObjectActive = 3,
         SpawnGameObject = 4,
         ModifyVoxel = 5,
+        CommitStorageReservation = 6,
     }
 
     /// <summary>
@@ -92,6 +94,19 @@ namespace Hecton8.Core
                 IntValue = materialId,
                 FloatValue = radius,
                 VectorValue = absolutePosition
+            };
+        }
+
+        public static EntityCommand CreateCommitStorageReservation(int crateToken, int reservationId)
+        {
+            return new EntityCommand
+            {
+                CommandType = EntityCommandType.CommitStorageReservation,
+                TargetToken = crateToken,
+                SecondaryToken = 0,
+                IntValue = reservationId,
+                FloatValue = 0f,
+                VectorValue = default
             };
         }
     }
@@ -277,6 +292,15 @@ namespace Hecton8.Core
                         command.VectorValue,
                         Mathf.Max(0f, command.FloatValue),
                         (byte)Mathf.Clamp(command.IntValue, 0, byte.MaxValue));
+                    break;
+                }
+
+                case EntityCommandType.CommitStorageReservation:
+                {
+                    if (command.IntValue <= 0 || !instance.TryGetComponent(out StorageCrate crate))
+                        break;
+
+                    crate.CommitReservation(command.IntValue);
                     break;
                 }
             }

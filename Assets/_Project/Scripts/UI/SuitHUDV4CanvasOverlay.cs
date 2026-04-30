@@ -146,6 +146,9 @@ namespace Hecton8.UI
         private static readonly char[] s_statusLifeSupportNominalStableChars = DefaultStatusLifeSupportNominalStable.ToCharArray();
         private static readonly char[] s_statusLifeSupportNominalAscendingChars = DefaultStatusLifeSupportNominalAscending.ToCharArray();
         private static readonly char[] s_statusLifeSupportNominalDescendingChars = DefaultStatusLifeSupportNominalDescending.ToCharArray();
+        private static readonly char[] s_loadPrefixChars = "LOAD: ".ToCharArray();
+        private static readonly char[] s_loadSeparatorChars = "/".ToCharArray();
+        private static readonly char[] s_loadKgSuffixChars = " KG".ToCharArray();
         private static readonly char[] s_emptyHudChars = Array.Empty<char>();
         private static readonly int _HudDepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_DEPTH);
         private static readonly int _HudTemperatureKeyHash = LocHash.Compute(LocalizationKeys.HUD_TEMP);
@@ -435,6 +438,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _depthLabel;
         private TextMeshProUGUI _temperatureLabel;
         private TextMeshProUGUI _pressureLabel;
+        private TextMeshProUGUI _loadLabel;
         private TextMeshProUGUI _statusLabel;
 
         private GaugeRefs _oxygenGauge;
@@ -532,6 +536,8 @@ namespace Hecton8.UI
         private bool _hasAppliedPressureTenths;
         private int _appliedPressureWhisperVersion = int.MinValue;
         private Color _appliedPressureColor;
+        private int _appliedLoadVersion = int.MinValue;
+        private Color _appliedLoadColor;
         private bool _styleApplied;
         private bool _canvasStateApplied;
         private bool _hasAppliedRootVisibility;
@@ -570,6 +576,8 @@ namespace Hecton8.UI
         private char[] _depthDisplayBuffer = new char[64];
         private char[] _temperatureDisplayBuffer = new char[64];
         private char[] _pressureDisplayBuffer = new char[64];
+        // COLD ALLOC: char[32] — LOAD telemetry fallback staging buffer — owner: SuitHUDV4CanvasOverlay
+        private char[] _loadDisplayFallbackBuffer = new char[32];
         private Canvas _appliedCanvasTarget;
         private Camera _appliedProjectionCamera;
         private RenderPath _appliedRenderPath;
@@ -2440,6 +2448,9 @@ namespace Hecton8.UI
             _pressureLabel = CreateText("PressureLabel", _telemetrySupplementRoot, 13f, FontStyles.Normal, TextAlignmentOptions.Right, 0.62f);
             Anchor(_pressureLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-18f, 0f), new Vector2(152f, 18f));
 
+            _loadLabel = CreateText("LoadLabel", _telemetrySupplementRoot, 12f, FontStyles.Bold, TextAlignmentOptions.Right, 0.72f);
+            Anchor(_loadLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-18f, -18f), new Vector2(152f, 18f));
+
             _statusLabel = CreateText("StatusLabel", _root, 16f, FontStyles.Bold, TextAlignmentOptions.Center, 0.84f);
             Anchor(_statusLabel.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), statusOffset, new Vector2(420f, 24f));
 
@@ -2804,6 +2815,8 @@ namespace Hecton8.UI
                 _lastStreamedPressure = pressure;
             }
 
+            UpdateEncumbranceReadout(pulsedPrimary, pulsedDim, pulsedWarning, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion);
+
             Color statusColor = PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning);
             if (_biosRecoveryMode)
             {
@@ -2862,6 +2875,117 @@ namespace Hecton8.UI
                 RefreshQuickbarVisuals(pulsedPrimary, pulsedDim, pulsedWarning);
                 _quickbarVisualsInitialized = true;
             }
+        }
+
+        private void UpdateEncumbranceReadout(
+            Color primary,
+            Color dim,
+            Color warning,
+            bool corruptedMode,
+            float corruptionIntensity,
+            int corruptionVersion)
+        {
+            if (_loadLabel == null)
+                return;
+
+            ResolveInventoryLoadValues(out float totalMassKg, out float carryCapacityKg, out float load01);
+            Color loadColor = ResolveLoadColor(primary, dim, warning, load01);
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+            {
+                if (_appliedLoadColor != loadColor)
+                {
+                    _loadLabel.color = loadColor;
+                    _appliedLoadColor = loadColor;
+                }
+
+                return;
+            }
+
+            try
+            {
+                if (!TryBuildLoadBuffer(lease.Buffer, totalMassKg, carryCapacityKg, out int length, out int version))
+                {
+                    if (!TryBuildLoadBuffer(_loadDisplayFallbackBuffer, totalMassKg, carryCapacityKg, out length, out version))
+                        return;
+
+                    SetDisplayBufferIfChanged(
+                        _loadLabel,
+                        _loadDisplayFallbackBuffer,
+                        length,
+                        false,
+                        loadColor,
+                        version,
+                        corruptedMode,
+                        corruptionIntensity,
+                        corruptionVersion,
+                        229,
+                        ref _appliedLoadVersion,
+                        ref _appliedLoadColor);
+                    return;
+                }
+
+                SetDisplayBufferIfChanged(
+                    _loadLabel,
+                    lease.Buffer,
+                    length,
+                    false,
+                    loadColor,
+                    version,
+                    corruptedMode,
+                    corruptionIntensity,
+                    corruptionVersion,
+                    229,
+                    ref _appliedLoadVersion,
+                    ref _appliedLoadColor);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private void ResolveInventoryLoadValues(out float totalMassKg, out float carryCapacityKg, out float load01)
+        {
+            totalMassKg = _playerInventory != null
+                ? Mathf.Max(0f, _playerInventory.TotalMassKg)
+                : (survival != null ? Mathf.Max(0f, survival.Weight) : 0f);
+            carryCapacityKg = survival != null && survival.Stats != null
+                ? Mathf.Max(0.01f, survival.Stats.CarryCapacityKg)
+                : 200f;
+            load01 = playerMovement != null
+                ? Mathf.Clamp01(playerMovement.InventoryLoad01)
+                : Mathf.Clamp01(totalMassKg / carryCapacityKg);
+        }
+
+        private static Color ResolveLoadColor(Color primary, Color dim, Color warning, float load01)
+        {
+            if (load01 <= 0.9f)
+                return Alpha(Color.Lerp(dim, primary, Mathf.Clamp01(load01 * 0.65f)), 0.72f);
+
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 10f);
+            Color red = new Color(1f, 0.06f, 0.045f, 1f);
+            return Alpha(Color.Lerp(warning, red, 0.42f + pulse * 0.48f), 0.95f);
+        }
+
+        private static bool TryBuildLoadBuffer(char[] buffer, float totalMassKg, float carryCapacityKg, out int length, out int version)
+        {
+            length = 0;
+            version = 0;
+            if (buffer == null || buffer.Length < 16)
+                return false;
+
+            int roundedMassKg = Mathf.Max(0, Mathf.RoundToInt(totalMassKg));
+            int roundedCapacityKg = Mathf.Max(1, Mathf.RoundToInt(carryCapacityKg));
+            int cursor = 0;
+            cursor = AppendChars(s_loadPrefixChars, buffer, cursor);
+            cursor = AppendInt(roundedMassKg, buffer, cursor);
+            cursor = AppendChars(s_loadSeparatorChars, buffer, cursor);
+            cursor = AppendInt(roundedCapacityKg, buffer, cursor);
+            cursor = AppendChars(s_loadKgSuffixChars, buffer, cursor);
+            length = Mathf.Clamp(cursor, 0, buffer.Length);
+            version = unchecked((roundedMassKg * 397) ^ roundedCapacityKg);
+            return cursor <= buffer.Length;
         }
 
         private void RefreshDepthSignalSubscription()
@@ -4133,6 +4257,16 @@ namespace Hecton8.UI
             return cursor + writable;
         }
 
+        private static int AppendChars(char[] value, char[] buffer, int cursor)
+        {
+            if (value == null || value.Length == 0 || buffer == null || cursor >= buffer.Length)
+                return cursor;
+
+            int writable = Mathf.Min(value.Length, buffer.Length - cursor);
+            Array.Copy(value, 0, buffer, cursor, writable);
+            return cursor + writable;
+        }
+
         private static int AppendInt(int value, char[] buffer, int cursor)
         {
             if (buffer == null || cursor >= buffer.Length)
@@ -4949,6 +5083,9 @@ namespace Hecton8.UI
         private void TryRegisterRuntimeTick()
         {
             if (!Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_tickRegistered)

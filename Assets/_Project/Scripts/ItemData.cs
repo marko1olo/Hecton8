@@ -80,6 +80,8 @@ namespace Hecton8.Items
         [SerializeField] private ItemPhysicsMaterialTag physicsMaterialTag = ItemPhysicsMaterialTag.Default;
         [Tooltip("Optional shared PhysicMaterial override applied to world colliders. Leave null to preserve the prefab default.")]
         [SerializeField] private PhysicsMaterial worldPhysicMaterial;
+        [Tooltip("Inventory radiation dose emitted per second while carried. Zero disables isotope half-life logic.")]
+        [SerializeField, Min(0f)] private float radiationSvPerSecond;
 
         [Header("Classification")]
         [Tooltip("Category used by UI filters and fabrication rules.")]
@@ -237,6 +239,12 @@ namespace Hecton8.Items
             ? ItemPhysicalMetadataUtility.ResolveDefaultPhysicsMaterialTag(category, resourceFamily, PersistentId)
             : physicsMaterialTag;
         public PhysicsMaterial WorldPhysicMaterial => worldPhysicMaterial;
+        public float RadiationSvPerSecond => Mathf.Max(
+            0f,
+            radiationSvPerSecond > 0f
+                ? radiationSvPerSecond
+                : ItemPhysicalMetadataUtility.ResolveDefaultRadiationSvPerSecond(category, resourceFamily, PersistentId));
+        public bool IsRadioactive => RadiationSvPerSecond > 0f;
 
         public int CellArea => width * height;
 
@@ -289,6 +297,9 @@ namespace Hecton8.Items
 
             if (!autoResolvePhysicalMetadata && volumeM3 < 0.0005f)
                 volumeM3 = 0.0005f;
+
+            if (radiationSvPerSecond < 0f)
+                radiationSvPerSecond = 0f;
 
             InvalidateLocalizedCache();
             EnsureLocalizedCache();

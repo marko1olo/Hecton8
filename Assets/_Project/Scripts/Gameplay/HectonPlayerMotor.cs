@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Inventory;
 using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Jobs;
@@ -33,7 +34,9 @@ namespace Hecton8.Gameplay
         private const int MaxSlideSweepIterations = 2;
         private const int ScheduledSweepCommandCount = 1;
         private const int ScheduledSweepMaxHits = 8;
+        private const int HydrodynamicGhostHistoryCapacity = 4;
         private const float MaxHydrodynamicGhostBlend = 0.15f;
+        private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
@@ -41,12 +44,10 @@ namespace Hecton8.Gameplay
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
+        private PlayerInventory _encumbranceSource;
         private bool _isGrounded;
         private readonly RaycastHit[] _sweepHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — motor-owned sweep/collision query buffer for kinematic isolation — owner: HectonPlayerMotor
-        private NativeArray<float3> _hydrodynamicGhostVelocityHistory;
-        private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
-        private NativeArray<RaycastHit> _scheduledSweepResults;
-        private JobHandle _scheduledSweepHandle;
+        private HectonPlayerMotorNativeState _nativeState;
         private bool _scheduledSweepPending;
         private bool _scheduledSweepResultReady;
         private bool _scheduledSweepWasBlocked;
@@ -57,6 +58,8 @@ namespace Hecton8.Gameplay
         private int _hydrodynamicGhostWriteIndex;
         private int _hydrodynamicGhostSampleCount;
         private bool _registeredPostFixedTick;
+        private bool _registeredMotorService;
+        private float _encumbranceMovementMultiplier = 1f;
 
         /// <inheritdoc />
         public Rigidbody Body => _body;
@@ -66,6 +69,9 @@ namespace Hecton8.Gameplay
 
         /// <inheritdoc />
         public bool IsGrounded => _isGrounded;
+
+        /// <summary>Current event-driven carry-load movement scalar.</summary>
+        public float EncumbranceMovementMultiplier => _encumbranceMovementMultiplier;
 
         /// <summary>Motor-owned sweep buffer. Reserved for kinematic queries only.</summary>
         public RaycastHit[] SweepHitBuffer => _sweepHitBuffer;
@@ -79,21 +85,33 @@ namespace Hecton8.Gameplay
             ResetHydrodynamicAddedMassState();
         }
 
+        /// <summary>Binds the inventory source accepted by encumbrance events.</summary>
+        public void BindEncumbranceSource(PlayerInventory inventory)
+        {
+            _encumbranceSource = inventory;
+        }
+
         private void OnEnable()
         {
+            InventoryEvents.OnEncumbranceChanged += HandleEncumbranceChanged;
             TryRegisterPostFixedTick();
+            TryRegisterMotorService();
         }
 
         private void OnDisable()
         {
+            InventoryEvents.OnEncumbranceChanged -= HandleEncumbranceChanged;
             TryUnregisterPostFixedTick();
+            TryUnregisterMotorService();
             DisposeScheduledSweepState();
             DisposeHydrodynamicGhostState();
         }
 
         private void OnDestroy()
         {
+            InventoryEvents.OnEncumbranceChanged -= HandleEncumbranceChanged;
             TryUnregisterPostFixedTick();
+            TryUnregisterMotorService();
             DisposeScheduledSweepState();
             DisposeHydrodynamicGhostState();
         }
@@ -102,6 +120,21 @@ namespace Hecton8.Gameplay
         public void SetGroundedState(bool isGrounded)
         {
             _isGrounded = isGrounded;
+        }
+
+        /// <summary>Applies a pre-resolved carry-load movement scalar.</summary>
+        public void SetEncumbranceMovementMultiplier(float multiplier)
+        {
+            _encumbranceMovementMultiplier = math.clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
+        }
+
+        private void HandleEncumbranceChanged(EncumbranceChangedEvent payload)
+        {
+            if (_encumbranceSource != null && payload.Inventory != _encumbranceSource)
+                return;
+
+            float load01 = math.saturate(payload.Load01);
+            SetEncumbranceMovementMultiplier(math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01));
         }
 
         /// <inheritdoc />
@@ -449,10 +482,10 @@ namespace Hecton8.Gameplay
             using (_hydrodynamicGhostProfilerMarker.Auto())
             {
                 RecordHydrodynamicGhostVelocity(safeActualVelocity);
-                if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
+                if (_hydrodynamicGhostSampleCount < _nativeState.HydrodynamicGhostVelocityHistory.Length)
                     return safeActualVelocity;
 
-                float3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
+                float3 oldestVelocity = _nativeState.HydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
                 float3 currentVelocity = new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z);
                 float3 perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
                 return SafeVelocity(new Vector3(perceivedVelocity.x, perceivedVelocity.y, perceivedVelocity.z), safeActualVelocity);
@@ -465,8 +498,8 @@ namespace Hecton8.Gameplay
             EnsureHydrodynamicGhostState();
             _hydrodynamicGhostWriteIndex = 0;
             _hydrodynamicGhostSampleCount = 0;
-            for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
-                _hydrodynamicGhostVelocityHistory[i] = float3.zero;
+            for (int i = 0; i < _nativeState.HydrodynamicGhostVelocityHistory.Length; i++)
+                _nativeState.HydrodynamicGhostVelocityHistory[i] = float3.zero;
         }
 
         /// <summary>
@@ -500,7 +533,7 @@ namespace Hecton8.Gameplay
                 SelfColliderInstanceId = selfColliderInstanceId
             };
 
-            _scheduledSweepCommands[0] = new CapsulecastCommand(
+            _nativeState.ScheduledSweepCommands[0] = new CapsulecastCommand(
                 capsulePoint1,
                 capsulePoint2,
                 math.max(0.01f, capsuleRadius),
@@ -510,9 +543,9 @@ namespace Hecton8.Gameplay
 
             using (_scheduledSweepProfilerMarker.Auto())
             {
-                _scheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
-                    _scheduledSweepCommands,
-                    _scheduledSweepResults,
+                _nativeState.ScheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
+                    _nativeState.ScheduledSweepCommands,
+                    _nativeState.ScheduledSweepResults,
                     1,
                     ScheduledSweepMaxHits,
                     default);
@@ -630,37 +663,14 @@ namespace Hecton8.Gameplay
 
         private void EnsureScheduledSweepState()
         {
-            if (!_scheduledSweepCommands.IsCreated)
-                _scheduledSweepCommands = new NativeArray<CapsulecastCommand>(ScheduledSweepCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-
-            if (!_scheduledSweepResults.IsCreated)
-                _scheduledSweepResults = new NativeArray<RaycastHit>(ScheduledSweepMaxHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _nativeState.EnsureScheduledSweepState(ScheduledSweepCommandCount, ScheduledSweepMaxHits);
         }
 
         private void DisposeScheduledSweepState()
         {
-            if (_scheduledSweepCommands.IsCreated)
-            {
-                JobHandle dependency = _scheduledSweepPending ? _scheduledSweepHandle : default;
-                dependency = _scheduledSweepCommands.Dispose(dependency);
-                _scheduledSweepCommands = default;
-                if (_scheduledSweepResults.IsCreated)
-                {
-                    dependency = _scheduledSweepResults.Dispose(dependency);
-                    _scheduledSweepResults = default;
-                }
-
-                if (dependency.IsCompleted)
-                    dependency.Complete();
-            }
-            else if (_scheduledSweepResults.IsCreated)
-            {
-                _scheduledSweepResults.Dispose();
-                _scheduledSweepResults = default;
-            }
+            _nativeState.DisposeScheduledSweepState(_scheduledSweepPending, _nativeState.ScheduledSweepHandle);
 
             _scheduledSweepPending = false;
-            _scheduledSweepHandle = default;
             _scheduledSweepResultReady = false;
             _scheduledSweepWasBlocked = false;
             _scheduledSweepBlockingHit = default;
@@ -686,14 +696,32 @@ namespace Hecton8.Gameplay
             _registeredPostFixedTick = false;
         }
 
-        private void CompleteScheduledSweepInPostFixedSwapWindow()
+        private void TryRegisterMotorService()
         {
-            if (!_scheduledSweepPending || !_scheduledSweepHandle.IsCompleted)
+            if (_registeredMotorService || !Application.isPlaying)
                 return;
 
-            _scheduledSweepHandle.Complete();
+            GlobalRegistry.RegisterPlayerMotorService(this);
+            _registeredMotorService = true;
+        }
+
+        private void TryUnregisterMotorService()
+        {
+            if (!_registeredMotorService)
+                return;
+
+            GlobalRegistry.UnregisterPlayerMotorService(this);
+            _registeredMotorService = false;
+        }
+
+        private void CompleteScheduledSweepInPostFixedSwapWindow()
+        {
+            if (!_scheduledSweepPending || !_nativeState.ScheduledSweepHandle.IsCompleted)
+                return;
+
+            _nativeState.ScheduledSweepHandle.Complete();
             _scheduledSweepPending = false;
-            _scheduledSweepHandle = default;
+            _nativeState.ScheduledSweepHandle = default;
             _scheduledSweepResultReady = true;
             _scheduledSweepWasBlocked = false;
             _scheduledSweepBlockingHit = default;
@@ -704,7 +732,7 @@ namespace Hecton8.Gameplay
             int nearestIndex = -1;
             for (int i = 0; i < ScheduledSweepMaxHits; i++)
             {
-                RaycastHit hit = _scheduledSweepResults[i];
+                RaycastHit hit = _nativeState.ScheduledSweepResults[i];
                 int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
                 if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
                     continue;
@@ -720,7 +748,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _scheduledSweepWasBlocked = true;
-            _scheduledSweepBlockingHit = _scheduledSweepResults[nearestIndex];
+            _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
             float safeDistance = math.max(0f, _scheduledSweepBlockingHit.distance - _scheduledSweepState.SkinWidth);
             float penetrationDepth = math.max(0f, _scheduledSweepState.SkinWidth - _scheduledSweepBlockingHit.distance);
             _scheduledSweepResolvedPosition = _scheduledSweepState.StartPosition +
@@ -740,28 +768,20 @@ namespace Hecton8.Gameplay
         {
             EnsureHydrodynamicGhostState();
             Vector3 safeVelocity = SafeVelocity(velocity);
-            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
-            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
-            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
+            _nativeState.HydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
+            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _nativeState.HydrodynamicGhostVelocityHistory.Length;
+            if (_hydrodynamicGhostSampleCount < _nativeState.HydrodynamicGhostVelocityHistory.Length)
                 _hydrodynamicGhostSampleCount++;
         }
 
         private void EnsureHydrodynamicGhostState()
         {
-            if (_hydrodynamicGhostVelocityHistory.IsCreated)
-                return;
-
-            // COLD ALLOC: NativeArray<float3>[4] — 3-frame added-mass inertial ghost history for underwater locomotion perception — owner: HectonPlayerMotor
-            _hydrodynamicGhostVelocityHistory = new NativeArray<float3>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _nativeState.EnsureHydrodynamicGhostState(HydrodynamicGhostHistoryCapacity);
         }
 
         private void DisposeHydrodynamicGhostState()
         {
-            if (!_hydrodynamicGhostVelocityHistory.IsCreated)
-                return;
-
-            _hydrodynamicGhostVelocityHistory.Dispose();
-            _hydrodynamicGhostVelocityHistory = default;
+            _nativeState.DisposeHydrodynamicGhostState();
             _hydrodynamicGhostWriteIndex = 0;
             _hydrodynamicGhostSampleCount = 0;
         }

@@ -200,7 +200,7 @@ namespace Hecton8.SaveSystem
                 || !ReadBarter(ref reader, out data.barter)
                 || !ReadFieldOperationLog(ref reader, out data.fieldOperations)
                 || !ReadBeaconNetwork(ref reader, out data.beaconNetwork)
-                || !ReadExplorationMap(ref reader, out data.explorationMap)
+                || !ReadExplorationMap(ref reader, data.version, out data.explorationMap)
                 || !ReadPdaLogbook(ref reader, out data.pdaLogbook)
                 || !ReadPdaMarkers(ref reader, out data.pdaMarkers)
                 || !reader.ReadStruct(out data.pdaAdvisories)
@@ -715,14 +715,38 @@ namespace Hecton8.SaveSystem
         private static bool WriteExplorationMap(ref BufferWriter writer, ExplorationMapDTO value)
         {
             return writer.WriteInt(value.exploredChunkCount)
-                && writer.WriteStructArray(value.exploredChunkKeys);
+                && writer.WriteStructArray(value.exploredChunkKeys)
+                && writer.WriteInt(value.chunkSizeMeters)
+                && writer.WriteInt(value.mortonMaskAxisBits)
+                && writer.WriteInt(value.mortonMaskOriginOffset)
+                && writer.WriteInt(value.exploredMortonWordCount)
+                && writer.WriteStructArray(value.exploredMortonMaskWords);
         }
 
-        private static bool ReadExplorationMap(ref BufferReader reader, out ExplorationMapDTO value)
+        private static bool ReadExplorationMap(ref BufferReader reader, int version, out ExplorationMapDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.exploredChunkCount)
-                && reader.ReadStructArray(out value.exploredChunkKeys);
+            if (!reader.ReadInt(out value.exploredChunkCount)
+                || !reader.ReadStructArray(out value.exploredChunkKeys))
+            {
+                return false;
+            }
+
+            if (version < 50)
+            {
+                value.chunkSizeMeters = ExplorationMapDTO.DenseChunkSizeMeters;
+                value.mortonMaskAxisBits = ExplorationMapDTO.MortonMaskAxisBits;
+                value.mortonMaskOriginOffset = ExplorationMapDTO.MortonMaskOriginOffset;
+                value.exploredMortonWordCount = 0;
+                value.exploredMortonMaskWords = null;
+                return true;
+            }
+
+            return reader.ReadInt(out value.chunkSizeMeters)
+                && reader.ReadInt(out value.mortonMaskAxisBits)
+                && reader.ReadInt(out value.mortonMaskOriginOffset)
+                && reader.ReadInt(out value.exploredMortonWordCount)
+                && reader.ReadStructArray(out value.exploredMortonMaskWords);
         }
 
         private static bool WritePdaLogbook(ref BufferWriter writer, PDALogbookDTO value)
@@ -1058,10 +1082,13 @@ namespace Hecton8.SaveSystem
                 && writer.WriteFloat(value.co2Normalized)
                 && writer.WriteBool(value.isFlooded)
                 && writer.WriteByte(value.failureMode)
+                && writer.WriteFloat(value.floodedReefFloodSeconds)
+                && writer.WriteBool(value.interiorReefInfestationActive)
                 && writer.WriteInt(value.cultivationSlotCount)
                 && WriteStringArray(ref writer, value.cultivationSeedItemIds)
                 && writer.WriteStructArray(value.cultivationGeneticsMasks)
-                && writer.WriteStructArray(value.cultivationGrowth01);
+                && writer.WriteStructArray(value.cultivationGrowth01)
+                && writer.WriteStructArray(value.cultivationQuality01);
         }
 
         private static bool ReadModule(ref BufferReader reader, int version, out ModuleDTO value)
@@ -1095,19 +1122,42 @@ namespace Hecton8.SaveSystem
             if (!ok)
                 return false;
 
+            if (version >= 49)
+            {
+                if (!reader.ReadFloat(out value.floodedReefFloodSeconds) ||
+                    !reader.ReadBool(out value.interiorReefInfestationActive))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                value.floodedReefFloodSeconds = 0f;
+                value.interiorReefInfestationActive = false;
+            }
+
             if (version < 48)
             {
                 value.cultivationSlotCount = 0;
                 value.cultivationSeedItemIds = null;
                 value.cultivationGeneticsMasks = null;
                 value.cultivationGrowth01 = null;
+                value.cultivationQuality01 = null;
                 return true;
             }
 
-            return reader.ReadInt(out value.cultivationSlotCount)
+            ok = reader.ReadInt(out value.cultivationSlotCount)
                 && ReadStringArray(ref reader, out value.cultivationSeedItemIds)
                 && reader.ReadStructArray(out value.cultivationGeneticsMasks)
                 && reader.ReadStructArray(out value.cultivationGrowth01);
+            if (!ok)
+                return false;
+
+            if (version >= 51)
+                return reader.ReadStructArray(out value.cultivationQuality01);
+
+            value.cultivationQuality01 = null;
+            return true;
         }
 
         private static bool WriteModuleGraphNode(ref BufferWriter writer, in ModuleGraphNodeDTO value)

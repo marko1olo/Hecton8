@@ -232,7 +232,7 @@ namespace Hecton8.EditorTools
         {
             sb.AppendLine("── MATERIAL INSTANCE LEAKS ─────────────────────────────");
 
-            var renderers = Object.FindObjectsByType<Renderer>();
+            var renderers = Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude);
             int leakCount = 0;
             var leakedNames = new List<string>(32); // COLD ALLOC: editor-only.
 

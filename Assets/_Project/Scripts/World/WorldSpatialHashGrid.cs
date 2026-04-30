@@ -27,6 +27,29 @@ namespace Hecton8.World
         Module = 1 << 5
     }
 
+    [System.Flags]
+    internal enum SpatialTransientEventType : uint
+    {
+        None = 0u,
+        AcousticImpulse = 1u << 0,
+        ChemicalCloud = 1u << 1
+    }
+
+    [System.Flags]
+    internal enum SpatialInteractionFlags : uint
+    {
+        None = 0u,
+        Resource = 1u << 0,
+        Bioform = 1u << 1,
+        Signal = 1u << 2,
+        Pickup = 1u << 3,
+        Scannable = 1u << 4,
+        Module = 1u << 5,
+        AcousticReceiver = 1u << 6,
+        ChemicalReceiver = 1u << 7,
+        Interactable = 1u << 8
+    }
+
     internal readonly struct SpatialQueryHit
     {
         public SpatialQueryHit(
@@ -102,7 +125,16 @@ namespace Hecton8.World
             public int Layer;
             public float3 HalfExtents;
             public int PayloadId;
+            public uint EntityFlags;
             public bool IsResidentInNativeHash;
+        }
+
+        private struct TransientSignalEntry
+        {
+            public Vector3 RuntimePosition;
+            public double ExpireTimestamp;
+            public FieldTargetRole SignalRole;
+            public int SourceSpeciesId;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -164,16 +196,24 @@ namespace Hecton8.World
         private const double FarUnloadPlayerTravelThresholdSq = FarUnloadPlayerTravelThresholdMeters * FarUnloadPlayerTravelThresholdMeters;
         private const float FarUnloadDistanceMeters = 2500f;
         private const double FarUnloadDistanceSq = FarUnloadDistanceMeters * FarUnloadDistanceMeters;
+        private const int AcousticDensityMapAxis = 8;
+        private const int AcousticDensityMapCellCount = AcousticDensityMapAxis * AcousticDensityMapAxis * AcousticDensityMapAxis;
+        private const int AcousticDensityMapCadenceFrames = 10;
+        private const float AcousticDensityMapRadiusMeters = 160f;
+        private const int MaxTransientSignalCount = 16;
 
         private static readonly ProfilerMarker _queryProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Query");
         private static readonly ProfilerMarker _maintenanceProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Maintenance");
         private static readonly ProfilerMarker _validationProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.Validation");
         private static readonly ProfilerMarker _farUnloadProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.FarUnload");
+        private static readonly ProfilerMarker _acousticDensityProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.AcousticDensity");
 
         // COLD ALLOC: Dictionary<int,Entry>(256) — runtime metadata registry layered over the native AUP spatial hash — owner: WorldSpatialHashGrid
         private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(DefaultEntryCapacity);
         // COLD ALLOC: List<int>[128] â€” deferred far-unload handle scratch for dynamic native-hash eviction â€” owner: WorldSpatialHashGrid
         private static readonly List<int> _farUnloadHandleScratch = new List<int>(128);
+
+        private static readonly TransientSignalEntry[] _transientSignals = new TransientSignalEntry[MaxTransientSignalCount]; // COLD ALLOC: TransientSignalEntry[16] - transient PDA sonar signal ring - owner: WorldSpatialHashGrid
 
         private static HectonSpatialHash _nativeHash;
         private static NativeList<int> _queryHandles;
@@ -196,6 +236,9 @@ namespace Hecton8.World
         private static JobHandle _farUnloadHandle;
         private static bool _farUnloadScheduled;
         private static int _farUnloadCount;
+        private static NativeArray<float> _acousticDensityMap;
+        private static int _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
+        private static int _transientSignalWriteIndex;
         private static AbsoluteUniversePosition _lastFarUnloadPlayerAup;
         private static bool _hasLastFarUnloadPlayerAup;
         private static int _lastValidationFrame = -ValidationCadenceFrames;
@@ -207,6 +250,7 @@ namespace Hecton8.World
             DisposeValidationBuffers();
             DisposeOriginShiftBuffers();
             DisposeFarUnloadBuffers();
+            DisposeAcousticDensityMap();
             _farUnloadHandleScratch.Clear();
             if (_queryHandles.IsCreated)
             {
@@ -224,6 +268,10 @@ namespace Hecton8.World
             _farUnloadCount = 0;
             _hasLastFarUnloadPlayerAup = false;
             _lastValidationFrame = -ValidationCadenceFrames;
+            _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
+            _transientSignalWriteIndex = 0;
+            for (int i = 0; i < _transientSignals.Length; i++)
+                _transientSignals[i] = default;
         }
 
         public static int RegisterResource(ResourceNode node)
@@ -356,8 +404,9 @@ namespace Hecton8.World
             EnsureInitialized();
             if (entry.IsResidentInNativeHash)
                 _nativeHash.Unregister(handle);
+            else
+                _nativeHash.ReleaseHandle(handle);
 
-            _nativeHash.ReleaseHandle(handle);
             _entries.Remove(handle);
         }
 
@@ -486,6 +535,26 @@ namespace Hecton8.World
                 }
             }
 
+            double currentTimestamp = Time.unscaledTimeAsDouble;
+            for (int i = 0; i < _transientSignals.Length; i++)
+            {
+                TransientSignalEntry signalEntry = _transientSignals[i];
+                if (signalEntry.ExpireTimestamp <= currentTimestamp)
+                    continue;
+
+                float distanceSqr = (signalEntry.RuntimePosition - origin).sqrMagnitude;
+                if (distanceSqr > radiusSqr)
+                    continue;
+
+                signalCount++;
+                if (distanceSqr < nearestSignalDistanceSqr)
+                {
+                    nearestSignalDistanceSqr = distanceSqr;
+                    nearestSignalRole = signalEntry.SignalRole;
+                    hasNearestSignal = true;
+                }
+            }
+
             snapshot = new SpatialSonarSnapshot(
                 resourceCount,
                 bioformCount,
@@ -505,12 +574,22 @@ namespace Hecton8.World
             SpatialTargetKind kindMask,
             SpatialQueryHit[] results)
         {
+            return CollectContactsNonAlloc(origin, radius, kindMask, SpatialInteractionFlags.None, results);
+        }
+
+        public static int CollectContactsNonAlloc(
+            Vector3 origin,
+            float radius,
+            SpatialTargetKind kindMask,
+            SpatialInteractionFlags interactionFilter,
+            SpatialQueryHit[] results)
+        {
             if (results == null || results.Length == 0 || kindMask == SpatialTargetKind.None)
                 return 0;
 
             int count = 0;
             float radiusSqr = radius * radius;
-            int handleCount = CollectCandidateHandles(origin, radius, kindMask);
+            int handleCount = CollectCandidateHandles(origin, radius, kindMask, (uint)interactionFilter);
             for (int i = 0; i < handleCount; i++)
             {
                 if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
@@ -543,6 +622,79 @@ namespace Hecton8.World
             return count;
         }
 
+        public static void RegisterTransientEvent(
+            Vector3 worldPosition,
+            float radiusMeters,
+            float intensity,
+            float lifetimeSeconds,
+            SpatialTransientEventType eventType,
+            SpatialInteractionFlags eventFlags = SpatialInteractionFlags.None,
+            FieldTargetRole signalRole = FieldTargetRole.Generic,
+            int sourceSpeciesId = 0)
+        {
+            if (radiusMeters <= 0f || intensity <= 0f || lifetimeSeconds <= 0f || eventType == SpatialTransientEventType.None)
+                return;
+
+            EnsureInitialized();
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            double currentTimestamp = Time.unscaledTimeAsDouble;
+            double expirationTimestamp = currentTimestamp + lifetimeSeconds;
+            uint sourceKey = ComposeTransientSignalSourceKey(signalRole, sourceSpeciesId);
+            _nativeHash.RegisterTransientEvent(
+                in positionAup,
+                radiusMeters,
+                math.saturate(intensity),
+                expirationTimestamp,
+                (uint)eventType,
+                (uint)eventFlags,
+                currentTimestamp,
+                sourceKey);
+
+            if (sourceKey != 0u)
+                TrackTransientSignal(worldPosition, expirationTimestamp, signalRole, sourceSpeciesId);
+        }
+
+        /// <summary>
+        /// Clears one transient signal source immediately, used by mimic fauna once the false beacon has served its ambush role.
+        /// </summary>
+        public static void ClearTransientSignal(FieldTargetRole signalRole, int sourceSpeciesId)
+        {
+            uint sourceKey = ComposeTransientSignalSourceKey(signalRole, sourceSpeciesId);
+            if (sourceKey != 0u)
+            {
+                EnsureInitialized();
+                _nativeHash.ClearTransientEvents((uint)SpatialTransientEventType.AcousticImpulse, sourceKey, Time.unscaledTimeAsDouble);
+                _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
+            }
+
+            double currentTimestamp = Time.unscaledTimeAsDouble;
+            for (int i = 0; i < _transientSignals.Length; i++)
+            {
+                TransientSignalEntry entry = _transientSignals[i];
+                if (entry.ExpireTimestamp <= currentTimestamp)
+                    continue;
+
+                if (entry.SignalRole == signalRole && entry.SourceSpeciesId == sourceSpeciesId)
+                    _transientSignals[i] = default;
+            }
+        }
+
+        public static bool TryGetAcousticDensityMap(
+            out NativeArray<float> densityMap,
+            out Vector3Int dimensions)
+        {
+            EnsureAcousticDensityMap();
+            densityMap = _acousticDensityMap;
+            dimensions = new Vector3Int(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis);
+            return _acousticDensityMap.IsCreated;
+        }
+
+        public static bool IsHandleCurrent(int handle)
+        {
+            EnsureInitialized();
+            return _nativeHash.IsCurrentHandle(handle);
+        }
+
         internal static void LateFrameMaintenance(int frameCount)
         {
             EnsureInitialized();
@@ -562,6 +714,12 @@ namespace Hecton8.World
 
                 if (!_farUnloadScheduled)
                     TryScheduleFarUnload();
+
+                if (frameCount - _lastAcousticDensityFrame >= AcousticDensityMapCadenceFrames)
+                {
+                    _nativeHash.PruneExpiredTransientEvents(Time.unscaledTimeAsDouble);
+                    BuildAcousticDensityMap(frameCount);
+                }
             }
         }
 
@@ -625,7 +783,8 @@ namespace Hecton8.World
             EnsureInitialized();
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
             float3 safeHalfExtents = math.max(halfExtents, 0f);
-            int handle = _nativeHash.Register(positionAup, safeHalfExtents, (int)kind, 0);
+            uint entityFlags = ResolveEntityFlags(kind);
+            int handle = _nativeHash.Register(positionAup, safeHalfExtents, (int)kind, entityFlags, 0);
             _entries[handle] = new Entry
             {
                 Transform = targetTransform,
@@ -637,6 +796,7 @@ namespace Hecton8.World
                 Layer = targetTransform.gameObject.layer,
                 HalfExtents = safeHalfExtents,
                 PayloadId = 0,
+                EntityFlags = entityFlags,
                 IsResidentInNativeHash = true
             };
             return handle;
@@ -654,7 +814,9 @@ namespace Hecton8.World
             entry.Layer = targetTransform.gameObject.layer;
             entry.RuntimePosition = targetTransform.position;
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
-            _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.PayloadId);
+            if (entry.EntityFlags == 0u)
+                entry.EntityFlags = ResolveEntityFlags(entry.Kind);
+            _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId);
             entry.IsResidentInNativeHash = true;
             _entries[handle] = entry;
         }
@@ -675,13 +837,13 @@ namespace Hecton8.World
             return 0;
         }
 
-        private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask)
+        private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, uint interactionFilter = 0u)
         {
             EnsureInitialized();
             using (_queryProfilerMarker.Auto())
             {
                 AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-                return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, _queryHandles);
+                return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, interactionFilter, _queryHandles);
             }
         }
 
@@ -734,13 +896,13 @@ namespace Hecton8.World
             return found;
         }
 
-        private static void ScheduleValidation(int frameCount)
+        private static void ScheduleValidation(int currentFrame)
         {
             EnsureInitialized();
             int count = _entries.Count;
             if (count <= 0)
             {
-                _lastValidationFrame = frameCount;
+                _lastValidationFrame = currentFrame;
                 return;
             }
 
@@ -762,7 +924,7 @@ namespace Hecton8.World
 
             if (writeIndex <= 0)
             {
-                _lastValidationFrame = frameCount;
+                _lastValidationFrame = currentFrame;
                 return;
             }
 
@@ -777,7 +939,7 @@ namespace Hecton8.World
                     InvalidMask = _validationInvalidMask
                 }.Schedule(writeIndex, 64);
                 _validationScheduled = true;
-                _lastValidationFrame = frameCount;
+                _lastValidationFrame = currentFrame;
             }
         }
 
@@ -887,7 +1049,7 @@ namespace Hecton8.World
                 if (entry.Transform != null)
                     entry.RuntimePosition = entry.Transform.position;
 
-                _nativeHash.Unregister(handle);
+                _nativeHash.Evict(handle);
                 entry.IsResidentInNativeHash = false;
                 AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
                 HectonEventBus.Publish(new SpatialHashEntryUnloadedEvent(
@@ -917,7 +1079,9 @@ namespace Hecton8.World
 
                 entry.RuntimePosition = _originShiftRuntimePositions[i];
                 AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromAbsolutePosition(_originShiftAbsolutePositions[i]);
-                _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.PayloadId);
+                if (entry.EntityFlags == 0u)
+                    entry.EntityFlags = ResolveEntityFlags(entry.Kind);
+                _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId);
             }
 
             _originShiftRefreshCount = 0;
@@ -1053,6 +1217,94 @@ namespace Hecton8.World
             _farUnloadCount = 0;
         }
 
+        private static void EnsureAcousticDensityMap()
+        {
+            if (_acousticDensityMap.IsCreated && _acousticDensityMap.Length == AcousticDensityMapCellCount)
+                return;
+
+            DisposeAcousticDensityMap();
+            // COLD ALLOC: NativeArray<float>[512] - 8x8x8 transient acoustic density payload - owner: WorldSpatialHashGrid
+            _acousticDensityMap = new NativeArray<float>(AcousticDensityMapCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private static void DisposeAcousticDensityMap()
+        {
+            if (_acousticDensityMap.IsCreated)
+            {
+                _acousticDensityMap.Dispose();
+                _acousticDensityMap = default;
+            }
+        }
+
+        private static void BuildAcousticDensityMap(int currentFrame)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return;
+
+            EnsureAcousticDensityMap();
+            using (_acousticDensityProfilerMarker.Auto())
+            {
+                AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                _nativeHash.BuildAcousticDensityMap(
+                    in listenerAup,
+                    AcousticDensityMapRadiusMeters,
+                    Time.unscaledTimeAsDouble,
+                    _acousticDensityMap,
+                    new int3(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis),
+                    (uint)SpatialTransientEventType.AcousticImpulse);
+                _lastAcousticDensityFrame = currentFrame;
+            }
+        }
+
+        private static void TrackTransientSignal(
+            Vector3 runtimePosition,
+            double expirationTimestamp,
+            FieldTargetRole signalRole,
+            int sourceSpeciesId)
+        {
+            _transientSignals[_transientSignalWriteIndex] = new TransientSignalEntry
+            {
+                RuntimePosition = runtimePosition,
+                ExpireTimestamp = expirationTimestamp,
+                SignalRole = signalRole,
+                SourceSpeciesId = sourceSpeciesId
+            };
+            _transientSignalWriteIndex = (_transientSignalWriteIndex + 1) % _transientSignals.Length;
+        }
+
+        private static uint ComposeTransientSignalSourceKey(FieldTargetRole signalRole, int sourceSpeciesId)
+        {
+            if (signalRole == FieldTargetRole.Generic && sourceSpeciesId == 0)
+                return 0u;
+
+            unchecked
+            {
+                uint roleBits = ((uint)signalRole & 0xFFu) << 24;
+                uint speciesBits = (uint)sourceSpeciesId & 0x00FFFFFFu;
+                return roleBits | speciesBits;
+            }
+        }
+
+        private static uint ResolveEntityFlags(SpatialTargetKind kind)
+        {
+            uint flags = 0u;
+            if ((kind & SpatialTargetKind.Resource) != 0)
+                flags |= (uint)(SpatialInteractionFlags.Resource | SpatialInteractionFlags.Interactable);
+            if ((kind & SpatialTargetKind.Bioform) != 0)
+                flags |= (uint)(SpatialInteractionFlags.Bioform | SpatialInteractionFlags.AcousticReceiver | SpatialInteractionFlags.ChemicalReceiver);
+            if ((kind & SpatialTargetKind.Signal) != 0)
+                flags |= (uint)SpatialInteractionFlags.Signal;
+            if ((kind & SpatialTargetKind.Pickup) != 0)
+                flags |= (uint)(SpatialInteractionFlags.Pickup | SpatialInteractionFlags.Interactable);
+            if ((kind & SpatialTargetKind.Scannable) != 0)
+                flags |= (uint)(SpatialInteractionFlags.Scannable | SpatialInteractionFlags.Interactable);
+            if ((kind & SpatialTargetKind.Module) != 0)
+                flags |= (uint)(SpatialInteractionFlags.Module | SpatialInteractionFlags.Interactable);
+            return flags;
+        }
+
         private static bool IsFarUnloadEligible(Entry entry)
         {
             if (entry == null || !entry.IsResidentInNativeHash)
@@ -1086,6 +1338,7 @@ namespace Hecton8.World
                 case FieldTargetRole.PowerGeneration:
                 case FieldTargetRole.PowerRelay:
                 case FieldTargetRole.PowerLoad:
+                case FieldTargetRole.DistressBeacon:
                     return true;
                 default:
                     return false;

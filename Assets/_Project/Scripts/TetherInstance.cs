@@ -260,7 +260,7 @@ namespace Hecton8.Physics
             _fullTensionExtension = owner != null ? owner.ResolveFullTensionExtension() : 1f;
             _maxBendPoints = owner != null ? owner.ResolveMaxBendPoints() : 0;
             _bendPointClearanceRadius = owner != null ? owner.ResolveBendPointClearanceRadius() : 0.3f;
-            _bendObstructionMask = owner != null ? owner.ResolveCableBendObstructionMask() : ~0;
+            _bendObstructionMask = owner != null ? owner.ResolveCableBendObstructionMask() : (1 << 8) | (1 << 9) | (1 << 10);
             _bendSurfaceOffset = owner != null ? owner.ResolveBendSurfaceOffset() : 0.12f;
             _bendEndpointInset = owner != null ? owner.ResolveBendEndpointInset() : 0.08f;
             _visualSegmentCount = owner != null ? owner.ResolveVisualSegmentCount() : 16;

@@ -65,6 +65,8 @@ namespace Hecton8.Physics
         private const float AbyssalFlowThermoclineDepthMeters = 120f;
         private const int GpuReadbackRingSize = 3;
         private const int MaxAbyssalHeatSourceCount = 8;
+        private const int MaxCavitationBurstEvents = 8;
+        private const int CavitationShockwaveHitCapacity = 24;
         private const float AbyssalBiolumeSurgeHoldSeconds = 4f;
         private const string NonFiniteBuoyancyForceLog = "[HectonFluidEngine] Non-finite buoyancy force output detected. Zeroing packet.";
         private const string NonFiniteBuoyancyTorqueLog = "[HectonFluidEngine] Non-finite buoyancy torque output detected. Zeroing packet.";
@@ -85,6 +87,16 @@ namespace Hecton8.Physics
             public float Intensity;
             public float Radius;
             public float3 Padding;
+        }
+
+        private struct CavitationBurstEvent
+        {
+            public Vector3 Position;
+            public Vector3 Direction;
+            public float Intensity01;
+            public float Radius;
+            public float Acceleration;
+            public int SourceBodyInstanceId;
         }
 
         private static readonly int _GpuBuoyancyPositionsId = Shader.PropertyToID("_GpuBuoyancyPositions");
@@ -220,6 +232,18 @@ namespace Hecton8.Physics
         [SerializeField, Range(4f, 40f)] private float abyssalHeatProbeRadius = 16f;
         [SerializeField, Range(0.1f, 64f)] private float abyssalHeatIntensityNormalization = 18f;
 
+        [Header("-- Cavitation -----------------------")]
+        [Tooltip("Optional particle system used for thruster cavitation bubble bursts.")]
+        [SerializeField] private ParticleSystem cavitationBubbleParticles;
+        [Tooltip("Particle count emitted by a full-intensity cavitation burst.")]
+        [SerializeField, Range(1, 128)] private int cavitationBubbleEmitCountAtFullIntensity = 42;
+        [Tooltip("Layer mask for small fauna or loose bodies affected by cavitation shockwaves.")]
+        [SerializeField] private LayerMask cavitationShockwaveLayers = (1 << 8) | (1 << 9) | (1 << 10);
+        [Tooltip("Maximum Rigidbody mass affected by cavitation collapse so large props and the submarine are ignored.")]
+        [SerializeField, Min(0.1f)] private float cavitationShockwaveMaxAffectedMassKg = 120f;
+        [Tooltip("Upward lift mixed into cavitation shockwave direction.")]
+        [SerializeField, Range(0f, 1f)] private float cavitationShockwaveVerticalLift = 0.12f;
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
@@ -318,6 +342,29 @@ namespace Hecton8.Physics
         /// <summary>Количество зарегистрированных объектов.</summary>
         public int ObjectCount => _objects.Count;
 
+        /// <summary>
+        /// Queues one thruster cavitation burst for post-fixed particle emission and shockwave force routing.
+        /// </summary>
+        /// <param name="position">World-space burst origin.</param>
+        /// <param name="direction">Preferred burst direction from the thruster exhaust.</param>
+        /// <param name="intensity01">Normalized cavitation intensity.</param>
+        /// <param name="radius">Shockwave radius in meters.</param>
+        /// <param name="acceleration">Shockwave acceleration routed through PhysicsApplySystem.</param>
+        /// <param name="sourceBodyInstanceId">Rigidbody instance ID to ignore, usually the submarine body.</param>
+        /// <returns>True when the fixed-capacity burst queue accepted the event.</returns>
+        public static bool QueueCavitationBurst(
+            Vector3 position,
+            Vector3 direction,
+            float intensity01,
+            float radius,
+            float acceleration,
+            int sourceBodyInstanceId)
+        {
+            HectonFluidEngine instance = _instance;
+            return instance != null &&
+                   instance.EnqueueCavitationBurst(position, direction, intensity01, radius, acceleration, sourceBodyInstanceId);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EVENTS
         // ══════════════════════════════════════════════════════════
@@ -375,6 +422,13 @@ namespace Hecton8.Physics
         private JobHandle _scheduledBuoyancyHandle;
         private bool _scheduledBuoyancyJobActive;
         private int _scheduledForceCount;
+        // COLD ALLOC: CavitationBurstEvent[8] — fixed post-fixed cavitation burst queue — owner: HectonFluidEngine
+        private readonly CavitationBurstEvent[] _cavitationBurstQueue = new CavitationBurstEvent[MaxCavitationBurstEvents];
+        // COLD ALLOC: Collider[24] — nonalloc cavitation shockwave overlap buffer — owner: HectonFluidEngine
+        private readonly Collider[] _cavitationShockwaveColliders = new Collider[CavitationShockwaveHitCapacity];
+        // COLD ALLOC: Rigidbody[24] — deduplicated cavitation shockwave rigidbody targets — owner: HectonFluidEngine
+        private readonly Rigidbody[] _cavitationShockwaveRigidbodies = new Rigidbody[CavitationShockwaveHitCapacity];
+        private int _cavitationBurstCount;
 
         /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
         private int _nativeCapacity;
@@ -734,6 +788,8 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
+            DrainCavitationBursts();
+
             if (!_scheduledBuoyancyJobActive || !_scheduledBuoyancyHandle.IsCompleted)
                 return;
 
@@ -940,6 +996,150 @@ namespace Hecton8.Physics
         /// <summary>
         /// Пересоздаёт NativeArrays с увеличенной ёмкостью (Capacity Doubling).
         /// </summary>
+        private bool EnqueueCavitationBurst(
+            Vector3 position,
+            Vector3 direction,
+            float intensity01,
+            float radius,
+            float acceleration,
+            int sourceBodyInstanceId)
+        {
+            if (_cavitationBurstCount >= MaxCavitationBurstEvents ||
+                !IsFiniteVector(position) ||
+                !IsFiniteVector(direction) ||
+                radius <= 0f ||
+                acceleration <= 0f)
+            {
+                return false;
+            }
+
+            Vector3 safeDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.back;
+            _cavitationBurstQueue[_cavitationBurstCount++] = new CavitationBurstEvent
+            {
+                Position = position,
+                Direction = safeDirection,
+                Intensity01 = math.saturate(intensity01),
+                Radius = math.max(0.01f, radius),
+                Acceleration = math.max(0f, acceleration),
+                SourceBodyInstanceId = sourceBodyInstanceId
+            };
+            return true;
+        }
+
+        private void DrainCavitationBursts()
+        {
+            int burstCount = _cavitationBurstCount;
+            if (burstCount <= 0)
+                return;
+
+            _cavitationBurstCount = 0;
+            for (int i = 0; i < burstCount; i++)
+            {
+                CavitationBurstEvent burstEvent = _cavitationBurstQueue[i];
+                _cavitationBurstQueue[i] = default;
+                if (burstEvent.Intensity01 <= 0.0001f)
+                    continue;
+
+                EmitCavitationParticles(in burstEvent);
+                ApplyCavitationShockwave(in burstEvent);
+            }
+        }
+
+        private void EmitCavitationParticles(in CavitationBurstEvent burstEvent)
+        {
+            if (cavitationBubbleParticles == null)
+                return;
+
+            Transform particleTransform = cavitationBubbleParticles.transform;
+            particleTransform.position = burstEvent.Position;
+            if (burstEvent.Direction.sqrMagnitude > 0.0001f)
+                particleTransform.rotation = Quaternion.LookRotation(burstEvent.Direction, Vector3.up);
+
+            int emitCount = Mathf.Clamp(
+                Mathf.CeilToInt(cavitationBubbleEmitCountAtFullIntensity * burstEvent.Intensity01),
+                1,
+                cavitationBubbleEmitCountAtFullIntensity);
+            cavitationBubbleParticles.Emit(emitCount);
+        }
+
+        private void ApplyCavitationShockwave(in CavitationBurstEvent burstEvent)
+        {
+            int colliderCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                burstEvent.Position,
+                burstEvent.Radius,
+                _cavitationShockwaveColliders,
+                cavitationShockwaveLayers,
+                QueryTriggerInteraction.Ignore);
+            if (colliderCount <= 0)
+                return;
+
+            int rigidbodyCount = 0;
+            for (int i = 0; i < colliderCount; i++)
+            {
+                Collider hitCollider = _cavitationShockwaveColliders[i];
+                _cavitationShockwaveColliders[i] = null;
+                if (hitCollider == null)
+                    continue;
+
+                Rigidbody candidateBody = hitCollider.attachedRigidbody;
+                if (candidateBody == null ||
+                    candidateBody.isKinematic ||
+                    unchecked((int)EntityId.ToULong(candidateBody.GetEntityId())) == burstEvent.SourceBodyInstanceId ||
+                    candidateBody.mass > cavitationShockwaveMaxAffectedMassKg)
+                {
+                    continue;
+                }
+
+                TryAppendCavitationShockwaveBody(candidateBody, ref rigidbodyCount);
+            }
+
+            for (int i = 0; i < rigidbodyCount; i++)
+            {
+                Rigidbody targetBody = _cavitationShockwaveRigidbodies[i];
+                _cavitationShockwaveRigidbodies[i] = null;
+                if (targetBody == null || targetBody.isKinematic)
+                    continue;
+
+                Vector3 radial = targetBody.worldCenterOfMass - burstEvent.Position;
+                float radialDistance = radial.magnitude;
+                Vector3 radialDirection = radialDistance > 0.0001f
+                    ? radial / radialDistance
+                    : burstEvent.Direction;
+                radialDirection = Vector3.Lerp(radialDirection, burstEvent.Direction, 0.2f);
+                radialDirection.y += cavitationShockwaveVerticalLift;
+                if (radialDirection.sqrMagnitude <= 0.0001f)
+                    radialDirection = Vector3.up;
+                else
+                    radialDirection.Normalize();
+
+                float distance01 = math.saturate(1f - radialDistance / math.max(burstEvent.Radius, 0.0001f));
+                if (distance01 <= 0.0001f)
+                    continue;
+
+                float acceleration = burstEvent.Acceleration * burstEvent.Intensity01 * distance01;
+                PhysicsForceRouter.QueueForce(
+                    targetBody,
+                    radialDirection * acceleration,
+                    ForceMode.Acceleration);
+            }
+        }
+
+        private void TryAppendCavitationShockwaveBody(Rigidbody candidateBody, ref int rigidbodyCount)
+        {
+            int capacity = math.min(_cavitationShockwaveRigidbodies.Length, CavitationShockwaveHitCapacity);
+            if (rigidbodyCount >= capacity)
+                return;
+
+            for (int i = 0; i < rigidbodyCount; i++)
+            {
+                if (_cavitationShockwaveRigidbodies[i] == candidateBody)
+                    return;
+            }
+
+            _cavitationShockwaveRigidbodies[rigidbodyCount] = candidateBody;
+            rigidbodyCount++;
+        }
+
         private void ReallocateNativeArrays(int requiredCount)
         {
             requiredCount = math.max(requiredCount, 1);
@@ -1013,6 +1213,7 @@ namespace Hecton8.Physics
             _scheduledBuoyancyHandle = default;
             _scheduledBuoyancyJobActive = false;
             _scheduledForceCount = 0;
+            _cavitationBurstCount = 0;
             ReleaseGpuBuoyancyBuffers();
             ReleaseGpuAbyssalFlowBuffers();
             _hasGpuBuoyancyData = false;
@@ -1032,6 +1233,12 @@ namespace Hecton8.Physics
                 array.Dispose(dependency);
 
             array = default;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            float3 numericValue = new float3(value.x, value.y, value.z);
+            return math.all(math.isfinite(numericValue));
         }
 
         private static bool TrySanitizePhysicsVector(float3 value, string errorMessage, out Vector3 sanitized)
@@ -1515,6 +1722,9 @@ namespace Hecton8.Physics
             if (abyssalFlowVerticalCellSize < 4f) abyssalFlowVerticalCellSize = 4f;
             if (abyssalHeatProbeRadius < 4f) abyssalHeatProbeRadius = 4f;
             if (abyssalHeatIntensityNormalization < 0.1f) abyssalHeatIntensityNormalization = 0.1f;
+            cavitationBubbleEmitCountAtFullIntensity = Mathf.Clamp(cavitationBubbleEmitCountAtFullIntensity, 1, 128);
+            if (cavitationShockwaveMaxAffectedMassKg < 0.1f) cavitationShockwaveMaxAffectedMassKg = 0.1f;
+            cavitationShockwaveVerticalLift = Mathf.Clamp01(cavitationShockwaveVerticalLift);
 
 #if UNITY_EDITOR
             if (gpuBuoyancyCompute == null)

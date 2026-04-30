@@ -1,0 +1,2743 @@
+﻿diff --git a/Assets/_Project/Scripts/Core/GlobalRegistry.cs b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+index 843e20c7..6f213e81 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistry.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+@@ -33,6 +33,7 @@ namespace Hecton8.Core
+         private static IUIService _ui;
+         private static ObjectPoolManager _objectPool;
+         private static IPlayerRuntimeContext _player;
++        private static HectonPlayerMotor _playerMotor;
+         private static IPlayerInventoryService _playerInventory;
+         private static IModularEquipmentService _modularEquipment;
+         private static IPlayerSensoryService _playerSensory;
+@@ -105,6 +106,11 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IPlayerRuntimeContext Player => _player;
+ 
++        /// <summary>
++        /// Registered player motor service slot.
++        /// </summary>
++        public static HectonPlayerMotor PlayerMotor => _playerMotor;
++
+         /// <summary>
+         /// Registered player inventory/tooling service slot.
+         /// </summary>
+@@ -176,6 +182,11 @@ namespace Hecton8.Core
+         /// </summary>
+         public static ILogisticsService Logistics => _logistics;
+ 
++        /// <summary>
++        /// Registered concrete construction runtime owner for compatibility during singleton migration.
++        /// </summary>
++        public static ConstructionManager ConstructionRuntime => _logistics as ConstructionManager;
++
+         /// <summary>
+         /// Registered world-generation service slot.
+         /// </summary>
+@@ -409,6 +420,15 @@ namespace Hecton8.Core
+             RegisterService(ref _player, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative player motor service.
++        /// </summary>
++        /// <param name="instance">Player motor instance.</param>
++        public static void RegisterPlayerMotorService(HectonPlayerMotor instance)
++        {
++            RegisterService(ref _playerMotor, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative player inventory/tooling service.
+         /// </summary>
+@@ -671,6 +691,15 @@ namespace Hecton8.Core
+             UnregisterService(ref _player, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current player motor service if the owner matches.
++        /// </summary>
++        /// <param name="instance">Player motor requesting unregistration.</param>
++        public static void UnregisterPlayerMotorService(HectonPlayerMotor instance)
++        {
++            UnregisterService(ref _playerMotor, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current player inventory/tooling service if the owner matches.
+         /// </summary>
+diff --git a/Assets/_Project/Scripts/Gameplay/BaseAirlock.cs b/Assets/_Project/Scripts/Gameplay/BaseAirlock.cs
+index 5367d31c..47335ab5 100644
+--- a/Assets/_Project/Scripts/Gameplay/BaseAirlock.cs
++++ b/Assets/_Project/Scripts/Gameplay/BaseAirlock.cs
+@@ -43,8 +43,11 @@ namespace Hecton8.Gameplay
+     [DisallowMultipleComponent]
+     [RequireComponent(typeof(Renderer))]
+     [AddComponentMenu("Hecton/Gameplay/Base Airlock")]
+-    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable
++    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource
+     {
++        private const float DefaultWeldOverrideDurationSeconds = 5f;
++        private const float MaxSignalWeldDeltaSeconds = 0.25f;
++
+         // ══════════════════════════════════════════════════════════
+         //  INSPECTOR
+         // ══════════════════════════════════════════════════════════
+@@ -75,6 +78,13 @@ namespace Hecton8.Gameplay
+         [Tooltip("Amber color shown while emergency bulkhead lockdown overrides player control.")]
+         [SerializeField] private Color lockedDownColor = new Color(1f, 0.6f, 0.08f);
+ 
++        [Header("Emergency Override")]
++        [Tooltip("Owning base module intentionally flooded when a lockdown override opens this quarantined airlock.")]
++        [SerializeField] private BaseModule owningModule;
++
++        [Tooltip("Continuous weld time required before a quarantined airlock unlocks.")]
++        [SerializeField, Min(0.1f)] private float weldOverrideDurationSeconds = DefaultWeldOverrideDurationSeconds;
++
+         [Header("── Audio ──────────────────────────────────────")]
+         [Tooltip("Sound played when airlock cycle starts.")]
+         [SerializeField] private AudioClip cycleStartSound;
+@@ -101,6 +111,7 @@ namespace Hecton8.Gameplay
+         private bool _isPlayerInside; // True if player is currently inside the base
+         private bool _registered;
+         private bool _emergencyLockedDown;
++        private float _weldOverrideProgressSeconds;
+         private int _emissionPropertyId;
+ 
+         // Cached references
+@@ -131,6 +142,14 @@ namespace Hecton8.Gameplay
+         /// <summary>True while emergency lockdown overrides player interaction.</summary>
+         public bool IsEmergencyLockedDown => _emergencyLockedDown;
+ 
++        /// <summary>Normalized welding progress toward a manual emergency override.</summary>
++        public float WeldOverrideProgress01 => ResolveWeldOverrideDurationSeconds() > 0f
++            ? Mathf.Clamp01(_weldOverrideProgressSeconds / ResolveWeldOverrideDurationSeconds())
++            : 0f;
++
++        /// <inheritdoc />
++        public uint VulnerabilityMask => ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.Weld);
++
+         // ══════════════════════════════════════════════════════════
+         //  LIFECYCLE
+         // ══════════════════════════════════════════════════════════
+@@ -143,6 +162,8 @@ namespace Hecton8.Gameplay
+ 
+             if (statusLightRenderer == null)
+                 statusLightRenderer = GetComponent<Renderer>();
++
++            CacheOwningModule();
+         }
+ 
+         private void OnEnable()
+@@ -152,6 +173,7 @@ namespace Hecton8.Gameplay
+             RebuildLocalizedTextCache();
+             // Set initial state
+             _state = AirlockState.Ready;
++            _weldOverrideProgressSeconds = 0f;
+             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
+         }
+ 
+@@ -258,10 +280,48 @@ namespace Hecton8.Gameplay
+             }
+         }
+ 
++        /// <summary>
++        /// Consumes welding time against an emergency lockdown. Completion unlocks the door and floods the protected module.
++        /// </summary>
++        /// <param name="deltaTime">Continuous weld duration in seconds for this tool sample.</param>
++        /// <param name="runtimeHitPoint">Runtime-space impact point used by future VFX hooks.</param>
++        /// <returns>True when the weld was accepted by a quarantined door.</returns>
++        public bool TryApplyWeldOverride(float deltaTime, Vector3 runtimeHitPoint)
++        {
++            if (!_emergencyLockedDown || _state != AirlockState.Ready)
++                return false;
++
++            if (deltaTime <= 0f || !float.IsFinite(deltaTime))
++                return true;
++
++            float requiredSeconds = ResolveWeldOverrideDurationSeconds();
++            _weldOverrideProgressSeconds = Mathf.Min(requiredSeconds, _weldOverrideProgressSeconds + deltaTime);
++            if (_weldOverrideProgressSeconds >= requiredSeconds)
++                ForceEmergencyOverride();
++
++            return true;
++        }
++
++        /// <inheritdoc />
++        public void ApplyInteractionSignal(in global::Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
++        {
++            if ((InteractionEffectType)signal.EffectType != InteractionEffectType.Weld)
++                return;
++
++            TryApplyWeldOverride(ResolveSignalWeldDeltaSeconds(in signal), runtimeHitPoint);
++        }
++
+         // ══════════════════════════════════════════════════════════
+         //  AIRLOCK LOGIC
+         // ══════════════════════════════════════════════════════════
+ 
++        void global::Hecton8.Interaction.IInteractionSignalConsumer.ApplyInteractionSignal(
++            in global::Hecton8.Interaction.InteractionSignal signal,
++            global::UnityEngine.Vector3 runtimeHitPoint)
++        {
++            ApplyInteractionSignal(in signal, runtimeHitPoint);
++        }
++
+         private void StartCycle(Transform player)
+         {
+             _state = AirlockState.Cycling;
+@@ -371,6 +431,43 @@ namespace Hecton8.Gameplay
+             statusLightRenderer.SetPropertyBlock(_mpb);
+         }
+ 
++        private void CacheOwningModule()
++        {
++            if (owningModule == null)
++                owningModule = GetComponentInParent<BaseModule>();
++        }
++
++        private float ResolveWeldOverrideDurationSeconds()
++        {
++            return Mathf.Max(0.1f, weldOverrideDurationSeconds);
++        }
++
++        private static float ResolveSignalWeldDeltaSeconds(in global::Hecton8.Interaction.InteractionSignal signal)
++        {
++            if (signal.PowerDelivered <= 0f || !float.IsFinite(signal.PowerDelivered))
++                return 0f;
++
++            float sourcePower = Mathf.Max(0.001f, signal.Source.Power);
++            float deltaSeconds = signal.PowerDelivered / sourcePower;
++            return Mathf.Clamp(deltaSeconds, 0f, MaxSignalWeldDeltaSeconds);
++        }
++
++        private void ForceEmergencyOverride()
++        {
++            _weldOverrideProgressSeconds = 0f;
++            CacheOwningModule();
++
++            if (owningModule != null)
++            {
++                owningModule.SetEmergencyBulkheadLockdown(false);
++                if (!owningModule.IsFlooded)
++                    owningModule.ForceFlood();
++                return;
++            }
++
++            SetEmergencyLockdown(false);
++        }
++
+         // ══════════════════════════════════════════════════════════
+         //  EDITOR
+         // ══════════════════════════════════════════════════════════
+@@ -440,6 +537,7 @@ namespace Hecton8.Gameplay
+                 return;
+ 
+             _emergencyLockedDown = lockedDown;
++            _weldOverrideProgressSeconds = 0f;
+             if (_state == AirlockState.Ready)
+                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
+         }
+diff --git a/Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs b/Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
+index 0be6b479..cc834e5f 100644
+--- a/Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
++++ b/Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs
+@@ -1,4 +1,5 @@
+ using Hecton8.Core;
++using Hecton8.Inventory;
+ using Hecton8.Physics;
+ using Unity.Collections;
+ using Unity.Jobs;
+@@ -33,7 +34,9 @@ namespace Hecton8.Gameplay
+         private const int MaxSlideSweepIterations = 2;
+         private const int ScheduledSweepCommandCount = 1;
+         private const int ScheduledSweepMaxHits = 8;
++        private const int HydrodynamicGhostHistoryCapacity = 4;
+         private const float MaxHydrodynamicGhostBlend = 0.15f;
++        private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
+ 
+         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
+         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
+@@ -41,12 +44,10 @@ namespace Hecton8.Gameplay
+ 
+         private Rigidbody _body;
+         private CapsuleCollider _capsule;
++        private PlayerInventory _encumbranceSource;
+         private bool _isGrounded;
+         private readonly RaycastHit[] _sweepHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — motor-owned sweep/collision query buffer for kinematic isolation — owner: HectonPlayerMotor
+-        private NativeArray<float3> _hydrodynamicGhostVelocityHistory;
+-        private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
+-        private NativeArray<RaycastHit> _scheduledSweepResults;
+-        private JobHandle _scheduledSweepHandle;
++        private HectonPlayerMotorNativeState _nativeState;
+         private bool _scheduledSweepPending;
+         private bool _scheduledSweepResultReady;
+         private bool _scheduledSweepWasBlocked;
+@@ -57,6 +58,8 @@ namespace Hecton8.Gameplay
+         private int _hydrodynamicGhostWriteIndex;
+         private int _hydrodynamicGhostSampleCount;
+         private bool _registeredPostFixedTick;
++        private bool _registeredMotorService;
++        private float _encumbranceMovementMultiplier = 1f;
+ 
+         /// <inheritdoc />
+         public Rigidbody Body => _body;
+@@ -67,6 +70,9 @@ namespace Hecton8.Gameplay
+         /// <inheritdoc />
+         public bool IsGrounded => _isGrounded;
+ 
++        /// <summary>Current event-driven carry-load movement scalar.</summary>
++        public float EncumbranceMovementMultiplier => _encumbranceMovementMultiplier;
++
+         /// <summary>Motor-owned sweep buffer. Reserved for kinematic queries only.</summary>
+         public RaycastHit[] SweepHitBuffer => _sweepHitBuffer;
+ 
+@@ -79,21 +85,33 @@ namespace Hecton8.Gameplay
+             ResetHydrodynamicAddedMassState();
+         }
+ 
++        /// <summary>Binds the inventory source accepted by encumbrance events.</summary>
++        public void BindEncumbranceSource(PlayerInventory inventory)
++        {
++            _encumbranceSource = inventory;
++        }
++
+         private void OnEnable()
+         {
++            InventoryEvents.OnEncumbranceChanged += HandleEncumbranceChanged;
+             TryRegisterPostFixedTick();
++            TryRegisterMotorService();
+         }
+ 
+         private void OnDisable()
+         {
++            InventoryEvents.OnEncumbranceChanged -= HandleEncumbranceChanged;
+             TryUnregisterPostFixedTick();
++            TryUnregisterMotorService();
+             DisposeScheduledSweepState();
+             DisposeHydrodynamicGhostState();
+         }
+ 
+         private void OnDestroy()
+         {
++            InventoryEvents.OnEncumbranceChanged -= HandleEncumbranceChanged;
+             TryUnregisterPostFixedTick();
++            TryUnregisterMotorService();
+             DisposeScheduledSweepState();
+             DisposeHydrodynamicGhostState();
+         }
+@@ -104,6 +122,21 @@ namespace Hecton8.Gameplay
+             _isGrounded = isGrounded;
+         }
+ 
++        /// <summary>Applies a pre-resolved carry-load movement scalar.</summary>
++        public void SetEncumbranceMovementMultiplier(float multiplier)
++        {
++            _encumbranceMovementMultiplier = math.clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
++        }
++
++        private void HandleEncumbranceChanged(EncumbranceChangedEvent payload)
++        {
++            if (_encumbranceSource != null && payload.Inventory != _encumbranceSource)
++                return;
++
++            float load01 = math.saturate(payload.Load01);
++            SetEncumbranceMovementMultiplier(math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01));
++        }
++
+         /// <inheritdoc />
+         public void AddExternalAcceleration(Vector3 acceleration)
+         {
+@@ -449,10 +482,10 @@ namespace Hecton8.Gameplay
+             using (_hydrodynamicGhostProfilerMarker.Auto())
+             {
+                 RecordHydrodynamicGhostVelocity(safeActualVelocity);
+-                if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
++                if (_hydrodynamicGhostSampleCount < _nativeState.HydrodynamicGhostVelocityHistory.Length)
+                     return safeActualVelocity;
+ 
+-                float3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
++                float3 oldestVelocity = _nativeState.HydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
+                 float3 currentVelocity = new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z);
+                 float3 perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
+                 return SafeVelocity(new Vector3(perceivedVelocity.x, perceivedVelocity.y, perceivedVelocity.z), safeActualVelocity);
+@@ -465,8 +498,8 @@ namespace Hecton8.Gameplay
+             EnsureHydrodynamicGhostState();
+             _hydrodynamicGhostWriteIndex = 0;
+             _hydrodynamicGhostSampleCount = 0;
+-            for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
+-                _hydrodynamicGhostVelocityHistory[i] = float3.zero;
++            for (int i = 0; i < _nativeState.HydrodynamicGhostVelocityHistory.Length; i++)
++                _nativeState.HydrodynamicGhostVelocityHistory[i] = float3.zero;
+         }
+ 
+         /// <summary>
+@@ -500,7 +533,7 @@ namespace Hecton8.Gameplay
+                 SelfColliderInstanceId = selfColliderInstanceId
+             };
+ 
+-            _scheduledSweepCommands[0] = new CapsulecastCommand(
++            _nativeState.ScheduledSweepCommands[0] = new CapsulecastCommand(
+                 capsulePoint1,
+                 capsulePoint2,
+                 math.max(0.01f, capsuleRadius),
+@@ -510,9 +543,9 @@ namespace Hecton8.Gameplay
+ 
+             using (_scheduledSweepProfilerMarker.Auto())
+             {
+-                _scheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
+-                    _scheduledSweepCommands,
+-                    _scheduledSweepResults,
++                _nativeState.ScheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
++                    _nativeState.ScheduledSweepCommands,
++                    _nativeState.ScheduledSweepResults,
+                     1,
+                     ScheduledSweepMaxHits,
+                     default);
+@@ -630,37 +663,14 @@ namespace Hecton8.Gameplay
+ 
+         private void EnsureScheduledSweepState()
+         {
+-            if (!_scheduledSweepCommands.IsCreated)
+-                _scheduledSweepCommands = new NativeArray<CapsulecastCommand>(ScheduledSweepCommandCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+-
+-            if (!_scheduledSweepResults.IsCreated)
+-                _scheduledSweepResults = new NativeArray<RaycastHit>(ScheduledSweepMaxHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            _nativeState.EnsureScheduledSweepState(ScheduledSweepCommandCount, ScheduledSweepMaxHits);
+         }
+ 
+         private void DisposeScheduledSweepState()
+         {
+-            if (_scheduledSweepCommands.IsCreated)
+-            {
+-                JobHandle dependency = _scheduledSweepPending ? _scheduledSweepHandle : default;
+-                dependency = _scheduledSweepCommands.Dispose(dependency);
+-                _scheduledSweepCommands = default;
+-                if (_scheduledSweepResults.IsCreated)
+-                {
+-                    dependency = _scheduledSweepResults.Dispose(dependency);
+-                    _scheduledSweepResults = default;
+-                }
+-
+-                if (dependency.IsCompleted)
+-                    dependency.Complete();
+-            }
+-            else if (_scheduledSweepResults.IsCreated)
+-            {
+-                _scheduledSweepResults.Dispose();
+-                _scheduledSweepResults = default;
+-            }
++            _nativeState.DisposeScheduledSweepState(_scheduledSweepPending, _nativeState.ScheduledSweepHandle);
+ 
+             _scheduledSweepPending = false;
+-            _scheduledSweepHandle = default;
+             _scheduledSweepResultReady = false;
+             _scheduledSweepWasBlocked = false;
+             _scheduledSweepBlockingHit = default;
+@@ -686,14 +696,32 @@ namespace Hecton8.Gameplay
+             _registeredPostFixedTick = false;
+         }
+ 
++        private void TryRegisterMotorService()
++        {
++            if (_registeredMotorService || !Application.isPlaying)
++                return;
++
++            GlobalRegistry.RegisterPlayerMotorService(this);
++            _registeredMotorService = true;
++        }
++
++        private void TryUnregisterMotorService()
++        {
++            if (!_registeredMotorService)
++                return;
++
++            GlobalRegistry.UnregisterPlayerMotorService(this);
++            _registeredMotorService = false;
++        }
++
+         private void CompleteScheduledSweepInPostFixedSwapWindow()
+         {
+-            if (!_scheduledSweepPending || !_scheduledSweepHandle.IsCompleted)
++            if (!_scheduledSweepPending || !_nativeState.ScheduledSweepHandle.IsCompleted)
+                 return;
+ 
+-            _scheduledSweepHandle.Complete();
++            _nativeState.ScheduledSweepHandle.Complete();
+             _scheduledSweepPending = false;
+-            _scheduledSweepHandle = default;
++            _nativeState.ScheduledSweepHandle = default;
+             _scheduledSweepResultReady = true;
+             _scheduledSweepWasBlocked = false;
+             _scheduledSweepBlockingHit = default;
+@@ -704,7 +732,7 @@ namespace Hecton8.Gameplay
+             int nearestIndex = -1;
+             for (int i = 0; i < ScheduledSweepMaxHits; i++)
+             {
+-                RaycastHit hit = _scheduledSweepResults[i];
++                RaycastHit hit = _nativeState.ScheduledSweepResults[i];
+                 int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                 if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                     continue;
+@@ -720,7 +748,7 @@ namespace Hecton8.Gameplay
+                 return;
+ 
+             _scheduledSweepWasBlocked = true;
+-            _scheduledSweepBlockingHit = _scheduledSweepResults[nearestIndex];
++            _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
+             float safeDistance = math.max(0f, _scheduledSweepBlockingHit.distance - _scheduledSweepState.SkinWidth);
+             float penetrationDepth = math.max(0f, _scheduledSweepState.SkinWidth - _scheduledSweepBlockingHit.distance);
+             _scheduledSweepResolvedPosition = _scheduledSweepState.StartPosition +
+@@ -740,28 +768,20 @@ namespace Hecton8.Gameplay
+         {
+             EnsureHydrodynamicGhostState();
+             Vector3 safeVelocity = SafeVelocity(velocity);
+-            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
+-            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
+-            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
++            _nativeState.HydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
++            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _nativeState.HydrodynamicGhostVelocityHistory.Length;
++            if (_hydrodynamicGhostSampleCount < _nativeState.HydrodynamicGhostVelocityHistory.Length)
+                 _hydrodynamicGhostSampleCount++;
+         }
+ 
+         private void EnsureHydrodynamicGhostState()
+         {
+-            if (_hydrodynamicGhostVelocityHistory.IsCreated)
+-                return;
+-
+-            // COLD ALLOC: NativeArray<float3>[4] — 3-frame added-mass inertial ghost history for underwater locomotion perception — owner: HectonPlayerMotor
+-            _hydrodynamicGhostVelocityHistory = new NativeArray<float3>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            _nativeState.EnsureHydrodynamicGhostState(HydrodynamicGhostHistoryCapacity);
+         }
+ 
+         private void DisposeHydrodynamicGhostState()
+         {
+-            if (!_hydrodynamicGhostVelocityHistory.IsCreated)
+-                return;
+-
+-            _hydrodynamicGhostVelocityHistory.Dispose();
+-            _hydrodynamicGhostVelocityHistory = default;
++            _nativeState.DisposeHydrodynamicGhostState();
+             _hydrodynamicGhostWriteIndex = 0;
+             _hydrodynamicGhostSampleCount = 0;
+         }
+diff --git a/Assets/_Project/Scripts/HectonPlayerMovement.cs b/Assets/_Project/Scripts/HectonPlayerMovement.cs
+index b7af1ed2..32b86df2 100644
+--- a/Assets/_Project/Scripts/HectonPlayerMovement.cs
++++ b/Assets/_Project/Scripts/HectonPlayerMovement.cs
+@@ -52,6 +52,7 @@ namespace Hecton8.Gameplay
+         private float _runtimeInjurySwimSpeedMultiplier = 1f;
+         private float _runtimeEmergencyMovementMultiplier = 1f;
+         private float _runtimeInventoryLoadMovementMultiplier = 1f;
++        private float _runtimeInventoryLoad01;
+         private const float TwoPi = 2f * math.PI;
+         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
+         private const int CrestBodySampleCount = 5;
+@@ -670,7 +671,7 @@ namespace Hecton8.Gameplay
+         [SerializeField] private float groundCheckRadius = 0.3f;
+         [SerializeField] private float groundCheckDistance = 0.4f;
+         [SerializeField, Range(5f, 89f)] private float maxGroundAngle = 60f;
+-        [SerializeField] private LayerMask groundLayers = ~0;
++        [SerializeField] private LayerMask groundLayers = (1 << 8) | (1 << 9) | (1 << 10);
+         [SerializeField, Range(1f, 2f)] private float slopeStabilityFactor = 1.1f;
+         [SerializeField, Range(0f, 20f)] private float groundSnapForce = 8f;
+         [SerializeField, Range(0f, 0.3f)] private float jumpBufferTime = 0.12f;
+@@ -886,6 +887,8 @@ namespace Hecton8.Gameplay
+         private HectonPlayerMotor _playerMotor;
+         private HectonPlayerEnvironmentHandler _environmentHandler;
+         private HectonPlayerStateMachine _stateMachine;
++        private HectonPlayerState _playerState;
++        private HectonPlayerInputHandler _inputHandler;
+         private IInputService _inputManager;
+         private IInputService _subscribedInputManager;
+         private PlayerToolManager _playerToolManager;
+@@ -1306,8 +1309,16 @@ namespace Hecton8.Gameplay
+         public void SetRuntimeInventoryLoadMovementMultiplier(float multiplier)
+         {
+             _runtimeInventoryLoadMovementMultiplier = Mathf.Clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
++            _playerMotor?.SetEncumbranceMovementMultiplier(_runtimeInventoryLoadMovementMultiplier);
++            _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
+         }
+ 
++        /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
++        public float InventoryLoad01 => _runtimeInventoryLoad01;
++
++        /// <summary>Resolved movement multiplier after inventory mass encumbrance.</summary>
++        public float InventoryLoadMovementMultiplier => ResolveRuntimeInventoryLoadMovementMultiplier();
++
+         /// <summary>Currently active suit data driving mass, drag, and swim parameters.</summary>
+         public SuitData CurrentSuit => currentSuitData;
+         /// <summary>0â€“1 ratio of the player body submerged below the water surface.</summary>
+@@ -1654,7 +1665,11 @@ namespace Hecton8.Gameplay
+             }
+ 
+             if (_playerMotor != null)
++            {
+                 _playerMotor.Bind(_rb, _capsuleCollider);
++                _playerMotor.BindEncumbranceSource(_inventoryLoadSource);
++                _playerMotor.SetEncumbranceMovementMultiplier(_runtimeInventoryLoadMovementMultiplier);
++            }
+ 
+             if (_environmentHandler != null)
+                 _environmentHandler.Bind(this, _playerMotor);
+@@ -1766,6 +1781,7 @@ namespace Hecton8.Gameplay
+         {
+             Vector3 queuedAcceleration = _queuedExternalKinematicAcceleration;
+             Vector3 queuedVelocityChange = _queuedExternalKinematicVelocityChange;
++            _playerState.SyncExternalKinematic(queuedAcceleration, queuedVelocityChange);
+             _queuedExternalKinematicAcceleration = Vector3.zero;
+             _queuedExternalKinematicVelocityChange = Vector3.zero;
+ 
+@@ -2316,6 +2332,8 @@ namespace Hecton8.Gameplay
+             _rb.useGravity = false;
+             _baseCenterOfMass = _rb.centerOfMass;
+             _lastAppliedCenterOfMass = _baseCenterOfMass;
++            _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
++            _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
+ 
+             // Cache camera component for FOV manipulation
+             if (playerCamera != null)
+@@ -2646,6 +2664,7 @@ namespace Hecton8.Gameplay
+             _queuedExternalKinematicVelocityChange = Vector3.zero;
+             _thermalUpdraftTraumaCooldownTimer = 0f;
+             _vegetationDensityLinearDamping = 0f;
++            _playerState.ResetTransient();
+             _playerMotor?.ResetRuntimeState();
+             _environmentHandler?.ResetRuntimeState();
+             _stateMachine?.ResetRuntimeState();
+@@ -2704,6 +2723,7 @@ namespace Hecton8.Gameplay
+ 
+             UnbindInventoryLoadSource();
+             _inventoryLoadSource = resolvedInventory;
++            _playerMotor?.BindEncumbranceSource(_inventoryLoadSource);
+             _inventoryLoadSource.InventoryChanged += HandleInventoryLoadChanged;
+             HandleInventoryLoadChanged();
+         }
+@@ -2714,6 +2734,8 @@ namespace Hecton8.Gameplay
+                 _inventoryLoadSource.InventoryChanged -= HandleInventoryLoadChanged;
+ 
+             _inventoryLoadSource = null;
++            _playerMotor?.BindEncumbranceSource(null);
++            _runtimeInventoryLoad01 = 0f;
+             SetRuntimeInventoryLoadMovementMultiplier(1f);
+         }
+ 
+@@ -2731,10 +2753,14 @@ namespace Hecton8.Gameplay
+         private void HandleInventoryLoadChanged()
+         {
+             float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
+-            SetRuntimeInventoryLoadMovementMultiplier(
+-                ResolveInventoryLoadMovementMultiplier(
+-                    totalMassKg,
+-                    ResolveInventoryCarryCapacityKg()));
++            float carryCapacityKg = ResolveInventoryCarryCapacityKg();
++            _runtimeInventoryLoad01 = ResolveInventoryLoad01(totalMassKg, carryCapacityKg);
++            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplierFromLoad(_runtimeInventoryLoad01));
++            InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
++                _inventoryLoadSource,
++                totalMassKg,
++                carryCapacityKg,
++                _runtimeInventoryLoad01));
+         }
+ 
+         private float ResolveInventoryCarryCapacityKg()
+@@ -2749,8 +2775,24 @@ namespace Hecton8.Gameplay
+ 
+         private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg, float carryCapacityKg)
+         {
+-            float load01 = math.saturate(totalMassKg / math.max(0.01f, carryCapacityKg));
+-            return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01);
++            return ResolveInventoryLoadMovementMultiplierFromLoad(ResolveInventoryLoad01(totalMassKg, carryCapacityKg));
++        }
++
++        private float ResolveRuntimeInventoryLoadMovementMultiplier()
++        {
++            return _playerMotor != null
++                ? _playerMotor.EncumbranceMovementMultiplier
++                : _runtimeInventoryLoadMovementMultiplier;
++        }
++
++        private static float ResolveInventoryLoad01(float totalMassKg, float carryCapacityKg)
++        {
++            return math.saturate(totalMassKg / math.max(0.01f, carryCapacityKg));
++        }
++
++        private static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
++        {
++            return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, math.saturate(load01));
+         }
+ 
+         /// <inheritdoc />
+@@ -4763,11 +4805,12 @@ namespace Hecton8.Gameplay
+                 return;
+             }
+ 
+-            _currentInputState = inputService.GetState();
+-            _cachedMoveInput = _currentInputState.MoveDelta;
+-            _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
++            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
++            _currentInputState = frame.State;
++            _cachedMoveInput = frame.MoveInput;
++            _cachedVerticalInput = frame.VerticalInput;
+             _pendingLookInput = Vector2.zero;
+-            SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
++            SetSprintingState(frame.SprintHeld);
+         }
+ 
+         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+@@ -4814,11 +4857,16 @@ namespace Hecton8.Gameplay
+ 
+                 if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+                 {
+-                    _currentInputState = _inputManager.GetState();
+-                    _cachedMoveInput = _currentInputState.MoveDelta;
+-                    _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
+-                    _pendingLookInput = _currentInputState.LookDelta;
+-                    if (_inputManager.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferTime))
++                    _inputHandler.TryReadFrame(
++                        _inputManager,
++                        jumpBufferTime,
++                        out HectonPlayerInputFrame inputFrame,
++                        out bool jumpBuffered);
++                    _currentInputState = inputFrame.State;
++                    _cachedMoveInput = inputFrame.MoveInput;
++                    _cachedVerticalInput = inputFrame.VerticalInput;
++                    _pendingLookInput = inputFrame.LookInput;
++                    if (jumpBuffered)
+                     {
+                         _jumpRequested = true;
+                         _jumpBufferTimer = jumpBufferTime;
+@@ -4837,7 +4885,7 @@ namespace Hecton8.Gameplay
+                         _inputV = 0f;
+                         _inputVertical = 0f;
+                     }
+-                    SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
++                    SetSprintingState(inputFrame.SprintHeld);
+                 }
+                 else
+                 {
+@@ -5040,7 +5088,7 @@ namespace Hecton8.Gameplay
+ 
+         private float ResolveVerticalInput()
+         {
+-            return math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
++            return HectonPlayerInputHandler.ResolveVerticalInput(in _currentInputState);
+         }
+ 
+         private void ApplyLookInput(Vector2 lookDelta)
+@@ -5168,6 +5216,7 @@ namespace Hecton8.Gameplay
+                 }
+ 
+                 _currentFixedDeltaTime = fixedDeltaTime;
++                _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
+                 _useFixedFrameSpatialCache = true;
+                 PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+                 ProcessQueuedCollisionEvents();
+@@ -7994,7 +8043,7 @@ namespace Hecton8.Gameplay
+ 
+             bool heavyCarryActive = IsHeavyCarryActive();
+             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
+-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeInventoryLoadMovementMultiplier;
++            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
+             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
+@@ -8285,7 +8334,7 @@ namespace Hecton8.Gameplay
+                 suit.walkForce *
+                 wadeMultiplier *
+                 sprintMult *
+-                _runtimeInventoryLoadMovementMultiplier *
++                ResolveRuntimeInventoryLoadMovementMultiplier() *
+                 ResolveHeavyCarryForceMultiplier() *
+                 ResolveExternalEnvironmentalThrustMultiplier();
+ 
+@@ -8491,7 +8540,7 @@ namespace Hecton8.Gameplay
+                 float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
+                 maxSpd *= math.max(wadeMultiplier, 0.2f);
+                 if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
+-                maxSpd *= _runtimeInventoryLoadMovementMultiplier;
++                maxSpd *= ResolveRuntimeInventoryLoadMovementMultiplier();
+                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
+                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
+                 maxSpd *= _runtimeEmergencyMovementMultiplier;
+@@ -8532,7 +8581,7 @@ namespace Hecton8.Gameplay
+             }
+             else
+             {
+-                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeInventoryLoadMovementMultiplier);
++                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier());
+                 if (_isSurfaceSwimming)
+                 {
+                     maxSpd *= surfaceMaxSpeedMultiplier;
+diff --git a/Assets/_Project/Scripts/InventoryEvents.cs b/Assets/_Project/Scripts/InventoryEvents.cs
+index 75c89234..542e7a4c 100644
+--- a/Assets/_Project/Scripts/InventoryEvents.cs
++++ b/Assets/_Project/Scripts/InventoryEvents.cs
+@@ -8,6 +8,29 @@ using Hecton8.Items;
+ 
+ namespace Hecton8.Inventory
+ {
++    /// <summary>
++    /// Carry-load change payload consumed by movement penalties without inventory polling.
++    /// </summary>
++    public readonly struct EncumbranceChangedEvent
++    {
++        public EncumbranceChangedEvent(
++            PlayerInventory inventory,
++            float totalMassKg,
++            float carryCapacityKg,
++            float load01)
++        {
++            Inventory = inventory;
++            TotalMassKg = totalMassKg;
++            CarryCapacityKg = carryCapacityKg;
++            Load01 = load01;
++        }
++
++        public readonly PlayerInventory Inventory;
++        public readonly float TotalMassKg;
++        public readonly float CarryCapacityKg;
++        public readonly float Load01;
++    }
++
+     public static class InventoryEvents
+     {
+         /// <summary>
+@@ -20,7 +43,13 @@ namespace Hecton8.Inventory
+         /// </summary>
+         public static event Action OnInventoryChanged;
+ 
++        /// <summary>
++        /// Fired when derived carry load changes and locomotion penalties must refresh.
++        /// </summary>
++        public static event Action<EncumbranceChangedEvent> OnEncumbranceChanged;
++
+         public static void NotifyInventoryFull(ItemData item) => OnInventoryFull?.Invoke(item);
+         public static void NotifyInventoryChanged() => OnInventoryChanged?.Invoke();
++        public static void NotifyEncumbranceChanged(EncumbranceChangedEvent payload) => OnEncumbranceChanged?.Invoke(payload);
+     }
+ }
+diff --git a/Assets/_Project/Scripts/PlayerInventory.cs b/Assets/_Project/Scripts/PlayerInventory.cs
+index 41a36f09..4dd95d92 100644
+--- a/Assets/_Project/Scripts/PlayerInventory.cs
++++ b/Assets/_Project/Scripts/PlayerInventory.cs
+@@ -25,6 +25,7 @@ namespace Hecton8.Inventory
+     public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable
+     {
+         private const ushort CraftingLockedMask = 1 << 10;
++        private const ushort RadioactiveItemStateMask = 1 << 4;
+         private const ushort BiologicalItemStateMask = 1 << 6;
+         internal const ushort DegradedItemStateMask = 1 << 8;
+         private const ushort RustedItemStateMask = 1 << 9;
+@@ -33,8 +34,11 @@ namespace Hecton8.Inventory
+         private const float OrganicDecayPerSecond = 0.00045f;
+         private const float SubmergedOrganicDecayPerSecond = 0.00075f;
+         private const float SubmergedMetalRustPerSecond = 0.00065f;
++        private const float RadioactiveHalfLifeBaseSeconds = 1800f;
++        private const float Ln2 = 0.6931471805599453f;
+         private const float KineticDamageThresholdG = 50f;
+         internal const ushort DegradedQualityMilliThreshold = 250;
++        private static readonly int _DepletedLeadHashId = LocHash.Compute("Data_DepletedLead");
+ 
+         private struct InventorySortEntry : IComparable<InventorySortEntry>
+         {
+@@ -132,16 +136,18 @@ namespace Hecton8.Inventory
+             [ReadOnly] public NativeArray<ushort> StackCounts;
+             [ReadOnly] public NativeArray<float> AnchorUnitMassKg;
+             [ReadOnly] public NativeArray<float> AnchorUnitVolumeM3;
+-            public NativeArray<float2> Totals;
++            [ReadOnly] public NativeArray<float> AnchorUnitRadiationSv;
++            public NativeArray<float3> Totals;
+ 
+             public void Execute()
+             {
+                 int count = math.min(
+-                    math.min(AnchorHashIds.Length, StackCounts.Length),
+-                    math.min(AnchorUnitMassKg.Length, AnchorUnitVolumeM3.Length));
++                    math.min(math.min(AnchorHashIds.Length, StackCounts.Length), math.min(AnchorUnitMassKg.Length, AnchorUnitVolumeM3.Length)),
++                    AnchorUnitRadiationSv.Length);
+ 
+                 float totalMassKg = 0f;
+                 float totalVolumeM3 = 0f;
++                float totalRadiationSv = 0f;
+ 
+                 for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+                 {
+@@ -151,11 +157,91 @@ namespace Hecton8.Inventory
+                     int stackCount = math.max(1, (int)StackCounts[anchorIndex]);
+                     totalMassKg += AnchorUnitMassKg[anchorIndex] * stackCount;
+                     totalVolumeM3 += AnchorUnitVolumeM3[anchorIndex] * stackCount;
++                    totalRadiationSv += AnchorUnitRadiationSv[anchorIndex] * stackCount;
+                 }
+ 
+-                Totals[0] = new float2(
++                Totals[0] = new float3(
+                     math.max(0f, totalMassKg),
+-                    math.max(0f, totalVolumeM3));
++                    math.max(0f, totalVolumeM3),
++                    math.max(0f, totalRadiationSv));
++            }
++        }
++
++        [BurstCompile]
++        private struct InventoryRadioactiveHalfLifeJob : IJob
++        {
++            [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
++            [ReadOnly] public NativeArray<ushort> StackCounts;
++            [ReadOnly] public NativeArray<float> AnchorUnitRadiationSv;
++            public NativeArray<ushort> ItemStateFlags;
++            public NativeArray<ushort> QualityMilli;
++            public NativeArray<int> ConversionAnchorIndices;
++            public NativeArray<int> Counters;
++            public float DeltaSeconds;
++            public float BaseHalfLifeSeconds;
++            public ushort DefaultQuality;
++            public ushort RadioactiveMask;
++            public ushort DegradedMask;
++            public ushort DegradedThreshold;
++
++            public void Execute()
++            {
++                if (Counters.Length >= 2)
++                {
++                    Counters[0] = 0;
++                    Counters[1] = 0;
++                }
++
++                int count = math.min(
++                    math.min(math.min(AnchorHashIds.Length, StackCounts.Length), AnchorUnitRadiationSv.Length),
++                    math.min(ItemStateFlags.Length, QualityMilli.Length));
++                if (count <= 0 || !(DeltaSeconds > 0f))
++                    return;
++
++                int conversionCount = 0;
++                int changed = 0;
++                float safeBaseHalfLifeSeconds = math.max(1f, BaseHalfLifeSeconds);
++
++                for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
++                {
++                    if (AnchorHashIds[anchorIndex] == 0 || StackCounts[anchorIndex] == 0)
++                        continue;
++
++                    float radiationSv = AnchorUnitRadiationSv[anchorIndex];
++                    if (!(radiationSv > 0f))
++                        continue;
++
++                    ushort currentFlags = (ushort)(ItemStateFlags[anchorIndex] | RadioactiveMask);
++                    ushort currentQualityMilli = QualityMilli[anchorIndex] > 0 ? QualityMilli[anchorIndex] : DefaultQuality;
++                    float currentQuality = math.clamp(currentQualityMilli / 1000f, 0f, 1f);
++                    float halfLifeSeconds = safeBaseHalfLifeSeconds / math.max(0.001f, radiationSv);
++                    float decayFactor = math.exp(-(Ln2 / halfLifeSeconds) * DeltaSeconds);
++                    float nextQuality = math.clamp(currentQuality * decayFactor, 0f, 1f);
++                    ushort nextQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
++
++                    if (nextQualityMilli < DegradedThreshold)
++                        currentFlags = (ushort)(currentFlags | DegradedMask);
++
++                    if (nextQualityMilli <= 0)
++                    {
++                        currentFlags = (ushort)(currentFlags | DegradedMask);
++                        if (conversionCount < ConversionAnchorIndices.Length)
++                            ConversionAnchorIndices[conversionCount++] = anchorIndex;
++                    }
++
++                    if (currentFlags != ItemStateFlags[anchorIndex] || nextQualityMilli != currentQualityMilli)
++                    {
++                        ItemStateFlags[anchorIndex] = currentFlags;
++                        QualityMilli[anchorIndex] = nextQualityMilli;
++                        changed = 1;
++                    }
++                }
++
++                if (Counters.Length >= 2)
++                {
++                    Counters[0] = conversionCount;
++                    Counters[1] = changed;
++                }
+             }
+         }
+ 
+@@ -226,6 +312,8 @@ namespace Hecton8.Inventory
+         [SerializeField] private HectonSurvivalSystem survival;
+         [Tooltip("Item catalog used for load-time and UI seam resolution.")]
+         [SerializeField] private ItemCatalog itemCatalog;
++        [Tooltip("Inventory radiation threshold in Sv before carried isotopes push trauma every SlowTick.")]
++        [SerializeField, Min(0f)] private float radiationTraumaThresholdSv = 0.5f;
+ 
+         private InventoryGrid _grid;
+         private NativeArray<ushort> _stackCounts;
+@@ -239,19 +327,24 @@ namespace Hecton8.Inventory
+         private NativeArray<byte> _simulationOccupiedCells;
+         private NativeArray<float> _anchorUnitMassKg;
+         private NativeArray<float> _anchorUnitVolumeM3;
++        private NativeArray<float> _anchorUnitRadiationSv;
+         private NativeArray<InventorySortEntry> _sortEntriesNative;
+         private NativeArray<InventorySortEntry> _sortScratchNative;
+         private NativeArray<int> _sortRadixCounts;
+-        private NativeArray<float2> _derivedMassVolumeScratch;
++        private NativeArray<float3> _derivedMassVolumeScratch;
++        private NativeArray<int> _radioactiveConversionAnchors;
++        private NativeArray<int> _radioactiveHalfLifeCounters;
+         private ItemPlacement[] _sortBuffer;
+         private ItemPlacement[] _sortedPlacements;
+         private bool _registeredSlowTick;
+         private ulong _playerImpactBodyId;
++        private TraumaDispatcher _traumaDispatcher;
+ 
+         public static PlayerInventory Instance => _instance;
+         public float TotalWeight { get; private set; }
+         public float TotalMassKg { get; private set; }
+         public float TotalVolumeM3 { get; private set; }
++        public float TotalRadiationSv { get; private set; }
+         public InventoryGrid Grid => _grid;
+         public ItemCatalog ItemCatalog => itemCatalog;
+         public int InventoryVersion { get; private set; }
+@@ -301,13 +394,17 @@ namespace Hecton8.Inventory
+             // COLD ALLOC: ItemPlacement[columns * rows] — placement snapshot buffer — owner: PlayerInventory
+             _anchorUnitMassKg = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit mass cache for Burst-derived carry totals â€” owner: PlayerInventory
+             _anchorUnitVolumeM3 = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit volume cache for Burst-derived carry totals â€” owner: PlayerInventory
++            _anchorUnitRadiationSv = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — per-anchor inventory radiation cache for Burst half-life and trauma totals — owner: PlayerInventory
+             _sortEntriesNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort input scratch â€” owner: PlayerInventory
+             _sortScratchNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort output scratch â€” owner: PlayerInventory
+             _sortRadixCounts = new NativeArray<int>(256, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[256] â€” radix bucket counts reused by inventory sorting â€” owner: PlayerInventory
+-            _derivedMassVolumeScratch = new NativeArray<float2>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float2[1] â€” Burst-derived mass/volume totals scratch â€” owner: PlayerInventory
++            _derivedMassVolumeScratch = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float3[1] — Burst-derived mass/volume/radiation totals scratch — owner: PlayerInventory
++            _radioactiveConversionAnchors = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] — radioactive half-life conversion anchor scratch — owner: PlayerInventory
++            _radioactiveHalfLifeCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — radioactive half-life changed/conversion counters — owner: PlayerInventory
+             _sortBuffer = new ItemPlacement[columns * rows];
+             // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
+             _sortedPlacements = new ItemPlacement[columns * rows];
++            TryGetComponent(out _traumaDispatcher);
+         }
+ 
+         private void OnEnable()
+@@ -366,6 +463,9 @@ namespace Hecton8.Inventory
+             if (_anchorUnitVolumeM3.IsCreated)
+                 _anchorUnitVolumeM3.Dispose(default);
+ 
++            if (_anchorUnitRadiationSv.IsCreated)
++                _anchorUnitRadiationSv.Dispose(default);
++
+             if (_sortEntriesNative.IsCreated)
+                 _sortEntriesNative.Dispose(default);
+ 
+@@ -378,6 +478,12 @@ namespace Hecton8.Inventory
+             if (_derivedMassVolumeScratch.IsCreated)
+                 _derivedMassVolumeScratch.Dispose(default);
+ 
++            if (_radioactiveConversionAnchors.IsCreated)
++                _radioactiveConversionAnchors.Dispose(default);
++
++            if (_radioactiveHalfLifeCounters.IsCreated)
++                _radioactiveHalfLifeCounters.Dispose(default);
++
+             if (_instance == this)
+                 _instance = null;
+         }
+@@ -408,17 +514,47 @@ namespace Hecton8.Inventory
+ 
+         public int RemoveOneItem(int anchorX, int anchorY)
+         {
++            return TryRemoveOneItemWithState(
++                anchorX,
++                anchorY,
++                out int itemHashId,
++                out _,
++                out _,
++                out _)
++                ? itemHashId
++                : 0;
++        }
++
++        public bool TryRemoveOneItemWithState(
++            int anchorX,
++            int anchorY,
++            out int itemHashId,
++            out ushort stateFlags,
++            out uint geneticsMask,
++            out ushort qualityMilli)
++        {
++            itemHashId = 0;
++            stateFlags = 0;
++            geneticsMask = 0u;
++            qualityMilli = 0;
+             if (_grid == null || !_stackCounts.IsCreated)
+-                return 0;
++                return false;
+ 
+             int anchorIndex = AnchorIndex(anchorX, anchorY);
+             if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
+-                return 0;
++                return false;
+ 
+             int count = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+             int unlockedCount = Mathf.Max(0, count - GetReservedCraftCount(anchorIndex));
+             if (unlockedCount <= 0)
+-                return 0;
++                return false;
++
++            itemHashId = descriptor.HashId;
++            stateFlags = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
++            geneticsMask = _itemGeneticsWords.IsCreated ? _itemGeneticsWords[anchorIndex] : 0u;
++            qualityMilli = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
++                ? _qualityMilli[anchorIndex]
++                : DefaultQualityMilli;
+ 
+             if (count > 1)
+             {
+@@ -439,7 +575,7 @@ namespace Hecton8.Inventory
+ 
+             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight);
+             NotifyInventoryChanged();
+-            return descriptor.HashId;
++            return true;
+         }
+ 
+         public bool ConsumeOneItem(int anchorX, int anchorY)
+@@ -572,12 +708,19 @@ namespace Hecton8.Inventory
+ 
+         public bool TryAddItemWithGenetics(int itemHashId, uint geneticsMask, int quantity = 1)
+         {
+-            return TryAddItemWithGeneticsInternal(itemHashId, quantity, geneticsMask, out _);
++            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, DefaultQualityMilli, out _);
++        }
++
++        public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, int quantity = 1)
++        {
++            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out _);
+         }
+ 
+         public void SlowTick()
+         {
+             ApplyInventoryEnvironmentalDegradation();
++            ApplyInventoryRadioactiveHalfLife();
++            DispatchInventoryRadiationTrauma();
+         }
+ 
+         public bool TryCopyAvailableItemCountsNonAlloc(
+@@ -714,6 +857,7 @@ namespace Hecton8.Inventory
+                     _craftLockedCounts[anchorIndex] = 0;
+                     _anchorStateFlags[anchorIndex] = 0;
+                     _itemStateFlags[anchorIndex] = 0;
++                    _itemGeneticsWords[anchorIndex] = 0u;
+                     _qualityMilli[anchorIndex] = 0;
+                     _lastUpdateUnixSeconds[anchorIndex] = 0;
+                     ClearAnchorPhysicalMetadata(anchorIndex);
+@@ -747,11 +891,16 @@ namespace Hecton8.Inventory
+         }
+ 
+         public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor)
++        {
++            return ScavengeAttempt(itemHashId, quantity, interactor, 0u, DefaultQualityMilli);
++        }
++
++        public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor, uint geneticsMask, ushort qualityMilli)
+         {
+             if (itemHashId == 0 || quantity <= 0)
+                 return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
+ 
+-            TryAddItemInternal(itemHashId, quantity, out int addedQuantity);
++            TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out int addedQuantity);
+             return new ScavengeAttemptResult(quantity, addedQuantity);
+         }
+ 
+@@ -893,7 +1042,7 @@ namespace Hecton8.Inventory
+                     _itemGeneticsWords[anchorIndex] = ResolveLoadedGeneticsMask(dto, i);
+                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
+                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
+-                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
++                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
+                     ApplyLoadedBiologicalDecay(anchorIndex);
+                     TotalWeight += descriptor.Weight * loadedCount;
+                     continue;
+@@ -907,7 +1056,7 @@ namespace Hecton8.Inventory
+                     _itemGeneticsWords[anchorIndex] = ResolveLoadedGeneticsMask(dto, i);
+                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
+                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
+-                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
++                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
+                     ApplyLoadedBiologicalDecay(anchorIndex);
+                     TotalWeight += descriptor.Weight * loadedCount;
+                 }
+@@ -959,6 +1108,7 @@ namespace Hecton8.Inventory
+             ClearNativeArray(_lastUpdateUnixSeconds);
+             ClearNativeArray(_anchorUnitMassKg);
+             ClearNativeArray(_anchorUnitVolumeM3);
++            ClearNativeArray(_anchorUnitRadiationSv);
+             TotalWeight = 0f;
+ 
+             for (int i = 0; i < count; i++)
+@@ -1032,6 +1182,7 @@ namespace Hecton8.Inventory
+                 SwapAnchorState(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
+                 SwapAnchorState(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
+                 SwapAnchorState(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
++                SwapAnchorState(_anchorUnitRadiationSv, sourceAnchorIndex, destinationAnchorIndex);
+                 return;
+             }
+ 
+@@ -1044,6 +1195,7 @@ namespace Hecton8.Inventory
+             MoveAnchorStateValue(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
+             MoveAnchorStateValue(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
+             MoveAnchorStateValue(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
++            MoveAnchorStateValue(_anchorUnitRadiationSv, sourceAnchorIndex, destinationAnchorIndex);
+         }
+ 
+         private static void SwapAnchorState<T>(NativeArray<T> values, int firstIndex, int secondIndex) where T : struct
+@@ -1117,10 +1269,10 @@ namespace Hecton8.Inventory
+ 
+         private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
+         {
+-            return TryAddItemWithGeneticsInternal(itemHashId, quantity, 0u, out addedQuantity);
++            return TryAddItemWithStateInternal(itemHashId, quantity, 0u, DefaultQualityMilli, out addedQuantity);
+         }
+ 
+-        private bool TryAddItemWithGeneticsInternal(int itemHashId, int quantity, uint geneticsMask, out int addedQuantity)
++        private bool TryAddItemWithStateInternal(int itemHashId, int quantity, uint geneticsMask, ushort qualityMilli, out int addedQuantity)
+         {
+             addedQuantity = 0;
+             if (_grid == null ||
+@@ -1133,11 +1285,12 @@ namespace Hecton8.Inventory
+             }
+ 
+             uint timestampNow = ResolveCurrentUnixTimestamp();
++            ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMilli);
+ 
+             bool allAdded = true;
+             for (int i = 0; i < quantity; i++)
+             {
+-                if (descriptor.Stackable && TryStackItemWithGenetics(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow, geneticsMask))
++                if (descriptor.Stackable && TryStackItemWithState(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow, geneticsMask, resolvedQualityMilli))
+                 {
+                     TotalWeight += descriptor.Weight;
+                     addedQuantity++;
+@@ -1150,9 +1303,9 @@ namespace Hecton8.Inventory
+                     _stackCounts[anchorIndex] = 1;
+                     _itemStateFlags[anchorIndex] = runtimeDescriptor.StateFlags;
+                     _itemGeneticsWords[anchorIndex] = geneticsMask;
+-                    _qualityMilli[anchorIndex] = DefaultQualityMilli;
++                    _qualityMilli[anchorIndex] = resolvedQualityMilli;
+                     _lastUpdateUnixSeconds[anchorIndex] = (runtimeDescriptor.StateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
+-                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
++                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
+                     TotalWeight += descriptor.Weight;
+                     addedQuantity++;
+                 }
+@@ -1171,7 +1324,7 @@ namespace Hecton8.Inventory
+             return allAdded;
+         }
+ 
+-        private bool TryStackItemWithGenetics(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, uint geneticsMask)
++        private bool TryStackItemWithState(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, uint geneticsMask, ushort qualityMilli)
+         {
+             if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1)
+                 return false;
+@@ -1182,7 +1335,8 @@ namespace Hecton8.Inventory
+                     continue;
+ 
+                 if ((_itemStateFlags.IsCreated && _itemStateFlags[anchorIndex] != itemStateFlags) ||
+-                    (_itemGeneticsWords.IsCreated && _itemGeneticsWords[anchorIndex] != geneticsMask))
++                    (_itemGeneticsWords.IsCreated && _itemGeneticsWords[anchorIndex] != geneticsMask) ||
++                    (_qualityMilli.IsCreated && NormalizeQualityMilli(_qualityMilli[anchorIndex]) != qualityMilli))
+                 {
+                     continue;
+                 }
+@@ -1192,8 +1346,7 @@ namespace Hecton8.Inventory
+                     _stackCounts[anchorIndex]++;
+                     _itemStateFlags[anchorIndex] = itemStateFlags;
+                     _itemGeneticsWords[anchorIndex] = geneticsMask;
+-                    if (_qualityMilli[anchorIndex] == 0)
+-                        _qualityMilli[anchorIndex] = DefaultQualityMilli;
++                    _qualityMilli[anchorIndex] = qualityMilli;
+                     if ((itemStateFlags & BiologicalItemStateMask) != 0 && _lastUpdateUnixSeconds[anchorIndex] == 0u)
+                         _lastUpdateUnixSeconds[anchorIndex] = timestampNow;
+                     return true;
+@@ -1399,6 +1552,7 @@ namespace Hecton8.Inventory
+             ClearNativeArray(_lastUpdateUnixSeconds);
+             ClearNativeArray(_anchorUnitMassKg);
+             ClearNativeArray(_anchorUnitVolumeM3);
++            ClearNativeArray(_anchorUnitRadiationSv);
+             TotalWeight = 0f;
+ 
+             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
+@@ -1463,10 +1617,28 @@ namespace Hecton8.Inventory
+         private void NotifyInventoryChanged()
+         {
+             RefreshDerivedMassAndSurvivalLoad();
++            PublishEncumbranceChanged();
+             InventoryVersion++;
+             InventoryChanged?.Invoke();
+         }
+ 
++        private void PublishEncumbranceChanged()
++        {
++            float carryCapacityKg = ResolveCarryCapacityKilograms();
++            InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
++                this,
++                TotalMassKg,
++                carryCapacityKg,
++                math.saturate(TotalMassKg / carryCapacityKg)));
++        }
++
++        private float ResolveCarryCapacityKilograms()
++        {
++            return survival != null && survival.Stats != null
++                ? math.max(0.01f, survival.Stats.CarryCapacityKg)
++                : 200f;
++        }
++
+         private void TryRegisterSlowTick()
+         {
+             if (_registeredSlowTick)
+@@ -1525,10 +1697,12 @@ namespace Hecton8.Inventory
+                 !_stackCounts.IsCreated ||
+                 !_anchorUnitMassKg.IsCreated ||
+                 !_anchorUnitVolumeM3.IsCreated ||
++                !_anchorUnitRadiationSv.IsCreated ||
+                 !_derivedMassVolumeScratch.IsCreated)
+             {
+                 TotalMassKg = 0f;
+                 TotalVolumeM3 = 0f;
++                TotalRadiationSv = 0f;
+             }
+             else
+             {
+@@ -1539,13 +1713,15 @@ namespace Hecton8.Inventory
+                     StackCounts = _stackCounts,
+                     AnchorUnitMassKg = _anchorUnitMassKg,
+                     AnchorUnitVolumeM3 = _anchorUnitVolumeM3,
++                    AnchorUnitRadiationSv = _anchorUnitRadiationSv,
+                     Totals = _derivedMassVolumeScratch
+                 }.Schedule();
+                 handle.Complete();
+ 
+-                float2 totals = _derivedMassVolumeScratch[0];
++                float3 totals = _derivedMassVolumeScratch[0];
+                 TotalMassKg = totals.x;
+                 TotalVolumeM3 = totals.y;
++                TotalRadiationSv = totals.z;
+             }
+ 
+             if (survival != null)
+@@ -1594,6 +1770,164 @@ namespace Hecton8.Inventory
+             return changed;
+         }
+ 
++        private void ApplyInventoryRadioactiveHalfLife()
++        {
++            if (_grid == null ||
++                !_stackCounts.IsCreated ||
++                !_itemStateFlags.IsCreated ||
++                !_qualityMilli.IsCreated ||
++                !_anchorUnitRadiationSv.IsCreated ||
++                !_radioactiveConversionAnchors.IsCreated ||
++                !_radioactiveHalfLifeCounters.IsCreated)
++            {
++                return;
++            }
++
++            // ZERO-GC SYNC JOB: bounded inventory SlowTick kernel; synchronous execution avoids cross-frame SOA mutation races.
++            new InventoryRadioactiveHalfLifeJob
++            {
++                AnchorHashIds = _grid.AnchorHashIds,
++                StackCounts = _stackCounts,
++                AnchorUnitRadiationSv = _anchorUnitRadiationSv,
++                ItemStateFlags = _itemStateFlags,
++                QualityMilli = _qualityMilli,
++                ConversionAnchorIndices = _radioactiveConversionAnchors,
++                Counters = _radioactiveHalfLifeCounters,
++                DeltaSeconds = SlowTickIntervalSeconds,
++                BaseHalfLifeSeconds = RadioactiveHalfLifeBaseSeconds,
++                DefaultQuality = DefaultQualityMilli,
++                RadioactiveMask = RadioactiveItemStateMask,
++                DegradedMask = DegradedItemStateMask,
++                DegradedThreshold = DegradedQualityMilliThreshold
++            }.Run();
++
++            if (_radioactiveHalfLifeCounters.Length < 2 || _radioactiveHalfLifeCounters[1] == 0)
++                return;
++
++            int conversionCount = math.clamp(_radioactiveHalfLifeCounters[0], 0, _radioactiveConversionAnchors.Length);
++            for (int i = 0; i < conversionCount; i++)
++                TryConvertRadioactiveAnchorToDepletedLead(_radioactiveConversionAnchors[i]);
++
++            NotifyInventoryChanged();
++        }
++
++        private void DispatchInventoryRadiationTrauma()
++        {
++            float threshold = ResolveInventoryRadiationThresholdSv();
++            if (!(TotalRadiationSv > threshold))
++                return;
++
++            TraumaDispatcher dispatcher = ResolveTraumaDispatcher();
++            if (dispatcher == null)
++                return;
++
++            float excess = TotalRadiationSv - threshold;
++            float hazard01 = math.saturate(excess / math.max(0.01f, threshold));
++            if (hazard01 <= 0f)
++                return;
++
++            DamageSignal signal = new DamageSignal
++            {
++                magnitude = hazard01,
++                localPoint = float3.zero,
++                damageType = (uint)DamageTypeMask.Radioactive,
++                integrityDelta = (byte)math.clamp((int)math.round(hazard01 * byte.MaxValue), 0, byte.MaxValue),
++                depth = ResolveInventoryCarrierDepthMeters(),
++                sourceID = DamageSourceIds.InventoryRadiation
++            };
++
++            dispatcher.OnClarityChanged(0f, hazard01, signal);
++            dispatcher.OnTraumaThresholdCrossed(ResolveRadiationTraumaLevel(hazard01));
++        }
++
++        private bool TryConvertRadioactiveAnchorToDepletedLead(int anchorIndex)
++        {
++            if (_grid == null ||
++                !_stackCounts.IsCreated ||
++                !_itemStateFlags.IsCreated ||
++                !_qualityMilli.IsCreated ||
++                !_lastUpdateUnixSeconds.IsCreated ||
++                (uint)anchorIndex >= (uint)_stackCounts.Length ||
++                !_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor sourceDescriptor) ||
++                !TryBuildDescriptor(_DepletedLeadHashId, out InventoryGrid.InventoryItemDescriptor depletedDescriptor) ||
++                !TryGetRuntimeDescriptor(depletedDescriptor.HashId, out ItemCatalog.ItemRuntimeDescriptor depletedRuntimeDescriptor))
++            {
++                return false;
++            }
++
++            int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
++            int anchorX = anchorIndex % columns;
++            int anchorY = anchorIndex / columns;
++            float sourceWeight = sourceDescriptor.Weight * stackCount;
++
++            _grid.RemoveAnchorAt(anchorIndex);
++            if (!_grid.PlaceAt(in depletedDescriptor, anchorX, anchorY))
++            {
++                _grid.PlaceAt(in sourceDescriptor, anchorX, anchorY);
++                SyncAnchorPhysicalMetadata(anchorIndex, sourceDescriptor.HashId);
++                return false;
++            }
++
++            ushort convertedStackCount = (ushort)Mathf.Clamp(stackCount, 1, depletedDescriptor.MaxStack);
++            _stackCounts[anchorIndex] = convertedStackCount;
++            _craftLockedCounts[anchorIndex] = 0;
++            _anchorStateFlags[anchorIndex] = 0;
++            _itemStateFlags[anchorIndex] = depletedRuntimeDescriptor.StateFlags;
++            _itemGeneticsWords[anchorIndex] = 0u;
++            _qualityMilli[anchorIndex] = DefaultQualityMilli;
++            _lastUpdateUnixSeconds[anchorIndex] = 0u;
++            SetAnchorPhysicalMetadata(
++                anchorIndex,
++                depletedRuntimeDescriptor.MassKg,
++                depletedRuntimeDescriptor.VolumeM3,
++                depletedRuntimeDescriptor.RadiationSvPerSecond);
++            TotalWeight = Mathf.Max(0f, TotalWeight - sourceWeight + depletedDescriptor.Weight * convertedStackCount);
++            return true;
++        }
++
++        private TraumaDispatcher ResolveTraumaDispatcher()
++        {
++            if (_traumaDispatcher != null)
++                return _traumaDispatcher;
++
++            if (survival != null)
++                survival.TryGetComponent(out _traumaDispatcher);
++
++            if (_traumaDispatcher == null)
++                TryGetComponent(out _traumaDispatcher);
++
++            return _traumaDispatcher;
++        }
++
++        private float ResolveInventoryRadiationThresholdSv()
++        {
++            if (survival != null && survival.Stats != null)
++                return math.max(0.01f, survival.Stats.RadiationThreshold);
++
++            return math.max(0.01f, radiationTraumaThresholdSv);
++        }
++
++        private static float ResolveInventoryCarrierDepthMeters()
++        {
++            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
++            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
++            return movement != null ? math.max(0f, movement.CurrentDepth) : 0f;
++        }
++
++        private static TraumaLevel ResolveRadiationTraumaLevel(float hazard01)
++        {
++            if (hazard01 >= 0.8f)
++                return TraumaLevel.Catastrophic;
++
++            if (hazard01 >= 0.55f)
++                return TraumaLevel.Critical;
++
++            if (hazard01 >= 0.3f)
++                return TraumaLevel.Significant;
++
++            return TraumaLevel.Minor;
++        }
++
+         private static bool ResolveInventoryCarrierSubmergedState()
+         {
+             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+@@ -1711,6 +2045,7 @@ namespace Hecton8.Inventory
+                 _craftLockedCounts[anchorIndex] = 0;
+                 _anchorStateFlags[anchorIndex] = 0;
+                 _itemStateFlags[anchorIndex] = 0;
++                _itemGeneticsWords[anchorIndex] = 0u;
+                 _qualityMilli[anchorIndex] = 0;
+                 _lastUpdateUnixSeconds[anchorIndex] = 0;
+                 ClearAnchorPhysicalMetadata(anchorIndex);
+@@ -1743,35 +2078,41 @@ namespace Hecton8.Inventory
+                 return;
+             }
+ 
+-            SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
++            SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
+         }
+ 
+-        private void SetAnchorPhysicalMetadata(int anchorIndex, float massKg, float volumeM3)
++        private void SetAnchorPhysicalMetadata(int anchorIndex, float massKg, float volumeM3, float radiationSv)
+         {
+             if (!_anchorUnitMassKg.IsCreated ||
+                 !_anchorUnitVolumeM3.IsCreated ||
++                !_anchorUnitRadiationSv.IsCreated ||
+                 (uint)anchorIndex >= (uint)_anchorUnitMassKg.Length ||
+-                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length)
++                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length ||
++                (uint)anchorIndex >= (uint)_anchorUnitRadiationSv.Length)
+             {
+                 return;
+             }
+ 
+             _anchorUnitMassKg[anchorIndex] = Mathf.Max(0f, massKg);
+             _anchorUnitVolumeM3[anchorIndex] = Mathf.Max(0f, volumeM3);
++            _anchorUnitRadiationSv[anchorIndex] = Mathf.Max(0f, radiationSv);
+         }
+ 
+         private void ClearAnchorPhysicalMetadata(int anchorIndex)
+         {
+             if (!_anchorUnitMassKg.IsCreated ||
+                 !_anchorUnitVolumeM3.IsCreated ||
++                !_anchorUnitRadiationSv.IsCreated ||
+                 (uint)anchorIndex >= (uint)_anchorUnitMassKg.Length ||
+-                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length)
++                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length ||
++                (uint)anchorIndex >= (uint)_anchorUnitRadiationSv.Length)
+             {
+                 return;
+             }
+ 
+             _anchorUnitMassKg[anchorIndex] = 0f;
+             _anchorUnitVolumeM3[anchorIndex] = 0f;
++            _anchorUnitRadiationSv[anchorIndex] = 0f;
+         }
+ 
+         private static uint ResolveCurrentUnixTimestamp()
+@@ -1791,6 +2132,14 @@ namespace Hecton8.Inventory
+             return dto.qualityMilli[index] > 0 ? dto.qualityMilli[index] : DefaultQualityMilli;
+         }
+ 
++        private static ushort NormalizeQualityMilli(ushort qualityMilli)
++        {
++            if (qualityMilli == 0)
++                return DefaultQualityMilli;
++
++            return (ushort)Mathf.Clamp((int)qualityMilli, 0, DefaultQualityMilli);
++        }
++
+         private static uint ResolveLoadedTimestamp(InventoryDTO dto, int index)
+         {
+             if (dto.lastUpdateUnixSeconds == null || (uint)index >= (uint)dto.lastUpdateUnixSeconds.Length)
+diff --git a/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs b/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+index 6ffd8d07..32c397de 100644
+--- a/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
++++ b/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+@@ -464,6 +464,7 @@ namespace Hecton8.World
+         private ScatterReconcileRuntimeState _reconcileRuntimeState;
+         private ScatterLifecycleRuntimeState _lifecycleRuntimeState;
+         private ScatterWorkingMemory _memory;
++        private ScatterInstancingService _instancingService;
+         private ref CandidateMap _groundRescueCandidates => ref _memory.GroundRescueCandidates;
+         private ref CandidateMap _clusterRescueCandidates => ref _memory.ClusterRescueCandidates;
+         private ref CandidateMap _clusterFertileCandidates => ref _memory.ClusterFertileCandidates;
+@@ -778,9 +779,15 @@ namespace Hecton8.World
+         private void EnsureWorkingMemory()
+         {
+             if (_memory != null)
++            {
++                if (_instancingService == null)
++                    _instancingService = new ScatterInstancingService();
++
+                 return;
++            }
+ 
+             _memory = new ScatterWorkingMemory();
++            _instancingService = new ScatterInstancingService();
+         }
+ 
+         private void CompleteSamplingJobIfNeeded()
+@@ -2120,13 +2127,7 @@ namespace Hecton8.World
+             in WorldProceduralFieldSampler.FieldSample fieldSample,
+             in ScatterRuntimeRuleEntry runtimeRule)
+         {
+-            if (fieldSample.isSecondaryDomain || fieldSample.verticalDomainWeight > 0f)
+-                return Mathf.Max(0, fieldSample.verticalDomainIndex);
+-
+-            return ResolveHeightLayerIndex(
+-                fieldSample.caveProximity,
+-                runtimeRule.Family,
+-                runtimeRule.StructureAccentRole);
++            return ScatterMath.ResolveHeightLayerIndex(fieldSample, runtimeRule);
+         }
+ 
+         private static int ResolveHeightLayerIndex(ScatterPlacement placement)
+@@ -2139,38 +2140,14 @@ namespace Hecton8.World
+             WorldPrefabFamilyProfile family,
+             WorldPrefabFamilyProfile.StructureAccentRole structureAccentRole)
+         {
+-            if (family == null)
+-                return 0;
+-
+-            const float caveHeightLayerThreshold = 0.68f;
+-            bool explicitCaveDomain = family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance
+-                                      || structureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
+-            bool caveQualified = caveProximity >= caveHeightLayerThreshold
+-                                 && (family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Structure
+-                                     || family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn
+-                                     || explicitCaveDomain);
+-            return explicitCaveDomain || caveQualified ? 1 : 0;
++            return ScatterMath.ResolveHeightLayerIndex(caveProximity, family, structureAccentRole);
+         }
+ 
+         private static bool ShouldEvaluateScatterDomain(
+             in WorldProceduralFieldSampler.FieldSample fieldSample,
+             in ScatterRuntimeRuleEntry runtimeRule)
+         {
+-            if (!fieldSample.isSecondaryDomain)
+-                return true;
+-
+-            WorldPrefabFamilyProfile family = runtimeRule.Family;
+-            if (family == null)
+-                return false;
+-
+-            if (runtimeRule.ScatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Structure ||
+-                runtimeRule.ScatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn)
+-            {
+-                return true;
+-            }
+-
+-            return family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance ||
+-                   runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
++            return ScatterMath.ShouldEvaluateScatterDomain(fieldSample, runtimeRule);
+         }
+ 
+         private ScatterReconcileMetrics ReconcileInstances(bool captureProfiling)
+@@ -3659,9 +3636,7 @@ namespace Hecton8.World
+ 
+         private static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
+         {
+-            float dx = a.x - b.x;
+-            float dz = a.z - b.z;
+-            return (dx * dx) + (dz * dz);
++            return ScatterMath.GetHorizontalDistanceSqr(a, b);
+         }
+ 
+         private float ResolveFinalVariantRadiusScale(WorldPrefabFamilyProfile family)
+@@ -3780,45 +3755,12 @@ namespace Hecton8.World
+ 
+         private static long ComposeScatterGridKey(int cellX, int cellZ)
+         {
+-            return ((long)cellX << 32) | (uint)cellZ;
++            return ScatterMath.ComposeScatterGridKey(cellX, cellZ);
+         }
+ 
+         private static float ResolveRequiredDistance(ScatterPlacement candidate, ScatterPlacement existing)
+         {
+-            WorldPrefabFamilyProfile.ScatterLayer candidateLayer = candidate.Family.scatterLayer;
+-            WorldPrefabFamilyProfile.ScatterLayer existingLayer = existing.Family.scatterLayer;
+-            float candidateSpacing = candidate.EffectiveSpacing;
+-            float existingSpacing = existing.EffectiveSpacing;
+-            float maxSpacing = Mathf.Max(candidateSpacing, existingSpacing);
+-
+-            if (candidateLayer == existingLayer)
+-            {
+-                return candidateLayer switch
+-                {
+-                    WorldPrefabFamilyProfile.ScatterLayer.Ground => Mathf.Max(1.25f, maxSpacing * 0.52f),
+-                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => Mathf.Max(3f, maxSpacing * 0.92f),
+-                    WorldPrefabFamilyProfile.ScatterLayer.Structure => Mathf.Max(12f, maxSpacing),
+-                    WorldPrefabFamilyProfile.ScatterLayer.Spawn => Mathf.Max(14f, maxSpacing * 1.08f),
+-                    _ => maxSpacing
+-                };
+-            }
+-
+-            bool candidatePocket = IsPocket(candidate.Family.proceduralDomain);
+-            bool existingPocket = IsPocket(existing.Family.proceduralDomain);
+-            if (candidatePocket && existingPocket)
+-                return Mathf.Max(10f, maxSpacing * 1.35f);
+-
+-            bool candidateStructure = IsStructure(candidate.Family.scatterLayer);
+-            bool existingStructure = IsStructure(existing.Family.scatterLayer);
+-            if (candidateStructure && existingStructure)
+-                return Mathf.Max(14f, maxSpacing * 0.88f);
+-
+-            bool candidateSpawn = candidateLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
+-            bool existingSpawn = existingLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
+-            if ((candidateSpawn && existingStructure) || (candidateStructure && existingSpawn))
+-                return Mathf.Max(12f, Mathf.Max(candidateSpacing, existingSpacing) * 0.9f);
+-
+-            return 0f;
++            return ScatterMath.ResolveRequiredDistance(candidate, existing);
+         }
+ 
+         private static bool IsPocket(WorldPrefabFamilyProfile.ProceduralDomain domain)
+@@ -3835,10 +3777,7 @@ namespace Hecton8.World
+ 
+         private static float GetEffectiveSpacing(WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
+         {
+-            if (rule != null && rule.minSpacingOverrideMeters > 0f)
+-                return Mathf.Max(0.5f, rule.minSpacingOverrideMeters);
+-
+-            return family != null ? Mathf.Max(0.5f, family.minSpacingMeters) : 1f;
++            return ScatterMath.GetEffectiveSpacing(family, rule);
+         }
+ 
+         private bool HasLayerBudget(
+@@ -10787,16 +10726,10 @@ namespace Hecton8.World
+         private void ResetFloraGpuiAggregation()
+         {
+             EnsureWorkingMemory();
+-            _activeGpuiFloraPlacements = 0;
+-
+-            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
+-            {
+-                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
+-                if (prototype == null)
+-                    continue;
+-
+-                _floraGpuiCounts[prototype] = 0;
+-            }
++            _instancingService.ResetAggregation(
++                _floraGpuiKnownPrototypes,
++                _floraGpuiCounts,
++                ref _activeGpuiFloraPlacements);
+         }
+ 
+         private bool TryRegisterFloraGpuiPlacement(
+@@ -10805,108 +10738,38 @@ namespace Hecton8.World
+             out GPUInstancerPrefabPrototype prototype)
+         {
+             EnsureWorkingMemory();
+-            if (!ShouldUseFloraGpuiPath(placement, runtimeVariant, out prototype))
+-                return false;
+-
+-            if (!_floraGpuiMatrices.TryGetValue(prototype, out Matrix4x4[] matrices))
+-            {
+-                matrices = System.Buffers.ArrayPool<Matrix4x4>.Shared.Rent(64); // COLD ALLOC: Matrix4x4[64] — pooled GPUI flora prototype buffer — owner: WorldProceduralScatterDirector
+-                _floraGpuiMatrices.Add(prototype, matrices);
+-                _floraGpuiCounts.Add(prototype, 0);
+-                _floraGpuiBufferCapacities.Add(prototype, 0);
+-                _floraGpuiKnownPrototypes.Add(prototype);
+-            }
+-
+-            int count = _floraGpuiCounts[prototype];
+-            if (count >= matrices.Length)
+-            {
+-                int newCapacity = Mathf.NextPowerOfTwo(count + 1);
+-                Matrix4x4[] expanded = System.Buffers.ArrayPool<Matrix4x4>.Shared.Rent(newCapacity);
+-                Array.Copy(matrices, 0, expanded, 0, count);
+-                System.Buffers.ArrayPool<Matrix4x4>.Shared.Return(matrices, clearArray: false);
+-                matrices = expanded;
+-                _floraGpuiMatrices[prototype] = matrices;
+-            }
+-
+-            matrices[count] = Matrix4x4.TRS(placement.RuntimePosition, placement.Rotation, Vector3.one * placement.Scale);
+-            _floraGpuiCounts[prototype] = count + 1;
+-            _activeGpuiFloraPlacements++;
+-            return true;
++            return _instancingService.TryRegisterPlacement(
++                floraGpuiManager,
++                placement,
++                runtimeVariant,
++                _floraGpuiKnownPrototypes,
++                _floraGpuiMatrices,
++                _floraGpuiCounts,
++                _floraGpuiBufferCapacities,
++                ref _activeGpuiFloraPlacements,
++                out prototype);
+         }
+ 
+         private void FlushFloraGpuiBuffers()
+         {
+             EnsureWorkingMemory();
+-            if (floraGpuiManager == null || !Application.isPlaying)
+-                return;
+-
+-            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
+-            {
+-                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
+-                if (prototype == null)
+-                    continue;
+-
+-                _floraGpuiCounts.TryGetValue(prototype, out int count);
+-                Matrix4x4[] matrices = _floraGpuiMatrices[prototype];
+-                int requiredCapacity = matrices != null ? matrices.Length : 0;
+-
+-                bool needsInitialize = !_floraGpuiInitializedPrototypes.Contains(prototype);
+-                if (!needsInitialize &&
+-                    _floraGpuiBufferCapacities.TryGetValue(prototype, out int currentCapacity) &&
+-                    currentCapacity < requiredCapacity)
+-                {
+-                    needsInitialize = true;
+-                }
+-
+-                if (needsInitialize)
+-                {
+-                    GPUInstancerAPI.InitializePrototype(
+-                        floraGpuiManager,
+-                        prototype,
+-                        requiredCapacity,
+-                        count);
+-                    _floraGpuiInitializedPrototypes.Add(prototype);
+-                    _floraGpuiBufferCapacities[prototype] = requiredCapacity;
+-                }
+-
+-                if (count <= 0)
+-                {
+-                    GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
+-                        floraGpuiManager,
+-                        prototype,
+-                        Array.Empty<Matrix4x4>());
+-                    continue;
+-                }
+-
+-                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
+-                    floraGpuiManager,
+-                    prototype,
+-                    matrices,
+-                    0,
+-                    0,
+-                    count);
+-            }
++            _instancingService.FlushBuffers(
++                floraGpuiManager,
++                _floraGpuiKnownPrototypes,
++                _floraGpuiMatrices,
++                _floraGpuiCounts,
++                _floraGpuiBufferCapacities,
++                _floraGpuiInitializedPrototypes);
+         }
+ 
+         private void ClearFloraGpuiVisibility()
+         {
+             EnsureWorkingMemory();
+-            _activeGpuiFloraPlacements = 0;
+-
+-            if (floraGpuiManager == null || !Application.isPlaying)
+-                return;
+-
+-            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
+-            {
+-                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
+-                if (prototype == null || !_floraGpuiInitializedPrototypes.Contains(prototype))
+-                    continue;
+-
+-                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
+-                    floraGpuiManager,
+-                    prototype,
+-                    Array.Empty<Matrix4x4>());
+-            }
++            _instancingService.ClearVisibility(
++                floraGpuiManager,
++                _floraGpuiKnownPrototypes,
++                _floraGpuiInitializedPrototypes,
++                ref _activeGpuiFloraPlacements);
+         }
+ 
+         private bool ShouldUseFloraGpuiPath(
+@@ -10914,28 +10777,12 @@ namespace Hecton8.World
+             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
+             out GPUInstancerPrefabPrototype prototype)
+         {
+-            prototype = null;
+-
+-            if (!Application.isPlaying || floraGpuiManager == null || placement == null)
+-                return false;
+-
+-            WorldPrefabFamilyProfile family = placement.Family;
+-            if (family == null ||
+-                (family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Kelp &&
+-                 family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Coral))
+-            {
+-                return false;
+-            }
+-
+-            if (family.expectsCollision || family.expectsInteraction)
+-                return false;
+-
+-            GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
+-            if (prefab == null || !prefab.TryGetComponent(out GPUInstancerPrefab gpuiPrefab))
+-                return false;
+-
+-            prototype = gpuiPrefab.prefabPrototype;
+-            return prototype != null;
++            EnsureWorkingMemory();
++            return _instancingService.CanUseFloraGpuiPath(
++                floraGpuiManager,
++                placement,
++                runtimeVariant,
++                out prototype);
+         }
+ 
+         private void RegisterProceduralStateRegistryCallbacks()
+diff --git a/Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs b/Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs
+index a71dcfa2..40a501f4 100644
+--- a/Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs
++++ b/Assets/_Project/Scripts/WorldProceduralScatterDirectorEnvironmentalEnvelope.cs
+@@ -86,7 +86,10 @@ namespace Hecton8.World
+ 
+             if (familyHash == _FamilyCoralBrittleHash)
+             {
+-                float lightProxy = EvaluateDepthLightProxy01(fieldSample.depthMeters);
++                float lightProxy = ScatterMath.EvaluateDepthLightProxy01(
++                    fieldSample.depthMeters,
++                    deepFloraMinDepthMeters,
++                    deepFloraLightProxyFadeRangeMeters);
+                 if (lightProxy > Mathf.Clamp01(deepCoralMaxLightProxy))
+                     return false;
+             }
+@@ -128,7 +131,7 @@ namespace Hecton8.World
+             if (runtimeRule.ClusterNoiseThreshold <= 0f)
+                 return true;
+ 
+-            float patchMask = EvaluateClusterPatchMask01(
++            float patchMask = ScatterMath.EvaluateClusterPatchMask01(
+                 candidatePreview.Position.x,
+                 candidatePreview.Position.z,
+                 runtimeRule.ClusterNoiseScale,
+@@ -163,46 +166,9 @@ namespace Hecton8.World
+             return environmentalVegetationBridge != null;
+         }
+ 
+-        private float EvaluateDepthLightProxy01(float depthMeters)
+-        {
+-            float minimumDepth = Mathf.Max(1f, deepFloraMinDepthMeters);
+-            float fadeRange = Mathf.Max(1f, deepFloraLightProxyFadeRangeMeters);
+-            float darkness01 = Mathf.Clamp01((depthMeters - minimumDepth) / fadeRange);
+-            return 1f - darkness01;
+-        }
+-
+-        private static float EvaluateClusterPatchMask01(
+-            float worldX,
+-            float worldZ,
+-            float clusterNoiseScale,
+-            int ruleIdHash,
+-            int familyHash)
+-        {
+-            float safeScale = Mathf.Max(0.0001f, clusterNoiseScale);
+-            float baseX = (worldX * safeScale) + ((ruleIdHash & 255) * 0.03125f);
+-            float baseZ = (worldZ * safeScale) + ((familyHash & 255) * 0.03125f);
+-            float octaveA = Mathf.PerlinNoise(baseX, baseZ);
+-            float octaveB = Mathf.PerlinNoise((baseX * 1.93f) + 11.7f, (baseZ * 1.93f) - 7.1f);
+-            float octaveC = Mathf.PerlinNoise((baseX * 0.57f) - 19.4f, (baseZ * 0.57f) + 23.8f);
+-            return Mathf.Clamp01((octaveA * 0.58f) + (octaveB * 0.28f) + (octaveC * 0.14f));
+-        }
+-
+         private static FloraBudgetClass ResolveFloraBudgetClass(WorldPrefabFamilyProfile family)
+         {
+-            if (family == null)
+-                return FloraBudgetClass.None;
+-
+-            switch (family.proceduralDomain)
+-            {
+-                case WorldPrefabFamilyProfile.ProceduralDomain.Kelp:
+-                case WorldPrefabFamilyProfile.ProceduralDomain.Plant:
+-                case WorldPrefabFamilyProfile.ProceduralDomain.Coral:
+-                    return family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Ground
+-                        ? FloraBudgetClass.Micro
+-                        : FloraBudgetClass.Macro;
+-                default:
+-                    return FloraBudgetClass.None;
+-            }
++            return (FloraBudgetClass)ScatterMath.ResolveFloraBudgetClassId(family);
+         }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/Gameplay/HectonPlayerInputHandler.cs b/Assets/_Project/Scripts/Gameplay/HectonPlayerInputHandler.cs
+new file mode 100644
+index 00000000..ae6b7294
+--- /dev/null
++++ b/Assets/_Project/Scripts/Gameplay/HectonPlayerInputHandler.cs
+@@ -0,0 +1,81 @@
++using Hecton8.Core;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace Hecton8.Gameplay
++{
++    /// <summary>
++    /// Zero-allocation reader for frame-cached player input snapshots.
++    /// </summary>
++    internal struct HectonPlayerInputHandler
++    {
++        public bool TryReadFrame(
++            IInputService inputService,
++            float jumpBufferSeconds,
++            out HectonPlayerInputFrame frame,
++            out bool jumpBuffered)
++        {
++            return TryReadFrame(
++                inputService,
++                jumpBufferSeconds,
++                consumeBufferedJump: true,
++                out frame,
++                out jumpBuffered);
++        }
++
++        public bool TryReadFrame(
++            IInputService inputService,
++            float jumpBufferSeconds,
++            bool consumeBufferedJump,
++            out HectonPlayerInputFrame frame,
++            out bool jumpBuffered)
++        {
++            frame = default;
++            jumpBuffered = false;
++
++            if (inputService == null || !inputService.IsPlayerInputEnabled)
++                return false;
++
++            PlayerInputState state = inputService.GetState();
++            frame = new HectonPlayerInputFrame(
++                state,
++                state.MoveDelta,
++                state.LookDelta,
++                ResolveVerticalInput(in state),
++                state.HasAction(PlayerInputAction.Sprint));
++            jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
++            return true;
++        }
++
++        public static float ResolveVerticalInput(in PlayerInputState state)
++        {
++            return math.clamp(state.VerticalDelta, -1f, 1f);
++        }
++    }
++
++    /// <summary>
++    /// Value snapshot consumed by the locomotion orchestrator after input service reads.
++    /// </summary>
++    internal readonly struct HectonPlayerInputFrame
++    {
++        public HectonPlayerInputFrame(
++            PlayerInputState state,
++            Vector2 moveInput,
++            Vector2 lookInput,
++            float verticalInput,
++            bool sprintHeld)
++        {
++            State = state;
++            MoveInput = moveInput;
++            LookInput = lookInput;
++            VerticalInput = verticalInput;
++            SprintHeld = sprintHeld;
++        }
++
++        public readonly PlayerInputState State;
++        public readonly Vector2 MoveInput;
++        public readonly Vector2 LookInput;
++        public readonly float VerticalInput;
++        public readonly bool SprintHeld;
++    }
++}
+diff --git a/Assets/_Project/Scripts/Gameplay/HectonPlayerInputHandler.cs.meta b/Assets/_Project/Scripts/Gameplay/HectonPlayerInputHandler.cs.meta
+new file mode 100644
+index 00000000..2c62b67f
+--- /dev/null
++++ b/Assets/_Project/Scripts/Gameplay/HectonPlayerInputHandler.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: a6af68ddbe5004041a4bf47717b79d5d
+\ No newline at end of file
+diff --git a/Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs b/Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs
+new file mode 100644
+index 00000000..dcb477c2
+--- /dev/null
++++ b/Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs
+@@ -0,0 +1,136 @@
++using System;
++using Hecton8.World;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace Hecton8.Gameplay
++{
++    /// <summary>
++    /// Compact player kinematic snapshot owned by the locomotion orchestrator.
++    /// </summary>
++    internal struct HectonPlayerState
++    {
++        public AbsoluteUniversePosition AbsolutePosition;
++        public float3 RuntimePosition;
++        public float3 LinearVelocity;
++        public float3 ExternalAcceleration;
++        public float3 ExternalVelocityChange;
++        public float InventoryLoad01;
++        public float InventoryMovementMultiplier;
++
++        public void SyncKinematic(Vector3 runtimePosition, Vector3 linearVelocity)
++        {
++            AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
++            RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
++            LinearVelocity = new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
++        }
++
++        public void SyncExternalKinematic(Vector3 acceleration, Vector3 velocityChange)
++        {
++            ExternalAcceleration = new float3(acceleration.x, acceleration.y, acceleration.z);
++            ExternalVelocityChange = new float3(velocityChange.x, velocityChange.y, velocityChange.z);
++        }
++
++        public void SyncEncumbrance(float load01, float movementMultiplier)
++        {
++            InventoryLoad01 = math.saturate(load01);
++            InventoryMovementMultiplier = math.clamp(movementMultiplier, 0f, 1f);
++        }
++
++        public void ResetTransient()
++        {
++            ExternalAcceleration = float3.zero;
++            ExternalVelocityChange = float3.zero;
++        }
++    }
++
++    /// <summary>
++    /// Owns persistent native buffers used by <see cref="HectonPlayerMotor"/>.
++    /// </summary>
++    internal struct HectonPlayerMotorNativeState : IDisposable
++    {
++        public NativeArray<float3> HydrodynamicGhostVelocityHistory;
++        public NativeArray<CapsulecastCommand> ScheduledSweepCommands;
++        public NativeArray<RaycastHit> ScheduledSweepResults;
++        public JobHandle ScheduledSweepHandle;
++
++        public void EnsureHydrodynamicGhostState(int capacity)
++        {
++            if (HydrodynamicGhostVelocityHistory.IsCreated)
++                return;
++
++            int safeCapacity = math.max(1, capacity);
++            HydrodynamicGhostVelocityHistory = new NativeArray<float3>(
++                safeCapacity,
++                Allocator.Persistent,
++                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[capacity] - motor added-mass history - owner: HectonPlayerMotorNativeState
++        }
++
++        public void EnsureScheduledSweepState(int commandCount, int resultCount)
++        {
++            if (!ScheduledSweepCommands.IsCreated)
++            {
++                ScheduledSweepCommands = new NativeArray<CapsulecastCommand>(
++                    math.max(1, commandCount),
++                    Allocator.Persistent,
++                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[commandCount] - deferred KCC sweep commands - owner: HectonPlayerMotorNativeState
++            }
++
++            if (!ScheduledSweepResults.IsCreated)
++            {
++                ScheduledSweepResults = new NativeArray<RaycastHit>(
++                    math.max(1, resultCount),
++                    Allocator.Persistent,
++                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[resultCount] - deferred KCC sweep results - owner: HectonPlayerMotorNativeState
++            }
++        }
++
++        public void DisposeHydrodynamicGhostState()
++        {
++            if (!HydrodynamicGhostVelocityHistory.IsCreated)
++                return;
++
++            HydrodynamicGhostVelocityHistory.Dispose();
++            HydrodynamicGhostVelocityHistory = default;
++        }
++
++        public void DisposeScheduledSweepState(bool hasDependency, JobHandle dependency)
++        {
++            if (!ScheduledSweepCommands.IsCreated && !ScheduledSweepResults.IsCreated)
++            {
++                ScheduledSweepHandle = default;
++                return;
++            }
++
++            if (!hasDependency)
++            {
++                if (ScheduledSweepCommands.IsCreated)
++                    ScheduledSweepCommands.Dispose();
++                if (ScheduledSweepResults.IsCreated)
++                    ScheduledSweepResults.Dispose();
++                ScheduledSweepCommands = default;
++                ScheduledSweepResults = default;
++                ScheduledSweepHandle = default;
++                return;
++            }
++
++            JobHandle disposeHandle = dependency;
++            if (ScheduledSweepCommands.IsCreated)
++                disposeHandle = ScheduledSweepCommands.Dispose(disposeHandle);
++            if (ScheduledSweepResults.IsCreated)
++                disposeHandle = ScheduledSweepResults.Dispose(disposeHandle);
++
++            ScheduledSweepCommands = default;
++            ScheduledSweepResults = default;
++            ScheduledSweepHandle = disposeHandle;
++        }
++
++        public void Dispose()
++        {
++            DisposeScheduledSweepState(ScheduledSweepHandle.IsCompleted == false, ScheduledSweepHandle);
++            DisposeHydrodynamicGhostState();
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs.meta b/Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs.meta
+new file mode 100644
+index 00000000..4f846eb5
+--- /dev/null
++++ b/Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 79bd3d55e111b7045b51932cf193b0d9
+\ No newline at end of file
+diff --git a/Assets/_Project/Scripts/World/ScatterEvaluationEngine.cs b/Assets/_Project/Scripts/World/ScatterEvaluationEngine.cs
+new file mode 100644
+index 00000000..b2f3a537
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/ScatterEvaluationEngine.cs
+@@ -0,0 +1,55 @@
++using Hecton8.Environment;
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Compatibility facade for callers not yet moved directly to <see cref="ScatterMath"/>.
++    /// </summary>
++    internal static class ScatterEvaluationEngine
++    {
++        public static int ResolveHeightLayerIndex(
++            in WorldProceduralFieldSampler.FieldSample fieldSample,
++            in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
++        {
++            return ScatterMath.ResolveHeightLayerIndex(fieldSample, runtimeRule);
++        }
++
++        public static int ResolveHeightLayerIndex(
++            float caveProximity,
++            WorldPrefabFamilyProfile family,
++            WorldPrefabFamilyProfile.StructureAccentRole structureAccentRole)
++        {
++            return ScatterMath.ResolveHeightLayerIndex(caveProximity, family, structureAccentRole);
++        }
++
++        public static bool ShouldEvaluateScatterDomain(
++            in WorldProceduralFieldSampler.FieldSample fieldSample,
++            in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
++        {
++            return ScatterMath.ShouldEvaluateScatterDomain(fieldSample, runtimeRule);
++        }
++
++        public static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
++        {
++            return ScatterMath.GetHorizontalDistanceSqr(a, b);
++        }
++
++        public static long ComposeScatterGridKey(int cellX, int cellZ)
++        {
++            return ScatterMath.ComposeScatterGridKey(cellX, cellZ);
++        }
++
++        public static float ResolveRequiredDistance(
++            WorldProceduralScatterDirector.ScatterPlacement candidate,
++            WorldProceduralScatterDirector.ScatterPlacement existing)
++        {
++            return ScatterMath.ResolveRequiredDistance(candidate, existing);
++        }
++
++        public static float GetEffectiveSpacing(WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
++        {
++            return ScatterMath.GetEffectiveSpacing(family, rule);
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/World/ScatterEvaluationEngine.cs.meta b/Assets/_Project/Scripts/World/ScatterEvaluationEngine.cs.meta
+new file mode 100644
+index 00000000..16389a28
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/ScatterEvaluationEngine.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: b0b938e52aa04714f94195e0f5c3d756
+\ No newline at end of file
+diff --git a/Assets/_Project/Scripts/World/ScatterInstancingService.cs b/Assets/_Project/Scripts/World/ScatterInstancingService.cs
+new file mode 100644
+index 00000000..ca9b6202
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/ScatterInstancingService.cs
+@@ -0,0 +1,215 @@
++using System;
++using System.Buffers;
++using System.Collections.Generic;
++using GPUInstancer;
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Encapsulates GPUI flora matrix aggregation and visibility-buffer pushes for scatter reconcile.
++    /// </summary>
++    internal sealed class ScatterInstancingService
++    {
++        public void ResetAggregation(
++            List<GPUInstancerPrefabPrototype> knownPrototypes,
++            Dictionary<GPUInstancerPrefabPrototype, int> counts,
++            ref int activeGpuiPlacements)
++        {
++            activeGpuiPlacements = 0;
++            if (knownPrototypes == null || counts == null)
++                return;
++
++            for (int i = 0; i < knownPrototypes.Count; i++)
++            {
++                GPUInstancerPrefabPrototype prototype = knownPrototypes[i];
++                if (prototype == null)
++                    continue;
++
++                counts[prototype] = 0;
++            }
++        }
++
++        public bool TryRegisterPlacement(
++            GPUInstancerPrefabManager manager,
++            WorldProceduralScatterDirector.ScatterPlacement placement,
++            WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
++            List<GPUInstancerPrefabPrototype> knownPrototypes,
++            Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> matricesByPrototype,
++            Dictionary<GPUInstancerPrefabPrototype, int> counts,
++            Dictionary<GPUInstancerPrefabPrototype, int> bufferCapacities,
++            ref int activeGpuiPlacements,
++            out GPUInstancerPrefabPrototype prototype)
++        {
++            if (!ShouldUseFloraGpuiPath(manager, placement, runtimeVariant, out prototype))
++                return false;
++
++            if (knownPrototypes == null ||
++                matricesByPrototype == null ||
++                counts == null ||
++                bufferCapacities == null)
++            {
++                return false;
++            }
++
++            if (!matricesByPrototype.TryGetValue(prototype, out Matrix4x4[] matrices))
++            {
++                matrices = ArrayPool<Matrix4x4>.Shared.Rent(64); // COLD ALLOC: Matrix4x4[64] - pooled GPUI flora prototype buffer - owner: ScatterInstancingService
++                matricesByPrototype.Add(prototype, matrices);
++                counts.Add(prototype, 0);
++                bufferCapacities.Add(prototype, 0);
++                knownPrototypes.Add(prototype);
++            }
++
++            int count = counts[prototype];
++            if (count >= matrices.Length)
++            {
++                int newCapacity = Mathf.NextPowerOfTwo(count + 1);
++                Matrix4x4[] expanded = ArrayPool<Matrix4x4>.Shared.Rent(newCapacity); // COLD ALLOC: Matrix4x4[newCapacity] - GPUI flora prototype buffer growth - owner: ScatterInstancingService
++                Array.Copy(matrices, 0, expanded, 0, count);
++                ArrayPool<Matrix4x4>.Shared.Return(matrices, clearArray: false);
++                matrices = expanded;
++                matricesByPrototype[prototype] = matrices;
++            }
++
++            matrices[count] = Matrix4x4.TRS(placement.RuntimePosition, placement.Rotation, Vector3.one * placement.Scale);
++            counts[prototype] = count + 1;
++            activeGpuiPlacements++;
++            return true;
++        }
++
++        public bool CanUseFloraGpuiPath(
++            GPUInstancerPrefabManager manager,
++            WorldProceduralScatterDirector.ScatterPlacement placement,
++            WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
++            out GPUInstancerPrefabPrototype prototype)
++        {
++            return ShouldUseFloraGpuiPath(manager, placement, runtimeVariant, out prototype);
++        }
++
++        public void FlushBuffers(
++            GPUInstancerPrefabManager manager,
++            List<GPUInstancerPrefabPrototype> knownPrototypes,
++            Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> matricesByPrototype,
++            Dictionary<GPUInstancerPrefabPrototype, int> counts,
++            Dictionary<GPUInstancerPrefabPrototype, int> bufferCapacities,
++            HashSet<GPUInstancerPrefabPrototype> initializedPrototypes)
++        {
++            if (manager == null ||
++                knownPrototypes == null ||
++                matricesByPrototype == null ||
++                counts == null ||
++                bufferCapacities == null ||
++                initializedPrototypes == null ||
++                !Application.isPlaying)
++            {
++                return;
++            }
++
++            for (int i = 0; i < knownPrototypes.Count; i++)
++            {
++                GPUInstancerPrefabPrototype prototype = knownPrototypes[i];
++                if (prototype == null)
++                    continue;
++
++                counts.TryGetValue(prototype, out int count);
++                Matrix4x4[] matrices = matricesByPrototype[prototype];
++                int requiredCapacity = matrices != null ? matrices.Length : 0;
++
++                bool needsInitialize = !initializedPrototypes.Contains(prototype);
++                if (!needsInitialize &&
++                    bufferCapacities.TryGetValue(prototype, out int currentCapacity) &&
++                    currentCapacity < requiredCapacity)
++                {
++                    needsInitialize = true;
++                }
++
++                if (needsInitialize)
++                {
++                    GPUInstancerAPI.InitializePrototype(
++                        manager,
++                        prototype,
++                        requiredCapacity,
++                        count);
++                    initializedPrototypes.Add(prototype);
++                    bufferCapacities[prototype] = requiredCapacity;
++                }
++
++                if (count <= 0)
++                {
++                    GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
++                        manager,
++                        prototype,
++                        Array.Empty<Matrix4x4>());
++                    continue;
++                }
++
++                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
++                    manager,
++                    prototype,
++                    matrices,
++                    0,
++                    0,
++                    count);
++            }
++        }
++
++        public void ClearVisibility(
++            GPUInstancerPrefabManager manager,
++            List<GPUInstancerPrefabPrototype> knownPrototypes,
++            HashSet<GPUInstancerPrefabPrototype> initializedPrototypes,
++            ref int activeGpuiPlacements)
++        {
++            activeGpuiPlacements = 0;
++            if (manager == null ||
++                knownPrototypes == null ||
++                initializedPrototypes == null ||
++                !Application.isPlaying)
++            {
++                return;
++            }
++
++            for (int i = 0; i < knownPrototypes.Count; i++)
++            {
++                GPUInstancerPrefabPrototype prototype = knownPrototypes[i];
++                if (prototype == null || !initializedPrototypes.Contains(prototype))
++                    continue;
++
++                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
++                    manager,
++                    prototype,
++                    Array.Empty<Matrix4x4>());
++            }
++        }
++
++        private static bool ShouldUseFloraGpuiPath(
++            GPUInstancerPrefabManager manager,
++            WorldProceduralScatterDirector.ScatterPlacement placement,
++            WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
++            out GPUInstancerPrefabPrototype prototype)
++        {
++            prototype = null;
++
++            if (!Application.isPlaying || manager == null || placement == null)
++                return false;
++
++            WorldPrefabFamilyProfile family = placement.Family;
++            if (family == null ||
++                (family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Kelp &&
++                 family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Coral))
++            {
++                return false;
++            }
++
++            if (family.expectsCollision || family.expectsInteraction)
++                return false;
++
++            GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
++            if (prefab == null || !prefab.TryGetComponent(out GPUInstancerPrefab gpuiPrefab))
++                return false;
++
++            prototype = gpuiPrefab.prefabPrototype;
++            return prototype != null;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/World/ScatterInstancingService.cs.meta b/Assets/_Project/Scripts/World/ScatterInstancingService.cs.meta
+new file mode 100644
+index 00000000..528d2af5
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/ScatterInstancingService.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: c90b18d4ef459744fadfce326d55da80
+diff --git a/Assets/_Project/Scripts/World/ScatterMath.cs b/Assets/_Project/Scripts/World/ScatterMath.cs
+new file mode 100644
+index 00000000..70db9d77
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/ScatterMath.cs
+@@ -0,0 +1,212 @@
++using Hecton8.Environment;
++using Unity.Burst;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Static scatter evaluation math shared by sampling, candidate acceptance, and envelope gates.
++    /// </summary>
++    internal static class ScatterMath
++    {
++        public static int ResolveHeightLayerIndex(
++            in WorldProceduralFieldSampler.FieldSample fieldSample,
++            in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
++        {
++            if (fieldSample.isSecondaryDomain || fieldSample.verticalDomainWeight > 0f)
++                return Mathf.Max(0, fieldSample.verticalDomainIndex);
++
++            return ResolveHeightLayerIndex(
++                fieldSample.caveProximity,
++                runtimeRule.Family,
++                runtimeRule.StructureAccentRole);
++        }
++
++        public static int ResolveHeightLayerIndex(
++            float caveProximity,
++            WorldPrefabFamilyProfile family,
++            WorldPrefabFamilyProfile.StructureAccentRole structureAccentRole)
++        {
++            if (family == null)
++                return 0;
++
++            const float caveHeightLayerThreshold = 0.68f;
++            bool explicitCaveDomain = family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance
++                                      || structureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
++            bool caveQualified = caveProximity >= caveHeightLayerThreshold
++                                 && (family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Structure
++                                     || family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn
++                                     || explicitCaveDomain);
++            return explicitCaveDomain || caveQualified ? 1 : 0;
++        }
++
++        public static bool ShouldEvaluateScatterDomain(
++            in WorldProceduralFieldSampler.FieldSample fieldSample,
++            in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
++        {
++            if (!fieldSample.isSecondaryDomain)
++                return true;
++
++            WorldPrefabFamilyProfile family = runtimeRule.Family;
++            if (family == null)
++                return false;
++
++            if (runtimeRule.ScatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Structure ||
++                runtimeRule.ScatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn)
++            {
++                return true;
++            }
++
++            return family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance ||
++                   runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
++        }
++
++        [BurstCompile]
++        public static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
++        {
++            float dx = a.x - b.x;
++            float dz = a.z - b.z;
++            return (dx * dx) + (dz * dz);
++        }
++
++        [BurstCompile]
++        public static long ComposeScatterGridKey(int cellX, int cellZ)
++        {
++            return ((long)cellX << 32) | (uint)cellZ;
++        }
++
++        public static float ResolveRequiredDistance(
++            WorldProceduralScatterDirector.ScatterPlacement candidate,
++            WorldProceduralScatterDirector.ScatterPlacement existing)
++        {
++            WorldPrefabFamilyProfile.ScatterLayer candidateLayer = candidate.Family.scatterLayer;
++            WorldPrefabFamilyProfile.ScatterLayer existingLayer = existing.Family.scatterLayer;
++            float candidateSpacing = candidate.EffectiveSpacing;
++            float existingSpacing = existing.EffectiveSpacing;
++            float maxSpacing = Mathf.Max(candidateSpacing, existingSpacing);
++
++            if (candidateLayer == existingLayer)
++            {
++                return candidateLayer switch
++                {
++                    WorldPrefabFamilyProfile.ScatterLayer.Ground => Mathf.Max(1.25f, maxSpacing * 0.52f),
++                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => Mathf.Max(3f, maxSpacing * 0.92f),
++                    WorldPrefabFamilyProfile.ScatterLayer.Structure => Mathf.Max(12f, maxSpacing),
++                    WorldPrefabFamilyProfile.ScatterLayer.Spawn => Mathf.Max(14f, maxSpacing * 1.08f),
++                    _ => maxSpacing
++                };
++            }
++
++            bool candidatePocket = IsPocket(candidate.Family.proceduralDomain);
++            bool existingPocket = IsPocket(existing.Family.proceduralDomain);
++            if (candidatePocket && existingPocket)
++                return Mathf.Max(10f, maxSpacing * 1.35f);
++
++            bool candidateStructure = IsStructure(candidate.Family.scatterLayer);
++            bool existingStructure = IsStructure(existing.Family.scatterLayer);
++            if (candidateStructure && existingStructure)
++                return Mathf.Max(14f, maxSpacing * 0.88f);
++
++            bool candidateSpawn = candidateLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
++            bool existingSpawn = existingLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
++            if ((candidateSpawn && existingStructure) || (candidateStructure && existingSpawn))
++                return Mathf.Max(12f, Mathf.Max(candidateSpacing, existingSpacing) * 0.9f);
++
++            return 0f;
++        }
++
++        public static float GetEffectiveSpacing(WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
++        {
++            if (rule != null && rule.minSpacingOverrideMeters > 0f)
++                return Mathf.Max(0.5f, rule.minSpacingOverrideMeters);
++
++            return family != null ? Mathf.Max(0.5f, family.minSpacingMeters) : 1f;
++        }
++
++        [BurstCompile]
++        public static float EvaluateDepthLightProxy01(
++            float depthMeters,
++            float deepFloraMinDepthMeters,
++            float deepFloraLightProxyFadeRangeMeters)
++        {
++            float minimumDepth = math.max(1f, deepFloraMinDepthMeters);
++            float fadeRange = math.max(1f, deepFloraLightProxyFadeRangeMeters);
++            float darkness01 = math.saturate((depthMeters - minimumDepth) / fadeRange);
++            return 1f - darkness01;
++        }
++
++        [BurstCompile]
++        public static float EvaluateClusterPatchMask01(
++            float worldX,
++            float worldZ,
++            float clusterNoiseScale,
++            int ruleIdHash,
++            int familyHash)
++        {
++            float safeScale = math.max(0.0001f, clusterNoiseScale);
++            float2 p = new float2(
++                (worldX * safeScale) + ((ruleIdHash & 255) * 0.03125f),
++                (worldZ * safeScale) + ((familyHash & 255) * 0.03125f));
++
++            float octaveA = ValueNoise01(p, ruleIdHash ^ familyHash ^ 0x51A3);
++            float octaveB = ValueNoise01((p * 1.93f) + new float2(11.7f, -7.1f), ruleIdHash ^ 0x2C1B);
++            float octaveC = ValueNoise01((p * 0.57f) + new float2(-19.4f, 23.8f), familyHash ^ 0x6D2F);
++            return math.saturate((octaveA * 0.58f) + (octaveB * 0.28f) + (octaveC * 0.14f));
++        }
++
++        internal static byte ResolveFloraBudgetClassId(WorldPrefabFamilyProfile family)
++        {
++            if (family == null)
++                return 0;
++
++            switch (family.proceduralDomain)
++            {
++                case WorldPrefabFamilyProfile.ProceduralDomain.Kelp:
++                case WorldPrefabFamilyProfile.ProceduralDomain.Plant:
++                case WorldPrefabFamilyProfile.ProceduralDomain.Coral:
++                    return family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Ground ? (byte)1 : (byte)2;
++                default:
++                    return 0;
++            }
++        }
++
++        [BurstCompile]
++        private static float ValueNoise01(float2 p, int salt)
++        {
++            float2 cell = math.floor(p);
++            float2 local = p - cell;
++            float2 t = local * local * (3f - (2f * local));
++
++            uint hashBase = unchecked((uint)(((int)cell.x * 73856093) ^ ((int)cell.y * 19349663) ^ salt));
++            float a = Hash01(hashBase);
++            float b = Hash01(hashBase ^ 0x9E3779B9u);
++            float c = Hash01(hashBase ^ 0x85EBCA6Bu);
++            float d = Hash01(hashBase ^ 0xC2B2AE35u);
++            return math.lerp(math.lerp(a, b, t.x), math.lerp(c, d, t.x), t.y);
++        }
++
++        [BurstCompile]
++        private static float Hash01(uint value)
++        {
++            value ^= value >> 16;
++            value *= 0x7FEB352Du;
++            value ^= value >> 15;
++            value *= 0x846CA68Bu;
++            value ^= value >> 16;
++            return (value & 0x00FFFFFFu) * (1f / 16777215f);
++        }
++
++        private static bool IsPocket(WorldPrefabFamilyProfile.ProceduralDomain domain)
++        {
++            return domain == WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket
++                || domain == WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket
++                || domain == WorldPrefabFamilyProfile.ProceduralDomain.SafePocket;
++        }
++
++        private static bool IsStructure(WorldPrefabFamilyProfile.ScatterLayer layer)
++        {
++            return layer == WorldPrefabFamilyProfile.ScatterLayer.Structure;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/World/ScatterMath.cs.meta b/Assets/_Project/Scripts/World/ScatterMath.cs.meta
+new file mode 100644
+index 00000000..efd40c6a
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/ScatterMath.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 14eb4f6d009b99d4eb2219cbc48a66b3
+\ No newline at end of file

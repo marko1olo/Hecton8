@@ -71,7 +71,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float repairSpeed = 20f;
 
         [Tooltip("Слои, по которым работает ремонтный луч.")]
-        [SerializeField] private LayerMask repairMask = ~0;
+        [SerializeField] private LayerMask repairMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("── Visuals ───────────────────────────────────")]
         [SerializeField] private LineRenderer repairLine;
@@ -100,6 +100,8 @@ namespace Hecton8.Gameplay
         private Collider _cachedServiceTargetCollider;
         private BaseModule _cachedServiceTargetModule;
         private HectonVoxelVolume _cachedServiceTargetVoxelVolume;
+        private Collider _cachedAirlockTargetCollider;
+        private BaseAirlock _cachedServiceTargetAirlock;
         private readonly char[] _integrityDiagnosticBuffer = new char[24]; // COLD ALLOC: char[24] — repair-tool floating integrity diagnostic buffer — owner: RepairTool
 
         // ══════════════════════════════════════════════════════════
@@ -317,6 +319,15 @@ namespace Hecton8.Gameplay
                     _noTargetReportedThisUse = true;
                 }
                 UpdateBeamMiss();
+                InvalidateDiagnosisCache();
+                return;
+            }
+
+            BaseAirlock airlock = ResolveRepairAirlock(_hit.collider);
+            if (airlock != null && airlock.TryApplyWeldOverride(deltaTime, _hit.point))
+            {
+                UpdateBeamHit(_hit.point, _hit.normal);
+                ClearIntegrityDiagnostic();
                 InvalidateDiagnosisCache();
                 return;
             }
@@ -658,6 +669,23 @@ namespace Hecton8.Gameplay
 
             module = _cachedServiceTargetModule;
             voxelVolume = _cachedServiceTargetVoxelVolume;
+        }
+
+        private BaseAirlock ResolveRepairAirlock(Collider collider)
+        {
+            if (collider == null)
+                return null;
+
+            if (!ReferenceEquals(_cachedAirlockTargetCollider, collider))
+            {
+                _cachedAirlockTargetCollider = collider;
+                _cachedServiceTargetAirlock = null;
+
+                if (!collider.TryGetComponent(out _cachedServiceTargetAirlock))
+                    _cachedServiceTargetAirlock = collider.GetComponentInParent<BaseAirlock>();
+            }
+
+            return _cachedServiceTargetAirlock;
         }
 
         private void PublishIntegrityDiagnostic(BaseModule module, Vector3 hitPoint, Vector3 hitNormal)

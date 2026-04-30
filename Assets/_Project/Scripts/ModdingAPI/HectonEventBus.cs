@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Crafting;
+using Hecton8.Interaction;
+using Hecton8.Items;
 using UnityEngine;
 
 namespace Hecton8.Modding
@@ -99,12 +102,17 @@ namespace Hecton8.Modding
     {
         // COLD ALLOC: List<IResettableEventChannel>[32] — typed event channel registry for play-session resets — owner: HectonEventBus
         private static readonly List<IResettableEventChannel> _channels = new List<IResettableEventChannel>(32);
+        // COLD ALLOC: NativeQueueBridge[1] - read-only first-party queue listener for mod event projection - owner: HectonEventBus
+        private static readonly NativeQueueBridge _nativeQueueBridge = new NativeQueueBridge();
+        private static bool _nativeQueueBindingsInstalled;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             for (int i = 0; i < _channels.Count; i++)
                 _channels[i].Reset();
+
+            _nativeQueueBindingsInstalled = false;
         }
 
         /// <summary>
@@ -151,6 +159,32 @@ namespace Hecton8.Modding
             return evt;
         }
 
+        /// <summary>
+        /// Installs read-only bridges from first-party NativeQueue event lanes into the managed mod event bus.
+        /// </summary>
+        internal static void InstallNativeQueueBindings()
+        {
+            if (_nativeQueueBindingsInstalled)
+                return;
+
+            InteractionEvents.Register(_nativeQueueBridge);
+            CraftingEvents.Register(_nativeQueueBridge);
+            _nativeQueueBindingsInstalled = true;
+        }
+
+        /// <summary>
+        /// Removes read-only bridges from first-party NativeQueue event lanes.
+        /// </summary>
+        internal static void UninstallNativeQueueBindings()
+        {
+            if (!_nativeQueueBindingsInstalled)
+                return;
+
+            InteractionEvents.Unregister(_nativeQueueBridge);
+            CraftingEvents.Unregister(_nativeQueueBridge);
+            _nativeQueueBindingsInstalled = false;
+        }
+
         internal static void RegisterChannel(IResettableEventChannel channel)
         {
             if (channel == null)
@@ -169,6 +203,32 @@ namespace Hecton8.Modding
             where TEvent : HectonEvent
         {
             internal static readonly EventChannel<TEvent> Instance = new EventChannel<TEvent>();
+        }
+
+        private sealed class NativeQueueBridge : IInteractionEventListener, ICraftingEventListener
+        {
+            public void OnInteractionEvent(in InteractionEventPayload payload)
+            {
+                if ((InteractionEventType)payload.EventType != InteractionEventType.ItemCollected)
+                    return;
+
+                if (!InteractionEvents.TryResolveItem(in payload, out ItemData item))
+                    return;
+
+                InteractionEvents.TryResolveInteractor(in payload, out Transform interactor);
+                Publish(new ItemCollectedEvent(item, payload.Quantity, interactor));
+            }
+
+            public void OnCraftingEvent(in CraftingEventPayload payload)
+            {
+                if ((CraftingEventType)payload.EventType != CraftingEventType.CraftCompleted)
+                    return;
+
+                if (!CraftingEvents.TryResolveItem(in payload, out ItemData item))
+                    return;
+
+                Publish(new ItemCraftedEvent(item));
+            }
         }
 
         private sealed class EventChannel<TEvent> : IHectonEventChannel, IResettableEventChannel

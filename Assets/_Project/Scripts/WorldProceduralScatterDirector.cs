@@ -464,6 +464,7 @@ namespace Hecton8.World
         private ScatterReconcileRuntimeState _reconcileRuntimeState;
         private ScatterLifecycleRuntimeState _lifecycleRuntimeState;
         private ScatterWorkingMemory _memory;
+        private ScatterInstancingService _instancingService;
         private ref CandidateMap _groundRescueCandidates => ref _memory.GroundRescueCandidates;
         private ref CandidateMap _clusterRescueCandidates => ref _memory.ClusterRescueCandidates;
         private ref CandidateMap _clusterFertileCandidates => ref _memory.ClusterFertileCandidates;
@@ -778,9 +779,15 @@ namespace Hecton8.World
         private void EnsureWorkingMemory()
         {
             if (_memory != null)
+            {
+                if (_instancingService == null)
+                    _instancingService = new ScatterInstancingService();
+
                 return;
+            }
 
             _memory = new ScatterWorkingMemory();
+            _instancingService = new ScatterInstancingService();
         }
 
         private void CompleteSamplingJobIfNeeded()
@@ -2120,13 +2127,7 @@ namespace Hecton8.World
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in ScatterRuntimeRuleEntry runtimeRule)
         {
-            if (fieldSample.isSecondaryDomain || fieldSample.verticalDomainWeight > 0f)
-                return Mathf.Max(0, fieldSample.verticalDomainIndex);
-
-            return ResolveHeightLayerIndex(
-                fieldSample.caveProximity,
-                runtimeRule.Family,
-                runtimeRule.StructureAccentRole);
+            return ScatterMath.ResolveHeightLayerIndex(fieldSample, runtimeRule);
         }
 
         private static int ResolveHeightLayerIndex(ScatterPlacement placement)
@@ -2139,38 +2140,14 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile family,
             WorldPrefabFamilyProfile.StructureAccentRole structureAccentRole)
         {
-            if (family == null)
-                return 0;
-
-            const float caveHeightLayerThreshold = 0.68f;
-            bool explicitCaveDomain = family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance
-                                      || structureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
-            bool caveQualified = caveProximity >= caveHeightLayerThreshold
-                                 && (family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Structure
-                                     || family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn
-                                     || explicitCaveDomain);
-            return explicitCaveDomain || caveQualified ? 1 : 0;
+            return ScatterMath.ResolveHeightLayerIndex(caveProximity, family, structureAccentRole);
         }
 
         private static bool ShouldEvaluateScatterDomain(
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in ScatterRuntimeRuleEntry runtimeRule)
         {
-            if (!fieldSample.isSecondaryDomain)
-                return true;
-
-            WorldPrefabFamilyProfile family = runtimeRule.Family;
-            if (family == null)
-                return false;
-
-            if (runtimeRule.ScatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Structure ||
-                runtimeRule.ScatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn)
-            {
-                return true;
-            }
-
-            return family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance ||
-                   runtimeRule.StructureAccentRole == WorldPrefabFamilyProfile.StructureAccentRole.CaveRead;
+            return ScatterMath.ShouldEvaluateScatterDomain(fieldSample, runtimeRule);
         }
 
         private ScatterReconcileMetrics ReconcileInstances(bool captureProfiling)
@@ -3659,9 +3636,7 @@ namespace Hecton8.World
 
         private static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
         {
-            float dx = a.x - b.x;
-            float dz = a.z - b.z;
-            return (dx * dx) + (dz * dz);
+            return ScatterMath.GetHorizontalDistanceSqr(a, b);
         }
 
         private float ResolveFinalVariantRadiusScale(WorldPrefabFamilyProfile family)
@@ -3780,45 +3755,12 @@ namespace Hecton8.World
 
         private static long ComposeScatterGridKey(int cellX, int cellZ)
         {
-            return ((long)cellX << 32) | (uint)cellZ;
+            return ScatterMath.ComposeScatterGridKey(cellX, cellZ);
         }
 
         private static float ResolveRequiredDistance(ScatterPlacement candidate, ScatterPlacement existing)
         {
-            WorldPrefabFamilyProfile.ScatterLayer candidateLayer = candidate.Family.scatterLayer;
-            WorldPrefabFamilyProfile.ScatterLayer existingLayer = existing.Family.scatterLayer;
-            float candidateSpacing = candidate.EffectiveSpacing;
-            float existingSpacing = existing.EffectiveSpacing;
-            float maxSpacing = Mathf.Max(candidateSpacing, existingSpacing);
-
-            if (candidateLayer == existingLayer)
-            {
-                return candidateLayer switch
-                {
-                    WorldPrefabFamilyProfile.ScatterLayer.Ground => Mathf.Max(1.25f, maxSpacing * 0.52f),
-                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => Mathf.Max(3f, maxSpacing * 0.92f),
-                    WorldPrefabFamilyProfile.ScatterLayer.Structure => Mathf.Max(12f, maxSpacing),
-                    WorldPrefabFamilyProfile.ScatterLayer.Spawn => Mathf.Max(14f, maxSpacing * 1.08f),
-                    _ => maxSpacing
-                };
-            }
-
-            bool candidatePocket = IsPocket(candidate.Family.proceduralDomain);
-            bool existingPocket = IsPocket(existing.Family.proceduralDomain);
-            if (candidatePocket && existingPocket)
-                return Mathf.Max(10f, maxSpacing * 1.35f);
-
-            bool candidateStructure = IsStructure(candidate.Family.scatterLayer);
-            bool existingStructure = IsStructure(existing.Family.scatterLayer);
-            if (candidateStructure && existingStructure)
-                return Mathf.Max(14f, maxSpacing * 0.88f);
-
-            bool candidateSpawn = candidateLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
-            bool existingSpawn = existingLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
-            if ((candidateSpawn && existingStructure) || (candidateStructure && existingSpawn))
-                return Mathf.Max(12f, Mathf.Max(candidateSpacing, existingSpacing) * 0.9f);
-
-            return 0f;
+            return ScatterMath.ResolveRequiredDistance(candidate, existing);
         }
 
         private static bool IsPocket(WorldPrefabFamilyProfile.ProceduralDomain domain)
@@ -3835,10 +3777,7 @@ namespace Hecton8.World
 
         private static float GetEffectiveSpacing(WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
         {
-            if (rule != null && rule.minSpacingOverrideMeters > 0f)
-                return Mathf.Max(0.5f, rule.minSpacingOverrideMeters);
-
-            return family != null ? Mathf.Max(0.5f, family.minSpacingMeters) : 1f;
+            return ScatterMath.GetEffectiveSpacing(family, rule);
         }
 
         private bool HasLayerBudget(
@@ -10787,16 +10726,10 @@ namespace Hecton8.World
         private void ResetFloraGpuiAggregation()
         {
             EnsureWorkingMemory();
-            _activeGpuiFloraPlacements = 0;
-
-            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
-            {
-                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
-                if (prototype == null)
-                    continue;
-
-                _floraGpuiCounts[prototype] = 0;
-            }
+            _instancingService.ResetAggregation(
+                _floraGpuiKnownPrototypes,
+                _floraGpuiCounts,
+                ref _activeGpuiFloraPlacements);
         }
 
         private bool TryRegisterFloraGpuiPlacement(
@@ -10805,108 +10738,38 @@ namespace Hecton8.World
             out GPUInstancerPrefabPrototype prototype)
         {
             EnsureWorkingMemory();
-            if (!ShouldUseFloraGpuiPath(placement, runtimeVariant, out prototype))
-                return false;
-
-            if (!_floraGpuiMatrices.TryGetValue(prototype, out Matrix4x4[] matrices))
-            {
-                matrices = System.Buffers.ArrayPool<Matrix4x4>.Shared.Rent(64); // COLD ALLOC: Matrix4x4[64] — pooled GPUI flora prototype buffer — owner: WorldProceduralScatterDirector
-                _floraGpuiMatrices.Add(prototype, matrices);
-                _floraGpuiCounts.Add(prototype, 0);
-                _floraGpuiBufferCapacities.Add(prototype, 0);
-                _floraGpuiKnownPrototypes.Add(prototype);
-            }
-
-            int count = _floraGpuiCounts[prototype];
-            if (count >= matrices.Length)
-            {
-                int newCapacity = Mathf.NextPowerOfTwo(count + 1);
-                Matrix4x4[] expanded = System.Buffers.ArrayPool<Matrix4x4>.Shared.Rent(newCapacity);
-                Array.Copy(matrices, 0, expanded, 0, count);
-                System.Buffers.ArrayPool<Matrix4x4>.Shared.Return(matrices, clearArray: false);
-                matrices = expanded;
-                _floraGpuiMatrices[prototype] = matrices;
-            }
-
-            matrices[count] = Matrix4x4.TRS(placement.RuntimePosition, placement.Rotation, Vector3.one * placement.Scale);
-            _floraGpuiCounts[prototype] = count + 1;
-            _activeGpuiFloraPlacements++;
-            return true;
+            return _instancingService.TryRegisterPlacement(
+                floraGpuiManager,
+                placement,
+                runtimeVariant,
+                _floraGpuiKnownPrototypes,
+                _floraGpuiMatrices,
+                _floraGpuiCounts,
+                _floraGpuiBufferCapacities,
+                ref _activeGpuiFloraPlacements,
+                out prototype);
         }
 
         private void FlushFloraGpuiBuffers()
         {
             EnsureWorkingMemory();
-            if (floraGpuiManager == null || !Application.isPlaying)
-                return;
-
-            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
-            {
-                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
-                if (prototype == null)
-                    continue;
-
-                _floraGpuiCounts.TryGetValue(prototype, out int count);
-                Matrix4x4[] matrices = _floraGpuiMatrices[prototype];
-                int requiredCapacity = matrices != null ? matrices.Length : 0;
-
-                bool needsInitialize = !_floraGpuiInitializedPrototypes.Contains(prototype);
-                if (!needsInitialize &&
-                    _floraGpuiBufferCapacities.TryGetValue(prototype, out int currentCapacity) &&
-                    currentCapacity < requiredCapacity)
-                {
-                    needsInitialize = true;
-                }
-
-                if (needsInitialize)
-                {
-                    GPUInstancerAPI.InitializePrototype(
-                        floraGpuiManager,
-                        prototype,
-                        requiredCapacity,
-                        count);
-                    _floraGpuiInitializedPrototypes.Add(prototype);
-                    _floraGpuiBufferCapacities[prototype] = requiredCapacity;
-                }
-
-                if (count <= 0)
-                {
-                    GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
-                        floraGpuiManager,
-                        prototype,
-                        Array.Empty<Matrix4x4>());
-                    continue;
-                }
-
-                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
-                    floraGpuiManager,
-                    prototype,
-                    matrices,
-                    0,
-                    0,
-                    count);
-            }
+            _instancingService.FlushBuffers(
+                floraGpuiManager,
+                _floraGpuiKnownPrototypes,
+                _floraGpuiMatrices,
+                _floraGpuiCounts,
+                _floraGpuiBufferCapacities,
+                _floraGpuiInitializedPrototypes);
         }
 
         private void ClearFloraGpuiVisibility()
         {
             EnsureWorkingMemory();
-            _activeGpuiFloraPlacements = 0;
-
-            if (floraGpuiManager == null || !Application.isPlaying)
-                return;
-
-            for (int i = 0; i < _floraGpuiKnownPrototypes.Count; i++)
-            {
-                GPUInstancerPrefabPrototype prototype = _floraGpuiKnownPrototypes[i];
-                if (prototype == null || !_floraGpuiInitializedPrototypes.Contains(prototype))
-                    continue;
-
-                GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array(
-                    floraGpuiManager,
-                    prototype,
-                    Array.Empty<Matrix4x4>());
-            }
+            _instancingService.ClearVisibility(
+                floraGpuiManager,
+                _floraGpuiKnownPrototypes,
+                _floraGpuiInitializedPrototypes,
+                ref _activeGpuiFloraPlacements);
         }
 
         private bool ShouldUseFloraGpuiPath(
@@ -10914,28 +10777,12 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
             out GPUInstancerPrefabPrototype prototype)
         {
-            prototype = null;
-
-            if (!Application.isPlaying || floraGpuiManager == null || placement == null)
-                return false;
-
-            WorldPrefabFamilyProfile family = placement.Family;
-            if (family == null ||
-                (family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Kelp &&
-                 family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Coral))
-            {
-                return false;
-            }
-
-            if (family.expectsCollision || family.expectsInteraction)
-                return false;
-
-            GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
-            if (prefab == null || !prefab.TryGetComponent(out GPUInstancerPrefab gpuiPrefab))
-                return false;
-
-            prototype = gpuiPrefab.prefabPrototype;
-            return prototype != null;
+            EnsureWorkingMemory();
+            return _instancingService.CanUseFloraGpuiPath(
+                floraGpuiManager,
+                placement,
+                runtimeVariant,
+                out prototype);
         }
 
         private void RegisterProceduralStateRegistryCallbacks()

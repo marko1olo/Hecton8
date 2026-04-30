@@ -1,5 +1,5 @@
-﻿// ============================================================================
-// HECTON-8 — PhysicalHandController.cs
+// ============================================================================
+// HECTON-8 � PhysicalHandController.cs
 // Heavy-object articulation hand proxy with zero-GC finger spherecast batching.
 // ============================================================================
 
@@ -78,19 +78,19 @@ namespace Hecton8.Interaction
         private static readonly float3 DefaultLittleKnuckleOffset = new float3(0.03f, -0.008f, 0.026f);
         private static readonly float3 DefaultThumbDirection = math.normalize(new float3(-0.35f, -0.05f, 0.93f));
         private static readonly float3 DefaultFingerDirection = new float3(0f, 0f, 1f);
-        [Header("── References ─────────────────────────")]
+        [Header("-- References -------------------------")]
         [Tooltip("Optional authored swim blockout rig used to source a stable right-hand attachment.")]
         [SerializeField] private PlayerSwimBlockoutRig swimBlockoutRig;
 
         [Tooltip("Optional explicit right-hand transform used when the blockout rig is absent.")]
         [SerializeField] private Transform rightHandAttachmentOverride;
 
-        [Tooltip("Optional finger segment transforms. Layout: thumb/index/middle/ring/little, proximal→distal.")]
+        [Tooltip("Optional finger segment transforms. Layout: thumb/index/middle/ring/little, proximal?distal.")]
         [SerializeField] private Transform[] fingerSegments;
 
-        [Header("── Finger Solve ───────────────────────")]
+        [Header("-- Finger Solve -----------------------")]
         [Tooltip("Collision layers considered solid for finger spherecasts.")]
-        [SerializeField] private LayerMask fingerCollisionMask = ~0;
+        [SerializeField] private LayerMask fingerCollisionMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Maximum curl angle applied to the proximal finger segment.")]
         [SerializeField, Range(10f, 100f)] private float proximalCurlDegrees = 56f;
@@ -101,7 +101,7 @@ namespace Hecton8.Interaction
         [Tooltip("Maximum curl angle applied to the distal finger segment.")]
         [SerializeField, Range(10f, 100f)] private float distalCurlDegrees = 42f;
 
-        [Header("── Diagnostics ───────────────────────")]
+        [Header("-- Diagnostics -----------------------")]
 #pragma warning disable CS0414
         [SerializeField] private bool _debugIsGrabbing;
         [SerializeField] private bool _debugDisconnectArmed;
@@ -384,15 +384,15 @@ namespace Hecton8.Interaction
             if (_fingerCommands.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<SpherecastCommand>[5] — persistent finger spherecast commands — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<SpherecastCommand>[5] � persistent finger spherecast commands � owner: PhysicalHandController
             _fingerCommands = new NativeArray<SpherecastCommand>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<RaycastHit>[5] — persistent finger spherecast results — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<RaycastHit>[5] � persistent finger spherecast results � owner: PhysicalHandController
             _fingerHits = new NativeArray<RaycastHit>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerPoseData>[5] — persistent finger pose results — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<FingerPoseData>[5] � persistent finger pose results � owner: PhysicalHandController
             _fingerPoses = new NativeArray<FingerPoseData>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerRayDefinition>[5] — persistent local finger ray definitions — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<FingerRayDefinition>[5] � persistent local finger ray definitions � owner: PhysicalHandController
             _fingerRayDefinitions = new NativeArray<FingerRayDefinition>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerRayRuntime>[5] — persistent world-space finger ray runtime data — owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<FingerRayRuntime>[5] � persistent world-space finger ray runtime data � owner: PhysicalHandController
             _fingerRayRuntime = new NativeArray<FingerRayRuntime>(FingerCount, Allocator.Persistent);
 
             _fingerRayDefinitions[0] = new FingerRayDefinition
@@ -430,7 +430,7 @@ namespace Hecton8.Interaction
             int segmentCount = fingerSegments != null ? fingerSegments.Length : 0;
             if (segmentCount > 0)
             {
-                // COLD ALLOC: Quaternion[15] — cached authored finger local rotations — owner: PhysicalHandController
+                // COLD ALLOC: Quaternion[15] � cached authored finger local rotations � owner: PhysicalHandController
                 _baseFingerLocalRotations = new Quaternion[segmentCount];
                 for (int i = 0; i < segmentCount; i++)
                 {

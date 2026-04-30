@@ -27,7 +27,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Spectrum Tab")]
-    public sealed class PDASpectrumTab : MonoBehaviour
+    public sealed class PDASpectrumTab : MonoBehaviour, IPDAEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -109,7 +109,7 @@ namespace Hecton8.UI
 
             SpectrumEvents.OnModeChanged += HandleModeChanged;
             SpectrumEvents.OnSonarSnapshotUpdated += HandleSonarSnapshotUpdated;
-            PDAEvents.OnOpened += HandlePDAOpened;
+            PDAEvents.Register(this);
             BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
             BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
 
@@ -120,7 +120,7 @@ namespace Hecton8.UI
         {
             SpectrumEvents.OnModeChanged -= HandleModeChanged;
             SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
-            PDAEvents.OnOpened -= HandlePDAOpened;
+            PDAEvents.Unregister(this);
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
             BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
         }
@@ -138,6 +138,12 @@ namespace Hecton8.UI
         private void HandlePDAOpened(int tab) => RefreshModeDisplay();
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile) => RefreshModeDisplay();
         private void HandleDepthTierChanged(int tier, float depthMeters) => RefreshModeDisplay();
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            if ((PDAEventType)payload.EventType == PDAEventType.Opened)
+                HandlePDAOpened(payload.CurrentTab);
+        }
 
         // ══════════════════════════════════════════════════════════
         //  BUILD UI
@@ -629,6 +635,8 @@ namespace Hecton8.UI
                     return "GRID";
                 case FieldTargetRole.PowerLoad:
                     return "LOAD";
+                case FieldTargetRole.DistressBeacon:
+                    return "DISTRESS";
                 default:
                     return "SIGNAL";
             }

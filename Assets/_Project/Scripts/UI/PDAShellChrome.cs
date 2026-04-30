@@ -14,7 +14,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
-    public sealed class PDAShellChrome : MonoBehaviour, ITickable
+    public sealed class PDAShellChrome : MonoBehaviour, ITickable, IPDAEventListener
     {
         private const string TitleTextValue = "HECTON-8 PERSONAL DATA ASSISTANT";
         private const string ActiveTabInventory = "ACTIVE TAB // INVENTORY";
@@ -249,9 +249,7 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            PDAEvents.OnOpened += HandlePdaOpened;
-            PDAEvents.OnClosed += HandlePdaClosed;
-            PDAEvents.OnTabChanged += HandleTabChanged;
+            PDAEvents.Register(this);
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
             SubscribeInventory(playerInventory);
@@ -261,9 +259,7 @@ namespace Hecton8.UI
 
         private void Unsubscribe()
         {
-            PDAEvents.OnOpened -= HandlePdaOpened;
-            PDAEvents.OnClosed -= HandlePdaClosed;
-            PDAEvents.OnTabChanged -= HandleTabChanged;
+            PDAEvents.Unregister(this);
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
 
             UnsubscribeInventory(_subscribedInventory);
@@ -330,6 +326,22 @@ namespace Hecton8.UI
             system.OnEnergyChanged -= HandleEnergyChanged;
             if (ReferenceEquals(_subscribedSurvivalSystem, system))
                 _subscribedSurvivalSystem = null;
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    HandlePdaOpened(payload.CurrentTab);
+                    break;
+                case PDAEventType.Closed:
+                    HandlePdaClosed(payload.DurationSeconds);
+                    break;
+                case PDAEventType.TabChanged:
+                    HandleTabChanged(payload.PreviousTab, payload.CurrentTab);
+                    break;
+            }
         }
 
         private void HandlePdaOpened(int _)

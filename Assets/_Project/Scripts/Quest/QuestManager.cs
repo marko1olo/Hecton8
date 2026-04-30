@@ -37,14 +37,13 @@ namespace Hecton8.Quest
         private QuestGraphEvaluator _graphEvaluator;
         private bool _loadedFromSave;
         private bool _hasLookupAmbiguity;
+        private bool _serviceRegistered;
+        private ISaveService _registeredSaveService;
         private string _lookupAmbiguitySummary = string.Empty;
-
-        public static QuestManager Instance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            Instance = null;
             s_stagedLoadedPackedState = null;
             s_stagedLoadedQuestHeader = default;
         }
@@ -61,33 +60,46 @@ namespace Hecton8.Quest
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
             BuildLookup();
             InitializeStateGraph();
         }
 
         private void OnEnable()
         {
+            QuestManager registeredQuest = GlobalRegistry.Quest;
+            if (registeredQuest != null && registeredQuest != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             GlobalRegistry.RegisterQuestRuntime(this);
-            GlobalRegistry.Save?.Register(this);
+            _serviceRegistered = true;
+
+            _registeredSaveService = GlobalRegistry.Save;
+            _registeredSaveService?.Register(this);
             _graphEvaluator?.Bind();
         }
 
         private void OnDisable()
         {
             _graphEvaluator?.Unbind();
-            GlobalRegistry.Save?.Unregister(this);
-            GlobalRegistry.UnregisterQuestRuntime(this);
+
+            _registeredSaveService?.Unregister(this);
+            _registeredSaveService = null;
+
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterQuestRuntime(this);
+                _serviceRegistered = false;
+            }
         }
 
         private void OnDestroy()
         {
+            _registeredSaveService?.Unregister(this);
+            _registeredSaveService = null;
+
             _graphEvaluator?.Dispose();
             _graphEvaluator = null;
 
@@ -97,10 +109,11 @@ namespace Hecton8.Quest
                 _stateManager = null;
             }
 
-            GlobalRegistry.UnregisterQuestRuntime(this);
-
-            if (Instance == this)
-                Instance = null;
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterQuestRuntime(this);
+                _serviceRegistered = false;
+            }
         }
 
         private void Start()

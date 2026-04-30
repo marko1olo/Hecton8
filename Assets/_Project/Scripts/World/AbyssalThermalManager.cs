@@ -3,7 +3,10 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Unity.Burst;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -16,7 +19,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IThermodynamicsService
+    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService
     {
         public struct ThermalFlowSample
         {
@@ -55,6 +58,25 @@ namespace Hecton8.World
             public float HeatIntensity;
             public float SmokeDensity;
             public float CableRadiusWS;
+        }
+
+        private struct ThermalCrystallizationSample
+        {
+            public float3 PositionWS;
+            public float PreviousTemperatureCelsius;
+            public float CurrentTemperatureCelsius;
+            public float RadiusMeters;
+            public uint SourceId;
+            public byte Pending;
+        }
+
+        private struct ThermalCrystallizationResult
+        {
+            public float3 PositionWS;
+            public float DeltaTemperatureCelsius;
+            public float RadiusMeters;
+            public uint SourceId;
+            public byte ShouldSpawn;
         }
 
         private struct ThermalVentGpuData
@@ -112,6 +134,7 @@ namespace Hecton8.World
         private const int MaxAnchorScanCapacity = 32;
         private const int MaxSmokeParticleCapacity = 8192;
         private const int MaxEmpNestCapacity = 8;
+        private const int MaxCrystallizationSampleCapacity = 32;
         private const int VentBufferRingSize = 3;
         private const float VentStateCompareEpsilon = 0.01f;
         private const uint ThermalHashSeed = 0xC6BC2796u;
@@ -142,8 +165,24 @@ namespace Hecton8.World
         private WorldZoneDirector worldZoneDirector;
 
         [SerializeField]
+        [Tooltip("Optional direct resource distribution owner used for flash-freeze Thermal Diamond spawns.")]
+        private ResourceDistributionDirector resourceDistributionDirector;
+
+        [SerializeField]
+        [Tooltip("Optional direct vegetation bridge used for abyssal thermal-grid sampling.")]
+        private HectonMapMagicVegetationBridge vegetationBridge;
+
+        [SerializeField]
         [Tooltip("Optional direct cut-manager override used when abyssal cables need to be severed by the cutter.")]
         private SargassumCutManager cutManager;
+
+        [SerializeField]
+        [Tooltip("Optional direct fluid decal manager override. Runtime resolves a local component when null.")]
+        private AbyssalFluidDecalManager fluidDecalManager;
+
+        [SerializeField]
+        [Tooltip("Shared authored material assigned to the abyssal fluid decal draw pass. Runtime material creation is forbidden.")]
+        private Material fluidDecalMaterial;
 
         [SerializeField]
         [Tooltip("Optional direct player override used for isolated validation scenes.")]
@@ -218,6 +257,31 @@ namespace Hecton8.World
         [Tooltip("Multiplier applied to vent pillar height while the seismic eruption window is active.")]
         private float seismicEruptionHeightMultiplier = 1.75f;
 
+        [Header("── Thermal Crystallization ───────────────")]
+        [SerializeField, Range(-300f, -100f)]
+        [Tooltip("Required signed Celsius delta current-minus-previous before a thermal boundary can crystallize into Thermal Diamond.")]
+        private float crystallizationDeltaTemperatureThresholdCelsius = -100f;
+
+        [SerializeField, Range(300f, 900f)]
+        [Tooltip("Minimum magma-side Celsius value required before flash-freeze crystallization is accepted.")]
+        private float crystallizationMinimumSourceTemperatureCelsius = 300f;
+
+        [SerializeField, Range(-8f, 8f)]
+        [Tooltip("Ambient/current temperature at or below this value can passively flash-freeze hot vent boundaries.")]
+        private float freezingCurrentTemperatureCelsius = 0f;
+
+        [SerializeField, Range(18f, 40f)]
+        [Tooltip("Converts authored vent heat intensity into Celsius for the crystallization boundary job.")]
+        private float ventHeatToCelsiusScale = 18f;
+
+        [SerializeField, Range(0.5f, 8f)]
+        [Tooltip("Radius in meters supplied to the Thermal Diamond spawn request after a boundary passes the Burst job.")]
+        private float crystallizationNodeRadiusMeters = 1.4f;
+
+        [SerializeField, Range(2f, 120f)]
+        [Tooltip("Minimum seconds between passive crystallization attempts per active vent slot.")]
+        private float passiveCrystallizationCooldownSeconds = 45f;
+
         [Header("── Bio-Cable Zones ─────────────────")]
         [SerializeField, Range(0.5f, 1.5f)]
         [Tooltip("Multiplier applied to qualifying cartographer service/power radii when resolving cable entanglement.")]
@@ -252,6 +316,10 @@ namespace Hecton8.World
         private float cableCutForwardOffset = 0.95f;
 
         [Header("── Bio-Cable Visuals ───────────────")]
+        [SerializeField]
+        [Tooltip("Shared authored material assigned to manager-created BioCableIK line renderers. Runtime material creation is forbidden.")]
+        private Material bioCableMaterial;
+
         [SerializeField, Range(0.5f, 24f)]
         [Tooltip("Maximum camera/player distance where procedural bio-cable rigs stay actively simulated.")]
         private float cableVisualActivationDistance = 14f;
@@ -415,6 +483,14 @@ namespace Hecton8.World
         [Tooltip("Seconds remaining on the current seismic vent-eruption window.")]
         private float _debugSeismicEruptionSeconds;
 
+        [SerializeField]
+        [Tooltip("Queued thermal-boundary samples waiting for the crystallization Burst job.")]
+        private int _debugQueuedCrystallizationSamples;
+
+        [SerializeField]
+        [Tooltip("Thermal Diamond nodes accepted by the crystallization commit path.")]
+        private int _debugCrystallizedNodeCount;
+
         // COLD ALLOC: List<WorldZoneAnchor>[32] - reusable runtime cartographer anchor scratch list for abyssal vent selection - owner: AbyssalThermalManager
         private readonly List<WorldZoneAnchor> _zoneAnchors = new List<WorldZoneAnchor>(MaxAnchorScanCapacity);
         // COLD ALLOC: List<RuntimeVentRegistration>[16] - bounded runtime hydrothermal vent registry injected by geology bridge - owner: AbyssalThermalManager
@@ -437,6 +513,7 @@ namespace Hecton8.World
         private Bounds _smokeBounds;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
         private bool _registeredThermodynamicsRuntime;
         private bool _cutterBeamActive;
         private bool _hasSmokeData;
@@ -471,6 +548,13 @@ namespace Hecton8.World
         private GraphicsFence _smokeDispatchFence;
         private float _seismicEruptionTimer;
         private float _seismicEruptionStrength01;
+        private NativeArray<ThermalCrystallizationSample> _crystallizationSamples;
+        private NativeArray<ThermalCrystallizationResult> _crystallizationResults;
+        private JobHandle _crystallizationJobHandle;
+        private bool _crystallizationJobActive;
+        private int _pendingCrystallizationSampleCount;
+        private int _scheduledCrystallizationSampleCount;
+        private float[] _ventCrystallizationCooldowns;
 
         public static AbyssalThermalManager Instance => _instance;
 
@@ -490,6 +574,36 @@ namespace Hecton8.World
                    || string.Equals(familyId, "biome.family.metallic_hadal", System.StringComparison.OrdinalIgnoreCase)
                    || string.Equals(familyId, "biome.family.rift_spine", System.StringComparison.OrdinalIgnoreCase)
                    || string.Equals(familyId, "biome.family.volcanic_hadal", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal bool TryResolveApexMigrationThermalAttractor(out Vector3 attractorPosition, out float strength01)
+        {
+            attractorPosition = default;
+            strength01 = 0f;
+            if (_ventStates == null || _activeVentCount <= 0)
+                return false;
+
+            float eruptionBlend = ResolveSeismicEruptionBlend();
+            if (eruptionBlend <= 0.001f)
+                return false;
+
+            float bestHeat = 0f;
+            for (int i = 0; i < _activeVentCount; i++)
+            {
+                ThermalVentState vent = _ventStates[i];
+                float eruptiveHeat = Mathf.Max(0f, vent.HeatIntensity) * Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
+                if (eruptiveHeat <= bestHeat)
+                    continue;
+
+                bestHeat = eruptiveHeat;
+                attractorPosition = vent.PositionWS;
+            }
+
+            if (bestHeat <= 0f)
+                return false;
+
+            strength01 = Mathf.Clamp01(bestHeat / Mathf.Max(1f, ventHeatIntensity * seismicEruptionHeatMultiplier));
+            return true;
         }
 
         public void RegisterRuntimeVent(
@@ -602,6 +716,7 @@ namespace Hecton8.World
             _frameParity = 0;
             ClearHazardSources();
             ReleaseBuffers();
+            DisposeCrystallizationBuffers();
             TryUnregister();
         }
 
@@ -613,6 +728,7 @@ namespace Hecton8.World
             HectonFloatingOrigin.UnregisterListener(this);
             ClearHazardSources();
             ReleaseBuffers();
+            DisposeCrystallizationBuffers();
 
             if (_instance == this)
                 _instance = null;
@@ -698,6 +814,17 @@ namespace Hecton8.World
                 }
             }
 
+            if (!_crystallizationJobActive && _crystallizationSamples.IsCreated)
+            {
+                float3 offset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
+                for (int i = 0; i < _pendingCrystallizationSampleCount; i++)
+                {
+                    ThermalCrystallizationSample sample = _crystallizationSamples[i];
+                    sample.PositionWS += offset;
+                    _crystallizationSamples[i] = sample;
+                }
+            }
+
             Bounds smokeBounds = _smokeBounds;
             smokeBounds.center += runtimeOffset;
             _smokeBounds = smokeBounds;
@@ -757,7 +884,63 @@ namespace Hecton8.World
         public void SlowTick()
         {
             ResolveDependencies();
+            AdvancePassiveCrystallizationCooldowns(0.5f);
             RebuildVentField();
+            QueueVentBoundaryCrystallizationSamples();
+            ScheduleCrystallizationJobIfNeeded();
+        }
+
+        /// <summary>
+        /// Queues a flash-freeze thermal boundary for Burst validation and Thermal Diamond spawning.
+        /// </summary>
+        /// <param name="runtimePosition">Runtime-space boundary center.</param>
+        /// <param name="previousTemperatureCelsius">Hot-side temperature before the coolant/current shock.</param>
+        /// <param name="currentTemperatureCelsius">Cold-side temperature after the shock.</param>
+        /// <param name="crystallizationRadiusMeters">Approximate boundary radius in meters.</param>
+        /// <param name="sourceId">Stable source id used by downstream deterministic placement jitter.</param>
+        /// <returns>True when the sample was queued.</returns>
+        public bool ReportFlashFreeze(
+            Vector3 runtimePosition,
+            float previousTemperatureCelsius,
+            float currentTemperatureCelsius,
+            float crystallizationRadiusMeters,
+            uint sourceId = 0u)
+        {
+            if (!_crystallizationSamples.IsCreated || _pendingCrystallizationSampleCount >= MaxCrystallizationSampleCapacity)
+                return false;
+
+            float3 position = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(position)) ||
+                !math.isfinite(previousTemperatureCelsius) ||
+                !math.isfinite(currentTemperatureCelsius))
+            {
+                return false;
+            }
+
+            _crystallizationSamples[_pendingCrystallizationSampleCount++] = new ThermalCrystallizationSample
+            {
+                PositionWS = position,
+                PreviousTemperatureCelsius = previousTemperatureCelsius,
+                CurrentTemperatureCelsius = currentTemperatureCelsius,
+                RadiusMeters = math.max(0.25f, crystallizationRadiusMeters),
+                SourceId = sourceId != 0u ? sourceId : (uint)math.hash(new int3(
+                    (int)math.round(position.x * 10f),
+                    (int)math.round(position.y * 10f),
+                    (int)math.round(position.z * 10f))),
+                Pending = 1
+            };
+
+            _debugQueuedCrystallizationSamples = _pendingCrystallizationSampleCount;
+            ScheduleCrystallizationJobIfNeeded();
+            return true;
+        }
+
+        /// <summary>
+        /// Commits completed thermal-boundary Burst results during the late-frame swap window.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            CompleteCrystallizationJobIfReady();
         }
 
         /// <summary>
@@ -836,6 +1019,168 @@ namespace Hecton8.World
             return sample.HasFlow || sample.IsCableZone;
         }
 
+        private void AdvancePassiveCrystallizationCooldowns(float deltaSeconds)
+        {
+            if (_ventCrystallizationCooldowns == null)
+                return;
+
+            float dt = Mathf.Max(0f, deltaSeconds);
+            for (int i = 0; i < _ventCrystallizationCooldowns.Length; i++)
+            {
+                if (_ventCrystallizationCooldowns[i] <= 0f)
+                    continue;
+
+                _ventCrystallizationCooldowns[i] = Mathf.Max(0f, _ventCrystallizationCooldowns[i] - dt);
+            }
+        }
+
+        private void QueueVentBoundaryCrystallizationSamples()
+        {
+            if (_activeVentCount <= 0 ||
+                vegetationBridge == null ||
+                _ventCrystallizationCooldowns == null ||
+                !_crystallizationSamples.IsCreated)
+            {
+                return;
+            }
+
+            float eruptionHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, ResolveSeismicEruptionBlend());
+            for (int i = 0; i < _activeVentCount && _pendingCrystallizationSampleCount < MaxCrystallizationSampleCapacity; i++)
+            {
+                if (_ventCrystallizationCooldowns[i] > 0f)
+                    continue;
+
+                ThermalVentState vent = _ventStates[i];
+                float hotSideTemperature = vent.HeatIntensity * eruptionHeatScale * ventHeatToCelsiusScale;
+                if (hotSideTemperature < crystallizationMinimumSourceTemperatureCelsius)
+                    continue;
+
+                Vector3 boundaryPosition = ResolveCrystallizationBoundaryPosition(in vent, i);
+                float ambientTemperature = vegetationBridge.GetWaterTemperature(boundaryPosition);
+                if (ambientTemperature > freezingCurrentTemperatureCelsius)
+                    continue;
+
+                uint sourceId = (uint)BuildHazardSourceId(i);
+                if (ReportFlashFreeze(
+                        boundaryPosition,
+                        hotSideTemperature,
+                        ambientTemperature,
+                        crystallizationNodeRadiusMeters,
+                        sourceId))
+                {
+                    _ventCrystallizationCooldowns[i] = passiveCrystallizationCooldownSeconds;
+                }
+            }
+        }
+
+        private Vector3 ResolveCrystallizationBoundaryPosition(in ThermalVentState vent, int ventIndex)
+        {
+            float angle = HashToFloat01((uint)_instanceId, (uint)(ventIndex + 1), 0x7D5C2A11u) * Mathf.PI * 2f;
+            float radius = Mathf.Max(0.5f, vent.RadiusWS * 0.88f);
+            Vector3 radial = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+            return vent.PositionWS + radial + Vector3.up * Mathf.Max(0.15f, vent.HeightWS * 0.08f);
+        }
+
+        private void ScheduleCrystallizationJobIfNeeded()
+        {
+            if (_crystallizationJobActive ||
+                _pendingCrystallizationSampleCount <= 0 ||
+                !_crystallizationSamples.IsCreated ||
+                !_crystallizationResults.IsCreated)
+            {
+                return;
+            }
+
+            _scheduledCrystallizationSampleCount = Mathf.Min(_pendingCrystallizationSampleCount, MaxCrystallizationSampleCapacity);
+            ThermalCrystallizationBoundaryJob job = new ThermalCrystallizationBoundaryJob
+            {
+                Samples = _crystallizationSamples,
+                Results = _crystallizationResults,
+                MinimumSourceTemperatureCelsius = crystallizationMinimumSourceTemperatureCelsius,
+                DeltaTemperatureThresholdCelsius = crystallizationDeltaTemperatureThresholdCelsius,
+                MinimumRadiusMeters = 0.25f
+            };
+
+            _crystallizationJobHandle = job.Schedule(_scheduledCrystallizationSampleCount, 8);
+            _crystallizationJobActive = true;
+        }
+
+        private void CompleteCrystallizationJobIfReady()
+        {
+            if (!_crystallizationJobActive || !_crystallizationJobHandle.IsCompleted)
+                return;
+
+            _crystallizationJobHandle.Complete();
+            _crystallizationJobHandle = default;
+            _crystallizationJobActive = false;
+
+            ResourceDistributionDirector director = resourceDistributionDirector != null
+                ? resourceDistributionDirector
+                : ResourceDistributionDirector.ActiveRuntimeInstance;
+            if (director != null)
+            {
+                for (int i = 0; i < _scheduledCrystallizationSampleCount; i++)
+                {
+                    ThermalCrystallizationResult result = _crystallizationResults[i];
+                    if (result.ShouldSpawn == 0)
+                        continue;
+
+                    Vector3 runtimePosition = new Vector3(result.PositionWS.x, result.PositionWS.y, result.PositionWS.z);
+                    if (director.TrySpawnThermalDiamondCrystallization(
+                            runtimePosition,
+                            result.RadiusMeters,
+                            result.DeltaTemperatureCelsius,
+                            result.SourceId))
+                    {
+                        _debugCrystallizedNodeCount++;
+                    }
+                }
+            }
+
+            CompactCrystallizationSamplesAfterCommit();
+            _debugQueuedCrystallizationSamples = _pendingCrystallizationSampleCount;
+            ScheduleCrystallizationJobIfNeeded();
+        }
+
+        private void CompactCrystallizationSamplesAfterCommit()
+        {
+            int consumedCount = _scheduledCrystallizationSampleCount;
+            int remainingCount = math.max(0, _pendingCrystallizationSampleCount - consumedCount);
+            for (int i = 0; i < remainingCount; i++)
+                _crystallizationSamples[i] = _crystallizationSamples[consumedCount + i];
+
+            for (int i = remainingCount; i < _pendingCrystallizationSampleCount; i++)
+                _crystallizationSamples[i] = default;
+
+            for (int i = 0; i < consumedCount && i < _crystallizationResults.Length; i++)
+                _crystallizationResults[i] = default;
+
+            _pendingCrystallizationSampleCount = remainingCount;
+            _scheduledCrystallizationSampleCount = 0;
+        }
+
+        private void DisposeCrystallizationBuffers()
+        {
+            JobHandle dependency = _crystallizationJobActive ? _crystallizationJobHandle : default;
+            if (_crystallizationSamples.IsCreated)
+            {
+                dependency = _crystallizationSamples.Dispose(dependency);
+                _crystallizationSamples = default;
+            }
+
+            if (_crystallizationResults.IsCreated)
+            {
+                dependency = _crystallizationResults.Dispose(dependency);
+                _crystallizationResults = default;
+            }
+
+            _crystallizationJobHandle = dependency;
+            _crystallizationJobActive = false;
+            _pendingCrystallizationSampleCount = 0;
+            _scheduledCrystallizationSampleCount = 0;
+            _debugQueuedCrystallizationSamples = 0;
+        }
+
         private void ResolveDependencies()
         {
             if (biomeMatrixDirector == null)
@@ -843,6 +1188,12 @@ namespace Hecton8.World
 
             if (worldZoneDirector == null)
                 worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+
+            if (resourceDistributionDirector == null)
+                resourceDistributionDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
+
+            if (vegetationBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
 
             if (cutManager == null)
                 cutManager = SargassumCutManager.Instance;
@@ -864,12 +1215,19 @@ namespace Hecton8.World
 
             if (_fluidDecalManager == null)
             {
-                if (!TryGetComponent(out _fluidDecalManager))
+                if (fluidDecalManager != null)
+                {
+                    _fluidDecalManager = fluidDecalManager;
+                }
+                else if (!TryGetComponent(out _fluidDecalManager))
                 {
                     // COLD ALLOC: Component[1] - local abyssal fluid decal owner added on the thermal manager host when authoring missed it - owner: AbyssalThermalManager
                     _fluidDecalManager = gameObject.AddComponent<AbyssalFluidDecalManager>();
                 }
             }
+
+            if (_fluidDecalManager != null && fluidDecalMaterial != null)
+                _fluidDecalManager.ConfigureMaterial(fluidDecalMaterial);
         }
 
         private void SanitizeSettings()
@@ -884,6 +1242,15 @@ namespace Hecton8.World
             ventDragMultiplier = Mathf.Clamp(ventDragMultiplier, 1f, 8f);
             ventHeatIntensity = Mathf.Clamp(ventHeatIntensity, 1f, 60f);
             ventHeatRadiusMultiplier = Mathf.Clamp(ventHeatRadiusMultiplier, 0.25f, 2f);
+            if (crystallizationDeltaTemperatureThresholdCelsius > 0f)
+                crystallizationDeltaTemperatureThresholdCelsius = -crystallizationDeltaTemperatureThresholdCelsius;
+
+            crystallizationDeltaTemperatureThresholdCelsius = Mathf.Clamp(crystallizationDeltaTemperatureThresholdCelsius, -300f, -100f);
+            crystallizationMinimumSourceTemperatureCelsius = Mathf.Clamp(crystallizationMinimumSourceTemperatureCelsius, 300f, 900f);
+            freezingCurrentTemperatureCelsius = Mathf.Clamp(freezingCurrentTemperatureCelsius, -8f, 8f);
+            ventHeatToCelsiusScale = Mathf.Clamp(ventHeatToCelsiusScale, 18f, 40f);
+            crystallizationNodeRadiusMeters = Mathf.Clamp(crystallizationNodeRadiusMeters, 0.5f, 8f);
+            passiveCrystallizationCooldownSeconds = Mathf.Clamp(passiveCrystallizationCooldownSeconds, 2f, 120f);
             cableRadiusMultiplier = Mathf.Clamp(cableRadiusMultiplier, 0.5f, 1.5f);
             cableAnchorPull = Mathf.Clamp(cableAnchorPull, 0f, 2f);
             cableCutQueryRadius = Mathf.Clamp(cableCutQueryRadius, 0.1f, 6f);
@@ -992,6 +1359,30 @@ namespace Hecton8.World
                 _cableEmpChainGlowTimers = new float[MaxVentCapacity];
             }
 
+            if (_ventCrystallizationCooldowns == null || _ventCrystallizationCooldowns.Length != MaxVentCapacity)
+            {
+                // COLD ALLOC: float[16] - per-vent passive flash-freeze cooldowns - owner: AbyssalThermalManager
+                _ventCrystallizationCooldowns = new float[MaxVentCapacity];
+            }
+
+            if (!_crystallizationSamples.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ThermalCrystallizationSample>[32] - thermal boundary job input ring - owner: AbyssalThermalManager
+                _crystallizationSamples = new NativeArray<ThermalCrystallizationSample>(
+                    MaxCrystallizationSampleCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (!_crystallizationResults.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ThermalCrystallizationResult>[32] - thermal boundary job output ring - owner: AbyssalThermalManager
+                _crystallizationResults = new NativeArray<ThermalCrystallizationResult>(
+                    MaxCrystallizationSampleCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
+            }
+
             if (_bioCableVisuals == null || _bioCableVisuals.Length != MaxVentCapacity)
             {
                 // COLD ALLOC: BioCableIK[16] - reusable visual cable rigs paired to active abyssal vent cable zones - owner: AbyssalThermalManager
@@ -1088,6 +1479,7 @@ namespace Hecton8.World
 
                 LineRenderer lineRenderer = cableObject.AddComponent<LineRenderer>();
                 lineRenderer.enabled = false;
+                lineRenderer.sharedMaterial = bioCableMaterial;
 
                 // COLD ALLOC: Component[1] - persistent abyssal bio-cable IK rig component - owner: AbyssalThermalManager
                 BioCableIK cableRig = cableObject.AddComponent<BioCableIK>();
@@ -2332,6 +2724,12 @@ namespace Hecton8.World
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = true;
             }
+
+            if (!_registeredLateFrameTick)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = true;
+            }
         }
 
         private void TryUnregister()
@@ -2353,6 +2751,47 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        private struct ThermalCrystallizationBoundaryJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<ThermalCrystallizationSample> Samples;
+            public NativeArray<ThermalCrystallizationResult> Results;
+            public float MinimumSourceTemperatureCelsius;
+            public float DeltaTemperatureThresholdCelsius;
+            public float MinimumRadiusMeters;
+
+            public void Execute(int index)
+            {
+                ThermalCrystallizationSample sample = Samples[index];
+                ThermalCrystallizationResult result = default;
+                if (sample.Pending == 0 ||
+                    sample.RadiusMeters < MinimumRadiusMeters ||
+                    !math.all(math.isfinite(sample.PositionWS)) ||
+                    !math.isfinite(sample.PreviousTemperatureCelsius) ||
+                    !math.isfinite(sample.CurrentTemperatureCelsius))
+                {
+                    Results[index] = result;
+                    return;
+                }
+
+                float delta = sample.CurrentTemperatureCelsius - sample.PreviousTemperatureCelsius;
+                bool accepted = sample.PreviousTemperatureCelsius >= MinimumSourceTemperatureCelsius &&
+                                delta <= DeltaTemperatureThresholdCelsius;
+                result.PositionWS = sample.PositionWS;
+                result.DeltaTemperatureCelsius = delta;
+                result.RadiusMeters = math.max(MinimumRadiusMeters, sample.RadiusMeters);
+                result.SourceId = sample.SourceId;
+                result.ShouldSpawn = accepted ? (byte)1 : (byte)0;
+                Results[index] = result;
+            }
         }
 
         private static float HashToFloat01(uint a, uint b, uint salt)
@@ -2365,5 +2804,24 @@ namespace Hecton8.World
             state ^= state >> 16;
             return (state & 0x00FFFFFFu) / 16777215f;
         }
+
+#if UNITY_EDITOR
+        private const string EditorDefaultBioCableMaterialPath = "Assets/_Project/Art/Materials/Nature/ProceduralOrganicMisc/Mat_Organic_PlantStem.mat";
+        private const string EditorDefaultFluidDecalMaterialPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
+
+        private void OnValidate()
+        {
+            SanitizeSettings();
+
+            if (bioCableMaterial == null)
+                bioCableMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultBioCableMaterialPath);
+
+            if (fluidDecalMaterial == null)
+                fluidDecalMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultFluidDecalMaterialPath);
+
+            if (fluidDecalManager == null)
+                TryGetComponent(out fluidDecalManager);
+        }
+#endif
     }
 }

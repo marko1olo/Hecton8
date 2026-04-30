@@ -61,8 +61,7 @@ namespace Hecton8.Core
 
             int oceanLayerMask = 1 << oceanRenderer.Layer;
             UniversalAdditionalCameraData[] cameraDataList =
-                UnityEngine.Object.FindObjectsByType<UniversalAdditionalCameraData>(
-                    FindObjectsInactive.Include); // COLD ALLOC: UniversalAdditionalCameraData[] - scene camera requirement sweep - owner: HectonUrpTextureRequirementsGuard
+                UnityEngine.Object.FindObjectsByType<UniversalAdditionalCameraData>(FindObjectsInactive.Include); // COLD ALLOC: UniversalAdditionalCameraData[] - scene camera requirement sweep - owner: HectonUrpTextureRequirementsGuard
 
             for (int cameraIndex = 0; cameraIndex < cameraDataList.Length; cameraIndex++)
             {

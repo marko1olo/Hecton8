@@ -193,8 +193,7 @@ namespace Hecton8.Gameplay
         public void OnScanEvent(in ScanEventPayload payload)
         {
             ScanEventType eventType = (ScanEventType)payload.EventType;
-            if ((eventType != ScanEventType.EntryDiscovered && eventType != ScanEventType.FaunaFeedingObserved) ||
-                payload.EntryHash == 0u)
+            if (payload.EntryHash == 0u || eventType != ScanEventType.FaunaFeedingObserved)
             {
                 return;
             }
@@ -293,7 +292,7 @@ namespace Hecton8.Gameplay
             if (_registeredWithSaveManager)
                 return;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null)
                 return;
 
@@ -315,7 +314,7 @@ namespace Hecton8.Gameplay
             if (!_registeredWithSaveManager)
                 return;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager != null)
                 saveManager.Unregister(this);
 

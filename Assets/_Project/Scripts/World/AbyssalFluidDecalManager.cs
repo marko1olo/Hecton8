@@ -3,6 +3,9 @@ using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.World
 {
@@ -13,6 +16,10 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-103)]
     public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable, IOriginShiftListener
     {
+#if UNITY_EDITOR
+        private const string DecalMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
+#endif
+
         private struct FluidDecalState
         {
             public bool Active;
@@ -36,7 +43,7 @@ namespace Hecton8.World
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
-        [Tooltip("Optional explicit fluid decal material. Runtime falls back to Shader.Find when left empty.")]
+        [Tooltip("Authored fluid decal material. Runtime material creation is forbidden for this draw path.")]
         private Material decalMaterial;
 
         [Header("── Decal Simulation ─────────────────")]
@@ -125,7 +132,7 @@ namespace Hecton8.World
             _instance = this;
             SanitizeSettings();
             EnsureStorage();
-            EnsureRenderingResources();
+            EnsureRenderingResources(false);
             _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             _previousGlobalDriftOffset = ResolveGlobalDriftOffset();
         }
@@ -133,7 +140,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             EnsureStorage();
-            EnsureRenderingResources();
+            EnsureRenderingResources(false);
             _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
@@ -168,6 +175,7 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterCableFluid(Vector3 positionWS, float radiusScale)
         {
+            EnsureRenderingResources(true);
             RegisterDecal(positionWS, cableFluidColor, Mathf.Lerp(0.8f, 2.2f, Mathf.Clamp01(radiusScale)), Mathf.Lerp(2.4f, 4.6f, Mathf.Clamp01(radiusScale)), 10f);
         }
 
@@ -176,7 +184,22 @@ namespace Hecton8.World
         /// </summary>
         public void RegisterRuptureFluid(Vector3 positionWS, float radiusScale)
         {
+            EnsureRenderingResources(true);
             RegisterDecal(positionWS, ruptureFluidColor, Mathf.Lerp(1.4f, 3.2f, Mathf.Clamp01(radiusScale)), Mathf.Lerp(3.6f, 7.5f, Mathf.Clamp01(radiusScale)), 14f);
+        }
+
+        /// <summary>
+        /// Assigns the authored decal material before runtime draw resources are used.
+        /// </summary>
+        /// <param name="material">Shared material asset owned by the caller.</param>
+        internal void ConfigureMaterial(Material material)
+        {
+            if (material == null)
+                return;
+
+            decalMaterial = material;
+            _runtimeMaterial = material;
+            _loggedMissingDecalMaterial = false;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -314,7 +337,7 @@ namespace Hecton8.World
             }
         }
 
-        private void EnsureRenderingResources()
+        private void EnsureRenderingResources(bool logIfMissing)
         {
             if (_quadMesh == null)
                 _quadMesh = BuildQuadMesh();
@@ -327,7 +350,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                if (!_loggedMissingDecalMaterial)
+                if (logIfMissing && !_loggedMissingDecalMaterial)
                 {
                     _loggedMissingDecalMaterial = true;
                     Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
@@ -398,7 +421,7 @@ namespace Hecton8.World
             if (!_registeredTick)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registeredTick = false;
         }
@@ -436,5 +459,15 @@ namespace Hecton8.World
             wakeDistortion = Mathf.Clamp01(wakeDistortion);
             wakeThreshold = Mathf.Clamp01(wakeThreshold);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            SanitizeSettings();
+
+            if (decalMaterial == null)
+                decalMaterial = AssetDatabase.LoadAssetAtPath<Material>(DecalMaterialAssetPath);
+        }
+#endif
     }
 }

@@ -66,7 +66,7 @@ namespace Hecton8.Audio
 {
     /// <summary>
     /// Ð¦ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ð¾Ð³Ð¾ Ð·Ð²ÑƒÐºÐ° Ñ Ð¿ÑƒÐ»Ð¸Ð½Ð³Ð¾Ð¼.
-    /// Singleton â€” Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ñ‡ÐµÑ€ÐµÐ· Hecton8.Core.GlobalRegistry.Audio.
+    /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
     public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable
@@ -176,7 +176,7 @@ namespace Hecton8.Audio
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  SINGLETON
+        //  SERVICE REGISTRY
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         /// <summary>
@@ -184,10 +184,6 @@ namespace Hecton8.Audio
         /// Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ñ€Ð°Ð·Ð¼ÐµÑ‰Ñ‘Ð½ Ð½Ð° ÑÑ†ÐµÐ½Ðµ Ð²Ñ€ÑƒÑ‡Ð½ÑƒÑŽ Ð¸Ð»Ð¸ Ñ‡ÐµÑ€ÐµÐ· bootstrap.
         /// </summary>
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-        /// <summary>
-        /// Legacy compatibility access. Authoritative ownership still lives in <see cref="GlobalRegistry"/>.
-        /// </summary>
 
         //  INSPECTOR CONFIGURATION
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -315,7 +311,7 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            // â”€â”€ Singleton enforcement â”€â”€
+            // Runtime service registration.
             _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
 
             InitializePool();
@@ -672,6 +668,16 @@ namespace Hecton8.Audio
 
             float3 runtimePosition = positionAup.ToRuntimeFloat3();
             PlayAtPoint(clip, new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z), volume, pitch, ResolvedDefaultWorldMixerGroup);
+        }
+
+        internal void PlaySporeEmissionAtAup(in AbsoluteUniversePosition positionAup, AudioClip clip, float pulseFrequencyHz, float volume = 1f)
+        {
+            if (clip == null)
+                return;
+
+            float3 runtimePosition = positionAup.ToRuntimeFloat3();
+            float pitch = math.clamp(pulseFrequencyHz, 0.1f, 3f);
+            PlayAtPoint(clip, new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z), volume, pitch, ResolvedThreatBusGroup);
         }
 
         /// <summary>

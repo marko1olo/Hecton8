@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 — SaveManager.cs
-// Менеджер сохранений. Singleton, DontDestroyOnLoad.
+// Save persistence service. Runtime owner is injected through GlobalRegistry.
 //
 // АРХИТЕКТУРА:
 //   • Реестр ISaveable вместо FindObjectsByType (zero GC при save/load).
@@ -33,6 +33,7 @@ namespace Hecton8.SaveSystem
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
+        private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
         private const float IntegrityScanIntervalSeconds = 10f;
         private const float IndexedDefragCheckIntervalSeconds = 5f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
@@ -42,10 +43,9 @@ namespace Hecton8.SaveSystem
         // ══════════════════════════════════════════════════════════
 
         // ══════════════════════════════════════════════════════════
-        //  SINGLETON
+        //  SERVICE STATE
         // ══════════════════════════════════════════════════════════
 
-        public static SaveManager Instance => GlobalRegistry.Save as SaveManager;
         public bool IsInitialized => _serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this);
         public bool IsBusy => _isBusy;
         public float CurrentPlayTimeSeconds => (float)ResolveCurrentPlayTimeSeconds();
@@ -156,16 +156,17 @@ namespace Hecton8.SaveSystem
         private static int GetBackupRetentionCountStatic(string slotName)
         {
             SaveSlotCategory category = ClassifySlot(slotName);
-            if (Instance != null)
+            SaveManager manager = GlobalRegistry.SaveRuntime;
+            if (manager != null)
             {
                 switch (category)
                 {
                     case SaveSlotCategory.Auto:
-                        return math.clamp(Instance.autoBackupGenerations, 1, 8);
+                        return math.clamp(manager.autoBackupGenerations, 1, 8);
                     case SaveSlotCategory.Quick:
-                        return math.clamp(Instance.quickBackupGenerations, 1, 8);
+                        return math.clamp(manager.quickBackupGenerations, 1, 8);
                     default:
-                        return math.clamp(Instance.manualBackupGenerations, 1, 8);
+                        return math.clamp(manager.manualBackupGenerations, 1, 8);
                 }
             }
 
@@ -182,10 +183,11 @@ namespace Hecton8.SaveSystem
 
         private static int GetMaxBackupGenerationCount()
         {
-            if (Instance != null)
+            SaveManager manager = GlobalRegistry.SaveRuntime;
+            if (manager != null)
             {
                 return math.clamp(
-                    math.max(Instance.manualBackupGenerations, math.max(Instance.autoBackupGenerations, Instance.quickBackupGenerations)),
+                    math.max(manager.manualBackupGenerations, math.max(manager.autoBackupGenerations, manager.quickBackupGenerations)),
                     1,
                     8);
             }
@@ -613,7 +615,7 @@ namespace Hecton8.SaveSystem
 
                 divergenceSnapshotTimer.Stop();
                 long saveTimestampTicks = DateTime.UtcNow.Ticks;
-                QuestManager questManager = QuestManager.Instance;
+                QuestManager questManager = GlobalRegistry.Quest;
                 if (questManager != null)
                 {
                     packedQuestStateSnapshot = questManager.CapturePackedStateSnapshot(
@@ -820,6 +822,7 @@ namespace Hecton8.SaveSystem
                 SortRegistryIfDirty(LoadPriorityCompare);
 
                 VoxelDeltaProcessor voxelDeltaProcessor = null;
+                long loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
                 for (int i = 0; i < _saveables.Count; i++)
                 {
                     if (!IsAlive(_saveables[i]))
@@ -832,6 +835,11 @@ namespace Hecton8.SaveSystem
                     }
 
                     _saveables[i].LoadFromSaveData(data);
+                    if (i + 1 < _saveables.Count && Stopwatch.GetTimestamp() >= loadApplyDeadlineTicks)
+                    {
+                        await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                        loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
+                    }
                 }
 
                 if (voxelDeltaProcessor != null && !voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
@@ -1042,7 +1050,7 @@ namespace Hecton8.SaveSystem
                     slotNames.Add(slotName);
             }
 
-            SaveManager manager = Instance;
+            SaveManager manager = GlobalRegistry.SaveRuntime;
             foreach (string slotName in slotNames)
             {
                 SaveSlotInfo info = manager != null ? manager.BuildSaveSlotInfo(slotName) : BuildSaveSlotInfoStatic(slotName);
@@ -1782,7 +1790,7 @@ namespace Hecton8.SaveSystem
 
         private static void AcquireReadBuffer(out NativeArray<byte> buffer, out bool ownsBuffer)
         {
-            SaveManager manager = Instance;
+            SaveManager manager = GlobalRegistry.SaveRuntime;
             if (manager != null && manager._savePayloadBuffer.IsCreated)
             {
                 buffer = manager._savePayloadBuffer;
@@ -1806,7 +1814,7 @@ namespace Hecton8.SaveSystem
             out NativeArray<byte> compressedBuffer,
             out bool ownsCompressedBuffer)
         {
-            SaveManager manager = Instance;
+            SaveManager manager = GlobalRegistry.SaveRuntime;
             if (manager != null && manager._savePayloadBuffer.IsCreated && manager._compressedSaveBuffer.IsCreated)
             {
                 rawBuffer = manager._savePayloadBuffer;

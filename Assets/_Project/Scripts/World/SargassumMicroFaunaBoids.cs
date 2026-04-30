@@ -906,7 +906,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Collider layers treated as formation obstacles. Use rock / ruin / terrain layers only.")]
-        private LayerMask formationObstacleLayers = ~0;
+        private LayerMask formationObstacleLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         [SerializeField, Range(4f, 80f)]
         [Tooltip("Non-alloc overlap radius used when harvesting nearby rock obstacles for formation avoidance.")]
@@ -1036,7 +1036,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Layer mask used when the leviathan supplements the vegetation spatial hash with a rigidbody overlap query.")]
-        private LayerMask leviathanShockwaveLayers = ~0;
+        private LayerMask leviathanShockwaveLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("â”€â”€ Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]

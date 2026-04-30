@@ -75,7 +75,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(10f, 500f)] private float skyCheckDistance = 200f;
 
         [Tooltip("Layers considered as sky obstruction.")]
-        [SerializeField] private LayerMask obstructionLayers = -1;
+        [SerializeField] private LayerMask obstructionLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("── Status Indicator ───────────────────────────")]
         [Tooltip("Renderer for the status indicator light.")]

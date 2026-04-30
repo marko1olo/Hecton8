@@ -15,6 +15,8 @@ namespace Hecton8.World
     /// </summary>
     internal static class HectonBatchRendererGroupUtility
     {
+        private const uint StrictRenderingLayerMask = (1u << 8) | (1u << 9) | (1u << 10);
+
         [BurstCompile]
         public struct BuildMatrixVisibilityMaskJob : IJobParallelFor
         {
@@ -118,7 +120,7 @@ namespace Hecton8.World
                         drawCommandsType = BatchDrawCommandType.Direct,
                         filterSettings = new BatchFilterSettings
                         {
-                            renderingLayerMask = uint.MaxValue,
+                            renderingLayerMask = StrictRenderingLayerMask,
                             rendererPriority = 0,
                             layer = (byte)math.clamp(Layer, byte.MinValue, byte.MaxValue),
                             shadowCastingMode = ShadowCastingMode,
@@ -241,7 +243,7 @@ namespace Hecton8.World
                 drawCommandsType = BatchDrawCommandType.Direct,
                 filterSettings = new BatchFilterSettings
                 {
-                    renderingLayerMask = uint.MaxValue,
+                    renderingLayerMask = StrictRenderingLayerMask,
                     rendererPriority = 0,
                     layer = (byte)Mathf.Clamp(layer, byte.MinValue, byte.MaxValue),
                     shadowCastingMode = shadowCastingMode,

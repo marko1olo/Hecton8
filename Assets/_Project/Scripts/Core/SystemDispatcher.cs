@@ -453,12 +453,15 @@ namespace Hecton8.Core
                 ThreadSafeCommandQueue.DrainMainThread();
             }
             NarrativeEvents.FlushPending();
+            Hecton8.Interaction.InteractionEvents.FlushPending();
+            Hecton8.Crafting.CraftingEvents.FlushPending();
             ScanEvents.FlushPending();
             SaveEvents.FlushPending();
             QuestEvents.FlushPending();
             AudioLogEvents.FlushPending();
             Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
             Hecton8.UI.NotificationEvents.FlushPending();
+            Hecton8.UI.PDAEvents.FlushPending();
             Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
             ObjectPoolDiagnostics.FlushPending();
             Hecton8.AtlasSignal.Atlas6Events.FlushPending();

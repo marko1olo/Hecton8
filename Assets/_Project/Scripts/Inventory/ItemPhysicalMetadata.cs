@@ -165,6 +165,21 @@ namespace Hecton8.Inventory
             }
         }
 
+        public static float ResolveDefaultRadiationSvPerSecond(
+            ItemCategory category,
+            ResourceFamily resourceFamily,
+            string persistentId)
+        {
+            string safeId = persistentId ?? string.Empty;
+            if (IsRadioactiveLikeId(safeId))
+                return resourceFamily == ResourceFamily.DeepMaterial ? 0.85f : 0.45f;
+
+            if (category == ItemCategory.Material && resourceFamily == ResourceFamily.DeepMaterial)
+                return 0.08f;
+
+            return 0f;
+        }
+
         public static bool IsOrganic(byte materialId)
         {
             return materialId == (byte)ItemAudioMaterialId.Organic;
@@ -181,6 +196,14 @@ namespace Hecton8.Inventory
                    persistentId.IndexOf("Crystal", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    persistentId.IndexOf("Silica", StringComparison.OrdinalIgnoreCase) >= 0 ||
                    persistentId.IndexOf("Lens", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsRadioactiveLikeId(string persistentId)
+        {
+            return persistentId.IndexOf("Isotope", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   persistentId.IndexOf("Uranium", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   persistentId.IndexOf("Radio", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   persistentId.IndexOf("AbyssalCrystal", StringComparison.OrdinalIgnoreCase) >= 0;
         }
     }
 }

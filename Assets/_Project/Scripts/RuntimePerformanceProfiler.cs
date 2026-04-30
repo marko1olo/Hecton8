@@ -39,8 +39,6 @@ namespace Hecton8.Dev
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string DefaultGameplaySceneName = "02_HECTON_WORLD";
 #if UNITY_EDITOR
-        private const double DirtyPlayRetryStableWindowSeconds = 0.75d;
-        private const double DirtyPlayRetryBudgetSeconds = 20d;
         private const int MaxDirtyPlayRetryAttempts = 3;
         private const int FrozenFallbackStallWarningWindowThreshold = 5;
         private const string AutoBootstrapSessionKey = "Hecton8.RuntimeProfiler.AutoBootstrapArmed";
@@ -254,8 +252,6 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR
         private static bool _editorHooksRegistered;
         private static bool _dirtyPlayRetryPending;
-        private static double _dirtyPlayRetryRequestedAt;
-        private static double _dirtyPlayStableSince;
         private static int _dirtyPlayRetryCount;
         private static string _dirtyPlayLastReason = "None";
 #endif
@@ -1704,8 +1700,6 @@ namespace Hecton8.Dev
             }
 
             _dirtyPlayRetryPending = true;
-            _dirtyPlayRetryRequestedAt = EditorApplication.timeSinceStartup;
-            _dirtyPlayStableSince = 0d;
             _dirtyPlayRetryCount++;
             _dirtyPlayLastReason = reason;
             SessionState.SetBool(DirtyPlayRetryPendingKey, true);
@@ -1743,35 +1737,10 @@ namespace Hecton8.Dev
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isPlaying)
                 return;
 
-            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
-            {
-                _dirtyPlayStableSince = 0d;
-                return;
-            }
-
-            double now = EditorApplication.timeSinceStartup;
-            if (_dirtyPlayStableSince <= 0d)
-            {
-                _dirtyPlayStableSince = now;
-                return;
-            }
-
-            if ((now - _dirtyPlayRetryRequestedAt) > DirtyPlayRetryBudgetSeconds)
-            {
-                Debug.LogWarning($"[RuntimeProfilerDirtyPlayGate] Retry window expired. lastReason={_dirtyPlayLastReason}");
-                ClearDirtyPlayRetryState();
-                return;
-            }
-
-            if ((now - _dirtyPlayStableSince) < DirtyPlayRetryStableWindowSeconds)
-                return;
-
-            Debug.Log($"[RuntimeProfilerDirtyPlayGate] Retrying play after stable editor window. retry={_dirtyPlayRetryCount}");
-            _dirtyPlayRetryPending = false;
-            SessionState.SetBool(DirtyPlayRetryPendingKey, false);
-            EditorPlayModeDiagnostics.RequestStartPlayMode(
-                nameof(RuntimePerformanceProfiler),
-                "DirtyPlayRetryStableWindow");
+            Debug.LogWarning(
+                $"[RuntimeProfilerDirtyPlayGate] Clearing blocked Play Mode retry. Automatic Play Mode restart is disabled. " +
+                $"lastReason={_dirtyPlayLastReason} retry={_dirtyPlayRetryCount}");
+            ClearDirtyPlayRetryState();
         }
 
         private static void TryAbortDirtyScenePlayEntry()
@@ -1835,8 +1804,6 @@ namespace Hecton8.Dev
         private static void ClearDirtyPlayRetryState()
         {
             _dirtyPlayRetryPending = false;
-            _dirtyPlayRetryRequestedAt = 0d;
-            _dirtyPlayStableSince = 0d;
             _dirtyPlayRetryCount = 0;
             _dirtyPlayLastReason = "None";
             SessionState.EraseBool(DirtyPlayRetryPendingKey);
@@ -2223,9 +2190,6 @@ namespace Hecton8.Dev
         private static string _lastStopOwner = "None";
         private static string _lastStopReason = "None";
         private static double _lastStopRequestTime;
-        private static string _lastStartOwner = "None";
-        private static string _lastStartReason = "None";
-        private static double _lastStartRequestTime;
 
         internal static void RequestStopPlayMode(string owner, string reason, UnityEngine.Object context = null)
         {
@@ -2248,23 +2212,6 @@ namespace Hecton8.Dev
             EditorApplication.isPlaying = false;
         }
 
-        internal static void RequestStartPlayMode(string owner, string reason)
-        {
-            string safeOwner = Sanitize(owner, "UnknownOwner");
-            string safeReason = Sanitize(reason, "None");
-            _lastStartOwner = safeOwner;
-            _lastStartReason = safeReason;
-            _lastStartRequestTime = EditorApplication.timeSinceStartup;
-
-            WriteTraceEvent(
-                "play.enter_request",
-                $"owner={safeOwner} reason={safeReason} scene={GetActiveSceneName()} " +
-                $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} paused={EditorApplication.isPaused}");
-
-            Debug.Log($"[PlayModeEnter] owner={safeOwner} reason={safeReason}");
-            EditorApplication.isPlaying = true;
-        }
-
         internal static void TracePlayModeStateChange(PlayModeStateChange state, string observer)
         {
             string safeObserver = Sanitize(observer, "UnknownObserver");
@@ -2273,8 +2220,6 @@ namespace Hecton8.Dev
                 $"observer={safeObserver} state={state} scene={GetActiveSceneName()} " +
                 $"lastStopOwner={_lastStopOwner} lastStopReason={_lastStopReason} " +
                 $"lastStopAge={FormatAgeSeconds(_lastStopRequestTime)} " +
-                $"lastStartOwner={_lastStartOwner} lastStartReason={_lastStartReason} " +
-                $"lastStartAge={FormatAgeSeconds(_lastStartRequestTime)} " +
                 $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} paused={EditorApplication.isPaused}");
         }
 

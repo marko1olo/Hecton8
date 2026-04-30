@@ -11,7 +11,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Barter Tab")]
-    public sealed class PDABarterTab : MonoBehaviour
+    public sealed class PDABarterTab : MonoBehaviour, IPDAEventListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -124,17 +124,13 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             RefreshExchangeBinding();
-            PDAEvents.OnOpened += HandlePdaOpened;
-            PDAEvents.OnClosed += HandlePdaClosed;
-            PDAEvents.OnTabChanged += HandlePdaTabChanged;
+            PDAEvents.Register(this);
         }
 
         private void Unsubscribe()
         {
             UnsubscribeExchangeSystem();
-            PDAEvents.OnOpened -= HandlePdaOpened;
-            PDAEvents.OnClosed -= HandlePdaClosed;
-            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            PDAEvents.Unregister(this);
         }
 
         private void RefreshExchangeBinding()
@@ -166,6 +162,22 @@ namespace Hecton8.UI
         {
             if (IsTabActive)
                 RefreshAll(true);
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    HandlePdaOpened(payload.CurrentTab);
+                    break;
+                case PDAEventType.Closed:
+                    HandlePdaClosed(payload.DurationSeconds);
+                    break;
+                case PDAEventType.TabChanged:
+                    HandlePdaTabChanged(payload.PreviousTab, payload.CurrentTab);
+                    break;
+            }
         }
 
         private void HandlePdaOpened(int tab)

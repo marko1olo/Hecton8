@@ -94,7 +94,7 @@ namespace Hecton8.UI
         private int _lastInventoryVersion = -1;
         private ToolDurabilitySystem _subscribedDurabilitySystem;
         [SerializeField] private float fieldAdviceRange = 18f;
-        [SerializeField] private LayerMask fieldAdviceMask = ~0;
+        [SerializeField] private LayerMask fieldAdviceMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE

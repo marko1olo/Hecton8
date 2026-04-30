@@ -8,6 +8,7 @@
 using System;
 using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Modding;
@@ -34,7 +35,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
-    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable
+    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, IPDAEventListener
     {
         private static readonly char[] StackCountTemplateChars = "×{0}".ToCharArray();
         private static readonly char[] DetailWeightStackTemplateChars = "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".ToCharArray();
@@ -435,8 +436,7 @@ namespace Hecton8.UI
                 toolManager.ActiveSlotChanged += OnToolSlotChanged;
                 toolManager.ToolAssignmentsChanged += OnToolAssignmentsChanged;
             }
-            PDAEvents.OnOpened += OnPdaOpened;
-            PDAEvents.OnTabChanged += OnTabChanged;
+            PDAEvents.Register(this);
             LocalizationManager.OnCorruptionVisualStateChanged += OnCorruptionVisualStateChanged;
         }
 
@@ -449,8 +449,7 @@ namespace Hecton8.UI
                 toolManager.ActiveSlotChanged -= OnToolSlotChanged;
                 toolManager.ToolAssignmentsChanged -= OnToolAssignmentsChanged;
             }
-            PDAEvents.OnOpened -= OnPdaOpened;
-            PDAEvents.OnTabChanged -= OnTabChanged;
+            PDAEvents.Unregister(this);
             LocalizationManager.OnCorruptionVisualStateChanged -= OnCorruptionVisualStateChanged;
         }
 
@@ -483,6 +482,19 @@ namespace Hecton8.UI
             _detailsDirty = true;
             if (IsTabActive)
                 FlushPendingRefresh();
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    OnPdaOpened(payload.CurrentTab);
+                    break;
+                case PDAEventType.TabChanged:
+                    OnTabChanged(payload.PreviousTab, payload.CurrentTab);
+                    break;
+            }
         }
 
         private void OnPdaOpened(int tab)
@@ -1965,9 +1977,23 @@ namespace Hecton8.UI
                 return;
             }
 
-            int droppedHashId = playerInventory.RemoveOneItem(_selectedX, _selectedY);
+            if (!playerInventory.TryRemoveOneItemWithState(
+                    _selectedX,
+                    _selectedY,
+                    out int droppedHashId,
+                    out _,
+                    out uint geneticsMask,
+                    out ushort qualityMilli))
+            {
+                return;
+            }
+
             ItemData dropped = ResolveInventoryItem(droppedHashId);
-            if (dropped == null) return;
+            if (dropped == null)
+            {
+                playerInventory.TryAddItemWithState(droppedHashId, geneticsMask, qualityMilli);
+                return;
+            }
 
             Vector3 spawnPos = dropOrigin.position
                 + dropOrigin.forward * 2.5f
@@ -1977,10 +2003,10 @@ namespace Hecton8.UI
             PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
             if (persistentWorldRegistry != null)
             {
-                dropCommitted = persistentWorldRegistry.TryRegisterDroppedItem(dropped, 1, spawnPos);
+                dropCommitted = persistentWorldRegistry.TryRegisterDroppedItemWithState(dropped, 1, spawnPos, geneticsMask, qualityMilli);
                 if (!dropCommitted)
                 {
-                    playerInventory.TryAddItem(droppedHashId, 1);
+                    playerInventory.TryAddItemWithState(droppedHashId, geneticsMask, qualityMilli);
                     NotifyWarning("DROP BLOCKED - PERSISTENT REGISTRY REJECTED ITEM");
                     return;
                 }
@@ -1993,10 +2019,25 @@ namespace Hecton8.UI
                     ObjectPoolManager pool = ObjectPoolManager.Instance;
                     if (pool != null)
                     {
-                        pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
-                        dropCommitted = true;
+                        GameObject instance = pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
+                        if (instance != null)
+                        {
+                            if (instance.TryGetComponent(out PickupItem pickupItem))
+                                pickupItem.Configure(dropped, 1, geneticsMask, qualityMilli);
+                            else if (instance.TryGetComponent(out HectonItem hectonItem))
+                                hectonItem.SetItemData(dropped, 1, geneticsMask, qualityMilli);
+
+                            dropCommitted = true;
+                        }
                     }
                 }
+            }
+
+            if (!dropCommitted)
+            {
+                playerInventory.TryAddItemWithState(droppedHashId, geneticsMask, qualityMilli);
+                NotifyWarning("DROP BLOCKED - WORLD SPAWN FAILED");
+                return;
             }
 
             HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, dropOrigin));

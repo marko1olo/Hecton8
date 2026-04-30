@@ -719,7 +719,7 @@ namespace Hecton8.Atmosphere
         [SerializeField, Min(1f)] private float maximumPressureImpulseNewtonSeconds = DefaultMaximumPressureImpulseNewtonSeconds;
 
         [Tooltip("Rigidbodies on these layers receive the blowout impulse.")]
-        [SerializeField] private LayerMask pressureImpulseLayers = ~0;
+        [SerializeField] private LayerMask pressureImpulseLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("── Diagnostics ──────────────────")]
         [SerializeField] private int _debugRoomCount;

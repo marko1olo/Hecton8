@@ -114,14 +114,14 @@ namespace Hecton.UI.MainMenu
 
         private void Start()
         {
-            _saveManager = SaveManager.Instance;
+            _saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             TryRegisterToTickManager();
 
 #if UNITY_EDITOR
             if (_saveManager == null)
             {
                 Debug.LogWarning(
-                    "[MainMenuController] SaveManager.Instance is null. " +
+                    "[MainMenuController] Hecton8.Core.GlobalRegistry.SaveRuntime is null. " +
                     "Save/Load features will be unavailable. " +
                     "Ensure SaveManager exists in scene or is DontDestroyOnLoad.");
             }
@@ -504,13 +504,13 @@ namespace Hecton.UI.MainMenu
             EnsureSlotInstances();
 
             if (_saveManager == null)
-                _saveManager = SaveManager.Instance;
+                _saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
 
             // TASK 31: Comprehensive null check for SaveManager
             if (_saveManager == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[MainMenuController] SaveManager.Instance is null. Save/Load features unavailable.");
+                Debug.LogWarning("[MainMenuController] Hecton8.Core.GlobalRegistry.SaveRuntime is null. Save/Load features unavailable.");
 #endif
                 // Display error message to user
                 LocalizationManager loc = LocalizationManager.Instance;
@@ -660,12 +660,12 @@ namespace Hecton.UI.MainMenu
             {
                 // TASK 31: Null check for SaveManager before save validation
                 if (_saveManager == null)
-                    _saveManager = SaveManager.Instance;
+                    _saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
 
                 if (_saveManager == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[MainMenuController] SaveManager.Instance is null. Cannot validate save file.");
+                    Debug.LogError("[MainMenuController] Hecton8.Core.GlobalRegistry.SaveRuntime is null. Cannot validate save file.");
 #endif
                     LocalizationManager loc = LocalizationManager.Instance;
                     string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save System Unavailable";

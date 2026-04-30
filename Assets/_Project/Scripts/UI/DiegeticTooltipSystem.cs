@@ -19,7 +19,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Tooltip System")]
-    public sealed class DiegeticTooltipSystem : MonoBehaviour, ITickable, IUpdatable
+    public sealed class DiegeticTooltipSystem : MonoBehaviour, ITickable, IUpdatable, IInteractionEventListener
     {
         private const int MaxGlyphCount = 96;
         private const int MaxIconCount = 1;
@@ -116,7 +116,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureResources();
-            InteractionEvents.OnHoverChanged += HandleHoverChanged;
+            InteractionEvents.Register(this);
             if (InputManager.Instance != null)
                 InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
             ActiveRuntimeInstance = this;
@@ -133,7 +133,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            InteractionEvents.OnHoverChanged -= HandleHoverChanged;
+            InteractionEvents.Unregister(this);
             if (InputManager.Instance != null)
                 InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -244,6 +244,15 @@ namespace Hecton8.UI
             }
 
             RebuildActiveTooltipLayout();
+        }
+
+        public void OnInteractionEvent(in InteractionEventPayload payload)
+        {
+            if ((InteractionEventType)payload.EventType != InteractionEventType.HoverChanged)
+                return;
+
+            InteractionEvents.TryResolveTarget(in payload, out IInteractable target);
+            HandleHoverChanged(target);
         }
 
         private void HandleInputDisplayStyleChanged(InputDisplayStyle _)

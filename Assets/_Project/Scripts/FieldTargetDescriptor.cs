@@ -33,7 +33,8 @@ namespace Hecton8.Gameplay
         ConstructionClear = 24,
         PowerGeneration = 25,
         PowerRelay = 26,
-        PowerLoad = 27
+        PowerLoad = 27,
+        DistressBeacon = 28
     }
 
     [DisallowMultipleComponent]

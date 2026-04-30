@@ -568,6 +568,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
         public NativeArray<byte>    caveB;
         public NativeArray<float>   biomeV;
         public JobHandle combinedHandle;
+        public bool cancelRequested;
 
         public void DisposeArrays()
         {
@@ -597,6 +598,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     // COLD ALLOC: List<PendingPhysicsBake>[64] — background PhysX bake queue for streamed chunk colliders — owner: HectonWorldGenerator
     readonly List<PendingPhysicsBake> _pendingPhysicsBakes = new List<PendingPhysicsBake>(64);
+    // COLD ALLOC: List<HectonChunkData>[64] - deferred chunk destruction while PhysX bake jobs finish - owner: HectonWorldGenerator
+    readonly List<HectonChunkData> _deferredChunkRetirements = new List<HectonChunkData>(64);
     int _physicsBakeScheduleHead;
     int _physicsBakeFinalizeHead;
     const int MAX_BAKES_PER_FRAME = 2;
@@ -662,6 +665,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             {
                 BakePhysicsBatch();
             }
+
+            ProcessDeferredChunkRetirements(maxFinalizationsPerFrame);
         }
     }
 
@@ -699,12 +704,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
         _queue.Clear();
         _queueHead = 0;
 
-        FlushPendingChunks();
+        CompletePendingPhysicsBakes();
+        ProcessAllDeferredChunkRetirements();
 
-        foreach (var kvp in _active) DestroyChunk(kvp.Value);
+        foreach (var kvp in _active) DestroyChunk(kvp.Value, allowDeferredRetirement: false);
         _active.Clear();
 
-        CompletePendingPhysicsBakes();
         _poiBases.Clear();
         _poiResources.Clear();
 
@@ -857,10 +862,11 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             var pc = _pendingChunks[i];
             if (!_desiredChunks.TryGetValue(pc.coord, out int wantLod) || wantLod != pc.lod)
             {
-                pc.combinedHandle.Complete();
-                pc.DisposeArrays();
-                _pendingChunks.RemoveAt(i);
+                pc.cancelRequested = true;
+                continue;
             }
+
+            pc.cancelRequested = false;
         }
 
         _pendingChunkCoordSet.Clear();
@@ -933,9 +939,11 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
             pc.combinedHandle.Complete();
 
-            var cd = FinalizeChunk(pc);
+            var cd = pc.cancelRequested ? null : FinalizeChunk(pc);
             if (cd != null)
                 _active[pc.coord] = cd;
+            else if (pc.cancelRequested)
+                pc.DisposeArrays();
 
             _pendingChunks.RemoveAt(i);
             finalized++;
@@ -1005,7 +1013,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             caveV          = caveV,
             caveB          = caveB,
             biomeV         = biomeV,
-            combinedHandle = h3
+            combinedHandle = h3,
+            cancelRequested = false
         };
 
         _pendingChunks.Add(pc);
@@ -1427,8 +1436,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
         _physicsBakeFinalizeHead = 0;
     }
 
-    void CancelPendingPhysicsBake(Mesh mesh, GameObject owner)
+    bool TryCancelPendingPhysicsBake(Mesh mesh, GameObject owner)
     {
+        bool hasInFlightBake = false;
+
         for (int i = _pendingPhysicsBakes.Count - 1; i >= 0; i--)
         {
             PendingPhysicsBake pending = _pendingPhysicsBakes[i];
@@ -1437,9 +1448,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
             if (pending.State == PhysicsBakeStateScheduled && !pending.Handle.IsCompleted)
             {
-                // COLD SYNC JOB: chunk teardown must retire an in-flight PhysX bake before the source mesh is destroyed.
-                pending.Handle.Complete();
+                hasInFlightBake = true;
+                continue;
             }
+
+            if (pending.State == PhysicsBakeStateScheduled)
+                pending.Handle.Complete();
 
             if (pending.Renderer != null && pending.DefaultMaterial != null)
                 pending.Renderer.sharedMaterial = pending.DefaultMaterial;
@@ -1450,6 +1464,63 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             if (i < _physicsBakeFinalizeHead)
                 _physicsBakeFinalizeHead--;
         }
+
+        return !hasInFlightBake;
+    }
+
+    bool HasInFlightPhysicsBake(Mesh mesh, GameObject owner)
+    {
+        for (int i = 0; i < _pendingPhysicsBakes.Count; i++)
+        {
+            PendingPhysicsBake pending = _pendingPhysicsBakes[i];
+            if (!ReferenceEquals(pending.Mesh, mesh) && !ReferenceEquals(pending.Owner, owner))
+                continue;
+
+            if (pending.State == PhysicsBakeStateScheduled && !pending.Handle.IsCompleted)
+                return true;
+        }
+
+        return false;
+    }
+
+    bool TryDeferChunkRetirement(HectonChunkData cd)
+    {
+        if (cd == null || !HasInFlightPhysicsBake(cd.mesh, cd.go))
+            return false;
+
+        if (!_deferredChunkRetirements.Contains(cd))
+            _deferredChunkRetirements.Add(cd);
+
+        if (cd.renderer != null)
+            cd.renderer.enabled = false;
+
+        if (cd.go != null && cd.go.TryGetComponent(out MeshCollider collider))
+            collider.enabled = false;
+
+        return true;
+    }
+
+    void ProcessDeferredChunkRetirements(int maxRetirements)
+    {
+        int retired = 0;
+        for (int i = _deferredChunkRetirements.Count - 1; i >= 0 && retired < maxRetirements; i--)
+        {
+            HectonChunkData cd = _deferredChunkRetirements[i];
+            if (cd != null && HasInFlightPhysicsBake(cd.mesh, cd.go))
+                continue;
+
+            _deferredChunkRetirements.RemoveAt(i);
+            DestroyChunkNow(cd);
+            retired++;
+        }
+    }
+
+    void ProcessAllDeferredChunkRetirements()
+    {
+        for (int i = _deferredChunkRetirements.Count - 1; i >= 0; i--)
+            DestroyChunkNow(_deferredChunkRetirements[i]);
+
+        _deferredChunkRetirements.Clear();
     }
 
     private static bool HasPhysicsBakeBudgetExpired(long batchStartTimestamp)
@@ -1489,10 +1560,25 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
     /// смена сцены), используется прямой SafeDestroy (как в v2.0).
     /// Это безопасно — _activeVolumes тоже уничтожен вместе с engine.
     /// </summary>
-    void DestroyChunk(HectonChunkData cd)
+    void DestroyChunk(HectonChunkData cd, bool allowDeferredRetirement = true)
     {
         if (cd == null) return;
-        CancelPendingPhysicsBake(cd.mesh, cd.go);
+
+        if (allowDeferredRetirement && TryDeferChunkRetirement(cd))
+            return;
+
+        DestroyChunkNow(cd);
+    }
+
+    void DestroyChunkNow(HectonChunkData cd)
+    {
+        if (cd == null) return;
+
+        if (!TryCancelPendingPhysicsBake(cd.mesh, cd.go))
+        {
+            TryDeferChunkRetirement(cd);
+            return;
+        }
 
         // ── Destroy child voxel volumes (v2.1: через DespawnVolume) ──
         if (cd.go != null)

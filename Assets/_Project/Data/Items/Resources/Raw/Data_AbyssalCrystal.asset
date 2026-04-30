@@ -29,6 +29,14 @@ MonoBehaviour:
   weight: 1.1
   stackable: 1
   maxStack: 12
+  autoResolvePhysicalMetadata: 1
+  vulnerabilityMask: 0
+  audioMaterialId: 0
+  massKg: 0
+  volumeM3: 0
+  physicsMaterialTag: 0
+  worldPhysicMaterial: {fileID: 0}
+  radiationSvPerSecond: 0.85
   category: 1
   resourceFamily: 6
   progressionTier: 4

@@ -243,7 +243,7 @@ namespace Hecton8.Tools
 
         public void LateFrameTick()
         {
-            if (!_decayScheduled)
+            if (!_decayScheduled || !_scheduledDecayHandle.IsCompleted)
                 return;
 
             _scheduledDecayHandle.Complete();

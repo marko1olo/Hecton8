@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 — EndingSystem.cs
 // Система концовок игры.
 //
@@ -149,8 +149,8 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
 
             AtlasSignalEvents.Register(this);
 
@@ -161,8 +161,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             AtlasSignalEvents.Unregister(this);
         }
@@ -195,7 +195,7 @@ namespace Hecton8.Gameplay
             EndingEvents.RaiseConditionMet();
 
             // Активируем квест
-            QuestManager qm = QuestManager.Instance;
+            QuestManager qm = GlobalRegistry.Quest;
             if (qm != null && !string.IsNullOrEmpty(endingQuestId))
                 qm.ActivateQuest(endingQuestId);
 
@@ -273,7 +273,7 @@ namespace Hecton8.Gameplay
             }
 
             // Завершаем квест
-            QuestManager qm = QuestManager.Instance;
+            QuestManager qm = GlobalRegistry.Quest;
             if (qm != null && !string.IsNullOrEmpty(endingQuestId))
                 qm.CompleteQuest(endingQuestId);
 

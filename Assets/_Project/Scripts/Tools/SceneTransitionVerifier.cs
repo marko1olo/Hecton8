@@ -151,7 +151,7 @@ namespace Hecton8.Tools
             GameStartContext context = GameStartContextHolder.Current;
             return context.IsValid &&
                    context.StartMode == GameStartMode.NewGame &&
-                   BootstrapController.AreAllSystemsReady();
+                   GameBootstrapper.AreAllSystemsReady();
         }
 
         private static bool VerifyLoadGameContext(string expectedSlot)
@@ -160,14 +160,14 @@ namespace Hecton8.Tools
             return context.IsValid &&
                    context.StartMode == GameStartMode.LoadGame &&
                    string.Equals(context.TargetSaveSlot, expectedSlot, System.StringComparison.Ordinal) &&
-                   BootstrapController.AreAllSystemsReady();
+                   GameBootstrapper.AreAllSystemsReady();
         }
 
         private static bool VerifyMenuReturnContext()
         {
             MainMenuController menuController = VerificationRuntimeProbe.ResolveMainMenuController();
             return menuController != null &&
-                   BootstrapController.AreAllSystemsReady() &&
+                   GameBootstrapper.AreAllSystemsReady() &&
                    !GameStartContextHolder.Current.IsValid;
         }
 

@@ -19,7 +19,8 @@ namespace Hecton8.World
             FastGrowing = 1u << 3,
             Medicinal = 1u << 4,
             Conductive = 1u << 5,
-            Cryogenic = 1u << 6,
+            Aquatic = 1u << 6,
+            Cryogenic = Aquatic,
             Explosive = 1u << 7
         }
 
@@ -36,6 +37,9 @@ namespace Hecton8.World
             [Tooltip("Signed oxygen contribution applied per slow tick while the trait is active on a mature plant.")]
             public float oxygenUnitsPerSlowTick;
 
+            [Tooltip("Watts of ambient lighting demand offset by a mature plant carrying this trait.")]
+            public float lightingPowerCreditWatts;
+
             [Tooltip("Additional scrubber power draw in watts required when the trait is active on a mature plant.")]
             public float scrubberPowerWatts;
 
@@ -49,6 +53,9 @@ namespace Hecton8.World
             [Tooltip("World-space hazard radius in meters contributed while the trait is active without enough scrubber power.")]
             [Min(0f)]
             public float hazardRadiusMeters;
+
+            [Tooltip("When true, plants carrying this trait survive saltwater flooding in a cultivation module.")]
+            public bool saltwaterTolerant;
 
             [Tooltip("Signed utility score used by downstream buff/debuff systems.")]
             public float utilityScore;
@@ -91,6 +98,22 @@ namespace Hecton8.World
             }
 
             return total;
+        }
+
+        /// <summary>Resolves cumulative lighting power credit for the supplied active trait mask.</summary>
+        public float ResolveLightingPowerCreditWatts(uint traitMask)
+        {
+            float total = 0f;
+            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            {
+                uint bit = 1u << bitIndex;
+                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                    continue;
+
+                total += definition.lightingPowerCreditWatts;
+            }
+
+            return Mathf.Max(0f, total);
         }
 
         /// <summary>Resolves cumulative scrubber power draw for the supplied active trait mask.</summary>
@@ -142,6 +165,22 @@ namespace Hecton8.World
             }
         }
 
+        /// <summary>Returns true when any active trait row explicitly tolerates saltwater flooding.</summary>
+        public bool IsSaltwaterTolerant(uint traitMask)
+        {
+            for (int bitIndex = 0; bitIndex < 8; bitIndex++)
+            {
+                uint bit = 1u << bitIndex;
+                if ((traitMask & bit) == 0u || !TryResolveTrait(bitIndex, out TraitDefinition definition))
+                    continue;
+
+                if (definition.saltwaterTolerant)
+                    return true;
+            }
+
+            return false;
+        }
+
         private void OnValidate()
         {
             if (traitDefinitions == null)
@@ -158,6 +197,7 @@ namespace Hecton8.World
         {
             definition.bitIndex = Mathf.Clamp(definition.bitIndex, 0, 31);
             definition.oxygenUnitsPerSlowTick = Mathf.Clamp(definition.oxygenUnitsPerSlowTick, -32f, 32f);
+            definition.lightingPowerCreditWatts = Mathf.Max(0f, definition.lightingPowerCreditWatts);
             definition.scrubberPowerWatts = Mathf.Max(0f, definition.scrubberPowerWatts);
             definition.growthRateMultiplier = Mathf.Max(0.1f, definition.growthRateMultiplier);
             definition.hazardIntensity = Mathf.Clamp01(definition.hazardIntensity);
@@ -169,14 +209,14 @@ namespace Hecton8.World
         {
             return bitIndex switch
             {
-                0 => new TraitDefinition { bitIndex = 0, label = "Bioluminescent", oxygenUnitsPerSlowTick = 0f, scrubberPowerWatts = 0f, growthRateMultiplier = 1f, hazardIntensity = 0f, hazardRadiusMeters = 0f, utilityScore = 0.35f },
-                1 => new TraitDefinition { bitIndex = 1, label = "Oxygen-Producing", oxygenUnitsPerSlowTick = 0.45f, scrubberPowerWatts = 0f, growthRateMultiplier = 1f, hazardIntensity = 0f, hazardRadiusMeters = 0f, utilityScore = 0.9f },
-                2 => new TraitDefinition { bitIndex = 2, label = "Toxic", oxygenUnitsPerSlowTick = 0f, scrubberPowerWatts = 8f, growthRateMultiplier = 1f, hazardIntensity = 0.72f, hazardRadiusMeters = 2.6f, utilityScore = -0.8f },
-                3 => new TraitDefinition { bitIndex = 3, label = "Fast-Growing", oxygenUnitsPerSlowTick = 0f, scrubberPowerWatts = 0f, growthRateMultiplier = 1.8f, hazardIntensity = 0f, hazardRadiusMeters = 0f, utilityScore = 0.4f },
-                4 => new TraitDefinition { bitIndex = 4, label = "Medicinal", oxygenUnitsPerSlowTick = 0.05f, scrubberPowerWatts = 0f, growthRateMultiplier = 0.95f, hazardIntensity = 0f, hazardRadiusMeters = 0f, utilityScore = 0.7f },
-                5 => new TraitDefinition { bitIndex = 5, label = "Conductive", oxygenUnitsPerSlowTick = 0f, scrubberPowerWatts = 1.5f, growthRateMultiplier = 1.05f, hazardIntensity = 0.08f, hazardRadiusMeters = 1.2f, utilityScore = -0.15f },
-                6 => new TraitDefinition { bitIndex = 6, label = "Cryogenic", oxygenUnitsPerSlowTick = 0f, scrubberPowerWatts = 2f, growthRateMultiplier = 0.8f, hazardIntensity = 0.18f, hazardRadiusMeters = 1.6f, utilityScore = 0.2f },
-                7 => new TraitDefinition { bitIndex = 7, label = "Explosive", oxygenUnitsPerSlowTick = 0f, scrubberPowerWatts = 3f, growthRateMultiplier = 0.9f, hazardIntensity = 0.44f, hazardRadiusMeters = 2f, utilityScore = -0.45f },
+                0 => new TraitDefinition { bitIndex = 0, label = "Bioluminescent", oxygenUnitsPerSlowTick = 0f, lightingPowerCreditWatts = 4f, scrubberPowerWatts = 0f, growthRateMultiplier = 1f, hazardIntensity = 0f, hazardRadiusMeters = 0f, saltwaterTolerant = false, utilityScore = 0.35f },
+                1 => new TraitDefinition { bitIndex = 1, label = "Oxygen-Producing", oxygenUnitsPerSlowTick = 0.45f, lightingPowerCreditWatts = 0f, scrubberPowerWatts = 0f, growthRateMultiplier = 1f, hazardIntensity = 0f, hazardRadiusMeters = 0f, saltwaterTolerant = false, utilityScore = 0.9f },
+                2 => new TraitDefinition { bitIndex = 2, label = "Toxic", oxygenUnitsPerSlowTick = 0f, lightingPowerCreditWatts = 0f, scrubberPowerWatts = 8f, growthRateMultiplier = 1f, hazardIntensity = 0.72f, hazardRadiusMeters = 2.6f, saltwaterTolerant = false, utilityScore = -0.8f },
+                3 => new TraitDefinition { bitIndex = 3, label = "Fast-Growing", oxygenUnitsPerSlowTick = 0f, lightingPowerCreditWatts = 0f, scrubberPowerWatts = 0f, growthRateMultiplier = 2f, hazardIntensity = 0f, hazardRadiusMeters = 0f, saltwaterTolerant = false, utilityScore = 0.4f },
+                4 => new TraitDefinition { bitIndex = 4, label = "Medicinal", oxygenUnitsPerSlowTick = 0.05f, lightingPowerCreditWatts = 0f, scrubberPowerWatts = 0f, growthRateMultiplier = 0.95f, hazardIntensity = 0f, hazardRadiusMeters = 0f, saltwaterTolerant = false, utilityScore = 0.7f },
+                5 => new TraitDefinition { bitIndex = 5, label = "Conductive", oxygenUnitsPerSlowTick = 0f, lightingPowerCreditWatts = 0f, scrubberPowerWatts = 1.5f, growthRateMultiplier = 1.05f, hazardIntensity = 0.08f, hazardRadiusMeters = 1.2f, saltwaterTolerant = false, utilityScore = -0.15f },
+                6 => new TraitDefinition { bitIndex = 6, label = "Aquatic", oxygenUnitsPerSlowTick = 0f, lightingPowerCreditWatts = 0f, scrubberPowerWatts = 2f, growthRateMultiplier = 0.8f, hazardIntensity = 0.18f, hazardRadiusMeters = 1.6f, saltwaterTolerant = true, utilityScore = 0.2f },
+                7 => new TraitDefinition { bitIndex = 7, label = "Explosive", oxygenUnitsPerSlowTick = 0f, lightingPowerCreditWatts = 0f, scrubberPowerWatts = 3f, growthRateMultiplier = 0.9f, hazardIntensity = 0.44f, hazardRadiusMeters = 2f, saltwaterTolerant = false, utilityScore = -0.45f },
                 _ => default
             };
         }

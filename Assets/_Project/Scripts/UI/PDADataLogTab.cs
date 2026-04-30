@@ -34,7 +34,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
-    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener
+    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener, IPDAEventListener
     {
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
         private static readonly char[] PlaybackTimerTemplateChars = PlaybackTimerTemplate.ToCharArray();
@@ -231,7 +231,7 @@ namespace Hecton8.UI
             TryRegister();
 
             AudioLogEvents.Register(this);
-            PDAEvents.OnOpened += HandlePDAOpened;
+            PDAEvents.Register(this);
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
             RebuildLoreBindingCache();
@@ -243,7 +243,7 @@ namespace Hecton8.UI
             TryUnregister();
 
             AudioLogEvents.Unregister(this);
-            PDAEvents.OnOpened -= HandlePDAOpened;
+            PDAEvents.Unregister(this);
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
         }
 
@@ -337,6 +337,12 @@ namespace Hecton8.UI
                     HandlePlaybackCompleted();
                     return;
             }
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            if ((PDAEventType)payload.EventType == PDAEventType.Opened)
+                HandlePDAOpened(payload.CurrentTab);
         }
 
         private void HandlePDAOpened(int tab) => _dirty = true;

@@ -115,7 +115,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 200f)] private float meltdownPlayerDamage = 65f;
 
         [Tooltip("Layers scanned during the reactor meltdown overlap pass.")]
-        [SerializeField] private LayerMask meltdownMask = ~0;
+        [SerializeField] private LayerMask meltdownMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("── Audio ──────────────────────────────────────")]
         [Tooltip("Sound played when fuel is inserted.")]

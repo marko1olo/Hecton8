@@ -252,6 +252,11 @@ namespace NASAPunk.Visor
 
         private void OnEnable()
         {
+#if UNITY_EDITOR
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+#endif
+
             RegisterActiveController();
             EnsurePropertyBlock();
             _materialPropertiesDirty = true;
@@ -339,6 +344,13 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private void EditorTick()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+            {
+                SuspendEditModeProjection();
+                UnregisterEditorTick();
+                return;
+            }
+
             if (!IsEditorPreviewActive())
             {
                 SuspendEditModeProjection();
@@ -364,6 +376,11 @@ namespace NASAPunk.Visor
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+#endif
+
             EnsurePropertyBlock();
             _materialPropertiesDirty = true;
             AutoResolveReferences(force: true);

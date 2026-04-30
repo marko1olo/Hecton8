@@ -3,6 +3,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using Hecton8.World;
 
 namespace Hecton8.Gameplay
 {
@@ -35,6 +36,10 @@ namespace Hecton8.Gameplay
         private const float MinDepthViscosityReferenceMeters = 100f;
         private const float MinEntanglementTetherMeters = 1.25f;
         private const float EntanglementFacingSharpness = 8f;
+        private const float KelpPushbackProbeRadiusMeters = 6f;
+        private const float KelpPushbackMinSpeedMetersPerSecond = 0.5f;
+        private const float KelpDragScale = 1.35f;
+        private const float KelpMaxDragCoefficient = 2.8f;
 
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
@@ -60,6 +65,8 @@ namespace Hecton8.Gameplay
         private bool _isEntangled;
         private Vector3 _entanglementAnchorPosition;
         private float _entanglementTetherLength;
+        private float _lastEntanglementTensionNewtons;
+        private float _lastKelpDensity01;
         private float _lastBlockingImpactSpeedMetersPerSecond;
         private Vector3 _lastBlockingImpactPoint;
         private Vector3 _lastBlockingImpactNormal = Vector3.up;
@@ -75,6 +82,12 @@ namespace Hecton8.Gameplay
 
         /// <summary>True while macro-flora entanglement is suppressing thrust and driving tethered motion.</summary>
         public bool IsEntangled => _isEntangled;
+
+        /// <summary>Last deterministic tether tension solved by the macro-flora constraint, in newtons.</summary>
+        public float LastEntanglementTensionNewtons => _lastEntanglementTensionNewtons;
+
+        /// <summary>Last normalized dense-flora drag density sampled by the vehicle motor.</summary>
+        public float LastKelpDensity01 => _lastKelpDensity01;
 
         internal float LastBlockingImpactSpeedMetersPerSecond => _lastBlockingImpactSpeedMetersPerSecond;
 
@@ -115,6 +128,8 @@ namespace Hecton8.Gameplay
             _isEntangled = false;
             _entanglementAnchorPosition = Vector3.zero;
             _entanglementTetherLength = 0f;
+            _lastEntanglementTensionNewtons = 0f;
+            _lastKelpDensity01 = 0f;
             _lastBlockingImpactSpeedMetersPerSecond = 0f;
             _lastBlockingImpactPoint = Vector3.zero;
             _lastBlockingImpactNormal = Vector3.up;
@@ -165,6 +180,7 @@ namespace Hecton8.Gameplay
             _localAngularVelocityDegrees = Vector3.zero;
             _entanglementAnchorPosition = anchorPosition;
             _entanglementTetherLength = resolvedTetherLength;
+            _lastEntanglementTensionNewtons = 0f;
             _isEntangled = true;
         }
 
@@ -175,6 +191,23 @@ namespace Hecton8.Gameplay
             _entanglementAnchorPosition = Vector3.zero;
             _entanglementTetherLength = 0f;
             _localAngularVelocityDegrees = Vector3.zero;
+            _lastEntanglementTensionNewtons = 0f;
+        }
+
+        /// <summary>Applies a floating-origin shift to cached kinematic positions owned by the motor.</summary>
+        public void ApplyOriginShift(Vector3 shiftOffset)
+        {
+            if (shiftOffset.sqrMagnitude <= MinVectorMagnitudeSq)
+                return;
+
+            if (_isEntangled)
+                _entanglementAnchorPosition -= shiftOffset;
+
+            if (_scheduledSweepPending)
+                _scheduledSweepState.StartPosition -= shiftOffset;
+
+            if (_lastBlockingImpactPoint.sqrMagnitude > MinVectorMagnitudeSq)
+                _lastBlockingImpactPoint -= shiftOffset;
         }
 
         /// <summary>Advances tethered current-driven motion while propulsion is locked out by macro-flora entanglement.</summary>
@@ -202,9 +235,21 @@ namespace Hecton8.Gameplay
                         ? relative.normalized * tetherLength
                         : _body.rotation * Vector3.back * tetherLength;
 
-                Vector3 constrainedRelative = predictedRelative.normalized * tetherLength;
+                float predictedLength = predictedRelative.magnitude;
+                Vector3 radialDirection = predictedRelative / math.max(predictedLength, 0.0001f);
+                Vector3 constrainedRelative = radialDirection * tetherLength;
                 Vector3 targetPosition = _entanglementAnchorPosition + constrainedRelative;
-                _linearVelocity = HectonPlayerMotor.SafeVelocity((targetPosition - currentPosition) / safeDeltaTime);
+                Vector3 constrainedVelocity = (targetPosition - currentPosition) / safeDeltaTime;
+                float extensionMeters = math.max(0f, predictedLength - tetherLength);
+                float outwardSpeedMetersPerSecond = math.max(0f, Vector3.Dot(candidateVelocity, radialDirection));
+                float constraintAcceleration = (extensionMeters / (safeDeltaTime * safeDeltaTime)) +
+                                               (outwardSpeedMetersPerSecond / safeDeltaTime);
+                float bodyMass = _body != null ? math.max(1f, _body.mass) : 1f;
+                _lastEntanglementTensionNewtons = math.max(0f, bodyMass * constraintAcceleration);
+                if (!float.IsFinite(_lastEntanglementTensionNewtons))
+                    _lastEntanglementTensionNewtons = 0f;
+
+                _linearVelocity = HectonPlayerMotor.SafeVelocity(constrainedVelocity);
 
                 if (_linearVelocity.sqrMagnitude > MinVectorMagnitudeSq)
                 {
@@ -266,6 +311,7 @@ namespace Hecton8.Gameplay
 
                 float effectiveDragCoefficient = ResolveDepthScaledDragCoefficient(linearDamping);
                 candidateVelocity = ApplyAnalyticalDrag(candidateVelocity, effectiveDragCoefficient, safeDeltaTime);
+                candidateVelocity = ApplyKelpPushback(candidateVelocity, safeDeltaTime);
 
                 float safeMaxSpeed = math.max(0.1f, maxSpeed);
                 float sqrMagnitude = candidateVelocity.sqrMagnitude;
@@ -500,6 +546,39 @@ namespace Hecton8.Gameplay
             float depthViscosityScale = math.log10(1f + (_hydrodynamicDepthMeters / MinDepthViscosityReferenceMeters));
             float depthDragCoefficient = safeBaseDrag * math.max(0f, depthViscosityScale);
             return safeBaseDrag + depthDragCoefficient;
+        }
+
+        private Vector3 ApplyKelpPushback(Vector3 velocity, float deltaTime)
+        {
+            _lastKelpDensity01 = 0f;
+            if (_body == null || _hydrodynamicSubmersionFactor <= 0.01f)
+                return velocity;
+
+            float speed = velocity.magnitude;
+            if (speed < KelpPushbackMinSpeedMetersPerSecond)
+                return velocity;
+
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            if (floraInteractionManager == null)
+                return velocity;
+
+            Vector3 samplePosition = _body.worldCenterOfMass;
+            if (!floraInteractionManager.TryResolveKelpPushback(
+                    samplePosition,
+                    KelpPushbackProbeRadiusMeters,
+                    out float density01,
+                    out float bendRadiusMeters))
+            {
+                return velocity;
+            }
+
+            _lastKelpDensity01 = density01;
+            float dragCoefficient = math.min(KelpMaxDragCoefficient, 1f + density01 * KelpDragScale);
+            floraInteractionManager.RegisterExternalInteraction(
+                samplePosition,
+                velocity,
+                math.max(bendRadiusMeters, KelpPushbackProbeRadiusMeters + speed * 0.12f));
+            return ApplyAnalyticalDrag(velocity, dragCoefficient, deltaTime);
         }
 
         private static Vector3 ApplyAnalyticalDrag(Vector3 velocity, float dragCoefficient, float deltaTime)

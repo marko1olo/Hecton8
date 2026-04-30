@@ -2,7 +2,7 @@
 // HECTON-8 â€” ConstructionManager.cs
 // ÐœÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð±Ð°Ð·Ñ‹.
 //
-// Singleton, ISaveable (Priority 90 â€” Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹ Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ).
+// GlobalRegistry service, ISaveable (Priority 90 â€” Ð¿Ð¾ÑÐ»ÐµÐ´Ð½Ð¸Ð¹ Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ).
 //
 // Ð’ÐµÐ´Ñ‘Ñ‚ Ñ€ÐµÐµÑÑ‚Ñ€ Ð²ÑÐµÑ… Ð¿Ð¾ÑÑ‚Ñ€Ð¾ÐµÐ½Ð½Ñ‹Ñ… Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹. ÐŸÑ€Ð¸ ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ð¸ Ð·Ð°Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÑ‚
 // ID + Ñ‚Ñ€Ð°Ð½ÑÑ„Ð¾Ñ€Ð¼ + Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¾Ðµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ (integrity, isFlooded)
@@ -42,28 +42,8 @@ namespace Hecton8.Construction
         private const float SlowTickDeltaTime = 0.5f;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  SINGLETON
+        //  SERVICE STATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
-        private static ConstructionManager _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        public static ConstructionManager Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                return _instance;
-            }
-        }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -144,22 +124,23 @@ namespace Hecton8.Construction
         /// </summary>
         public bool IsInitialized => ReferenceEquals(GlobalRegistry.Logistics, this);
 
+        /// <summary>
+        /// Registers the construction/logistics service with bootstrap-owned runtime systems.
+        /// </summary>
+        public void InitializeService()
+        {
+            TryRegisterLogisticsService();
+            TryRegisterTick();
+            TryRegisterSaveParticipant();
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void Awake()
         {
-            // â”€â”€ Singleton â”€â”€
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-
+            // â”€â”€ Service â”€â”€
             // â”€â”€ Pre-allocate â”€â”€
             _spawnedModules = new List<GameObject>(initialCapacity);
             // COLD ALLOC: HabitatGraphManager[1] — persistent placed-module CSR adjacency owner — owner: ConstructionManager
@@ -170,7 +151,6 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             _slowTickAccumulator = 0f;
-            TryRegisterLogisticsService();
             TryRegisterTick();
             TryRegisterSaveParticipant();
         }
@@ -194,8 +174,6 @@ namespace Hecton8.Construction
                 _habitatGraphManager = null;
             }
 
-            if (_instance == this)
-                _instance = null;
         }
 
         public void Tick(float deltaTime)
@@ -319,7 +297,7 @@ namespace Hecton8.Construction
 
             UnregisterModule(module);
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             DespawnOrDestroyModuleInstance(module, pool);
         }
 
@@ -354,7 +332,7 @@ namespace Hecton8.Construction
         /// </summary>
         public void ClearAllModules()
         {
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
 
             // â”€â”€ ÐžÐ±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ñ†Ð¸ÐºÐ»: Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ Ð¿Ñ€Ð¸ Ð¼Ð¾Ð´Ð¸Ñ„Ð¸ÐºÐ°Ñ†Ð¸Ð¸ ÑÐ¿Ð¸ÑÐºÐ° â”€â”€
             for (int i = _spawnedModules.Count - 1; i >= 0; i--)
@@ -463,6 +441,8 @@ namespace Hecton8.Construction
                     moduleDto.co2Normalized = baseModule.Co2Normalized;
                     moduleDto.isFlooded = baseModule.IsFlooded;
                     moduleDto.failureMode = (byte)baseModule.CurrentFailureMode;
+                    moduleDto.floodedReefFloodSeconds = baseModule.FloodedReefFloodSeconds;
+                    moduleDto.interiorReefInfestationActive = baseModule.InteriorReefInfestationActive;
                 }
                 else
                 {
@@ -472,6 +452,8 @@ namespace Hecton8.Construction
                     moduleDto.co2Normalized = 0f;
                     moduleDto.isFlooded = DefaultIsFlooded;
                     moduleDto.failureMode = (byte)BaseModuleFailureMode.None;
+                    moduleDto.floodedReefFloodSeconds = 0f;
+                    moduleDto.interiorReefInfestationActive = false;
                 }
 
                 if (module.TryGetComponent(out MaintenanceStationModule maintenanceStation) && maintenanceStation.HasSlottedTool)
@@ -484,7 +466,7 @@ namespace Hecton8.Construction
                     deepDrill.PopulateSaveData(ref moduleDto);
 
                 if (module.TryGetComponent(out CultivationManager cultivationManager))
-                    cultivationManager.PopulateSaveData(ref moduleDto, PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null);
+                    cultivationManager.PopulateSaveData(ref moduleDto, ResolvePlayerItemCatalog());
 
                 if (module.TryGetComponent(out LogisticsPipeNode logisticsPipe))
                     logisticsPipe.PopulateSaveData(ref moduleDto);
@@ -536,7 +518,7 @@ namespace Hecton8.Construction
             }
 
             ConstructionDTO dto = data.construction;
-            ItemCatalog itemCatalog = PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null;
+            ItemCatalog itemCatalog = ResolvePlayerItemCatalog();
             bool hasGraphTopology = data.version >= 47 &&
                                     dto.graphNodes != null &&
                                     dto.graphNodeCount > 0;
@@ -553,7 +535,7 @@ namespace Hecton8.Construction
             }
 
             // â”€â”€ 2. Ð ÐµÑÐ¿Ð°Ð²Ð½ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð¸Ð· ÑÐµÐ¹Ð²Ð° â”€â”€
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             ClearAllModules();
             int count = hasGraphTopology
                 ? Mathf.Min(dto.graphNodeCount, dto.graphNodes.Length)
@@ -675,6 +657,10 @@ namespace Hecton8.Construction
                     float loadedCo2Normalized = data.version >= 34
                         ? Mathf.Clamp01(moduleDto.co2Normalized)
                         : 0f;
+                    float loadedFloodedReefFloodSeconds = data.version >= 49
+                        ? Mathf.Max(0f, moduleDto.floodedReefFloodSeconds)
+                        : 0f;
+                    bool loadedInteriorReefInfestationActive = data.version >= 49 && moduleDto.interiorReefInfestationActive;
 
                     baseModule.SetState(
                         loadedIntegrity,
@@ -682,7 +668,9 @@ namespace Hecton8.Construction
                         (BaseModuleFailureMode)moduleDto.failureMode,
                         loadedRepairCap,
                         loadedAirReserveNormalized,
-                        loadedCo2Normalized);
+                        loadedCo2Normalized,
+                        loadedFloodedReefFloodSeconds,
+                        loadedInteriorReefInfestationActive);
                 }
 
                 if (hasLegacyModuleState &&
@@ -786,6 +774,13 @@ namespace Hecton8.Construction
                 pool.Despawn(module);
             else
                 Destroy(module);
+        }
+
+        private static ItemCatalog ResolvePlayerItemCatalog()
+        {
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
+            return inventory != null ? inventory.ItemCatalog : null;
         }
 
         private bool ContainsRef(GameObject module)
@@ -1035,6 +1030,14 @@ namespace Hecton8.Construction
                 return;
 
             _habitatGraphManager.NotifyModuleEmergencyStateChanged(module);
+        }
+
+        internal void NotifyModuleParasiteRootStateChanged(BaseModule module)
+        {
+            if (_habitatGraphManager == null || module == null)
+                return;
+
+            RefreshHabitatGraph();
         }
     }
 }

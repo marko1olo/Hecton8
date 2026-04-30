@@ -408,6 +408,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
         private float _surfaceWeatherStarVisibilityMultiplier = 1f;
         private float _surfaceWeatherStormEmissionMultiplier = 1f;
         private float _surfaceWeatherSkyLuminanceMultiplier = 1f;
+        private bool _registeredToTickManager;
         private float _surfaceWeatherSunDiscMultiplier = 1f;
         private float _surfaceWeatherSunScatterMultiplier = 1f;
         private Color _surfaceWeatherCloudLitColor = Color.white;
@@ -645,7 +646,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             {
                 BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
                 BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                TryRegisterToTickManager();
 
                 BiomeMatrixDirector director = BiomeMatrixDirector.ActiveRuntimeInstance;
                 if (director != null)
@@ -668,6 +669,11 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
 #endif
         }
 
+        private void Start()
+        {
+            TryRegisterToTickManager();
+        }
+
         private void OnDisable()
         {
             if (ActiveRuntimeInstance == this)
@@ -685,13 +691,10 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             RestoreCelestialTextureDefaults();
             RestoreSunDefaults();
             CleanupPlanetShineLight();
+            TryUnregisterFromTickManager();
 
-            if (Application.isPlaying)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            }
 #if UNITY_EDITOR
-            else
+            if (!Application.isPlaying)
             {
                 EditorApplication.update -= EditorTick;
             }
@@ -720,6 +723,28 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             OnEclipseEnd = null;
             OnSunAngleChanged = null;
             OnPlanetPhaseChanged = null;
+            TryUnregisterFromTickManager();
+        }
+
+        private void TryRegisterToTickManager()
+        {
+            if (_registeredToTickManager || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredToTickManager = true;
+        }
+
+        private void TryUnregisterFromTickManager()
+        {
+            if (!_registeredToTickManager)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registeredToTickManager = false;
         }
 
 #if UNITY_EDITOR

@@ -86,6 +86,7 @@ namespace Hecton8.Core
             Voxel = 1u << 1,
             AI = 1u << 2,
             Fluid = 1u << 3,
+            Bootstrap = 1u << 4,
         }
 
         private enum ExportReason : uint
@@ -96,6 +97,7 @@ namespace Hecton8.Core
             UnityError = 3u,
             ApplicationQuit = 4u,
             AppDomainUnhandledException = 5u,
+            BootstrapPhaseDuration = 6u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -234,6 +236,20 @@ namespace Hecton8.Core
         public static void ReportNanPhysicsRecovery()
         {
             OrRuntimeFaultFlags((int)ErrorBits.NanPhysics);
+        }
+
+        /// <summary>
+        /// Writes one bootstrap phase duration sample into the crash telemetry ring.
+        /// </summary>
+        /// <param name="step">Bootstrap phase token.</param>
+        /// <param name="elapsedMilliseconds">Measured phase duration in milliseconds.</param>
+        public static void RecordBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
+        {
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated || step == BootstrapStepToken.None)
+                return;
+
+            instance.WriteBootstrapPhaseDuration(step, elapsedMilliseconds);
         }
 
 #if UNITY_EDITOR
@@ -394,6 +410,40 @@ namespace Hecton8.Core
         public void FixedTick(float fdt)
         {
             _lastFixedDeltaTime = fdt;
+        }
+
+        private void WriteBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Bootstrap;
+            entry.DeltaTime = 0f;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = (float)elapsedMilliseconds;
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = float3.zero;
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.BootstrapPhaseDuration;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackBootstrapPhaseDuration(step, elapsedMilliseconds);
+            entry.SubsystemHeatPacked = 0u;
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private static uint PackBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
+        {
+            double positiveMilliseconds = elapsedMilliseconds > 0d ? elapsedMilliseconds : 0d;
+            uint wholeMilliseconds = positiveMilliseconds >= 16777215d
+                ? 16777215u
+                : (uint)(positiveMilliseconds + 0.5d);
+            return ((uint)step << 24) | wholeMilliseconds;
         }
 
         private void InitializeBuffers()

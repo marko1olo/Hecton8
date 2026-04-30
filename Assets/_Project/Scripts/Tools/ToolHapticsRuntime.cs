@@ -212,6 +212,8 @@ namespace Hecton8.Tools
         private void EnqueueBackBuffer(float powerDelivered, float ratedPower, byte priority)
         {
             EnsureBuffers();
+            TryRegisterUpdate();
+            TryRegisterLateFrame();
             if (_backCount >= BufferCapacity)
                 return;
 
@@ -243,6 +245,8 @@ namespace Hecton8.Tools
             byte blendMode)
         {
             EnsureBuffers();
+            TryRegisterUpdate();
+            TryRegisterLateFrame();
             if (_backCount >= BufferCapacity || motorMask == 0)
                 return;
 

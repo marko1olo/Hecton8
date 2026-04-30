@@ -157,8 +157,11 @@ namespace Hecton8.Gameplay
 
         private void OnCollisionEnter(Collision collision)
         {
-            Vector3 hitPoint = collision.contacts.Length > 0
-                ? collision.contacts[0].point
+            if (collision == null)
+                return;
+
+            Vector3 hitPoint = collision.contactCount > 0
+                ? collision.GetContact(0).point
                 : _cachedTransform.position;
 
             if (collision.gameObject.CompareTag(PlayerTag))

@@ -4,6 +4,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using TMPro;
 using Unity.Collections;
 using UnityEngine;
@@ -303,6 +304,15 @@ namespace Hecton8.UI
         private void RefreshThreatPings()
         {
             _activeThreatPingCount = 0;
+            for (int pingIndex = 0; pingIndex < _threatPings.Length; pingIndex++)
+                _threatPings[pingIndex] = Vector4.zero;
+
+            if (WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float> densityMap, out Vector3Int densityDimensions))
+            {
+                RefreshThreatPingsFromSpatialDensity(densityMap, densityDimensions);
+                return;
+            }
+
             Hecton8.Core.IAudioService audio = Hecton8.Core.GlobalRegistry.Audio;
             if (audio == null)
             {
@@ -321,9 +331,6 @@ namespace Hecton8.UI
             {
                 return;
             }
-
-            for (int pingIndex = 0; pingIndex < _threatPings.Length; pingIndex++)
-                _threatPings[pingIndex] = Vector4.zero;
 
             for (int cellIndex = 0; cellIndex < gridEnergy.Length; cellIndex++)
             {
@@ -357,6 +364,54 @@ namespace Hecton8.UI
                     Mathf.Sin(azimuthRadians) * cosElevation,
                     Mathf.Sin(elevationRadians),
                     Mathf.Cos(azimuthRadians) * cosElevation) * 0.38f;
+                _threatPings[weakestIndex] = new Vector4(
+                    localPosition.x,
+                    localPosition.y,
+                    localPosition.z,
+                    Mathf.Clamp01(intensity));
+            }
+
+            for (int i = 0; i < MaxThreatPings; i++)
+            {
+                if (_threatPings[i].w > 0f)
+                    _activeThreatPingCount++;
+            }
+        }
+
+        private void RefreshThreatPingsFromSpatialDensity(NativeArray<float> densityMap, Vector3Int dimensions)
+        {
+            int safeWidth = Mathf.Max(1, dimensions.x);
+            int safeHeight = Mathf.Max(1, dimensions.y);
+            int safeDepth = Mathf.Max(1, dimensions.z);
+            int maxCells = Mathf.Min(densityMap.Length, safeWidth * safeHeight * safeDepth);
+            for (int cellIndex = 0; cellIndex < maxCells; cellIndex++)
+            {
+                float intensity = densityMap[cellIndex];
+                if (intensity <= 0.025f)
+                    continue;
+
+                int weakestIndex = -1;
+                float weakestIntensity = float.PositiveInfinity;
+                for (int existingIndex = 0; existingIndex < MaxThreatPings; existingIndex++)
+                {
+                    float existingIntensity = _threatPings[existingIndex].w;
+                    if (existingIntensity < weakestIntensity)
+                    {
+                        weakestIntensity = existingIntensity;
+                        weakestIndex = existingIndex;
+                    }
+                }
+
+                if (weakestIndex < 0 || intensity <= weakestIntensity)
+                    continue;
+
+                int z = cellIndex / (safeWidth * safeHeight);
+                int y = (cellIndex - (z * safeWidth * safeHeight)) / safeWidth;
+                int x = cellIndex - (z * safeWidth * safeHeight) - (y * safeWidth);
+                Vector3 localPosition = new Vector3(
+                    ((x + 0.5f) / safeWidth) - 0.5f,
+                    ((y + 0.5f) / safeHeight) - 0.5f,
+                    ((z + 0.5f) / safeDepth) - 0.5f) * 0.76f;
                 _threatPings[weakestIndex] = new Vector4(
                     localPosition.x,
                     localPosition.y,

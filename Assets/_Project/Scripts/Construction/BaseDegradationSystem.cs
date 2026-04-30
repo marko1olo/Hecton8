@@ -20,6 +20,7 @@ namespace Hecton8.Construction
         private const float IntegritySocketThreshold = 0.5f;
         private const int RustDecalAtlasIndex = 1;
         private const int CrackDecalAtlasIndex = 2;
+        private const int ParasiteSporeHazardIdSalt = unchecked((int)0x58C20D40);
         private const string LeakStripeDecalChildName = "LeakStripeDecal";
         private const string LeakScuffDecalChildName = "LeakScuffDecal";
         private const string LeakWetSheenChildName = "LeakWetSheen";
@@ -39,6 +40,13 @@ namespace Hecton8.Construction
             public int DecalAtlasIndex;
         }
 
+        private struct ParasiteSporeHazardState
+        {
+            public int HazardSourceId;
+            public float Intensity;
+            public float Radius;
+        }
+
         // COLD ALLOC: Dictionary<UInt32,RuptureNodeState>[64] - last-known rupture state per habitat graph node - owner: BaseDegradationSystem
         private static readonly Dictionary<uint, RuptureNodeState> _ruptureStates = new Dictionary<uint, RuptureNodeState>(64);
         // COLD ALLOC: List<UInt32>[64] - seen-node scratch for one habitat graph synchronization pass - owner: BaseDegradationSystem
@@ -55,6 +63,8 @@ namespace Hecton8.Construction
         private static readonly Dictionary<int, IntegrityDecalState> _integrityDecalStates = new Dictionary<int, IntegrityDecalState>(64);
         // COLD ALLOC: Dictionary<Int32,Boolean>[64] - rupture-state mirror keyed by runtime module id for fleet arbitration - owner: BaseDegradationSystem
         private static readonly Dictionary<int, bool> _moduleRuptureStates = new Dictionary<int, bool>(64);
+        // COLD ALLOC: Dictionary<Int32,ParasiteSporeHazardState>[32] - active parasite spore room hazards keyed by runtime module id - owner: BaseDegradationSystem
+        private static readonly Dictionary<int, ParasiteSporeHazardState> _parasiteSporeHazards = new Dictionary<int, ParasiteSporeHazardState>(32);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -67,6 +77,7 @@ namespace Hecton8.Construction
             _integritySocketStates.Clear();
             _integrityDecalStates.Clear();
             _moduleRuptureStates.Clear();
+            _parasiteSporeHazards.Clear();
         }
 
         internal static IReadOnlyList<Matrix4x4> GlobalCrackDecalMatrices => _globalCrackDecalMatrices;
@@ -203,6 +214,76 @@ namespace Hecton8.Construction
                 RebuildGlobalDecalBuffer();
         }
 
+        internal static void SynchronizeParasiteSporeHazard(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return;
+
+            int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
+            if (moduleRuntimeId == 0)
+                return;
+
+            if (!baseModule.TryGetParasiteSporeHazard(out Vector3 position, out float radius, out float intensity))
+            {
+                ClearParasiteSporeHazard(baseModule);
+                return;
+            }
+
+            int hazardSourceId = ComposeParasiteSporeHazardId(moduleRuntimeId);
+            _parasiteSporeHazards[moduleRuntimeId] = new ParasiteSporeHazardState
+            {
+                HazardSourceId = hazardSourceId,
+                Intensity = Mathf.Clamp01(intensity),
+                Radius = Mathf.Max(0.1f, radius)
+            };
+
+            HectonHazardManager.Register(
+                hazardSourceId,
+                position,
+                Mathf.Clamp01(intensity),
+                Mathf.Max(0.1f, radius),
+                HazardType.Toxicity,
+                1.35f);
+            baseModule.SetParasiteSporeVfxActive(true);
+        }
+
+        internal static void ClearParasiteSporeHazard(BaseModule baseModule)
+        {
+            if (baseModule == null)
+                return;
+
+            int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
+            if (moduleRuntimeId == 0)
+                return;
+
+            if (_parasiteSporeHazards.TryGetValue(moduleRuntimeId, out ParasiteSporeHazardState state))
+            {
+                HectonHazardManager.Unregister(state.HazardSourceId);
+                _parasiteSporeHazards.Remove(moduleRuntimeId);
+            }
+
+            baseModule.SetParasiteSporeVfxActive(false);
+        }
+
+        internal static bool TryGetParasiteSporeHazard(BaseModule baseModule, out float intensity, out float radius)
+        {
+            intensity = 0f;
+            radius = 0f;
+            if (baseModule == null)
+                return false;
+
+            int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
+            if (moduleRuntimeId == 0 ||
+                !_parasiteSporeHazards.TryGetValue(moduleRuntimeId, out ParasiteSporeHazardState state))
+            {
+                return false;
+            }
+
+            intensity = state.Intensity;
+            radius = state.Radius;
+            return intensity > 0.001f;
+        }
+
         private static void DispatchRuptureEffects(GameObject moduleObject, Vector3 ruptureWorldPosition, Matrix4x4 decalMatrix)
         {
             if (moduleObject != null && moduleObject.TryGetComponent(out BaseModule baseModule))
@@ -321,6 +402,11 @@ namespace Hecton8.Construction
                 return null;
 
             return lod0Transform.Find(childName);
+        }
+
+        private static int ComposeParasiteSporeHazardId(int moduleRuntimeId)
+        {
+            return moduleRuntimeId ^ ParasiteSporeHazardIdSalt;
         }
 
         private static int ResolveModuleRuntimeId(GameObject moduleObject)

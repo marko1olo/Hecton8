@@ -60,6 +60,8 @@ Contents:
 - `24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md`
 - `25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md`
 - `26_LEGACY_DOCSET_ACTUALITY_AND_UPDATE_QUEUE.md`
+- `27_PLAYMODE_DEADLOCK_STATIC_AUDIT.md`
+- `28_STALE_ERROR_PURGE_AND_TRUST_SYNC.md`
 
 Interpretation rule:
 - Percentages here are audit confidence/readiness estimates derived from code/editor/doc evidence.

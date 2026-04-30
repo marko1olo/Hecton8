@@ -241,6 +241,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half biomeLayer : TEXCOORD16;
                 half cascadeSeed : TEXCOORD17;
                 half growth01 : TEXCOORD18;
+                half health01 : TEXCOORD19;
             };
 
             float Hash21(float2 value)
@@ -857,7 +858,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float ResolveBiomeLayer(float runtimeFlags)
             {
                 float variationFlags = floor(max(runtimeFlags, 0.0));
-                return floor(variationFlags / 16.0) % 4.0;
+                return fmod(floor(variationFlags / 16.0), 4.0);
             }
 
             void ResolveRuntimeStateWeights(float runtimeState, out float agitatedWeight, out float dyingWeight)
@@ -907,6 +908,24 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half crest = 1.0h - smoothstep(pulseDuration * 0.52h, pulseDuration, age);
                 half tail = 1.0h - smoothstep(pulseDuration, releaseDuration, age);
                 return rise * max(crest, tail * 0.55h) * emissionBoost;
+            }
+
+            half ResolveEdgeInwardNecrosisMask(Varyings input)
+            {
+                half damage01 = saturate(1.0h - input.health01);
+                half edgeSignal = saturate(max(input.edgeMask, input.curvatureMask * 0.82h));
+                edgeSignal = saturate(edgeSignal + smoothstep(0.72h, 1.0h, input.heightMask) * 0.14h);
+
+                half noise = (half)ValueNoise3D(
+                    input.positionWS * 2.75 +
+                    float3(input.cascadeSeed * 13.17h, _Time.y * 0.035, input.pulseFrequency * 5.0h));
+                half inwardThreshold = saturate(1.08h - damage01 * 1.26h + (noise - 0.5h) * 0.32h);
+                half hardCreep = step(inwardThreshold, edgeSignal);
+                half featheredCreep = smoothstep(
+                    inwardThreshold - 0.10h,
+                    inwardThreshold + 0.06h,
+                    saturate(edgeSignal + noise * 0.08h));
+                return saturate(max(hardCreep, featheredCreep) * smoothstep(0.04h, 0.30h, damage01));
             }
 
             Varyings Vert(Attributes input, uint instanceID : SV_InstanceID)
@@ -1181,6 +1200,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.biomeLayer = biomeLayer;
                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
                 output.growth01 = growth01;
+                output.health01 = normalizedHealth;
                 return output;
             }
 
@@ -1232,6 +1252,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half gradientLuma = dot(gradientColor, half3(0.299h, 0.587h, 0.114h));
                 half3 decayColor = lerp(half3(gradientLuma, gradientLuma, gradientLuma), half3(0.32h, 0.29h, 0.24h), 0.55h);
                 gradientColor = lerp(gradientColor, decayColor, input.entropyProgress * 0.92h);
+                half necrosisMask = ResolveEdgeInwardNecrosisMask(input);
+                half necrosisNoise = (half)ValueNoise3D(input.positionWS * 5.6 + float3(0.0, input.cascadeSeed * 7.0h, _Time.y * 0.025));
+                half3 necrosisColor = lerp(half3(0.025h, 0.018h, 0.012h), half3(0.20h, 0.10h, 0.035h), necrosisNoise);
+                gradientColor = lerp(gradientColor, necrosisColor, necrosisMask);
                 half3 parasiteGlowTint = input.instanceType < 1.5h
                     ? half3(0.18h, 0.95h, 0.72h)
                     : half3(0.14h, 0.78h, 1.00h);
@@ -1305,7 +1329,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 stateEmissionScale = lerp(stateEmissionScale, 0.28h, dyingWeight);
                 half predatorDim = ResolveBiolumPredatorDim(input.positionWS);
                 half parasiteBiolumBoost = lerp(1.0h, 1.12h, input.parasiteMask);
-                half biolumVisibility = saturate(1.0h - input.entropyProgress * 0.65h);
+                half biolumVisibility = saturate((1.0h - input.entropyProgress * 0.65h) * (1.0h - necrosisMask));
                 half flowReactiveBoost = 1.0h + (max(0.0h, input.flowMagnitude) * 0.5h);
                 half seasonalBloomScale = ResolveSeasonalBloomEmissionScale();
                 half decaySeasonPulse = 0.5h + 0.5h * cos((_HectonSeasonCycle - 0.75h) * 6.28318h);

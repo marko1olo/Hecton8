@@ -6,7 +6,7 @@
 //   • Fabricator — машина-верстак с IPowerComponent, IInteractable, ITickable.
 //
 // ПОТРЕБИТЕЛИ:
-//   • HectonFabricatorUI — подписывается на CraftingEvents.OnFabricatorOpened(IFabricator),
+//   • HectonFabricatorUI — subscribes through ICraftingEventListener for FabricatorOpened payloads,
 //     читает AvailableRecipes, IsCrafting, вызывает StartCraft/CancelCraft.
 //   • CraftingEvents — передаёт IFabricator в событии открытия.
 //

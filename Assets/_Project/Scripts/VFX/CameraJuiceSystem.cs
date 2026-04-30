@@ -28,7 +28,7 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ISaveable
+    public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ISaveable, IInteractionEventListener
     {
         // ═══ SINGLETON ═══
         private static CameraJuiceSystem _instance;
@@ -127,7 +127,7 @@ namespace Hecton8.VFX
         private bool _depthOfFieldEnabled = true;
 
         [SerializeField, Tooltip("Physics layers sampled by the center-eye focus ray.")]
-        private LayerMask _interactionFocusMask = ~0;
+        private LayerMask _interactionFocusMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [SerializeField, Tooltip("Maximum range used by the center-eye focus ray.")]
         private float _interactionFocusRayDistance = 120f;
@@ -345,7 +345,7 @@ namespace Hecton8.VFX
             TryResolveGameplayDependencies();
             SyncDependencySubscriptions();
 
-            InteractionEvents.OnHoverChanged += HandleHoverChanged;
+            InteractionEvents.Register(this);
         }
 
         private void OnDisable()
@@ -355,7 +355,7 @@ namespace Hecton8.VFX
 
             UnhookDependencyEvents();
 
-            InteractionEvents.OnHoverChanged -= HandleHoverChanged;
+            InteractionEvents.Unregister(this);
 
             _fovBlendActive = false;
             _biomeBlendActive = false;
@@ -740,6 +740,15 @@ namespace Hecton8.VFX
             {
                 _focusTargetTransform = component.transform;
             }
+        }
+
+        public void OnInteractionEvent(in InteractionEventPayload payload)
+        {
+            if ((InteractionEventType)payload.EventType != InteractionEventType.HoverChanged)
+                return;
+
+            InteractionEvents.TryResolveTarget(in payload, out IInteractable target);
+            HandleHoverChanged(target);
         }
 
         private void UpdateShake(float dt)

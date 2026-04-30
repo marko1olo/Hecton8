@@ -202,13 +202,11 @@ namespace Hecton8.Bootstrap
         {
             // COLD ALLOC: scene validation arrays — explicit validation/editor-only diagnostics
             Hecton8.Interaction.NarrativeDiscovery[] discoveries =
-                FindObjectsByType<Hecton8.Interaction.NarrativeDiscovery>(
-                    FindObjectsInactive.Include);
+                FindObjectsByType<Hecton8.Interaction.NarrativeDiscovery>(FindObjectsInactive.Include);
 
             // COLD ALLOC: scene validation arrays — explicit validation/editor-only diagnostics
             Hecton8.Narrative.AudioLogPickup[] audioPickups =
-                FindObjectsByType<Hecton8.Narrative.AudioLogPickup>(
-                    FindObjectsInactive.Include);
+                FindObjectsByType<Hecton8.Narrative.AudioLogPickup>(FindObjectsInactive.Include);
 
             _narrativeDiscoveryCount = discoveries != null ? discoveries.Length : 0;
             _audioLogPickupCount = audioPickups != null ? audioPickups.Length : 0;

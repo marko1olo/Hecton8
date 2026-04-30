@@ -239,7 +239,7 @@ namespace Hecton8.Dev
                     GameStartContext menuContext = GameStartContextHolder.Current;
                     Debug.Log(
                         $"[ShellSmoke] Bootstrap wait complete scene={activeSceneName} menuReady={IsMenuRouteReady()} " +
-                        $"hasMenu={_mainMenuController != null} bootstrapReady={BootstrapController.AreAllSystemsReady()} " +
+                        $"hasMenu={_mainMenuController != null} bootstrapReady={GameBootstrapper.AreAllSystemsReady()} " +
                         $"contextValid={menuContext.IsValid} startMode={menuContext.StartMode} slot={menuContext.TargetSaveSlot}");
                 }
 
@@ -425,7 +425,7 @@ namespace Hecton8.Dev
         {
             GameStartContext context = GameStartContextHolder.Current;
             return string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal) &&
-                   BootstrapController.AreAllSystemsReady() &&
+                   GameBootstrapper.AreAllSystemsReady() &&
                    context.IsValid &&
                    context.StartMode == GameStartMode.NewGame;
         }
@@ -444,7 +444,7 @@ namespace Hecton8.Dev
             AutoResolve();
             return string.Equals(SceneManager.GetActiveScene().name, MainMenuSceneName, System.StringComparison.Ordinal) &&
                    _mainMenuController != null &&
-                   BootstrapController.AreAllSystemsReady() &&
+                   GameBootstrapper.AreAllSystemsReady() &&
                    !GameStartContextHolder.Current.IsValid;
         }
 
@@ -452,7 +452,7 @@ namespace Hecton8.Dev
         {
             GameStartContext context = GameStartContextHolder.Current;
             return string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal) &&
-                   BootstrapController.AreAllSystemsReady() &&
+                   GameBootstrapper.AreAllSystemsReady() &&
                    context.IsValid &&
                    context.StartMode == GameStartMode.LoadGame &&
                    string.Equals(context.TargetSaveSlot, slotName, System.StringComparison.Ordinal);
@@ -460,7 +460,7 @@ namespace Hecton8.Dev
 
         private string ResolveExistingSaveSlot()
         {
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null)
                 return string.Empty;
 
@@ -518,7 +518,7 @@ namespace Hecton8.Dev
 
             GameStartContext context = GameStartContextHolder.Current;
             string activeSceneName = SceneManager.GetActiveScene().name;
-            bool bootstrapReady = BootstrapController.AreAllSystemsReady();
+            bool bootstrapReady = GameBootstrapper.AreAllSystemsReady();
             bool hasMenu = _mainMenuController != null;
 
             Debug.Log(

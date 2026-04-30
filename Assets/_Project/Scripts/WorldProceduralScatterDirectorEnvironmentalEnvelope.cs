@@ -86,7 +86,10 @@ namespace Hecton8.World
 
             if (familyHash == _FamilyCoralBrittleHash)
             {
-                float lightProxy = EvaluateDepthLightProxy01(fieldSample.depthMeters);
+                float lightProxy = ScatterMath.EvaluateDepthLightProxy01(
+                    fieldSample.depthMeters,
+                    deepFloraMinDepthMeters,
+                    deepFloraLightProxyFadeRangeMeters);
                 if (lightProxy > Mathf.Clamp01(deepCoralMaxLightProxy))
                     return false;
             }
@@ -128,7 +131,7 @@ namespace Hecton8.World
             if (runtimeRule.ClusterNoiseThreshold <= 0f)
                 return true;
 
-            float patchMask = EvaluateClusterPatchMask01(
+            float patchMask = ScatterMath.EvaluateClusterPatchMask01(
                 candidatePreview.Position.x,
                 candidatePreview.Position.z,
                 runtimeRule.ClusterNoiseScale,
@@ -163,46 +166,9 @@ namespace Hecton8.World
             return environmentalVegetationBridge != null;
         }
 
-        private float EvaluateDepthLightProxy01(float depthMeters)
-        {
-            float minimumDepth = Mathf.Max(1f, deepFloraMinDepthMeters);
-            float fadeRange = Mathf.Max(1f, deepFloraLightProxyFadeRangeMeters);
-            float darkness01 = Mathf.Clamp01((depthMeters - minimumDepth) / fadeRange);
-            return 1f - darkness01;
-        }
-
-        private static float EvaluateClusterPatchMask01(
-            float worldX,
-            float worldZ,
-            float clusterNoiseScale,
-            int ruleIdHash,
-            int familyHash)
-        {
-            float safeScale = Mathf.Max(0.0001f, clusterNoiseScale);
-            float baseX = (worldX * safeScale) + ((ruleIdHash & 255) * 0.03125f);
-            float baseZ = (worldZ * safeScale) + ((familyHash & 255) * 0.03125f);
-            float octaveA = Mathf.PerlinNoise(baseX, baseZ);
-            float octaveB = Mathf.PerlinNoise((baseX * 1.93f) + 11.7f, (baseZ * 1.93f) - 7.1f);
-            float octaveC = Mathf.PerlinNoise((baseX * 0.57f) - 19.4f, (baseZ * 0.57f) + 23.8f);
-            return Mathf.Clamp01((octaveA * 0.58f) + (octaveB * 0.28f) + (octaveC * 0.14f));
-        }
-
         private static FloraBudgetClass ResolveFloraBudgetClass(WorldPrefabFamilyProfile family)
         {
-            if (family == null)
-                return FloraBudgetClass.None;
-
-            switch (family.proceduralDomain)
-            {
-                case WorldPrefabFamilyProfile.ProceduralDomain.Kelp:
-                case WorldPrefabFamilyProfile.ProceduralDomain.Plant:
-                case WorldPrefabFamilyProfile.ProceduralDomain.Coral:
-                    return family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Ground
-                        ? FloraBudgetClass.Micro
-                        : FloraBudgetClass.Macro;
-                default:
-                    return FloraBudgetClass.None;
-            }
+            return (FloraBudgetClass)ScatterMath.ResolveFloraBudgetClassId(family);
         }
     }
 }

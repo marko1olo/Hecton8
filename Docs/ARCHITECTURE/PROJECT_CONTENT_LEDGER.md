@@ -39,6 +39,7 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 | `ResourceNodeTemplate_LithiumCrystalCluster.asset` | `resource.node.lithium_crystal_cluster` | 1020671615 | `0x3CD6367F` | `Data_LithiumCrystal` | -531463424 | `NONE` |
 | `ResourceNodeTemplate_AbyssalCrystalSpire.asset` | `resource.node.abyssal_crystal_spire` | -1912665273 | `0x8DFF0B47` | `Data_AbyssalCrystal` | 702456815 | `NONE` |
 | `ResourceNodeTemplate_DeepMantleGeode.asset` | `resource.node.deep_mantle_geode` | 1840897952 | `0x6DB9DFA0` | `Data_AbyssalCrystal` | 702456815 | `NONE` |
+| `ResourceNodeTemplate_ThermalDiamond.asset` | `resource.node.thermal_diamond` | -858705345 | `0xCCD1323F` | `Data_AbyssalCrystal` | 702456815 | `NONE` |
 | `ResourceNodeTemplate_CrystallizedOsmium.asset` | `resource.node.crystallized_osmium` | -731924692 | `0xD45FB72C` | `Data_RareEarthDust` | 1997058338 | `NONE` |
 | `ResourceNodeTemplate_ToxicSulfurDeposit.asset` | `resource.node.toxic_sulfur_deposit` | -232166803 | `0xF2296A6D` | `Data_SulfurClumps` | -948091731 | `NONE` |
 | `ResourceNodeTemplate_BrineIsotopeGeode.asset` | `resource.node.brine_isotope_geode` | 694959346 | `0x296C3CF2` | `Data_AbyssalCrystal` | 702456815 | `NONE` |
@@ -50,6 +51,7 @@ It is the canonical handoff table for item/resource/entity hash coordination unt
 ### Extreme-Depth Notes
 
 - `ResourceNodeTemplate_DeepMantleGeode.asset` is the hydrothermal-only geode owner. Runtime gate: `Temperature > 80C`, steam explosion without `ToolUpgradeBits.ThermalShield`, crater carve on depletion, extractor-enabled.
+- `ResourceNodeTemplate_ThermalDiamond.asset` is the flash-freeze crystallization output. Runtime owner: `AbyssalThermalManager.ReportFlashFreeze(...)` -> Burst boundary validation -> `ResourceDistributionDirector.TrySpawnThermalDiamondCrystallization(...)`.
 - `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_ToxicSulfurDeposit.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` are deterministic hadal brine-pool resources. Runtime gate: `RequiresBrinePool = true`, brine density override `1250 kg/m3`, toxicity hazard routing, and seismic upwelling reinstatement.
 - `ResourceNodeTemplate_TitaniumBasaltMass.asset` is the new hadal titanium vein for autonomous production scaling.
 - `ResourceNodeTemplate_CrystallizedOsmium.asset`, `ResourceNodeTemplate_XenonOmegaVentCache.asset`, `ResourceNodeTemplate_Silicon7BGlassVein.asset`, `ResourceNodeTemplate_AegiriumCrustNodule.asset`, and `ResourceNodeTemplate_BrineIsotopeGeode.asset` currently route into placeholder item assets until dedicated isotope item records exist. Lore IDs are `crystallized_osmium`, `xenon_omega`, `silicon_7b`, `aegirium`, and `brine_isotope`.

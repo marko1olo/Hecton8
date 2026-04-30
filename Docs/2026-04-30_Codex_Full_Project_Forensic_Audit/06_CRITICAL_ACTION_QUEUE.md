@@ -7,13 +7,16 @@ Status: PENDING VERIFICATION
 1. Restore trustworthy editor-state observability.
 Reason: Right now console truth, log truth, MCP readiness, and editor responsiveness do not form one reliable verification surface.
 
-2. Freeze authority drift.
+2. Remove remaining forced job completion from runtime streaming retirement paths.
+Reason: `27_PLAYMODE_DEADLOCK_STATIC_AUDIT.md` fixed pending chunk cancellation, but `HectonWorldGenerator` can still force-complete active chunk PhysX bakes before mesh destruction. This remains a concrete Play Mode stall candidate.
+
+3. Freeze authority drift.
 Reason: Choose the runtime sovereign path between registry/dispatcher/bootstrap versus legacy singleton residue. Stop adding more mixed ownership.
 
-3. Clean `02_HECTON_WORLD` as a truth surface.
+4. Clean `02_HECTON_WORLD` as a truth surface.
 Reason: Separate production runtime roots from debug, preview, trial, and temporary residue.
 
-4. Audit the spatial-hash handle contract.
+5. Audit the spatial-hash handle contract.
 Reason: `HectonSpatialHash` currently uses monotonic `_nextHandle++` without visible allocator-boundary guard or reuse. Even if it is not the proven root of `SetResource` spam yet, it is too weak to ignore.
 
 ## Priority 1
@@ -21,7 +24,13 @@ Reason: `HectonSpatialHash` currently uses monotonic `_nextHandle++` without vis
 1. Audit every `.Complete()` in hot or cadence-sensitive owners.
 Reason: The project uses Jobs/Burst for real work, then repeatedly pays back the benefit with barriers.
 
-2. Decompose the worst monoliths.
+2. Add watchdog diagnostics to scene and async job waits.
+Reason: `SceneRuntimeService`, `GameBootstrapper`, `HectonVoxelEngine`, and `ProceduralWreckGenerator` yield instead of spin, but several waits have no failure deadline. This can look like Play Mode deadlock even when CPU is low.
+
+3. Profile synchronous `.Run()` jobs before converting them.
+Reason: `CraftingSystem`, `PlayerInventory`, `TetherInstance`, and `FloraInteractionManager` use synchronous jobs. This is not a deadlock root by itself, but it can be a frame-time stall source.
+
+4. Decompose the worst monoliths.
 Primary suspects:
 - `HectonMapMagicVegetationBridge`
 - `HectonPlayerMovement`
@@ -29,7 +38,7 @@ Primary suspects:
 - `FaunaDirector`
 - `HectonVoxelEngine`
 
-3. Produce a hard migration map for `Instance` and `DontDestroyOnLoad` owners.
+5. Produce a hard migration map for `Instance` and `DontDestroyOnLoad` owners.
 Reason: `GlobalRegistry` cannot become authoritative while parallel sovereignty remains normal.
 
 ## Priority 2

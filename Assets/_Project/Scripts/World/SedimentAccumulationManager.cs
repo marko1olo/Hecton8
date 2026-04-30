@@ -210,7 +210,7 @@ namespace Hecton8.World
             _captureCamera.allowMSAA = false;
             _captureCamera.useOcclusionCulling = false;
             _captureCamera.forceIntoRenderTexture = true;
-            _captureCamera.cullingMask = ~0;
+            _captureCamera.cullingMask = (1 << 8) | (1 << 9) | (1 << 10);
         }
 
         private void ReleaseCaptureCamera()

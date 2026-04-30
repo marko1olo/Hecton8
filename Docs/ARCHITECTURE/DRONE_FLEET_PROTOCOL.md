@@ -6,6 +6,8 @@ Runtime owners:
 - `DroneFleetManager.cs`: central repair-task dispatcher, fleet snapshot publisher, emergency-overclock state, swarm avoidance input.
 - `RepairDroneHub.cs`: powered dock, logistics intake, pooled launch owner.
 - `RepairDroneEntity.cs`: mission execution, battery drain, route following, additive weld dispatch.
+- `ThreadSafeCommandQueue.cs`: main-thread structural command drain for storage-reservation commits.
+- `FloraInteractionManager.cs`: module parasite target resolution and plasma-cut dispatch into destructible organic runtime.
 - `HectonSubmarineOS.cs`: diegetic consumer of fleet snapshot telemetry.
 
 Relevant mandates followed:
@@ -73,6 +75,15 @@ Hub launch flow:
 3. reserve units through the two-phase logistics reservation path
 4. commit the reservation only after the drone is actually spawned
 
+Field resupply flow:
+1. empty drone calls `RepairDroneHub.TryResolveNearestSupplyEndpoint`
+2. hub resolves nearest connected `StorageCrate` or `Fabricator` through `BaseLogisticsNetwork`
+3. drone routes there through `VoxelDynamicNavGridRuntime.TryBuildMacroPortalRouteNonAlloc`
+4. hub reserves refill units through `BaseLogisticsNetwork.TryReserveResources`
+5. `BaseLogisticsNetwork.CommitReservedViaCommandQueue` registers each touched crate with `ThreadSafeCommandQueue`
+6. queue drains `EntityCommandType.CommitStorageReservation` on the dispatcher main-thread window
+7. no stock means drone enables yellow warning light and enters `STASIS`
+
 Current fallback:
 - requested ID: `Nanite_Solder`
 - fallback ID: `Data_TitaniumScrap`
@@ -83,6 +94,29 @@ Consumption model:
 - the drone carries a mission load and decrements that load as restored integrity accumulates
 - no supply: dock slots report `STASIS`
 
+## Parasite Defense
+
+Base parasites are fleet tasks, not decorative flora state.
+
+Candidate source:
+- module parasite anchors published by `FloraInteractionManager`
+- host `BaseModule.ParasiteInfectionLevel > 0`
+- same `PowerGrid` as the requesting hub
+
+Criticality:
+
+```csharp
+weight = 4f + (infection * 6f) + ((1f - module.AirReserveNormalized) * 1.5f);
+if (module.HasCascadeFailure) weight += 1.5f;
+if (EmergencyLevel == Evacuate) weight *= 1.35f;
+```
+
+Execution:
+- drone routes to the parasite anchor position
+- nozzle direction is resolved from drone nozzle to anchor
+- `FloraInteractionManager.TryApplyDroneParasiteCut` calls `DestructibleOrganicManager.TryApplyToolHit(... PlasmaCut)`
+- one solder unit is consumed when the cut is applied
+
 ## Navigation And Swarm Motion
 
 Travel:
@@ -90,10 +124,11 @@ Travel:
 - if no macro route exists, the drone falls back to direct movement
 
 Swarm steering:
-- base vector: route or target direction
-- additive avoidance:
-- other active repair drones
-- player runtime transform from `GlobalRegistry.Player`
+- base vector: route or target direction, weight `1.0`
+- separation: inverse-square push away from other active repair drones
+- alignment: average active neighbor velocity, weight `0.35`
+- cohesion: average active neighbor center, `0.8` in open water and `0.1` in tight voxel corridors
+- player separation: same inverse-square model at `3x` the drone separation weight
 
 Corridor policy:
 - if hybrid nav sample resolves `HybridNavigationMode.CaveVoxel`, cohesion weight drops to `0.1`
@@ -109,13 +144,16 @@ Source:
 When OS emergency level reaches `Evacuate`:
 - thruster speed multiplier: `3x`
 - battery drain multiplier: `5x`
+- task criticality multiplier: `1.35x`
 
 The fleet snapshot mirrors this so diegetic UI can display it without scanning live scene objects.
+`HectonSubmarineOS` publishes a nominal shutdown snapshot on disable so fleet overclock cannot stay latched after OS unload.
 
 ## Suicide Weld
 
 External trigger:
 - `DroneFleetManager.RequestFleetSacrifice()`
+- `HectonSubmarineOS.RequestFleetSacrifice()`
 
 Runtime behavior:
 - if the assigned target is below `5%` recoverable integrity and the command is armed

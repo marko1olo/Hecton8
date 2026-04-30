@@ -44,8 +44,10 @@ namespace Hecton8.World
         private const float LightFalloffDepthMeters = 2500f;
         private const float PredatorDietValidationRadiusMeters = 500f;
         private const float CorpseSpawnInfluenceRadiusMeters = 100f;
+        private const float MinimumCorpseDietInfluence01 = 0.001f;
         private const float CorpseSpawnSelectionScale = 2.6f;
         private const int PredatorSpawnValidationHitCapacity = 64;
+        private const int HibernationPopulationSyncsPerColdSolve = 8;
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
@@ -396,9 +398,11 @@ namespace Hecton8.World
         private bool _registeredSlowTickable;
         private bool _diffusionScheduled;
         private bool _solveScheduled;
+        private bool _populationSolvePendingHibernationSync;
         private float _biomeHostility01;
         private float _starvationAggressionPressure01;
         private int _hostilityTier;
+        private int _nextHibernationPopulationSyncIndex;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
 
@@ -507,6 +511,12 @@ namespace Hecton8.World
             uint dietMaskBits = faunaDataTemplate != null ? faunaDataTemplate.DietMaskBits : 0u;
             if (dietMaskBits == 0u)
                 return false;
+
+            if ((dietMaskBits & (uint)FaunaDietMask.Carcass) != 0u &&
+                ResolveCorpseSpawnInfluence01(worldPosition, CorpseSpawnInfluenceRadiusMeters) > MinimumCorpseDietInfluence01)
+            {
+                return true;
+            }
 
             int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
                 worldPosition,
@@ -641,6 +651,7 @@ namespace Hecton8.World
                 return;
 
             CompleteScheduledSimulation(forceComplete: true);
+            SyncPendingHibernatedFaunaPopulationRecords();
             for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
             {
                 SectorPopulationState state = _sectorFrontStates[sectorIndex];
@@ -754,6 +765,7 @@ namespace Hecton8.World
 
             DecayBiomeHostility();
             CompleteScheduledSimulation(forceComplete: false);
+            SyncPendingHibernatedFaunaPopulationRecords();
             EnsurePlayerSectorRegistered();
             EnsureMigrationNeighborSectorsRegistered();
 
@@ -764,6 +776,7 @@ namespace Hecton8.World
                 _coldTickAccumulator -= coldTickIntervalSeconds;
                 _diffusionTickAccumulator = 0f;
                 CompleteScheduledSimulation(forceComplete: true);
+                SyncPendingHibernatedFaunaPopulationRecords();
                 ApplyPendingPredationEvents();
                 ScheduleSectorSolve();
                 return;
@@ -774,6 +787,7 @@ namespace Hecton8.World
 
             _diffusionTickAccumulator -= diffusionTickIntervalSeconds;
             CompleteScheduledSimulation(forceComplete: true);
+            SyncPendingHibernatedFaunaPopulationRecords();
             ApplyPendingPredationEvents();
             SchedulePopulationDiffusion();
         }
@@ -1144,6 +1158,7 @@ namespace Hecton8.World
             _scheduledSolveHandle = default;
             _diffusionScheduled = false;
             _solveScheduled = false;
+            _populationSolvePendingHibernationSync = false;
             _biomeHostility01 = 0f;
             _starvationAggressionPressure01 = 0f;
             _hostilityTier = 0;
@@ -1410,6 +1425,45 @@ namespace Hecton8.World
             _scheduledSolveHandle = default;
             _solveScheduled = false;
             RefreshStarvationPressure();
+            _populationSolvePendingHibernationSync = true;
+        }
+
+        private void SyncPendingHibernatedFaunaPopulationRecords()
+        {
+            if (!_populationSolvePendingHibernationSync)
+                return;
+
+            _populationSolvePendingHibernationSync = false;
+            SyncHibernatedFaunaPopulationRecords();
+        }
+
+        private void SyncHibernatedFaunaPopulationRecords()
+        {
+            if (_activeSectorCount <= 0)
+                return;
+
+            if (_cachedPersistentWorldRegistry == null)
+                _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
+
+            if (_cachedPersistentWorldRegistry == null)
+                return;
+
+            int syncBudget = math.min(HibernationPopulationSyncsPerColdSolve, _activeSectorCount);
+            for (int i = 0; i < syncBudget; i++)
+            {
+                if (_nextHibernationPopulationSyncIndex >= _activeSectorCount)
+                    _nextHibernationPopulationSyncIndex = 0;
+
+                SectorPopulationState state = _sectorFrontStates[_nextHibernationPopulationSyncIndex];
+                _cachedPersistentWorldRegistry.ReconcileFaunaHibernationSectorPopulation(
+                    state.SectorCoord,
+                    state.PreyPopulationRounded,
+                    state.PredatorPopulationRounded,
+                    maxPreyPopulation,
+                    maxPredatorPopulation);
+
+                _nextHibernationPopulationSyncIndex++;
+            }
         }
 
         private int ResolveOrCreateSectorSlot(int2 sectorCoord, bool seedWithBaseline = true)

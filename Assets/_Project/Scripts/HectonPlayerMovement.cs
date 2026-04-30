@@ -52,6 +52,7 @@ namespace Hecton8.Gameplay
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
         private float _runtimeEmergencyMovementMultiplier = 1f;
         private float _runtimeInventoryLoadMovementMultiplier = 1f;
+        private float _runtimeInventoryLoad01;
         private const float TwoPi = 2f * math.PI;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const int CrestBodySampleCount = 5;
@@ -670,7 +671,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float groundCheckRadius = 0.3f;
         [SerializeField] private float groundCheckDistance = 0.4f;
         [SerializeField, Range(5f, 89f)] private float maxGroundAngle = 60f;
-        [SerializeField] private LayerMask groundLayers = ~0;
+        [SerializeField] private LayerMask groundLayers = (1 << 8) | (1 << 9) | (1 << 10);
         [SerializeField, Range(1f, 2f)] private float slopeStabilityFactor = 1.1f;
         [SerializeField, Range(0f, 20f)] private float groundSnapForce = 8f;
         [SerializeField, Range(0f, 0.3f)] private float jumpBufferTime = 0.12f;
@@ -886,6 +887,8 @@ namespace Hecton8.Gameplay
         private HectonPlayerMotor _playerMotor;
         private HectonPlayerEnvironmentHandler _environmentHandler;
         private HectonPlayerStateMachine _stateMachine;
+        private HectonPlayerState _playerState;
+        private HectonPlayerInputHandler _inputHandler;
         private IInputService _inputManager;
         private IInputService _subscribedInputManager;
         private PlayerToolManager _playerToolManager;
@@ -1306,7 +1309,15 @@ namespace Hecton8.Gameplay
         public void SetRuntimeInventoryLoadMovementMultiplier(float multiplier)
         {
             _runtimeInventoryLoadMovementMultiplier = Mathf.Clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
+            _playerMotor?.SetEncumbranceMovementMultiplier(_runtimeInventoryLoadMovementMultiplier);
+            _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
         }
+
+        /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
+        public float InventoryLoad01 => _runtimeInventoryLoad01;
+
+        /// <summary>Resolved movement multiplier after inventory mass encumbrance.</summary>
+        public float InventoryLoadMovementMultiplier => ResolveRuntimeInventoryLoadMovementMultiplier();
 
         /// <summary>Currently active suit data driving mass, drag, and swim parameters.</summary>
         public SuitData CurrentSuit => currentSuitData;
@@ -1654,7 +1665,11 @@ namespace Hecton8.Gameplay
             }
 
             if (_playerMotor != null)
+            {
                 _playerMotor.Bind(_rb, _capsuleCollider);
+                _playerMotor.BindEncumbranceSource(_inventoryLoadSource);
+                _playerMotor.SetEncumbranceMovementMultiplier(_runtimeInventoryLoadMovementMultiplier);
+            }
 
             if (_environmentHandler != null)
                 _environmentHandler.Bind(this, _playerMotor);
@@ -1766,6 +1781,7 @@ namespace Hecton8.Gameplay
         {
             Vector3 queuedAcceleration = _queuedExternalKinematicAcceleration;
             Vector3 queuedVelocityChange = _queuedExternalKinematicVelocityChange;
+            _playerState.SyncExternalKinematic(queuedAcceleration, queuedVelocityChange);
             _queuedExternalKinematicAcceleration = Vector3.zero;
             _queuedExternalKinematicVelocityChange = Vector3.zero;
 
@@ -2316,6 +2332,8 @@ namespace Hecton8.Gameplay
             _rb.useGravity = false;
             _baseCenterOfMass = _rb.centerOfMass;
             _lastAppliedCenterOfMass = _baseCenterOfMass;
+            _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
+            _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
 
             // Cache camera component for FOV manipulation
             if (playerCamera != null)
@@ -2646,6 +2664,7 @@ namespace Hecton8.Gameplay
             _queuedExternalKinematicVelocityChange = Vector3.zero;
             _thermalUpdraftTraumaCooldownTimer = 0f;
             _vegetationDensityLinearDamping = 0f;
+            _playerState.ResetTransient();
             _playerMotor?.ResetRuntimeState();
             _environmentHandler?.ResetRuntimeState();
             _stateMachine?.ResetRuntimeState();
@@ -2704,6 +2723,7 @@ namespace Hecton8.Gameplay
 
             UnbindInventoryLoadSource();
             _inventoryLoadSource = resolvedInventory;
+            _playerMotor?.BindEncumbranceSource(_inventoryLoadSource);
             _inventoryLoadSource.InventoryChanged += HandleInventoryLoadChanged;
             HandleInventoryLoadChanged();
         }
@@ -2714,6 +2734,8 @@ namespace Hecton8.Gameplay
                 _inventoryLoadSource.InventoryChanged -= HandleInventoryLoadChanged;
 
             _inventoryLoadSource = null;
+            _playerMotor?.BindEncumbranceSource(null);
+            _runtimeInventoryLoad01 = 0f;
             SetRuntimeInventoryLoadMovementMultiplier(1f);
         }
 
@@ -2731,10 +2753,14 @@ namespace Hecton8.Gameplay
         private void HandleInventoryLoadChanged()
         {
             float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
-            SetRuntimeInventoryLoadMovementMultiplier(
-                ResolveInventoryLoadMovementMultiplier(
-                    totalMassKg,
-                    ResolveInventoryCarryCapacityKg()));
+            float carryCapacityKg = ResolveInventoryCarryCapacityKg();
+            _runtimeInventoryLoad01 = ResolveInventoryLoad01(totalMassKg, carryCapacityKg);
+            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplierFromLoad(_runtimeInventoryLoad01));
+            InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
+                _inventoryLoadSource,
+                totalMassKg,
+                carryCapacityKg,
+                _runtimeInventoryLoad01));
         }
 
         private float ResolveInventoryCarryCapacityKg()
@@ -2749,8 +2775,24 @@ namespace Hecton8.Gameplay
 
         private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg, float carryCapacityKg)
         {
-            float load01 = math.saturate(totalMassKg / math.max(0.01f, carryCapacityKg));
-            return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01);
+            return ResolveInventoryLoadMovementMultiplierFromLoad(ResolveInventoryLoad01(totalMassKg, carryCapacityKg));
+        }
+
+        private float ResolveRuntimeInventoryLoadMovementMultiplier()
+        {
+            return _playerMotor != null
+                ? _playerMotor.EncumbranceMovementMultiplier
+                : _runtimeInventoryLoadMovementMultiplier;
+        }
+
+        private static float ResolveInventoryLoad01(float totalMassKg, float carryCapacityKg)
+        {
+            return math.saturate(totalMassKg / math.max(0.01f, carryCapacityKg));
+        }
+
+        private static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
+        {
+            return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, math.saturate(load01));
         }
 
         /// <inheritdoc />
@@ -4763,11 +4805,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _currentInputState = inputService.GetState();
-            _cachedMoveInput = _currentInputState.MoveDelta;
-            _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
+            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+            _currentInputState = frame.State;
+            _cachedMoveInput = frame.MoveInput;
+            _cachedVerticalInput = frame.VerticalInput;
             _pendingLookInput = Vector2.zero;
-            SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
+            SetSprintingState(frame.SprintHeld);
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -4814,11 +4857,16 @@ namespace Hecton8.Gameplay
 
                 if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
                 {
-                    _currentInputState = _inputManager.GetState();
-                    _cachedMoveInput = _currentInputState.MoveDelta;
-                    _cachedVerticalInput = math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
-                    _pendingLookInput = _currentInputState.LookDelta;
-                    if (_inputManager.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferTime))
+                    _inputHandler.TryReadFrame(
+                        _inputManager,
+                        jumpBufferTime,
+                        out HectonPlayerInputFrame inputFrame,
+                        out bool jumpBuffered);
+                    _currentInputState = inputFrame.State;
+                    _cachedMoveInput = inputFrame.MoveInput;
+                    _cachedVerticalInput = inputFrame.VerticalInput;
+                    _pendingLookInput = inputFrame.LookInput;
+                    if (jumpBuffered)
                     {
                         _jumpRequested = true;
                         _jumpBufferTimer = jumpBufferTime;
@@ -4837,7 +4885,7 @@ namespace Hecton8.Gameplay
                         _inputV = 0f;
                         _inputVertical = 0f;
                     }
-                    SetSprintingState(_currentInputState.HasAction(PlayerInputAction.Sprint));
+                    SetSprintingState(inputFrame.SprintHeld);
                 }
                 else
                 {
@@ -5040,7 +5088,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveVerticalInput()
         {
-            return math.clamp(_currentInputState.VerticalDelta, -1f, 1f);
+            return HectonPlayerInputHandler.ResolveVerticalInput(in _currentInputState);
         }
 
         private void ApplyLookInput(Vector2 lookDelta)
@@ -5168,6 +5216,7 @@ namespace Hecton8.Gameplay
                 }
 
                 _currentFixedDeltaTime = fixedDeltaTime;
+                _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
                 _useFixedFrameSpatialCache = true;
                 PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
                 ProcessQueuedCollisionEvents();
@@ -7994,7 +8043,7 @@ namespace Hecton8.Gameplay
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeInventoryLoadMovementMultiplier;
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
@@ -8285,7 +8334,7 @@ namespace Hecton8.Gameplay
                 suit.walkForce *
                 wadeMultiplier *
                 sprintMult *
-                _runtimeInventoryLoadMovementMultiplier *
+                ResolveRuntimeInventoryLoadMovementMultiplier() *
                 ResolveHeavyCarryForceMultiplier() *
                 ResolveExternalEnvironmentalThrustMultiplier();
 
@@ -8491,7 +8540,7 @@ namespace Hecton8.Gameplay
                 float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
                 maxSpd *= math.max(wadeMultiplier, 0.2f);
                 if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
-                maxSpd *= _runtimeInventoryLoadMovementMultiplier;
+                maxSpd *= ResolveRuntimeInventoryLoadMovementMultiplier();
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
                 maxSpd *= _runtimeEmergencyMovementMultiplier;
@@ -8532,7 +8581,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeInventoryLoadMovementMultiplier);
+                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier());
                 if (_isSurfaceSwimming)
                 {
                     maxSpd *= surfaceMaxSpeedMultiplier;

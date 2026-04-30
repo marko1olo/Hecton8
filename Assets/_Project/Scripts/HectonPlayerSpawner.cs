@@ -90,7 +90,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     [SerializeField] private float raycastOriginHeight = 10000f;
 
     [Tooltip("Слой(и) террейна для Raycast")]
-    [SerializeField] private LayerMask terrainLayerMask = ~0;
+    [SerializeField] private LayerMask terrainLayerMask = (1 << 8) | (1 << 9) | (1 << 10);
 
     // ══════════════════════════════════════════════════════════════
     //  INSPECTOR — SPAWN SEARCH SETTINGS

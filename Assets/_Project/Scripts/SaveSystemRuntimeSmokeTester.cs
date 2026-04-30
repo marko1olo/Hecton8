@@ -1,6 +1,10 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using Hecton8.SaveSystem;
+using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Dev
@@ -27,6 +31,10 @@ namespace Hecton8.Dev
         [SerializeField] private bool corruptBackupMetadata = false;
         [SerializeField] private bool verboseLogging = false;
 
+        [Header("Indexed Sector Sub-Block")]
+        [SerializeField] private string indexedSubBlockSlotName = "smoke_indexed_subblock_slot";
+        [SerializeField] private bool cleanupIndexedSubBlockSlotAfterRun = true;
+
         // Inspector-only smoke diagnostics for save recovery validation.
 #pragma warning disable CS0414
         [Header("Debug")]
@@ -40,6 +48,9 @@ namespace Hecton8.Dev
         [SerializeField] private bool _debugLastLoadUsedBackup;
         [SerializeField] private int _debugLastLoadBackupGeneration;
         [SerializeField] private bool _debugLastLoadSelfRepaired;
+        [SerializeField] private bool _debugIndexedSubBlockPass;
+        [SerializeField] private string _debugIndexedSubBlockIssue = string.Empty;
+        [SerializeField] private long _debugIndexedSubBlockSectorHash;
 #pragma warning restore CS0414
 
         private bool _isRunning;
@@ -81,6 +92,145 @@ namespace Hecton8.Dev
 
             StartCoroutine(RunSmokePass());
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [ContextMenu("Run Indexed Sector Sub-Block Backup Smoke Pass")]
+        public void RunIndexedSubBlockFallbackFromContextMenu()
+        {
+            if (_isRunning)
+                return;
+
+            _ = RunIndexedSubBlockFallbackSmokePassAsync();
+        }
+
+        private async Awaitable RunIndexedSubBlockFallbackSmokePassAsync()
+        {
+            if (_isRunning)
+                return;
+
+            _isRunning = true;
+            _debugRunCount++;
+            _debugLastPhase = "IndexedSubBlockStartup";
+            _debugLastIssue = string.Empty;
+            _debugIndexedSubBlockIssue = string.Empty;
+            _debugIndexedSubBlockPass = false;
+            _debugIndexedSubBlockSectorHash = 0L;
+
+            string currentSlot = string.IsNullOrWhiteSpace(indexedSubBlockSlotName)
+                ? "smoke_indexed_subblock_slot"
+                : indexedSubBlockSlotName.Trim();
+
+            try
+            {
+                if (startupDelay > 0f)
+                    await DelayRealtimeAsync(startupDelay);
+
+                _debugLastPhase = "IndexedSubBlockWaitForManager";
+                if (!await WaitForSaveManagerAsync())
+                    return;
+
+                if (cleanupBeforeRun)
+                {
+                    _debugLastPhase = "IndexedSubBlockCleanupBefore";
+                    saveManager.DeleteSave(currentSlot);
+                    await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                }
+
+                _debugLastPhase = "IndexedSubBlockSeedPrimary";
+                await saveManager.SaveGameAsync(currentSlot);
+                if (!saveManager.LastOperationSucceeded)
+                {
+                    FailIndexedSubBlock($"Primary seed save failed: {saveManager.LastOperationError}");
+                    return;
+                }
+
+                _debugLastPhase = "IndexedSubBlockSeedBackup";
+                await saveManager.SaveGameAsync(currentSlot);
+                if (!saveManager.LastOperationSucceeded)
+                {
+                    FailIndexedSubBlock($"Backup seed save failed: {saveManager.LastOperationError}");
+                    return;
+                }
+
+                string primaryRelativePath = SaveManager.GetPrimarySaveFilePath(currentSlot);
+                string primaryAbsolutePath = Path.Combine(Application.persistentDataPath, primaryRelativePath);
+                string indexedBackupAbsolutePath = $"{primaryAbsolutePath}.bak";
+                if (!File.Exists(primaryAbsolutePath) || !File.Exists(indexedBackupAbsolutePath))
+                {
+                    FailIndexedSubBlock("Primary indexed save or .sav.bak mirror is missing after seed saves.");
+                    return;
+                }
+
+                List<SaveBinaryStorage.IndexedSectorEntryInfo> sectorEntries = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(16);
+                if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(primaryAbsolutePath, sectorEntries, out _, out string directoryError) ||
+                    sectorEntries.Count <= 0)
+                {
+                    FailIndexedSubBlock($"No indexed persistent sectors available for sub-block fallback smoke: {directoryError}");
+                    return;
+                }
+
+                if (!SaveBinaryStorage.TryCorruptFirstIndexedSectorProtectedBlockForSmoke(primaryAbsolutePath, out long sectorHash, out string corruptError))
+                {
+                    FailIndexedSubBlock(corruptError);
+                    return;
+                }
+
+                _debugIndexedSubBlockSectorHash = sectorHash;
+
+                if (!TryLoadIndexedSubBlockFallback(primaryAbsolutePath, sectorHash, out int restoredRecordCount, out string loadError))
+                {
+                    FailIndexedSubBlock($"Indexed sector fallback load failed: {loadError}");
+                    return;
+                }
+
+                _debugLastPhase = "IndexedSubBlockComplete";
+                _debugIndexedSubBlockPass = true;
+                Debug.Log($"[SaveSmoke] Indexed sub-block fallback PASS slot={currentSlot} sector=0x{sectorHash:X16} records={restoredRecordCount}");
+            }
+            catch (OperationCanceledException)
+            {
+                FailIndexedSubBlock("Indexed sub-block fallback smoke was cancelled.");
+            }
+            finally
+            {
+                if (cleanupIndexedSubBlockSlotAfterRun && saveManager != null)
+                {
+                    _debugLastPhase = "IndexedSubBlockCleanupAfter";
+                    saveManager.DeleteSave(currentSlot);
+                }
+
+                _isRunning = false;
+            }
+        }
+
+        private static bool TryLoadIndexedSubBlockFallback(
+            string primaryAbsolutePath,
+            long sectorHash,
+            out int restoredRecordCount,
+            out string loadError)
+        {
+            restoredRecordCount = 0;
+            loadError = string.Empty;
+            NativeArray<long> requestedSectors = new NativeArray<long>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeList<PersistentWorldDeltaRecord> restoredRecords = new NativeList<PersistentWorldDeltaRecord>(16, Allocator.TempJob);
+            try
+            {
+                requestedSectors[0] = sectorHash;
+                if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(primaryAbsolutePath, requestedSectors, restoredRecords, out loadError))
+                    return false;
+
+                restoredRecordCount = restoredRecords.Length;
+                return true;
+            }
+            finally
+            {
+                if (requestedSectors.IsCreated)
+                    requestedSectors.Dispose();
+                if (restoredRecords.IsCreated)
+                    restoredRecords.Dispose();
+            }
+        }
+#endif
 
         private IEnumerator RunSmokePass()
         {
@@ -330,6 +480,31 @@ namespace Hecton8.Dev
             Fail("SaveManager not found before smoke execution.");
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private async Awaitable<bool> WaitForSaveManagerAsync()
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0.5f, operationTimeout);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                AutoResolve();
+                if (saveManager != null)
+                    return true;
+
+                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+            }
+
+            FailIndexedSubBlock("SaveManager not found before indexed sub-block smoke execution.");
+            return false;
+        }
+
+        private async Awaitable DelayRealtimeAsync(float seconds)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (Time.realtimeSinceStartup < deadline)
+                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+        }
+#endif
+
         private int GetRequiredSavePassCount()
         {
             int highestBackupGeneration = 0;
@@ -396,7 +571,7 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (saveManager == null)
-                saveManager = SaveManager.Instance != null ? SaveManager.Instance : SaveManager.Instance;
+                saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime != null ? Hecton8.Core.GlobalRegistry.SaveRuntime : Hecton8.Core.GlobalRegistry.SaveRuntime;
         }
 
         private void LogVerbose(string message)
@@ -413,5 +588,16 @@ namespace Hecton8.Dev
             _isRunning = false;
             Debug.LogWarning($"[SaveSmoke] FAIL {_debugLastIssue}");
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void FailIndexedSubBlock(string issue)
+        {
+            _debugIndexedSubBlockPass = false;
+            _debugIndexedSubBlockIssue = string.IsNullOrEmpty(issue) ? "Unknown indexed sub-block failure." : issue;
+            _debugLastIssue = _debugIndexedSubBlockIssue;
+            _debugLastPhase = "IndexedSubBlockFailed";
+            Debug.LogWarning($"[SaveSmoke] Indexed sub-block fallback FAIL {_debugIndexedSubBlockIssue}");
+        }
+#endif
     }
 }

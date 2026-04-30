@@ -41,7 +41,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float impulse = 9f;
         [SerializeField] private float stunDuration = 2.5f;
         [SerializeField] private float shotCooldown = 0.6f;
-        [SerializeField] private LayerMask targetMask = ~0;
+        [SerializeField] private LayerMask targetMask = (1 << 8) | (1 << 9) | (1 << 10);
         [SerializeField] private float feedbackInterval = 0.35f;
 
         private Transform _cachedTransform;

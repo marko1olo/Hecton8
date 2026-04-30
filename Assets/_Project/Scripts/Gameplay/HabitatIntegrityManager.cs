@@ -97,6 +97,7 @@ namespace Hecton8.Gameplay
         public const ushort EnvironmentHazard = 4;
         public const ushort SubmarineImpact = 5;
         public const ushort FaunaEmp = 6;
+        public const ushort InventoryRadiation = 7;
     }
 
     [DisallowMultipleComponent]

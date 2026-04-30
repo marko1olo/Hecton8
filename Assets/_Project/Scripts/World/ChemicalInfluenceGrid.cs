@@ -76,6 +76,8 @@ namespace Hecton8.World
         private const float MinimumCellDimension = 0.25f;
         private const float MinimumSubmarineVelocitySqr = 0.25f;
         private const float MinimumTransportSignal = 0.05f;
+        private const float ChemicalTransientRadiusMeters = 18f;
+        private const float ChemicalTransientLifetimeSeconds = 12f;
 
         private static readonly int _ChemicalGridSourceId = Shader.PropertyToID("_ChemicalGridSource");
         private static readonly int _ChemicalGridTargetId = Shader.PropertyToID("_ChemicalGridTarget");
@@ -186,22 +188,44 @@ namespace Hecton8.World
 
         internal static void QueueBloodScent(Vector3 worldPosition, float intensity = 1f)
         {
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(math.max(0f, intensity), 0f, 0f, 0f));
+            float clampedIntensity = math.max(0f, intensity);
+            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(clampedIntensity, 0f, 0f, 0f));
+            RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueExhaustScent(Vector3 worldPosition, float intensity = 1f)
         {
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, math.max(0f, intensity), 0f, 0f));
+            float clampedIntensity = math.max(0f, intensity);
+            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, clampedIntensity, 0f, 0f));
+            RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueFearPheromone(Vector3 worldPosition, float intensity)
         {
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, math.max(0f, intensity), 0f));
+            float clampedIntensity = math.max(0f, intensity);
+            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, clampedIntensity, 0f));
+            RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueToxicityBurst(Vector3 worldPosition, float intensity)
         {
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, math.max(0f, intensity)));
+            float clampedIntensity = math.max(0f, intensity);
+            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, clampedIntensity));
+            RegisterChemicalTransient(worldPosition, clampedIntensity);
+        }
+
+        private static void RegisterChemicalTransient(Vector3 worldPosition, float intensity)
+        {
+            if (intensity <= 0f)
+                return;
+
+            WorldSpatialHashGrid.RegisterTransientEvent(
+                worldPosition,
+                ChemicalTransientRadiusMeters,
+                math.saturate(intensity),
+                ChemicalTransientLifetimeSeconds,
+                SpatialTransientEventType.ChemicalCloud,
+                SpatialInteractionFlags.ChemicalReceiver);
         }
 
         private void Awake()

@@ -42,7 +42,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float swingCooldown = 0.35f;
         [SerializeField] private float precisionStrikeMultiplier = 1.65f;
         [SerializeField] private float criticalHealthThreshold = 0.35f;
-        [SerializeField] private LayerMask hitMask = ~0;
+        [SerializeField] private LayerMask hitMask = (1 << 8) | (1 << 9) | (1 << 10);
         [SerializeField] private float feedbackInterval = 0.35f;
 
         private static readonly RaycastHit[] HitBuffer = new RaycastHit[8];

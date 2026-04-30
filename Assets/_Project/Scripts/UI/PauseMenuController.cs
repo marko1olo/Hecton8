@@ -296,8 +296,7 @@ namespace Hecton8.UI
             // TASK 33: Close Fabricator before opening pause menu if Fabricator is open
             if (HectonFabricatorUI.IsMenuOpen)
             {
-                // Trigger CraftingEvents.OnFabricatorClosed to properly close the fabricator
-                // HectonFabricatorUI subscribes to this event and will call CloseMenu()
+                // Trigger the deferred fabricator-closed payload so HectonFabricatorUI closes through the event lane.
                 CraftingEvents.RaiseFabricatorClosed();
             }
 
@@ -796,7 +795,7 @@ namespace Hecton8.UI
             if (_saveStatus != null)
                 ApplySaveStatusText(_cachedWriting, upperSlotName, "...");
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null)
             {
                 if (_saveStatus != null)
@@ -1347,7 +1346,7 @@ namespace Hecton8.UI
         private void RefreshSaveSectionState()
         {
             // TASK 31: SaveManager null check with user-facing error message
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             
             // If SaveManager is unavailable, disable all save buttons and display error
             if (saveManager == null)

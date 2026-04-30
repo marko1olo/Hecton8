@@ -144,6 +144,11 @@ namespace Hecton8.Environment
 
         private void OnEnable()
         {
+#if UNITY_EDITOR
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+#endif
+
             TryRegister();
 #if UNITY_EDITOR
             _editorPreviewDirty = true;
@@ -181,6 +186,12 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
         private void EditorUpdate()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+            {
+                EditorApplication.update -= EditorUpdate;
+                return;
+            }
+
             if (Application.isPlaying)
                 return;
 
@@ -274,6 +285,9 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+
             _editorPreviewDirty = true;
         }
 #endif
@@ -290,7 +304,7 @@ namespace Hecton8.Environment
                 _currentDepthMeters = 0f;
                 _currentDepthTier = 1;
                 _debugResolutionMode = evaluationTransform == null ? "Missing evaluation transform" : "Missing catalog";
-                if (hadProfile)
+                if (hadProfile && Application.isPlaying)
                     OnMatrixBiomeChanged?.Invoke(null);
                 UpdateDiagnostics(null, 1, HectonBiomeMatrixProfile.CardinalRegion.North);
                 return;
@@ -309,14 +323,17 @@ namespace Hecton8.Environment
             _debugSurfaceLevelY = surfaceLevelY;
             _debugResolutionMode = next == null ? MissingProfileLabel : usedFallback ? "Fallback" : "Exact";
 
-            if (depthTierChanged)
+            if (depthTierChanged && Application.isPlaying)
                 OnDepthTierChanged?.Invoke(_currentDepthTier, _currentDepthMeters);
 
             if (forcePublish || next != _currentProfile)
             {
                 _currentProfile = next;
-                GlobalTelemetryBus.PublishBiomeVisited(next != null ? next.biomeName : string.Empty, tier, depth);
-                OnMatrixBiomeChanged?.Invoke(_currentProfile);
+                if (Application.isPlaying)
+                {
+                    GlobalTelemetryBus.PublishBiomeVisited(next != null ? next.biomeName : string.Empty, tier, depth);
+                    OnMatrixBiomeChanged?.Invoke(_currentProfile);
+                }
             }
 
             UpdateDiagnostics(_currentProfile, tier, region);

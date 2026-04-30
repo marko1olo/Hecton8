@@ -38,6 +38,7 @@ namespace Hecton8.Items
         private const float OverflowScatterTorqueImpulse = 0.35f;
         private const float DeepSeaSeawaterDensityKgPerM3 = 1025f;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
+        private const ushort DefaultQualityMilli = 1000;
         // ─────────────────────── Data ────────────────────────────
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -81,6 +82,8 @@ namespace Hecton8.Items
         private int _cachedItemHashId;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
+        private uint _geneticsMask;
+        private ushort _qualityMilli = DefaultQualityMilli;
 
         // ═════════════════════════════════════════════════════════
         private void Awake()
@@ -230,8 +233,16 @@ namespace Hecton8.Items
         /// <param name="qty">Количество единиц.</param>
         public void SetItemData(ItemData data, int qty)
         {
+            SetItemData(data, qty, 0u, DefaultQualityMilli);
+        }
+
+        /// <summary>Programmatic item initialization with persisted mutable item state.</summary>
+        public void SetItemData(ItemData data, int qty, uint geneticsMask, ushort qualityMilli)
+        {
             itemData = data;
             quantity = qty > 0 ? qty : 1;
+            _geneticsMask = geneticsMask;
+            _qualityMilli = NormalizeQualityMilli(qualityMilli);
             RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             ConfigureWaterDynamicsFromData();
@@ -257,6 +268,10 @@ namespace Hecton8.Items
         /// <summary>Текущее количество (read-only).</summary>
         public int Quantity => quantity;
         public int ItemHashId => _cachedItemHashId;
+        /// <summary>Persisted genetics payload carried by biological seed world items.</summary>
+        public uint GeneticsMask => _geneticsMask;
+        /// <summary>Persisted item quality in milli-normalized units.</summary>
+        public ushort QualityMilli => _qualityMilli != 0 ? _qualityMilli : DefaultQualityMilli;
         public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;
         public byte ImpactAudioMaterialId => itemData != null ? itemData.AudioMaterialByte : (byte)ItemAudioMaterialId.Organic;
 
@@ -351,7 +366,7 @@ namespace Hecton8.Items
                 return true;
             }
 
-            PlayerInventory.ScavengeAttemptResult attempt = inventory.ScavengeAttempt(_cachedItemHashId, quantity, interactor);
+            PlayerInventory.ScavengeAttemptResult attempt = inventory.ScavengeAttempt(_cachedItemHashId, quantity, interactor, _geneticsMask, QualityMilli);
             if (!attempt.AnyAdded)
             {
                 DropOverflow(interactor);
@@ -372,6 +387,14 @@ namespace Hecton8.Items
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
             return true;
+        }
+
+        private static ushort NormalizeQualityMilli(ushort qualityMilli)
+        {
+            if (qualityMilli == 0)
+                return DefaultQualityMilli;
+
+            return (ushort)Mathf.Clamp((int)qualityMilli, 0, DefaultQualityMilli);
         }
 
         public string GetInteractText()

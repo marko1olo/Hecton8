@@ -18,9 +18,9 @@ Static snapshot:
 
 | Surface | Count |
 |---|---:|
-| `Docs` non-meta files | 521 |
-| docs `*.md`/`*.txt` files | 403 |
-| audit docs by filename | 45 |
+| `Docs` non-meta files | 529 |
+| docs `*.md`/`*.txt` files | 412 |
+| audit docs by filename | not authoritative because naming is inconsistent |
 | runtime smoke testers (`*SmokeTester*.cs`) | 12 |
 | verifier scripts (`*Verifier*.cs`) | 5 |
 | `Assets/_Project/Tests` non-meta files | 6 |
@@ -53,18 +53,28 @@ Verdict:
 ## 3. Smoke/runtime verification is materially real
 
 Evidence:
-- There are `12` smoke-test style scripts, including:
+- There are `12` runtime smoke-test style scripts:
   - `ShellVerificationRuntimeSmokeTester`
+  - `WeakToolsRuntimeSmokeTester`
   - `SaveSystemRuntimeSmokeTester`
   - `WorldGenerativeGeologyRuntimeSmokeTester`
   - `UIRuntimeSmokeTester`
   - `ToolRuntimeSmokeTester`
+  - `ToolTrialRangeRuntimeSmokeTester`
   - `FieldToolRuntimeSmokeTester`
   - `FabricationRuntimeSmokeTester`
   - `BuilderRuntimeSmokeTester`
   - `BarterRuntimeSmokeTester`
+  - `ScanRuntimeSmokeTester`
 - There are also `5` verifier scripts, including pause/state/scene recovery and domain-specific runtime verifiers.
 - Earlier passes already confirmed `ShellVerificationRuntimeSmokeTester` is not small or ceremonial.
+
+Verifier scripts:
+- `StateRecoveryVerifier`
+- `SceneTransitionVerifier`
+- `PauseSystemVerifier`
+- `PhysicalInteractionRuntimeVerifier`
+- `MantaAcousticRuntimeVerifier`
 
 What is genuinely good:
 - The project does try to execute scenario-level proof.
@@ -82,8 +92,10 @@ Verdict:
 
 Evidence:
 - `CrashTelemetryBuffer.cs:28` is a real runtime owner implementing `ITickable`, `IUpdatable`, `IFixedTickable`.
-- It owns ring buffers and export staging through persistent `NativeArray<DebugLogEntry>` allocations (`141-142`, `413-417`).
-- It samples `ProfilerRecorder`, `FrameTimingManager`, and listens to `Application.logMessageReceived` / threaded variants (`161-168`, `344`, `463-471`, `551`, `718-740`, `952`).
+- It defines a 64-byte `DebugLogEntry` (`111-112`).
+- It owns persistent `NativeArray<DebugLogEntry>` ring/export buffers (`143-144`, `463-467`).
+- It owns binary export scratch and live MMF staging buffers (`469-472`).
+- It exposes `EnsureRuntimeInstance()` and `ReportNanPhysicsRecovery()` (`224`, `236`).
 
 What is genuinely good:
 - Post-mortem proof is not an afterthought.
@@ -101,16 +113,16 @@ Verdict:
 ## 5. Documentation is a system, not a folder
 
 Evidence:
-- `Docs` contains `521` non-meta files.
+- `Docs` contains `529` non-meta files.
 - Largest branches include:
   - `_Archive` (`156`)
-  - `ARCHIVARIUS REPORTS` (`114`)
+  - `ARCHIVARIUS REPORTS` (`116` physical non-meta files)
   - miscellaneous log bundles (`90`)
   - `ARCHITECTURE` (`24`)
-  - active Codex forensic bundle (`26`)
+  - active Codex forensic bundle (`28` numbered markdown files)
 - `ARCHIVARIUS REPORTS` itself is structured into:
   - `01_GENERAL_INFO` (`22`)
-  - `02_ACTUAL_REPORTS` (`53`)
+  - `02_ACTUAL_REPORTS` (`55`)
   - `03_OBSOLETE` (`39`)
   - `04_DELETION_QUEUE` (`0`)
 - `DOC_GOVERNANCE.md` and `Docs/README.md` explicitly discuss archive rules and stale-doc management.

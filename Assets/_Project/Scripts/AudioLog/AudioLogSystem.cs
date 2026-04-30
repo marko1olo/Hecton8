@@ -101,16 +101,16 @@ namespace Hecton8.Narrative
         {
             TryRegister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
         }
 
         private void OnDisable()
         {
             TryUnregister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             if (_isPlaying)
                 StopPlayback();

@@ -226,7 +226,7 @@ namespace Hecton8.World
 
             EnsureInitialized();
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
-            int handle = _nativeHash.Register(positionAup, float3.zero, (int)kind, 0);
+            int handle = _nativeHash.Register(positionAup, float3.zero, (int)kind, ResolveEntityFlags(kind), 0);
             _entries[handle] = new Entry
             {
                 Transform = targetTransform,
@@ -250,7 +250,7 @@ namespace Hecton8.World
 
             entry.Layer = targetTransform.gameObject.layer;
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
-            _nativeHash.UpdateEntry(handle, positionAup, float3.zero, (int)entry.Kind, 0);
+            _nativeHash.UpdateEntry(handle, positionAup, float3.zero, (int)entry.Kind, ResolveEntityFlags(entry.Kind), 0);
         }
 
         private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask)
@@ -258,6 +258,18 @@ namespace Hecton8.World
             EnsureInitialized();
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, _queryHandles);
+        }
+
+        private static uint ResolveEntityFlags(SpatialTargetKind kind)
+        {
+            uint flags = 0u;
+            if ((kind & SpatialTargetKind.Bioform) != 0)
+                flags |= (uint)(SpatialInteractionFlags.Bioform | SpatialInteractionFlags.AcousticReceiver | SpatialInteractionFlags.ChemicalReceiver);
+            if ((kind & SpatialTargetKind.Signal) != 0)
+                flags |= (uint)SpatialInteractionFlags.Signal;
+            if ((kind & SpatialTargetKind.Pickup) != 0)
+                flags |= (uint)(SpatialInteractionFlags.Pickup | SpatialInteractionFlags.Interactable);
+            return flags;
         }
 
         private static bool MatchesLayer(int layer, int layerMask)

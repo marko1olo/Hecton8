@@ -474,12 +474,38 @@ namespace Hecton8.SaveSystem
                 steps.Add("exploration map capacity repaired");
             }
 
+            if (dto.exploredMortonMaskWords == null || dto.exploredMortonMaskWords.Length < ExplorationMapDTO.MortonMaskWordCount)
+            {
+                dto.EnsureCapacity();
+                changed = true;
+                steps.Add("exploration morton bitmask capacity repaired");
+            }
+
             int clampedCount = math.clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
             if (clampedCount != dto.exploredChunkCount)
             {
                 dto.exploredChunkCount = clampedCount;
                 changed = true;
                 steps.Add("exploration map count clamped");
+            }
+
+            int clampedWordCount = math.clamp(dto.exploredMortonWordCount, 0, ExplorationMapDTO.MortonMaskWordCount);
+            if (clampedWordCount != dto.exploredMortonWordCount)
+            {
+                dto.exploredMortonWordCount = clampedWordCount;
+                changed = true;
+                steps.Add("exploration morton word count clamped");
+            }
+
+            if (dto.chunkSizeMeters != ExplorationMapDTO.DenseChunkSizeMeters ||
+                dto.mortonMaskAxisBits != ExplorationMapDTO.MortonMaskAxisBits ||
+                dto.mortonMaskOriginOffset != ExplorationMapDTO.MortonMaskOriginOffset)
+            {
+                dto.chunkSizeMeters = ExplorationMapDTO.DenseChunkSizeMeters;
+                dto.mortonMaskAxisBits = ExplorationMapDTO.MortonMaskAxisBits;
+                dto.mortonMaskOriginOffset = ExplorationMapDTO.MortonMaskOriginOffset;
+                changed = true;
+                steps.Add("exploration morton metadata repaired");
             }
 
             return changed;

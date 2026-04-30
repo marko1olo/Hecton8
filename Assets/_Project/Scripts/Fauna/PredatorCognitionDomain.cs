@@ -538,9 +538,17 @@ namespace Hecton8.AI
             _cores[slot] = core;
         }
 
+        internal static float ResolveHibernationTimeAsleepSeconds(float decodedSleepStartSeconds, float currentTime)
+        {
+            if (!math.isfinite(decodedSleepStartSeconds) || !math.isfinite(currentTime) || decodedSleepStartSeconds <= 0f)
+                return 0f;
+
+            return math.max(0f, currentTime - decodedSleepStartSeconds);
+        }
+
         internal static bool ApplyHibernationCatchUp(int slot, float sleepSeconds, float currentTime)
         {
-            if (!IsValidSlot(slot) || sleepSeconds <= 0f)
+            if (!IsValidSlot(slot) || !math.isfinite(sleepSeconds) || sleepSeconds <= 0f)
                 return false;
 
             CognitionCore core = _cores[slot];
@@ -651,7 +659,7 @@ namespace Hecton8.AI
 
         internal static void BeginDispatcherFrame(int frameId)
         {
-            if (_evaluationScheduled)
+            if (_evaluationScheduled && _scheduledEvaluationHandle.IsCompleted)
             {
                 _scheduledEvaluationHandle.Complete();
                 _scheduledSwarmHandle = default;

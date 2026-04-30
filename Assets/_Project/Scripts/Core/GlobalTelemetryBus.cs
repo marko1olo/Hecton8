@@ -39,6 +39,7 @@ namespace Hecton8.Core
         private const int Version = 1;
         private const uint BinaryMagic = 0x4D4C4554u; // "TELM"
         private const float DrainIntervalSeconds = 60f;
+        private const int SnapshotCopyBudgetPerLateFrame = 128;
         private const string ExportFolderName = "Telemetry";
         private const string BinaryExtension = ".tbin";
         private const string JsonExtension = ".json";
@@ -54,9 +55,31 @@ namespace Hecton8.Core
         private static int _pendingByteCount;
         private static string _pendingBinaryPath;
         private static string _pendingJsonPath;
+        private static string _pendingTelemetryDirectory;
+        private static long _pendingGeneratedUtcTicks;
+        private static bool _snapshotInProgress;
+        private static int _snapshotStartIndex;
+        private static int _snapshotTotalCount;
+        private static int _snapshotCopiedCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
+        {
+            DisposeStaticState();
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorLifecycleHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= DisposeStaticState;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += DisposeStaticState;
+            UnityEditor.EditorApplication.quitting -= DisposeStaticState;
+            UnityEditor.EditorApplication.quitting += DisposeStaticState;
+        }
+#endif
+
+        private static void DisposeStaticState()
         {
             if (_ringBuffer.IsCreated)
                 _ringBuffer.Dispose();
@@ -74,6 +97,12 @@ namespace Hecton8.Core
             _pendingByteCount = 0;
             _pendingBinaryPath = null;
             _pendingJsonPath = null;
+            _pendingTelemetryDirectory = null;
+            _pendingGeneratedUtcTicks = 0L;
+            _snapshotInProgress = false;
+            _snapshotStartIndex = 0;
+            _snapshotTotalCount = 0;
+            _snapshotCopiedCount = 0;
         }
 
         public static void PublishPlayerDeath(Vector3 worldPosition)
@@ -118,11 +147,20 @@ namespace Hecton8.Core
 
         public static void LateFrameUpdate(float unscaledTimeSeconds)
         {
-            if (!_ringBuffer.IsCreated || unscaledTimeSeconds < _nextDrainTimeSeconds)
+            if (!_ringBuffer.IsCreated)
+                return;
+
+            if (_snapshotInProgress)
+            {
+                ContinueSnapshotCopy();
+                return;
+            }
+
+            if (unscaledTimeSeconds < _nextDrainTimeSeconds)
                 return;
 
             _nextDrainTimeSeconds = unscaledTimeSeconds + DrainIntervalSeconds;
-            QueueBackgroundExport();
+            BeginSnapshotCopy();
         }
 
         private static void Publish(
@@ -132,10 +170,16 @@ namespace Hecton8.Core
             float scalarValue,
             Vector3 worldPosition)
         {
+            if (!Application.isPlaying)
+                return;
+
             EnsureInitialized();
 
             int writeIndex = Interlocked.Increment(ref _writeCursor) - 1;
             int slot = writeIndex % Capacity;
+            if (slot < 0)
+                slot += Capacity;
+
             _ringBuffer[slot] = new TelemetryEvent
             {
                 FrameIndex = unchecked((uint)Time.frameCount),
@@ -164,30 +208,53 @@ namespace Hecton8.Core
                 : unchecked((uint)LocHash.Compute(value));
         }
 
-        private static unsafe void QueueBackgroundExport()
+        private static void BeginSnapshotCopy()
         {
             if (Interlocked.CompareExchange(ref _exportInFlight, 1, 0) != 0)
                 return;
 
-            int totalWritten = math.min(_writeCursor, Capacity);
+            int writeCursor = Volatile.Read(ref _writeCursor);
+            int totalWritten = math.min(writeCursor, Capacity);
             if (totalWritten <= 0)
             {
                 Interlocked.Exchange(ref _exportInFlight, 0);
                 return;
             }
 
-            int startIndex = _writeCursor - totalWritten;
-            for (int i = 0; i < totalWritten; i++)
+            _snapshotStartIndex = writeCursor - totalWritten;
+            _snapshotTotalCount = totalWritten;
+            _snapshotCopiedCount = 0;
+            _snapshotInProgress = true;
+            ContinueSnapshotCopy();
+        }
+
+        private static void ContinueSnapshotCopy()
+        {
+            if (!_snapshotInProgress || !_ringBuffer.IsCreated || !_snapshotBuffer.IsCreated)
+                return;
+
+            int remaining = _snapshotTotalCount - _snapshotCopiedCount;
+            int copyCount = math.min(remaining, SnapshotCopyBudgetPerLateFrame);
+            for (int i = 0; i < copyCount; i++)
             {
-                int ringIndex = (startIndex + i) % Capacity;
+                int ringIndex = (_snapshotStartIndex + _snapshotCopiedCount + i) % Capacity;
                 if (ringIndex < 0)
                     ringIndex += Capacity;
 
-                _snapshotBuffer[i] = _ringBuffer[ringIndex];
+                _snapshotBuffer[_snapshotCopiedCount + i] = _ringBuffer[ringIndex];
             }
 
+            _snapshotCopiedCount += copyCount;
+            if (_snapshotCopiedCount < _snapshotTotalCount)
+                return;
+
+            CompleteSnapshotCopy();
+        }
+
+        private static unsafe void CompleteSnapshotCopy()
+        {
             int eventSizeBytes = UnsafeUtility.SizeOf<TelemetryEvent>();
-            WriteHeader(totalWritten, eventSizeBytes);
+            WriteHeader(_snapshotTotalCount, eventSizeBytes);
 
             fixed (byte* exportBytesPtr = _exportBytes)
             {
@@ -195,17 +262,17 @@ namespace Hecton8.Core
                 UnsafeUtility.MemCpy(
                     payloadPtr,
                     _snapshotBuffer.GetUnsafeReadOnlyPtr(),
-                    totalWritten * eventSizeBytes);
+                    _snapshotTotalCount * eventSizeBytes);
             }
 
-            string telemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
-            Directory.CreateDirectory(telemetryDirectory);
-
-            string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-            _pendingBinaryPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{BinaryExtension}");
-            _pendingJsonPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{JsonExtension}");
-            _pendingEventCount = totalWritten;
-            _pendingByteCount = BinaryHeaderSizeBytes + (totalWritten * eventSizeBytes);
+            _pendingTelemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
+            _pendingGeneratedUtcTicks = DateTime.UtcNow.Ticks;
+            _pendingEventCount = _snapshotTotalCount;
+            _pendingByteCount = BinaryHeaderSizeBytes + (_snapshotTotalCount * eventSizeBytes);
+            _snapshotInProgress = false;
+            _snapshotStartIndex = 0;
+            _snapshotTotalCount = 0;
+            _snapshotCopiedCount = 0;
             ThreadPool.QueueUserWorkItem(_backgroundExportCallback);
         }
 
@@ -225,6 +292,19 @@ namespace Hecton8.Core
         {
             try
             {
+                string telemetryDirectory = _pendingTelemetryDirectory;
+                if (string.IsNullOrEmpty(telemetryDirectory))
+                    return;
+
+                Directory.CreateDirectory(telemetryDirectory);
+                DateTime generatedUtc = _pendingGeneratedUtcTicks > 0L
+                    ? new DateTime(_pendingGeneratedUtcTicks, DateTimeKind.Utc)
+                    : DateTime.UtcNow;
+
+                string timestamp = generatedUtc.ToString("yyyyMMdd_HHmmss");
+                _pendingBinaryPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{BinaryExtension}");
+                _pendingJsonPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{JsonExtension}");
+
                 if (_pendingByteCount > 0 && !string.IsNullOrEmpty(_pendingBinaryPath))
                 {
                     fixed (byte* exportPtr = _exportBytes)
@@ -254,6 +334,8 @@ namespace Hecton8.Core
                 _pendingByteCount = 0;
                 _pendingBinaryPath = null;
                 _pendingJsonPath = null;
+                _pendingTelemetryDirectory = null;
+                _pendingGeneratedUtcTicks = 0L;
                 Interlocked.Exchange(ref _exportInFlight, 0);
             }
         }

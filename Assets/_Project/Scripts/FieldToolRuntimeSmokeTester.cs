@@ -471,7 +471,7 @@ namespace Hecton8.Gameplay
             if (playerBuilder == null)
                 playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
             if (constructionManager == null)
-                constructionManager = ConstructionManager.Instance;
+                constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (loadoutProvisioner == null)
                 loadoutProvisioner = ToolLoadoutProvisioner.ActiveRuntimeInstance;
             if (salvageProbeItem == null)

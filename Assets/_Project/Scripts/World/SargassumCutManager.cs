@@ -1289,6 +1289,9 @@ namespace Hecton8.World
         {
             if (stampComputeOverride == null)
                 stampComputeOverride = AssetDatabase.LoadAssetAtPath<ComputeShader>(StampComputeAssetPath);
+
+            if (damageVolumeComputeOverride == null)
+                damageVolumeComputeOverride = AssetDatabase.LoadAssetAtPath<ComputeShader>(DamageVolumeComputeAssetPath);
         }
 #endif
     }

@@ -61,7 +61,7 @@ namespace Hecton8.Meta
 
         private void OnEnable()
         {
-            SaveManager.Instance?.Register(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             SubscribeToEventBus();
             ResetForCurrentContext();
         }
@@ -73,13 +73,13 @@ namespace Hecton8.Meta
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             UnsubscribeFromEventBus();
         }
 
         private void OnDestroy()
         {
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             UnsubscribeFromEventBus();
 
             if (_instance == this)
@@ -198,7 +198,7 @@ namespace Hecton8.Meta
             if (string.IsNullOrWhiteSpace(slotName))
                 return;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null)
                 return;
 
@@ -212,7 +212,7 @@ namespace Hecton8.Meta
             if (!string.IsNullOrWhiteSpace(context.TargetSaveSlot))
                 return context.TargetSaveSlot;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager != null && !string.IsNullOrWhiteSpace(saveManager.LastOperationSlot))
                 return saveManager.LastOperationSlot;
 

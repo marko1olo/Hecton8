@@ -26,6 +26,11 @@ namespace Hecton8.World
         private const float SeedSlopeSampleDistance = 1.25f;
         private const float MaximumSeedSlopeDegrees = 30f;
         private const int SeedsPerSargassumCluster = 3;
+        private const float CanopyShadowRadiusMeters = 6f;
+        private const float CanopyVerticalMinMeters = 1.25f;
+        private const float CanopyVerticalMaxMeters = 28f;
+        private const float CanopyMinHeightScale = 0.45f;
+        private const float LightStarvationStrength = 0.85f;
         private const byte StateWaiting = 0;
         private const byte StateActive = 1;
 
@@ -62,6 +67,9 @@ namespace Hecton8.World
             public float3 RuntimePosition;
             public float SpawnPlayTimeSeconds;
             public float GrowthDurationSeconds;
+            public float HeightScale;
+            public float WidthScale;
+            public int TypeId;
             public byte SeenThisScan;
             public byte Reserved0;
             public ushort Reserved1;
@@ -72,6 +80,9 @@ namespace Hecton8.World
         {
             public uint InstanceUid;
             public float Progress01;
+            public float GrowthMultiplier;
+            public float ScaleMultiplier;
+            public float ResourceYieldMultiplier;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -79,6 +90,11 @@ namespace Hecton8.World
         {
             [ReadOnly] public NativeArray<FloraMaturationState> States;
             public float CurrentPlayTimeSeconds;
+            public float CanopyShadowRadiusMeters;
+            public float CanopyVerticalMinMeters;
+            public float CanopyVerticalMaxMeters;
+            public float CanopyMinHeightScale;
+            public float LightStarvationStrength;
             [WriteOnly] public NativeArray<FloraMaturationResult> Results;
 
             public void Execute(int index)
@@ -96,11 +112,76 @@ namespace Hecton8.World
                 float durationSeconds = math.max(1f, state.GrowthDurationSeconds);
                 float ageSeconds = math.max(0f, CurrentPlayTimeSeconds - state.SpawnPlayTimeSeconds);
                 float progress01 = math.saturate(ageSeconds / durationSeconds);
+                float maturationMultiplier = ResolveMaturationMultiplier(progress01);
+                float growthMultiplier = ResolveLightStarvationGrowthMultiplier(index, state, progress01);
                 Results[index] = new FloraMaturationResult
                 {
                     InstanceUid = state.InstanceUid,
-                    Progress01 = progress01
+                    Progress01 = progress01,
+                    GrowthMultiplier = growthMultiplier,
+                    ScaleMultiplier = maturationMultiplier,
+                    ResourceYieldMultiplier = maturationMultiplier
                 };
+            }
+
+            private static float ResolveMaturationMultiplier(float progress01)
+            {
+                float clampedProgress = math.saturate(progress01);
+                float smoothProgress = clampedProgress * clampedProgress * (3f - (2f * clampedProgress));
+                return math.lerp(0.1f, 1f, smoothProgress);
+            }
+
+            private float ResolveLightStarvationGrowthMultiplier(int index, FloraMaturationState undergrowth, float progress01)
+            {
+                if (undergrowth.TypeId != (int)HectonVegetationInstanceType.Grass ||
+                    math.abs(undergrowth.HeightScale) <= 0.0001f)
+                {
+                    return progress01;
+                }
+
+                float bestOcclusion01 = 0f;
+                float verticalRange = math.max(0.001f, CanopyVerticalMaxMeters - CanopyVerticalMinMeters);
+                for (int canopyIndex = 0; canopyIndex < States.Length; canopyIndex++)
+                {
+                    if (canopyIndex == index)
+                        continue;
+
+                    FloraMaturationState canopy = States[canopyIndex];
+                    if (!IsCanopyType(canopy.TypeId) ||
+                        math.abs(canopy.HeightScale) < CanopyMinHeightScale)
+                    {
+                        continue;
+                    }
+
+                    float3 delta = canopy.RuntimePosition - undergrowth.RuntimePosition;
+                    float verticalDelta = delta.y;
+                    if (verticalDelta < CanopyVerticalMinMeters || verticalDelta > CanopyVerticalMaxMeters)
+                        continue;
+
+                    float radius = math.max(0.25f, CanopyShadowRadiusMeters * math.max(1f, math.abs(canopy.WidthScale)));
+                    float radiusSq = radius * radius;
+                    float planarDistanceSq = (delta.x * delta.x) + (delta.z * delta.z);
+                    if (planarDistanceSq > radiusSq)
+                        continue;
+
+                    float planarOcclusion01 = 1f - math.saturate(planarDistanceSq / radiusSq);
+                    float verticalOcclusion01 = 1f - math.saturate((verticalDelta - CanopyVerticalMinMeters) / verticalRange);
+                    float heightOcclusion01 = math.saturate((math.abs(canopy.HeightScale) - CanopyMinHeightScale) / math.max(0.001f, 1f - CanopyMinHeightScale));
+                    float occlusion01 = planarOcclusion01 *
+                                         math.max(0.25f, verticalOcclusion01) *
+                                         math.max(0.25f, heightOcclusion01);
+                    bestOcclusion01 = math.max(bestOcclusion01, occlusion01);
+                }
+
+                return bestOcclusion01 > 0.0001f
+                    ? -math.saturate(bestOcclusion01 * math.max(0.01f, LightStarvationStrength))
+                    : progress01;
+            }
+
+            private static bool IsCanopyType(int typeId)
+            {
+                return typeId == (int)HectonVegetationInstanceType.Sargassum ||
+                       typeId == (int)HectonVegetationInstanceType.GiantKelp;
             }
         }
 
@@ -315,6 +396,12 @@ namespace Hecton8.World
                     continue;
                 }
 
+                if (metadata[i].RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
+                    math.abs(metadata[i].HeightScale) <= 0.0001f)
+                {
+                    continue;
+                }
+
                 Vector3 runtimePosition = ExtractTranslation(matrices[i]);
                 float spawnPlayTimeSeconds;
                 if (!registry.TryGetFloraSpawnTimestamp(instanceUid, out spawnPlayTimeSeconds))
@@ -329,6 +416,9 @@ namespace Hecton8.World
                     state.RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
                     state.SpawnPlayTimeSeconds = spawnPlayTimeSeconds;
                     state.GrowthDurationSeconds = Mathf.Max(1f, growthTimeSeconds);
+                    state.HeightScale = Mathf.Abs(metadata[i].HeightScale);
+                    state.WidthScale = Mathf.Abs(metadata[i].WidthScale);
+                    state.TypeId = types[i];
                     state.SeenThisScan = 1;
                     _maturationStates[existingIndex] = state;
                     continue;
@@ -343,6 +433,9 @@ namespace Hecton8.World
                     RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
                     SpawnPlayTimeSeconds = spawnPlayTimeSeconds,
                     GrowthDurationSeconds = Mathf.Max(1f, growthTimeSeconds),
+                    HeightScale = Mathf.Abs(metadata[i].HeightScale),
+                    WidthScale = Mathf.Abs(metadata[i].WidthScale),
+                    TypeId = types[i],
                     SeenThisScan = 1,
                     Reserved0 = 0,
                     Reserved1 = 0
@@ -365,6 +458,11 @@ namespace Hecton8.World
             {
                 States = _maturationStates.AsArray(),
                 CurrentPlayTimeSeconds = currentPlayTime,
+                CanopyShadowRadiusMeters = CanopyShadowRadiusMeters,
+                CanopyVerticalMinMeters = CanopyVerticalMinMeters,
+                CanopyVerticalMaxMeters = CanopyVerticalMaxMeters,
+                CanopyMinHeightScale = CanopyMinHeightScale,
+                LightStarvationStrength = LightStarvationStrength,
                 Results = _maturationResults
             }.Schedule(_maturationStates.Length, 32);
             _maturationJobScheduled = true;
@@ -372,7 +470,7 @@ namespace Hecton8.World
 
         private void CompleteMaturationJobIfNeeded()
         {
-            if (!_maturationJobScheduled)
+            if (!_maturationJobScheduled || !_maturationJobHandle.IsCompleted)
                 return;
 
             _maturationJobHandle.Complete();
@@ -388,7 +486,17 @@ namespace Hecton8.World
                 if (result.InstanceUid == 0u)
                     continue;
 
-                destructibleOrganicManager.TrySetMaturationProgress(result.InstanceUid, result.Progress01);
+                if (result.GrowthMultiplier < -0.0001f)
+                {
+                    destructibleOrganicManager.TryApplyLightStarvation(result.InstanceUid, -result.GrowthMultiplier);
+                    continue;
+                }
+
+                destructibleOrganicManager.TrySetMaturationProgress(
+                    result.InstanceUid,
+                    result.Progress01,
+                    result.ScaleMultiplier,
+                    result.ResourceYieldMultiplier);
             }
         }
 

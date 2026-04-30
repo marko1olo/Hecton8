@@ -33,6 +33,7 @@ namespace Hecton8.World
         private const int FrustumPlaneCount = 6;
         private const int MaxVegetationVisibilityPasses = 3;
         private const int MaxVegetationDrawCommands = 7;
+        private const uint StrictRenderingLayerMask = (1u << 8) | (1u << 9) | (1u << 10);
         private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
         private const byte VisibilityMaskNear = 1 << 0;
         private const byte VisibilityMaskFar = 1 << 1;
@@ -722,7 +723,7 @@ namespace Hecton8.World
                     drawCommandsType = BatchDrawCommandType.Direct,
                     filterSettings = new BatchFilterSettings
                     {
-                        renderingLayerMask = uint.MaxValue,
+                        renderingLayerMask = StrictRenderingLayerMask,
                         rendererPriority = 0,
                         layer = (byte)math.clamp(Layer, byte.MinValue, byte.MaxValue),
                         shadowCastingMode = shadowCastingMode,

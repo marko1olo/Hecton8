@@ -26,7 +26,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float wiringRange = 8f;
 
         [Tooltip("Collision mask used to find habitat modules for bypass routing.")]
-        [SerializeField] private LayerMask wiringMask = ~0;
+        [SerializeField] private LayerMask wiringMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Fallback heat-generation rate authored into the modular runtime.")]
         [SerializeField] private float authoredHeatGenerationRate = 0.12f;
@@ -101,7 +101,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            ConstructionManager constructionManager = ConstructionManager.Instance;
+            ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (constructionManager == null)
             {
                 ToolHitUtility.ShowWarning(InvalidTargetMessage);

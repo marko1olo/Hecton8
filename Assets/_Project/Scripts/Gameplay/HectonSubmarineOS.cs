@@ -213,8 +213,7 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstalled()
         {
-            SubmarineCoreDirector[] submarineRoots = Object.FindObjectsByType<SubmarineCoreDirector>(
-                FindObjectsInactive.Exclude);
+            SubmarineCoreDirector[] submarineRoots = Object.FindObjectsByType<SubmarineCoreDirector>(FindObjectsInactive.Exclude);
             if (submarineRoots == null)
                 return;
 
@@ -250,6 +249,12 @@ namespace Hecton8.Gameplay
         /// <summary>Latest fleet telemetry published by the repair-drone dispatcher.</summary>
         public HectonDroneFleetSnapshot FleetSnapshot => _fleetSnapshot;
 
+        /// <summary>Arms the fleet-wide last-resort sacrifice weld command.</summary>
+        public void RequestFleetSacrifice()
+        {
+            DroneFleetManager.RequestFleetSacrifice();
+        }
+
         private void Awake()
         {
             CacheReferences();
@@ -270,6 +275,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            PublishShutdownSnapshot();
             Unsubscribe();
             TryUnregister();
             SetLowPowerMode(false);
@@ -829,6 +835,21 @@ namespace Hecton8.Gameplay
 
             string captionText = new string(captionChars); // COLD ALLOC: string[1] — spatial caption payload authored on state-transition boundaries only — owner: HectonSubmarineOS
             AudioCaptionEvents.Raise(new AudioCaptionRequest(captionText, transform.position, 2.4f, math.saturate(intensity)));
+        }
+
+        private void PublishShutdownSnapshot()
+        {
+            HectonSubmarineOsSnapshot shutdownSnapshot = new HectonSubmarineOsSnapshot(
+                _subsystemStatus,
+                SubmarineEmergencyLevel.Nominal,
+                _powerNormalized,
+                _oxygenNormalized,
+                _maxPressureKPa,
+                false,
+                false,
+                false);
+            _lastPublishedSnapshot = shutdownSnapshot;
+            HectonSubmarineOsEvents.RaiseSnapshotUpdated(in shutdownSnapshot);
         }
 
         private void PublishLog(HectonSubmarineOsLogCode code, byte priority)

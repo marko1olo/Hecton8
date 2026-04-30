@@ -336,8 +336,8 @@ namespace Hecton8.AtlasSignal
         {
             TryRegister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
 
             NarrativeEvents.Register(this);
             Atlas6Events.Register(this);
@@ -348,8 +348,8 @@ namespace Hecton8.AtlasSignal
         {
             TryUnregister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             NarrativeEvents.Unregister(this);
             Atlas6Events.Unregister(this);
@@ -491,7 +491,7 @@ namespace Hecton8.AtlasSignal
             _latestScarcityDirectiveQuestHash = directiveQuestHash;
             _latestScarcityDirectiveResourceHash = resourceHash;
 
-            Quest.QuestManager questManager = Quest.QuestManager.Instance;
+            Quest.QuestManager questManager = GlobalRegistry.Quest;
             if (questManager != null &&
                 directiveQuestHash != 0u &&
                 questManager.TryGetQuestPresentation(

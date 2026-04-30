@@ -17,6 +17,8 @@ namespace Hecton8.AI
         private const float MinimumTransportNoiseRadius = 28f;
         private const float MaximumTransportNoiseRadius = 96f;
         private const float ActiveSonarDetectionRadius = 80f;
+        private const float PlayerNoiseMemorySeconds = 10f;
+        private const float ActiveSonarMemorySeconds = 8f;
         private const int MaxNoiseListenerCount = 256;
         private const int MaxAcousticOcclusionHits = 8;
 
@@ -121,6 +123,18 @@ namespace Hecton8.AI
                 Mathf.Clamp01(toolUseNoise01),
                 Time.frameCount);
             _hasPlayerNoiseSignal = true;
+            float transientRadius = ResolveDispatchRadius(_playerNoiseSignal);
+            if (transientRadius > 0f)
+            {
+                WorldSpatialHashGrid.RegisterTransientEvent(
+                    position,
+                    transientRadius,
+                    ResolveSignalIntensity01(_playerNoiseSignal),
+                    PlayerNoiseMemorySeconds,
+                    SpatialTransientEventType.AcousticImpulse,
+                    SpatialInteractionFlags.AcousticReceiver);
+            }
+
             DispatchPlayerSignal(_playerNoiseSignal);
         }
 
@@ -143,6 +157,13 @@ namespace Hecton8.AI
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz,
                 ActiveSonarDetectionRadius);
             _hasPlayerNoiseSignal = true;
+            WorldSpatialHashGrid.RegisterTransientEvent(
+                position,
+                ActiveSonarDetectionRadius,
+                clampedIntensity,
+                ActiveSonarMemorySeconds,
+                SpatialTransientEventType.AcousticImpulse,
+                SpatialInteractionFlags.AcousticReceiver);
             DispatchActiveSonarPing(_playerNoiseSignal);
         }
 
@@ -181,6 +202,7 @@ namespace Hecton8.AI
                 signal.Position,
                 dispatchRadius,
                 SpatialTargetKind.Bioform,
+                SpatialInteractionFlags.AcousticReceiver,
                 _playerNoiseListenerBuffer);
 
             for (int i = 0; i < count; i++)
@@ -196,6 +218,7 @@ namespace Hecton8.AI
                 signal.Position,
                 ActiveSonarDetectionRadius,
                 SpatialTargetKind.Bioform,
+                SpatialInteractionFlags.AcousticReceiver,
                 _playerNoiseListenerBuffer);
 
             for (int i = 0; i < count; i++)
@@ -270,6 +293,19 @@ namespace Hecton8.AI
                 dispatchRadius = Mathf.Max(dispatchRadius, signal.SignalRadiusMeters);
 
             return dispatchRadius;
+        }
+
+        private static float ResolveSignalIntensity01(PlayerNoiseSignal signal)
+        {
+            float movementIntensity = signal.MovementSpeedSqr > 0f
+                ? Mathf.InverseLerp(MinimumMovementNoiseSqr, 72.25f, signal.MovementSpeedSqr)
+                : 0f;
+            float utilityIntensity = Mathf.Max(signal.ToolUseNoise01, signal.TransportBoost01);
+            if (signal.FlashlightOn)
+                utilityIntensity = Mathf.Max(utilityIntensity, 0.25f);
+            if (signal.IsActiveSonarPing)
+                utilityIntensity = Mathf.Max(utilityIntensity, signal.ToolUseNoise01 * signal.AcousticTransmission01);
+            return Mathf.Clamp01(Mathf.Max(movementIntensity, utilityIntensity));
         }
 
         public static float EvaluatePlayerNoise01(

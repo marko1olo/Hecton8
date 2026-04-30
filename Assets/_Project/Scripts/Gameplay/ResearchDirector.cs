@@ -1,4 +1,5 @@
 using Hecton8.Narrative;
+using Hecton8.Core;
 using Hecton8.Quest;
 using UnityEngine;
 
@@ -126,8 +127,9 @@ namespace Hecton8.Gameplay
             if (node.LoreUnlockBits != 0UL && LoreDatabaseManager.Instance != null)
                 LoreDatabaseManager.Instance.UnlockByPackedBits(node.LoreUnlockBits);
 
-            if (!string.IsNullOrWhiteSpace(node.UnlockQuestId) && QuestManager.Instance != null)
-                QuestManager.Instance.ActivateQuest(node.UnlockQuestId);
+            QuestManager questManager = GlobalRegistry.Quest;
+            if (!string.IsNullOrWhiteSpace(node.UnlockQuestId) && questManager != null)
+                questManager.ActivateQuest(node.UnlockQuestId);
         }
 
         private void RegisterScanListener()

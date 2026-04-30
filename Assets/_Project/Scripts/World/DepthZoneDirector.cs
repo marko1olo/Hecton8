@@ -152,7 +152,7 @@ namespace Hecton8.World
             DepthZoneProfile newZone = FindZoneForDepth(depth);
 
             // Обновляем QuestManager после разрешения текущей authored zone context.
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager != null)
             {
                 questManager.UpdateDepthContext(

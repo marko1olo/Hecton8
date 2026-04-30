@@ -310,6 +310,46 @@ Parallel to that:
 This is not a perfectly singular stack.
 It is a dominant survival spine plus one parallel health branch.
 
+## 2026-04-30 Boundary Recheck
+
+Prompt-targeted ownership split:
+
+| Owner | Current authority | Evidence | Boundary risk |
+|---|---|---|---|
+| `HectonSurvivalSystem` | oxygen, pressure, suit integrity, thermal state, survival death cause, survival save state | `HectonSurvivalSystem.cs:184`, `459-510`, `1362`, `1556-1595` | already owns damage-like integrity loss and death semantics |
+| `HazardZoneManager` | hazard volume registry, exposure job, spatial registration, exposure mask, survival damage routing | `HazardZoneManager.cs:47-63`, `291-321`, `514-534`, `654-663`, `716`, `1176`, `1242-1243` | not the source of every hazard; it is the exposure router |
+| `HectonPlayerHealth` | HP, invulnerability, radiation exposure, mutation bitmask, mutation events | `HectonPlayerHealth.cs:66-75`, `106-122`, `210-227`, `303-321`, `364-379` | parallel branch can drift from survival integrity/death logic |
+
+Operational damage/hazard flow:
+
+`environment source`
+-> `HectonHazardManager.Register(...)` or direct `HazardZoneManager.RegisterZone(...)`
+-> `HazardZoneManager` spatial registration / native exposure job
+-> exposure intensity and mask publication
+-> `HectonSurvivalSystem.TakeDamage(...)` or resistance query
+-> downstream stress/visor/audio consequence owners
+
+Parallel health/mutation flow:
+
+`radiation / fauna / direct gameplay damage`
+-> `HectonPlayerHealth.ApplyRadiationExposure(...)` or `TakeDamage(...)`
+-> HP and mutation state
+-> `OnDamageTaken`, `OnDeath`, `OnMutationFlagsChanged`
+-> external listeners and presentation logic
+
+Legacy save gap:
+
+- `HectonPlayerHealth.cs:371-379` implements `ISaveable`, but `PopulateSaveData` explicitly documents that `SaveData` has no dedicated player-health DTO.
+- That means the health/mutation branch is not persistence-equal to `HectonSurvivalSystem`, which has concrete save/load implementation at `HectonSurvivalSystem.cs:1559-1595`.
+- Any feature depending on permanent mutation state must treat `HectonPlayerHealth` persistence as incomplete until a dedicated DTO/record is added and load-order validated.
+
+Boundary rule for future work:
+
+- pressure, oxygen, thermal, suit integrity, and survival death belong to `HectonSurvivalSystem`.
+- hazard volume registration and exposure accumulation belong to `HazardZoneManager`.
+- HP, mutation flags, invulnerability, and radiation mutation thresholds belong to `HectonPlayerHealth`.
+- no new system should apply survival damage directly while bypassing the hazard router unless it is a one-shot explicit damage event with a documented owner.
+
 ## What Looks Good
 
 - `HectonSurvivalSystem` is a real, broad, explicit survival owner with save integration and detailed death-state semantics.
@@ -345,6 +385,56 @@ It is a dominant survival spine plus one parallel health branch.
 | Memory | None. Documentation-only pass. |
 | Cadence | None. Runtime code unchanged. |
 | Correctness | Improves visibility into one of the most failure-prone gameplay domains by exposing the real overlap between survival, health, hazard, and stress-consequence systems. |
+
+## 2026-04-30 Late Revalidation - Survival / Hazard / Health Split
+
+Static source scan was repeated against the current survival, hazard, health, construction-adjacent damage, audio stress, and visor stress surfaces.
+No runtime code was changed in this pass.
+
+### Current ownership boundary
+
+`HectonSurvivalSystem` remains the dominant survival authority:
+
+- it implements `ITickable`, `IUpdatable`, `ISlowTickable`, and `ISaveable` (`HectonSurvivalSystem.cs:184`).
+- it registers save ownership through `GlobalRegistry.Save` (`HectonSurvivalSystem.cs:463`).
+- `Tick()` owns high-frequency survival context, depth/pressure, hull stress, oxygen grace, and lethal-state checks (`HectonSurvivalSystem.cs:577-590`).
+- `SlowTick()` owns oxygen, energy, pressure damage, rapid-ascent damage, temperature, radiation, toxicity, hunger, and thirst (`HectonSurvivalSystem.cs:593-605`).
+- environmental resistance is resolved from the survival side (`HectonSurvivalSystem.cs:916`).
+- direct survival damage still routes through `TakeDamage(float amount)` (`HectonSurvivalSystem.cs:1362`).
+- concrete survival persistence exists (`HectonSurvivalSystem.cs:1559-1595`).
+
+`HazardZoneManager` remains the exposure router:
+
+- it implements `ITickable`, `IUpdatable`, and `ILateFrameTickable` (`HazardZoneManager.cs:192`).
+- zones enter through explicit registration (`HazardZoneManager.cs:291-296`).
+- exposure advances on a stepped tick path (`HazardZoneManager.cs:499-518`).
+- completed exposure jobs are consumed in late-frame cadence and currently check `_jobHandle.IsCompleted` before `Complete()` (`HazardZoneManager.cs:523-525`, `HazardZoneManager.cs:646-651`).
+- toxicity damage pulses route into `_playerSurvival.TakeDamage(...)` (`HazardZoneManager.cs:705-716`).
+- survival resistance is consumed by the hazard router (`HazardZoneManager.cs:741`).
+- exposure work is jobified through `ScheduleExposureJob()` (`HazardZoneManager.cs:746-793`).
+
+`HectonPlayerHealth` remains a parallel HP/mutation branch:
+
+- it implements `ISaveable`, `ITickable`, and `IUpdatable` (`HectonPlayerHealth.cs:19`).
+- it owns radiation exposure and mutation flags (`HectonPlayerHealth.cs:93-106`).
+- direct HP damage routes through `TakeDamage(float damage, bool ignoreInvulnerability = false)` (`HectonPlayerHealth.cs:210-227`).
+- mutation threshold evaluation and notifications are local to health (`HectonPlayerHealth.cs:303-321`).
+- mutation effects can modify survival oxygen capacity through the survival system (`HectonPlayerHealth.cs:325-336`).
+- the save gap is still current: `PopulateSaveData()` intentionally writes nothing because there is no dedicated player-health DTO, and `LoadFromSaveData()` only clamps current health (`HectonPlayerHealth.cs:371-381`).
+
+### Correct domain split
+
+- Oxygen, pressure, suit integrity, thermal stress, rapid ascent, hunger, thirst, and survival death: `HectonSurvivalSystem`.
+- Hazard volume registration, spatial lookup, exposure accumulation, and toxicity routing: `HazardZoneManager`.
+- HP, invulnerability, radiation mutation thresholds, mutation flags, and mutation side effects: `HectonPlayerHealth`.
+- Presentation consequences: `PlayerStressVFX`, `DeepPsychosisController`, visor/HUD stress surfaces.
+
+### Current open risks
+
+- Health and survival both carry damage/death semantics. That is not automatically broken, but it is a standing drift risk.
+- Mutation state is weaker than survival state because its persistence path is explicitly incomplete in code.
+- Hazard jobs currently use an `IsCompleted` guard before `Complete()`, but integrated hazard-heavy traversal still needs profiler proof because exposure, survival, stress VFX, and audio consequences can all activate together.
+- A permanent mutation feature should not be considered production-persistent until a dedicated save DTO and load-order contract exist.
 
 ## Verdict
 

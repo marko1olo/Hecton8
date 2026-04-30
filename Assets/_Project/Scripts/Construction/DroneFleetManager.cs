@@ -2,11 +2,36 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Power;
+using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Construction
 {
+    internal enum DroneFleetTaskKind : byte
+    {
+        None = 0,
+        RepairModule = 1,
+        CutParasite = 2
+    }
+
+    internal readonly struct DroneFleetTask
+    {
+        public DroneFleetTask(DroneFleetTaskKind kind, BaseModule module, Vector3 position, float radius)
+        {
+            Kind = kind;
+            Module = module;
+            Position = position;
+            Radius = radius;
+        }
+
+        public DroneFleetTaskKind Kind { get; }
+        public BaseModule Module { get; }
+        public Vector3 Position { get; }
+        public float Radius { get; }
+        public bool IsValid => Kind != DroneFleetTaskKind.None && Module != null;
+    }
+
     /// <summary>
     /// Read-only fleet snapshot consumed by diagnostics owners such as the submarine OS.
     /// </summary>
@@ -74,18 +99,25 @@ namespace Hecton8.Construction
         private const float FloodCriticalityBonus = 2f;
         private const float BreachCriticalityBonus = 3f;
         private const float CascadeCriticalityBonus = 1.5f;
+        private const float ParasiteCriticalityBonus = 4f;
         private const float AirReserveCriticalityScale = 1.5f;
         private const float EmergencyCriticalityScale = 1.35f;
         private const float SeparationDistanceEpsilon = 0.0001f;
+        private const float RouteFollowWeight = 1f;
         private const float DroneAvoidanceWeight = 1.9f;
         private const float PlayerAvoidanceWeight = DroneAvoidanceWeight * 3f;
+        private const float SwarmAlignmentWeight = 0.35f;
+        private const float MaxSwarmSteeringMagnitude = 6f;
         private const float EmergencyThrusterSpeedMultiplier = 3f;
         private const float EmergencyBatteryDrainMultiplier = 5f;
 
         private struct RepairTaskCandidate
         {
+            public DroneFleetTaskKind Kind;
             public BaseModule Module;
             public int ModuleIndex;
+            public Vector3 Position;
+            public float Radius;
             public float Score;
             public float CriticalityWeight;
         }
@@ -223,6 +255,21 @@ namespace Hecton8.Construction
             out float criticalityWeight)
         {
             target = null;
+            if (!TryAssignFleetTask(hub, dispatchIntegrityThreshold, out DroneFleetTask task, out assignmentScore, out criticalityWeight))
+                return false;
+
+            target = task.Module;
+            return target != null;
+        }
+
+        internal static bool TryAssignFleetTask(
+            RepairDroneHub hub,
+            float dispatchIntegrityThreshold,
+            out DroneFleetTask task,
+            out float assignmentScore,
+            out float criticalityWeight)
+        {
+            task = default;
             assignmentScore = 0f;
             criticalityWeight = 0f;
 
@@ -231,18 +278,19 @@ namespace Hecton8.Construction
 
             EnsureInitialized();
 
-            ConstructionManager manager = ConstructionManager.Instance;
+            ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             IReadOnlyList<GameObject> modules = manager != null ? manager.SpawnedModules : null;
             if (modules == null || modules.Count == 0)
                 return false;
 
-            EnsureTaskCapacity(modules.Count);
+            EnsureTaskCapacity(modules.Count * 2);
             ClearClaimCounts(modules.Count);
             RebuildActiveClaimCounts(modules, modules.Count);
             ResetHeap();
 
             Vector3 hubPosition = hub.DockPosition;
             PowerGrid hubGrid = hub.CurrentGrid;
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
 
             for (int moduleIndex = 0; moduleIndex < modules.Count; moduleIndex++)
             {
@@ -254,18 +302,43 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                if (!IsEligibleRepairTarget(hubGrid, module, dispatchIntegrityThreshold))
-                    continue;
+                if (IsEligibleRepairTarget(hubGrid, module, dispatchIntegrityThreshold))
+                {
+                    float distanceMeters = Vector3.Distance(hubPosition, module.transform.position);
+                    float taskCriticality = ResolveCriticalityWeight(module);
+                    float taskScore = ComputeTaskAssignmentScore(distanceMeters, taskCriticality);
+                    PushTask(new RepairTaskCandidate
+                    {
+                        Kind = DroneFleetTaskKind.RepairModule,
+                        Module = module,
+                        ModuleIndex = moduleIndex,
+                        Position = module.transform.position,
+                        Radius = 0f,
+                        Score = taskScore,
+                        CriticalityWeight = taskCriticality
+                    });
+                }
 
-                float distanceMeters = Vector3.Distance(hubPosition, module.transform.position);
-                float taskCriticality = ResolveCriticalityWeight(module);
-                float taskScore = ComputeTaskAssignmentScore(distanceMeters, taskCriticality);
+                if (floraInteractionManager == null ||
+                    module.ParasiteInfectionLevel <= 0.0001f ||
+                    IsDifferentGrid(hubGrid, module) ||
+                    !floraInteractionManager.TryResolveNearestModuleParasite(module, hubPosition, out FloraInteractionManager.ModuleParasiteTarget parasiteTarget))
+                {
+                    continue;
+                }
+
+                float parasiteDistanceMeters = Vector3.Distance(hubPosition, parasiteTarget.Position);
+                float parasiteCriticality = ResolveParasiteCriticalityWeight(module, in parasiteTarget);
+                float parasiteScore = ComputeTaskAssignmentScore(parasiteDistanceMeters, parasiteCriticality);
                 PushTask(new RepairTaskCandidate
                 {
+                    Kind = DroneFleetTaskKind.CutParasite,
                     Module = module,
                     ModuleIndex = moduleIndex,
-                    Score = taskScore,
-                    CriticalityWeight = taskCriticality
+                    Position = parasiteTarget.Position,
+                    Radius = parasiteTarget.Radius,
+                    Score = parasiteScore,
+                    CriticalityWeight = parasiteCriticality
                 });
             }
 
@@ -278,7 +351,11 @@ namespace Hecton8.Construction
                     continue;
 
                 s_TaskClaimCounts[bestTask.ModuleIndex] = s_TaskClaimCounts[bestTask.ModuleIndex] + 1;
-                target = bestTask.Module;
+                task = new DroneFleetTask(
+                    bestTask.Kind,
+                    bestTask.Module,
+                    bestTask.Position,
+                    bestTask.Radius);
                 assignmentScore = bestTask.Score;
                 criticalityWeight = bestTask.CriticalityWeight;
                 PublishSnapshot();
@@ -295,25 +372,57 @@ namespace Hecton8.Construction
             float droneSeparationRadius,
             float playerSeparationRadius)
         {
-            Vector3 totalAvoidance = Vector3.zero;
+            return ResolveSwarmSteering(
+                drone,
+                position,
+                Vector3.zero,
+                Vector3.zero,
+                droneSeparationRadius,
+                droneSeparationRadius,
+                playerSeparationRadius,
+                0f);
+        }
 
-            if (droneSeparationRadius > 0f)
+        internal static Vector3 ResolveSwarmSteering(
+            RepairDroneEntity drone,
+            Vector3 position,
+            Vector3 currentVelocity,
+            Vector3 routeDirection,
+            float perceptionRadius,
+            float droneSeparationRadius,
+            float playerSeparationRadius,
+            float cohesionWeight)
+        {
+            Vector3 totalAvoidance = Vector3.zero;
+            Vector3 alignmentSum = Vector3.zero;
+            Vector3 cohesionSum = Vector3.zero;
+            int neighborCount = 0;
+
+            if (perceptionRadius > 0f)
             {
+                float maxPerceptionDistanceSq = perceptionRadius * perceptionRadius;
                 float maxDroneDistanceSq = droneSeparationRadius * droneSeparationRadius;
                 for (int i = 0; i < s_ActiveDrones.Count; i++)
                 {
                     RepairDroneEntity other = s_ActiveDrones[i];
-                    if (other == null || ReferenceEquals(other, drone))
+                    if (other == null || ReferenceEquals(other, drone) || !other.IsSwarmAvoidanceParticipant)
                         continue;
 
-                    Vector3 otherPosition = other.transform.position;
+                    Vector3 otherPosition = other.SwarmPosition;
                     Vector3 offset = position - otherPosition;
                     float distanceSq = offset.sqrMagnitude;
-                    if (distanceSq <= SeparationDistanceEpsilon || distanceSq > maxDroneDistanceSq)
+                    if (distanceSq <= SeparationDistanceEpsilon || distanceSq > maxPerceptionDistanceSq)
                         continue;
 
-                    float distance = Mathf.Sqrt(distanceSq);
-                    totalAvoidance += (offset / distance) * (DroneAvoidanceWeight / Mathf.Max(distanceSq, 0.04f));
+                    neighborCount++;
+                    alignmentSum += other.SwarmVelocity;
+                    cohesionSum += otherPosition;
+
+                    if (droneSeparationRadius > 0f && distanceSq <= maxDroneDistanceSq)
+                    {
+                        float distance = Mathf.Sqrt(distanceSq);
+                        totalAvoidance += (offset / distance) * (DroneAvoidanceWeight / Mathf.Max(distanceSq, 0.04f));
+                    }
                 }
             }
 
@@ -331,7 +440,25 @@ namespace Hecton8.Construction
                 }
             }
 
-            return totalAvoidance;
+            Vector3 alignment = Vector3.zero;
+            Vector3 cohesion = Vector3.zero;
+            if (neighborCount > 0)
+            {
+                float inverseNeighborCount = 1f / neighborCount;
+                Vector3 averageVelocity = alignmentSum * inverseNeighborCount;
+                if (averageVelocity.sqrMagnitude > SeparationDistanceEpsilon)
+                {
+                    Vector3 currentDirection = SafeNormalize(currentVelocity);
+                    alignment = (SafeNormalize(averageVelocity) - currentDirection) * SwarmAlignmentWeight;
+                }
+
+                Vector3 centerOffset = (cohesionSum * inverseNeighborCount) - position;
+                if (centerOffset.sqrMagnitude > SeparationDistanceEpsilon)
+                    cohesion = SafeNormalize(centerOffset) * Mathf.Clamp01(cohesionWeight);
+            }
+
+            Vector3 route = SafeNormalize(routeDirection) * RouteFollowWeight;
+            return ClampVector(route + totalAvoidance + alignment + cohesion, MaxSwarmSteeringMagnitude);
         }
 
         public static float ComputeTaskAssignmentScore(float distanceMeters, float criticalityWeight)
@@ -355,6 +482,28 @@ namespace Hecton8.Construction
         {
             s_EmergencyLevel = snapshot.EmergencyLevel;
             PublishSnapshot();
+        }
+
+        private static Vector3 SafeNormalize(Vector3 vector)
+        {
+            float lengthSq = vector.sqrMagnitude;
+            if (lengthSq <= SeparationDistanceEpsilon)
+                return Vector3.zero;
+
+            return vector / Mathf.Sqrt(lengthSq);
+        }
+
+        private static Vector3 ClampVector(Vector3 vector, float maxMagnitude)
+        {
+            if (maxMagnitude <= 0f)
+                return Vector3.zero;
+
+            float lengthSq = vector.sqrMagnitude;
+            float maxMagnitudeSq = maxMagnitude * maxMagnitude;
+            if (lengthSq <= maxMagnitudeSq)
+                return vector;
+
+            return vector * (maxMagnitude / Mathf.Sqrt(lengthSq));
         }
 
         private static bool IsEligibleRepairTarget(PowerGrid hubGrid, BaseModule module, float dispatchIntegrityThreshold)
@@ -407,6 +556,20 @@ namespace Hecton8.Construction
                 weight += RuptureCriticalityBonus;
 
             weight += (1f - Mathf.Clamp01(module.AirReserveNormalized)) * AirReserveCriticalityScale;
+
+            if (s_EmergencyLevel == SubmarineEmergencyLevel.Evacuate)
+                weight *= EmergencyCriticalityScale;
+
+            return weight;
+        }
+
+        private static float ResolveParasiteCriticalityWeight(BaseModule module, in FloraInteractionManager.ModuleParasiteTarget parasiteTarget)
+        {
+            float moduleAirRisk = module != null ? 1f - Mathf.Clamp01(module.AirReserveNormalized) : 0f;
+            float infection = Mathf.Clamp01(parasiteTarget.InfectionLevel);
+            float weight = ParasiteCriticalityBonus + (infection * 6f) + (moduleAirRisk * AirReserveCriticalityScale);
+            if (module != null && module.HasCascadeFailure)
+                weight += CascadeCriticalityBonus;
 
             if (s_EmergencyLevel == SubmarineEmergencyLevel.Evacuate)
                 weight *= EmergencyCriticalityScale;

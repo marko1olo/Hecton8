@@ -18,7 +18,7 @@ namespace Hecton8.Tests.PlayMode
         public IEnumerator TearDown()
         {
             // Clean up test save slot
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager != null && saveManager.SaveExists(TestSlot))
             {
                 saveManager.DeleteSave(TestSlot);
@@ -32,8 +32,8 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = SaveManager.Instance;
-            Assert.IsNotNull(saveManager, "SaveManager.Instance should not be null");
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Attempt save
             yield return saveManager.SaveGameAsync(TestSlot);
@@ -56,8 +56,8 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = SaveManager.Instance;
-            Assert.IsNotNull(saveManager, "SaveManager.Instance should not be null");
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Save first
             yield return saveManager.SaveGameAsync(TestSlot);
@@ -84,8 +84,8 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = SaveManager.Instance;
-            Assert.IsNotNull(saveManager, "SaveManager.Instance should not be null");
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Save first
             yield return saveManager.SaveGameAsync(TestSlot);
@@ -106,8 +106,8 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = SaveManager.Instance;
-            Assert.IsNotNull(saveManager, "SaveManager.Instance should not be null");
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Save first
             yield return saveManager.SaveGameAsync(TestSlot);
@@ -128,8 +128,8 @@ namespace Hecton8.Tests.PlayMode
         {
             yield return null;
 
-            SaveManager saveManager = SaveManager.Instance;
-            Assert.IsNotNull(saveManager, "SaveManager.Instance should not be null");
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
+            Assert.IsNotNull(saveManager, "Hecton8.Core.GlobalRegistry.SaveRuntime should not be null");
 
             // Ensure test slot doesn't exist
             if (saveManager.SaveExists(TestSlot))

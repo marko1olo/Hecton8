@@ -20,7 +20,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ICraftingEventListener
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -144,12 +144,7 @@ namespace Hecton8.UI
                 inputManager.OnCancel += HandleCancelInput;
             }
 
-            CraftingEvents.OnFabricatorOpened += HandleFabricatorOpened;
-            CraftingEvents.OnFabricatorClosed += HandleFabricatorClosed;
-            CraftingEvents.OnCraftStarted += HandleCraftStarted;
-            CraftingEvents.OnCraftProgressUpdated += HandleCraftProgress;
-            CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
-            CraftingEvents.OnCraftCancelled += HandleCraftCancelled;
+            CraftingEvents.Register(this);
         }
 
         private void OnDisable()
@@ -163,12 +158,7 @@ namespace Hecton8.UI
                 inputManager.OnCancel -= HandleCancelInput;
             }
 
-            CraftingEvents.OnFabricatorOpened -= HandleFabricatorOpened;
-            CraftingEvents.OnFabricatorClosed -= HandleFabricatorClosed;
-            CraftingEvents.OnCraftStarted -= HandleCraftStarted;
-            CraftingEvents.OnCraftProgressUpdated -= HandleCraftProgress;
-            CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
-            CraftingEvents.OnCraftCancelled -= HandleCraftCancelled;
+            CraftingEvents.Unregister(this);
 
             UnregisterTick();
 
@@ -263,6 +253,34 @@ namespace Hecton8.UI
             RenderActiveRecipeHologram(deltaTime);
             ScheduleRecipePointerSelection();
             UpdateDiagnostics();
+        }
+
+        public void OnCraftingEvent(in CraftingEventPayload payload)
+        {
+            switch ((CraftingEventType)payload.EventType)
+            {
+                case CraftingEventType.FabricatorOpened:
+                    if (CraftingEvents.TryResolveFabricator(in payload, out Fabricator fabricator))
+                        HandleFabricatorOpened(fabricator);
+                    break;
+                case CraftingEventType.FabricatorClosed:
+                    HandleFabricatorClosed();
+                    break;
+                case CraftingEventType.CraftStarted:
+                    if (CraftingEvents.TryResolveRecipe(in payload, out RecipeData recipe))
+                        HandleCraftStarted(recipe);
+                    break;
+                case CraftingEventType.CraftProgressUpdated:
+                    HandleCraftProgress(payload.Progress01);
+                    break;
+                case CraftingEventType.CraftCompleted:
+                    CraftingEvents.TryResolveItem(in payload, out ItemData resultItem);
+                    HandleCraftCompleted(resultItem);
+                    break;
+                case CraftingEventType.CraftCancelled:
+                    HandleCraftCancelled();
+                    break;
+            }
         }
 
         private void HandleFabricatorOpened(Fabricator fabricator)
@@ -983,7 +1001,7 @@ namespace Hecton8.UI
             if (_recipePointerScheduled)
                 return;
 
-            QueryParameters query = new QueryParameters(~0, false, QueryTriggerInteraction.Ignore);
+            QueryParameters query = new QueryParameters((1 << 8) | (1 << 9) | (1 << 10), false, QueryTriggerInteraction.Ignore);
             _recipePointerCommands[0] = new RaycastCommand(
                 hudCamera.transform.position,
                 hudCamera.transform.forward,

@@ -35,7 +35,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("World layers treated as cave-solid occluders for the local SDF volume.")]
-        private LayerMask occluderLayers = ~0;
+        private LayerMask occluderLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         [SerializeField]
         [Tooltip("Physics trigger handling used while scanning cave-solid occupancy.")]

@@ -45,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 48; // v48: cultivation genetics persistence
+        public const int CurrentVersion = 51; // v51: cultivation quality persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -747,13 +747,33 @@ namespace Hecton8.SaveSystem
     {
         public int exploredChunkCount;
         public long[] exploredChunkKeys;
+        public int chunkSizeMeters;
+        public int mortonMaskAxisBits;
+        public int mortonMaskOriginOffset;
+        public int exploredMortonWordCount;
+        public long[] exploredMortonMaskWords;
 
         public const int MaxExploredChunks = 16384;
+        public const int DenseChunkSizeMeters = 16;
+        public const int MortonMaskAxisBits = 7;
+        public const int MortonMaskAxisLength = 1 << MortonMaskAxisBits;
+        public const int MortonMaskOriginOffset = MortonMaskAxisLength >> 1;
+        public const int MortonMaskBitCount = MortonMaskAxisLength * MortonMaskAxisLength * MortonMaskAxisLength;
+        public const int MortonMaskWordCount = MortonMaskBitCount >> 6;
 
         public void EnsureCapacity()
         {
             if (exploredChunkKeys == null || exploredChunkKeys.Length < MaxExploredChunks)
                 exploredChunkKeys = new long[MaxExploredChunks];
+
+            if (exploredMortonMaskWords == null || exploredMortonMaskWords.Length < MortonMaskWordCount)
+                exploredMortonMaskWords = new long[MortonMaskWordCount];
+
+            chunkSizeMeters = DenseChunkSizeMeters;
+            mortonMaskAxisBits = MortonMaskAxisBits;
+            mortonMaskOriginOffset = MortonMaskOriginOffset;
+            if (exploredMortonWordCount < 0 || exploredMortonWordCount > MortonMaskWordCount)
+                exploredMortonWordCount = 0;
         }
     }
 
@@ -1020,10 +1040,13 @@ namespace Hecton8.SaveSystem
         public float co2Normalized;
         public bool isFlooded;
         public byte failureMode;
+        public float floodedReefFloodSeconds;
+        public bool interiorReefInfestationActive;
         public int cultivationSlotCount;
         public string[] cultivationSeedItemIds;
         public uint[] cultivationGeneticsMasks;
         public float[] cultivationGrowth01;
+        public float[] cultivationQuality01;
 
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
         public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);

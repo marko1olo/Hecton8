@@ -14,7 +14,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton OS Boot Manager")]
-    public sealed class HectonOSBootManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonOSBootManager : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener
     {
         private enum BootReason : byte
         {
@@ -80,7 +80,7 @@ namespace Hecton8.UI
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
             PDAIntrusionManager.OnRebootCompleted += HandleIntrusionRebootCompleted;
-            PDAEvents.OnClosed += HandlePdaClosed;
+            PDAEvents.Register(this);
 
             if (ShouldArmLoadBootFromContext())
                 _awaitingLoadBoot = true;
@@ -91,7 +91,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             PDAIntrusionManager.OnRebootCompleted -= HandleIntrusionRebootCompleted;
-            PDAEvents.OnClosed -= HandlePdaClosed;
+            PDAEvents.Unregister(this);
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
@@ -101,7 +101,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             PDAIntrusionManager.OnRebootCompleted -= HandleIntrusionRebootCompleted;
-            PDAEvents.OnClosed -= HandlePdaClosed;
+            PDAEvents.Unregister(this);
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
@@ -167,6 +167,12 @@ namespace Hecton8.UI
         private void HandleIntrusionRebootCompleted()
         {
             StartSequence(BootReason.IntrusionRecovery, DefaultRecoverySlot);
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            if ((PDAEventType)payload.EventType == PDAEventType.Closed)
+                HandlePdaClosed(payload.DurationSeconds);
         }
 
         private void HandlePdaClosed(float _)

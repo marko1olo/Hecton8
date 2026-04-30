@@ -52,7 +52,7 @@ namespace Hecton8.Ecosystem
         private void OnEnable()
         {
             TryRegisterToTickManager();
-            SaveManager.Instance?.Register(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
         }
 
         private void Start()
@@ -63,13 +63,13 @@ namespace Hecton8.Ecosystem
         private void OnDisable()
         {
             UnregisterFromTickManager();
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
         }
 
         private void OnDestroy()
         {
             UnregisterFromTickManager();
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             if (_instance == this)
                 _instance = null;
         }

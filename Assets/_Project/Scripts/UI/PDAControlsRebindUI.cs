@@ -13,7 +13,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Controls Rebind UI")]
-    public sealed class PDAControlsRebindUI : MonoBehaviour
+    public sealed class PDAControlsRebindUI : MonoBehaviour, IPDAEventListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.8f);
         private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.18f);
@@ -171,8 +171,7 @@ namespace Hecton8.UI
             rebinding.OnOverridesSaved += HandleBindingOverridesChanged;
             rebinding.OnOverridesCleared += HandleBindingOverridesChanged;
 
-            PDAEvents.OnTabChanged += HandlePdaTabChanged;
-            PDAEvents.OnOpened += HandlePdaOpened;
+            PDAEvents.Register(this);
 
             _subscribed = true;
         }
@@ -203,8 +202,7 @@ namespace Hecton8.UI
                 rebinding.OnOverridesCleared -= HandleBindingOverridesChanged;
             }
 
-            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
-            PDAEvents.OnOpened -= HandlePdaOpened;
+            PDAEvents.Unregister(this);
 
             _subscribed = false;
         }
@@ -312,6 +310,19 @@ namespace Hecton8.UI
             RefreshAllBindings();
             if (!IsControlsTabActive) return;
             UpdateStatusForSelected();
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    HandlePdaOpened(payload.CurrentTab);
+                    break;
+                case PDAEventType.TabChanged:
+                    HandlePdaTabChanged(payload.PreviousTab, payload.CurrentTab);
+                    break;
+            }
         }
 
         private void HandlePdaTabChanged(int oldTab, int newTab)

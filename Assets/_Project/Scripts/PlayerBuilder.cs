@@ -91,7 +91,7 @@ namespace Hecton8.Building
         [SerializeField] private float ghostFollowSpeed = 12f;
 
         [Tooltip("Слой поверхности для размещения (Terrain, Default)")]
-        [SerializeField] private LayerMask surfaceMask = ~0;
+        [SerializeField] private LayerMask surfaceMask = (1 << 8) | (1 << 9) | (1 << 10);
         [Tooltip("Rigid world-space grid size used for free placement positions.")]
         [SerializeField] private float constructionGridSize = 2.5f;
         [Tooltip("Total structural integrity budget available to the current habitat graph.")]
@@ -1593,7 +1593,7 @@ namespace Hecton8.Building
                 return null;
 
             Ray ray = playerCamera.ViewportPointToRay(ViewportCenter);
-            if (!TryGetBuildHit(ray, ~0, out RaycastHit hit))
+            if (!TryGetBuildHit(ray, (1 << 8) | (1 << 9) | (1 << 10), out RaycastHit hit))
                 return null;
 
             return hit.collider != null ? hit.collider.GetComponentInParent<BaseModule>() : null;

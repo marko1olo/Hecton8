@@ -395,6 +395,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private bool _isLoadingSave;
         private WorldProceduralScatterDirector _worldProceduralScatterDirector;
+        private bool _activationStarted;
 
         private void Awake()
         {
@@ -416,15 +417,19 @@ namespace Hecton8.Bootstrap
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Start remains synchronous and kicks an Awaitable bootstrap state machine.
+        /// Start delegates scene activation to the unified GameBootstrapper state machine.
         /// </summary>
         private void Start()
         {
-            _ = RunBootstrapAsync();
+            GameBootstrapper.RequestSceneActivation(this);
         }
 
-        private async Awaitable RunBootstrapAsync()
+        internal async Awaitable<bool> ExecuteSceneActivationAsync(CancellationToken ownerToken)
         {
+            if (_activationStarted)
+                return _debugCompleted;
+
+            _activationStarted = true;
             BootstrapState.PublishGameReady(false);
             SceneInstantiationGate.Instance?.BeginSceneLoad(gameObject.scene.name);
 
@@ -438,6 +443,7 @@ namespace Hecton8.Bootstrap
 
             // ── Глобальный таймаут + привязка к жизни GO ──
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(
+                ownerToken,
                 destroyCancellationToken);
             cts.CancelAfter(TimeSpan.FromSeconds(bootstrapTimeout));
             CancellationToken ct = cts.Token;
@@ -449,7 +455,7 @@ namespace Hecton8.Bootstrap
                 if (!VerifySingletons())
                 {
                     Fail("Critical singletons missing! Bootstrap aborted.");
-                    return;
+                    return false;
                 }
                 await Awaitable.NextFrameAsync(cancellationToken: ct);
                 ct.ThrowIfCancellationRequested();
@@ -502,7 +508,12 @@ namespace Hecton8.Bootstrap
                 await RunColdCleanupAndCaptureMemorySnapshotAsync(ct);
                 ct.ThrowIfCancellationRequested();
 
-                SetStep("Step 8.75: Scene Gate Verification");
+                SetStep("Step 8.75: Resident World Prefab Gate");
+                if (!await WaitForResidentWorldPrefabPoolsReadyAsync(ct))
+                    return false;
+                ct.ThrowIfCancellationRequested();
+
+                SetStep("Step 8.9: Scene Gate Verification");
                 await WaitForSceneInstantiationGateAsync(ct);
                 ct.ThrowIfCancellationRequested();
 
@@ -517,25 +528,28 @@ namespace Hecton8.Bootstrap
 
                 BootstrapState.PublishGameReady(true);
                 RaiseGameReadyEvent();
+                return true;
             }
             catch (OperationCanceledException)
             {
                 BootstrapState.PublishGameReady(false);
                 // Если GO уничтожен — тихий выход, не спамим ошибкой
                 if (this == null || destroyCancellationToken.IsCancellationRequested)
-                    return;
+                    return false;
 
                 Fail($"Bootstrap timed out after {bootstrapTimeout}s! " +
                      $"Last step: {_debugCurrentStep}");
+                return false;
             }
             catch (Exception ex)
             {
                 BootstrapState.PublishGameReady(false);
                 // Если GO уже уничтожен — не трогаем
-                if (this == null) return;
+                if (this == null) return false;
 
                 Fail($"Bootstrap failed at [{_debugCurrentStep}]: " +
                      $"{ex.Message}\n{ex.StackTrace}");
+                return false;
             }
         }
 
@@ -627,7 +641,7 @@ namespace Hecton8.Bootstrap
                 Log("  PrefabRegistry");
             }
 
-            if (SaveManager.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime == null)
             {
                 Debug.LogError("[SceneBootstrap] SaveManager NOT FOUND! " +
                     "Create a GameObject with SaveManager component.");
@@ -650,7 +664,7 @@ namespace Hecton8.Bootstrap
                 Log("  ✓ WorldStateManager");
             }
 
-            if (Hecton8.Construction.ConstructionManager.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.ConstructionRuntime == null)
             {
                 Debug.LogWarning("[SceneBootstrap] ConstructionManager not found. " +
                     "Base construction persistence will be disabled.");
@@ -736,8 +750,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private void StartWorldGeneration()
         {
-            var allBehaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Exclude);
+            var allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude);
 
             MonoBehaviour productionWorldGen = null;
             MonoBehaviour temporaryWorldGen = null;
@@ -800,7 +813,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private async Awaitable LoadOrNewGameAsync()
         {
-            SaveManager save = SaveManager.Instance;
+            SaveManager save = Hecton8.Core.GlobalRegistry.SaveRuntime;
 
             // ── Читаем контекст игровой сессии ──
             GameStartContext context;
@@ -910,7 +923,7 @@ namespace Hecton8.Bootstrap
 
             // Очистка построек
             Hecton8.Construction.ConstructionManager cm =
-                Hecton8.Construction.ConstructionManager.Instance;
+                Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (cm != null)
                 cm.ClearAllModules();
 
@@ -1220,6 +1233,27 @@ namespace Hecton8.Bootstrap
             Log("  Scene instantiation gate verified.");
         }
 
+        private async Awaitable<bool> WaitForResidentWorldPrefabPoolsReadyAsync(CancellationToken ct)
+        {
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+            {
+                Fail("PersistentWorldRegistry missing. Resident world prefab pools cannot be verified.");
+                return false;
+            }
+
+            while (Application.isPlaying &&
+                   ReferenceEquals(ActiveInstance, this) &&
+                   !registry.AreResidentWorldPrefabPoolsReady())
+            {
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                ct.ThrowIfCancellationRequested();
+            }
+
+            Log("  Resident world prefab pools verified.");
+            return true;
+        }
+
         private void CaptureStartupMemorySnapshot()
         {
             bool textureResolved = TryReadMemoryMetricMegabytes(
@@ -1417,8 +1451,7 @@ namespace Hecton8.Bootstrap
             }
 
             WorldProceduralScatterDirector[] allDirectors =
-                FindObjectsByType<WorldProceduralScatterDirector>(
-                    FindObjectsInactive.Exclude);
+                FindObjectsByType<WorldProceduralScatterDirector>(FindObjectsInactive.Exclude);
 
             for (int i = 0, len = allDirectors.Length; i < len; i++)
             {

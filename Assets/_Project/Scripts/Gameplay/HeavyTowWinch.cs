@@ -60,7 +60,7 @@ namespace Hecton8.Gameplay
 
         [Header("Cable Bending")]
         [Tooltip("Obstacle mask used when probing whether the tow cable should bend around geometry.")]
-        [SerializeField] private LayerMask cableBendObstructionMask = ~0;
+        [SerializeField] private LayerMask cableBendObstructionMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("How far the stored bend point is pushed off the blocking surface normal to avoid self-intersection.")]
         [SerializeField, Range(0.01f, 1f)] private float cableBendSurfaceOffset = 0.12f;

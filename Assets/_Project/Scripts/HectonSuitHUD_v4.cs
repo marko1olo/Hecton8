@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [DisallowMultipleComponent]
 [ExecuteAlways]
@@ -32,6 +35,11 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour, ITickable, IUpdatable
 
     private void OnEnable()
     {
+#if UNITY_EDITOR
+        if (EditorApplication.isCompiling || !Application.isPlaying)
+            return;
+#endif
+
         RegisterActiveHud();
         TryRegisterUiService();
     }

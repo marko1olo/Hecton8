@@ -39,7 +39,12 @@ namespace Hecton8.World
         private const float MinimumDecomposedWidthScale = 0.12f;
         private const float HarvestStatePartialThreshold01 = 0.999f;
         private const float HarvestStateBareThreshold01 = 0.3f;
+        private const float MatureSporeGrowthThreshold01 = 0.999f;
         private const float SoftBareHealthFloor01 = 0.05f;
+        private const float LightStarvationDamagePerSlowTick01 = 0.035f;
+        private const float LightStarvationDeathHealth01 = 0.015f;
+        private const float AllelopathicBareHealth01 = 0.08f;
+        private const float AllelopathicDeathThreshold01 = 0.85f;
         private const byte FloraRuntimeFlagHasParasite = (byte)HectonVegetationRuntimeFlags.Parasite;
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const int DefaultCorpseNodeCapacity = 96;
@@ -58,10 +63,37 @@ namespace Hecton8.World
             public uint NodeId;
             public int SpeciesId;
             public Vector3 Position;
+            public float InitialUnits;
             public float RemainingUnits;
             public float BloodIntensity;
             public float ExpireTime;
             public byte Active;
+        }
+
+        private readonly struct SporeAcousticEvent
+        {
+            public readonly AbsoluteUniversePosition PositionAup;
+            public readonly Vector3 RuntimePosition;
+            public readonly AudioClip Clip;
+            public readonly float PulseFrequencyHz;
+            public readonly float Volume;
+            public readonly float Pitch;
+
+            public SporeAcousticEvent(
+                AbsoluteUniversePosition positionAup,
+                Vector3 runtimePosition,
+                AudioClip clip,
+                float pulseFrequencyHz,
+                float volume,
+                float pitch)
+            {
+                PositionAup = positionAup;
+                RuntimePosition = runtimePosition;
+                Clip = clip;
+                PulseFrequencyHz = pulseFrequencyHz;
+                Volume = volume;
+                Pitch = pitch;
+            }
         }
 
         [Header("Runtime Wiring")]
@@ -142,6 +174,23 @@ namespace Hecton8.World
         [Tooltip("Base harvest audio volume applied to partial state changes before state-specific scaling.")]
         private float harvestAudioBaseVolume = 0.72f;
 
+        [Header("Spore Acoustics")]
+        [SerializeField]
+        [Tooltip("Fallback hostile spore pulse clip used when a mature spore flora template has no authored clip.")]
+        private AudioClip sporeAcousticFallbackClip;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Fallback volume for mature spore acoustic pulses when the flora template leaves volume at zero.")]
+        private float sporeAcousticFallbackVolume = 0.65f;
+
+        [SerializeField, Min(0.05f)]
+        [Tooltip("Lower cadence guard for mature spore acoustic pulses. Actual cadence remains locked to 1 / PulseFrequency unless clamped by this value.")]
+        private float sporeAcousticMinimumIntervalSeconds = 0.2f;
+
+        [SerializeField, Min(1)]
+        [Tooltip("Maximum active flora instances checked per lane each Tick for mature spore acoustic cadence. This keeps large fields bounded.")]
+        private int matureSporeAcousticScanBudgetPerTick = 64;
+
         private NativeArray<uint> _surfaceInstanceUids;
         private NativeArray<uint> _underwaterInstanceUids;
         private NativeArray<byte> _surfaceMaterialClasses;
@@ -156,6 +205,8 @@ namespace Hecton8.World
         private NativeHashMap<uint, float> _regrowthProgressByInstanceUid;
         private NativeHashMap<uint, float3> _regrowthPositionByInstanceUid;
         private NativeHashMap<uint, Unity.Mathematics.half> _maturationScaleByInstanceUid;
+        private NativeHashMap<uint, Unity.Mathematics.half> _maturationYieldByInstanceUid;
+        private NativeHashMap<uint, float> _nextSporeAcousticTimeByInstanceUid;
         private NativeHashMap<uint, float2> _baseScaleByInstanceUid;
         private NativeHashMap<uint, byte> _runtimeFlagsByInstanceUid;
         private NativeList<PersistentWorldDeltaRecord> _destroyedFloraScratch;
@@ -194,6 +245,12 @@ namespace Hecton8.World
         private byte[] _floraCategoryByDescriptorIndex = Array.Empty<byte>();
         private byte[] _audioMaterialByDescriptorIndex = Array.Empty<byte>();
         private float[] _growthTimeSecondsByDescriptorIndex = Array.Empty<float>();
+        private byte[] _sporeAcousticEmitterByDescriptorIndex = Array.Empty<byte>();
+        private AudioClip[] _sporeAcousticClipByDescriptorIndex = Array.Empty<AudioClip>();
+        private float[] _sporePulseFrequencyByDescriptorIndex = Array.Empty<float>();
+        private float[] _sporeAcousticVolumeByDescriptorIndex = Array.Empty<float>();
+        private int _surfaceMatureSporeScanCursor;
+        private int _underwaterMatureSporeScanCursor;
         // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
         private CorpseResourceNodeRecord[] _corpseResourceNodes = Array.Empty<CorpseResourceNodeRecord>();
         private int _corpseResourceNodeCount;
@@ -222,12 +279,14 @@ namespace Hecton8.World
             if (writeIndex < 0)
                 return false;
 
+            float initialUnits = Mathf.Max(0.25f, capacityUnits);
             CorpseResourceNodeRecord record = new CorpseResourceNodeRecord
             {
                 NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(worldPosition) & uint.MaxValue),
                 SpeciesId = speciesId,
                 Position = worldPosition,
-                RemainingUnits = Mathf.Max(0.25f, capacityUnits),
+                InitialUnits = initialUnits,
+                RemainingUnits = initialUnits,
                 BloodIntensity = DefaultCorpseBloodIntensity,
                 ExpireTime = Time.time + OrganicDecompositionDurationSeconds,
                 Active = 1
@@ -285,7 +344,7 @@ namespace Hecton8.World
                 }
                 else
                 {
-                    record.BloodIntensity = Mathf.Clamp(record.RemainingUnits * 0.2f, 0.5f, DefaultCorpseBloodIntensity);
+                    record.BloodIntensity = Mathf.Lerp(0.35f, DefaultCorpseBloodIntensity, ResolveCorpseCapacityFraction01(in record));
                 }
 
                 _corpseResourceNodes[i] = record;
@@ -314,7 +373,7 @@ namespace Hecton8.World
                     continue;
 
                 float distance01 = 1f - Mathf.Clamp01(Mathf.Sqrt(distanceSq) / searchRadius);
-                float mass01 = Mathf.Clamp01(record.RemainingUnits / DefaultCorpseBloodIntensity);
+                float mass01 = ResolveCorpseCapacityFraction01(in record);
                 float influence01 = distance01 * mass01;
                 if (influence01 > bestInfluence01)
                     bestInfluence01 = influence01;
@@ -340,6 +399,9 @@ namespace Hecton8.World
             allelopathicKelpCapacity = Mathf.Max(1, allelopathicKelpCapacity);
             allelopathicThreshold01 = Mathf.Clamp(allelopathicThreshold01, 0.5f, 1f);
             harvestAudioBaseVolume = Mathf.Clamp01(harvestAudioBaseVolume);
+            sporeAcousticFallbackVolume = Mathf.Clamp01(sporeAcousticFallbackVolume);
+            sporeAcousticMinimumIntervalSeconds = Mathf.Max(0.05f, sporeAcousticMinimumIntervalSeconds);
+            matureSporeAcousticScanBudgetPerTick = Mathf.Max(1, matureSporeAcousticScanBudgetPerTick);
 
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - persistent per-instance harvest health state keyed by deterministic flora uid - owner: DestructibleOrganicManager
             _healthByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
@@ -357,6 +419,10 @@ namespace Hecton8.World
             _regrowthPositionByInstanceUid = new NativeHashMap<uint, float3>(DefaultTrackedDestroyedCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,half>[4096] - live flora maturation scale multipliers keyed by deterministic flora uid - owner: DestructibleOrganicManager
             _maturationScaleByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,half>[4096] - live flora maturation resource-yield multipliers keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _maturationYieldByInstanceUid = new NativeHashMap<uint, Unity.Mathematics.half>(DefaultTrackedHealthCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeHashMap<uint,float>[4096] - mature spore acoustic cadence keyed by deterministic flora uid - owner: DestructibleOrganicManager
+            _nextSporeAcousticTimeByInstanceUid = new NativeHashMap<uint, float>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,float2>[4096] - baseline height/width scales keyed by deterministic flora uid - owner: DestructibleOrganicManager
             _baseScaleByInstanceUid = new NativeHashMap<uint, float2>(DefaultTrackedHealthCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeHashMap<uint,byte>[4096] - runtime flora bit-mask flags keyed by deterministic flora uid - owner: DestructibleOrganicManager
@@ -464,6 +530,12 @@ namespace Hecton8.World
             if (_maturationScaleByInstanceUid.IsCreated)
                 _maturationScaleByInstanceUid.Dispose();
 
+            if (_maturationYieldByInstanceUid.IsCreated)
+                _maturationYieldByInstanceUid.Dispose();
+
+            if (_nextSporeAcousticTimeByInstanceUid.IsCreated)
+                _nextSporeAcousticTimeByInstanceUid.Dispose();
+
             if (_decompositionStartTimeByInstanceUid.IsCreated)
                 _decompositionStartTimeByInstanceUid.Dispose();
 
@@ -494,13 +566,15 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
+            float currentTime = Time.time;
             VoxelDynamicNavGridRuntime.CompletePendingDynamicObstacleUpdates();
             RefreshActiveCachesIfNeeded(force: false);
-            UpdateDecompositionVisuals(Time.time);
+            UpdateDecompositionVisuals(currentTime);
             UpdateRegrowthVisuals();
-            UpdateDamageVisuals(Time.time);
-            UpdateWiltInstances(Time.time);
-            CompleteYieldJobIfNeeded();
+            UpdateMatureSporeAcoustics(currentTime);
+            UpdateDamageVisuals(currentTime);
+            UpdateWiltInstances(currentTime);
+            CompleteYieldJobIfNeeded(force: false);
             DrainDropBuffer();
             VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(_pendingYieldEvents);
             ScheduleYieldJobIfNeeded();
@@ -788,6 +862,10 @@ namespace Hecton8.World
             _floraCategoryByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora-category cache used by harvest-state thresholds - owner: DestructibleOrganicManager
             _audioMaterialByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora audio-material routing cache used by harvest-state audio dispatch - owner: DestructibleOrganicManager
             _growthTimeSecondsByDescriptorIndex = new float[math.max(1, validTemplateCount)]; // COLD ALLOC: float[templateCount] - authored flora growth durations - owner: DestructibleOrganicManager
+            _sporeAcousticEmitterByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - mature spore acoustic emitter flags - owner: DestructibleOrganicManager
+            _sporeAcousticClipByDescriptorIndex = new AudioClip[math.max(1, validTemplateCount)]; // COLD ALLOC: AudioClip[templateCount] - mature spore acoustic clip refs - owner: DestructibleOrganicManager
+            _sporePulseFrequencyByDescriptorIndex = new float[math.max(1, validTemplateCount)]; // COLD ALLOC: float[templateCount] - mature spore pulse cadence copied from VAT authoring - owner: DestructibleOrganicManager
+            _sporeAcousticVolumeByDescriptorIndex = new float[math.max(1, validTemplateCount)]; // COLD ALLOC: float[templateCount] - mature spore acoustic volume per descriptor - owner: DestructibleOrganicManager
             _harvestDescriptorIndexByFloraTemplateIndex = hasFloraTemplates
                 ? new int[floraTemplates.Length]
                 : Array.Empty<int>(); // COLD ALLOC: int[floraTemplates.Length] - flora-template to descriptor mapping - owner: DestructibleOrganicManager
@@ -837,6 +915,10 @@ namespace Hecton8.World
                         _floraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)floraTemplate.Category;
                         _audioMaterialByDescriptorIndex[descriptorWriteIndex] = floraTemplate.AudioMaterialID;
                         _growthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = floraTemplate.GrowthTimeSeconds;
+                        _sporeAcousticEmitterByDescriptorIndex[descriptorWriteIndex] = floraTemplate.EmitsMatureSporeAcoustic ? (byte)1 : (byte)0;
+                        _sporeAcousticClipByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticClip;
+                        _sporePulseFrequencyByDescriptorIndex[descriptorWriteIndex] = floraTemplate.PulseFrequency;
+                        _sporeAcousticVolumeByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticVolume;
                         _harvestDescriptorIndexByFloraTemplateIndex[i] = descriptorWriteIndex;
 
                         int materialIndex = descriptor.MaterialClassId;
@@ -1268,9 +1350,9 @@ namespace Hecton8.World
             }
         }
 
-        private void CompleteYieldJobIfNeeded()
+        private void CompleteYieldJobIfNeeded(bool force = true)
         {
-            if (!_yieldScheduled)
+            if (!_yieldScheduled || (!force && !_yieldJobHandle.IsCompleted))
                 return;
 
             _yieldJobHandle.Complete();
@@ -1356,12 +1438,20 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float normalizedDecay = Mathf.Clamp01(record.RemainingUnits / Mathf.Max(1f, DefaultCorpseBloodIntensity));
+                float normalizedDecay = ResolveCorpseCapacityFraction01(in record);
                 float bloodIntensity = Mathf.Lerp(0.35f, record.BloodIntensity, normalizedDecay);
                 ChemicalInfluenceGrid.QueueBloodScent(record.Position, bloodIntensity);
             }
 
             TrimTrailingCorpseNodes();
+        }
+
+        private static float ResolveCorpseCapacityFraction01(in CorpseResourceNodeRecord record)
+        {
+            float initialUnits = record.InitialUnits > 0f ? record.InitialUnits : record.RemainingUnits;
+            return initialUnits > 0f
+                ? Mathf.Clamp01(record.RemainingUnits / initialUnits)
+                : 0f;
         }
 
         private int FindWeakestCorpseNodeIndex()
@@ -2398,6 +2488,133 @@ namespace Hecton8.World
             }
         }
 
+        private void TryDispatchMatureSporeAcoustic(
+            uint instanceUid,
+            float progress01,
+            bool underwater,
+            int activeIndex,
+            int templateIndex,
+            float currentTime)
+        {
+            if (instanceUid == 0u || !_nextSporeAcousticTimeByInstanceUid.IsCreated)
+                return;
+
+            if (progress01 < MatureSporeGrowthThreshold01)
+            {
+                _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
+                return;
+            }
+
+            if (!IsMatureSporeAcousticEmitter(templateIndex))
+                return;
+
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
+                return;
+
+            if (_nextSporeAcousticTimeByInstanceUid.TryGetValue(instanceUid, out float nextAllowedTime) && currentTime < nextAllowedTime)
+                return;
+
+            AudioClip clip = ResolveMatureSporeAcousticClip(templateIndex);
+            if (clip == null)
+                return;
+
+            float pulseFrequency = ResolveMatureSporePulseFrequency(templateIndex);
+            float intervalSeconds = math.max(sporeAcousticMinimumIntervalSeconds, 1f / math.max(0.05f, pulseFrequency));
+            float volume = ResolveMatureSporeAcousticVolume(templateIndex);
+            float pitch = ResolveMatureSporeAcousticPitch(pulseFrequency);
+            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
+            AbsoluteUniversePosition soundAup = AbsoluteUniversePosition.FromRuntimePosition(instancePosition);
+            SporeAcousticEvent acousticEvent = new SporeAcousticEvent(
+                soundAup,
+                instancePosition,
+                clip,
+                pulseFrequency,
+                volume,
+                pitch);
+            DispatchSporeAcousticEvent(in acousticEvent);
+
+            _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
+            _nextSporeAcousticTimeByInstanceUid.TryAdd(instanceUid, currentTime + intervalSeconds);
+        }
+
+        private static void DispatchSporeAcousticEvent(in SporeAcousticEvent acousticEvent)
+        {
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+            {
+                spatialAudioManager.PlaySporeEmissionAtAup(
+                    acousticEvent.PositionAup,
+                    acousticEvent.Clip,
+                    acousticEvent.PulseFrequencyHz,
+                    acousticEvent.Volume);
+                return;
+            }
+
+            GlobalRegistry.Audio?.PlayAtPoint(
+                acousticEvent.Clip,
+                acousticEvent.RuntimePosition,
+                acousticEvent.Volume,
+                acousticEvent.Pitch);
+        }
+
+        private static bool IsMatureGrowth(HectonVegetationInstanceData metadata)
+        {
+            return metadata.Reserved0 <= 0.0001f || metadata.Reserved0 >= MatureSporeGrowthThreshold01;
+        }
+
+        private bool IsMatureSporeAcousticEmitter(int templateIndex)
+        {
+            return _sporeAcousticEmitterByDescriptorIndex != null &&
+                   templateIndex >= 0 &&
+                   templateIndex < _sporeAcousticEmitterByDescriptorIndex.Length &&
+                   _sporeAcousticEmitterByDescriptorIndex[templateIndex] != 0;
+        }
+
+        private AudioClip ResolveMatureSporeAcousticClip(int templateIndex)
+        {
+            if (_sporeAcousticClipByDescriptorIndex != null &&
+                templateIndex >= 0 &&
+                templateIndex < _sporeAcousticClipByDescriptorIndex.Length &&
+                _sporeAcousticClipByDescriptorIndex[templateIndex] != null)
+            {
+                return _sporeAcousticClipByDescriptorIndex[templateIndex];
+            }
+
+            return sporeAcousticFallbackClip != null
+                ? sporeAcousticFallbackClip
+                : ResolveHarvestAudioClip(ResolveDescriptorAudioMaterialId(templateIndex), HarvestState.PartiallyHarvested);
+        }
+
+        private float ResolveMatureSporePulseFrequency(int templateIndex)
+        {
+            if (_sporePulseFrequencyByDescriptorIndex != null &&
+                templateIndex >= 0 &&
+                templateIndex < _sporePulseFrequencyByDescriptorIndex.Length)
+            {
+                return Mathf.Max(0.05f, _sporePulseFrequencyByDescriptorIndex[templateIndex]);
+            }
+
+            return 1f;
+        }
+
+        private float ResolveMatureSporeAcousticVolume(int templateIndex)
+        {
+            if (_sporeAcousticVolumeByDescriptorIndex != null &&
+                templateIndex >= 0 &&
+                templateIndex < _sporeAcousticVolumeByDescriptorIndex.Length &&
+                _sporeAcousticVolumeByDescriptorIndex[templateIndex] > 0.0001f)
+            {
+                return Mathf.Clamp01(_sporeAcousticVolumeByDescriptorIndex[templateIndex]);
+            }
+
+            return sporeAcousticFallbackVolume;
+        }
+
+        private static float ResolveMatureSporeAcousticPitch(float pulseFrequency)
+        {
+            return Mathf.Clamp(pulseFrequency, 0.1f, 3f);
+        }
+
         private bool TryResolvePersistedFloraState(uint instanceUid, out float normalizedHealth, out float normalizedHeightScale)
         {
             normalizedHealth = 1f;
@@ -2578,6 +2795,73 @@ namespace Hecton8.World
                     continue;
 
                 ApplyRegrowthVisualToLaneInstance(underwater, i, instanceUid, progress01);
+            }
+        }
+
+        private void UpdateMatureSporeAcoustics(float currentTime)
+        {
+            if (!_nextSporeAcousticTimeByInstanceUid.IsCreated ||
+                _sporeAcousticEmitterByDescriptorIndex == null ||
+                _sporeAcousticEmitterByDescriptorIndex.Length == 0)
+            {
+                return;
+            }
+
+            UpdateMatureSporeAcousticLane(false, currentTime, ref _surfaceMatureSporeScanCursor);
+            UpdateMatureSporeAcousticLane(true, currentTime, ref _underwaterMatureSporeScanCursor);
+        }
+
+        private void UpdateMatureSporeAcousticLane(bool underwater, float currentTime, ref int scanCursor)
+        {
+            NativeArray<uint> instanceUids = underwater ? _underwaterInstanceUids : _surfaceInstanceUids;
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+            int count = underwater ? _underwaterCount : _surfaceCount;
+            if (!instanceUids.IsCreated || !metadata.IsCreated || !materialClasses.IsCreated || count <= 0)
+            {
+                scanCursor = 0;
+                return;
+            }
+
+            int safeCount = math.min(count, math.min(instanceUids.Length, math.min(metadata.Length, materialClasses.Length)));
+            if (safeCount <= 0)
+            {
+                scanCursor = 0;
+                return;
+            }
+
+            if ((uint)scanCursor >= (uint)safeCount)
+                scanCursor = 0;
+
+            int budget = math.min(Mathf.Max(1, matureSporeAcousticScanBudgetPerTick), safeCount);
+            for (int checkedCount = 0; checkedCount < budget; checkedCount++)
+            {
+                int activeIndex = scanCursor;
+                scanCursor++;
+                if (scanCursor >= safeCount)
+                    scanCursor = 0;
+
+                uint instanceUid = instanceUids[activeIndex];
+                if (instanceUid == 0u ||
+                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
+                {
+                    continue;
+                }
+
+                HectonVegetationInstanceData instanceData = metadata[activeIndex];
+                if (!IsMatureGrowth(instanceData) ||
+                    instanceData.HealthNormalized < MatureSporeGrowthThreshold01 ||
+                    instanceData.RuntimeState >= HectonVegetationInstanceData.RuntimeStateDying - 0.01f ||
+                    math.abs(instanceData.HeightScale) <= 0.0001f)
+                {
+                    continue;
+                }
+
+                int templateIndex = ResolveTemplateIndex(instanceData, (HarvestableTemplate.MaterialClass)materialClasses[activeIndex]);
+                if (!IsMatureSporeAcousticEmitter(templateIndex))
+                    continue;
+
+                TryDispatchMatureSporeAcoustic(instanceUid, 1f, underwater, activeIndex, templateIndex, currentTime);
             }
         }
 
@@ -2905,17 +3189,159 @@ namespace Hecton8.World
 
         internal bool TrySetMaturationProgress(uint instanceUid, float progress01)
         {
+            float multiplier = EvaluateMaturationScaleMultiplier(progress01);
+            return TrySetMaturationProgress(instanceUid, progress01, multiplier, multiplier);
+        }
+
+        internal bool TrySetMaturationProgress(uint instanceUid, float progress01, float scaleMultiplier, float resourceYieldMultiplier)
+        {
             if (instanceUid == 0u || !_maturationScaleByInstanceUid.IsCreated)
                 return false;
 
-            float scaleMultiplier = EvaluateMaturationScaleMultiplier(progress01);
+            scaleMultiplier = Mathf.Clamp(scaleMultiplier, 0.1f, 1f);
+            resourceYieldMultiplier = Mathf.Clamp(resourceYieldMultiplier, 0.1f, 1f);
             _maturationScaleByInstanceUid.Remove(instanceUid);
             if (scaleMultiplier < 0.9999f)
                 _maturationScaleByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)scaleMultiplier);
 
-            if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out _))
-                ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, scaleMultiplier);
+            if (_maturationYieldByInstanceUid.IsCreated)
+            {
+                _maturationYieldByInstanceUid.Remove(instanceUid);
+                if (resourceYieldMultiplier < 0.9999f)
+                    _maturationYieldByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)resourceYieldMultiplier);
+            }
 
+            if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
+            {
+                ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, scaleMultiplier);
+                TryDispatchMatureSporeAcoustic(instanceUid, progress01, underwater, activeIndex, templateIndex, Time.time);
+            }
+            else if (progress01 < MatureSporeGrowthThreshold01 && _nextSporeAcousticTimeByInstanceUid.IsCreated)
+            {
+                _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
+            }
+
+            return true;
+        }
+
+        internal bool TryApplyLightStarvation(uint instanceUid, float starvation01)
+        {
+            if (instanceUid == 0u ||
+                !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex) ||
+                (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
+            {
+                return false;
+            }
+
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+            if (!matrices.IsCreated ||
+                !materialClasses.IsCreated ||
+                activeIndex < 0 ||
+                activeIndex >= matrices.Length ||
+                activeIndex >= materialClasses.Length)
+            {
+                return false;
+            }
+
+            HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
+            if (materialClass == HarvestableTemplate.MaterialClass.None)
+                return false;
+
+            float clampedStarvation01 = Mathf.Clamp01(starvation01);
+            float baseHealth = ResolveBaseHealth(templateIndex);
+            float currentHealth = GetLaneHealth(underwater, activeIndex);
+            if (currentHealth <= 0.0001f)
+                return false;
+
+            float nextHealth = Mathf.Max(0f, currentHealth - (baseHealth * LightStarvationDamagePerSlowTick01 * clampedStarvation01));
+            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
+            if (nextHealth <= baseHealth * LightStarvationDeathHealth01)
+            {
+                ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
+                return true;
+            }
+
+            float normalizedHealth = Mathf.Clamp01(nextHealth / Mathf.Max(0.0001f, baseHealth));
+            float normalizedHeightScale = Mathf.Clamp(
+                Mathf.Min(normalizedHealth, ResolveBareHeightCeiling01(templateIndex)),
+                SoftBareHealthFloor01,
+                1f);
+            ApplySuppressionState(
+                underwater,
+                activeIndex,
+                instanceUid,
+                templateIndex,
+                instancePosition,
+                baseHealth,
+                nextHealth,
+                normalizedHealth,
+                normalizedHeightScale);
+            return true;
+        }
+
+        internal bool TryApplyAllelopathicToxinSuppression(
+            Matrix4x4 matrix,
+            HectonVegetationInstanceData metadata,
+            int typeId,
+            int semanticType,
+            float toxicity01)
+        {
+            if (!TryResolveFloraGrowthDescriptor(
+                    matrix,
+                    metadata,
+                    typeId,
+                    semanticType,
+                    out uint instanceUid,
+                    out _,
+                    out _) ||
+                instanceUid == 0u ||
+                !TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex) ||
+                (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(instanceUid)))
+            {
+                return false;
+            }
+
+            NativeArray<Matrix4x4> matrices = underwater ? _underwaterMatrices : _surfaceMatrices;
+            NativeArray<byte> materialClasses = underwater ? _underwaterMaterialClasses : _surfaceMaterialClasses;
+            if (!matrices.IsCreated ||
+                !materialClasses.IsCreated ||
+                activeIndex < 0 ||
+                activeIndex >= matrices.Length ||
+                activeIndex >= materialClasses.Length)
+            {
+                return false;
+            }
+
+            HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[activeIndex];
+            if (materialClass == HarvestableTemplate.MaterialClass.None)
+                return false;
+
+            float clampedToxicity01 = Mathf.Clamp01(toxicity01);
+            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
+            if (clampedToxicity01 >= AllelopathicDeathThreshold01)
+            {
+                ApplyPassiveDecomposition(underwater, activeIndex, instanceUid, materialClass, templateIndex, instancePosition);
+                return true;
+            }
+
+            float baseHealth = ResolveBaseHealth(templateIndex);
+            float normalizedHealth = Mathf.Lerp(ResolveBareThreshold01(templateIndex), AllelopathicBareHealth01, clampedToxicity01);
+            float normalizedHeightScale = Mathf.Clamp(
+                Mathf.Min(normalizedHealth, ResolveBareHeightCeiling01(templateIndex)),
+                SoftBareHealthFloor01,
+                1f);
+            float nextHealth = baseHealth * normalizedHealth;
+            ApplySuppressionState(
+                underwater,
+                activeIndex,
+                instanceUid,
+                templateIndex,
+                instancePosition,
+                baseHealth,
+                nextHealth,
+                normalizedHealth,
+                normalizedHeightScale);
             return true;
         }
 
@@ -2924,6 +3350,52 @@ namespace Hecton8.World
             float clampedProgress = math.saturate(progress01);
             float smoothProgress = clampedProgress * clampedProgress * (3f - (2f * clampedProgress));
             return Mathf.Lerp(0.1f, 1f, smoothProgress);
+        }
+
+        private float ResolveBaseHealth(int templateIndex)
+        {
+            return templateIndex >= 0 && templateIndex < _templateDescriptors.Length
+                ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
+                : 1f;
+        }
+
+        private void ApplySuppressionState(
+            bool underwater,
+            int activeIndex,
+            uint instanceUid,
+            int templateIndex,
+            Vector3 instancePosition,
+            float baseHealth,
+            float currentHealth,
+            float normalizedHealth,
+            float normalizedHeightScale)
+        {
+            SetLaneHealth(underwater, activeIndex, currentHealth);
+            if (_healthByInstanceUid.IsCreated)
+            {
+                _healthByInstanceUid.Remove(instanceUid);
+                _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)Mathf.Max(0f, currentHealth));
+            }
+
+            float damage01 = ResolveDamageProgress(baseHealth, currentHealth);
+            UpdateDamageProgressCache(instanceUid, damage01);
+            ApplyDamageToLaneInstance(
+                underwater,
+                activeIndex,
+                instanceUid,
+                templateIndex,
+                Mathf.Clamp01(normalizedHealth),
+                damage01,
+                Mathf.Clamp01(normalizedHeightScale),
+                Time.time);
+            PersistFloraStateOverride(
+                instanceUid,
+                templateIndex,
+                instancePosition,
+                underwater,
+                activeIndex,
+                baseHealth,
+                currentHealth);
         }
 
         private int ResolveDescriptorIndexByPersistentIdHash(ulong floraPersistentIdHash)
@@ -3059,6 +3531,18 @@ namespace Hecton8.World
             return Mathf.Clamp((float)storedScale, 0.1f, 1f);
         }
 
+        private float ResolveMaturationYieldMultiplier(uint instanceUid)
+        {
+            if (!_maturationYieldByInstanceUid.IsCreated ||
+                instanceUid == 0u ||
+                !_maturationYieldByInstanceUid.TryGetValue(instanceUid, out Unity.Mathematics.half storedYield))
+            {
+                return ResolveMaturationScaleMultiplier(instanceUid);
+            }
+
+            return Mathf.Clamp((float)storedYield, 0.1f, 1f);
+        }
+
         private void ApplyMaturationVisualToLaneInstance(bool underwater, int activeIndex, uint instanceUid, float scaleMultiplier)
         {
             NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
@@ -3080,6 +3564,7 @@ namespace Hecton8.World
             maturationMetadata.Type = types[activeIndex];
             maturationMetadata.HeightScale = baseScale.x * clampedScale;
             maturationMetadata.WidthScale = baseScale.y * clampedScale;
+            maturationMetadata.Reserved0 = clampedScale;
             metadata[activeIndex] = maturationMetadata;
         }
 
@@ -3121,6 +3606,7 @@ namespace Hecton8.World
                 ? HectonVegetationInstanceData.RuntimeStateIdle
                 : HectonVegetationInstanceData.RuntimeStateAgitated;
             regrowthMetadata.HealthNormalized = Mathf.Clamp01(progress01);
+            regrowthMetadata.Reserved0 = Mathf.Clamp01(progress01);
             metadata[activeIndex] = regrowthMetadata;
         }
 
@@ -3190,7 +3676,7 @@ namespace Hecton8.World
                 width01 = Mathf.Clamp01(instanceData.WidthScale);
             }
 
-            float maturationMultiplier = ResolveMaturationScaleMultiplier(_underwaterInstanceUids.IsCreated || _surfaceInstanceUids.IsCreated
+            float maturationMultiplier = ResolveMaturationYieldMultiplier(_underwaterInstanceUids.IsCreated || _surfaceInstanceUids.IsCreated
                 ? (underwater && activeIndex >= 0 && activeIndex < _underwaterCount ? _underwaterInstanceUids[activeIndex] :
                    !underwater && activeIndex >= 0 && activeIndex < _surfaceCount ? _surfaceInstanceUids[activeIndex] :
                    0u)

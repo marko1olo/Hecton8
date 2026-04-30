@@ -38,7 +38,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float deployCooldown = 0.25f;
         [SerializeField] private float retractRange = 6f;
         [SerializeField] private int maxActiveBeacons = 24;
-        [SerializeField] private LayerMask deploymentMask = ~0;
+        [SerializeField] private LayerMask deploymentMask = (1 << 8) | (1 << 9) | (1 << 10);
         [SerializeField] private GameObject worldBeaconPrefab;
         [SerializeField] private float feedbackInterval = 0.45f;
 

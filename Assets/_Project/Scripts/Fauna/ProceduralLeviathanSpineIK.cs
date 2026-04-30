@@ -302,7 +302,8 @@ namespace Hecton8.AI
             if (deltaTime <= 0f || _faunaBrain == null || _vertebraAccessArray.length <= 0)
                 return;
 
-            CompletePendingJob();
+            if (!CompletePendingJob(force: false))
+                return;
 
             if (!TryResolveHeadPose(out float3 headPosition, out float3 headForward, out float speedNormalized))
                 return;
@@ -462,15 +463,19 @@ namespace Hecton8.AI
             _registeredOriginShiftListener = false;
         }
 
-        private void CompletePendingJob()
+        private bool CompletePendingJob(bool force = true)
         {
             if (!_jobScheduled)
-                return;
+                return true;
+
+            if (!force && !_pendingSpineHandle.IsCompleted)
+                return false;
 
             _pendingSpineHandle.Complete();
             _pendingSpineHandle = default;
             _jobScheduled = false;
             ApplySolvedRotations();
+            return true;
         }
 
         private void SuppressAnimatorPlayback(bool suppress)

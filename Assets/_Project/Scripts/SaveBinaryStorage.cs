@@ -343,6 +343,45 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        internal struct IndexedSectorEntityStateWriteHandle
+        {
+            internal bool IsCreated;
+            internal string AbsolutePath;
+            internal JobHandle Handle;
+            public NativeArray<EntityDataRecord> SourceStates;
+            public NativeArray<SectorEntityStateSortEntry> SortEntries;
+            public NativeArray<SectorEntityStateSortEntry> RadixScratch;
+            public NativeArray<EntityDataRecord> SortedEntityStates;
+            public NativeArray<byte> FileBytes;
+            public NativeArray<int> ResultLength;
+            public NativeArray<int> RadixCounts;
+            public NativeArray<int> RadixOffsets;
+
+            internal bool IsCompleted => IsCreated && Handle.IsCompleted;
+
+            internal void Dispose()
+            {
+                if (SourceStates.IsCreated)
+                    SourceStates.Dispose();
+                if (SortEntries.IsCreated)
+                    SortEntries.Dispose();
+                if (RadixScratch.IsCreated)
+                    RadixScratch.Dispose();
+                if (SortedEntityStates.IsCreated)
+                    SortedEntityStates.Dispose();
+                if (FileBytes.IsCreated)
+                    FileBytes.Dispose();
+                if (ResultLength.IsCreated)
+                    ResultLength.Dispose();
+                if (RadixCounts.IsCreated)
+                    RadixCounts.Dispose();
+                if (RadixOffsets.IsCreated)
+                    RadixOffsets.Dispose();
+
+                this = default;
+            }
+        }
+
         private struct IndexedBlockDecompressJob : IJob
         {
             [ReadOnly] public NativeArray<byte> CompressedPayload;
@@ -373,7 +412,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private struct SectorEntityStateSortEntry
+        internal struct SectorEntityStateSortEntry
         {
             public ulong SortKey;
             public EntityDataRecord Record;
@@ -498,6 +537,7 @@ namespace Hecton8.SaveSystem
                     rawByteLength,
                     filePtr + UnsafeUtility.SizeOf<SectorEntityStateFileHeader>(),
                     FileBytes.Length - UnsafeUtility.SizeOf<SectorEntityStateFileHeader>(),
+                    useStaticDictionary: true,
                     protectSubBlocks: true);
                 if (compressedLength <= 0)
                 {
@@ -1850,6 +1890,101 @@ namespace Hecton8.SaveSystem
             }
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static bool TryCorruptFirstIndexedSectorProtectedBlockForSmoke(
+            string absolutePath,
+            out long sectorHash,
+            out string error)
+        {
+            sectorHash = 0L;
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+            {
+                error = "Smoke corruption path is missing.";
+                return false;
+            }
+
+            if (!TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping readMapping, out SaveFileHeader header, out _, out error))
+                return false;
+
+            SectorEntry selectedEntry = default;
+            bool foundProtectedSector = false;
+            try
+            {
+                if (!TryReadIndexedDirectory(in header, ref readMapping, out _, out SectorEntry[] sectorEntries, out error))
+                    return false;
+
+                for (int i = 0; i < sectorEntries.Length; i++)
+                {
+                    SectorEntry entry = sectorEntries[i];
+                    if (!IsIndexedSectorEntryPopulated(in entry) ||
+                        entry.CompressedSize <= IndexedSectorBlockHeaderSize + ProtectedCompressedBlockHeaderBytes ||
+                        entry.ByteOffset + entry.CompressedSize > readMapping.Length)
+                    {
+                        continue;
+                    }
+
+                    IndexedSectorBlockHeader blockHeader = UnsafeUtility.ReadArrayElement<IndexedSectorBlockHeader>((byte*)readMapping.View + entry.ByteOffset, 0);
+                    if ((blockHeader.Flags & FlagPerBlockChecksums) == 0)
+                        continue;
+
+                    selectedEntry = entry;
+                    foundProtectedSector = true;
+                    break;
+                }
+            }
+            finally
+            {
+                AsyncWriteManager.CloseReadOnlyMapping(ref readMapping);
+            }
+
+            if (!foundProtectedSector)
+            {
+                error = "Smoke corruption could not find a protected indexed sector block.";
+                return false;
+            }
+
+            FileStream fileStream = null;
+            MemoryMappedFile fileMapping = null;
+            MemoryMappedViewAccessor accessor = null;
+            byte* filePtr = null;
+            try
+            {
+                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                fileMapping = MemoryMappedFile.CreateFromFile(fileStream, null, fileStream.Length, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, true);
+                accessor = fileMapping.CreateViewAccessor(0L, fileStream.Length, MemoryMappedFileAccess.ReadWrite);
+                accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref filePtr);
+                byte* mappedFilePtr = filePtr + accessor.PointerOffset;
+
+                long checksumOffset = selectedEntry.ByteOffset + IndexedSectorBlockHeaderSize + 8;
+                uint checksum = UnsafeUtility.ReadArrayElement<uint>(mappedFilePtr + checksumOffset, 0);
+                uint corruptedChecksum = checksum ^ 0xA5A5A5A5u;
+                if (corruptedChecksum == checksum)
+                    corruptedChecksum = checksum + 1u;
+
+                UnsafeUtility.WriteArrayElement(mappedFilePtr + checksumOffset, 0, corruptedChecksum);
+                accessor.Flush();
+                fileStream.Flush(true);
+                sectorHash = selectedEntry.SectorHash;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = $"Smoke corruption failed: {ex.Message}";
+                return false;
+            }
+            finally
+            {
+                if (accessor != null && filePtr != null)
+                    accessor.SafeMemoryMappedViewHandle.ReleasePointer();
+
+                accessor?.Dispose();
+                fileMapping?.Dispose();
+                fileStream?.Dispose();
+            }
+        }
+#endif
+
         internal static bool TryLoadIndexedPersistentWorldSectors(
             string absolutePath,
             NativeArray<long> desiredSectorHashes,
@@ -2119,6 +2254,30 @@ namespace Hecton8.SaveSystem
             int chunkSizeMeters,
             out string error)
         {
+            if (!TryScheduleIndexedSectorEntityStateOverrideWrite(
+                    absolutePath,
+                    sectorHash,
+                    entityStates,
+                    chunkSizeMeters,
+                    out IndexedSectorEntityStateWriteHandle writeHandle,
+                    out error))
+            {
+                return false;
+            }
+
+            writeHandle.Handle.Complete();
+            return TryCompleteIndexedSectorEntityStateOverrideWrite(ref writeHandle, out error);
+        }
+
+        internal static bool TryScheduleIndexedSectorEntityStateOverrideWrite(
+            string absolutePath,
+            long sectorHash,
+            NativeArray<EntityDataRecord> entityStates,
+            int chunkSizeMeters,
+            out IndexedSectorEntityStateWriteHandle writeHandle,
+            out string error)
+        {
+            writeHandle = default;
             error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath))
             {
@@ -2144,55 +2303,114 @@ namespace Hecton8.SaveSystem
             int compressedCapacity = rawByteLength + (rawByteLength / 255) + 16 + (blockCount * ProtectedCompressedBlockHeaderBytes);
             int fileCapacity = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedCapacity;
 
-            using NativeArray<SectorEntityStateSortEntry> sortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            using NativeArray<SectorEntityStateSortEntry> radixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            using NativeArray<EntityDataRecord> sortedEntityStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            using NativeArray<byte> compressedBytes = new NativeArray<byte>(fileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            using NativeArray<int> resultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            using NativeArray<int> radixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            using NativeArray<int> radixOffsets = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            try
+            {
+                writeHandle.IsCreated = true;
+                writeHandle.AbsolutePath = absolutePath;
+                writeHandle.SourceStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                writeHandle.SortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                writeHandle.RadixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                writeHandle.SortedEntityStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                writeHandle.FileBytes = new NativeArray<byte>(fileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                writeHandle.ResultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                writeHandle.RadixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                writeHandle.RadixOffsets = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            }
+            catch (Exception ex)
+            {
+                writeHandle.Dispose();
+                error = $"Sector entity-state write buffers could not be allocated: {ex.Message}";
+                return false;
+            }
+
+            for (int i = 0; i < recordCount; i++)
+                writeHandle.SourceStates[i] = entityStates[i];
 
             BuildSectorEntityStateSortEntriesJob buildJob = new BuildSectorEntityStateSortEntriesJob
             {
-                SourceStates = entityStates,
-                Entries = sortEntries,
+                SourceStates = writeHandle.SourceStates,
+                Entries = writeHandle.SortEntries,
                 ChunkSizeMeters = math.max(1, chunkSizeMeters)
             };
             RadixSortSectorEntityStateEntriesJob sortJob = new RadixSortSectorEntityStateEntriesJob
             {
-                Entries = sortEntries,
-                Scratch = radixScratch,
-                Counts = radixCounts,
-                Offsets = radixOffsets
+                Entries = writeHandle.SortEntries,
+                Scratch = writeHandle.RadixScratch,
+                Counts = writeHandle.RadixCounts,
+                Offsets = writeHandle.RadixOffsets
             };
             ExtractSortedSectorEntityStatesJob extractJob = new ExtractSortedSectorEntityStatesJob
             {
-                Entries = sortEntries,
-                SortedStates = sortedEntityStates
+                Entries = writeHandle.SortEntries,
+                SortedStates = writeHandle.SortedEntityStates
             };
             CompressSectorEntityStateJob compressJob = new CompressSectorEntityStateJob
             {
-                SortedStates = sortedEntityStates,
-                FileBytes = compressedBytes,
-                ResultLength = resultLength,
+                SortedStates = writeHandle.SortedEntityStates,
+                FileBytes = writeHandle.FileBytes,
+                ResultLength = writeHandle.ResultLength,
                 SectorHash = sectorHash
             };
 
-            JobHandle buildHandle = buildJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)));
-            JobHandle sortHandle = sortJob.Schedule(buildHandle);
-            JobHandle extractHandle = extractJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)), sortHandle);
-            JobHandle compressHandle = compressJob.Schedule(extractHandle);
-            compressHandle.Complete();
-
-            int fileLength = resultLength[0];
-            if (fileLength <= UnsafeUtility.SizeOf<SectorEntityStateFileHeader>())
+            try
             {
-                error = "Sector entity-state LZ4 compression failed.";
+                JobHandle buildHandle = buildJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)));
+                JobHandle sortHandle = sortJob.Schedule(buildHandle);
+                JobHandle extractHandle = extractJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)), sortHandle);
+                writeHandle.Handle = compressJob.Schedule(extractHandle);
+            }
+            catch (Exception ex)
+            {
+                writeHandle.Dispose();
+                error = $"Sector entity-state write job scheduling failed: {ex.Message}";
                 return false;
             }
 
-            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compressedBytes);
-            return AsyncWriteManager.WriteAll(absolutePath, filePtr, fileLength, out error);
+            return true;
+        }
+
+        internal static bool TryCompleteIndexedSectorEntityStateOverrideWrite(
+            ref IndexedSectorEntityStateWriteHandle writeHandle,
+            out string error)
+        {
+            error = string.Empty;
+            if (!writeHandle.IsCreated)
+            {
+                error = "Sector entity-state write handle is not initialized.";
+                return false;
+            }
+
+            if (!writeHandle.Handle.IsCompleted)
+            {
+                error = "Sector entity-state write job is still running.";
+                return false;
+            }
+
+            writeHandle.Handle.Complete();
+
+            int fileLength = writeHandle.ResultLength[0];
+            if (fileLength <= UnsafeUtility.SizeOf<SectorEntityStateFileHeader>())
+            {
+                error = "Sector entity-state LZ4 compression failed.";
+                writeHandle.Dispose();
+                return false;
+            }
+
+            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writeHandle.FileBytes);
+            bool written = AsyncWriteManager.WriteAll(writeHandle.AbsolutePath, filePtr, fileLength, out error);
+            writeHandle.Dispose();
+            return written;
+        }
+
+        internal static void DisposeIndexedSectorEntityStateOverrideWrite(ref IndexedSectorEntityStateWriteHandle writeHandle)
+        {
+            if (!writeHandle.IsCreated)
+                return;
+
+            if (!writeHandle.Handle.IsCompleted)
+                writeHandle.Handle.Complete();
+
+            writeHandle.Dispose();
         }
 
         internal static bool TryReadIndexedSectorEntityStateOverride(
@@ -2502,10 +2720,6 @@ namespace Hecton8.SaveSystem
                 AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
             }
 
-            string tempPath = $"{absolutePath}.defragtmp";
-            if (File.Exists(tempPath))
-                File.Delete(tempPath);
-
             try
             {
                 List<int> sortedIndices = new List<int>(checked((int)directoryHeader.SectorCount));
@@ -2516,95 +2730,108 @@ namespace Hecton8.SaveSystem
                 }
 
                 sortedIndices.Sort((left, right) => sectorEntries[left].ByteOffset.CompareTo(sectorEntries[right].ByteOffset));
+                if (sortedIndices.Count <= 0)
+                    return true;
 
-                FileStream sourceStream = null;
-                MemoryMappedFile sourceMapping = null;
-                MemoryMappedViewAccessor sourceAccessor = null;
-                byte* sourcePtr = null;
+                int trailingBlockIndex = sortedIndices[sortedIndices.Count - 1];
+                SectorEntry trailingBlock = sectorEntries[trailingBlockIndex];
+                long trailingBlockEnd = trailingBlock.ByteOffset + trailingBlock.CompressedSize;
+                if (trailingBlock.ByteOffset < metadataEndOffset || trailingBlock.CompressedSize <= 0 || trailingBlockEnd > originalLength)
+                {
+                    error = "Indexed sector defrag found an invalid trailing sector block.";
+                    return false;
+                }
 
-                FileStream targetStream = null;
-                MemoryMappedFile targetMapping = null;
-                MemoryMappedViewAccessor targetAccessor = null;
-                byte* targetPtr = null;
+                long scanCursor = metadataEndOffset;
+                long largestHoleOffset = 0L;
+                long largestHoleSize = 0L;
+                for (int i = 0; i < sortedIndices.Count; i++)
+                {
+                    SectorEntry entry = sectorEntries[sortedIndices[i]];
+                    if (entry.CompressedSize <= 0)
+                        continue;
+
+                    if (entry.ByteOffset > scanCursor)
+                    {
+                        long holeSize = entry.ByteOffset - scanCursor;
+                        if (holeSize > largestHoleSize && scanCursor < trailingBlock.ByteOffset)
+                        {
+                            largestHoleOffset = scanCursor;
+                            largestHoleSize = holeSize;
+                        }
+                    }
+
+                    long entryEnd = entry.ByteOffset + entry.CompressedSize;
+                    if (entryEnd > scanCursor)
+                        scanCursor = entryEnd;
+                }
+
+                if (largestHoleSize < trailingBlock.CompressedSize || largestHoleOffset <= 0L)
+                {
+                    reclaimedBytes = 0L;
+                    return true;
+                }
+
+                FileStream fileStream = null;
+                MemoryMappedFile fileMapping = null;
+                MemoryMappedViewAccessor accessor = null;
+                byte* filePtr = null;
+                bool relocationApplied = false;
+                long truncatedLength = trailingBlock.ByteOffset;
 
                 try
                 {
-                    sourceStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    sourceMapping = MemoryMappedFile.CreateFromFile(sourceStream, null, sourceStream.Length, MemoryMappedFileAccess.Read, HandleInheritability.None, true);
-                    sourceAccessor = sourceMapping.CreateViewAccessor(0L, sourceStream.Length, MemoryMappedFileAccess.Read);
-                    sourceAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref sourcePtr);
-                    byte* sourceFilePtr = sourcePtr + sourceAccessor.PointerOffset;
+                    fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    fileMapping = MemoryMappedFile.CreateFromFile(fileStream, null, originalLength, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, true);
+                    accessor = fileMapping.CreateViewAccessor(0L, originalLength, MemoryMappedFileAccess.ReadWrite);
+                    accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref filePtr);
+                    byte* mappedFilePtr = filePtr + accessor.PointerOffset;
 
-                    targetStream = new FileStream(tempPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None);
-                    targetStream.SetLength(compactLength);
-                    targetMapping = MemoryMappedFile.CreateFromFile(targetStream, null, compactLength, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, true);
-                    targetAccessor = targetMapping.CreateViewAccessor(0L, compactLength, MemoryMappedFileAccess.ReadWrite);
-                    targetAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref targetPtr);
-                    byte* targetFilePtr = targetPtr + targetAccessor.PointerOffset;
+                    UnsafeUtility.MemMove(mappedFilePtr + largestHoleOffset, mappedFilePtr + trailingBlock.ByteOffset, trailingBlock.CompressedSize);
 
-                    UnsafeUtility.MemCpy(targetFilePtr, sourceFilePtr, metadataEndOffset);
+                    int directoryEntryOffset = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize + (trailingBlockIndex * UnsafeUtility.SizeOf<SectorEntry>());
+                    SectorEntry movedEntry = trailingBlock;
+                    movedEntry.ByteOffset = largestHoleOffset;
+                    UnsafeUtility.CopyStructureToPtr(ref movedEntry, mappedFilePtr + directoryEntryOffset);
 
-                    long writeCursor = metadataEndOffset;
-                    SectorEntry[] rewrittenEntries = new SectorEntry[sectorEntries.Length];
-                    for (int i = 0; i < sortedIndices.Count; i++)
-                    {
-                        int sourceIndex = sortedIndices[i];
-                        SectorEntry entry = sectorEntries[sourceIndex];
-                        if (entry.CompressedSize <= 0)
-                        {
-                            rewrittenEntries[sourceIndex] = entry;
-                            continue;
-                        }
-
-                        UnsafeUtility.MemCpy(targetFilePtr + writeCursor, sourceFilePtr + entry.ByteOffset, entry.CompressedSize);
-                        entry.ByteOffset = writeCursor;
-                        rewrittenEntries[sourceIndex] = entry;
-                        writeCursor += entry.CompressedSize;
-                    }
-
-                    int directoryCursor = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize;
-                    for (int i = 0; i < rewrittenEntries.Length; i++)
-                    {
-                        UnsafeUtility.CopyStructureToPtr(ref rewrittenEntries[i], targetFilePtr + directoryCursor);
-                        directoryCursor += UnsafeUtility.SizeOf<SectorEntry>();
-                    }
-
-                    SaveFileHeader updatedHeader = header;
+                    SaveFileHeader updatedHeader = UnsafeUtility.ReadArrayElement<SaveFileHeader>(mappedFilePtr, 0);
                     ulong newDirectoryHash64 = directoryBytes > 0
-                        ? Hash64(targetFilePtr + CurrentHeaderSize, directoryBytes)
+                        ? Hash64(mappedFilePtr + CurrentHeaderSize, directoryBytes)
                         : 0UL;
                     updatedHeader.HashPayload64 = metadataHash64 ^ newDirectoryHash64;
                     updatedHeader.HashHeader64 = 0UL;
                     updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
-                    UnsafeUtility.CopyStructureToPtr(ref updatedHeader, targetFilePtr);
+                    UnsafeUtility.CopyStructureToPtr(ref updatedHeader, mappedFilePtr);
 
-                    targetAccessor.Flush();
-                    targetStream.Flush(true);
+                    accessor.Flush();
+                    relocationApplied = true;
                 }
                 finally
                 {
-                    if (sourceAccessor != null && sourcePtr != null)
-                        sourceAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
-                    if (targetAccessor != null && targetPtr != null)
-                        targetAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                    if (accessor != null && filePtr != null)
+                        accessor.SafeMemoryMappedViewHandle.ReleasePointer();
 
-                    sourceAccessor?.Dispose();
-                    sourceMapping?.Dispose();
-                    sourceStream?.Dispose();
-                    targetAccessor?.Dispose();
-                    targetMapping?.Dispose();
-                    targetStream?.Dispose();
+                    accessor?.Dispose();
+                    fileMapping?.Dispose();
+
+                    if (fileStream != null)
+                    {
+                        if (relocationApplied)
+                        {
+                            fileStream.SetLength(truncatedLength);
+                            fileStream.Flush(true);
+                            reclaimedBytes = math.max(0L, originalLength - truncatedLength);
+                        }
+
+                        fileStream.Dispose();
+                    }
                 }
 
-                File.Copy(tempPath, absolutePath, true);
-                File.Delete(tempPath);
                 return true;
             }
             catch (Exception ex)
             {
                 error = $"Indexed sector defrag failed: {ex.Message}";
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
                 return false;
             }
         }

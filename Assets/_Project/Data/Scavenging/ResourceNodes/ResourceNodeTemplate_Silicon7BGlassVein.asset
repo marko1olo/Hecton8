@@ -33,7 +33,7 @@ MonoBehaviour:
   maximumDensity: 0.14
   validLayers:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 1792
   colliderShape: 0
   physicalSize: {x: 1.7, y: 1.9, z: 1.7}
   supportsAutonomousExtraction: 1

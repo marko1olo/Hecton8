@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Construction;
 using Hecton8.Physics;
 using Hecton.Localization;
 using UnityEngine;
@@ -26,6 +27,8 @@ namespace Hecton8.Gameplay
         private const float FloodedInsulationFactor = 0.2f;
         private const float RadiationFatigueSignalThreshold = 0.05f;
         private const float EmpStressTransfer01 = 0.92f;
+        private const float ParasiteSporeDamagePerSecond = 5f;
+        private const float ParasiteSporeSealedResistanceThreshold = 500f;
 
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
@@ -41,6 +44,7 @@ namespace Hecton8.Gameplay
         private float _activeTransportChargeNormalized = 1f;
         private float _activeTransportIntegrityNormalized = 1f;
         private HabitatIntegrityManager _activeHabitatManager;
+        private BaseModule _activeHabitatModule;
         private IDamageSignalEmitter _activeHabitatEmitter;
         private MonoBehaviour _activeHabitatEmitterBehaviour;
         private IPlayerTransportLifecycleOwner _activeTransportOwner;
@@ -162,6 +166,7 @@ namespace Hecton8.Gameplay
             _hazardToxicSignal01 = DecayChannel(_hazardToxicSignal01, HazardSignalDecayPerSecond, deltaTime);
             _empSensorBlindTimer = Mathf.Max(0f, _empSensorBlindTimer - Mathf.Max(0f, deltaTime));
             UpdateRadiationFatigue(deltaTime);
+            UpdateActiveParasiteSporeHazard(deltaTime);
 
             if (IsEmpSensorBlindActive)
                 PromoteChannel(ref _clarityChannel01, 1f);
@@ -322,6 +327,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _activeHabitatManager = habitatManager;
+            habitatManager.TryGetComponent(out _activeHabitatModule);
             _activeHabitatEmitter = habitatManager;
             _activeHabitatEmitterBehaviour = habitatManager;
             _activeHabitatEmitter.RegisterDamageReceiver(this);
@@ -333,6 +339,7 @@ namespace Hecton8.Gameplay
                 _activeHabitatEmitter.UnregisterDamageReceiver(this);
 
             _activeHabitatManager = null;
+            _activeHabitatModule = null;
             _activeHabitatEmitter = null;
             _activeHabitatEmitterBehaviour = null;
         }
@@ -496,6 +503,31 @@ namespace Hecton8.Gameplay
 
             _radiationExposureSeconds += Mathf.Max(0f, deltaTime) * radiationSignal;
             _playerHealth.ApplyRadiationExposure(_radiationExposureSeconds);
+        }
+
+        private void UpdateActiveParasiteSporeHazard(float deltaTime)
+        {
+            if (_activeHabitatModule == null || _survivalSystem == null)
+                return;
+
+            if (!BaseDegradationSystem.TryGetParasiteSporeHazard(_activeHabitatModule, out float intensity, out _))
+                return;
+
+            float hazardIntensity = Mathf.Clamp01(intensity);
+            PromoteChannel(ref _hazardToxicSignal01, hazardIntensity);
+            PromoteChannel(ref _clarityChannel01, hazardIntensity * 0.35f);
+            if (HasSealedHelmetProtection())
+                return;
+
+            _survivalSystem.TakeDamage(ParasiteSporeDamagePerSecond * hazardIntensity * Mathf.Max(0f, deltaTime));
+        }
+
+        private bool HasSealedHelmetProtection()
+        {
+            if (_survivalSystem == null)
+                return false;
+
+            return _survivalSystem.ResolveEnvironmentalResistance(HazardType.Toxicity) >= ParasiteSporeSealedResistanceThreshold;
         }
 
         private static float ResolveTraumaImpulse(TraumaLevel level)

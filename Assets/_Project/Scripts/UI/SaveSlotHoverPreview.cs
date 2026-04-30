@@ -231,7 +231,7 @@ namespace Hecton8.UI
             }
 
             LocalizationManager localization = LocalizationManager.Instance;
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null || !saveManager.TryGetSaveSlotInfo(_currentSlotId, out SaveSlotInfo slotInfo) || slotInfo == null)
             {
                 ApplyPreviewTexts(

@@ -133,6 +133,11 @@ namespace Hecton8.Celestial
 
         private void OnEnable()
         {
+#if UNITY_EDITOR
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+#endif
+
             CacheAuthoringReferences();
             TryCaptureInitialDirection();
             ApplyPlacement();
@@ -177,6 +182,9 @@ namespace Hecton8.Celestial
 
         private void LateUpdate()
         {
+            if (!Application.isPlaying)
+                return;
+
             if (placementMode != CelestialPlacementMode.FixedDirection)
                 return;
 
@@ -200,9 +208,11 @@ namespace Hecton8.Celestial
 
         private void TryRegister()
         {
-            if (_registeredToTickManager)
+            if (_registeredToTickManager || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = true;
@@ -213,7 +223,7 @@ namespace Hecton8.Celestial
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -578,6 +588,12 @@ namespace Hecton8.Celestial
 #if UNITY_EDITOR
         private void HandleEditorUpdate()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+            {
+                EditorApplication.update -= HandleEditorUpdate;
+                return;
+            }
+
             if (Application.isPlaying || this == null)
                 return;
 
@@ -594,6 +610,9 @@ namespace Hecton8.Celestial
 
         private void OnValidate()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+
             _registeredToTickManager = false;
             _parentObserverRelativeBody = null;
             _editorPreviewDirty = true;

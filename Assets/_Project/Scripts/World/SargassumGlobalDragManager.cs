@@ -3020,7 +3020,7 @@ namespace Hecton8.World
         {
             if (Application.isPlaying && !_saveRegistered)
             {
-                SaveManager.Instance?.Register(this);
+                Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
                 _saveRegistered = true;
             }
 
@@ -3056,7 +3056,7 @@ namespace Hecton8.World
 
             if (_saveRegistered)
             {
-                SaveManager.Instance?.Unregister(this);
+                Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
                 _saveRegistered = false;
             }
         }

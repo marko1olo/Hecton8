@@ -24,8 +24,10 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-105)]
-    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, IOriginShiftListener
+    public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
     {
+        private static FloraInteractionManager s_ActiveRuntimeInstance;
+
         [StructLayout(LayoutKind.Sequential)]
         private struct FloraInteractionPointGpuData
         {
@@ -43,6 +45,27 @@ namespace Hecton8.World
         {
             public float PowerDrainWatts;
             public float InfectionLevel;
+            public float RootPowerDrainWatts;
+            public float RootInfectionLevel;
+            public int ParasiteCount;
+        }
+
+        internal readonly struct ModuleParasiteTarget
+        {
+            public ModuleParasiteTarget(BaseModule hostModule, Vector3 position, float radius, float infectionLevel, float criticalityWeight)
+            {
+                HostModule = hostModule;
+                Position = position;
+                Radius = radius;
+                InfectionLevel = infectionLevel;
+                CriticalityWeight = criticalityWeight;
+            }
+
+            public BaseModule HostModule { get; }
+            public Vector3 Position { get; }
+            public float Radius { get; }
+            public float InfectionLevel { get; }
+            public float CriticalityWeight { get; }
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -145,6 +168,7 @@ namespace Hecton8.World
         private const float InactiveCascadeSeed = -100000f;
         private const int ToxicSporeHazardSourceId = unchecked((int)0x6B13A7F1);
         private const int DefensiveSporeHazardSourceId = unchecked((int)0x52F1063A);
+        private const float MinimumAllelopathicToxicity01 = 0.005f;
 #if UNITY_EDITOR
         private const string WakeTrailSimulationComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute";
 #endif
@@ -211,6 +235,10 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Optional vegetation bridge override used for dense-grass heuristics and sediment interaction bursts.")]
         private HectonMapMagicVegetationBridge _vegetationBridgeOverride;
+
+        [SerializeField]
+        [Tooltip("Optional organic destruction owner override used for chemical flora suppression in isolated scene validation.")]
+        private DestructibleOrganicManager _destructibleOrganicManagerOverride;
 
         [Header("Interaction")]
         [SerializeField, Range(1f, 10f)]
@@ -284,7 +312,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Physics layers considered for dynamic vegetation interaction queries.")]
-        private LayerMask _dynamicInteractionMask = ~0;
+        private LayerMask _dynamicInteractionMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("Biolum Stealth")]
         [SerializeField, Range(2f, 48f)]
@@ -301,7 +329,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Physics layers considered when querying the nearest aggressive bioform for flora stealth dimming.")]
-        private LayerMask _predatorThreatMask = ~0;
+        private LayerMask _predatorThreatMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("Seasonal Lifecycle")]
         [SerializeField, Range(120f, 3600f)]
@@ -331,6 +359,23 @@ namespace Hecton8.World
         [SerializeField, Range(0f, 1f)]
         [Tooltip("Global wilt deformation strength applied during decay windows.")]
         private float _decayWiltStrength = 0.82f;
+
+        [Header("Allelopathic Toxin")]
+        [SerializeField]
+        [Tooltip("Stable flora template id that emits territorial toxin into the chemical influence grid.")]
+        private string _bloodKelpAllelopathyStableId = "flora.blood_kelp";
+
+        [SerializeField]
+        [Tooltip("Stable flora template id that is suppressed by Blood Kelp toxicity in its chemical-grid cell.")]
+        private string _ghostWeedAllelopathyStableId = "flora.ghost_weed";
+
+        [SerializeField, Range(0.01f, 4f)]
+        [Tooltip("Toxicity channel dose emitted by each active Blood Kelp during one SlowTick.")]
+        private float _bloodKelpToxinDosePerSlowTick = 0.28f;
+
+        [SerializeField, Range(0.001f, 1f)]
+        [Tooltip("Normalized chemical-grid toxicity threshold where Ghost Weed enters bare/dead suppression.")]
+        private float _ghostWeedSuppressionThreshold01 = 0.08f;
 
         [SerializeField, Range(0f, 0.5f)]
         [Tooltip("Extra bloom weight injected while the encounter pacing director ramps or peaks.")]
@@ -414,6 +459,10 @@ namespace Hecton8.World
         [SerializeField, Range(0.5f, 12f)]
         [Tooltip("Maximum distance from a parasitic flora instance to a module contact before the latch is discarded.")]
         private float _moduleParasiteAttachmentRadius = 4f;
+
+        [SerializeField, Range(1f, 20f)]
+        [Tooltip("Multiplier applied when a module parasite reaches full growth and exposes a logistics root node.")]
+        private float _matureParasiteRootDrainMultiplier = 8f;
 
         [SerializeField, Range(0.5f, 12f)]
         [Tooltip("Maximum distance from a module to the nearest active BioReactor used for thermophilic host validation.")]
@@ -585,6 +634,7 @@ namespace Hecton8.World
         private bool _hasActiveScooterWake;
         private bool _hasActiveSubmarineWake;
         private bool _isRegistered;
+        private bool _isSlowTickRegistered;
         private int _lastPublishedInteractionCount;
         private int _externalInteractionCount;
 
@@ -615,6 +665,7 @@ namespace Hecton8.World
         private float _flowFieldCellSize;
         private float _flowFieldUploadTimer;
         private HectonMapMagicVegetationBridge _vegetationBridge;
+        private DestructibleOrganicManager _destructibleOrganicManager;
         private IHectonOceanKinematics _oceanKinematicsProvider;
         private Vector3 _flowFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
@@ -625,6 +676,9 @@ namespace Hecton8.World
         private int _cachedToxicSporeTemplateCount = -1;
         private int _toxicSporeStableHashId;
         private int _thermalTubewormStableHashId;
+        private int _bloodKelpAllelopathyStableHashId;
+        private int _ghostWeedAllelopathyStableHashId;
+        private int _cachedAllelopathicTemplateCount = -1;
         private float _toxicSporeScanTimer;
         private float _lastToxicSporeExposure01;
         private float _moduleParasiteScanTimer;
@@ -649,6 +703,8 @@ namespace Hecton8.World
         private int _lastUnderwaterPlayerContactPayloadIndex = -1;
         private NativeArray<byte> _cascadeReactiveTemplateMask;
         private NativeArray<byte> _defensiveSporeBurstTemplateMask;
+        private NativeArray<byte> _allelopathicBloodKelpTemplateMask;
+        private NativeArray<byte> _allelopathicGhostWeedTemplateMask;
         private NativeArray<float> _surfaceCascadePhaseSeeds;
         private NativeArray<float> _underwaterCascadePhaseSeeds;
         private NativeArray<FloraCascadeEventPayload> _surfaceCascadeEvents;
@@ -671,6 +727,8 @@ namespace Hecton8.World
         /// <summary>True when the active Manta scooter wake point is currently being published.</summary>
         public bool HasActiveScooterWake => _hasActiveScooterWake;
 
+        internal static FloraInteractionManager ActiveRuntimeInstance => s_ActiveRuntimeInstance;
+
         /// <summary>Last published player velocity vector.</summary>
         public Vector3 LastPublishedPlayerVelocity => _lastPublishedPlayerVelocity;
 
@@ -690,8 +748,15 @@ namespace Hecton8.World
             return totalBytes;
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_ActiveRuntimeInstance = null;
+        }
+
         private void Awake()
         {
+            s_ActiveRuntimeInstance = this;
             _maxInteractionPoints = Mathf.Clamp(_maxInteractionPoints, 1, MaxPublishedInteractionPoints);
             _wakeTrailWorldSize = Mathf.Max(32f, _wakeTrailWorldSize);
             _wakeTrailFadeSeconds = Mathf.Max(0.1f, _wakeTrailFadeSeconds);
@@ -708,6 +773,8 @@ namespace Hecton8.World
             _decayPhaseWidthNormalized = Mathf.Clamp(_decayPhaseWidthNormalized, 0.05f, 0.45f);
             _bloomEmissionBoost = Mathf.Max(1f, _bloomEmissionBoost);
             _decayWiltStrength = Mathf.Clamp01(_decayWiltStrength);
+            _bloodKelpToxinDosePerSlowTick = Mathf.Max(0.01f, _bloodKelpToxinDosePerSlowTick);
+            _ghostWeedSuppressionThreshold01 = Mathf.Clamp(_ghostWeedSuppressionThreshold01, 0.001f, 1f);
             _encounterBloomBias = Mathf.Clamp(_encounterBloomBias, 0f, 0.5f);
             _encounterDecayBias = Mathf.Clamp(_encounterDecayBias, 0f, 0.75f);
             _cascadeContactRadius = Mathf.Max(0.5f, _cascadeContactRadius);
@@ -726,6 +793,7 @@ namespace Hecton8.World
             _toxicSporeVisorGlitchBias = Mathf.Max(0f, _toxicSporeVisorGlitchBias);
             _moduleParasiteScanIntervalSeconds = Mathf.Max(0.1f, _moduleParasiteScanIntervalSeconds);
             _moduleParasiteAttachmentRadius = Mathf.Max(0.5f, _moduleParasiteAttachmentRadius);
+            _matureParasiteRootDrainMultiplier = Mathf.Max(1f, _matureParasiteRootDrainMultiplier);
             _thermophileReactorValidationRadius = Mathf.Max(0.5f, _thermophileReactorValidationRadius);
             _defensiveSporeBurstRadius = Mathf.Max(1f, _defensiveSporeBurstRadius);
             _defensiveSporeBurstDose = Mathf.Max(0.25f, _defensiveSporeBurstDose);
@@ -735,8 +803,11 @@ namespace Hecton8.World
             _wakeTrailQualityLevel = QualitySettings.GetQualityLevel();
             _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQuality(_wakeTrailQualityLevel);
             _vegetationBridge = ResolveVegetationBridge();
+            _destructibleOrganicManager = ResolveDestructibleOrganicManager();
             _toxicSporeStableHashId = string.IsNullOrWhiteSpace(_toxicSporeStableId) ? 0 : LocHash.Compute(_toxicSporeStableId);
             _thermalTubewormStableHashId = string.IsNullOrWhiteSpace(_thermalTubewormStableId) ? 0 : LocHash.Compute(_thermalTubewormStableId);
+            _bloodKelpAllelopathyStableHashId = string.IsNullOrWhiteSpace(_bloodKelpAllelopathyStableId) ? 0 : LocHash.Compute(_bloodKelpAllelopathyStableId);
+            _ghostWeedAllelopathyStableHashId = string.IsNullOrWhiteSpace(_ghostWeedAllelopathyStableId) ? 0 : LocHash.Compute(_ghostWeedAllelopathyStableId);
             CacheStableHashIds(_cascadeReactiveStableIds, ref _cascadeReactiveStableHashIds);
             CacheStableHashIds(_defensiveSporeBurstStableIds, ref _defensiveSporeBurstStableHashIds);
             TryAutoAssignWakeTrailSimulationCompute();
@@ -772,6 +843,7 @@ namespace Hecton8.World
             RefreshToxicSporeTemplateMask(force: true);
             RefreshCascadeTemplateMask(force: true);
             RefreshDefensiveSporeBurstTemplateMask(force: true);
+            RefreshAllelopathicTemplateMasks(force: true);
             ResetInteractionGlobals();
             PublishEnvironmentGlobals(Vector3.zero);
             PublishParasiteInfectionGlobals();
@@ -779,6 +851,8 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            s_ActiveRuntimeInstance = this;
+
             if (_interactionBuffer != null)
                 Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
 
@@ -791,6 +865,9 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            if (s_ActiveRuntimeInstance == this)
+                s_ActiveRuntimeInstance = null;
+
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ClearToxicSporeHazard();
@@ -802,6 +879,9 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            if (s_ActiveRuntimeInstance == this)
+                s_ActiveRuntimeInstance = null;
+
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             ClearToxicSporeHazard();
@@ -818,6 +898,8 @@ namespace Hecton8.World
 
             DisposeNativeArray(ref _cascadeReactiveTemplateMask);
             DisposeNativeArray(ref _defensiveSporeBurstTemplateMask);
+            DisposeNativeArray(ref _allelopathicBloodKelpTemplateMask);
+            DisposeNativeArray(ref _allelopathicGhostWeedTemplateMask);
             DisposeNativeArray(ref _surfaceCascadePhaseSeeds);
             DisposeNativeArray(ref _underwaterCascadePhaseSeeds);
             DisposeNativeArray(ref _surfaceCascadeEvents);
@@ -927,6 +1009,25 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Emits persistent plant-competition chemistry and applies chemical-cell suppression.
+        /// </summary>
+        public void SlowTick()
+        {
+            if (_vegetationBridge == null)
+                _vegetationBridge = ResolveVegetationBridge();
+
+            if (_destructibleOrganicManager == null)
+                _destructibleOrganicManager = ResolveDestructibleOrganicManager();
+
+            if (_vegetationBridge == null || _destructibleOrganicManager == null)
+                return;
+
+            RefreshAllelopathicTemplateMasks(force: false);
+            EmitAllelopathicToxinsAndSuppressLane(underwater: true);
+            EmitAllelopathicToxinsAndSuppressLane(underwater: false);
+        }
+
+        /// <summary>
         /// Queues one external vegetation interaction burst for publication during the next Tick.
         /// </summary>
         public void RegisterExternalInteraction(Vector3 positionWS, Vector3 velocityWS, float radius)
@@ -947,6 +1048,31 @@ namespace Hecton8.World
                     velocityWS.z,
                     velocityWS.magnitude)
             };
+        }
+
+        /// <summary>
+        /// Samples dense underwater flora near a vehicle using the existing spatial hash and returns normalized drag density.
+        /// </summary>
+        public bool TryResolveKelpPushback(Vector3 positionWS, float radiusMeters, out float density01, out float bendRadiusMeters)
+        {
+            density01 = 0f;
+            bendRadiusMeters = 0f;
+            if (_underwaterReactiveFloraHash == null || !_reactiveFloraQueryHandles.IsCreated)
+                return false;
+
+            float safeRadius = Mathf.Max(0.5f, radiusMeters);
+            _reactiveFloraQueryHandles.Clear();
+            int queryCount = _underwaterReactiveFloraHash.CollectSphere(
+                AbsoluteUniversePosition.FromRuntimePosition(positionWS),
+                safeRadius,
+                ReactiveFloraKindMask,
+                _reactiveFloraQueryHandles);
+            if (queryCount <= 0)
+                return false;
+
+            density01 = Mathf.Clamp01(queryCount / Mathf.Max(1f, safeRadius * safeRadius));
+            bendRadiusMeters = safeRadius;
+            return density01 > 0.001f;
         }
 
         private Transform ResolveRuntimePlayerTransform()
@@ -1220,6 +1346,18 @@ namespace Hecton8.World
                 return childBridge;
 
             return GetComponentInParent<HectonMapMagicVegetationBridge>();
+        }
+
+        private DestructibleOrganicManager ResolveDestructibleOrganicManager()
+        {
+            if (_destructibleOrganicManagerOverride != null)
+                return _destructibleOrganicManagerOverride;
+
+            DestructibleOrganicManager directManager = GetComponent<DestructibleOrganicManager>();
+            if (directManager != null)
+                return directManager;
+
+            return DestructibleOrganicManager.ActiveRuntimeInstance;
         }
 
         private void EnsureSedimentParticleSystem()
@@ -1680,6 +1818,135 @@ namespace Hecton8.World
             HectonHazardManager.Unregister(ToxicSporeHazardSourceId);
         }
 
+        private void EmitAllelopathicToxinsAndSuppressLane(bool underwater)
+        {
+            if (!_allelopathicBloodKelpTemplateMask.IsCreated ||
+                !_allelopathicGhostWeedTemplateMask.IsCreated ||
+                _bloodKelpToxinDosePerSlowTick <= 0f)
+            {
+                return;
+            }
+
+            NativeArray<Matrix4x4> matrices;
+            NativeArray<HectonVegetationInstanceData> metadata;
+            NativeArray<int> types;
+            int count;
+            bool hasPayload = underwater
+                ? _vegetationBridge.TryGetActiveUnderwaterNativePayload(out matrices, out metadata, out types, out count)
+                : _vegetationBridge.TryGetActiveSurfaceNativePayload(out matrices, out metadata, out types, out count);
+            if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || !types.IsCreated || count <= 0)
+                return;
+
+            NativeArray<int> semanticTypes;
+            int semanticCount;
+            bool hasSemanticPayload = underwater
+                ? _vegetationBridge.TryGetActiveUnderwaterSemanticPayload(out semanticTypes, out _, out semanticCount)
+                : _vegetationBridge.TryGetActiveSurfaceSemanticPayload(out semanticTypes, out _, out semanticCount);
+            if (!hasSemanticPayload || !semanticTypes.IsCreated || semanticCount <= 0)
+                return;
+
+            int safeCount = math.min(count, math.min(matrices.Length, math.min(metadata.Length, math.min(types.Length, math.min(semanticTypes.Length, semanticCount)))));
+            for (int i = 0; i < safeCount; i++)
+            {
+                HectonVegetationInstanceData instanceData = metadata[i];
+                if (!IsLiveFloraInstance(instanceData))
+                    continue;
+
+                if (!IsTemplateInMask(instanceData, _allelopathicBloodKelpTemplateMask))
+                    continue;
+
+                ChemicalInfluenceGrid.QueueToxicityBurst(ExtractTranslation(matrices[i]), _bloodKelpToxinDosePerSlowTick);
+            }
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                HectonVegetationInstanceData instanceData = metadata[i];
+                if (!IsLiveFloraInstance(instanceData))
+                    continue;
+
+                if (!IsTemplateInMask(instanceData, _allelopathicGhostWeedTemplateMask))
+                    continue;
+
+                Vector3 instancePositionWS = ExtractTranslation(matrices[i]);
+                if (!ChemicalInfluenceGrid.TrySampleNormalizedChannels(instancePositionWS, out float4 channels) ||
+                    channels.w < _ghostWeedSuppressionThreshold01)
+                {
+                    continue;
+                }
+
+                float toxicity01 = Mathf.Clamp01((channels.w - _ghostWeedSuppressionThreshold01) /
+                                                  Mathf.Max(MinimumAllelopathicToxicity01, 1f - _ghostWeedSuppressionThreshold01));
+                _destructibleOrganicManager.TryApplyAllelopathicToxinSuppression(
+                    matrices[i],
+                    instanceData,
+                    types[i],
+                    semanticTypes[i],
+                    toxicity01);
+            }
+        }
+
+        private void RefreshAllelopathicTemplateMasks(bool force)
+        {
+            if (_vegetationBridge == null)
+                _vegetationBridge = ResolveVegetationBridge();
+
+            FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
+            int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
+            if (!force &&
+                _cachedAllelopathicTemplateCount == templateCount &&
+                _allelopathicBloodKelpTemplateMask.IsCreated &&
+                _allelopathicGhostWeedTemplateMask.IsCreated &&
+                _allelopathicBloodKelpTemplateMask.Length == templateCount &&
+                _allelopathicGhostWeedTemplateMask.Length == templateCount)
+            {
+                return;
+            }
+
+            _cachedAllelopathicTemplateCount = templateCount;
+            if (templateCount <= 0 || _bloodKelpAllelopathyStableHashId == 0 || _ghostWeedAllelopathyStableHashId == 0)
+            {
+                DisposeNativeArray(ref _allelopathicBloodKelpTemplateMask);
+                DisposeNativeArray(ref _allelopathicGhostWeedTemplateMask);
+                return;
+            }
+
+            EnsureByteNativeArray(ref _allelopathicBloodKelpTemplateMask, templateCount);
+            EnsureByteNativeArray(ref _allelopathicGhostWeedTemplateMask, templateCount);
+            for (int i = 0; i < templateCount; i++)
+            {
+                _allelopathicBloodKelpTemplateMask[i] = 0;
+                _allelopathicGhostWeedTemplateMask[i] = 0;
+            }
+
+            for (int i = 0; i < templateCount; i++)
+            {
+                FloraDataTemplate template = floraTemplates[i];
+                if (template == null || string.IsNullOrWhiteSpace(template.StableId))
+                    continue;
+
+                int stableHash = LocHash.Compute(template.StableId);
+                _allelopathicBloodKelpTemplateMask[i] = stableHash == _bloodKelpAllelopathyStableHashId ? (byte)1 : (byte)0;
+                _allelopathicGhostWeedTemplateMask[i] = stableHash == _ghostWeedAllelopathyStableHashId ? (byte)1 : (byte)0;
+            }
+        }
+
+        private static bool IsLiveFloraInstance(HectonVegetationInstanceData instanceData)
+        {
+            return instanceData.RuntimeState < HectonVegetationInstanceData.RuntimeStateDying - 0.01f &&
+                   math.abs(instanceData.HeightScale) > 0.0001f;
+        }
+
+        private static bool IsTemplateInMask(HectonVegetationInstanceData instanceData, NativeArray<byte> templateMask)
+        {
+            if (!templateMask.IsCreated)
+                return false;
+
+            int templateIndex = Mathf.RoundToInt(instanceData.TemplateIndex);
+            return templateIndex >= 0 &&
+                   templateIndex < templateMask.Length &&
+                   templateMask[templateIndex] != 0;
+        }
+
         private void RefreshModuleParasiteState(float deltaTime)
         {
             _moduleParasiteScanTimer -= deltaTime;
@@ -1746,7 +2013,16 @@ namespace Hecton8.World
                 if (!TryResolveNearestBaseModule(instancePositionWS, _moduleParasiteAttachmentRadius, out BaseModule module))
                     continue;
 
-                AccumulateModuleParasiteState(module, template.ModulePowerDrainWatts, template.ModuleInfectionStrength);
+                float growth01 = ResolveParasiteGrowth01(in instanceData);
+                float rootDrainWatts = growth01 >= 0.999f
+                    ? template.ModulePowerDrainWatts * _matureParasiteRootDrainMultiplier
+                    : 0f;
+                AccumulateModuleParasiteState(
+                    module,
+                    template.ModulePowerDrainWatts,
+                    template.ModuleInfectionStrength,
+                    rootDrainWatts,
+                    growth01);
                 AppendParasiteAnchor(
                     instancePositionWS,
                     template.ModuleInfectionRadiusMeters,
@@ -1818,7 +2094,12 @@ namespace Hecton8.World
                 if (nextDwellSeconds < dwellThresholdSeconds)
                     continue;
 
-                AccumulateModuleParasiteState(module, template.ModulePowerDrainWatts, template.ModuleInfectionStrength);
+                AccumulateModuleParasiteState(
+                    module,
+                    template.ModulePowerDrainWatts,
+                    template.ModuleInfectionStrength,
+                    template.ModulePowerDrainWatts * _matureParasiteRootDrainMultiplier,
+                    1f);
                 AppendParasiteAnchor(
                     module.ResolveBotanyAnchorWorldPosition(),
                     template.ModuleInfectionRadiusMeters,
@@ -1850,7 +2131,23 @@ namespace Hecton8.World
             return null;
         }
 
-        private void AccumulateModuleParasiteState(BaseModule module, float drainWatts, float infectionLevel)
+        private static float ResolveParasiteGrowth01(in HectonVegetationInstanceData instanceData)
+        {
+            if (instanceData.HealthNormalized > 0.0001f)
+                return Mathf.Clamp01(instanceData.HealthNormalized);
+
+            if (instanceData.Reserved0 > 0.0001f)
+                return Mathf.Clamp01(instanceData.Reserved0);
+
+            return Mathf.Clamp01(Mathf.Abs(instanceData.HeightScale));
+        }
+
+        private void AccumulateModuleParasiteState(
+            BaseModule module,
+            float drainWatts,
+            float infectionLevel,
+            float rootDrainWatts,
+            float rootInfectionLevel)
         {
             if (module == null)
                 return;
@@ -1859,6 +2156,9 @@ namespace Hecton8.World
             {
                 state.PowerDrainWatts += Mathf.Max(0f, drainWatts);
                 state.InfectionLevel = Mathf.Clamp01(Mathf.Max(state.InfectionLevel, infectionLevel));
+                state.RootPowerDrainWatts += Mathf.Max(0f, rootDrainWatts);
+                state.RootInfectionLevel = Mathf.Clamp01(Mathf.Max(state.RootInfectionLevel, rootInfectionLevel));
+                state.ParasiteCount++;
                 _moduleParasiteStateBack[module] = state;
                 return;
             }
@@ -1866,7 +2166,10 @@ namespace Hecton8.World
             _moduleParasiteStateBack[module] = new ModuleParasiteState
             {
                 PowerDrainWatts = Mathf.Max(0f, drainWatts),
-                InfectionLevel = Mathf.Clamp01(infectionLevel)
+                InfectionLevel = Mathf.Clamp01(infectionLevel),
+                RootPowerDrainWatts = Mathf.Max(0f, rootDrainWatts),
+                RootInfectionLevel = Mathf.Clamp01(rootInfectionLevel),
+                ParasiteCount = 1
             };
         }
 
@@ -1886,6 +2189,71 @@ namespace Hecton8.World
                 thermalGrowthFlag,
                 0f);
             _publishedParasiteAnchorCount++;
+        }
+
+        internal bool TryResolveNearestModuleParasite(BaseModule hostModule, Vector3 origin, out ModuleParasiteTarget target)
+        {
+            target = default;
+            if (_publishedParasiteAnchorCount <= 0)
+                return false;
+
+            bool found = false;
+            float bestDistanceSq = float.MaxValue;
+            for (int i = 0; i < _publishedParasiteAnchorCount; i++)
+            {
+                Vector4 anchorData = _parasiteAnchorData[i];
+                Vector3 anchorPosition = new Vector3(anchorData.x, anchorData.y, anchorData.z);
+                float anchorRadius = Mathf.Max(0.25f, anchorData.w);
+                BaseModule resolvedHost = hostModule;
+                if (resolvedHost != null)
+                {
+                    float attachmentRadius = _moduleParasiteAttachmentRadius + anchorRadius;
+                    if ((anchorPosition - resolvedHost.transform.position).sqrMagnitude > attachmentRadius * attachmentRadius)
+                        continue;
+                }
+                else if (!TryResolveNearestBaseModule(anchorPosition, _moduleParasiteAttachmentRadius + anchorRadius, out resolvedHost))
+                {
+                    continue;
+                }
+
+                if (resolvedHost == null || resolvedHost.ParasiteInfectionLevel <= 0.0001f)
+                    continue;
+
+                float distanceSq = (anchorPosition - origin).sqrMagnitude;
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                float infectionLevel = Mathf.Max(Mathf.Clamp01(_parasiteAnchorParams[i].x), resolvedHost.ParasiteInfectionLevel);
+                float criticalityWeight = 1f + (infectionLevel * 5f);
+                bestDistanceSq = distanceSq;
+                target = new ModuleParasiteTarget(resolvedHost, anchorPosition, anchorRadius, infectionLevel, criticalityWeight);
+                found = true;
+            }
+
+            return found;
+        }
+
+        internal bool TryApplyDroneParasiteCut(Vector3 hitPoint, Vector3 direction, float deliveredDamage, float normalizedPower)
+        {
+            if (_destructibleOrganicManager == null)
+                _destructibleOrganicManager = ResolveDestructibleOrganicManager();
+
+            if (_destructibleOrganicManager == null)
+                return false;
+
+            Vector3 resolvedDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.down;
+            bool applied = _destructibleOrganicManager.TryApplyToolHit(
+                hitPoint,
+                Vector3.up,
+                resolvedDirection,
+                Mathf.Max(0.1f, deliveredDamage),
+                Mathf.Clamp01(normalizedPower),
+                (uint)FloraDataTemplate.VulnerabilityMask.PlasmaCut);
+
+            if (applied)
+                _moduleParasiteScanTimer = 0f;
+
+            return applied;
         }
 
         private bool TryResolveNearestBaseModule(Vector3 origin, float radius, out BaseModule module)
@@ -1932,7 +2300,7 @@ namespace Hecton8.World
             {
                 BaseModule staleModule = _staleParasiticModules[i];
                 if (staleModule != null)
-                    staleModule.SetParasiteInfestation(0f, 0f);
+                    staleModule.SetParasiteInfestation(0f, 0f, 0f, 0f, 0);
             }
 
             Dictionary<BaseModule, ModuleParasiteState>.Enumerator nextEnumerator = _moduleParasiteStateBack.GetEnumerator();
@@ -1946,7 +2314,12 @@ namespace Hecton8.World
                 if (!_moduleParasiteStateFront.TryGetValue(module, out ModuleParasiteState previousState) ||
                     !AreEquivalentParasiteStates(in previousState, in nextState))
                 {
-                    module.SetParasiteInfestation(nextState.PowerDrainWatts, nextState.InfectionLevel);
+                    module.SetParasiteInfestation(
+                        nextState.PowerDrainWatts,
+                        nextState.InfectionLevel,
+                        nextState.RootPowerDrainWatts,
+                        nextState.RootInfectionLevel,
+                        nextState.ParasiteCount);
                 }
             }
 
@@ -1959,7 +2332,10 @@ namespace Hecton8.World
         private static bool AreEquivalentParasiteStates(in ModuleParasiteState lhs, in ModuleParasiteState rhs)
         {
             return Mathf.Abs(lhs.PowerDrainWatts - rhs.PowerDrainWatts) <= 0.01f &&
-                   Mathf.Abs(lhs.InfectionLevel - rhs.InfectionLevel) <= 0.001f;
+                   Mathf.Abs(lhs.InfectionLevel - rhs.InfectionLevel) <= 0.001f &&
+                   Mathf.Abs(lhs.RootPowerDrainWatts - rhs.RootPowerDrainWatts) <= 0.01f &&
+                   Mathf.Abs(lhs.RootInfectionLevel - rhs.RootInfectionLevel) <= 0.001f &&
+                   lhs.ParasiteCount == rhs.ParasiteCount;
         }
 
         private void ClearModuleParasiteState()
@@ -1969,7 +2345,7 @@ namespace Hecton8.World
             {
                 BaseModule module = frontEnumerator.Current.Key;
                 if (module != null)
-                    module.SetParasiteInfestation(0f, 0f);
+                    module.SetParasiteInfestation(0f, 0f, 0f, 0f, 0);
             }
 
             _moduleParasiteStateFront.Clear();
@@ -2187,6 +2563,7 @@ namespace Hecton8.World
                     AbsoluteUniversePosition.FromRuntimePosition(positionWS),
                     ResolveReactiveFloraHalfExtents(metadata[i], types.IsCreated && i < types.Length ? types[i] : 0),
                     ReactiveFloraKindMask,
+                    0u,
                     i);
                 registeredHandles.Add(handle);
             }
@@ -3353,21 +3730,35 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = true;
+            if (!_isRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _isRegistered = true;
+            }
+
+            if (!_isSlowTickRegistered)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _isSlowTickRegistered = true;
+            }
         }
 
         private void TryUnregister()
         {
-            if (!_isRegistered)
-                return;
-
+            if (_isRegistered)
+            {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _isRegistered = false;
+            }
 
-            _isRegistered = false;
+            if (_isSlowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _isSlowTickRegistered = false;
+            }
         }
 
         private static long EstimateGraphicsBufferBytes(GraphicsBuffer buffer)

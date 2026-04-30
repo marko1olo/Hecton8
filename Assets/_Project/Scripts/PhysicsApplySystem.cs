@@ -156,6 +156,50 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// False or authored acoustic ping payload consumed by sonar and PDA signal systems.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public readonly struct AcousticPingEvent
+    {
+        /// <summary>
+        /// Creates one transient acoustic ping payload.
+        /// </summary>
+        public AcousticPingEvent(
+            Vector3 runtimePosition,
+            float radiusMeters,
+            float intensity01,
+            float lifetimeSeconds,
+            FieldTargetRole signalRole,
+            int sourceSpeciesId)
+        {
+            RuntimePosition = runtimePosition;
+            RadiusMeters = math.max(0f, radiusMeters);
+            Intensity01 = math.saturate(intensity01);
+            LifetimeSeconds = math.max(0f, lifetimeSeconds);
+            SignalRole = signalRole;
+            SourceSpeciesId = sourceSpeciesId;
+        }
+
+        /// <summary>Runtime-space origin of the ping.</summary>
+        public Vector3 RuntimePosition { get; }
+
+        /// <summary>World-space radius in authored meters.</summary>
+        public float RadiusMeters { get; }
+
+        /// <summary>Normalized signal intensity.</summary>
+        public float Intensity01 { get; }
+
+        /// <summary>Transient acoustic lifetime in seconds.</summary>
+        public float LifetimeSeconds { get; }
+
+        /// <summary>PDA-facing role label used by signal displays.</summary>
+        public FieldTargetRole SignalRole { get; }
+
+        /// <summary>Stable species id of the emitter.</summary>
+        public int SourceSpeciesId { get; }
+    }
+
+    /// <summary>
     /// Static physics-domain event surface for transient pressure impulses.
     /// </summary>
     public static class PhysicsEventBus
@@ -166,11 +210,17 @@ namespace Hecton8.Physics
         /// <summary>Delegate used by EMP subscribers.</summary>
         public delegate void ElectromagneticPulseEventHandler(in ElectromagneticPulseEvent pulseEvent);
 
+        /// <summary>Delegate used by acoustic-ping subscribers.</summary>
+        public delegate void AcousticPingEventHandler(in AcousticPingEvent pingEvent);
+
         /// <summary>Fired when a bulkhead blowout impulse is emitted.</summary>
         public static event PressureImpulseEventHandler OnPressureImpulse;
 
         /// <summary>Fired when an EMP pulse is emitted.</summary>
         public static event ElectromagneticPulseEventHandler OnElectromagneticPulse;
+
+        /// <summary>Fired when an acoustic ping is emitted by fauna or environment systems.</summary>
+        public static event AcousticPingEventHandler OnAcousticPing;
 
         /// <summary>Broadcasts one pressure-impulse payload.</summary>
         public static void NotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
@@ -182,6 +232,12 @@ namespace Hecton8.Physics
         public static void NotifyElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
         {
             OnElectromagneticPulse?.Invoke(pulseEvent);
+        }
+
+        /// <summary>Broadcasts one acoustic-ping payload.</summary>
+        public static void NotifyAcousticPing(in AcousticPingEvent pingEvent)
+        {
+            OnAcousticPing?.Invoke(pingEvent);
         }
     }
 
@@ -863,7 +919,7 @@ namespace Hecton8.Physics
 
         private void CompleteFrontPacketValidationInLateFrameSwapWindow()
         {
-            if (!_packetValidationScheduled)
+            if (!_packetValidationScheduled || !_packetValidationHandle.IsCompleted)
                 return;
 
             using (_packetValidationProfilerMarker.Auto())

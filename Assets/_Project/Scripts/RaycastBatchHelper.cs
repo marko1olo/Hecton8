@@ -106,7 +106,7 @@ namespace Hecton8.Physics
         /// Registers a raycast query for the next batch.
         /// </summary>
         public int AddQuery(Vector3 origin, Vector3 direction, float distance,
-                           int layerMask = -1,
+                           int layerMask = (1 << 8) | (1 << 9) | (1 << 10),
                            QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Ignore,
                            Collider excludeCollider = null)
         {

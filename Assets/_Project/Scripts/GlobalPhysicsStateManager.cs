@@ -57,6 +57,7 @@ namespace Hecton8.Physics
             Vector3 normal,
             float force,
             float intensity,
+            float massVelocity,
             PhysicsImpactWeightClass weightClass,
             byte primaryAudioMaterialId,
             byte secondaryAudioMaterialId)
@@ -67,6 +68,7 @@ namespace Hecton8.Physics
             Normal = normal;
             Force = force;
             Intensity = intensity;
+            MassVelocity = massVelocity;
             WeightClass = weightClass;
             PrimaryAudioMaterialId = primaryAudioMaterialId;
             SecondaryAudioMaterialId = secondaryAudioMaterialId;
@@ -89,6 +91,9 @@ namespace Hecton8.Physics
 
         /// <summary>Perceived impact intensity computed from the force-domain logarithmic mapping.</summary>
         public float Intensity { get; }
+
+        /// <summary>Strict item impact loudness scalar: impact velocity magnitude multiplied by primary body mass.</summary>
+        public float MassVelocity { get; }
 
         /// <summary>Discrete impact-weight bucket for downstream presentation systems.</summary>
         public PhysicsImpactWeightClass WeightClass { get; }
@@ -166,6 +171,7 @@ namespace Hecton8.Physics
             public ulong SecondaryBodyId;
             public float Force;
             public float Intensity;
+            public float MassVelocity;
             public float3 Point;
             public float3 Normal;
             public PhysicsImpactWeightClass WeightClass;
@@ -656,6 +662,7 @@ namespace Hecton8.Physics
             if (!(impactForce > MinImpactForce))
                 return;
 
+            float massVelocity = ResolveImpactMassVelocity(primaryBody, collision.relativeVelocity.magnitude);
             float impactIntensity = ResolveImpactIntensityFromForce(impactForce);
             if (!(impactIntensity > 0f))
                 return;
@@ -671,6 +678,7 @@ namespace Hecton8.Physics
                 SecondaryBodyId = secondaryBody != null ? EntityId.ToULong(secondaryBody.GetEntityId()) : 0ul,
                 Force = impactForce,
                 Intensity = impactIntensity,
+                MassVelocity = massVelocity,
                 Point = new float3(point.x, point.y, point.z),
                 Normal = new float3(normal.x, normal.y, normal.z),
                 WeightClass = weightClass,
@@ -700,6 +708,7 @@ namespace Hecton8.Physics
             if (!(impactForce > MinImpactForce))
                 return;
 
+            float massVelocity = ResolveImpactMassVelocity(primaryBody, safeImpactSpeed);
             float3 point3 = new float3(point.x, point.y, point.z);
             float3 normal3 = new float3(normal.x, normal.y, normal.z);
             if (!math.all(math.isfinite(point3)))
@@ -719,6 +728,7 @@ namespace Hecton8.Physics
                 SecondaryBodyId = secondaryBody != null ? EntityId.ToULong(secondaryBody.GetEntityId()) : 0ul,
                 Force = impactForce,
                 Intensity = impactIntensity,
+                MassVelocity = massVelocity,
                 Point = point3,
                 Normal = normal3,
                 WeightClass = ResolveImpactWeightClass(impactIntensity),
@@ -747,10 +757,17 @@ namespace Hecton8.Physics
                     new Vector3(impactEvent.Normal.x, impactEvent.Normal.y, impactEvent.Normal.z),
                     impactEvent.Force,
                     impactEvent.Intensity,
+                    impactEvent.MassVelocity,
                     impactEvent.WeightClass,
                     impactEvent.PrimaryAudioMaterialId,
                     impactEvent.SecondaryAudioMaterialId));
             }
+        }
+
+        private static float ResolveImpactMassVelocity(Rigidbody primaryBody, float impactVelocityMagnitude)
+        {
+            float massKg = primaryBody != null ? primaryBody.mass : 1f;
+            return math.max(0f, impactVelocityMagnitude) * math.max(massKg, MinMass);
         }
 
         private static byte ResolveImpactAudioMaterialId(Rigidbody body)

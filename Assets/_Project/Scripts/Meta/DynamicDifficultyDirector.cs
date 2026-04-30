@@ -322,7 +322,7 @@ namespace Hecton8.Meta
 
         private static float ResolveTelemetryTimeSeconds()
         {
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager != null)
                 return Mathf.Max(0f, saveManager.CurrentPlayTimeSeconds);
 

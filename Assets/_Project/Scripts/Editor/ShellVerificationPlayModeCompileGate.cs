@@ -19,15 +19,10 @@ namespace Hecton8.Editor
         private const string DisableMenuPath = "Hecton/Dev/Verification/Disable Shell Smoke Compile Gate";
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
-        private const double RetryStableWindowSeconds = 0.75d;
-        private const double EnteredPlayModeRetryBudgetSeconds = 20d;
         private const int MaxRetryAttempts = 3;
 
         private static bool _isRegistered;
-        private static bool _retryPending;
         private static bool _awaitingDirtyPlayEvaluation;
-        private static double _retryRequestedAt;
-        private static double _stableSince;
         private static int _retryAttempts;
         private static string _lastReason = "None";
 
@@ -50,8 +45,6 @@ namespace Hecton8.Editor
 
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
-            EditorApplication.update -= HandleEditorUpdate;
-            EditorApplication.update += HandleEditorUpdate;
             _isRegistered = true;
         }
 
@@ -60,7 +53,6 @@ namespace Hecton8.Editor
             if (_isRegistered)
             {
                 EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
-                EditorApplication.update -= HandleEditorUpdate;
                 _isRegistered = false;
             }
 
@@ -73,8 +65,7 @@ namespace Hecton8.Editor
             if (state == PlayModeStateChange.ExitingPlayMode || state == PlayModeStateChange.EnteredEditMode)
             {
                 _awaitingDirtyPlayEvaluation = false;
-                if (!_retryPending)
-                    _retryAttempts = 0;
+                _retryAttempts = 0;
 
                 return;
             }
@@ -105,65 +96,19 @@ namespace Hecton8.Editor
             if (_retryAttempts >= MaxRetryAttempts)
             {
                 Debug.LogWarning(
-                    $"[ShellSmokeGate] Dirty play entry persisted after {_retryAttempts} retries. " +
+                    $"[ShellSmokeGate] Dirty play entry persisted after {_retryAttempts} blocked entries. " +
                     $"scene={SceneManager.GetActiveScene().name} compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating}");
                 return;
             }
 
-            _retryPending = true;
-            _retryRequestedAt = EditorApplication.timeSinceStartup;
-            _stableSince = 0d;
             _retryAttempts++;
-            _lastReason = $"DirtyPlayEntry retry={_retryAttempts}";
+            _lastReason = $"DirtyPlayEntry blocked={_retryAttempts}";
 
             Debug.LogWarning(
-                $"[ShellSmokeGate] Aborting dirty play entry and scheduling retry. " +
-                $"scene={SceneManager.GetActiveScene().name} compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} retry={_retryAttempts}");
+                $"[ShellSmokeGate] Aborting dirty play entry. Automatic Play Mode retry is disabled. " +
+                $"scene={SceneManager.GetActiveScene().name} compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} blocked={_retryAttempts}");
 
             RequestStopPlayMode($"ShellSmokeDirtyPlay:{_retryAttempts}");
-        }
-
-        private static void HandleEditorUpdate()
-        {
-            if (!_retryPending)
-                return;
-
-            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isPlaying)
-                return;
-
-            if (!ShouldGuardVerificationSession())
-            {
-                ClearRetryState();
-                return;
-            }
-
-            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
-            {
-                _stableSince = 0d;
-                return;
-            }
-
-            double now = EditorApplication.timeSinceStartup;
-            if (_stableSince <= 0d)
-            {
-                _stableSince = now;
-                return;
-            }
-
-            if ((now - _retryRequestedAt) > EnteredPlayModeRetryBudgetSeconds)
-            {
-                Debug.LogWarning($"[ShellSmokeGate] Retry window expired. lastReason={_lastReason}");
-                ClearRetryState();
-                return;
-            }
-
-            if ((now - _stableSince) < RetryStableWindowSeconds)
-                return;
-
-            Debug.Log($"[ShellSmokeGate] Retrying play after stable editor window. retry={_retryAttempts}");
-            _retryPending = false;
-            _awaitingDirtyPlayEvaluation = true;
-            RequestStartPlayMode("ShellSmokeRetryStableWindow");
         }
 
         private static bool ShouldGuardVerificationSession()
@@ -200,10 +145,7 @@ namespace Hecton8.Editor
 
         private static void ClearRetryState()
         {
-            _retryPending = false;
             _awaitingDirtyPlayEvaluation = false;
-            _retryRequestedAt = 0d;
-            _stableSince = 0d;
             _retryAttempts = 0;
             _lastReason = "None";
         }
@@ -217,14 +159,6 @@ namespace Hecton8.Editor
             EditorApplication.isPlaying = false;
         }
 
-        private static void RequestStartPlayMode(string reason)
-        {
-            RuntimeDiagnosticsTrace.WriteEvent(
-                "play.enter_request",
-                $"owner={nameof(ShellVerificationPlayModeCompileGate)} reason={reason} scene={SceneManager.GetActiveScene().name} " +
-                $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating} paused={EditorApplication.isPaused}");
-            EditorApplication.isPlaying = true;
-        }
     }
 }
 #endif

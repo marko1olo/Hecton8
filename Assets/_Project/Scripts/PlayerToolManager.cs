@@ -759,7 +759,7 @@ namespace Hecton8.Gameplay
                 return;
 
             ObjectPoolManager pool = ObjectPoolManager.Instance;
-            ConstructionManager constructionManager = ConstructionManager.Instance;
+            ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
             if (pool == null || catalog == null || catalog.Count <= 0)
                 return;

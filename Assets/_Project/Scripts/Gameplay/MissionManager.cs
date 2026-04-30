@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.Quest;
 using UnityEngine;
 
@@ -63,7 +64,7 @@ namespace Hecton8.Gameplay
             if (missionHash == 0u || _completedMissions.Contains(missionHash) || _activeMissions.ContainsKey(missionHash))
                 return;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 
@@ -77,7 +78,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(missionId) || string.IsNullOrWhiteSpace(objectiveId))
                 return;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null || !questManager.IsActive(missionId))
                 return;
 
@@ -93,7 +94,7 @@ namespace Hecton8.Gameplay
             if (missionHash == 0u)
                 return null;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager != null && questManager.IsActive(missionId))
                 return EnsureActiveInstance(missionHash, missionId);
 
@@ -118,7 +119,7 @@ namespace Hecton8.Gameplay
             if (_completedMissions.Contains(missionHash))
                 return true;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             return questManager != null && questManager.IsCompleted(missionId);
         }
 

@@ -75,9 +75,9 @@ HUD Camera (GameObject)
 - Label: "PDA [ACTIVE]" / "PDA"
 
 **События:**
-- `PDAEvents.OnOpened` → активирует индикатор
-- `PDAEvents.OnClosed` → деактивирует индикатор
-- `PDAEvents.OnLowBatteryShutdown` → показывает notification
+- `IPDAEventListener.OnPDAEvent(PDAEventType.Opened)` → активирует индикатор
+- `IPDAEventListener.OnPDAEvent(PDAEventType.Closed)` → деактивирует индикатор
+- `IPDAEventListener.OnPDAEvent(PDAEventType.LowBatteryShutdown)` → показывает notification
 
 ### Notification System
 

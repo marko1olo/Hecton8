@@ -23,8 +23,6 @@ namespace Hecton8.Core
             public float Time;
         }
 
-        private static InputDispatcher _instance;
-
         private InputManager _nativeInputManager;
         private Gamepad _cachedGamepad;
         private bool _registeredUpdatable;
@@ -53,6 +51,21 @@ namespace Hecton8.Core
         /// </summary>
         public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
 
+        /// <summary>
+        /// Binds the bootstrap-owned native input action owner used by this dispatcher.
+        /// </summary>
+        /// <param name="inputManager">Native input manager validated by the bootstrapper.</param>
+        public void BindNativeInputManager(InputManager inputManager)
+        {
+            if (ReferenceEquals(_nativeInputManager, inputManager))
+                return;
+
+            UnsubscribeFromNativeInput();
+            _nativeInputManager = inputManager;
+            SubscribeToNativeInput();
+            CaptureState();
+        }
+
         /// <inheritdoc />
         public event System.Action OnInteract;
 
@@ -80,25 +93,6 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public event System.Action OnToolSlot4;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        /// <summary>
-        /// Ensures a persistent runtime input dispatcher exists.
-        /// </summary>
-        /// <returns>Live dispatcher instance.</returns>
-        public static InputDispatcher EnsureRuntimeInstance()
-        {
-            if (_instance != null)
-                return _instance;
-
-            GameObject runtimeRoot = new GameObject("[InputDispatcher]"); // COLD ALLOC: GameObject[1] - runtime input dispatcher root - owner: InputDispatcher
-            return runtimeRoot.AddComponent<InputDispatcher>();
-        }
-
         /// <summary>
         /// Explicitly initializes the dispatcher and registers it into <see cref="GlobalRegistry"/>.
         /// </summary>
@@ -111,18 +105,6 @@ namespace Hecton8.Core
                 return;
             }
 
-            EnsureSingletonOwnership();
-            if (_instance != this)
-                return;
-
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
-
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
             TryRegisterToDispatcher();
@@ -133,7 +115,8 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            EnsureSingletonOwnership();
+            EnsureInputBinding();
+            EnsureHapticDeviceBinding();
         }
 
         private void OnEnable()
@@ -169,9 +152,6 @@ namespace Hecton8.Core
             TryUnregisterFromDispatcher();
 
             TryUnregisterInputService();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <summary>
@@ -248,25 +228,11 @@ namespace Hecton8.Core
             return false;
         }
 
-        private void EnsureSingletonOwnership()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-        }
-
         private void EnsureInputBinding()
         {
-            InputManager currentInputManager = InputManager.Instance;
-            if (ReferenceEquals(_nativeInputManager, currentInputManager))
+            if (_nativeInputManager == null || _subscribedToNativeInput)
                 return;
 
-            UnsubscribeFromNativeInput();
-            _nativeInputManager = currentInputManager;
             SubscribeToNativeInput();
         }
 
@@ -403,7 +369,7 @@ namespace Hecton8.Core
 
         private void TryRegisterInputService()
         {
-            if (!_isInitialized && !ReferenceEquals(_instance, this))
+            if (!_isInitialized)
                 return;
 
             if (_registeredInputService)
@@ -540,6 +506,10 @@ namespace Hecton8.Core
             var commandBuffer = runtime.GetFrontBuffer();
             float lowMotor = 0f;
             float highMotor = 0f;
+            byte lowPriority = 0;
+            byte highPriority = 0;
+            bool hasLowPriority = false;
+            bool hasHighPriority = false;
             int commandCount = runtime.FrontCount;
             for (int i = 0; i < commandCount; i++)
             {
@@ -554,26 +524,60 @@ namespace Hecton8.Core
                     ? math.saturate(command.HighFreqIntensity)
                     : 0f;
 
-                switch (command.BlendMode)
-                {
-                    case 0:
-                        lowMotor = lowContribution;
-                        highMotor = highContribution;
-                        break;
-
-                    case 1:
-                        lowMotor = math.saturate(lowMotor + lowContribution);
-                        highMotor = math.saturate(highMotor + highContribution);
-                        break;
-
-                    default:
-                        lowMotor = math.max(lowMotor, lowContribution);
-                        highMotor = math.max(highMotor, highContribution);
-                        break;
-                }
+                ApplyHapticContribution(
+                    lowContribution,
+                    command.Priority,
+                    command.BlendMode,
+                    ref lowMotor,
+                    ref lowPriority,
+                    ref hasLowPriority);
+                ApplyHapticContribution(
+                    highContribution,
+                    command.Priority,
+                    command.BlendMode,
+                    ref highMotor,
+                    ref highPriority,
+                    ref hasHighPriority);
             }
 
             ApplyGamepadHaptics(lowMotor, highMotor);
+        }
+
+        private static void ApplyHapticContribution(
+            float contribution,
+            byte priority,
+            byte blendMode,
+            ref float motorValue,
+            ref byte motorPriority,
+            ref bool hasPriority)
+        {
+            if (contribution <= 0f)
+                return;
+
+            if (!hasPriority || priority > motorPriority)
+            {
+                motorValue = 0f;
+                motorPriority = priority;
+                hasPriority = true;
+            }
+
+            if (priority < motorPriority)
+                return;
+
+            switch (blendMode)
+            {
+                case 0:
+                    motorValue = contribution;
+                    break;
+
+                case 1:
+                    motorValue = math.saturate(motorValue + contribution);
+                    break;
+
+                default:
+                    motorValue = math.max(motorValue, contribution);
+                    break;
+            }
         }
 
         private void ApplyGamepadHaptics(float lowMotor, float highMotor)

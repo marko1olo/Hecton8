@@ -169,6 +169,7 @@ namespace Hecton8.Audio
         private const float PhysicsImpactStressDecayPerSecond = 1.65f;
         private const float PhysicsImpactMetallicDecayPerSecond = 2.4f;
         private const float PhysicsImpactStressBoost = 0.55f;
+        private const float PhysicsImpactMassVelocityReference = 24f;
         private const float HeartbeatBypassOxygenThreshold = 0.90f;
         private const float HeartbeatCriticalOxygenThreshold = 0.30f;
         private const float HeartbeatTerminalOxygenThreshold = 0.05f;
@@ -280,7 +281,7 @@ namespace Hecton8.Audio
         [Header("Spatial Reverb")]
         [Tooltip("Layers considered valid enclosure geometry for the orthogonal reverb probes.")]
         [FormerlySerializedAs("ceilingProbeLayers")]
-        [SerializeField] private LayerMask enclosureProbeLayers = ~0;
+        [SerializeField] private LayerMask enclosureProbeLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Maximum orthogonal probe distance used to classify open water vs. local enclosure coverage.")]
         [SerializeField, Range(5f, 80f)] private float ceilingProbeDistance = 48f;
@@ -1877,7 +1878,8 @@ namespace Hecton8.Audio
             byte dominantMaterialId = ResolveDominantImpactMaterialId(impactSignal.PrimaryAudioMaterialId, impactSignal.SecondaryAudioMaterialId);
             float clangMaterialMultiplier = ResolveImpactClangMaterialMultiplier(dominantMaterialId);
             float echoMaterialMultiplier = ResolveImpactEchoMaterialMultiplier(dominantMaterialId);
-            float impactStress = math.saturate(impactSignal.Intensity * PhysicsImpactStressBoost * math.max(0.2f, proximity));
+            float impactVolume01 = ResolveImpactVolume01FromMassVelocity(impactSignal.MassVelocity);
+            float impactStress = math.saturate(impactVolume01 * PhysicsImpactStressBoost * math.max(0.2f, proximity));
             if (impactSignal.IsHeavy)
                 impactStress = math.max(impactStress, 0.45f * math.max(0.35f, proximity));
 
@@ -1887,12 +1889,12 @@ namespace Hecton8.Audio
             metallicImpulse = math.saturate(metallicImpulse * clangMaterialMultiplier);
             float clangExcitation = math.saturate(
                 metallicImpulse *
-                math.lerp(0.55f, 1.15f, math.saturate(impactSignal.Intensity)) *
+                math.lerp(0.55f, 1.15f, impactVolume01) *
                 math.max(0.4f, proximity) *
                 clangMaterialMultiplier);
             if (isPlayerOwnedImpact && impactSignal.IsHeavy)
                 clangExcitation = math.max(clangExcitation, 0.48f);
-            float echoExcitation = math.saturate(metallicImpulse * math.lerp(0.45f, 1f, math.saturate(impactSignal.Intensity)) * echoMaterialMultiplier);
+            float echoExcitation = math.saturate(metallicImpulse * math.lerp(0.45f, 1f, impactVolume01) * echoMaterialMultiplier);
             float echoDelaySeconds = 0f;
             float echoAttenuation = 0f;
             float echoLowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
@@ -1929,6 +1931,11 @@ namespace Hecton8.Audio
                 return secondaryMaterialId;
 
             return primaryMaterialId;
+        }
+
+        private static float ResolveImpactVolume01FromMassVelocity(float massVelocity)
+        {
+            return math.saturate(math.max(0f, massVelocity) / PhysicsImpactMassVelocityReference);
         }
 
         private static float ResolveImpactClangMaterialMultiplier(byte materialId)

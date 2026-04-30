@@ -45,7 +45,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool autoTurnOffOnUnequip = true;
         [SerializeField] private bool secondaryCyclesBeamMode = true;
         [SerializeField] private float contextProbeRange = 18f;
-        [SerializeField] private LayerMask contextMask = ~0;
+        [SerializeField] private LayerMask contextMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("── Battery Settings ─────────────────────────")]
         [Tooltip("Battery item type this tool uses.")]

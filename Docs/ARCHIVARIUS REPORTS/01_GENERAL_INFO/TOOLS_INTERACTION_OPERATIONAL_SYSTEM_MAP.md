@@ -379,6 +379,59 @@ The current player-tool chain can be summarized as:
 
 That is a deeper and more structured chain than older summaries implied.
 
+## 2026-04-30 Operational Linkage Recheck
+
+Prompt-targeted recheck:
+
+| Link | Source evidence | Operational meaning |
+|---|---|---|
+| player intent ingress | `PlayerToolManager.cs:243`, `308` read `GlobalRegistry.Input`; `PlayerToolManager.cs:272+` owns hand-level dispatch | input enters the tool domain through the held-tool front controller |
+| inventory/tool ownership | `PlayerToolManager.cs:55` serializes `PlayerInventory`; `PlayerToolManager.cs:136` exposes it internally | held tools are still inventory-gated, not purely ability-driven |
+| compiled equipment state | `ModularEquipmentEngine.cs:40-42` owns `NativeArray<ToolState>`, `NativeArray<ToolRuntimeStats>`, and `NativeHashMap<uint,int>` | battery, heat, durability mirrors, and upgrade state have a central native runtime owner |
+| tool registration | `ModularEquipmentEngine.cs:139` registers `PlayerTool`; `PlayerTool.cs:613` forces `ModularEquipmentEngine.EnsureRuntimeInstance()` | concrete tools become indexed runtime state records before downstream systems read their stats |
+| queued interaction dispatch | `EquipmentInteractionHandler.cs:43-47` owns queue and raycast lanes; `EquipmentInteractionHandler.cs:514` schedules `RaycastCommand.ScheduleBatch` | tool hits are resolved by a deferred interaction service, not by every tool firing ad-hoc physics |
+| world mutation handoff | `EquipmentInteractionHandler.cs:314-316` routes to `IInteractionSignalConsumer`; `EquipmentInteractionHandler.cs:311` contains base-module suppression guard | mutation authority is contract-routed and has construction-specific safety exceptions |
+| build-cost read | `HabitatConstructionManager.cs:161` checks build resources through `PlayerInventory` | construction placement is inventory-backed |
+| build-cost consume | `HabitatConstructionManager.cs:200-219` consumes required item hashes through `TryRemoveFirstMatchingItemByHash` | construction mutates inventory before committing build state |
+| placement validation | `HabitatConstructionManager.cs:267` schedules validation; `276-279` consumes only after `IsCompleted` | construction has a Burst-backed validation lane with a guarded completion point |
+| habitat graph publication | `HabitatGraphManager.cs:46-52` owns native CSR graph buffers; `1108-1119` allocates node/edge/reachability snapshots | placed modules feed a graph backend, not just spawned GameObjects |
+
+Current layered flow:
+
+`GlobalRegistry.Input`
+-> `PlayerToolManager`
+-> active `PlayerTool`
+-> `ModularEquipmentEngine` native state
+-> `EquipmentInteractionHandler` queue / batch raycast
+-> target contract (`IInteractionSignalConsumer`, `ICuttable`, construction/base-module guards)
+-> domain owner (`Voxel`, `BaseModule`, scanner log, beacon network, repair target)
+-> persistence owner where applicable (`ToolDurabilitySystem`, `ScanLogSystem`, `BeaconNetworkSystem`, construction save participants)
+
+Construction-specific flow:
+
+`PlayerBuilder`
+-> `ConstructionManager` / `HabitatConstructionManager`
+-> `PlayerInventory` resource check and consume
+-> Burst placement integrity validation
+-> module spawn / placement commit
+-> `HabitatGraphManager` CSR rebuild
+-> downstream power, atmosphere, logistics, and module-integrity consumers
+
+The important boundary:
+
+- `PlayerToolManager` is the intent and active-hand owner.
+- `ModularEquipmentEngine` is the tool runtime-state owner.
+- `EquipmentInteractionHandler` is the interaction signal and batch-query owner.
+- `HabitatConstructionManager` is the construction transaction and validation owner.
+- `HabitatGraphManager` is the post-placement topology owner.
+- `PlayerInventory` is not a passive bag in this chain; it is the resource ledger that construction consumes.
+
+Risk:
+
+- the chain is real and layered, but it is not flat; regressions can appear two owners away from the visible tool class.
+- `EquipmentInteractionHandler` still uses a runtime-created `DontDestroyOnLoad` service root, which keeps it in mixed-authority territory.
+- construction has its own native validation and graph truth, so tool-side build success is not the final authority.
+
 ## What Looks Good
 
 - Tool runtime is not a random cluster of MonoBehaviours; there is a clear shared base spine in `PlayerTool`.
@@ -417,6 +470,73 @@ That is a deeper and more structured chain than older summaries implied.
 | Memory | None. Documentation-only pass. |
 | Cadence | None. Runtime code unchanged. |
 | Correctness | Improves owner visibility for one of the most layered gameplay domains and reduces future false assumptions about where tool behavior really lives. |
+
+## 2026-04-30 Late Revalidation - Intent To World Mutation Chain
+
+Static source scan was repeated against the current `Interaction`, `Tools`, `Construction`, and `Visor` folders after the broader forensic docs were read.
+The relevant scan surface contained 134 class/interface declarations in those four folders.
+
+### Operational chain structure
+
+Current source-backed chain:
+
+`Player input`
+-> `PlayerToolManager.RefreshInputSubscriptions()` via `GlobalRegistry.Input` (`PlayerToolManager.cs:243-255`)
+-> `PlayerToolManager.Tick()` active-tool dispatch (`PlayerToolManager.cs:279-320`)
+-> concrete `PlayerTool` branch
+-> `PlayerTool` common registration and interaction service calls (`PlayerTool.cs:190`, `PlayerTool.cs:613-619`)
+-> `ModularEquipmentEngine` runtime state owner (`ModularEquipmentEngine.cs:139`, `ModularEquipmentEngine.cs:328-375`)
+-> `EquipmentInteractionHandler` queued signal/raycast owner (`EquipmentInteractionHandler.cs:112`, `EquipmentInteractionHandler.cs:472-514`)
+-> world-side consumer: `IInteractionSignalConsumer`, `ICuttable`, voxel cut, boil, repair, scan, beacon, or builder branch
+
+Construction-specific chain:
+
+`PlayerToolManager`
+-> `BuilderTool.UsePrimary/UseSecondary/ToolTick` delegation (`BuilderTool.cs:276-312`)
+-> `PlayerBuilder.TryPlaceModuleInternal()` transaction (`PlayerBuilder.cs:967-1038`)
+-> `HabitatConstructionManager.HasBuildResources/ConsumeBuildResources()` (`HabitatConstructionManager.cs:161`, `HabitatConstructionManager.cs:200-219`)
+-> `PlayerInventory` hash-based resource removal
+-> `HabitatConstructionManager.ScheduleIntegrityValidation()` and Burst validation job (`HabitatConstructionManager.cs:233`, `HabitatConstructionManager.cs:599`, `HabitatConstructionManager.cs:711`)
+-> placed module registration (`PlayerBuilder.cs:1247`)
+-> `ConstructionManager.RegisterModule()` and graph refresh (`ConstructionManager.cs:254-271`, `ConstructionManager.cs:1012-1017`)
+-> `HabitatGraphManager.Rebuild()` CSR topology publish (`HabitatGraphManager.cs:97-137`)
+-> hydrodynamic stress, power, logistics, and downstream module-state consumers (`HabitatGraphManager.cs:140-183`)
+
+### Layering facts
+
+- `PlayerToolManager` owns hand intent and active slot dispatch, not deep interaction truth.
+- `PlayerTool` is the common operational spine and forces modular runtime registration.
+- `ModularEquipmentEngine` owns compiled tool state, heat, cooldown, battery, upgrade flags, and durability mirrors.
+- `EquipmentInteractionHandler` owns the queued interaction lane and staged raycast batch.
+- `PlayerBuilder` owns the player-side construction transaction, but construction validity is not final until `HabitatConstructionManager` and `HabitatGraphManager` accept it.
+- `PlayerInventory` is a hard dependency in construction, not a passive container.
+
+### Job/barrier honesty
+
+- `EquipmentInteractionHandler.CompleteScheduledRaycasts()` currently checks `_scheduledRaycastHandle.IsCompleted` before completing (`EquipmentInteractionHandler.cs:472-477`). That is the right shape for avoiding a mid-frame forced wait in the interaction raycast lane.
+- `HabitatConstructionManager` still owns explicit completion authority through `CompletePendingValidation()` (`HabitatConstructionManager.cs:599`). That is not automatically wrong, but it must remain outside input-spam cadence or be proven safe in profiler.
+- `HabitatGraphManager.Rebuild()` is synchronous topology publication. It is expected after construction mutation, but it is a graph-wide authority and should not absorb unrelated construction policy.
+
+### Surgery log - Interaction Linkage Map structure
+
+Required structure for this map going forward:
+
+1. Proof boundary and scan date.
+2. Authored player surfaces.
+3. Player intent owner: `PlayerToolManager`.
+4. Common tool spine: `PlayerTool`.
+5. Runtime state owner: `ModularEquipmentEngine`.
+6. Interaction query/signal owner: `EquipmentInteractionHandler`.
+7. Specialized tool branches: scanner, cutter, repair, beacon, builder.
+8. Construction transaction path: `PlayerBuilder` -> `HabitatConstructionManager` -> `PlayerInventory` -> `ConstructionManager` -> `HabitatGraphManager`.
+9. Job/barrier risks.
+10. Save/event surfaces and regression model.
+
+### Current open risks
+
+- Runtime-created service roots (`EquipmentInteractionHandler`, `ModularEquipmentEngine`) remain mixed-authority surfaces because they are critical but not obviously authored in the player prefab.
+- Construction success has several owners. A bug may appear as a tool failure while actually being resource hash, integrity validation, graph rebuild, or module registration.
+- No live GC/CPU proof exists for input spam across tool swap, scan, cut, repair, and build placement in one session.
 
 ## Verdict
 

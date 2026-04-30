@@ -4,7 +4,7 @@
 // Назначить на Player root. Управляет Canvas-панелью PDA.
 //
 // v2.0 ENTERPRISE ADDITIONS:
-//   [ADD] PDAEvents — глобальная шина событий (OnOpened, OnClosed, OnTabChanged)
+//   [ADD] PDAEvents — queue-backed global PDA event lane (Opened, Closed, TabChanged)
 //   [ADD] Audio feedback — open/close/tab switch sounds через SpatialAudioManager
 //   [ADD] Panel slide animation — плавное появление/исчезновение Canvas
 //   [ADD] Battery drain system — PDA потребляет энергию из HectonSurvivalSystem
@@ -41,8 +41,10 @@ using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.World;
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -52,32 +54,160 @@ namespace Hecton8.UI
     /// Глобальная шина событий PDA. Zero GC, thread-safe.
     /// Подписчики: HUD, аудио, аналитика, сохранения.
     /// </summary>
+    public enum PDAEventType : byte
+    {
+        Opened = 0,
+        Closed = 1,
+        TabChanged = 2,
+        LowBatteryShutdown = 3
+    }
+
+    /// <summary>
+    /// Blittable PDA event payload queued by <see cref="PDAEvents"/>.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PDAEventPayload
+    {
+        public float DurationSeconds;
+        public int PreviousTab;
+        public int CurrentTab;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener contract for queue-drained PDA events.
+    /// </summary>
+    public interface IPDAEventListener
+    {
+        void OnPDAEvent(in PDAEventPayload payload);
+    }
+
+    /// <summary>
+    /// Queue-backed PDA event lane flushed from SystemDispatcher.LateUpdate.
+    /// </summary>
     public static class PDAEvents
     {
-        /// <summary>Fired when PDA opens. Parameter: initial tab index.</summary>
-        public static event Action<int> OnOpened;
+        // COLD ALLOC: RegistryBucket<IPDAEventListener>[32] - PDA listeners drained by SystemDispatcher LateUpdate - owner: PDAEvents
+        private static readonly RegistryBucket<IPDAEventListener> _listeners = new RegistryBucket<IPDAEventListener>(32);
+        private static NativeQueue<PDAEventPayload> _pendingEvents;
 
-        /// <summary>Fired when PDA closes. Parameter: was open for X seconds.</summary>
-        public static event Action<float> OnClosed;
+        public static void Register(IPDAEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>Fired when tab changes. Parameters: (oldTab, newTab).</summary>
-        public static event Action<int, int> OnTabChanged;
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
 
-        /// <summary>Fired when battery critically low and PDA force-closes.</summary>
-        public static event Action OnLowBatteryShutdown;
+        public static void Unregister(IPDAEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        internal static void RaiseOpened(int tab) => OnOpened?.Invoke(tab);
-        internal static void RaiseClosed(float duration) => OnClosed?.Invoke(duration);
-        internal static void RaiseTabChanged(int oldTab, int newTab) => OnTabChanged?.Invoke(oldTab, newTab);
-        internal static void RaiseLowBatteryShutdown() => OnLowBatteryShutdown?.Invoke();
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (_pendingEvents.TryDequeue(out PDAEventPayload payload))
+            {
+                IPDAEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnPDAEvent(in payload);
+            }
+        }
+
+        internal static void RaiseOpened(int tab)
+        {
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = 0f,
+                PreviousTab = -1,
+                CurrentTab = tab,
+                EventType = (ushort)PDAEventType.Opened,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseClosed(float duration)
+        {
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = duration,
+                PreviousTab = -1,
+                CurrentTab = -1,
+                EventType = (ushort)PDAEventType.Closed,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseTabChanged(int oldTab, int newTab)
+        {
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = 0f,
+                PreviousTab = oldTab,
+                CurrentTab = newTab,
+                EventType = (ushort)PDAEventType.TabChanged,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseLowBatteryShutdown()
+        {
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = 0f,
+                PreviousTab = -1,
+                CurrentTab = -1,
+                EventType = (ushort)PDAEventType.LowBatteryShutdown,
+                Reserved = 0
+            });
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnOpened = null;
-            OnClosed = null;
-            OnTabChanged = null;
-            OnLowBatteryShutdown = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+                _pendingEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] - deferred PDA event lane flushed by SystemDispatcher LateUpdate - owner: PDAEvents
+        }
+
+        private static void Enqueue(in PDAEventPayload payload)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
         }
     }
 
@@ -974,7 +1104,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Diagnostic Terminal")]
-    public sealed class PDADiagnosticTerminal : MonoBehaviour, ISlowTickable
+    public sealed class PDADiagnosticTerminal : MonoBehaviour, ISlowTickable, IPDAEventListener
     {
         private const int DiagnosticsTabIndex = 7;
         private const string TitleText = "DIAGNOSTIC TERMINAL // PERF / HULL / OFFSET";
@@ -1020,26 +1150,20 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureBuilt();
-            PDAEvents.OnOpened += HandlePdaStateChanged;
-            PDAEvents.OnClosed += HandlePdaClosed;
-            PDAEvents.OnTabChanged += HandlePdaTabChanged;
+            PDAEvents.Register(this);
             EvaluateTickRegistration();
             RefreshTerminal(force: true);
         }
 
         private void OnDisable()
         {
-            PDAEvents.OnOpened -= HandlePdaStateChanged;
-            PDAEvents.OnClosed -= HandlePdaClosed;
-            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            PDAEvents.Unregister(this);
             UnregisterFromTickManager();
         }
 
         private void OnDestroy()
         {
-            PDAEvents.OnOpened -= HandlePdaStateChanged;
-            PDAEvents.OnClosed -= HandlePdaClosed;
-            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            PDAEvents.Unregister(this);
             UnregisterFromTickManager();
         }
 
@@ -1049,6 +1173,22 @@ namespace Hecton8.UI
                 return;
 
             RefreshTerminal(force: false);
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    HandlePdaStateChanged(payload.CurrentTab);
+                    break;
+                case PDAEventType.Closed:
+                    HandlePdaClosed(payload.DurationSeconds);
+                    break;
+                case PDAEventType.TabChanged:
+                    HandlePdaTabChanged(payload.PreviousTab, payload.CurrentTab);
+                    break;
+            }
         }
 
         private void HandlePdaStateChanged(int initialTab)

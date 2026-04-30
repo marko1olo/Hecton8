@@ -38,6 +38,7 @@ namespace Hecton8.World
         private const float GhostAlpha = 0.24f;
         private const string RuntimePrefabName = "PFB_RuntimeResourceNode_Generic";
         private const string RuntimeMagmaVentPrefabName = "PFB_RuntimeMagmaVent_Generic";
+        private const string ThermalDiamondStableId = "resource.node.thermal_diamond";
         private const int BrinePoolSeedSalt = unchecked((int)0x4252494E);
         private const int BrinePoolHazardIdSalt = unchecked((int)0x52494E45);
         private const int MagmaVentSeedSalt = unchecked((int)0x56454E54);
@@ -90,6 +91,10 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Authored resource-node templates consumed by the environmental-envelope spawner.")]
         private ResourceNodeTemplate[] resourceTemplates;
+
+        [SerializeField]
+        [Tooltip("Optional explicit template spawned by flash-freeze crystallization. If empty, the director resolves resource.node.thermal_diamond from resourceTemplates.")]
+        private ResourceNodeTemplate thermalDiamondTemplate;
 
         [SerializeField]
         [Tooltip("Optional explicit player transform. Runtime falls back to WorldRuntimeReferenceUtility when empty.")]
@@ -303,6 +308,88 @@ namespace Hecton8.World
             RefreshResidentSectors(playerSector);
             ProcessPendingSpawns();
             UpdateDiagnostics(playerSector);
+        }
+
+        /// <summary>
+        /// Spawns one Thermal Diamond node at a flash-freeze crystallization boundary.
+        /// </summary>
+        /// <param name="runtimePosition">Runtime-space crystallization center.</param>
+        /// <param name="crystallizationRadiusMeters">Thermal boundary radius that produced the crystal.</param>
+        /// <param name="deltaTemperatureCelsius">Signed current-minus-previous temperature delta that passed the flash-freeze threshold.</param>
+        /// <param name="sourceId">Stable caller-provided source id used for deterministic yaw jitter.</param>
+        /// <returns>True when a pooled ResourceNode was spawned and spatially registered.</returns>
+        public bool TrySpawnThermalDiamondCrystallization(
+            Vector3 runtimePosition,
+            float crystallizationRadiusMeters,
+            float deltaTemperatureCelsius,
+            uint sourceId)
+        {
+            EnsureRuntimePool();
+
+            if (!Application.isPlaying ||
+                _residentSectors == null ||
+                !_runtimePoolReady ||
+                _runtimePrefab == null ||
+                !TryResolveThermalDiamondTemplate(out ResourceNodeTemplate template))
+            {
+                return false;
+            }
+
+            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            if (pool == null)
+                return false;
+
+            float safeRadius = math.max(0.25f, crystallizationRadiusMeters);
+            Vector3 spawnPosition = ResolveThermalDiamondVoxelFacePosition(runtimePosition, safeRadius, template);
+            ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
+                return false;
+
+            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            int2 sector = QuantizeSector(in spawnAup);
+            long sectorKey = ComposeSectorKey(sector);
+            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
+                return false;
+
+            uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
+            yawSeed = Mix(yawSeed, (uint)math.asint(deltaTemperatureCelsius));
+            float yawDegrees = Next01(ref yawSeed) * 360f;
+            Quaternion rotation = ResolveSurfaceRotation(Vector3.up, yawDegrees);
+            GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
+            if (instance == null)
+                return false;
+
+            if (!instance.TryGetComponent(out ResourceNode node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
+            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
+            node.RefreshRuntimeSpatialRegistration();
+            sectorState.ActiveNodes.Add(node);
+            _debugLastAcceptedTemplateHash = template.StableHashId;
+            return true;
+        }
+
+        private Vector3 ResolveThermalDiamondVoxelFacePosition(
+            Vector3 runtimePosition,
+            float safeRadius,
+            ResourceNodeTemplate template)
+        {
+            float spawnOffset = math.max(template.SpawnOffsetMeters, safeRadius * 0.08f);
+            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
+            if (voxelEngine != null &&
+                voxelEngine.TryGetNearestActiveVolume(runtimePosition, out HectonVoxelVolume volume) &&
+                volume != null &&
+                volume.TrySampleSurfaceNormal(runtimePosition, math.max(0.25f, safeRadius * 0.25f), out Vector3 surfaceNormal))
+            {
+                return runtimePosition + surfaceNormal * spawnOffset;
+            }
+
+            return runtimePosition + Vector3.up * spawnOffset;
         }
 
         private bool TryResolveRuntimeDependencies()
@@ -652,25 +739,71 @@ namespace Hecton8.World
             }
         }
 
+        private bool TryResolveThermalDiamondTemplate(out ResourceNodeTemplate template)
+        {
+            template = thermalDiamondTemplate;
+            if (template != null)
+                return true;
+
+            if (resourceTemplates == null)
+                return false;
+
+            for (int i = 0; i < resourceTemplates.Length; i++)
+            {
+                ResourceNodeTemplate candidate = resourceTemplates[i];
+                if (candidate == null || !string.Equals(candidate.StableId, ThermalDiamondStableId, System.StringComparison.Ordinal))
+                    continue;
+
+                template = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private SectorState ResolveOrCreateRuntimeSectorState(int2 sector, long sectorKey)
+        {
+            if (_residentSectors == null)
+                return null;
+
+            if (_residentSectors.TryGetValue(sectorKey, out SectorState state))
+                return state;
+
+            state = new SectorState(sector, ComputePerSectorInitialCapacity());
+            if (mapMagicBridge != null)
+            {
+                state.BrinePool = ResolveBrinePoolState(sector);
+                SyncBrineHazardRegistration(state);
+            }
+            _residentSectors.Add(sectorKey, state);
+            return state;
+        }
+
         internal bool TrySampleBrineFluidDensity(Vector3 runtimePosition, out float fluidDensityKgPerCubicMeter)
         {
             fluidDensityKgPerCubicMeter = 0f;
             if (_residentSectors == null || _residentSectors.Count == 0)
                 return false;
 
-            Dictionary<long, SectorState>.Enumerator enumerator = _residentSectors.GetEnumerator();
-            while (enumerator.MoveNext())
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            int2 sector = QuantizeSector(in aup);
+            for (int offsetX = -1; offsetX <= 1; offsetX++)
             {
-                BrinePoolState brinePool = enumerator.Current.Value.BrinePool;
-                if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
-                    continue;
+                for (int offsetY = -1; offsetY <= 1; offsetY++)
+                {
+                    int2 candidateSector = new int2(sector.x + offsetX, sector.y + offsetY);
+                    if (!_residentSectors.TryGetValue(ComposeSectorKey(candidateSector), out SectorState state))
+                        continue;
 
-                fluidDensityKgPerCubicMeter = brinePool.FluidDensityKgPerCubicMeter;
-                enumerator.Dispose();
-                return fluidDensityKgPerCubicMeter > 0f;
+                    BrinePoolState brinePool = state.BrinePool;
+                    if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
+                        continue;
+
+                    fluidDensityKgPerCubicMeter = brinePool.FluidDensityKgPerCubicMeter;
+                    return fluidDensityKgPerCubicMeter > 0f;
+                }
             }
 
-            enumerator.Dispose();
             return false;
         }
 

@@ -172,7 +172,7 @@ namespace Hecton8.Core
         private void SyncEnvironmentContext()
         {
             if (_constructionManager == null || !_constructionManager.isActiveAndEnabled)
-                _constructionManager = ConstructionManager.Instance;
+                _constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
 
             _moduleCatalog = _constructionManager != null ? _constructionManager.Catalog : null;
 

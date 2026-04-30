@@ -109,6 +109,7 @@ namespace Hecton8.SaveSystem
             public readonly byte PhysicsMaterialTag;
             public readonly float MassKg;
             public readonly float VolumeM3;
+            public readonly float RadiationSvPerSecond;
             public readonly bool Stackable;
             public readonly bool IsConsumable;
             public readonly float OxygenRestore;
@@ -131,6 +132,7 @@ namespace Hecton8.SaveSystem
                 byte physicsMaterialTag,
                 float massKg,
                 float volumeM3,
+                float radiationSvPerSecond,
                 bool stackable,
                 bool isConsumable,
                 float oxygenRestore,
@@ -152,6 +154,7 @@ namespace Hecton8.SaveSystem
                 PhysicsMaterialTag = physicsMaterialTag;
                 MassKg = massKg;
                 VolumeM3 = volumeM3;
+                RadiationSvPerSecond = radiationSvPerSecond;
                 Stackable = stackable;
                 IsConsumable = isConsumable;
                 OxygenRestore = oxygenRestore;
@@ -915,6 +918,7 @@ namespace Hecton8.SaveSystem
                 (byte)item.PhysicsMaterialTag,
                 item.MassKg,
                 item.VolumeM3,
+                item.RadiationSvPerSecond,
                 item.stackable && item.maxStack > 1,
                 item.isConsumable,
                 item.oxygenRestore,
@@ -939,6 +943,9 @@ namespace Hecton8.SaveSystem
 
             if (item.category == ItemCategory.Tool)
                 flags |= 1 << 7;
+
+            if (item.IsRadioactive)
+                flags |= 1 << 4;
 
             if (item.category == ItemCategory.Consumable ||
                 item.category == ItemCategory.Organic ||

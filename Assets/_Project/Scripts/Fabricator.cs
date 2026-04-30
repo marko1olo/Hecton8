@@ -12,7 +12,7 @@
 //
 // ЖИЗНЕННЫЙ ЦИКЛ КРАФТА:
 //   1. Игрок наводится → OnHoverStart → HUD показывает промпт
-//   2. [E] → Interact → CraftingEvents.OnFabricatorOpened
+//   2. [E] → Interact → CraftingEvents.RaiseFabricatorOpened
 //   3. UI вызывает StartCraft(recipe) → CanCraft проверка
 //   4. Ресурсы списываются СРАЗУ → таймер запускается
 //      → NotifyGridBalanceChanged() — сеть пересчитывает с -100W

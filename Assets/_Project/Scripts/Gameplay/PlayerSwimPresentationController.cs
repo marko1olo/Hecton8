@@ -307,7 +307,7 @@ namespace Hecton8.Gameplay
 
         [Header("-- Environment Reactivity -------------")]
         [Tooltip("Physics layers that can push swim hands back when the player swims close to walls, ceilings, or the seabed.")]
-        [SerializeField] private LayerMask handObstacleMask = ~0;
+        [SerializeField] private LayerMask handObstacleMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Sphere radius used for hand obstacle probes. Keep this modest so tight caves feel reactive without causing jitter.")]
         [SerializeField, Range(0.02f, 0.18f)] private float handObstacleSphereRadius = 0.06f;

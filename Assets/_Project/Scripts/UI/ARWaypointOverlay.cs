@@ -95,7 +95,7 @@ namespace Hecton8.UI
         private readonly char[] _labelCharBuffer = new char[MaximumLabelCharacters];
 
         [SerializeField]
-        private LayerMask occlusionMask = ~0;
+        private LayerMask occlusionMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         private bool _registeredTick;
         private bool _registeredSlowTick;

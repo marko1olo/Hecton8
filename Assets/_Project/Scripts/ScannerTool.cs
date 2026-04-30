@@ -311,7 +311,7 @@ namespace Hecton8.Gameplay
         [Header("Scan Parameters")]
         [SerializeField] private float scanRadius = 50f;
         [SerializeField] private float scanCooldown = 3f;
-        [SerializeField] private LayerMask scanLayerMask = ~0;
+        [SerializeField] private LayerMask scanLayerMask = (1 << 8) | (1 << 9) | (1 << 10);
         [SerializeField, Min(1f)] private float focusedScanRange = 14f;
         [SerializeField, Range(1f, 18f)] private float focusedScanConeAngleDegrees = 5.5f;
         [SerializeField, Range(0.05f, 0.5f)] private float focusedScanResampleInterval = 0.12f;

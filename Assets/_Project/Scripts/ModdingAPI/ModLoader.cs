@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Hecton8.Bootstrap;
-using Hecton8.Crafting;
-using Hecton8.Items;
 using Hecton8.SaveSystem;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -125,7 +123,7 @@ namespace Hecton8.Modding
                 return;
 
             SaveEvents.Register(_saveEventListener);
-            CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
+            HectonEventBus.InstallNativeQueueBindings();
             SceneBootstrap.Register(_bootstrapEventListener);
             Application.quitting += HandleApplicationQuitting;
             SceneManager.sceneLoaded += HandleSceneLoaded;
@@ -138,7 +136,7 @@ namespace Hecton8.Modding
                 return;
 
             SaveEvents.Unregister(_saveEventListener);
-            CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
+            HectonEventBus.UninstallNativeQueueBindings();
             SceneBootstrap.Unregister(_bootstrapEventListener);
             Application.quitting -= HandleApplicationQuitting;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
@@ -529,14 +527,6 @@ namespace Hecton8.Modding
         private static void HandleLoadCompleted(string slotName)
         {
             HectonEventBus.Publish(new GameLoadedEvent(slotName));
-        }
-
-        private static void HandleCraftCompleted(ItemData itemData)
-        {
-            if (itemData == null)
-                return;
-
-            HectonEventBus.Publish(new ItemCraftedEvent(itemData));
         }
 
         private static void HandleGameReady()

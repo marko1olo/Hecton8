@@ -196,7 +196,7 @@ namespace Hecton8.UI
 
         [Header("── Interaction ────────────────────────────")]
         [SerializeField, Tooltip("Layer mask used for the panel collider hit query.")]
-        private LayerMask interactionMask = ~0;
+        private LayerMask interactionMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [SerializeField, Tooltip("Maximum world-space distance for cursor interaction.")]
         private float maxInteractionDistance = 2.75f;

@@ -3,6 +3,9 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [DisallowMultipleComponent]
 [ExecuteAlways]
@@ -28,6 +31,11 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
     private void OnEnable()
     {
+#if UNITY_EDITOR
+        if (EditorApplication.isCompiling || !Application.isPlaying)
+            return;
+#endif
+
         AutoResolveReferences(force: true);
         RegisterTick();
     }

@@ -57,7 +57,7 @@ namespace Hecton8.Construction
         [SerializeField, Range(1f, 40f)] private float supplySearchRadius = 18f;
 
         [Tooltip("Layer mask used while probing for nearby storage crates.")]
-        [SerializeField] private LayerMask supplySearchMask = ~0;
+        [SerializeField] private LayerMask supplySearchMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Override repair supply item. Falls back to Data_TitaniumScrap through the active ItemCatalog when left empty.")]
         [SerializeField] private ItemData repairSupplyItem;
@@ -331,14 +331,14 @@ namespace Hecton8.Construction
             if (freeSlot < 0)
                 return;
 
-            if (!DroneFleetManager.TryAssignRepairTask(this, dispatchIntegrityThreshold, out BaseModule target, out float assignmentScore, out _))
+            if (!DroneFleetManager.TryAssignFleetTask(this, dispatchIntegrityThreshold, out DroneFleetTask task, out float assignmentScore, out _))
                 return;
 
             PowerGrid grid = _powerNode.Grid;
-            if (target == null || grid.HasPowerDeficit)
+            if (!task.IsValid || grid.HasPowerDeficit)
                 return;
 
-            int requiredSupplyUnits = ResolveMissionSupplyUnits(target);
+            int requiredSupplyUnits = ResolveMissionSupplyUnits(in task);
             if (!HasRepairSupplyAvailable(requiredSupplyUnits))
                 return;
 
@@ -365,12 +365,12 @@ namespace Hecton8.Construction
                 grid.ConsumePower(launchBurstPowerCost);
 
             _activeDrones[freeSlot] = drone;
-            _activeTargetIds[freeSlot] = GetModuleRuntimeId(target);
+            _activeTargetIds[freeSlot] = GetModuleRuntimeId(task.Module);
             _launchCountTotal++;
-            _debugCurrentTargetName = target.name;
+            _debugCurrentTargetName = task.Module != null ? task.Module.name : string.Empty;
             _debugLastAssignmentScore = assignmentScore;
             _debugLastAssignedSupplyUnits = requiredSupplyUnits;
-            drone.AssignMission(this, target, launchPosition, droneRepairRate, requiredSupplyUnits);
+            drone.AssignMission(this, task, launchPosition, droneRepairRate, requiredSupplyUnits);
         }
 
         private void RegisterHubInstance()
@@ -395,26 +395,60 @@ namespace Hecton8.Construction
 
         private bool HasRepairSupplyAvailable(int requiredUnits)
         {
-            if (repairSupplyItem == null || requiredUnits <= 0)
+            if (requiredUnits <= 0)
                 return false;
 
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
             if (grid != null)
             {
-                int hashId = ResolveRepairSupplyHashId();
-                return hashId != 0 && BaseLogisticsNetwork.CountAccessibleItem(grid, hashId) >= requiredUnits;
+                return ResolveAvailableRepairSupplyHashId(grid, requiredUnits) != 0;
             }
+
+            if (repairSupplyItem == null)
+                return false;
 
             return TryResolveRepairSupplySlot(requiredUnits, consume: false);
         }
 
         private bool TryConsumeRepairSupply(int requiredUnits)
         {
-            if (repairSupplyItem == null || requiredUnits <= 0)
+            return TryConsumeRepairSupplyInternal(requiredUnits, commitViaCommandQueue: false);
+        }
+
+        internal bool TryAcquireDroneResupply(int requestedUnits, out int grantedUnits)
+        {
+            grantedUnits = 0;
+            int safeRequestedUnits = Mathf.Max(1, requestedUnits);
+            if (!TryConsumeRepairSupplyInternal(safeRequestedUnits, commitViaCommandQueue: true))
+                return false;
+
+            grantedUnits = safeRequestedUnits;
+            return true;
+        }
+
+        internal bool TryResolveNearestSupplyEndpoint(Vector3 requesterPosition, out Vector3 endpointPosition)
+        {
+            endpointPosition = DockPosition;
+
+            PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
+            if (grid != null)
+            {
+                int hashId = ResolveAvailableRepairSupplyHashId(grid, 1);
+                if (hashId != 0 && BaseLogisticsNetwork.TryResolveNearestSupplyEndpoint(grid, hashId, requesterPosition, out endpointPosition))
+                    return true;
+            }
+
+            return TryResolveNearestSupplyEndpoint(supplyCrates, supplyCrates != null ? supplyCrates.Length : 0, requesterPosition, ref endpointPosition) ||
+                   TryResolveNearestSupplyEndpoint(_discoveredSupplyCrates, _discoveredSupplyCount, requesterPosition, ref endpointPosition);
+        }
+
+        private bool TryConsumeRepairSupplyInternal(int requiredUnits, bool commitViaCommandQueue)
+        {
+            if (requiredUnits <= 0)
                 return false;
 
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
-            int hashId = ResolveRepairSupplyHashId();
+            int hashId = ResolveAvailableRepairSupplyHashId(grid, requiredUnits);
             if (grid != null && hashId != 0)
             {
                 _repairSupplyHashIds[0] = hashId;
@@ -422,11 +456,43 @@ namespace Hecton8.Construction
                 if (!BaseLogisticsNetwork.TryReserveResources(grid, _repairSupplyHashIds, _repairSupplyAmounts, 1, out BaseLogisticsNetwork.LogisticsReservation reservation))
                     return false;
 
-                BaseLogisticsNetwork.CommitReserved(reservation);
+                if (commitViaCommandQueue)
+                    BaseLogisticsNetwork.CommitReservedViaCommandQueue(reservation);
+                else
+                    BaseLogisticsNetwork.CommitReserved(reservation);
                 return true;
             }
 
+            if (repairSupplyItem == null)
+                return false;
+
             return TryResolveRepairSupplySlot(requiredUnits, consume: true);
+        }
+
+        private bool TryResolveNearestSupplyEndpoint(StorageCrate[] crates, int count, Vector3 requesterPosition, ref Vector3 endpointPosition)
+        {
+            if (crates == null || repairSupplyItem == null)
+                return false;
+
+            bool found = false;
+            float bestDistanceSq = float.MaxValue;
+            for (int i = 0; i < count; i++)
+            {
+                StorageCrate crate = crates[i];
+                if (crate == null || crate.CountItem(repairSupplyItem) <= 0)
+                    continue;
+
+                Vector3 candidatePosition = crate.transform.position;
+                float distanceSq = (candidatePosition - requesterPosition).sqrMagnitude;
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                endpointPosition = candidatePosition;
+                found = true;
+            }
+
+            return found;
         }
 
         private bool TryResolveRepairSupplySlot(int requiredUnits, bool consume)
@@ -630,9 +696,13 @@ namespace Hecton8.Construction
             return activeCount;
         }
 
-        private int ResolveMissionSupplyUnits(BaseModule target)
+        private int ResolveMissionSupplyUnits(in DroneFleetTask task)
         {
+            BaseModule target = task.Module;
             if (target == null)
+                return Mathf.Max(1, scrapPerMission);
+
+            if (task.Kind == DroneFleetTaskKind.CutParasite)
                 return Mathf.Max(1, scrapPerMission);
 
             float recoverableIntegrity = Mathf.Max(1f, target.MaxRecoverableIntegrity);
@@ -650,6 +720,25 @@ namespace Hecton8.Construction
             return repairSupplyItem != null && !string.IsNullOrWhiteSpace(repairSupplyItem.PersistentId)
                 ? Hecton.Localization.LocHash.Compute(repairSupplyItem.PersistentId)
                 : 0;
+        }
+
+        private int ResolveAvailableRepairSupplyHashId(PowerGrid grid, int requiredUnits)
+        {
+            if (grid == null || requiredUnits <= 0)
+                return 0;
+
+            int primaryHashId = ResolveRepairSupplyHashId();
+            if (primaryHashId == 0)
+                primaryHashId = Hecton.Localization.LocHash.Compute(DefaultRepairSupplyItemId);
+
+            if (primaryHashId != 0 && BaseLogisticsNetwork.CountAccessibleItem(grid, primaryHashId) >= requiredUnits)
+                return primaryHashId;
+
+            int legacyHashId = Hecton.Localization.LocHash.Compute(LegacyRepairSupplyItemId);
+            if (legacyHashId != 0 && legacyHashId != primaryHashId && BaseLogisticsNetwork.CountAccessibleItem(grid, legacyHashId) >= requiredUnits)
+                return legacyHashId;
+
+            return 0;
         }
 
         private int CountRepairSupplyUnits(StorageCrate[] crates, int count)

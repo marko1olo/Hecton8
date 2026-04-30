@@ -73,7 +73,7 @@ namespace Hecton8.Construction
 
         [Header("── Placement ──────────────────────────────")]
         [Tooltip("Layers considered valid seabed for drill anchoring.")]
-        [SerializeField] private LayerMask seabedMask = ~0;
+        [SerializeField] private LayerMask seabedMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Vertical probe height above the candidate placement point.")]
         [SerializeField, Range(0.25f, 8f)] private float placementProbeHeight = 2.5f;

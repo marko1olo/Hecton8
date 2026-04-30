@@ -309,6 +309,25 @@ namespace Hecton8.AI
         [SerializeField, Range(0f, 1f), Tooltip("Clarity suppression intensity injected into the trauma dispatcher during the EMP blind window.")]
         private float empClaritySuppression01 = 1f;
 
+        [Header("Echolocation Mimicry")]
+        [SerializeField, Tooltip("If enabled, apex fauna can publish a false distress beacon into sonar before ambush.")]
+        private bool canEmitMimicDistressPing;
+
+        [SerializeField, Min(1f), Tooltip("Radius of the false acoustic ping registered into sonar/acoustic density maps.")]
+        private float mimicPingRadiusMeters = 60f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Normalized signal strength of the false distress beacon.")]
+        private float mimicPingIntensity01 = 0.8f;
+
+        [SerializeField, Min(0.1f), Tooltip("Seconds the false beacon remains visible if the player does not enter the kill radius.")]
+        private float mimicPingLifetimeSeconds = 7f;
+
+        [SerializeField, Min(0.1f), Tooltip("Minimum seconds between false beacon emissions.")]
+        private float mimicPingCooldownSeconds = 18f;
+
+        [SerializeField, Min(1f), Tooltip("Player distance at which the false beacon vanishes and the predator commits to attack.")]
+        private float mimicPingVanishDistanceMeters = 50f;
+
         /// <summary>
         /// Stable species identifier for gameplay-side lookups.
         /// </summary>
@@ -452,6 +471,36 @@ namespace Hecton8.AI
         public float EmpBlindDurationSeconds => math.max(0f, empBlindDurationSeconds);
 
         public float EmpClaritySuppression01 => math.saturate(empClaritySuppression01);
+
+        /// <summary>
+        /// True when this template can publish false distress-beacon sonar returns.
+        /// </summary>
+        public bool CanEmitMimicDistressPing => canEmitMimicDistressPing || foodChainTier == FaunaFoodChainTier.Leviathan;
+
+        /// <summary>
+        /// Radius of the false acoustic ping in authored meters.
+        /// </summary>
+        public float MimicPingRadiusMeters => math.max(1f, mimicPingRadiusMeters);
+
+        /// <summary>
+        /// Normalized false-ping intensity.
+        /// </summary>
+        public float MimicPingIntensity01 => math.saturate(mimicPingIntensity01);
+
+        /// <summary>
+        /// Seconds the false sonar return remains visible before expiring.
+        /// </summary>
+        public float MimicPingLifetimeSeconds => math.max(0.1f, mimicPingLifetimeSeconds);
+
+        /// <summary>
+        /// Minimum seconds between false beacon emissions.
+        /// </summary>
+        public float MimicPingCooldownSeconds => math.max(0.1f, mimicPingCooldownSeconds);
+
+        /// <summary>
+        /// Player proximity that cancels the beacon and commits the ambush.
+        /// </summary>
+        public float MimicPingVanishDistanceMeters => math.max(1f, mimicPingVanishDistanceMeters);
 
         /// <summary>
         /// Builds the blittable runtime descriptor consumed by SOA-friendly fauna systems.
@@ -618,6 +667,11 @@ namespace Hecton8.AI
             parentalDefenseHuntDurationSeconds = math.max(0f, parentalDefenseHuntDurationSeconds);
             empBlindDurationSeconds = math.max(0f, empBlindDurationSeconds);
             empClaritySuppression01 = math.saturate(empClaritySuppression01);
+            mimicPingRadiusMeters = math.max(1f, mimicPingRadiusMeters);
+            mimicPingIntensity01 = math.saturate(mimicPingIntensity01);
+            mimicPingLifetimeSeconds = math.max(0.1f, mimicPingLifetimeSeconds);
+            mimicPingCooldownSeconds = math.max(0.1f, mimicPingCooldownSeconds);
+            mimicPingVanishDistanceMeters = math.max(1f, mimicPingVanishDistanceMeters);
 
             if (driveWeights == null || driveWeights.Length != 3)
             {

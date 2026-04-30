@@ -25,6 +25,7 @@ namespace Hecton8.Inventory
     public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable
     {
         private const ushort CraftingLockedMask = 1 << 10;
+        private const ushort RadioactiveItemStateMask = 1 << 4;
         private const ushort BiologicalItemStateMask = 1 << 6;
         internal const ushort DegradedItemStateMask = 1 << 8;
         private const ushort RustedItemStateMask = 1 << 9;
@@ -33,8 +34,11 @@ namespace Hecton8.Inventory
         private const float OrganicDecayPerSecond = 0.00045f;
         private const float SubmergedOrganicDecayPerSecond = 0.00075f;
         private const float SubmergedMetalRustPerSecond = 0.00065f;
+        private const float RadioactiveHalfLifeBaseSeconds = 1800f;
+        private const float Ln2 = 0.6931471805599453f;
         private const float KineticDamageThresholdG = 50f;
         internal const ushort DegradedQualityMilliThreshold = 250;
+        private static readonly int _DepletedLeadHashId = LocHash.Compute("Data_DepletedLead");
 
         private struct InventorySortEntry : IComparable<InventorySortEntry>
         {
@@ -132,16 +136,18 @@ namespace Hecton8.Inventory
             [ReadOnly] public NativeArray<ushort> StackCounts;
             [ReadOnly] public NativeArray<float> AnchorUnitMassKg;
             [ReadOnly] public NativeArray<float> AnchorUnitVolumeM3;
-            public NativeArray<float2> Totals;
+            [ReadOnly] public NativeArray<float> AnchorUnitRadiationSv;
+            public NativeArray<float3> Totals;
 
             public void Execute()
             {
                 int count = math.min(
-                    math.min(AnchorHashIds.Length, StackCounts.Length),
-                    math.min(AnchorUnitMassKg.Length, AnchorUnitVolumeM3.Length));
+                    math.min(math.min(AnchorHashIds.Length, StackCounts.Length), math.min(AnchorUnitMassKg.Length, AnchorUnitVolumeM3.Length)),
+                    AnchorUnitRadiationSv.Length);
 
                 float totalMassKg = 0f;
                 float totalVolumeM3 = 0f;
+                float totalRadiationSv = 0f;
 
                 for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
                 {
@@ -151,11 +157,91 @@ namespace Hecton8.Inventory
                     int stackCount = math.max(1, (int)StackCounts[anchorIndex]);
                     totalMassKg += AnchorUnitMassKg[anchorIndex] * stackCount;
                     totalVolumeM3 += AnchorUnitVolumeM3[anchorIndex] * stackCount;
+                    totalRadiationSv += AnchorUnitRadiationSv[anchorIndex] * stackCount;
                 }
 
-                Totals[0] = new float2(
+                Totals[0] = new float3(
                     math.max(0f, totalMassKg),
-                    math.max(0f, totalVolumeM3));
+                    math.max(0f, totalVolumeM3),
+                    math.max(0f, totalRadiationSv));
+            }
+        }
+
+        [BurstCompile]
+        private struct InventoryRadioactiveHalfLifeJob : IJob
+        {
+            [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
+            [ReadOnly] public NativeArray<ushort> StackCounts;
+            [ReadOnly] public NativeArray<float> AnchorUnitRadiationSv;
+            public NativeArray<ushort> ItemStateFlags;
+            public NativeArray<ushort> QualityMilli;
+            public NativeArray<int> ConversionAnchorIndices;
+            public NativeArray<int> Counters;
+            public float DeltaSeconds;
+            public float BaseHalfLifeSeconds;
+            public ushort DefaultQuality;
+            public ushort RadioactiveMask;
+            public ushort DegradedMask;
+            public ushort DegradedThreshold;
+
+            public void Execute()
+            {
+                if (Counters.Length >= 2)
+                {
+                    Counters[0] = 0;
+                    Counters[1] = 0;
+                }
+
+                int count = math.min(
+                    math.min(math.min(AnchorHashIds.Length, StackCounts.Length), AnchorUnitRadiationSv.Length),
+                    math.min(ItemStateFlags.Length, QualityMilli.Length));
+                if (count <= 0 || !(DeltaSeconds > 0f))
+                    return;
+
+                int conversionCount = 0;
+                int changed = 0;
+                float safeBaseHalfLifeSeconds = math.max(1f, BaseHalfLifeSeconds);
+
+                for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+                {
+                    if (AnchorHashIds[anchorIndex] == 0 || StackCounts[anchorIndex] == 0)
+                        continue;
+
+                    float radiationSv = AnchorUnitRadiationSv[anchorIndex];
+                    if (!(radiationSv > 0f))
+                        continue;
+
+                    ushort currentFlags = (ushort)(ItemStateFlags[anchorIndex] | RadioactiveMask);
+                    ushort currentQualityMilli = QualityMilli[anchorIndex] > 0 ? QualityMilli[anchorIndex] : DefaultQuality;
+                    float currentQuality = math.clamp(currentQualityMilli / 1000f, 0f, 1f);
+                    float halfLifeSeconds = safeBaseHalfLifeSeconds / math.max(0.001f, radiationSv);
+                    float decayFactor = math.exp(-(Ln2 / halfLifeSeconds) * DeltaSeconds);
+                    float nextQuality = math.clamp(currentQuality * decayFactor, 0f, 1f);
+                    ushort nextQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
+
+                    if (nextQualityMilli < DegradedThreshold)
+                        currentFlags = (ushort)(currentFlags | DegradedMask);
+
+                    if (nextQualityMilli <= 0)
+                    {
+                        currentFlags = (ushort)(currentFlags | DegradedMask);
+                        if (conversionCount < ConversionAnchorIndices.Length)
+                            ConversionAnchorIndices[conversionCount++] = anchorIndex;
+                    }
+
+                    if (currentFlags != ItemStateFlags[anchorIndex] || nextQualityMilli != currentQualityMilli)
+                    {
+                        ItemStateFlags[anchorIndex] = currentFlags;
+                        QualityMilli[anchorIndex] = nextQualityMilli;
+                        changed = 1;
+                    }
+                }
+
+                if (Counters.Length >= 2)
+                {
+                    Counters[0] = conversionCount;
+                    Counters[1] = changed;
+                }
             }
         }
 
@@ -226,6 +312,8 @@ namespace Hecton8.Inventory
         [SerializeField] private HectonSurvivalSystem survival;
         [Tooltip("Item catalog used for load-time and UI seam resolution.")]
         [SerializeField] private ItemCatalog itemCatalog;
+        [Tooltip("Inventory radiation threshold in Sv before carried isotopes push trauma every SlowTick.")]
+        [SerializeField, Min(0f)] private float radiationTraumaThresholdSv = 0.5f;
 
         private InventoryGrid _grid;
         private NativeArray<ushort> _stackCounts;
@@ -239,19 +327,24 @@ namespace Hecton8.Inventory
         private NativeArray<byte> _simulationOccupiedCells;
         private NativeArray<float> _anchorUnitMassKg;
         private NativeArray<float> _anchorUnitVolumeM3;
+        private NativeArray<float> _anchorUnitRadiationSv;
         private NativeArray<InventorySortEntry> _sortEntriesNative;
         private NativeArray<InventorySortEntry> _sortScratchNative;
         private NativeArray<int> _sortRadixCounts;
-        private NativeArray<float2> _derivedMassVolumeScratch;
+        private NativeArray<float3> _derivedMassVolumeScratch;
+        private NativeArray<int> _radioactiveConversionAnchors;
+        private NativeArray<int> _radioactiveHalfLifeCounters;
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
         private bool _registeredSlowTick;
         private ulong _playerImpactBodyId;
+        private TraumaDispatcher _traumaDispatcher;
 
         public static PlayerInventory Instance => _instance;
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
         public float TotalVolumeM3 { get; private set; }
+        public float TotalRadiationSv { get; private set; }
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
         public int InventoryVersion { get; private set; }
@@ -301,13 +394,17 @@ namespace Hecton8.Inventory
             // COLD ALLOC: ItemPlacement[columns * rows] — placement snapshot buffer — owner: PlayerInventory
             _anchorUnitMassKg = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit mass cache for Burst-derived carry totals â€” owner: PlayerInventory
             _anchorUnitVolumeM3 = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit volume cache for Burst-derived carry totals â€” owner: PlayerInventory
+            _anchorUnitRadiationSv = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — per-anchor inventory radiation cache for Burst half-life and trauma totals — owner: PlayerInventory
             _sortEntriesNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort input scratch â€” owner: PlayerInventory
             _sortScratchNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort output scratch â€” owner: PlayerInventory
             _sortRadixCounts = new NativeArray<int>(256, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[256] â€” radix bucket counts reused by inventory sorting â€” owner: PlayerInventory
-            _derivedMassVolumeScratch = new NativeArray<float2>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float2[1] â€” Burst-derived mass/volume totals scratch â€” owner: PlayerInventory
+            _derivedMassVolumeScratch = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float3[1] — Burst-derived mass/volume/radiation totals scratch — owner: PlayerInventory
+            _radioactiveConversionAnchors = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] — radioactive half-life conversion anchor scratch — owner: PlayerInventory
+            _radioactiveHalfLifeCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — radioactive half-life changed/conversion counters — owner: PlayerInventory
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
             _sortedPlacements = new ItemPlacement[columns * rows];
+            TryGetComponent(out _traumaDispatcher);
         }
 
         private void OnEnable()
@@ -366,6 +463,9 @@ namespace Hecton8.Inventory
             if (_anchorUnitVolumeM3.IsCreated)
                 _anchorUnitVolumeM3.Dispose(default);
 
+            if (_anchorUnitRadiationSv.IsCreated)
+                _anchorUnitRadiationSv.Dispose(default);
+
             if (_sortEntriesNative.IsCreated)
                 _sortEntriesNative.Dispose(default);
 
@@ -377,6 +477,12 @@ namespace Hecton8.Inventory
 
             if (_derivedMassVolumeScratch.IsCreated)
                 _derivedMassVolumeScratch.Dispose(default);
+
+            if (_radioactiveConversionAnchors.IsCreated)
+                _radioactiveConversionAnchors.Dispose(default);
+
+            if (_radioactiveHalfLifeCounters.IsCreated)
+                _radioactiveHalfLifeCounters.Dispose(default);
 
             if (_instance == this)
                 _instance = null;
@@ -408,17 +514,47 @@ namespace Hecton8.Inventory
 
         public int RemoveOneItem(int anchorX, int anchorY)
         {
+            return TryRemoveOneItemWithState(
+                anchorX,
+                anchorY,
+                out int itemHashId,
+                out _,
+                out _,
+                out _)
+                ? itemHashId
+                : 0;
+        }
+
+        public bool TryRemoveOneItemWithState(
+            int anchorX,
+            int anchorY,
+            out int itemHashId,
+            out ushort stateFlags,
+            out uint geneticsMask,
+            out ushort qualityMilli)
+        {
+            itemHashId = 0;
+            stateFlags = 0;
+            geneticsMask = 0u;
+            qualityMilli = 0;
             if (_grid == null || !_stackCounts.IsCreated)
-                return 0;
+                return false;
 
             int anchorIndex = AnchorIndex(anchorX, anchorY);
             if (!_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor descriptor))
-                return 0;
+                return false;
 
             int count = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
             int unlockedCount = Mathf.Max(0, count - GetReservedCraftCount(anchorIndex));
             if (unlockedCount <= 0)
-                return 0;
+                return false;
+
+            itemHashId = descriptor.HashId;
+            stateFlags = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
+            geneticsMask = _itemGeneticsWords.IsCreated ? _itemGeneticsWords[anchorIndex] : 0u;
+            qualityMilli = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
+                ? _qualityMilli[anchorIndex]
+                : DefaultQualityMilli;
 
             if (count > 1)
             {
@@ -439,7 +575,7 @@ namespace Hecton8.Inventory
 
             TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight);
             NotifyInventoryChanged();
-            return descriptor.HashId;
+            return true;
         }
 
         public bool ConsumeOneItem(int anchorX, int anchorY)
@@ -572,12 +708,19 @@ namespace Hecton8.Inventory
 
         public bool TryAddItemWithGenetics(int itemHashId, uint geneticsMask, int quantity = 1)
         {
-            return TryAddItemWithGeneticsInternal(itemHashId, quantity, geneticsMask, out _);
+            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, DefaultQualityMilli, out _);
+        }
+
+        public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, int quantity = 1)
+        {
+            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out _);
         }
 
         public void SlowTick()
         {
             ApplyInventoryEnvironmentalDegradation();
+            ApplyInventoryRadioactiveHalfLife();
+            DispatchInventoryRadiationTrauma();
         }
 
         public bool TryCopyAvailableItemCountsNonAlloc(
@@ -714,6 +857,7 @@ namespace Hecton8.Inventory
                     _craftLockedCounts[anchorIndex] = 0;
                     _anchorStateFlags[anchorIndex] = 0;
                     _itemStateFlags[anchorIndex] = 0;
+                    _itemGeneticsWords[anchorIndex] = 0u;
                     _qualityMilli[anchorIndex] = 0;
                     _lastUpdateUnixSeconds[anchorIndex] = 0;
                     ClearAnchorPhysicalMetadata(anchorIndex);
@@ -748,10 +892,15 @@ namespace Hecton8.Inventory
 
         public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor)
         {
+            return ScavengeAttempt(itemHashId, quantity, interactor, 0u, DefaultQualityMilli);
+        }
+
+        public ScavengeAttemptResult ScavengeAttempt(int itemHashId, int quantity, Transform interactor, uint geneticsMask, ushort qualityMilli)
+        {
             if (itemHashId == 0 || quantity <= 0)
                 return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
 
-            TryAddItemInternal(itemHashId, quantity, out int addedQuantity);
+            TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out int addedQuantity);
             return new ScavengeAttemptResult(quantity, addedQuantity);
         }
 
@@ -893,7 +1042,7 @@ namespace Hecton8.Inventory
                     _itemGeneticsWords[anchorIndex] = ResolveLoadedGeneticsMask(dto, i);
                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
-                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
+                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
                     ApplyLoadedBiologicalDecay(anchorIndex);
                     TotalWeight += descriptor.Weight * loadedCount;
                     continue;
@@ -907,7 +1056,7 @@ namespace Hecton8.Inventory
                     _itemGeneticsWords[anchorIndex] = ResolveLoadedGeneticsMask(dto, i);
                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
-                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
+                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
                     ApplyLoadedBiologicalDecay(anchorIndex);
                     TotalWeight += descriptor.Weight * loadedCount;
                 }
@@ -959,6 +1108,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_lastUpdateUnixSeconds);
             ClearNativeArray(_anchorUnitMassKg);
             ClearNativeArray(_anchorUnitVolumeM3);
+            ClearNativeArray(_anchorUnitRadiationSv);
             TotalWeight = 0f;
 
             for (int i = 0; i < count; i++)
@@ -1032,6 +1182,7 @@ namespace Hecton8.Inventory
                 SwapAnchorState(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_anchorUnitRadiationSv, sourceAnchorIndex, destinationAnchorIndex);
                 return;
             }
 
@@ -1044,6 +1195,7 @@ namespace Hecton8.Inventory
             MoveAnchorStateValue(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_anchorUnitVolumeM3, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_anchorUnitRadiationSv, sourceAnchorIndex, destinationAnchorIndex);
         }
 
         private static void SwapAnchorState<T>(NativeArray<T> values, int firstIndex, int secondIndex) where T : struct
@@ -1117,10 +1269,10 @@ namespace Hecton8.Inventory
 
         private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
         {
-            return TryAddItemWithGeneticsInternal(itemHashId, quantity, 0u, out addedQuantity);
+            return TryAddItemWithStateInternal(itemHashId, quantity, 0u, DefaultQualityMilli, out addedQuantity);
         }
 
-        private bool TryAddItemWithGeneticsInternal(int itemHashId, int quantity, uint geneticsMask, out int addedQuantity)
+        private bool TryAddItemWithStateInternal(int itemHashId, int quantity, uint geneticsMask, ushort qualityMilli, out int addedQuantity)
         {
             addedQuantity = 0;
             if (_grid == null ||
@@ -1133,11 +1285,12 @@ namespace Hecton8.Inventory
             }
 
             uint timestampNow = ResolveCurrentUnixTimestamp();
+            ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMilli);
 
             bool allAdded = true;
             for (int i = 0; i < quantity; i++)
             {
-                if (descriptor.Stackable && TryStackItemWithGenetics(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow, geneticsMask))
+                if (descriptor.Stackable && TryStackItemWithState(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow, geneticsMask, resolvedQualityMilli))
                 {
                     TotalWeight += descriptor.Weight;
                     addedQuantity++;
@@ -1150,9 +1303,9 @@ namespace Hecton8.Inventory
                     _stackCounts[anchorIndex] = 1;
                     _itemStateFlags[anchorIndex] = runtimeDescriptor.StateFlags;
                     _itemGeneticsWords[anchorIndex] = geneticsMask;
-                    _qualityMilli[anchorIndex] = DefaultQualityMilli;
+                    _qualityMilli[anchorIndex] = resolvedQualityMilli;
                     _lastUpdateUnixSeconds[anchorIndex] = (runtimeDescriptor.StateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
-                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
+                    SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
                     TotalWeight += descriptor.Weight;
                     addedQuantity++;
                 }
@@ -1171,7 +1324,7 @@ namespace Hecton8.Inventory
             return allAdded;
         }
 
-        private bool TryStackItemWithGenetics(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, uint geneticsMask)
+        private bool TryStackItemWithState(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, uint geneticsMask, ushort qualityMilli)
         {
             if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1)
                 return false;
@@ -1182,7 +1335,8 @@ namespace Hecton8.Inventory
                     continue;
 
                 if ((_itemStateFlags.IsCreated && _itemStateFlags[anchorIndex] != itemStateFlags) ||
-                    (_itemGeneticsWords.IsCreated && _itemGeneticsWords[anchorIndex] != geneticsMask))
+                    (_itemGeneticsWords.IsCreated && _itemGeneticsWords[anchorIndex] != geneticsMask) ||
+                    (_qualityMilli.IsCreated && NormalizeQualityMilli(_qualityMilli[anchorIndex]) != qualityMilli))
                 {
                     continue;
                 }
@@ -1192,8 +1346,7 @@ namespace Hecton8.Inventory
                     _stackCounts[anchorIndex]++;
                     _itemStateFlags[anchorIndex] = itemStateFlags;
                     _itemGeneticsWords[anchorIndex] = geneticsMask;
-                    if (_qualityMilli[anchorIndex] == 0)
-                        _qualityMilli[anchorIndex] = DefaultQualityMilli;
+                    _qualityMilli[anchorIndex] = qualityMilli;
                     if ((itemStateFlags & BiologicalItemStateMask) != 0 && _lastUpdateUnixSeconds[anchorIndex] == 0u)
                         _lastUpdateUnixSeconds[anchorIndex] = timestampNow;
                     return true;
@@ -1399,6 +1552,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_lastUpdateUnixSeconds);
             ClearNativeArray(_anchorUnitMassKg);
             ClearNativeArray(_anchorUnitVolumeM3);
+            ClearNativeArray(_anchorUnitRadiationSv);
             TotalWeight = 0f;
 
             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
@@ -1463,8 +1617,26 @@ namespace Hecton8.Inventory
         private void NotifyInventoryChanged()
         {
             RefreshDerivedMassAndSurvivalLoad();
+            PublishEncumbranceChanged();
             InventoryVersion++;
             InventoryChanged?.Invoke();
+        }
+
+        private void PublishEncumbranceChanged()
+        {
+            float carryCapacityKg = ResolveCarryCapacityKilograms();
+            InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
+                this,
+                TotalMassKg,
+                carryCapacityKg,
+                math.saturate(TotalMassKg / carryCapacityKg)));
+        }
+
+        private float ResolveCarryCapacityKilograms()
+        {
+            return survival != null && survival.Stats != null
+                ? math.max(0.01f, survival.Stats.CarryCapacityKg)
+                : 200f;
         }
 
         private void TryRegisterSlowTick()
@@ -1525,10 +1697,12 @@ namespace Hecton8.Inventory
                 !_stackCounts.IsCreated ||
                 !_anchorUnitMassKg.IsCreated ||
                 !_anchorUnitVolumeM3.IsCreated ||
+                !_anchorUnitRadiationSv.IsCreated ||
                 !_derivedMassVolumeScratch.IsCreated)
             {
                 TotalMassKg = 0f;
                 TotalVolumeM3 = 0f;
+                TotalRadiationSv = 0f;
             }
             else
             {
@@ -1539,13 +1713,15 @@ namespace Hecton8.Inventory
                     StackCounts = _stackCounts,
                     AnchorUnitMassKg = _anchorUnitMassKg,
                     AnchorUnitVolumeM3 = _anchorUnitVolumeM3,
+                    AnchorUnitRadiationSv = _anchorUnitRadiationSv,
                     Totals = _derivedMassVolumeScratch
                 }.Schedule();
                 handle.Complete();
 
-                float2 totals = _derivedMassVolumeScratch[0];
+                float3 totals = _derivedMassVolumeScratch[0];
                 TotalMassKg = totals.x;
                 TotalVolumeM3 = totals.y;
+                TotalRadiationSv = totals.z;
             }
 
             if (survival != null)
@@ -1592,6 +1768,164 @@ namespace Hecton8.Inventory
                 _lastUpdateUnixSeconds[anchorIndex] = nowTimestamp;
 
             return changed;
+        }
+
+        private void ApplyInventoryRadioactiveHalfLife()
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_qualityMilli.IsCreated ||
+                !_anchorUnitRadiationSv.IsCreated ||
+                !_radioactiveConversionAnchors.IsCreated ||
+                !_radioactiveHalfLifeCounters.IsCreated)
+            {
+                return;
+            }
+
+            // ZERO-GC SYNC JOB: bounded inventory SlowTick kernel; synchronous execution avoids cross-frame SOA mutation races.
+            new InventoryRadioactiveHalfLifeJob
+            {
+                AnchorHashIds = _grid.AnchorHashIds,
+                StackCounts = _stackCounts,
+                AnchorUnitRadiationSv = _anchorUnitRadiationSv,
+                ItemStateFlags = _itemStateFlags,
+                QualityMilli = _qualityMilli,
+                ConversionAnchorIndices = _radioactiveConversionAnchors,
+                Counters = _radioactiveHalfLifeCounters,
+                DeltaSeconds = SlowTickIntervalSeconds,
+                BaseHalfLifeSeconds = RadioactiveHalfLifeBaseSeconds,
+                DefaultQuality = DefaultQualityMilli,
+                RadioactiveMask = RadioactiveItemStateMask,
+                DegradedMask = DegradedItemStateMask,
+                DegradedThreshold = DegradedQualityMilliThreshold
+            }.Run();
+
+            if (_radioactiveHalfLifeCounters.Length < 2 || _radioactiveHalfLifeCounters[1] == 0)
+                return;
+
+            int conversionCount = math.clamp(_radioactiveHalfLifeCounters[0], 0, _radioactiveConversionAnchors.Length);
+            for (int i = 0; i < conversionCount; i++)
+                TryConvertRadioactiveAnchorToDepletedLead(_radioactiveConversionAnchors[i]);
+
+            NotifyInventoryChanged();
+        }
+
+        private void DispatchInventoryRadiationTrauma()
+        {
+            float threshold = ResolveInventoryRadiationThresholdSv();
+            if (!(TotalRadiationSv > threshold))
+                return;
+
+            TraumaDispatcher dispatcher = ResolveTraumaDispatcher();
+            if (dispatcher == null)
+                return;
+
+            float excess = TotalRadiationSv - threshold;
+            float hazard01 = math.saturate(excess / math.max(0.01f, threshold));
+            if (hazard01 <= 0f)
+                return;
+
+            DamageSignal signal = new DamageSignal
+            {
+                magnitude = hazard01,
+                localPoint = float3.zero,
+                damageType = (uint)DamageTypeMask.Radioactive,
+                integrityDelta = (byte)math.clamp((int)math.round(hazard01 * byte.MaxValue), 0, byte.MaxValue),
+                depth = ResolveInventoryCarrierDepthMeters(),
+                sourceID = DamageSourceIds.InventoryRadiation
+            };
+
+            dispatcher.OnClarityChanged(0f, hazard01, signal);
+            dispatcher.OnTraumaThresholdCrossed(ResolveRadiationTraumaLevel(hazard01));
+        }
+
+        private bool TryConvertRadioactiveAnchorToDepletedLead(int anchorIndex)
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_itemStateFlags.IsCreated ||
+                !_qualityMilli.IsCreated ||
+                !_lastUpdateUnixSeconds.IsCreated ||
+                (uint)anchorIndex >= (uint)_stackCounts.Length ||
+                !_grid.TryGetAnchorDescriptor(anchorIndex, out InventoryGrid.InventoryItemDescriptor sourceDescriptor) ||
+                !TryBuildDescriptor(_DepletedLeadHashId, out InventoryGrid.InventoryItemDescriptor depletedDescriptor) ||
+                !TryGetRuntimeDescriptor(depletedDescriptor.HashId, out ItemCatalog.ItemRuntimeDescriptor depletedRuntimeDescriptor))
+            {
+                return false;
+            }
+
+            int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            int anchorX = anchorIndex % columns;
+            int anchorY = anchorIndex / columns;
+            float sourceWeight = sourceDescriptor.Weight * stackCount;
+
+            _grid.RemoveAnchorAt(anchorIndex);
+            if (!_grid.PlaceAt(in depletedDescriptor, anchorX, anchorY))
+            {
+                _grid.PlaceAt(in sourceDescriptor, anchorX, anchorY);
+                SyncAnchorPhysicalMetadata(anchorIndex, sourceDescriptor.HashId);
+                return false;
+            }
+
+            ushort convertedStackCount = (ushort)Mathf.Clamp(stackCount, 1, depletedDescriptor.MaxStack);
+            _stackCounts[anchorIndex] = convertedStackCount;
+            _craftLockedCounts[anchorIndex] = 0;
+            _anchorStateFlags[anchorIndex] = 0;
+            _itemStateFlags[anchorIndex] = depletedRuntimeDescriptor.StateFlags;
+            _itemGeneticsWords[anchorIndex] = 0u;
+            _qualityMilli[anchorIndex] = DefaultQualityMilli;
+            _lastUpdateUnixSeconds[anchorIndex] = 0u;
+            SetAnchorPhysicalMetadata(
+                anchorIndex,
+                depletedRuntimeDescriptor.MassKg,
+                depletedRuntimeDescriptor.VolumeM3,
+                depletedRuntimeDescriptor.RadiationSvPerSecond);
+            TotalWeight = Mathf.Max(0f, TotalWeight - sourceWeight + depletedDescriptor.Weight * convertedStackCount);
+            return true;
+        }
+
+        private TraumaDispatcher ResolveTraumaDispatcher()
+        {
+            if (_traumaDispatcher != null)
+                return _traumaDispatcher;
+
+            if (survival != null)
+                survival.TryGetComponent(out _traumaDispatcher);
+
+            if (_traumaDispatcher == null)
+                TryGetComponent(out _traumaDispatcher);
+
+            return _traumaDispatcher;
+        }
+
+        private float ResolveInventoryRadiationThresholdSv()
+        {
+            if (survival != null && survival.Stats != null)
+                return math.max(0.01f, survival.Stats.RadiationThreshold);
+
+            return math.max(0.01f, radiationTraumaThresholdSv);
+        }
+
+        private static float ResolveInventoryCarrierDepthMeters()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
+            return movement != null ? math.max(0f, movement.CurrentDepth) : 0f;
+        }
+
+        private static TraumaLevel ResolveRadiationTraumaLevel(float hazard01)
+        {
+            if (hazard01 >= 0.8f)
+                return TraumaLevel.Catastrophic;
+
+            if (hazard01 >= 0.55f)
+                return TraumaLevel.Critical;
+
+            if (hazard01 >= 0.3f)
+                return TraumaLevel.Significant;
+
+            return TraumaLevel.Minor;
         }
 
         private static bool ResolveInventoryCarrierSubmergedState()
@@ -1711,6 +2045,7 @@ namespace Hecton8.Inventory
                 _craftLockedCounts[anchorIndex] = 0;
                 _anchorStateFlags[anchorIndex] = 0;
                 _itemStateFlags[anchorIndex] = 0;
+                _itemGeneticsWords[anchorIndex] = 0u;
                 _qualityMilli[anchorIndex] = 0;
                 _lastUpdateUnixSeconds[anchorIndex] = 0;
                 ClearAnchorPhysicalMetadata(anchorIndex);
@@ -1743,35 +2078,41 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
+            SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
         }
 
-        private void SetAnchorPhysicalMetadata(int anchorIndex, float massKg, float volumeM3)
+        private void SetAnchorPhysicalMetadata(int anchorIndex, float massKg, float volumeM3, float radiationSv)
         {
             if (!_anchorUnitMassKg.IsCreated ||
                 !_anchorUnitVolumeM3.IsCreated ||
+                !_anchorUnitRadiationSv.IsCreated ||
                 (uint)anchorIndex >= (uint)_anchorUnitMassKg.Length ||
-                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length)
+                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length ||
+                (uint)anchorIndex >= (uint)_anchorUnitRadiationSv.Length)
             {
                 return;
             }
 
             _anchorUnitMassKg[anchorIndex] = Mathf.Max(0f, massKg);
             _anchorUnitVolumeM3[anchorIndex] = Mathf.Max(0f, volumeM3);
+            _anchorUnitRadiationSv[anchorIndex] = Mathf.Max(0f, radiationSv);
         }
 
         private void ClearAnchorPhysicalMetadata(int anchorIndex)
         {
             if (!_anchorUnitMassKg.IsCreated ||
                 !_anchorUnitVolumeM3.IsCreated ||
+                !_anchorUnitRadiationSv.IsCreated ||
                 (uint)anchorIndex >= (uint)_anchorUnitMassKg.Length ||
-                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length)
+                (uint)anchorIndex >= (uint)_anchorUnitVolumeM3.Length ||
+                (uint)anchorIndex >= (uint)_anchorUnitRadiationSv.Length)
             {
                 return;
             }
 
             _anchorUnitMassKg[anchorIndex] = 0f;
             _anchorUnitVolumeM3[anchorIndex] = 0f;
+            _anchorUnitRadiationSv[anchorIndex] = 0f;
         }
 
         private static uint ResolveCurrentUnixTimestamp()
@@ -1789,6 +2130,14 @@ namespace Hecton8.Inventory
                 return DefaultQualityMilli;
 
             return dto.qualityMilli[index] > 0 ? dto.qualityMilli[index] : DefaultQualityMilli;
+        }
+
+        private static ushort NormalizeQualityMilli(ushort qualityMilli)
+        {
+            if (qualityMilli == 0)
+                return DefaultQualityMilli;
+
+            return (ushort)Mathf.Clamp((int)qualityMilli, 0, DefaultQualityMilli);
         }
 
         private static uint ResolveLoadedTimestamp(InventoryDTO dto, int index)

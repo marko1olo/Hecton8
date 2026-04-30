@@ -60,6 +60,8 @@ namespace Hecton8.EditorTools
             public bool ThermophilicModuleGrowth;
             public float ThermalActivationTemperatureCelsius;
             public float ThermalActivationDwellSeconds;
+            public bool MatureSporeAcousticEmitter;
+            public float MatureSporeAcousticVolume;
         }
 
         [MenuItem("Hecton/Authoring/Rebuild Flora Foundation", priority = 183)]
@@ -132,7 +134,7 @@ namespace Hecton8.EditorTools
 
                 Coral("BeamAnemone", "flora.beam_anemone", "Beam Anemone", 5.2f, 780f, new Vector3(0.95f, 1.10f, 0.95f), new Color(0.22f, 0.74f, 0.96f, 0.60f), 0.22f, ElectrolyteSaltsItemPath, FloraDataTemplate.VulnerabilityMask.Drill, FloraDataTemplate.AudioMaterialId.Brittle, FloraDataTemplate.AttachmentSurface.Metal, HectonMapMagicVegetationBridge.VegetationSemanticType.ColonySupportBeam, HectonMapMagicVegetationBridge.VegetationBiomeLayer.ColonyGraveyard),
                 Coral("IronCoral", "flora.iron_coral", "Iron Coral", 9.8f, 920f, new Vector3(1.22f, 1.35f, 1.22f), new Color(0.24f, 0.64f, 0.76f, 0.36f), 0.26f, IronCompositeItemPath, FloraDataTemplate.VulnerabilityMask.Drill, FloraDataTemplate.AudioMaterialId.Metallic, FloraDataTemplate.AttachmentSurface.Metal, HectonMapMagicVegetationBridge.VegetationSemanticType.ColonyHullPlating, HectonMapMagicVegetationBridge.VegetationBiomeLayer.ColonyGraveyard, MetallicHarvestTemplatePath),
-                Coral("SporeCannon", "flora.spore_cannon", "Spore Cannon", 6.4f, 640f, new Vector3(0.88f, 1.42f, 0.88f), new Color(0.62f, 0.90f, 0.22f, 0.72f), 0.74f, MembraneTissueItemPath, FloraDataTemplate.VulnerabilityMask.Cut | FloraDataTemplate.VulnerabilityMask.Drill),
+                Coral("SporeCannon", "flora.spore_cannon", "Spore Cannon", 6.4f, 640f, new Vector3(0.88f, 1.42f, 0.88f), new Color(0.62f, 0.90f, 0.22f, 0.72f), 0.74f, MembraneTissueItemPath, FloraDataTemplate.VulnerabilityMask.Cut | FloraDataTemplate.VulnerabilityMask.Drill, matureSporeAcousticEmitter: true, matureSporeAcousticVolume: 0.74f),
                 Coral("AnchorCoral", "flora.anchor_coral", "Anchor Coral", 8.6f, 860f, new Vector3(1.14f, 1.28f, 1.14f), new Color(0.94f, 0.28f, 0.18f, 0.32f), 0.18f, EnzymeCoralItemPath, FloraDataTemplate.VulnerabilityMask.Drill),
                 Coral("BoltCoral", "flora.bolt_coral", "Bolt Coral", 9.2f, 880f, new Vector3(1.08f, 1.22f, 1.08f), new Color(0.76f, 0.62f, 0.18f, 0.28f), 0.20f, IronCompositeItemPath, FloraDataTemplate.VulnerabilityMask.Drill, FloraDataTemplate.AudioMaterialId.Metallic, FloraDataTemplate.AttachmentSurface.Rock, HectonMapMagicVegetationBridge.VegetationSemanticType.DeadZoneMassiveStructure, HectonMapMagicVegetationBridge.VegetationBiomeLayer.DeadZone, MetallicHarvestTemplatePath),
                 Coral("RedGlassCoral", "flora.red_glass_coral", "Red Glass Coral", 7.8f, 810f, new Vector3(1.02f, 1.18f, 1.02f), new Color(0.96f, 0.36f, 0.32f, 0.46f), 0.30f, EnzymeCoralItemPath, FloraDataTemplate.VulnerabilityMask.Drill),
@@ -265,7 +267,9 @@ namespace Hecton8.EditorTools
             FloraDataTemplate.AttachmentSurface attachmentSurface = FloraDataTemplate.AttachmentSurface.Rock,
             HectonMapMagicVegetationBridge.VegetationSemanticType semanticType = HectonMapMagicVegetationBridge.VegetationSemanticType.OrganicGrass,
             HectonMapMagicVegetationBridge.VegetationBiomeLayer biomeLayer = HectonMapMagicVegetationBridge.VegetationBiomeLayer.ColonyGraveyard,
-            string harvestTemplatePath = CoralHarvestTemplatePath)
+            string harvestTemplatePath = CoralHarvestTemplatePath,
+            bool matureSporeAcousticEmitter = false,
+            float matureSporeAcousticVolume = 0.65f)
         {
             return new FloraSpec
             {
@@ -294,7 +298,9 @@ namespace Hecton8.EditorTools
                 ModuleInfectionPulseFrequency = 0f,
                 ThermophilicModuleGrowth = false,
                 ThermalActivationTemperatureCelsius = 100f,
-                ThermalActivationDwellSeconds = 300f
+                ThermalActivationDwellSeconds = 300f,
+                MatureSporeAcousticEmitter = matureSporeAcousticEmitter,
+                MatureSporeAcousticVolume = matureSporeAcousticVolume
             };
         }
 
@@ -401,6 +407,9 @@ namespace Hecton8.EditorTools
             SetVector3(serializedObject, "breakVfxSocketLocal", breakSocket);
             SetColor(serializedObject, "bioluminescenceColor", spec.BiolumColor);
             SetFloat(serializedObject, "pulseFrequency", spec.PulseFrequency);
+            SetBool(serializedObject, "matureSporeAcousticEmitter", spec.MatureSporeAcousticEmitter);
+            SetObject(serializedObject, "matureSporeAcousticClip", null);
+            SetFloat(serializedObject, "matureSporeAcousticVolume", spec.MatureSporeAcousticVolume > 0f ? spec.MatureSporeAcousticVolume : 0.65f);
             SetFloat(serializedObject, "swaySpeed", ResolveDefaultSwaySpeed(spec.Category));
             SetFloat(serializedObject, "bendAmplitude", ResolveDefaultBendAmplitude(spec.Category));
             SetBool(serializedObject, "parasiticToModules", spec.ParasiticToModules);

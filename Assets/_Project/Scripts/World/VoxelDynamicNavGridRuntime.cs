@@ -47,12 +47,16 @@ namespace Hecton8.World
         private static readonly List<int> _routeOpenSetScratch = new List<int>(128);
         // COLD ALLOC: List<int>(128) - reusable portal route reconstruction scratch - owner: VoxelDynamicNavGridRuntime
         private static readonly List<int> _routePathScratch = new List<int>(128);
+        // COLD ALLOC: List<int>(16) - record keys pending safe native-container disposal after dynamic jobs complete - owner: VoxelDynamicNavGridRuntime
+        private static readonly List<int> _recordRemovalScratch = new List<int>(16);
         // COLD ALLOC: Dictionary<int,ObstacleRegistration>(64) - registered habitat obstacle collider sources - owner: VoxelDynamicNavGridRuntime
         private static readonly Dictionary<int, ObstacleRegistration> _registeredObstacles = new Dictionary<int, ObstacleRegistration>(64);
         private static NativeQueue<DirtyVolumeRequest> _dirtyVolumes;
         private static NativeQueue<DynamicObstacleClearRequest> _pendingObstacleClears;
-        private static NativeList<DynamicObstacleClearRequest> _pendingObstacleClearSpill;
+        private static VoxelDynamicNavGridRuntimeLifecycle _lifecycleOwner;
         private static bool _portalGraphDirty = true;
+        private static bool _teardownPending;
+        private static bool _clearRuntimeContainersWhenTeardownCompletes;
 
         internal enum HybridNavigationMode : byte
         {
@@ -433,6 +437,7 @@ namespace Hecton8.World
             public NativeArray<NavObstaclePrimitive> PendingObstacleSnapshot;
             public JobHandle PendingDynamicUpdateHandle;
             public bool HasPendingDynamicUpdate;
+            public bool PendingRemoval;
             public int3 PendingRegionMin;
             public int3 PendingRegionMax;
             public PortalNode[] Portals = System.Array.Empty<PortalNode>();
@@ -441,8 +446,18 @@ namespace Hecton8.World
             public int[] FaceQueueScratch = System.Array.Empty<int>();
             public int FaceVisitStamp;
 
-            public void Dispose()
+            public bool TryDisposeCompleted()
             {
+                if (HasPendingDynamicUpdate)
+                {
+                    if (!PendingDynamicUpdateHandle.IsCompleted)
+                        return false;
+
+                    PendingDynamicUpdateHandle.Complete();
+                    PendingDynamicUpdateHandle = default;
+                    HasPendingDynamicUpdate = false;
+                }
+
                 if (Current.IsCreated)
                     Current.Dispose();
 
@@ -473,6 +488,7 @@ namespace Hecton8.World
                 PendingObstacleSnapshot = default;
                 PendingDynamicUpdateHandle = default;
                 HasPendingDynamicUpdate = false;
+                PendingRemoval = false;
                 PendingRegionMin = int3.zero;
                 PendingRegionMax = int3.zero;
                 IsDirty = false;
@@ -484,6 +500,7 @@ namespace Hecton8.World
                 CellSize = 0f;
                 PortalCount = 0;
                 FaceVisitStamp = 0;
+                return true;
             }
         }
 
@@ -542,6 +559,18 @@ namespace Hecton8.World
             EnsureInitialized();
             int volumeInstanceId = GetStableVolumeEntityId(volume);
             VolumeRecord record = GetOrCreateRecord(volumeInstanceId);
+            if (record.HasPendingDynamicUpdate)
+            {
+                CompletePendingDynamicObstacleUpdates();
+                if (!_records.TryGetValue(volumeInstanceId, out record) || record.HasPendingDynamicUpdate)
+                {
+                    if (record != null)
+                        record.IsDirty = true;
+
+                    return false;
+                }
+            }
+
             bool consumedDirtyMarker = ConsumeDirtyMarker(volumeInstanceId, runtimeStamp);
             bool dimensionsChanged = !math.all(record.Dimensions == dimensions);
             bool originChanged = math.lengthsq(record.Origin - origin) > 0.0001f;
@@ -580,6 +609,7 @@ namespace Hecton8.World
             EnsureBuffer(ref record.BaseNext, pointCount);
             EnsureBuffer(ref record.CurrentDistance, pointCount);
             EnsureBuffer(ref record.NextDistance, pointCount);
+            EnsurePortalWorkCapacity(record);
             record.IsPureVoid = false;
 
             outputBuffer = record.Next;
@@ -617,6 +647,7 @@ namespace Hecton8.World
             }
 
             RebuildPortals(record);
+            EnsurePortalGraphScratchCapacityForRecords();
             _portalGraphDirty = true;
         }
 
@@ -739,6 +770,9 @@ namespace Hecton8.World
                     RebuildPortals(record);
                 _portalGraphDirty = true;
             }
+
+            if (_teardownPending)
+                DisposePendingCompletedRecords(false);
         }
 
         internal static void SchedulePendingDynamicObstacleUpdates()
@@ -749,13 +783,7 @@ namespace Hecton8.World
             if (HasPendingDynamicObstacleUpdate())
                 return;
 
-            _pendingObstacleClearSpill.Clear();
-            while (_pendingObstacleClears.TryDequeue(out DynamicObstacleClearRequest request))
-            {
-                _pendingObstacleClearSpill.Add(request);
-            }
-
-            if (_pendingObstacleClearSpill.Length <= 0)
+            if (!TryDequeueValidDynamicClearRequest(out DynamicObstacleClearRequest clearRequest))
                 return;
 
             Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
@@ -774,7 +802,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (!TryResolveDynamicUpdateRegion(record, _pendingObstacleClearSpill, out int3 regionMin, out int3 regionMax))
+                if (!TryResolveDynamicUpdateRegion(record, clearRequest, out int3 regionMin, out int3 regionMax))
                     continue;
 
                 NativeArray<byte>.Copy(record.Current, record.Next, record.Current.Length);
@@ -826,6 +854,25 @@ namespace Hecton8.World
                 VolumeRecord record = enumerator.Current.Value;
                 if (record != null && record.HasPendingDynamicUpdate)
                     return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryDequeueValidDynamicClearRequest(out DynamicObstacleClearRequest request)
+        {
+            request = default;
+            while (_pendingObstacleClears.TryDequeue(out DynamicObstacleClearRequest candidate))
+            {
+                if (candidate.Extents.x <= 0.0001f ||
+                    candidate.Extents.y <= 0.0001f ||
+                    candidate.Extents.z <= 0.0001f)
+                {
+                    continue;
+                }
+
+                request = candidate;
+                return true;
             }
 
             return false;
@@ -1090,27 +1137,104 @@ namespace Hecton8.World
             int volumeInstanceId = GetStableVolumeEntityId(volume);
             if (_records.TryGetValue(volumeInstanceId, out VolumeRecord record))
             {
-                record.Dispose();
-                _records.Remove(volumeInstanceId);
-                _portalGraphDirty = true;
+                record.PendingRemoval = true;
+                if (record.TryDisposeCompleted())
+                {
+                    _records.Remove(volumeInstanceId);
+                    _portalGraphDirty = true;
+                    return;
+                }
+
+                _teardownPending = true;
             }
         }
 
         internal static void DisposeAll()
         {
-            foreach (KeyValuePair<int, VolumeRecord> pair in _records)
+            if (!DisposePendingCompletedRecords(true))
             {
-                pair.Value.Dispose();
+                _clearRuntimeContainersWhenTeardownCompletes = true;
+                return;
             }
 
+            ClearRuntimeContainers();
+        }
+
+        internal static void DisposeCompletedTeardownRecords()
+        {
+            DisposePendingCompletedRecords(false);
+        }
+
+        internal static void ClearLifecycleOwner(VoxelDynamicNavGridRuntimeLifecycle owner)
+        {
+            if (_lifecycleOwner == owner)
+                _lifecycleOwner = null;
+        }
+
+        private static bool DisposePendingCompletedRecords(bool markAllRecordsForRemoval)
+        {
+            bool blockedByPendingJob = false;
+            _recordRemovalScratch.Clear();
+
+            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                KeyValuePair<int, VolumeRecord> pair = enumerator.Current;
+                VolumeRecord record = pair.Value;
+                if (record == null)
+                {
+                    _recordRemovalScratch.Add(pair.Key);
+                    continue;
+                }
+
+                if (markAllRecordsForRemoval)
+                    record.PendingRemoval = true;
+
+                if (!record.PendingRemoval)
+                    continue;
+
+                if (record.TryDisposeCompleted())
+                {
+                    _recordRemovalScratch.Add(pair.Key);
+                    continue;
+                }
+
+                blockedByPendingJob = true;
+            }
+
+            for (int i = 0; i < _recordRemovalScratch.Count; i++)
+            {
+                _records.Remove(_recordRemovalScratch[i]);
+            }
+
+            _recordRemovalScratch.Clear();
+            _teardownPending = blockedByPendingJob;
+            if (!blockedByPendingJob)
+            {
+                _portalGraphDirty = true;
+                if (_clearRuntimeContainersWhenTeardownCompletes)
+                {
+                    _clearRuntimeContainersWhenTeardownCompletes = false;
+                    ClearRuntimeContainers();
+                }
+            }
+
+            return !blockedByPendingJob;
+        }
+
+        private static void ClearRuntimeContainers()
+        {
             _records.Clear();
             _dirtyRequestSpill.Clear();
             _portalGraphNodes.Clear();
             _routeNodeScratch.Clear();
             _routeOpenSetScratch.Clear();
             _routePathScratch.Clear();
+            _recordRemovalScratch.Clear();
             _registeredObstacles.Clear();
             _portalGraphDirty = true;
+            _teardownPending = false;
+            _clearRuntimeContainersWhenTeardownCompletes = false;
             if (_dirtyVolumes.IsCreated)
             {
                 _dirtyVolumes.Dispose();
@@ -1122,24 +1246,29 @@ namespace Hecton8.World
                 _pendingObstacleClears.Dispose();
                 _pendingObstacleClears = default;
             }
-
-            if (_pendingObstacleClearSpill.IsCreated)
-            {
-                _pendingObstacleClearSpill.Dispose();
-                _pendingObstacleClearSpill = default;
-            }
         }
 
         private static void EnsureInitialized()
         {
+            EnsureLifecycleOwner();
+            if (_teardownPending)
+                DisposePendingCompletedRecords(false);
+
             if (!_dirtyVolumes.IsCreated)
                 _dirtyVolumes = new NativeQueue<DirtyVolumeRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirtyVolumeRequest>[32] - dirty voxel volume rebuild requests - owner: VoxelDynamicNavGridRuntime
 
             if (!_pendingObstacleClears.IsCreated)
                 _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
+        }
 
-            if (!_pendingObstacleClearSpill.IsCreated)
-                _pendingObstacleClearSpill = new NativeList<DynamicObstacleClearRequest>(16, Allocator.Persistent); // COLD ALLOC: NativeList<DynamicObstacleClearRequest>[16] - drained destroyed-organic obstacle clear queue prior to Burst scheduling - owner: VoxelDynamicNavGridRuntime
+        private static void EnsureLifecycleOwner()
+        {
+            if (_lifecycleOwner != null || !Application.isPlaying)
+                return;
+
+            GameObject lifecycleRoot = new GameObject("[VoxelDynamicNavGridRuntime]"); // COLD ALLOC: GameObject[1] - static navgrid native-container lifecycle owner - owner: VoxelDynamicNavGridRuntime
+            _lifecycleOwner = lifecycleRoot.AddComponent<VoxelDynamicNavGridRuntimeLifecycle>();
+            Object.DontDestroyOnLoad(lifecycleRoot);
         }
 
         internal static void MarkAllVolumesDirty()
@@ -1525,45 +1654,41 @@ namespace Hecton8.World
 
         private static bool TryResolveDynamicUpdateRegion(
             VolumeRecord record,
-            NativeList<DynamicObstacleClearRequest> requests,
+            DynamicObstacleClearRequest request,
             out int3 regionMin,
             out int3 regionMax)
         {
             regionMin = new int3(int.MaxValue, int.MaxValue, int.MaxValue);
             regionMax = new int3(int.MinValue, int.MinValue, int.MinValue);
-            if (record == null || !requests.IsCreated || requests.Length <= 0)
+            if (record == null ||
+                request.Extents.x <= 0.0001f ||
+                request.Extents.y <= 0.0001f ||
+                request.Extents.z <= 0.0001f)
+            {
                 return false;
+            }
 
             int chunkCells = math.max(1, (int)math.ceil(DynamicObstacleChunkSizeMeters / math.max(record.CellSize, 0.0001f)));
             int clearanceCells = ResolveClearanceRadiusCells(record.CellSize);
-            bool found = false;
-            for (int i = 0; i < requests.Length; i++)
-            {
-                DynamicObstacleClearRequest request = requests[i];
-                float3 requestMinWorld = request.Center - request.Extents;
-                float3 requestMaxWorld = request.Center + request.Extents;
-                if (!BoundsOverlapRecord(record, requestMinWorld, requestMaxWorld))
-                    continue;
+            float3 requestMinWorld = request.Center - request.Extents;
+            float3 requestMaxWorld = request.Center + request.Extents;
+            if (!BoundsOverlapRecord(record, requestMinWorld, requestMaxWorld))
+                return false;
 
-                int3 requestMinVoxel = WorldToVoxel(record, requestMinWorld);
-                int3 requestMaxVoxel = WorldToVoxel(record, requestMaxWorld);
-                int3 chunkMin = new int3(
-                    (requestMinVoxel.x / chunkCells) * chunkCells,
-                    (requestMinVoxel.y / chunkCells) * chunkCells,
-                    (requestMinVoxel.z / chunkCells) * chunkCells);
-                int3 chunkMax = new int3(
-                    (((requestMaxVoxel.x / chunkCells) + 1) * chunkCells) - 1,
-                    (((requestMaxVoxel.y / chunkCells) + 1) * chunkCells) - 1,
-                    (((requestMaxVoxel.z / chunkCells) + 1) * chunkCells) - 1);
+            int3 requestMinVoxel = WorldToVoxel(record, requestMinWorld);
+            int3 requestMaxVoxel = WorldToVoxel(record, requestMaxWorld);
+            int3 chunkMin = new int3(
+                (requestMinVoxel.x / chunkCells) * chunkCells,
+                (requestMinVoxel.y / chunkCells) * chunkCells,
+                (requestMinVoxel.z / chunkCells) * chunkCells);
+            int3 chunkMax = new int3(
+                (((requestMaxVoxel.x / chunkCells) + 1) * chunkCells) - 1,
+                (((requestMaxVoxel.y / chunkCells) + 1) * chunkCells) - 1,
+                (((requestMaxVoxel.z / chunkCells) + 1) * chunkCells) - 1);
 
-                chunkMin = math.max(int3.zero, chunkMin - clearanceCells);
-                chunkMax = math.min(record.Dimensions - 1, chunkMax + clearanceCells);
-                regionMin = math.min(regionMin, chunkMin);
-                regionMax = math.max(regionMax, chunkMax);
-                found = true;
-            }
-
-            return found;
+            regionMin = math.max(int3.zero, chunkMin - clearanceCells);
+            regionMax = math.min(record.Dimensions - 1, chunkMax + clearanceCells);
+            return math.all(regionMin <= regionMax);
         }
 
         private static int3 WorldToVoxel(VolumeRecord record, float3 worldPosition)
@@ -1710,8 +1835,10 @@ namespace Hecton8.World
 
         private static void RebuildPortals(VolumeRecord record)
         {
-            if (record == null ||
-                !record.Current.IsCreated ||
+            if (record == null)
+                return;
+
+            if (!record.Current.IsCreated ||
                 record.Dimensions.x <= 1 ||
                 record.Dimensions.y <= 1 ||
                 record.Dimensions.z <= 1)
@@ -1720,11 +1847,8 @@ namespace Hecton8.World
                 return;
             }
 
-            int maxFaceCells = math.max(
-                record.Dimensions.x * record.Dimensions.y,
-                math.max(record.Dimensions.x * record.Dimensions.z, record.Dimensions.y * record.Dimensions.z));
-            EnsureManagedBuffer(ref record.FaceVisitScratch, maxFaceCells);
-            EnsureManagedBuffer(ref record.FaceQueueScratch, maxFaceCells);
+            int maxFaceCells = ResolveMaxFaceCells(record.Dimensions);
+            EnsurePortalWorkCapacity(record);
             record.PortalCount = 0;
 
             for (byte face = 0; face < FaceCount; face++)
@@ -2060,6 +2184,56 @@ namespace Hecton8.World
             buffer = new T[length];
         }
 
+        private static void EnsurePortalWorkCapacity(VolumeRecord record)
+        {
+            if (record == null ||
+                record.Dimensions.x <= 1 ||
+                record.Dimensions.y <= 1 ||
+                record.Dimensions.z <= 1)
+            {
+                return;
+            }
+
+            int maxFaceCells = ResolveMaxFaceCells(record.Dimensions);
+            EnsureManagedBuffer(ref record.FaceVisitScratch, maxFaceCells);
+            EnsureManagedBuffer(ref record.FaceQueueScratch, maxFaceCells);
+            EnsurePortalCapacity(record, maxFaceCells * FaceCount);
+        }
+
+        private static void EnsurePortalGraphScratchCapacityForRecords()
+        {
+            int requiredCapacity = 0;
+            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                VolumeRecord record = enumerator.Current.Value;
+                if (record?.Portals == null)
+                    continue;
+
+                requiredCapacity += record.Portals.Length;
+            }
+
+            EnsureListCapacity(_portalGraphNodes, requiredCapacity);
+            EnsureListCapacity(_routeNodeScratch, requiredCapacity);
+            EnsureListCapacity(_routeOpenSetScratch, requiredCapacity);
+            EnsureListCapacity(_routePathScratch, requiredCapacity);
+        }
+
+        private static void EnsureListCapacity<T>(List<T> list, int requiredCapacity)
+        {
+            if (list == null || requiredCapacity <= 0 || list.Capacity >= requiredCapacity)
+                return;
+
+            list.Capacity = requiredCapacity;
+        }
+
+        private static int ResolveMaxFaceCells(int3 dimensions)
+        {
+            return math.max(
+                dimensions.x * dimensions.y,
+                math.max(dimensions.x * dimensions.z, dimensions.y * dimensions.z));
+        }
+
         private static void EnsurePortalCapacity(VolumeRecord record, int requiredCount)
         {
             if (record.Portals != null && record.Portals.Length >= requiredCount)
@@ -2081,4 +2255,5 @@ namespace Hecton8.World
             }
         }
     }
+
 }

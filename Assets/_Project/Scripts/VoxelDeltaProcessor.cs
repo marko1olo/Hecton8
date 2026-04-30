@@ -45,6 +45,8 @@ namespace Hecton8.Caves
         private const float SphereVolumeFactor = 4f / 3f * math.PI;
         private const byte DefaultMaterialId = 0;
         private const byte DeltaModeAdditive = 1 << 0;
+        private const byte DeltaShapeSphere = 0;
+        private const byte DeltaShapeBox = 1;
         private const int NativeSnapshotMagic = unchecked((int)0x48584432);
         private static readonly ProfilerMarker _carveScheduleProfilerMarker = new ProfilerMarker("H8.VoxelDelta.ScheduleCarve");
         private static readonly ProfilerMarker _carveCommitProfilerMarker = new ProfilerMarker("H8.VoxelDelta.CommitCarve");
@@ -76,6 +78,7 @@ namespace Hecton8.Caves
         private JobHandle _scheduledCarveHandle;
         private bool _scheduledCarveRunning;
         private PendingCarveRequest _scheduledCarveRequest;
+        private int _scheduledCarveWriteCount;
         // COLD ALLOC: NativeArray<CarveCellWrite>[capacity] â€” staged Burst carve results before managed delta-chunk commit â€” owner: VoxelDeltaProcessor
         private NativeArray<CarveCellWrite> _scheduledCarveWrites;
 
@@ -286,6 +289,59 @@ namespace Hecton8.Caves
                 ExplicitRadiusMeters = radius,
                 MaterialId = materialId,
                 DeltaFlags = 0
+            };
+        }
+
+        /// <summary>
+        /// Applies an explicit subtractive box carve in absolute-universe space and queues a rebuild on the dispatcher lane.
+        /// </summary>
+        /// <param name="volume">Target runtime volume.</param>
+        /// <param name="absoluteCenter">Absolute-universe box center.</param>
+        /// <param name="halfExtents">Axis-aligned absolute half-extents in meters.</param>
+        /// <param name="materialId">Material palette index for the modified cells.</param>
+        public void ApplyImmediateAbsoluteBoxCrater(
+            HectonVoxelVolume volume,
+            Vector3 absoluteCenter,
+            Vector3 halfExtents,
+            byte materialId = DefaultMaterialId)
+        {
+            if (volume == null || !volume.HasRuntimeData)
+                return;
+
+            float3 resolvedHalfExtents3 = new float3(
+                math.max(volume.VoxelSize, math.abs(halfExtents.x)),
+                math.max(volume.VoxelSize, math.abs(halfExtents.y)),
+                math.max(volume.VoxelSize, math.abs(halfExtents.z)));
+            Vector3 resolvedHalfExtents = new Vector3(
+                resolvedHalfExtents3.x,
+                resolvedHalfExtents3.y,
+                resolvedHalfExtents3.z);
+            if (resolvedHalfExtents.sqrMagnitude <= 0.0001f)
+                return;
+
+            if (_pendingCarveCount >= _pendingCarves.Length)
+            {
+                if (!_scheduledCarveRunning)
+                    TrySchedulePendingCarve();
+
+                if (_pendingCarveCount >= _pendingCarves.Length)
+                {
+                    for (int i = 1; i < _pendingCarveCount; i++)
+                        _pendingCarves[i - 1] = _pendingCarves[i];
+
+                    _pendingCarveCount = _pendingCarves.Length - 1;
+                }
+            }
+
+            _pendingCarves[_pendingCarveCount++] = new PendingCarveRequest
+            {
+                Volume = volume,
+                AbsoluteHitPoint = absoluteCenter,
+                AbsoluteHalfExtents = resolvedHalfExtents,
+                ExplicitBlendStrength = math.max(volume.VoxelSize, math.cmin(resolvedHalfExtents3) * 0.35f),
+                MaterialId = materialId,
+                DeltaFlags = 0,
+                Shape = DeltaShapeBox
             };
         }
 
@@ -800,21 +856,29 @@ namespace Hecton8.Caves
             if (volume == null || !volume.HasRuntimeData)
                 return;
 
-            float radius = ResolveCarveRadius(in request, volume);
-            if (radius <= 0f)
+            float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
+            byte shape = request.Shape == DeltaShapeBox ? DeltaShapeBox : DeltaShapeSphere;
+            float radius = shape == DeltaShapeBox ? 0f : ResolveCarveRadius(in request, volume);
+            if (shape == DeltaShapeSphere && radius <= 0f)
                 return;
 
-            float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
-            float blendRadius = math.max(voxelSize, radius * 0.35f);
-            float outerRadius = radius + blendRadius;
+            float blendRadius = shape == DeltaShapeBox
+                ? math.max(voxelSize, ResolveBlendStrength(in request, voxelSize))
+                : math.max(voxelSize, radius * 0.35f);
+            float3 halfExtents = shape == DeltaShapeBox
+                ? new float3(
+                    math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.x)),
+                    math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.y)),
+                    math.max(voxelSize, math.abs(request.AbsoluteHalfExtents.z)))
+                : new float3(radius);
             int3 minCell = new int3(
-                Mathf.FloorToInt((request.AbsoluteHitPoint.x - outerRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.y - outerRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.z - outerRadius) / voxelSize));
+                Mathf.FloorToInt((request.AbsoluteHitPoint.x - halfExtents.x - blendRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.y - halfExtents.y - blendRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.z - halfExtents.z - blendRadius) / voxelSize));
             int3 maxCell = new int3(
-                Mathf.FloorToInt((request.AbsoluteHitPoint.x + outerRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.y + outerRadius) / voxelSize),
-                Mathf.FloorToInt((request.AbsoluteHitPoint.z + outerRadius) / voxelSize));
+                Mathf.FloorToInt((request.AbsoluteHitPoint.x + halfExtents.x + blendRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.y + halfExtents.y + blendRadius) / voxelSize),
+                Mathf.FloorToInt((request.AbsoluteHitPoint.z + halfExtents.z + blendRadius) / voxelSize));
 
             int3 span = (maxCell - minCell) + 1;
             int candidateCount = math.max(0, span.x) * math.max(0, span.y) * math.max(0, span.z);
@@ -833,13 +897,16 @@ namespace Hecton8.Caves
                 BlendRadius = blendRadius,
                 BlendStrength = ResolveBlendStrength(in request, voxelSize),
                 Center = new float3(request.AbsoluteHitPoint.x, request.AbsoluteHitPoint.y, request.AbsoluteHitPoint.z),
+                HalfExtents = halfExtents,
                 MaterialId = request.MaterialId,
                 DeltaFlags = request.DeltaFlags,
+                Shape = shape,
                 Writes = _scheduledCarveWrites
             };
 
             using (_carveScheduleProfilerMarker.Auto())
             {
+                _scheduledCarveWriteCount = candidateCount;
                 _scheduledCarveHandle = carveJob.Schedule(candidateCount, 64);
                 _scheduledCarveRunning = true;
             }
@@ -861,7 +928,8 @@ namespace Hecton8.Caves
                     return;
 
                 float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
-                for (int i = 0; i < _scheduledCarveWrites.Length; i++)
+                int writeCount = math.min(_scheduledCarveWriteCount, _scheduledCarveWrites.Length);
+                for (int i = 0; i < writeCount; i++)
                 {
                     CarveCellWrite write = _scheduledCarveWrites[i];
                     if (write.IsActive == 0)
@@ -886,8 +954,13 @@ namespace Hecton8.Caves
                 }
 
                 EnqueueVolumeRebuild(volume);
-                if ((_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0)
+                if ((_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
+                    _scheduledCarveRequest.Shape != DeltaShapeBox)
+                {
                     EmitCarveDebris(in _scheduledCarveRequest, ResolveCarveRadius(in _scheduledCarveRequest, volume));
+                }
+
+                _scheduledCarveWriteCount = 0;
             }
         }
 
@@ -1230,6 +1303,7 @@ namespace Hecton8.Caves
 
             _scheduledCarveHandle = default;
             _scheduledCarveRunning = false;
+            _scheduledCarveWriteCount = 0;
         }
 
         private void DisposeChunkStates()
@@ -1316,11 +1390,13 @@ namespace Hecton8.Caves
         {
             public HectonVoxelVolume Volume;
             public Vector3 AbsoluteHitPoint;
+            public Vector3 AbsoluteHalfExtents;
             public float AccumulatedDamage;
             public float ExplicitRadiusMeters;
             public float ExplicitBlendStrength;
             public byte MaterialId;
             public byte DeltaFlags;
+            public byte Shape;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -1333,8 +1409,10 @@ namespace Hecton8.Caves
             public float BlendRadius;
             public float BlendStrength;
             public float3 Center;
+            public float3 HalfExtents;
             public byte MaterialId;
             public byte DeltaFlags;
+            public byte Shape;
             public NativeArray<CarveCellWrite> Writes;
 
             public void Execute(int index)
@@ -1346,16 +1424,18 @@ namespace Hecton8.Caves
                 int localX = remainder - (localY * Span.x);
                 int3 absoluteCell = MinCell + new int3(localX, localY, localZ);
                 float3 cellCenter = (new float3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5f) * VoxelSize;
-                float sphereDistance = math.distance(cellCenter, Center) - Radius;
-                if (sphereDistance >= BlendRadius)
+                float signedDistance = Shape == DeltaShapeBox
+                    ? BoxSdf(cellCenter - Center, HalfExtents)
+                    : math.distance(cellCenter, Center) - Radius;
+                if (signedDistance >= BlendRadius)
                 {
                     Writes[index] = default;
                     return;
                 }
 
                 float densityValue = (DeltaFlags & DeltaModeAdditive) != 0
-                    ? math.clamp(-sphereDistance, -8f, 8f)
-                    : math.clamp(sphereDistance, -8f, 8f);
+                    ? math.clamp(-signedDistance, -8f, 8f)
+                    : math.clamp(signedDistance, -8f, 8f);
 
                 Writes[index] = new CarveCellWrite
                 {
@@ -1366,6 +1446,12 @@ namespace Hecton8.Caves
                     BlendStrength = BlendStrength,
                     IsActive = 1
                 };
+            }
+
+            private static float BoxSdf(float3 local, float3 halfExtents)
+            {
+                float3 q = math.abs(local) - math.max(halfExtents, new float3(0.001f));
+                return math.length(math.max(q, 0f)) + math.min(math.cmax(q), 0f);
             }
         }
 

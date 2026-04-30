@@ -23,6 +23,7 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredContext;
+        private bool _dynamicContextReferencesEnabled;
         private GameObject _playerRootOverride;
         private GameObject _playerObject;
         private Transform _playerTransform;
@@ -262,7 +263,7 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
-            InitializeServiceInternal(true);
+            InitializeServiceInternal(false);
         }
 
         internal void InitializeServiceDeferredSync()
@@ -275,6 +276,7 @@ namespace Hecton8.Core
             if (!_isInitialized)
                 return;
 
+            _dynamicContextReferencesEnabled = true;
             SyncPlayerContext();
         }
 
@@ -371,7 +373,8 @@ namespace Hecton8.Core
                 _playerTransform != null &&
                 (_hudNotification != null || !Application.isPlaying))
             {
-                RefreshDynamicContextReferences();
+                if (_dynamicContextReferencesEnabled)
+                    RefreshDynamicContextReferences();
                 PublishMovementSnapshot();
                 return;
             }
@@ -409,7 +412,8 @@ namespace Hecton8.Core
                 _playerObject.TryGetComponent(out _playerCollider);
 
                 ResolvePlayerHierarchyReferencesCold();
-                RefreshDynamicContextReferences();
+                if (_dynamicContextReferencesEnabled)
+                    RefreshDynamicContextReferences();
             }
 
             if (_underwaterVisuals == null)

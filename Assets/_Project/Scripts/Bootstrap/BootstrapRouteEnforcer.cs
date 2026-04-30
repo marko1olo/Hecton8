@@ -28,7 +28,7 @@ namespace Hecton8.Bootstrap
             if (!Application.isPlaying)
                 return true;
 
-            if (BootstrapController.AreAllSystemsReady())
+            if (GameBootstrapper.AreAllSystemsReady())
                 return true;
 
             if (_bootstrapRecoveryTriggered)

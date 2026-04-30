@@ -218,7 +218,7 @@ namespace Hecton8.Dev
                 playerBuilder = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.PlayerBuilder : null);
 
             if (constructionManager == null)
-                constructionManager = ConstructionManager.Instance;
+                constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
 
             if (playerInventory == null)
                 playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
@@ -306,7 +306,7 @@ namespace Hecton8.Dev
             for (int i = 0; i < offsets.Length; i++)
             {
                 Vector3 candidate = basePos + offsets[i];
-                if (!UnityEngine.Physics.CheckSphere(candidate, 0.75f, ~0, QueryTriggerInteraction.Ignore))
+                if (!UnityEngine.Physics.CheckSphere(candidate, 0.75f, (1 << 8) | (1 << 9) | (1 << 10), QueryTriggerInteraction.Ignore))
                 {
                     position = candidate;
                     return true;

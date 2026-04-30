@@ -26,6 +26,24 @@ Authority levels used below:
 - `HISTORICAL` = still useful evidence, but not preferred current authority
 - `GAP` = no strong current-source authority yet
 
+## Coverage Inventory Snapshot
+
+Filesystem snapshot: 2026-04-30.
+
+| Bucket | Current count |
+|---|---:|
+| `01_GENERAL_INFO` markdown files | 22 |
+| `02_ACTUAL_REPORTS` markdown files | 46 |
+| `02_ACTUAL_REPORTS` CSV datasets | 1 |
+| `02_ACTUAL_REPORTS` patch artifacts | 8 |
+| indexed docs/datasets in `01` + `02` | 69 |
+| physical non-meta files in `01` + `02` | 77 |
+
+Correction:
+- Earlier `19` / `43` folder-count claims are stale against the current filesystem.
+- The current source-backed coverage map includes `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, and `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`.
+- Patch artifacts are evidence files, not independent current-state authority.
+
 ## Domain Coverage
 
 | Domain | Current coverage | Primary files | Secondary files | Authority | Current gap |

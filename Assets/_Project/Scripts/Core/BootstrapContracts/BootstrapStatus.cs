@@ -8,10 +8,14 @@ namespace Hecton8.Core
     public enum BootstrapStepToken : byte
     {
         None = 0,
-        Core = 1,
-        Environment = 2,
-        Player = 3,
-        UI = 4,
+        HardwareCheck = 1,
+        MemoryPreWarm = 2,
+        Core = 3,
+        CoreServices = Core,
+        Environment = 4,
+        Player = 5,
+        UI = 6,
+        SceneActivate = 7,
     }
 
     /// <summary>

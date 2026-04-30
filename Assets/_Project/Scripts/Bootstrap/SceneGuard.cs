@@ -40,7 +40,7 @@ namespace Hecton8.Guardian
                 return;
 
             // ── Проверка что bootstrap был загружен ──
-            if (!BootstrapController.AreAllSystemsReady())
+            if (!GameBootstrapper.AreAllSystemsReady())
             {
                 Scene currentScene = gameObject.scene;
 

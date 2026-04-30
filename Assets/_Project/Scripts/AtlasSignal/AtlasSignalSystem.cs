@@ -164,8 +164,8 @@ namespace Hecton8.AtlasSignal
         {
             TryRegister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
 
             ResolvePlayer();
         }
@@ -174,8 +174,8 @@ namespace Hecton8.AtlasSignal
         {
             TryUnregister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
         }
 
         private void OnDestroy()

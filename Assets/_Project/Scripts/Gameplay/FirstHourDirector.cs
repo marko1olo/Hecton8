@@ -66,7 +66,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-65)]
-    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener
+    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener, ICraftingEventListener, IInteractionEventListener
     {
         [Flags]
         private enum GuidanceStateFlags
@@ -218,18 +218,18 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
 
             ResolveSurvivalSystem();
             ResolveWorldContext(force: true);
             SynchronizeContextFromRuntimeSystems();
 
-            CraftingEvents.OnCraftCompleted += HandleCraftCompleted;
+            CraftingEvents.Register(this);
             NarrativeEvents.Register(this);
             QuestEvents.Register(this);
             ScanEvents.Register(this);
-            InteractionEvents.OnItemCollected += HandleItemCollected;
+            InteractionEvents.Register(this);
             AudioLogEvents.Register(this);
         }
 
@@ -237,14 +237,14 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
-            CraftingEvents.OnCraftCompleted -= HandleCraftCompleted;
+            CraftingEvents.Unregister(this);
             NarrativeEvents.Unregister(this);
             QuestEvents.Unregister(this);
             ScanEvents.Unregister(this);
-            InteractionEvents.OnItemCollected -= HandleItemCollected;
+            InteractionEvents.Unregister(this);
             AudioLogEvents.Unregister(this);
 
             _lastObservedZone = null;
@@ -257,7 +257,7 @@ namespace Hecton8.Gameplay
         private void Start()
         {
             TryRegister();
-            SaveManager.Instance?.Register(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             RefreshCachedHashes();
             ResolveSurvivalSystem();
             ResolveWorldContext(force: true);
@@ -317,8 +317,8 @@ namespace Hecton8.Gameplay
                 !IsMilestoneComplete(FirstHourMilestone.FirstModule) &&
                 _sessionTime >= firstModuleTime &&
                 currentDepthTier > 1 &&
-                QuestManager.Instance != null &&
-                QuestManager.Instance.IsCompleted(firstDepthQuestId))
+                GlobalRegistry.Quest != null &&
+                GlobalRegistry.Quest.IsCompleted(firstDepthQuestId))
             {
                 _firstModuleHintIssued = true;
                 _firstModuleReminderIssued = true;
@@ -466,6 +466,29 @@ namespace Hecton8.Gameplay
         {
             if (payload.Type == AudioLogEventType.Discovered && payload.LogHash != 0u)
                 _hasLoreRouteContact = true;
+        }
+
+        public void OnCraftingEvent(in CraftingEventPayload payload)
+        {
+            if ((CraftingEventType)payload.EventType != CraftingEventType.CraftCompleted)
+                return;
+
+            if (!CraftingEvents.TryResolveItem(in payload, out ItemData resultItem))
+                return;
+
+            HandleCraftCompleted(resultItem);
+        }
+
+        public void OnInteractionEvent(in InteractionEventPayload payload)
+        {
+            if ((InteractionEventType)payload.EventType != InteractionEventType.ItemCollected)
+                return;
+
+            if (!InteractionEvents.TryResolveItem(in payload, out ItemData item))
+                return;
+
+            InteractionEvents.TryResolveInteractor(in payload, out Transform interactor);
+            HandleItemCollected(item, payload.Quantity, interactor);
         }
 
         private void HandleItemCollected(ItemData item, int quantity, Transform interactor)
@@ -626,7 +649,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(questId))
                 return;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 
@@ -639,7 +662,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(questId))
                 return;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 
@@ -659,7 +682,7 @@ namespace Hecton8.Gameplay
             ActivateQuest(firstResourceQuestId);
             TryAdvanceFirstResourceGoalFromRuntimeInventory();
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager != null && questManager.IsCompleted(firstResourceQuestId))
             {
                 _firstResourceReminderIssued = true;
@@ -783,7 +806,7 @@ namespace Hecton8.Gameplay
             if (!IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 
@@ -835,7 +858,7 @@ namespace Hecton8.Gameplay
             if (Time.unscaledTime < _nextContextualGuidanceTime)
                 return;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 

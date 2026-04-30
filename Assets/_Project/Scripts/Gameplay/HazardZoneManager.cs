@@ -1180,6 +1180,7 @@ namespace Hecton8.Gameplay
                     data.AbsoluteUniversePosition.z)),
                 new float3(data.Radius, data.Radius, data.Radius),
                 ResolveSpatialKindMask(data.Type),
+                0u,
                 id);
         }
 
@@ -1203,6 +1204,7 @@ namespace Hecton8.Gameplay
                     data.AbsoluteUniversePosition.z)),
                 new float3(data.Radius, data.Radius, data.Radius),
                 ResolveSpatialKindMask(data.Type),
+                0u,
                 id);
         }
 

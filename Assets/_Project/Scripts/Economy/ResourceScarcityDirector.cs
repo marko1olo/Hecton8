@@ -146,7 +146,7 @@ namespace Hecton8.Economy
 
         private void OnEnable()
         {
-            SaveManager.Instance?.Register(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             TryRegisterSlowTickable();
             CacheDirectiveDefinitions();
 
@@ -156,7 +156,7 @@ namespace Hecton8.Economy
 
         private void OnDisable()
         {
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             TryUnregisterSlowTickable();
             _itemCollectedSubscription?.Dispose();
             _itemCollectedSubscription = null;
@@ -164,7 +164,7 @@ namespace Hecton8.Economy
 
         private void OnDestroy()
         {
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             TryUnregisterSlowTickable();
             _itemCollectedSubscription?.Dispose();
             _itemCollectedSubscription = null;
@@ -379,7 +379,7 @@ namespace Hecton8.Economy
             if (_cachedDirectiveCount <= 0)
                 return;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
             PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory

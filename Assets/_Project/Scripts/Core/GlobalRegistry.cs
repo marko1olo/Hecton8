@@ -33,6 +33,7 @@ namespace Hecton8.Core
         private static IUIService _ui;
         private static ObjectPoolManager _objectPool;
         private static IPlayerRuntimeContext _player;
+        private static HectonPlayerMotor _playerMotor;
         private static IPlayerInventoryService _playerInventory;
         private static IModularEquipmentService _modularEquipment;
         private static IPlayerSensoryService _playerSensory;
@@ -106,6 +107,11 @@ namespace Hecton8.Core
         public static IPlayerRuntimeContext Player => _player;
 
         /// <summary>
+        /// Registered player motor service slot.
+        /// </summary>
+        public static HectonPlayerMotor PlayerMotor => _playerMotor;
+
+        /// <summary>
         /// Registered player inventory/tooling service slot.
         /// </summary>
         public static IPlayerInventoryService PlayerInventory => _playerInventory;
@@ -175,6 +181,11 @@ namespace Hecton8.Core
         /// Registered logistics/build-network service slot.
         /// </summary>
         public static ILogisticsService Logistics => _logistics;
+
+        /// <summary>
+        /// Registered concrete construction runtime owner for compatibility during singleton migration.
+        /// </summary>
+        public static ConstructionManager ConstructionRuntime => _logistics as ConstructionManager;
 
         /// <summary>
         /// Registered world-generation service slot.
@@ -407,6 +418,15 @@ namespace Hecton8.Core
         public static void RegisterPlayerRuntimeContext(IPlayerRuntimeContext instance)
         {
             RegisterService(ref _player, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative player motor service.
+        /// </summary>
+        /// <param name="instance">Player motor instance.</param>
+        public static void RegisterPlayerMotorService(HectonPlayerMotor instance)
+        {
+            RegisterService(ref _playerMotor, instance);
         }
 
         /// <summary>
@@ -669,6 +689,15 @@ namespace Hecton8.Core
         public static void UnregisterPlayerRuntimeContext(IPlayerRuntimeContext instance)
         {
             UnregisterService(ref _player, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current player motor service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Player motor requesting unregistration.</param>
+        public static void UnregisterPlayerMotorService(HectonPlayerMotor instance)
+        {
+            UnregisterService(ref _playerMotor, instance);
         }
 
         /// <summary>

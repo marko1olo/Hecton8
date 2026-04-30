@@ -393,7 +393,7 @@ namespace Hecton8.Tools
             ResolveMainMenuController();
             return string.Equals(SceneManager.GetActiveScene().name, MainMenuSceneName, System.StringComparison.Ordinal) &&
                    _mainMenuController != null &&
-                   BootstrapController.AreAllSystemsReady() &&
+                   GameBootstrapper.AreAllSystemsReady() &&
                    !GameStartContextHolder.Current.IsValid;
         }
 
@@ -401,7 +401,7 @@ namespace Hecton8.Tools
         {
             GameStartContext context = GameStartContextHolder.Current;
             return string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal) &&
-                   BootstrapController.AreAllSystemsReady() &&
+                   GameBootstrapper.AreAllSystemsReady() &&
                    context.IsValid &&
                    context.StartMode == GameStartMode.NewGame;
         }
@@ -410,7 +410,7 @@ namespace Hecton8.Tools
         {
             GameStartContext context = GameStartContextHolder.Current;
             return string.Equals(SceneManager.GetActiveScene().name, WorldSceneName, System.StringComparison.Ordinal) &&
-                   BootstrapController.AreAllSystemsReady() &&
+                   GameBootstrapper.AreAllSystemsReady() &&
                    context.IsValid &&
                    context.StartMode == GameStartMode.LoadGame &&
                    string.Equals(context.TargetSaveSlot, expectedSlot, System.StringComparison.Ordinal);
@@ -441,7 +441,7 @@ namespace Hecton8.Tools
 
         private string ResolveExistingSaveSlot()
         {
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null || _saveSlotProbeOrder == null)
                 return string.Empty;
 

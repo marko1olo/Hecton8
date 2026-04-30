@@ -34,7 +34,7 @@ namespace Hecton8.Caves
         [Header("── Query Settings ──────────────────")]
         [SerializeField]
         [Tooltip("Layers sampled when applying eruption shock and cavitation to nearby rigidbodies.")]
-        private LayerMask affectedLayers = ~0;
+        private LayerMask affectedLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         private float _quietDuration = 10f;
         private float _eruptionDuration = 3f;
@@ -102,6 +102,7 @@ namespace Hecton8.Caves
             ResolvePlayerContext();
 
             Vector3 origin = transform.position;
+            bool playerBodyAffectedByOverlap = false;
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 origin,
                 _cavitationRadius,
@@ -116,6 +117,9 @@ namespace Hecton8.Caves
                     continue;
 
                 Rigidbody body = hitCollider.attachedRigidbody;
+                if (body != null && _playerRigidbody != null && ReferenceEquals(body, _playerRigidbody))
+                    playerBodyAffectedByOverlap = true;
+
                 Vector3 point = body != null ? body.worldCenterOfMass : hitCollider.bounds.center;
                 Vector3 horizontal = point - origin;
                 horizontal.y = 0f;
@@ -161,13 +165,16 @@ namespace Hecton8.Caves
                     float eruptionT = EvaluateCylinderAttenuation(playerDistance, _eruptionRadius, playerVerticalOffset, playerEruptionHeight);
                     float cavitationT = EvaluateCylinderAttenuation(playerDistance, _cavitationRadius, playerVerticalOffset, playerCavitationHeight);
 
-                    if (eruptionT > 0f)
-                        _playerMovement.ApplyExternalThermalUpdraft(Vector3.up * (_updraftStrength * 0.01f * eruptionT * fdt));
+                    if (!playerBodyAffectedByOverlap && eruptionT > 0f && _playerRigidbody != null)
+                        PhysicsForceRouter.QueueForce(
+                            _playerRigidbody,
+                            Vector3.up * (_updraftStrength * eruptionT),
+                            ForceMode.Acceleration);
 
                     if (cavitationT > 0f)
                     {
                         _playerMovement.ApplyEnvironmentalDrag(Mathf.Lerp(1f, _cavitationDragMultiplier, cavitationT));
-                        if (_playerRigidbody != null)
+                        if (!playerBodyAffectedByOverlap && _playerRigidbody != null)
                             PhysicsForceRouter.QueueForce(
                                 _playerRigidbody,
                                 Vector3.down * (_cavitationSinkAcceleration * cavitationT),

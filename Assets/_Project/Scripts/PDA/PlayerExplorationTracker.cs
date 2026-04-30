@@ -1,38 +1,48 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.PDA
 {
     /// <summary>
-    /// Tracks player movement across a sparse world-space chunk grid for PDA map reveal and fog-of-war queries.
+    /// Tracks player movement across a dense 16m Morton-ordered exploration mask for PDA fog-of-war queries.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/Player Exploration Tracker")]
     public sealed class PlayerExplorationTracker : MonoBehaviour, ITickable, ISaveable
     {
+        private const int ExplorationChunkSizeMeters = ExplorationMapDTO.DenseChunkSizeMeters;
+        private const int MaskAxisBits = ExplorationMapDTO.MortonMaskAxisBits;
+        private const int MaskAxisLength = ExplorationMapDTO.MortonMaskAxisLength;
+        private const int MaskOriginOffset = ExplorationMapDTO.MortonMaskOriginOffset;
+        private const int MaskBitCount = ExplorationMapDTO.MortonMaskBitCount;
+        private const int MaskWordCount = ExplorationMapDTO.MortonMaskWordCount;
+        private const int LocalMask = MaskAxisLength - 1;
+
         [Header("References")]
         [Tooltip("Optional explicit player transform. When empty, the tracker resolves the current bootstrap player.")]
         [SerializeField] private Transform playerTransform;
 
         [Header("Exploration Grid")]
-        [Tooltip("World size, in meters, represented by one explored PDA chunk.")]
-        [SerializeField, Min(4f)] private float chunkWorldSize = 32f;
         [Tooltip("Minimum movement distance before the tracker re-evaluates chunk membership.")]
         [SerializeField, Min(0.25f)] private float movementSampleDistance = 4f;
         [Tooltip("When enabled, biome changes from MapMagic automatically feed the discovery registry.")]
         [SerializeField] private bool forwardBiomeDiscovery = true;
 
-        // COLD ALLOC: HashSet<long>[dynamic] - sparse explored chunk registry - owner: PlayerExplorationTracker
-        private readonly HashSet<long> _exploredChunkKeys = new HashSet<long>();
+        // COLD ALLOC: long[32768] - save DTO word staging for dense Morton exploration mask - owner: PlayerExplorationTracker
+        private readonly long[] _saveMaskWordBuffer = new long[MaskWordCount];
+        private NativeBitArray _exploredChunkMask;
+        private NativeList<int> _exploredBitIndices;
         private bool _registeredToTick;
         private bool _registeredToSave;
+        private bool _explorationMaskInitialized;
         private Vector3 _lastSampledPosition;
-        private long _lastChunkKey = long.MinValue;
+        private int _lastBitIndex = -1;
 
         /// <summary>Live singleton instance for PDA map systems.</summary>
         public static PlayerExplorationTracker Instance { get; private set; }
@@ -47,10 +57,10 @@ namespace Hecton8.PDA
         public event Action<Vector2Int> ChunkExplored;
 
         /// <summary>Total explored chunk count currently held in memory.</summary>
-        public int ExploredChunkCount => _exploredChunkKeys.Count;
+        public int ExploredChunkCount => _exploredBitIndices.IsCreated ? _exploredBitIndices.Length : 0;
 
         /// <summary>World-space size represented by one persisted exploration chunk.</summary>
-        public float ChunkWorldSize => chunkWorldSize;
+        public float ChunkWorldSize => ExplorationChunkSizeMeters;
 
         /// <inheritdoc />
         public int SavePriority => 21;
@@ -67,12 +77,16 @@ namespace Hecton8.PDA
             }
 
             Instance = this;
-            chunkWorldSize = Mathf.Max(4f, chunkWorldSize);
             movementSampleDistance = Mathf.Max(0.25f, movementSampleDistance);
+            InitializeExplorationMask();
         }
 
         private void OnEnable()
         {
+            if (Instance == null)
+                Instance = this;
+
+            InitializeExplorationMask();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
             MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
@@ -81,6 +95,7 @@ namespace Hecton8.PDA
 
         private void Start()
         {
+            InitializeExplorationMask();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
             ResolvePlayerTransform(force: true);
@@ -102,6 +117,7 @@ namespace Hecton8.PDA
             MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
+            DisposeExplorationMask();
 
             if (Instance == this)
                 Instance = null;
@@ -127,7 +143,7 @@ namespace Hecton8.PDA
         /// </summary>
         public bool IsChunkExplored(Vector2Int chunkCoordinates)
         {
-            return _exploredChunkKeys.Contains(PDAKeyUtility.PackChunkKey(chunkCoordinates.x, chunkCoordinates.y));
+            return IsChunkExplored(chunkCoordinates.x, chunkCoordinates.y);
         }
 
         /// <summary>
@@ -135,7 +151,8 @@ namespace Hecton8.PDA
         /// </summary>
         public bool IsChunkExplored(int chunkX, int chunkY)
         {
-            return _exploredChunkKeys.Contains(PDAKeyUtility.PackChunkKey(chunkX, chunkY));
+            InitializeExplorationMask();
+            return TryEncodeBitIndex(chunkX, 0, chunkY, out int bitIndex) && _exploredChunkMask.IsSet(bitIndex);
         }
 
         /// <summary>
@@ -143,10 +160,9 @@ namespace Hecton8.PDA
         /// </summary>
         public bool TryWorldToChunk(Vector3 worldPosition, out Vector2Int chunkCoordinates)
         {
-            float safeChunkSize = Mathf.Max(4f, chunkWorldSize);
             chunkCoordinates = new Vector2Int(
-                Mathf.FloorToInt(worldPosition.x / safeChunkSize),
-                Mathf.FloorToInt(worldPosition.z / safeChunkSize));
+                Mathf.FloorToInt(worldPosition.x / ExplorationChunkSizeMeters),
+                Mathf.FloorToInt(worldPosition.z / ExplorationChunkSizeMeters));
             return true;
         }
 
@@ -155,15 +171,15 @@ namespace Hecton8.PDA
         /// </summary>
         public int CopyExploredChunks(Vector2Int[] buffer)
         {
-            if (buffer == null || buffer.Length == 0 || _exploredChunkKeys.Count == 0)
+            InitializeExplorationMask();
+            if (buffer == null || buffer.Length == 0 || _exploredBitIndices.Length == 0)
                 return 0;
 
-            int count = 0;
-            HashSet<long>.Enumerator enumerator = _exploredChunkKeys.GetEnumerator();
-            while (enumerator.MoveNext() && count < buffer.Length)
+            int count = math.min(buffer.Length, _exploredBitIndices.Length);
+            for (int i = 0; i < count; i++)
             {
-                buffer[count] = PDAKeyUtility.UnpackChunkKey(enumerator.Current);
-                count++;
+                DecodeBitIndex(_exploredBitIndices[i], out int chunkX, out _, out int chunkZ);
+                buffer[i] = new Vector2Int(chunkX, chunkZ);
             }
 
             return count;
@@ -171,15 +187,15 @@ namespace Hecton8.PDA
 
         internal int CopyExploredChunkKeys(long[] buffer)
         {
-            if (buffer == null || buffer.Length == 0 || _exploredChunkKeys.Count == 0)
+            InitializeExplorationMask();
+            if (buffer == null || buffer.Length == 0 || _exploredBitIndices.Length == 0)
                 return 0;
 
-            int count = 0;
-            HashSet<long>.Enumerator enumerator = _exploredChunkKeys.GetEnumerator();
-            while (enumerator.MoveNext() && count < buffer.Length)
+            int count = math.min(buffer.Length, _exploredBitIndices.Length);
+            for (int i = 0; i < count; i++)
             {
-                buffer[count] = enumerator.Current;
-                count++;
+                DecodeBitIndex(_exploredBitIndices[i], out int chunkX, out int chunkY, out int chunkZ);
+                buffer[i] = PDAKeyUtility.PackMortonChunkKey(chunkX, chunkY, chunkZ);
             }
 
             return count;
@@ -190,13 +206,7 @@ namespace Hecton8.PDA
         /// </summary>
         public bool MarkChunkExplored(Vector2Int chunkCoordinates)
         {
-            long chunkKey = PDAKeyUtility.PackChunkKey(chunkCoordinates.x, chunkCoordinates.y);
-            if (!_exploredChunkKeys.Add(chunkKey))
-                return false;
-
-            _lastChunkKey = chunkKey;
-            ChunkExplored?.Invoke(chunkCoordinates);
-            return true;
+            return MarkChunkExplored(chunkCoordinates.x, 0, chunkCoordinates.y, raiseEvent: true);
         }
 
         /// <inheritdoc />
@@ -205,34 +215,48 @@ namespace Hecton8.PDA
             if (data == null)
                 return;
 
+            InitializeExplorationMask();
             data.explorationMap.EnsureCapacity();
+            data.explorationMap.chunkSizeMeters = ExplorationChunkSizeMeters;
+            data.explorationMap.mortonMaskAxisBits = MaskAxisBits;
+            data.explorationMap.mortonMaskOriginOffset = MaskOriginOffset;
 
-            int writeCount = 0;
-            HashSet<long>.Enumerator enumerator = _exploredChunkKeys.GetEnumerator();
-            while (enumerator.MoveNext() && writeCount < ExplorationMapDTO.MaxExploredChunks)
+            NativeArray<ulong> maskWords = _exploredChunkMask.AsNativeArray<ulong>();
+            int wordCount = math.min(maskWords.Length, MaskWordCount);
+            for (int i = 0; i < wordCount; i++)
             {
-                data.explorationMap.exploredChunkKeys[writeCount] = enumerator.Current;
-                writeCount++;
+                long word = unchecked((long)maskWords[i]);
+                _saveMaskWordBuffer[i] = word;
+                data.explorationMap.exploredMortonMaskWords[i] = word;
             }
 
-            data.explorationMap.exploredChunkCount = writeCount;
-            for (int i = writeCount; i < ExplorationMapDTO.MaxExploredChunks; i++)
+            for (int i = wordCount; i < MaskWordCount; i++)
+            {
+                _saveMaskWordBuffer[i] = 0L;
+                data.explorationMap.exploredMortonMaskWords[i] = 0L;
+            }
+
+            data.explorationMap.exploredMortonWordCount = wordCount;
+            int keyCount = CopyExploredChunkKeys(data.explorationMap.exploredChunkKeys);
+            data.explorationMap.exploredChunkCount = keyCount;
+            for (int i = keyCount; i < ExplorationMapDTO.MaxExploredChunks; i++)
                 data.explorationMap.exploredChunkKeys[i] = 0L;
         }
 
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
-            _exploredChunkKeys.Clear();
-            _lastChunkKey = long.MinValue;
+            InitializeExplorationMask();
+            ClearExplorationMask();
+            _lastBitIndex = -1;
 
             if (data == null)
                 return;
 
             ExplorationMapDTO dto = data.explorationMap;
-            int count = Mathf.Clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
-            for (int i = 0; i < count; i++)
-                _exploredChunkKeys.Add(dto.exploredChunkKeys[i]);
+            bool loadedMask = TryLoadDenseMask(dto);
+            if (!loadedMask)
+                LoadLegacyChunkKeys(dto);
 
             SampleCurrentChunk(force: true);
         }
@@ -245,12 +269,166 @@ namespace Hecton8.PDA
             if (!TryWorldToChunk(playerTransform.position, out Vector2Int currentChunk))
                 return;
 
-            long currentChunkKey = PDAKeyUtility.PackChunkKey(currentChunk.x, currentChunk.y);
-            if (!force && currentChunkKey == _lastChunkKey)
+            if (!TryEncodeBitIndex(currentChunk.x, 0, currentChunk.y, out int currentBitIndex))
                 return;
 
-            _lastChunkKey = currentChunkKey;
+            if (!force && currentBitIndex == _lastBitIndex)
+                return;
+
+            _lastBitIndex = currentBitIndex;
             MarkChunkExplored(currentChunk);
+        }
+
+        private bool MarkChunkExplored(int chunkX, int chunkY, int chunkZ, bool raiseEvent)
+        {
+            InitializeExplorationMask();
+            if (!TryEncodeBitIndex(chunkX, chunkY, chunkZ, out int bitIndex))
+                return false;
+
+            if (_exploredChunkMask.IsSet(bitIndex))
+                return false;
+
+            _exploredChunkMask.Set(bitIndex, true);
+            _exploredBitIndices.Add(bitIndex);
+            _lastBitIndex = bitIndex;
+            if (raiseEvent)
+                ChunkExplored?.Invoke(new Vector2Int(chunkX, chunkZ));
+            return true;
+        }
+
+        private void InitializeExplorationMask()
+        {
+            if (_explorationMaskInitialized)
+                return;
+
+            // COLD ALLOC: NativeBitArray[2097152 bits / 262144 bytes] - dense Morton exploration mask - owner: PlayerExplorationTracker
+            _exploredChunkMask = new NativeBitArray(MaskBitCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeList<int>[ExplorationMapDTO.MaxExploredChunks] - explored bit-index enumeration cache - owner: PlayerExplorationTracker
+            _exploredBitIndices = new NativeList<int>(ExplorationMapDTO.MaxExploredChunks, Allocator.Persistent);
+            _explorationMaskInitialized = true;
+        }
+
+        private void DisposeExplorationMask()
+        {
+            if (_exploredChunkMask.IsCreated)
+                _exploredChunkMask.Dispose();
+
+            if (_exploredBitIndices.IsCreated)
+                _exploredBitIndices.Dispose();
+
+            _explorationMaskInitialized = false;
+        }
+
+        private void ClearExplorationMask()
+        {
+            _exploredChunkMask.Clear();
+            _exploredBitIndices.Clear();
+        }
+
+        private bool TryLoadDenseMask(ExplorationMapDTO dto)
+        {
+            if (dto.exploredMortonMaskWords == null ||
+                dto.exploredMortonMaskWords.Length == 0 ||
+                dto.exploredMortonWordCount <= 0)
+            {
+                return false;
+            }
+
+            NativeArray<ulong> maskWords = _exploredChunkMask.AsNativeArray<ulong>();
+            int wordCount = math.min(math.min(maskWords.Length, dto.exploredMortonMaskWords.Length), dto.exploredMortonWordCount);
+            for (int i = 0; i < wordCount; i++)
+                maskWords[i] = unchecked((ulong)dto.exploredMortonMaskWords[i]);
+
+            for (int i = wordCount; i < maskWords.Length; i++)
+                maskWords[i] = 0UL;
+
+            RebuildExploredBitIndexCache(maskWords);
+            return true;
+        }
+
+        private void LoadLegacyChunkKeys(ExplorationMapDTO dto)
+        {
+            int count = Mathf.Clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
+            for (int i = 0; i < count; i++)
+            {
+                Vector2Int legacyChunk = PDAKeyUtility.UnpackChunkKey(dto.exploredChunkKeys[i]);
+                MarkChunkExplored(legacyChunk.x, 0, legacyChunk.y, raiseEvent: false);
+            }
+        }
+
+        private void RebuildExploredBitIndexCache(NativeArray<ulong> maskWords)
+        {
+            _exploredBitIndices.Clear();
+            for (int wordIndex = 0; wordIndex < maskWords.Length; wordIndex++)
+            {
+                ulong word = maskWords[wordIndex];
+                if (word == 0UL)
+                    continue;
+
+                int baseBitIndex = wordIndex << 6;
+                for (int bit = 0; bit < 64; bit++)
+                {
+                    if ((word & (1UL << bit)) == 0UL)
+                        continue;
+
+                    int bitIndex = baseBitIndex + bit;
+                    if (bitIndex < MaskBitCount)
+                        _exploredBitIndices.Add(bitIndex);
+                }
+            }
+        }
+
+        private static bool TryEncodeBitIndex(int chunkX, int chunkY, int chunkZ, out int bitIndex)
+        {
+            int localX = chunkX + MaskOriginOffset;
+            int localY = chunkY + MaskOriginOffset;
+            int localZ = chunkZ + MaskOriginOffset;
+            if ((uint)localX >= MaskAxisLength || (uint)localY >= MaskAxisLength || (uint)localZ >= MaskAxisLength)
+            {
+                bitIndex = -1;
+                return false;
+            }
+
+            bitIndex = EncodeLocalMortonIndex(localX, localY, localZ);
+            return true;
+        }
+
+        private static void DecodeBitIndex(int bitIndex, out int chunkX, out int chunkY, out int chunkZ)
+        {
+            int localX = Compact1By2((uint)bitIndex);
+            int localY = Compact1By2((uint)bitIndex >> 1);
+            int localZ = Compact1By2((uint)bitIndex >> 2);
+            chunkX = localX - MaskOriginOffset;
+            chunkY = localY - MaskOriginOffset;
+            chunkZ = localZ - MaskOriginOffset;
+        }
+
+        private static int EncodeLocalMortonIndex(int x, int y, int z)
+        {
+            uint ux = Part1By2((uint)x & LocalMask);
+            uint uy = Part1By2((uint)y & LocalMask);
+            uint uz = Part1By2((uint)z & LocalMask);
+            return (int)(ux | (uy << 1) | (uz << 2));
+        }
+
+        private static uint Part1By2(uint value)
+        {
+            value &= LocalMask;
+            value = (value | (value << 16)) & 0x030000FFu;
+            value = (value | (value << 8)) & 0x0300F00Fu;
+            value = (value | (value << 4)) & 0x030C30C3u;
+            value = (value | (value << 2)) & 0x09249249u;
+            return value;
+        }
+
+        private static int Compact1By2(uint value)
+        {
+            value &= 0x09249249u;
+            value = (value ^ (value >> 2)) & 0x030C30C3u;
+            value = (value ^ (value >> 4)) & 0x0300F00Fu;
+            value = (value ^ (value >> 8)) & 0x030000FFu;
+            value = (value ^ (value >> 16)) & 0x0000007Fu;
+            return (int)value;
         }
 
         private bool ResolvePlayerTransform(bool force)
@@ -295,8 +473,7 @@ namespace Hecton8.PDA
             if (!_registeredToTick)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredToTick = false;
         }
 
@@ -305,7 +482,7 @@ namespace Hecton8.PDA
             if (_registeredToSave)
                 return;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null)
                 return;
 
@@ -318,11 +495,18 @@ namespace Hecton8.PDA
             if (!_registeredToSave)
                 return;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager != null)
                 saveManager.Unregister(this);
 
             _registeredToSave = false;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            movementSampleDistance = Mathf.Max(0.25f, movementSampleDistance);
+        }
+#endif
     }
 }

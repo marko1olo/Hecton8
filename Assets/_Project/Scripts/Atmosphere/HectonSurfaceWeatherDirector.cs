@@ -192,7 +192,7 @@ namespace Hecton8.Atmosphere
 
         [Header("Local Shelter")]
         [Tooltip("Layers treated as overhead rain blockers for the local player weather rig.")]
-        [SerializeField] private LayerMask shelterOccluderMask = ~0;
+        [SerializeField] private LayerMask shelterOccluderMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Vertical offset from the follow target used as the shelter probe origin.")]
         [SerializeField, UnityEngine.Range(0.5f, 3f)] private float shelterProbeOriginOffset = 1.35f;
@@ -224,6 +224,9 @@ namespace Hecton8.Atmosphere
 
         [Tooltip("Optional explicit local weather VFX rig reference. If null, a scene-local rig is created on demand.")]
         [SerializeField] private SurfaceWeatherVfxRig weatherVfxRig;
+
+        [Tooltip("Shared authored line-renderer material assigned to runtime-created weather VFX rigs.")]
+        [SerializeField] private Material lightningBoltMaterial;
 
         [Tooltip("Optional explicit visor HUD controller reference used for storm interference pulses.")]
         [SerializeField] private VisorHUDController stormVisorController;
@@ -577,8 +580,12 @@ namespace Hecton8.Atmosphere
 
             // COLD ALLOC: GameObject[1] - scene-local weather VFX rig for rain and lightning - owner: HectonSurfaceWeatherDirector
             GameObject rigRoot = new GameObject("SurfaceWeatherVfxRig");
+            rigRoot.SetActive(false);
             rigRoot.transform.SetParent(transform, false);
-            return rigRoot.AddComponent<SurfaceWeatherVfxRig>();
+            SurfaceWeatherVfxRig rig = rigRoot.AddComponent<SurfaceWeatherVfxRig>();
+            rig.ConfigureAuthoring(lightningBoltMaterial);
+            rigRoot.SetActive(true);
+            return rig;
         }
 
         private void RefreshPlayerMovementSubscription()
@@ -677,7 +684,7 @@ namespace Hecton8.Atmosphere
 
         private void TryCompleteWeatherMathJob()
         {
-            if (!_weatherJobScheduled)
+            if (!_weatherJobScheduled || !_weatherJobHandle.IsCompleted)
                 return;
 
             _weatherJobHandle.Complete();
@@ -688,7 +695,7 @@ namespace Hecton8.Atmosphere
 
         private void ScheduleWeatherMathJob(float deltaTime)
         {
-            if (!_runtimeStateInitialized)
+            if (!_runtimeStateInitialized || _weatherJobScheduled)
                 return;
 
             EnsureWeatherMathBuffers();
@@ -2135,6 +2142,8 @@ namespace Hecton8.Atmosphere
             "Assets/Feel/NiceVibrations/HapticSamples/Nature/Thunder2.wav"
         };
 
+        private const string EditorDefaultLightningBoltMaterialPath = "Assets/_Project/Art/Materials/VFX/Mat_LeakPlume.mat";
+
         private void TryAssignEditorAuthoringDefaults()
         {
             if (weatherProfiles == null || weatherProfiles.Length == 0)
@@ -2168,6 +2177,9 @@ namespace Hecton8.Atmosphere
                 if (validCount > 0)
                     thunderClips = loadedClips;
             }
+
+            if (lightningBoltMaterial == null)
+                lightningBoltMaterial = AssetDatabase.LoadAssetAtPath<Material>(EditorDefaultLightningBoltMaterialPath);
         }
 
         private void TryAssignEditorSceneReferences()
@@ -2190,12 +2202,18 @@ namespace Hecton8.Atmosphere
 
         private void Reset()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+
             TryAssignEditorAuthoringDefaults();
             TryAssignEditorSceneReferences();
         }
 
         private void OnValidate()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+
             TryAssignEditorAuthoringDefaults();
             TryAssignEditorSceneReferences();
 

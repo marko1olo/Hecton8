@@ -83,6 +83,86 @@ v_next = (x_target - x) / dt
 
 This gives a pendulum-like response under flow while keeping thrust at zero.
 
+The anchor is captured in the current runtime frame from the flora AUP-backed instance stream. `MountablePlayerTransport` forwards origin-shift events into `VehicleMotor.ApplyOriginShift`, so the cached runtime anchor remains aligned with the same absolute kelp instance after floating-origin rebases.
+
+## Shear Stress Damage
+The tether solve also reports deterministic tension for downstream hull stress.
+
+Let:
+- `m` = submarine rigidbody mass
+- `|r_pred|` = unconstrained predicted anchor-relative length
+- `R` = captured tether length
+- `v_candidate` = current-driven candidate velocity before projection
+- `n = normalize(r_pred)` = tether radial direction
+- `dt` = fixed step
+
+Extension and outward velocity:
+
+```text
+extension = max(0, |r_pred| - R)
+v_out = max(0, dot(v_candidate, n))
+```
+
+Constraint acceleration removed by the tether:
+
+```text
+a_constraint = extension / (dt * dt) + v_out / dt
+```
+
+Solved tether tension:
+
+```text
+T_solve = m * a_constraint
+```
+
+Pilot fighting tension adds commanded propulsion demand without restoring thrust:
+
+```text
+T_command = m * ThrustAcceleration * ThrottleOutput
+T_total = T_solve + T_command
+```
+
+If:
+
+```text
+ThrottleOutput >= StressThrottleThreshold
+T_total > TetherYieldLimit
+```
+
+then:
+
+```text
+overload01 = saturate((T_total - TetherYieldLimit) / TetherYieldLimit)
+damage += ShearDamagePerSecond * overload01 * dt
+```
+
+Damage is accumulated into a bounded scalar and emitted on `entanglementStressSignalInterval` through the existing `IDamageSignalEmitter` path. `TraumaDispatcher` remains a receiver only. The same interval gates structural groan audio and stress haptics.
+
+## Cavitation Overload
+While entangled, high throttle at low vehicle speed produces cavitation instead of useful flow.
+
+Condition:
+
+```text
+ThrottleOutput >= CavitationThrottleThreshold
+|v_next| <= CavitationLowSpeedThreshold
+```
+
+Intensity:
+
+```text
+speedSuppression01 = 1 - saturate(|v_next| / CavitationLowSpeedThreshold)
+cavitation01 = saturate(ThrottleOutput * max(speedSuppression01, overYield ? 1 : 0.5))
+```
+
+Engine damage:
+
+```text
+engineDamage += CavitationEngineDamagePerSecond * cavitation01 * dt
+```
+
+Bubble and shockwave requests are fixed-capacity events queued to `HectonFluidEngine`. In `PostFixedTick`, the engine emits optional cavitation particles and uses `Physics.OverlapSphereNonAlloc` plus preallocated collider/rigidbody buffers. Small rigidbodies are deduplicated and pushed through `PhysicsForceRouter.QueueForce(..., ForceMode.Acceleration)`.
+
 ## Release Rule
 The transport stores the exact entangling flora instance UIDs.
 
@@ -104,6 +184,8 @@ That keeps the warning deterministic and non-spammy:
 - one notification per lock event
 - one haptic stall pulse per lock event
 - no per-frame UI or haptic queue churn while already tethered
+
+`ToolHapticsRuntime.EnqueueCommand` writes into the existing double-buffered haptic queue only. `InputDispatcher.DrainToolHaptics` is the sole device drain. It resolves each motor independently by priority first, then blend mode. Lower-priority tool pulses cannot add on top of active stall or hull-stress pulses; same-priority commands still follow override/additive/max semantics.
 
 ## Zero-Allocation Density Query Proof
 The fixed-step macro-flora query path is allocation-free after initialization.

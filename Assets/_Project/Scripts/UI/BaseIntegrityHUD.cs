@@ -61,7 +61,7 @@ namespace Hecton8.UI
         [Tooltip("Search radius for the nearest base module in meters.")]
         [SerializeField] private float scanRadius = 50f;
 
-        [SerializeField] private LayerMask moduleLayerMask = ~0;
+        [SerializeField] private LayerMask moduleLayerMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         public static BaseIntegrityHUD Instance { get; private set; }
 

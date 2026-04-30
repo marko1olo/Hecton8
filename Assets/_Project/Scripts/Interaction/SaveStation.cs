@@ -64,7 +64,7 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void Interact(Transform interactor)
         {
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null)
             {
                 ResolveHudNotification();

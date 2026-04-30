@@ -465,7 +465,7 @@ namespace Hecton8.PDA
             if (_registeredToSave)
                 return;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null)
                 return;
 
@@ -478,7 +478,7 @@ namespace Hecton8.PDA
             if (!_registeredToSave)
                 return;
 
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager != null)
                 saveManager.Unregister(this);
 

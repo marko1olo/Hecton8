@@ -48,7 +48,7 @@ namespace Hecton8.EditorTools
 
         private static void ValidateSceneScannables(List<string> issues)
         {
-            ScannableTarget[] targets = Object.FindObjectsByType<ScannableTarget>();
+            ScannableTarget[] targets = Object.FindObjectsByType<ScannableTarget>(FindObjectsInactive.Exclude);
             if (targets == null || targets.Length == 0)
             {
                 issues.Add("No ScannableTarget components found in the active scene.");

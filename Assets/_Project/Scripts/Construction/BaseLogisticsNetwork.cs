@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Crafting;
+using Hecton8.Core;
 using Hecton8.Economy;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
+using UnityEngine;
 
 namespace Hecton8.Construction
 {
@@ -215,6 +217,58 @@ namespace Hecton8.Construction
             return count;
         }
 
+        public static bool TryResolveNearestSupplyEndpoint(PowerGrid grid, int itemHashId, Vector3 origin, out Vector3 position)
+        {
+            position = Vector3.zero;
+            if (grid == null || itemHashId == 0)
+                return false;
+
+            bool found = false;
+            float bestDistanceSq = float.MaxValue;
+            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null ||
+                    endpoint.Node == null ||
+                    endpoint.Node.Grid != grid ||
+                    endpoint.Crate.CountItemByHash(itemHashId) <= 0)
+                {
+                    continue;
+                }
+
+                Vector3 candidatePosition = endpoint.Crate.transform.position;
+                float distanceSq = (candidatePosition - origin).sqrMagnitude;
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                position = candidatePosition;
+                found = true;
+            }
+
+            bool hasNetworkStock = found || CountAccessibleItem(grid, itemHashId) > 0;
+            if (!hasNetworkStock)
+                return found;
+
+            for (int i = 0; i < s_FabricatorEndpoints.Count; i++)
+            {
+                FabricatorEndpoint endpoint = s_FabricatorEndpoints[i];
+                if (endpoint.Fabricator == null || endpoint.Node == null || endpoint.Node.Grid != grid)
+                    continue;
+
+                Vector3 candidatePosition = endpoint.Fabricator.transform.position;
+                float distanceSq = (candidatePosition - origin).sqrMagnitude;
+                if (distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                position = candidatePosition;
+                found = true;
+            }
+
+            return found;
+        }
+
         /// <summary>
         /// Prepare phase for legacy string-id callers. It resolves items through the item catalog and reserves slots
         /// without physically moving them.
@@ -341,6 +395,29 @@ namespace Hecton8.Construction
             {
                 StorageCrate crate = reservation.GetTouchedCrate(i);
                 crate?.CommitReservation(reservationId);
+            }
+
+            reservation.Release();
+        }
+
+        public static void CommitReservedViaCommandQueue(LogisticsReservation reservation)
+        {
+            if (reservation == null || !reservation.IsPrepared)
+                return;
+
+            int reservationId = reservation.ReservationId;
+            int touchedCrateCount = reservation.TouchedCrateCount;
+            for (int i = 0; i < touchedCrateCount; i++)
+            {
+                StorageCrate crate = reservation.GetTouchedCrate(i);
+                if (crate == null)
+                    continue;
+
+                int token = ThreadSafeCommandQueue.RegisterGameObjectTarget(crate.gameObject);
+                if (token > 0)
+                    ThreadSafeCommandQueue.Enqueue(EntityCommand.CreateCommitStorageReservation(token, reservationId));
+                else
+                    crate.CommitReservation(reservationId);
             }
 
             reservation.Release();

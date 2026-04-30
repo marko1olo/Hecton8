@@ -63,7 +63,8 @@ namespace Hecton8.Construction
             Repair = 2,
             Return = 3,
             Docking = 4,
-            Stasis = 5
+            Stasis = 5,
+            ResupplyTravel = 6
         }
 
         private const int MaxRouteWaypointCount = 16;
@@ -73,6 +74,8 @@ namespace Hecton8.Construction
         private const float IntegrityPercentPerSolderUnit = 10f;
         private const float MinimumWeldDirectionEpsilon = 0.0001f;
         private const float MinimumDockingDurationSeconds = 1f;
+        private const float ParasiteCutDamage = 9999f;
+        private const float WarningFlashPeriodSeconds = 0.5f;
 
         [Header("── Flight Profile ─────────────────────")]
         [Tooltip("Cruise speed while moving between hub and target.")]
@@ -112,6 +115,9 @@ namespace Hecton8.Construction
         [Tooltip("Preferred separation radius from the player.")]
         [SerializeField, Range(0.5f, 8f)] private float playerSeparationRadius = 2.5f;
 
+        [Tooltip("Neighbor radius used for fleet alignment and cohesion steering.")]
+        [SerializeField, Range(2f, 16f)] private float boidPerceptionRadius = 8f;
+
         [Header("── Repair Profile ────────────────────")]
         [Tooltip("Fallback repair rate applied when the hub does not override mission throughput.")]
         [SerializeField, Range(1f, 100f)] private float repairRatePerSecond = 18f;
@@ -145,6 +151,9 @@ namespace Hecton8.Construction
         [Tooltip("Short pooled torch clip re-fired through SpatialAudioManager while the weld is active.")]
         [SerializeField] private AudioClip repairTorchClip;
 
+        [Tooltip("Optional authored yellow warning light enabled when the drone cannot acquire solder.")]
+        [SerializeField] private Light supplyWarningLight;
+
         [Tooltip("Seconds between pooled weld-torch acoustic pulses while repairing.")]
         [SerializeField, Range(0.05f, 0.5f)] private float repairTorchEventIntervalSeconds = 0.18f;
 
@@ -167,6 +176,7 @@ namespace Hecton8.Construction
         private RepairDroneHub _hub;
         private BaseModule _target;
         private HectonVoxelVolume _targetVoxelVolume;
+        private DroneFleetTaskKind _taskKind;
         private bool _registered;
         private float _activeRepairRate;
         private float _batteryNormalized = 1f;
@@ -174,17 +184,22 @@ namespace Hecton8.Construction
         private float _repathTimer;
         private Vector3 _homePosition;
         private Quaternion _homeRotation;
+        private Vector3 _taskPosition;
+        private Vector3 _supplyEndpointPosition;
         private DroneMissionState _state;
+        private float _taskRadius;
         private int _routeWaypointCount;
         private int _routeWaypointIndex;
         private int _solderUnitsRemaining;
         private int _loadedSolderUnitCapacity;
         private float _dockBlendElapsed;
         private float _repairTorchEventTimer;
+        private float _supplyWarningTimer;
         private Vector3 _dockBlendStartPosition;
         private Vector3 _dockBlendTargetPosition;
         private Quaternion _dockBlendStartRotation;
         private Quaternion _dockBlendTargetRotation;
+        private bool _supplyWarningActive;
 
         /// <summary>True while the drone still owns a live mission.</summary>
         public bool HasActiveMission => _state != DroneMissionState.Idle;
@@ -194,6 +209,12 @@ namespace Hecton8.Construction
 
         /// <summary>Current mission battery state used by fleet diagnostics.</summary>
         public float BatteryNormalized => _batteryNormalized;
+
+        internal bool IsSwarmAvoidanceParticipant => isActiveAndEnabled && _state != DroneMissionState.Idle;
+
+        internal Vector3 SwarmPosition => _cachedTransform != null ? _cachedTransform.position : transform.position;
+
+        internal Vector3 SwarmVelocity => _rigidbody != null ? _rigidbody.linearVelocity : Vector3.zero;
 
         private void Awake()
         {
@@ -209,6 +230,7 @@ namespace Hecton8.Construction
         private void OnDisable()
         {
             StopRepairFeedback();
+            DroneFleetManager.UnregisterActiveDrone(this);
             TryUnregister();
         }
 
@@ -228,6 +250,9 @@ namespace Hecton8.Construction
 
         public void Tick(float dt)
         {
+            if (_supplyWarningActive)
+                TickSupplyWarning(dt);
+
             if (_state == DroneMissionState.Idle || _state == DroneMissionState.Stasis)
                 return;
 
@@ -271,6 +296,11 @@ namespace Hecton8.Construction
                             CompleteMission(false);
                     }
                     break;
+
+                case DroneMissionState.ResupplyTravel:
+                    if (TryReachSupplyEndpoint())
+                        CompleteResupply();
+                    break;
             }
         }
 
@@ -284,9 +314,10 @@ namespace Hecton8.Construction
                 return;
             }
 
+            Vector3 currentPosition = _cachedTransform.position;
             Vector3 destination = ResolveDestination();
             float stopDistance = _state == DroneMissionState.Return ? returnStopDistance : serviceRadius;
-            Vector3 offset = destination - _cachedTransform.position;
+            Vector3 offset = destination - currentPosition;
             float distance = offset.magnitude;
 
             if (distance <= stopDistance)
@@ -297,8 +328,15 @@ namespace Hecton8.Construction
 
             Vector3 pathDirection = offset / Mathf.Max(distance, 0.0001f);
             float cohesionWeight = ResolveCohesionWeight();
-            Vector3 avoidance = DroneFleetManager.ResolveSwarmAvoidance(this, _cachedTransform.position, droneSeparationRadius, playerSeparationRadius);
-            Vector3 steering = (pathDirection * cohesionWeight) + avoidance;
+            Vector3 steering = DroneFleetManager.ResolveSwarmSteering(
+                this,
+                currentPosition,
+                _rigidbody.linearVelocity,
+                pathDirection,
+                boidPerceptionRadius,
+                droneSeparationRadius,
+                playerSeparationRadius,
+                cohesionWeight);
             if (steering.sqrMagnitude <= 0.0001f)
                 steering = pathDirection;
 
@@ -324,8 +362,19 @@ namespace Hecton8.Construction
         /// <summary>Assigns a fresh mission to this pooled drone.</summary>
         public void AssignMission(RepairDroneHub hub, BaseModule target, Vector3 homePosition, float repairRateOverride, int loadedSolderUnits)
         {
+            Vector3 taskPosition = target != null ? target.transform.position : homePosition;
+            DroneFleetTask task = new DroneFleetTask(DroneFleetTaskKind.RepairModule, target, taskPosition, 0f);
+            AssignMission(hub, in task, homePosition, repairRateOverride, loadedSolderUnits);
+        }
+
+        internal void AssignMission(RepairDroneHub hub, in DroneFleetTask task, Vector3 homePosition, float repairRateOverride, int loadedSolderUnits)
+        {
             _hub = hub;
-            _target = target;
+            _target = task.Module;
+            _taskKind = task.Kind;
+            _taskPosition = task.Position;
+            _taskRadius = task.Radius;
+            _supplyEndpointPosition = homePosition;
             _homePosition = homePosition;
             _homeRotation = hub != null ? hub.DockRotation : _cachedTransform.rotation;
             _activeRepairRate = repairRateOverride > 0f ? repairRateOverride : repairRatePerSecond;
@@ -333,8 +382,8 @@ namespace Hecton8.Construction
             _repairPercentAccumulator = 0f;
             _solderUnitsRemaining = Mathf.Max(0, loadedSolderUnits);
             _loadedSolderUnitCapacity = Mathf.Max(1, _solderUnitsRemaining);
-            _targetVoxelVolume = TryResolveTargetVoxelVolume(target);
-            _state = target != null ? DroneMissionState.Travel : DroneMissionState.Return;
+            _targetVoxelVolume = TryResolveTargetVoxelVolume(_target);
+            _state = task.IsValid ? DroneMissionState.Travel : DroneMissionState.Return;
             _debugMissionActive = _state != DroneMissionState.Idle;
             _debugState = _state.ToString();
             _debugBatteryNormalized = _batteryNormalized;
@@ -345,6 +394,7 @@ namespace Hecton8.Construction
             _dockBlendElapsed = 0f;
             _repairTorchEventTimer = 0f;
             StopRepairFeedback();
+            SetSupplyWarning(false);
 
             if (_rigidbody != null)
             {
@@ -372,6 +422,10 @@ namespace Hecton8.Construction
             _hub = null;
             _target = null;
             _targetVoxelVolume = null;
+            _taskKind = DroneFleetTaskKind.None;
+            _taskPosition = Vector3.zero;
+            _taskRadius = 0f;
+            _supplyEndpointPosition = _homePosition;
             _activeRepairRate = repairRatePerSecond;
             _batteryNormalized = 1f;
             _repairPercentAccumulator = 0f;
@@ -389,6 +443,7 @@ namespace Hecton8.Construction
             _debugState = DroneMissionState.Idle.ToString();
             _debugBatteryNormalized = 1f;
             _debugSolderUnitsRemaining = 0;
+            SetSupplyWarning(false);
 
             if (_rigidbody != null)
             {
@@ -431,6 +486,12 @@ namespace Hecton8.Construction
 
             TickRepairFeedback(dt);
 
+            if (_taskKind == DroneFleetTaskKind.CutParasite)
+            {
+                TickParasiteCut();
+                return;
+            }
+
             float recoverableIntegrity = Mathf.Max(1f, _target.MaxRecoverableIntegrity);
             if (DroneFleetManager.ConsumeFleetSacrificeFlag() && (_target.CurrentIntegrity / recoverableIntegrity) <= 0.05f)
             {
@@ -440,7 +501,7 @@ namespace Hecton8.Construction
 
             if (_solderUnitsRemaining <= 0)
             {
-                BeginReturn();
+                BeginResupply();
                 return;
             }
 
@@ -465,7 +526,7 @@ namespace Hecton8.Construction
             if (IsMissionComplete())
                 BeginReturn();
             else if (_solderUnitsRemaining <= 0)
-                BeginReturn();
+                BeginResupply();
         }
 
         private void DrainBattery(float dt)
@@ -474,6 +535,7 @@ namespace Hecton8.Construction
             switch (_state)
             {
                 case DroneMissionState.Travel:
+                case DroneMissionState.ResupplyTravel:
                     drainPerSecond = travelBatteryDrainPerSecond;
                     break;
                 case DroneMissionState.Repair:
@@ -537,8 +599,18 @@ namespace Hecton8.Construction
 
         private Vector3 ResolveDirectDestination()
         {
+            if (_state == DroneMissionState.ResupplyTravel)
+                return _supplyEndpointPosition;
+
             if (_state == DroneMissionState.Return || _target == null)
                 return _homePosition;
+
+            if (_taskKind == DroneFleetTaskKind.CutParasite)
+            {
+                Vector3 parasiteStandOff = _taskPosition;
+                parasiteStandOff.y += hoverHeight;
+                return parasiteStandOff;
+            }
 
             Vector3 targetPosition = _target.transform.position;
             targetPosition.y += hoverHeight;
@@ -551,6 +623,12 @@ namespace Hecton8.Construction
                 return false;
 
             Vector3 offset = ResolveDirectDestination() - _cachedTransform.position;
+            return offset.sqrMagnitude <= serviceRadius * serviceRadius;
+        }
+
+        private bool TryReachSupplyEndpoint()
+        {
+            Vector3 offset = _supplyEndpointPosition - _cachedTransform.position;
             return offset.sqrMagnitude <= serviceRadius * serviceRadius;
         }
 
@@ -606,14 +684,19 @@ namespace Hecton8.Construction
             if (_target == null)
                 return true;
 
+            if (_taskKind == DroneFleetTaskKind.CutParasite)
+                return _target.ParasiteInfectionLevel <= 0.0001f;
+
             return _target.CurrentIntegrity >= _target.MaxRecoverableIntegrity && !_target.IsFlooded;
         }
 
         private void BeginReturn()
         {
             StopRepairFeedback();
+            SetSupplyWarning(false);
             _target = null;
             _targetVoxelVolume = null;
+            _taskKind = DroneFleetTaskKind.None;
             _state = DroneMissionState.Return;
             _debugState = _state.ToString();
             _repathTimer = 0f;
@@ -621,11 +704,61 @@ namespace Hecton8.Construction
             DroneFleetManager.NotifyFleetStateChanged();
         }
 
-        private void EnterStasis()
+        private void BeginResupply()
         {
             StopRepairFeedback();
+            if (_hub == null || !_hub.TryResolveNearestSupplyEndpoint(_cachedTransform.position, out _supplyEndpointPosition))
+            {
+                EnterStasis(true);
+                return;
+            }
+
+            SetSupplyWarning(false);
+            _state = DroneMissionState.ResupplyTravel;
+            _debugState = _state.ToString();
+            _repathTimer = 0f;
+            RebuildRoute();
+            DroneFleetManager.NotifyFleetStateChanged();
+        }
+
+        private void CompleteResupply()
+        {
+            if (_hub == null)
+            {
+                EnterStasis(true);
+                return;
+            }
+
+            int requestedUnits = Mathf.Max(1, _loadedSolderUnitCapacity - _solderUnitsRemaining);
+            if (!_hub.TryAcquireDroneResupply(requestedUnits, out int grantedUnits) || grantedUnits <= 0)
+            {
+                EnterStasis(true);
+                return;
+            }
+
+            _solderUnitsRemaining += grantedUnits;
+            _loadedSolderUnitCapacity = Mathf.Max(_loadedSolderUnitCapacity, _solderUnitsRemaining);
+            _debugSolderUnitsRemaining = _solderUnitsRemaining;
+            SetSupplyWarning(false);
+
+            if (_target != null && _target.gameObject.activeInHierarchy && !IsMissionComplete())
+                _state = DroneMissionState.Travel;
+            else
+                _state = DroneMissionState.Return;
+
+            _debugState = _state.ToString();
+            _repathTimer = 0f;
+            RebuildRoute();
+            DroneFleetManager.NotifyFleetStateChanged();
+        }
+
+        private void EnterStasis(bool supplyWarning = false)
+        {
+            StopRepairFeedback();
+            SetSupplyWarning(supplyWarning);
             _target = null;
             _targetVoxelVolume = null;
+            _taskKind = DroneFleetTaskKind.None;
             _state = DroneMissionState.Stasis;
             _debugState = _state.ToString();
             _debugMissionActive = true;
@@ -638,6 +771,38 @@ namespace Hecton8.Construction
             }
 
             DroneFleetManager.NotifyFleetStateChanged();
+        }
+
+        private void TickParasiteCut()
+        {
+            if (_solderUnitsRemaining <= 0)
+            {
+                BeginResupply();
+                return;
+            }
+
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            if (floraInteractionManager == null)
+            {
+                BeginReturn();
+                return;
+            }
+
+            Vector3 nozzlePosition = ResolveNozzlePosition();
+            Vector3 cutDirection = _taskPosition - nozzlePosition;
+            bool applied = floraInteractionManager.TryApplyDroneParasiteCut(
+                _taskPosition,
+                cutDirection,
+                ParasiteCutDamage,
+                weldPowerNormalized);
+
+            if (applied)
+            {
+                _solderUnitsRemaining--;
+                _debugSolderUnitsRemaining = _solderUnitsRemaining;
+            }
+
+            BeginReturn();
         }
 
         private void ExecuteSacrificePatch()
@@ -683,6 +848,30 @@ namespace Hecton8.Construction
             _repairTorchEventTimer = 0f;
             if (repairSparkVfx != null)
                 repairSparkVfx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        private void SetSupplyWarning(bool active)
+        {
+            _supplyWarningActive = active;
+            _supplyWarningTimer = 0f;
+            if (supplyWarningLight == null)
+                return;
+
+            supplyWarningLight.color = Color.yellow;
+            supplyWarningLight.enabled = active;
+        }
+
+        private void TickSupplyWarning(float dt)
+        {
+            if (supplyWarningLight == null)
+                return;
+
+            _supplyWarningTimer += dt;
+            if (_supplyWarningTimer < WarningFlashPeriodSeconds)
+                return;
+
+            _supplyWarningTimer = 0f;
+            supplyWarningLight.enabled = !supplyWarningLight.enabled;
         }
 
         private void DispatchAdditiveRepairWeld()

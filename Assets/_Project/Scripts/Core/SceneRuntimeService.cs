@@ -14,6 +14,9 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9940)]
     public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable
     {
+        private const int SceneActivationWatchdogInitialFrames = 1200;
+        private const int SceneActivationWatchdogRepeatFrames = 300;
+
         private static SceneRuntimeService _instance;
         private bool _isInitialized;
         private bool _registeredSceneService;
@@ -117,16 +120,26 @@ namespace Hecton8.Core
 
                 _pendingSceneLoadOperation = loadOperation;
                 _pendingSceneLoadOperation.allowSceneActivation = false;
+                int waitFrames = 0;
+                int nextWatchdogFrame = SceneActivationWatchdogInitialFrames;
 
                 while (Application.isPlaying && ReferenceEquals(_instance, this) && !_pendingSceneLoadOperation.isDone)
                 {
-                    if (_pendingSceneLoadOperation.progress >= 0.9f &&
-                        ArePersistentWorldPoolsReadyForSceneActivation() &&
-                        IsFloatingOriginStableForSceneActivation())
+                    bool loadReady = _pendingSceneLoadOperation.progress >= 0.9f;
+                    bool poolsReady = loadReady && ArePersistentWorldPoolsReadyForSceneActivation();
+                    bool originStable = poolsReady && IsFloatingOriginStableForSceneActivation();
+
+                    if (loadReady && poolsReady && originStable)
                     {
                         _pendingSceneLoadOperation.allowSceneActivation = true;
                     }
+                    else if (waitFrames >= nextWatchdogFrame)
+                    {
+                        LogSceneActivationWatchdog(sceneName, _pendingSceneLoadOperation.progress, loadReady, poolsReady, originStable, waitFrames);
+                        nextWatchdogFrame = waitFrames + SceneActivationWatchdogRepeatFrames;
+                    }
 
+                    waitFrames++;
                     await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
                 }
             }
@@ -224,7 +237,7 @@ namespace Hecton8.Core
         {
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             if (registry == null)
-                return true;
+                return false;
 
             return registry.AreResidentWorldPrefabPoolsReady();
         }
@@ -233,6 +246,30 @@ namespace Hecton8.Core
         {
             return !HectonFloatingOrigin.IsShiftInProgress &&
                    !HectonFloatingOrigin.IsPhysicsPausedForShift;
+        }
+
+        private static void LogSceneActivationWatchdog(
+            string sceneName,
+            float progress,
+            bool loadReady,
+            bool poolsReady,
+            bool originStable,
+            int waitFrames)
+        {
+            string blockedBy = GetSceneActivationBlockedReason(loadReady, poolsReady, originStable);
+            Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' still blocked after {waitFrames} frames. Reason: {blockedBy}. Progress: {progress:0.00}.");
+        }
+
+        private static string GetSceneActivationBlockedReason(bool loadReady, bool poolsReady, bool originStable)
+        {
+            if (!loadReady)
+                return "AsyncOperation progress below activation threshold";
+            if (!poolsReady)
+                return "PersistentWorldRegistry pools not ready";
+            if (!originStable)
+                return "floating origin shift in progress";
+
+            return "activation pending";
         }
 
         private void TryRegisterUpdatable()

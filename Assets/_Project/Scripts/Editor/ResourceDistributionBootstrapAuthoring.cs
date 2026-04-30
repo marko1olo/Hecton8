@@ -12,6 +12,7 @@ namespace Hecton8.Editor
     internal static class ResourceDistributionBootstrapAuthoring
     {
         private const string ManagersRootName = "__WORLD_MANAGERS";
+        private const string ThermalDiamondTemplateAssetPath = "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_ThermalDiamond.asset";
 
         private static readonly string[] TemplateAssetPaths =
         {
@@ -58,6 +59,7 @@ namespace Hecton8.Editor
             AssignObject(serializedDirector, "vegetationBridge", Object.FindAnyObjectByType<HectonMapMagicVegetationBridge>(FindObjectsInactive.Include));
             AssignObject(serializedDirector, "voxelEngine", Object.FindAnyObjectByType<HectonVoxelEngine>(FindObjectsInactive.Include));
             AssignTemplates(serializedDirector.FindProperty("resourceTemplates"));
+            AssignObject(serializedDirector, "thermalDiamondTemplate", AssetDatabase.LoadAssetAtPath<ResourceNodeTemplate>(ThermalDiamondTemplateAssetPath));
             serializedDirector.ApplyModifiedPropertiesWithoutUndo();
 
             EditorUtility.SetDirty(director);

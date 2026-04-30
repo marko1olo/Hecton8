@@ -88,7 +88,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float damagePerSecond = 25f;
 
         [Tooltip("LayerMask for raycast targets.")]
-        [SerializeField] private LayerMask cuttableLayer = ~0;
+        [SerializeField] private LayerMask cuttableLayer = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("── Heat Management ───────────────────────────")]
         [Tooltip("Seconds of continuous firing to reach overheat (heat 0→1).")]

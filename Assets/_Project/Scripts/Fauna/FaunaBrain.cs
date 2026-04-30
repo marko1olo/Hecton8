@@ -65,6 +65,10 @@ namespace Hecton8.AI
         public int SpeciesId => ComputeStableSpeciesId();
         public bool HasActiveApexIntimidation => _apexIntimidationUntilTime > _cognitionTimeSeconds;
         public bool IsFlankingManeuverDetected => _flankingManeuverDetected;
+        /// <summary>
+        /// True while this predator is publishing a false PDA distress-beacon signal.
+        /// </summary>
+        public bool HasActiveEcholocationMimicry => _mimicSignalActive;
         public uint ThreatPredictionLoreHash => _faunaDataTemplate != null ? _faunaDataTemplate.FullLoreHash : 0u;
 
         /// <summary>
@@ -172,7 +176,10 @@ namespace Hecton8.AI
         private float _forcedMigrationUntilTime;
         private float _nextBurrowBreachTime;
         private float _nextBestiaryObservationTime;
+        private float _nextMimicPingTime;
+        private float _mimicPingExpireTime;
         private bool _hasForcedMigrationTarget;
+        private bool _mimicSignalActive;
         private uint _cachedScanEntryHash;
 
         // ══════════════════════════════════════════════════════════
@@ -294,6 +301,7 @@ namespace Hecton8.AI
             _utilityBrain.SetRuntimeActive(false);
             ResetDispatcherCadence();
             ClearVoxelPathGuidance();
+            ClearEcholocationMimicSignal();
         }
 
         private void OnDestroy()
@@ -308,6 +316,7 @@ namespace Hecton8.AI
             ClearInfectionHazardRegistration();
             _utilityBrain.Dispose();
             ClearVoxelPathGuidance();
+            ClearEcholocationMimicSignal();
         }
 
         public void OnSpawn()
@@ -347,6 +356,7 @@ namespace Hecton8.AI
             ResetDispatcherCadence();
             ClearProceduralStrikeIntent();
             ClearVoxelPathGuidance();
+            ClearEcholocationMimicSignal();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -364,6 +374,7 @@ namespace Hecton8.AI
             {
                 AdvanceSlowTickCadence(dt);
                 ClearProceduralStrikeIntent();
+                ClearEcholocationMimicSignal();
                 if (_logicalLodTier == FaunaLogicalLodTier.DataOnly && _rb != null && !_rb.IsSleeping())
                     _rb.Sleep();
 
@@ -374,6 +385,7 @@ namespace Hecton8.AI
             {
                 AdvanceSlowTickCadence(dt);
                 ClearProceduralStrikeIntent();
+                ClearEcholocationMimicSignal();
                 return;
             }
 
@@ -385,6 +397,7 @@ namespace Hecton8.AI
                 FixedTick(dt);
                 AdvanceSlowTickCadence(dt);
                 ClearProceduralStrikeIntent();
+                ClearEcholocationMimicSignal();
                 return;
             }
 
@@ -398,6 +411,7 @@ namespace Hecton8.AI
                 attackTarget = null;
 
             UpdateBioluminescentHypnosis();
+            UpdateEcholocationMimicry();
             UpdateProceduralStrikeIntent(_currentStateCache, attackTarget);
             UpdateProceduralHeadLookIntent();
             EmitLeviathanThreatPulse(in utilityEvaluation);
@@ -785,6 +799,117 @@ namespace Hecton8.AI
                 _faunaDataTemplate.EmpClaritySuppression01,
                 (uint)DamageTypeMask.Emp,
                 DamageSourceIds.FaunaEmp));
+        }
+
+        private void UpdateEcholocationMimicry()
+        {
+            if (_isDead ||
+                !ShouldUseEcholocationMimicry() ||
+                !TryResolveMimicPlayerPosition(out Vector3 playerPosition) ||
+                _currentStateCache == AIState.Retreat ||
+                _currentStateCache == AIState.Sated)
+            {
+                ClearEcholocationMimicSignal();
+                return;
+            }
+
+            Vector3 selfPosition = transform.position;
+            float vanishDistance = _faunaDataTemplate.MimicPingVanishDistanceMeters;
+            float vanishDistanceSqr = vanishDistance * vanishDistance;
+            float playerDistanceSqr = (playerPosition - selfPosition).sqrMagnitude;
+
+            if (_mimicSignalActive)
+            {
+                if (playerDistanceSqr <= vanishDistanceSqr)
+                {
+                    CommitEcholocationMimicAmbush(playerPosition);
+                    _nextMimicPingTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingCooldownSeconds;
+                    ClearEcholocationMimicSignal();
+                    return;
+                }
+
+                if (_cognitionTimeSeconds >= _mimicPingExpireTime || _currentStateCache == AIState.Aggressive)
+                {
+                    ClearEcholocationMimicSignal();
+                    return;
+                }
+
+                return;
+            }
+
+            if (_currentStateCache == AIState.Aggressive || _cognitionTimeSeconds < _nextMimicPingTime)
+                return;
+
+            float pingRadius = _faunaDataTemplate.MimicPingRadiusMeters;
+            if (playerDistanceSqr <= vanishDistanceSqr || playerDistanceSqr > pingRadius * pingRadius)
+                return;
+
+            EmitEcholocationMimicPing(selfPosition);
+        }
+
+        private bool ShouldUseEcholocationMimicry()
+        {
+            if (_faunaDataTemplate == null || !_faunaDataTemplate.CanEmitMimicDistressPing)
+                return false;
+
+            return IsApexPredator() || _faunaDataTemplate.FoodChainTier == FaunaFoodChainTier.Leviathan;
+        }
+
+        private bool TryResolveMimicPlayerPosition(out Vector3 playerPosition)
+        {
+            if (_sensorSuite.TryGetPerceivedPlayerPosition(out playerPosition))
+                return true;
+
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _currentCullingPlayerTransform);
+            if (_currentCullingPlayerTransform == null)
+            {
+                playerPosition = default;
+                return false;
+            }
+
+            playerPosition = _currentCullingPlayerTransform.position;
+            return true;
+        }
+
+        private void EmitEcholocationMimicPing(Vector3 selfPosition)
+        {
+            if (_faunaDataTemplate == null)
+                return;
+
+            _mimicSignalActive = true;
+            _mimicPingExpireTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingLifetimeSeconds;
+            _nextMimicPingTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingCooldownSeconds;
+
+            PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
+                selfPosition,
+                _faunaDataTemplate.MimicPingRadiusMeters,
+                _faunaDataTemplate.MimicPingIntensity01,
+                _faunaDataTemplate.MimicPingLifetimeSeconds,
+                FieldTargetRole.DistressBeacon,
+                ComputeStableSpeciesId()));
+        }
+
+        private void CommitEcholocationMimicAmbush(Vector3 playerPosition)
+        {
+            Vector3 attackDirection = playerPosition - transform.position;
+            if (attackDirection.sqrMagnitude <= 0.0001f)
+                attackDirection = transform.forward;
+            else
+                attackDirection.Normalize();
+
+            _cachedDesiredDirection = attackDirection;
+            _utilityBrain.RecordAuditoryStimulus(playerPosition, _cognitionTimeSeconds);
+            _utilityBrain.ApplyExternalState(AIState.Aggressive, _cognitionTimeSeconds);
+            _stateMachine.currentState = AIState.Aggressive;
+            _currentStateCache = AIState.Aggressive;
+        }
+
+        private void ClearEcholocationMimicSignal()
+        {
+            if (_mimicSignalActive)
+                WorldSpatialHashGrid.ClearTransientSignal(FieldTargetRole.DistressBeacon, ComputeStableSpeciesId());
+            _mimicSignalActive = false;
+            _mimicPingExpireTime = 0f;
         }
 
         private void EmitParentalDefenseSignal(Vector3 sourcePosition, float normalizedDamage)
@@ -1269,6 +1394,8 @@ namespace Hecton8.AI
 
         private void UnregisterSpatialHandle()
         {
+            ClearEcholocationMimicSignal();
+
             if (_spatialHandle != 0)
             {
                 WorldSpatialHashGrid.Unregister(_spatialHandle);
@@ -1833,7 +1960,10 @@ namespace Hecton8.AI
             _forcedMigrationUntilTime = 0f;
             _nextBurrowBreachTime = 0f;
             _nextBestiaryObservationTime = 0f;
+            _nextMimicPingTime = 0f;
+            _mimicPingExpireTime = 0f;
             _hasForcedMigrationTarget = false;
+            ClearEcholocationMimicSignal();
             ClearVoxelPathGuidance();
         }
 

@@ -43,8 +43,11 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Base Airlock")]
-    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable
+    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource
     {
+        private const float DefaultWeldOverrideDurationSeconds = 5f;
+        private const float MaxSignalWeldDeltaSeconds = 0.25f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -75,6 +78,13 @@ namespace Hecton8.Gameplay
         [Tooltip("Amber color shown while emergency bulkhead lockdown overrides player control.")]
         [SerializeField] private Color lockedDownColor = new Color(1f, 0.6f, 0.08f);
 
+        [Header("Emergency Override")]
+        [Tooltip("Owning base module intentionally flooded when a lockdown override opens this quarantined airlock.")]
+        [SerializeField] private BaseModule owningModule;
+
+        [Tooltip("Continuous weld time required before a quarantined airlock unlocks.")]
+        [SerializeField, Min(0.1f)] private float weldOverrideDurationSeconds = DefaultWeldOverrideDurationSeconds;
+
         [Header("── Audio ──────────────────────────────────────")]
         [Tooltip("Sound played when airlock cycle starts.")]
         [SerializeField] private AudioClip cycleStartSound;
@@ -101,6 +111,7 @@ namespace Hecton8.Gameplay
         private bool _isPlayerInside; // True if player is currently inside the base
         private bool _registered;
         private bool _emergencyLockedDown;
+        private float _weldOverrideProgressSeconds;
         private int _emissionPropertyId;
 
         // Cached references
@@ -131,6 +142,14 @@ namespace Hecton8.Gameplay
         /// <summary>True while emergency lockdown overrides player interaction.</summary>
         public bool IsEmergencyLockedDown => _emergencyLockedDown;
 
+        /// <summary>Normalized welding progress toward a manual emergency override.</summary>
+        public float WeldOverrideProgress01 => ResolveWeldOverrideDurationSeconds() > 0f
+            ? Mathf.Clamp01(_weldOverrideProgressSeconds / ResolveWeldOverrideDurationSeconds())
+            : 0f;
+
+        /// <inheritdoc />
+        public uint VulnerabilityMask => ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.Weld);
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -143,6 +162,8 @@ namespace Hecton8.Gameplay
 
             if (statusLightRenderer == null)
                 statusLightRenderer = GetComponent<Renderer>();
+
+            CacheOwningModule();
         }
 
         private void OnEnable()
@@ -152,6 +173,7 @@ namespace Hecton8.Gameplay
             RebuildLocalizedTextCache();
             // Set initial state
             _state = AirlockState.Ready;
+            _weldOverrideProgressSeconds = 0f;
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
         }
 
@@ -258,9 +280,47 @@ namespace Hecton8.Gameplay
             }
         }
 
+        /// <summary>
+        /// Consumes welding time against an emergency lockdown. Completion unlocks the door and floods the protected module.
+        /// </summary>
+        /// <param name="deltaTime">Continuous weld duration in seconds for this tool sample.</param>
+        /// <param name="runtimeHitPoint">Runtime-space impact point used by future VFX hooks.</param>
+        /// <returns>True when the weld was accepted by a quarantined door.</returns>
+        public bool TryApplyWeldOverride(float deltaTime, Vector3 runtimeHitPoint)
+        {
+            if (!_emergencyLockedDown || _state != AirlockState.Ready)
+                return false;
+
+            if (deltaTime <= 0f || !float.IsFinite(deltaTime))
+                return true;
+
+            float requiredSeconds = ResolveWeldOverrideDurationSeconds();
+            _weldOverrideProgressSeconds = Mathf.Min(requiredSeconds, _weldOverrideProgressSeconds + deltaTime);
+            if (_weldOverrideProgressSeconds >= requiredSeconds)
+                ForceEmergencyOverride();
+
+            return true;
+        }
+
+        /// <inheritdoc />
+        public void ApplyInteractionSignal(in global::Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
+        {
+            if ((InteractionEffectType)signal.EffectType != InteractionEffectType.Weld)
+                return;
+
+            TryApplyWeldOverride(ResolveSignalWeldDeltaSeconds(in signal), runtimeHitPoint);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  AIRLOCK LOGIC
         // ══════════════════════════════════════════════════════════
+
+        void global::Hecton8.Interaction.IInteractionSignalConsumer.ApplyInteractionSignal(
+            in global::Hecton8.Interaction.InteractionSignal signal,
+            global::UnityEngine.Vector3 runtimeHitPoint)
+        {
+            ApplyInteractionSignal(in signal, runtimeHitPoint);
+        }
 
         private void StartCycle(Transform player)
         {
@@ -371,6 +431,43 @@ namespace Hecton8.Gameplay
             statusLightRenderer.SetPropertyBlock(_mpb);
         }
 
+        private void CacheOwningModule()
+        {
+            if (owningModule == null)
+                owningModule = GetComponentInParent<BaseModule>();
+        }
+
+        private float ResolveWeldOverrideDurationSeconds()
+        {
+            return Mathf.Max(0.1f, weldOverrideDurationSeconds);
+        }
+
+        private static float ResolveSignalWeldDeltaSeconds(in global::Hecton8.Interaction.InteractionSignal signal)
+        {
+            if (signal.PowerDelivered <= 0f || !float.IsFinite(signal.PowerDelivered))
+                return 0f;
+
+            float sourcePower = Mathf.Max(0.001f, signal.Source.Power);
+            float deltaSeconds = signal.PowerDelivered / sourcePower;
+            return Mathf.Clamp(deltaSeconds, 0f, MaxSignalWeldDeltaSeconds);
+        }
+
+        private void ForceEmergencyOverride()
+        {
+            _weldOverrideProgressSeconds = 0f;
+            CacheOwningModule();
+
+            if (owningModule != null)
+            {
+                owningModule.SetEmergencyBulkheadLockdown(false);
+                if (!owningModule.IsFlooded)
+                    owningModule.ForceFlood();
+                return;
+            }
+
+            SetEmergencyLockdown(false);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EDITOR
         // ══════════════════════════════════════════════════════════
@@ -440,6 +537,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _emergencyLockedDown = lockedDown;
+            _weldOverrideProgressSeconds = 0f;
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
         }

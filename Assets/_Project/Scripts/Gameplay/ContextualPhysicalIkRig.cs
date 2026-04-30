@@ -693,10 +693,10 @@ namespace Hecton8.Gameplay
         [SerializeField] private Transform clearanceProbe;
 
         [Tooltip("Terrain layers used for foot-placement raycasts.")]
-        [SerializeField] private LayerMask groundMask = ~0;
+        [SerializeField] private LayerMask groundMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Tooltip("Wall/cave layers used for tunnel and hand-brace raycasts.")]
-        [SerializeField] private LayerMask wallMask = ~0;
+        [SerializeField] private LayerMask wallMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("── Left Leg ─────────────────────────")]
         [Tooltip("Left upper-leg/thigh bone.")]

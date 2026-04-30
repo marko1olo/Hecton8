@@ -283,7 +283,7 @@ namespace Hecton8.Narrative
         {
             BuildLookupIfNeeded();
             EnsureUnlockStorage();
-            SaveManager.Instance?.Register(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             if (_loreAcquiredSubscription == null)
                 _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, "narrative.lore-db");
         }
@@ -292,7 +292,7 @@ namespace Hecton8.Narrative
         {
             _loreAcquiredSubscription?.Dispose();
             _loreAcquiredSubscription = null;
-            SaveManager.Instance?.Unregister(this);
+            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
         }
 
         private void OnDestroy()

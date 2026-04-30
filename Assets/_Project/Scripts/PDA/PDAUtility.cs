@@ -9,6 +9,9 @@ namespace Hecton8.PDA
     /// </summary>
     internal static class PDAKeyUtility
     {
+        private const int MortonAxisBits = 21;
+        private const ulong MortonAxisMask = (1UL << MortonAxisBits) - 1UL;
+
         public static long PackChunkKey(int chunkX, int chunkY)
         {
             unchecked
@@ -16,6 +19,28 @@ namespace Hecton8.PDA
                 uint packedX = (uint)ZigZagEncode(chunkX);
                 uint packedY = (uint)ZigZagEncode(chunkY);
                 return ((long)packedX << 32) | packedY;
+            }
+        }
+
+        public static long PackMortonChunkKey(int chunkX, int chunkY, int chunkZ)
+        {
+            unchecked
+            {
+                ulong x = (ulong)ZigZagEncode(chunkX) & MortonAxisMask;
+                ulong y = (ulong)ZigZagEncode(chunkY) & MortonAxisMask;
+                ulong z = (ulong)ZigZagEncode(chunkZ) & MortonAxisMask;
+                return (long)(Part1By2(x) | (Part1By2(y) << 1) | (Part1By2(z) << 2));
+            }
+        }
+
+        public static void UnpackMortonChunkKey(long key, out int chunkX, out int chunkY, out int chunkZ)
+        {
+            unchecked
+            {
+                ulong morton = (ulong)key;
+                chunkX = ZigZagDecode((int)Compact1By2(morton));
+                chunkY = ZigZagDecode((int)Compact1By2(morton >> 1));
+                chunkZ = ZigZagDecode((int)Compact1By2(morton >> 2));
             }
         }
 
@@ -44,6 +69,28 @@ namespace Hecton8.PDA
                 return (value >> 1) ^ (-(value & 1));
             }
         }
+
+        private static ulong Part1By2(ulong value)
+        {
+            value &= MortonAxisMask;
+            value = (value | (value << 32)) & 0x1F00000000FFFFUL;
+            value = (value | (value << 16)) & 0x1F0000FF0000FFUL;
+            value = (value | (value << 8)) & 0x100F00F00F00F00FUL;
+            value = (value | (value << 4)) & 0x10C30C30C30C30C3UL;
+            value = (value | (value << 2)) & 0x1249249249249249UL;
+            return value;
+        }
+
+        private static ulong Compact1By2(ulong value)
+        {
+            value &= 0x1249249249249249UL;
+            value = (value ^ (value >> 2)) & 0x10C30C30C30C30C3UL;
+            value = (value ^ (value >> 4)) & 0x100F00F00F00F00FUL;
+            value = (value ^ (value >> 8)) & 0x1F0000FF0000FFUL;
+            value = (value ^ (value >> 16)) & 0x1F00000000FFFFUL;
+            value = (value ^ (value >> 32)) & MortonAxisMask;
+            return value;
+        }
     }
 
     /// <summary>
@@ -55,7 +102,7 @@ namespace Hecton8.PDA
 
         public static void CaptureStamp(out int dayIndex, out float dayTimeHours, out float playTimeSeconds)
         {
-            SaveManager saveManager = SaveManager.Instance;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             playTimeSeconds = saveManager != null ? saveManager.CurrentPlayTimeSeconds : 0f;
 
             HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;

@@ -31,7 +31,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Atlas Signal Tab")]
-    public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable, IUpdatable, IAtlasSignalEventListener
+    public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable, IUpdatable, IAtlasSignalEventListener, IPDAEventListener
     {
         private const float MainCameraResolveRetryInterval = 1f;
         private const string StrengthPercentTemplate = "{0}%";
@@ -165,7 +165,7 @@ namespace Hecton8.UI
             TryRegister();
 
             AtlasSignalEvents.Register(this);
-            PDAEvents.OnOpened += HandlePDAOpened;
+            PDAEvents.Register(this);
 
             _dirty = true;
         }
@@ -175,7 +175,7 @@ namespace Hecton8.UI
             TryUnregister();
 
             AtlasSignalEvents.Unregister(this);
-            PDAEvents.OnOpened -= HandlePDAOpened;
+            PDAEvents.Unregister(this);
         }
 
         private void OnDestroy()
@@ -225,6 +225,12 @@ namespace Hecton8.UI
                     HandleSignalDecoded(string.Empty);
                     break;
             }
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            if ((PDAEventType)payload.EventType == PDAEventType.Opened)
+                HandlePDAOpened(payload.CurrentTab);
         }
 
         private void HandleStrengthChanged(float strength)

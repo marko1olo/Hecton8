@@ -21,8 +21,8 @@ Snapshot date: 2026-04-30.
 
 | Surface | Count |
 |---|---:|
-| all non-meta files under `Docs` after this report | 521 |
-| markdown files | 347 |
+| all non-meta files under `Docs` after this report | 529 |
+| markdown files | 350 |
 | text files | 61 |
 | patch files | 8 |
 | csv files | 1 |
@@ -34,14 +34,14 @@ Archivarius active folder inventory:
 |---|---:|
 | `01_GENERAL_INFO` physical files | 22 |
 | `01_GENERAL_INFO` markdown files | 22 |
-| `02_ACTUAL_REPORTS` physical files | 53 |
+| `02_ACTUAL_REPORTS` physical files | 55 |
 | `02_ACTUAL_REPORTS` markdown files | 46 |
-| `02_ACTUAL_REPORTS` patch artifacts | 6 |
+| `02_ACTUAL_REPORTS` patch artifacts | 8 |
 | `02_ACTUAL_REPORTS` csv datasets | 1 |
 
 Interpretation:
 - `MASTER_INDEX.md` is correct for indexed docs/datasets at `69`.
-- It previously under-communicated that six `.patch` artifacts physically live in `02_ACTUAL_REPORTS`.
+- It previously under-communicated that patch artifacts physically live in `02_ACTUAL_REPORTS`.
 - Patch files are evidence artifacts, not standalone current-state authority.
 
 ## 2. Active Files Updated In This Pass
@@ -60,6 +60,7 @@ Updated active anchors:
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/README.md` | added this report to bundle contents |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md` | refreshed Docs count and active bundle count |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md` | refreshed bundle count after adding this report |
+| `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/28_STALE_ERROR_PURGE_AND_TRUST_SYNC.md` | added explicit stale-error purge and trust-sync addendum |
 
 Runtime code changed:
 - none

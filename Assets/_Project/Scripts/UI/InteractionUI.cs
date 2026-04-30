@@ -50,7 +50,7 @@ namespace Hecton8.UI
         [SerializeField] private float interactionRange = 4f;
 
         [Tooltip("Layers to check for interactables.")]
-        [SerializeField] private LayerMask interactionMask = ~0;
+        [SerializeField] private LayerMask interactionMask = (1 << 8) | (1 << 9) | (1 << 10);
 
         [Header("â”€â”€ Prompt Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Default interaction prompt format. {0}=verb, {1}=name")]

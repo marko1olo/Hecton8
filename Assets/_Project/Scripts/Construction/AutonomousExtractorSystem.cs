@@ -248,7 +248,7 @@ namespace Hecton8.Construction
         /// </summary>
         public void LateFrameTick()
         {
-            if (!_scheduledJobActive)
+            if (!_scheduledJobActive || !_scheduledJobHandle.IsCompleted)
                 return;
 
             _scheduledJobHandle.Complete();

@@ -40,6 +40,13 @@ namespace Hecton8.Gameplay
         private const byte EntanglementStallHapticPriority = 3;
         private const byte EntanglementStallHapticMotorMask = 0b0011;
         private const byte EntanglementStallHapticBlendMode = 2;
+        private const float EntanglementStressHapticLowMotor = 0.62f;
+        private const float EntanglementStressHapticHighMotor = 0.78f;
+        private const float EntanglementStressHapticDurationSeconds = 0.22f;
+        private const float EntanglementStressHapticDecayRate = 6f;
+        private const byte EntanglementStressHapticPriority = 2;
+        private const byte EntanglementStressHapticMotorMask = 0b0011;
+        private const byte EntanglementStressHapticBlendMode = 2;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -69,7 +76,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.1f, 8f)] private float mountedLinearDamping = 1.15f;
 
         [Tooltip("Layer mask used by the mounted vehicle capsule sweep. Defaults to the project physics layers when omitted.")]
-        [SerializeField] private LayerMask mountedSweepMask = ~0;
+        [SerializeField] private LayerMask mountedSweepMask = (1 << 0) | (1 << 3) | (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10) | (1 << 11) | (1 << 12) | (1 << 14);
 
         [Tooltip("Maximum world-up slope angle the mounted kinematic drive may climb before the sweep result is treated like a wall and flattened.")]
         [SerializeField, Range(5f, 89f)] private float mountedGroundSlopeLimitDegrees = 48f;
@@ -92,6 +99,42 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Additional damping applied while the vehicle is swinging on an entanglement tether.")]
         [SerializeField, Min(0f)] private float entanglementCurrentDamping = 0.9f;
+
+        [Tooltip("Deterministic tether tension, in newtons, above which max-thrust fighting damages the hull.")]
+        [SerializeField, Min(100f)] private float entanglementTetherYieldLimit = 28000f;
+
+        [Tooltip("Normalized throttle output required before tether fighting is treated as deliberate max thrust.")]
+        [SerializeField, Range(0.1f, 1f)] private float entanglementStressThrottleThreshold = 0.92f;
+
+        [Tooltip("Hull integrity damage per second at full tether overload while the pilot keeps max thrust applied.")]
+        [SerializeField, Min(0f)] private float entanglementShearDamagePerSecond = 7.5f;
+
+        [Tooltip("Minimum interval between shear-stress damage signals, groan one-shots, and haptic pulses.")]
+        [SerializeField, Min(0.02f)] private float entanglementStressSignalInterval = 0.2f;
+
+        [Tooltip("One-shot structural groan played while the entangled hull is fighting past tether yield.")]
+        [SerializeField] private AudioClip entanglementStressGroanSound;
+
+        [Tooltip("Normalized throttle output required before trapped thrusters can cavitate.")]
+        [SerializeField, Range(0.1f, 1f)] private float cavitationThrottleThreshold = 0.88f;
+
+        [Tooltip("Vehicle speed below which high trapped thrust produces cavitation instead of useful flow.")]
+        [SerializeField, Min(0.05f)] private float cavitationLowSpeedThreshold = 1.2f;
+
+        [Tooltip("Engine integrity damage per second at full cavitation intensity.")]
+        [SerializeField, Min(0f)] private float cavitationEngineDamagePerSecond = 2.5f;
+
+        [Tooltip("Minimum interval between cavitation bubble and shockwave requests.")]
+        [SerializeField, Min(0.02f)] private float cavitationEventInterval = 0.14f;
+
+        [Tooltip("Radius of the localized cavitation shockwave emitted at the thrusters.")]
+        [SerializeField, Min(0.25f)] private float cavitationShockwaveRadius = 5f;
+
+        [Tooltip("Acceleration pushed through PhysicsApplySystem to nearby small rigidbodies hit by cavitation collapse.")]
+        [SerializeField, Min(0f)] private float cavitationShockwaveAcceleration = 7f;
+
+        [Tooltip("Optional thruster anchors used for cavitation bubble and shockwave origins. Falls back to the transport stern when empty.")]
+        [SerializeField] private Transform[] cavitationThrusterAnchors;
 
         [Header("-- Audio ----------------------------")]
         [Tooltip("One-shot played when the player mounts this transport.")]
@@ -166,6 +209,10 @@ namespace Hecton8.Gameplay
         private float _nextMountedImpactFeedbackTime;
         private int _platformVelocityGhostWriteIndex;
         private int _platformVelocityGhostSampleCount;
+        private float _entanglementStressSignalTimer;
+        private float _cavitationEventTimer;
+        private float _pendingEntanglementShearDamage;
+        private float _pendingCavitationEngineDamage;
         // COLD ALLOC: List<IDamageSignalReceiver>[1] â€” mounted transport damage listeners (player trauma dispatcher) â€” owner: MountablePlayerTransport
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
         // COLD ALLOC: Vector3[4] Ã¢â‚¬â€ inertial ghost history for presentation-only transport boost carry Ã¢â‚¬â€ owner: MountablePlayerTransport
@@ -456,6 +503,8 @@ namespace Hecton8.Gameplay
                 return;
 
             _previousPlatformPosition -= shiftOffset;
+            if (_vehicleMotor != null)
+                _vehicleMotor.ApplyOriginShift(shiftOffset);
         }
 
         /// <summary>Current propulsion force contributed by this transport.</summary>
@@ -535,6 +584,44 @@ namespace Hecton8.Gameplay
 
             DispatchClarityChanged(0f, Mathf.Clamp01(Mathf.Max(damageT, 1f - nextIntegrityNormalized)), damageSignal);
             DispatchTraumaThresholdCrossed(ResolveTraumaLevel(nextIntegrityNormalized, damageT));
+            if (_currentIntegrity <= 0.0001f)
+                BreakTransport();
+        }
+
+        private void ApplyTransportStressDamage(
+            float damage,
+            float signalMagnitude,
+            Vector3 hitPoint,
+            uint damageType,
+            float trauma01,
+            bool dispatchPowerChange)
+        {
+            if (preset == null || _isBroken || damage <= 0f)
+                return;
+
+            EnsureLifecycleInitialized();
+            float previousIntegrityNormalized = ResolveIntegrityNormalized();
+            _currentIntegrity = Mathf.Max(0f, _currentIntegrity - damage);
+            float nextIntegrityNormalized = ResolveIntegrityNormalized();
+            DamageSignal damageSignal = BuildDamageSignal(
+                signalMagnitude,
+                hitPoint,
+                damageType,
+                previousIntegrityNormalized,
+                nextIntegrityNormalized);
+            DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
+
+            if (dispatchPowerChange)
+            {
+                float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
+                float nextPowerChannel = ResolvePowerChannel(nextIntegrityNormalized);
+                if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
+                    DispatchPowerChanged(previousPowerChannel, nextPowerChannel, damageSignal);
+            }
+
+            float clampedTrauma = Mathf.Clamp01(trauma01);
+            DispatchClarityChanged(0f, Mathf.Clamp01(Mathf.Max(clampedTrauma, 1f - nextIntegrityNormalized)), damageSignal);
+            DispatchTraumaThresholdCrossed(ResolveTraumaLevel(nextIntegrityNormalized, clampedTrauma));
             if (_currentIntegrity <= 0.0001f)
                 BreakTransport();
         }
@@ -756,7 +843,7 @@ namespace Hecton8.Gameplay
 
             _vehicleMotor.ConfigureHydrodynamicSubmersion(hydrodynamicSubmersionFactor);
             _vehicleMotor.ConfigureHydrodynamicDepth(hydrodynamicDepthMeters);
-            if (TryAdvanceMacroFloraEntanglement(fixedDeltaTime))
+            if (TryAdvanceMacroFloraEntanglement(fixedDeltaTime, thrustAcceleration, safeMass))
             {
                 int entanglementSelfColliderInstanceId = _interactionCollider != null
                     ? unchecked((int)EntityId.ToULong(_interactionCollider.GetEntityId()))
@@ -797,7 +884,7 @@ namespace Hecton8.Gameplay
                 fixedDeltaTime);
         }
 
-        private bool TryAdvanceMacroFloraEntanglement(float fixedDeltaTime)
+        private bool TryAdvanceMacroFloraEntanglement(float fixedDeltaTime, float thrustAcceleration, float safeMass)
         {
             if (_vehicleMotor == null || _transportBody == null)
                 return false;
@@ -816,9 +903,12 @@ namespace Hecton8.Gameplay
                 if (vegetationBridge != null)
                     vegetationBridge.TrySampleAbyssalFlow(_transportBody.position, out flowVelocity);
 
+                float throttleDemand = preset != null ? ResolveThrottle(_driveMoveInput, _driveVerticalInput) : 0f;
+                float throttleOutput = ResolveThrottleOutput(throttleDemand);
                 _currentThrottle = 0f;
                 _transportActive = true;
                 _vehicleMotor.AdvanceEntanglement(flowVelocity, entanglementCurrentAcceleration, entanglementCurrentDamping, fixedDeltaTime);
+                ApplyEntanglementStressAndCavitation(fixedDeltaTime, throttleOutput, thrustAcceleration, safeMass);
                 return true;
             }
 
@@ -861,9 +951,12 @@ namespace Hecton8.Gameplay
 
             Vector3 anchorFlowVelocity = Vector3.zero;
             vegetationBridge.TrySampleAbyssalFlow(anchorPosition, out anchorFlowVelocity);
+            float initialThrottleDemand = preset != null ? ResolveThrottle(_driveMoveInput, _driveVerticalInput) : 0f;
+            float initialThrottleOutput = ResolveThrottleOutput(initialThrottleDemand);
             _currentThrottle = 0f;
             _transportActive = true;
             _vehicleMotor.AdvanceEntanglement(anchorFlowVelocity, entanglementCurrentAcceleration, entanglementCurrentDamping, fixedDeltaTime);
+            ApplyEntanglementStressAndCavitation(fixedDeltaTime, initialThrottleOutput, thrustAcceleration, safeMass);
             return true;
         }
 
@@ -894,12 +987,177 @@ namespace Hecton8.Gameplay
             if (_vehicleMotor != null && _vehicleMotor.IsEntangled)
                 _vehicleMotor.ClearEntanglement();
 
+            _entanglementStressSignalTimer = 0f;
+            _cavitationEventTimer = 0f;
+            _pendingEntanglementShearDamage = 0f;
+            _pendingCavitationEngineDamage = 0f;
             _entanglementTrackedCount = 0;
             for (int i = 0; i < _entanglementInstanceUids.Length; i++)
             {
                 _entanglementInstanceUids[i] = 0u;
                 _entanglementInstancePositions[i] = Vector3.zero;
             }
+        }
+
+        private void ApplyEntanglementStressAndCavitation(
+            float fixedDeltaTime,
+            float throttleOutput,
+            float thrustAcceleration,
+            float safeMass)
+        {
+            if (_vehicleMotor == null || _transportBody == null || fixedDeltaTime <= 0f)
+                return;
+
+            float safeDeltaTime = math.max(0.0001f, fixedDeltaTime);
+            float clampedThrottleOutput = math.saturate(throttleOutput);
+            float commandTension = math.max(0f, safeMass) * math.max(0f, thrustAcceleration) * clampedThrottleOutput;
+            float tetherTension = math.max(0f, _vehicleMotor.LastEntanglementTensionNewtons + commandTension);
+            bool maxThrust = clampedThrottleOutput >= entanglementStressThrottleThreshold;
+            bool overYield = maxThrust && tetherTension > entanglementTetherYieldLimit;
+
+            if (overYield)
+            {
+                float overload01 = math.saturate((tetherTension - entanglementTetherYieldLimit) /
+                                                 math.max(entanglementTetherYieldLimit, 0.0001f));
+                _pendingEntanglementShearDamage += entanglementShearDamagePerSecond * overload01 * safeDeltaTime;
+                _entanglementStressSignalTimer -= safeDeltaTime;
+                if (_entanglementStressSignalTimer <= 0f)
+                {
+                    ApplyTransportStressDamage(
+                        _pendingEntanglementShearDamage,
+                        tetherTension,
+                        _transportBody.worldCenterOfMass,
+                        (uint)DamageTypeMask.Impact,
+                        overload01,
+                        dispatchPowerChange: false);
+                    _pendingEntanglementShearDamage = 0f;
+                    PlayTransportOneShot(entanglementStressGroanSound);
+                    NotifyEntanglementStressHaptic();
+                    _entanglementStressSignalTimer = entanglementStressSignalInterval;
+                }
+            }
+            else
+            {
+                FlushPendingEntanglementDamage(tetherTension);
+            }
+
+            float speed = _vehicleMotor.LinearVelocity.magnitude;
+            bool cavitating = clampedThrottleOutput >= cavitationThrottleThreshold &&
+                              speed <= cavitationLowSpeedThreshold &&
+                              thrustAcceleration > 0.0001f;
+            if (!cavitating)
+            {
+                FlushPendingCavitationDamage();
+                return;
+            }
+
+            float speedSuppression01 = 1f - math.saturate(speed / math.max(cavitationLowSpeedThreshold, 0.0001f));
+            float cavitationIntensity01 = math.saturate(clampedThrottleOutput * math.max(speedSuppression01, overYield ? 1f : 0.5f));
+            _pendingCavitationEngineDamage += cavitationEngineDamagePerSecond * cavitationIntensity01 * safeDeltaTime;
+            _cavitationEventTimer -= safeDeltaTime;
+            if (_cavitationEventTimer > 0f)
+                return;
+
+            QueueCavitationBursts(cavitationIntensity01);
+            ApplyTransportStressDamage(
+                _pendingCavitationEngineDamage,
+                cavitationShockwaveAcceleration * cavitationIntensity01,
+                ResolveCavitationFallbackPosition(),
+                (uint)(DamageTypeMask.Impact | DamageTypeMask.Pressure),
+                cavitationIntensity01,
+                dispatchPowerChange: true);
+            _pendingCavitationEngineDamage = 0f;
+            _cavitationEventTimer = cavitationEventInterval;
+        }
+
+        private void FlushPendingEntanglementDamage(float tetherTension)
+        {
+            if (_pendingEntanglementShearDamage <= 0f || _transportBody == null)
+                return;
+
+            ApplyTransportStressDamage(
+                _pendingEntanglementShearDamage,
+                tetherTension,
+                _transportBody.worldCenterOfMass,
+                (uint)DamageTypeMask.Impact,
+                0.1f,
+                dispatchPowerChange: false);
+            _pendingEntanglementShearDamage = 0f;
+        }
+
+        private void FlushPendingCavitationDamage()
+        {
+            if (_pendingCavitationEngineDamage <= 0f)
+                return;
+
+            ApplyTransportStressDamage(
+                _pendingCavitationEngineDamage,
+                0f,
+                ResolveCavitationFallbackPosition(),
+                (uint)(DamageTypeMask.Impact | DamageTypeMask.Pressure),
+                0.1f,
+                dispatchPowerChange: true);
+            _pendingCavitationEngineDamage = 0f;
+        }
+
+        private void QueueCavitationBursts(float intensity01)
+        {
+            float clampedIntensity = math.saturate(intensity01);
+            if (clampedIntensity <= 0.0001f)
+                return;
+
+            int sourceBodyInstanceId = _transportBody != null ? unchecked((int)EntityId.ToULong(_transportBody.GetEntityId())) : 0;
+            Vector3 direction = _cachedTransform != null ? -_cachedTransform.forward : Vector3.back;
+            bool queuedAny = false;
+            if (cavitationThrusterAnchors != null)
+            {
+                for (int i = 0; i < cavitationThrusterAnchors.Length; i++)
+                {
+                    Transform anchor = cavitationThrusterAnchors[i];
+                    if (anchor == null)
+                        continue;
+
+                    HectonFluidEngine.QueueCavitationBurst(
+                        anchor.position,
+                        direction,
+                        clampedIntensity,
+                        cavitationShockwaveRadius,
+                        cavitationShockwaveAcceleration,
+                        sourceBodyInstanceId);
+                    queuedAny = true;
+                }
+            }
+
+            if (queuedAny)
+                return;
+
+            HectonFluidEngine.QueueCavitationBurst(
+                ResolveCavitationFallbackPosition(),
+                direction,
+                clampedIntensity,
+                cavitationShockwaveRadius,
+                cavitationShockwaveAcceleration,
+                sourceBodyInstanceId);
+        }
+
+        private Vector3 ResolveCavitationFallbackPosition()
+        {
+            if (_cachedTransform == null)
+                return _transportBody != null ? _transportBody.position : Vector3.zero;
+
+            return _cachedTransform.position - (_cachedTransform.forward * 1.25f);
+        }
+
+        private static void NotifyEntanglementStressHaptic()
+        {
+            ToolHapticsRuntime.EnqueueCommand(
+                EntanglementStressHapticLowMotor,
+                EntanglementStressHapticHighMotor,
+                EntanglementStressHapticDurationSeconds,
+                EntanglementStressHapticDecayRate,
+                EntanglementStressHapticPriority,
+                EntanglementStressHapticMotorMask,
+                EntanglementStressHapticBlendMode);
         }
 
         private static void NotifyEntanglementCritical()
@@ -1675,6 +1933,14 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            entanglementTetherYieldLimit = Mathf.Max(100f, entanglementTetherYieldLimit);
+            entanglementShearDamagePerSecond = Mathf.Max(0f, entanglementShearDamagePerSecond);
+            entanglementStressSignalInterval = Mathf.Max(0.02f, entanglementStressSignalInterval);
+            cavitationLowSpeedThreshold = Mathf.Max(0.05f, cavitationLowSpeedThreshold);
+            cavitationEngineDamagePerSecond = Mathf.Max(0f, cavitationEngineDamagePerSecond);
+            cavitationEventInterval = Mathf.Max(0.02f, cavitationEventInterval);
+            cavitationShockwaveRadius = Mathf.Max(0.25f, cavitationShockwaveRadius);
+            cavitationShockwaveAcceleration = Mathf.Max(0f, cavitationShockwaveAcceleration);
             ResolveAnchorCache();
             BindPresetToFeelContract();
             RebuildPromptCache();

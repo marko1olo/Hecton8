@@ -115,8 +115,8 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Register(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
 
             NarrativeEvents.Register(this);
             NarrativeEvents.RegisterPointOfInterestListener(this);
@@ -129,8 +129,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.Unregister(this);
+            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
+                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             NarrativeEvents.Unregister(this);
             NarrativeEvents.UnregisterPointOfInterestListener(this);

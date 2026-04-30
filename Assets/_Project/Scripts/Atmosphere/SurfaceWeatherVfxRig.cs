@@ -99,6 +99,16 @@ namespace Hecton8.Atmosphere
             HectonFloatingOrigin.UnregisterListener(this);
         }
 
+        internal void ConfigureAuthoring(Material authoredLightningBoltMaterial)
+        {
+            if (authoredLightningBoltMaterial == null)
+                return;
+
+            lightningBoltMaterial = authoredLightningBoltMaterial;
+            if (_boltRenderer != null)
+                _boltRenderer.sharedMaterial = lightningBoltMaterial;
+        }
+
         /// <summary>
         /// Updates local rain presentation and fades active lightning visuals.
         /// </summary>

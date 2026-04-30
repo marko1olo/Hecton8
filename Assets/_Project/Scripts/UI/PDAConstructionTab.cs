@@ -20,7 +20,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Construction Tab")]
-    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -190,7 +190,7 @@ namespace Hecton8.UI
             }
 
             if (constructionManager == null)
-                constructionManager = ConstructionManager.Instance;
+                constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
 
             if (playerPDA == null)
                 playerPDA = GetComponentInParent<PlayerPDA>();
@@ -211,9 +211,7 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             RefreshSubscriptions();
-            PDAEvents.OnOpened += HandlePdaOpened;
-            PDAEvents.OnClosed += HandlePdaClosed;
-            PDAEvents.OnTabChanged += HandlePdaTabChanged;
+            PDAEvents.Register(this);
         }
 
         private void Unsubscribe()
@@ -231,9 +229,7 @@ namespace Hecton8.UI
                 _subscribedToolManager = null;
             }
 
-            PDAEvents.OnOpened -= HandlePdaOpened;
-            PDAEvents.OnClosed -= HandlePdaClosed;
-            PDAEvents.OnTabChanged -= HandlePdaTabChanged;
+            PDAEvents.Unregister(this);
         }
 
         private void RefreshSubscriptions()
@@ -290,6 +286,22 @@ namespace Hecton8.UI
 
             MarkSummaryDirty();
             Refresh();
+        }
+
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    HandlePdaOpened(payload.CurrentTab);
+                    break;
+                case PDAEventType.Closed:
+                    HandlePdaClosed(payload.DurationSeconds);
+                    break;
+                case PDAEventType.TabChanged:
+                    HandlePdaTabChanged(payload.PreviousTab, payload.CurrentTab);
+                    break;
+            }
         }
 
         private void HandlePdaOpened(int tab)

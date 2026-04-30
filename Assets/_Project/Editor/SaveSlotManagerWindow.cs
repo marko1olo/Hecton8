@@ -193,9 +193,9 @@ namespace Hecton8.Editor
             {
                 if (EditorUtility.DisplayDialog("Delete Save", $"Are you sure you want to delete '{slot.slotName}'?", "Yes", "Cancel"))
                 {
-                    if (SaveManager.Instance != null)
+                    if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                     {
-                        SaveManager.Instance.DeleteSave(slot.slotName);
+                        Hecton8.Core.GlobalRegistry.SaveRuntime.DeleteSave(slot.slotName);
                     }
                     else
                     {

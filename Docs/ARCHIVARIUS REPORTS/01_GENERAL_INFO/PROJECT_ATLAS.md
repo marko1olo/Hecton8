@@ -124,9 +124,9 @@ Coverage snapshot from current reverification pass:
 - `01_GENERAL_INFO` markdown files: `22`
 - `02_ACTUAL_REPORTS` markdown files: `46`
 - `02_ACTUAL_REPORTS` csv files: `1`
-- `02_ACTUAL_REPORTS` patch artifacts: `6`
+- `02_ACTUAL_REPORTS` patch artifacts: `8`
 - total indexed docs/datasets in folders `01` and `02`: `69`
-- total physical non-meta files in folders `01` and `02`: `75`
+- total physical non-meta files in folders `01` and `02`: `77`
 
 Canonical entry files inside this bundle:
 

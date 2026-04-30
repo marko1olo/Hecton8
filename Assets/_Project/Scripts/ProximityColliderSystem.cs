@@ -96,6 +96,7 @@ namespace Hecton8.Core
         private bool      _jobScheduled;
         private bool      _initialized;
         private bool      _registeredToDispatcher;
+        private int       _jobPendingFrameCount;
 
         // ── Cached squared radii (avoid sqrt in Job) ──
         private float _activateRadiusSq;
@@ -446,9 +447,15 @@ namespace Hecton8.Core
 
             if (_jobScheduled)
             {
-                // ── Ждём завершения (обычно уже готова — прошёл целый кадр) ──
+                if (!_jobHandle.IsCompleted)
+                {
+                    _jobPendingFrameCount++;
+                    return;
+                }
+
                 _jobHandle.Complete();
                 _jobScheduled = false;
+                _jobPendingFrameCount = 0;
 
                 // ── Применяем результаты: Spawn/Despawn коллайдеров ──
                 ProcessJobResults();
@@ -467,20 +474,21 @@ namespace Hecton8.Core
 
         /// <summary>
         /// Копирует prevStatus в NativeArray и планирует Burst Job.
-        ///
-        /// Почему отдельный NativeArray для prevStatus?
-        ///   Job не может читать managed byte[]. Нужен NativeArray.
-        ///   Аллоцируем с TempJob — автоматически освобождается
-        ///   при Complete (или через 4 кадра, safety system).
+        /// Persistent buffer avoids TempJob lifetime warnings when a distance job spans multiple frames.
         /// </summary>
         private NativeArray<byte> _prevStatusNative;
 
         private void ScheduleDistanceJob()
         {
-            // ── Подготавливаем NativeArray prevStatus для Job ──
-            // TempJob — живёт до Complete, не нужно вручную Dispose.
-            _prevStatusNative = new NativeArray<byte>(
-                _pointCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            if (!_prevStatusNative.IsCreated || _prevStatusNative.Length != _pointCount)
+            {
+                if (_prevStatusNative.IsCreated)
+                    _prevStatusNative.Dispose();
+
+                // COLD ALLOC: NativeArray<byte>[pointCount] - persistent previous proximity state mirror for async distance jobs - owner: ProximityColliderSystem
+                _prevStatusNative = new NativeArray<byte>(
+                    _pointCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            }
 
             // ── Копируем managed → native (memcpy, zero GC) ──
             // NativeArray<byte>.CopyFrom(byte[]) — специализированный fast path.
@@ -506,6 +514,7 @@ namespace Hecton8.Core
             // ~10 батчей на ядро. Отличный баланс overhead/parallelism.
             _jobHandle  = job.Schedule(_pointCount, 256);
             _jobScheduled = true;
+            _jobPendingFrameCount = 0;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -523,10 +532,6 @@ namespace Hecton8.Core
         /// </summary>
         private void ProcessJobResults()
         {
-            // ── Освобождаем TempJob NativeArray ──
-            if (_prevStatusNative.IsCreated)
-                _prevStatusNative.Dispose();
-
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool == null) return;
 
@@ -618,9 +623,9 @@ namespace Hecton8.Core
             {
                 _jobHandle.Complete();
                 _jobScheduled = false;
+                _jobPendingFrameCount = 0;
             }
 
-            // ── Освобождаем TempJob, если не был disposed ──
             if (_prevStatusNative.IsCreated)
                 _prevStatusNative.Dispose();
         }

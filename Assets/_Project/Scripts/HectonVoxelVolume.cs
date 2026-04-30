@@ -9,6 +9,8 @@ using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using Hecton8.Core;
+using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.World;
 
 namespace Hecton8.Caves
@@ -47,10 +49,16 @@ namespace Hecton8.Caves
         private const string EntranceMarkersRootName = "_EntranceMarkers";
         private const string ColliderChunkRootName = "_ColliderChunks";
         private const int MaxCraterStampCount = 16;
+        private const int ResourceCraterCollapseThreshold = 5;
+        private const int CollapseImpulseColliderCapacity = 48;
+        private const int CollapseImpulseBodyCapacity = 32;
         private const int MaxTerrainHoleHandleCount = 8;
         private const int MaxColliderChunkCount = 8;
         private const int MaxPlasmaCutSteps = 24;
         private const int MaxQueuedRebuildPassesPerKick = 4;
+        private const float ResourceCraterClusterRadiusMeters = 20f;
+        private const float CollapseBoxHorizontalPaddingMeters = 4f;
+        private const float CollapseImpulseVerticalBias = 0.45f;
         private const float MinPlasmaCutPower = 0.02f;
         private const float PlasmaCutAttenuationPerMeter = 1f;
         private const byte DefaultDeltaMaterialId = 0;
@@ -62,11 +70,16 @@ namespace Hecton8.Caves
         private CaveEntrance[] _entrances = Array.Empty<CaveEntrance>();
         private CaveStructure[] _structures = Array.Empty<CaveStructure>();
         private VoxelCraterStamp[] _craterStamps = Array.Empty<VoxelCraterStamp>();
+        private VoxelCraterStamp[] _resourceCraterClusterStamps = Array.Empty<VoxelCraterStamp>();
+        private Collider[] _collapseImpulseColliders = Array.Empty<Collider>();
+        private Rigidbody[] _collapseImpulseBodies = Array.Empty<Rigidbody>();
         private int _craterStampCount;
+        private int _resourceCraterClusterCount;
         private int _runtimeStamp;
         private bool _runtimeDataReady;
         private bool _rebuildQueued;
         private bool _rebuildRunning;
+        private bool _lastCollapseClusterValid;
         private uint _seed;
         private int _gridDimension;
         private float _voxelSize;
@@ -74,6 +87,7 @@ namespace Hecton8.Caves
         private bool _buildCollider;
         private CaveGenerationParams _caveParams;
         private Vector3 _generationAbsoluteUniversePosition;
+        private Vector3 _lastCollapseAbsoluteCenter;
         private int[] _terrainHoleHandles = Array.Empty<int>();
         private int _terrainHoleHandleCount;
         private Transform _colliderChunkRoot;
@@ -423,7 +437,13 @@ namespace Hecton8.Caves
             _entrances = Array.Empty<CaveEntrance>();
             _structures = Array.Empty<CaveStructure>();
             _craterStamps = Array.Empty<VoxelCraterStamp>();
+            _resourceCraterClusterStamps = Array.Empty<VoxelCraterStamp>();
+            _collapseImpulseColliders = Array.Empty<Collider>();
+            _collapseImpulseBodies = Array.Empty<Rigidbody>();
             _craterStampCount = 0;
+            _resourceCraterClusterCount = 0;
+            _lastCollapseClusterValid = false;
+            _lastCollapseAbsoluteCenter = Vector3.zero;
             _runtimeDataReady = false;
             _rebuildQueued = false;
             _rebuildRunning = false;
@@ -733,6 +753,24 @@ namespace Hecton8.Caves
                 _craterStamps = new VoxelCraterStamp[MaxCraterStampCount];
             }
 
+            if (_resourceCraterClusterStamps.Length != MaxCraterStampCount)
+            {
+                // COLD ALLOC: VoxelCraterStamp[MaxCraterStampCount] - persistent resource-crater cluster tracker - owner: HectonVoxelVolume
+                _resourceCraterClusterStamps = new VoxelCraterStamp[MaxCraterStampCount];
+            }
+
+            if (_collapseImpulseColliders.Length != CollapseImpulseColliderCapacity)
+            {
+                // COLD ALLOC: Collider[CollapseImpulseColliderCapacity] - collapse impulse overlap buffer - owner: HectonVoxelVolume
+                _collapseImpulseColliders = new Collider[CollapseImpulseColliderCapacity];
+            }
+
+            if (_collapseImpulseBodies.Length != CollapseImpulseBodyCapacity)
+            {
+                // COLD ALLOC: Rigidbody[CollapseImpulseBodyCapacity] - collapse impulse dedupe buffer - owner: HectonVoxelVolume
+                _collapseImpulseBodies = new Rigidbody[CollapseImpulseBodyCapacity];
+            }
+
             if (_terrainHoleHandles.Length != MaxTerrainHoleHandleCount)
             {
                 // COLD ALLOC: int[MaxTerrainHoleHandleCount] - stable terrain-hole handle registry for cave entrance lifecycle - owner: HectonVoxelVolume
@@ -740,6 +778,9 @@ namespace Hecton8.Caves
             }
 
             _craterStampCount = 0;
+            _resourceCraterClusterCount = 0;
+            _lastCollapseClusterValid = false;
+            _lastCollapseAbsoluteCenter = Vector3.zero;
             _terrainHoleHandleCount = 0;
             _runtimeDataReady = true;
             _rebuildQueued = false;
@@ -855,7 +896,12 @@ namespace Hecton8.Caves
         /// </summary>
         public void ApplyPersistentResourceCrater(Vector3 pos, float radius)
         {
+            if (!_runtimeDataReady || radius <= 0f)
+                return;
+
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
             CarveCrater(pos, radius);
+            TryTriggerResourceCraterClusterCollapse(absolutePosition, radius);
         }
 
         /// <summary>
@@ -1610,6 +1656,186 @@ namespace Hecton8.Caves
             return voxel.x >= 0 && voxel.x < _gridDimension &&
                    voxel.y >= 0 && voxel.y < _gridDimension &&
                    voxel.z >= 0 && voxel.z < _gridDimension;
+        }
+
+        private void TryTriggerResourceCraterClusterCollapse(Vector3 absolutePosition, float radius)
+        {
+            if (_resourceCraterClusterStamps.Length != MaxCraterStampCount ||
+                _collapseImpulseColliders.Length != CollapseImpulseColliderCapacity ||
+                _collapseImpulseBodies.Length != CollapseImpulseBodyCapacity)
+            {
+                return;
+            }
+
+            float clampedRadius = Mathf.Max(_voxelSize * 1.25f, radius);
+            if (_resourceCraterClusterCount >= MaxCraterStampCount)
+            {
+                for (int i = 1; i < _resourceCraterClusterCount; i++)
+                    _resourceCraterClusterStamps[i - 1] = _resourceCraterClusterStamps[i];
+
+                _resourceCraterClusterCount = MaxCraterStampCount - 1;
+            }
+
+            _resourceCraterClusterStamps[_resourceCraterClusterCount++] = new VoxelCraterStamp
+            {
+                position = absolutePosition,
+                radius = clampedRadius,
+                blendRadius = Mathf.Max(_voxelSize, clampedRadius * 0.35f)
+            };
+
+            if (!TryResolveResourceCraterCluster(
+                    absolutePosition,
+                    out Vector3 collapseAbsoluteCenter,
+                    out Vector3 collapseHalfExtents,
+                    out int clusterCount))
+            {
+                return;
+            }
+
+            if (_lastCollapseClusterValid &&
+                (_lastCollapseAbsoluteCenter - collapseAbsoluteCenter).sqrMagnitude <=
+                ResourceCraterClusterRadiusMeters * ResourceCraterClusterRadiusMeters)
+            {
+                return;
+            }
+
+            _lastCollapseClusterValid = true;
+            _lastCollapseAbsoluteCenter = collapseAbsoluteCenter;
+            ExecuteResourceCraterClusterCollapse(collapseAbsoluteCenter, collapseHalfExtents, clusterCount);
+        }
+
+        private bool TryResolveResourceCraterCluster(
+            Vector3 absolutePosition,
+            out Vector3 collapseAbsoluteCenter,
+            out Vector3 collapseHalfExtents,
+            out int clusterCount)
+        {
+            collapseAbsoluteCenter = absolutePosition;
+            collapseHalfExtents = default;
+            clusterCount = 0;
+            float clusterRadiusSq = ResourceCraterClusterRadiusMeters * ResourceCraterClusterRadiusMeters;
+            Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+            float largestRadius = 0f;
+
+            for (int i = 0; i < _resourceCraterClusterCount; i++)
+            {
+                VoxelCraterStamp stamp = _resourceCraterClusterStamps[i];
+                if ((stamp.position - absolutePosition).sqrMagnitude > clusterRadiusSq)
+                    continue;
+
+                clusterCount++;
+                largestRadius = Mathf.Max(largestRadius, stamp.radius);
+                Vector3 radiusVector = Vector3.one * stamp.radius;
+                min = Vector3.Min(min, stamp.position - radiusVector);
+                max = Vector3.Max(max, stamp.position + radiusVector);
+            }
+
+            if (clusterCount <= ResourceCraterCollapseThreshold)
+                return false;
+
+            collapseAbsoluteCenter = (min + max) * 0.5f;
+            Vector3 span = max - min;
+            collapseHalfExtents = new Vector3(
+                Mathf.Max(6f, span.x * 0.5f + CollapseBoxHorizontalPaddingMeters),
+                Mathf.Max(3f, largestRadius),
+                Mathf.Max(6f, span.z * 0.5f + CollapseBoxHorizontalPaddingMeters));
+            return true;
+        }
+
+        private void ExecuteResourceCraterClusterCollapse(Vector3 absoluteCenter, Vector3 halfExtents, int clusterCount)
+        {
+            Vector3 runtimeCenter = HectonFloatingOrigin.ToRuntimePosition(absoluteCenter);
+            if (_deltaProcessor != null)
+            {
+                SetBakeState(VoxelBakeState.Pending);
+                _deltaProcessor.ApplyImmediateAbsoluteBoxCrater(this, absoluteCenter, halfExtents, DefaultDeltaMaterialId);
+            }
+
+            float impulseRadius = Mathf.Max(
+                ResourceCraterClusterRadiusMeters,
+                Mathf.Sqrt((halfExtents.x * halfExtents.x) + (halfExtents.z * halfExtents.z)) * 1.35f);
+            float impulseMagnitude = Mathf.Clamp(clusterCount * 3f + halfExtents.y * 2f, 12f, 48f);
+            ApplyCollapseImpulse(runtimeCenter, halfExtents, impulseRadius, impulseMagnitude);
+
+            SeismicShockwaveEvent shockwaveEvent = new SeismicShockwaveEvent(
+                runtimeCenter,
+                impulseRadius,
+                impulseMagnitude,
+                clusterCount);
+            RandomEventEvents.RaiseSeismicShockwave(in shockwaveEvent);
+        }
+
+        private void ApplyCollapseImpulse(Vector3 runtimeCenter, Vector3 halfExtents, float impulseRadius, float impulseMagnitude)
+        {
+            int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(
+                runtimeCenter,
+                halfExtents + Vector3.one * 2f,
+                _collapseImpulseColliders,
+                Quaternion.identity,
+                ~0,
+                QueryTriggerInteraction.Ignore);
+            if (hitCount <= 0)
+                return;
+
+            int bodyCount = 0;
+            int colliderLimit = Mathf.Min(hitCount, _collapseImpulseColliders.Length);
+            for (int i = 0; i < colliderLimit; i++)
+            {
+                Collider hitCollider = _collapseImpulseColliders[i];
+                _collapseImpulseColliders[i] = null;
+                if (hitCollider == null)
+                    continue;
+
+                Rigidbody body = hitCollider.attachedRigidbody;
+                if (body == null || body.isKinematic || ContainsCollapseBody(body, bodyCount))
+                    continue;
+
+                _collapseImpulseBodies[bodyCount++] = body;
+                if (bodyCount >= _collapseImpulseBodies.Length)
+                    break;
+            }
+
+            float safeRadius = Mathf.Max(1f, impulseRadius);
+            for (int i = 0; i < bodyCount; i++)
+            {
+                Rigidbody body = _collapseImpulseBodies[i];
+                _collapseImpulseBodies[i] = null;
+                if (body == null || body.isKinematic)
+                    continue;
+
+                Vector3 bodyCenter = body.worldCenterOfMass;
+                Vector3 inward = runtimeCenter - bodyCenter;
+                float distance = inward.magnitude;
+                if (distance > safeRadius)
+                    continue;
+
+                if (distance > 0.0001f)
+                    inward /= distance;
+                else
+                    inward = Vector3.down;
+
+                inward.y -= CollapseImpulseVerticalBias;
+                if (inward.sqrMagnitude <= 0.0001f)
+                    inward = Vector3.down;
+                else
+                    inward.Normalize();
+
+                float distance01 = 1f - Mathf.Clamp01(distance / safeRadius);
+                float resolvedImpulse = impulseMagnitude * Mathf.Pow(distance01, 0.65f);
+                PhysicsForceRouter.QueueForce(body, inward * resolvedImpulse, ForceMode.Impulse);
+            }
+        }
+
+        private bool ContainsCollapseBody(Rigidbody candidate, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (_collapseImpulseBodies[i] == candidate)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool AppendCraterStamp(Vector3 absolutePosition, float radius, bool queueRebuild)

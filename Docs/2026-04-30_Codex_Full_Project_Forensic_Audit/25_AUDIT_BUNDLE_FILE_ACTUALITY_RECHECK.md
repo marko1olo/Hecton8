@@ -21,15 +21,15 @@ Current bundle:
 | Item | Count |
 |---|---:|
 | README files | 1 |
-| numbered audit files | 26 |
-| total markdown files in bundle | 27 |
+| numbered audit files | 28 |
+| total markdown files in bundle | 29 |
 
 README `Contents` integrity:
 
 | Check | Result |
 |---|---|
-| listed numbered files | 26 |
-| actual numbered files | 26 |
+| listed numbered files | 28 |
+| actual numbered files | 28 |
 | missing from README | none |
 | listed but absent on disk | none |
 
@@ -54,7 +54,7 @@ Snapshot date: 2026-04-30.
 | prefabs under `Assets/_Project/Prefabs` | 378 |
 | first-party `.shader` files | 62 |
 | first-party `.compute` files | 22 |
-| non-meta files under `Docs` after this addendum | 521 |
+| non-meta files under `Docs` after this addendum | 529 |
 
 Fresh folder source-size checks:
 
@@ -119,7 +119,9 @@ Interpretation:
 | `23_RENDERING_VISUAL_STACK_AND_GPU_IDENTITY.md` | current | Rendering/GPU identity critique remains current pending Frame Debugger/profiler proof. |
 | `24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md` | refreshed | Docs count and active bundle count updated. |
 | `25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md` | refreshed snapshot | This file remains the bundle-file actuality recheck; `26` extends the scope to the wider legacy docset. |
-| `26_LEGACY_DOCSET_ACTUALITY_AND_UPDATE_QUEUE.md` | current latest docset pass | This file is the latest old-doc actuality and update-queue layer. |
+| `26_LEGACY_DOCSET_ACTUALITY_AND_UPDATE_QUEUE.md` | refreshed snapshot | This file is the old-doc actuality and update-queue layer. |
+| `27_PLAYMODE_DEADLOCK_STATIC_AUDIT.md` | current adjacent static audit | This file exists in the bundle and must be included in index integrity checks. |
+| `28_STALE_ERROR_PURGE_AND_TRUST_SYNC.md` | current latest truth-sync pass | This file explicitly invalidates stale symbol-missing compile blockers and synchronizes docset trust counts. |
 
 ## 5. Files Updated In This Recheck
 
@@ -129,10 +131,13 @@ Updated across the latest bundle actuality passes:
 - `08_SUBSYSTEM_IMPLEMENTATION_CATALOG.md`
 - `24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md`
 - `25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md`
+- `26_LEGACY_DOCSET_ACTUALITY_AND_UPDATE_QUEUE.md`
 
 Added across the latest bundle actuality passes:
 - `25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md`
 - `26_LEGACY_DOCSET_ACTUALITY_AND_UPDATE_QUEUE.md`
+- `27_PLAYMODE_DEADLOCK_STATIC_AUDIT.md`
+- `28_STALE_ERROR_PURGE_AND_TRUST_SYNC.md`
 
 Confirmed:
 - README lists every numbered audit file.
@@ -163,7 +168,7 @@ Correctness:
 
 ## 7. Hard Conclusion
 
-The active audit bundle is current as a documentation package after the `26` docset pass.
+The active audit bundle is current as a documentation package after the `28` stale-error purge pass.
 
 Not verified:
 - Unity play-mode behavior.

@@ -348,6 +348,11 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+#if UNITY_EDITOR
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+#endif
+
             if (Application.isPlaying)
             {
                 TryRegister();
@@ -448,6 +453,12 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
         private void EditorTick()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+            {
+                EditorApplication.update -= EditorTick;
+                return;
+            }
+
             if (Application.isPlaying || this == null)
                 return;
 
@@ -562,13 +573,16 @@ namespace Hecton8.Atmosphere
 
         private void OnValidate()
         {
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+                return;
+
             _editorInitialized = false;
             _editorPreviewDirty = true;
             _cycleDuration = math.max(_cycleDuration, 1f);
 
             if (_sunLight == null)
             {
-                var lights = FindObjectsByType<Light>();
+                var lights = FindObjectsByType<Light>(FindObjectsInactive.Exclude);
                 for (int i = 0; i < lights.Length; i++)
                 {
                     if (lights[i].type == LightType.Directional)

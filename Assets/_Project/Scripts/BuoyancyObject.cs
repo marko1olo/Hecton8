@@ -133,7 +133,7 @@ namespace Hecton8.Physics
 
         [Tooltip("Layers considered as ground (Terrain, Default, etc). " +
                  "MUST exclude Water layer to avoid false positives.")]
-        [SerializeField] private LayerMask groundLayers = ~0; // default: everything
+        [SerializeField] private LayerMask groundLayers = (1 << 8) | (1 << 9) | (1 << 10);
 
         // ══════════════════════════════════════════════════════════
         //  CACHED

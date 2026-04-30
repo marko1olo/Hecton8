@@ -41,6 +41,7 @@ namespace Hecton8.Interaction
         private const float LooseItemUnderwaterLinearDamping = 1.6f;
         private const float LooseItemUnderwaterAngularDamping = 6.5f;
         private const float LooseItemBuoyancyAngularDragMultiplier = 2.75f;
+        private const ushort DefaultQualityMilli = 1000;
 
         [Header("Item Configuration")]
         [SerializeField] private ItemData itemData;
@@ -74,11 +75,17 @@ namespace Hecton8.Interaction
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
         private bool _registeredToWorldStateRegistry;
+        private uint _geneticsMask;
+        private ushort _qualityMilli = DefaultQualityMilli;
 
         public ItemData ItemData => itemData;
         public int Quantity => quantity;
         public static int WorldStateRegistryCount => _worldStateRegistry.Count;
         public int ItemHashId => _cachedItemHashId;
+        /// <summary>Persisted genetics payload carried by biological seed pickups.</summary>
+        public uint GeneticsMask => _geneticsMask;
+        /// <summary>Persisted item quality in milli-normalized units.</summary>
+        public ushort QualityMilli => _qualityMilli != 0 ? _qualityMilli : DefaultQualityMilli;
         public uint VulnerabilityMask => itemData != null ? itemData.VulnerabilityMask : 0u;
         public byte ImpactAudioMaterialId => itemData != null ? itemData.AudioMaterialByte : (byte)ItemAudioMaterialId.Organic;
         public bool IsFaunaBait => Hecton8.Inventory.PlayerInventory.IsFaunaBaitItem(itemData);
@@ -90,8 +97,16 @@ namespace Hecton8.Interaction
 
         public void Configure(ItemData data, int itemQuantity)
         {
+            Configure(data, itemQuantity, 0u, DefaultQualityMilli);
+        }
+
+        /// <summary>Configures pickup identity and persisted mutable item state.</summary>
+        public void Configure(ItemData data, int itemQuantity, uint geneticsMask, ushort qualityMilli)
+        {
             itemData = data;
             quantity = Mathf.Max(1, itemQuantity);
+            _geneticsMask = geneticsMask;
+            _qualityMilli = NormalizeQualityMilli(qualityMilli);
             RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             InvalidateWorldStateIdentity();
@@ -370,7 +385,7 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            PlayerInventory.ScavengeAttemptResult attempt = inventory.ScavengeAttempt(_cachedItemHashId, quantity, interactor);
+            PlayerInventory.ScavengeAttemptResult attempt = inventory.ScavengeAttempt(_cachedItemHashId, quantity, interactor, _geneticsMask, QualityMilli);
             if (!attempt.AnyAdded)
             {
                 DropOverflow(interactor);
@@ -394,6 +409,14 @@ namespace Hecton8.Interaction
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
             return true;
+        }
+
+        private static ushort NormalizeQualityMilli(ushort qualityMilli)
+        {
+            if (qualityMilli == 0)
+                return DefaultQualityMilli;
+
+            return (ushort)Mathf.Clamp((int)qualityMilli, 0, DefaultQualityMilli);
         }
 
         public string GetInteractText()

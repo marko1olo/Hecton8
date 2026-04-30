@@ -190,6 +190,19 @@ namespace Hecton8.World
         [Tooltip("Pulse frequency in Hertz applied by the indirect vegetation shader.")]
         private float pulseFrequency = 0.85f;
 
+        [Header("Spore Acoustics")]
+        [SerializeField]
+        [Tooltip("When true, mature instances emit a periodic hostile acoustic pulse synchronized to the VAT pulse frequency.")]
+        private bool matureSporeAcousticEmitter;
+
+        [SerializeField]
+        [Tooltip("Optional authored clip used by mature spore-emitter flora. DestructibleOrganicManager falls back to its configured spore/harvest clip when null.")]
+        private AudioClip matureSporeAcousticClip;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Base volume for mature spore acoustic pulses before distance and audio LOD attenuation.")]
+        private float matureSporeAcousticVolume = 0.65f;
+
         [SerializeField, Min(0f)]
         [Tooltip("Per-species VAT sway speed multiplier. Zero falls back to category defaults so existing assets remain valid.")]
         private float swaySpeed;
@@ -321,6 +334,15 @@ namespace Hecton8.World
         /// <summary>Authored shader pulse frequency in Hertz.</summary>
         public float PulseFrequency => Mathf.Max(0.05f, pulseFrequency);
 
+        /// <summary>True when a mature instance emits a periodic hostile acoustic pulse.</summary>
+        public bool EmitsMatureSporeAcoustic => matureSporeAcousticEmitter;
+
+        /// <summary>Optional authored clip for mature spore pulses.</summary>
+        public AudioClip MatureSporeAcousticClip => matureSporeAcousticClip;
+
+        /// <summary>Base volume for mature spore acoustic pulses.</summary>
+        public float MatureSporeAcousticVolume => Mathf.Clamp01(matureSporeAcousticVolume);
+
         /// <summary>Per-species VAT sway speed multiplier.</summary>
         public float SwaySpeed
         {
@@ -427,6 +449,7 @@ namespace Hecton8.World
             maxHealth = Mathf.Max(0.1f, maxHealth);
             growthTimeSeconds = Mathf.Max(1f, growthTimeSeconds);
             pulseFrequency = Mathf.Max(0.05f, pulseFrequency);
+            matureSporeAcousticVolume = Mathf.Clamp01(matureSporeAcousticVolume);
             swaySpeed = Mathf.Max(0f, swaySpeed);
             bendAmplitude = Mathf.Clamp(bendAmplitude, 0f, 2f);
             boundingBoxSize.x = Mathf.Max(0.05f, boundingBoxSize.x);

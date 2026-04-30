@@ -200,8 +200,7 @@ namespace Hecton8.World
 
             _nextVolumeFallbackRefreshTime = Time.unscaledTime + VolumeFallbackRefreshIntervalSeconds;
             HectonVoxelVolume[] fallbackVolumes =
-                Object.FindObjectsByType<HectonVoxelVolume>(
-                    FindObjectsInactive.Exclude); // COLD ALLOC: HectonVoxelVolume[] - fallback cave AO scan when WorldCaveDirector is unavailable - owner: HectonCaveVoxelAmbientOcclusionController
+                Object.FindObjectsByType<HectonVoxelVolume>(FindObjectsInactive.Exclude); // COLD ALLOC: HectonVoxelVolume[] - fallback cave AO scan when WorldCaveDirector is unavailable - owner: HectonCaveVoxelAmbientOcclusionController
             if (fallbackVolumes == null)
             {
                 _debugVolumeCount = 0;

@@ -47,6 +47,8 @@ namespace Hecton8.Editor
         };
         private static readonly MethodInfo s_ValidateRendererFeaturesMethod =
             typeof(ScriptableRendererData).GetMethod("ValidateRendererFeatures", BindingFlags.Instance | BindingFlags.NonPublic);
+        private const string InitialRepairCompletedSessionKey =
+            "HectonRenderPipelineValidator.InitialRepairCompleted";
         private static bool s_InitialRepairQueued;
 
         private static readonly string[] s_DepthMutationPatterns =
@@ -66,8 +68,11 @@ namespace Hecton8.Editor
         [InitializeOnLoadMethod]
         private static void QueueInitialRepair()
         {
-            if (s_InitialRepairQueued)
+            if (s_InitialRepairQueued ||
+                SessionState.GetBool(InitialRepairCompletedSessionKey, false))
+            {
                 return;
+            }
 
             s_InitialRepairQueued = true;
             EditorApplication.delayCall += RunInitialRepair;
@@ -109,6 +114,7 @@ namespace Hecton8.Editor
                 return;
             }
 
+            SessionState.SetBool(InitialRepairCompletedSessionKey, true);
             RepairKnownRenderPipelineAssets();
             Validate(logSummary: false, applyRepairs: true);
         }

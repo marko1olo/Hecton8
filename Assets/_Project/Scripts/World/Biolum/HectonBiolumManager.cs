@@ -323,7 +323,7 @@ namespace Hecton8.Biolum
         /// </summary>
         private void FindExistingZones()
         {
-            HectonBiolumZone[] zones = Object.FindObjectsByType<HectonBiolumZone>();
+            HectonBiolumZone[] zones = Object.FindObjectsByType<HectonBiolumZone>(FindObjectsInactive.Exclude);
             foreach (var zone in zones)
             {
                 zone.EnsureTickRegistration();

@@ -78,6 +78,9 @@ namespace Hecton8.AI
         private const double DehydrationDistanceSq = DehydrationDistanceMeters * DehydrationDistanceMeters;
         private const float HibernationDistanceMeters = 150f;
         private const double HibernationDistanceSq = HibernationDistanceMeters * HibernationDistanceMeters;
+        private const float ThermalApexMigrationIntervalSeconds = 2f;
+        private const float ThermalApexMigrationRadiusMeters = 1000f;
+        private const float ThermalApexMigrationStepMeters = 250f;
         private const int GlobalFaunaHardCap = 200;
         private const int PredatorHardCapPerKilometerSector = 5;
         private const uint StandardFaunaInstanceTypeId = 0xF9u;
@@ -531,6 +534,7 @@ namespace Hecton8.AI
         private bool _residentDataOnlyLodScheduled;
         private float _nextPlayerResolveTime = float.NegativeInfinity;
         private float _nextRuntimeSettingsRefreshTime = float.NegativeInfinity;
+        private float _nextThermalApexMigrationTime = float.NegativeInfinity;
         private bool _runtimeSettingsDirty = true;
         private WorldProceduralFaunaMood _currentMatrixFaunaMood;
         private int _currentEffectiveGlobalMaxCount = 30;
@@ -773,6 +777,7 @@ namespace Hecton8.AI
             int cullCount = CullOrDehydrateDistantCreatures(playerPos);
             HydrateResidentCreatures(playerPos);
             OffloadPersistedTier2Fauna(playerPos);
+            ApplyThermalApexMigrationToPersistedTier2Fauna();
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             //  3. BIOME DETECTION (THROTTLED)
@@ -2503,6 +2508,27 @@ namespace Hecton8.AI
             }
         }
 
+        private void ApplyThermalApexMigrationToPersistedTier2Fauna()
+        {
+            if (Time.time < _nextThermalApexMigrationTime)
+                return;
+
+            _nextThermalApexMigrationTime = Time.time + ThermalApexMigrationIntervalSeconds;
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            if (thermalManager == null ||
+                !thermalManager.TryResolveApexMigrationThermalAttractor(out Vector3 attractorPosition, out float strength01))
+            {
+                return;
+            }
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return;
+
+            float stepMeters = ThermalApexMigrationStepMeters * Mathf.Max(0.25f, Mathf.Clamp01(strength01));
+            registry.MigrateApexFaunaHibernationStatesToward(attractorPosition, ThermalApexMigrationRadiusMeters, stepMeters);
+        }
+
         private void RestorePersistedTier2Fauna(Vector3 playerPos)
         {
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
@@ -2572,9 +2598,9 @@ namespace Hecton8.AI
 
             FaunaResidencyState restoredState = _dehydratedCreatureStates[slotIndex];
             restoredState.health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState);
-            restoredState.pendingHibernationSleepSeconds = sleepStartTimeSeconds > 0f
-                ? Mathf.Max(0f, Time.time - sleepStartTimeSeconds)
-                : 0f;
+            restoredState.pendingHibernationSleepSeconds = PredatorCognitionDomain.ResolveHibernationTimeAsleepSeconds(
+                sleepStartTimeSeconds,
+                Time.time);
             restoredState.hibernationStartTimeSeconds = sleepStartTimeSeconds;
             restoredState.speciesId = speciesId;
             restoredState.isLargeThreat = isLargeThreat;

@@ -26,6 +26,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
 using Hecton.Localization;
@@ -221,6 +222,7 @@ namespace Hecton8.Visor
         private SpectrumMode _currentMode = SpectrumMode.Normal;
         private float _sonarTimer;
         private bool _registered;
+        private bool _acousticPingSubscribed;
         private bool _hasSonarSnapshot;
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
@@ -323,6 +325,8 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
+            SubscribeAcousticPingEvents();
+
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
@@ -344,6 +348,8 @@ namespace Hecton8.Visor
 
         private void OnDisable()
         {
+            UnsubscribeAcousticPingEvents();
+
             if (_registered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
@@ -359,6 +365,8 @@ namespace Hecton8.Visor
 
         private void OnDestroy()
         {
+            UnsubscribeAcousticPingEvents();
+
             if (_registered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
@@ -518,6 +526,40 @@ namespace Hecton8.Visor
                 NoiseSystem.ReportActiveSonarPing(playerPosition, pulseIntensity);
             SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
             return true;
+        }
+
+        private void SubscribeAcousticPingEvents()
+        {
+            if (_acousticPingSubscribed || !Application.isPlaying)
+                return;
+
+            PhysicsEventBus.OnAcousticPing += HandleAcousticPing;
+            _acousticPingSubscribed = true;
+        }
+
+        private void UnsubscribeAcousticPingEvents()
+        {
+            if (!_acousticPingSubscribed)
+                return;
+
+            PhysicsEventBus.OnAcousticPing -= HandleAcousticPing;
+            _acousticPingSubscribed = false;
+        }
+
+        private void HandleAcousticPing(in AcousticPingEvent pingEvent)
+        {
+            if (pingEvent.RadiusMeters <= 0f || pingEvent.Intensity01 <= 0f || pingEvent.LifetimeSeconds <= 0f)
+                return;
+
+            WorldSpatialHashGrid.RegisterTransientEvent(
+                pingEvent.RuntimePosition,
+                pingEvent.RadiusMeters,
+                pingEvent.Intensity01,
+                pingEvent.LifetimeSeconds,
+                SpatialTransientEventType.AcousticImpulse,
+                SpatialInteractionFlags.Signal | SpatialInteractionFlags.AcousticReceiver,
+                pingEvent.SignalRole,
+                pingEvent.SourceSpeciesId);
         }
 
         private bool ResolveSurvivalSystem()
@@ -1093,9 +1135,18 @@ namespace Hecton8.Visor
             }
             else if ((hit.Kind & SpatialTargetKind.Signal) != 0)
             {
-                hardResponse = 0.92f;
-                organicResponse = 0.05f;
-                contactRadius = 6.25f;
+                if (hit.SignalRole == FieldTargetRole.DistressBeacon)
+                {
+                    hardResponse = 0.18f;
+                    organicResponse = 0.95f;
+                    contactRadius = 7.25f;
+                }
+                else
+                {
+                    hardResponse = 0.92f;
+                    organicResponse = 0.05f;
+                    contactRadius = 6.25f;
+                }
             }
             else if ((hit.Kind & SpatialTargetKind.Scannable) != 0)
             {

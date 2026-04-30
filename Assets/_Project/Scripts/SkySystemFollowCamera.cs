@@ -43,6 +43,11 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
 
     private void OnEnable()
     {
+#if UNITY_EDITOR
+        if (EditorApplication.isCompiling || !Application.isPlaying)
+            return;
+#endif
+
         CaptureFixedYPosition();
         ResolveSeaLevelOwners();
         ApplyFollowImmediately();
@@ -131,6 +136,12 @@ public sealed class SkySystemFollowCamera : MonoBehaviour
 #if UNITY_EDITOR
     private void EditorTick()
     {
+        if (EditorApplication.isCompiling || !Application.isPlaying)
+        {
+            EditorApplication.update -= EditorTick;
+            return;
+        }
+
         if (Application.isPlaying || !followInEditMode || this == null)
             return;
 

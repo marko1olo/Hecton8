@@ -217,7 +217,7 @@ namespace Hecton8.Quest
         {
             _visibleMarkerCount = 0;
 
-            QuestManager questManager = QuestManager.Instance;
+            QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 
