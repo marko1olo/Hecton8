@@ -322,7 +322,7 @@ namespace Hecton8.Gameplay
             if (_state != FlareState.Inactive && _state != FlareState.Extinguished)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[DeployableFlare] Deploy called on already active flare (state={_state})", this);
+                Debug.LogWarning("[DeployableFlare] Deploy called on already active flare.", this);
 #endif
                 return;
             }

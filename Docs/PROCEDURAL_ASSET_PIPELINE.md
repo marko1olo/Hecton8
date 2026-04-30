@@ -1,5 +1,7 @@
 ﻿# PROCEDURAL_ASSET_PIPELINE.md
 ## КОНТРАКТ НА ГЕНЕРАЦИЮ ПРОЦЕДУРНЫХ АССЕТОВ
+Status: PENDING VERIFICATION
+Verification: not runtime-measured in this pass
 Target: NVIDIA MX350 2GB VRAM · i5-1135G7 · 12GB RAM
 Engine: Unity 6000.x · URP Forward+
 Tools: MapMagic 2.1.18 · GPU Instancer Pro · Mantis LOD · Mesh Baker

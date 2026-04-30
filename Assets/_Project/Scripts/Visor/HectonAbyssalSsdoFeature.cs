@@ -119,6 +119,9 @@ namespace Hecton8.Visor
             {
                 Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
 
+                if (!Application.isPlaying)
+                    return;
+
                 if (_settings == null ||
                     _occlusionMaterial == null ||
                     _blurHorizontalMaterial == null ||
@@ -361,6 +364,12 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            if (!Application.isPlaying)
+            {
+                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                return;
+            }
+
             if (settings == null ||
                 _pass == null ||
                 _occlusionMaterial == null ||

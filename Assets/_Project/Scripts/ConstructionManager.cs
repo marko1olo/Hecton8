@@ -483,6 +483,9 @@ namespace Hecton8.Construction
                 if (module.TryGetComponent(out DeepDrillModule deepDrill))
                     deepDrill.PopulateSaveData(ref moduleDto);
 
+                if (module.TryGetComponent(out CultivationManager cultivationManager))
+                    cultivationManager.PopulateSaveData(ref moduleDto, PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null);
+
                 if (module.TryGetComponent(out LogisticsPipeNode logisticsPipe))
                     logisticsPipe.PopulateSaveData(ref moduleDto);
 
@@ -701,6 +704,9 @@ namespace Hecton8.Construction
 
                     if (module.TryGetComponent(out DeepDrillModule deepDrill))
                         deepDrill.RestoreFromSaveData(moduleDto, itemCatalog);
+
+                    if (module.TryGetComponent(out CultivationManager cultivationManager))
+                        cultivationManager.RestoreFromSaveData(moduleDto, itemCatalog);
 
                     if (module.TryGetComponent(out LogisticsPipeNode logisticsPipe))
                         logisticsPipe.RestoreFromSaveData(moduleDto, itemCatalog);

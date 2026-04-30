@@ -45,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 47; // v47: habitat graph topology persistence
+        public const int CurrentVersion = 48; // v48: cultivation genetics persistence
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -370,6 +370,7 @@ namespace Hecton8.SaveSystem
         public uint[] packedCellCoordinates;
         public ushort[] stackCounts;
         public ushort[] itemStateFlags;
+        public uint[] itemGeneticsWords;
         public ushort[] qualityMilli;
         public uint[] lastUpdateUnixSeconds;
         public float totalWeight;
@@ -391,6 +392,9 @@ namespace Hecton8.SaveSystem
 
             if (itemStateFlags == null || itemStateFlags.Length < MaxCells)
                 itemStateFlags = new ushort[MaxCells];
+
+            if (itemGeneticsWords == null || itemGeneticsWords.Length < MaxCells)
+                itemGeneticsWords = new uint[MaxCells];
 
             if (qualityMilli == null || qualityMilli.Length < MaxCells)
                 qualityMilli = new ushort[MaxCells];
@@ -1016,6 +1020,10 @@ namespace Hecton8.SaveSystem
         public float co2Normalized;
         public bool isFlooded;
         public byte failureMode;
+        public int cultivationSlotCount;
+        public string[] cultivationSeedItemIds;
+        public uint[] cultivationGeneticsMasks;
+        public float[] cultivationGrowth01;
 
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
         public Quaternion GetRotation() => new Quaternion(rotX, rotY, rotZ, rotW);

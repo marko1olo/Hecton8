@@ -436,9 +436,11 @@ namespace Hecton8.VFX
                 RefreshAdaptiveBudgetResponse();
                 UpdateShake(dt);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError($"[CameraJuiceSystem] Shake calculation failed: {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[CameraJuiceSystem] Shake calculation failed.");
+#endif
                 _shakeEnabled = false;
             }
 
@@ -446,9 +448,11 @@ namespace Hecton8.VFX
             {
                 UpdateFOV(dt);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError($"[CameraJuiceSystem] FOV calculation failed: {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
+#endif
                 _fovEnabled = false;
             }
 
@@ -456,9 +460,11 @@ namespace Hecton8.VFX
             {
                 UpdateBiomeBlend(dt);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError($"[CameraJuiceSystem] Biome blend failed: {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[CameraJuiceSystem] Biome blend failed.");
+#endif
                 _biomeBlendActive = false;
             }
 
@@ -466,9 +472,11 @@ namespace Hecton8.VFX
             {
                 UpdateInteractionFocus(dt);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError($"[CameraJuiceSystem] Interaction focus calculation failed: {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
+#endif
                 _depthOfFieldEnabled = false;
             }
 
@@ -477,7 +485,7 @@ namespace Hecton8.VFX
             if (frameTime > 1.0f && Time.time >= _nextLogTime)
             {
                 _nextLogTime = Time.time + 5f;
-                Debug.LogWarning($"[CameraJuiceSystem] Frame time exceeded budget: {frameTime:F2}ms");
+                Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
             }
 #endif
         }
@@ -502,9 +510,11 @@ namespace Hecton8.VFX
             {
                 UpdateHealthPostProcessing();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError($"[CameraJuiceSystem] Health post-processing failed: {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
+#endif
                 _healthO2EffectsEnabled = false;
             }
 
@@ -512,9 +522,11 @@ namespace Hecton8.VFX
             {
                 UpdateO2PostProcessing();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError($"[CameraJuiceSystem] O2 post-processing failed: {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[CameraJuiceSystem] O2 post-processing failed.");
+#endif
                 _healthO2EffectsEnabled = false;
             }
         }

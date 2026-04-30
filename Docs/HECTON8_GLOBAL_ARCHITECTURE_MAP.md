@@ -1,6 +1,6 @@
 # HECTON-8 Global Architecture Map
 
-Date: 2026-04-29
+Date: 2026-04-30
 Status: PENDING VERIFICATION
 Scope: source-backed architecture map only, not a profiler capture and not a build-certification report
 
@@ -16,11 +16,11 @@ Mandates followed:
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- Current first-party `.cs` inventory under `Assets/_Project`: `1010`
-- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `970`
-- Current script line count under `Assets/_Project/Scripts`: `420468`
-- Average lines per script: `433.47`
-- Scripts still living directly in `Assets/_Project/Scripts` root: `312`
+- Current first-party `.cs` inventory under `Assets/_Project`: `1038`
+- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `998`
+- Current script line count under `Assets/_Project/Scripts`: `444135`
+- Average lines per script: `445.03`
+- Scripts still living directly in `Assets/_Project/Scripts` root: `314`
 
 This file replaces the older generated map whose `808`-script snapshot and some interface conclusions are no longer true.
 
@@ -95,7 +95,7 @@ Meaning:
 
 ## 5. Current Editor Readback
 
-Current reachable Unity Editor state during the latest recheck:
+Historical Unity Editor readback from the previous recheck:
 
 - Build Settings scenes: `00_BOOTSTRAP`, `01_MAIN_MENU`, `02_HECTON_WORLD`
 - Loaded active scene: `02_HECTON_WORLD`
@@ -107,21 +107,23 @@ Latest console slice observed:
 - repeated message pattern: `Failed to convert -1 to a unsigned 32 bit int`
 - affected assets: `Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_*`
 
-This is a live editor snapshot only.
+This is a historical editor snapshot only and was not refreshed in the 2026-04-30 docset actuality pass.
 It is not proof of stable play-mode behavior, shipping build health, or zero-GC runtime.
 
 ## 6. Concentration Risks
 
 Largest current first-party owners by line count:
 
-- `World/HectonMapMagicVegetationBridge.cs` - `13279`
-- `WorldProceduralScatterDirector.cs` - `10333`
-- `HectonPlayerMovement.cs` - `7851`
-- `HectonUnderwaterVisuals.cs` - `4826`
-- `UI/SuitHUDV4CanvasOverlay.cs` - `4608`
-- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `4200`
-- `HectonVoxelEngine.cs` - `4138`
-- `World/SargassumMicroFaunaBoids.cs` - `3921`
+- `World/HectonMapMagicVegetationBridge.cs` - `13688`
+- `WorldProceduralScatterDirector.cs` - `10433`
+- `HectonPlayerMovement.cs` - `7940`
+- `HectonUnderwaterVisuals.cs` - `4827`
+- `UI/SuitHUDV4CanvasOverlay.cs` - `4655`
+- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `4282`
+- `HectonVoxelEngine.cs` - `4160`
+- `FaunaDirector.cs` - `3955`
+- `World/SargassumMicroFaunaBoids.cs` - `3923`
+- `SaveBinaryStorage.cs` - `3896`
 
 These are not cosmetic complaints.
 They are risk multipliers because runtime ownership, visuals, simulation, and integration pressure accumulate inside very large files.
@@ -130,7 +132,7 @@ They are risk multipliers because runtime ownership, visuals, simulation, and in
 
 - bootstrap ownership is split between `GameBootstrapper` and `SceneBootstrap`
 - event architecture is mixed between queue-backed and direct static buses
-- root-folder ownership is still noisy with `312` scripts in `Assets/_Project/Scripts`
+- root-folder ownership is still noisy with `314` scripts in `Assets/_Project/Scripts`
 - codebase health is stronger than some old reports claimed, but file-size concentration and ownership spread remain real
 
 ## 8. Regression Model
@@ -139,7 +141,7 @@ CPU: no runtime code changed
 GC: no runtime code changed
 Memory: no runtime code changed
 Cadence: documentation only
-Correctness: improved because stale script counts, stale interface ownership claims, and stale compile-state assumptions were removed
+Correctness: improved because stale script counts and large-owner line counts were refreshed; editor state remains historical until a future Unity run
 
 ## 9. Hot Path Impact
 

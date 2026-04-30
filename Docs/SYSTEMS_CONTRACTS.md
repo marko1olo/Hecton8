@@ -1,5 +1,7 @@
 # SYSTEMS_CONTRACTS.md
 ## ENGINE SYSTEMS CONTRACTS
+Status: PENDING VERIFICATION
+Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
 These systems are developed separately from asset pipeline work.

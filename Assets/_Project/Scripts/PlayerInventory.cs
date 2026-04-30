@@ -194,6 +194,7 @@ namespace Hecton8.Inventory
             public ushort stackCount;
             public ushort lockedCount;
             public ushort stateFlags;
+            public uint geneticsMask;
             public ushort qualityMilli;
             public uint lastUpdateUnixSeconds;
             public float weight;
@@ -231,6 +232,7 @@ namespace Hecton8.Inventory
         private NativeArray<ushort> _craftLockedCounts;
         private NativeArray<ushort> _anchorStateFlags;
         private NativeArray<ushort> _itemStateFlags;
+        private NativeArray<uint> _itemGeneticsWords;
         private NativeArray<ushort> _qualityMilli;
         private NativeArray<uint> _lastUpdateUnixSeconds;
         private NativeArray<ushort> _scavengeSimStackCounts;
@@ -286,6 +288,8 @@ namespace Hecton8.Inventory
             _anchorStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — persistent per-anchor item-state flags — owner: PlayerInventory
             _itemStateFlags = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: uint[columns * rows] â€” persistent per-anchor cultivation genetics words â€” owner: PlayerInventory
+            _itemGeneticsWords = new NativeArray<uint>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: ushort[columns * rows] — persistent per-anchor quality values (0-1000) — owner: PlayerInventory
             _qualityMilli = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: uint[columns * rows] — persistent per-anchor last update timestamps — owner: PlayerInventory
@@ -341,6 +345,9 @@ namespace Hecton8.Inventory
             if (_itemStateFlags.IsCreated)
                 _itemStateFlags.Dispose(default);
 
+            if (_itemGeneticsWords.IsCreated)
+                _itemGeneticsWords.Dispose(default);
+
             if (_qualityMilli.IsCreated)
                 _qualityMilli.Dispose(default);
 
@@ -390,6 +397,7 @@ namespace Hecton8.Inventory
             _craftLockedCounts[anchorIndex] = 0;
             _anchorStateFlags[anchorIndex] = 0;
             _itemStateFlags[anchorIndex] = 0;
+            _itemGeneticsWords[anchorIndex] = 0u;
             _qualityMilli[anchorIndex] = 0;
             _lastUpdateUnixSeconds[anchorIndex] = 0;
             ClearAnchorPhysicalMetadata(anchorIndex);
@@ -423,6 +431,7 @@ namespace Hecton8.Inventory
                 _craftLockedCounts[anchorIndex] = 0;
                 _anchorStateFlags[anchorIndex] = 0;
                 _itemStateFlags[anchorIndex] = 0;
+                _itemGeneticsWords[anchorIndex] = 0u;
                 _qualityMilli[anchorIndex] = 0;
                 _lastUpdateUnixSeconds[anchorIndex] = 0;
                 ClearAnchorPhysicalMetadata(anchorIndex);
@@ -522,12 +531,19 @@ namespace Hecton8.Inventory
 
         internal bool TryConsumeFirstMatchingItemByHash(int itemHashId, out ushort stateFlags, out ushort qualityMilli)
         {
+            return TryConsumeFirstMatchingItemByHash(itemHashId, out stateFlags, out qualityMilli, out _);
+        }
+
+        internal bool TryConsumeFirstMatchingItemByHash(int itemHashId, out ushort stateFlags, out ushort qualityMilli, out uint geneticsMask)
+        {
             stateFlags = 0;
             qualityMilli = 0;
+            geneticsMask = 0u;
             if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
                 return false;
 
             stateFlags = _itemStateFlags.IsCreated ? _itemStateFlags[anchorIndex] : (ushort)0;
+            geneticsMask = _itemGeneticsWords.IsCreated ? _itemGeneticsWords[anchorIndex] : 0u;
             qualityMilli = _qualityMilli.IsCreated && _qualityMilli[anchorIndex] > 0
                 ? _qualityMilli[anchorIndex]
                 : DefaultQualityMilli;
@@ -552,6 +568,11 @@ namespace Hecton8.Inventory
         {
             return CanAcceptQuantity(itemHashId, quantity) &&
                    TryAddItemInternal(itemHashId, quantity, out _);
+        }
+
+        public bool TryAddItemWithGenetics(int itemHashId, uint geneticsMask, int quantity = 1)
+        {
+            return TryAddItemWithGeneticsInternal(itemHashId, quantity, geneticsMask, out _);
         }
 
         public void SlowTick()
@@ -764,6 +785,7 @@ namespace Hecton8.Inventory
                     _craftLockedCounts[anchorIndex] = 0;
                     _anchorStateFlags[anchorIndex] = 0;
                     _itemStateFlags[anchorIndex] = 0;
+                    _itemGeneticsWords[anchorIndex] = 0u;
                     _qualityMilli[anchorIndex] = 0;
                     _lastUpdateUnixSeconds[anchorIndex] = 0;
                     ClearAnchorPhysicalMetadata(anchorIndex);
@@ -815,6 +837,7 @@ namespace Hecton8.Inventory
                 dto.packedCellCoordinates[cellIndex] = InventoryDTO.PackCellCoordinate(x, y);
                 dto.stackCounts[cellIndex] = _stackCounts[anchorIndex];
                 dto.itemStateFlags[cellIndex] = _itemStateFlags[anchorIndex];
+                dto.itemGeneticsWords[cellIndex] = _itemGeneticsWords[anchorIndex];
                 dto.qualityMilli[cellIndex] = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli;
                 dto.lastUpdateUnixSeconds[cellIndex] = _lastUpdateUnixSeconds[anchorIndex];
                 cellIndex++;
@@ -833,6 +856,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_stackCounts);
             ClearCraftReservationState();
             ClearNativeArray(_itemStateFlags);
+            ClearNativeArray(_itemGeneticsWords);
             ClearNativeArray(_qualityMilli);
             ClearNativeArray(_lastUpdateUnixSeconds);
             TotalWeight = 0f;
@@ -866,6 +890,7 @@ namespace Hecton8.Inventory
                     int anchorIndex = AnchorIndex(cellX, cellY);
                     _stackCounts[anchorIndex] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
                     _itemStateFlags[anchorIndex] = ResolveLoadedItemStateFlags(dto, i, runtimeDescriptor.StateFlags);
+                    _itemGeneticsWords[anchorIndex] = ResolveLoadedGeneticsMask(dto, i);
                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
                     SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
@@ -879,6 +904,7 @@ namespace Hecton8.Inventory
                     int anchorIndex = AnchorIndex(px, py);
                     _stackCounts[anchorIndex] = (ushort)Mathf.Clamp(loadedCount, 1, ushort.MaxValue);
                     _itemStateFlags[anchorIndex] = ResolveLoadedItemStateFlags(dto, i, runtimeDescriptor.StateFlags);
+                    _itemGeneticsWords[anchorIndex] = ResolveLoadedGeneticsMask(dto, i);
                     _qualityMilli[anchorIndex] = ResolveLoadedQualityMilli(dto, i);
                     _lastUpdateUnixSeconds[anchorIndex] = ResolveLoadedTimestamp(dto, i);
                     SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
@@ -928,6 +954,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_stackCounts);
             ClearCraftReservationState();
             ClearNativeArray(_itemStateFlags);
+            ClearNativeArray(_itemGeneticsWords);
             ClearNativeArray(_qualityMilli);
             ClearNativeArray(_lastUpdateUnixSeconds);
             ClearNativeArray(_anchorUnitMassKg);
@@ -943,6 +970,7 @@ namespace Hecton8.Inventory
                     int anchorIndex = AnchorIndex(px, py);
                     _stackCounts[anchorIndex] = placement.stackCount;
                     _itemStateFlags[anchorIndex] = placement.stateFlags;
+                    _itemGeneticsWords[anchorIndex] = placement.geneticsMask;
                     _qualityMilli[anchorIndex] = placement.qualityMilli;
                     _lastUpdateUnixSeconds[anchorIndex] = placement.lastUpdateUnixSeconds;
                     SyncAnchorPhysicalMetadata(anchorIndex, placement.itemHashId);
@@ -999,6 +1027,7 @@ namespace Hecton8.Inventory
                 SwapAnchorState(_craftLockedCounts, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_anchorStateFlags, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+                SwapAnchorState(_itemGeneticsWords, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
                 SwapAnchorState(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
@@ -1010,6 +1039,7 @@ namespace Hecton8.Inventory
             MoveAnchorStateValue(_craftLockedCounts, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_anchorStateFlags, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_itemStateFlags, sourceAnchorIndex, destinationAnchorIndex);
+            MoveAnchorStateValue(_itemGeneticsWords, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_qualityMilli, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_lastUpdateUnixSeconds, sourceAnchorIndex, destinationAnchorIndex);
             MoveAnchorStateValue(_anchorUnitMassKg, sourceAnchorIndex, destinationAnchorIndex);
@@ -1057,6 +1087,7 @@ namespace Hecton8.Inventory
                     stackCount = (ushort)Mathf.Max(1, _stackCounts[anchorIndex]),
                     lockedCount = _craftLockedCounts[anchorIndex],
                     stateFlags = _itemStateFlags[anchorIndex],
+                    geneticsMask = _itemGeneticsWords[anchorIndex],
                     qualityMilli = _qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli,
                     lastUpdateUnixSeconds = _lastUpdateUnixSeconds[anchorIndex],
                     weight = descriptor.Weight,
@@ -1086,6 +1117,11 @@ namespace Hecton8.Inventory
 
         private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
         {
+            return TryAddItemWithGeneticsInternal(itemHashId, quantity, 0u, out addedQuantity);
+        }
+
+        private bool TryAddItemWithGeneticsInternal(int itemHashId, int quantity, uint geneticsMask, out int addedQuantity)
+        {
             addedQuantity = 0;
             if (_grid == null ||
                 itemHashId == 0 ||
@@ -1101,7 +1137,7 @@ namespace Hecton8.Inventory
             bool allAdded = true;
             for (int i = 0; i < quantity; i++)
             {
-                if (descriptor.Stackable && TryStackItem(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow))
+                if (descriptor.Stackable && TryStackItemWithGenetics(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow, geneticsMask))
                 {
                     TotalWeight += descriptor.Weight;
                     addedQuantity++;
@@ -1113,6 +1149,7 @@ namespace Hecton8.Inventory
                     int anchorIndex = AnchorIndex(placedX, placedY);
                     _stackCounts[anchorIndex] = 1;
                     _itemStateFlags[anchorIndex] = runtimeDescriptor.StateFlags;
+                    _itemGeneticsWords[anchorIndex] = geneticsMask;
                     _qualityMilli[anchorIndex] = DefaultQualityMilli;
                     _lastUpdateUnixSeconds[anchorIndex] = (runtimeDescriptor.StateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
                     SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3);
@@ -1134,7 +1171,7 @@ namespace Hecton8.Inventory
             return allAdded;
         }
 
-        private bool TryStackItem(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow)
+        private bool TryStackItemWithGenetics(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, uint geneticsMask)
         {
             if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1)
                 return false;
@@ -1144,10 +1181,17 @@ namespace Hecton8.Inventory
                 if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != itemHashId || IsCraftLockedFlagSet(anchorIndex))
                     continue;
 
+                if ((_itemStateFlags.IsCreated && _itemStateFlags[anchorIndex] != itemStateFlags) ||
+                    (_itemGeneticsWords.IsCreated && _itemGeneticsWords[anchorIndex] != geneticsMask))
+                {
+                    continue;
+                }
+
                 if (_stackCounts[anchorIndex] < maxStack)
                 {
                     _stackCounts[anchorIndex]++;
                     _itemStateFlags[anchorIndex] = itemStateFlags;
+                    _itemGeneticsWords[anchorIndex] = geneticsMask;
                     if (_qualityMilli[anchorIndex] == 0)
                         _qualityMilli[anchorIndex] = DefaultQualityMilli;
                     if ((itemStateFlags & BiologicalItemStateMask) != 0 && _lastUpdateUnixSeconds[anchorIndex] == 0u)
@@ -1350,6 +1394,7 @@ namespace Hecton8.Inventory
             ClearNativeArray(_craftLockedCounts);
             ClearNativeArray(_anchorStateFlags);
             ClearNativeArray(_itemStateFlags);
+            ClearNativeArray(_itemGeneticsWords);
             ClearNativeArray(_qualityMilli);
             ClearNativeArray(_lastUpdateUnixSeconds);
             ClearNativeArray(_anchorUnitMassKg);
@@ -1369,6 +1414,8 @@ namespace Hecton8.Inventory
                     _craftLockedCounts[anchorIndex] = placement.lockedCount;
                 if (_itemStateFlags.IsCreated)
                     _itemStateFlags[anchorIndex] = placement.stateFlags;
+                if (_itemGeneticsWords.IsCreated)
+                    _itemGeneticsWords[anchorIndex] = placement.geneticsMask;
                 if (_qualityMilli.IsCreated)
                     _qualityMilli[anchorIndex] = placement.qualityMilli;
                 if (_lastUpdateUnixSeconds.IsCreated)
@@ -1759,6 +1806,14 @@ namespace Hecton8.Inventory
 
             ushort savedFlags = dto.itemStateFlags[index];
             return savedFlags != 0 ? savedFlags : fallbackFlags;
+        }
+
+        private static uint ResolveLoadedGeneticsMask(InventoryDTO dto, int index)
+        {
+            if (dto.itemGeneticsWords == null || (uint)index >= (uint)dto.itemGeneticsWords.Length)
+                return 0u;
+
+            return dto.itemGeneticsWords[index];
         }
 
         private void ApplyLoadedBiologicalDecay(int anchorIndex)

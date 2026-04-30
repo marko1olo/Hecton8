@@ -14,6 +14,10 @@ namespace Hecton8.Caves
     [RequireComponent(typeof(CurrentVolume))]
     public sealed class ThermalGeyser : MonoBehaviour, ITickable, IUpdatable, IFixedTickable
     {
+        private const float MinimumCylinderHeightMeters = 1f;
+        private const float EruptionCylinderHeightMultiplier = 2.25f;
+        private const float CavitationCylinderHeightMultiplier = 1.5f;
+
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
         [Tooltip("Local current volume driven by the geyser cycle.")]
@@ -116,11 +120,14 @@ namespace Hecton8.Caves
                 Vector3 horizontal = point - origin;
                 horizontal.y = 0f;
                 float horizontalDistance = horizontal.magnitude;
-                if (horizontalDistance > _cavitationRadius)
+                float verticalOffset = point.y - origin.y;
+                float eruptionHeight = Mathf.Max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
+                float cavitationHeight = Mathf.Max(eruptionHeight, _cavitationRadius * CavitationCylinderHeightMultiplier);
+                if (horizontalDistance > _cavitationRadius || verticalOffset < 0f || verticalOffset > cavitationHeight)
                     continue;
 
-                float eruptionT = 1f - Mathf.Clamp01(horizontalDistance / Mathf.Max(0.01f, _eruptionRadius));
-                float cavitationT = 1f - Mathf.Clamp01(horizontalDistance / Mathf.Max(0.01f, _cavitationRadius));
+                float eruptionT = EvaluateCylinderAttenuation(horizontalDistance, _eruptionRadius, verticalOffset, eruptionHeight);
+                float cavitationT = EvaluateCylinderAttenuation(horizontalDistance, _cavitationRadius, verticalOffset, cavitationHeight);
 
                 if (body != null)
                 {
@@ -146,10 +153,13 @@ namespace Hecton8.Caves
                 Vector3 playerOffset = _playerTransform.position - origin;
                 Vector3 playerHorizontal = new Vector3(playerOffset.x, 0f, playerOffset.z);
                 float playerDistance = playerHorizontal.magnitude;
-                if (playerDistance <= _cavitationRadius)
+                float playerVerticalOffset = playerOffset.y;
+                float playerEruptionHeight = Mathf.Max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
+                float playerCavitationHeight = Mathf.Max(playerEruptionHeight, _cavitationRadius * CavitationCylinderHeightMultiplier);
+                if (playerDistance <= _cavitationRadius && playerVerticalOffset >= 0f && playerVerticalOffset <= playerCavitationHeight)
                 {
-                    float eruptionT = 1f - Mathf.Clamp01(playerDistance / Mathf.Max(0.01f, _eruptionRadius));
-                    float cavitationT = 1f - Mathf.Clamp01(playerDistance / Mathf.Max(0.01f, _cavitationRadius));
+                    float eruptionT = EvaluateCylinderAttenuation(playerDistance, _eruptionRadius, playerVerticalOffset, playerEruptionHeight);
+                    float cavitationT = EvaluateCylinderAttenuation(playerDistance, _cavitationRadius, playerVerticalOffset, playerCavitationHeight);
 
                     if (eruptionT > 0f)
                         _playerMovement.ApplyExternalThermalUpdraft(Vector3.up * (_updraftStrength * 0.01f * eruptionT * fdt));
@@ -165,6 +175,15 @@ namespace Hecton8.Caves
                     }
                 }
             }
+        }
+
+        private static float EvaluateCylinderAttenuation(float radialDistance, float radius, float verticalOffset, float height)
+        {
+            float safeRadius = Mathf.Max(0.01f, radius);
+            float safeHeight = Mathf.Max(0.01f, height);
+            float radialFactor = 1f - Mathf.Clamp01(radialDistance / safeRadius);
+            float verticalFactor = 1f - Mathf.Clamp01(verticalOffset / safeHeight);
+            return radialFactor * verticalFactor;
         }
 
         private void Awake()

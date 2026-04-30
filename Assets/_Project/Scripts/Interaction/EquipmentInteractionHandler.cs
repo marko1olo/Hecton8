@@ -23,7 +23,7 @@ namespace Hecton8.Interaction
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
         private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
-        private static readonly int BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
+        private static int _baseModuleLayer = int.MinValue;
 
         private static EquipmentInteractionHandler _instance;
 
@@ -154,6 +154,7 @@ namespace Hecton8.Interaction
             }
 
             _instance = this;
+            EnsureLayerCache();
 
             if (!_signalQueue.IsCreated)
             {
@@ -177,6 +178,12 @@ namespace Hecton8.Interaction
 
                 DontDestroyOnLoad(gameObject);
             }
+        }
+
+        private static void EnsureLayerCache()
+        {
+            if (_baseModuleLayer == int.MinValue)
+                _baseModuleLayer = LayerMask.NameToLayer("BaseModule");
         }
 
         private void LateUpdate()
@@ -316,7 +323,8 @@ namespace Hecton8.Interaction
 
         private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint)
         {
-            if (targetCollider == null || targetCollider.gameObject.layer != BaseModuleLayer)
+            EnsureLayerCache();
+            if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
                 return false;
 
             BaseModule module = targetCollider.GetComponentInParent<BaseModule>();

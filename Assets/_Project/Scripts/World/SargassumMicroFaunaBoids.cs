@@ -318,7 +318,7 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 640)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 672)]
         private struct SimulationFrameConstants
         {
             public float4 Simulation0;
@@ -405,7 +405,7 @@ namespace Hecton8.World
         private const float WakeFlowLifetimeSeconds = 1.25f;
         private const uint HashSeed = 0x9E3779B9u;
         private const float SimulationPhaseWrapSeconds = 60f;
-        private const int SimulationFrameConstantsStride = 640;
+        private const int SimulationFrameConstantsStride = 672;
         private const int BoidDataPositionOffsetBytes = 0;
         private const int BoidDataVelocityOffsetBytes = 12;
         private const int BoidDataPanicOffsetBytes = 24;

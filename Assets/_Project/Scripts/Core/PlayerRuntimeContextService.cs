@@ -262,11 +262,30 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            InitializeServiceInternal(true);
+        }
+
+        internal void InitializeServiceDeferredSync()
+        {
+            InitializeServiceInternal(false);
+        }
+
+        internal void RefreshRuntimeContext()
+        {
+            if (!_isInitialized)
+                return;
+
+            SyncPlayerContext();
+        }
+
+        private void InitializeServiceInternal(bool syncImmediately)
+        {
             if (_isInitialized)
             {
                 TryRegisterUpdatable();
                 TryRegisterContext();
-                SyncPlayerContext();
+                if (syncImmediately)
+                    SyncPlayerContext();
                 return;
             }
 
@@ -285,7 +304,8 @@ namespace Hecton8.Core
             _isInitialized = true;
             TryRegisterUpdatable();
             TryRegisterContext();
-            SyncPlayerContext();
+            if (syncImmediately)
+                SyncPlayerContext();
         }
 
         /// <inheritdoc />

@@ -263,6 +263,7 @@ namespace Hecton8.SaveSystem
                 && writer.WriteStructArray(value.packedCellCoordinates)
                 && writer.WriteStructArray(value.stackCounts)
                 && writer.WriteStructArray(value.itemStateFlags)
+                && writer.WriteStructArray(value.itemGeneticsWords)
                 && writer.WriteStructArray(value.qualityMilli)
                 && writer.WriteStructArray(value.lastUpdateUnixSeconds)
                 && writer.WriteFloat(value.totalWeight)
@@ -454,6 +455,14 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadInventoryStateArrays(ref BufferReader reader, int version, ref InventoryDTO value)
         {
+            if (version >= 48)
+            {
+                return reader.ReadStructArray(out value.itemStateFlags)
+                    && reader.ReadStructArray(out value.itemGeneticsWords)
+                    && reader.ReadStructArray(out value.qualityMilli)
+                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+            }
+
             if (version >= 43)
             {
                 return reader.ReadStructArray(out value.itemStateFlags)
@@ -621,7 +630,7 @@ namespace Hecton8.SaveSystem
         {
             value = default;
             if (!reader.ReadInt(out value.moduleCount) ||
-                !ReadModuleArray(ref reader, out value.modules))
+                !ReadModuleArray(ref reader, version, out value.modules))
             {
                 return false;
             }
@@ -1048,13 +1057,17 @@ namespace Hecton8.SaveSystem
                 && writer.WriteFloat(value.airReserveNormalized)
                 && writer.WriteFloat(value.co2Normalized)
                 && writer.WriteBool(value.isFlooded)
-                && writer.WriteByte(value.failureMode);
+                && writer.WriteByte(value.failureMode)
+                && writer.WriteInt(value.cultivationSlotCount)
+                && WriteStringArray(ref writer, value.cultivationSeedItemIds)
+                && writer.WriteStructArray(value.cultivationGeneticsMasks)
+                && writer.WriteStructArray(value.cultivationGrowth01);
         }
 
-        private static bool ReadModule(ref BufferReader reader, out ModuleDTO value)
+        private static bool ReadModule(ref BufferReader reader, int version, out ModuleDTO value)
         {
             value = default;
-            return reader.ReadString(out value.prefabId)
+            bool ok = reader.ReadString(out value.prefabId)
                 && reader.ReadString(out value.slottedToolItemId)
                 && reader.ReadString(out value.pipeInFlightItemId)
                 && reader.ReadInt(out value.pipeInFlightAmount)
@@ -1079,6 +1092,22 @@ namespace Hecton8.SaveSystem
                 && reader.ReadFloat(out value.co2Normalized)
                 && reader.ReadBool(out value.isFlooded)
                 && reader.ReadByte(out value.failureMode);
+            if (!ok)
+                return false;
+
+            if (version < 48)
+            {
+                value.cultivationSlotCount = 0;
+                value.cultivationSeedItemIds = null;
+                value.cultivationGeneticsMasks = null;
+                value.cultivationGrowth01 = null;
+                return true;
+            }
+
+            return reader.ReadInt(out value.cultivationSlotCount)
+                && ReadStringArray(ref reader, out value.cultivationSeedItemIds)
+                && reader.ReadStructArray(out value.cultivationGeneticsMasks)
+                && reader.ReadStructArray(out value.cultivationGrowth01);
         }
 
         private static bool WriteModuleGraphNode(ref BufferWriter writer, in ModuleGraphNodeDTO value)
@@ -1222,9 +1251,29 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WriteModule);
         }
 
-        private static bool ReadModuleArray(ref BufferReader reader, out ModuleDTO[] values)
+        private static bool ReadModuleArray(ref BufferReader reader, int version, out ModuleDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadModule);
+            values = null;
+            if (!reader.ReadInt(out int count))
+                return false;
+
+            if (count == NullCollectionCount)
+                return true;
+
+            if (count < 0)
+            {
+                reader.SetError("Collection length is negative.");
+                return false;
+            }
+
+            values = new ModuleDTO[count];
+            for (int i = 0; i < count; i++)
+            {
+                if (!ReadModule(ref reader, version, out values[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool WriteModuleGraphNodeArray(ref BufferWriter writer, ModuleGraphNodeDTO[] values)

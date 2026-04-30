@@ -104,6 +104,8 @@ namespace Hecton8.World
         private readonly double _cellSizeMeters;
         private NativeParallelHashMap<int, SpatialEntry> _entries;
         private NativeList<int> _entryHandles;
+        private NativeList<int> _releasedHandles;
+        private NativeParallelHashSet<int> _releasedHandleSet;
         private NativeParallelMultiHashMap<Long3, int> _cellOccupancy;
         private QueryScratchArena _queryScratch;
         private int _nextHandle;
@@ -116,6 +118,10 @@ namespace Hecton8.World
             _entries = new NativeParallelHashMap<int, SpatialEntry>(safeEntryCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeList<int>[safeEntryCapacity] — dense active-handle list for zero-alloc hash rebuilds — owner: HectonSpatialHash
             _entryHandles = new NativeList<int>(safeEntryCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeList<int>[safeEntryCapacity] — reusable released handle stack for bounded spatial registry ids — owner: HectonSpatialHash
+            _releasedHandles = new NativeList<int>(safeEntryCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeParallelHashSet<int>[safeEntryCapacity] — duplicate-release guard for reusable spatial handles — owner: HectonSpatialHash
+            _releasedHandleSet = new NativeParallelHashSet<int>(safeEntryCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeParallelMultiHashMap<long3,int>[safeCellCapacity] — AUP cell occupancy buckets — owner: HectonSpatialHash
             _cellOccupancy = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, Allocator.Persistent);
             _queryScratch = new QueryScratchArena(safeEntryCapacity);
@@ -128,7 +134,10 @@ namespace Hecton8.World
         {
             using (_registerProfilerMarker.Auto())
             {
-                int handle = _nextHandle++;
+                int handle = AllocateHandle();
+                if (handle <= 0)
+                    return 0;
+
                 UpsertInternal(handle, in position, halfExtents, kindMask, payloadId, appendHandle: true);
                 return handle;
             }
@@ -164,6 +173,17 @@ namespace Hecton8.World
                 _entryHandles.RemoveAt(lastIndex);
                 break;
             }
+        }
+
+        public void ReleaseHandle(int handle)
+        {
+            if (handle <= 0 || _entries.ContainsKey(handle))
+                return;
+
+            if (!_releasedHandleSet.Add(handle))
+                return;
+
+            _releasedHandles.Add(handle);
         }
 
         public bool TryGetEntry(int handle, out SpatialEntry entry)
@@ -236,10 +256,39 @@ namespace Hecton8.World
             if (_entryHandles.IsCreated)
                 _entryHandles.Dispose();
 
+            if (_releasedHandles.IsCreated)
+                _releasedHandles.Dispose();
+
+            if (_releasedHandleSet.IsCreated)
+                _releasedHandleSet.Dispose();
+
             if (_cellOccupancy.IsCreated)
                 _cellOccupancy.Dispose();
 
             _queryScratch.Dispose();
+        }
+
+        private int AllocateHandle()
+        {
+            int releasedCount = _releasedHandles.Length;
+            if (releasedCount > 0)
+            {
+                int lastIndex = releasedCount - 1;
+                int handle = _releasedHandles[lastIndex];
+                _releasedHandles.RemoveAt(lastIndex);
+                _releasedHandleSet.Remove(handle);
+                return handle;
+            }
+
+            if (_nextHandle == int.MaxValue)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                UnityEngine.Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
+#endif
+                return 0;
+            }
+
+            return _nextHandle++;
         }
 
         private void UpsertInternal(int handle, in AbsoluteUniversePosition position, float3 halfExtents, int kindMask, int payloadId, bool appendHandle)
@@ -278,6 +327,12 @@ namespace Hecton8.World
 
             if (_entryHandles.Capacity < requiredEntryCapacity)
                 _entryHandles.Capacity = math.max(requiredEntryCapacity, _entryHandles.Capacity << 1);
+
+            if (_releasedHandles.Capacity < requiredEntryCapacity)
+                _releasedHandles.Capacity = math.max(requiredEntryCapacity, _releasedHandles.Capacity << 1);
+
+            if (_releasedHandleSet.Capacity < requiredEntryCapacity)
+                _releasedHandleSet.Capacity = math.max(requiredEntryCapacity, _releasedHandleSet.Capacity << 1);
 
             int cellSpan = EstimateCellSpan(minCell, maxCell);
             int requiredCellCapacity = _cellOccupancy.Count() + cellSpan;

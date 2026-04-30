@@ -199,6 +199,8 @@ namespace Hecton8.Physics
         private int _trackedBodyCount;
         private int _connectionCount;
         private int _queuedImpactCount;
+        private bool _serviceRegistered;
+        private bool _isInitialized;
         private bool _registeredFixedTick;
         private bool _registeredOriginShift;
         private bool _sceneEventsSubscribed;
@@ -320,15 +322,6 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
-            GlobalPhysicsStateManager registeredManager = GlobalRegistry.PhysicsStateManager;
-            if (registeredManager != null && !ReferenceEquals(registeredManager, this))
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            GlobalRegistry.RegisterPhysicsStateManager(this);
-
             if (!_lastValidPositions.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float3>[512 initial] â€” authoritative last-valid runtime-space body positions for origin-shift-safe recovery â€” owner: GlobalPhysicsStateManager
@@ -340,6 +333,29 @@ namespace Hecton8.Physics
                 // COLD ALLOC: NativeQueue<PhysicsImpactEventData>(Persistent) â€” deferred gameplay physics impact bus â€” owner: GlobalPhysicsStateManager
                 _impactQueue = new NativeQueue<PhysicsImpactEventData>(Allocator.Persistent);
             }
+        }
+
+        /// <summary>
+        /// Registers this manager as the authoritative global physics-state owner.
+        /// </summary>
+        public void InitializeService()
+        {
+            if (_isInitialized)
+            {
+                TryRegisterService();
+                TryRegisterFixedTick();
+                TryRegisterOriginShift();
+                return;
+            }
+
+            GlobalPhysicsStateManager registeredManager = GlobalRegistry.PhysicsStateManager;
+            if (registeredManager != null && !ReferenceEquals(registeredManager, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            TryRegisterService();
 
             if (Application.isPlaying)
             {
@@ -351,21 +367,18 @@ namespace Hecton8.Physics
 
             SubscribeSceneEvents();
             ScanLoadedScenesForRigidbodies();
+            _isInitialized = true;
+            TryRegisterFixedTick();
+            TryRegisterOriginShift();
         }
 
         private void OnEnable()
         {
-            if (!_registeredFixedTick && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-            {
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-                _registeredFixedTick = true;
-            }
+            if (!_isInitialized)
+                return;
 
-            if (!_registeredOriginShift)
-            {
-                HectonFloatingOrigin.RegisterListener(this);
-                _registeredOriginShift = true;
-            }
+            TryRegisterFixedTick();
+            TryRegisterOriginShift();
         }
 
         private void LateUpdate()
@@ -400,7 +413,7 @@ namespace Hecton8.Physics
             if (_lastValidPositions.IsCreated)
                 _lastValidPositions.Dispose();
 
-            GlobalRegistry.UnregisterPhysicsStateManager(this);
+            TryUnregisterService();
         }
 
         /// <inheritdoc />
@@ -416,6 +429,44 @@ namespace Hecton8.Physics
         {
             manager = GlobalRegistry.PhysicsStateManager;
             return manager != null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered)
+                return;
+
+            GlobalRegistry.RegisterPhysicsStateManager(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.PhysicsStateManager, this))
+                GlobalRegistry.UnregisterPhysicsStateManager(this);
+
+            _serviceRegistered = false;
+        }
+
+        private void TryRegisterFixedTick()
+        {
+            if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
+            _registeredFixedTick = true;
+        }
+
+        private void TryRegisterOriginShift()
+        {
+            if (_registeredOriginShift)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShift = true;
         }
 
         /// <inheritdoc />

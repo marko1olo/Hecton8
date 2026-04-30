@@ -262,6 +262,9 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
+                if (!Application.isPlaying)
+                    return;
+
                 if (_settings == null ||
                     _raymarchMaterial == null ||
                     _blurHorizontalMaterial == null ||
@@ -730,6 +733,9 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            if (!Application.isPlaying)
+                return;
+
             if (settings == null ||
                 _pass == null ||
                 _raymarchMaterial == null ||

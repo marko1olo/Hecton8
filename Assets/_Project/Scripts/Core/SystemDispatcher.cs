@@ -864,9 +864,22 @@ namespace Hecton8.Core
         private bool _hasPendingRenderSettingsRestore;
         private Camera _pendingRenderSettingsCamera;
         private RenderSettingsSnapshot _pendingRenderSettingsSnapshot;
+        private bool _serviceRegistered;
 
         private void Awake()
         {
+            _hasPendingRenderSettingsRestore = false;
+            _pendingRenderSettingsCamera = null;
+        }
+
+        /// <summary>
+        /// Registers this dispatcher as the authoritative SRP render dispatcher.
+        /// </summary>
+        public void InitializeService()
+        {
+            if (_serviceRegistered)
+                return;
+
             RenderDispatcher registeredDispatcher = GlobalRegistry.RenderDispatcher;
             if (registeredDispatcher != null && !ReferenceEquals(registeredDispatcher, this))
             {
@@ -875,6 +888,7 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterRenderDispatcher(this);
+            _serviceRegistered = true;
 
             if (Application.isPlaying)
             {
@@ -902,7 +916,10 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
-            GlobalRegistry.UnregisterRenderDispatcher(this);
+            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.RenderDispatcher, this))
+                GlobalRegistry.UnregisterRenderDispatcher(this);
+
+            _serviceRegistered = false;
         }
 
         private void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)

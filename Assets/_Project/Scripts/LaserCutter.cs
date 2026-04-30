@@ -46,7 +46,7 @@ namespace Hecton8.Gameplay
         private const int CutHitBufferCapacity = 8;
         private static int _WaterLayer = int.MinValue;
         private static int _TransparentFxLayer = int.MinValue;
-        private static readonly int BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
+        private static int _BaseModuleLayer = int.MinValue;
         private const byte IdleState = (byte)ToolStateBits.Idle;
         private const byte ActiveState = (byte)ToolStateBits.Active;
         private const byte BusyState = (byte)ToolStateBits.Busy;
@@ -322,6 +322,8 @@ namespace Hecton8.Gameplay
                 _WaterLayer = LayerMask.NameToLayer("Water");
             if (_TransparentFxLayer == int.MinValue)
                 _TransparentFxLayer = LayerMask.NameToLayer("TransparentFX");
+            if (_BaseModuleLayer == int.MinValue)
+                _BaseModuleLayer = LayerMask.NameToLayer("BaseModule");
         }
 
         public override void OnSpawn()
@@ -1307,7 +1309,8 @@ namespace Hecton8.Gameplay
 
         private static bool IsBaseModuleHit(Collider collider)
         {
-            return collider != null && collider.gameObject.layer == BaseModuleLayer;
+            EnsureLayerCache();
+            return collider != null && collider.gameObject.layer == _BaseModuleLayer;
         }
 
         private static bool IsBaseHitOccludedByConsumableFlora(Vector3 worldHitPoint)

@@ -350,9 +350,14 @@ namespace Hecton8.World
             if (handle <= 0)
                 return;
 
+            if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                return;
+
             EnsureInitialized();
-            if (_entries.TryGetValue(handle, out Entry entry) && entry != null && entry.IsResidentInNativeHash)
+            if (entry.IsResidentInNativeHash)
                 _nativeHash.Unregister(handle);
+
+            _nativeHash.ReleaseHandle(handle);
             _entries.Remove(handle);
         }
 

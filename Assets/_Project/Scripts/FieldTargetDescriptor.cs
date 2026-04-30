@@ -96,7 +96,7 @@ namespace Hecton8.Gameplay
 
         private void RegisterSpatialHandle()
         {
-            if (!isActiveAndEnabled)
+            if (!Application.isPlaying || !isActiveAndEnabled)
                 return;
 
             if (_spatialHandle == 0)
@@ -108,6 +108,13 @@ namespace Hecton8.Gameplay
 
         private void UnregisterSpatialHandle()
         {
+            if (!Application.isPlaying)
+            {
+                _spatialHandle = 0;
+                _faunaSpatialHandle = 0;
+                return;
+            }
+
             if (_spatialHandle != 0)
             {
                 WorldSpatialHashGrid.Unregister(_spatialHandle);
@@ -123,7 +130,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshSpatialHandle()
         {
-            if (!isActiveAndEnabled)
+            if (!Application.isPlaying || !isActiveAndEnabled)
                 return;
 
             UnregisterSpatialHandle();

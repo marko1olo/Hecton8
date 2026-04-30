@@ -55,7 +55,8 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project/Scripts`: `970`
+Observed first-party C# file count under `Assets/_Project`: `1038`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `998`
 
 This is physical file count only.
 It does not imply quality, cohesion, or compile health.
@@ -123,7 +124,9 @@ Coverage snapshot from current reverification pass:
 - `01_GENERAL_INFO` markdown files: `22`
 - `02_ACTUAL_REPORTS` markdown files: `46`
 - `02_ACTUAL_REPORTS` csv files: `1`
-- total audited files in folders `01` and `02`: `69`
+- `02_ACTUAL_REPORTS` patch artifacts: `6`
+- total indexed docs/datasets in folders `01` and `02`: `69`
+- total physical non-meta files in folders `01` and `02`: `75`
 
 Canonical entry files inside this bundle:
 

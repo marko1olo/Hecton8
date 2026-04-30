@@ -33,6 +33,19 @@ namespace Hecton8.Scavenging
             Sphere = 1
         }
 
+        /// <summary>
+        /// Stable collision-response family assigned to pooled mining shards.
+        /// </summary>
+        public enum DebrisPhysicalProfile : byte
+        {
+            /// <summary>Resolve from the authored density range.</summary>
+            Auto = 0,
+            /// <summary>Soft seabed shard response with higher friction and duller roll-out.</summary>
+            Sediment = 1,
+            /// <summary>Dense volcanic shard response with lower damping and harder roll-out.</summary>
+            Basalt = 2
+        }
+
         [Serializable]
         public struct YieldAuthoringEntry
         {
@@ -203,6 +216,27 @@ namespace Hecton8.Scavenging
         [Tooltip("Terrain or biome layers allowed to host this node family.")]
         private LayerMask validLayers = ~0;
 
+        [Header("Physical Response")]
+        [SerializeField, Range(0.65f, 1.45f)]
+        [Tooltip("Pitch scalar applied to active-sonar returns from this node family. Values below 1 sound dull, above 1 sound sharp.")]
+        private float acousticResonance = 1f;
+
+        [SerializeField]
+        [Tooltip("Optional physical-response override for spawned mining shards. Auto resolves from the authored density range.")]
+        private DebrisPhysicalProfile debrisPhysicalProfile = DebrisPhysicalProfile.Auto;
+
+        [SerializeField, Range(0f, 64f)]
+        [Tooltip("Average density threshold that upgrades Auto debris from sediment to basalt response.")]
+        private float basaltDensityThreshold = 1.25f;
+
+        [SerializeField]
+        [Tooltip("Optional shared PhysicsMaterial for sediment-class mining shards.")]
+        private PhysicsMaterial sedimentDebrisPhysicsMaterial;
+
+        [SerializeField]
+        [Tooltip("Optional shared PhysicsMaterial for basalt-class mining shards.")]
+        private PhysicsMaterial basaltDebrisPhysicsMaterial;
+
         [Header("Presentation")]
         [SerializeField]
         [Tooltip("Optional authored mesh used by the runtime node root. If empty, the spawner applies the ghost-box standard.")]
@@ -358,6 +392,12 @@ namespace Hecton8.Scavenging
         /// <summary>Final probability gate after the environmental envelope passes.</summary>
         public float PlacementProbability => math.saturate(placementProbability);
 
+        /// <summary>Pitch scalar applied to active-sonar echo rendering for this node family.</summary>
+        public float AcousticResonance => math.clamp(acousticResonance, 0.65f, 1.45f);
+
+        /// <summary>Mean authored density used by debris-profile auto-resolution.</summary>
+        public float AverageDensity => math.max(0f, (minimumDensity + maximumDensity) * 0.5f);
+
         /// <summary>Optional authored mesh for the runtime node root.</summary>
         public Mesh NodeMesh => nodeMesh;
 
@@ -466,6 +506,30 @@ namespace Hecton8.Scavenging
 
         /// <summary>Maximum lateral path displacement in meters for the embedded ore-vein jitter.</summary>
         public float EmbeddedVeinNoiseAmplitudeMeters => math.max(0f, embeddedVeinNoiseAmplitudeMeters);
+
+        /// <summary>Resolves the mining-shard physical-response family for this template.</summary>
+        public DebrisPhysicalProfile ResolveDebrisPhysicalProfile()
+        {
+            switch (debrisPhysicalProfile)
+            {
+                case DebrisPhysicalProfile.Sediment:
+                case DebrisPhysicalProfile.Basalt:
+                    return debrisPhysicalProfile;
+
+                default:
+                    return AverageDensity >= math.max(0f, basaltDensityThreshold)
+                        ? DebrisPhysicalProfile.Basalt
+                        : DebrisPhysicalProfile.Sediment;
+            }
+        }
+
+        /// <summary>Returns the shared PhysicsMaterial override for the requested shard-response family.</summary>
+        public PhysicsMaterial ResolveDebrisPhysicsMaterial(DebrisPhysicalProfile profile)
+        {
+            return profile == DebrisPhysicalProfile.Basalt
+                ? basaltDebrisPhysicsMaterial
+                : sedimentDebrisPhysicsMaterial;
+        }
 
         /// <summary>Builds the blittable runtime descriptor consumed by scatter/harvest SOA lanes.</summary>
         public RuntimeDescriptor BuildRuntimeDescriptor()

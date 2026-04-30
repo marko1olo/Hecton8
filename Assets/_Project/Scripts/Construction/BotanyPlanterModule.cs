@@ -37,12 +37,16 @@ namespace Hecton8.Construction
 
         private readonly ItemData[] _plantedItems = new ItemData[MaxPlanterSlots];
         private readonly int[] _plantedQuantities = new int[MaxPlanterSlots];
+        private CultivationManager _cultivationManager;
         private bool _registered;
 
         private void Awake()
         {
             if (targetModule == null)
                 targetModule = GetComponentInParent<BaseModule>();
+
+            if (_cultivationManager == null)
+                TryGetComponent(out _cultivationManager);
 
             if (slotCount < 1)
                 slotCount = 1;
@@ -62,6 +66,13 @@ namespace Hecton8.Construction
 
         public void SlowTick()
         {
+            if (_cultivationManager != null)
+            {
+                _debugPlantCount = _cultivationManager.OccupiedSlotCount;
+                _debugLastScrubAmount = 0f;
+                return;
+            }
+
             if (targetModule == null)
                 return;
 
@@ -100,6 +111,9 @@ namespace Hecton8.Construction
         /// </summary>
         public bool TryInsertFromInventory(PlayerInventory inventory, ItemData item, int quantity = 1)
         {
+            if (_cultivationManager != null)
+                return _cultivationManager.TryInsertFromInventory(inventory, item, quantity);
+
             if (inventory == null || item == null || quantity <= 0 || !IsValidPlantItem(item))
                 return false;
 
@@ -128,6 +142,9 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyBufferSnapshot(ItemData[] items, int[] quantities)
         {
+            if (_cultivationManager != null)
+                return _cultivationManager.CopyBufferSnapshot(items, quantities, PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null);
+
             if (items == null || quantities == null)
                 return 0;
 

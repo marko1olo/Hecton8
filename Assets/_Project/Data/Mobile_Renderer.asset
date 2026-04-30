@@ -21,6 +21,7 @@ MonoBehaviour:
     dropletScale: 8
     lateralStreakStrength: 0.42
     forwardStretchStrength: 0.28
+    edgeStreakStrength: 0.46
     hullStressContribution: 0.8
     edgeFadeExponent: 1.35
 --- !u!114 &-2501237762034214547

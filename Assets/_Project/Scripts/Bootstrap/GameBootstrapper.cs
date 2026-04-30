@@ -297,7 +297,11 @@ namespace Hecton8.Bootstrap
             PlayerSensoryManager playerSensoryManager = PlayerSensoryManager.EnsureRuntimeInstance();
             ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
             inputDispatcher.InitializeService();
-            playerContextService.InitializeService();
+            // Register player service slots before the first context refresh so no owner reads a later slot during bootstrap.
+            playerContextService.InitializeServiceDeferredSync();
+            playerInventoryManager.InitializeService();
+            playerSensoryManager.InitializeService();
+            playerContextService.RefreshRuntimeContext();
             playerInventoryManager.InitializeService();
             playerSensoryManager.InitializeService();
             return true;
@@ -387,20 +391,34 @@ namespace Hecton8.Bootstrap
 
         private static RenderDispatcher EnsureRenderDispatcherRegistered()
         {
-            if (GlobalRegistry.RenderDispatcher != null)
-                return GlobalRegistry.RenderDispatcher;
+            RenderDispatcher dispatcher = GlobalRegistry.RenderDispatcher;
+            if (dispatcher == null)
+                dispatcher = UnityEngine.Object.FindAnyObjectByType<RenderDispatcher>();
 
-            GameObject runtimeRoot = new GameObject("[RenderDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned SRP render dispatcher root - owner: GameBootstrapper
-            return runtimeRoot.AddComponent<RenderDispatcher>();
+            if (dispatcher == null)
+            {
+                GameObject runtimeRoot = new GameObject("[RenderDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned SRP render dispatcher root - owner: GameBootstrapper
+                dispatcher = runtimeRoot.AddComponent<RenderDispatcher>();
+            }
+
+            dispatcher.InitializeService();
+            return dispatcher;
         }
 
         private static GlobalPhysicsStateManager EnsureGlobalPhysicsStateManagerRegistered()
         {
-            if (GlobalRegistry.PhysicsStateManager != null)
-                return GlobalRegistry.PhysicsStateManager;
+            GlobalPhysicsStateManager manager = GlobalRegistry.PhysicsStateManager;
+            if (manager == null)
+                manager = UnityEngine.Object.FindAnyObjectByType<GlobalPhysicsStateManager>();
 
-            GameObject runtimeRoot = new GameObject("[GlobalPhysicsStateManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned global physics-state manager root - owner: GameBootstrapper
-            return runtimeRoot.AddComponent<GlobalPhysicsStateManager>();
+            if (manager == null)
+            {
+                GameObject runtimeRoot = new GameObject("[GlobalPhysicsStateManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned global physics-state manager root - owner: GameBootstrapper
+                manager = runtimeRoot.AddComponent<GlobalPhysicsStateManager>();
+            }
+
+            manager.InitializeService();
+            return manager;
         }
 
         private static SpatialAudioManager EnsureAudioServiceRegistered()

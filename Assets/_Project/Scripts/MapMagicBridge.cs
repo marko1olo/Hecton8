@@ -51,6 +51,8 @@ namespace Hecton8.Core
     public sealed class MapMagicBridge : MonoBehaviour, ISlowTickable
     {
         private const float SceneBindingRefreshInterval = 1f;
+        private const int MainTerrainBaseMapResolutionBudget = 512;
+        private const int DraftTerrainBaseMapResolutionBudget = 128;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -218,6 +220,7 @@ namespace Hecton8.Core
             _runtimeTerrainResolutionRepairPending = mapMagicObject != null;
             EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
+            ApplyTerrainDataMemoryBudgetToCachedTerrains();
             RepairRuntimeTerrainResolutionMismatchIfNeeded();
 
             // ── Поиск игрока ──
@@ -748,6 +751,7 @@ namespace Hecton8.Core
             InvalidateBiomeTextureCache();
             EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
+            ApplyTerrainDataMemoryBudgetToCachedTerrains();
             _nextSceneBindingRefreshTime = float.NegativeInfinity;
             UpdateDiagnostics();
         }
@@ -853,6 +857,7 @@ namespace Hecton8.Core
             }
 
             RefreshTerrainTileCache(force: true);
+            ApplyTerrainDataMemoryBudgetToCachedTerrains();
 
             TerrainTile[] terrainTiles = _cachedTerrainTiles;
             int tileCount = terrainTiles.Length;
@@ -1201,6 +1206,7 @@ namespace Hecton8.Core
             _cachedTerrainTileRootCount = rootChildCount;
             _lastResolvedTerrainTile = null;
             InvalidateBiomeTextureCache();
+            ApplyTerrainDataMemoryBudgetToCachedTerrains();
         }
 
         private void InvalidateBiomeTextureCache()
@@ -1232,11 +1238,17 @@ namespace Hecton8.Core
 
                 Terrain mainTerrain = tile.GetTerrain(false);
                 if (mainTerrain != null)
+                {
                     mapMagicObject.terrainSettings.ApplySettings(mainTerrain);
+                    ApplyTerrainDataMemoryBudget(mainTerrain, false);
+                }
 
                 Terrain draftTerrain = tile.GetTerrain(true);
                 if (draftTerrain != null)
+                {
                     mapMagicObject.terrainSettings.ApplySettings(draftTerrain);
+                    ApplyTerrainDataMemoryBudget(draftTerrain, true);
+                }
             }
         }
 
@@ -1458,7 +1470,8 @@ namespace Hecton8.Core
                     highDetailMain ? mainBaseMapDistance : draftBaseMapDistance,
                     detailDistance,
                     detailDensity,
-                    heightmapMaximumLod);
+                    heightmapMaximumLod,
+                    !highDetailMain);
             }
 
             if (draftTerrain != null)
@@ -1469,7 +1482,8 @@ namespace Hecton8.Core
                     draftBaseMapDistance,
                     detailDistance,
                     detailDensity,
-                    heightmapMaximumLod);
+                    heightmapMaximumLod,
+                    true);
             }
         }
 
@@ -1483,7 +1497,8 @@ namespace Hecton8.Core
             int baseMapDistance,
             float detailDistance,
             float detailDensity,
-            int heightmapMaximumLod)
+            int heightmapMaximumLod,
+            bool useDraftBaseMapBudget)
         {
             if (terrain == null || terrain.terrainData == null)
                 return;
@@ -1493,6 +1508,35 @@ namespace Hecton8.Core
             terrain.heightmapMaximumLOD = heightmapMaximumLod;
             terrain.detailObjectDistance = detailDistance;
             terrain.detailObjectDensity = detailDensity;
+            ApplyTerrainDataMemoryBudget(terrain, useDraftBaseMapBudget);
+        }
+
+        private void ApplyTerrainDataMemoryBudgetToCachedTerrains()
+        {
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles != null ? terrainTiles.Length : 0;
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null)
+                    continue;
+
+                ApplyTerrainDataMemoryBudget(tile.GetTerrain(false), false);
+                ApplyTerrainDataMemoryBudget(tile.GetTerrain(true), true);
+            }
+        }
+
+        private static void ApplyTerrainDataMemoryBudget(Terrain terrain, bool isDraft)
+        {
+            if (terrain == null || terrain.terrainData == null)
+                return;
+
+            TerrainData terrainData = terrain.terrainData;
+            int targetResolution = isDraft
+                ? DraftTerrainBaseMapResolutionBudget
+                : MainTerrainBaseMapResolutionBudget;
+            if (terrainData.baseMapResolution > targetResolution)
+                terrainData.baseMapResolution = targetResolution;
         }
 
         /// <summary>

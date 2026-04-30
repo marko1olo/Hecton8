@@ -43,6 +43,30 @@ namespace Hecton8.Visor
         Echolocation = 3   // Эхолот (биомеханические сигнатуры)
     }
 
+    /// <summary>
+    /// Resource-authored active-sonar echo payload forwarded into the procedural audio pipeline.
+    /// </summary>
+    public readonly struct AcousticEchoEvent
+    {
+        /// <summary>Build a new active-sonar return payload.</summary>
+        public AcousticEchoEvent(Vector3 worldPosition, float distanceMeters, float returnStrength, float resonance)
+        {
+            WorldPosition = worldPosition;
+            DistanceMeters = distanceMeters;
+            ReturnStrength = returnStrength;
+            Resonance = resonance;
+        }
+
+        /// <summary>World-space origin of the reflected return.</summary>
+        public Vector3 WorldPosition { get; }
+        /// <summary>One-way listener-to-target distance in authored meters.</summary>
+        public float DistanceMeters { get; }
+        /// <summary>Normalized return energy emitted by the struck resource node.</summary>
+        public float ReturnStrength { get; }
+        /// <summary>Pitch scalar used by the echo renderer. 1 = neutral.</summary>
+        public float Resonance { get; }
+    }
+
     public static class SpectrumEvents
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -52,6 +76,8 @@ namespace Hecton8.Visor
             OnSonarPulse = null;
             OnSonarPingSent = null;
             OnSonarSnapshotUpdated = null;
+            OnAcousticEchoReturned = null;
+            LastSonarPulseRadiusMeters = 0f;
         }
 
         /// <summary>Режим визора изменился.</summary>
@@ -62,11 +88,20 @@ namespace Hecton8.Visor
         /// <summary>Controller-authored active sonar ping. Float = normalized pulse intensity 0-1.</summary>
         public static event Action<float> OnSonarPingSent;
         public static event Action<SpatialSonarSnapshot> OnSonarSnapshotUpdated;
+        public static event Action<AcousticEchoEvent> OnAcousticEchoReturned;
+
+        /// <summary>Most recent emitted sonar pulse radius in authored meters.</summary>
+        public static float LastSonarPulseRadiusMeters { get; private set; }
 
         public static void RaiseModeChanged(SpectrumMode mode) => OnModeChanged?.Invoke(mode);
-        public static void RaiseSonarPulse(float radius) => OnSonarPulse?.Invoke(radius);
+        public static void RaiseSonarPulse(float radius)
+        {
+            LastSonarPulseRadiusMeters = Mathf.Max(0f, radius);
+            OnSonarPulse?.Invoke(radius);
+        }
         public static void RaiseSonarPingSent(float intensity) => OnSonarPingSent?.Invoke(intensity);
         public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot) => OnSonarSnapshotUpdated?.Invoke(snapshot);
+        public static void RaiseAcousticEchoReturned(AcousticEchoEvent echoEvent) => OnAcousticEchoReturned?.Invoke(echoEvent);
     }
 
     [DisallowMultipleComponent]

@@ -451,6 +451,11 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private void OnValidate()
         {
+            if (UnityEditor.EditorApplication.isCompiling ||
+                UnityEditor.EditorApplication.isUpdating ||
+                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
             relayId = string.IsNullOrWhiteSpace(relayId)
                 ? relayId
                 : relayId.Trim();

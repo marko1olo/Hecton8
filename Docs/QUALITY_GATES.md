@@ -1,6 +1,8 @@
 # QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
-Status: SECONDARY. Apply only after production result exists.
+Status: SECONDARY
+Verification: PENDING VERIFICATION
+Apply only after production result exists.
 Source of truth for asset specs: PROCEDURAL_ASSET_PIPELINE.md
 Performance tooling: SYSTEMS_CONTRACTS.md (BenchmarkRunner.cs)
 

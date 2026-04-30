@@ -1,6 +1,6 @@
 # Docs Index
 
-Date: `2026-04-29`
+Date: `2026-04-30`
 Status: `PENDING VERIFICATION`
 
 Purpose: active documentation entry point after the `2026-04-29` forensic audit and stale-doc archive pass.
@@ -17,6 +17,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit 
 
 ## Current Audit Outputs
 
+- `2026-04-30_Codex_Full_Project_Forensic_Audit/README.md`
 - `Reports/ILLEGAL_SINGLETONS.md`
 - `Reports/GC_HOTPATH_VIOLATIONS.md`
 - `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`

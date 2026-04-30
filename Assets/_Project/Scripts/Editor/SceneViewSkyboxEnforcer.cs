@@ -11,12 +11,16 @@ public static class SceneViewSkyboxEnforcer
     private const string PreviewName = "__SceneViewSkyPreview";
     private const double DefaultRefreshIntervalSeconds = 0.5d;
     private const double SourceRetryIntervalSeconds = 1d;
+    private const string WaterLayerName = "Water";
+    private const string TerrainLayerName = "Terrain ";
 
     private static GameObject _previewObject;
     private static MeshFilter _previewFilter;
     private static MeshRenderer _previewRenderer;
     private static MeshFilter _sourceFilter;
     private static MeshRenderer _sourceRenderer;
+    private static int _waterLayer = int.MinValue;
+    private static int _terrainLayer = int.MinValue;
     private static bool _sourceDirty = true;
     private static double _nextDefaultsApplyAt;
     private static double _nextSourceResolveAt;
@@ -115,9 +119,9 @@ public static class SceneViewSkyboxEnforcer
             SceneView.SceneViewState state = sceneView.sceneViewState;
             bool stateChanged = false;
 
-            if (!state.showSkybox)
+            if (state.showSkybox)
             {
-                state.showSkybox = true;
+                state.showSkybox = false;
                 stateChanged = true;
             }
 
@@ -127,15 +131,15 @@ public static class SceneViewSkyboxEnforcer
                 stateChanged = true;
             }
 
-            if (!state.showImageEffects)
+            if (state.showImageEffects)
             {
-                state.showImageEffects = true;
+                state.showImageEffects = false;
                 stateChanged = true;
             }
 
-            if (!state.showFog)
+            if (state.showFog)
             {
-                state.showFog = true;
+                state.showFog = false;
                 stateChanged = true;
             }
 
@@ -155,9 +159,34 @@ public static class SceneViewSkyboxEnforcer
                 stateChanged = true;
             }
 
+            if (sceneCamera != null)
+            {
+                if (ExcludeLayer(sceneCamera, ref _waterLayer, WaterLayerName))
+                    stateChanged = true;
+
+                if (ExcludeLayer(sceneCamera, ref _terrainLayer, TerrainLayerName))
+                    stateChanged = true;
+            }
+
             if (stateChanged)
                 sceneView.Repaint();
         }
+    }
+
+    private static bool ExcludeLayer(Camera sceneCamera, ref int layer, string layerName)
+    {
+        if (layer == int.MinValue)
+            layer = LayerMask.NameToLayer(layerName);
+
+        if (layer < 0)
+            return false;
+
+        int layerMask = 1 << layer;
+        if ((sceneCamera.cullingMask & layerMask) == 0)
+            return false;
+
+        sceneCamera.cullingMask &= ~layerMask;
+        return true;
     }
 
     private static void OnBeginCameraRendering(ScriptableRenderContext _, Camera camera)
@@ -168,6 +197,8 @@ public static class SceneViewSkyboxEnforcer
             return;
         }
 
+        ExcludeLayer(camera, ref _waterLayer, WaterLayerName);
+        ExcludeLayer(camera, ref _terrainLayer, TerrainLayerName);
         UpdatePreview(camera);
     }
 

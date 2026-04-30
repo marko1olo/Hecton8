@@ -119,6 +119,14 @@ namespace Hecton8.World
         private int lootHashId;
 
         [SerializeField]
+        [Tooltip("Optional inventory item that represents this flora as a cultivation seed inside the laboratory loop.")]
+        private ItemData cultivationSeedItem;
+
+        [SerializeField]
+        [Tooltip("Default authored genetics mask injected when this flora is seeded without a custom hybrid payload.")]
+        private GeneticTraitProfile.GeneticTraitMask geneticsMask = GeneticTraitProfile.GeneticTraitMask.None;
+
+        [SerializeField]
         [Tooltip("Capability mask required to harvest this flora family. CUT/PlasmaCut is live; other masks stage future tool integrations.")]
         private VulnerabilityMask vulnerabilityMask = VulnerabilityMask.Cut;
 
@@ -256,6 +264,17 @@ namespace Hecton8.World
                 return lootHashId;
             }
         }
+
+        /// <summary>Optional inventory item that represents this flora as a cultivation seed.</summary>
+        public ItemData CultivationSeedItem => cultivationSeedItem;
+
+        /// <summary>Stable inventory hash id for the authored cultivation seed item.</summary>
+        public int CultivationSeedHashId => cultivationSeedItem != null && !string.IsNullOrWhiteSpace(cultivationSeedItem.PersistentId)
+            ? LocHash.Compute(cultivationSeedItem.PersistentId)
+            : 0;
+
+        /// <summary>Default authored genetics mask used by cultivation and hybrid fallback resolution.</summary>
+        public uint GeneticsMask => (uint)geneticsMask;
 
         /// <summary>Capability mask required to harvest this flora family.</summary>
         public uint ToolVulnerabilityMask => (uint)vulnerabilityMask;

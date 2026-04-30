@@ -158,7 +158,7 @@ namespace Hecton8.World
             SoundscapeEvents.RaiseTierChanged(oldTier, newTier);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Soundscape] Tier: {oldTier} → {newTier} (depth: {depth:F0}m)");
+            Debug.Log("[Soundscape] Tier changed.");
 #endif
         }
 

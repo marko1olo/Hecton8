@@ -91,7 +91,7 @@ namespace Hecton8.World
         /// <summary>Normalized health lane consumed by harvest visuals and emissive dimming.</summary>
         public float HealthNormalized;
 
-        /// <summary>Padding/reserved scalar retained for future payload expansion.</summary>
+        /// <summary>Optional cultivation growth lane. Zero means legacy/default mature when no cultivation data is authored.</summary>
         public float Reserved0;
 
         /// <summary>

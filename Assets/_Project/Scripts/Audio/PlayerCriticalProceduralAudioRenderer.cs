@@ -610,6 +610,7 @@ namespace Hecton8.Audio
             public float EchoDelaySeconds;
             public float EchoAttenuation;
             public float EchoLowPassCutoffHz;
+            public float EchoPitchScale;
         }
 
         private struct HullSynthesisState
@@ -705,6 +706,7 @@ namespace Hecton8.Audio
             public float LowPassCutoffHz;
             public float LowPassState;
             public float ElapsedSeconds;
+            public float PitchScale;
             public double CarrierPhaseA;
             public double CarrierPhaseB;
         }
@@ -797,6 +799,7 @@ namespace Hecton8.Audio
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
             PhysicsEvents.OnImpact += HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            SpectrumEvents.OnAcousticEchoReturned += HandleAcousticEchoReturned;
             LaserCutter.OnHeatChanged += HandleCutterHeatChanged;
             LaserCutter.OnBeamStateChanged += HandleCutterBeamStateChanged;
             Volatile.Write(ref _managedFilterFallbackEnabled, 1);
@@ -810,6 +813,7 @@ namespace Hecton8.Audio
             Volatile.Write(ref _managedFilterFallbackEnabled, 0);
             LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
             LaserCutter.OnHeatChanged -= HandleCutterHeatChanged;
+            SpectrumEvents.OnAcousticEchoReturned -= HandleAcousticEchoReturned;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             AudioSettings.OnAudioConfigurationChanged -= HandleAudioConfigurationChanged;
@@ -1533,6 +1537,35 @@ namespace Hecton8.Audio
                 SonarChirpDurationSeconds);
         }
 
+        private void HandleAcousticEchoReturned(AcousticEchoEvent echoEvent)
+        {
+            if (echoEvent.ReturnStrength <= 0.0001f)
+                return;
+
+            if (_boundPlayerTransform == null)
+                TryBindFromBootstrap();
+
+            float resonanceScale = math.clamp(echoEvent.Resonance, 0.65f, 1.45f);
+            float resonance01 = math.saturate((resonanceScale - 0.65f) / 0.8f);
+            float roundTripDistance = math.max(0f, echoEvent.DistanceMeters) * 2f;
+            float echoDelaySeconds = math.clamp(roundTripDistance / SoundSpeedWaterMetersPerSecond, 0f, SonarEchoMaximumDelaySeconds);
+            float echoAttenuation = math.saturate(math.exp(-roundTripDistance * SonarEchoAbsorptionCoefficient));
+            float echoExcitation = math.saturate(
+                echoEvent.ReturnStrength *
+                math.lerp(0.65f, 1.2f, resonance01) *
+                math.max(0.2f, echoAttenuation));
+            float echoLowPassCutoffHz = math.lerp(1450f, AcousticOcclusionUtility.OpenLowPassCutoffHertz, resonance01);
+            TryEnqueueImpactAudioEvent(
+                0f,
+                0f,
+                0f,
+                echoExcitation,
+                echoDelaySeconds,
+                echoAttenuation,
+                echoLowPassCutoffHz,
+                resonanceScale);
+        }
+
         private void HandleAudioConfigurationChanged(bool deviceWasChanged)
         {
             RefreshAudioConfiguration();
@@ -1882,7 +1915,8 @@ namespace Hecton8.Audio
                 echoExcitation,
                 echoDelaySeconds,
                 echoAttenuation,
-                echoLowPassCutoffHz);
+                echoLowPassCutoffHz,
+                1f);
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
         }
 
@@ -2556,7 +2590,8 @@ namespace Hecton8.Audio
                 _pendingImpactEchoProbe.Excitation,
                 echoDelaySeconds,
                 echoAttenuation,
-                echoLowPassCutoffHz);
+                echoLowPassCutoffHz,
+                1f);
             _pendingImpactEchoProbe = default;
         }
 
@@ -3315,7 +3350,8 @@ namespace Hecton8.Audio
             float echoExcitation,
             float echoDelaySeconds,
             float echoAttenuation,
-            float echoLowPassCutoffHz)
+            float echoLowPassCutoffHz,
+            float echoPitchScale)
         {
             ImpactAudioEvent impactAudioEvent = new ImpactAudioEvent
             {
@@ -3328,7 +3364,8 @@ namespace Hecton8.Audio
                 EchoLowPassCutoffHz = math.clamp(
                     echoLowPassCutoffHz,
                     AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
-                    AcousticOcclusionUtility.OpenLowPassCutoffHertz)
+                    AcousticOcclusionUtility.OpenLowPassCutoffHertz),
+                EchoPitchScale = math.clamp(echoPitchScale, 0.65f, 1.45f)
             };
 
             int watchdog = 0;
@@ -3384,6 +3421,7 @@ namespace Hecton8.Audio
             impactMetallicTarget = _audioImpactMetallicValue;
             HullSynthesisState hullState = _hullSynthesisState;
             uint clangSeed = (uint)_producedSampleCount ^ 0x51F2A8B3u;
+            float strongestEchoEnergy = _impactEchoSynthesisState.Excitation * _impactEchoSynthesisState.Attenuation;
 
             while (TryDequeueImpactAudioEvent(out ImpactAudioEvent impactAudioEvent))
             {
@@ -3398,12 +3436,18 @@ namespace Hecton8.Audio
                 if (impactAudioEvent.EchoExcitation > ImpactEchoMinimumExcitation &&
                     impactAudioEvent.EchoAttenuation > 0.0001f)
                 {
-                    _impactEchoSynthesisState.DelayRemainingSeconds = impactAudioEvent.EchoDelaySeconds;
-                    _impactEchoSynthesisState.Excitation = impactAudioEvent.EchoExcitation;
-                    _impactEchoSynthesisState.Attenuation = impactAudioEvent.EchoAttenuation;
-                    _impactEchoSynthesisState.LowPassCutoffHz = impactAudioEvent.EchoLowPassCutoffHz;
-                    _impactEchoSynthesisState.LowPassState = 0f;
-                    _impactEchoSynthesisState.ElapsedSeconds = 0f;
+                    float eventEchoEnergy = impactAudioEvent.EchoExcitation * impactAudioEvent.EchoAttenuation;
+                    if (eventEchoEnergy >= strongestEchoEnergy)
+                    {
+                        _impactEchoSynthesisState.DelayRemainingSeconds = impactAudioEvent.EchoDelaySeconds;
+                        _impactEchoSynthesisState.Excitation = impactAudioEvent.EchoExcitation;
+                        _impactEchoSynthesisState.Attenuation = impactAudioEvent.EchoAttenuation;
+                        _impactEchoSynthesisState.LowPassCutoffHz = impactAudioEvent.EchoLowPassCutoffHz;
+                        _impactEchoSynthesisState.LowPassState = 0f;
+                        _impactEchoSynthesisState.ElapsedSeconds = 0f;
+                        _impactEchoSynthesisState.PitchScale = math.clamp(impactAudioEvent.EchoPitchScale, 0.65f, 1.45f);
+                        strongestEchoEnergy = eventEchoEnergy;
+                    }
                 }
             }
 
@@ -3792,6 +3836,7 @@ namespace Hecton8.Audio
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz);
             float lowPassAlpha = math.exp((-TwoPi * lowPassCutoff) / math.max(_sampleRate, 1f));
+            float pitchScale = math.clamp(state.PitchScale <= 0f ? 1f : state.PitchScale, 0.65f, 1.45f);
 
             for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
             {
@@ -3814,8 +3859,8 @@ namespace Hecton8.Audio
                 uint sampleIndex = (uint)math.max(0f, age * _sampleRate);
                 float envelope = math.exp(-age * decayRate);
                 float tonal =
-                    AdvanceSine(ref state.CarrierPhaseA, ImpactEchoCarrierPrimaryHertz, invSampleRate) * 0.62f +
-                    AdvanceSine(ref state.CarrierPhaseB, ImpactEchoCarrierSecondaryHertz, invSampleRate) * 0.38f;
+                    AdvanceSine(ref state.CarrierPhaseA, ImpactEchoCarrierPrimaryHertz * pitchScale, invSampleRate) * 0.62f +
+                    AdvanceSine(ref state.CarrierPhaseB, ImpactEchoCarrierSecondaryHertz * pitchScale, invSampleRate) * 0.38f;
                 float noise = LayeredPinkLike(sampleIndex) * ImpactEchoNoiseBlend;
                 float raw = (tonal + noise) * envelope * state.Excitation * state.Attenuation;
                 float filtered = raw + lowPassAlpha * ((state.LowPassState + BiquadDenormalBias) - raw);

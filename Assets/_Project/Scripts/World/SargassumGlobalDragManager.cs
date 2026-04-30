@@ -746,6 +746,12 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+            {
+                SanitizeSettings();
+                return;
+            }
+
             ResolveActiveNestingPrototypes();
             EnsureDisruptionStorage();
             EnsureScavengerStorage();
@@ -766,6 +772,16 @@ namespace Hecton8.World
             ClearSinkTexture();
             ClearScavengerHosts();
             ReleaseDensityBuildStorage();
+
+            if (!Application.isPlaying)
+            {
+                ReleaseNestedAttachmentStorage();
+                ReleaseFallbackNestingResources();
+                ReleaseDensityTexture();
+                ReleaseSinkTexture();
+                ReleaseScavengerResources();
+            }
+
             Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
             Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
@@ -1913,19 +1929,19 @@ namespace Hecton8.World
 
             if (_fallbackCrateMaterial != null)
             {
-                Destroy(_fallbackCrateMaterial);
+                DestroyOwnedRuntimeObject(_fallbackCrateMaterial);
                 _fallbackCrateMaterial = null;
             }
 
             if (_fallbackScrapMaterial != null)
             {
-                Destroy(_fallbackScrapMaterial);
+                DestroyOwnedRuntimeObject(_fallbackScrapMaterial);
                 _fallbackScrapMaterial = null;
             }
 
             if (_fallbackAttachmentMesh != null)
             {
-                Destroy(_fallbackAttachmentMesh);
+                DestroyOwnedRuntimeObject(_fallbackAttachmentMesh);
                 _fallbackAttachmentMesh = null;
             }
         }
@@ -2357,13 +2373,13 @@ namespace Hecton8.World
 
             if (_fallbackScavengerMaterial != null)
             {
-                Destroy(_fallbackScavengerMaterial);
+                DestroyOwnedRuntimeObject(_fallbackScavengerMaterial);
                 _fallbackScavengerMaterial = null;
             }
 
             if (_fallbackScavengerMesh != null)
             {
-                Destroy(_fallbackScavengerMesh);
+                DestroyOwnedRuntimeObject(_fallbackScavengerMesh);
                 _fallbackScavengerMesh = null;
             }
 
@@ -2629,10 +2645,25 @@ namespace Hecton8.World
                 return;
             }
 
-            Destroy(_scavengerBrgMaterial);
+            DestroyOwnedRuntimeObject(_scavengerBrgMaterial);
             _scavengerBrgMaterial = null;
             _scavengerBrgMaterialSource = null;
             _ownsScavengerBrgMaterial = false;
+        }
+
+        private static void DestroyOwnedRuntimeObject(UnityEngine.Object target)
+        {
+            if (target == null)
+                return;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                DestroyImmediate(target);
+                return;
+            }
+#endif
+            Destroy(target);
         }
 
         private void SyncScavengerBatchRegistration(Mesh activeMesh, Material activeMaterial)
@@ -2942,6 +2973,21 @@ namespace Hecton8.World
                     scavengerFallbackShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Art/Shaders/Hecton_CollapseScavengerIndirect.shader");
 #endif
                 SanitizeSettings();
+                if (!Application.isPlaying)
+                {
+                    _activeNestingPrototypes = nestingPrototypes != null && nestingPrototypes.Length > 0
+                        ? nestingPrototypes
+                        : null;
+                    _activeNestedPrototypeCount = 0;
+                    _activeNestedAttachmentStateCount = 0;
+                    _activeScavengerHostCount = 0;
+                    _activeExternalScavengerSiteCount = 0;
+                    _debugNestedAttachmentCount = 0;
+                    _debugNestedStateCount = 0;
+                    _debugActiveDisruptionZones = 0;
+                    return;
+                }
+
                 ResolveActiveNestingPrototypes();
                 EnsureNestedAttachmentStorage();
                 EnsureDisruptionStorage();
@@ -3222,7 +3268,7 @@ namespace Hecton8.World
             if (_densityFieldTexture == null)
                 return;
 
-            Destroy(_densityFieldTexture);
+            DestroyOwnedRuntimeObject(_densityFieldTexture);
             _densityFieldTexture = null;
         }
 
@@ -3231,7 +3277,7 @@ namespace Hecton8.World
             if (_sinkFieldTexture == null)
                 return;
 
-            Destroy(_sinkFieldTexture);
+            DestroyOwnedRuntimeObject(_sinkFieldTexture);
             _sinkFieldTexture = null;
         }
 

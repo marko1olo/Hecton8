@@ -307,6 +307,7 @@ namespace Hecton8.Gameplay
         private bool _ambientLightsBrownedOut;
         private float _basePowerRating;
         private float _parasitePowerDrainWatts;
+        private float _cultivationScrubberPowerDrainWatts;
         private float _parasiteInfectionLevel;
         private bool _tickRegistered;
         private bool _fixedTickRegistered;
@@ -468,7 +469,7 @@ namespace Hecton8.Gameplay
         /// Базовое энергопотребление модуля.
         /// Источник: BuildableData.powerRating → fallback.
         /// </summary>
-        public float PowerRating => _basePowerRating - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts;
+        public float PowerRating => _basePowerRating - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
 
         public int PowerPriority => powerPriority;
 
@@ -560,6 +561,9 @@ namespace Hecton8.Gameplay
             _hasBreachCenterOfMassTarget = false;
             _cachedFloodLevel01 = 0f;
             _trackedPlayerSurvival = null;
+            _parasitePowerDrainWatts = 0f;
+            _parasiteInfectionLevel = 0f;
+            _cultivationScrubberPowerDrainWatts = 0f;
             _integrityComponent.ResetForDespawn();
             _lifeSupportComponent.ResetForDespawn();
             TryUnregisterFixedTick();
@@ -2273,6 +2277,21 @@ namespace Hecton8.Gameplay
             _lifeSupportComponent.ScrubCo2(amount);
         }
 
+        /// <summary>
+        /// Allows cultivation modules to inject additional oxygen into the owning room atmosphere.
+        /// </summary>
+        public void ApplyCultivationOxygen(float oxygenUnits)
+        {
+            if (oxygenUnits <= 0f || !TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
+                return;
+
+            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            if (roomIndex < 0)
+                return;
+
+            atmosphereSystem.InjectOxygenUnits(roomIndex, oxygenUnits);
+        }
+
         internal float ParasiteInfectionLevel => _parasiteInfectionLevel;
 
         internal bool SetParasiteInfestation(float powerDrainWatts, float infectionLevel)
@@ -2287,6 +2306,17 @@ namespace Hecton8.Gameplay
 
             _parasitePowerDrainWatts = sanitizedDrain;
             _parasiteInfectionLevel = sanitizedInfection;
+            TryMarkPowerGridDirty();
+            return true;
+        }
+
+        internal bool SetCultivationScrubberLoad(float powerDrainWatts)
+        {
+            float sanitizedDrain = Mathf.Max(0f, powerDrainWatts);
+            if (Mathf.Abs(_cultivationScrubberPowerDrainWatts - sanitizedDrain) <= 0.01f)
+                return false;
+
+            _cultivationScrubberPowerDrainWatts = sanitizedDrain;
             TryMarkPowerGridDirty();
             return true;
         }

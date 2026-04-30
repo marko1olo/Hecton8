@@ -1,3 +1,4 @@
+using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -5,6 +6,7 @@ using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Tools;
+using Hecton8.Visor;
 using Hecton8.World;
 using UnityEngine;
 
@@ -22,7 +24,9 @@ namespace Hecton8.Scavenging
         private const int DebrisPoolWarmupCount = 96;
         private const int MinimumImpactDebrisCount = 3;
         private const int MaximumImpactDebrisCount = 5;
-        private const float ImpactDebrisLifetimeSeconds = 3f;
+        private const float ImpactDebrisLifetimeSeconds = 5f;
+        private const float ImpactDebrisSinkDurationSeconds = 1.15f;
+        private const float ImpactDebrisSinkDepthMultiplier = 1.6f;
         private const float DefaultFirstYieldSampleSeconds = 0.12f;
         private const float MinimumYieldSampleSeconds = 0.016f;
         private const float MaximumYieldSampleSeconds = 0.35f;
@@ -31,6 +35,8 @@ namespace Hecton8.Scavenging
         private static GameObject s_runtimeDebrisPrefab;
         private static Mesh s_runtimeDebrisMesh;
         private static Material s_runtimeDebrisMaterial;
+        private static PhysicsMaterial s_runtimeSedimentDebrisPhysicsMaterial;
+        private static PhysicsMaterial s_runtimeBasaltDebrisPhysicsMaterial;
         private static bool s_runtimeDebrisPoolReady;
         // COLD ALLOC: RegistryBucket<ResourceNode>[4096] — authored/persistent resource node registry for legacy world-state compatibility — owner: ResourceNode
         private static readonly RegistryBucket<ResourceNode> _worldStateRegistry = new RegistryBucket<ResourceNode>(4096);
@@ -42,6 +48,8 @@ namespace Hecton8.Scavenging
             s_runtimeDebrisPrefab = null;
             s_runtimeDebrisMesh = null;
             s_runtimeDebrisMaterial = null;
+            s_runtimeSedimentDebrisPhysicsMaterial = null;
+            s_runtimeBasaltDebrisPhysicsMaterial = null;
             s_runtimeDebrisPoolReady = false;
         }
 
@@ -114,6 +122,7 @@ namespace Hecton8.Scavenging
         private bool _despawnRequested;
         private bool _lootSpawnBlockedLogged;
         private bool _registeredToWorldStateRegistry;
+        private bool _registeredSonarEchoResponse;
         private int _spatialHandle;
         private ulong _persistentTombstoneId;
         private HectonVoxelEngine _cachedVoxelEngine;
@@ -194,6 +203,7 @@ namespace Hecton8.Scavenging
 
         private void OnDisable()
         {
+            UnregisterSonarEchoResponse();
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
         }
@@ -207,6 +217,7 @@ namespace Hecton8.Scavenging
 
         public void OnDespawn()
         {
+            UnregisterSonarEchoResponse();
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
             ResetState();
@@ -329,7 +340,53 @@ namespace Hecton8.Scavenging
                 return;
             }
 
+            RegisterSonarEchoResponse();
             RegisterSpatialHandle();
+        }
+
+        private void RegisterSonarEchoResponse()
+        {
+            if (_registeredSonarEchoResponse || !Application.isPlaying)
+                return;
+
+            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            _registeredSonarEchoResponse = true;
+        }
+
+        private void UnregisterSonarEchoResponse()
+        {
+            if (!_registeredSonarEchoResponse)
+                return;
+
+            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            _registeredSonarEchoResponse = false;
+        }
+
+        private void HandleSonarPingSent(float intensity)
+        {
+            if (_isDepleted || _despawnRequested || resourceTemplate == null || intensity <= 0f)
+                return;
+
+            float pulseRadiusMeters = SpectrumEvents.LastSonarPulseRadiusMeters;
+            if (pulseRadiusMeters <= 0f || !SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+                return;
+
+            Vector3 nodePosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            Vector3 offset = nodePosition - playerTransform.position;
+            float radiusSqr = pulseRadiusMeters * pulseRadiusMeters;
+            float distanceSqr = offset.sqrMagnitude;
+            if (distanceSqr > radiusSqr)
+                return;
+
+            float distanceMeters = Mathf.Sqrt(distanceSqr);
+            float proximity = 1f - Mathf.Clamp01(distanceMeters / Mathf.Max(0.01f, pulseRadiusMeters));
+            float resonance = resourceTemplate.AcousticResonance;
+            float resonance01 = Mathf.InverseLerp(0.65f, 1.45f, resonance);
+            float returnStrength = Mathf.Clamp01(intensity * Mathf.Lerp(0.35f, 1f, proximity) * Mathf.Lerp(0.7f, 1f, resonance01));
+            if (returnStrength <= 0.01f)
+                return;
+
+            SpectrumEvents.RaiseAcousticEchoReturned(new AcousticEchoEvent(nodePosition, distanceMeters, returnStrength, resonance));
         }
 
         private void ResolvePersistentIdentity()
@@ -529,15 +586,13 @@ namespace Hecton8.Scavenging
             if (_cachedVoxelEngine == null)
                 return;
 
-            VoxelDeltaProcessor deltaProcessor = _cachedVoxelEngine.DeltaProcessor;
-            if (deltaProcessor == null ||
-                !_cachedVoxelEngine.TryGetNearestActiveVolume(_cachedTransform.position, out HectonVoxelVolume volume) ||
+            if (!_cachedVoxelEngine.TryGetNearestActiveVolume(_cachedTransform.position, out HectonVoxelVolume volume) ||
                 volume == null)
             {
                 return;
             }
 
-            deltaProcessor.ApplyImmediateCrater(volume, _cachedTransform.position, craterRadiusMeters);
+            volume.ApplyPersistentResourceCrater(_cachedTransform.position, craterRadiusMeters);
         }
 
         private void DespawnSelf()
@@ -678,6 +733,8 @@ namespace Hecton8.Scavenging
             if (debrisMesh == null)
                 return;
 
+            ResourceNodeTemplate.DebrisPhysicalProfile debrisProfile = ResolveDebrisPhysicalProfile();
+            PhysicsMaterial debrisPhysicsMaterial = ResolveDebrisPhysicsMaterial(debrisProfile);
             uint state = unchecked((uint)_persistentTombstoneId) ^ ((uint)(_yieldDropCount + 1) * 0x85EBCA6Bu);
             int debrisCount = MinimumImpactDebrisCount + (int)Mathf.Floor(Next01(ref state) * (MaximumImpactDebrisCount - MinimumImpactDebrisCount + 1));
             debrisCount = Mathf.Clamp(debrisCount, MinimumImpactDebrisCount, MaximumImpactDebrisCount);
@@ -700,22 +757,31 @@ namespace Hecton8.Scavenging
                     debrisRenderer.sharedMaterial = debrisMaterial;
 
                 debris.transform.localScale = Vector3.one * Mathf.Lerp(0.08f, 0.18f, Next01(ref state));
+                if (debris.TryGetComponent(out RuntimeDebrisShard shard))
+                {
+                    float sinkDepth = Mathf.Max(0.08f, debris.transform.localScale.y * ImpactDebrisSinkDepthMultiplier);
+                    shard.ConfigureRuntime(
+                        pool,
+                        debrisProfile,
+                        debrisPhysicsMaterial,
+                        ImpactDebrisLifetimeSeconds,
+                        ImpactDebrisSinkDurationSeconds,
+                        sinkDepth);
+                }
 
                 if (debris.TryGetComponent(out Rigidbody body))
                 {
                     body.isKinematic = false;
-                    body.useGravity = false;
+                    body.useGravity = true;
                     body.linearVelocity = Vector3.zero;
                     body.angularVelocity = Vector3.zero;
                     body.WakeUp();
 
-                    Vector3 impulse = ((outwardNormal * Mathf.Lerp(0.45f, 0.9f, Next01(ref state))) +
-                                       (tangent * Mathf.Lerp(0.1f, 0.35f, Next01(ref state)))) * impulseScale;
-                    PhysicsForceRouter.QueueForce(body, impulse, ForceMode.Impulse);
-                    PhysicsForceRouter.QueueTorque(body, tangent * Mathf.Lerp(0.08f, 0.22f, Next01(ref state)), ForceMode.Impulse);
+                    Vector3 velocityChange = ((outwardNormal * Mathf.Lerp(0.65f, 1.2f, Next01(ref state))) +
+                                              (tangent * Mathf.Lerp(0.12f, 0.4f, Next01(ref state)))) * impulseScale;
+                    PhysicsForceRouter.QueueForce(body, velocityChange, ForceMode.VelocityChange);
+                    PhysicsForceRouter.QueueTorque(body, tangent * Mathf.Lerp(0.12f, 0.28f, Next01(ref state)), ForceMode.VelocityChange);
                 }
-
-                pool.Despawn(debris, ImpactDebrisLifetimeSeconds);
             }
         }
 
@@ -755,6 +821,8 @@ namespace Hecton8.Scavenging
                     DestroyImmediate(primitive);
             }
 
+            EnsureRuntimeDebrisPhysicsMaterials();
+
             if (s_runtimeDebrisMesh == null)
                 return null;
 
@@ -777,14 +845,14 @@ namespace Hecton8.Scavenging
 
             Rigidbody body = prefab.AddComponent<Rigidbody>();
             body.mass = 0.08f;
-            body.useGravity = false;
+            body.useGravity = true;
             body.linearDamping = 0.45f;
             body.angularDamping = 0.35f;
             body.collisionDetectionMode = CollisionDetectionMode.Discrete;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             body.isKinematic = false;
 
-            prefab.AddComponent<ObjectPoolManager.DespawnTimer>();
+            prefab.AddComponent<RuntimeDebrisShard>();
             return prefab;
         }
 
@@ -797,6 +865,64 @@ namespace Hecton8.Scavenging
                 return targetRenderer.sharedMaterial;
 
             return s_runtimeDebrisMaterial;
+        }
+
+        private ResourceNodeTemplate.DebrisPhysicalProfile ResolveDebrisPhysicalProfile()
+        {
+            return resourceTemplate != null
+                ? resourceTemplate.ResolveDebrisPhysicalProfile()
+                : ResourceNodeTemplate.DebrisPhysicalProfile.Basalt;
+        }
+
+        private PhysicsMaterial ResolveDebrisPhysicsMaterial(ResourceNodeTemplate.DebrisPhysicalProfile profile)
+        {
+            if (resourceTemplate != null)
+            {
+                PhysicsMaterial authoredMaterial = resourceTemplate.ResolveDebrisPhysicsMaterial(profile);
+                if (authoredMaterial != null)
+                    return authoredMaterial;
+            }
+
+            EnsureRuntimeDebrisPhysicsMaterials();
+            return profile == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment
+                ? s_runtimeSedimentDebrisPhysicsMaterial
+                : s_runtimeBasaltDebrisPhysicsMaterial;
+        }
+
+        private static void EnsureRuntimeDebrisPhysicsMaterials()
+        {
+            if (s_runtimeSedimentDebrisPhysicsMaterial == null)
+                s_runtimeSedimentDebrisPhysicsMaterial = BuildRuntimeDebrisPhysicsMaterial(
+                    "RuntimeSedimentShardPhysics",
+                    dynamicFriction: 0.92f,
+                    staticFriction: 0.96f,
+                    bounciness: 0.01f);
+
+            if (s_runtimeBasaltDebrisPhysicsMaterial == null)
+                s_runtimeBasaltDebrisPhysicsMaterial = BuildRuntimeDebrisPhysicsMaterial(
+                    "RuntimeBasaltShardPhysics",
+                    dynamicFriction: 0.58f,
+                    staticFriction: 0.64f,
+                    bounciness: 0.03f);
+        }
+
+        private static PhysicsMaterial BuildRuntimeDebrisPhysicsMaterial(
+            string materialName,
+            float dynamicFriction,
+            float staticFriction,
+            float bounciness)
+        {
+            // COLD ALLOC: PhysicsMaterial[1] - shared pooled shard collision response profile - owner: ResourceNode
+            PhysicsMaterial material = new PhysicsMaterial(materialName)
+            {
+                dynamicFriction = dynamicFriction,
+                staticFriction = staticFriction,
+                bounciness = bounciness,
+                frictionCombine = PhysicsMaterialCombine.Maximum,
+                bounceCombine = PhysicsMaterialCombine.Minimum
+            };
+            material.hideFlags = HideFlags.HideAndDontSave;
+            return material;
         }
 
         private float ResolveYieldSampleDeltaSeconds()
@@ -954,6 +1080,189 @@ namespace Hecton8.Scavenging
         private bool IsPooledInstance()
         {
             return TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
+        }
+
+        [DisallowMultipleComponent]
+        [AddComponentMenu("")]
+        private sealed class RuntimeDebrisShard : MonoBehaviour, IPoolable, IUpdatable
+        {
+            private Transform _cachedTransform;
+            private Rigidbody _rigidbody;
+            private Collider _collider;
+            private ObjectPoolManager _owningPool;
+            private bool _registeredToDispatcher;
+            private bool _active;
+            private bool _sinking;
+            private float _lifetimeSeconds;
+            private float _sinkDurationSeconds;
+            private float _sinkStartTimeSeconds;
+            private float _sinkDepthMeters;
+            private float _ageSeconds;
+            private Vector3 _sinkStartPosition;
+            private Vector3 _sinkEndPosition;
+
+            private void Awake()
+            {
+                _cachedTransform = transform;
+                TryGetComponent(out _rigidbody);
+                TryGetComponent(out _collider);
+            }
+
+            public void OnSpawn()
+            {
+                ResetRuntimeState();
+                TryRegisterToDispatcher();
+            }
+
+            public void OnDespawn()
+            {
+                TryUnregisterFromDispatcher();
+                ResetPhysicsState();
+                ResetRuntimeState();
+                _owningPool = null;
+            }
+
+            public void Tick(float deltaTime)
+            {
+                if (!_active)
+                    return;
+
+                _ageSeconds += Mathf.Max(0f, deltaTime);
+                if (!_sinking && _ageSeconds >= _sinkStartTimeSeconds)
+                    BeginSinkPhase();
+
+                if (_sinking)
+                {
+                    float sinkElapsedSeconds = _ageSeconds - _sinkStartTimeSeconds;
+                    float sinkT = _sinkDurationSeconds > 0.0001f
+                        ? Mathf.Clamp01(sinkElapsedSeconds / _sinkDurationSeconds)
+                        : 1f;
+                    _cachedTransform.position = Vector3.LerpUnclamped(_sinkStartPosition, _sinkEndPosition, sinkT);
+                }
+
+                if (_ageSeconds >= _lifetimeSeconds)
+                    RequestDespawn();
+            }
+
+            public void ConfigureRuntime(
+                ObjectPoolManager owningPool,
+                ResourceNodeTemplate.DebrisPhysicalProfile profile,
+                PhysicsMaterial physicsMaterial,
+                float lifetimeSeconds,
+                float sinkDurationSeconds,
+                float sinkDepthMeters)
+            {
+                if (_cachedTransform == null)
+                    _cachedTransform = transform;
+
+                _owningPool = owningPool;
+                _active = true;
+                _sinking = false;
+                _ageSeconds = 0f;
+                _lifetimeSeconds = Mathf.Max(0.1f, lifetimeSeconds);
+                _sinkDurationSeconds = Mathf.Clamp(sinkDurationSeconds, 0.05f, _lifetimeSeconds);
+                _sinkStartTimeSeconds = Mathf.Max(0f, _lifetimeSeconds - _sinkDurationSeconds);
+                _sinkDepthMeters = Mathf.Max(0.05f, sinkDepthMeters);
+
+                if (_collider != null)
+                    _collider.sharedMaterial = physicsMaterial;
+
+                if (_rigidbody != null)
+                {
+                    _rigidbody.linearVelocity = Vector3.zero;
+                    _rigidbody.angularVelocity = Vector3.zero;
+                    _rigidbody.isKinematic = false;
+                    _rigidbody.useGravity = true;
+
+                    if (profile == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment)
+                    {
+                        _rigidbody.mass = 0.07f;
+                        _rigidbody.linearDamping = 0.6f;
+                        _rigidbody.angularDamping = 0.3f;
+                    }
+                    else
+                    {
+                        _rigidbody.mass = 0.14f;
+                        _rigidbody.linearDamping = 0.22f;
+                        _rigidbody.angularDamping = 0.1f;
+                    }
+
+                    _rigidbody.WakeUp();
+                }
+
+                TryRegisterToDispatcher();
+            }
+
+            private void BeginSinkPhase()
+            {
+                _sinking = true;
+                _sinkStartPosition = _cachedTransform.position;
+                _sinkEndPosition = _sinkStartPosition + (Vector3.down * _sinkDepthMeters);
+
+                if (_rigidbody != null)
+                {
+                    _rigidbody.linearVelocity = Vector3.zero;
+                    _rigidbody.angularVelocity = Vector3.zero;
+                    _rigidbody.isKinematic = true;
+                    _rigidbody.useGravity = false;
+                }
+            }
+
+            private void RequestDespawn()
+            {
+                _active = false;
+
+                ObjectPoolManager pool = _owningPool != null ? _owningPool : ObjectPoolManager.Instance;
+                if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+                {
+                    pool.Despawn(gameObject);
+                    return;
+                }
+
+                gameObject.SetActive(false);
+            }
+
+            private void TryRegisterToDispatcher()
+            {
+                if (_registeredToDispatcher || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                    return;
+
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToDispatcher = true;
+            }
+
+            private void TryUnregisterFromDispatcher()
+            {
+                if (!_registeredToDispatcher)
+                    return;
+
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToDispatcher = false;
+            }
+
+            private void ResetPhysicsState()
+            {
+                if (_rigidbody == null)
+                    return;
+
+                _rigidbody.linearVelocity = Vector3.zero;
+                _rigidbody.angularVelocity = Vector3.zero;
+                _rigidbody.isKinematic = false;
+                _rigidbody.useGravity = true;
+            }
+
+            private void ResetRuntimeState()
+            {
+                _active = false;
+                _sinking = false;
+                _ageSeconds = 0f;
+                _lifetimeSeconds = 0f;
+                _sinkDurationSeconds = 0f;
+                _sinkStartTimeSeconds = 0f;
+                _sinkDepthMeters = 0f;
+                _sinkStartPosition = Vector3.zero;
+                _sinkEndPosition = Vector3.zero;
+            }
         }
 
 #if UNITY_EDITOR

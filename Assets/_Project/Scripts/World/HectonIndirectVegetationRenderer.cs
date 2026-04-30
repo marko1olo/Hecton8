@@ -699,7 +699,7 @@ namespace Hecton8.World
                 bool receiveShadows,
                 MotionVectorGenerationMode motionMode)
             {
-                if (visibleCount <= 0)
+                if (visibleCount <= 0 || materialId.value == 0u || meshId.value == 0u)
                     return commandIndex;
 
                 DrawCommands[commandIndex] = new BatchDrawCommand
@@ -836,19 +836,20 @@ namespace Hecton8.World
             TryUnregister();
             _hasPreviousMotionCameraPosition = false;
             _previousMotionCamera = null;
+            ReleaseBatchRendererGroupResources();
             ReleaseGpuIndirectResources();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            ReleaseBatchRendererGroupResources();
+            ReleaseGpuIndirectResources();
             ReleaseLegacyInstanceDataBuffer();
             ReleaseUploadedInstanceBuffers();
             ReleaseAuxiliaryMaterials();
             ReleaseRuntimeMaterial();
-            ReleaseBatchRendererGroupResources();
             ReleaseCpuCullingData();
-            ReleaseGpuIndirectResources();
 
             if (_generatedMesh != null)
             {
@@ -898,6 +899,7 @@ namespace Hecton8.World
                 return;
             }
 
+            InvalidateRenderStateForBufferIdentityChange(instanceMatrixBuffer, _instanceDataBuffer, _floraPhaseSeedBuffer);
             _instanceMatrixBuffer = instanceMatrixBuffer;
             _legacyDataDirty = true;
             _hasCpuCullingData = false;
@@ -918,6 +920,7 @@ namespace Hecton8.World
                 return;
             }
 
+            InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer, instanceDataBuffer, _floraPhaseSeedBuffer);
             _instanceDataBuffer = instanceDataBuffer;
         }
 
@@ -927,9 +930,11 @@ namespace Hecton8.World
         /// <param name="floraPhaseSeedBuffer">Structured buffer containing one phase seed per active vegetation instance.</param>
         public void BindFloraPhaseSeedBuffer(GraphicsBuffer floraPhaseSeedBuffer)
         {
-            _floraPhaseSeedBuffer = floraPhaseSeedBuffer != null && floraPhaseSeedBuffer.count > 0
+            GraphicsBuffer resolvedPhaseSeedBuffer = floraPhaseSeedBuffer != null && floraPhaseSeedBuffer.count > 0
                 ? floraPhaseSeedBuffer
                 : null;
+            InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer, _instanceDataBuffer, resolvedPhaseSeedBuffer);
+            _floraPhaseSeedBuffer = resolvedPhaseSeedBuffer;
         }
 
         /// <summary>
@@ -1008,6 +1013,7 @@ namespace Hecton8.World
             if (_uploadedInstanceMatrixBuffer == null || _uploadedInstanceDataBuffer == null)
                 return false;
 
+            InvalidateRenderStateForBufferIdentityChange(_uploadedInstanceMatrixBuffer, _uploadedInstanceDataBuffer, _floraPhaseSeedBuffer);
             GraphicsBufferUploadUtility.UploadNativeArray(_uploadedInstanceMatrixBuffer, instanceMatrices, instanceCount);
             GraphicsBufferUploadUtility.UploadNativeArray(_uploadedInstanceDataBuffer, instanceData, instanceCount);
             _instanceMatrixBuffer = _uploadedInstanceMatrixBuffer;
@@ -2341,12 +2347,14 @@ namespace Hecton8.World
 
             if (_instanceMatrixBuffer != sourceMatrixBuffer)
             {
+                InvalidateRenderStateForBufferIdentityChange(sourceMatrixBuffer, _instanceDataBuffer, _floraPhaseSeedBuffer);
                 _instanceMatrixBuffer = sourceMatrixBuffer;
                 _hasCpuCullingData = false;
             }
 
             if (_instanceDataBuffer != sourceDataBuffer)
             {
+                InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer, sourceDataBuffer != null && sourceDataBuffer.count > 0 ? sourceDataBuffer : null, _floraPhaseSeedBuffer);
                 _instanceDataBuffer = sourceDataBuffer != null && sourceDataBuffer.count > 0 ? sourceDataBuffer : null;
                 _hasCpuCullingData = false;
             }
@@ -2361,12 +2369,38 @@ namespace Hecton8.World
 
         private void ClearBoundInstanceState()
         {
+            InvalidateRenderStateForBufferIdentityChange(null, null, null);
             _instanceMatrixBuffer = null;
             _instanceDataBuffer = null;
             _floraPhaseSeedBuffer = null;
             _instanceCount = 0;
             _legacyDataDirty = true;
             _hasCpuCullingData = false;
+        }
+
+        private void InvalidateRenderStateForBufferIdentityChange(
+            GraphicsBuffer nextMatrixBuffer,
+            GraphicsBuffer nextDataBuffer,
+            GraphicsBuffer nextPhaseSeedBuffer)
+        {
+            if (_instanceMatrixBuffer == nextMatrixBuffer &&
+                _instanceDataBuffer == nextDataBuffer &&
+                _floraPhaseSeedBuffer == nextPhaseSeedBuffer)
+            {
+                return;
+            }
+
+            bool hadActiveBinding = _instanceMatrixBuffer != null ||
+                                    _instanceDataBuffer != null ||
+                                    _floraPhaseSeedBuffer != null ||
+                                    _batchRendererGroup != null;
+            if (!hadActiveBinding)
+                return;
+
+            _hasPreviousMotionCameraPosition = false;
+            _previousMotionCamera = null;
+            ReleaseBatchRendererGroupResources();
+            ReleaseGpuIndirectResources();
         }
 
         private int CopyScooterHeadlightPayload()
@@ -2470,6 +2504,9 @@ namespace Hecton8.World
 
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(16, instanceCount));
 
+            if (_legacyInstanceDataBuffer != null && _instanceDataBuffer == null && _instanceCount > 0)
+                InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer, null, _floraPhaseSeedBuffer);
+
             ReleaseLegacyInstanceDataBuffer();
 
             // COLD ALLOC: HectonVegetationInstanceData[nextCapacity] - legacy metadata fallback staging - owner: HectonIndirectVegetationRenderer
@@ -2486,6 +2523,9 @@ namespace Hecton8.World
 
             if (_uploadedInstanceMatrixBuffer == null || _uploadedInstanceMatrixBuffer.count < instanceCount)
             {
+                if (_uploadedInstanceMatrixBuffer != null && _instanceMatrixBuffer == _uploadedInstanceMatrixBuffer)
+                    InvalidateRenderStateForBufferIdentityChange(null, _instanceDataBuffer == _uploadedInstanceDataBuffer ? null : _instanceDataBuffer, _floraPhaseSeedBuffer);
+
                 if (_uploadedInstanceMatrixBuffer != null)
                 {
                     _uploadedInstanceMatrixBuffer.Release();
@@ -2502,6 +2542,9 @@ namespace Hecton8.World
 
             if (_uploadedInstanceDataBuffer == null || _uploadedInstanceDataBuffer.count < instanceCount)
             {
+                if (_uploadedInstanceDataBuffer != null && _instanceDataBuffer == _uploadedInstanceDataBuffer)
+                    InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer == _uploadedInstanceMatrixBuffer ? null : _instanceMatrixBuffer, null, _floraPhaseSeedBuffer);
+
                 if (_uploadedInstanceDataBuffer != null)
                 {
                     _uploadedInstanceDataBuffer.Release();

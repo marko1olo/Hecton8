@@ -850,6 +850,15 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Executes the authoritative persistent resource-depletion crater pass.
+        /// Kept explicit so tombstoned geology callers route through the volume owner instead of the delta processor.
+        /// </summary>
+        public void ApplyPersistentResourceCrater(Vector3 pos, float radius)
+        {
+            CarveCrater(pos, radius);
+        }
+
+        /// <summary>
         /// Resolves ceiling-adjacent crater anchors around the supplied epicenter and pushes them
         /// through the authoritative crater/delta pipeline.
         /// </summary>
