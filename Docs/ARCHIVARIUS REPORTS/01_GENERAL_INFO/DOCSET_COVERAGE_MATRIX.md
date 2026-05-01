@@ -129,11 +129,13 @@ For current-source truth, prefer in this order:
 
 1. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 2. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
-3. `PROJECT_ATLAS.md`
-4. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
-5. current-source summaries in `01_GENERAL_INFO`
-6. current-source rewrites in `02_ACTUAL_REPORTS`
-7. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
+3. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
+4. `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
+5. `PROJECT_ATLAS.md`
+6. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+7. current-source summaries in `01_GENERAL_INFO`
+8. current-source rewrites in `02_ACTUAL_REPORTS`
+9. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
 
 Do not treat dated bundles as current runtime proof.
 
@@ -185,6 +187,8 @@ New high-authority May 1 report inputs:
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY | updated current remediation queue |
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY | current conceptual system-ownership entry point |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY | current blunt project-level verdict; source/doc-backed, not runtime proof |
+| `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | PRIMARY COMPILE DELTA | current editor compile/MCP console evidence for event-bus listener migration and spatial-hash repair |
+| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | PRIMARY COMPILE DELTA | current editor compile/reload evidence after `VegetationJobRecovery.cs.meta` restoration; keeps MCP console caveat active |
 
 Coverage corrections:
 

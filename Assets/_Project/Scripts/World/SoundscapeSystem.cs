@@ -57,7 +57,7 @@ namespace Hecton8.World
             public SoundscapeTier NewTier;
         }
 
-        private static readonly RegistryBucket<Action<SoundscapeTier, SoundscapeTier>> _tierChangedListeners = new RegistryBucket<Action<SoundscapeTier, SoundscapeTier>>(16);
+        private static readonly RegistryBucket<ISoundscapeEventListener> _listeners = new RegistryBucket<ISoundscapeEventListener>(16);
         private static NativeQueue<SoundscapeEventPayload> _pendingEvents;
 
         public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
@@ -71,20 +71,20 @@ namespace Hecton8.World
                 _pendingEvents = default;
             }
 
-            _tierChangedListeners.Clear();
+            _listeners.Clear();
         }
 
         /// <summary>Звуковой тир изменился. (oldTier, newTier)</summary>
-        public static void RegisterTierChanged(Action<SoundscapeTier, SoundscapeTier> listener)
+        public static void Register(ISoundscapeEventListener listener)
         {
-            if (listener != null && !_tierChangedListeners.Contains(listener))
-                _tierChangedListeners.Register(listener);
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
-        public static void UnregisterTierChanged(Action<SoundscapeTier, SoundscapeTier> listener)
+        public static void Unregister(ISoundscapeEventListener listener)
         {
-            if (listener != null && _tierChangedListeners.Contains(listener))
-                _tierChangedListeners.Unregister(listener);
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         public static void RaiseTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
@@ -104,10 +104,10 @@ namespace Hecton8.World
 
             while (_pendingEvents.TryDequeue(out SoundscapeEventPayload payload))
             {
-                Action<SoundscapeTier, SoundscapeTier>[] rawArray = _tierChangedListeners.RawArray;
-                int count = _tierChangedListeners.Count;
+                ISoundscapeEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i]?.Invoke(payload.OldTier, payload.NewTier);
+                    rawArray[i].OnSoundscapeTierChanged(payload.OldTier, payload.NewTier);
             }
         }
 

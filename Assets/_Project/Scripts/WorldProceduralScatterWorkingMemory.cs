@@ -38,6 +38,10 @@ namespace Hecton8.World
             public readonly System.Collections.Generic.List<ScatterCandidate> PatternSpawnPredatorOrderedCandidates = new System.Collections.Generic.List<ScatterCandidate>(64);
             public readonly System.Collections.Generic.List<ScatterRuntimeRuleEntry> RuntimeRuleBuffer = new System.Collections.Generic.List<ScatterRuntimeRuleEntry>(256);
             public readonly System.Collections.Generic.HashSet<long> OccupiedCellBuffer = new System.Collections.Generic.HashSet<long>(1024);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // COLD ALLOC: HashSet<long>[256] - one-shot strict substrate missing logs per scatter chunk - owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+            public readonly System.Collections.Generic.HashSet<long> StrictSubstrateMissingLoggedChunks = new System.Collections.Generic.HashSet<long>(256);
+#endif
             public readonly System.Collections.Generic.Dictionary<long, System.Collections.Generic.List<ScatterPlacement>> GridPlacements = new System.Collections.Generic.Dictionary<long, System.Collections.Generic.List<ScatterPlacement>>(512);
             public readonly System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>> GridPlacementBuckets = new System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>>(512);
             public NativeList<ScatterPlacementSpatialMetadata> GridPlacementSpatialMetadata;

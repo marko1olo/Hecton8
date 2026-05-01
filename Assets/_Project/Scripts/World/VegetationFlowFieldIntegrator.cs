@@ -174,7 +174,7 @@ namespace Hecton8.World
             if (!_threatPropagationScheduled)
                 return;
 
-            if (!VegetationJobRecovery.TryComplete(ref _threatPropagationHandle, forceComplete))
+            if (!VegetationLateFrameJobSwap.TryComplete(ref _threatPropagationHandle, forceComplete))
                 return;
 
             NativeArray<float> threatSwap = _nativeMemory.EcosystemThreatGridCurrentNative;
@@ -360,7 +360,7 @@ namespace Hecton8.World
             if (!_flowFieldScheduled)
                 return;
 
-            if (!VegetationJobRecovery.TryComplete(ref _flowFieldHandle, forceComplete))
+            if (!VegetationLateFrameJobSwap.TryComplete(ref _flowFieldHandle, forceComplete))
                 return;
 
             NativeArray<float2> flowSwap = _nativeMemory.EcosystemFlowFieldCurrentNative;
@@ -376,7 +376,7 @@ namespace Hecton8.World
             if (!_abyssalThermalGridScheduled)
                 return;
 
-            if (!VegetationJobRecovery.TryComplete(ref _abyssalThermalGridHandle, forceComplete))
+            if (!VegetationLateFrameJobSwap.TryComplete(ref _abyssalThermalGridHandle, forceComplete))
                 return;
 
             bool canComparePreviousFlowVolume =

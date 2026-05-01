@@ -40,6 +40,8 @@ These are new enough and important enough to stay active.
 |---|---|---|---|
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY CURRENT STATE | yes | First report to read for current system shape. |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | yes | Honest project-level verdict after current docs/source scan; not Play Mode proof. |
+| `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | ACTIVE COMPILE DELTA | yes | Latest editor compile/MCP console evidence for Sargassum/Emergency relay listener migration and spatial-hash fix. |
+| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | ACTIVE COMPILE DELTA | yes | Supersedes latest compile line numbers after `VegetationJobRecovery.cs.meta` restoration; records MCP console caveat. |
 | `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` | ACTIVE HIGH-RISK REPORT | yes | Current concurrency/headless/memory/raycast/event-risk map. |
 | `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` | ACTIVE SURGERY REPORT | yes | Current coroutine/pool/telemetry surgery state; not runtime proof. |
 | `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md` | ACTIVE COMPLIANCE REPORT WITH CAUTION | yes | Important because it rejects fake `MCP VERIFIED` status and records remaining compile/console limits. |

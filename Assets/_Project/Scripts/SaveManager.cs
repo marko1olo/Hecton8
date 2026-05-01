@@ -29,7 +29,7 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable
+    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable, ILateFrameTickable
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
@@ -96,6 +96,7 @@ namespace Hecton8.SaveSystem
         private int _integrityPayloadLength;
         private bool _integrityScanScheduled;
         private bool _updatableRegistered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _emergencyBackupScheduled;
         private bool _indexedDefragInFlight;
@@ -219,23 +220,38 @@ namespace Hecton8.SaveSystem
 
         private void OnEnable()
         {
-            if (!_serviceRegistered || _updatableRegistered || !Application.isPlaying)
+            if (!_serviceRegistered || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _updatableRegistered = true;
+            if (!_updatableRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                _updatableRegistered = true;
+            }
+
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+                _lateFrameRegistered = true;
+            }
         }
 
         private void OnDisable()
         {
-            if (!_updatableRegistered)
-                return;
+            if (_updatableRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                _updatableRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _updatableRegistered = false;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _lateFrameRegistered = false;
+            }
         }
 
         private void OnDestroy()
@@ -247,6 +263,12 @@ namespace Hecton8.SaveSystem
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                 _updatableRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _lateFrameRegistered = false;
             }
 
             _serviceRegistered = false;
@@ -264,10 +286,19 @@ namespace Hecton8.SaveSystem
         {
             if (_serviceRegistered)
             {
-                if (isActiveAndEnabled && !_updatableRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
+                if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                 {
-                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                    _updatableRegistered = true;
+                    if (!_updatableRegistered)
+                    {
+                        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                        _updatableRegistered = true;
+                    }
+
+                    if (!_lateFrameRegistered)
+                    {
+                        GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+                        _lateFrameRegistered = true;
+                    }
                 }
 
                 return;
@@ -276,10 +307,19 @@ namespace Hecton8.SaveSystem
             GlobalRegistry.RegisterSaveService(this);
             _serviceRegistered = true;
 
-            if (isActiveAndEnabled && !_updatableRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
+            if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _updatableRegistered = true;
+                if (!_updatableRegistered)
+                {
+                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                    _updatableRegistered = true;
+                }
+
+                if (!_lateFrameRegistered)
+                {
+                    GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+                    _lateFrameRegistered = true;
+                }
             }
         }
 
@@ -300,13 +340,6 @@ namespace Hecton8.SaveSystem
 
         public void Tick(float deltaTime)
         {
-            if (_integrityScanScheduled && _integrityScanHandle.IsCompleted)
-            {
-                _integrityScanHandle.Complete();
-                _integrityScanScheduled = false;
-                EvaluateIntegrityScanResult();
-            }
-
             if (!_isBusy &&
                 !_integrityScanScheduled &&
                 !_indexedDefragInFlight &&
@@ -342,6 +375,16 @@ namespace Hecton8.SaveSystem
             _integrityScanHandle = job.Schedule();
             _integrityScanScheduled = true;
             _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_integrityScanScheduled || !_integrityScanHandle.IsCompleted)
+                return;
+
+            _integrityScanHandle.Complete();
+            _integrityScanScheduled = false;
+            EvaluateIntegrityScanResult();
         }
 
         private unsafe void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)

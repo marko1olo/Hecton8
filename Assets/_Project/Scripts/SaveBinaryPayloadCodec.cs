@@ -19,20 +19,33 @@ namespace Hecton8.SaveSystem
         private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
         private static readonly byte[] s_lz4CompressionDictionary = SaveCompressionDictionary.Bytes;
-        private static readonly GCHandle s_lz4CompressionDictionaryHandle = GCHandle.Alloc(s_lz4CompressionDictionary, GCHandleType.Pinned);
-        private static readonly IntPtr s_lz4CompressionDictionaryPtr = s_lz4CompressionDictionaryHandle.AddrOfPinnedObject();
+        private static GCHandle s_lz4CompressionDictionaryHandle;
+        private static IntPtr s_lz4CompressionDictionaryPtr;
 
         internal static int Lz4CompressionDictionaryLength => Lz4CompressionDictionarySizeBytes;
         internal static bool HasLz4CompressionDictionary =>
+            EnsureLz4CompressionDictionaryPinned() &&
             s_lz4CompressionDictionary != null &&
             s_lz4CompressionDictionary.Length >= Lz4CompressionDictionarySizeBytes &&
             s_lz4CompressionDictionaryHandle.IsAllocated &&
             s_lz4CompressionDictionaryPtr != IntPtr.Zero;
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (s_lz4CompressionDictionaryHandle.IsAllocated)
+                s_lz4CompressionDictionaryHandle.Free();
+
+            s_lz4CompressionDictionaryPtr = IntPtr.Zero;
+        }
+
         [Unity.Burst.BurstDiscard]
         internal static void CopyLz4CompressionDictionary(byte* destinationPtr, int destinationCapacity)
         {
             if (destinationPtr == null || destinationCapacity < Lz4CompressionDictionarySizeBytes)
+                return;
+
+            if (!EnsureLz4CompressionDictionaryPinned())
                 return;
 
             if (!UnsafeMemoryCopyGuard.TryMemCpy(
@@ -43,6 +56,22 @@ namespace Hecton8.SaveSystem
             {
                 UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
             }
+        }
+
+        private static bool EnsureLz4CompressionDictionaryPinned()
+        {
+            if (s_lz4CompressionDictionaryHandle.IsAllocated && s_lz4CompressionDictionaryPtr != IntPtr.Zero)
+                return true;
+
+            if (s_lz4CompressionDictionary == null || s_lz4CompressionDictionary.Length < Lz4CompressionDictionarySizeBytes)
+                return false;
+
+            if (s_lz4CompressionDictionaryHandle.IsAllocated)
+                s_lz4CompressionDictionaryHandle.Free();
+
+            s_lz4CompressionDictionaryHandle = GCHandle.Alloc(s_lz4CompressionDictionary, GCHandleType.Pinned);
+            s_lz4CompressionDictionaryPtr = s_lz4CompressionDictionaryHandle.AddrOfPinnedObject();
+            return s_lz4CompressionDictionaryPtr != IntPtr.Zero;
         }
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)

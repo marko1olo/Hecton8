@@ -14,7 +14,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3900)] // Consumes zone/acoustic state resolved by earlier managers.
-    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
+    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IDepthZoneEventListener
     {
         private enum PlaybackState : byte
         {
@@ -405,8 +405,7 @@ namespace Hecton8.Audio
             AcousticZoneController.OnAcousticZoneChanged += HandleAcousticZoneChanged;
             BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
             BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
-            DepthZoneEvents.RegisterZoneEntered(HandleDepthZoneEntered);
-            DepthZoneEvents.RegisterZoneExited(HandleDepthZoneExited);
+            DepthZoneEvents.Register(this);
             HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequested;
             HectonDirectorAI.OnRequestSpawnHorde += HandleSpawnHordeRequested;
             HectonDirectorAI.OnPredatorPressureChanged += HandlePredatorPressureChanged;
@@ -428,8 +427,7 @@ namespace Hecton8.Audio
             HectonDirectorAI.OnPredatorPressureChanged -= HandlePredatorPressureChanged;
             HectonDirectorAI.OnRequestSpawnHorde -= HandleSpawnHordeRequested;
             HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequested;
-            DepthZoneEvents.UnregisterZoneExited(HandleDepthZoneExited);
-            DepthZoneEvents.UnregisterZoneEntered(HandleDepthZoneEntered);
+            DepthZoneEvents.Unregister(this);
             BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
             AcousticZoneController.OnAcousticZoneChanged -= HandleAcousticZoneChanged;
@@ -2171,6 +2169,16 @@ namespace Hecton8.Audio
                 return;
 
             PlayRecoveryStinger();
+        }
+
+        void IDepthZoneEventListener.OnDepthZoneEntered(DepthZoneProfile zone)
+        {
+            HandleDepthZoneEntered(zone);
+        }
+
+        void IDepthZoneEventListener.OnDepthZoneExited(DepthZoneProfile zone)
+        {
+            HandleDepthZoneExited(zone);
         }
 
         private void HandleRareDiscoveryRequested(Vector3 position)

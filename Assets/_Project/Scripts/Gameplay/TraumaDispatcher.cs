@@ -15,7 +15,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonSurvivalSystem))]
     [RequireComponent(typeof(HectonPlayerMovement))]
-    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IDamageSignalReceiver
+    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IDamageSignalReceiver, IModuleStatusEventListener
     {
         private const float IntegrityChannelDecayPerSecond = 0.35f;
         private const float PowerChannelDecayPerSecond = 0.28f;
@@ -140,8 +140,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveReferences();
-            ModuleStatusEvents.OnModuleEnter += HandleModuleEnter;
-            ModuleStatusEvents.OnModuleExit += HandleModuleExit;
+            ModuleStatusEvents.Register(this);
             PhysicsEventBus.OnElectromagneticPulse += HandleElectromagneticPulse;
 
             if (_playerTransportCoordinator != null)
@@ -159,8 +158,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;
-            ModuleStatusEvents.OnModuleExit -= HandleModuleExit;
+            ModuleStatusEvents.Unregister(this);
             PhysicsEventBus.OnElectromagneticPulse -= HandleElectromagneticPulse;
 
             if (_playerTransportCoordinator != null)
@@ -318,6 +316,18 @@ namespace Hecton8.Gameplay
         {
             PromoteChannel(ref _integrityChannel01, 1f);
             PromoteChannel(ref _clarityChannel01, Mathf.Clamp01(0.35f + pressureDelta * 0.35f));
+        }
+
+        /// <inheritdoc />
+        public void OnModuleStatusEvent(in ModuleStatusEventPayload payload)
+        {
+            if (!ModuleStatusEvents.TryResolveModule(in payload, out BaseModule module))
+                return;
+
+            if (payload.IsEnter)
+                HandleModuleEnter(module);
+            else
+                HandleModuleExit(module);
         }
 
         private void HandleModuleEnter(BaseModule module)

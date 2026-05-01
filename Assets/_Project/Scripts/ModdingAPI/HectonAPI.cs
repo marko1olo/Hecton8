@@ -111,6 +111,37 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
+        /// Input-facing mod API. Mods receive button masks only, never Input System assets or action references.
+        /// </summary>
+        public static class Input
+        {
+            /// <summary>
+            /// Returns the current frame-cached gameplay button mask.
+            /// </summary>
+            public static uint GetButtonMask()
+            {
+                IInputService input = GlobalRegistry.Input;
+                if (input == null)
+                    return 0u;
+
+                return input.GetState().ActionsBitmask;
+            }
+
+            /// <summary>
+            /// Returns true when all requested button bits are present in the current frame mask.
+            /// </summary>
+            /// <param name="requiredMask">Bit mask built from <see cref="PlayerInputAction"/> values.</param>
+            public static bool HasButtonMask(uint requiredMask)
+            {
+                if (requiredMask == 0u)
+                    return false;
+
+                uint currentMask = GetButtonMask();
+                return (currentMask & requiredMask) == requiredMask;
+            }
+        }
+
+        /// <summary>
         /// Command-facing mod API. Commands are requests; engine systems validate and execute during late-frame drain.
         /// </summary>
         public static class Commands

@@ -55,6 +55,85 @@ namespace Hecton8.Modding
     }
 
     /// <summary>
+    /// Voxel SDF operation mode accepted by the mod command dispatcher.
+    /// Negative SDF means solid; subtract digs, add welds/builds solid material.
+    /// </summary>
+    public enum ModSdfMode : ushort
+    {
+        /// <summary>Subtracts material from the voxel field.</summary>
+        Subtract = 0,
+
+        /// <summary>Adds/welds material into the voxel field.</summary>
+        Add = 1
+    }
+
+    /// <summary>
+    /// AUP response lane kind for asynchronous mod callbacks.
+    /// </summary>
+    public enum ModAupResponseKind : uint
+    {
+        /// <summary>No response.</summary>
+        None = 0,
+
+        /// <summary>Flow vector response. Payload packs xyz meters per second.</summary>
+        FlowVector = 1,
+
+        /// <summary>Voxel modification accepted/rejected response.</summary>
+        VoxelModify = 2,
+
+        /// <summary>Acoustic ping accepted/rejected response.</summary>
+        AcousticPing = 3
+    }
+
+    /// <summary>
+    /// Generic status for asynchronous AUP mod responses.
+    /// </summary>
+    public enum ModAupResponseStatus : uint
+    {
+        /// <summary>The engine accepted and processed the request.</summary>
+        Accepted = 0,
+
+        /// <summary>The request was rejected before reaching the owning subsystem.</summary>
+        Rejected = 1,
+
+        /// <summary>The owning subsystem is unavailable this frame.</summary>
+        Unavailable = 2
+    }
+
+    /// <summary>
+    /// Fixed-size asynchronous response payload for AUP-backed mod queries.
+    /// Bytes 52..63 pack opcode-specific data. Flow responses store x/y in Payload0
+    /// and z in Payload1 using math.asuint(float).
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    public struct ModAupResponse
+    {
+        /// <summary>Stable mod hash.</summary>
+        public uint ModHash;
+
+        /// <summary>Mod-local request identifier.</summary>
+        public uint RequestId;
+
+        /// <summary><see cref="ModAupResponseKind"/> value.</summary>
+        public uint ResponseKind;
+
+        /// <summary><see cref="ModAupResponseStatus"/> value.</summary>
+        public uint Status;
+
+        /// <summary>AUP grid echoed from the request.</summary>
+        public long3 Grid;
+
+        /// <summary>AUP local offset echoed from the request.</summary>
+        public float3 Local;
+
+        /// <summary>Opcode-specific packed payload. Flow: low32=x, high32=y.</summary>
+        public ulong Payload0;
+
+        /// <summary>Opcode-specific packed payload. Flow: low32=z, high32 reserved.</summary>
+        public uint Payload1;
+    }
+
+    /// <summary>
     /// Matrix submission packet for the reserved mod instancing layer.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]

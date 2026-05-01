@@ -1110,11 +1110,10 @@ namespace Hecton8.World
                 return;
             }
 
-            IReadOnlyList<BaseModule> modules = BaseModule.ActiveModules;
-            int moduleCount = modules != null ? modules.Count : 0;
+            int moduleCount = BaseModule.ActiveModuleCount;
             for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
             {
-                BaseModule baseModule = modules[moduleIndex];
+                BaseModule baseModule = BaseModule.GetActiveModuleAt(moduleIndex);
                 if (baseModule == null || !baseModule.isActiveAndEnabled)
                     continue;
 

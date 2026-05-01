@@ -16,6 +16,7 @@ namespace Hecton8.Modding
         private static readonly Dictionary<uint, AssetBundle> _loadedBundles = new Dictionary<uint, AssetBundle>(32);
         // COLD ALLOC: Dictionary<uint,Texture2D>[32] - cached raw PNG textures by asset hash - owner: ModAssetManager
         private static readonly Dictionary<uint, Texture2D> _rawTextures = new Dictionary<uint, Texture2D>(32);
+        private const string ModCompatibleLedgerTag = "MOD_COMPATIBLE";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -79,6 +80,14 @@ namespace Hecton8.Modding
         {
             if (string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(assetName))
                 return null;
+
+            if (typeof(TAsset) == typeof(GameObject) &&
+                IsProjectPrefabReference(assetName) &&
+                !IsLedgerModCompatible(assetName))
+            {
+                Debug.LogWarning($"[ModAssetManager] SECURITY_VIOLATION: mod '{modId}' attempted to load unauthorized prefab reference '{assetName}'.");
+                return null;
+            }
 
             uint modHash = ModCommandDispatcher.ComputeModHash(modId);
             if (!TryGetLoadedBundle(modHash, modId, out AssetBundle bundle))
@@ -211,6 +220,53 @@ namespace Hecton8.Modding
                 hash ^= ModCommandDispatcher.ComputeModHash(filePath) + 0x9E3779B9u + (hash << 6) + (hash >> 2);
                 return hash;
             }
+        }
+
+        private static bool IsProjectPrefabReference(string assetName)
+        {
+            string normalized = assetName.Replace('\\', '/');
+            return normalized.StartsWith("Assets/", System.StringComparison.OrdinalIgnoreCase) ||
+                   IsGuidLike(normalized);
+        }
+
+        private static bool IsLedgerModCompatible(string assetName)
+        {
+            string ledgerPath = Path.Combine(Application.dataPath, "..", "Docs", "ARCHITECTURE", "PROJECT_CONTENT_LEDGER.md");
+            if (!File.Exists(ledgerPath))
+                return false;
+
+            string normalized = assetName.Replace('\\', '/');
+            foreach (string line in File.ReadLines(ledgerPath))
+            {
+                if (line == null ||
+                    line.IndexOf(ModCompatibleLedgerTag, System.StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                if (line.IndexOf(normalized, System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsGuidLike(string value)
+        {
+            if (value.Length != 32)
+                return false;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                bool isHex = (c >= '0' && c <= '9') ||
+                             (c >= 'a' && c <= 'f') ||
+                             (c >= 'A' && c <= 'F');
+                if (!isHex)
+                    return false;
+            }
+
+            return true;
         }
     }
 }

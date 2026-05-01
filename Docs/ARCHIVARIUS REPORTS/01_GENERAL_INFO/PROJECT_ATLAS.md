@@ -118,6 +118,8 @@ Current active anchors include:
 - `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
 - `Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 - `Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+- `Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
+- `Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
 - `Reports/TOTAL_CODEBASE_AUDIT_V2.md`
 - `Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
 - `Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
@@ -386,16 +388,17 @@ These counts are orientation data only. They are not readiness metrics and shoul
 Current active forensic reports to read before older atlas claims:
 
 1. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-2. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
-3. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
-4. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
-5. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
-6. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
-7. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
+2. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
+3. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
+4. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
+5. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+6. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
+7. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
+8. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
 
 Current risk corrections:
 
-- Headless simulation is now a first-order risk. `FaunaBrain` still uses player camera data for gameplay hypnosis logic, and `StorageCrate` can rely on Animator events for item access state.
+- Headless simulation is now a first-order risk. `FaunaBrain` still uses player camera data for gameplay hypnosis logic. `StorageCrate` no longer relies on an Animator event for the `Opening -> Open` source transition, but Play Mode proof is absent.
 - Jobs/Burst compliance improved at the attribute level, but local `.Complete()` barriers in cadence lanes remain a stall/deadlock candidate class.
 - Event topology is stronger than old docs implied because late-frame dispatch budgeting exists, but recursive generation/depth is not globally proven safe.
 - Core asmdef purification is not complete. The current safe position is staged bridge extraction, not blind reference removal.
@@ -404,7 +407,7 @@ Current risk corrections:
 
 Verification state:
 
-- Unity console: previous May 1 MCP error query returned `0` entries. This atlas delta could not refresh the console because MCP returned `no_unity_session` twice.
+- Unity console: latest May 1 MCP `read_console` returned `0` error/warning entries after the event-bus/spatial-hash compile refresh.
 - Runtime: Play Mode was not launched.
 - GC/frame/memory: no fresh profiler or GCMonitor measurement.
 

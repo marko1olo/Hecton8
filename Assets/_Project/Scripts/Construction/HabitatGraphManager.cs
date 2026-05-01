@@ -401,6 +401,11 @@ namespace Hecton8.Construction
                 if (stress01 < StructuralGroanStressThreshold01)
                     continue;
 
+                bool sourceGroanAllowed = sourceModule.TryConsumeJointShearGroanCooldown();
+                bool destinationGroanAllowed = destinationModule.TryConsumeJointShearGroanCooldown();
+                if (!sourceGroanAllowed && !destinationGroanAllowed)
+                    continue;
+
                 Vector3 midpoint = new Vector3(
                     (edge.StartSocketPosition.x + edge.EndSocketPosition.x) * 0.5f,
                     (edge.StartSocketPosition.y + edge.EndSocketPosition.y) * 0.5f,

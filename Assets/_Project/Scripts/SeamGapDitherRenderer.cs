@@ -26,6 +26,24 @@ namespace Hecton8.World
         private const int MaxMotesPerChunk = 256;
         private const float MinimumProbeDistance = 0.05f;
         private const float MinimumSeamGapMeters = 0.01f;
+        // COLD ALLOC: Vector3[4] - immutable seam dither quad vertex template - owner: SeamGapDitherRenderer
+        private static readonly Vector3[] _quadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f)
+        };
+        // COLD ALLOC: Vector2[4] - immutable seam dither quad uv template - owner: SeamGapDitherRenderer
+        private static readonly Vector2[] _quadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(1f, 0f)
+        };
+        // COLD ALLOC: int[6] - immutable seam dither quad triangle template - owner: SeamGapDitherRenderer
+        private static readonly int[] _quadTriangles = { 0, 1, 2, 0, 2, 3 };
         [Header("References")]
         [SerializeField] private SeamRegistry seamRegistry;
         [SerializeField] private Transform playerTransform;
@@ -265,21 +283,9 @@ namespace Hecton8.World
             {
                 name = "GEN_SeamGapDitherQuad"
             }; // COLD ALLOC: Mesh[1] - billboard quad used by seam dither indirect draw - owner: SeamGapDitherRenderer
-            _quadMesh.SetVertices(new[]
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3(-0.5f, 0.5f, 0f),
-                new Vector3(0.5f, 0.5f, 0f),
-                new Vector3(0.5f, -0.5f, 0f)
-            });
-            _quadMesh.SetUVs(0, new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f),
-                new Vector2(1f, 0f)
-            });
-            _quadMesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0, true);
+            _quadMesh.SetVertices(_quadVertices);
+            _quadMesh.SetUVs(0, _quadUvs);
+            _quadMesh.SetTriangles(_quadTriangles, 0, true);
             _quadMesh.bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
             _quadMesh.UploadMeshData(false);
         }

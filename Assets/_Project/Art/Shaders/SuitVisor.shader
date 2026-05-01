@@ -164,6 +164,7 @@ Shader "NASAPunk/SuitVisor"
             TEXTURE2D(_FingerprintTex); SAMPLER(sampler_FingerprintTex);
             TEXTURE2D(_WaterRunoffNormalTex); SAMPLER(sampler_WaterRunoffNormalTex);
             TEXTURE2D(_WaterDropletMaskTex); SAMPLER(sampler_WaterDropletMaskTex);
+            float4 _HectonHudFogPerturbation;
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
             float4 _SonarRevealOriginWS;
             float4 _SonarRevealWaveParams;
@@ -651,6 +652,8 @@ Shader "NASAPunk/SuitVisor"
                 hudColor += (batteryActiveColor * batteryActiveMask) + (batteryInactiveColor * batteryInactiveMask);
                 hudAlpha = saturate(hudAlpha + (batteryLedMask * 0.9));
                 float hudLuminance = dot(hudColor, float3(0.2126, 0.7152, 0.0722));
+                float hudFogBleed = saturate(_HectonHudFogPerturbation.x * hudAlpha * 0.08);
+                sceneColor += _HUD_Color.rgb * hudFogBleed;
                 hudColor = lerp(hudColor, hudLuminance.xxx, hypoxiaLevel * 0.78);
                 float decayNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * (0.16 + hazardGlitch * 0.24)) + float2(floor(_Time.y * 26.0), tearBands));
                 float decayMask = step(0.46 - hazardGlitch * 0.22, decayNoise) * hazardGlitch;

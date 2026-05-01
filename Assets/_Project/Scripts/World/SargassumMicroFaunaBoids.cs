@@ -23,7 +23,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-101)]
-    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener
+    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener
     {
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
@@ -1342,7 +1342,7 @@ namespace Hecton8.World
             RefreshThreatVoxelPayload();
             RefreshSpawnData(force: true);
             PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
-            SargassumGlobalDragManager.RegisterMassiveDisplacement(HandleMassiveDisplacement);
+            SargassumGlobalDragManager.Register(this);
             FlashlightEvents.Register(this);
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             HectonFloatingOrigin.RegisterListener(this);
@@ -1354,7 +1354,7 @@ namespace Hecton8.World
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            SargassumGlobalDragManager.UnregisterMassiveDisplacement(HandleMassiveDisplacement);
+            SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             HectonFloatingOrigin.UnregisterListener(this);
@@ -1414,7 +1414,7 @@ namespace Hecton8.World
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            SargassumGlobalDragManager.UnregisterMassiveDisplacement(HandleMassiveDisplacement);
+            SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             HectonFloatingOrigin.UnregisterListener(this);
@@ -3105,7 +3105,16 @@ namespace Hecton8.World
             return true;
         }
 
-        private void HandleMassiveDisplacement(SargassumGlobalDragManager.MassiveDisplacementSignal signal)
+        void ISargassumGlobalDragEventListener.OnSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal)
+        {
+        }
+
+        void ISargassumGlobalDragEventListener.OnSargassumMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal)
+        {
+            HandleMassiveDisplacement(in signal);
+        }
+
+        private void HandleMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal)
         {
             if (_massiveThreats == null || _massiveThreats.Length == 0)
                 return;

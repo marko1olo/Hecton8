@@ -686,8 +686,14 @@ namespace Hecton8.Core
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 IOriginShiftListener listener = _originShiftListeners[i];
+                if (listener == null)
+                {
+                    _originShiftListeners.RemoveAt(i);
+                    continue;
+                }
+
                 UnityEngine.Object unityListener = listener as UnityEngine.Object;
-                if (listener == null || unityListener == null)
+                if (!ReferenceEquals(unityListener, null) && unityListener == null)
                 {
                     _originShiftListeners.RemoveAt(i);
                     continue;

@@ -340,6 +340,11 @@ namespace Hecton8.Core
         public static int NativeCopyOperationCount => Volatile.Read(ref _nativeCopyOperationCount);
 
         /// <summary>
+        /// Total whole megabytes copied through <see cref="UnsafeMemoryCopyGuard"/> since the last subsystem reset.
+        /// </summary>
+        public static long NativeCopyMegabyteCount => Interlocked.Read(ref _nativeCopyByteCount) >> 20;
+
+        /// <summary>
         /// Attempts a crash-path synchronous export of the global telemetry ring.
         /// Returns false when a background MMF write already owns the export scratch state.
         /// </summary>

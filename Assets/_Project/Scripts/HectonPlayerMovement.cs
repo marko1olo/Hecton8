@@ -42,7 +42,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener
+    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener
     {
         private const float GroundCheckSkin = 0.02f;
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
@@ -2405,16 +2405,14 @@ namespace Hecton8.Gameplay
             _cameraRig.Bind(playerCamera, _cameraComponent);
             EnsurePlayerRuntimeSubsystems();
 
-            Vector3 euler = _cachedTransform.eulerAngles;
-            _cameraYaw = euler.y;
-            _bodyYaw = euler.y;
+            float initialYaw = ExtractWorldYaw(_cachedTransform.forward, 0f);
+            _cameraYaw = initialYaw;
+            _bodyYaw = initialYaw;
             _bodyYawVelocity = 0f;
 
             if (playerCamera != null)
             {
-                float camX = playerCamera.localEulerAngles.x;
-                _cameraPitch = camX > 180f ? camX - 360f : camX;
-                _cameraPitch = -_cameraPitch;
+                _cameraPitch = -ExtractLocalPitchDegrees(playerCamera.localRotation);
                 _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
                 _cameraBaseLocalPos = playerCamera.localPosition;
             }
@@ -2601,7 +2599,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            SargassumGlobalDragManager.RegisterEntanglementStrain(HandleSargassumEntanglementStrain);
+            SargassumGlobalDragManager.Register(this);
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             BindInventoryLoadSource();
             ResolvePlayerToolManager();
@@ -2633,7 +2631,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            SargassumGlobalDragManager.UnregisterEntanglementStrain(HandleSargassumEntanglementStrain);
+            SargassumGlobalDragManager.Unregister(this);
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             UnbindInventoryLoadSource();
             UnsubscribeFromInput();
@@ -3108,6 +3106,32 @@ namespace Hecton8.Gameplay
         private static Quaternion ResolveWorldYawRotation(float worldYaw)
         {
             return Quaternion.AngleAxis(worldYaw, Vector3.up);
+        }
+
+        private static Quaternion ComposeAxisAngleDegrees(float pitchDegrees, float yawDegrees, float rollDegrees)
+        {
+            quaternion pitch = quaternion.AxisAngle(new float3(1f, 0f, 0f), pitchDegrees * DEG_TO_RAD);
+            quaternion yaw = quaternion.AxisAngle(new float3(0f, 1f, 0f), yawDegrees * DEG_TO_RAD);
+            quaternion roll = quaternion.AxisAngle(new float3(0f, 0f, 1f), rollDegrees * DEG_TO_RAD);
+            quaternion composed = math.mul(yaw, math.mul(pitch, roll));
+            return new Quaternion(composed.value.x, composed.value.y, composed.value.z, composed.value.w);
+        }
+
+        private static Vector3 RotateVectorByAxisAnglesDegrees(Vector3 vector, float pitchDegrees, float yawDegrees, float rollDegrees)
+        {
+            return ComposeAxisAngleDegrees(pitchDegrees, yawDegrees, rollDegrees) * vector;
+        }
+
+        private static float ExtractLocalPitchDegrees(Quaternion rotation)
+        {
+            Vector3 forward = rotation * Vector3.forward;
+            return math.degrees(math.asin(math.clamp(-forward.y, -1f, 1f)));
+        }
+
+        private static float ExtractLocalRollDegrees(Quaternion rotation)
+        {
+            Vector3 right = rotation * Vector3.right;
+            return math.degrees(math.asin(math.clamp(right.y, -1f, 1f)));
         }
 
         private static float ExtractWorldYaw(Vector3 worldForward, float fallbackYaw)
@@ -4044,7 +4068,16 @@ namespace Hecton8.Gameplay
             return math.saturate((escapeIntent - sargassumEscapeInputThreshold) / math.max(1f - sargassumEscapeInputThreshold, 0.0001f));
         }
 
-        private void HandleSargassumEntanglementStrain(SargassumGlobalDragManager.EntanglementStrainSignal signal)
+        void ISargassumGlobalDragEventListener.OnSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal)
+        {
+            HandleSargassumEntanglementStrain(in signal);
+        }
+
+        void ISargassumGlobalDragEventListener.OnSargassumMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal)
+        {
+        }
+
+        private void HandleSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal)
         {
             if (signal.SourceInstanceId != _instanceId)
                 return;
@@ -5260,11 +5293,11 @@ namespace Hecton8.Gameplay
             if (_activeTransportPlatform != null && _activeTransportPlatform.InheritPlatformRotation && TryGetActiveTransportPlatformTransform(out _))
             {
                 float platformLocalYaw = ResolveYawRelativeToTransportPlatform(CameraYaw);
-                _cameraWorldRotation = ResolveTransportPlatformBasisRotation() * Quaternion.Euler(finalPitch, platformLocalYaw, finalRoll);
+                _cameraWorldRotation = ResolveTransportPlatformBasisRotation() * ComposeAxisAngleDegrees(finalPitch, platformLocalYaw, finalRoll);
             }
             else
             {
-                _cameraWorldRotation = Quaternion.Euler(finalPitch, CameraYaw, finalRoll);
+                _cameraWorldRotation = ComposeAxisAngleDegrees(finalPitch, CameraYaw, finalRoll);
             }
 
             Vector3 finalPos;
@@ -6011,13 +6044,12 @@ namespace Hecton8.Gameplay
                 else
                     desiredForward.Normalize();
 
-                Quaternion yawRotation = Quaternion.Euler(0f, _bodyYaw, 0f);
+                Quaternion yawRotation = ResolveWorldYawRotation(_bodyYaw);
                 Quaternion waveRotation = Quaternion.LookRotation(desiredForward, EffectiveWaterSurfaceNormal);
                 Quaternion localDelta = Quaternion.Inverse(yawRotation) * waveRotation;
-                Vector3 localEuler = localDelta.eulerAngles;
-                float pitch = math.clamp(NormalizeSignedAngle(localEuler.x), -surfaceWaveMaxPitch, surfaceWaveMaxPitch) * _shoreBuoyancyBlend;
-                float roll = math.clamp(NormalizeSignedAngle(localEuler.z), -surfaceWaveMaxRoll, surfaceWaveMaxRoll) * _shoreBuoyancyBlend;
-                targetSurfacePose = Quaternion.Euler(pitch, 0f, roll);
+                float pitch = math.clamp(ExtractLocalPitchDegrees(localDelta), -surfaceWaveMaxPitch, surfaceWaveMaxPitch) * _shoreBuoyancyBlend;
+                float roll = math.clamp(ExtractLocalRollDegrees(localDelta), -surfaceWaveMaxRoll, surfaceWaveMaxRoll) * _shoreBuoyancyBlend;
+                targetSurfacePose = ComposeAxisAngleDegrees(pitch, 0f, roll);
             }
 
             float surfaceBlendT = ResolveLinearBlendT(math.max(surfaceWaveAlignmentSharpness, 0.01f), fixedDeltaTime);
@@ -6030,7 +6062,7 @@ namespace Hecton8.Gameplay
             if (_isSurfaceSwimming && _crestSamplingSucceeded && _surfaceLockBlend > 0.001f)
             {
                 float downhillSlopeT = math.saturate(-_dynamicWaveLocalSlope.y / math.max(dynamicCollisionTuckSlopeForFull, 0.0001f));
-                float descentPosePitch = -NormalizeSignedAngle(_surfaceWavePoseRotation.eulerAngles.x);
+                float descentPosePitch = -ExtractLocalPitchDegrees(_surfaceWavePoseRotation);
                 float descentPoseT = math.saturate(descentPosePitch / math.max(surfaceWaveMaxPitch, 0.01f));
                 float immersionDepthT = math.saturate(_currentDepth / math.max(dynamicCollisionImmersionDepthForFull, 0.01f));
                 targetTuck = math.max(downhillSlopeT, descentPoseT) * immersionDepthT * _surfaceLockBlend * _shoreBuoyancyBlend;
@@ -6134,7 +6166,7 @@ namespace Hecton8.Gameplay
                     lateralOscillation * underwaterTurbulenceRoll,
                     -underwaterTurbulenceRoll,
                     underwaterTurbulenceRoll) * turbulenceIntensity;
-                targetTurbulencePose = Quaternion.Euler(targetPitch, 0f, targetRoll);
+                targetTurbulencePose = ComposeAxisAngleDegrees(targetPitch, 0f, targetRoll);
             }
 
             float turbulenceBlendT = ResolveLinearBlendT(math.max(underwaterTurbulencePoseSharpness, 0.01f), fixedDeltaTime);
@@ -8405,15 +8437,21 @@ namespace Hecton8.Gameplay
                 if (ResolveActiveTransportSource() is MantaScooter mantaScooter &&
                     mantaScooter.TryGetHullStressMisfireDeviation(out Vector2 misfireDeviationDegrees))
                 {
-                    transportPropulsionDirection = Quaternion.Euler(misfireDeviationDegrees.x, misfireDeviationDegrees.y, 0f) * transportPropulsionDirection;
+                    transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
+                        transportPropulsionDirection,
+                        misfireDeviationDegrees.x,
+                        misfireDeviationDegrees.y,
+                        0f);
                 }
 
                 if (math.abs(_abyssalTransportTurbulencePitchOffset) > 0.001f ||
                     math.abs(_abyssalTransportTurbulenceYawOffset) > 0.001f)
                 {
-                    transportPropulsionDirection =
-                        Quaternion.Euler(_abyssalTransportTurbulencePitchOffset, _abyssalTransportTurbulenceYawOffset, 0f) *
-                        transportPropulsionDirection;
+                    transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
+                        transportPropulsionDirection,
+                        _abyssalTransportTurbulencePitchOffset,
+                        _abyssalTransportTurbulenceYawOffset,
+                        0f);
                 }
 
                 _forceVector.x += transportPropulsionDirection.x * transportPropulsionForce;
@@ -8858,9 +8896,8 @@ namespace Hecton8.Gameplay
             _debugCrestAvailable = _crestAvailable;
             _debugDynamicWaterY = _dynamicWaterSurfaceY;
             _debugCrestSampling = _crestSamplingSucceeded;
-            Vector3 surfaceWaveEuler = _surfaceWavePoseRotation.eulerAngles;
-            _debugSurfaceWavePitch = NormalizeSignedAngle(surfaceWaveEuler.x);
-            _debugSurfaceWaveRoll = NormalizeSignedAngle(surfaceWaveEuler.z);
+            _debugSurfaceWavePitch = ExtractLocalPitchDegrees(_surfaceWavePoseRotation);
+            _debugSurfaceWaveRoll = ExtractLocalRollDegrees(_surfaceWavePoseRotation);
             _debugStormIntensity01 = _dynamicStormIntensity;
             _debugWaveHeightSpan = _dynamicWaveHeightSpan;
             _debugTransportCavitationEfficiency = _transportCavitationEfficiency;
@@ -8914,9 +8951,8 @@ namespace Hecton8.Gameplay
             _debugExternalEnvironmentalDragMultiplier = ResolveExternalEnvironmentalDragMultiplier();
             _debugExternalEnvironmentalSpeedMultiplier = ResolveExternalEnvironmentalSpeedMultiplier();
             _debugExternalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
-            Vector3 surfaceWaveEuler = _surfaceWavePoseRotation.eulerAngles;
-            _debugSurfaceWavePitch = NormalizeSignedAngle(surfaceWaveEuler.x);
-            _debugSurfaceWaveRoll = NormalizeSignedAngle(surfaceWaveEuler.z);
+            _debugSurfaceWavePitch = ExtractLocalPitchDegrees(_surfaceWavePoseRotation);
+            _debugSurfaceWaveRoll = ExtractLocalRollDegrees(_surfaceWavePoseRotation);
             _debugStormIntensity01 = _dynamicStormIntensity;
             _debugWaveHeightSpan = _dynamicWaveHeightSpan;
             _debugTransportCavitationEfficiency = _transportCavitationEfficiency;

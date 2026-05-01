@@ -76,6 +76,8 @@ Source: `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 | `Atlas6Events` | `NativeQueue<Atlas6EventPayload>` | `IAtlas6EventListener` | `RaisePlayerStatusChanged`, `RaiseDirectiveConflict`, `RaiseBarterAccepted`, `RaiseScarcityDirective` | `SystemDispatcher.LateUpdate()` | Declared inside `Atlas6DirectiveSystem.cs`; separate lane from `AtlasSignalEvents`. |
 | `ModCommandDispatcher` | `NativeQueue<ModCommand>`, `NativeQueue<ModAupCommand>`, `NativeQueue<ModRenderInstanceCommand>` | `IModCommandKernel`, `IDispatcherRaycastReceiver`, `HectonEventBus` unmanaged result payloads | `Request`, `RequestAup`, `RequestRenderInstance` | `SystemDispatcher.LateUpdate()` before first-party event flushes | Commands are throttled to 128/mod/tick and drained after dispatcher raycasts complete. |
 
+World-domain lanes use queue payloads with interface listener buckets, not delegate buckets. Current listener contracts include `IDepthZoneEventListener`, `ISoundscapeEventListener`, `IEmergencyServiceRelayEventListener`, and `ISargassumGlobalDragEventListener`.
+
 ## Spatial Memory Lane
 
 `WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount)` is not an event bus lane. It is an end-of-frame spatial maintenance lane:

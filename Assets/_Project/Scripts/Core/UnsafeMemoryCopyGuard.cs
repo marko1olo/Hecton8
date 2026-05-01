@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -5,10 +6,26 @@ using UnityEngine;
 namespace Hecton8.Core
 {
     /// <summary>
+    /// Fatal development-time signal for a byte-copy that would corrupt native memory.
+    /// </summary>
+    public sealed class FatalMemoryCorruptionException : Exception
+    {
+        /// <summary>
+        /// Creates a fatal native-memory corruption exception.
+        /// </summary>
+        /// <param name="message">Failure context.</param>
+        public FatalMemoryCorruptionException(string message) : base(message)
+        {
+        }
+    }
+
+    /// <summary>
     /// Central guard for raw native memory copies.
     /// </summary>
     public static unsafe class UnsafeMemoryCopyGuard
     {
+        private const string RejectedCopyMessage = "[UnsafeMemoryCopyGuard] Rejected unsafe native copy: source bytes exceed destination capacity or pointer/size is invalid.";
+
         /// <summary>
         /// Copies native memory only when the source byte range fits the destination byte range.
         /// </summary>
@@ -24,12 +41,31 @@ namespace Hecton8.Core
             void* source,
             long sourceSizeBytes)
         {
-            if (!CanCopy(destination, destinationSizeBytes, source, sourceSizeBytes))
+            if (sourceSizeBytes < 0L || destinationSizeBytes < 0L)
+                return RejectInvalidCopy();
+
+            if (sourceSizeBytes == 0L)
+                return true;
+
+            if (destination == null || source == null)
+                return RejectInvalidCopy();
+
+            long copySizeBytes = sourceSizeBytes;
+            if (sourceSizeBytes > destinationSizeBytes)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                throw new FatalMemoryCorruptionException(RejectedCopyMessage);
+#else
+                copySizeBytes = destinationSizeBytes;
+#endif
+            }
+
+            if (copySizeBytes <= 0L)
                 return false;
 
-            UnsafeUtility.MemCpy(destination, source, sourceSizeBytes);
-            GlobalTelemetryBus.RecordNativeCopy(sourceSizeBytes);
-            return true;
+            UnsafeUtility.MemCpy(destination, source, copySizeBytes);
+            GlobalTelemetryBus.RecordNativeCopy(copySizeBytes);
+            return copySizeBytes == sourceSizeBytes;
         }
 
         /// <summary>
@@ -69,7 +105,17 @@ namespace Hecton8.Core
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         public static void ReportRejectedCopy(string owner)
         {
-            Debug.LogError("[UnsafeMemoryCopyGuard] Rejected out-of-bounds MemCpy in " + owner + ".");
+            Debug.LogError(RejectedCopyMessage);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool RejectInvalidCopy()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            throw new FatalMemoryCorruptionException(RejectedCopyMessage);
+#else
+            return false;
+#endif
         }
     }
 }

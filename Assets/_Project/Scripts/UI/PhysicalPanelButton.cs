@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -46,13 +48,26 @@ namespace Hecton8.UI
         [SerializeField, Range(0.02f, 1f), Tooltip("Minimum seconds between queued button signals.")]
         private float signalCooldownSeconds = 0.18f;
 
+        [Header("Diegetic Audio")]
+        [SerializeField, Tooltip("Optional short mechanical click routed through the world-space audio pool.")]
+        private AudioClip pressClickSound;
+        [SerializeField, Range(0f, 1f), Tooltip("Linear volume for the physical panel click.")]
+        private float clickVolume = 0.42f;
+        [SerializeField, Range(0.25f, 2.5f), Tooltip("Pitch applied to the physical panel click.")]
+        private float clickPitch = 1f;
+        [SerializeField, Tooltip("Optional source transform for the diegetic click. Defaults to this button transform.")]
+        private Transform clickAudioOrigin;
+
         private IPanelInteractable _panelInteractable;
+        private Transform _cachedTransform;
         private Vector3 _baseLocalPosition;
+        private int _clickOcclusionMask;
         private int _lastHandInsideFrame = -1;
         private float _nextSignalTime;
         private float _pressed01;
         private bool _registered;
         private bool _pressDispatched;
+        private bool _acousticRuntimeAcquired;
 
         /// <summary>Collider volume used by the physical hand overlap probe.</summary>
         public Collider ActivationCollider => activationVolume;
@@ -73,6 +88,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _cachedTransform = transform;
+            _clickOcclusionMask = AcousticOcclusionUtility.BuildSensoryMask();
             ResolveReferences();
             if (buttonMesh != null)
                 _baseLocalPosition = buttonMesh.localPosition;
@@ -82,18 +99,26 @@ namespace Hecton8.UI
         {
             ResolveReferences();
             RegisterCollider();
+            AcquireAcousticRuntime();
             TryRegister();
         }
 
         private void OnDisable()
         {
             Unregister();
+            ReleaseAcousticRuntime();
             UnregisterCollider();
             _lastHandInsideFrame = -1;
             _pressDispatched = false;
             _pressed01 = 0f;
             if (buttonMesh != null)
                 buttonMesh.localPosition = _baseLocalPosition;
+        }
+
+        private void OnDestroy()
+        {
+            ReleaseAcousticRuntime();
+            UnregisterCollider();
         }
 
         /// <inheritdoc />
@@ -175,6 +200,7 @@ namespace Hecton8.UI
             if (!_pressDispatched)
             {
                 DispatchPanelEvent(DiegeticPanelInputEventType.Down);
+                PlayDiegeticClick(runtimeHitPoint);
                 _pressDispatched = true;
             }
         }
@@ -228,6 +254,92 @@ namespace Hecton8.UI
                 EventType = eventType,
                 Timestamp = Time.unscaledTime
             });
+        }
+
+        private void PlayDiegeticClick(Vector3 runtimeHitPoint)
+        {
+            if (pressClickSound == null || GlobalRegistry.Audio == null)
+                return;
+
+            Vector3 sourcePosition = clickAudioOrigin != null
+                ? clickAudioOrigin.position
+                : runtimeHitPoint;
+            if (!IsFinite(sourcePosition))
+                sourcePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+
+            Transform listenerTransform = ResolveListenerTransform();
+            Vector3 listenerPosition = listenerTransform != null ? listenerTransform.position : sourcePosition;
+            float resolvedVolume = clickVolume;
+            float lowPassCutoff = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            if (_clickOcclusionMask != 0)
+            {
+                AcousticOcclusionUtility.PrimeOcclusionPath(
+                    sourcePosition,
+                    listenerPosition,
+                    _clickOcclusionMask,
+                    _cachedTransform,
+                    listenerTransform);
+                if (AcousticOcclusionUtility.TryGetCachedOcclusionPath(
+                        sourcePosition,
+                        listenerPosition,
+                        _clickOcclusionMask,
+                        _cachedTransform,
+                        listenerTransform,
+                        out AcousticOcclusionResult result))
+                {
+                    resolvedVolume *= math.saturate(result.Transmission01);
+                    lowPassCutoff = result.LowPassCutoffHz;
+                }
+            }
+
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+            {
+                spatialAudio.PlayAtPointWithLowPass(
+                    pressClickSound,
+                    sourcePosition,
+                    resolvedVolume,
+                    clickPitch,
+                    null,
+                    lowPassCutoff);
+                return;
+            }
+
+            GlobalRegistry.Audio.PlayAtPoint(pressClickSound, sourcePosition, resolvedVolume, clickPitch);
+        }
+
+        private static Transform ResolveListenerTransform()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return null;
+
+            if (playerContext.PlayerCamera != null)
+                return playerContext.PlayerCamera.transform;
+
+            return playerContext.PlayerTransform;
+        }
+
+        private void AcquireAcousticRuntime()
+        {
+            if (_acousticRuntimeAcquired)
+                return;
+
+            AcousticOcclusionUtility.AcquireRuntime();
+            _acousticRuntimeAcquired = true;
+        }
+
+        private void ReleaseAcousticRuntime()
+        {
+            if (!_acousticRuntimeAcquired)
+                return;
+
+            AcousticOcclusionUtility.ReleaseRuntime();
+            _acousticRuntimeAcquired = false;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite((float3)value));
         }
 
         private void TryRegister()

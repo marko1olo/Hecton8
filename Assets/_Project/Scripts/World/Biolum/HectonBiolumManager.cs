@@ -74,9 +74,14 @@ namespace Hecton8.Biolum
         // PRIVATE STATE
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-        private List<HectonBiolumZone> _activeCaveZones = new List<HectonBiolumZone>();
-        private List<HectonBiolumZone> _activeOceanZones = new List<HectonBiolumZone>();
-        private List<HectonBiolumZone> _activeFloorZones = new List<HectonBiolumZone>();
+        private const int ActiveZoneListCapacity = 32;
+
+        // COLD ALLOC: List<HectonBiolumZone>[32] - active cave-zone registry - owner: HectonBiolumManager
+        private readonly List<HectonBiolumZone> _activeCaveZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
+        // COLD ALLOC: List<HectonBiolumZone>[32] - active ocean-zone registry - owner: HectonBiolumManager
+        private readonly List<HectonBiolumZone> _activeOceanZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
+        // COLD ALLOC: List<HectonBiolumZone>[32] - active floor-zone registry - owner: HectonBiolumManager
+        private readonly List<HectonBiolumZone> _activeFloorZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
 
         private int _totalActiveLights = 0;
         private bool _initialized = false;

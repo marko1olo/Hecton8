@@ -14,7 +14,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4020)]
     [AddComponentMenu("Hecton8/World/Emergency Service Relay Director")]
-    public sealed class EmergencyServiceRelayDirector : MonoBehaviour
+    public sealed class EmergencyServiceRelayDirector : MonoBehaviour, IEmergencyServiceRelayEventListener
     {
         private const string DefaultIntroChainId = "intro_service_route";
         private const string DefaultRelayFallback =
@@ -73,14 +73,14 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            EmergencyServiceRelayEvents.RegisterRelayActivated(HandleRelayActivated);
+            EmergencyServiceRelayEvents.Register(this);
             InvalidateRelayCache();
             RefreshRelayDiscoveryState();
         }
 
         private void OnDisable()
         {
-            EmergencyServiceRelayEvents.UnregisterRelayActivated(HandleRelayActivated);
+            EmergencyServiceRelayEvents.Unregister(this);
             InvalidateRelayCache();
             _currentRouteTarget = null;
             _lastGuidanceRelayId = null;
@@ -198,6 +198,11 @@ namespace Hecton8.World
 
             if (nextRelay != null)
                 _lastGuidanceRelayId = nextRelay.RelayId;
+        }
+
+        void IEmergencyServiceRelayEventListener.OnEmergencyServiceRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
+        {
+            HandleRelayActivated(relay, firstActivation);
         }
 
         private void RefreshRelayDiscoveryState()

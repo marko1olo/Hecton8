@@ -450,6 +450,8 @@ namespace Hecton8.World
         private const float HydrateRadiusMeters = 150f;
         private const uint FloraSpawnTimestampStateTypeMask = 0xFA000000u;
         private const float FloraSpawnTimestampQuantizationSeconds = 60f;
+        private const float ModCoreProtectionRadiusMeters = 8f;
+        private const float ModCoreProtectionRadiusSq = ModCoreProtectionRadiusMeters * ModCoreProtectionRadiusMeters;
         private const double HydrateRadiusSq = HydrateRadiusMeters * HydrateRadiusMeters;
         private const float DehydrateRadiusMeters = 160f;
         private const double DehydrateRadiusSq = DehydrateRadiusMeters * DehydrateRadiusMeters;
@@ -610,6 +612,33 @@ namespace Hecton8.World
         }
 
         public static PersistentWorldRegistry Instance => _instance;
+
+        /// <summary>
+        /// Returns true when a sandboxed mod command targets protected runtime space near the active player core.
+        /// </summary>
+        /// <param name="runtimePosition">Frame-space command center.</param>
+        /// <returns>True when the command must be rejected by the mod security gate.</returns>
+        public static bool IsModProtectedCoreRuntimePosition(Vector3 runtimePosition)
+        {
+            float3 position = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(position)))
+                return true;
+
+            if (IsInsideActiveModuleInterior(runtimePosition))
+                return true;
+
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            if (submarine != null && IsInsideSubmarineFallbackBounds(submarine, runtimePosition))
+                return true;
+
+            Transform playerTransform = null;
+            if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform) || playerTransform == null)
+                return false;
+
+            Vector3 playerPosition = playerTransform.position;
+            float3 delta = position - new float3(playerPosition.x, playerPosition.y, playerPosition.z);
+            return math.lengthsq(delta) <= ModCoreProtectionRadiusSq;
+        }
 
         public bool AreResidentWorldPrefabPoolsReady()
         {

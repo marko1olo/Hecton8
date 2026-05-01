@@ -21,6 +21,8 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - `2026-05-01_CURRENT_PROJECT_STATE.md`
 - `2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 - `2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`
+- `2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
+- `2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
 - `2026-05-01_EVENT_CASCADE_RECHECK.md`
 - `TOTAL_CODEBASE_AUDIT_V2.md`
 - `OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
@@ -35,6 +37,10 @@ It is source/doc-backed, but still not Play Mode proof.
 
 `2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md` is the current local `Editor.log` evidence for console-spam mitigation.
 It supersedes older same-day statements that the editor console had known C# warnings or `SetResource` spam in the latest reachable local log, but it is not Play Mode or profiler proof.
+
+`2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` records the current compile-clean source migration around listener-backed Sargassum/Emergency relay events, the Burst spatial-hash `in` argument fix, and the latest MCP console zero-entry check.
+
+`2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` supersedes the older compile-evidence line numbers after the `VegetationJobRecovery.cs.meta` restoration. It records current `Editor.log` compile/reload success and the remaining stale MCP console internal-build entry.
 
 `2026-05-01_EVENT_CASCADE_RECHECK.md` corrects stale event-bus audit claims.
 It confirms the source-present `HectonEventBus` depth cap and keeps NativeQueue generation split as the remaining event-cascade risk.

@@ -21,7 +21,7 @@ Evidence basis:
 - direct scan of `SystemDispatcher.LateUpdate()`
 - direct scans for `NativeQueue<TPayload>` ownership
 - direct scans for `Raise*`, `Register`, `Unregister`, and `FlushPending()` paths
-- direct scan for remaining static `Action` surfaces in the two migrated buses
+- direct scan for remaining static `Action` surfaces in the migrated global buses
 
 No runtime replay, scene wiring proof, or GCMonitor capture is claimed here.
 
@@ -41,14 +41,19 @@ Flush order visible in source:
 9. `HectonSubmarineOsEvents.FlushPending()`
 10. `FlashlightEvents.FlushPending()`
 11. `WeatherEvents.FlushPending()`
-12. `AtlasSignalEvents.FlushPending()`
-13. `NotificationEvents.FlushPending()`
-14. `PDAEvents.FlushPending()`
-15. `SceneBootstrap.FlushPendingEvents()`
-16. `ObjectPoolDiagnostics.FlushPending()`
-17. `Atlas6Events.FlushPending()`
-18. `GlobalRegistry.FlushPendingServiceReboundEvents()`
-19. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
+12. `ModuleStatusEvents.FlushPending()`
+13. `DepthZoneEvents.FlushPending()`
+14. `SoundscapeEvents.FlushPending()`
+15. `EmergencyServiceRelayEvents.FlushPending()`
+16. `SargassumGlobalDragManager.FlushPendingEvents()`
+17. `AtlasSignalEvents.FlushPending()`
+18. `NotificationEvents.FlushPending()`
+19. `PDAEvents.FlushPending()`
+20. `SceneBootstrap.FlushPendingEvents()`
+21. `ObjectPoolDiagnostics.FlushPending()`
+22. `Atlas6Events.FlushPending()`
+23. `GlobalRegistry.FlushPendingServiceReboundEvents()`
+24. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
 
 `SystemDispatcher.TryConsumeLateFrameEventDispatch()` enforces the shared late-frame event budget. If the budget is exhausted, queues retain remaining events for a later frame instead of draining unbounded work.
 
@@ -66,6 +71,11 @@ Confirmed queue-backed deferred buses:
 | `HectonSubmarineOsEvents` | `SubmarineOsEventPayload` | NativeQueue; sequential payload with module hash, emergency level, and status bits. |
 | `FlashlightEvents` | `FlashlightEventPayload` | NativeQueue; flashlight state bits plus battery/heat scalar fields. |
 | `WeatherEvents` | `WeatherEventPayload` | NativeQueue; weather state mask, wind/current vectors, and current metadata. |
+| `ModuleStatusEvents` | `ModuleStatusEventPayload` | NativeQueue; module entity/hash payload plus bounded managed sidecar for dispatch-time `BaseModule` resolution. |
+| `DepthZoneEvents` | `DepthZoneEventPayload` | NativeQueue; zone hash + enter/exit event type; managed profile lookup remains outside the queued payload. |
+| `SoundscapeEvents` | `SoundscapeEventPayload` | NativeQueue; old/new soundscape tier enums. |
+| `EmergencyServiceRelayEvents` | `RelayEventPayload` | NativeQueue; relay entity id + first-activation flag; managed relay lookup remains outside the queued payload. |
+| `SargassumGlobalDragManager` | `EntanglementStrainSignal` / `MassiveDisplacementSignal` | Two NativeQueues drained by dispatcher for sargassum strain and displacement signals. |
 | `GlobalRegistry` rebound lane | `RegistryEventPayload` | NativeQueue; service slot + object identity hashes; managed service refs stay in fixed sidecar slots. |
 | `InteractionEvents` | `InteractionEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
 | `CraftingEvents` | `CraftingEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
@@ -131,6 +141,8 @@ Confirmed listener registration pattern for the migrated lanes:
 - `InteractionUI`: registers `InteractionEvents` in `OnEnable`; unregisters in `OnDisable`.
 - `DiegeticTooltipSystem`: registers `InteractionEvents` in `OnEnable`; unregisters in `OnDisable`.
 - `CameraJuiceSystem`: registers `InteractionEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `TraumaDispatcher`: registers `ModuleStatusEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `PlayerToolManager`: registers `ModuleStatusEvents` in `OnEnable`; unregisters in `OnDisable`.
 - `HectonEventBus` bridge: installed/uninstalled by `ModLoader` hook lifecycle.
 
 Scene/prefab UnityEvent bindings are outside this source-only scan.
@@ -141,11 +153,13 @@ Definitions:
 - `Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs`
 - `Assets/_Project/Scripts/PlayerFlashlight.cs`
 - `Assets/_Project/Scripts/Environment/WeatherEvents.cs`
+- `Assets/_Project/Scripts/ModuleStatusEvents.cs`
 - `Assets/_Project/Scripts/Core/GlobalRegistry.cs`
 
 Current shape:
 - direct static multicast delegates were removed from `HectonSubmarineOsEvents` and `FlashlightEvents`
 - weather snapshots are published through `WeatherEvents` only when state/vector/intensity crosses the director epsilon checks
+- `ModuleStatusEvents` publishes enter/exit through `NativeQueue<ModuleStatusEventPayload>` and uses `IModuleStatusEventListener`
 - `GlobalRegistry` service rebounds enqueue `RegistryEventPayload` and drain in `SystemDispatcher.LateUpdate()`
 - registry sidecar references are dispatch-scoped; the native payload remains unmanaged
 - `SystemDispatcher` records the active lane hash when the late-frame circuit breaker trips and publishes a `PerformanceWarning` telemetry event with the dominant offender hash

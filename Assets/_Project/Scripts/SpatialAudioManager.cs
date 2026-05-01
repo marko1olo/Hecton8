@@ -50,6 +50,7 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.AI;
 using Hecton8.Atmosphere;
 using Hecton8.Caves;
 using Hecton8.Construction;
@@ -837,6 +838,84 @@ namespace Hecton8.Audio
             MarkWorldSourceActive(index);
         }
 
+        /// <summary>
+        /// Plays one world-space clip with an explicit acoustic low-pass cutoff resolved by the caller.
+        /// </summary>
+        public void PlayAtPointWithLowPass(
+            AudioClip clip,
+            Vector3 position,
+            float volume,
+            float pitch,
+            AudioMixerGroup mixerGroup,
+            float lowPassCutoffHz)
+        {
+            if (clip == null)
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning("[SpatialAudioManager] PlayAtPointWithLowPass called with null clip.");
+#endif
+                return;
+            }
+
+            if (_pool == null || _poolSize <= 0)
+                return;
+
+            AudioLodTier lodTier = ResolveAudioLodTier(position);
+            if (lodTier == AudioLodTier.Tier2Culled)
+                return;
+
+            int index = AcquireSourceIndex();
+            if (index < 0)
+                return;
+
+            AudioSource source = _pool[index];
+            ResetWorldSourceState(index, true);
+            source.enabled = true;
+            source.transform.position = position;
+            source.clip = clip;
+            source.volume = volume;
+            float clampedPitch = math.clamp(pitch, 0.1f, 3f);
+            source.pitch = clampedPitch;
+            _baseVolumes[index] = volume;
+            _basePitches[index] = clampedPitch;
+            source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
+            _audioLodTiers[index] = lodTier;
+            float now = Time.unscaledTime;
+            UpdateWorldSourceAudioLod(index, source, now, true);
+            float cutoff = math.clamp(
+                lowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            if (cutoff < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f)
+                ApplyLowPassFilter(index, true, cutoff);
+
+            ApplyHaasMask(index, position);
+            source.spatialBlend = ResolveTargetSpatialBlend(index, now);
+            source.Play();
+            _startTimes[index] = now;
+            MarkWorldSourceActive(index);
+        }
+
+        /// <summary>
+        /// Emits a sandboxed mod acoustic ping into passive radar and fauna hearing paths.
+        /// The owning audio system converts it into engine-native sensory events only.
+        /// </summary>
+        /// <param name="runtimePosition">Frame-space ping origin.</param>
+        /// <param name="intensity01">Normalized ping intensity.</param>
+        /// <returns>True when the ping entered the sensory path.</returns>
+        public bool TryEmitModAcousticPing(Vector3 runtimePosition, float intensity01)
+        {
+            float amplitude = math.saturate(intensity01);
+            if (!(amplitude > ImpactEmitterMinimumAmplitude))
+                return false;
+
+            if (!TryQueueImpactRadarEmitter(runtimePosition, amplitude, amplitude))
+                return false;
+
+            NoiseSystem.ReportActiveSonarPing(runtimePosition, amplitude);
+            return true;
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC API â€” 2D STATIC AUDIO (SUIT / HELMET / HUD)
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1285,14 +1364,19 @@ private int AcquireSourceIndex()
             if (impactSignal.IsHeavy)
                 amplitude = math.max(amplitude, 0.45f);
 
+            TryQueueImpactRadarEmitter(impactSignal.Point, amplitude, math.saturate(impactSignal.Intensity));
+        }
+
+        private bool TryQueueImpactRadarEmitter(Vector3 position, float amplitude, float lifetime01)
+        {
             if (!(amplitude > ImpactEmitterMinimumAmplitude))
-                return;
+                return false;
 
             float now = Time.unscaledTime;
             float lifetime = math.lerp(
                 ImpactEmitterLifetimeMinSeconds,
                 ImpactEmitterLifetimeMaxSeconds,
-                math.saturate(impactSignal.Intensity));
+                math.saturate(lifetime01));
             int selectedIndex = -1;
             float weakestAmplitude = float.MaxValue;
             for (int i = 0; i < _impactEmitters.Length; i++)
@@ -1311,15 +1395,16 @@ private int AcquireSourceIndex()
             }
 
             if (selectedIndex < 0)
-                return;
+                return false;
 
             _impactEmitters[selectedIndex] = new ImpactEmitterSample
             {
-                Position = impactSignal.Point,
+                Position = position,
                 Amplitude = amplitude,
                 SpawnAt = now,
                 ExpireAt = now + lifetime
             };
+            return true;
         }
 
         private void HandleFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent)

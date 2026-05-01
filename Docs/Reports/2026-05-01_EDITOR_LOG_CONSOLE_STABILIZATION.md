@@ -195,6 +195,25 @@ The final source cleanup in this pass removed the now-unused `Hecton8.Bootstrap.
 
 This latest marker proves editor script compile only. It does not prove globally clean console, Play Mode, frame time, GC, memory retention, scene wiring, or save/load correctness.
 
+## 2026-05-01 MapMagic Warning Cleanup Delta
+
+Later local `Editor.log` scans surfaced two current `CS0414` warnings:
+
+- `HectonMapMagicVegetationBridge.scatterSnapRaycastDistanceMeters`
+- `HectonMapMagicVegetationBridge.scatterSnapRaycastElevationMeters`
+
+The fields are serialized placement-tuning values retained for scene/prefab compatibility after scatter placement moved to resident terrain-cache sampling. The cleanup normalized both values in `Awake()` so the fields are source-used without reintroducing per-placement physics raycasts or deleting serialized data.
+
+Latest local `Editor.log` boundary after this cleanup:
+
+- total log lines: `19592`
+- latest `Tundra build success`: line `19510`
+- strict post-success signals (`error CS`, `warning CS`, `Burst error`, `Exception`, `Resource ID out of range`): `0`
+
+Related source/docs evidence:
+
+- `Docs/Reports/2026-05-01_HEADLESS_FAUNA_CONSOLE_DELTA.md`
+
 ## Regression Model
 
 CPU: BRG buffer rebinding is reduced to buffer-change events instead of repeated same-buffer calls. Runtime frame impact is not measured.

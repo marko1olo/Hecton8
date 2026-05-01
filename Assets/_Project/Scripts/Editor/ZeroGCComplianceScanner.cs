@@ -168,10 +168,10 @@ namespace Hecton8.EditorTools
             // ── FindObjectOfType ─────────────────────────────────
             new ViolationPattern
             {
-                Name = "FindObjectOfType at runtime",
-                Regex = @"FindObjectOfType\s*[<(]",
+                Name = "Scene-wide object lookup at runtime",
+                Regex = @"\b(?:FindFirstObjectByType|FindAnyObjectByType|FindObjectOfType|FindObjectsOfType|FindObjectsByType|FindWithTag|GameObject\.FindWithTag)\s*[<(]",
                 Severity = "ERROR",
-                Fix = "Use cached refs or Singleton.Instance"
+                Fix = "Use GlobalRegistry, cached refs, or serialized references"
             },
             // ── GameObject.Find ──────────────────────────────────
             new ViolationPattern
@@ -179,7 +179,7 @@ namespace Hecton8.EditorTools
                 Name = "GameObject.Find at runtime",
                 Regex = @"GameObject\.Find\s*\(",
                 Severity = "ERROR",
-                Fix = "Use cached refs, Singleton.Instance, or serialized references"
+                Fix = "Use GlobalRegistry, cached refs, or serialized references"
             },
         };
 

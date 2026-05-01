@@ -13,6 +13,20 @@ using UnityEngine.Rendering;
 namespace Hecton8.World
 {
     /// <summary>
+    /// Listener contract for queue-backed sargassum drag notifications.
+    /// </summary>
+    public interface ISargassumGlobalDragEventListener
+    {
+        /// <summary>Called when a player or vehicle strains against sargassum entanglement.</summary>
+        /// <param name="signal">Entanglement strain payload.</param>
+        void OnSargassumEntanglementStrain(in SargassumGlobalDragManager.EntanglementStrainSignal signal);
+
+        /// <summary>Called when a large displacement disturbs the sargassum canopy.</summary>
+        /// <param name="signal">Massive displacement payload.</param>
+        void OnSargassumMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal);
+    }
+
+    /// <summary>
     /// Builds a coarse world-space density field for floating sargassum and serves zero-allocation drag queries.
     /// Also bakes a density texture used by Crest damping and GPU micro-fauna.
     /// </summary>
@@ -217,8 +231,7 @@ namespace Hecton8.World
         }
 
         private static SargassumGlobalDragManager _instance;
-        private static readonly RegistryBucket<Action<EntanglementStrainSignal>> _entanglementStrainListeners = new RegistryBucket<Action<EntanglementStrainSignal>>(16);
-        private static readonly RegistryBucket<Action<MassiveDisplacementSignal>> _massiveDisplacementListeners = new RegistryBucket<Action<MassiveDisplacementSignal>>(16);
+        private static readonly RegistryBucket<ISargassumGlobalDragEventListener> _listeners = new RegistryBucket<ISargassumGlobalDragEventListener>(16);
         private static NativeQueue<EntanglementStrainSignal> _pendingEntanglementStrain;
         private static NativeQueue<MassiveDisplacementSignal> _pendingMassiveDisplacement;
 
@@ -242,8 +255,7 @@ namespace Hecton8.World
                 _pendingMassiveDisplacement = default;
             }
 
-            _entanglementStrainListeners.Clear();
-            _massiveDisplacementListeners.Clear();
+            _listeners.Clear();
         }
 
         [Header("── Runtime Wiring ──────────────────")]
@@ -674,28 +686,16 @@ namespace Hecton8.World
         public int SavePriority => 45;
         public int LoadPriority => 45;
 
-        public static void RegisterEntanglementStrain(Action<EntanglementStrainSignal> listener)
+        public static void Register(ISargassumGlobalDragEventListener listener)
         {
-            if (listener != null && !_entanglementStrainListeners.Contains(listener))
-                _entanglementStrainListeners.Register(listener);
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
-        public static void UnregisterEntanglementStrain(Action<EntanglementStrainSignal> listener)
+        public static void Unregister(ISargassumGlobalDragEventListener listener)
         {
-            if (listener != null && _entanglementStrainListeners.Contains(listener))
-                _entanglementStrainListeners.Unregister(listener);
-        }
-
-        public static void RegisterMassiveDisplacement(Action<MassiveDisplacementSignal> listener)
-        {
-            if (listener != null && !_massiveDisplacementListeners.Contains(listener))
-                _massiveDisplacementListeners.Register(listener);
-        }
-
-        public static void UnregisterMassiveDisplacement(Action<MassiveDisplacementSignal> listener)
-        {
-            if (listener != null && _massiveDisplacementListeners.Contains(listener))
-                _massiveDisplacementListeners.Unregister(listener);
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         /// <summary>
@@ -764,10 +764,10 @@ namespace Hecton8.World
             {
                 while (_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
                 {
-                    Action<EntanglementStrainSignal>[] rawArray = _entanglementStrainListeners.RawArray;
-                    int count = _entanglementStrainListeners.Count;
+                    ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
+                    int count = _listeners.Count;
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i]?.Invoke(signal);
+                        rawArray[i].OnSargassumEntanglementStrain(in signal);
                 }
             }
 
@@ -775,10 +775,10 @@ namespace Hecton8.World
             {
                 while (_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
                 {
-                    Action<MassiveDisplacementSignal>[] rawArray = _massiveDisplacementListeners.RawArray;
-                    int count = _massiveDisplacementListeners.Count;
+                    ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
+                    int count = _listeners.Count;
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i]?.Invoke(signal);
+                        rawArray[i].OnSargassumMassiveDisplacement(in signal);
                 }
             }
         }

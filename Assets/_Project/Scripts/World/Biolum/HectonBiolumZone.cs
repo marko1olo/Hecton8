@@ -67,7 +67,7 @@ namespace Hecton8.Biolum
     public abstract class HectonBiolumZone : MonoBehaviour, ITickable, IUpdatable
     {
         private const int MaxTrackedActiveZones = 512;
-        // COLD ALLOC: List<HectonBiolumZone>[512] - active zone registry replacing scene-wide FindObjectsByType fallback - owner: HectonBiolumZone
+        // COLD ALLOC: List<HectonBiolumZone>[512] - active zone registry replacing scene-wide reflection search fallback - owner: HectonBiolumZone
         private static readonly List<HectonBiolumZone> s_ActiveZones = new List<HectonBiolumZone>(MaxTrackedActiveZones);
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

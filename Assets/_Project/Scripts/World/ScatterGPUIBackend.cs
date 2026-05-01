@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Core;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -21,6 +22,24 @@ namespace Hecton8.World
         public GraphicsBuffer InstanceBuffer => _instanceBuffer;
 
         public GraphicsBuffer ArgsBuffer => _argsBuffer;
+
+        public static Matrix4x4 BuildOriginRelativeMatrix(Vector3 absolutePosition, Quaternion rotation, float scale)
+        {
+            AbsoluteUniversePosition target = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                absolutePosition.x,
+                absolutePosition.y,
+                absolutePosition.z));
+            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            AbsoluteUniversePosition origin = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                committedOffset.x,
+                committedOffset.y,
+                committedOffset.z));
+            float3 originRelative = AUPMath.ResolveCameraRelative(in target, in origin);
+            return Matrix4x4.TRS(
+                new Vector3(originRelative.x, originRelative.y, originRelative.z),
+                rotation,
+                Vector3.one * scale);
+        }
 
         public bool EnsureInstanceBuffer<T>(int requiredCapacity) where T : struct
         {

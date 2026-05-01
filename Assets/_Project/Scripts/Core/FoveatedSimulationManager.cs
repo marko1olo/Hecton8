@@ -12,6 +12,7 @@ namespace Hecton8.Core
 {
     internal interface IFoveatedDispatcher : IDisposable
     {
+        void InitializeRuntime();
         void RegisterTarget(IFoveatedSimulationTarget target);
         void UnregisterTarget(IFoveatedSimulationTarget target);
         void BeginDispatcherFrame(float frameDeltaTime);
@@ -49,7 +50,7 @@ namespace Hecton8.Core
     /// throttles opt-in targets, smooths low-frequency visual motion, and keeps
     /// audio/raycast side effects on an allocation-free path.
     /// </summary>
-    internal sealed class FoveatedSimulationManager : IFoveatedDispatcher
+    internal sealed class FoveatedSimulationManager : IFoveatedDispatcher, IOriginShiftListener
     {
         private const double SlowJobCompleteWarningMilliseconds = 100.0;
 
@@ -224,8 +225,18 @@ namespace Hecton8.Core
         private bool _interpolationScheduled;
         private bool _deferredRaycastScheduled;
         private bool _listenerStateInitialized;
+        private bool _originShiftListenerRegistered;
         private int _queuedDeferredRaycastCount;
         private int _lastDeferredRaycastScheduleFrame = -1;
+
+        public void InitializeRuntime()
+        {
+            if (_originShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _originShiftListenerRegistered = true;
+        }
 
         public void RegisterTarget(IFoveatedSimulationTarget target)
         {
@@ -528,8 +539,33 @@ namespace Hecton8.Core
             _visualTransformArray = Array.Empty<Transform>();
         }
 
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            if (shiftOffset.sqrMagnitude <= MinimumVelocityDelta)
+                return;
+
+            CompleteFrameJobsInternal(true);
+            for (int i = 0; i < _targetCount; i++)
+            {
+                _visualFromPositions[i] -= shiftOffset;
+                _visualToPositions[i] -= shiftOffset;
+            }
+
+            if (_listenerStateInitialized)
+                _lastListenerPosition -= shiftOffset;
+
+            _visualTargetCacheDirty = true;
+        }
+
         public void Dispose()
         {
+            if (_originShiftListenerRegistered)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _originShiftListenerRegistered = false;
+            }
+
             ResetRuntimeState();
         }
 

@@ -29,8 +29,8 @@ This file is not proof of:
 - shipping readiness
 
 No Play Mode was launched for this update.
-No MCP Unity console refresh was obtained in the latest console-stabilization pass.
-Local `Editor.log` evidence exists in `Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`.
+Local `Editor.log` evidence exists in `Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`, `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`, and `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`.
+The latest continuation pass is compile-clean by local `Editor.log`, but MCP console still exposes one stale internal build-system exception. Do not claim global MCP-clean status.
 
 ## Current Runtime Shape
 
@@ -99,7 +99,7 @@ These are the current high-level truths to preserve across future docs:
 1. Editor/Play Mode deadlock truth is still fragmented.
 2. Runtime job completion ownership is still too local in several cadence-sensitive systems.
 3. Headless gameplay state still depends on presentation in known places such as fauna look logic. `StorageCrate` no longer relies on an Animator event for the `Opening -> Open` transition at source level, but Play Mode proof is absent.
-4. Broad physics masks and default layer fallbacks are partially reduced. Remaining source-level `~0` query masks are concentrated in `AutonomousExtractorSystem`, `WorldCaveDirector`, and `WorldProceduralFieldSampler`; scene-layer validation is required before narrowing those.
+4. Broad physics masks and default layer fallbacks are partially reduced. Current source recheck no longer finds the earlier cited `~0` query masks in `AutonomousExtractorSystem`, `WorldCaveDirector`, or `WorldProceduralFieldSampler`; scene-layer validation is still required before claiming physics filtering is complete.
 5. Service authority remains mixed between registry-owned services and singleton/DDOL owners.
 6. Large world/scatter/fauna/player files remain reliability risks because ownership concentration is too high.
 
@@ -162,11 +162,11 @@ Line-number evidence inside older maps may drift after source edits. Treat class
 ## Verification State
 
 - Play Mode: not launched.
-- Unity console: MCP unavailable. Local `Editor.log` reached an additional `Tundra build success` after the input asmdef cleanup and then `Mono: successfully reloaded assembly` at line `136460`; scan after that reload found no `error CS*`, `warning CS*`, `CS2001`, `Tundra build failed`, `Resource ID out of range`, or duplicate-GUID markers. Post-reload noise still includes MCP WebSocket/TLS transport lines from `com.coplaydev.unity-mcp`, so this is editor compile evidence only, not a globally clean console.
-- MCP: not used for editor mutation or scene operation in this pass.
+- Unity console: current MCP `read_console` still returns one internal build-system exception after Console UI clear: `Read the full binlog without getting a BuildFinishedMessage`. Local `Editor.log` supersedes that stale console entry with `Tundra build success` at line `91784`, `Begin MonoManager ReloadAssembly` at line `91826`, and `Mono: successfully reloaded assembly` at line `91935`; scan after latest success found no `error CS*`, `warning CS*`, `Burst error`, `Exception:`, `Tundra build failed`, or `Resource ID out of range` lines. This is editor compile evidence only, not Play Mode proof.
+- MCP: used for script refresh/console read/editor-state read. Editor state reports Play Mode false, compiling false, and domain reload pending false, but console is not a globally clean evidence surface because of the stale internal build-system entry.
 - Runtime GC: not measured.
 - Memory retention: not measured.
-- Code compilation: latest local `Editor.log` reached `Tundra build success` and `Mono: successfully reloaded assembly`; this is editor compile evidence, not Play Mode proof.
+- Code compilation: latest local `Editor.log` reached `Tundra build success` and `Mono: successfully reloaded assembly`; strict post-success scan is clean. This is editor compile evidence, not Play Mode proof.
 
 ## Regression Model
 

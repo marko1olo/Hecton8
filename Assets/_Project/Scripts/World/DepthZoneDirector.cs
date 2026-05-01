@@ -120,7 +120,7 @@ namespace Hecton8.World
                 return;
 
             EnsureInitialized();
-            uint zoneHash = zone.ZoneHash != 0u ? zone.ZoneHash : unchecked((uint)zone.GetInstanceID());
+            uint zoneHash = zone.ZoneHash != 0u ? zone.ZoneHash : unchecked((uint)EntityId.ToULong(zone.GetEntityId()));
             _profilesByHash[zoneHash] = zone;
             _pendingEvents.Enqueue(new DepthZoneEventPayload
             {

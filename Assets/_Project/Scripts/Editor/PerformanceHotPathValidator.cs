@@ -27,6 +27,10 @@ namespace Hecton8.EditorTools
             @"\b(?:FindFirstObjectByType|FindAnyObjectByType|FindObjectOfType|FindObjectsOfType|FindObjectsByType|GameObject\.Find|FindWithTag)\b",
             RegexOptions.Compiled);
 
+        private static readonly Regex _CameraMainRegex = new Regex(
+            @"\bCamera\.main\b",
+            RegexOptions.Compiled);
+
         private static readonly Regex _GetComponentRegex = new Regex(
             @"\bGetComponent\s*<",
             RegexOptions.Compiled);
@@ -220,6 +224,15 @@ namespace Hecton8.EditorTools
                     lineNumber,
                     "SCENE_SEARCH",
                     $"{methodName}() performs a scene-wide lookup."));
+            }
+
+            if (_CameraMainRegex.IsMatch(line))
+            {
+                issues.Add(new PerformanceIssue(
+                    assetPath,
+                    lineNumber,
+                    "CAMERA_MAIN",
+                    $"{methodName}() uses Camera.main instead of an injected or cached camera reference."));
             }
 
             if (_GetComponentRegex.IsMatch(line))

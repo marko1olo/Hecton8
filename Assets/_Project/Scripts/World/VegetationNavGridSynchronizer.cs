@@ -804,7 +804,7 @@ namespace Hecton8.World
             if (!_hlodCullScheduled)
                 return;
 
-            if (!VegetationJobRecovery.TryComplete(ref _hlodCullHandle, forceComplete))
+            if (!VegetationLateFrameJobSwap.TryComplete(ref _hlodCullHandle, forceComplete))
                 return;
 
             _hlodCullScheduled = false;
@@ -917,7 +917,7 @@ namespace Hecton8.World
             if (!_abyssalPathScheduled)
                 return;
 
-            if (!VegetationJobRecovery.TryComplete(ref _abyssalPathHandle, forceComplete))
+            if (!VegetationLateFrameJobSwap.TryComplete(ref _abyssalPathHandle, forceComplete))
                 return;
 
             _abyssalPathScheduled = false;

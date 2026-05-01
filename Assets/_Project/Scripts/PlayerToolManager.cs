@@ -41,7 +41,7 @@ namespace Hecton8.Gameplay
 #endif
 
     [DisallowMultipleComponent]
-    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IModuleStatusEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -849,16 +849,25 @@ namespace Hecton8.Gameplay
 
         private void SubscribeModuleStatusEvents()
         {
-            ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;
-            ModuleStatusEvents.OnModuleExit -= HandleModuleExit;
-            ModuleStatusEvents.OnModuleEnter += HandleModuleEnter;
-            ModuleStatusEvents.OnModuleExit += HandleModuleExit;
+            ModuleStatusEvents.Unregister(this);
+            ModuleStatusEvents.Register(this);
         }
 
         private void UnsubscribeModuleStatusEvents()
         {
-            ModuleStatusEvents.OnModuleEnter -= HandleModuleEnter;
-            ModuleStatusEvents.OnModuleExit -= HandleModuleExit;
+            ModuleStatusEvents.Unregister(this);
+        }
+
+        /// <inheritdoc />
+        public void OnModuleStatusEvent(in ModuleStatusEventPayload payload)
+        {
+            if (!ModuleStatusEvents.TryResolveModule(in payload, out BaseModule module))
+                return;
+
+            if (payload.IsEnter)
+                HandleModuleEnter(module);
+            else
+                HandleModuleExit(module);
         }
 
         private void HandleModuleEnter(BaseModule module)

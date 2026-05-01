@@ -24,7 +24,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-85)]
-    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener
+    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -102,7 +102,7 @@ namespace Hecton8.World
 
             EclipseGameplayEvents.OnEclipsePhaseChanged += HandleEclipsePhase;
             AtlasSignalEvents.Register(this);
-            DepthZoneEvents.RegisterZoneEntered(HandleDepthZoneEntered);
+            DepthZoneEvents.Register(this);
             SpectrumEvents.OnSonarPulse                 += HandleSonarPulse;
 
             _currentIntensity = baseIntensity;
@@ -117,7 +117,7 @@ namespace Hecton8.World
 
             EclipseGameplayEvents.OnEclipsePhaseChanged -= HandleEclipsePhase;
             AtlasSignalEvents.Unregister(this);
-            DepthZoneEvents.UnregisterZoneEntered(HandleDepthZoneEntered);
+            DepthZoneEvents.Unregister(this);
             SpectrumEvents.OnSonarPulse                 -= HandleSonarPulse;
 
             Shader.SetGlobalFloat(_ShaderBiolumIntensity, baseIntensity);
@@ -235,6 +235,15 @@ namespace Hecton8.World
             }
 
             return playerTransform.TryGetComponent(out survivalSystem);
+        }
+
+        void IDepthZoneEventListener.OnDepthZoneEntered(DepthZoneProfile zone)
+        {
+            HandleDepthZoneEntered(zone);
+        }
+
+        void IDepthZoneEventListener.OnDepthZoneExited(DepthZoneProfile zone)
+        {
         }
 
         private void TryRegister()

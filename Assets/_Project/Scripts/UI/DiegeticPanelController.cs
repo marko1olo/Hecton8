@@ -326,7 +326,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _raycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
-            _proxyLightKey = GetInstanceID();
+            _proxyLightKey = unchecked((int)EntityId.ToULong(gameObject.GetEntityId()));
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
             ResolveInterfaces();
             DetermineTargetHardwareTier();

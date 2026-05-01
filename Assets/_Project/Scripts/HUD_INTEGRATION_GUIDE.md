@@ -61,10 +61,10 @@ HUD Camera (GameObject)
 - Flickering animation (при low battery или high heat)
 
 **События:**
-- `FlashlightEvents.OnToggled` → обновляет иконку
-- `FlashlightEvents.OnOverheat` → показывает notification + warning
-- `FlashlightEvents.OnFlickerStart` → анимация мерцания
-- `FlashlightEvents.OnBatteryDepleted` → notification
+- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.Toggled)` → обновляет иконку
+- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.Overheat)` → показывает notification + warning
+- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.FlickerStart)` → анимация мерцания
+- `IFlashlightEventListener.OnFlashlightEvent(FlashlightEventType.BatteryDepleted)` → notification
 
 ### PDA Status Indicator
 
@@ -121,12 +121,12 @@ HUD Camera (GameObject)
 **Проблема:** Notifications не появляются
 - Проверьте что `hudCamera` назначен
 - Проверьте что `hudFont` назначен
-- Проверьте что события FlashlightEvents/PDAEvents вызываются
+- Проверьте что flashlight listener зарегистрирован через `FlashlightEvents.Register`, а PDAEvents вызываются
 
 **Проблема:** Flashlight indicator не обновляется
 - Проверьте что `flashlight` назначен (или auto-resolve работает)
 - Проверьте что PlayerFlashlight.IsOn property доступен
-- Проверьте что FlashlightEvents.OnToggled вызывается
+- Проверьте что `FlashlightEventType.Toggled` доходит до `IFlashlightEventListener.OnFlashlightEvent`
 
 **Проблема:** Battery drain не работает
 - Проверьте что HectonSurvivalSystem.DrainEnergy(int) метод существует

@@ -14,7 +14,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-119)]
-    public sealed class FloraRegrowthDirector : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class FloraRegrowthDirector : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
     {
         private const float RegrowthDelaySeconds = 4f * 60f * 60f;
         private const float DefaultRegrowthDurationSeconds = 90f;
@@ -367,6 +367,8 @@ namespace Hecton8.World
         private float _lastSeedPlayTime;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
+        private bool _lateFrameRegistered;
+        private bool _originShiftRegistered;
 
         private void Awake()
         {
@@ -430,19 +432,34 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
                 return;
 
-            if (!_tickRegistered)
+            if (GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _tickRegistered = true;
+                if (!_tickRegistered)
+                {
+                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                    _tickRegistered = true;
+                }
+
+                if (!_slowTickRegistered)
+                {
+                    GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                    _slowTickRegistered = true;
+                }
+
+                if (!_lateFrameRegistered)
+                {
+                    GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _lateFrameRegistered = true;
+                }
             }
 
-            if (!_slowTickRegistered)
+            if (!_originShiftRegistered)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = true;
+                HectonFloatingOrigin.RegisterListener(this);
+                _originShiftRegistered = true;
             }
         }
 
@@ -459,10 +476,34 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _slowTickRegistered = false;
             }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
+            if (_originShiftRegistered)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _originShiftRegistered = false;
+            }
         }
 
         private void OnDestroy()
         {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
+
+            if (_originShiftRegistered)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _originShiftRegistered = false;
+            }
+
             JobHandle disposeHandle = _maturationJobScheduled ? _maturationJobHandle : default;
             JobHandle symbioticDisposeHandle = _symbioticMstJobScheduled ? _symbioticMstJobHandle : default;
             if (_destroyedFloraScratch.IsCreated)
@@ -851,19 +892,21 @@ namespace Hecton8.World
             _symbioticMstJobScheduled = true;
         }
 
-        private void CompleteSymbioticMstJobIfReady()
+        private void CompleteSymbioticMstJobIfReady(bool forceComplete = false)
         {
-            if (!_symbioticMstJobScheduled || !_symbioticMstJobHandle.IsCompleted)
+            if (!_symbioticMstJobScheduled)
                 return;
 
             if (_maturationJobScheduled)
             {
-                CompleteMaturationJobIfNeeded();
+                CompleteMaturationJobIfNeeded(forceComplete);
                 if (_maturationJobScheduled)
                     return;
             }
 
-            _symbioticMstJobHandle.Complete();
+            if (!TryCompleteVegetationJob(ref _symbioticMstJobHandle, forceComplete))
+                return;
+
             _symbioticMstJobScheduled = false;
             ApplySymbioticMstResults(GetCurrentPlayTimeSeconds());
         }
@@ -889,6 +932,11 @@ namespace Hecton8.World
                     Reserved0 = 0f
                 });
             }
+        }
+
+        private static bool TryCompleteVegetationJob(ref JobHandle handle, bool forceComplete)
+        {
+            return VegetationJobRecovery.TryComplete(ref handle, forceComplete);
         }
 
         private void UpsertSymbioticFungalBuff(SymbioticFungalBuffState buff)
@@ -919,12 +967,14 @@ namespace Hecton8.World
             }
         }
 
-        private void CompleteMaturationJobIfNeeded()
+        private void CompleteMaturationJobIfNeeded(bool forceComplete = false)
         {
-            if (!_maturationJobScheduled || !_maturationJobHandle.IsCompleted)
+            if (!_maturationJobScheduled)
                 return;
 
-            _maturationJobHandle.Complete();
+            if (!TryCompleteVegetationJob(ref _maturationJobHandle, forceComplete))
+                return;
+
             _maturationJobScheduled = false;
 
             if (destructibleOrganicManager == null || !_maturationResults.IsCreated || !_maturationStates.IsCreated)
@@ -996,8 +1046,6 @@ namespace Hecton8.World
 
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
             float currentPlayTime = GetCurrentPlayTimeSeconds();
-            CompleteSymbioticMstJobIfReady();
-            CompleteMaturationJobIfNeeded();
             UpdateSeedFlights(deltaTime);
             for (int i = _regrowthStates.Length - 1; i >= 0; i--)
             {
@@ -1021,6 +1069,30 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Recovers completed flora maturation and symbiotic graph jobs inside the dispatcher late-frame swap window.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            CompleteSymbioticMstJobIfReady();
+            CompleteMaturationJobIfNeeded();
+        }
+
+        /// <summary>
+        /// Re-bases cached runtime flora positions after the floating-origin system shifts the scene.
+        /// </summary>
+        /// <param name="shiftData">Origin-shift event emitted by <see cref="HectonFloatingOrigin"/>.</param>
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
+                return;
+
+            CompleteSymbioticMstJobIfReady(forceComplete: true);
+            CompleteMaturationJobIfNeeded(forceComplete: true);
+            float3 runtimeOffset = new float3(-shiftData.ShiftOffset.x, -shiftData.ShiftOffset.y, -shiftData.ShiftOffset.z);
+            ApplyOriginShiftToCachedFloraState(runtimeOffset);
+        }
+
+        /// <summary>
         /// Scans persistent flora-destruction tombstones and starts delayed regrowth once the time gate opens.
         /// </summary>
         public void SlowTick()
@@ -1032,8 +1104,6 @@ namespace Hecton8.World
             if (registry == null || destructibleOrganicManager == null)
                 return;
 
-            CompleteSymbioticMstJobIfReady();
-            CompleteMaturationJobIfNeeded();
             if (_symbioticMstJobScheduled || _maturationJobScheduled)
                 return;
 
@@ -1329,6 +1399,49 @@ namespace Hecton8.World
                 }
 
                 registry.TryMarkPendingFloraSeedReady(seedRecord.InstanceUid);
+            }
+        }
+
+        private void ApplyOriginShiftToCachedFloraState(float3 runtimeOffset)
+        {
+            if (_regrowthStates.IsCreated)
+            {
+                for (int i = 0; i < _regrowthStates.Length; i++)
+                {
+                    FloraRegrowthState state = _regrowthStates[i];
+                    state.RuntimePosition += runtimeOffset;
+                    _regrowthStates[i] = state;
+                }
+            }
+
+            if (_seedFlightStates.IsCreated)
+            {
+                for (int i = 0; i < _seedFlightStates.Length; i++)
+                {
+                    SeedFlightState state = _seedFlightStates[i];
+                    state.Position += runtimeOffset;
+                    _seedFlightStates[i] = state;
+                }
+            }
+
+            if (_maturationStates.IsCreated)
+            {
+                for (int i = 0; i < _maturationStates.Length; i++)
+                {
+                    FloraMaturationState state = _maturationStates[i];
+                    state.RuntimePosition += runtimeOffset;
+                    _maturationStates[i] = state;
+                }
+            }
+
+            if (_symbioticFungalNodes.IsCreated)
+            {
+                for (int i = 0; i < _symbioticFungalNodes.Length; i++)
+                {
+                    SymbioticFungalNodeState state = _symbioticFungalNodes[i];
+                    state.RuntimePosition += runtimeOffset;
+                    _symbioticFungalNodes[i] = state;
+                }
             }
         }
 

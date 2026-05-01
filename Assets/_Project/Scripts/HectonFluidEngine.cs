@@ -619,6 +619,34 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
+        /// Samples the previous-frame environmental current for sandboxed mod flow queries.
+        /// The dispatcher owns call cadence and never exposes fluid buffers to mods.
+        /// </summary>
+        /// <param name="runtimePosition">Frame-space query position.</param>
+        /// <param name="flowVector">Resolved flow vector in meters per second.</param>
+        /// <returns>True when a finite flow vector was resolved.</returns>
+        public bool TrySampleModAbyssalFlow(Vector3 runtimePosition, out float3 flowVector)
+        {
+            flowVector = default;
+            float3 query = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(query)))
+                return false;
+
+            WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            Vector3 authoredCurrent = CurrentVolume.SampleCombinedCurrent(runtimePosition);
+            float3 weatherCurrent = weatherSnapshot.CurrentMeta.GlobalBaseVector * math.max(0f, weatherSnapshot.CurrentMeta.GlobalScale);
+            float3 configuredCurrent = new float3(currentVector.x, currentVector.y, currentVector.z) * math.max(0f, currentStrength);
+            flowVector = configuredCurrent + weatherCurrent + new float3(authoredCurrent.x, authoredCurrent.y, authoredCurrent.z);
+            if (!math.all(math.isfinite(flowVector)))
+            {
+                flowVector = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Снимает BuoyancyObject с регистрации. Вызывается из OnDisable.
         /// Swap-remove для O(1).
         /// </summary>

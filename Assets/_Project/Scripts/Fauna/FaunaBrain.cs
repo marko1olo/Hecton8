@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Caves;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
@@ -168,6 +171,7 @@ namespace Hecton8.AI
         private readonly Vector3[] _voxelRouteWaypoints = new Vector3[MaxVoxelRouteWaypointCount];
         // COLD ALLOC: AbsoluteUniversePosition[16] - origin-shift-stable route ownership for predator steering - owner: FaunaBrain
         private readonly AbsoluteUniversePosition[] _voxelRouteWaypointAups = new AbsoluteUniversePosition[MaxVoxelRouteWaypointCount];
+        private FaunaRouteRehydrationCache _voxelRouteRehydrationCache;
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -322,6 +326,7 @@ namespace Hecton8.AI
             _utilityBrain.SetRuntimeActive(false);
             ResetDispatcherCadence();
             ClearVoxelPathGuidance();
+            DisposeVoxelRouteRehydrationCache();
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
         }
@@ -339,6 +344,7 @@ namespace Hecton8.AI
             UnregisterOriginShiftListener();
             _utilityBrain.Dispose();
             ClearVoxelPathGuidance();
+            DisposeVoxelRouteRehydrationCache();
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
         }
@@ -383,6 +389,7 @@ namespace Hecton8.AI
             ResetDispatcherCadence();
             ClearProceduralStrikeIntent();
             ClearVoxelPathGuidance();
+            DisposeVoxelRouteRehydrationCache();
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
         }
@@ -1502,10 +1509,111 @@ namespace Hecton8.AI
                 return;
 
             int clampedCount = math.clamp(_voxelRouteWaypointCount, 0, MaxVoxelRouteWaypointCount);
+            EnsureVoxelRouteRehydrationCache();
             for (int waypointIndex = 0; waypointIndex < clampedCount; waypointIndex++)
-                _voxelRouteWaypoints[waypointIndex] = _voxelRouteWaypointAups[waypointIndex].ToRuntimeFloat3();
+                _voxelRouteRehydrationCache.WaypointAups[waypointIndex] = _voxelRouteWaypointAups[waypointIndex];
 
-            _voxelRouteTargetPosition = _voxelRouteTargetAup.ToRuntimeFloat3();
+            _voxelRouteRehydrationCache.TargetAup[0] = _voxelRouteTargetAup;
+            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            var job = new RehydrateVoxelRouteJob
+            {
+                WaypointAups = _voxelRouteRehydrationCache.WaypointAups,
+                RuntimeWaypoints = _voxelRouteRehydrationCache.RuntimeWaypoints,
+                TargetAup = _voxelRouteRehydrationCache.TargetAup,
+                RuntimeTarget = _voxelRouteRehydrationCache.RuntimeTarget,
+                CommittedOriginOffset = new float3(committedOffset.x, committedOffset.y, committedOffset.z)
+            };
+
+            JobHandle handle = job.Schedule(clampedCount, 4);
+            handle.Complete();
+            for (int waypointIndex = 0; waypointIndex < clampedCount; waypointIndex++)
+            {
+                float3 runtimeWaypoint = _voxelRouteRehydrationCache.RuntimeWaypoints[waypointIndex];
+                _voxelRouteWaypoints[waypointIndex] = new Vector3(runtimeWaypoint.x, runtimeWaypoint.y, runtimeWaypoint.z);
+            }
+
+            float3 runtimeTarget = _voxelRouteRehydrationCache.RuntimeTarget[0];
+            _voxelRouteTargetPosition = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
+        }
+
+        private void EnsureVoxelRouteRehydrationCache()
+        {
+            if (_voxelRouteRehydrationCache.IsCreated)
+                return;
+
+            _voxelRouteRehydrationCache = FaunaRouteRehydrationCache.Create(MaxVoxelRouteWaypointCount);
+        }
+
+        private void DisposeVoxelRouteRehydrationCache()
+        {
+            _voxelRouteRehydrationCache.Dispose();
+        }
+
+        private struct FaunaRouteRehydrationCache : IDisposable
+        {
+            public NativeArray<AbsoluteUniversePosition> WaypointAups;
+            public NativeArray<float3> RuntimeWaypoints;
+            public NativeArray<AbsoluteUniversePosition> TargetAup;
+            public NativeArray<float3> RuntimeTarget;
+
+            public bool IsCreated => WaypointAups.IsCreated ||
+                                     RuntimeWaypoints.IsCreated ||
+                                     TargetAup.IsCreated ||
+                                     RuntimeTarget.IsCreated;
+
+            public static FaunaRouteRehydrationCache Create(int capacity)
+            {
+                int safeCapacity = math.max(1, capacity);
+                return new FaunaRouteRehydrationCache
+                {
+                    // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[16] - Burst route rehydration AUP input cache - owner: FaunaBrain
+                    WaypointAups = new NativeArray<AbsoluteUniversePosition>(safeCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory),
+                    // COLD ALLOC: NativeArray<float3>[16] - Burst route rehydration runtime output cache - owner: FaunaBrain
+                    RuntimeWaypoints = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory),
+                    // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[1] - Burst route rehydration target input - owner: FaunaBrain
+                    TargetAup = new NativeArray<AbsoluteUniversePosition>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory),
+                    // COLD ALLOC: NativeArray<float3>[1] - Burst route rehydration target output - owner: FaunaBrain
+                    RuntimeTarget = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory)
+                };
+            }
+
+            public void Dispose()
+            {
+                if (WaypointAups.IsCreated)
+                    WaypointAups.Dispose();
+                if (RuntimeWaypoints.IsCreated)
+                    RuntimeWaypoints.Dispose();
+                if (TargetAup.IsCreated)
+                    TargetAup.Dispose();
+                if (RuntimeTarget.IsCreated)
+                    RuntimeTarget.Dispose();
+
+                WaypointAups = default;
+                RuntimeWaypoints = default;
+                TargetAup = default;
+                RuntimeTarget = default;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct RehydrateVoxelRouteJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<AbsoluteUniversePosition> WaypointAups;
+            [WriteOnly] public NativeArray<float3> RuntimeWaypoints;
+            [ReadOnly] public NativeArray<AbsoluteUniversePosition> TargetAup;
+            [WriteOnly] public NativeArray<float3> RuntimeTarget;
+            public float3 CommittedOriginOffset;
+
+            public void Execute(int index)
+            {
+                AbsoluteUniversePosition waypoint = WaypointAups[index];
+                RuntimeWaypoints[index] = AUPMath.ToRuntimeFloat3(in waypoint, CommittedOriginOffset);
+                if (index != 0)
+                    return;
+
+                AbsoluteUniversePosition target = TargetAup[0];
+                RuntimeTarget[0] = AUPMath.ToRuntimeFloat3(in target, CommittedOriginOffset);
+            }
         }
 
         public void FixedTick(float fdt)

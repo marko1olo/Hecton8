@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -19,6 +20,7 @@ namespace Hecton8.EditorTools
 
         private static readonly List<ComponentState<MeshRenderer>> _meshRendererStates = new List<ComponentState<MeshRenderer>>(4096);
         private static readonly List<ComponentState<SkinnedMeshRenderer>> _skinnedRendererStates = new List<ComponentState<SkinnedMeshRenderer>>(1024);
+        private static readonly List<ComponentState<Camera>> _cameraStates = new List<ComponentState<Camera>>(32);
         private static readonly List<ComponentState<AudioSource>> _audioSourceStates = new List<ComponentState<AudioSource>>(512);
         private static readonly List<MonoBehaviour> _simulationBehaviours = new List<MonoBehaviour>(2048);
 
@@ -44,6 +46,67 @@ namespace Hecton8.EditorTools
         private static void RunFromMenu()
         {
             RunHeadlessSimulationTicks(DefaultTickCount);
+        }
+
+        [MenuItem("Hecton/Validation/Headless Scatter Refresh Validator")]
+        private static void RunScatterRefreshFromMenu()
+        {
+            RunHeadlessScatterRefresh();
+        }
+
+        /// <summary>
+        /// Executes a scatter refresh with presentation cameras/renderers disabled so Camera.main and renderer paths cannot be required.
+        /// </summary>
+        /// <summary>
+        /// Runs the scatter refresh path with presentation components disabled to validate headless simulation safety.
+        /// </summary>
+        public static void RunHeadlessScatterRefresh()
+        {
+            WorldProceduralScatterDirector director = Object.FindAnyObjectByType<WorldProceduralScatterDirector>(FindObjectsInactive.Include);
+            if (director == null)
+            {
+                Debug.LogError("[HeadlessSimulationValidator] FAILED: WorldProceduralScatterDirector not found.");
+                return;
+            }
+
+            _nullReferenceCount = 0;
+            _firstException = null;
+            CaptureAndDisablePresentation();
+            Application.logMessageReceived += HandleLogMessageReceived;
+            try
+            {
+                director.RebuildScatterPreview();
+            }
+            catch (NullReferenceException exception)
+            {
+                _nullReferenceCount++;
+                _firstException = exception;
+                throw;
+            }
+            catch (Exception exception)
+            {
+                _firstException = exception;
+                throw;
+            }
+            finally
+            {
+                Application.logMessageReceived -= HandleLogMessageReceived;
+                RestorePresentation();
+            }
+
+            if (_nullReferenceCount > 0)
+            {
+                Debug.LogError($"[HeadlessSimulationValidator] FAILED: {_nullReferenceCount} NullReferenceException entries during headless scatter refresh.");
+                return;
+            }
+
+            if (_firstException != null)
+            {
+                Debug.LogError($"[HeadlessSimulationValidator] FAILED: {_firstException.GetType().Name} during headless scatter refresh.");
+                return;
+            }
+
+            Debug.Log($"[HeadlessSimulationValidator] PASS: headless scatter refresh executed, ActivePlacementCount={director.ActivePlacementCount}, Camera.main path disabled.");
         }
 
         /// <summary>
@@ -152,7 +215,19 @@ namespace Hecton8.EditorTools
         {
             _meshRendererStates.Clear();
             _skinnedRendererStates.Clear();
+            _cameraStates.Clear();
             _audioSourceStates.Clear();
+
+            Camera[] cameras = Resources.FindObjectsOfTypeAll<Camera>();
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                Camera camera = cameras[i];
+                if (!IsSceneComponent(camera))
+                    continue;
+
+                _cameraStates.Add(new ComponentState<Camera>(camera));
+                camera.enabled = false;
+            }
 
             MeshRenderer[] meshRenderers = Resources.FindObjectsOfTypeAll<MeshRenderer>();
             for (int i = 0; i < meshRenderers.Length; i++)
@@ -204,6 +279,13 @@ namespace Hecton8.EditorTools
                     SetComponentEnabled(state.Component, state.WasEnabled);
             }
 
+            for (int i = 0; i < _cameraStates.Count; i++)
+            {
+                ComponentState<Camera> state = _cameraStates[i];
+                if (state.Component != null)
+                    SetComponentEnabled(state.Component, state.WasEnabled);
+            }
+
             for (int i = 0; i < _audioSourceStates.Count; i++)
             {
                 ComponentState<AudioSource> state = _audioSourceStates[i];
@@ -213,6 +295,7 @@ namespace Hecton8.EditorTools
 
             _meshRendererStates.Clear();
             _skinnedRendererStates.Clear();
+            _cameraStates.Clear();
             _audioSourceStates.Clear();
         }
 

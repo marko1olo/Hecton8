@@ -1,6 +1,10 @@
 using System.Runtime.InteropServices;
+using Hecton8.Audio;
+using Hecton8.Caves;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -29,7 +33,16 @@ namespace Hecton8.Modding
         SpawnEffect = 4,
 
         /// <summary>Requests frame-space entity movement.</summary>
-        MoveEntity = 5
+        MoveEntity = 5,
+
+        /// <summary>Requests a protected voxel SDF add/subtract operation.</summary>
+        VoxelModify = 6,
+
+        /// <summary>Requests an asynchronous abyssal flow vector sample.</summary>
+        FlowQuery = 7,
+
+        /// <summary>Requests an engine-owned acoustic ping emission.</summary>
+        AcousticPing = 8
     }
 
     /// <summary>
@@ -53,7 +66,13 @@ namespace Hecton8.Modding
         Physics = 4,
 
         /// <summary>VFX/effects target.</summary>
-        Effects = 5
+        Effects = 5,
+
+        /// <summary>Audio/sensory target.</summary>
+        Audio = 6,
+
+        /// <summary>Environmental simulation target.</summary>
+        Environment = 7
     }
 
     /// <summary>
@@ -162,7 +181,12 @@ namespace Hecton8.Modding
         CommandFlood = 10,
         SpawnConflict = 11,
         RenderCapacityExceeded = 12,
-        HeapQuotaExceeded = 13
+        HeapQuotaExceeded = 13,
+        ProtectedCoreSector = 14,
+        VoxelUnavailable = 15,
+        FlowUnavailable = 16,
+        AcousticUnavailable = 17,
+        InvalidPayload = 18
     }
 
     internal static class ModCommandDispatcher
@@ -178,6 +202,9 @@ namespace Hecton8.Modding
         private const int AupCellSizeMeters = 5000;
         private const double SpawnConflictEpsilonSq = 0.25d;
         private const long ModHeapQuotaBytes = 16L * 1024L * 1024L;
+        private const float MaxModVoxelModifyRadiusMeters = 8f;
+        private const float MaxModAcousticPingRadiusMeters = 80f;
+        private const float ModAcousticPingLifetimeSeconds = 1.25f;
 
         private const byte ModStateActive = 1;
         private const byte ModStateQuarantined = 2;
@@ -231,6 +258,7 @@ namespace Hecton8.Modding
         private static NativeQueue<ModRaycastResultPayload> _pendingRaycastResults;
         private static NativeQueue<ModInteractionRejectedPayload> _pendingRejectEvents;
         private static NativeQueue<ModCriticalMemoryEvictionPayload> _pendingMemoryEvictionEvents;
+        private static NativeQueue<ModAupResponse> _pendingAupResponses;
         private static NativeHashMap<uint, ModCommandModState> _modStatesByHash;
         private static NativeHashMap<uint, int> _modIndexByHash;
         private static NativeHashMap<uint, int> _kernelIndexByCommandKey;
@@ -240,6 +268,7 @@ namespace Hecton8.Modding
         private static int _queuedRaycastResultCount;
         private static int _queuedRejectEventCount;
         private static int _queuedMemoryEvictionEventCount;
+        private static int _queuedAupResponseCount;
         private static int _kernelCount;
         private static int _modCount;
 
@@ -269,6 +298,9 @@ namespace Hecton8.Modding
             if (!_pendingMemoryEvictionEvents.IsCreated)
                 _pendingMemoryEvictionEvents = new NativeQueue<ModCriticalMemoryEvictionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCriticalMemoryEvictionPayload>[32] - unmanaged mod memory eviction event lane - owner: ModCommandDispatcher
 
+            if (!_pendingAupResponses.IsCreated)
+                _pendingAupResponses = new NativeQueue<ModAupResponse>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModAupResponse>[256] - unmanaged mod AUP response event lane - owner: ModCommandDispatcher
+
             if (!_modStatesByHash.IsCreated)
                 _modStatesByHash = new NativeHashMap<uint, ModCommandModState>(ModCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,ModCommandModState>[32] - O(1) mod command security lookup - owner: ModCommandDispatcher
 
@@ -287,6 +319,7 @@ namespace Hecton8.Modding
             DisposeQueue(ref _pendingRaycastResults);
             DisposeQueue(ref _pendingRejectEvents);
             DisposeQueue(ref _pendingMemoryEvictionEvents);
+            DisposeQueue(ref _pendingAupResponses);
 
             if (_modStatesByHash.IsCreated)
             {
@@ -324,6 +357,7 @@ namespace Hecton8.Modding
             _queuedRaycastResultCount = 0;
             _queuedRejectEventCount = 0;
             _queuedMemoryEvictionEventCount = 0;
+            _queuedAupResponseCount = 0;
             _kernelCount = 0;
             _modCount = 0;
         }
@@ -628,6 +662,9 @@ namespace Hecton8.Modding
                 }
 
                 int priority = ResolveModPriority(command.ModHash);
+                if (TryExecuteValidatedAupIntrinsic(in command, in aupCommand.Position))
+                    continue;
+
                 if (command.Opcode == (ushort)ModCommandOpcode.SpawnDebris &&
                     !TryAcceptSpawnCandidate(
                         in command,
@@ -758,6 +795,14 @@ namespace Hecton8.Modding
                 return;
             }
 
+            if (command.Opcode == (ushort)ModCommandOpcode.VoxelModify ||
+                command.Opcode == (ushort)ModCommandOpcode.FlowQuery ||
+                command.Opcode == (ushort)ModCommandOpcode.AcousticPing)
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AupRequired);
+                return;
+            }
+
             uint key = BuildCommandKey(command.Opcode, command.TargetSystem);
             if (!_kernelIndexByCommandKey.TryGetValue(key, out int kernelIndex) ||
                 (uint)kernelIndex >= (uint)_kernelCount)
@@ -769,6 +814,135 @@ namespace Hecton8.Modding
             IModCommandKernel kernel = _kernels[kernelIndex];
             if (kernel == null || !kernel.Execute(in command))
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.MissingKernel);
+        }
+
+        private static bool TryExecuteValidatedAupIntrinsic(in ModCommand command, in ModAup position)
+        {
+            switch ((ModCommandOpcode)command.Opcode)
+            {
+                case ModCommandOpcode.VoxelModify:
+                    ExecuteModVoxelModify(in command, in position);
+                    return true;
+
+                case ModCommandOpcode.FlowQuery:
+                    ExecuteModFlowQuery(in command, in position);
+                    return true;
+
+                case ModCommandOpcode.AcousticPing:
+                    ExecuteModAcousticPing(in command, in position);
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static void ExecuteModVoxelModify(in ModCommand command, in ModAup position)
+        {
+            UnpackFloat2(command.Payload1, out float centerX, out float centerY);
+            UnpackFloat2(command.Payload2, out float centerZ, out float radius);
+            Vector3 runtimeCenter = new Vector3(centerX, centerY, centerZ);
+            if (!IsFinite(runtimeCenter) ||
+                !float.IsFinite(radius) ||
+                radius <= 0f ||
+                radius > MaxModVoxelModifyRadiusMeters)
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.InvalidPayload);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.VoxelModify, ModAupResponseStatus.Rejected, in position);
+                return;
+            }
+
+            if (PersistentWorldRegistry.IsModProtectedCoreRuntimePosition(runtimeCenter))
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.ProtectedCoreSector);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.VoxelModify, ModAupResponseStatus.Rejected, in position);
+                return;
+            }
+
+            HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
+            VoxelDeltaProcessor deltaProcessor = engine != null ? engine.DeltaProcessor : null;
+            if (deltaProcessor == null)
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.VoxelUnavailable);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.VoxelModify, ModAupResponseStatus.Unavailable, in position);
+                return;
+            }
+
+            ushort mode = unchecked((ushort)(command.Payload5 & 0xFFFFUL));
+            bool additive = mode == (ushort)ModSdfMode.Add;
+            if (!deltaProcessor.TryApplyModSdfModify(runtimeCenter, radius, additive))
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.VoxelUnavailable);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.VoxelModify, ModAupResponseStatus.Unavailable, in position);
+                return;
+            }
+
+            EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.VoxelModify, ModAupResponseStatus.Accepted, in position);
+        }
+
+        private static void ExecuteModFlowQuery(in ModCommand command, in ModAup position)
+        {
+            UnpackFloat2(command.Payload1, out float centerX, out float centerY);
+            UnpackFloat2(command.Payload2, out float centerZ, out _);
+            Vector3 runtimePosition = new Vector3(centerX, centerY, centerZ);
+            if (!IsFinite(runtimePosition))
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.InvalidPayload);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.FlowVector, ModAupResponseStatus.Rejected, in position);
+                return;
+            }
+
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            if (fluidEngine == null ||
+                !fluidEngine.TrySampleModAbyssalFlow(runtimePosition, out float3 flowVector))
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.FlowUnavailable);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.FlowVector, ModAupResponseStatus.Unavailable, in position);
+                return;
+            }
+
+            PackFloat3(flowVector, out ulong payload0, out uint payload1);
+            EnqueueAupResponse(
+                command.ModHash,
+                command.RequestId,
+                ModAupResponseKind.FlowVector,
+                ModAupResponseStatus.Accepted,
+                in position,
+                payload0,
+                payload1);
+        }
+
+        private static void ExecuteModAcousticPing(in ModCommand command, in ModAup position)
+        {
+            UnpackFloat2(command.Payload1, out float centerX, out float centerY);
+            UnpackFloat2(command.Payload2, out float centerZ, out float intensity01);
+            Vector3 runtimePosition = new Vector3(centerX, centerY, centerZ);
+            if (!IsFinite(runtimePosition) || !float.IsFinite(intensity01) || intensity01 <= 0f)
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.InvalidPayload);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.AcousticPing, ModAupResponseStatus.Rejected, in position);
+                return;
+            }
+
+            float normalizedIntensity = math.saturate(intensity01);
+            if (!(GlobalRegistry.Audio is SpatialAudioManager audioManager) ||
+                !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
+            {
+                RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AcousticUnavailable);
+                EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.AcousticPing, ModAupResponseStatus.Unavailable, in position);
+                return;
+            }
+
+            AcousticPingEvent pingEvent = new AcousticPingEvent(
+                runtimePosition,
+                MaxModAcousticPingRadiusMeters * normalizedIntensity,
+                normalizedIntensity,
+                ModAcousticPingLifetimeSeconds,
+                FieldTargetRole.Generic,
+                0);
+            PhysicsEventBus.NotifyAcousticPing(in pingEvent);
+
+            EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.AcousticPing, ModAupResponseStatus.Accepted, in position);
         }
 
         private static bool TryResolveRequestState(uint modHash, out ModCommandModState state, out ModCommandRejectReason rejectReason)
@@ -1013,6 +1187,32 @@ namespace Hecton8.Modding
             _queuedMemoryEvictionEventCount++;
         }
 
+        private static void EnqueueAupResponse(
+            uint modHash,
+            uint requestId,
+            ModAupResponseKind responseKind,
+            ModAupResponseStatus status,
+            in ModAup position,
+            ulong payload0 = 0UL,
+            uint payload1 = 0u)
+        {
+            if (!_pendingAupResponses.IsCreated)
+                return;
+
+            _pendingAupResponses.Enqueue(new ModAupResponse
+            {
+                ModHash = modHash,
+                RequestId = requestId,
+                ResponseKind = (uint)responseKind,
+                Status = (uint)status,
+                Grid = position.Grid,
+                Local = position.Local,
+                Payload0 = payload0,
+                Payload1 = payload1
+            });
+            _queuedAupResponseCount++;
+        }
+
         private static void FlushDeferredEventQueues()
         {
             while (_queuedRaycastResultCount > 0 && _pendingRaycastResults.TryDequeue(out ModRaycastResultPayload raycastPayload))
@@ -1031,6 +1231,12 @@ namespace Hecton8.Modding
             {
                 _queuedMemoryEvictionEventCount--;
                 HectonEventBus.Publish(in evictionPayload);
+            }
+
+            while (_queuedAupResponseCount > 0 && _pendingAupResponses.TryDequeue(out ModAupResponse aupResponse))
+            {
+                _queuedAupResponseCount--;
+                HectonEventBus.Publish(in aupResponse);
             }
         }
 
@@ -1094,6 +1300,12 @@ namespace Hecton8.Modding
                     return targetSystem == (ushort)ModCommandTargetSystem.Effects;
                 case ModCommandOpcode.MoveEntity:
                     return targetSystem == (ushort)ModCommandTargetSystem.World;
+                case ModCommandOpcode.VoxelModify:
+                    return targetSystem == (ushort)ModCommandTargetSystem.Voxel;
+                case ModCommandOpcode.FlowQuery:
+                    return targetSystem == (ushort)ModCommandTargetSystem.Environment;
+                case ModCommandOpcode.AcousticPing:
+                    return targetSystem == (ushort)ModCommandTargetSystem.Audio;
                 default:
                     return false;
             }
@@ -1108,6 +1320,9 @@ namespace Hecton8.Modding
                 case ModCommandOpcode.RaycastQuery:
                 case ModCommandOpcode.SpawnEffect:
                 case ModCommandOpcode.MoveEntity:
+                case ModCommandOpcode.VoxelModify:
+                case ModCommandOpcode.FlowQuery:
+                case ModCommandOpcode.AcousticPing:
                     return true;
                 default:
                     return false;
@@ -1143,10 +1358,40 @@ namespace Hecton8.Modding
             return ((ulong)math.asuint(b) << 32) | math.asuint(a);
         }
 
+        /// <summary>
+        /// Packs two sequential floats into a uint2 without managed conversion.
+        /// </summary>
+        public static uint2 PackSequentialFloat2(float a, float b)
+        {
+            return new uint2(math.asuint(a), math.asuint(b));
+        }
+
+        /// <summary>
+        /// Packs three sequential floats into a uint3 without managed conversion.
+        /// </summary>
+        public static uint3 PackSequentialFloat3(float a, float b, float c)
+        {
+            return new uint3(math.asuint(a), math.asuint(b), math.asuint(c));
+        }
+
+        private static void PackFloat3(float3 value, out ulong payload0, out uint payload1)
+        {
+            uint3 packed = PackSequentialFloat3(value.x, value.y, value.z);
+            payload0 = ((ulong)packed.y << 32) | packed.x;
+            payload1 = packed.z;
+        }
+
         private static void UnpackFloat2(ulong packed, out float a, out float b)
         {
             a = math.asfloat(unchecked((uint)(packed & 0xFFFFFFFFUL)));
             b = math.asfloat(unchecked((uint)(packed >> 32)));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
         }
 
         private static void DisposeQueue<TPayload>(ref NativeQueue<TPayload> queue)

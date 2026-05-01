@@ -1,9 +1,19 @@
-using System;
 using Hecton8.Core;
 using Unity.Collections;
 
 namespace Hecton8.World
 {
+    /// <summary>
+    /// Listener contract for queue-backed emergency relay notifications.
+    /// </summary>
+    public interface IEmergencyServiceRelayEventListener
+    {
+        /// <summary>Called when an emergency relay is activated.</summary>
+        /// <param name="relay">Activated relay.</param>
+        /// <param name="firstActivation">True on first discovery-grade activation.</param>
+        void OnEmergencyServiceRelayActivated(EmergencyServiceRelay relay, bool firstActivation);
+    }
+
     /// <summary>
     /// Static event bus for emergency service relay interactions.
     /// </summary>
@@ -11,12 +21,12 @@ namespace Hecton8.World
     {
         private struct RelayEventPayload
         {
-            public int RelayInstanceId;
+            public ulong RelayEntityId;
             public byte FirstActivation;
         }
 
-        private static readonly RegistryBucket<Action<EmergencyServiceRelay, bool>> _relayActivatedListeners = new RegistryBucket<Action<EmergencyServiceRelay, bool>>(16);
-        private static readonly System.Collections.Generic.Dictionary<int, EmergencyServiceRelay> _relaysByInstanceId = new System.Collections.Generic.Dictionary<int, EmergencyServiceRelay>(32);
+        private static readonly RegistryBucket<IEmergencyServiceRelayEventListener> _listeners = new RegistryBucket<IEmergencyServiceRelayEventListener>(16);
+        private static readonly System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay> _relaysByInstanceId = new System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay>(32);
         private static NativeQueue<RelayEventPayload> _pendingEvents;
 
         public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
@@ -30,20 +40,20 @@ namespace Hecton8.World
                 _pendingEvents = default;
             }
 
-            _relayActivatedListeners.Clear();
+            _listeners.Clear();
             _relaysByInstanceId.Clear();
         }
 
-        public static void RegisterRelayActivated(Action<EmergencyServiceRelay, bool> listener)
+        public static void Register(IEmergencyServiceRelayEventListener listener)
         {
-            if (listener != null && !_relayActivatedListeners.Contains(listener))
-                _relayActivatedListeners.Register(listener);
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
-        public static void UnregisterRelayActivated(Action<EmergencyServiceRelay, bool> listener)
+        public static void Unregister(IEmergencyServiceRelayEventListener listener)
         {
-            if (listener != null && _relayActivatedListeners.Contains(listener))
-                _relayActivatedListeners.Unregister(listener);
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         /// <summary>
@@ -57,11 +67,11 @@ namespace Hecton8.World
                 return;
 
             EnsureInitialized();
-            int instanceId = relay.GetInstanceID();
-            _relaysByInstanceId[instanceId] = relay;
+            ulong relayEntityId = UnityEngine.EntityId.ToULong(relay.GetEntityId());
+            _relaysByInstanceId[relayEntityId] = relay;
             _pendingEvents.Enqueue(new RelayEventPayload
             {
-                RelayInstanceId = instanceId,
+                RelayEntityId = relayEntityId,
                 FirstActivation = firstActivation ? (byte)1 : (byte)0
             });
         }
@@ -73,14 +83,14 @@ namespace Hecton8.World
 
             while (_pendingEvents.TryDequeue(out RelayEventPayload payload))
             {
-                if (!_relaysByInstanceId.TryGetValue(payload.RelayInstanceId, out EmergencyServiceRelay relay) || relay == null)
+                if (!_relaysByInstanceId.TryGetValue(payload.RelayEntityId, out EmergencyServiceRelay relay) || relay == null)
                     continue;
 
-                Action<EmergencyServiceRelay, bool>[] rawArray = _relayActivatedListeners.RawArray;
-                int count = _relayActivatedListeners.Count;
+                IEmergencyServiceRelayEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
                 bool firstActivation = payload.FirstActivation != 0;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i]?.Invoke(relay, firstActivation);
+                    rawArray[i].OnEmergencyServiceRelayActivated(relay, firstActivation);
             }
         }
 

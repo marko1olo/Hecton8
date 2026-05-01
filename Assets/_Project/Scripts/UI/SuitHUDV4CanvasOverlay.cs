@@ -2741,6 +2741,7 @@ namespace Hecton8.UI
             bool corruptedMode = !_biosRecoveryMode && displayCorruptionIntensity > 0f;
             bool toolDepletedWarningActive = !_biosRecoveryMode && _toolDepletedWarningTimer > 0f;
             EvaluateCriticalHapticCoupling(oxygen, power, health);
+            HectonUnderwaterVisuals.PublishHudAverageLuminance(ResolveHudFogLuminance(oxygen, power, health, toolDepletedWarningActive, displayCorruptionIntensity));
             if (corruptedMode)
                 _corruptionFrameVersion++;
 
@@ -3073,6 +3074,21 @@ namespace Hecton8.UI
 
             lastVersion = slot.Version;
             return true;
+        }
+
+        private static float ResolveHudFogLuminance(
+            float oxygen01,
+            float power01,
+            float health01,
+            bool toolDepletedWarningActive,
+            float corruptionIntensity)
+        {
+            float oxygenWarning = 1f - math.smoothstep(0.12f, 0.34f, oxygen01);
+            float powerWarning = 1f - math.smoothstep(0.10f, 0.30f, power01);
+            float healthWarning = 1f - math.smoothstep(0.14f, 0.36f, health01);
+            float toolWarning = math.select(0f, 1f, toolDepletedWarningActive);
+            float warningLuminance = math.max(math.max(oxygenWarning, powerWarning), math.max(healthWarning, toolWarning));
+            return math.saturate(0.08f + warningLuminance * 0.72f + math.saturate(corruptionIntensity) * 0.2f);
         }
 
         private bool PrepareLoadMassVertexRefresh(int version, Color loadColor, bool corruptedMode, int corruptionVersion, int corruptionSalt)

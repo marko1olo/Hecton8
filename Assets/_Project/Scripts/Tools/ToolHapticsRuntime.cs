@@ -84,6 +84,9 @@ namespace Hecton8.Tools
                 0f);
         }
 
+        /// <summary>
+        /// Enqueues a bounded sinusoidal rumble envelope for critical UI and tool warnings.
+        /// </summary>
         public static void EnqueueSinusoidalCommand(
             float lowFreqIntensity,
             float highFreqIntensity,

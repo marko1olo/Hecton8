@@ -9,6 +9,14 @@ Scope: `Assets/_Project/Scripts/`
 
 This is a static forensic report. No Play Mode was launched. No GCMonitor, Jobs Debugger, Memory Profiler, RenderDoc, or 10-minute retention run was captured. Findings are code-review evidence, not runtime measurements.
 
+## 2026-05-01 Source Recheck Delta
+
+Follow-up evidence: `Docs/Reports/2026-05-01_HEADLESS_FAUNA_CONSOLE_DELTA.md`.
+
+Current source no longer matches the original `FaunaBrain.UpdateBioluminescentHypnosis()` camera-specific finding. The method now reads `PlayerRuntimeContext.LookState` and uses the blittable `PlayerLookState` snapshot (`EyePosition`, `AimForward`, `Flags`) instead of `runtimeContext.PlayerCamera`. The specific "no Camera component disables dazzle gameplay" defect is source-fixed.
+
+This does not prove fauna headless correctness. `FaunaSensorSuite` still uses player `Transform` / Rigidbody references for perception and distance gating, and no no-camera headless Play Mode test has been run.
+
 Scan surface:
 
 - `Assets/_Project/Scripts/`: 1020 C# files.
@@ -28,7 +36,7 @@ Primary risk model:
 
 ## Surgery Log: 3 Most Dangerous Flaws
 
-1. CRITICAL: `FaunaBrain.UpdateBioluminescentHypnosis()` uses `runtimeContext.PlayerCamera` as gameplay truth and directly applies player pull. Headless/no-camera simulation changes the state transition graph.
+1. CRITICAL: original `FaunaBrain.UpdateBioluminescentHypnosis()` camera dependency is stale by current source recheck; broader fauna headless proof is still absent because perception still depends on player Transform/Rigidbody paths and no no-camera Play Mode test was run.
 2. CRITICAL: `StorageCrate.OpenCrate()` can enter `Opening` and rely on `OnAnimationComplete()` for the `Open` transition. Animator present but event missing means inventory access can dead-state.
 3. HIGH: `JobHandle.Complete()` exists in `Tick` / `PostFixedTick` lanes. `IsCompleted` gates reduce stalls but do not satisfy the mandate: barriers are locally owned, not dispatcher-owned swap windows.
 

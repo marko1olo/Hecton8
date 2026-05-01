@@ -620,6 +620,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
 
     const int LUT_RES   = 1024;
     const int JOB_BATCH = 64;
+    const int DefaultTriangleScratchCapacity = 393216; // 256m chunk at 1m spacing: 256 * 256 * 6 indices.
+    // COLD ALLOC: List<int>[393216] (~1536 KB) - reused terrain triangle index scratch, prevents per-chunk managed int[] allocations during streaming finalization - owner: HectonWorldGenerator
+    readonly List<int> _triangleScratch = new List<int>(DefaultTriangleScratchCapacity);
 
     #endregion
 
@@ -696,6 +699,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
     {
         if (viewer == null) { UnityEngine.Debug.LogWarning("[Hecton] No viewer assigned."); return; }
         EnsureLUTs();
+        EnsureTriangleScratchCapacity(ComputeConfiguredTriangleScratchRequirement());
         _streaming  = true;
         _lastChunk  = new int2(int.MinValue, int.MinValue);
     }
@@ -776,6 +780,21 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
     {
         DisposeLUTs();
         EnsureLUTs();
+    }
+
+    int ComputeConfiguredTriangleScratchRequirement()
+    {
+        int res = Mathf.CeilToInt(chunkSize / Mathf.Max(0.001f, lod0Spacing)) + 1;
+        return Mathf.Max(0, (res - 1) * (res - 1) * 6);
+    }
+
+    void EnsureTriangleScratchCapacity(int requiredTriangleIndices)
+    {
+        if (_triangleScratch.Capacity >= requiredTriangleIndices)
+            return;
+
+        // COLD ALLOC: List<int>.Capacity[requiredTriangleIndices] - authoring setting exceeded default streamed triangle scratch; avoids repeated runtime chunk-finalize arrays - owner: HectonWorldGenerator
+        _triangleScratch.Capacity = requiredTriangleIndices;
     }
 
     #endregion
@@ -1036,8 +1055,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             int vc  = res * pc.resZ;
 
             int maxTri = (res - 1) * (pc.resZ - 1) * 6;
-            var tris = new int[maxTri];
-            int tc = 0;
+            _triangleScratch.Clear();
+            if (_triangleScratch.Capacity < maxTri)
+                EnsureTriangleScratchCapacity(maxTri);
+
             bool cutCaves = pc.lod == 0;
 
             for (int z = 0; z < pc.resZ - 1; z++)
@@ -1051,27 +1072,20 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
                 if (!cutCaves || !(pc.caveB[i00] > 0 &&
                     pc.caveB[i01] > 0 && pc.caveB[i10] > 0))
                 {
-                    tris[tc++] = i00;
-                    tris[tc++] = i01;
-                    tris[tc++] = i10;
+                    _triangleScratch.Add(i00);
+                    _triangleScratch.Add(i01);
+                    _triangleScratch.Add(i10);
                 }
 
                 if (!cutCaves || !(pc.caveB[i10] > 0 && pc.caveB[i01] > 0 && pc.caveB[i11] > 0))
                 {
-                    tris[tc++] = i10;
-                    tris[tc++] = i01;
-                    tris[tc++] = i11;
+                    _triangleScratch.Add(i10);
+                    _triangleScratch.Add(i01);
+                    _triangleScratch.Add(i11);
                 }
             }
 
-            if (tc == 0) return null;
-
-            if (tc < maxTri)
-            {
-                var trimmed = new int[tc];
-                System.Array.Copy(tris, trimmed, tc);
-                tris = trimmed;
-            }
+            if (_triangleScratch.Count == 0) return null;
 
             var mesh = new Mesh();
             mesh.name = $"Hecton_{pc.coord.x}_{pc.coord.y}_L{pc.lod}";
@@ -1081,7 +1095,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable
             mesh.SetNormals(pc.norms);
             mesh.SetUVs(0, pc.uvs);
             mesh.SetColors(pc.cols);
-            mesh.triangles = tris;
+            mesh.SetTriangles(_triangleScratch, 0, false);
             mesh.RecalculateTangents();
             mesh.RecalculateBounds();
 

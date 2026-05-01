@@ -381,7 +381,7 @@ namespace Hecton8.UI
 
             int currentCount = _queuedEventKeys.Count();
             if (currentCount >= _queuedEventKeys.Capacity)
-                _queuedEventKeys.Capacity = Mathf.Max(EventDedupCapacity, _queuedEventKeys.Capacity << 1);
+                return true;
 
             return _queuedEventKeys.Add(dedupKey);
         }

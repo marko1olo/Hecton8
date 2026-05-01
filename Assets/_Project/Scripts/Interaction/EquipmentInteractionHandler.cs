@@ -43,6 +43,14 @@ namespace Hecton8.Interaction
         private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
         // COLD ALLOC: RaycastHit[8] - fixed flora/base overlap arbitration buffer - owner: EquipmentInteractionHandler
         private static readonly RaycastHit[] _hitArbitrationHits = new RaycastHit[MaxHitArbitrationHits];
+        // COLD ALLOC: Transform[256] - platform-local hit point side-channel aligned with the native signal queue - owner: EquipmentInteractionHandler
+        private readonly Transform[] _queuedPlatformTransforms = new Transform[MaxQueuedSignals];
+        // COLD ALLOC: Vector3[256] - local platform hit points aligned with the native signal queue - owner: EquipmentInteractionHandler
+        private readonly Vector3[] _queuedPlatformLocalHitPoints = new Vector3[MaxQueuedSignals];
+        // COLD ALLOC: Vector3[256] - local platform hit normals aligned with the native signal queue - owner: EquipmentInteractionHandler
+        private readonly Vector3[] _queuedPlatformLocalHitNormals = new Vector3[MaxQueuedSignals];
+        // COLD ALLOC: bool[256] - platform-local hit validity bits aligned with the native signal queue - owner: EquipmentInteractionHandler
+        private readonly bool[] _queuedHasPlatformLocalHit = new bool[MaxQueuedSignals];
 
         private NativeQueue<InteractionSignal> _signalQueue;
         private NativeArray<RaycastCommand> _scheduledCommands;
@@ -105,6 +113,7 @@ namespace Hecton8.Interaction
 
             _signalQueue.Enqueue(signal);
             _queuedTargetColliders[_queueTail] = targetCollider;
+            CachePlatformRelativeHit(_queueTail, in signal, targetCollider);
             _queueTail = (_queueTail + 1) % MaxQueuedSignals;
             _queueCount++;
             _packetAdmissionCount++;
@@ -150,6 +159,10 @@ namespace Hecton8.Interaction
             }
 
             System.Array.Clear(_queuedTargetColliders, 0, _queuedTargetColliders.Length);
+            System.Array.Clear(_queuedPlatformTransforms, 0, _queuedPlatformTransforms.Length);
+            System.Array.Clear(_queuedPlatformLocalHitPoints, 0, _queuedPlatformLocalHitPoints.Length);
+            System.Array.Clear(_queuedPlatformLocalHitNormals, 0, _queuedPlatformLocalHitNormals.Length);
+            System.Array.Clear(_queuedHasPlatformLocalHit, 0, _queuedHasPlatformLocalHit.Length);
             _queueHead = 0;
             _queueTail = 0;
             _queueCount = 0;
@@ -241,6 +254,8 @@ namespace Hecton8.Interaction
                 processedCount++;
                 Collider targetCollider = _queuedTargetColliders[_queueHead];
                 _queuedTargetColliders[_queueHead] = null;
+                RehydratePlatformRelativeHit(_queueHead, ref signal);
+                ClearPlatformRelativeHit(_queueHead);
                 _queueHead = (_queueHead + 1) % MaxQueuedSignals;
                 _queueCount--;
 
@@ -323,6 +338,74 @@ namespace Hecton8.Interaction
                     DispatchCutDamage(signal, targetCollider);
                     return;
             }
+        }
+
+        private void CachePlatformRelativeHit(int queueIndex, in InteractionSignal signal, Collider targetCollider)
+        {
+            ClearPlatformRelativeHit(queueIndex);
+            if (targetCollider == null || !TryResolvePlatformTransform(targetCollider, out Transform platformTransform))
+                return;
+
+            Vector3 absoluteHitPoint = new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z);
+            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(absoluteHitPoint);
+            Vector3 hitNormal = new Vector3(signal.HitNormal.x, signal.HitNormal.y, signal.HitNormal.z);
+            if (!IsFinite(runtimeHitPoint) || !IsFinite(hitNormal))
+                return;
+
+            _queuedPlatformTransforms[queueIndex] = platformTransform;
+            _queuedPlatformLocalHitPoints[queueIndex] = platformTransform.InverseTransformPoint(runtimeHitPoint);
+            _queuedPlatformLocalHitNormals[queueIndex] = platformTransform.InverseTransformDirection(hitNormal);
+            _queuedHasPlatformLocalHit[queueIndex] = true;
+        }
+
+        private void RehydratePlatformRelativeHit(int queueIndex, ref InteractionSignal signal)
+        {
+            if (!_queuedHasPlatformLocalHit[queueIndex])
+                return;
+
+            Transform platformTransform = _queuedPlatformTransforms[queueIndex];
+            if (platformTransform == null)
+                return;
+
+            Vector3 runtimeHitPoint = platformTransform.TransformPoint(_queuedPlatformLocalHitPoints[queueIndex]);
+            Vector3 runtimeHitNormal = platformTransform.TransformDirection(_queuedPlatformLocalHitNormals[queueIndex]);
+            if (!IsFinite(runtimeHitPoint) || !IsFinite(runtimeHitNormal))
+                return;
+
+            Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeHitPoint);
+            signal.HitPoint = new Unity.Mathematics.float3(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z);
+            signal.HitNormal = new Unity.Mathematics.float3(runtimeHitNormal.x, runtimeHitNormal.y, runtimeHitNormal.z);
+        }
+
+        private void ClearPlatformRelativeHit(int queueIndex)
+        {
+            _queuedPlatformTransforms[queueIndex] = null;
+            _queuedPlatformLocalHitPoints[queueIndex] = Vector3.zero;
+            _queuedPlatformLocalHitNormals[queueIndex] = Vector3.zero;
+            _queuedHasPlatformLocalHit[queueIndex] = false;
+        }
+
+        private static bool TryResolvePlatformTransform(Collider targetCollider, out Transform platformTransform)
+        {
+            platformTransform = null;
+            Transform current = targetCollider != null ? targetCollider.transform : null;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out ITransportPlatform platform) && platform.PlatformTransform != null)
+                {
+                    platformTransform = platform.PlatformTransform;
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         private static bool DispatchPlasmaCut(InteractionSignal signal, Collider targetCollider)

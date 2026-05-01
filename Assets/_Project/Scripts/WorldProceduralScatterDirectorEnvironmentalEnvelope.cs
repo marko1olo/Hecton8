@@ -1,6 +1,3 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-using System.Collections.Generic;
-#endif
 using UnityEngine;
 
 namespace Hecton8.World
@@ -58,11 +55,6 @@ namespace Hecton8.World
         [SerializeField, Min(1)]
         [Tooltip("Hard cap for macro-flora placements inside the density-clamp radius.")]
         private int floraDensityClampMacroCap = 50;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        // COLD ALLOC: HashSet[256] - one-shot strict substrate missing logs per scatter chunk - owner: WorldProceduralScatterDirector
-        private readonly HashSet<long> _strictSubstrateMissingLoggedChunks = new HashSet<long>(256);
-#endif
 
         private bool PassesEnvironmentalEnvelope(
             in WorldProceduralFieldSampler.FieldSample fieldSample,
@@ -138,28 +130,21 @@ namespace Hecton8.World
                 return false;
             }
 
-            return (runtimeRule.RequiredSubstrate & resolvedSubstrate) != 0;
+            return ScatterCandidateEvaluator.PassesStrictSubstrateEnvelope(runtimeRule.RequiredSubstrate, resolvedSubstrate);
         }
 
         private bool PassesClusterPatchEnvelope(
             in ScatterRuntimeRuleEntry runtimeRule,
             in ScatterCandidatePreview candidatePreview)
         {
-            if (runtimeRule.ClusterNoiseThreshold <= 0f)
-                return true;
-
-            float chunkSize = Mathf.Max(1f, _runtimeStreamingState.ChunkSize);
-            int chunkX = Mathf.FloorToInt(candidatePreview.Position.x / chunkSize);
-            int chunkZ = Mathf.FloorToInt(candidatePreview.Position.z / chunkSize);
-            float patchMask = ScatterMath.EvaluateClusterPatchMask01(
+            return ScatterCandidateEvaluator.PassesClusterPatchEnvelope(
                 candidatePreview.Position.x,
                 candidatePreview.Position.z,
-                chunkX,
-                chunkZ,
+                _runtimeStreamingState.ChunkSize,
+                runtimeRule.ClusterNoiseThreshold,
                 runtimeRule.ClusterNoiseScale,
                 runtimeRule.RuleIdHash,
                 runtimeRule.Family != null ? runtimeRule.Family.FamilyHash : 0);
-            return patchMask >= runtimeRule.ClusterNoiseThreshold;
         }
 
         private bool TrySampleEnvironmentalFlowMagnitude(Vector3 absolutePosition, out float flowMagnitude)
@@ -196,7 +181,8 @@ namespace Hecton8.World
             int chunkX = Mathf.FloorToInt(absolutePosition.x / chunkSize);
             int chunkZ = Mathf.FloorToInt(absolutePosition.z / chunkSize);
             long chunkKey = (((long)chunkX) << 32) ^ (uint)chunkZ;
-            if (!_strictSubstrateMissingLoggedChunks.Add(chunkKey))
+            EnsureWorkingMemory();
+            if (_memory == null || !_memory.StrictSubstrateMissingLoggedChunks.Add(chunkKey))
                 return;
 
             Debug.LogWarning(

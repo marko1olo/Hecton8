@@ -16,8 +16,8 @@ Reason: Choose the runtime sovereign path between registry/dispatcher/bootstrap 
 4. Clean `02_HECTON_WORLD` as a truth surface.
 Reason: Separate production runtime roots from debug, preview, trial, and temporary residue.
 
-5. Audit the spatial-hash handle contract.
-Reason: `HectonSpatialHash` currently uses monotonic `_nextHandle++` without visible allocator-boundary guard or reuse. Even if it is not the proven root of `SetResource` spam yet, it is too weak to ignore.
+5. Runtime-test the spatial-hash handle contract.
+Reason: the earlier source-level claim that `HectonSpatialHash` only used monotonic `_nextHandle++` is stale. Current source has slot/generation handles, queued-free duplicate guard, and current-handle validation. The remaining P0 work is runtime churn proof under register/unregister pressure, not another blind source rewrite.
 
 ## Priority 1
 
@@ -108,16 +108,46 @@ Evidence file: `Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`.
 This changes Priority 0 item 1 from "no trustworthy local log surface" to "local Editor.log surface currently clean after compile/import."
 It does not solve MCP availability, Play Mode verification, profiler proof, or long-run memory retention.
 
+## 2026-05-01 Event-Bus / Spatial-Hash Compile Delta
+
+Follow-up evidence file: `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`.
+
+Local `Editor.log` evidence after the event-bus/spatial-hash repair reports:
+
+- latest `Tundra build success`: line `14575`
+- latest `Mono: successfully reloaded assembly`: line `14663`
+- strict post-success signals (`error CS`, `warning CS`, `Burst error`, `Exception`, `Resource ID out of range`): `0`
+- MCP `read_console`: `0` error/warning entries after the compile refresh
+
+Queue corrections from current source recheck:
+
+- `HectonSpatialHash` no longer matches the older "monotonic `_nextHandle++` without visible allocator-boundary guard" finding. Current source has slot/generation handles, queued-free duplicate guard, and current-handle validation. Runtime churn remains unprofiled.
+- `AutonomousExtractorSystem`, `WorldCaveDirector`, and `WorldProceduralFieldSampler` no longer show the specific `~0` query masks cited by the earlier flaw report. Current source uses named project masks at those query sites. Scene-layer validation remains pending before claiming physics filtering is complete.
+
+## 2026-05-01 Compile Stabilization Continuation
+
+Follow-up evidence file: `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`.
+
+Local `Editor.log` evidence after restoring `Assets/_Project/Scripts/World/VegetationJobRecovery.cs.meta` reports:
+
+- latest `Tundra build success`: line `91784`
+- latest `Begin MonoManager ReloadAssembly`: line `91826`
+- latest `Mono: successfully reloaded assembly`: line `91935`
+- strict post-success signals (`error CS`, `warning CS`, `Burst error`, `Exception`, `Resource ID out of range`, `Tundra build failed`): `0`
+
+MCP console is not globally clean: after Console UI clear it still reports one stale internal build-system exception about missing `BuildFinishedMessage`.
+Treat the current state as local compile-clean by `Editor.log`, not `MCP VERIFIED`.
+
 ## Priority 0 Additions
 
 1. Remove presentation-owned gameplay transitions.
-Reason: `FaunaBrain.UpdateBioluminescentHypnosis()` changes gameplay behavior based on `runtimeContext.PlayerCamera`. `StorageCrate.OpenCrate()` was source-patched so gameplay opens immediately and the Animator event is idempotent, but Play Mode proof is absent. Fauna look logic remains open.
+Reason: the original `FaunaBrain.UpdateBioluminescentHypnosis()` `runtimeContext.PlayerCamera` dependency is stale by current source recheck; it now consumes `PlayerRuntimeContext.LookState`. Remaining fauna headless risk is perception/LOD logic still using player Transform/Rigidbody paths plus absent no-camera Play Mode proof. `StorageCrate.OpenCrate()` was source-patched so gameplay opens immediately and the Animator event is idempotent, but Play Mode proof is absent.
 
 2. Move frame-lane job barriers behind dispatcher-owned completion windows.
 Reason: `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` call `.Complete()` in cadence-sensitive lanes. `IsCompleted` checks reduce stall probability but do not satisfy the project mandate requiring completion only in defined swap/end windows.
 
 3. Replace broad physics masks with named layer masks.
-Reason: the latest flaw report found query surfaces using `~0`, `DefaultRaycastLayers`, or serialized all-layer defaults. Source-level partial patch applied: `GravityTetherTool`, `PhysicalInteractionHandler`, `PlayerInteraction`, `HectonMusicDirector`, `HectonVoxelVolume`, `ResourceNode`, `SubmarineFluidDynamics`, and `AbyssalThermalManager` now use named/fallback masks. Remaining `~0` query masks require scene-layer verification before narrowing: `AutonomousExtractorSystem`, `WorldCaveDirector`, `WorldProceduralFieldSampler`.
+Reason: the latest flaw report found query surfaces using `~0`, `DefaultRaycastLayers`, or serialized all-layer defaults. Source-level partial patch applied: `GravityTetherTool`, `PhysicalInteractionHandler`, `PlayerInteraction`, `HectonMusicDirector`, `HectonVoxelVolume`, `ResourceNode`, `SubmarineFluidDynamics`, and `AbyssalThermalManager` now use named/fallback masks. Follow-up source recheck no longer finds the earlier cited `~0` masks in `AutonomousExtractorSystem`, `WorldCaveDirector`, or `WorldProceduralFieldSampler`; scene-layer validation remains pending before claiming physics filtering is complete.
 
 4. Keep Core asmdef isolation as blocked, not done.
 Reason: `OMEGA_CORE_ENFORCEMENT_2026-05-01.md` explicitly rejected blind removal. `Hecton8.Core.asmdef` still references UI/third-party packages, and safe isolation requires staged bridge assemblies first.
@@ -140,7 +170,7 @@ Reason: `HectonBatchRendererGroupUtility` allocates direct-draw `TempJob` memory
 
 - Do not claim Play Mode deadlock is fixed. Play Mode was intentionally not launched.
 - Do not claim GC is zero. GCMonitor/profiler proof is absent.
-- Do not claim MCP VERIFIED as a global runtime state. Previous May 1 evidence was `0` console errors for editor/script state only; this delta pass could not refresh the console because MCP returned `no_unity_session`.
+- Do not claim MCP VERIFIED as a global runtime state. Current May 1 evidence is local `Editor.log` compile/reload success, while MCP console still exposes one stale internal build-system exception. Play Mode, GCMonitor, profiler, and long-run memory proof are absent.
 - Do not claim the docs are fully current. This queue now points to current deltas, but older dated documents still contain historical and stale claims.
 - Do not treat `2026-05-01_CURRENT_PROJECT_STATE.md` as runtime verification. It is a conceptual source-backed snapshot only.
 

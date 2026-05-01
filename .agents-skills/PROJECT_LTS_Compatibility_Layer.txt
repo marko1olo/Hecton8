@@ -414,6 +414,28 @@ ModdingFacade exposes ONLY:
 MAX 8 public methods on facade. Exceeding → split into sub-facades by domain.
 ```
 
+### [RULE] MOD ENVIRONMENTAL PROXY COMMANDS
+
+```
+ModdingFacade exposes environment mutation and sensing only through command opcodes.
+
+Voxel carving path:
+  1. Mod submits MOD_CMD_VOXEL_MODIFY as ModAupCommand.
+  2. Payload carries AUP int64x3 grid + float3 local, frame-space center, radius, SdfMode.
+  3. ModCommandDispatcher rebases through the current floating-origin frame.
+  4. PersistentWorldRegistry rejects protected core sectors before voxel ownership sees the write.
+  5. VoxelDeltaProcessor.TryApplyModSdfModify routes to HectonVoxelVolume delta paths.
+  6. Result returns through ModAupResponse; mods never receive SDF arrays or volume refs.
+
+Flow sensing path:
+  - MOD_CMD_FLOW_QUERY samples HectonFluidEngine through GlobalRegistry.Fluid.
+  - Response payload packs float3 flow as uint bits in ModAupResponse.Payload0/Payload1.
+
+Acoustic path:
+  - MOD_CMD_ACOUSTIC_PING requires SpatialAudioManager.TryEmitModAcousticPing.
+  - AI hearing remains behind NoiseSystem + AcousticOcclusionUtility; mods never call Physics APIs.
+```
+
 ### [RULE] MOD DATA SERIALIZATION BOUNDARY
 
 ```

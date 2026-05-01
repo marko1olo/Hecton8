@@ -283,8 +283,7 @@ namespace Hecton8.UI
             char[] historyLine = _historyLineStorage[writeIndex];
             int safeLength = Mathf.Min(_typingSourceLength, HistoryLineCapacity);
             System.Array.Clear(historyLine, 0, historyLine.Length);
-            for (int i = 0; i < safeLength; i++)
-                historyLine[i] = _typingBuffer[i];
+            CopyCharsUnsafe(_typingBuffer, 0, historyLine, 0, safeLength);
 
             _historyLineLengths[writeIndex] = safeLength;
             _historyLineWriteIndex = (_historyLineWriteIndex + 1) % HistoryLineCount;
@@ -320,6 +319,10 @@ namespace Hecton8.UI
             cursor = AppendLiteral(_metricBuffer, cursor, "  P ");
             cursor = AppendInt(_metricBuffer, cursor, Mathf.RoundToInt(_snapshot.MaxPressureKPa));
             cursor = AppendLiteral(_metricBuffer, cursor, "kPa");
+            cursor = AppendLiteral(_metricBuffer, cursor, "  MEM ");
+            long nativeCopyMegabytes = GlobalTelemetryBus.NativeCopyMegabyteCount;
+            cursor = AppendInt(_metricBuffer, cursor, nativeCopyMegabytes > int.MaxValue ? int.MaxValue : (int)nativeCopyMegabytes);
+            cursor = AppendLiteral(_metricBuffer, cursor, "MB");
             _metricLabel.SetCharArray(_metricBuffer, 0, Mathf.Max(0, cursor));
         }
 
@@ -610,10 +613,27 @@ namespace Hecton8.UI
             int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
             int safeStart = Mathf.Clamp(sourceStart, 0, source.Length);
             int safeLength = Mathf.Clamp(length, 0, Mathf.Min(source.Length - safeStart, destination.Length - safeCursor));
-            for (int i = 0; i < safeLength; i++)
-                destination[safeCursor + i] = source[safeStart + i];
+            CopyCharsUnsafe(source, safeStart, destination, safeCursor, safeLength);
 
             return safeCursor + safeLength;
+        }
+
+        private static unsafe void CopyCharsUnsafe(char[] source, int sourceStart, char[] destination, int destinationStart, int length)
+        {
+            if (source == null || destination == null || length <= 0)
+                return;
+
+            fixed (char* sourcePtr = source)
+            fixed (char* destinationPtr = destination)
+            {
+                long destinationBytes = (long)(destination.Length - destinationStart) * sizeof(char);
+                long sourceBytes = (long)length * sizeof(char);
+                UnsafeMemoryCopyGuard.SafeCopy(
+                    destinationPtr + destinationStart,
+                    destinationBytes,
+                    sourcePtr + sourceStart,
+                    sourceBytes);
+            }
         }
     }
 }

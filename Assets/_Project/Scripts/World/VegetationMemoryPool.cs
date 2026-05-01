@@ -352,10 +352,17 @@ namespace Hecton8.World
             if (!forceComplete && (!surfaceReady || !underwaterReady))
                 return;
 
-            if (_surfaceDefragMoveCount > 0)
-                VegetationJobRecovery.Recover(ref _surfacePoolDefragHandle);
-            if (_underwaterDefragMoveCount > 0)
-                VegetationJobRecovery.Recover(ref _underwaterPoolDefragHandle);
+            if (_surfaceDefragMoveCount > 0 &&
+                !VegetationLateFrameJobSwap.TryComplete(ref _surfacePoolDefragHandle, forceComplete))
+            {
+                return;
+            }
+
+            if (_underwaterDefragMoveCount > 0 &&
+                !VegetationLateFrameJobSwap.TryComplete(ref _underwaterPoolDefragHandle, forceComplete))
+            {
+                return;
+            }
 
             if (_surfaceDefragMoveCount > 0)
             {

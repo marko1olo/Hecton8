@@ -314,7 +314,7 @@ namespace Hecton8.PDA
                 return false;
 
             _exploredChunkMask.Set(bitIndex, true);
-            _exploredBitIndices.Add(bitIndex);
+            TryAppendExploredBitIndex(bitIndex);
             _lastBitIndex = bitIndex;
             if (raiseEvent)
             {
@@ -469,9 +469,22 @@ namespace Hecton8.PDA
 
                     int bitIndex = baseBitIndex + bit;
                     if (bitIndex < MaskBitCount)
-                        _exploredBitIndices.Add(bitIndex);
+                        TryAppendExploredBitIndex(bitIndex);
                 }
             }
+        }
+
+        private bool TryAppendExploredBitIndex(int bitIndex)
+        {
+            if (!_exploredBitIndices.IsCreated ||
+                (uint)bitIndex >= (uint)TotalChunkCapacity ||
+                _exploredBitIndices.Length >= _exploredBitIndices.Capacity)
+            {
+                return false;
+            }
+
+            _exploredBitIndices.AddNoResize(bitIndex);
+            return true;
         }
 
         private static bool TryEncodeBitIndex(int chunkX, int chunkY, int chunkZ, out int bitIndex)

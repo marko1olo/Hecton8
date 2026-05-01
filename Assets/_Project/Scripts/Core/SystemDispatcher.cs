@@ -36,6 +36,7 @@ namespace Hecton8.Core
         private const int LateFrameCircuitBreakerLaneCapacity = 32;
         private const float CircuitBreakerLogIntervalSeconds = 5f;
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
+        private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
         private const string SlowDispatcherPhaseWarningMessage = "[SystemDispatcher] Dispatcher phase exceeded slow threshold.";
         private const string FoveatedFrameCompleteWarningMessage = "[SystemDispatcher] Foveated frame completion exceeded slow threshold.";
         private const string JobHandleCompleteWarningMessage = "[SystemDispatcher] Job handle completion exceeded slow threshold.";
@@ -60,6 +61,7 @@ namespace Hecton8.Core
         private static readonly uint _SubmarineOsEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SubmarineOsEvents"));
         private static readonly uint _FlashlightEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("FlashlightEvents"));
         private static readonly uint _WeatherEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("WeatherEvents"));
+        private static readonly uint _ModuleStatusEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ModuleStatusEvents"));
         private static readonly uint _DepthZoneEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DepthZoneEvents"));
         private static readonly uint _SoundscapeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SoundscapeEvents"));
         private static readonly uint _EmergencyRelayEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EmergencyRelayEvents"));
@@ -155,6 +157,9 @@ namespace Hecton8.Core
         private static ushort _dominantLateFrameCircuitBreakerLaneCount;
         private static float _nextCircuitBreakerLogTime;
         private static float _nextAupNanInquisitorLogTime;
+        private static float _nextDispatcherPhaseWarningLogTime;
+        private static float _nextFoveatedFrameWarningLogTime;
+        private static float _nextJobHandleWarningLogTime;
         private static bool _temporalCompressionActive;
         private static int _temporalCompressionFrameCount;
         private static int _pdaOverBudgetConsecutiveFrames;
@@ -165,6 +170,11 @@ namespace Hecton8.Core
         private static bool _dispatcherRaycastsScheduled;
         private static int _pendingDispatcherRaycastCount;
         private static int _scheduledDispatcherRaycastCount;
+
+        static SystemDispatcher()
+        {
+            _foveatedSimulationManager.InitializeRuntime();
+        }
 
         /// <summary>
         /// True when this frame dropped excess fixed-step catch-up time instead of exceeding the substep cap.
@@ -181,6 +191,7 @@ namespace Hecton8.Core
         {
             _foveatedSimulationManager.Dispose();
             _foveatedSimulationManager = new FoveatedSimulationManager();
+            _foveatedSimulationManager.InitializeRuntime();
             DisposeDispatcherRaycastBuffers();
             ThreadSafeCommandQueue.Shutdown();
             ClearAllLanes();
@@ -194,6 +205,9 @@ namespace Hecton8.Core
             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
             _nextCircuitBreakerLogTime = 0f;
             _nextAupNanInquisitorLogTime = 0f;
+            _nextDispatcherPhaseWarningLogTime = 0f;
+            _nextFoveatedFrameWarningLogTime = 0f;
+            _nextJobHandleWarningLogTime = 0f;
             _temporalCompressionActive = false;
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
@@ -565,6 +579,9 @@ namespace Hecton8.Core
             SetActiveLateFrameEventLane(_WeatherEventsQueueHash);
             ReportLateFrameQueueDepth(_WeatherEventsQueueHash, WeatherEvents.PendingCount);
             WeatherEvents.FlushPending();
+            SetActiveLateFrameEventLane(_ModuleStatusEventsQueueHash);
+            ReportLateFrameQueueDepth(_ModuleStatusEventsQueueHash, ModuleStatusEvents.PendingCount);
+            ModuleStatusEvents.FlushPending();
             SetActiveLateFrameEventLane(_DepthZoneEventsQueueHash);
             ReportLateFrameQueueDepth(_DepthZoneEventsQueueHash, DepthZoneEvents.PendingCount);
             DepthZoneEvents.FlushPending();
@@ -740,10 +757,6 @@ namespace Hecton8.Core
 
                 return;
             }
-        }
-
-        private void FixedUpdate()
-        {
         }
 
         private void RunFixedStepAccumulator(float unscaledDeltaTime, bool blockGameplayLanes)
@@ -1056,7 +1069,16 @@ namespace Hecton8.Core
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowDispatcherPhaseWarningMilliseconds)
             {
-                Debug.LogWarning(SlowDispatcherPhaseWarningMessage);
+                float now = Time.unscaledTime;
+                if (now >= _nextDispatcherPhaseWarningLogTime)
+                {
+                    _nextDispatcherPhaseWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
+                    GlobalTelemetryBus.PublishJobBarrierStall(
+                        nameof(SystemDispatcher),
+                        phaseName,
+                        (float)elapsedMilliseconds);
+                    Debug.LogWarning(SlowDispatcherPhaseWarningMessage);
+                }
             }
 #endif
         }
@@ -1074,11 +1096,16 @@ namespace Hecton8.Core
                 (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
             {
-                GlobalTelemetryBus.PublishJobBarrierStall(
-                    "FoveatedSimulationManager",
-                    "LateFrameComplete",
-                    (float)elapsedMilliseconds);
-                Debug.LogWarning(FoveatedFrameCompleteWarningMessage);
+                float now = Time.unscaledTime;
+                if (now >= _nextFoveatedFrameWarningLogTime)
+                {
+                    _nextFoveatedFrameWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
+                    GlobalTelemetryBus.PublishJobBarrierStall(
+                        "FoveatedSimulationManager",
+                        "LateFrameComplete",
+                        (float)elapsedMilliseconds);
+                    Debug.LogWarning(FoveatedFrameCompleteWarningMessage);
+                }
             }
 #else
             using (_foveatedCompleteProfilerMarker.Auto())
@@ -1097,11 +1124,16 @@ namespace Hecton8.Core
                 (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
             {
-                GlobalTelemetryBus.PublishJobBarrierStall(
-                    systemName,
-                    "LateFrameComplete",
-                    (float)elapsedMilliseconds);
-                Debug.LogWarning(JobHandleCompleteWarningMessage);
+                float now = Time.unscaledTime;
+                if (now >= _nextJobHandleWarningLogTime)
+                {
+                    _nextJobHandleWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
+                    GlobalTelemetryBus.PublishJobBarrierStall(
+                        systemName,
+                        "LateFrameComplete",
+                        (float)elapsedMilliseconds);
+                    Debug.LogWarning(JobHandleCompleteWarningMessage);
+                }
             }
 #else
             handle.Complete();

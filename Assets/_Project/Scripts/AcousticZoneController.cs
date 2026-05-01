@@ -64,7 +64,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)] // После FluidEngine (-5000), до большинства систем
-    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ISoundscapeEventListener
     {
         private static readonly string[] SoundscapeTierLabels = System.Enum.GetNames(typeof(SoundscapeTier));
 
@@ -728,7 +728,7 @@ namespace Hecton8.Audio
         {
             TryRegister();
             HectonAtmosphereManager.OnStateChanged += HandleAtmosphereStateChanged;
-            SoundscapeEvents.RegisterTierChanged(HandleSoundscapeTierChanged);
+            SoundscapeEvents.Register(this);
             PhysicsEvents.OnImpact += HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             _stormInterferencePulseTimer = 0f;
@@ -785,7 +785,7 @@ namespace Hecton8.Audio
         private void OnDisable()
         {
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
-            SoundscapeEvents.UnregisterTierChanged(HandleSoundscapeTierChanged);
+            SoundscapeEvents.Unregister(this);
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             _stormInterferencePulseTimer = 0f;
@@ -805,7 +805,7 @@ namespace Hecton8.Audio
         {
             TryUnregister();
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
-            SoundscapeEvents.UnregisterTierChanged(HandleSoundscapeTierChanged);
+            SoundscapeEvents.Unregister(this);
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             ResetSourceLevelAcousticFallback();
@@ -1419,6 +1419,11 @@ namespace Hecton8.Audio
         private void HandleSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
         {
             ApplySoundscapeTierContext(newTier);
+        }
+
+        void ISoundscapeEventListener.OnSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
+        {
+            HandleSoundscapeTierChanged(oldTier, newTier);
         }
 
         private void RefreshBiomeAmbientContext()

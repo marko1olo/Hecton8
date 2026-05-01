@@ -190,6 +190,31 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Applies a validated mod SDF operation through the registered live-volume lane.
+        /// </summary>
+        /// <param name="runtimeCenter">Frame-space command center.</param>
+        /// <param name="radius">Sphere radius in meters.</param>
+        /// <param name="additive">True for Add/weld; false for Subtract/carve.</param>
+        /// <returns>True when one registered volume accepted the operation.</returns>
+        public bool TryApplyModSdfModify(Vector3 runtimeCenter, float radius, bool additive)
+        {
+            if (radius <= 0f || _registeredVolumes.Count <= 0)
+                return false;
+
+            for (int i = 0; i < _registeredVolumes.Count; i++)
+            {
+                HectonVoxelVolume volume = _registeredVolumes[i];
+                if (volume == null || !volume.HasRuntimeData)
+                    continue;
+
+                if (volume.TryApplyModSdfModify(runtimeCenter, radius, additive))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Stages a plasma-cut carve request for batch processing on the dispatcher lane.
         /// </summary>
         /// <param name="volume">Target runtime volume.</param>

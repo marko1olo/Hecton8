@@ -43,7 +43,7 @@ using UnityEditor;
 namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
-    public sealed class ProximityColliderSystem : MonoBehaviour, ITickable, IUpdatable
+    public sealed class ProximityColliderSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable
     {
         internal static ProximityColliderSystem ActiveRuntimeInstance { get; private set; }
 #if UNITY_EDITOR
@@ -96,6 +96,7 @@ namespace Hecton8.Core
         private bool      _jobScheduled;
         private bool      _initialized;
         private bool      _registeredToDispatcher;
+        private bool      _registeredLateFrame;
         private int       _jobPendingFrameCount;
 
         // ── Cached squared radii (avoid sqrt in Job) ──
@@ -333,22 +334,35 @@ namespace Hecton8.Core
                 deactivateRadius = activateRadius + 5f;
             }
 
-            if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_registeredToDispatcher)
+            if (Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToDispatcher = true;
+                if (!_registeredToDispatcher)
+                {
+                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                    _registeredToDispatcher = true;
+                }
+
+                if (!_registeredLateFrame)
+                {
+                    GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _registeredLateFrame = true;
+                }
             }
         }
 
         private void OnDisable()
         {
             // ── Завершаем текущую Job, если она в полёте ──
-            CompleteCurrentJob();
-
             if (_registeredToDispatcher)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredToDispatcher = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
             }
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
@@ -358,9 +372,9 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             // ── Завершаем Job и возвращаем все коллайдеры в пул ──
-            CompleteCurrentJob();
+            JobHandle teardownDependency = CancelScheduledJobForTeardown();
             DespawnAllColliders();
-            Cleanup();
+            Cleanup(teardownDependency);
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -447,18 +461,8 @@ namespace Hecton8.Core
 
             if (_jobScheduled)
             {
-                if (!_jobHandle.IsCompleted)
-                {
-                    _jobPendingFrameCount++;
-                    return;
-                }
-
-                _jobHandle.Complete();
-                _jobScheduled = false;
-                _jobPendingFrameCount = 0;
-
-                // ── Применяем результаты: Spawn/Despawn коллайдеров ──
-                ProcessJobResults();
+                _jobPendingFrameCount++;
+                return;
             }
 
             // ═══════════════════════════════════════════════════
@@ -466,6 +470,21 @@ namespace Hecton8.Core
             // ═══════════════════════════════════════════════════
 
             ScheduleDistanceJob();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_initialized || !_jobScheduled)
+                return;
+
+            if (!_jobHandle.IsCompleted)
+                return;
+
+            _jobHandle.Complete();
+            _jobScheduled = false;
+            _jobPendingFrameCount = 0;
+
+            ProcessJobResults();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -614,20 +633,18 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Завершает текущую Job немедленно. Безопасно вызывать
-        /// многократно — проверяет флаг _jobScheduled.
+        /// Detaches the active job handle for teardown without blocking the main thread.
         /// </summary>
-        private void CompleteCurrentJob()
+        private JobHandle CancelScheduledJobForTeardown()
         {
-            if (_jobScheduled)
-            {
-                _jobHandle.Complete();
-                _jobScheduled = false;
-                _jobPendingFrameCount = 0;
-            }
+            if (!_jobScheduled)
+                return default;
 
-            if (_prevStatusNative.IsCreated)
-                _prevStatusNative.Dispose();
+            JobHandle dependency = _jobHandle;
+            _jobHandle = default;
+            _jobScheduled = false;
+            _jobPendingFrameCount = 0;
+            return dependency;
         }
 
         /// <summary>
@@ -640,14 +657,21 @@ namespace Hecton8.Core
         /// </remarks>
         private void PrepareForReinitialize()
         {
-            CompleteCurrentJob();
+            JobHandle teardownDependency = CancelScheduledJobForTeardown();
             if (_registeredToDispatcher)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _registeredToDispatcher = false;
             }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
             DespawnAllColliders();
-            Cleanup();
+            Cleanup(teardownDependency);
 #if UNITY_EDITOR
             _debugTotalPoints = 0;
             _debugActiveColliders = 0;
@@ -681,19 +705,29 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Освобождает NativeArrays и обнуляет ссылки.
-        /// ВАЖНО: вызывать только после CompleteCurrentJob!
+        /// Releases NativeArrays with deferred disposal and clears managed ownership.
         /// </summary>
-        private void Cleanup()
+        private void Cleanup(JobHandle dependency)
         {
+            JobHandle disposeDependency = dependency;
+
             if (_positions.IsCreated)
-                _positions.Dispose();
+            {
+                disposeDependency = _positions.Dispose(disposeDependency);
+                _positions = default;
+            }
 
             if (_jobResults.IsCreated)
-                _jobResults.Dispose();
+            {
+                disposeDependency = _jobResults.Dispose(disposeDependency);
+                _jobResults = default;
+            }
 
             if (_prevStatusNative.IsCreated)
-                _prevStatusNative.Dispose();
+            {
+                disposeDependency = _prevStatusNative.Dispose(disposeDependency);
+                _prevStatusNative = default;
+            }
 
             _activeColliders = null;
             _prevStatus      = null;
@@ -713,9 +747,10 @@ namespace Hecton8.Core
         {
             if (!_initialized) return;
             if (index < 0 || index >= _pointCount) return;
+            if (_jobScheduled) return;
 
             // ── Безопасно: NativeArray write между Jobs ──
-            // Job уже Complete перед этим вызовом (Tick flow).
+            // Job completion is owned by LateFrameTick; writes are skipped while a job reads this buffer.
             _positions[index] = new float3(newPosition.x, newPosition.y, newPosition.z);
         }
 

@@ -93,6 +93,16 @@ _backPacketQueue = swap;
 No main-thread `.Clear()` is performed on a queue while it is the producer-visible Back queue.
 Teleport cleanup explicitly drains both queues after the validation handle is complete.
 
+Force packets carry an explicit priority byte:
+
+```csharp
+Visual = 0;
+Ambient = 1;
+Critical = 2;
+```
+
+Critical packets are used for kinematic/tether/impact authority. Ambient packets are used for water currents, buoyancy side effects, and environmental drift. When a `VehicleMotor` is macro-flora entangled, ambient force packets are rejected if their predicted velocity delta would extend the vehicle outside the cached tether radius. The discard gate does not apply to critical packets.
+
 ## Tractor Beam PD Controller
 
 The tractor/tow controller is not allowed to call `Rigidbody.AddForce` directly.
@@ -154,12 +164,15 @@ The local offset is accumulated in `double`; only the final camera-relative valu
 `GlobalPhysicsStateManager` suspends rigidbody interpolation during the shift, writes the shifted body pose, then issues `MovePosition(targetPosition)` before interpolation is restored.
 Unity does not expose the internal interpolation target buffer; the supported mitigation is interpolation suspension plus one-frame pose publication.
 
+During an origin shift, tracked rigidbodies moving faster than 20 m/s are temporarily forced to `CollisionDetectionMode.Continuous`. The previous CCD mode is restored after the rebase window. The position shift and interpolation mitigation must be applied in the same rebase window; splitting those operations creates one-frame ghost collisions.
+
 Safe teleport protocol:
 1. `HectonFloatingOrigin.BeginSafeTeleportProtocol()` pauses physics integration for the frame.
 2. `PhysicsApplySystem.ClearQueuedPacketsStatic()` completes pending packet validation and drains Front/Back queues.
 3. Player and vehicle inertial-ghost buffers are reset.
 4. Teleport/AUP mutation executes.
-5. `HectonFloatingOrigin.EndSafeTeleportProtocol()` releases the one-frame physics pause.
+5. Rigidbody interpolation history is invalidated by resetting center of mass and toggling kinematic state through the safe-teleport reset owner.
+6. `HectonFloatingOrigin.EndSafeTeleportProtocol()` releases the one-frame physics pause.
 
 ## Relative Transport Frames
 
@@ -202,6 +215,17 @@ playerWorldRotationNew = qCurrent * localRotationBeforeDelta;
 ```
 
 This is equivalent to multiplying by `dq` when the platform cache is coherent, but the explicit local-rotation form is the contract.
+The rotation update runs before the KCC fixed movement solve, so input, contact sweeps, carrier motion, and camera feedback all see the same hull-relative frame.
+
+Interaction hits against platform-owned colliders must be cached in platform-local space at raycast publication time. The queued signal is rehydrated to AUP hit coordinates only at dispatch time:
+
+```csharp
+localHit = platformTransform.InverseTransformPoint(runtimeHit);
+runtimeHitAtDispatch = platformTransform.TransformPoint(localHit);
+signal.HitPoint = ToAbsoluteUniversePosition(runtimeHitAtDispatch);
+```
+
+This prevents "grab lag" when a submarine translates or rolls between the raycast frame and the interaction dispatch frame.
 
 Dropped items inside active `BaseModule` hazard bounds or submarine fallback bounds inherit platform point velocity before their spawn velocity-change packet is queued.
 
@@ -265,7 +289,7 @@ Vehicles publish submersion; the global manager captures dry baselines once, app
 Reference kernel:
 
 ```csharp
-multiplier = 1f + 0.3f * submersionFactor;
+multiplier = 1f + 0.35f * submersionFactor;
 body.angularDamping = dryAngularDamping * multiplier;
 body.inertiaTensor = dryInertiaTensor * multiplier;
 body.inertiaTensorRotation = dryInertiaTensorRotation;
@@ -279,6 +303,8 @@ Vehicle hydrodynamic damping uses the analytical drag form rather than Unity lin
 
 ```csharp
 kDrag = baseK * math.log10(1f + depthMeters / 100f);
+if (length(velocity) < 0.001f)
+    velocity = float3.zero;
 velocity = velocity / (1f + kDrag * length(velocity) * fixedDeltaTime);
 ```
 
@@ -357,6 +383,14 @@ if (!isfinite(position) || !isfinite(rotation) || !isfinite(velocity))
 ```
 
 The last-good runtime position remains as a fallback, but the authoritative recovery target is the last valid AUP so a post-rebase recovery does not snap to a stale camera-relative coordinate.
+
+Kinetic anomaly telemetry is emitted when tracked-body `deltaVelocity / fixedDeltaTime` exceeds 100 m/s2 outside an origin-shift window. The crash ring stores the AUP position, packed velocity delta, and measured acceleration under `ExportReason.KineticAnomaly`.
+
+## Core AUP Cache Subscription
+
+Core systems with persistent runtime-space `Vector3` caches must implement `IOriginShiftListener` when those cached vectors survive across frames. `FoveatedSimulationManager` owns visual interpolation and Doppler caches, so it subtracts `OriginShiftEventData.ShiftOffset` from `_visualFromPositions`, `_visualToPositions`, and `_lastListenerPosition` during origin shifts after completing outstanding scoring/interpolation jobs.
+
+Non-Mono Core services must not register origin-shift listeners from constructors or field initializers. The owning bootstrap/dispatcher calls an explicit runtime-initialization method, and disposal unregisters idempotently.
 
 ## Wall Slide And Depenetration
 

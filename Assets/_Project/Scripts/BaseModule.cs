@@ -138,6 +138,7 @@ namespace Hecton8.Gameplay
         private const float DefaultJointShearCompressionDeltaThreshold = 0.15f;
         private const float DefaultJointShearDamagePerSecondAtFullDelta = 0.02f;
         private const float DefaultJointShearStressRecoveryPerSecond = 0.08f;
+        private const float DefaultJointShearGroanCooldownSeconds = 4f;
         private const float DefaultBreachVortexDurationSeconds = 5f;
         private const float DefaultBreachVortexReferenceMassKilograms = 80f;
         private const float DefaultBreachVortexMaximumAccelerationMetersPerSecondSquared = 45f;
@@ -239,6 +240,9 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Normalized joint shear stress recovered per second when no pressure mismatch overload is present.")]
         [SerializeField, Min(0f)] private float jointShearStressRecoveryPerSecond = DefaultJointShearStressRecoveryPerSecond;
+
+        [Tooltip("Minimum seconds between structural groan audio events emitted by this module under joint shear.")]
+        [SerializeField, Min(0.1f)] private float jointShearGroanCooldownSeconds = DefaultJointShearGroanCooldownSeconds;
 
         [Header("Breach Vortex")]
         [Tooltip("Duration in seconds for the transient depressurization vortex emitted on module breach.")]
@@ -486,6 +490,7 @@ namespace Hecton8.Gameplay
         private float _pressureCompressionVolumeScale = 1f;
         private float _pressureCompressionDepthMeters;
         private float _jointShearStress01;
+        private float _jointShearGroanCooldownRemainingSeconds;
 
         /// <summary>
         /// Предыдущее состояние isFlooded, используемое для определения
@@ -543,6 +548,11 @@ namespace Hecton8.Gameplay
         /// <summary>Максимальная целостность (read-only).</summary>
         public float MaxIntegrity => maxIntegrity;
         internal static IReadOnlyList<BaseModule> ActiveModules => s_activeModules;
+        internal static int ActiveModuleCount => s_activeModules.Count;
+        internal static BaseModule GetActiveModuleAt(int index)
+        {
+            return index >= 0 && index < s_activeModules.Count ? s_activeModules[index] : null;
+        }
 
         /// <summary>
         /// Текущая целостность. ConstructionManager записывает сюда
@@ -754,6 +764,7 @@ namespace Hecton8.Gameplay
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
             _jointShearStress01 = 0f;
+            _jointShearGroanCooldownRemainingSeconds = 0f;
             _bulkheadFailureLatched = false;
             _emergencyBulkheadLockedDown = false;
             _implosionTriggered = false;
@@ -802,6 +813,7 @@ namespace Hecton8.Gameplay
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
             _jointShearStress01 = 0f;
+            _jointShearGroanCooldownRemainingSeconds = 0f;
             _bulkheadFailureLatched = false;
             _emergencyBulkheadLockedDown = false;
             _implosionTriggered = false;
@@ -1371,7 +1383,13 @@ namespace Hecton8.Gameplay
 
         internal void DecayJointShearStress(float deltaTime)
         {
-            if (deltaTime <= 0f || !float.IsFinite(deltaTime) || _jointShearStress01 <= 0f)
+            if (deltaTime <= 0f || !float.IsFinite(deltaTime))
+                return;
+
+            if (_jointShearGroanCooldownRemainingSeconds > 0f)
+                _jointShearGroanCooldownRemainingSeconds = Mathf.Max(0f, _jointShearGroanCooldownRemainingSeconds - deltaTime);
+
+            if (_jointShearStress01 <= 0f)
                 return;
 
             float recovery = Mathf.Max(0f, jointShearStressRecoveryPerSecond) * deltaTime;
@@ -1379,6 +1397,15 @@ namespace Hecton8.Gameplay
                 return;
 
             _jointShearStress01 = Mathf.Max(0f, _jointShearStress01 - recovery);
+        }
+
+        internal bool TryConsumeJointShearGroanCooldown()
+        {
+            if (_jointShearGroanCooldownRemainingSeconds > 0f)
+                return false;
+
+            _jointShearGroanCooldownRemainingSeconds = Mathf.Max(0.1f, jointShearGroanCooldownSeconds);
+            return true;
         }
 
         internal bool ApplyJointShearStress(float compressionDelta01, float deltaTime)

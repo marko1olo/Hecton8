@@ -71,7 +71,7 @@ namespace Hecton8.Environment
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IRenderable
+    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IRenderable, ISoundscapeEventListener
     {
         internal static HectonUnderwaterVisuals ActiveRuntimeInstance { get; private set; }
         internal static Material RuntimeSkyMaterialReference { get; private set; }
@@ -97,6 +97,8 @@ namespace Hecton8.Environment
         private const float UnderwaterFarHazeFullDepth = 14f;
         private const float UnderwaterFarHazeDensityBoost = 0.00075f;
         private const float UnderwaterBaselineDistanceHaze = 0.00045f;
+        private const float HudFogPerturbationMaxDensityBoost = 0.0012f;
+        private const float HudFogPerturbationResponse = 8f;
         private const float UnderwaterMediumFogColorBlend = 0.54f;
         private const float UnderwaterDepthColumnHazeFullDepth = 36f;
         private const float UnderwaterDepthColumnHazeDensityBoost = 0.00055f;
@@ -132,6 +134,17 @@ namespace Hecton8.Environment
         {
             ActiveRuntimeInstance = null;
         }
+
+        internal static void PublishHudAverageLuminance(float luminance01)
+        {
+            if (ActiveRuntimeInstance == null)
+                return;
+
+            ActiveRuntimeInstance._hudFogTargetLuminance01 = math.saturate(luminance01);
+        }
+
+        private float _hudFogTargetLuminance01;
+        private float _hudFogSmoothedLuminance01;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  INSPECTOR Ã¢â‚¬â€ REFERENCES
@@ -601,6 +614,8 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_HectonNoirCausticsShape");
         private static readonly int _HectonNoirCaveAttenuationId =
             Shader.PropertyToID("_HectonNoirCaveAttenuation");
+        private static readonly int _HectonHudFogPerturbationId =
+            Shader.PropertyToID("_HectonHudFogPerturbation");
         private static readonly int _HectonFlowSynchronyParamsId =
             Shader.PropertyToID("_HectonFlowSynchronyParams");
         private static readonly int _ID_SunSize =
@@ -834,7 +849,7 @@ namespace Hecton8.Environment
                 EnsureGameplayCameraStackEnabled();
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
-                SoundscapeEvents.RegisterTierChanged(HandleSoundscapeTierChanged);
+                SoundscapeEvents.Register(this);
                 ResolveBiomeMatrixDirector();
                 ApplyCurrentMatrixVisualOverride();
                 TryRegisterTickManagers();
@@ -1112,7 +1127,7 @@ namespace Hecton8.Environment
                 UnregisterRenderDispatcher();
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
-                SoundscapeEvents.UnregisterTierChanged(HandleSoundscapeTierChanged);
+                SoundscapeEvents.Unregister(this);
 
                 if (_registeredTick)
                 {
@@ -3136,6 +3151,10 @@ namespace Hecton8.Environment
             ApplySoundscapeTierResponse(newTier);
         }
 
+        void ISoundscapeEventListener.OnSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
+        {
+            HandleSoundscapeTierChanged(oldTier, newTier);
+        }
         private void RefreshSoundscapeTierResponse(bool force)
         {
             SoundscapeTier tier = SoundscapeSystem.Instance != null
@@ -4353,6 +4372,15 @@ namespace Hecton8.Environment
                 CalmTurbulenceFrequency,
                 StormTurbulenceFrequency,
                 _weatherStormFlowBlend);
+            float hudDeltaTime = Application.isPlaying ? math.max(0f, Time.unscaledDeltaTime) : 0.0166667f;
+            float hudAlpha = 1f - math.exp(-HudFogPerturbationResponse * hudDeltaTime);
+            _hudFogSmoothedLuminance01 = math.lerp(
+                _hudFogSmoothedLuminance01,
+                _hudFogTargetLuminance01,
+                hudAlpha);
+            float hudFogDensityBoost = _cachedVisualIsUnderwater
+                ? _hudFogSmoothedLuminance01 * HudFogPerturbationMaxDensityBoost
+                : 0f;
 
             Shader.SetGlobalVector(
                 _HectonNoirResolveSettingsId,
@@ -4368,7 +4396,14 @@ namespace Hecton8.Environment
                     waterLevel,
                     1f / verticalFogSpan,
                     math.max(0f, abyssalDensityBoost),
-                    math.max(0.0001f, _cachedFogDensity)));
+                    math.max(0.0001f, _cachedFogDensity + hudFogDensityBoost)));
+            Shader.SetGlobalVector(
+                _HectonHudFogPerturbationId,
+                new Vector4(
+                    _hudFogSmoothedLuminance01,
+                    hudFogDensityBoost,
+                    0f,
+                    0f));
             Shader.SetGlobalVector(
                 _HectonNoirDitherParamsId,
                 new Vector4(
@@ -4424,6 +4459,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_HectonNoirCausticsShapeId, new Vector4(3.4f, 0.38f, 12f, 8f));
             Shader.SetGlobalVector(_HectonNoirCaveAttenuationId, new Vector4(0.9f, 0f, 0f, 0f));
             Shader.SetGlobalVector(_HectonFlowSynchronyParamsId, new Vector4(1f, 0.26f, 0f, 0f));
+            Shader.SetGlobalVector(_HectonHudFogPerturbationId, Vector4.zero);
         }
 
         private void UpdateFlowSynchronyState(float deltaTime)

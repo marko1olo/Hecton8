@@ -898,6 +898,33 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Applies a security-gated mod SDF operation to this runtime volume.
+        /// The dispatcher owns bounds/protected-sector validation before this call.
+        /// </summary>
+        internal bool TryApplyModSdfModify(Vector3 runtimeCenter, float radius, bool additive)
+        {
+            if (!_runtimeDataReady || _deltaProcessor == null || radius <= 0f || !IsFinite(runtimeCenter))
+                return false;
+
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
+                return false;
+
+            float safeRadius = Mathf.Max(_voxelSize, radius);
+            Bounds runtimeBounds = BuildRuntimeAabb(transform, localBounds);
+            if (runtimeBounds.SqrDistance(runtimeCenter) > safeRadius * safeRadius)
+                return false;
+
+            Vector3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeCenter);
+            SetBakeState(VoxelBakeState.Pending);
+            if (additive)
+                _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absoluteCenter, safeRadius, safeRadius, DefaultDeltaMaterialId);
+            else
+                _deltaProcessor.ApplyImmediateAbsoluteCrater(this, absoluteCenter, safeRadius, DefaultDeltaMaterialId);
+
+            return true;
+        }
+
+        /// <summary>
         /// Applies a persistent additive organic root mound through the voxel delta owner.
         /// </summary>
         internal void ApplyOrganicRootMound(Vector3 pos, float radius, float strength)

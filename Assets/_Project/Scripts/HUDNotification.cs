@@ -4,6 +4,7 @@
 // Sibling Ðº HUD_V4_CanvasRoot Ð½Ð° Suit_HUD_Canvas.
 // ============================================================================
 
+using System;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;

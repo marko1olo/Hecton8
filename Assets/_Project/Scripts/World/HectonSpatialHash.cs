@@ -124,7 +124,10 @@ namespace Hecton8.World
             {
                 int safeCount = math.min(Count, math.min(Handles.Length, Entries.Length));
                 for (int i = 0; i < safeCount; i++)
-                    AddEntryCells(Handles[i], in Entries[i], BackBuffer);
+                {
+                    SpatialEntry entry = Entries[i];
+                    AddEntryCells(Handles[i], in entry, BackBuffer);
+                }
             }
         }
 

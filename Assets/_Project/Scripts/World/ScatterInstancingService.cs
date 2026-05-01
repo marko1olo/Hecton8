@@ -72,7 +72,10 @@ namespace Hecton8.World
                 matricesByPrototype[prototype] = matrices;
             }
 
-            matrices[count] = Matrix4x4.TRS(placement.RuntimePosition, placement.Rotation, Vector3.one * placement.Scale);
+            matrices[count] = ScatterGPUIBackend.BuildOriginRelativeMatrix(
+                placement.Position,
+                placement.Rotation,
+                placement.Scale);
             counts[prototype] = count + 1;
             activeGpuiPlacements++;
             return true;
