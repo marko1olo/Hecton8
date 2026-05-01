@@ -19,6 +19,7 @@ namespace Hecton8.EditorTools
         private const float ProxySnapRaycastElevationMeters = 80f;
         private const float ProxySnapRaycastDistanceMeters = 240f;
         private const float ProxySnapMaxTiltDegrees = 35f;
+        private const float ProxySnapMinimumNormalUpDot = 0.2f;
 
         [MenuItem("Hecton/Authoring/Rebuild Procedural Proxy Scene", priority = 179)]
         public static void RebuildProceduralProxyScene()
@@ -289,7 +290,7 @@ namespace Hecton8.EditorTools
 
                 point = hit.point;
                 normal = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
-                return true;
+                return Vector3.Dot(normal, Vector3.up) >= ProxySnapMinimumNormalUpDot;
             }
             finally
             {

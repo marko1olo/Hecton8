@@ -6,6 +6,7 @@
 namespace Hecton8.Gameplay
 {
     using Hecton8.Core;
+    using Hecton8.World;
     using UnityEngine;
 
     /// <summary>
@@ -15,12 +16,8 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Sargassum Cut Responder")]
     public sealed class SargassumCutResponder : MonoBehaviour, ITickable, IUpdatable
     {
-        private static readonly int InteractionPositionId = Shader.PropertyToID("_InteractionPosition");
-        private static readonly int InteractionRadiusId = Shader.PropertyToID("_InteractionRadius");
-        private static readonly int InteractionCutStrengthId = Shader.PropertyToID("_InteractionCutStrength");
-
         [Header("── Runtime Bindings ───────────────────")]
-        [Tooltip("Cluster renderers that receive the cut-mask MaterialPropertyBlock.")]
+        [Tooltip("Legacy renderer list retained for prefab compatibility. Cut response is routed through SargassumCutManager global mask publishing.")]
         [SerializeField] private Renderer[] targetRenderers;
 
         [Tooltip("Optional particle system used for leaf scrap bursts.")]
@@ -51,7 +48,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private Vector3 _debugCutPosition;
         [SerializeField] private float _debugParticleCooldown;
 
-        private MaterialPropertyBlock _mpb;
         private bool _registered;
         private float _cutStrength;
         private float _cutRadius;
@@ -85,7 +81,7 @@ namespace Hecton8.Gameplay
             _cutPositionWS = positionWS;
             _cutRadius = Mathf.Lerp(minCutRadius, maxCutRadius, normalizedSpeed);
             _cutStrength = Mathf.Max(_cutStrength, Mathf.Lerp(0.5f, 1f, normalizedSpeed));
-            ApplyCutState();
+            PublishCutMask(positionWS, velocityWS);
 
             if (_registered)
                 return;
@@ -148,7 +144,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            EnsurePropertyBlock();
+            ApplyCutState();
         }
 
         private void OnDisable()
@@ -162,31 +158,19 @@ namespace Hecton8.Gameplay
 
         private void ApplyCutState()
         {
-            if (targetRenderers == null)
-                return;
-
-            EnsurePropertyBlock();
-            for (int i = 0; i < targetRenderers.Length; i++)
-            {
-                Renderer renderer = targetRenderers[i];
-                if (renderer == null)
-                    continue;
-
-                renderer.GetPropertyBlock(_mpb);
-                _mpb.SetVector(InteractionPositionId, _cutPositionWS);
-                _mpb.SetFloat(InteractionRadiusId, Mathf.Max(minCutRadius, _cutRadius));
-                _mpb.SetFloat(InteractionCutStrengthId, _cutStrength);
-                renderer.SetPropertyBlock(_mpb);
-                _mpb.Clear();
-            }
+            _debugCutStrength = _cutStrength;
+            _debugCutRadius = _cutRadius;
+            _debugCutPosition = _cutPositionWS;
+            _debugParticleCooldown = _particleCooldownRemaining;
         }
 
-        private void EnsurePropertyBlock()
+        private void PublishCutMask(Vector3 positionWS, Vector3 velocityWS)
         {
-            if (_mpb != null)
+            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            if (cutManager == null)
                 return;
 
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — shared cut-mask payload for bound renderers — owner: SargassumCutResponder
+            cutManager.RegisterExternalCut(positionWS, Mathf.Max(minCutRadius, _cutRadius), _cutStrength, velocityWS, 0.45f);
         }
 
         private void UnregisterIfNeeded()

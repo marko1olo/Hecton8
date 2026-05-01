@@ -1,5 +1,14 @@
 # SAVE_V8_BINARY_SPEC
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+2026-05-01 current-state boundary:
+
+- This is the binary save container specification, not save/load runtime proof.
+- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- `SaveBinaryStorage.cs` is the source-backed storage owner; slot traversal, corruption fallback, paging, and long-session persistence still require fresh Unity/runtime validation.
+
 ## Scope
 
 HECTON-8 save container `0x0008` (`SaveBinaryStorage.CurrentVersion`).

@@ -5,6 +5,12 @@ Status: PENDING VERIFICATION
 Scope: source-backed ownership map for survival, oxygen, pressure, thermal stress, hazard routing, damage consequences, and adjacent stress/presentation branches
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Persistent_Object_Registry.txt`
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- This file maps survival/hazard ownership; it does not prove integrated hazard traversal, pressure correctness, or live GC/CPU behavior.
+- Current high-risk cross-domain concerns remain presentation-owned gameplay transitions, broad physics masks, and unverified save/load recovery paths.
+
 ## Purpose
 
 This file exists to answer one narrow question:

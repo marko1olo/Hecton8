@@ -31,16 +31,17 @@ namespace Hecton8.Modding
         private const string ManifestFileName = "mod.json";
         private const string DefaultAssemblyExtension = ".dll";
         private const string DefaultBundleExtension = ".bundle";
+        internal const int CurrentAPIVersion = 2;
 
         // COLD ALLOC: List<LoadedMod>[16] — successfully instantiated managed mods — owner: ModLoader
         private static readonly List<LoadedMod> _loadedMods = new List<LoadedMod>(16);
         // COLD ALLOC: List<ModRuntimeInfo>[32] — discovered runtime info descriptors for UI and diagnostics — owner: ModLoader
         private static readonly List<ModRuntimeInfo> _runtimeInfos = new List<ModRuntimeInfo>(32);
         // COLD ALLOC: Dictionary<string,int>[32] — modId to runtime info index lookup — owner: ModLoader
-        private static readonly Dictionary<string, int> _runtimeInfoIndexById = new Dictionary<string, int>(32);
+        private static readonly Dictionary<uint, int> _runtimeInfoIndexByHash = new Dictionary<uint, int>(32);
         // COLD ALLOC: Dictionary<string,Func<IHectonMod>>[16] — explicit boot-registered managed mod factories — owner: ModLoader
-        private static readonly Dictionary<string, Func<IHectonMod>> _managedModFactories =
-            new Dictionary<string, Func<IHectonMod>>(16);
+        private static readonly Dictionary<uint, Func<IHectonMod>> _managedModFactories =
+            new Dictionary<uint, Func<IHectonMod>>(16);
         // COLD ALLOC: SaveEventListener[1] — static save-event bridge for mod runtime hooks — owner: ModLoader
         private static readonly SaveEventListener _saveEventListener = new SaveEventListener();
         private static readonly BootstrapEventListener _bootstrapEventListener = new BootstrapEventListener();
@@ -59,7 +60,7 @@ namespace Hecton8.Modding
             UninstallHooks();
             _loadedMods.Clear();
             _runtimeInfos.Clear();
-            _runtimeInfoIndexById.Clear();
+            _runtimeInfoIndexByHash.Clear();
             _managedModFactories.Clear();
             _bootstrapped = false;
             _modsInitialized = false;
@@ -93,7 +94,8 @@ namespace Hecton8.Modding
         internal static bool TryGetModDirectory(string modId, out string directoryPath)
         {
             directoryPath = null;
-            if (!_runtimeInfoIndexById.TryGetValue(modId, out int index))
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            if (modHash == 0u || !_runtimeInfoIndexByHash.TryGetValue(modHash, out int index))
                 return false;
 
             directoryPath = _runtimeInfos[index].DirectoryPath;
@@ -105,7 +107,11 @@ namespace Hecton8.Modding
             if (string.IsNullOrWhiteSpace(modId) || factory == null)
                 return false;
 
-            _managedModFactories[modId] = factory;
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            if (modHash == 0u)
+                return false;
+
+            _managedModFactories[modHash] = factory;
             return true;
         }
 
@@ -114,7 +120,9 @@ namespace Hecton8.Modding
             if (string.IsNullOrWhiteSpace(modId))
                 return;
 
-            _managedModFactories.Remove(modId);
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            if (modHash != 0u)
+                _managedModFactories.Remove(modHash);
         }
 
         private static void InstallHooks()
@@ -124,6 +132,8 @@ namespace Hecton8.Modding
 
             SaveEvents.Register(_saveEventListener);
             HectonEventBus.InstallNativeQueueBindings();
+            ModCommandDispatcher.Initialize();
+            ModResourceRegistry.Initialize();
             SceneBootstrap.Register(_bootstrapEventListener);
             Application.quitting += HandleApplicationQuitting;
             SceneManager.sceneLoaded += HandleSceneLoaded;
@@ -140,6 +150,8 @@ namespace Hecton8.Modding
             SceneBootstrap.Unregister(_bootstrapEventListener);
             Application.quitting -= HandleApplicationQuitting;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            ModCommandDispatcher.Shutdown();
+            ModResourceRegistry.Shutdown();
             _hooksInstalled = false;
         }
 
@@ -235,7 +247,7 @@ namespace Hecton8.Modding
             string assemblyPath,
             bool hasManagedEntry)
         {
-            return new ModCandidate
+            ModCandidate candidate = new ModCandidate
             {
                 Metadata = new ModMetadata
                 {
@@ -243,7 +255,10 @@ namespace Hecton8.Modding
                     Name = string.IsNullOrWhiteSpace(manifest.Name) ? manifest.Id : manifest.Name,
                     Version = string.IsNullOrWhiteSpace(manifest.Version) ? "0.0.0" : manifest.Version,
                     Author = manifest.Author ?? string.Empty,
-                    Dependencies = manifest.Dependencies ?? Array.Empty<string>()
+                    Dependencies = manifest.Dependencies ?? Array.Empty<string>(),
+                    RequiredAPIVersion = manifest.RequiredAPIVersion,
+                    StableIdHash = ModCommandDispatcher.ComputeModHash(manifest.Id),
+                    ModPriority = manifest.ModPriority
                 },
                 EntryAssemblyPath = assemblyPath,
                 EntryTypeName = manifest.EntryType ?? string.Empty,
@@ -253,6 +268,19 @@ namespace Hecton8.Modding
                 LocalizationFiles = ResolveLocalizationFiles(modDirectory),
                 HasManagedEntry = hasManagedEntry
             };
+
+            if (manifest.RequiredAPIVersion <= 0)
+            {
+                candidate.IsDisabled = true;
+                candidate.DisabledReason = "Missing RequiredAPIVersion.";
+            }
+            else if (manifest.RequiredAPIVersion > CurrentAPIVersion)
+            {
+                candidate.IsDisabled = true;
+                candidate.DisabledReason = "RequiredAPIVersion exceeds engine API version.";
+            }
+
+            return candidate;
         }
 
         private static string ResolveAssemblyPath(string modDirectory, ModManifest manifest)
@@ -298,21 +326,28 @@ namespace Hecton8.Modding
         private static void BuildLoadOrder(List<ModCandidate> candidates, List<ModCandidate> loadOrder)
         {
             // COLD ALLOC: Dictionary<string,ModCandidate>[candidate count] — dependency lookup by modId — owner: ModLoader
-            Dictionary<string, ModCandidate> byId = new Dictionary<string, ModCandidate>(candidates.Count);
+            Dictionary<uint, ModCandidate> byId = new Dictionary<uint, ModCandidate>(candidates.Count);
             // COLD ALLOC: HashSet<string>[candidate count] — sorted IDs for dependency resolution — owner: ModLoader
-            HashSet<string> sortedIds = new HashSet<string>();
+            HashSet<uint> sortedIds = new HashSet<uint>();
 
             for (int i = 0; i < candidates.Count; i++)
             {
                 ModCandidate candidate = candidates[i];
-                if (byId.TryGetValue(candidate.Metadata.Id, out ModCandidate existing))
+                uint candidateHash = candidate.Metadata.StableIdHash != 0u
+                    ? candidate.Metadata.StableIdHash
+                    : ModCommandDispatcher.ComputeModHash(candidate.Metadata.Id);
+                ModCandidate existing = null;
+                if (candidateHash == 0u || byId.TryGetValue(candidateHash, out existing))
                 {
                     candidate.IsDisabled = true;
-                    candidate.DisabledReason = $"Duplicate mod ID. Keeping '{existing.ManifestPath}'.";
+                    candidate.DisabledReason = existing != null
+                        ? $"Duplicate mod ID. Keeping '{existing.ManifestPath}'."
+                        : "Invalid mod ID hash.";
                     continue;
                 }
 
-                byId.Add(candidate.Metadata.Id, candidate);
+                candidate.Metadata.StableIdHash = candidateHash;
+                byId.Add(candidateHash, candidate);
             }
 
             int unresolvedCount = 0;
@@ -344,7 +379,7 @@ namespace Hecton8.Modding
                         continue;
 
                     loadOrder.Add(candidate);
-                    sortedIds.Add(candidate.Metadata.Id);
+                    sortedIds.Add(candidate.Metadata.StableIdHash);
                     candidate.IsProcessed = true;
                     unresolvedCount--;
                     progressed = true;
@@ -368,7 +403,7 @@ namespace Hecton8.Modding
             }
         }
 
-        private static bool TryDisableForMissingDependency(ModCandidate candidate, Dictionary<string, ModCandidate> byId)
+        private static bool TryDisableForMissingDependency(ModCandidate candidate, Dictionary<uint, ModCandidate> byId)
         {
             string[] dependencies = candidate.Metadata.Dependencies;
             if (dependencies == null || dependencies.Length == 0)
@@ -380,7 +415,8 @@ namespace Hecton8.Modding
                 if (string.IsNullOrWhiteSpace(dependencyId))
                     continue;
 
-                if (byId.TryGetValue(dependencyId, out ModCandidate dependencyCandidate) && !dependencyCandidate.IsDisabled)
+                uint dependencyHash = ModCommandDispatcher.ComputeModHash(dependencyId);
+                if (dependencyHash != 0u && byId.TryGetValue(dependencyHash, out ModCandidate dependencyCandidate) && !dependencyCandidate.IsDisabled)
                     continue;
 
                 candidate.IsDisabled = true;
@@ -392,7 +428,7 @@ namespace Hecton8.Modding
             return false;
         }
 
-        private static bool AreDependenciesSatisfied(ModCandidate candidate, HashSet<string> sortedIds)
+        private static bool AreDependenciesSatisfied(ModCandidate candidate, HashSet<uint> sortedIds)
         {
             string[] dependencies = candidate.Metadata.Dependencies;
             if (dependencies == null || dependencies.Length == 0)
@@ -404,7 +440,8 @@ namespace Hecton8.Modding
                 if (string.IsNullOrWhiteSpace(dependencyId))
                     continue;
 
-                if (!sortedIds.Contains(dependencyId))
+                uint dependencyHash = ModCommandDispatcher.ComputeModHash(dependencyId);
+                if (dependencyHash == 0u || !sortedIds.Contains(dependencyHash))
                     return false;
             }
 
@@ -442,20 +479,39 @@ namespace Hecton8.Modding
                     return;
                 }
 
+                int requiredApiVersion = ResolveRequiredApiVersion(candidate.Metadata.RequiredAPIVersion, modInstance);
+                if (requiredApiVersion <= 0)
+                {
+                    DisableCandidate(candidate, "Missing RequiredAPIVersion.");
+                    return;
+                }
+
+                if (requiredApiVersion > CurrentAPIVersion)
+                {
+                    DisableCandidate(candidate, "RequiredAPIVersion exceeds engine API version.");
+                    return;
+                }
+
                 LoadedMod loadedMod = new LoadedMod
                 {
                     Metadata = candidate.Metadata,
                     Instance = modInstance
                 };
+                loadedMod.Metadata.RequiredAPIVersion = requiredApiVersion;
+
+                ModCommandDispatcher.RegisterMod(loadedMod.Metadata.Id, requiredApiVersion, loadedMod.Metadata.ModPriority);
 
                 if (!ExecuteModCallback(loadedMod.Metadata.Id, loadedMod.Instance.OnLoad, "OnLoad"))
+                {
+                    ModCommandDispatcher.UnregisterMod(loadedMod.Metadata.Id);
                     return;
+                }
 
                 _loadedMods.Add(loadedMod);
 
                 RecordRuntimeInfo(new ModRuntimeInfo
                 {
-                    Metadata = candidate.Metadata,
+                    Metadata = loadedMod.Metadata,
                     Status = ModLoadStatus.Active,
                     DirectoryPath = candidate.ModDirectory,
                     StatusMessage = string.Empty,
@@ -468,6 +524,18 @@ namespace Hecton8.Modding
             {
                 DisableCandidate(candidate, $"Load failure '{ex.Message}'.");
             }
+        }
+
+        private static int ResolveRequiredApiVersion(int manifestApiVersion, IHectonMod modInstance)
+        {
+            int requiredApiVersion = manifestApiVersion;
+            if (modInstance is IHectonVersionedMod versionedMod &&
+                versionedMod.RequiredAPIVersion > requiredApiVersion)
+            {
+                requiredApiVersion = versionedMod.RequiredAPIVersion;
+            }
+
+            return requiredApiVersion;
         }
 
         private static void DisableCandidate(ModCandidate candidate, string reason)
@@ -499,6 +567,7 @@ namespace Hecton8.Modding
                 return;
 
             HectonEventBus.DisableSubscriber(modId);
+            ModCommandDispatcher.QuarantineMod(modId);
 
             for (int i = _loadedMods.Count - 1; i >= 0; i--)
             {
@@ -522,6 +591,7 @@ namespace Hecton8.Modding
                 }
 
                 _loadedMods.RemoveAt(i);
+                ModCommandDispatcher.UnregisterMod(modId);
                 ModRuntimeInfo info = new ModRuntimeInfo
                 {
                     Metadata = loadedMod.Metadata,
@@ -545,7 +615,8 @@ namespace Hecton8.Modding
         {
             modInstance = null;
             failureReason = null;
-            if (!_managedModFactories.TryGetValue(modId, out Func<IHectonMod> factory) || factory == null)
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            if (modHash == 0u || !_managedModFactories.TryGetValue(modHash, out Func<IHectonMod> factory) || factory == null)
             {
                 failureReason =
                     "Managed code entry requires explicit boot registration. Runtime assembly reflection loading is disabled for IL2CPP compliance.";
@@ -618,7 +689,10 @@ namespace Hecton8.Modding
             _shutdownInvoked = true;
 
             for (int i = _loadedMods.Count - 1; i >= 0; i--)
+            {
                 ExecuteModCallback(_loadedMods[i].Metadata.Id, _loadedMods[i].Instance.OnUnload, "OnUnload");
+                ModCommandDispatcher.UnregisterMod(_loadedMods[i].Metadata.Id);
+            }
 
             _loadedMods.Clear();
         }
@@ -630,11 +704,14 @@ namespace Hecton8.Modding
 
             try
             {
+                long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
                 using (ModExecutionScope.Enter(modId))
                 {
                     callback();
                 }
 
+                long allocatedDelta = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+                ModCommandDispatcher.ReportModManagedAllocation(modId, allocatedDelta);
                 return true;
             }
             catch (Exception ex)
@@ -647,14 +724,19 @@ namespace Hecton8.Modding
 
         private static void RecordRuntimeInfo(ModRuntimeInfo info)
         {
-            if (_runtimeInfoIndexById.TryGetValue(info.Metadata.Id, out int index))
+            if (info.Metadata.StableIdHash == 0u)
+                info.Metadata.StableIdHash = ModCommandDispatcher.ComputeModHash(info.Metadata.Id);
+
+            if (info.Metadata.StableIdHash != 0u && _runtimeInfoIndexByHash.TryGetValue(info.Metadata.StableIdHash, out int index))
             {
                 _runtimeInfos[index] = info;
                 RuntimeRegistryChanged?.Invoke();
                 return;
             }
 
-            _runtimeInfoIndexById.Add(info.Metadata.Id, _runtimeInfos.Count);
+            if (info.Metadata.StableIdHash != 0u)
+                _runtimeInfoIndexByHash.Add(info.Metadata.StableIdHash, _runtimeInfos.Count);
+
             _runtimeInfos.Add(info);
             RuntimeRegistryChanged?.Invoke();
         }
@@ -681,6 +763,8 @@ namespace Hecton8.Modding
             public string[] Dependencies;
             public string EntryAssembly;
             public string EntryType;
+            public int RequiredAPIVersion;
+            public int ModPriority;
 
             public ModManifest(
                 string id,
@@ -689,7 +773,9 @@ namespace Hecton8.Modding
                 string author,
                 string[] dependencies,
                 string entryAssembly,
-                string entryType)
+                string entryType,
+                int requiredApiVersion,
+                int modPriority)
             {
                 Id = id;
                 Name = name;
@@ -698,6 +784,8 @@ namespace Hecton8.Modding
                 Dependencies = dependencies;
                 EntryAssembly = entryAssembly;
                 EntryType = entryType;
+                RequiredAPIVersion = requiredApiVersion;
+                ModPriority = modPriority;
             }
         }
 

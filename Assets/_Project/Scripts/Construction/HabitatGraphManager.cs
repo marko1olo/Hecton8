@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -51,6 +52,9 @@ namespace Hecton8.Construction
         private const float GravityAccelerationMetersPerSecondSquared = 9.81f;
         private const float DefaultHydrodynamicDamagePerSecondAtFullOverload = 1.5f;
         private const float DefaultHydroShearThresholdKilograms = 18000f;
+        private const float PressureBucklingCompressionDeltaThreshold = 0.15f;
+        private const float StructuralGroanStressThreshold01 = 0.8f;
+        private const float StructuralGroanPitchRange = 0.32f;
         private const float MinimumHydrodynamicFlowSpeedMetersPerSecond = 0.1f;
         private const float SupportCaptureRadiusMeters = 3f;
         private const float SupportCaptureRadiusSq = SupportCaptureRadiusMeters * SupportCaptureRadiusMeters;
@@ -187,6 +191,7 @@ namespace Hecton8.Construction
             QueueFloodMassLoads(deltaTime);
             ApplyIslandFloodCenterOfMassShifts(deltaTime);
             EvaluateBulkheadFloodStress(deltaTime);
+            EvaluatePressureBucklingStress(deltaTime);
 
             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (bridge == null)
@@ -361,6 +366,50 @@ namespace Hecton8.Construction
                 return false;
 
             return candidateAirlock.AccumulateBulkheadFloodStress(floodWaterMassKilograms, deltaTime);
+        }
+
+        private void EvaluatePressureBucklingStress(float deltaTime)
+        {
+            for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
+            {
+                BaseModule baseModule = _moduleBuffer[moduleIndex].BaseModule;
+                if (baseModule != null && baseModule.isActiveAndEnabled)
+                    baseModule.DecayJointShearStress(deltaTime);
+            }
+
+            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+            {
+                EdgeRecord edge = _edgeBuffer[edgeIndex];
+                if (edge.Severed || edge.IsSyntheticParasiteRoot)
+                    continue;
+
+                BaseModule sourceModule = _moduleBuffer[edge.SourceIndex].BaseModule;
+                BaseModule destinationModule = _moduleBuffer[edge.DestinationIndex].BaseModule;
+                if (sourceModule == null || destinationModule == null)
+                    continue;
+
+                float compressionDelta = math.abs(sourceModule.PressureCompressionAlpha01 - destinationModule.PressureCompressionAlpha01);
+                if (compressionDelta <= PressureBucklingCompressionDeltaThreshold || !math.isfinite(compressionDelta))
+                    continue;
+
+                bool sourceDamaged = sourceModule.ApplyJointShearStress(compressionDelta, deltaTime);
+                bool destinationDamaged = destinationModule.ApplyJointShearStress(compressionDelta, deltaTime);
+                if (!sourceDamaged && !destinationDamaged)
+                    continue;
+
+                float stress01 = math.max(sourceModule.JointShearStress01, destinationModule.JointShearStress01);
+                if (stress01 < StructuralGroanStressThreshold01)
+                    continue;
+
+                Vector3 midpoint = new Vector3(
+                    (edge.StartSocketPosition.x + edge.EndSocketPosition.x) * 0.5f,
+                    (edge.StartSocketPosition.y + edge.EndSocketPosition.y) * 0.5f,
+                    (edge.StartSocketPosition.z + edge.EndSocketPosition.z) * 0.5f);
+                ProceduralAudioEvents.RaiseStructuralStressTriggered(
+                    midpoint,
+                    stress01,
+                    1f + (math.saturate(stress01) * StructuralGroanPitchRange));
+            }
         }
 
         internal void NotifyModuleEmergencyStateChanged(BaseModule module)
@@ -544,6 +593,13 @@ namespace Hecton8.Construction
 
         internal bool TryAddTemporaryBypass(GameObject sourceModule, GameObject destinationModule)
         {
+            bool injectedDirectly;
+            return TryAddTemporaryBypass(sourceModule, destinationModule, out injectedDirectly);
+        }
+
+        internal bool TryAddTemporaryBypass(GameObject sourceModule, GameObject destinationModule, out bool injectedDirectly)
+        {
+            injectedDirectly = false;
             if (sourceModule == null || destinationModule == null || ReferenceEquals(sourceModule, destinationModule))
                 return false;
 
@@ -561,16 +617,85 @@ namespace Hecton8.Construction
                     return false;
             }
 
+            if (_temporaryBypassBuffer.Count >= _temporaryBypassBuffer.Capacity)
+                return false;
+
             Vector3 sourcePosition = sourceModule.transform.position;
             Vector3 destinationPosition = destinationModule.transform.position;
+            Vector3 lowPosition = sourceNodeId == lowNodeId ? sourcePosition : destinationPosition;
+            Vector3 highPosition = sourceNodeId == lowNodeId ? destinationPosition : sourcePosition;
             _temporaryBypassBuffer.Add(new TemporaryBypassRecord
             {
                 LowNodeId = lowNodeId,
                 HighNodeId = highNodeId,
-                SourcePosition = sourceNodeId == lowNodeId ? sourcePosition : destinationPosition,
-                DestinationPosition = sourceNodeId == lowNodeId ? destinationPosition : sourcePosition
+                SourcePosition = lowPosition,
+                DestinationPosition = highPosition
             });
+
+            injectedDirectly = TryInjectTemporaryBypassIntoLiveCsr(lowNodeId, highNodeId, lowPosition, highPosition);
             return true;
+        }
+
+        private bool TryInjectTemporaryBypassIntoLiveCsr(uint lowNodeId, uint highNodeId, Vector3 sourcePosition, Vector3 destinationPosition)
+        {
+            if (_nodeCount <= 0 ||
+                !_edgeOffsets.IsCreated ||
+                !_edgeDestinations.IsCreated ||
+                !_edgeResistance.IsCreated ||
+                !_moduleIndexByNodeId.TryGetValue(lowNodeId, out int lowIndex) ||
+                !_moduleIndexByNodeId.TryGetValue(highNodeId, out int highIndex) ||
+                lowIndex == highIndex ||
+                _edgeCount + 2 > _edgeDestinations.Length ||
+                _edgeBuffer.Count >= _edgeBuffer.Capacity)
+            {
+                return false;
+            }
+
+            Vector3 direction = destinationPosition - sourcePosition;
+            float sqrMagnitude = direction.sqrMagnitude;
+            Vector3 forward = sqrMagnitude > 0.0001f ? direction / math.sqrt(sqrMagnitude) : Vector3.up;
+            float resistance = math.max(MinimumEdgeResistance, math.sqrt(math.max(0f, sqrMagnitude)) * EdgeResistancePerMeter);
+
+            _edgeBuffer.Add(new EdgeRecord
+            {
+                SourceIndex = lowIndex,
+                DestinationIndex = highIndex,
+                StartSocketPosition = sourcePosition,
+                EndSocketPosition = destinationPosition,
+                StartForward = forward,
+                EndForward = -forward,
+                Resistance = resistance,
+                Flags = PipeRenderFlags.None,
+                Severed = false
+            });
+
+            InsertDirectedCsrEdge(lowIndex, highIndex, resistance);
+            InsertDirectedCsrEdge(highIndex, lowIndex, resistance);
+            EvaluateAnchorReachability();
+            PublishAnchorState();
+            PublishComponentPowerState();
+            PublishEmergencyLockdownState();
+            PublishDegradationState();
+            PublishSiegeTargetSnapshot();
+            PublishGraphKernel();
+            return true;
+        }
+
+        private void InsertDirectedCsrEdge(int sourceIndex, int destinationIndex, float resistance)
+        {
+            int insertIndex = _edgeOffsets[sourceIndex + 1];
+            for (int edgeIndex = _edgeCount; edgeIndex > insertIndex; edgeIndex--)
+            {
+                _edgeDestinations[edgeIndex] = _edgeDestinations[edgeIndex - 1];
+                _edgeResistance[edgeIndex] = _edgeResistance[edgeIndex - 1];
+            }
+
+            _edgeDestinations[insertIndex] = destinationIndex;
+            _edgeResistance[insertIndex] = resistance;
+            for (int nodeIndex = sourceIndex + 1; nodeIndex <= _nodeCount; nodeIndex++)
+                _edgeOffsets[nodeIndex] = _edgeOffsets[nodeIndex] + 1;
+
+            _edgeCount++;
         }
 
         private void AppendTemporaryBypassEdges()
@@ -947,6 +1072,7 @@ namespace Hecton8.Construction
                     continue;
 
                 bool shouldLock = false;
+                bool blockManualOverride = false;
                 if (module.IsEmergencyAirlock && baseModule.IntegrityState == BaseModuleIntegrityState.Pristine)
                 {
                     int edgeStart = _edgeOffsets[nodeIndex];
@@ -958,12 +1084,16 @@ namespace Hecton8.Construction
                             (adjacentModule.IntegrityState == BaseModuleIntegrityState.Ruptured || adjacentModule.IsFlooded))
                         {
                             shouldLock = true;
-                            break;
+                            if (adjacentModule.FloodLevel01 >= 0.2f)
+                            {
+                                blockManualOverride = true;
+                                break;
+                            }
                         }
                     }
                 }
 
-                baseModule.SetEmergencyBulkheadLockdown(shouldLock);
+                baseModule.SetEmergencyBulkheadLockdown(shouldLock, blockManualOverride);
                 LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
                 node.Reserved = (byte)ResolveReservedState(
                     baseModule,
@@ -1487,9 +1617,17 @@ namespace Hecton8.Construction
             if (_edgeDestinations.IsCreated && _edgeDestinations.Length >= safeLength && _edgeResistance.Length >= safeLength)
                 return;
 
-            int nodeCapacity = math.max(1, _nodes.Length);
-            DisposeNativeBuffers();
-            AllocateNativeBuffers(nodeCapacity, NextPowerOfTwo(math.max(safeLength, InitialEdgeCapacity)));
+            if (_edgeDestinations.IsCreated)
+                _edgeDestinations.Dispose();
+
+            if (_edgeResistance.IsCreated)
+                _edgeResistance.Dispose();
+
+            int edgeCapacity = NextPowerOfTwo(math.max(safeLength, InitialEdgeCapacity));
+            // COLD ALLOC: NativeArray<Int32>[edgeCapacity] - expanded habitat CSR destination buffer - owner: HabitatGraphManager
+            _edgeDestinations = new NativeArray<int>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Single>[edgeCapacity] - expanded habitat CSR edge-resistance buffer - owner: HabitatGraphManager
+            _edgeResistance = new NativeArray<float>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 
         private void DisposeNativeBuffers()

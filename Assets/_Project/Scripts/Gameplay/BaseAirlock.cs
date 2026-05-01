@@ -47,6 +47,8 @@ namespace Hecton8.Gameplay
     {
         private const float DefaultWeldOverrideDurationSeconds = 5f;
         private const float MaxSignalWeldDeltaSeconds = 0.25f;
+        private const int OverrideRaycastHitCapacity = 4;
+        private const float MinOverrideRaycastDirectionSqr = 0.000001f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -111,6 +113,7 @@ namespace Hecton8.Gameplay
         private bool _isPlayerInside; // True if player is currently inside the base
         private bool _registered;
         private bool _emergencyLockedDown;
+        private bool _lockdownOverrideBlockedByFloodedNeighbor;
         private float _weldOverrideProgressSeconds;
         private int _emissionPropertyId;
 
@@ -118,6 +121,10 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private MaterialPropertyBlock _mpb;
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+        private static readonly uint _OverrideVulnerabilityMask = ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.Weld) |
+                                                                  ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.PlasmaCut);
+        // COLD ALLOC: RaycastHit[4] — static quarantine override raycast buffer for zero-GC weld validation — owner: BaseAirlock
+        private static readonly RaycastHit[] s_overrideRaycastHits = new RaycastHit[OverrideRaycastHitCapacity];
 
         // Pre-cached interaction text
         private const string DefaultEnterText = "Enter Base";
@@ -141,15 +148,21 @@ namespace Hecton8.Gameplay
 
         /// <summary>True while emergency lockdown overrides player interaction.</summary>
         public bool IsEmergencyLockedDown => _emergencyLockedDown;
+        /// <summary>True when the habitat graph forbids manual lockdown override because the sealed neighbor is still flooded.</summary>
+        public bool IsManualOverrideBlocked => _lockdownOverrideBlockedByFloodedNeighbor;
 
         /// <summary>Normalized welding progress toward a manual emergency override.</summary>
-        public float WeldOverrideProgress01 => ResolveWeldOverrideDurationSeconds() > 0f
-            ? Mathf.Clamp01(_weldOverrideProgressSeconds / ResolveWeldOverrideDurationSeconds())
-            : 0f;
+        public float WeldOverrideProgress01
+        {
+            get
+            {
+                float requiredSeconds = ResolveWeldOverrideDurationSeconds();
+                return requiredSeconds > 0f ? Mathf.Clamp01(_weldOverrideProgressSeconds / requiredSeconds) : 0f;
+            }
+        }
 
         /// <inheritdoc />
-        public uint VulnerabilityMask => ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.Weld) |
-                                         ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.PlasmaCut);
+        public uint VulnerabilityMask => _OverrideVulnerabilityMask;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -161,8 +174,8 @@ namespace Hecton8.Gameplay
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: BaseAirlock
 
-            if (statusLightRenderer == null)
-                statusLightRenderer = GetComponent<Renderer>();
+            if (statusLightRenderer == null && TryGetComponent(out Renderer cachedRenderer))
+                statusLightRenderer = cachedRenderer;
 
             CacheOwningModule();
         }
@@ -289,7 +302,7 @@ namespace Hecton8.Gameplay
         /// <returns>True when the weld was accepted by a quarantined door.</returns>
         public bool TryApplyWeldOverride(float deltaTime, Vector3 runtimeHitPoint)
         {
-            if (!_emergencyLockedDown || _state != AirlockState.Ready)
+            if (!_emergencyLockedDown || _lockdownOverrideBlockedByFloodedNeighbor || _state != AirlockState.Ready)
                 return false;
 
             if (deltaTime <= 0f || !float.IsFinite(deltaTime))
@@ -308,6 +321,12 @@ namespace Hecton8.Gameplay
         {
             InteractionEffectType effectType = (InteractionEffectType)signal.EffectType;
             if (effectType != InteractionEffectType.Weld && effectType != InteractionEffectType.PlasmaCut)
+                return;
+
+            if (_lockdownOverrideBlockedByFloodedNeighbor)
+                return;
+
+            if (!IsOverrideWeldRaycastValid(in signal))
                 return;
 
             TryApplyWeldOverride(ResolveSignalWeldDeltaSeconds(in signal), runtimeHitPoint);
@@ -376,9 +395,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Teleport player
-            player.position = destination.position;
-            player.rotation = destination.rotation;
+            if (player.TryGetComponent(out Rigidbody playerBody))
+                TeleportBody(playerBody, destination.position, destination.rotation);
+            else
+                player.SetPositionAndRotation(destination.position, destination.rotation);
 
             // Toggle environment state
             _isPlayerInside = !_isPlayerInside;
@@ -388,30 +408,31 @@ namespace Hecton8.Gameplay
             OnEnvironmentChanged?.Invoke(_isPlayerInside);
 
             // Update player's BuoyancyObject if present
-            var buoyancy = player.GetComponent<BuoyancyObject>();
-            if (buoyancy != null)
+            if (player.TryGetComponent(out BuoyancyObject buoyancy))
             {
                 if (_isPlayerInside)
                     buoyancy.EnterDryZone();
                 else
                     buoyancy.ExitDryZone();
             }
+        }
 
-            // Update player's HectonSurvivalSystem if present
-            // When inside a dry zone, oxygen consumption should be handled differently
-            var survival = player.GetComponent<HectonSurvivalSystem>();
-            if (survival != null)
+        private static void TeleportBody(Rigidbody body, Vector3 position, Quaternion rotation)
+        {
+            bool wasKinematic = body.isKinematic;
+            bool wasDetectingCollisions = body.detectCollisions;
+
+            body.isKinematic = true;
+            body.detectCollisions = false;
+            body.transform.SetPositionAndRotation(position, rotation);
+            body.isKinematic = wasKinematic;
+            body.detectCollisions = wasDetectingCollisions;
+
+            if (!wasKinematic)
             {
-                // The survival system already handles oxygen based on the surface contract
-                // (underwater vs surface swim). When in a dry zone, the BuoyancyObject
-                // will report IsInAir = true, which affects fluid simulation.
-                // 
-                // For explicit dry zone oxygen handling, we could add a method to
-                // HectonSurvivalSystem, but the current implementation already
-                // handles this via the surface contract check.
-                //
-                // Future: If we need explicit "in base" oxygen refill, add:
-                // survival.SetInDryZone(_isPlayerInside);
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+                body.WakeUp();
             }
         }
 
@@ -452,6 +473,62 @@ namespace Hecton8.Gameplay
             float sourcePower = Mathf.Max(0.001f, signal.Source.Power);
             float deltaSeconds = signal.PowerDelivered / sourcePower;
             return Mathf.Clamp(deltaSeconds, 0f, MaxSignalWeldDeltaSeconds);
+        }
+
+        private bool IsOverrideWeldRaycastValid(in global::Hecton8.Interaction.InteractionSignal signal)
+        {
+            if (!_emergencyLockedDown || _lockdownOverrideBlockedByFloodedNeighbor || _state != AirlockState.Ready)
+                return false;
+
+            Vector3 origin = new Vector3(signal.Source.Origin.x, signal.Source.Origin.y, signal.Source.Origin.z);
+            Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
+            if (direction.sqrMagnitude <= MinOverrideRaycastDirectionSqr)
+                return false;
+
+            float range = Mathf.Max(0f, signal.Source.Range);
+            if (range <= 0f)
+                return false;
+
+            direction.Normalize();
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                origin,
+                direction,
+                s_overrideRaycastHits,
+                range,
+                HectonLayerMasks.InteractableLayerMask,
+                QueryTriggerInteraction.Collide);
+
+            bool nearestHitIsOwnAirlock = false;
+            float nearestDistance = float.MaxValue;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                Collider hitCollider = s_overrideRaycastHits[hitIndex].collider;
+                if (hitCollider == null)
+                    continue;
+
+                float hitDistance = s_overrideRaycastHits[hitIndex].distance;
+                if (hitDistance >= nearestDistance)
+                    continue;
+
+                nearestDistance = hitDistance;
+                nearestHitIsOwnAirlock = IsOwnAirlockCollider(hitCollider);
+            }
+
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+                s_overrideRaycastHits[hitIndex] = default;
+
+            return nearestHitIsOwnAirlock;
+        }
+
+        private bool IsOwnAirlockCollider(Collider hitCollider)
+        {
+            if (hitCollider == null || _cachedTransform == null)
+                return false;
+
+            Transform hitTransform = hitCollider.transform;
+            return hitTransform == _cachedTransform ||
+                   hitTransform.IsChildOf(_cachedTransform) ||
+                   _cachedTransform.IsChildOf(hitTransform);
         }
 
         private void ForceEmergencyOverride()
@@ -539,9 +616,24 @@ namespace Hecton8.Gameplay
                 return;
 
             _emergencyLockedDown = lockedDown;
+            if (!lockedDown)
+                _lockdownOverrideBlockedByFloodedNeighbor = false;
             _weldOverrideProgressSeconds = 0f;
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
+        }
+
+        /// <summary>
+        /// Sets the logic-authoritative override block while a quarantined neighbor remains materially flooded.
+        /// </summary>
+        public void SetEmergencyLockdownOverrideBlocked(bool blocked)
+        {
+            if (_lockdownOverrideBlockedByFloodedNeighbor == blocked)
+                return;
+
+            _lockdownOverrideBlockedByFloodedNeighbor = blocked;
+            if (blocked)
+                _weldOverrideProgressSeconds = 0f;
         }
     }
 }

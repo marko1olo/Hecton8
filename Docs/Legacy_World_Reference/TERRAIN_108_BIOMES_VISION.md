@@ -1,5 +1,8 @@
 # Hecton8: The 108-Biome Deep Sea Lore Matrix (Exhaustive Specification)
 
+Status: LEGACY REFERENCE
+Verification: PENDING VERIFICATION
+
 This is the definitive lore and geological specification for the 15km vertical terrain of Hecton8. It details 108 unique biomes across 27 depth tiers, distributed into four cardinal regions (North, South, East, West).
 
 ---

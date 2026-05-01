@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -24,9 +26,9 @@ namespace Hecton8.Modding
         // COLD ALLOC: List<ModWorldSpawnRecord>[32] — persistent mod world spawn records — owner: ModWorldPersistenceManager
         private readonly List<ModWorldSpawnRecord> _records = new List<ModWorldSpawnRecord>(32);
         // COLD ALLOC: Dictionary<string,int>[32] — spawnId to record index lookup — owner: ModWorldPersistenceManager
-        private readonly Dictionary<string, int> _recordIndexById = new Dictionary<string, int>(32);
+        private readonly Dictionary<uint, int> _recordIndexByHash = new Dictionary<uint, int>(32);
         // COLD ALLOC: Dictionary<string,ModSpawnedEntity>[32] — live scene instances indexed by spawnId — owner: ModWorldPersistenceManager
-        private readonly Dictionary<string, ModSpawnedEntity> _liveEntities = new Dictionary<string, ModSpawnedEntity>(32);
+        private readonly Dictionary<uint, ModSpawnedEntity> _liveEntitiesByHash = new Dictionary<uint, ModSpawnedEntity>(32);
 
         private int _nextSpawnSequence = 1;
         private bool _saveRegistered;
@@ -45,7 +47,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Active runtime singleton when the manager has been created.
         /// </summary>
-        public static ModWorldPersistenceManager Instance => _instance;
+        internal static ModWorldPersistenceManager Instance => _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -105,7 +107,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Spawns a persistent prefab instance owned by a mod package.
         /// </summary>
-        public GameObject SpawnPersistentPrefab(string modId, string assetName, Vector3 position, Quaternion rotation)
+        internal GameObject SpawnPersistentPrefab(string modId, string assetName, Vector3 position, Quaternion rotation)
         {
             if (string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(assetName))
                 return null;
@@ -130,14 +132,23 @@ namespace Hecton8.Modding
 
             string sceneName = SceneManager.GetActiveScene().name;
             string spawnId = BuildSpawnId(modId);
+            uint spawnHash = ModCommandDispatcher.ComputeModHash(spawnId);
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);
 
             ModWorldSpawnRecord record = new ModWorldSpawnRecord
             {
                 SpawnId = spawnId,
+                SpawnHash = spawnHash,
                 ModId = modId,
                 AssetName = assetName,
                 SceneName = sceneName,
                 Position = position,
+                GridX = aup.GridX,
+                GridY = aup.GridY,
+                GridZ = aup.GridZ,
+                LocalX = aup.LocalX,
+                LocalY = aup.LocalY,
+                LocalZ = aup.LocalZ,
                 Rotation = rotation,
                 Scale = instance.transform.localScale
             };
@@ -145,20 +156,20 @@ namespace Hecton8.Modding
             AddOrReplaceRecord(record);
 
             ModSpawnedEntity marker = AttachMarker(instance, record);
-            _liveEntities[spawnId] = marker;
+            _liveEntitiesByHash[spawnHash] = marker;
             return instance;
         }
 
         /// <summary>
         /// Removes a previously spawned persistent mod instance from the save registry and despawns it through the pool owner.
         /// </summary>
-        public bool DespawnPersistentInstance(GameObject instance)
+        internal bool DespawnPersistentInstance(GameObject instance)
         {
             if (instance == null || !instance.TryGetComponent(out ModSpawnedEntity marker))
                 return false;
 
             RemoveRecord(marker.SpawnId);
-            _liveEntities.Remove(marker.SpawnId);
+            _liveEntitiesByHash.Remove(marker.SpawnHash);
 
             ObjectPoolManager pool = ObjectPoolManager.Instance;
             if (pool != null)
@@ -191,8 +202,8 @@ namespace Hecton8.Modding
         public void LoadFromSaveData(SaveData data)
         {
             _records.Clear();
-            _recordIndexById.Clear();
-            _liveEntities.Clear();
+            _recordIndexByHash.Clear();
+            _liveEntitiesByHash.Clear();
             _nextSpawnSequence = 1;
 
             string json = ModSaveStateStore.GetModString(SaveKey, string.Empty);
@@ -236,7 +247,7 @@ namespace Hecton8.Modding
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            _liveEntities.Clear();
+            _liveEntitiesByHash.Clear();
             TryRegisterWithSaveManager();
         }
 
@@ -273,7 +284,8 @@ namespace Hecton8.Modding
                 if (!string.Equals(record.SceneName, activeSceneName, StringComparison.Ordinal))
                     continue;
 
-                if (_liveEntities.ContainsKey(record.SpawnId))
+                EnsureSpatialFields(ref record);
+                if (_liveEntitiesByHash.ContainsKey(record.SpawnHash))
                     continue;
 
                 GameObject prefab = ModAssetManager.LoadPrefab(record.ModId, record.AssetName);
@@ -288,31 +300,38 @@ namespace Hecton8.Modding
                 if (pool == null)
                     continue;
 
-                GameObject instance = pool.Spawn(prefab, record.Position, record.Rotation);
+                GameObject instance = pool.Spawn(prefab, ResolveRuntimePosition(in record), record.Rotation);
                 if (instance == null)
                     continue;
 
                 instance.transform.localScale = record.Scale;
                 ModSpawnedEntity marker = AttachMarker(instance, record);
-                _liveEntities[record.SpawnId] = marker;
+                _liveEntitiesByHash[record.SpawnHash] = marker;
             }
         }
 
         private void SyncLiveTransforms()
         {
-            Dictionary<string, ModSpawnedEntity>.Enumerator enumerator = _liveEntities.GetEnumerator();
+            Dictionary<uint, ModSpawnedEntity>.Enumerator enumerator = _liveEntitiesByHash.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 ModSpawnedEntity marker = enumerator.Current.Value;
                 if (marker == null)
                     continue;
 
-                if (!_recordIndexById.TryGetValue(marker.SpawnId, out int index))
+                if (!_recordIndexByHash.TryGetValue(marker.SpawnHash, out int index))
                     continue;
 
                 Transform cachedTransform = marker.transform;
                 ModWorldSpawnRecord record = _records[index];
                 record.Position = cachedTransform.position;
+                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(cachedTransform.position);
+                record.GridX = aup.GridX;
+                record.GridY = aup.GridY;
+                record.GridZ = aup.GridZ;
+                record.LocalX = aup.LocalX;
+                record.LocalY = aup.LocalY;
+                record.LocalZ = aup.LocalZ;
                 record.Rotation = cachedTransform.rotation;
                 record.Scale = cachedTransform.localScale;
                 _records[index] = record;
@@ -327,25 +346,30 @@ namespace Hecton8.Modding
                 marker = instance.AddComponent<ModSpawnedEntity>(); // COLD ALLOC: Component[1] — marker for persistent mod world instance — owner: ModWorldPersistenceManager
             }
 
-            marker.Initialize(record.SpawnId, record.ModId, record.AssetName, record.SceneName);
+            marker.Initialize(record.SpawnId, record.SpawnHash, record.ModId, record.AssetName, record.SceneName);
             return marker;
         }
 
         private void AddOrReplaceRecord(ModWorldSpawnRecord record)
         {
-            if (_recordIndexById.TryGetValue(record.SpawnId, out int existingIndex))
+            EnsureSpatialFields(ref record);
+            if (_recordIndexByHash.TryGetValue(record.SpawnHash, out int existingIndex))
             {
                 _records[existingIndex] = record;
                 return;
             }
 
-            _recordIndexById.Add(record.SpawnId, _records.Count);
+            _recordIndexByHash.Add(record.SpawnHash, _records.Count);
             _records.Add(record);
         }
 
         private void RemoveRecord(string spawnId)
         {
-            if (string.IsNullOrWhiteSpace(spawnId) || !_recordIndexById.TryGetValue(spawnId, out int index))
+            if (string.IsNullOrWhiteSpace(spawnId))
+                return;
+
+            uint spawnHash = ModCommandDispatcher.ComputeModHash(spawnId);
+            if (!_recordIndexByHash.TryGetValue(spawnHash, out int index))
                 return;
 
             int lastIndex = _records.Count - 1;
@@ -353,11 +377,11 @@ namespace Hecton8.Modding
             {
                 ModWorldSpawnRecord moved = _records[lastIndex];
                 _records[index] = moved;
-                _recordIndexById[moved.SpawnId] = index;
+                _recordIndexByHash[moved.SpawnHash] = index;
             }
 
             _records.RemoveAt(lastIndex);
-            _recordIndexById.Remove(spawnId);
+            _recordIndexByHash.Remove(spawnHash);
         }
 
         private string BuildSpawnId(string modId)
@@ -365,6 +389,46 @@ namespace Hecton8.Modding
             string spawnId = modId + ":" + _nextSpawnSequence.ToString();
             _nextSpawnSequence++;
             return spawnId;
+        }
+
+        private static void EnsureSpatialFields(ref ModWorldSpawnRecord record)
+        {
+            if (record.SpawnHash == 0u && !string.IsNullOrWhiteSpace(record.SpawnId))
+                record.SpawnHash = ModCommandDispatcher.ComputeModHash(record.SpawnId);
+
+            if (record.GridX != 0L ||
+                record.GridY != 0L ||
+                record.GridZ != 0L ||
+                !Mathf.Approximately(record.LocalX, 0f) ||
+                !Mathf.Approximately(record.LocalY, 0f) ||
+                !Mathf.Approximately(record.LocalZ, 0f))
+            {
+                return;
+            }
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(record.Position);
+            record.GridX = aup.GridX;
+            record.GridY = aup.GridY;
+            record.GridZ = aup.GridZ;
+            record.LocalX = aup.LocalX;
+            record.LocalY = aup.LocalY;
+            record.LocalZ = aup.LocalZ;
+        }
+
+        private static Vector3 ResolveRuntimePosition(in ModWorldSpawnRecord record)
+        {
+            AbsoluteUniversePosition aup = new AbsoluteUniversePosition
+            {
+                GridX = record.GridX,
+                GridY = record.GridY,
+                GridZ = record.GridZ,
+                LocalX = record.LocalX,
+                LocalY = record.LocalY,
+                LocalZ = record.LocalZ
+            };
+
+            float3 runtime = aup.ToRuntimeFloat3();
+            return new Vector3(runtime.x, runtime.y, runtime.z);
         }
 
         private void TryRegisterWithSaveManager()
@@ -389,10 +453,17 @@ namespace Hecton8.Modding
         private struct ModWorldSpawnRecord
         {
             public string SpawnId;
+            public uint SpawnHash;
             public string ModId;
             public string AssetName;
             public string SceneName;
             public Vector3 Position;
+            public long GridX;
+            public long GridY;
+            public long GridZ;
+            public float LocalX;
+            public float LocalY;
+            public float LocalZ;
             public Quaternion Rotation;
             public Vector3 Scale;
         }
@@ -410,12 +481,17 @@ namespace Hecton8.Modding
     /// Marker stored on persistent mod-spawned instances so the manager can map live objects back to saved records.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ModSpawnedEntity : MonoBehaviour
+    internal sealed class ModSpawnedEntity : MonoBehaviour
     {
         /// <summary>
         /// Stable persistent spawn identifier.
         /// </summary>
         public string SpawnId { get; private set; }
+
+        /// <summary>
+        /// Stable FNV hash of the persistent spawn identifier.
+        /// </summary>
+        public uint SpawnHash { get; private set; }
 
         /// <summary>
         /// Owning mod identifier.
@@ -432,9 +508,10 @@ namespace Hecton8.Modding
         /// </summary>
         public string SceneName { get; private set; }
 
-        internal void Initialize(string spawnId, string modId, string assetName, string sceneName)
+        internal void Initialize(string spawnId, uint spawnHash, string modId, string assetName, string sceneName)
         {
             SpawnId = spawnId;
+            SpawnHash = spawnHash;
             ModId = modId;
             AssetName = assetName;
             SceneName = sceneName;

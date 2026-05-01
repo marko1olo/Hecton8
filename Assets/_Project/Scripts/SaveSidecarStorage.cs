@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -346,7 +347,12 @@ namespace Hecton8.SaveSystem
 
                 fixed (char* sourcePtr = value)
                 {
-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
+                    {
+                        Error = "Sidecar string copy exceeded the allocated byte range.";
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveSidecarStorage));
+                        return false;
+                    }
                 }
 
                 _cursor += byteCount;

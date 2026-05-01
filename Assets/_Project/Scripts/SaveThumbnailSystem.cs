@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Optimization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -133,6 +134,8 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static Sprite LoadThumbnail(string slotName)
         {
+            AssetLoadDispatcher.ForceEvaluateUiMipBiasGate();
+
             if (_spriteCache.TryGetValue(slotName, out Sprite cached))
             {
                 if (cached != null && cached.texture != null)
@@ -240,6 +243,9 @@ namespace Hecton8.SaveSystem
             CaptureRequest inflightRequest = _inflightRequest;
             _inflightRequest = default;
             _hasInflightRequest = false;
+
+            if (!Application.isPlaying || inflightRequest.Camera == null)
+                return;
 
             if (request.hasError)
             {

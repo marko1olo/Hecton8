@@ -1244,7 +1244,7 @@ namespace DarkTonic.MasterAudio {
         public int InstanceId {
             get {
                 if (_instanceId < 0) {
-                    _instanceId = GetInstanceID();
+                    _instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
                 }
 
                 return _instanceId;

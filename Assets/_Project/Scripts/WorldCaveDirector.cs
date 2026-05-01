@@ -902,7 +902,7 @@ namespace Hecton8.World
             entranceGlow.color = new Color(0.8f, 0.7f, 0.5f); // warm safety glow
             entranceGlow.intensity = 0.5f;
             entranceGlow.range = preset.entranceRadius * 3f;
-            entranceGlow.renderingLayerMask = (int)HectonLayerMasks.AllDefinedProjectRenderingLayerMaskValue;
+            entranceGlow.renderingLayerMask = HectonLayerMasks.AllDefinedProjectLayersMask;
         }
 
         private void InitializeCaveDressingLayer(CaveInstance instance, CavePreset preset)
@@ -1114,7 +1114,7 @@ namespace Hecton8.World
                 ray,
                 _cavePlacementHits,
                 rayDistance,
-                ~0,
+                HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask,
                 QueryTriggerInteraction.Ignore);
 
             float nearestDistance = float.PositiveInfinity;

@@ -24,6 +24,12 @@ namespace Hecton8.Optimization
         Misc = 6
     }
 
+    internal enum AddressableAssetGroupKind : byte
+    {
+        Unknown = 0,
+        UIIcons = 1
+    }
+
     internal struct AssetRecord
     {
         public uint Key;

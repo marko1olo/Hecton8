@@ -324,9 +324,10 @@ namespace Hecton8.Construction
             if (amount <= 0f)
                 return;
 
-            _co2Level += amount;
-            if (_co2Level > _co2Capacity)
-                _co2Level = _co2Capacity;
+            float normalizedLevel = _co2Capacity > 0.01f
+                ? Mathf.Clamp01((_co2Level + amount) / _co2Capacity)
+                : 0f;
+            _co2Level = normalizedLevel * _co2Capacity;
         }
 
         public string BuildAirReserveSummary()

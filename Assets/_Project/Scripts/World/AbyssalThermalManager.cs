@@ -140,6 +140,14 @@ namespace Hecton8.World
         private const float VentStateCompareEpsilon = 0.01f;
         private const uint ThermalHashSeed = 0xC6BC2796u;
         private const float ThermalSpatialEventLifetimeSeconds = 1.25f;
+        private const float DryAirDensityKilogramsPerCubicMeter = 1.225f;
+        private const float DryAirHeatCapacityJoulesPerKilogramKelvin = 1005f;
+        private static readonly int _EmpPulseLayerMask =
+            HectonLayerMasks.PlayerLayerMask |
+            HectonLayerMasks.VehicleLayerMask |
+            HectonLayerMasks.DefaultLayerMask |
+            HectonLayerMasks.FirstPersonToolsLayerMask |
+            HectonLayerMasks.TriggerZoneLayerMask;
 
         private static AbyssalThermalManager _instance;
 
@@ -275,6 +283,18 @@ namespace Hecton8.World
         [SerializeField, Range(18f, 40f)]
         [Tooltip("Converts authored vent heat intensity into Celsius for the crystallization boundary job.")]
         private float ventHeatToCelsiusScale = 18f;
+
+        [SerializeField, Range(0f, 12f)]
+        [Tooltip("Thermal conductivity coefficient used when hydrothermal updraft heat bleeds into habitat modules.")]
+        private float habitatThermalConductivityWattsPerSquareMeterKelvin = 0.18f;
+
+        [SerializeField, Range(0.1f, 8f)]
+        [Tooltip("Sample radius used when testing base modules against active thermal updraft volumes.")]
+        private float habitatThermalSampleRadiusMeters = 2f;
+
+        [SerializeField, Range(0.01f, 12f)]
+        [Tooltip("Hard cap for Celsius injected into a room from hydrothermal flux per SlowTick.")]
+        private float habitatThermalMaxTemperatureDeltaPerSlowTick = 3f;
 
         [SerializeField, Range(0.5f, 8f)]
         [Tooltip("Radius in meters supplied to the Thermal Diamond spawn request after a boundary passes the Burst job.")]
@@ -893,6 +913,7 @@ namespace Hecton8.World
             ResolveDependencies();
             AdvancePassiveCrystallizationCooldowns(0.5f);
             RebuildVentField();
+            ApplyThermalInfiltrationToBaseModules(0.5f);
             QueueVentBoundaryCrystallizationSamples();
             ScheduleCrystallizationJobIfNeeded();
         }
@@ -1077,6 +1098,60 @@ namespace Hecton8.World
                 {
                     _ventCrystallizationCooldowns[i] = passiveCrystallizationCooldownSeconds;
                 }
+            }
+        }
+
+        private void ApplyThermalInfiltrationToBaseModules(float deltaTime)
+        {
+            if (_activeVentCount <= 0 ||
+                deltaTime <= 0f ||
+                habitatThermalConductivityWattsPerSquareMeterKelvin <= 0f)
+            {
+                return;
+            }
+
+            IReadOnlyList<BaseModule> modules = BaseModule.ActiveModules;
+            int moduleCount = modules != null ? modules.Count : 0;
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                BaseModule baseModule = modules[moduleIndex];
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                Vector3 modulePosition = baseModule.transform.position;
+                if (!SampleThermalFlow(modulePosition, habitatThermalSampleRadiusMeters, out ThermalFlowSample sample) ||
+                    sample.Heat01 <= 0f)
+                {
+                    continue;
+                }
+
+                float externalTemperatureCelsius = sample.Heat01 * ventHeatToCelsiusScale;
+                float internalTemperatureCelsius = baseModule.ResolveHostRoomTemperatureCelsius();
+                float temperatureDelta = externalTemperatureCelsius - internalTemperatureCelsius;
+                if (temperatureDelta <= 0f || !math.isfinite(temperatureDelta))
+                    continue;
+
+                float surfaceAreaSquareMeters = baseModule.ResolveThermalSurfaceAreaSquareMeters();
+                float heatFluxJoules = habitatThermalConductivityWattsPerSquareMeterKelvin *
+                                       surfaceAreaSquareMeters *
+                                       temperatureDelta *
+                                       deltaTime;
+                if (heatFluxJoules <= 0f || !math.isfinite(heatFluxJoules))
+                    continue;
+
+                float airVolumeCubicMeters = baseModule.ModuleTemplate != null
+                    ? math.max(0.1f, baseModule.ModuleTemplate.AirVolumeM3)
+                    : 18f;
+                float airHeatCapacity = math.max(
+                    1f,
+                    airVolumeCubicMeters *
+                    DryAirDensityKilogramsPerCubicMeter *
+                    DryAirHeatCapacityJoulesPerKilogramKelvin);
+                float injectedDeltaCelsius = math.min(
+                    habitatThermalMaxTemperatureDeltaPerSlowTick,
+                    heatFluxJoules / airHeatCapacity);
+                if (injectedDeltaCelsius > 0f && math.isfinite(injectedDeltaCelsius))
+                    baseModule.TryInjectHostRoomTemperatureDeltaCelsius(injectedDeltaCelsius);
             }
         }
 
@@ -2302,7 +2377,7 @@ namespace Hecton8.World
                 castDirection,
                 _empHits,
                 castDistance,
-                ~0,
+                _EmpPulseLayerMask,
                 QueryTriggerInteraction.Collide);
 
             bool hitPlayerTransport = false;

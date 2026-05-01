@@ -28,6 +28,9 @@ namespace Hecton8.Gameplay
         private const float MinimumPower = 0.05f;
         private const float WorldCullY = -5000f;
         private const float MaximumChunkLifetime = 60f;
+        private const int DebrisPoolTelemetryId = unchecked((int)0x00DEB815u);
+        private const uint PendingBurstQueueFullReason = 0x44504251u;
+        private const uint ActiveSlotPoolExhaustedReason = 0x4450534Cu;
 
         private static DebrisManager _instance;
 
@@ -240,8 +243,14 @@ namespace Hecton8.Gameplay
             float power01,
             uint seed)
         {
-            if (definition == null || !definition.IsValid || _pendingBurstCount >= _pendingBursts.Length)
+            if (definition == null || !definition.IsValid)
                 return false;
+
+            if (_pendingBurstCount >= _pendingBursts.Length)
+            {
+                PublishDebrisPoolExhausted(PendingBurstQueueFullReason);
+                return false;
+            }
 
             _pendingBursts[_pendingBurstCount++] = new PendingBurstRequest
             {
@@ -342,8 +351,14 @@ namespace Hecton8.Gameplay
                     continue;
 
                 int requiredSlots = CountValidChunks(request.Definition);
-                if (requiredSlots <= 0 || CountFreeSlots() < requiredSlots)
+                if (requiredSlots <= 0)
                     continue;
+
+                if (CountFreeSlots() < requiredSlots)
+                {
+                    PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
+                    continue;
+                }
 
                 BurstRandom rng = new BurstRandom(request.Seed != 0u ? request.Seed : 1u);
                 float power = math.max(MinimumPower, request.Power01);
@@ -359,7 +374,10 @@ namespace Hecton8.Gameplay
 
                     int slotIndex = FindFreeSlot();
                     if (slotIndex < 0)
+                    {
+                        PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
                         break;
+                    }
 
                     Matrix4x4 worldMatrix = Matrix4x4.TRS(request.RuntimeOrigin, request.RuntimeRotation, Vector3.one) *
                                             request.Definition.GetLocalMatrix(chunkIndex);
@@ -587,6 +605,11 @@ namespace Hecton8.Gameplay
             }
 
             return -1;
+        }
+
+        private static void PublishDebrisPoolExhausted(uint reasonCode)
+        {
+            GlobalTelemetryBus.PublishPoolExhausted(DebrisPoolTelemetryId, reasonCode);
         }
 
         private void ResetActiveState()

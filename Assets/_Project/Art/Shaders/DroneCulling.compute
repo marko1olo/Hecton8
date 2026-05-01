@@ -1,0 +1,93 @@
+#pragma kernel CS_ClearArgs
+#pragma kernel CS_CullDrones
+
+struct HeadlessDroneState
+{
+    int DroneId;
+    int HubGridId;
+    int HubSlot;
+    int TargetTaskIndex;
+    int TargetModuleId;
+    int SolderUnits;
+    int LoadedSolderCapacity;
+    uint PackedStateFactionCorridor;
+    float BatteryPercent;
+    float RepairAccumulator;
+    float DockingElapsed;
+    float RebootElapsed;
+    float AvoidanceHysteresisSeconds;
+    float TransactionProgress;
+    float ServiceRadius;
+    float MaxSpeed;
+    float BatteryDrainPerSecond;
+    float RepairRatePerSecond;
+    float WeldPowerNormalized;
+    float WeldRangeMeters;
+    float3 Position;
+    float3 Velocity;
+    float3 HomePosition;
+    float3 TargetPosition;
+    float3 SupplyPosition;
+    float3 DockStartPosition;
+    float4 Rotation;
+    float4 HomeRotation;
+    float4 DockStartRotation;
+};
+
+struct DroneRenderInstance
+{
+    float4x4 Matrix;
+    float TransactionProgress;
+    float3 Padding;
+};
+
+StructuredBuffer<HeadlessDroneState> _DroneStates;
+StructuredBuffer<float4x4> _DroneMatrices;
+StructuredBuffer<DroneRenderInstance> _DroneRenderInstances;
+AppendStructuredBuffer<float4x4> _InstanceMatrices;
+AppendStructuredBuffer<DroneRenderInstance> _DroneVisibleInstances;
+AppendStructuredBuffer<uint> _DroneVisibleIndices;
+RWByteAddressBuffer _IndirectArgsBuffer;
+
+float4 _CameraFrustumPlanes[6];
+int _DroneCount;
+float _DroneCullRadius;
+
+[numthreads(1, 1, 1)]
+void CS_ClearArgs(uint3 id : SV_DispatchThreadID)
+{
+    _IndirectArgsBuffer.Store(4, 0u);
+}
+
+bool IsSphereVisible(float3 center, float radius)
+{
+    [unroll]
+    for (uint i = 0u; i < 6u; i++)
+    {
+        float4 plane = _CameraFrustumPlanes[i];
+        if (dot(plane.xyz, center) + plane.w < -radius)
+            return false;
+    }
+
+    return true;
+}
+
+[numthreads(64, 1, 1)]
+void CS_CullDrones(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= (uint)_DroneCount)
+        return;
+
+    HeadlessDroneState drone = _DroneStates[index];
+    uint runtimeState = drone.PackedStateFactionCorridor & 0xFFu;
+    if (runtimeState == 0u || runtimeState == 8u || runtimeState == 9u)
+        return;
+
+    if (!IsSphereVisible(drone.Position, max(0.01, _DroneCullRadius)))
+        return;
+
+    _InstanceMatrices.Append(_DroneMatrices[index]);
+    _DroneVisibleInstances.Append(_DroneRenderInstances[index]);
+    _DroneVisibleIndices.Append(index);
+}

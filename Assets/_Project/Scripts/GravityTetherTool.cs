@@ -15,6 +15,9 @@ namespace Hecton8.Gameplay
     public sealed class GravityTetherTool : PlayerTool
     {
         private const int TetherHitCapacity = 32;
+        private static readonly int _DefaultTetherLayerMask =
+            HectonLayerMasks.DroppedItemLayerMask |
+            HectonLayerMasks.InteractableLayerMask;
 
         [Header("Tether Query")]
         [Tooltip("Maximum tether reach in metres.")]
@@ -30,7 +33,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0.05f)] private float pickupDistanceMeters = 0.65f;
 
         [Tooltip("Layer mask containing interactable pickup proxies.")]
-        [SerializeField] private LayerMask interactableMask = ~0;
+        [SerializeField] private LayerMask interactableMask = HectonLayerMasks.DroppedItemLayerMask | HectonLayerMasks.InteractableLayerMask;
 
         [Tooltip("Optional chest target. Falls back to the registered player transform.")]
         [SerializeField] private Transform chestTarget;
@@ -73,7 +76,7 @@ namespace Hecton8.Gameplay
                 direction,
                 _tetherHits,
                 runtimeRange,
-                interactableMask,
+                ResolveTetherLayerMask(),
                 QueryTriggerInteraction.Collide);
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
@@ -151,6 +154,12 @@ namespace Hecton8.Gameplay
 
             _inventory = PlayerInventory.Instance;
             return _inventory;
+        }
+
+        private int ResolveTetherLayerMask()
+        {
+            int mask = interactableMask.value;
+            return HectonLayerMasks.IsEverythingLayerMask(mask) ? _DefaultTetherLayerMask : mask;
         }
     }
 }

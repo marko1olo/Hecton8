@@ -49,6 +49,9 @@ Reason: `GlobalRegistry` cannot become authoritative while parallel sovereignty 
 - experimental
 - dead seam
 
+Current state: partially addressed in `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
+Remaining work: turn the conceptual classification into owner-by-owner tickets and live verification gates.
+
 2. Mark DOTS honestly.
 Reason: It is currently a seam, not a strength.
 
@@ -75,6 +78,9 @@ Suggested values:
 
 3. Establish one audit scoreboard that is maintained from code/editor evidence, not aspiration.
 
+4. Keep `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` synchronized with major source-level architecture changes.
+Reason: this file is now the conceptual entry point. If it drifts, future agents will again read stale system ownership from older reports.
+
 ## What Not To Do
 
 - Do not claim DOTS is active production architecture.
@@ -87,16 +93,31 @@ Suggested values:
 
 This section supersedes queue ordering where the May 1 audits produced sharper evidence.
 
+## 2026-05-01 Editor.log Delta
+
+Local `Editor.log` evidence after the console-stabilization pass reports:
+
+- `error CS`: `0`
+- `warning CS`: `0`
+- `Exception`: `0`
+- `Resource ID out of range in SetResource`: `0`
+- mixed shader line-ending warnings: `0`
+
+Evidence file: `Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`.
+
+This changes Priority 0 item 1 from "no trustworthy local log surface" to "local Editor.log surface currently clean after compile/import."
+It does not solve MCP availability, Play Mode verification, profiler proof, or long-run memory retention.
+
 ## Priority 0 Additions
 
 1. Remove presentation-owned gameplay transitions.
-Reason: `FaunaBrain.UpdateBioluminescentHypnosis()` changes gameplay behavior based on `runtimeContext.PlayerCamera`. `StorageCrate.OpenCrate()` can dead-state if an Animator event does not fire. These are headless-simulation failures, not cosmetic issues.
+Reason: `FaunaBrain.UpdateBioluminescentHypnosis()` changes gameplay behavior based on `runtimeContext.PlayerCamera`. `StorageCrate.OpenCrate()` was source-patched so gameplay opens immediately and the Animator event is idempotent, but Play Mode proof is absent. Fauna look logic remains open.
 
 2. Move frame-lane job barriers behind dispatcher-owned completion windows.
 Reason: `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` call `.Complete()` in cadence-sensitive lanes. `IsCompleted` checks reduce stall probability but do not satisfy the project mandate requiring completion only in defined swap/end windows.
 
 3. Replace broad physics masks with named layer masks.
-Reason: the latest flaw report found query surfaces using `~0`, `DefaultRaycastLayers`, or serialized all-layer defaults. These are collision-matrix holes and make gameplay queries depend on unrelated visual/trigger layers.
+Reason: the latest flaw report found query surfaces using `~0`, `DefaultRaycastLayers`, or serialized all-layer defaults. Source-level partial patch applied: `GravityTetherTool`, `PhysicalInteractionHandler`, `PlayerInteraction`, `HectonMusicDirector`, `HectonVoxelVolume`, `ResourceNode`, `SubmarineFluidDynamics`, and `AbyssalThermalManager` now use named/fallback masks. Remaining `~0` query masks require scene-layer verification before narrowing: `AutonomousExtractorSystem`, `WorldCaveDirector`, `WorldProceduralFieldSampler`.
 
 4. Keep Core asmdef isolation as blocked, not done.
 Reason: `OMEGA_CORE_ENFORCEMENT_2026-05-01.md` explicitly rejected blind removal. `Hecton8.Core.asmdef` still references UI/third-party packages, and safe isolation requires staged bridge assemblies first.
@@ -104,13 +125,13 @@ Reason: `OMEGA_CORE_ENFORCEMENT_2026-05-01.md` explicitly rejected blind removal
 ## Priority 1 Additions
 
 1. Convert the remaining coroutine smoke/verifier harnesses one by one.
-Reason: current strict grep still finds 15 `StartCoroutine(` call sites in `FieldToolRuntimeSmokeTester`, `ToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, `Dev/ShellVerificationRuntimeSmokeTester`, and `Tools/StateRecoveryVerifier`.
+Reason: current strict grep now finds 0 `StartCoroutine(` call sites outside `Editor/**`. `Tools/StateRecoveryVerifier`, `ToolRuntimeSmokeTester`, `FieldToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, and `Dev/ShellVerificationRuntimeSmokeTester` were migrated to `Awaitable` at source level; Play Mode proof is absent.
 
 2. Add AUP-safe route ownership to fauna navigation.
 Reason: `FaunaBrain` caches raw `Vector3` route waypoints and target positions without implementing origin-shift listener behavior. After floating-origin rebases, cached routes can drift by the shift vector.
 
-3. Add a hard event generation/depth guard.
-Reason: `SystemDispatcher` has a late-frame dispatch budget, but `HectonEventBus` depth tracking has no hard cap. A recursive publish chain can still produce unbounded same-frame work unless generation splitting or max-depth rejection is enforced.
+3. Add NativeQueue generation split for event lanes.
+Reason: source recheck found `HectonEventBus.MaxDispatchDepth = 4` and dispatcher late-frame budget enforcement already present. Remaining risk is same-frame reenqueue in NativeQueue-backed lanes until `MaxLateFrameEventsPerFrame` is exhausted. Evidence: `Docs/Reports/2026-05-01_EVENT_CASCADE_RECHECK.md`.
 
 4. Verify BRG temporary allocation ownership before touching rendering code.
 Reason: `HectonBatchRendererGroupUtility` allocates direct-draw `TempJob` memory. It may be Unity-owned after submission, but the project-owned free path is not proven in source.
@@ -121,5 +142,6 @@ Reason: `HectonBatchRendererGroupUtility` allocates direct-draw `TempJob` memory
 - Do not claim GC is zero. GCMonitor/profiler proof is absent.
 - Do not claim MCP VERIFIED as a global runtime state. Previous May 1 evidence was `0` console errors for editor/script state only; this delta pass could not refresh the console because MCP returned `no_unity_session`.
 - Do not claim the docs are fully current. This queue now points to current deltas, but older dated documents still contain historical and stale claims.
+- Do not treat `2026-05-01_CURRENT_PROJECT_STATE.md` as runtime verification. It is a conceptual source-backed snapshot only.
 
 STATUS: PENDING VERIFICATION

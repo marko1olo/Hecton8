@@ -1,4 +1,5 @@
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton.UI.MainMenu;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -64,7 +65,7 @@ namespace Hecton8.Tools
             if (!_enableVerification)
                 return;
 
-            StartCoroutine(VerifyPauseToGameplayRecoveryRoutine());
+            _ = VerifyPauseToGameplayRecoveryAsync(destroyCancellationToken);
         }
 
         /// <summary>
@@ -75,7 +76,7 @@ namespace Hecton8.Tools
             if (!_enableVerification)
                 return;
 
-            StartCoroutine(VerifyReturnToMenuRecoveryRoutine());
+            _ = VerifyReturnToMenuRecoveryAsync(destroyCancellationToken);
         }
 
         /// <summary>
@@ -86,7 +87,7 @@ namespace Hecton8.Tools
             if (!_enableVerification)
                 return;
 
-            StartCoroutine(VerifyNewGameAfterSaveRecoveryRoutine());
+            _ = VerifyNewGameAfterSaveRecoveryAsync(destroyCancellationToken);
         }
 
         /// <summary>
@@ -97,7 +98,7 @@ namespace Hecton8.Tools
             if (!_enableVerification)
                 return;
 
-            StartCoroutine(VerifyLoadSlotFromShellRecoveryRoutine());
+            _ = VerifyLoadSlotFromShellRecoveryAsync(destroyCancellationToken);
         }
 
         /// <summary>
@@ -108,7 +109,7 @@ namespace Hecton8.Tools
             if (!_enableVerification)
                 return;
 
-            StartCoroutine(VerifyInputRestorationRoutine());
+            _ = VerifyInputRestorationAsync(destroyCancellationToken);
         }
 
         /// <summary>
@@ -119,80 +120,101 @@ namespace Hecton8.Tools
             return (_testsRun, _testsPassed, _testsFailed);
         }
 
-        private IEnumerator VerifyPauseToGameplayRecoveryRoutine()
+        private async Awaitable VerifyPauseToGameplayRecoveryAsync(CancellationToken cancellationToken)
         {
-            yield return RunVerification("Pause to Gameplay", PauseToGameplaySequence);
+            await RunVerificationAsync("Pause to Gameplay", PauseToGameplaySequenceAsync, cancellationToken);
         }
 
-        private IEnumerator VerifyReturnToMenuRecoveryRoutine()
+        private async Awaitable VerifyReturnToMenuRecoveryAsync(CancellationToken cancellationToken)
         {
-            yield return RunVerification("Return to Menu", ReturnToMenuSequence);
+            await RunVerificationAsync("Return to Menu", ReturnToMenuSequenceAsync, cancellationToken);
         }
 
-        private IEnumerator VerifyNewGameAfterSaveRecoveryRoutine()
+        private async Awaitable VerifyNewGameAfterSaveRecoveryAsync(CancellationToken cancellationToken)
         {
-            yield return RunVerification("New Game After Save", NewGameAfterSaveSequence);
+            await RunVerificationAsync("New Game After Save", NewGameAfterSaveSequenceAsync, cancellationToken);
         }
 
-        private IEnumerator VerifyLoadSlotFromShellRecoveryRoutine()
+        private async Awaitable VerifyLoadSlotFromShellRecoveryAsync(CancellationToken cancellationToken)
         {
-            yield return RunVerification("Load Slot From Shell", LoadSlotFromShellSequence);
+            await RunVerificationAsync("Load Slot From Shell", LoadSlotFromShellSequenceAsync, cancellationToken);
         }
 
-        private IEnumerator VerifyInputRestorationRoutine()
+        private async Awaitable VerifyInputRestorationAsync(CancellationToken cancellationToken)
         {
-            yield return RunVerification("Input Restoration", InputRestorationSequence);
+            await RunVerificationAsync("Input Restoration", InputRestorationSequenceAsync, cancellationToken);
         }
 
-        private IEnumerator RunVerification(string testName, System.Func<IEnumerator> sequenceFactory)
+        private async Awaitable RunVerificationAsync(
+            string testName,
+            Func<CancellationToken, Awaitable> sequenceFactory,
+            CancellationToken cancellationToken)
         {
             _testsRun++;
             LogVerification($"Starting verification: {testName}");
 
-            yield return sequenceFactory != null ? sequenceFactory() : null;
+            if (sequenceFactory == null)
+                return;
+
+            try
+            {
+                await sequenceFactory(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                LogVerification($"CANCELLED {testName}");
+            }
+            catch (Exception exception)
+            {
+                _testsFailed++;
+                LogVerification($"FAIL {testName}: exception {exception.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception, this);
+#endif
+            }
         }
 
-        private IEnumerator PauseToGameplaySequence()
+        private async Awaitable PauseToGameplaySequenceAsync(CancellationToken cancellationToken)
         {
             ResolvePauseMenu();
             if (_pauseMenu == null)
             {
                 Fail("Pause to Gameplay", "PauseMenuController not found.");
-                yield break;
+                return;
             }
 
             if (_pauseMenu.IsOpen)
             {
                 _pauseMenu.Close();
-                yield return WaitForCondition(IsGameplayStateRestored, "Pre-close pause state");
+                await WaitForConditionAsync(IsGameplayStateRestored, "Pre-close pause state", cancellationToken);
                 if (!IsGameplayStateRestored())
                 {
                     Fail("Pause to Gameplay", "Pause menu failed to close before test.");
-                    yield break;
+                    return;
                 }
             }
 
             _pauseMenu.Open();
-            yield return WaitForCondition(IsPauseStateValid, "Pause open");
+            await WaitForConditionAsync(IsPauseStateValid, "Pause open", cancellationToken);
             if (!IsPauseStateValid())
             {
                 Fail("Pause to Gameplay", "Pause state did not become valid.");
-                yield break;
+                return;
             }
 
             _pauseMenu.Close();
-            yield return WaitForCondition(IsGameplayStateRestored, "Gameplay restore");
+            await WaitForConditionAsync(IsGameplayStateRestored, "Gameplay restore", cancellationToken);
 
             if (!IsGameplayStateRestored())
             {
                 Fail("Pause to Gameplay", "Gameplay state was not restored after pause close.");
-                yield break;
+                return;
             }
 
             Pass("Pause to Gameplay");
         }
 
-        private IEnumerator ReturnToMenuSequence()
+        private async Awaitable ReturnToMenuSequenceAsync(CancellationToken cancellationToken)
         {
             if (string.Equals(SceneManager.GetActiveScene().name, MainMenuSceneName, System.StringComparison.Ordinal))
             {
@@ -201,171 +223,182 @@ namespace Hecton8.Tools
                 else
                     Fail("Return to Menu", "Already in main menu but menu state is invalid.");
 
-                yield break;
+                return;
             }
 
-            yield return NavigateToMainMenu();
+            await NavigateToMainMenuAsync(cancellationToken);
             if (!IsMainMenuStateValid())
             {
                 Fail("Return to Menu", "Main menu recovery state is invalid after route handoff.");
-                yield break;
+                return;
             }
 
             Pass("Return to Menu");
         }
 
-        private IEnumerator NewGameAfterSaveSequence()
+        private async Awaitable NewGameAfterSaveSequenceAsync(CancellationToken cancellationToken)
         {
             if (!HasAnySaveSlot())
             {
                 Fail("New Game After Save", "No existing save slot found. Test precondition is false.");
-                yield break;
+                return;
             }
 
-            yield return EnsureMainMenuScene();
+            await EnsureMainMenuSceneAsync(cancellationToken);
             if (!IsMainMenuStateValid())
             {
                 Fail("New Game After Save", "Failed to reach a valid menu shell before new game handoff.");
-                yield break;
+                return;
             }
 
             ResolveMainMenuController();
             if (_mainMenuController == null)
             {
                 Fail("New Game After Save", "MainMenuController not found.");
-                yield break;
+                return;
             }
 
             _mainMenuController.StartGame(string.Empty);
-            yield return WaitForCondition(IsNewGameStateValid, "New game world handoff");
+            await WaitForConditionAsync(IsNewGameStateValid, "New game world handoff", cancellationToken);
 
             if (!IsNewGameStateValid())
             {
                 Fail("New Game After Save", "New game context/world state is invalid after StartGame.");
-                yield break;
+                return;
             }
 
             Pass("New Game After Save");
         }
 
-        private IEnumerator LoadSlotFromShellSequence()
+        private async Awaitable LoadSlotFromShellSequenceAsync(CancellationToken cancellationToken)
         {
             string slotName = ResolveExistingSaveSlot();
             if (string.IsNullOrEmpty(slotName))
             {
                 Fail("Load Slot From Shell", "No existing save slot found.");
-                yield break;
+                return;
             }
 
-            yield return EnsureMainMenuScene();
+            await EnsureMainMenuSceneAsync(cancellationToken);
             if (!IsMainMenuStateValid())
             {
                 Fail("Load Slot From Shell", "Failed to reach a valid menu shell before load handoff.");
-                yield break;
+                return;
             }
 
             ResolveMainMenuController();
             if (_mainMenuController == null)
             {
                 Fail("Load Slot From Shell", "MainMenuController not found.");
-                yield break;
+                return;
             }
 
             _mainMenuController.StartGame(slotName);
-            yield return WaitForCondition(() => IsLoadGameStateValid(slotName), "Load-game world handoff");
+            await WaitForConditionAsync(() => IsLoadGameStateValid(slotName), "Load-game world handoff", cancellationToken);
 
             if (!IsLoadGameStateValid(slotName))
             {
                 Fail("Load Slot From Shell", $"Load-game context/world state is invalid for slot '{slotName}'.");
-                yield break;
+                return;
             }
 
             Pass("Load Slot From Shell");
         }
 
-        private IEnumerator InputRestorationSequence()
+        private async Awaitable InputRestorationSequenceAsync(CancellationToken cancellationToken)
         {
             ResolvePauseMenu();
             if (_pauseMenu == null)
             {
                 Fail("Input Restoration", "PauseMenuController not found.");
-                yield break;
+                return;
             }
 
             if (!IsGameplayInputModeValid())
             {
                 Fail("Input Restoration", "Gameplay input mode is not valid before pause.");
-                yield break;
+                return;
             }
 
             _pauseMenu.Open();
-            yield return WaitForCondition(IsPauseStateValid, "Pause input mode");
+            await WaitForConditionAsync(IsPauseStateValid, "Pause input mode", cancellationToken);
             if (!IsPauseStateValid())
             {
                 Fail("Input Restoration", "Pause state was not valid during input restoration test.");
-                yield break;
+                return;
             }
 
             _pauseMenu.Close();
-            yield return WaitForCondition(IsGameplayStateRestored, "Gameplay input restore");
+            await WaitForConditionAsync(IsGameplayStateRestored, "Gameplay input restore", cancellationToken);
 
             if (!IsGameplayStateRestored())
             {
                 Fail("Input Restoration", "Gameplay input mode was not restored after pause.");
-                yield break;
+                return;
             }
 
             Pass("Input Restoration");
         }
 
-        private IEnumerator EnsureMainMenuScene()
+        private async Awaitable EnsureMainMenuSceneAsync(CancellationToken cancellationToken)
         {
             if (IsMainMenuStateValid())
-                yield break;
+                return;
 
-            yield return NavigateToMainMenu();
+            await NavigateToMainMenuAsync(cancellationToken);
         }
 
-        private IEnumerator NavigateToMainMenu()
+        private async Awaitable NavigateToMainMenuAsync(CancellationToken cancellationToken)
         {
             ResolvePauseMenu();
             if (_pauseMenu == null)
-                yield break;
+                return;
 
             if (!_pauseMenu.IsOpen)
             {
                 _pauseMenu.Open();
-                yield return WaitForCondition(IsPauseStateValid, "Pause open for menu return");
+                await WaitForConditionAsync(IsPauseStateValid, "Pause open for menu return", cancellationToken);
                 if (!IsPauseStateValid())
-                    yield break;
+                    return;
             }
 
             Button exitToMenuButton = VerificationRuntimeProbe.ResolvePauseExitToMenuButton(_pauseMenu);
             if (exitToMenuButton == null)
-                yield break;
+                return;
 
             exitToMenuButton.onClick.Invoke();
-            yield return WaitForCondition(IsMainMenuStateValid, "Main-menu scene handoff");
+            await WaitForConditionAsync(IsMainMenuStateValid, "Main-menu scene handoff", cancellationToken);
         }
 
-        private IEnumerator WaitForCondition(System.Func<bool> predicate, string label)
+        private async Awaitable WaitForConditionAsync(Func<bool> predicate, string label, CancellationToken cancellationToken)
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0.1f, _actionTimeout);
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (predicate())
                 {
                     if (_stabilizationTime > 0f)
-                        yield return new WaitForSecondsRealtime(_stabilizationTime);
+                        await DelayRealtimeAsync(_stabilizationTime, cancellationToken);
 
                     LogVerification($"PASS {label}");
-                    yield break;
+                    return;
                 }
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             LogVerification($"FAIL {label}: timeout after {_actionTimeout:0.00}s");
+        }
+
+        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
         }
 
         private bool IsPauseStateValid()

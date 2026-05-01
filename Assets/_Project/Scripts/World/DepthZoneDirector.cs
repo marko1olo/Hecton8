@@ -21,6 +21,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Quest;
 using Hecton8.UI;
+using Unity.Collections;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -28,23 +29,111 @@ using UnityEditor;
 
 namespace Hecton8.World
 {
+    /// <summary>
+    /// Listener contract for queue-backed depth-zone notifications.
+    /// </summary>
+    public interface IDepthZoneEventListener
+    {
+        /// <summary>Called when the player enters a new depth zone.</summary>
+        /// <param name="zone">Entered zone profile.</param>
+        void OnDepthZoneEntered(DepthZoneProfile zone);
+
+        /// <summary>Called when the player exits a depth zone.</summary>
+        /// <param name="zone">Exited zone profile.</param>
+        void OnDepthZoneExited(DepthZoneProfile zone);
+    }
+
     public static class DepthZoneEvents
     {
+        private struct DepthZoneEventPayload
+        {
+            public uint ZoneHash;
+            public byte EventType;
+        }
+
+        private const byte EnteredEventType = 1;
+        private const byte ExitedEventType = 2;
+
+        private static readonly RegistryBucket<IDepthZoneEventListener> _listeners = new RegistryBucket<IDepthZoneEventListener>(16);
+        private static readonly System.Collections.Generic.Dictionary<uint, DepthZoneProfile> _profilesByHash = new System.Collections.Generic.Dictionary<uint, DepthZoneProfile>(32);
+        private static NativeQueue<DepthZoneEventPayload> _pendingEvents;
+
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnZoneEntered = null;
-            OnZoneExited = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _profilesByHash.Clear();
         }
 
         /// <summary>Вход в новую зону. DepthZoneProfile: новая зона.</summary>
-        public static event Action<DepthZoneProfile> OnZoneEntered;
 
         /// <summary>Выход из зоны. DepthZoneProfile: покинутая зона.</summary>
-        public static event Action<DepthZoneProfile> OnZoneExited;
 
-        public static void RaiseZoneEntered(DepthZoneProfile zone) => OnZoneEntered?.Invoke(zone);
-        public static void RaiseZoneExited(DepthZoneProfile zone)  => OnZoneExited?.Invoke(zone);
+        public static void Register(IDepthZoneEventListener listener)
+        {
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        public static void Unregister(IDepthZoneEventListener listener)
+        {
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        public static void RaiseZoneEntered(DepthZoneProfile zone) => Enqueue(zone, EnteredEventType);
+        public static void RaiseZoneExited(DepthZoneProfile zone)  => Enqueue(zone, ExitedEventType);
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out DepthZoneEventPayload payload))
+            {
+                if (!_profilesByHash.TryGetValue(payload.ZoneHash, out DepthZoneProfile profile) || profile == null)
+                    continue;
+
+                IDepthZoneEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    if (payload.EventType == EnteredEventType)
+                        rawArray[i].OnDepthZoneEntered(profile);
+                    else
+                        rawArray[i].OnDepthZoneExited(profile);
+                }
+            }
+        }
+
+        private static void Enqueue(DepthZoneProfile zone, byte eventType)
+        {
+            if (zone == null)
+                return;
+
+            EnsureInitialized();
+            uint zoneHash = zone.ZoneHash != 0u ? zone.ZoneHash : unchecked((uint)zone.GetInstanceID());
+            _profilesByHash[zoneHash] = zone;
+            _pendingEvents.Enqueue(new DepthZoneEventPayload
+            {
+                ZoneHash = zoneHash,
+                EventType = eventType
+            });
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+                _pendingEvents = new NativeQueue<DepthZoneEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DepthZoneEventPayload>[16] - depth-zone event lane flushed by SystemDispatcher - owner: DepthZoneEvents
+        }
     }
 
     [DisallowMultipleComponent]

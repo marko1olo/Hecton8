@@ -2707,7 +2707,7 @@ namespace Hecton8.World
                 Vector3.down,
                 _seafloorRaycastHits,
                 40000f,
-                ~0,
+                HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask,
                 QueryTriggerInteraction.Ignore);
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {

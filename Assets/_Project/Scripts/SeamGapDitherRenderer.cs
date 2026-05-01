@@ -23,7 +23,9 @@ namespace Hecton8.World
         private static readonly int _BaseTintId = Shader.PropertyToID("_BaseTint");
         private const string LegacyGapDitherName = "__SEAM_DITHER";
         private const int MaxSeamRaycastCommands = 256;
+        private const int MaxMotesPerChunk = 256;
         private const float MinimumProbeDistance = 0.05f;
+        private const float MinimumSeamGapMeters = 0.01f;
         [Header("References")]
         [SerializeField] private SeamRegistry seamRegistry;
         [SerializeField] private Transform playerTransform;
@@ -49,6 +51,28 @@ namespace Hecton8.World
         [SerializeField, Min(1)] private int maxRaycastMotes = 128;
         [SerializeField, Min(1)] private int raycastProbeStride = 2;
 
+        [Header("Flora Root Gap Motes")]
+        [Tooltip("When enabled, the indirect dither pass also emits capped bioluminescent motes around underwater macro-flora root contacts.")]
+        [SerializeField] private bool includeFloraRootMotes = true;
+
+        [Tooltip("Maximum flora-root motes appended to the existing seam dither indirect draw.")]
+        [SerializeField, Min(1)] private int maxFloraRootMotes = 128;
+
+        [Tooltip("Stride through active underwater vegetation instances. Higher values lower CPU upload cost.")]
+        [SerializeField, Min(1)] private int floraRootInstanceStride = 4;
+
+        [Tooltip("Number of contact-ring motes emitted per accepted macro-flora instance.")]
+        [SerializeField, Range(1, 4)] private int floraRootMotesPerPlant = 4;
+
+        [Tooltip("Base footprint radius used when placing root-contact motes around a vegetation pivot.")]
+        [SerializeField, Min(0.01f)] private float floraRootFootprintRadiusMeters = 0.35f;
+
+        [Tooltip("Small upward offset to keep root motes from z-fighting with seabed geometry.")]
+        [SerializeField, Min(0f)] private float floraRootSurfaceLiftMeters = 0.035f;
+
+        [Tooltip("Tint used for flora-root contact dust motes.")]
+        [SerializeField] private Color floraRootDustColor = new Color(0.24f, 0.95f, 0.78f, 0.65f);
+
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
         [SerializeField] private int _debugRenderedInstances;
@@ -61,6 +85,8 @@ namespace Hecton8.World
         private readonly List<WorldGenerativeGeologySeamRuntime> _legacyRuntimeScratch = new List<WorldGenerativeGeologySeamRuntime>(128);
         // COLD ALLOC: IndirectDrawIndexedArgs[1] - indirect draw argument upload cache for seam dither - owner: SeamGapDitherRenderer
         private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _argsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+        // COLD ALLOC: float[256] - expected seam heights paired with raycast commands for gap-threshold filtering - owner: SeamGapDitherRenderer
+        private readonly float[] _seamRaycastExpectedHeights = new float[MaxSeamRaycastCommands];
 
         private Matrix4x4[] _matrixUpload;
         private Vector4[] _colorUpload;
@@ -216,16 +242,16 @@ namespace Hecton8.World
 
         private void EnsureCpuCapacity()
         {
-            int clampedCapacity = Mathf.Clamp(maxInstances, 8, 4096);
+            int clampedCapacity = Mathf.Clamp(maxInstances, 8, MaxMotesPerChunk);
             if (_matrixUpload == null || _matrixUpload.Length != clampedCapacity)
             {
-                // COLD ALLOC: Matrix4x4[maxInstances] - per-frame seam dither transform upload cache - owner: SeamGapDitherRenderer
+                // COLD ALLOC: Matrix4x4[MaxMotesPerChunk] - capped per-frame seam dither transform upload cache - owner: SeamGapDitherRenderer
                 _matrixUpload = new Matrix4x4[clampedCapacity];
             }
 
             if (_colorUpload == null || _colorUpload.Length != clampedCapacity)
             {
-                // COLD ALLOC: Vector4[maxInstances] - per-frame seam dither tint upload cache - owner: SeamGapDitherRenderer
+                // COLD ALLOC: Vector4[MaxMotesPerChunk] - capped per-frame seam dither tint upload cache - owner: SeamGapDitherRenderer
                 _colorUpload = new Vector4[clampedCapacity];
             }
         }
@@ -260,17 +286,17 @@ namespace Hecton8.World
 
         private void EnsureBuffers()
         {
-            int requiredCapacity = _matrixUpload != null ? _matrixUpload.Length : Mathf.Clamp(maxInstances, 8, 4096);
+            int requiredCapacity = _matrixUpload != null ? _matrixUpload.Length : Mathf.Clamp(maxInstances, 8, MaxMotesPerChunk);
             if (_matrixBuffer == null || _matrixBuffer.count != requiredCapacity)
             {
                 ReleaseBuffer(ref _matrixBuffer);
-                _matrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[maxInstances] - seam dither matrix upload buffer - owner: SeamGapDitherRenderer
+                _matrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither matrix upload buffer - owner: SeamGapDitherRenderer
             }
 
             if (_colorBuffer == null || _colorBuffer.count != requiredCapacity)
             {
                 ReleaseBuffer(ref _colorBuffer);
-                _colorBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[maxInstances] - seam dither tint upload buffer - owner: SeamGapDitherRenderer
+                _colorBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[MaxMotesPerChunk] - seam dither tint upload buffer - owner: SeamGapDitherRenderer
             }
 
             if (_argsBuffer == null)
@@ -296,11 +322,6 @@ namespace Hecton8.World
         private int BuildInstances()
         {
             seamRegistry.CopyStatesTo(_stateScratch);
-            if (_stateScratch.Count == 0)
-            {
-                _debugDrawBounds = new Bounds(Vector3.zero, Vector3.zero);
-                return 0;
-            }
 
             Quaternion billboardRotation = targetCamera.transform.rotation;
             Vector3 cameraPosition = targetCamera.transform.position;
@@ -392,6 +413,16 @@ namespace Hecton8.World
                 ref boundsMax,
                 ref hasBounds);
 
+            instanceCount = AppendFloraRootInstances(
+                instanceCount,
+                maxCount,
+                cameraPosition,
+                billboardRotation,
+                maxDistanceSq,
+                ref boundsMin,
+                ref boundsMax,
+                ref hasBounds);
+
             if (!hasBounds)
             {
                 _debugDrawBounds = new Bounds(cameraPosition, Vector3.zero);
@@ -401,6 +432,84 @@ namespace Hecton8.World
             Vector3 center = (boundsMin + boundsMax) * 0.5f;
             Vector3 size = Vector3.Max(boundsMax - boundsMin, Vector3.one * 0.5f);
             _debugDrawBounds = new Bounds(center, size);
+            return instanceCount;
+        }
+
+        private int AppendFloraRootInstances(
+            int instanceCount,
+            int maxCount,
+            Vector3 cameraPosition,
+            Quaternion billboardRotation,
+            float maxDistanceSq,
+            ref Vector3 boundsMin,
+            ref Vector3 boundsMax,
+            ref bool hasBounds)
+        {
+            if (!includeFloraRootMotes || maxFloraRootMotes <= 0 || instanceCount >= maxCount)
+                return instanceCount;
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge == null ||
+                !vegetationBridge.TryGetActiveUnderwaterNativePayload(
+                    out NativeArray<Matrix4x4> matrices,
+                    out NativeArray<HectonVegetationInstanceData> metadata,
+                    out _,
+                    out int count))
+            {
+                return instanceCount;
+            }
+
+            int limit = Mathf.Min(count, Mathf.Min(matrices.Length, metadata.Length));
+            if (limit <= 0)
+                return instanceCount;
+
+            int stride = Mathf.Max(1, floraRootInstanceStride);
+            int motesPerPlant = Mathf.Clamp(floraRootMotesPerPlant, 1, 4);
+            int appendLimit = Mathf.Min(Mathf.Max(0, maxFloraRootMotes), maxCount - instanceCount);
+            int appendedCount = 0;
+            float footprintRadius = Mathf.Max(0.01f, floraRootFootprintRadiusMeters);
+            float surfaceLift = Mathf.Max(0f, floraRootSurfaceLiftMeters);
+            Color color = floraRootDustColor;
+            if (color.a <= 0.01f)
+                return instanceCount;
+
+            for (int sourceIndex = 0; sourceIndex < limit && appendedCount < appendLimit; sourceIndex += stride)
+            {
+                HectonVegetationInstanceData instanceData = metadata[sourceIndex];
+                HectonVegetationInstanceType type = (HectonVegetationInstanceType)Mathf.RoundToInt(instanceData.Type);
+                if (type != HectonVegetationInstanceType.GiantKelp && type != HectonVegetationInstanceType.Sargassum)
+                    continue;
+
+                Matrix4x4 matrix = matrices[sourceIndex];
+                Vector3 root = new Vector3(matrix.m03, matrix.m13, matrix.m23);
+                Vector3 right = new Vector3(matrix.m00, matrix.m10, matrix.m20);
+                Vector3 forward = new Vector3(matrix.m02, matrix.m12, matrix.m22);
+                float rightMagnitude = right.magnitude;
+                float forwardMagnitude = forward.magnitude;
+                right = rightMagnitude > 0.0001f ? right / rightMagnitude : Vector3.right;
+                forward = forwardMagnitude > 0.0001f ? forward / forwardMagnitude : Vector3.forward;
+
+                float baseRadius = footprintRadius * Mathf.Max(0.35f, Mathf.Abs(instanceData.WidthScale));
+                for (int moteIndex = 0; moteIndex < motesPerPlant && appendedCount < appendLimit && instanceCount < maxCount; moteIndex++)
+                {
+                    float angle01 = (moteIndex + Hash01(sourceIndex, moteIndex, 83) * 0.22f) / motesPerPlant;
+                    float angle = angle01 * Mathf.PI * 2f;
+                    Vector3 runtimePoint =
+                        root +
+                        ((right * Mathf.Cos(angle)) + (forward * Mathf.Sin(angle))) * baseRadius +
+                        (Vector3.up * surfaceLift);
+                    if ((runtimePoint - cameraPosition).sqrMagnitude > maxDistanceSq)
+                        continue;
+
+                    float scale = moteSize * Mathf.Lerp(0.45f, 0.9f, Hash01(sourceIndex, moteIndex, 97));
+                    _matrixUpload[instanceCount] = Matrix4x4.TRS(runtimePoint, billboardRotation, Vector3.one * scale);
+                    _colorUpload[instanceCount] = (Vector4)color;
+                    IncludeInstanceBounds(runtimePoint, scale, ref boundsMin, ref boundsMax, ref hasBounds);
+                    instanceCount++;
+                    appendedCount++;
+                }
+            }
+
             return instanceCount;
         }
 
@@ -424,6 +533,9 @@ namespace Hecton8.World
             {
                 RaycastHit hit = _seamRaycastHits[i];
                 if (hit.collider == null)
+                    continue;
+
+                if (Mathf.Abs(hit.point.y - _seamRaycastExpectedHeights[i]) <= MinimumSeamGapMeters)
                     continue;
 
                 Vector3 runtimePoint = hit.point + hit.normal * 0.025f;
@@ -491,13 +603,17 @@ namespace Hecton8.World
                         Vector3.down,
                         queryParameters,
                         probeDistance);
+                    _seamRaycastExpectedHeights[commandCount] = runtimePoint.y;
                     commandCount++;
                 }
             }
 
             RaycastCommand invalidCommand = CreateInvalidRaycastCommand();
             for (int i = commandCount; i < _seamRaycastCommands.Length; i++)
+            {
                 _seamRaycastCommands[i] = invalidCommand;
+                _seamRaycastExpectedHeights[i] = 0f;
+            }
 
             if (commandCount <= 0)
                 return;

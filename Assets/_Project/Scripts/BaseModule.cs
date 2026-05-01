@@ -61,6 +61,7 @@ using System.Collections.Generic;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Building;
+using Hecton8.Caves;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Inventory;
@@ -131,9 +132,12 @@ namespace Hecton8.Gameplay
         private const float DefaultBulkheadStressRatePerSecond = 0.035f;
         private const float DefaultBulkheadStressRecoveryPerSecond = 0.01f;
         private const float SurfacePressureKPa = 101.325f;
-        private const float DefaultDeepCompressionStartDepthMeters = 4000f;
+        private const float DefaultDeepCompressionStartDepthMeters = 3000f;
         private const float DefaultDeepCompressionFullPressureKPa = 60000f;
         private const float DefaultMaximumDeepCompressionAxisLoss = 0.001f;
+        private const float DefaultJointShearCompressionDeltaThreshold = 0.15f;
+        private const float DefaultJointShearDamagePerSecondAtFullDelta = 0.02f;
+        private const float DefaultJointShearStressRecoveryPerSecond = 0.08f;
         private const float DefaultBreachVortexDurationSeconds = 5f;
         private const float DefaultBreachVortexReferenceMassKilograms = 80f;
         private const float DefaultBreachVortexMaximumAccelerationMetersPerSecondSquared = 45f;
@@ -146,6 +150,7 @@ namespace Hecton8.Gameplay
         private const float DefaultFloodedReefActivationDays = 3f;
         private const int FloodedReefFaunaAnchorSalt = unchecked((int)0x52EF0A11);
         private const int ParasiteSporeHazardThreshold = 5;
+        private const int MinimumFloodedReefProxyPoolReserve = 10;
         private const string FloodedReefFaunaFamilyId = "fauna.family.reef_small";
         private const string FoundationPersistentId = "Build_Foundation_Platform";
         private const string PylonPersistentId = "Build_Utility_Pylon";
@@ -225,6 +230,15 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Maximum X/Y visual axis loss at full crush pressure. 0.001 = one millimeter per meter.")]
         [SerializeField, Range(0f, 0.01f)] private float maximumDeepCompressionAxisLoss = DefaultMaximumDeepCompressionAxisLoss;
+
+        [Tooltip("Normalized compression-alpha delta across a graph edge before joint shear starts damaging both modules.")]
+        [SerializeField, Range(0f, 1f)] private float jointShearCompressionDeltaThreshold = DefaultJointShearCompressionDeltaThreshold;
+
+        [Tooltip("Integrity fraction consumed per second when the edge compression delta reaches the maximum possible mismatch.")]
+        [SerializeField, Min(0f)] private float jointShearDamagePerSecondAtFullDelta = DefaultJointShearDamagePerSecondAtFullDelta;
+
+        [Tooltip("Normalized joint shear stress recovered per second when no pressure mismatch overload is present.")]
+        [SerializeField, Min(0f)] private float jointShearStressRecoveryPerSecond = DefaultJointShearStressRecoveryPerSecond;
 
         [Header("Breach Vortex")]
         [Tooltip("Duration in seconds for the transient depressurization vortex emitted on module breach.")]
@@ -438,6 +452,7 @@ namespace Hecton8.Gameplay
         private HabitatIntegrityManager _habitatIntegrityManager;
         private SubmarineAtmosphereSystem _submarineAtmosphereSystem;
         private PowerNode _powerNode;
+        private HectonVoxelVolume _voxelVolume;
         private bool _breachLatched;
         private Rigidbody _moduleRigidbody;
         private int _cachedAtmosphereRoomIndex = -1;
@@ -470,6 +485,7 @@ namespace Hecton8.Gameplay
         private float _pressureCompressionAxisScale = 1f;
         private float _pressureCompressionVolumeScale = 1f;
         private float _pressureCompressionDepthMeters;
+        private float _jointShearStress01;
 
         /// <summary>
         /// Предыдущее состояние isFlooded, используемое для определения
@@ -640,6 +656,16 @@ namespace Hecton8.Gameplay
         internal float BreathableReserveCapacity => _lifeSupportComponent.BreathableReserveCapacity;
         internal float PressureCompressionVolumeScale => _pressureCompressionVolumeScale;
         internal float PressureCompressionDepthMeters => _pressureCompressionDepthMeters;
+        internal float PressureCompressionAlpha01
+        {
+            get
+            {
+                float maximumAxisLoss = Mathf.Max(0.000001f, Mathf.Clamp(maximumDeepCompressionAxisLoss, 0f, 0.01f));
+                float axisLoss = 1f - _pressureCompressionAxisScale;
+                return Mathf.Clamp01(axisLoss / maximumAxisLoss);
+            }
+        }
+        internal float JointShearStress01 => _jointShearStress01;
         internal int AttachedParasiteCount => _attachedParasiteCount;
         internal float ParasiteRootPowerDrainWatts => _parasiteRootPowerDrainWatts;
         internal float ParasiteAddedMassKilograms => _parasiteAddedMassKilograms;
@@ -648,6 +674,8 @@ namespace Hecton8.Gameplay
         internal float PowerRatingForHabitatGraph => _interiorReefInfestationActive
             ? 0f
             : _basePowerRating + _cultivationLightingPowerCreditWatts - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
+        internal PowerGrid CachedPowerGrid => _powerNode != null ? _powerNode.Grid : null;
+        internal HectonVoxelVolume CachedVoxelVolume => _voxelVolume;
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent
@@ -725,6 +753,7 @@ namespace Hecton8.Gameplay
             _islandFloodCenterOfMassWeight01 = 0f;
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
+            _jointShearStress01 = 0f;
             _bulkheadFailureLatched = false;
             _emergencyBulkheadLockedDown = false;
             _implosionTriggered = false;
@@ -772,6 +801,7 @@ namespace Hecton8.Gameplay
             _islandFloodCenterOfMassWeight01 = 0f;
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
+            _jointShearStress01 = 0f;
             _bulkheadFailureLatched = false;
             _emergencyBulkheadLockedDown = false;
             _implosionTriggered = false;
@@ -1337,6 +1367,59 @@ namespace Hecton8.Gameplay
             _bulkheadFailureLatched = true;
             ForceFlood();
             return true;
+        }
+
+        internal void DecayJointShearStress(float deltaTime)
+        {
+            if (deltaTime <= 0f || !float.IsFinite(deltaTime) || _jointShearStress01 <= 0f)
+                return;
+
+            float recovery = Mathf.Max(0f, jointShearStressRecoveryPerSecond) * deltaTime;
+            if (recovery <= 0f || !float.IsFinite(recovery))
+                return;
+
+            _jointShearStress01 = Mathf.Max(0f, _jointShearStress01 - recovery);
+        }
+
+        internal bool ApplyJointShearStress(float compressionDelta01, float deltaTime)
+        {
+            if (compressionDelta01 <= 0f ||
+                deltaTime <= 0f ||
+                !float.IsFinite(compressionDelta01) ||
+                !float.IsFinite(deltaTime) ||
+                IsBreached)
+            {
+                return false;
+            }
+
+            float threshold = Mathf.Clamp01(jointShearCompressionDeltaThreshold);
+            if (compressionDelta01 <= threshold)
+                return false;
+
+            float overload01 = Mathf.Clamp01((compressionDelta01 - threshold) / Mathf.Max(0.0001f, 1f - threshold));
+            _jointShearStress01 = Mathf.Clamp01(Mathf.Max(_jointShearStress01, overload01));
+
+            float damageFraction = Mathf.Max(0f, jointShearDamagePerSecondAtFullDelta) * overload01 * deltaTime;
+            float damageAmount = damageFraction * Mathf.Max(1f, _integrityComponent.MaxIntegrity);
+            if (damageAmount <= 0f || !float.IsFinite(damageAmount))
+                return true;
+
+            ApplyDamage(damageAmount);
+            return true;
+        }
+
+        internal float ResolveThermalSurfaceAreaSquareMeters()
+        {
+            Vector3 size = moduleTemplate != null ? moduleTemplate.ProxyBoundsSize : Vector3.zero;
+            if (size.x <= 0.01f || size.y <= 0.01f || size.z <= 0.01f)
+            {
+                size = interiorTrigger != null
+                    ? interiorTrigger.bounds.size
+                    : new Vector3(4f, 4f, 4f);
+            }
+
+            float area = 2f * ((size.x * size.y) + (size.x * size.z) + (size.y * size.z));
+            return float.IsFinite(area) ? Mathf.Max(0.1f, area) : 1f;
         }
 
         /// <summary>
@@ -2396,6 +2479,9 @@ namespace Hecton8.Gameplay
             if (_powerNode == null)
                 TryGetComponent(out _powerNode);
 
+            if (_voxelVolume == null && !TryGetComponent(out _voxelVolume))
+                _voxelVolume = GetComponentInParent<HectonVoxelVolume>();
+
             if (interiorTrigger == null)
                 interiorTrigger = GetComponentInChildren<BoxCollider>(true);
 
@@ -2624,6 +2710,7 @@ namespace Hecton8.Gameplay
         private void ResetBulkheadFloodStress()
         {
             _bulkheadFloodStress01 = 0f;
+            _jointShearStress01 = 0f;
             _bulkheadFailureLatched = false;
         }
 
@@ -2694,7 +2781,9 @@ namespace Hecton8.Gameplay
             if (_moduleRigidbody == null)
                 return;
 
+            Vector3 currentCenterOfMass = _moduleRigidbody.centerOfMass;
             Vector3 targetCenterOfMass = _defaultCenterOfMassLocal;
+            bool hasFloodCenterOfMassShift = false;
             if (_hasBreachCenterOfMassTarget && floodFill01 > 0.001f)
             {
                 Vector3 offsetFromCenter = _breachCenterOfMassTargetLocal - _defaultCenterOfMassLocal;
@@ -2703,6 +2792,7 @@ namespace Hecton8.Gameplay
                     offsetFromCenter = offsetFromCenter.normalized * maxShift;
 
                 targetCenterOfMass += offsetFromCenter * floodFill01;
+                hasFloodCenterOfMassShift = true;
             }
 
             if (_hasIslandFloodCenterOfMassTarget && _islandFloodCenterOfMassWeight01 > 0.001f)
@@ -2713,15 +2803,22 @@ namespace Hecton8.Gameplay
                     islandOffset = islandOffset.normalized * maxShift;
 
                 targetCenterOfMass += islandOffset * _islandFloodCenterOfMassWeight01;
+                hasFloodCenterOfMassShift = true;
             }
+
+            if (!hasFloodCenterOfMassShift && (currentCenterOfMass - _defaultCenterOfMassLocal).sqrMagnitude <= 0f)
+                return;
 
             float tauSeconds = ResolveCenterOfMassShiftTauSeconds();
             float alpha = 1f - Mathf.Exp(-fixedDeltaTime / tauSeconds);
-            Vector3 nextCenterOfMass = Vector3.Lerp(_moduleRigidbody.centerOfMass, targetCenterOfMass, alpha);
-            Vector3 clampedDelta = nextCenterOfMass - _moduleRigidbody.centerOfMass;
+            Vector3 nextCenterOfMass = Vector3.Lerp(currentCenterOfMass, targetCenterOfMass, alpha);
+            Vector3 clampedDelta = nextCenterOfMass - currentCenterOfMass;
+            if (clampedDelta.sqrMagnitude <= 0f)
+                return;
+
             float maxStep = Mathf.Max(0.001f, maxCenterOfMassShiftPerTickMeters);
             if (clampedDelta.sqrMagnitude > (maxStep * maxStep))
-                nextCenterOfMass = _moduleRigidbody.centerOfMass + clampedDelta.normalized * maxStep;
+                nextCenterOfMass = currentCenterOfMass + clampedDelta.normalized * maxStep;
 
             _moduleRigidbody.centerOfMass = nextCenterOfMass;
         }
@@ -2921,6 +3018,11 @@ namespace Hecton8.Gameplay
 
         internal void SetEmergencyBulkheadLockdown(bool lockedDown)
         {
+            SetEmergencyBulkheadLockdown(lockedDown, false);
+        }
+
+        internal void SetEmergencyBulkheadLockdown(bool lockedDown, bool blockManualOverride)
+        {
             if (!ResolveEmergencyAirlockRole())
                 return;
 
@@ -2930,7 +3032,10 @@ namespace Hecton8.Gameplay
             {
                 BaseAirlock airlock = _airlockBuffer[i];
                 if (airlock != null)
+                {
                     airlock.SetEmergencyLockdown(lockedDown);
+                    airlock.SetEmergencyLockdownOverrideBlocked(lockedDown && blockManualOverride);
+                }
             }
 
             for (int i = 0; i < _sealedDoorBuffer.Count; i++)
@@ -3074,7 +3179,10 @@ namespace Hecton8.Gameplay
             if (rootStateChanged)
                 NotifyParasiteRootGraphChanged();
             if (sporeStateChanged)
+            {
                 BaseDegradationSystem.SynchronizeParasiteSporeHazard(this);
+                BaseDegradationSystem.SynchronizeIntegrityState(this);
+            }
             return true;
         }
 
@@ -3313,16 +3421,22 @@ namespace Hecton8.Gameplay
             return unchecked((long)EntityId.ToULong(GetEntityId()) ^ FloodedReefFaunaAnchorSalt);
         }
 
-        private void SetInteriorReefVisualActive(bool active)
+        private bool SetInteriorReefVisualActive(bool active)
         {
             if (active)
+            {
                 ResolveInteriorReefProxyReferences();
+                if (!HasInteriorReefProxyPoolReserve())
+                    return false;
+            }
 
             if (interiorCaveWeed != null && interiorCaveWeed.activeSelf != active)
                 interiorCaveWeed.SetActive(active);
 
             if (interiorBarnacles != null && interiorBarnacles.activeSelf != active)
                 interiorBarnacles.SetActive(active);
+
+            return true;
         }
 
         private void ResolveInteriorReefProxyReferences()
@@ -3345,6 +3459,27 @@ namespace Hecton8.Gameplay
             }
 
             return child != null ? child.gameObject : null;
+        }
+
+        private bool HasInteriorReefProxyPoolReserve()
+        {
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool == null)
+                return true;
+
+            return HasProxyPoolReserve(interiorCaveWeed, pool) &&
+                   HasProxyPoolReserve(interiorBarnacles, pool);
+        }
+
+        private static bool HasProxyPoolReserve(GameObject proxy, ObjectPoolManager pool)
+        {
+            if (proxy == null || pool == null)
+                return true;
+
+            if (!proxy.TryGetComponent(out ObjectPoolManager.PoolItemMarker marker))
+                return true;
+
+            return pool.GetAvailableCountByPrefabId(marker.PrefabId) >= MinimumFloodedReefProxyPoolReserve;
         }
 
         private float ResolveFloodedReefActivationSeconds()
@@ -3507,6 +3642,10 @@ namespace Hecton8.Gameplay
 
         private void NotifyModuleImploded()
         {
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            if (floraInteractionManager != null)
+                floraInteractionManager.KillAttachedParasites(this);
+
             ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (manager != null)
                 manager.NotifyModuleImploded(this);

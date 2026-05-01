@@ -253,6 +253,7 @@ namespace Hecton8.AI
         private const float FearDecayLogK = -2.302585093f;
         private const float ThreatDecayLogK = -2.995732274f;
         private const float ThreatSmoothingK = 3f;
+        private const float MaxThreatSmoothingDeltaTime = 0.05f;
         private const float MemoryLifetimeSeconds = 45f;
         private const float AcousticMemoryLifetimeSeconds = 45f;
         private const float MinimumDistanceMeters = 1.25f;
@@ -309,6 +310,7 @@ namespace Hecton8.AI
         private const float BaseSiegeLoiterRadiusMeters = 10f;
         private const float BaseSiegeUtilityBias = 0.35f;
         private const int SpatialMemoryRecallCount = 5;
+        private const int MaxPackRoleCasAttempts = 3;
 
         private static NativeArray<CognitionCore> _cores;
         private static NativeArray<CognitionControl> _controls;
@@ -1286,7 +1288,7 @@ namespace Hecton8.AI
         private static int3 ResolveSpatialBucketCoordinates(float3 worldPosition, float3 boundsMin, float bucketCellSize)
         {
             float safeCellSize = math.max(bucketCellSize, 0.001f);
-            float3 localPosition = worldPosition - boundsMin;
+            float3 localPosition = math.max(worldPosition - boundsMin, float3.zero);
             return new int3(
                 (int)math.floor(localPosition.x / safeCellSize),
                 (int)math.floor(localPosition.y / safeCellSize),
@@ -1621,11 +1623,20 @@ namespace Hecton8.AI
 
             private static unsafe bool TryReservePackRole(int* claimTable, int reservationIndex, int creatureSlot)
             {
-                int priorOwner = System.Threading.Interlocked.CompareExchange(
-                    ref claimTable[reservationIndex],
-                    creatureSlot,
-                    UnclaimedBoidSlot);
-                return priorOwner == UnclaimedBoidSlot || priorOwner == creatureSlot;
+                if (claimTable == null || reservationIndex < 0 || reservationIndex >= Capacity || creatureSlot < 0)
+                    return false;
+
+                for (int attempt = 0; attempt < MaxPackRoleCasAttempts; attempt++)
+                {
+                    int priorOwner = System.Threading.Interlocked.CompareExchange(
+                        ref claimTable[reservationIndex],
+                        creatureSlot,
+                        UnclaimedBoidSlot);
+                    if (priorOwner == UnclaimedBoidSlot || priorOwner == creatureSlot)
+                        return true;
+                }
+
+                return false;
             }
 
             private static float3 ResolveRuntimePosition(in AbsoluteUniversePositionBlit128 positionAup, float3 floatingOriginOffset)
@@ -1948,9 +1959,18 @@ namespace Hecton8.AI
                                        math.lengthsq(playerToBait) > DdaEpsilon &&
                                        math.dot(playerForward, playerToBait) >= PlayerFacingBaitThreshold;
                     float3 packPredictionDelta = predictedPlayerPosition - input.PlayerPosition;
-                    targetPosition = math.lerp(predictedPlayerPosition, packFlankTarget + packPredictionDelta, math.saturate(packFlankWeight));
+                    float3 flankCandidate = packFlankTarget + packPredictionDelta;
+                    if (IsThreatVoxelSolidOrOutOfBounds(flankCandidate))
+                    {
+                        targetPosition = predictedPlayerPosition;
+                    }
+                    else
+                    {
+                        targetPosition = math.lerp(predictedPlayerPosition, flankCandidate, math.saturate(packFlankWeight));
+                        flankingManeuverDetected = true;
+                    }
+
                     hasTarget = true;
-                    flankingManeuverDetected = true;
                 }
 
                 float threatVisual = 0f;
@@ -1965,7 +1985,7 @@ namespace Hecton8.AI
                 else if (threatVisible)
                     threatVisual = ComputeThreatVisual(input.Position, input.ThreatPosition, fallbackForward, input.AttackRange * 1.5f) * 0.75f;
 
-                float threatBlend = 1f - math.exp(-ThreatSmoothingK * math.max(0f, input.DeltaTime));
+                float threatBlend = ResolveThreatBlend(input.DeltaTime);
                 float threatRaw = math.max(math.max(threatVisual, acousticScore), threatLevel);
                 threatLevel = math.lerp(threatLevel, threatRaw, threatBlend);
                 threatLevel = math.clamp(threatLevel, 0f, 1f);
@@ -2231,7 +2251,7 @@ namespace Hecton8.AI
                 if (threatVisible)
                     threatVisual = math.max(threatVisual, ComputeThreatVisual(input.Position, input.ThreatPosition, fallbackForward, math.max(input.EscapeSafeDistance, 1f)));
 
-                float threatBlend = 1f - math.exp(-ThreatSmoothingK * math.max(0f, input.DeltaTime));
+                float threatBlend = ResolveThreatBlend(input.DeltaTime);
                 float threatRaw = math.max(math.max(math.max(threatVisual, playerThreat), acousticScore), fearPheromoneSignal * FearPheromoneContagionShare);
                 threatLevel = math.lerp(threatLevel, threatRaw, threatBlend);
                 threatLevel = math.clamp(threatLevel, 0f, 1f);
@@ -2462,11 +2482,17 @@ namespace Hecton8.AI
                 if (claimTable == null || targetIndex < 0 || targetIndex >= HabitatGraphManager.MaxSiegeTargetCount)
                     return false;
 
-                int priorOwner = System.Threading.Interlocked.CompareExchange(
-                    ref claimTable[targetIndex],
-                    creatureSlot,
-                    UnclaimedBoidSlot);
-                return priorOwner == UnclaimedBoidSlot || priorOwner == creatureSlot;
+                for (int attempt = 0; attempt < MaxPackRoleCasAttempts; attempt++)
+                {
+                    int priorOwner = System.Threading.Interlocked.CompareExchange(
+                        ref claimTable[targetIndex],
+                        creatureSlot,
+                        UnclaimedBoidSlot);
+                    if (priorOwner == UnclaimedBoidSlot || priorOwner == creatureSlot)
+                        return true;
+                }
+
+                return false;
             }
 
             private unsafe bool TryClaimBoid(int creatureSlot, int boidSlot)
@@ -2828,11 +2854,17 @@ namespace Hecton8.AI
             private static int3 ResolveSpatialBucketCoordinates(float3 worldPosition, float3 boundsMin, float bucketCellSize)
             {
                 float safeCellSize = math.max(bucketCellSize, 0.001f);
-                float3 localPosition = worldPosition - boundsMin;
+                float3 localPosition = math.max(worldPosition - boundsMin, float3.zero);
                 return new int3(
                     (int)math.floor(localPosition.x / safeCellSize),
                     (int)math.floor(localPosition.y / safeCellSize),
                     (int)math.floor(localPosition.z / safeCellSize));
+            }
+
+            private static float ResolveThreatBlend(float deltaTime)
+            {
+                float safeDeltaTime = math.min(math.max(0f, deltaTime), MaxThreatSmoothingDeltaTime);
+                return math.saturate(1f - math.exp(-ThreatSmoothingK * safeDeltaTime));
             }
 
             private static int3 ResolveAcousticBucketCoordinates(float3 worldPosition, float bucketCellSize)
@@ -3013,6 +3045,22 @@ namespace Hecton8.AI
 
                 voxel = candidate;
                 return true;
+            }
+
+            private bool IsThreatVoxelSolidOrOutOfBounds(float3 worldPosition)
+            {
+                if (!ThreatVoxelGrid.IsCreated ||
+                    ThreatVoxelDimensions.x <= 0 ||
+                    ThreatVoxelDimensions.y <= 0 ||
+                    ThreatVoxelDimensions.z <= 0)
+                {
+                    return false;
+                }
+
+                if (!TryWorldToVoxel(worldPosition, out int3 voxel))
+                    return true;
+
+                return IsThreatVoxelSolid(SampleThreatVoxel(voxel));
             }
 
             private bool IsVoxelInside(int3 voxel)

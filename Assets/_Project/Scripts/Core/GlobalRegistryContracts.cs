@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Interaction;
 using Hecton8.SaveSystem;
 using Hecton8.Construction;
@@ -7,6 +8,7 @@ using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
+using Hecton8.Meta;
 using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.Tools;
@@ -266,6 +268,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Shared current-metadata payload mandated for flow-field-derived systems.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct CurrentMeta
     {
         /// <summary>
@@ -292,6 +295,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable Gerstner-wave component consumed by Burst jobs.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct GerstnerWaveComponent
     {
         /// <summary>
@@ -328,6 +332,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Zero-allocation weather snapshot consumed by physics and VFX systems.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct WeatherRuntimeSnapshot
     {
         /// <summary>
@@ -475,6 +480,22 @@ namespace Hecton8.Core
         /// Switches native input routing to UI.
         /// </summary>
         void SwitchToUIInput();
+    }
+
+    /// <summary>
+    /// Registry-owned global meta profile service.
+    /// </summary>
+    public interface IProfileService
+    {
+        event System.Action ProfileChanged;
+        int ExplorerPoints { get; }
+        float MaxDepthMeters { get; }
+        float LongestLifeWithoutDeathSeconds { get; }
+        int HighestBiomeDiscoveriesInSingleRun { get; }
+        bool HasUnlockedAchievement(string achievementId);
+        int GetUpgradeLevel(string upgradeId);
+        bool TryPurchaseUpgrade(string upgradeId, out string error);
+        GlobalProfileData GetSnapshot();
     }
 
     /// <summary>
@@ -1245,6 +1266,34 @@ namespace Hecton8.Core
         public object CurrentService { get; }
     }
 
+    public enum RegistryEventType : byte
+    {
+        ServiceRebound = 0
+    }
+
+    /// <summary>
+    /// Unmanaged registry event payload drained by <see cref="SystemDispatcher"/>.
+    /// Managed service references are carried by GlobalRegistry sidecar slots during dispatch only.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RegistryEventPayload
+    {
+        public uint PreviousServiceHash;
+        public uint CurrentServiceHash;
+        public int ReferenceSlot;
+        public uint FrameIndex;
+        public ushort ServiceSlot;
+        public ushort EventType;
+    }
+
+    /// <summary>
+    /// Listener contract for registry service-rebound payloads.
+    /// </summary>
+    public interface IRegistryEventListener
+    {
+        void OnRegistryEvent(in RegistryEventPayload payload);
+    }
+
     /// <summary>
     /// Typed registry service slot identifiers used by GlobalRegistry hot-swap notifications.
     /// </summary>
@@ -1288,6 +1337,8 @@ namespace Hecton8.Core
         PersistentWorldRegistry = 35,
         PDALogbook = 36,
         PlayerMotor = 37,
+        Profile = 38,
+        InputBinding = 39,
         Unknown = 255
     }
 

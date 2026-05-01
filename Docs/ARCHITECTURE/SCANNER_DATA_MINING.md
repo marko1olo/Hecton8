@@ -1,5 +1,14 @@
 # Scanner Data Mining
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this scanner map as current runtime truth.
+- This document is a PDA/scanner/data-mining contract, not proof that sonar SDF, lore unlocks, scan fragments, or UI text paths are runtime-validated.
+- Re-open PDA, scanner, lore, shader, and save owners before surgery.
+
 ## Owners
 - `PDAMapTab.cs`: PDA sonar viewport owner. Uploads the published cave SDF, drives the raymarch material, and stages status text through `CharBufferPool`.
 - `Hecton_PDA_SonarMap.shader`: local-space sonar projection. Raymarches the SDF inside a bounded hologram box and renders cyan wireframe occupancy plus threat pings.

@@ -43,6 +43,86 @@ namespace Hecton8.World
         public float QualityBias;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal struct FractionalDrillingYieldSample
+    {
+        public float3 Position;
+        public float ToolPower;
+        public float NodeHardness;
+        public float DeltaSeconds;
+        public float UnitItemMassKg;
+        public float FractionalMassRemainderKg;
+        public int ItemHashId;
+        public uint SourceInstanceUid;
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    internal struct FractionalDrillingYieldResult
+    {
+        public float3 Position;
+        public float FractionalMassRemainderKg;
+        public int WholeItemCount;
+        public int ItemHashId;
+        public uint SourceInstanceUid;
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct FractionalDrillingYieldJob : IJobParallelFor
+    {
+        private const int GramsPerKilogram = 1000;
+        private const float KilogramsPerGram = 0.001f;
+
+        [ReadOnly] public NativeArray<FractionalDrillingYieldSample> Samples;
+        public NativeArray<FractionalDrillingYieldResult> Results;
+        public int SampleCount;
+
+        public void Execute(int index)
+        {
+            if (index >= SampleCount || !Samples.IsCreated || !Results.IsCreated)
+                return;
+
+            FractionalDrillingYieldSample sample = Samples[index];
+            float unitItemMassKg = math.max(0.01f, sample.UnitItemMassKg);
+            float extractedMassKg = math.max(0f, sample.ToolPower) *
+                                    math.max(0.01f, sample.NodeHardness) *
+                                    math.max(0f, sample.DeltaSeconds);
+            long unitItemMassGrams = UnitKilogramsToGrams(unitItemMassKg);
+            long remainderGrams = KilogramsToGrams(sample.FractionalMassRemainderKg);
+            long extractedGrams = KilogramsToGrams(extractedMassKg);
+            long availableGrams = remainderGrams + extractedGrams;
+            long wholeItemCountLong = unitItemMassGrams > 0L ? availableGrams / unitItemMassGrams : 0L;
+            if (wholeItemCountLong > int.MaxValue)
+                wholeItemCountLong = int.MaxValue;
+
+            long consumedGrams = wholeItemCountLong * unitItemMassGrams;
+            long remainingGrams = availableGrams > consumedGrams ? availableGrams - consumedGrams : 0L;
+
+            Results[index] = new FractionalDrillingYieldResult
+            {
+                Position = sample.Position,
+                FractionalMassRemainderKg = remainingGrams * KilogramsPerGram,
+                WholeItemCount = (int)wholeItemCountLong,
+                ItemHashId = sample.ItemHashId,
+                SourceInstanceUid = sample.SourceInstanceUid
+            };
+        }
+
+        private static long KilogramsToGrams(float kilograms)
+        {
+            if (!math.isfinite(kilograms) || kilograms <= 0f)
+                return 0L;
+
+            long grams = (long)math.round(kilograms * GramsPerKilogram);
+            return grams > 0L ? grams : 0L;
+        }
+
+        private static long UnitKilogramsToGrams(float kilograms)
+        {
+            long grams = KilogramsToGrams(kilograms);
+            return grams > 0L ? grams : 1L;
+        }
+    }
+
     /// <summary>
     /// Burst deterministic flora yield generation. One stack-oriented drop record per destroyed instance.
     /// </summary>

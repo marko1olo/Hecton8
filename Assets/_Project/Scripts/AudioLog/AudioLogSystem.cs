@@ -139,14 +139,15 @@ namespace Hecton8.Narrative
                 return;
 
             // Воспроизведение завершено
-            string completedId = _currentLog.logId;
+            AudioLogData completedLog = _currentLog;
+            string completedId = completedLog.logId;
             uint completedHash = _currentLogHash;
             _isPlaying = false;
             _currentLog = null;
             _currentLogHash = 0u;
             _playbackTimer = 0f;
 
-            AudioLogEvents.RaisePlaybackCompleted(completedHash);
+            AudioLogEvents.RaisePlaybackCompleted(completedHash, completedLog);
             SubtitleEventBus.RaisePlaybackCompleted(completedHash);
 
             LogPlaybackCompleted(completedId);
@@ -171,7 +172,7 @@ namespace Hecton8.Narrative
             uint discoveredHash = LoreDatabaseManager.ComputeLoreHash(data.SafeLogId);
             _discoveredLogs.Add(data.logId);
             if (discoveredHash != 0u)
-                AudioLogEvents.RaiseLogDiscovered(discoveredHash);
+                AudioLogEvents.RaiseLogDiscovered(discoveredHash, data);
             LocalizationManager localization = LocalizationManager.Instance;
             NotificationEvents.PushInfo(localization != null
                 ? localization.GetFormatted(LocalizationKeys.AUDIOLOG_DISCOVERED, displayTitle)
@@ -214,7 +215,7 @@ namespace Hecton8.Narrative
             _playbackTimer = data.Duration;
             _isPlaying = true;
 
-            AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
+            AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
             SubtitleEventBus.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
 
             LogPlaying(data.logId, data.Duration);
@@ -228,13 +229,14 @@ namespace Hecton8.Narrative
             if (!_isPlaying || _currentLog == null)
                 return;
 
+            AudioLogData stoppedLog = _currentLog;
             uint stoppedHash = _currentLogHash;
             _isPlaying = false;
             _currentLog = null;
             _currentLogHash = 0u;
             _playbackTimer = 0f;
 
-            AudioLogEvents.RaisePlaybackStopped(stoppedHash);
+            AudioLogEvents.RaisePlaybackStopped(stoppedHash, stoppedLog);
             SubtitleEventBus.RaisePlaybackStopped(stoppedHash);
         }
 

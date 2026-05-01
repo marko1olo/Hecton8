@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
 
@@ -12,11 +13,13 @@ namespace Hecton8.Narrative
         PlaybackCompleted = 3
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public struct AudioLogEventPayload
     {
         public AudioLogEventType Type;
         public ulong TimestampTicks;
         public uint LogHash;
+        public int ReferenceSlot;
         public float DurationSeconds;
     }
 
@@ -29,7 +32,26 @@ namespace Hecton8.Narrative
     {
         // COLD ALLOC: RegistryBucket<IAudioLogEventListener>[16] - audio log event listener registry drained on dispatcher LateUpdate - owner: AudioLogEvents
         private static readonly RegistryBucket<IAudioLogEventListener> _listeners = new RegistryBucket<IAudioLogEventListener>(16);
+        private const int ReferenceSlotCapacity = 128;
+        private struct AudioLogReferenceSlot
+        {
+            public AudioLogData LogData;
+
+            public void Clear()
+            {
+                LogData = null;
+            }
+        }
+
+        // COLD ALLOC: AudioLogReferenceSlot[128] - managed audio-log data sidecar resolved only during dispatch - owner: AudioLogEvents
+        private static readonly AudioLogReferenceSlot[] _referenceSlots = new AudioLogReferenceSlot[ReferenceSlotCapacity];
+        // COLD ALLOC: bool[128] - audio-log sidecar occupancy map - owner: AudioLogEvents
+        private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<AudioLogEventPayload> _pendingEvents;
+        private static int _referenceWriteIndex;
+        private static int _referencePendingCount;
+
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -42,6 +64,9 @@ namespace Hecton8.Narrative
             }
 
             _listeners.Clear();
+            ClearReferenceSlots();
+            _referenceWriteIndex = 0;
+            _referencePendingCount = 0;
         }
 
         public static void Register(IAudioLogEventListener listener)
@@ -81,27 +106,39 @@ namespace Hecton8.Narrative
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnAudioLogEvent(in payload);
+
+                ReleaseReferenceSlot(payload.ReferenceSlot);
             }
         }
 
-        public static void RaiseLogDiscovered(uint logHash)
+        public static bool TryResolveLogData(in AudioLogEventPayload payload, out AudioLogData data)
         {
-            Enqueue(AudioLogEventType.Discovered, logHash, 0f);
+            data = null;
+            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+                return false;
+
+            data = _referenceSlots[payload.ReferenceSlot].LogData;
+            return data != null;
         }
 
-        public static void RaisePlaybackStarted(uint logHash, float durationSeconds)
+        public static void RaiseLogDiscovered(uint logHash, AudioLogData data = null)
         {
-            Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds);
+            Enqueue(AudioLogEventType.Discovered, logHash, 0f, data);
         }
 
-        public static void RaisePlaybackStopped(uint logHash)
+        public static void RaisePlaybackStarted(uint logHash, float durationSeconds, AudioLogData data = null)
         {
-            Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f);
+            Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds, data);
         }
 
-        public static void RaisePlaybackCompleted(uint logHash)
+        public static void RaisePlaybackStopped(uint logHash, AudioLogData data = null)
         {
-            Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f);
+            Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f, data);
+        }
+
+        public static void RaisePlaybackCompleted(uint logHash, AudioLogData data = null)
+        {
+            Enqueue(AudioLogEventType.PlaybackCompleted, logHash, 0f, data);
         }
 
         private static void EnsureInitialized()
@@ -112,14 +149,24 @@ namespace Hecton8.Narrative
             }
         }
 
-        private static void Enqueue(AudioLogEventType type, uint logHash, float durationSeconds)
+        private static void Enqueue(AudioLogEventType type, uint logHash, float durationSeconds, AudioLogData data)
         {
             EnsureInitialized();
+            int referenceSlot = -1;
+            if (data != null)
+            {
+                if (!TryReserveReferenceSlot(out referenceSlot))
+                    return;
+
+                _referenceSlots[referenceSlot].LogData = data;
+            }
+
             _pendingEvents.Enqueue(new AudioLogEventPayload
             {
                 Type = type,
                 TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
                 LogHash = logHash,
+                ReferenceSlot = referenceSlot,
                 DurationSeconds = durationSeconds
             });
         }
@@ -129,8 +176,56 @@ namespace Hecton8.Narrative
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            while (_pendingEvents.TryDequeue(out AudioLogEventPayload payload))
             {
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+            }
+        }
+
+        private static bool TryReserveReferenceSlot(out int slot)
+        {
+            slot = -1;
+            if (_referencePendingCount >= ReferenceSlotCapacity)
+                return false;
+
+            for (int attempt = 0; attempt < ReferenceSlotCapacity; attempt++)
+            {
+                int candidate = _referenceWriteIndex;
+                _referenceWriteIndex = (_referenceWriteIndex + 1) % ReferenceSlotCapacity;
+                if (_referenceSlotOccupied[candidate])
+                    continue;
+
+                _referenceSlotOccupied[candidate] = true;
+                _referencePendingCount++;
+                slot = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsValidReferenceSlot(int slot)
+        {
+            return (uint)slot < ReferenceSlotCapacity && _referenceSlotOccupied[slot];
+        }
+
+        private static void ReleaseReferenceSlot(int slot)
+        {
+            if (!IsValidReferenceSlot(slot))
+                return;
+
+            _referenceSlots[slot].Clear();
+            _referenceSlotOccupied[slot] = false;
+            if (_referencePendingCount > 0)
+                _referencePendingCount--;
+        }
+
+        private static void ClearReferenceSlots()
+        {
+            for (int i = 0; i < ReferenceSlotCapacity; i++)
+            {
+                _referenceSlots[i].Clear();
+                _referenceSlotOccupied[i] = false;
             }
         }
     }

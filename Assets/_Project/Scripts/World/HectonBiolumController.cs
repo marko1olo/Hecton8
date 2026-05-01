@@ -102,7 +102,7 @@ namespace Hecton8.World
 
             EclipseGameplayEvents.OnEclipsePhaseChanged += HandleEclipsePhase;
             AtlasSignalEvents.Register(this);
-            DepthZoneEvents.OnZoneEntered               += HandleDepthZoneEntered;
+            DepthZoneEvents.RegisterZoneEntered(HandleDepthZoneEntered);
             SpectrumEvents.OnSonarPulse                 += HandleSonarPulse;
 
             _currentIntensity = baseIntensity;
@@ -117,7 +117,7 @@ namespace Hecton8.World
 
             EclipseGameplayEvents.OnEclipsePhaseChanged -= HandleEclipsePhase;
             AtlasSignalEvents.Unregister(this);
-            DepthZoneEvents.OnZoneEntered               -= HandleDepthZoneEntered;
+            DepthZoneEvents.UnregisterZoneEntered(HandleDepthZoneEntered);
             SpectrumEvents.OnSonarPulse                 -= HandleSonarPulse;
 
             Shader.SetGlobalFloat(_ShaderBiolumIntensity, baseIntensity);

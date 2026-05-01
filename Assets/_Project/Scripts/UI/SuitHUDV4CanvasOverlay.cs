@@ -76,7 +76,19 @@ namespace Hecton8.UI
         private const float DepthStreamThresholdMeters = 0.5f;
         private const float TemperatureStreamThreshold = 0.1f;
         private const float PressureStreamThreshold = 0.1f;
+        private const float CadenceDeltaEpsilon = 0.000001f;
         private const float HeadingStreamThresholdDegrees = 1f;
+        private const float OxygenCriticalHapticThreshold = 0.15f;
+        private const float PowerCriticalHapticThreshold = 0.12f;
+        private const float HealthCriticalHapticThreshold = 0.18f;
+        private const float CriticalHapticCooldownSeconds = 0.65f;
+        private const float CriticalHapticDurationSeconds = 0.5f;
+        private const float CriticalHapticFrequencyHz = 7.5f;
+        private const byte CriticalHapticPriority = 4;
+        private const byte BothMotorMask = 0b0011;
+        private const byte CriticalMaskOxygen = 1 << 0;
+        private const byte CriticalMaskPower = 1 << 1;
+        private const byte CriticalMaskHealth = 1 << 2;
         private const float ToolDepletedWarningDurationSeconds = 2.25f;
         private const float CorruptedModeThreshold = 0.75f;
         private const float JitterAmplitudePixels = 7f;
@@ -503,6 +515,11 @@ namespace Hecton8.UI
         private float _lastStreamedTemperature = float.NaN;
         private float _lastStreamedPressure = float.NaN;
         private float _lastStreamedHeadingDegrees = float.NaN;
+        private uint _lastHapticOxygenVersion;
+        private uint _lastHapticPowerVersion;
+        private uint _lastHapticHealthVersion;
+        private float _nextCriticalHapticTime;
+        private byte _activeCriticalHapticMask;
         private bool _quickbarVisualsInitialized;
         private bool _layoutBuilt;
         [SerializeField, HideInInspector] private int _appliedLayoutRevision;
@@ -596,6 +613,7 @@ namespace Hecton8.UI
         private Color _appliedWarning;
         private CanvasScaler _cachedCanvasScaler;
         private GraphicRaycaster _cachedGraphicRaycaster;
+        private Canvas _cachedGraphicRaycasterCanvas;
         private HectonUIScaler _cachedUiScaler;
         private HectonSurvivalSystem _depthSignalSource;
         private IPlayerInventoryService _inventoryService;
@@ -725,12 +743,14 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            ResolveGraphicRaycasterCold();
             _scannerHologramPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — scanner visor hologram per-draw properties — owner: SuitHUDV4CanvasOverlay
         }
 
         private void OnEnable()
         {
             EnsureLayerCache();
+            ResolveGraphicRaycasterCold();
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
             LocalizationManager.OnCorruptionVisualStateChanged += HandleCorruptionVisualStateChanged;
             SceneBootstrap.Register(this);
@@ -2692,20 +2712,23 @@ namespace Hecton8.UI
             }
 
             bool hasSurvivalStats = survival != null && survival.Stats != null;
-            float oxygen = hasSurvivalStats ? Mathf.Clamp01(survival.OxygenNormalized) : 1f;
+            float oxygenFallback = hasSurvivalStats ? Mathf.Clamp01(survival.OxygenNormalized) : 1f;
+            float oxygen = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.Oxygen01, oxygenFallback));
+            float powerFallback = hasSurvivalStats ? Mathf.Clamp01(survival.EnergyNormalized) : 1f;
             float power = _biosRecoveryMode
                 ? _traumaTransportPower01
-                : (hasSurvivalStats ? Mathf.Clamp01(survival.EnergyNormalized) : 1f);
-            float health = hasSurvivalStats ? Mathf.Clamp01(survival.IntegrityNormalized) : 1f;
+                : Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.Power01, powerFallback));
+            float healthFallback = hasSurvivalStats ? Mathf.Clamp01(survival.IntegrityNormalized) : 1f;
+            float health = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.Health01, healthFallback));
             health = Mathf.Min(health, _traumaHullIntegrity01);
-            float depth = _depthMeters;
-            float pressure = survival != null ? Mathf.Max(1f, survival.Pressure) : 1f + depth / 10f;
+            float depth = Mathf.Max(0f, ReadHeadlessUIValue(UIValueSlotId.DepthMeters, _depthMeters));
+            float pressure = Mathf.Max(1f, ReadHeadlessUIValue(UIValueSlotId.PressureAtm, survival != null ? Mathf.Max(1f, survival.Pressure) : 1f + depth / 10f));
             float heading = playerMovement != null ? Mathf.Repeat(playerMovement.CameraYaw, 360f) : 0f;
-            float safeDepth = hasSurvivalStats ? Mathf.Max(1f, survival.Stats.SafeDepth) : 50f;
+            float safeDepth = Mathf.Max(1f, ReadHeadlessUIValue(UIValueSlotId.SafeDepthMeters, hasSurvivalStats ? Mathf.Max(1f, survival.Stats.SafeDepth) : 50f));
             float safeDepthNormalized = ResolveSafeDepthNormalized(depth, safeDepth);
-            float oxygenCurrent = survival != null ? survival.Oxygen : oxygen * 100f;
-            float energyCurrent = survival != null ? survival.Energy : power * 100f;
-            float healthCurrent = survival != null ? survival.Integrity : health * 100f;
+            float oxygenCurrent = ReadHeadlessUIValue(UIValueSlotId.OxygenCurrent, survival != null ? survival.Oxygen : oxygen * 100f);
+            float energyCurrent = ReadHeadlessUIValue(UIValueSlotId.EnergyCurrent, survival != null ? survival.Energy : power * 100f);
+            float healthCurrent = ReadHeadlessUIValue(UIValueSlotId.IntegrityCurrent, survival != null ? survival.Integrity : health * 100f);
             float stressPulse = _biosRecoveryMode ? 0f : UpdateStressPulse(dt);
             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
@@ -2717,6 +2740,7 @@ namespace Hecton8.UI
             float displayCorruptionIntensity = math.max(hullStressCorruptionIntensity, traumaCorruptionIntensity);
             bool corruptedMode = !_biosRecoveryMode && displayCorruptionIntensity > 0f;
             bool toolDepletedWarningActive = !_biosRecoveryMode && _toolDepletedWarningTimer > 0f;
+            EvaluateCriticalHapticCoupling(oxygen, power, health);
             if (corruptedMode)
                 _corruptionFrameVersion++;
 
@@ -2982,15 +3006,73 @@ namespace Hecton8.UI
 
         private void ResolveInventoryLoadValues(out float totalMassKg, out float carryCapacityKg, out float load01)
         {
-            totalMassKg = _playerInventory != null
+            float fallbackMassKg = _playerInventory != null
                 ? Mathf.Max(0f, _playerInventory.TotalMassKg)
                 : (survival != null ? Mathf.Max(0f, survival.Weight) : 0f);
-            carryCapacityKg = survival != null && survival.Stats != null
+            float fallbackCapacityKg = survival != null && survival.Stats != null
                 ? Mathf.Max(0.01f, survival.Stats.CarryCapacityKg)
                 : 200f;
-            load01 = playerMovement != null
+            float fallbackLoad01 = playerMovement != null
                 ? Mathf.Clamp01(playerMovement.InventoryLoad01)
-                : Mathf.Clamp01(totalMassKg / carryCapacityKg);
+                : Mathf.Clamp01(fallbackMassKg / fallbackCapacityKg);
+
+            totalMassKg = Mathf.Max(0f, ReadHeadlessUIValue(UIValueSlotId.InventoryMassKg, fallbackMassKg));
+            carryCapacityKg = Mathf.Max(0.01f, ReadHeadlessUIValue(UIValueSlotId.CarryCapacityKg, fallbackCapacityKg));
+            load01 = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.InventoryLoad01, fallbackLoad01));
+        }
+
+        private static float ReadHeadlessUIValue(UIValueSlotId slotId, float fallback)
+        {
+            return UIStateStore.TryReadValue(slotId, out UIValueSlot valueSlot)
+                ? valueSlot.Value
+                : fallback;
+        }
+
+        private void EvaluateCriticalHapticCoupling(float oxygen01, float power01, float health01)
+        {
+            bool versionChanged = TryConsumeHapticSlotVersion(UIValueSlotId.Oxygen01, ref _lastHapticOxygenVersion);
+            versionChanged |= TryConsumeHapticSlotVersion(UIValueSlotId.Power01, ref _lastHapticPowerVersion);
+            versionChanged |= TryConsumeHapticSlotVersion(UIValueSlotId.Health01, ref _lastHapticHealthVersion);
+            if (!versionChanged)
+                return;
+
+            byte criticalMask = 0;
+            criticalMask |= (byte)math.select(0, CriticalMaskOxygen, oxygen01 < OxygenCriticalHapticThreshold);
+            criticalMask |= (byte)math.select(0, CriticalMaskPower, power01 < PowerCriticalHapticThreshold);
+            criticalMask |= (byte)math.select(0, CriticalMaskHealth, health01 < HealthCriticalHapticThreshold);
+
+            byte enteredCriticalMask = (byte)(criticalMask & ~_activeCriticalHapticMask);
+            _activeCriticalHapticMask = criticalMask;
+            if (enteredCriticalMask == 0)
+                return;
+
+            float now = Time.unscaledTime;
+            if (now < _nextCriticalHapticTime)
+                return;
+
+            float oxygenCritical = math.select(0f, 1f, (enteredCriticalMask & CriticalMaskOxygen) != 0);
+            float powerCritical = math.select(0f, 1f, (enteredCriticalMask & CriticalMaskPower) != 0);
+            float healthCritical = math.select(0f, 1f, (enteredCriticalMask & CriticalMaskHealth) != 0);
+            float lowMotor = math.saturate(math.max(oxygenCritical, healthCritical) * 0.78f + powerCritical * 0.18f);
+            float highMotor = math.saturate(math.max(powerCritical, healthCritical) * 0.86f + oxygenCritical * 0.34f);
+
+            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                lowMotor,
+                highMotor,
+                CriticalHapticDurationSeconds,
+                CriticalHapticFrequencyHz,
+                CriticalHapticPriority,
+                BothMotorMask);
+            _nextCriticalHapticTime = now + CriticalHapticCooldownSeconds;
+        }
+
+        private static bool TryConsumeHapticSlotVersion(UIValueSlotId slotId, ref uint lastVersion)
+        {
+            if (!UIStateStore.TryReadValue(slotId, out UIValueSlot slot) || slot.Version == lastVersion)
+                return false;
+
+            lastVersion = slot.Version;
+            return true;
         }
 
         private bool PrepareLoadMassVertexRefresh(int version, Color loadColor, bool corruptedMode, int corruptionVersion, int corruptionSalt)
@@ -3014,10 +3096,7 @@ namespace Hecton8.UI
 
             if (load01 > 0.9f)
             {
-                _loadMassPulsePhase += Mathf.Max(0f, deltaTime) * 10f;
-                if (_loadMassPulsePhase >= Mathf.PI * 2f)
-                    _loadMassPulsePhase -= Mathf.PI * 2f;
-
+                _loadMassPulsePhase = Mathf.Repeat(Time.unscaledTime * 10f, Mathf.PI * 2f);
                 ApplyLoadMassVertexColor(ResolveLoadMassPulseColor(warning, _loadMassPulsePhase));
                 return;
             }
@@ -3150,13 +3229,13 @@ namespace Hecton8.UI
                 return false;
 
             return !float.IsFinite(_lastStreamedOxygen01) ||
-                   Mathf.Abs(oxygen01 - _lastStreamedOxygen01) >= OxygenStreamThreshold01 ||
+                   ExceedsCadenceDelta(oxygen01, _lastStreamedOxygen01, OxygenStreamThreshold01) ||
                    !float.IsFinite(_lastStreamedDepthMeters) ||
-                   Mathf.Abs(depthMeters - _lastStreamedDepthMeters) >= DepthStreamThresholdMeters ||
+                   ExceedsCadenceDelta(depthMeters, _lastStreamedDepthMeters, DepthStreamThresholdMeters) ||
                    !float.IsFinite(_lastStreamedTemperature) ||
-                   Mathf.Abs(localizedTemperature - _lastStreamedTemperature) >= TemperatureStreamThreshold ||
+                   ExceedsCadenceDelta(localizedTemperature, _lastStreamedTemperature, TemperatureStreamThreshold) ||
                    !float.IsFinite(_lastStreamedPressure) ||
-                   Mathf.Abs(pressureAtm - _lastStreamedPressure) >= PressureStreamThreshold;
+                   ExceedsCadenceDelta(pressureAtm, _lastStreamedPressure, PressureStreamThreshold);
         }
 
         private bool NeedsGaugeCadenceRefresh(bool cadenceGateOpen, float oxygen01, float power01, float health01)
@@ -3165,11 +3244,19 @@ namespace Hecton8.UI
                 return false;
 
             return !float.IsFinite(_lastStreamedOxygen01) ||
-                   Mathf.Abs(oxygen01 - _lastStreamedOxygen01) >= OxygenStreamThreshold01 ||
+                   ExceedsCadenceDelta(oxygen01, _lastStreamedOxygen01, OxygenStreamThreshold01) ||
                    !float.IsFinite(_lastStreamedPower01) ||
-                   Mathf.Abs(power01 - _lastStreamedPower01) >= OxygenStreamThreshold01 ||
+                   ExceedsCadenceDelta(power01, _lastStreamedPower01, OxygenStreamThreshold01) ||
                    !float.IsFinite(_lastStreamedHealth01) ||
-                   Mathf.Abs(health01 - _lastStreamedHealth01) >= OxygenStreamThreshold01;
+                   ExceedsCadenceDelta(health01, _lastStreamedHealth01, OxygenStreamThreshold01);
+        }
+
+        private static bool ExceedsCadenceDelta(float current, float previous, float threshold)
+        {
+            if (!float.IsFinite(current) || !float.IsFinite(previous))
+                return false;
+
+            return Mathf.Abs(current - previous) > threshold + CadenceDeltaEpsilon;
         }
 
         private static float DampHudValue(float displayValue, float targetValue, float dampFactor, float dt)
@@ -4865,8 +4952,9 @@ namespace Hecton8.UI
             float movementSpeed = playerMovement != null
                 ? playerMovement.InterpolatedLinearVelocity.magnitude
                 : 0f;
+            movementSpeed = Mathf.Max(0f, ReadHeadlessUIValue(UIValueSlotId.MovementSpeed, movementSpeed));
             float velocityContribution = Mathf.Clamp(movementSpeed * reticleVelocityFactor, 0f, 36f);
-            float heatContribution = ResolveReticleHeat01() * reticleHeatSpread;
+            float heatContribution = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.ToolHeat01, ResolveReticleHeat01())) * reticleHeatSpread;
             float targetSpread = Mathf.Max(0f, reticleBaseSpread + velocityContribution + heatContribution);
             float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, reticleSpreadBlendSpeed) * Mathf.Max(dt, 0.016f));
             _reticleSpreadPixels = Mathf.Lerp(_reticleSpreadPixels, targetSpread, blendT);
@@ -4906,6 +4994,11 @@ namespace Hecton8.UI
             _lastStreamedTemperature = float.NaN;
             _lastStreamedPressure = float.NaN;
             _lastStreamedHeadingDegrees = float.NaN;
+            _lastHapticOxygenVersion = 0u;
+            _lastHapticPowerVersion = 0u;
+            _lastHapticHealthVersion = 0u;
+            _nextCriticalHapticTime = 0f;
+            _activeCriticalHapticMask = 0;
             _appliedSuitLabelVersion = int.MinValue;
             _appliedSuitLabelColor = default;
             _appliedHeadingLabelVersion = int.MinValue;
@@ -4943,6 +5036,7 @@ namespace Hecton8.UI
             _appliedOverlaySortingOrder = 0;
             _cachedCanvasScaler = null;
             _cachedGraphicRaycaster = null;
+            _cachedGraphicRaycasterCanvas = null;
             _cachedUiScaler = null;
             _cachedHullStressWhisperBucket = int.MinValue;
             _cachedHullStressWhisperText = null;
@@ -4954,13 +5048,17 @@ namespace Hecton8.UI
             if (targetCanvas == null)
                 targetCanvas = GetComponent<Canvas>();
 
-            if (targetCanvas != null &&
-                (_cachedGraphicRaycaster == null || _cachedGraphicRaycaster.gameObject != targetCanvas.gameObject))
-            {
-                targetCanvas.TryGetComponent(out _cachedGraphicRaycaster);
-            }
-
             return targetCanvas;
+        }
+
+        private void ResolveGraphicRaycasterCold()
+        {
+            Canvas canvas = ResolveTargetCanvas();
+            if (canvas == null || ReferenceEquals(_cachedGraphicRaycasterCanvas, canvas))
+                return;
+
+            canvas.TryGetComponent(out _cachedGraphicRaycaster);
+            _cachedGraphicRaycasterCanvas = canvas;
         }
 
         private CanvasScaler ResolveCanvasScaler()

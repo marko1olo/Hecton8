@@ -53,7 +53,7 @@ namespace Hecton8.Physics
         private const float DefaultIntegrityByteToCellDamageScale = 1.15f;
         private const float DefaultFatiguePressureThresholdKPa = 150f;
         private const byte DefaultFatigueIntegrityLossPerCycle = 4;
-        private const float DefaultCompressionDepthThresholdMeters = 4000f;
+        private const float DefaultCompressionDepthThresholdMeters = 3000f;
         private const float DefaultCompressionFullPressureKPa = 60000f;
         private const float DefaultMaximumVolumeCompressionNormalized = 0.15f;
         private const float RecentImpactSeverityDecayPerSecond = 2.8f;
@@ -310,6 +310,7 @@ namespace Hecton8.Physics
         private bool _dentJobRunning;
         private bool _nativeStateReady;
         private bool _hullDentMeshReady;
+        private bool _hullDentWritableMeshDataApplied;
         private int _queuedImpactCount;
         private int _scheduledImpactCount;
         private int _queuedDentCount;
@@ -1063,6 +1064,7 @@ namespace Hecton8.Physics
             _dentJobHandle = default;
             _dentJobRunning = false;
             _scheduledDentCount = 0;
+            _hullDentWritableMeshDataApplied = false;
 
             NativeArray<float3> frontVertices = _hullDentVerticesFront;
             _hullDentVerticesFront = _hullDentVerticesBack;
@@ -1078,7 +1080,8 @@ namespace Hecton8.Physics
                 !_hullDentNormals.IsCreated ||
                 !_hullDentUvs.IsCreated ||
                 !_hullDentIndices.IsCreated ||
-                _hullDentSubMeshes == null)
+                _hullDentSubMeshes == null ||
+                _hullDentWritableMeshDataApplied)
             {
                 return;
             }
@@ -1120,6 +1123,7 @@ namespace Hecton8.Physics
                     _runtimeHullDentMesh,
                     MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
                 meshApplied = true;
+                _hullDentWritableMeshDataApplied = true;
                 _runtimeHullDentMesh.bounds = _hullDentBoundsLocal;
                 if (hullDeformMeshCollider != null)
                 {
@@ -1200,6 +1204,7 @@ namespace Hecton8.Physics
             _dentJobRunning = false;
             _nativeStateReady = false;
             _hullDentMeshReady = false;
+            _hullDentWritableMeshDataApplied = false;
             _recentImpactSeverityNormalized = 0f;
             _queuedImpactCount = 0;
             _scheduledImpactCount = 0;
@@ -1225,6 +1230,7 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _hullDentIndices, ref dependency);
             _hullDentSubMeshes = null;
             _hullDentMeshReady = false;
+            _hullDentWritableMeshDataApplied = false;
             _hullDentIndexCount = 0;
             _hullDentSubMeshCount = 0;
             if (_runtimeHullDentMesh != null)

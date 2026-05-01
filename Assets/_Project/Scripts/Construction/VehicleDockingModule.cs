@@ -30,6 +30,9 @@ namespace Hecton8.Construction
         [Tooltip("PD position damping gain used to suppress overshoot during magnetic capture.")]
         [SerializeField, Min(0f)] private float dockingPositionDamping = 8f;
 
+        [Tooltip("Maximum total PD force applied by magnetic capture before dividing by docked-body mass.")]
+        [SerializeField, Min(1f)] private float maxDockingForce = 65000f;
+
         [Tooltip("PD rotation spring gain used to align the transport to the moonpool anchor.")]
         [SerializeField, Min(0f)] private float dockingRotationSpring = 18f;
 
@@ -364,7 +367,9 @@ namespace Hecton8.Construction
                 Vector3 currentPosition = _dockedBody.position;
                 Quaternion currentRotation = _dockedBody.rotation;
                 Vector3 positionError = anchorPosition - currentPosition;
-                Vector3 positionAcceleration = (positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping);
+                float bodyMass = Mathf.Max(1f, _dockedBody.mass);
+                Vector3 positionForce = ((positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping)) * bodyMass;
+                Vector3 positionAcceleration = ClampVectorMagnitude(positionForce, maxDockingForce) / bodyMass;
                 _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockingLinearVelocity + (positionAcceleration * safeDeltaTime));
                 Vector3 nextPosition = currentPosition + (_dockingLinearVelocity * safeDeltaTime);
 
@@ -382,7 +387,8 @@ namespace Hecton8.Construction
             {
                 Transform transportTransform = _dockedBehaviour.transform;
                 Vector3 positionError = anchorPosition - transportTransform.position;
-                Vector3 positionAcceleration = (positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping);
+                Vector3 positionForce = (positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping);
+                Vector3 positionAcceleration = ClampVectorMagnitude(positionForce, maxDockingForce);
                 _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockingLinearVelocity + (positionAcceleration * safeDeltaTime));
                 Vector3 rotationErrorRadians = ResolveRotationErrorRadians(transportTransform.rotation, anchorRotation);
                 Vector3 angularAcceleration = (rotationErrorRadians * dockingRotationSpring) - (_dockingAngularVelocityRadians * dockingRotationDamping);
@@ -421,6 +427,20 @@ namespace Hecton8.Construction
             _isDocked = true;
             _dockingLinearVelocity = Vector3.zero;
             _dockingAngularVelocityRadians = Vector3.zero;
+        }
+
+        private static Vector3 ClampVectorMagnitude(Vector3 vector, float maxMagnitude)
+        {
+            float safeMaxMagnitude = Mathf.Max(0f, maxMagnitude);
+            if (safeMaxMagnitude <= 0f)
+                return Vector3.zero;
+
+            float sqrMagnitude = vector.sqrMagnitude;
+            float maxSqrMagnitude = safeMaxMagnitude * safeMaxMagnitude;
+            if (sqrMagnitude <= maxSqrMagnitude || sqrMagnitude <= 0.000001f)
+                return vector;
+
+            return vector * (safeMaxMagnitude / Mathf.Sqrt(sqrMagnitude));
         }
 
         private static Vector3 ResolveRotationErrorRadians(Quaternion currentRotation, Quaternion targetRotation)

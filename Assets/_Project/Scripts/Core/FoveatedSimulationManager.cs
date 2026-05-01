@@ -119,7 +119,7 @@ namespace Hecton8.Core
 
         private const int ImportanceScoreBatchSize = 32;
         private const int MaxTargets = 512;
-        private const int MaxDeferredRaycastCommandsPerTarget = 3;
+        private const int MaxDeferredRaycastCommandsPerTarget = 4;
         private const int MaxDeferredRaycastCommands = MaxTargets * MaxDeferredRaycastCommandsPerTarget;
         private const int MinimumCommandsPerJob = 1;
         private const float CenterTickIntervalSeconds = 1.0f / 60.0f;
@@ -155,7 +155,7 @@ namespace Hecton8.Core
         private const float RearVelocitySmoothingSharpness = 5.0f;
         private const float RearOneHertzVelocitySmoothingSharpness = 2.0f;
         private const float CulledEcosystemVelocitySmoothingSharpness = 1.0f;
-        private const long PersistentNativeBudgetBytes = 262144L;
+        private const long PersistentNativeBudgetBytes = 327680L;
         private const string MemoryBudgetOwnerName = "FoveatedSimulationManager";
 
         // COLD ALLOC: IFoveatedSimulationTarget[512] — dispatcher-owned opt-in simulation targets — owner: FoveatedSimulationManager
@@ -730,21 +730,25 @@ namespace Hecton8.Core
             if (!_jobScorePositions.IsCreated)
             {
                 _jobScorePositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] - simulation positions for Burst cadence scoring - owner: FoveatedSimulationManager
+                NativeMemorySentinel.RegisterNativeArray(_jobScorePositions, nameof(FoveatedSimulationManager), nameof(_jobScorePositions), NativeAllocationLifetime.Session);
             }
 
             if (!_jobImportanceScores.IsCreated)
             {
                 _jobImportanceScores = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] - Burst importance score output buffer - owner: FoveatedSimulationManager
+                NativeMemorySentinel.RegisterNativeArray(_jobImportanceScores, nameof(FoveatedSimulationManager), nameof(_jobImportanceScores), NativeAllocationLifetime.Session);
             }
 
             if (!_jobTickRateCodes.IsCreated)
             {
                 _jobTickRateCodes = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst raw cadence tier codes before hysteresis - owner: FoveatedSimulationManager
+                NativeMemorySentinel.RegisterNativeArray(_jobTickRateCodes, nameof(FoveatedSimulationManager), nameof(_jobTickRateCodes), NativeAllocationLifetime.Session);
             }
 
             if (!_jobInsideFrustumFlags.IsCreated)
             {
                 _jobInsideFrustumFlags = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst front hemisphere visibility flags - owner: FoveatedSimulationManager
+                NativeMemorySentinel.RegisterNativeArray(_jobInsideFrustumFlags, nameof(FoveatedSimulationManager), nameof(_jobInsideFrustumFlags), NativeAllocationLifetime.Session);
             }
             if (!_jobFromPositions.IsCreated)
             {
@@ -763,17 +767,17 @@ namespace Hecton8.Core
 
             if (!_pendingDeferredRaycastCommands.IsCreated)
             {
-                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[1536] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[2048] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
             }
 
             if (!_pendingDeferredRaycastOwnerIndices.IsCreated)
             {
-                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[1536] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[2048] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
             }
 
             if (!_pendingDeferredRaycastCommandIndices.IsCreated)
             {
-                _pendingDeferredRaycastCommandIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[1536] - deferred fauna sight-line command slot indices aligned to queued commands - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastCommandIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[2048] - deferred fauna sight-line command slot indices aligned to queued commands - owner: FoveatedSimulationManager
             }
 
             if (!_deferredRaycastCommands.IsCreated)
@@ -785,7 +789,24 @@ namespace Hecton8.Core
             {
                 _deferredRaycastResults = new NativeArray<RaycastHit>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[512] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
             }
+            RegisterNativeMemorySentinel();
             RegisterNativeMemoryBudget();
+        }
+
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_jobScorePositions, nameof(FoveatedSimulationManager), nameof(_jobScorePositions), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobImportanceScores, nameof(FoveatedSimulationManager), nameof(_jobImportanceScores), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobTickRateCodes, nameof(FoveatedSimulationManager), nameof(_jobTickRateCodes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobInsideFrustumFlags, nameof(FoveatedSimulationManager), nameof(_jobInsideFrustumFlags), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobFromPositions, nameof(FoveatedSimulationManager), nameof(_jobFromPositions), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobToPositions, nameof(FoveatedSimulationManager), nameof(_jobToPositions), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobAlphas, nameof(FoveatedSimulationManager), nameof(_jobAlphas), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeQueue(_pendingDeferredRaycastCommands, MaxDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommands), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeQueue(_pendingDeferredRaycastOwnerIndices, MaxDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastOwnerIndices), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeQueue(_pendingDeferredRaycastCommandIndices, MaxDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_deferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_deferredRaycastCommands), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_deferredRaycastResults, nameof(FoveatedSimulationManager), nameof(_deferredRaycastResults), NativeAllocationLifetime.Session);
         }
 
         private void DisposeNativeBuffers(JobHandle dependency)
@@ -798,6 +819,10 @@ namespace Hecton8.Core
             DisposeNativeArray(ref _jobFromPositions, dependency);
             DisposeNativeArray(ref _jobToPositions, dependency);
             DisposeNativeArray(ref _jobAlphas, dependency);
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommands));
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastOwnerIndices));
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices));
+            NativeMemorySentinel.UnregisterNativeList(nameof(FoveatedSimulationManager), nameof(_deferredRaycastCommands));
             DisposeNativeQueue(ref _pendingDeferredRaycastCommands);
             DisposeNativeQueue(ref _pendingDeferredRaycastOwnerIndices);
             DisposeNativeQueue(ref _pendingDeferredRaycastCommandIndices);
@@ -823,6 +848,7 @@ namespace Hecton8.Core
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(dependency);
             array = default;
         }

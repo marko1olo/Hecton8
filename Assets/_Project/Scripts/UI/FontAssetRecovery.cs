@@ -43,6 +43,13 @@ namespace Hecton8.UI
 
 #if UNITY_EDITOR
         private static bool _editorAssetRepairCompleted;
+
+        [InitializeOnLoadMethod]
+        private static void BootstrapEditorAssetRepair()
+        {
+            EditorApplication.delayCall -= RepairKnownAssetImports;
+            EditorApplication.delayCall += RepairKnownAssetImports;
+        }
 #endif
 
         /// <summary>

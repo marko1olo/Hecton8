@@ -75,6 +75,7 @@ namespace Hecton8.World
         private BatchMaterialID _batchMaterialId;
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
+        private GraphicsBuffer _registeredBatchBuffer;
 
         private void Awake()
         {
@@ -125,7 +126,7 @@ namespace Hecton8.World
             Shader.SetGlobalBuffer(InstanceMatricesId, _matrixBuffer);
             Shader.SetGlobalBuffer(InstanceFadeId, _fadeBuffer);
             SyncBatchRegistration(activeMesh, activeMaterial);
-            _batchRendererGroup.SetBatchBuffer(_batchId, _matrixBuffer.bufferHandle);
+            SyncBatchBuffer(_matrixBuffer);
             _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
         }
 
@@ -260,6 +261,18 @@ namespace Hecton8.World
             }
         }
 
+        private void SyncBatchBuffer(GraphicsBuffer matrixBuffer)
+        {
+            if (_batchRendererGroup == null || _batchId.Equals(default) || matrixBuffer == null)
+                return;
+
+            if (ReferenceEquals(_registeredBatchBuffer, matrixBuffer))
+                return;
+
+            _batchRendererGroup.SetBatchBuffer(_batchId, matrixBuffer.bufferHandle);
+            _registeredBatchBuffer = matrixBuffer;
+        }
+
         private void EnsureOwnedUploadCapacity(int instanceCount)
         {
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
@@ -328,6 +341,7 @@ namespace Hecton8.World
                 _batchMaterialId = default;
                 _registeredMesh = null;
                 _registeredMaterial = null;
+                _registeredBatchBuffer = null;
             }
 
             if (_batchHandleBuffer != null)
@@ -343,6 +357,7 @@ namespace Hecton8.World
             {
                 _uploadedMatrixBuffer.Release();
                 _uploadedMatrixBuffer = null;
+                _registeredBatchBuffer = null;
             }
 
             if (_uploadedFadeBuffer != null)

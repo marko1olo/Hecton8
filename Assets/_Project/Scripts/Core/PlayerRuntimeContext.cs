@@ -43,6 +43,17 @@ namespace Hecton8.Core
         public uint Flags;
     }
 
+    /// <summary>
+    /// Headless-safe player gaze snapshot. Presentation cameras may seed it, but gameplay reads only this data.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PlayerLookState
+    {
+        public float3 EyePosition;
+        public float3 AimForward;
+        public uint Flags;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     public struct PlayerSurvivalRuntimeState
     {
@@ -100,6 +111,7 @@ namespace Hecton8.Core
         public HUDNotification HudNotification { get; private set; }
 
         public PlayerMovementRuntimeState MovementState;
+        public PlayerLookState LookState;
         public PlayerSurvivalRuntimeState SurvivalState;
         public PlayerInteractionRuntimeState InteractionState;
 
@@ -127,6 +139,7 @@ namespace Hecton8.Core
             PlayerCollider = null;
             HudNotification = null;
             MovementState = default;
+            LookState = default;
             SurvivalState = default;
             InteractionState = default;
         }
@@ -176,6 +189,15 @@ namespace Hecton8.Core
         public void PublishMovementState(in PlayerMovementRuntimeState state)
         {
             MovementState = state;
+        }
+
+        /// <summary>
+        /// Publishes the headless-safe gaze snapshot for systems that must not depend on camera components.
+        /// </summary>
+        /// <param name="state">Latest player look snapshot.</param>
+        public void PublishLookState(in PlayerLookState state)
+        {
+            LookState = state;
         }
 
         public void PublishSurvivalState(in PlayerSurvivalRuntimeState state)

@@ -62,7 +62,8 @@ namespace Hecton8.UI
         LowBatteryShutdown = 3,
         MapChunkExplored = 4,
         MarkerChanged = 5,
-        LogbookChanged = 6
+        LogbookChanged = 6,
+        UndoRequest = 7
     }
 
     /// <summary>
@@ -76,6 +77,10 @@ namespace Hecton8.UI
         public int CurrentTab;
         public int PayloadA;
         public int PayloadB;
+        public uint MarkerHashID;
+        public uint LogEventHashID;
+        public uint EventHashID;
+        public uint SourceID;
         public ushort EventType;
         public ushort Reserved;
     }
@@ -95,7 +100,12 @@ namespace Hecton8.UI
     {
         // COLD ALLOC: RegistryBucket<IPDAEventListener>[32] - PDA listeners drained by SystemDispatcher LateUpdate - owner: PDAEvents
         private static readonly RegistryBucket<IPDAEventListener> _listeners = new RegistryBucket<IPDAEventListener>(32);
+        private const int EventDedupCapacity = 128;
         private static NativeQueue<PDAEventPayload> _pendingEvents;
+        private static NativeParallelHashSet<ulong> _queuedEventKeys;
+        private static int _dedupFrame = -1;
+
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
 
         public static void Register(IPDAEventListener listener)
         {
@@ -131,15 +141,31 @@ namespace Hecton8.UI
             Debug.LogError($"[PDAEvents] {ownerName} was destroyed while still registered as an IPDAEventListener.");
         }
 
+        /// <summary>
+        /// Flushes all queued PDA events through registered listeners.
+        /// </summary>
         public static void FlushPending()
+        {
+            FlushPending(int.MaxValue);
+        }
+
+        /// <summary>
+        /// Flushes a capped number of queued PDA events through registered listeners.
+        /// </summary>
+        /// <param name="maxEventsPerFrame">Maximum payload count to dequeue this frame.</param>
+        public static void FlushPending(int maxEventsPerFrame)
         {
             if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
             {
-                DrainWithoutDispatch();
+                DrainWithoutDispatch(maxEventsPerFrame);
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            if (maxEventsPerFrame <= 0)
+                return;
+
+            int processedCount = 0;
+            while (!_pendingEvents.IsEmpty() && processedCount < maxEventsPerFrame)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
@@ -147,16 +173,18 @@ namespace Hecton8.UI
                 if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
                     return;
 
+                ApplySimulationSideEffects(in payload);
                 IPDAEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnPDAEvent(in payload);
+
+                processedCount++;
             }
         }
 
         internal static void RaiseOpened(int tab)
         {
-            UIStateStore.SetPDAOpenState(true, tab, 0f);
             Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
@@ -169,7 +197,6 @@ namespace Hecton8.UI
 
         internal static void RaiseClosed(float duration)
         {
-            UIStateStore.SetPDAOpenState(false, -1, duration);
             Enqueue(new PDAEventPayload
             {
                 DurationSeconds = duration,
@@ -182,7 +209,6 @@ namespace Hecton8.UI
 
         internal static void RaiseTabChanged(int oldTab, int newTab)
         {
-            UIStateStore.SetPDAActiveTab(oldTab, newTab);
             Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
@@ -202,6 +228,8 @@ namespace Hecton8.UI
                 CurrentTab = -1,
                 PayloadA = 0,
                 PayloadB = 0,
+                MarkerHashID = 0u,
+                LogEventHashID = 0u,
                 EventType = (ushort)PDAEventType.LowBatteryShutdown,
                 Reserved = 0
             });
@@ -216,12 +244,14 @@ namespace Hecton8.UI
                 CurrentTab = -1,
                 PayloadA = chunkX,
                 PayloadB = chunkY,
+                MarkerHashID = 0u,
+                LogEventHashID = 0u,
                 EventType = (ushort)PDAEventType.MapChunkExplored,
                 Reserved = 0
             });
         }
 
-        internal static void RaiseMarkerChanged(int markerCount)
+        internal static void RaiseMarkerChanged(uint markerHashId, int markerCount)
         {
             Enqueue(new PDAEventPayload
             {
@@ -230,6 +260,8 @@ namespace Hecton8.UI
                 CurrentTab = -1,
                 PayloadA = markerCount,
                 PayloadB = 0,
+                MarkerHashID = markerHashId,
+                LogEventHashID = 0u,
                 EventType = (ushort)PDAEventType.MarkerChanged,
                 Reserved = 0
             });
@@ -237,15 +269,32 @@ namespace Hecton8.UI
 
         internal static void RaiseLogbookChanged(int entryCount, uint latestEventHash = 0u)
         {
-            UIStateStore.SetPDALogbookState(entryCount, latestEventHash);
             Enqueue(new PDAEventPayload
             {
                 DurationSeconds = 0f,
                 PreviousTab = -1,
                 CurrentTab = -1,
                 PayloadA = entryCount,
-                PayloadB = unchecked((int)latestEventHash),
+                PayloadB = 0,
+                MarkerHashID = 0u,
+                LogEventHashID = latestEventHash,
                 EventType = (ushort)PDAEventType.LogbookChanged,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseUndoRequest(int framesBack = 1)
+        {
+            Enqueue(new PDAEventPayload
+            {
+                DurationSeconds = 0f,
+                PreviousTab = -1,
+                CurrentTab = -1,
+                PayloadA = Mathf.Max(1, framesBack),
+                PayloadB = 0,
+                MarkerHashID = 0u,
+                LogEventHashID = 0u,
+                EventType = (ushort)PDAEventType.UndoRequest,
                 Reserved = 0
             });
         }
@@ -259,28 +308,151 @@ namespace Hecton8.UI
                 _pendingEvents = default;
             }
 
+            if (_queuedEventKeys.IsCreated)
+            {
+                _queuedEventKeys.Dispose();
+                _queuedEventKeys = default;
+            }
+
             _listeners.Clear();
+            _dedupFrame = -1;
         }
 
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
                 _pendingEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] - deferred PDA event lane flushed by SystemDispatcher LateUpdate - owner: PDAEvents
+
+            if (!_queuedEventKeys.IsCreated)
+                _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame PDA duplicate suppression keys - owner: PDAEvents
         }
 
         private static void Enqueue(in PDAEventPayload payload)
         {
             EnsureInitialized();
-            _pendingEvents.Enqueue(payload);
+            PrepareDedupFrame();
+            PDAEventPayload resolvedPayload = payload;
+            ResolveDedupFields(ref resolvedPayload);
+            ulong dedupKey = ComposeDedupKey(in resolvedPayload);
+            if (dedupKey != 0UL && !TryRegisterDedupKey(dedupKey))
+                return;
+
+            _pendingEvents.Enqueue(resolvedPayload);
         }
 
-        private static void DrainWithoutDispatch()
+        private static void DrainWithoutDispatch(int maxEventsPerFrame)
         {
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            if (maxEventsPerFrame <= 0)
+                return;
+
+            int processedCount = 0;
+            while (processedCount < maxEventsPerFrame && _pendingEvents.TryDequeue(out PDAEventPayload payload))
             {
+                ApplySimulationSideEffects(in payload);
+                processedCount++;
+            }
+        }
+
+        private static void ApplySimulationSideEffects(in PDAEventPayload payload)
+        {
+            if ((PDAEventType)payload.EventType == PDAEventType.UndoRequest)
+                UIStateStore.TryRollbackPDAState(payload.PayloadA <= 0 ? 1 : payload.PayloadA);
+        }
+
+        private static void PrepareDedupFrame()
+        {
+            int frame = Time.frameCount;
+            if (_dedupFrame == frame)
+                return;
+
+            if (_queuedEventKeys.IsCreated)
+                _queuedEventKeys.Clear();
+
+            _dedupFrame = frame;
+        }
+
+        private static bool TryRegisterDedupKey(ulong dedupKey)
+        {
+            if (!_queuedEventKeys.IsCreated)
+                return true;
+
+            int currentCount = _queuedEventKeys.Count();
+            if (currentCount >= _queuedEventKeys.Capacity)
+                _queuedEventKeys.Capacity = Mathf.Max(EventDedupCapacity, _queuedEventKeys.Capacity << 1);
+
+            return _queuedEventKeys.Add(dedupKey);
+        }
+
+        private static void ResolveDedupFields(ref PDAEventPayload payload)
+        {
+            if (payload.EventHashID == 0u)
+                payload.EventHashID = ResolveEventHashID(in payload);
+
+            if (payload.SourceID == 0u)
+                payload.SourceID = ResolveSourceID(in payload);
+        }
+
+        private static ulong ComposeDedupKey(in PDAEventPayload payload)
+        {
+            uint eventHash = payload.EventHashID != 0u ? payload.EventHashID : ResolveEventHashID(in payload);
+            uint sourceId = payload.SourceID != 0u ? payload.SourceID : ResolveSourceID(in payload);
+            return ((ulong)sourceId << 32) | eventHash;
+        }
+
+        private static uint ResolveEventHashID(in PDAEventPayload payload)
+        {
+            PDAEventType eventType = (PDAEventType)payload.EventType;
+            if (eventType == PDAEventType.MarkerChanged && payload.MarkerHashID != 0u)
+                return payload.MarkerHashID;
+
+            if (eventType == PDAEventType.LogbookChanged && payload.LogEventHashID != 0u)
+                return payload.LogEventHashID;
+
+            return Mix32((uint)payload.EventType, PackSigned(payload.PayloadA), PackSigned(payload.PayloadB), PackSigned(payload.CurrentTab));
+        }
+
+        private static uint ResolveSourceID(in PDAEventPayload payload)
+        {
+            PDAEventType eventType = (PDAEventType)payload.EventType;
+            switch (eventType)
+            {
+                case PDAEventType.Opened:
+                    return PackSigned(payload.CurrentTab);
+                case PDAEventType.Closed:
+                    return 1u;
+                case PDAEventType.TabChanged:
+                    return Mix32(PackSigned(payload.PreviousTab), PackSigned(payload.CurrentTab), 0u, 0u);
+                case PDAEventType.MapChunkExplored:
+                    return Mix32(PackSigned(payload.PayloadA), PackSigned(payload.PayloadB), 0u, 0u);
+                case PDAEventType.MarkerChanged:
+                    return payload.MarkerHashID != 0u ? payload.MarkerHashID : PackSigned(payload.PayloadA);
+                case PDAEventType.LogbookChanged:
+                    return payload.LogEventHashID != 0u ? payload.LogEventHashID : PackSigned(payload.PayloadA);
+                case PDAEventType.UndoRequest:
+                    return PackSigned(payload.PayloadA);
+                default:
+                    return (uint)eventType;
+            }
+        }
+
+        private static uint PackSigned(int value)
+        {
+            return unchecked((uint)value);
+        }
+
+        private static uint Mix32(uint a, uint b, uint c, uint d)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ a) * 16777619u;
+                hash = (hash ^ b) * 16777619u;
+                hash = (hash ^ c) * 16777619u;
+                hash = (hash ^ d) * 16777619u;
+                return hash == 0u ? 1u : hash;
             }
         }
     }
@@ -1105,10 +1277,20 @@ namespace Hecton8.UI
 
         private void PopTabHistory()
         {
-            if (_tabHistoryCount <= 0) return;
+            if (!TryPopTabHistory(out int previousTab))
+                return;
 
-            int previousTab = _tabHistory[--_tabHistoryCount];
             SetActiveTab(previousTab);
+        }
+
+        private bool TryPopTabHistory(out int previousTab)
+        {
+            previousTab = 0;
+            if (_tabHistoryCount <= 0)
+                return false;
+
+            previousTab = _tabHistory[--_tabHistoryCount];
+            return true;
         }
 
         private void ClearTabHistory()
@@ -1153,34 +1335,24 @@ namespace Hecton8.UI
             // the UI map might also have a toggle or the Player map is disabled.
             // In our case, Open() switches to UI, but UI map might not have "PDA" action.
             // If InputManager handles "PDA" in both maps or if we stay in Player map for toggle:
-            Toggle();
+            EnqueuePDAStateCommand(IsOpen ? -1 : defaultTab);
         }
 
         private void HandleInventoryInput()
         {
-            if (!IsOpen)
-            {
-                Open(0);
-                return;
-            }
-
-            SetActiveTab(0);
+            EnqueuePDAStateCommand(0);
         }
 
         private void HandleCancelInput()
         {
             if (IsOpen)
-            {
-                Close();
-            }
+                EnqueuePDAStateCommand(-1);
         }
 
         private void HandleBackInput()
         {
-            if (IsOpen && enableTabHistory)
-            {
-                PopTabHistory();
-            }
+            if (IsOpen && enableTabHistory && TryPopTabHistory(out int previousTab))
+                EnqueuePDAStateCommand(previousTab);
         }
         private void HandleTabNextInput()
         {
@@ -1189,7 +1361,15 @@ namespace Hecton8.UI
 
             int next = _activeTab + 1;
             if (next >= tabs.Length) next = 0;
-            SetActiveTab(next);
+            EnqueuePDAStateCommand(next);
+        }
+
+        private static void EnqueuePDAStateCommand(int tabIndex)
+        {
+            EntityCommand command = tabIndex < 0
+                ? EntityCommand.CreateClosePDA()
+                : EntityCommand.CreateOpenPDATab(tabIndex);
+            ThreadSafeCommandQueue.Enqueue(in command);
         }
     }
 

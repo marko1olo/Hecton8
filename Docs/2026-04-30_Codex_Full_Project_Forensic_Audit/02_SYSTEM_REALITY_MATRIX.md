@@ -63,7 +63,8 @@ Criticism where required:
 
 Source-backed update after the May 1 audit pass:
 
-- Current first-party script surface under `Assets/_Project/Scripts`: `1020` C# files, `466768` lines by PowerShell line count.
+- `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` now provides the conceptual system classification layer: load-bearing, active/transitional, presentation/support, experimental/seam, and historical/evidence.
+- Current first-party script surface under `Assets/_Project/Scripts`: `1020` C# files, `544728` lines by PowerShell line count.
 - `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` is now the current high-risk failure map. It supersedes softer claims that event, headless, AUP, and job-safety risks were only theoretical.
 - Event buses are no longer accurately described as having no breaker at all. `SystemDispatcher` contains `MaxLateFrameEventsPerFrame = 1000` and many static event lanes call `TryConsumeLateFrameEventDispatch()`. The remaining risk is narrower: no proven same-frame generation split across all event lanes, and `HectonEventBus` tracks dispatch depth without a hard max-depth cap.
 - The strongest newly verified headless violations are `FaunaBrain.UpdateBioluminescentHypnosis()` using `runtimeContext.PlayerCamera` as gameplay truth and `StorageCrate.OpenCrate()` depending on an Animator event to leave `Opening`.
@@ -71,6 +72,7 @@ Source-backed update after the May 1 audit pass:
 - Coroutine eradication is partial, not complete. `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` reports 15 remaining `StartCoroutine(` call sites, concentrated in runtime smoke/verifier harnesses.
 - Object pool exhaustion policy was tightened by code inspection: spawn exhaustion returns `null` and emits `GlobalTelemetryBus.PublishPoolExhausted(...)`; runtime expansion through `InstantiatePooled` is warmup-only by current source review.
 - Unity MCP console proof from the previous May 1 report pass: error query returned `0` entries. Current delta pass attempted `read_console` twice and MCP returned `no_unity_session`; therefore this update has no fresh console proof. Play Mode, GCMonitor, profiler, and runtime deadlock proof remain absent.
+- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is the current conceptual entry point for system ownership and active risks. It does not upgrade any readiness score and does not provide runtime proof.
 
 Readiness adjustments implied by this delta:
 
@@ -81,5 +83,12 @@ Readiness adjustments implied by this delta:
 | Jobs / Burst adoption | Real / 64% | Burst metadata has improved, but local frame-lane barriers remain a production stall risk |
 | Headless simulation | not separately scored | must be treated as critical risk because gameplay state still depends on camera/Animator presentation |
 | Documentation trust | Real but stale-prone | confirmed stale-prone; active truth must now start from May 1 reports and current-source deltas |
+
+Conceptual corrections:
+
+- DOTS, Networking, and some modding surfaces are not load-bearing gameplay authority yet.
+- Smoke testers and verifier scripts are QA support, not production gameplay ownership.
+- UI/audio/VFX are important presentation layers, but gameplay state must not depend on presentation availability or animation events.
+- World/scatter/voxel/fauna systems are load-bearing and high-risk; their problem is dependency gravity, not absence.
 
 STATUS: PENDING VERIFICATION

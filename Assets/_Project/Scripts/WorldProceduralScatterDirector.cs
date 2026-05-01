@@ -2005,7 +2005,12 @@ namespace Hecton8.World
             int stableHash = ComputePlacementStableHash(runtimeRule.RuleIdHash, cellXIndex, cellZIndex, heightLayerIndex);
             Vector3 position = ResolvePlacementPosition(fieldSample.position, family, rule, stableHash, size);
             position.y = fieldSample.seafloorHeight + surfaceYOffset;
-            return new ScatterCandidatePreview(stableHash, ToAbsoluteScatterPosition(position), heightLayerIndex);
+            return new ScatterCandidatePreview(
+                stableHash,
+                ToAbsoluteScatterPosition(position),
+                heightLayerIndex,
+                cellXIndex,
+                cellZIndex);
         }
 
         private ScatterCandidate BuildCandidate(
@@ -2142,7 +2147,7 @@ namespace Hecton8.World
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in ScatterRuntimeRuleEntry runtimeRule)
         {
-            return ScatterMath.ResolveHeightLayerIndex(fieldSample, runtimeRule);
+            return ScatterCandidateEvaluator.ResolveHeightLayerIndex(fieldSample, runtimeRule);
         }
 
         private static int ResolveHeightLayerIndex(ScatterPlacement placement)
@@ -2155,14 +2160,14 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile family,
             WorldPrefabFamilyProfile.StructureAccentRole structureAccentRole)
         {
-            return ScatterMath.ResolveHeightLayerIndex(caveProximity, family, structureAccentRole);
+            return ScatterCandidateEvaluator.ResolveHeightLayerIndex(caveProximity, family, structureAccentRole);
         }
 
         private static bool ShouldEvaluateScatterDomain(
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in ScatterRuntimeRuleEntry runtimeRule)
         {
-            return ScatterMath.ShouldEvaluateScatterDomain(fieldSample, runtimeRule);
+            return ScatterCandidateEvaluator.ShouldEvaluateScatterDomain(fieldSample, runtimeRule);
         }
 
         private ScatterReconcileMetrics ReconcileInstances(bool captureProfiling)
@@ -3651,7 +3656,7 @@ namespace Hecton8.World
 
         private static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
         {
-            return ScatterMath.GetHorizontalDistanceSqr(a, b);
+            return ScatterCandidateEvaluator.GetHorizontalDistanceSqr(a, b);
         }
 
         private float ResolveFinalVariantRadiusScale(WorldPrefabFamilyProfile family)
@@ -3770,12 +3775,12 @@ namespace Hecton8.World
 
         private static long ComposeScatterGridKey(int cellX, int cellZ)
         {
-            return ScatterMath.ComposeScatterGridKey(cellX, cellZ);
+            return ScatterCandidateEvaluator.ComposeScatterGridKey(cellX, cellZ);
         }
 
         private static float ResolveRequiredDistance(ScatterPlacement candidate, ScatterPlacement existing)
         {
-            return ScatterMath.ResolveRequiredDistance(candidate, existing);
+            return ScatterCandidateEvaluator.ResolveRequiredDistance(candidate, existing);
         }
 
         private static bool IsPocket(WorldPrefabFamilyProfile.ProceduralDomain domain)
@@ -3792,7 +3797,7 @@ namespace Hecton8.World
 
         private static float GetEffectiveSpacing(WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
         {
-            return ScatterMath.GetEffectiveSpacing(family, rule);
+            return ScatterCandidateEvaluator.GetEffectiveSpacing(family, rule);
         }
 
         private bool HasLayerBudget(
@@ -7213,10 +7218,11 @@ namespace Hecton8.World
             metadata = null;
             Vector3 runtimePosition = placement.RuntimePosition;
             bool poolManaged = false;
+            ObjectPoolManager pool = null;
 
             if (prefab != null)
             {
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                pool = ObjectPoolManager.Instance;
                 if (pool != null)
                 {
                     instance = pool.Spawn(prefab, runtimePosition, placement.Rotation, !Application.isPlaying);
@@ -7237,6 +7243,9 @@ namespace Hecton8.World
             }
             else
             {
+                if (Application.isPlaying)
+                    return null;
+
                 instance = new GameObject();
                 instance.transform.SetParent(parent, false);
                 instance.transform.SetPositionAndRotation(runtimePosition, placement.Rotation);
@@ -7250,7 +7259,19 @@ namespace Hecton8.World
             }
 
             if (instance != null && !instance.TryGetComponent(out metadata))
+            {
+                if (Application.isPlaying)
+                {
+                    if (poolManaged && pool != null)
+                        pool.Despawn(instance);
+                    else
+                        Destroy(instance);
+                    return null;
+                }
+
                 metadata = instance.AddComponent<WorldProceduralProxyInstance>();
+            }
+
             if (metadata != null)
                 metadata.SetPoolManaged(poolManaged);
 
@@ -11368,16 +11389,25 @@ namespace Hecton8.World
 
         private readonly struct ScatterCandidatePreview
         {
-            public ScatterCandidatePreview(int stableHash, Vector3 position, int heightLayerIndex)
+            public ScatterCandidatePreview(
+                int stableHash,
+                Vector3 position,
+                int heightLayerIndex,
+                int cellX,
+                int cellZ)
             {
                 StableHash = stableHash;
                 Position = position;
                 HeightLayerIndex = heightLayerIndex;
+                CellX = cellX;
+                CellZ = cellZ;
             }
 
             public int StableHash { get; }
             public Vector3 Position { get; }
             public int HeightLayerIndex { get; }
+            public int CellX { get; }
+            public int CellZ { get; }
         }
 
         /// <summary>

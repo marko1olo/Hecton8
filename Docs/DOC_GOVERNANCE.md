@@ -1,16 +1,27 @@
 # Documentation Governance
 
-Date: `2026-04-17`
+Date: `2026-05-01`
 Status: `PENDING VERIFICATION`
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
 
+Current-state boundary:
+
+- This file defines documentation placement and authority order only.
+- It is not runtime proof and does not certify that every listed document is current by itself.
+- Current project truth starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` plus source files.
+
 ## Authority Order
 
 1. `../AGENTS.md`
-2. active execution docs under `Docs/`
-3. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
-4. archive bundles under `Docs/_Archive/`
+2. task-relevant `.agents-skills/*` mandates
+3. `Docs/README.md`
+4. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+5. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+6. active execution docs under `Docs/`
+7. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+8. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+9. archive bundles under `Docs/_Archive/`
 
 ## What Belongs In Root
 
@@ -63,6 +74,17 @@ Move material into `Docs/_Archive/` when it is:
 - an old agent work package
 - stale status reporting older than the current working slice
 
+## What Belongs In Deprecated
+
+Move material into `Docs/DEPRECATED/` when it is:
+
+- a dated audit snapshot superseded by a newer current-state report
+- an external idea/prompt/log bundle that must be preserved but must not look active
+- a compatibility copy whose original path is no longer canonical
+- a static scan whose counts are stale but whose provenance is still useful
+
+Move report-root snapshots into `Docs/Reports/DEPRECATED/` when they are superseded by newer reports but should stay near report history.
+
 Archive threshold:
 
 - if a report/plan is older than `5` days, no longer drives current work, and is not a long-lived reference contract, move it out of active `Docs`
@@ -79,10 +101,12 @@ Do not invent vague folders like `misc`, `temp docs`, `new stuff`, `agent notes`
 ## Maintenance Rules
 
 - when moving active docs, update `Docs/README.md`
+- when moving superseded docs to deprecated, add or update a local `README.md` explaining the replacement authority
 - when shrinking root, update `Docs/ROOT_DOCS_REFERENCE.md`
 - when archiving a large wave, update `Docs/_Archive/README.md` and the bundle manifest
 - if a legacy document is kept for historical value but not active authority, put it in a reference bundle or archive, not in root
 - if a filesystem lock blocks rename/delete, keep a temporary compatibility mirror but declare the canonical bundle path explicitly in `Docs/README.md`
+- if a compatibility mirror is no longer needed as an active redirect, move it to `Docs/DEPRECATED/` with a local README and keep only the canonical bundle path in active indexes
 - do not create new root-level `.md` or `.txt` files unless the file is an approved emergency anchor and the reason is explicit
 
 ## Red Flags

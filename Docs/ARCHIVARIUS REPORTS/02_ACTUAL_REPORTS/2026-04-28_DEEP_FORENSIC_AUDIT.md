@@ -190,7 +190,7 @@ ItemData GetCell(int x, int y);
 | Файл | Тип | Status |
 |------|-----|--------|
 | `Tools/generate_survival_database.py` | Data generation | ✅ OK (Lore tool) |
-| `Docs/много идей от дипсика/` | Documentation | ✅ OK |
+| `Docs/DEPRECATED/External_And_Log_Bundles/много идей от дипсика/` | Documentation | HISTORICAL |
 | `Lore/лор*.txt` | Lore | ✅ OK |
 | `Docs/гемини ЛАПОЧКА.txt` | Specific file in task | ✅ OK |
 

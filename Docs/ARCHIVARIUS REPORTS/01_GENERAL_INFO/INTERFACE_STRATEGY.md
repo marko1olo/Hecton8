@@ -122,7 +122,7 @@ That proof was not established for `IRenderable`, `IAudioService`, or `IUIServic
 | P0 | purge ghost/fragmented claims from dependent docs | current source already disproves them |
 | P1 | keep one authoritative owner named for each registry-facing service contract | prevents drift and folklore |
 | P1 | when Unity evidence exists, add runtime occupancy notes separately from source ownership | avoids mixing static facts with live-state assumptions |
-| P2 | rerun interface audit after any `GlobalRegistryContracts.cs` expansion | current file already grew from 19 to 27 interfaces |
+| P2 | rerun interface audit after any `GlobalRegistryContracts.cs` expansion | current file grew from the older 19/27 snapshots to 31 interfaces; `IGlobalRegistryHotSwapListener` is currently an empty seam |
 
 ## 5. Regression Model
 

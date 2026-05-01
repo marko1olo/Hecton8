@@ -9,6 +9,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton.Localization;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -34,13 +35,14 @@ namespace Hecton8.UI
         }
 
         private const int InventoryFullMessageCacheSize = 16;
+        private const int MaxNotificationQueueCapacity = 8;
         private const string InventoryFullMessagePrefix = "INVENTORY FULL \u2014 CANNOT STORE ";
         private const string FallbackInventoryItemName = "ITEM";
 
         private struct NotificationRequest
         {
-            public string Message;
-            public NotificationSeverity Severity;
+            public uint MessageHash;
+            public byte Severity;
         }
 
         [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -67,11 +69,11 @@ namespace Hecton8.UI
         private float _currentAlpha;
         private bool _built;
         private bool _isShowing;
-        private readonly System.Collections.Generic.List<NotificationRequest> _queue =
-            new System.Collections.Generic.List<NotificationRequest>(8);
-        private string _currentMessage;
+        private NativeArray<NotificationRequest> _queue;
+        private int _queueCount;
+        private uint _currentMessageHash;
         private NotificationSeverity _currentSeverity;
-        private string _lastEnqueuedMessage;
+        private uint _lastEnqueuedMessageHash;
         private NotificationSeverity _lastEnqueuedSeverity;
         private float _lastEnqueueTime = -999f;
         private bool _registeredToTickManager;
@@ -116,6 +118,18 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             InventoryEvents.OnInventoryFull -= OnInventoryFull;
             NotificationEvents.Unregister(this);
+            _queueCount = 0;
+            _currentMessageHash = 0u;
+        }
+
+        private void OnDestroy()
+        {
+            if (_queue.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_queue);
+                _queue.Dispose();
+                _queue = default;
+            }
         }
 
         public void Tick(float deltaTime)
@@ -138,11 +152,10 @@ namespace Hecton8.UI
                     _currentAlpha = 0f;
                     _isShowing = false;
 
-                    if (_queue.Count > 0)
+                    if (_queueCount > 0)
                     {
-                        NotificationRequest next = _queue[0];
-                        _queue.RemoveAt(0);
-                        ShowImmediate(next.Message, next.Severity);
+                        NotificationRequest next = PopQueueFront();
+                        ShowImmediate(next.MessageHash, (NotificationSeverity)next.Severity);
                     }
                     else
                     {
@@ -198,77 +211,86 @@ namespace Hecton8.UI
         {
             EnsureBuilt();
 
-            if (string.IsNullOrWhiteSpace(message))
+            uint messageHash = NotificationEvents.RegisterMessage(message);
+            if (messageHash == 0u)
                 return;
 
-            string normalized = message.Trim();
+            Enqueue(messageHash, severity);
+        }
+
+        private void Enqueue(uint messageHash, NotificationSeverity severity)
+        {
+            EnsureBuilt();
+            if (messageHash == 0u)
+                return;
+
             float now = Time.unscaledTime;
 
-            if (normalized == _currentMessage && severity == _currentSeverity && _timer > 0f)
+            if (messageHash == _currentMessageHash && severity == _currentSeverity && _timer > 0f)
             {
                 _timer = displayDuration;
                 return;
             }
 
-            if (normalized == _lastEnqueuedMessage &&
+            if (messageHash == _lastEnqueuedMessageHash &&
                 severity == _lastEnqueuedSeverity &&
                 now - _lastEnqueueTime < repeatSuppressWindow)
             {
                 return;
             }
 
-            _lastEnqueuedMessage = normalized;
+            _lastEnqueuedMessageHash = messageHash;
             _lastEnqueuedSeverity = severity;
             _lastEnqueueTime = now;
 
-            if (_timer <= 0f && _queue.Count == 0 && !_isShowing && _currentAlpha <= 0.01f)
+            if (_timer <= 0f && _queueCount == 0 && !_isShowing && _currentAlpha <= 0.01f)
             {
-                ShowImmediate(normalized, severity);
+                ShowImmediate(messageHash, severity);
                 return;
             }
 
             if (severity == NotificationSeverity.Critical && _currentSeverity != NotificationSeverity.Critical)
             {
-                if (!string.IsNullOrWhiteSpace(_currentMessage) && _queue.Count < maxQueuedNotifications)
+                if (_currentMessageHash != 0u && _queueCount < ResolveQueueCapacity())
                 {
-                    _queue.Insert(0, new NotificationRequest
+                    InsertQueueFront(new NotificationRequest
                     {
-                        Message = _currentMessage,
-                        Severity = _currentSeverity
+                        MessageHash = _currentMessageHash,
+                        Severity = (byte)_currentSeverity
                     });
                 }
 
-                ShowImmediate(normalized, severity);
+                ShowImmediate(messageHash, severity);
                 return;
             }
 
-            if (_queue.Count >= Mathf.Max(1, maxQueuedNotifications))
+            if (_queueCount >= ResolveQueueCapacity())
             {
                 if (severity <= NotificationSeverity.Info)
                     return;
 
-                _queue.RemoveAt(0);
+                RemoveQueueFront();
             }
 
-            _queue.Add(new NotificationRequest
+            PushQueueBack(new NotificationRequest
             {
-                Message = normalized,
-                Severity = severity
+                MessageHash = messageHash,
+                Severity = (byte)severity
             });
         }
 
-        private void ShowImmediate(string message, NotificationSeverity severity)
+        private void ShowImmediate(uint messageHash, NotificationSeverity severity)
         {
             RegisterToTickManager();
-            ApplyVisuals(message, severity);
+            ApplyVisuals(messageHash, severity);
             _timer = displayDuration;
             _currentAlpha = 0f;
             _isShowing = true;
         }
 
-        private void ApplyVisuals(string message, NotificationSeverity severity)
+        private void ApplyVisuals(uint messageHash, NotificationSeverity severity)
         {
-            _currentMessage = message;
+            _currentMessageHash = messageHash;
             _currentSeverity = severity;
 
             switch (severity)
@@ -288,22 +310,12 @@ namespace Hecton8.UI
             }
 
             _lastStressCorruptionBucket = int.MinValue;
-            string displayMessage = ResolveDisplayMessage(message);
-            if (!string.Equals(_notifText.text, displayMessage, System.StringComparison.Ordinal))
-                _notifText.text = displayMessage;
+            ApplyNotificationText(messageHash);
         }
 
         public void OnNotificationEvent(in NotificationEventPayload payload)
         {
-            if (!NotificationEvents.TryResolveMessage(payload.MessageHash, out string message))
-                return;
-
-            OnPushNotification(message, payload.Severity);
-        }
-
-        private void OnPushNotification(string message, ushort severity)
-        {
-            Enqueue(message, (NotificationSeverity)severity);
+            Enqueue(payload.MessageHash, (NotificationSeverity)payload.Severity);
         }
 
         private void OnInventoryFull(ItemData item)
@@ -336,25 +348,116 @@ namespace Hecton8.UI
                 return;
 
             _lastStressCorruptionBucket = stressBucket;
-            string displayMessage = ResolveDisplayMessage(_currentMessage);
-            if (_notifText != null && !string.Equals(_notifText.text, displayMessage, System.StringComparison.Ordinal))
-                _notifText.text = displayMessage;
+            ApplyNotificationText(_currentMessageHash);
         }
 
-        private static string ResolveDisplayMessage(string message)
+        private void ApplyNotificationText(uint messageHash)
         {
-            if (string.IsNullOrEmpty(message))
-                return string.Empty;
+            if (_notifText == null || messageHash == 0u)
+                return;
+
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                if (!TryWriteDisplayMessage(messageHash, lease.Buffer.AsSpan(), out int length))
+                    return;
+
+                _notifText.SetCharArray(lease.Buffer, 0, length);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static bool TryWriteDisplayMessage(uint messageHash, Span<char> target, out int length)
+        {
+            length = 0;
+            if (messageHash == 0u || !NotificationEvents.TryResolveMessage(messageHash, out string message) || string.IsNullOrEmpty(message))
+                return false;
 
             LocalizationManager manager = LocalizationManager.Instance;
-            return manager != null
+            string displayMessage = manager != null
                 ? manager.ApplyHullStressCorruptionIfNeeded(message)
                 : message;
+            ReadOnlySpan<char> source = displayMessage.AsSpan();
+            length = Mathf.Min(source.Length, target.Length);
+            if (length <= 0)
+                return false;
+
+            source.Slice(0, length).CopyTo(target);
+            return true;
+        }
+
+        private int ResolveQueueCapacity()
+        {
+            EnsureQueue();
+            return Mathf.Clamp(maxQueuedNotifications, 1, _queue.Length);
+        }
+
+        private void EnsureQueue()
+        {
+            if (_queue.IsCreated)
+                return;
+
+            int capacity = Mathf.Clamp(maxQueuedNotifications, 1, MaxNotificationQueueCapacity);
+            _queue = new NativeArray<NotificationRequest>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<NotificationRequest>[capacity] - fixed HUD notification hash queue - owner: HUDNotification
+            NativeMemorySentinel.RegisterNativeArray(_queue, nameof(HUDNotification), nameof(_queue), NativeAllocationLifetime.Scene);
+            _queueCount = 0;
+        }
+
+        private void PushQueueBack(in NotificationRequest request)
+        {
+            EnsureQueue();
+            int capacity = ResolveQueueCapacity();
+            if (_queueCount >= capacity)
+                return;
+
+            _queue[_queueCount] = request;
+            _queueCount++;
+        }
+
+        private void InsertQueueFront(in NotificationRequest request)
+        {
+            EnsureQueue();
+            int capacity = ResolveQueueCapacity();
+            if (_queueCount >= capacity)
+                _queueCount = capacity - 1;
+
+            for (int i = _queueCount; i > 0; i--)
+                _queue[i] = _queue[i - 1];
+
+            _queue[0] = request;
+            _queueCount++;
+        }
+
+        private NotificationRequest PopQueueFront()
+        {
+            EnsureQueue();
+            NotificationRequest request = _queueCount > 0 ? _queue[0] : default;
+            RemoveQueueFront();
+            return request;
+        }
+
+        private void RemoveQueueFront()
+        {
+            if (!_queue.IsCreated || _queueCount <= 0)
+                return;
+
+            for (int i = 1; i < _queueCount; i++)
+                _queue[i - 1] = _queue[i];
+
+            _queueCount--;
+            _queue[_queueCount] = default;
         }
 
         private void EnsureBuilt()
         {
             if (_built) return;
+
+            EnsureQueue();
 
             RectTransform self = transform as RectTransform;
             if (self == null) return;

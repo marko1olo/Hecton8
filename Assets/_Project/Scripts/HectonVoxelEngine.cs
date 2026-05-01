@@ -4304,9 +4304,12 @@ public class HectonVoxelEngine : MonoBehaviour
         if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
         {
             GameObject pooled = ObjectPoolManager.Instance.Spawn(voxelVolumePrefab, Vector3.zero, Quaternion.identity);
-            PrepareVolumeForBuild(pooled);
-            HectonFloatingOrigin.MarkShiftTargetsDirty();
-            return pooled;
+            if (pooled != null)
+            {
+                PrepareVolumeForBuild(pooled);
+                HectonFloatingOrigin.MarkShiftTargetsDirty();
+                return pooled;
+            }
         }
 
         var go = new GameObject("CaveVolume");

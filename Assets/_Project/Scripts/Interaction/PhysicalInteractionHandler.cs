@@ -88,7 +88,7 @@ namespace Hecton8.Interaction
         [SerializeField, Range(0.005f, 0.2f)] private float panelButtonProbeRadius = 0.035f;
 
         [Tooltip("Layer mask containing physical diegetic panel button BoxCollider trigger volumes.")]
-        [SerializeField] private LayerMask panelButtonMask = ~0;
+        [SerializeField] private LayerMask panelButtonMask = HectonLayerMasks.UILayerMask | HectonLayerMasks.InteractableLayerMask;
 
         [Header("── Heavy Carry Movement Feel ──────────────────")]
         [Tooltip("Movement-force multiplier while dragging the lightest valid heavy object.")]
@@ -142,6 +142,9 @@ namespace Hecton8.Interaction
         private float _stateTimer;
         private Vector3 _pullSmoothDampVelocity;
         private const int MaxPanelButtonOverlaps = 8;
+        private static readonly int _DefaultPanelButtonLayerMask =
+            HectonLayerMasks.UILayerMask |
+            HectonLayerMasks.InteractableLayerMask;
         private readonly Collider[] _panelButtonOverlaps = new Collider[MaxPanelButtonOverlaps]; // COLD ALLOC: Collider[8] - physical panel button overlap buffer - owner: PhysicalInteractionHandler
 
         private IInteractable _activeInteractable;
@@ -330,7 +333,7 @@ namespace Hecton8.Interaction
                 handPosition,
                 panelButtonProbeRadius,
                 _panelButtonOverlaps,
-                panelButtonMask.value,
+                ResolvePanelButtonLayerMask(),
                 QueryTriggerInteraction.Collide);
             if (hitCount <= 0)
                 return;
@@ -348,6 +351,12 @@ namespace Hecton8.Interaction
 
                 button.TryQueueHandPress(handPosition, handForward, interactionSignals);
             }
+        }
+
+        private int ResolvePanelButtonLayerMask()
+        {
+            int mask = panelButtonMask.value;
+            return HectonLayerMasks.IsEverythingLayerMask(mask) ? _DefaultPanelButtonLayerMask : mask;
         }
 
         private bool TryBeginPocketPickup(IInteractable interactable, MonoBehaviour behaviour)

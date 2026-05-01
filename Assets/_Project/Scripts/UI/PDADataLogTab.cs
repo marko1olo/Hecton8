@@ -114,6 +114,7 @@ namespace Hecton8.UI
         private int _selectedIndex = -1;
         private bool _built;
         private bool _registered;
+        private bool _pdaEventsRegistered;
         private bool _dirty;
         private bool _detailVisible = true;
 
@@ -139,6 +140,8 @@ namespace Hecton8.UI
         private int _resolvedSummaryHexLength;
         private float _hologramAnimationTime;
         private Material _runtimeHologramMaterial;
+        private uint _latestSimulationLogHash;
+        private float _latestSimulationLogTimestamp;
 
         private const float TICK_DT = 1f / 60f;
         private const float HiddenRecordDelaySeconds = 5f;
@@ -231,7 +234,7 @@ namespace Hecton8.UI
             TryRegister();
 
             AudioLogEvents.Register(this);
-            PDAEvents.Register(this);
+            TryRegisterPDAEvents();
             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
 
             RebuildLoreBindingCache();
@@ -243,7 +246,7 @@ namespace Hecton8.UI
             TryUnregister();
 
             AudioLogEvents.Unregister(this);
-            PDAEvents.Unregister(this);
+            UnregisterPDAEvents();
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
         }
 
@@ -251,7 +254,7 @@ namespace Hecton8.UI
         {
             TryUnregister();
             AudioLogEvents.Unregister(this);
-            PDAEvents.Unregister(this);
+            UnregisterPDAEvents();
             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
             PDAEvents.AssertUnregistered(this, nameof(PDADataLogTab));
             if (_runtimeHologramMaterial != null)
@@ -259,6 +262,24 @@ namespace Hecton8.UI
                 Destroy(_runtimeHologramMaterial);
                 _runtimeHologramMaterial = null;
             }
+        }
+
+        private void TryRegisterPDAEvents()
+        {
+            if (_pdaEventsRegistered)
+                return;
+
+            PDAEvents.Register(this);
+            _pdaEventsRegistered = true;
+        }
+
+        private void UnregisterPDAEvents()
+        {
+            if (!_pdaEventsRegistered)
+                return;
+
+            PDAEvents.Unregister(this);
+            _pdaEventsRegistered = false;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -345,11 +366,36 @@ namespace Hecton8.UI
 
         public void OnPDAEvent(in PDAEventPayload payload)
         {
-            if ((PDAEventType)payload.EventType == PDAEventType.Opened)
-                HandlePDAOpened(payload.CurrentTab);
+            switch ((PDAEventType)payload.EventType)
+            {
+                case PDAEventType.Opened:
+                    HandlePDAOpened(payload.CurrentTab);
+                    return;
+
+                case PDAEventType.LogbookChanged:
+                    HandleEventSourcedLogbookChanged(payload.LogEventHashID);
+                    return;
+            }
         }
 
         private void HandlePDAOpened(int tab) => _dirty = true;
+
+        private void HandleEventSourcedLogbookChanged(uint eventHash)
+        {
+            if (eventHash != 0u)
+            {
+                _latestSimulationLogHash = eventHash;
+                _latestSimulationLogTimestamp = 0f;
+            }
+
+            if (UIStateStore.TryGetPDALogEvent(0, out uint latestHash, out float timestampSeconds))
+            {
+                _latestSimulationLogHash = latestHash;
+                _latestSimulationLogTimestamp = timestampSeconds;
+            }
+
+            _dirty = true;
+        }
 
         private void HandleLogDiscovered(uint logHash)
         {
@@ -671,7 +717,10 @@ namespace Hecton8.UI
             {
                 bool shouldShowEmptyState = logCount == 0;
                 SetElementVisible(_emptyStateLabel, shouldShowEmptyState);
-                ApplyDynamicText(_emptyStateLabel, ResolveStressReactiveText(_localizedEmptyStateText), ref _summaryTextBuffer);
+                if (shouldShowEmptyState && TryResolveEventSourcedLogText(out char[] eventBuffer, out int eventLength))
+                    ApplyDynamicText(_emptyStateLabel, eventBuffer, eventLength);
+                else
+                    ApplyDynamicText(_emptyStateLabel, ResolveStressReactiveText(_localizedEmptyStateText), ref _summaryTextBuffer);
             }
 
             if (logCount == 0)
@@ -873,6 +922,16 @@ namespace Hecton8.UI
                 return null;
 
             return allLogs[index];
+        }
+
+        private bool TryResolveEventSourcedLogText(out char[] buffer, out int length)
+        {
+            buffer = null;
+            length = 0;
+            if (_latestSimulationLogHash == 0u)
+                return false;
+
+            return LocRegistry.TryGetRawBuffer(unchecked((int)_latestSimulationLogHash), out buffer, out length);
         }
 
         private AudioLogData GetSelectedLog()

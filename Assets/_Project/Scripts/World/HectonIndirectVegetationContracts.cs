@@ -123,12 +123,12 @@ namespace Hecton8.World
             TemplateIndex = templateIndex;
             RuntimeState = runtimeState;
             RuntimeFlags = runtimeFlags;
-            PulseFrequency = pulseFrequency;
+            PulseFrequency = Mathf.Max(0.01f, pulseFrequency);
             BioluminescenceColor = bioluminescenceColor;
             SwaySpeed = swaySpeed;
             BendAmplitude = bendAmplitude;
-            HealthNormalized = healthNormalized;
-            Reserved0 = reserved0;
+            HealthNormalized = Mathf.Clamp01(healthNormalized);
+            Reserved0 = Mathf.Clamp(reserved0, 0f, 1f);
         }
 
         /// <summary>

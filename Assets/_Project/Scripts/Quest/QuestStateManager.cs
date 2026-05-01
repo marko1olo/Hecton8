@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -742,9 +743,11 @@ namespace Hecton8.Quest
 
             unsafe
             {
+                int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(snapshot);
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, WordCapacity * UnsafeUtility.SizeOf<uint>());
+                if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, copyBytes, sourcePtr, copyBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
             }
 
             return snapshot;
@@ -787,8 +790,11 @@ namespace Hecton8.Quest
                 {
                     fixed (uint* sourcePtr = packedWords)
                     {
+                        int copyBytes = copyWordCount * UnsafeUtility.SizeOf<uint>();
+                        int destinationBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
                         void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
-                        UnsafeUtility.MemCpy(destinationPtr, sourcePtr, copyWordCount * UnsafeUtility.SizeOf<uint>());
+                        if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
                     }
                 }
             }
@@ -839,9 +845,11 @@ namespace Hecton8.Quest
 
             unsafe
             {
+                int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
                 void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_transitionHistoryWords) + (entry.SnapshotWordOffset * UnsafeUtility.SizeOf<uint>());
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, WordCapacity * UnsafeUtility.SizeOf<uint>());
+                if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, copyBytes, sourcePtr, copyBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
             }
 
             RefreshStateMetadata(resetVersion: false);
@@ -1189,9 +1197,12 @@ namespace Hecton8.Quest
             int snapshotWordOffset = slot * WordCapacity;
             unsafe
             {
+                int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
+                int destinationBytes = (_transitionHistoryWords.Length - snapshotWordOffset) * UnsafeUtility.SizeOf<uint>();
                 void* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_transitionHistoryWords) + (snapshotWordOffset * UnsafeUtility.SizeOf<uint>());
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, WordCapacity * UnsafeUtility.SizeOf<uint>());
+                if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
             }
 
             uint fromFlagId = 0u;

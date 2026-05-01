@@ -1,5 +1,15 @@
 # ZERO_GC_UI_PIPELINE
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+2026-05-01 current-state boundary:
+
+- This is the UI zero-GC contract and source-oriented pattern reference, not profiler proof.
+- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Any claim of `0 B/frame` for HUD/PDA/menu paths still requires fresh GCMonitor or profiler capture.
+- Presentation/UI must not own gameplay state transitions without a logic-owned fallback.
+
 ## Scope
 
 This project does not push runtime HUD numbers into `TMP_Text.text`. Hot-path UI text is staged through fixed buffers, formatted with `Span<char>`, and committed through `TMP_Text.SetCharArray(...)`.

@@ -5,6 +5,12 @@ Status: PENDING VERIFICATION
 Scope: source-backed ownership map for player tools, operational interaction routing, scanner/cutter/repair/beacon branches, and adjacent save/event surfaces
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Persistent_Object_Registry.txt`
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- This file remains a source-backed tool/interaction ownership map, not proof of live multi-tool traversal, save/load, or zero-GC interaction spam.
+- Current project-wide risks still include broad physics masks, mixed runtime service ownership, and local job/readback barriers outside dispatcher-owned windows.
+
 ## Purpose
 
 This file exists to answer one concrete question:

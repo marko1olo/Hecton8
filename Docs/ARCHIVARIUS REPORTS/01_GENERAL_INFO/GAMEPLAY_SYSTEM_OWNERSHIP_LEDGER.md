@@ -5,6 +5,13 @@ Status: PENDING VERIFICATION
 Scope: broad source-backed owner inventory for major first-party gameplay domains
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger as current project truth.
+- Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` when the question is project readiness or overall risk, not narrow domain ownership.
+- This ledger is a navigation aid, not a live verification artifact.
+- Current cross-project risks remain mixed registry/singleton authority, local job barriers, headless/presentation coupling, and missing profiler/GC proof.
+
 ## Purpose
 
 The active docset already has narrow truth pages for:

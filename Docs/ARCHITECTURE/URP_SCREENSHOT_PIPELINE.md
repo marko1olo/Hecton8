@@ -1,5 +1,14 @@
 # URP Screenshot Pipeline
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this pipeline as current runtime truth.
+- This document is a save-thumbnail/URP contract, not proof that the renderer feature is assigned, the active camera renders the pass, or thumbnail persistence is runtime-validated.
+- Re-open `SaveThumbnailSystem`, `SaveThumbnailCaptureFeature`, renderer assets, and current console evidence before surgery.
+
 ## Purpose
 
 `SaveThumbnailSystem` must capture save-slot thumbnails without breaking the URP camera stack, without forcing a synchronous GPU readback, and without blocking the main thread on image encoding or disk I/O.

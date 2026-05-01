@@ -35,6 +35,7 @@ namespace Hecton8.Audio
         private const int InvalidVoiceIndex = -1;
         private const float MixerFloorDb = -80f;
         private const float MixerCeilingDb = 0f;
+        private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
         private static readonly string[] MenuSceneTokens = { "main_menu" };
         private static readonly string[] PrologueSceneTokens = { "prologue" };
@@ -404,8 +405,8 @@ namespace Hecton8.Audio
             AcousticZoneController.OnAcousticZoneChanged += HandleAcousticZoneChanged;
             BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
             BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
-            DepthZoneEvents.OnZoneEntered += HandleDepthZoneEntered;
-            DepthZoneEvents.OnZoneExited += HandleDepthZoneExited;
+            DepthZoneEvents.RegisterZoneEntered(HandleDepthZoneEntered);
+            DepthZoneEvents.RegisterZoneExited(HandleDepthZoneExited);
             HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequested;
             HectonDirectorAI.OnRequestSpawnHorde += HandleSpawnHordeRequested;
             HectonDirectorAI.OnPredatorPressureChanged += HandlePredatorPressureChanged;
@@ -427,8 +428,8 @@ namespace Hecton8.Audio
             HectonDirectorAI.OnPredatorPressureChanged -= HandlePredatorPressureChanged;
             HectonDirectorAI.OnRequestSpawnHorde -= HandleSpawnHordeRequested;
             HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequested;
-            DepthZoneEvents.OnZoneExited -= HandleDepthZoneExited;
-            DepthZoneEvents.OnZoneEntered -= HandleDepthZoneEntered;
+            DepthZoneEvents.UnregisterZoneExited(HandleDepthZoneExited);
+            DepthZoneEvents.UnregisterZoneEntered(HandleDepthZoneEntered);
             BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
             BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
             AcousticZoneController.OnAcousticZoneChanged -= HandleAcousticZoneChanged;
@@ -867,7 +868,7 @@ namespace Hecton8.Audio
             if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
                 _playerTransform.position,
                 math.max(1f, _predatorSenseRadius),
-                ~0,
+                _PredatorThreatLayerMask,
                 _playerTransform,
                 out SpatialQueryHit predatorHit))
             {

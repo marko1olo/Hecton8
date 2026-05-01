@@ -191,7 +191,11 @@ namespace Hecton8.Physics
         internal static float3 ProjectVelocityAlongSurface(float3 velocity, float3 surfaceNormal)
         {
             float3 safeVelocity = math.select(float3.zero, velocity, math.all(math.isfinite(velocity)));
-            float3 safeNormal = SafeNormal(surfaceNormal, new float3(0f, 1f, 0f));
+            float normalMagnitudeSq = math.lengthsq(surfaceNormal);
+            if (normalMagnitudeSq < 0.1f || !math.all(math.isfinite(surfaceNormal)))
+                return float3.zero;
+
+            float3 safeNormal = surfaceNormal * math.rsqrt(normalMagnitudeSq);
             return safeVelocity - (safeNormal * math.dot(safeVelocity, safeNormal));
         }
 

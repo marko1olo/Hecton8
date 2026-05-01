@@ -25,6 +25,7 @@ namespace Hecton8.Core
         private bool _sceneLoadInFlight;
         private string _pendingSceneName;
         private AsyncOperation _pendingSceneLoadOperation;
+        private int _gpuResidencyReadyFrame = -1;
 
         /// <summary>
         /// True once the service has registered itself into <see cref="GlobalRegistry"/>.
@@ -109,6 +110,7 @@ namespace Hecton8.Core
             {
                 _sceneLoadInFlight = true;
                 _pendingSceneName = sceneName;
+                _gpuResidencyReadyFrame = -1;
                 ClearRuntimeState();
 
                 AsyncOperation loadOperation = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
@@ -128,14 +130,15 @@ namespace Hecton8.Core
                     bool loadReady = _pendingSceneLoadOperation.progress >= 0.9f;
                     bool poolsReady = loadReady && ArePersistentWorldPoolsReadyForSceneActivation();
                     bool originStable = poolsReady && IsFloatingOriginStableForSceneActivation();
+                    bool gpuResidencyReady = IsGpuResidencyReadyForSceneActivation(loadReady, poolsReady, originStable);
 
-                    if (loadReady && poolsReady && originStable)
+                    if (loadReady && poolsReady && originStable && gpuResidencyReady)
                     {
                         _pendingSceneLoadOperation.allowSceneActivation = true;
                     }
                     else if (waitFrames >= nextWatchdogFrame)
                     {
-                        LogSceneActivationWatchdog(sceneName, _pendingSceneLoadOperation.progress, loadReady, poolsReady, originStable, waitFrames);
+                        LogSceneActivationWatchdog(sceneName, _pendingSceneLoadOperation.progress, loadReady, poolsReady, originStable, gpuResidencyReady, waitFrames);
                         nextWatchdogFrame = waitFrames + SceneActivationWatchdogRepeatFrames;
                     }
 
@@ -151,6 +154,7 @@ namespace Hecton8.Core
                 _sceneLoadInFlight = false;
                 _pendingSceneName = null;
                 _pendingSceneLoadOperation = null;
+                _gpuResidencyReadyFrame = -1;
             }
         }
 
@@ -251,19 +255,37 @@ namespace Hecton8.Core
                    !HectonFloatingOrigin.IsPhysicsPausedForShift;
         }
 
+        private bool IsGpuResidencyReadyForSceneActivation(bool loadReady, bool poolsReady, bool originStable)
+        {
+            if (!loadReady || !poolsReady || !originStable)
+            {
+                _gpuResidencyReadyFrame = -1;
+                return false;
+            }
+
+            if (_gpuResidencyReadyFrame < 0)
+            {
+                _gpuResidencyReadyFrame = Time.frameCount + 1;
+                return false;
+            }
+
+            return Time.frameCount >= _gpuResidencyReadyFrame;
+        }
+
         private static void LogSceneActivationWatchdog(
             string sceneName,
             float progress,
             bool loadReady,
             bool poolsReady,
             bool originStable,
+            bool gpuResidencyReady,
             int waitFrames)
         {
-            string blockedBy = GetSceneActivationBlockedReason(loadReady, poolsReady, originStable);
+            string blockedBy = GetSceneActivationBlockedReason(loadReady, poolsReady, originStable, gpuResidencyReady);
             Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' still blocked after {waitFrames} frames. Reason: {blockedBy}. Progress: {progress:0.00}.");
         }
 
-        private static string GetSceneActivationBlockedReason(bool loadReady, bool poolsReady, bool originStable)
+        private static string GetSceneActivationBlockedReason(bool loadReady, bool poolsReady, bool originStable, bool gpuResidencyReady)
         {
             if (!loadReady)
                 return "AsyncOperation progress below activation threshold";
@@ -271,6 +293,8 @@ namespace Hecton8.Core
                 return "PersistentWorldRegistry pools not ready";
             if (!originStable)
                 return "floating origin shift in progress";
+            if (!gpuResidencyReady)
+                return "GPU residency settle frame pending";
 
             return "activation pending";
         }

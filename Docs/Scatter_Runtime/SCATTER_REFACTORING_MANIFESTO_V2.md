@@ -1,4 +1,14 @@
 # SCATTER REFACTORING MANIFESTO v2.0
+
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this manifesto as current project truth.
+- This manifesto is a refactor reference, not a runtime proof or current mandate override.
+- Any `Complete()` / `Dispose()` teardown examples below are superseded by `OPT_Native_Memory_Collections_JobSystem_Protocol.txt` and `AGENTS.md`: prefer owner-safe deferred disposal and do not introduce local gameplay barriers without current source proof.
+- `WorldProceduralScatterDirector` remains the runtime owner; do not create a parallel scatter/flora owner.
 # WorldProceduralScatterDirector.cs — Deep Architectural Refactoring
 # Target: Data-Oriented Pipeline, Zero-GC Hot Paths, Burst-Compatible Jobs
 
@@ -72,8 +82,9 @@ The service receives it by reference and returns it — it does not own it.
 Add bool _isSamplingJobRunning field to Director.
 While job is running, SlowTick() must early-return immediately.
 FORBIDDEN to read or write any NativeArray while JobHandle is not Complete().
-In OnDisable() and OnDestroy(): call samplingJobHandle.Complete() BEFORE any Dispose().
-This is mandatory. Violating this causes native memory corruption.
+OnDisable/OnDestroy teardown must follow current `OPT_Native_Memory_Collections_JobSystem_Protocol.txt` and `AGENTS.md`.
+Do not add local `.Complete()` barriers from this manifesto without rechecking source ownership; prefer owner-safe deferred disposal when a job may still reference the collection.
+Unsafe disposal while a job owns the memory still causes native memory corruption.
 
 ### 1.7 ref struct LIFETIME — HARD CONSTRAINT
 
@@ -81,7 +92,7 @@ ScatterRescueContext is a ref struct.
 It CANNOT be stored in a class field.
 It CANNOT be passed between frames.
 It MUST be created strictly inside the Processing phase (ScatterState.Processing),
-immediately after samplingJobHandle.Complete() is called.
+after the sampling job is known complete through the current owner-approved swap/completion path.
 Lifetime = single method scope within the Processing tick. No exceptions.
 
 ### 1.8 Span<T> SAFETY INSIDE ref struct
@@ -253,7 +264,7 @@ internal sealed class ScatterWorkingMemory : IDisposable
 
     public void Dispose()
     {
-        // MUST be called AFTER samplingJobHandle.Complete()
+        // Current rule: dispose only after producer ownership is recovered, or use deferred Dispose(JobHandle).
         if (CellSamplingInputs.IsCreated)  CellSamplingInputs.Dispose();
         if (CellSamplingOutputs.IsCreated) CellSamplingOutputs.Dispose();
         // FastCandidateMap arrays are managed — GC handles them
@@ -263,8 +274,9 @@ internal sealed class ScatterWorkingMemory : IDisposable
 
 Director calls in OnDestroy():
 ```csharp
-_samplingJobHandle.Complete(); // FIRST — always
-_memory.Dispose();             // SECOND — always
+// Current rule: recover ownership through the active source-approved shutdown path.
+// If a job may still reference memory, use deferred disposal instead of copying a local barrier from this manifesto.
+_memory.Dispose();
 ```
 
 ---
@@ -505,8 +517,8 @@ public struct CellSamplingJob : IJobParallelFor
 ### 13.2 DESTROY SEQUENCE (OnDestroy)
 
 ```
-1. _samplingJobHandle.Complete()   ← ALWAYS FIRST, even if _isSamplingJobRunning == false
-2. _memory.Dispose()               ← ALWAYS SECOND
+1. Recover native ownership through the current source-approved shutdown path.
+2. Dispose immediately only when no job can reference the memory; otherwise defer disposal through JobHandle-backed ownership.
 3. null out service references
 ```
 
@@ -616,7 +628,7 @@ STEP 13: Final audit
   - Zero LINQ in hot paths
   - Zero string interpolation outside #if guards
   - All NativeArrays have IsCreated check before Dispose()
-  - _samplingJobHandle.Complete() called before every Dispose()
+  - NativeArray disposal follows current NativeJobs mandate: no unsafe disposal while a job owns memory, no copied local barrier without owner proof
   - All renamed fields have [FormerlySerializedAs]
   - StableRandom01, ComputeStableHash, ComputeRuleIdHash, ComposeKey: UNCHANGED
 ```

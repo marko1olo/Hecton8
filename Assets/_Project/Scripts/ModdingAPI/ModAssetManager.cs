@@ -10,12 +10,12 @@ namespace Hecton8.Modding
     /// </summary>
     internal static class ModAssetManager
     {
-        // COLD ALLOC: Dictionary<string,string>[32] — modId to bundle path lookup — owner: ModAssetManager
-        private static readonly Dictionary<string, string> _bundlePaths = new Dictionary<string, string>(32);
-        // COLD ALLOC: Dictionary<string,AssetBundle>[32] — cached loaded mod bundles — owner: ModAssetManager
-        private static readonly Dictionary<string, AssetBundle> _loadedBundles = new Dictionary<string, AssetBundle>(32);
-        // COLD ALLOC: Dictionary<string,Texture2D>[32] — cached raw PNG textures — owner: ModAssetManager
-        private static readonly Dictionary<string, Texture2D> _rawTextures = new Dictionary<string, Texture2D>(32);
+        // COLD ALLOC: Dictionary<uint,string>[32] - mod hash to bundle path lookup - owner: ModAssetManager
+        private static readonly Dictionary<uint, string> _bundlePaths = new Dictionary<uint, string>(32);
+        // COLD ALLOC: Dictionary<uint,AssetBundle>[32] - cached loaded mod bundles by mod hash - owner: ModAssetManager
+        private static readonly Dictionary<uint, AssetBundle> _loadedBundles = new Dictionary<uint, AssetBundle>(32);
+        // COLD ALLOC: Dictionary<uint,Texture2D>[32] - cached raw PNG textures by asset hash - owner: ModAssetManager
+        private static readonly Dictionary<uint, Texture2D> _rawTextures = new Dictionary<uint, Texture2D>(32);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -35,13 +35,14 @@ namespace Hecton8.Modding
             if (string.IsNullOrWhiteSpace(modId))
                 return;
 
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
             if (string.IsNullOrWhiteSpace(bundlePath))
             {
-                _bundlePaths.Remove(modId);
+                _bundlePaths.Remove(modHash);
                 return;
             }
 
-            _bundlePaths[modId] = bundlePath;
+            _bundlePaths[modHash] = bundlePath;
         }
 
         /// <summary>
@@ -79,7 +80,8 @@ namespace Hecton8.Modding
             if (string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(assetName))
                 return null;
 
-            if (!TryGetLoadedBundle(modId, out AssetBundle bundle))
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            if (!TryGetLoadedBundle(modHash, modId, out AssetBundle bundle))
                 return null;
 
             TAsset asset = bundle.LoadAsset<TAsset>(assetName);
@@ -110,13 +112,13 @@ namespace Hecton8.Modding
             return null;
         }
 
-        private static bool TryGetLoadedBundle(string modId, out AssetBundle bundle)
+        private static bool TryGetLoadedBundle(uint modHash, string modId, out AssetBundle bundle)
         {
-            if (_loadedBundles.TryGetValue(modId, out bundle) && bundle != null)
+            if (_loadedBundles.TryGetValue(modHash, out bundle) && bundle != null)
                 return true;
 
             bundle = null;
-            if (!_bundlePaths.TryGetValue(modId, out string bundlePath) ||
+            if (!_bundlePaths.TryGetValue(modHash, out string bundlePath) ||
                 string.IsNullOrWhiteSpace(bundlePath) ||
                 !File.Exists(bundlePath))
             {
@@ -130,7 +132,7 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            _loadedBundles[modId] = bundle;
+            _loadedBundles[modHash] = bundle;
             return true;
         }
 
@@ -147,7 +149,7 @@ namespace Hecton8.Modding
             if (!File.Exists(filePath))
                 return null;
 
-            string cacheKey = modId + "|" + filePath;
+            uint cacheKey = ComputeAssetCacheHash(modId, filePath);
             if (_rawTextures.TryGetValue(cacheKey, out Texture2D cachedTexture) && cachedTexture != null)
                 return cachedTexture;
 
@@ -180,7 +182,7 @@ namespace Hecton8.Modding
 
         private static void UnloadAllBundles()
         {
-            Dictionary<string, AssetBundle>.Enumerator enumerator = _loadedBundles.GetEnumerator();
+            Dictionary<uint, AssetBundle>.Enumerator enumerator = _loadedBundles.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 AssetBundle bundle = enumerator.Current.Value;
@@ -190,7 +192,7 @@ namespace Hecton8.Modding
 
             _loadedBundles.Clear();
 
-            Dictionary<string, Texture2D>.Enumerator textureEnumerator = _rawTextures.GetEnumerator();
+            Dictionary<uint, Texture2D>.Enumerator textureEnumerator = _rawTextures.GetEnumerator();
             while (textureEnumerator.MoveNext())
             {
                 Texture2D texture = textureEnumerator.Current.Value;
@@ -199,6 +201,16 @@ namespace Hecton8.Modding
             }
 
             _rawTextures.Clear();
+        }
+
+        private static uint ComputeAssetCacheHash(string modId, string filePath)
+        {
+            unchecked
+            {
+                uint hash = ModCommandDispatcher.ComputeModHash(modId);
+                hash ^= ModCommandDispatcher.ComputeModHash(filePath) + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                return hash;
+            }
         }
     }
 }

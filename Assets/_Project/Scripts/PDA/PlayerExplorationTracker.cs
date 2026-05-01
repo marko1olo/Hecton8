@@ -23,6 +23,7 @@ namespace Hecton8.PDA
         private const int MaskAxisLength = ExplorationMapDTO.MortonMaskAxisLength;
         private const int MaskOriginOffset = ExplorationMapDTO.MortonMaskOriginOffset;
         private const int MaskBitCount = ExplorationMapDTO.MortonMaskBitCount;
+        private const int TotalChunkCapacity = MaskBitCount;
         private const int MaskWordCount = ExplorationMapDTO.MortonMaskWordCount;
         private const int MaskByteCount = ExplorationMapDTO.MortonMaskByteCount;
         private const int LocalMask = MaskAxisLength - 1;
@@ -223,10 +224,11 @@ namespace Hecton8.PDA
             data.explorationMap.chunkSizeMeters = ExplorationChunkSizeMeters;
             data.explorationMap.mortonMaskAxisBits = MaskAxisBits;
             data.explorationMap.mortonMaskOriginOffset = MaskOriginOffset;
+            data.explorationMap.mortonBuildSalt = SaveBinaryStorage.ExplorationMortonBuildSalt32;
 
             NativeArray<ulong> maskWords = _exploredChunkMask.AsNativeArray<ulong>();
             int wordCount = math.min(maskWords.Length, MaskWordCount);
-            int byteCount = ResolveSerializedByteCount(maskWords, wordCount);
+            int byteCount = SaveBinaryStorage.AlignExplorationMortonByteCount(ResolveSerializedByteCount(maskWords, wordCount));
             data.explorationMap.exploredMortonByteCount = byteCount;
             Array.Clear(data.explorationMap.exploredMortonMaskBytes, 0, data.explorationMap.exploredMortonMaskBytes.Length);
             unsafe
@@ -235,7 +237,11 @@ namespace Hecton8.PDA
                 {
                     void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(maskWords);
                     if (byteCount > 0)
-                        UnsafeUtility.MemCpy(destination, source, byteCount);
+                    {
+                        int destinationBytes = data.explorationMap.exploredMortonMaskBytes.Length;
+                        if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, destinationBytes, source, byteCount))
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerExplorationTracker));
+                    }
                 }
             }
 
@@ -299,6 +305,9 @@ namespace Hecton8.PDA
         {
             InitializeExplorationMask();
             if (!TryEncodeBitIndex(chunkX, chunkY, chunkZ, out int bitIndex))
+                return false;
+
+            if ((uint)bitIndex >= (uint)TotalChunkCapacity)
                 return false;
 
             if (_exploredChunkMask.IsSet(bitIndex))
@@ -410,15 +419,22 @@ namespace Hecton8.PDA
                 return false;
             }
 
+            if (dto.mortonBuildSalt != 0u && dto.mortonBuildSalt != SaveBinaryStorage.ExplorationMortonBuildSalt32)
+                return false;
+
             NativeArray<ulong> maskWords = _exploredChunkMask.AsNativeArray<ulong>();
-            int byteCount = math.min(math.min(MaskByteCount, dto.exploredMortonMaskBytes.Length), dto.exploredMortonByteCount);
+            int byteCount = math.min(
+                math.min(MaskByteCount, dto.exploredMortonMaskBytes.Length),
+                SaveBinaryStorage.AlignExplorationMortonByteCount(dto.exploredMortonByteCount));
             unsafe
             {
                 void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(maskWords);
                 UnsafeUtility.MemClear(destination, maskWords.Length * sizeof(ulong));
                 fixed (byte* source = dto.exploredMortonMaskBytes)
                 {
-                    UnsafeUtility.MemCpy(destination, source, byteCount);
+                    int destinationBytes = maskWords.Length * sizeof(ulong);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, destinationBytes, source, byteCount))
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerExplorationTracker));
                 }
             }
 
@@ -470,6 +486,12 @@ namespace Hecton8.PDA
             }
 
             bitIndex = EncodeLocalMortonIndex(localX, localY, localZ);
+            if ((uint)bitIndex >= (uint)TotalChunkCapacity)
+            {
+                bitIndex = -1;
+                return false;
+            }
+
             return true;
         }
 

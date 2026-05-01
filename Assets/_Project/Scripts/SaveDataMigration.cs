@@ -505,20 +505,23 @@ namespace Hecton8.SaveSystem
             }
 
             int clampedByteCount = math.clamp(dto.exploredMortonByteCount, 0, ExplorationMapDTO.MortonMaskByteCount);
+            clampedByteCount = SaveBinaryStorage.AlignExplorationMortonByteCount(clampedByteCount);
             if (clampedByteCount != dto.exploredMortonByteCount)
             {
                 dto.exploredMortonByteCount = clampedByteCount;
                 changed = true;
-                steps.Add("exploration morton byte count clamped");
+                steps.Add("exploration morton byte count aligned");
             }
 
             if (dto.chunkSizeMeters != ExplorationMapDTO.DenseChunkSizeMeters ||
                 dto.mortonMaskAxisBits != ExplorationMapDTO.MortonMaskAxisBits ||
-                dto.mortonMaskOriginOffset != ExplorationMapDTO.MortonMaskOriginOffset)
+                dto.mortonMaskOriginOffset != ExplorationMapDTO.MortonMaskOriginOffset ||
+                dto.mortonBuildSalt != SaveBinaryStorage.ExplorationMortonBuildSalt32)
             {
                 dto.chunkSizeMeters = ExplorationMapDTO.DenseChunkSizeMeters;
                 dto.mortonMaskAxisBits = ExplorationMapDTO.MortonMaskAxisBits;
                 dto.mortonMaskOriginOffset = ExplorationMapDTO.MortonMaskOriginOffset;
+                dto.mortonBuildSalt = SaveBinaryStorage.ExplorationMortonBuildSalt32;
                 changed = true;
                 steps.Add("exploration morton metadata repaired");
             }

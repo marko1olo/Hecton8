@@ -1,5 +1,14 @@
 # EQUIPMENT_SOA_LAYOUT
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before treating this layout as current runtime truth.
+- This document is a source-backed equipment SOA contract, not proof that every tool prefab, save path, UI readout, or haptics path is currently wired.
+- Re-open `ModularEquipmentEngine`, `EquipmentInteractionHandler`, and current tool assets before surgery.
+
 Mandates followed:
 - `CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`
 - `DATA_Inventory_Resources_Items_SOA_Layout.txt`

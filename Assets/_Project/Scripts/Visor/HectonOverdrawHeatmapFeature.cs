@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -47,7 +48,10 @@ namespace Hecton8.EditorTools
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Overdraw Heatmap");
-            private readonly FilteringSettings _filteringSettings = new FilteringSettings(RenderQueueRange.all);
+            private readonly FilteringSettings _filteringSettings = new FilteringSettings(
+                RenderQueueRange.all,
+                HectonLayerMasks.RenderGraphWorldLayerMask,
+                HectonLayerMasks.AllDefinedProjectRenderingLayerMaskValue);
             private FeatureSettings _settings;
             private Material _material;
 

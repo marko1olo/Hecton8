@@ -6,7 +6,7 @@ Date: `2026-04-19`
 
 ## Purpose
 
-This document converts `Docs/ГЕМИНИ СОВЕТУЕТ/гемини советует - саммари.txt` from raw suggestion dump into a project-reality execution plan.
+This document converts `Docs/DEPRECATED/External_And_Log_Bundles/ГЕМИНИ СОВЕТУЕТ/гемини советует - саммари.txt` from raw suggestion dump into a project-reality execution plan.
 
 This is not a rewrite of repository authority.
 

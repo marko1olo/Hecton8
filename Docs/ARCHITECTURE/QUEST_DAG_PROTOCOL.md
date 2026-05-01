@@ -1,5 +1,14 @@
 # QUEST DAG Protocol
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this protocol as current runtime truth.
+- This document is a quest-state architecture contract, not proof that all authored quests, event signals, save bits, or UI surfaces are integrated.
+- Re-open `QuestStateManager`, narrative events, save owners, and current quest data before surgery.
+
 ## Scope
 Runtime quest progression in HECTON-8 is a compiled directed acyclic graph backed by a bit-packed `NativeArray<uint>`. Quests are not `MonoBehaviour` state machines. They are precompiled descriptors evaluated only when an event signal arrives.
 

@@ -41,6 +41,11 @@ namespace Hecton8.World
         private const float HarvestStatePartialThreshold01 = 0.999f;
         private const float HarvestStateBareThreshold01 = 0.3f;
         private const float MatureSporeGrowthThreshold01 = 0.999f;
+        private const float MinimumSporePulseFrequencyHz = 0.01f;
+        private const float SporePulsePeakPhase01 = 0.25f;
+        private const float SporeShaderPhasePositionX = 0.07f;
+        private const float SporeShaderPhasePositionZ = 0.05f;
+        private const float InvTwoPi = 0.15915494309189535f;
         private const float SoftBareHealthFloor01 = 0.05f;
         private const float LightStarvationDamagePerSlowTick01 = 0.035f;
         private const float LightStarvationDeathHealth01 = 0.015f;
@@ -85,6 +90,8 @@ namespace Hecton8.World
             public readonly float PulseFrequencyHz;
             public readonly float Volume;
             public readonly float Pitch;
+            public readonly float SimulationTimeSeconds;
+            public readonly float PhaseOffset01;
 
             public SporeAcousticEvent(
                 AbsoluteUniversePosition positionAup,
@@ -92,7 +99,9 @@ namespace Hecton8.World
                 AudioClip clip,
                 float pulseFrequencyHz,
                 float volume,
-                float pitch)
+                float pitch,
+                float simulationTimeSeconds,
+                float phaseOffset01)
             {
                 PositionAup = positionAup;
                 RuntimePosition = runtimePosition;
@@ -100,6 +109,8 @@ namespace Hecton8.World
                 PulseFrequencyHz = pulseFrequencyHz;
                 Volume = volume;
                 Pitch = pitch;
+                SimulationTimeSeconds = simulationTimeSeconds;
+                PhaseOffset01 = phaseOffset01;
             }
         }
 
@@ -744,10 +755,19 @@ namespace Hecton8.World
             float currentHealth = GetLaneHealth(underwater, activeIndex);
             float toolResistance = math.max(0.01f, _templateDescriptors[templateIndex].ToolResistance);
             float nextHealth = Mathf.Max(0f, currentHealth - (deliveredDamage / toolResistance));
+            float previousNormalizedHealth = math.saturate(currentHealth / math.max(0.0001f, baseHealth));
+            float previousHeightScale = ResolveCurrentNormalizedHeightScale(underwater, activeIndex, instanceUid, previousNormalizedHealth);
+            HarvestState previousHarvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, previousHeightScale);
+            float nextHeightScale = ResolveNormalizedHeightScale(templateIndex, baseHealth, nextHealth);
+            HarvestState nextHarvestState = nextHealth > 0.0001f
+                ? ResolveHarvestState(templateIndex, baseHealth, nextHealth, nextHeightScale)
+                : HarvestState.Dead;
             if (ShouldDetonateDefensiveSporeBurst(templateIndex, toolCapabilityMask))
             {
                 floraInteractionManager?.RegisterDefensiveSporeBurst(instancePosition, Mathf.Max(0.35f, normalizedPower));
                 nextHealth = 0f;
+                nextHeightScale = ResolveNormalizedHeightScale(templateIndex, baseHealth, nextHealth);
+                nextHarvestState = HarvestState.Dead;
             }
 
             SetLaneHealth(underwater, activeIndex, nextHealth);
@@ -756,8 +776,11 @@ namespace Hecton8.World
             MarkOrganicTouched(instanceUid, Time.time);
 
             PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
-            ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, Time.time);
-            DispatchHarvestAudioTransition(instanceUid, templateIndex, baseHealth, currentHealth, nextHealth, underwater, activeIndex, instancePosition);
+            bool harvestStateChanged = previousHarvestState != nextHarvestState;
+            ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, nextHeightScale, harvestStateChanged, Time.time);
+            if (harvestStateChanged)
+                DispatchHarvestAudioTransition(instanceUid, templateIndex, previousHarvestState, nextHarvestState, instancePosition);
+
             if (nextHealth > 0.0001f)
             {
                 PersistFloraStateOverride(instanceUid, templateIndex, instancePosition, underwater, activeIndex, baseHealth, nextHealth);
@@ -1505,6 +1528,12 @@ namespace Hecton8.World
                 if (record.InstanceUid == 0u)
                     continue;
 
+                if (ResolveDescriptorIndexByPersistentIdHash(record.ItemPersistentIdHash) < 0)
+                {
+                    registry.TryClearDestroyedFlora(record.InstanceUid);
+                    continue;
+                }
+
                 if (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(record.InstanceUid))
                     continue;
 
@@ -1543,14 +1572,21 @@ namespace Hecton8.World
                     continue;
                 }
 
+                int descriptorIndex = ResolveDescriptorIndexByPersistentIdHash(record.ItemPersistentIdHash);
+                if (descriptorIndex < 0)
+                {
+                    registry.TryClearFloraStateOverride(record.InstanceUid);
+                    continue;
+                }
+
                 PersistentWorldRegistry.UnpackFloraStateOverride(record.Quantity, out float persistedHealth01, out byte persistedHarvestState);
-                float normalizedHealth = Mathf.Clamp01(persistedHealth01);
+                float normalizedHealth = math.saturate(persistedHealth01);
                 float normalizedHeightScale = ResolveNormalizedHeightScaleFromHarvestState(
-                    ResolveDescriptorIndexByPersistentIdHash(record.ItemPersistentIdHash),
+                    descriptorIndex,
                     normalizedHealth,
                     ResolvePersistedHarvestState(persistedHarvestState));
                 _persistedHealth01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)normalizedHealth);
-                _persistedHeightScale01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)Mathf.Clamp01(normalizedHeightScale));
+                _persistedHeightScale01ByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)math.saturate(normalizedHeightScale));
             }
         }
 
@@ -2500,15 +2536,19 @@ namespace Hecton8.World
             int templateIndex,
             float baseHealth,
             float currentHealth,
+            float transitionHeightScale,
+            bool harvestStateChanged,
             float currentTime)
         {
             float damage01 = ResolveDamageProgress(baseHealth, currentHealth);
             UpdateDamageProgressCache(instanceUid, damage01);
-            if (damage01 <= 0.0001f)
+            if (damage01 <= 0.0001f && !harvestStateChanged)
                 return;
 
-            float normalizedHealth = Mathf.Clamp01(currentHealth / math.max(0.0001f, baseHealth));
-            float normalizedHeightScale = ResolveNormalizedHeightScale(templateIndex, baseHealth, currentHealth);
+            float normalizedHealth = math.saturate(currentHealth / math.max(0.0001f, baseHealth));
+            float normalizedHeightScale = harvestStateChanged
+                ? math.saturate(transitionHeightScale)
+                : ResolveCurrentNormalizedHeightScale(underwater, activeIndex, instanceUid, normalizedHealth);
             ApplyDamageToLaneInstance(underwater, activeIndex, instanceUid, templateIndex, normalizedHealth, damage01, normalizedHeightScale, currentTime);
         }
 
@@ -2660,32 +2700,17 @@ namespace Hecton8.World
         private void DispatchHarvestAudioTransition(
             uint instanceUid,
             int templateIndex,
-            float baseHealth,
-            float previousHealth,
-            float nextHealth,
-            bool underwater,
-            int activeIndex,
+            HarvestState previousState,
+            HarvestState nextState,
             Vector3 instancePosition)
         {
-            if (templateIndex < 0 || templateIndex >= _templateDescriptors.Length || previousHealth <= 0.0001f)
+            if (templateIndex < 0 ||
+                templateIndex >= _templateDescriptors.Length ||
+                instanceUid == 0u ||
+                previousState == nextState)
+            {
                 return;
-
-            float previousHeightScale = ResolveCurrentNormalizedHeightScale(
-                underwater,
-                activeIndex,
-                instanceUid,
-                Mathf.Clamp01(previousHealth / Mathf.Max(0.0001f, baseHealth)));
-            HarvestState previousState = ResolveHarvestState(templateIndex, baseHealth, previousHealth, previousHeightScale);
-            HarvestState nextState = nextHealth > 0.0001f
-                ? ResolveHarvestState(
-                    templateIndex,
-                    baseHealth,
-                    nextHealth,
-                    ResolveNormalizedHeightScale(templateIndex, baseHealth, nextHealth))
-                : HarvestState.Dead;
-
-            if (previousState == nextState)
-                return;
+            }
 
             AudioClip clip = ResolveHarvestAudioClip(ResolveDescriptorAudioMaterialId(templateIndex), nextState);
             if (clip == null)
@@ -2770,18 +2795,27 @@ namespace Hecton8.World
             if (!matrices.IsCreated || activeIndex < 0 || activeIndex >= matrices.Length)
                 return;
 
-            if (_nextSporeAcousticTimeByInstanceUid.TryGetValue(instanceUid, out float nextAllowedTime) && currentTime < nextAllowedTime)
-                return;
-
             AudioClip clip = ResolveMatureSporeAcousticClip(templateIndex);
             if (clip == null)
                 return;
 
             float pulseFrequency = ResolveMatureSporePulseFrequency(templateIndex);
-            float intervalSeconds = 1f / math.max(0.05f, pulseFrequency);
+            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
+            float phaseOffset01 = ResolveSporeShaderPhaseOffset01(instancePosition);
+            if (!_nextSporeAcousticTimeByInstanceUid.TryGetValue(instanceUid, out float nextAllowedTime))
+            {
+                nextAllowedTime = ResolveNextSporePulseTime(currentTime, pulseFrequency, phaseOffset01);
+                _nextSporeAcousticTimeByInstanceUid.TryAdd(instanceUid, nextAllowedTime);
+                if (currentTime < nextAllowedTime)
+                    return;
+            }
+            else if (currentTime < nextAllowedTime)
+            {
+                return;
+            }
+
             float volume = ResolveMatureSporeAcousticVolume(templateIndex);
             float pitch = ResolveMatureSporeAcousticPitch(pulseFrequency);
-            Vector3 instancePosition = ExtractTranslation(matrices[activeIndex]);
             AbsoluteUniversePosition soundAup = AbsoluteUniversePosition.FromRuntimePosition(instancePosition);
             SporeAcousticEvent acousticEvent = new SporeAcousticEvent(
                 soundAup,
@@ -2789,11 +2823,13 @@ namespace Hecton8.World
                 clip,
                 pulseFrequency,
                 volume,
-                pitch);
+                pitch,
+                nextAllowedTime,
+                phaseOffset01);
             DispatchSporeAcousticEvent(in acousticEvent);
 
             _nextSporeAcousticTimeByInstanceUid.Remove(instanceUid);
-            _nextSporeAcousticTimeByInstanceUid.TryAdd(instanceUid, currentTime + intervalSeconds);
+            _nextSporeAcousticTimeByInstanceUid.TryAdd(instanceUid, ResolveNextSporePulseTime(currentTime + 0.0001f, pulseFrequency, phaseOffset01));
         }
 
         private static void DispatchSporeAcousticEvent(in SporeAcousticEvent acousticEvent)
@@ -2804,6 +2840,8 @@ namespace Hecton8.World
                     acousticEvent.PositionAup,
                     acousticEvent.Clip,
                     acousticEvent.PulseFrequencyHz,
+                    acousticEvent.SimulationTimeSeconds,
+                    acousticEvent.PhaseOffset01,
                     acousticEvent.Volume);
                 return;
             }
@@ -2813,6 +2851,19 @@ namespace Hecton8.World
                 acousticEvent.RuntimePosition,
                 acousticEvent.Volume,
                 acousticEvent.Pitch);
+        }
+
+        private static float ResolveSporeShaderPhaseOffset01(Vector3 instancePosition)
+        {
+            return math.frac((instancePosition.x * SporeShaderPhasePositionX + instancePosition.z * SporeShaderPhasePositionZ) * InvTwoPi);
+        }
+
+        private static float ResolveNextSporePulseTime(float simulationTimeSeconds, float pulseFrequencyHz, float phaseOffset01)
+        {
+            float safePulseFrequency = math.max(MinimumSporePulseFrequencyHz, pulseFrequencyHz);
+            float currentCycle = simulationTimeSeconds * safePulseFrequency + phaseOffset01 - SporePulsePeakPhase01;
+            float nextCycle = math.floor(currentCycle) + 1f;
+            return (nextCycle + SporePulsePeakPhase01 - phaseOffset01) / safePulseFrequency;
         }
 
         private static bool IsMatureGrowth(HectonVegetationInstanceData metadata)
@@ -2849,7 +2900,7 @@ namespace Hecton8.World
                 templateIndex >= 0 &&
                 templateIndex < _sporePulseFrequencyByDescriptorIndex.Length)
             {
-                return Mathf.Max(0.05f, _sporePulseFrequencyByDescriptorIndex[templateIndex]);
+                return Mathf.Max(MinimumSporePulseFrequencyHz, _sporePulseFrequencyByDescriptorIndex[templateIndex]);
             }
 
             return 1f;
@@ -2935,7 +2986,7 @@ namespace Hecton8.World
             if (instanceUid == 0u || templateIndex < 0 || templateIndex >= _templateDescriptors.Length)
                 return;
 
-            float normalizedHealth = Mathf.Clamp01(currentHealth / math.max(0.0001f, baseHealth));
+            float normalizedHealth = math.saturate(currentHealth / math.max(0.0001f, baseHealth));
             float normalizedHeightScale = ResolveCurrentNormalizedHeightScale(underwater, activeIndex, instanceUid, normalizedHealth);
             HarvestState harvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, normalizedHeightScale);
             if (PersistentWorldRegistry.IsPristineFloraState(normalizedHealth, normalizedHeightScale))
@@ -3338,13 +3389,13 @@ namespace Hecton8.World
             if (_baseScaleByInstanceUid.IsCreated &&
                 _baseScaleByInstanceUid.TryGetValue(instanceUid, out float2 baseScale))
             {
-                float clampedHeight01 = Mathf.Clamp01(normalizedHeightScale);
+                float clampedHeight01 = math.saturate(normalizedHeightScale);
                 harvestState = ResolveHarvestState(templateIndex, baseScale.x, baseScale.x * clampedHeight01, clampedHeight01);
                 HectonVegetationInstanceData damageMetadata = metadata[activeIndex];
                 damageMetadata.HeightScale = -Mathf.Max(MinimumDecomposedHeightScale, baseScale.x * clampedHeight01);
                 damageMetadata.WidthScale = currentTime - (Mathf.Clamp01(damage01) * OrganicWiltDurationSeconds);
                 damageMetadata.RuntimeState = ResolveHarvestStateRuntimeState(harvestState);
-                damageMetadata.HealthNormalized = Mathf.Clamp01(normalizedHealth);
+                damageMetadata.HealthNormalized = math.saturate(normalizedHealth);
                 metadata[activeIndex] = damageMetadata;
                 return;
             }
@@ -3352,7 +3403,7 @@ namespace Hecton8.World
             ApplyDamageMetadata(ref metadata, activeIndex, damage01, currentTime);
             HectonVegetationInstanceData fallbackMetadata = metadata[activeIndex];
             fallbackMetadata.RuntimeState = ResolveHarvestStateRuntimeState(harvestState);
-            fallbackMetadata.HealthNormalized = Mathf.Clamp01(normalizedHealth);
+            fallbackMetadata.HealthNormalized = math.saturate(normalizedHealth);
             metadata[activeIndex] = fallbackMetadata;
         }
 
@@ -3715,6 +3766,11 @@ namespace Hecton8.World
             }
 
             return -1;
+        }
+
+        internal bool HasTemplatePersistentIdHash(ulong floraPersistentIdHash)
+        {
+            return ResolveDescriptorIndexByPersistentIdHash(floraPersistentIdHash) >= 0;
         }
 
         private static HarvestState ResolvePersistedHarvestState(byte packedHarvestState)

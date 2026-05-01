@@ -262,7 +262,7 @@ namespace Hecton8.World
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             instance.RegisterDefoliantDeadZone(worldPosition, safeRadius);
-            instance.Enqueue(worldPosition, new float4(0f, 0f, 0f, -math.max(1f, clampedIntensity)));
+            instance.EnqueueRadiusClamped(worldPosition, safeRadius, new float4(0f, 0f, 0f, -math.max(1f, clampedIntensity)));
             RegisterChemicalTransient(worldPosition, clampedIntensity);
 
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
@@ -451,6 +451,36 @@ namespace Hecton8.World
             _pendingWriteCount++;
         }
 
+        private void EnqueueRadiusClamped(Vector3 worldPosition, float radiusMeters, float4 delta)
+        {
+            if (!TryWorldSphereToCellBounds(new float3(worldPosition.x, worldPosition.y, worldPosition.z), radiusMeters, out int3 minCell, out int3 maxCell))
+                return;
+
+            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
+            float radiusSq = safeRadius * safeRadius;
+            float3 center = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            float3 safeCellSize = math.max(_cellSizeWS, new float3(MinimumCellDimension));
+            for (int z = minCell.z; z <= maxCell.z; z++)
+            {
+                for (int y = minCell.y; y <= maxCell.y; y++)
+                {
+                    for (int x = minCell.x; x <= maxCell.x; x++)
+                    {
+                        if (_pendingWriteCount >= _pendingWrites.Length)
+                            return;
+
+                        float3 cellCenter = _gridOriginWS + ((new float3(x, y, z) + new float3(0.5f)) * safeCellSize);
+                        if (math.lengthsq(cellCenter - center) > radiusSq)
+                            continue;
+
+                        _pendingWrites[_pendingWriteCount].WorldPosition = cellCenter;
+                        _pendingWrites[_pendingWriteCount].Delta = delta;
+                        _pendingWriteCount++;
+                    }
+                }
+            }
+        }
+
         private void RegisterDefoliantDeadZone(Vector3 worldPosition, float radiusMeters)
         {
             Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
@@ -500,7 +530,9 @@ namespace Hecton8.World
                 if (!TryWorldToCell(write.WorldPosition, out int3 cell))
                     continue;
 
-                int flatIndex = Flatten(cell);
+                if (!TryFlatten(cell, out int flatIndex))
+                    continue;
+
                 float4 next = _overlayGrid[flatIndex] + write.Delta;
                 _overlayGrid[flatIndex] = ClampChemicalChannels(next, math.max(0.1f, maximumChannelIntensity));
             }
@@ -671,10 +703,59 @@ namespace Hecton8.World
             return true;
         }
 
-        private int Flatten(int3 cell)
+        private bool TryWorldSphereToCellBounds(float3 worldPosition, float radiusMeters, out int3 minCell, out int3 maxCell)
         {
             int3 dimensions = ResolveDimensions();
-            return cell.x + (cell.y * dimensions.x) + (cell.z * dimensions.x * dimensions.y);
+            minCell = int3.zero;
+            maxCell = int3.zero;
+            if (dimensions.x <= 0 || dimensions.y <= 0 || dimensions.z <= 0)
+                return false;
+
+            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
+            float3 safeCellSize = math.max(_cellSizeWS, new float3(MinimumCellDimension));
+            float3 localMin = worldPosition - new float3(safeRadius) - _gridOriginWS;
+            float3 localMax = worldPosition + new float3(safeRadius) - _gridOriginWS;
+            int3 rawMin = new int3(
+                (int)math.floor(localMin.x / safeCellSize.x),
+                (int)math.floor(localMin.y / safeCellSize.y),
+                (int)math.floor(localMin.z / safeCellSize.z));
+            int3 rawMax = new int3(
+                (int)math.floor(localMax.x / safeCellSize.x),
+                (int)math.floor(localMax.y / safeCellSize.y),
+                (int)math.floor(localMax.z / safeCellSize.z));
+
+            if (rawMax.x < 0 || rawMax.y < 0 || rawMax.z < 0 ||
+                rawMin.x >= dimensions.x || rawMin.y >= dimensions.y || rawMin.z >= dimensions.z)
+            {
+                return false;
+            }
+
+            int3 lastCell = dimensions - new int3(1);
+            minCell = math.clamp(rawMin, int3.zero, lastCell);
+            maxCell = math.clamp(rawMax, int3.zero, lastCell);
+            return minCell.x <= maxCell.x && minCell.y <= maxCell.y && minCell.z <= maxCell.z;
+        }
+
+        private bool TryFlatten(int3 cell, out int flatIndex)
+        {
+            flatIndex = -1;
+            int3 dimensions = ResolveDimensions();
+            if (cell.x < 0 || cell.y < 0 || cell.z < 0 ||
+                cell.x >= dimensions.x || cell.y >= dimensions.y || cell.z >= dimensions.z)
+            {
+                return false;
+            }
+
+            int resolvedIndex = cell.x + (cell.y * dimensions.x) + (cell.z * dimensions.x * dimensions.y);
+            if (resolvedIndex < 0 ||
+                (_frontGrid.IsCreated && resolvedIndex >= _frontGrid.Length) ||
+                (_overlayGrid.IsCreated && resolvedIndex >= _overlayGrid.Length))
+            {
+                return false;
+            }
+
+            flatIndex = resolvedIndex;
+            return true;
         }
 
         private bool TrySampleNormalizedChannelsInternal(float3 worldPosition, out float4 normalizedChannels)
@@ -700,7 +781,16 @@ namespace Hecton8.World
                 return true;
             }
 
-            float4 combinedChannels = _frontGrid[Flatten(cell)] + _overlayGrid[Flatten(cell)];
+            if (!TryFlatten(cell, out int flatIndex))
+            {
+                if (!insideDeadZone)
+                    return false;
+
+                normalizedChannels = new float4(0f, 0f, 0f, -1f);
+                return true;
+            }
+
+            float4 combinedChannels = _frontGrid[flatIndex] + _overlayGrid[flatIndex];
             float inverseMaxIntensity = 1f / math.max(0.1f, maximumChannelIntensity);
             float4 normalized = combinedChannels * inverseMaxIntensity;
             normalizedChannels = new float4(

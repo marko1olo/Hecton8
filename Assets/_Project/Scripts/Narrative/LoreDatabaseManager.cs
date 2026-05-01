@@ -28,7 +28,7 @@ namespace Hecton8.Narrative
     /// <summary>
     /// Typed lore acquisition event routed through the global modding event bus.
     /// </summary>
-    public sealed class LoreAcquiredEvent : HectonEvent
+    internal sealed class LoreAcquiredEvent : HectonEvent
     {
         /// <summary>
         /// Create one hashed lore acquisition payload.
@@ -221,6 +221,8 @@ namespace Hecton8.Narrative
         private NativeArray<uint> _unlockedWords;
         private JobHandle _disposeHandle;
         private HectonEventSubscription _loreAcquiredSubscription;
+        private bool _recordLookupBuilt;
+        private bool _recordLookupCollisionLogged;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -699,12 +701,32 @@ namespace Hecton8.Narrative
 
         private void BuildLookupIfNeeded()
         {
-            if (_recordIndexByHash.Count == s_records.Length)
+            if (_recordLookupBuilt)
                 return;
 
             _recordIndexByHash.Clear();
             for (int i = 0; i < s_records.Length; i++)
-                _recordIndexByHash[s_records[i].LogHash] = i;
+            {
+                uint logHash = s_records[i].LogHash;
+                if (_recordIndexByHash.TryGetValue(logHash, out int existingIndex))
+                    LogRecordHashCollision(logHash, existingIndex, i);
+
+                _recordIndexByHash[logHash] = i;
+            }
+
+            _recordLookupBuilt = true;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogRecordHashCollision(uint logHash, int existingIndex, int duplicateIndex)
+        {
+            if (_recordLookupCollisionLogged)
+                return;
+
+            _recordLookupCollisionLogged = true;
+            Debug.LogError(
+                $"[LoreDatabaseManager] Duplicate lore hash 0x{logHash:X8} at record indices {existingIndex} and {duplicateIndex}. Last record remains addressable; earlier record is shadowed.");
         }
 
         private void EnsureUnlockStorage()

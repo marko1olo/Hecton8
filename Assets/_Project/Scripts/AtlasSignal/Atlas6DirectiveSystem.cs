@@ -90,6 +90,8 @@ namespace Hecton8.AtlasSignal
         private static readonly Dictionary<uint, string> _conflictIdsByHash = new Dictionary<uint, string>(8);
         private static NativeQueue<Atlas6EventPayload> _pendingEvents;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

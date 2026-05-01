@@ -3,6 +3,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.World;
 
@@ -13,7 +14,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Transport/Vehicle Motor")]
-    public sealed class VehicleMotor : MonoBehaviour
+    public sealed class VehicleMotor : MonoBehaviour, IOriginShiftListener, ILateFrameTickable
     {
         internal struct SubmarineState
         {
@@ -53,6 +54,7 @@ namespace Hecton8.Gameplay
         private const float SlopeDot45Degrees = 0.70710678f;
         private const float GroundAlignmentSharpness = 10f;
         private const float MinDepthViscosityReferenceMeters = 100f;
+        private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
         private const float WakeEmissionSpeedThresholdMetersPerSecond = 15f;
         private const float WakeLifetimeSeconds = 0.45f;
         private const float WakeRadiusMeters = 5.5f;
@@ -81,6 +83,13 @@ namespace Hecton8.Gameplay
         [Tooltip("Vertical-axis multiplier applied to depth-scaled quadratic drag. Keeps ballast motion heavier than forward drive.")]
         [SerializeField, Min(0f)] private float hydrodynamicVerticalDragScale = 1.25f;
 
+        [Header("-- Headless Presentation -----------")]
+        [Tooltip("Optional visual-only submarine root interpolated from the authoritative NativeArray state in the late-frame dispatcher lane.")]
+        [SerializeField] private Transform headlessVisualRoot;
+
+        [Tooltip("Interpolation sharpness used when smoothing the visual-only submarine root toward the headless kinematic state.")]
+        [SerializeField, Min(0.01f)] private float headlessVisualInterpolationSharpness = 18f;
+
         private Rigidbody _body;
         private CapsuleCollider _capsule;
         private NativeArray<SubmarineState> _submarineState;
@@ -103,10 +112,15 @@ namespace Hecton8.Gameplay
         private float _hydrodynamicDepthMeters;
         private bool _isEntangled;
         private bool _wakeRegistryRegistered;
+        private bool _registeredOriginShiftListener;
+        private bool _registeredLateFrameTick;
+        private bool _visualTeleportPending;
         private Vector3 _entanglementAnchorPosition;
+        private AbsoluteUniversePosition _floraAnchorAup;
         private float _entanglementTetherLength;
         private float _lastEntanglementTensionNewtons;
         private float _lastKelpDensity01;
+        private bool _hasFloraAnchorAup;
         private float _lastBlockingImpactSpeedMetersPerSecond;
         private Vector3 _lastBlockingImpactPoint;
         private Vector3 _lastBlockingImpactNormal = Vector3.up;
@@ -134,6 +148,27 @@ namespace Hecton8.Gameplay
         /// <summary>Last normalized dense-flora drag density sampled by the vehicle motor.</summary>
         public float LastKelpDensity01 => _lastKelpDensity01;
 
+        internal static bool TryResolveForBody(Rigidbody body, out VehicleMotor motor)
+        {
+            motor = null;
+            if (body == null)
+                return false;
+
+            for (int i = 0; i < _registeredWakeMotors.Length; i++)
+            {
+                VehicleMotor candidate = _registeredWakeMotors[i];
+                if (candidate == null || candidate._body != body)
+                    continue;
+
+                motor = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        internal AbsoluteUniversePositionBlit128 FloraAnchorAup => _hasFloraAnchorAup ? _floraAnchorAup.ToAlignedBlit() : default;
+
         internal float LastBlockingImpactSpeedMetersPerSecond => _lastBlockingImpactSpeedMetersPerSecond;
 
         internal Vector3 LastBlockingImpactPoint => _lastBlockingImpactPoint;
@@ -149,16 +184,22 @@ namespace Hecton8.Gameplay
             EnsureHydrodynamicGhostState();
             EnsureHydrodynamicWakeState();
             RegisterWakeMotor();
+            TryRegisterOriginShiftListener();
+            TryRegisterLateFrameTickable();
             ResetRuntimeState();
         }
 
         private void OnEnable()
         {
             RegisterWakeMotor();
+            TryRegisterOriginShiftListener();
+            TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
         {
+            TryUnregisterLateFrameTickable();
+            TryUnregisterOriginShiftListener();
             UnregisterWakeMotor();
             DisposeScheduledSweepState();
             DisposeHydrodynamicWakeState();
@@ -168,6 +209,8 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregisterLateFrameTickable();
+            TryUnregisterOriginShiftListener();
             UnregisterWakeMotor();
             DisposeScheduledSweepState();
             DisposeHydrodynamicWakeState();
@@ -186,12 +229,15 @@ namespace Hecton8.Gameplay
             _hydrodynamicDepthMeters = 0f;
             _isEntangled = false;
             _entanglementAnchorPosition = Vector3.zero;
+            _floraAnchorAup = default;
             _entanglementTetherLength = 0f;
             _lastEntanglementTensionNewtons = 0f;
             _lastKelpDensity01 = 0f;
+            _hasFloraAnchorAup = false;
             _lastBlockingImpactSpeedMetersPerSecond = 0f;
             _lastBlockingImpactPoint = Vector3.zero;
             _lastBlockingImpactNormal = Vector3.up;
+            _visualTeleportPending = true;
             ResetHydrodynamicGhostState();
             ResetHydrodynamicWakeState();
             WriteSubmarineState(_body != null ? _body.position : Vector3.zero, _body != null ? _body.rotation : Quaternion.identity);
@@ -248,8 +294,10 @@ namespace Hecton8.Gameplay
 
             _localAngularVelocityDegrees = Vector3.zero;
             _entanglementAnchorPosition = anchorPosition;
+            _floraAnchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
             _entanglementTetherLength = resolvedTetherLength;
             _lastEntanglementTensionNewtons = 0f;
+            _hasFloraAnchorAup = true;
             _isEntangled = true;
         }
 
@@ -258,9 +306,40 @@ namespace Hecton8.Gameplay
         {
             _isEntangled = false;
             _entanglementAnchorPosition = Vector3.zero;
+            _floraAnchorAup = default;
             _entanglementTetherLength = 0f;
             _localAngularVelocityDegrees = Vector3.zero;
             _lastEntanglementTensionNewtons = 0f;
+            _hasFloraAnchorAup = false;
+        }
+
+        internal bool WouldAmbientForceExtendEntanglement(Vector3 force, ForceMode mode, float fixedDeltaTime)
+        {
+            if (!_isEntangled || _body == null || fixedDeltaTime <= 0f)
+                return false;
+
+            Vector3 velocityDelta = ResolveVelocityDelta(force, mode, math.max(_body.mass, 0.0001f), fixedDeltaTime);
+            if (velocityDelta.sqrMagnitude <= MinVectorMagnitudeSq)
+                return false;
+
+            Vector3 candidateVelocity = HectonPlayerMotor.SafeVelocity(_body.linearVelocity + velocityDelta, _linearVelocity);
+            Vector3 predictedRelative = (_body.worldCenterOfMass + candidateVelocity * fixedDeltaTime) - _entanglementAnchorPosition;
+            float tetherLength = math.max(MinEntanglementTetherMeters, _entanglementTetherLength);
+            return predictedRelative.sqrMagnitude > tetherLength * tetherLength;
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            ApplyOriginShift(shiftData.ShiftOffset);
+            if (shiftData.IsSafeTeleport)
+                _visualTeleportPending = true;
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            ApplyHeadlessVisualInterpolation();
         }
 
         /// <summary>Applies a floating-origin shift to cached kinematic positions owned by the motor.</summary>
@@ -279,6 +358,7 @@ namespace Hecton8.Gameplay
                 _lastBlockingImpactPoint -= shiftOffset;
 
             RebaseHydrodynamicWakeState(shiftOffset);
+            _visualTeleportPending = true;
 
             if (_body != null)
                 WriteSubmarineState(_body.position, _body.rotation);
@@ -374,7 +454,7 @@ namespace Hecton8.Gameplay
                     angularDampingFactor);
                 _localAngularVelocityDegrees = HectonPlayerMotor.SafeVelocity(localAngularVelocityDegrees);
 
-                Quaternion deltaRotation = Quaternion.Euler(_localAngularVelocityDegrees * safeDeltaTime);
+                Quaternion deltaRotation = ComposeAxisAngleDegrees(_localAngularVelocityDegrees * safeDeltaTime);
                 Quaternion targetRotation = _body.rotation * deltaRotation;
                 targetRotation = ResolveGroundAlignedRotation(targetRotation, safeDeltaTime);
                 _body.MoveRotation(targetRotation);
@@ -604,9 +684,8 @@ namespace Hecton8.Gameplay
             if (safeBaseDrag <= 0f)
                 return 0f;
 
-            float depthViscosityScale = math.log10(1f + (_hydrodynamicDepthMeters / MinDepthViscosityReferenceMeters));
-            float depthDragCoefficient = safeBaseDrag * math.max(0f, depthViscosityScale);
-            return depthDragCoefficient;
+            float depthViscosityScale = 1f + math.log(1f + (_hydrodynamicDepthMeters / MinDepthViscosityReferenceMeters));
+            return safeBaseDrag * math.max(1f, depthViscosityScale);
         }
 
         private Vector3 ApplyKelpPushback(Vector3 velocity, float deltaTime)
@@ -646,7 +725,9 @@ namespace Hecton8.Gameplay
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             float speed = math.length(velocity3);
-            if (speed <= 0.0001f || dragCoefficient <= 0f)
+            if (speed < DenormalVelocityFlushThresholdMetersPerSecond)
+                return Vector3.zero;
+            if (dragCoefficient <= 0f)
                 return velocity;
 
             float safeDeltaTime = math.max(deltaTime, 0.0001f);
@@ -655,11 +736,44 @@ namespace Hecton8.Gameplay
             return new Vector3(result.x, result.y, result.z);
         }
 
+        private static Vector3 ResolveVelocityDelta(Vector3 force, ForceMode mode, float mass, float fixedDeltaTime)
+        {
+            Vector3 safeForce = HectonPlayerMotor.SafeVelocity(force);
+            switch (mode)
+            {
+                case ForceMode.Force:
+                    return safeForce * (fixedDeltaTime / math.max(mass, 0.0001f));
+
+                case ForceMode.Acceleration:
+                    return safeForce * fixedDeltaTime;
+
+                case ForceMode.Impulse:
+                    return safeForce / math.max(mass, 0.0001f);
+
+                case ForceMode.VelocityChange:
+                    return safeForce;
+
+                default:
+                    return Vector3.zero;
+            }
+        }
+
+        private static Quaternion ComposeAxisAngleDegrees(Vector3 eulerDegrees)
+        {
+            quaternion pitch = quaternion.AxisAngle(new float3(1f, 0f, 0f), eulerDegrees.x * Mathf.Deg2Rad);
+            quaternion yaw = quaternion.AxisAngle(new float3(0f, 1f, 0f), eulerDegrees.y * Mathf.Deg2Rad);
+            quaternion roll = quaternion.AxisAngle(new float3(0f, 0f, 1f), eulerDegrees.z * Mathf.Deg2Rad);
+            quaternion composed = math.mul(yaw, math.mul(pitch, roll));
+            return new Quaternion(composed.value.x, composed.value.y, composed.value.z, composed.value.w);
+        }
+
         private Vector3 ApplyDirectionalAnalyticalDrag(Vector3 velocity, Quaternion hullRotation, float dragCoefficient, float deltaTime)
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             float speed = math.length(velocity3);
-            if (speed <= 0.0001f || dragCoefficient <= 0f)
+            if (speed < DenormalVelocityFlushThresholdMetersPerSecond)
+                return Vector3.zero;
+            if (dragCoefficient <= 0f)
                 return velocity;
 
             Vector3 localVelocity = Quaternion.Inverse(hullRotation) * velocity;
@@ -868,6 +982,87 @@ namespace Hecton8.Gameplay
             }
 
             _wakeRegistryRegistered = false;
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_registeredOriginShiftListener || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShiftListener = true;
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            if (!_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _registeredOriginShiftListener = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = true;
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = false;
+        }
+
+        private void ApplyHeadlessVisualInterpolation()
+        {
+            if (headlessVisualRoot == null || !_submarineState.IsCreated || _submarineState.Length <= 0)
+                return;
+
+            if (_body != null && ReferenceEquals(headlessVisualRoot, _body.transform))
+                return;
+
+            if (ReferenceEquals(headlessVisualRoot, transform))
+                return;
+
+            SubmarineState state = _submarineState[0];
+            float3 targetPosition = state.RuntimePosition;
+            quaternion targetRotation = state.RuntimeRotation;
+            if (!math.all(math.isfinite(targetPosition)) || !math.all(math.isfinite(targetRotation.value)))
+                return;
+
+            if (_visualTeleportPending)
+            {
+                headlessVisualRoot.SetPositionAndRotation(
+                    new Vector3(targetPosition.x, targetPosition.y, targetPosition.z),
+                    new Quaternion(targetRotation.value.x, targetRotation.value.y, targetRotation.value.z, targetRotation.value.w));
+                _visualTeleportPending = false;
+                return;
+            }
+
+            Vector3 currentPositionVector = headlessVisualRoot.position;
+            Quaternion currentRotationQuaternion = headlessVisualRoot.rotation;
+            float3 currentPosition = new float3(currentPositionVector.x, currentPositionVector.y, currentPositionVector.z);
+            quaternion currentRotation = new quaternion(
+                currentRotationQuaternion.x,
+                currentRotationQuaternion.y,
+                currentRotationQuaternion.z,
+                currentRotationQuaternion.w);
+            if (!math.all(math.isfinite(currentPosition)) || !math.all(math.isfinite(currentRotation.value)))
+                return;
+
+            float alpha = math.saturate(Time.deltaTime * math.max(0.01f, headlessVisualInterpolationSharpness));
+            float3 nextPosition = math.lerp(currentPosition, targetPosition, alpha);
+            quaternion nextRotation = math.slerp(currentRotation, targetRotation, alpha);
+            headlessVisualRoot.SetPositionAndRotation(
+                new Vector3(nextPosition.x, nextPosition.y, nextPosition.z),
+                new Quaternion(nextRotation.value.x, nextRotation.value.y, nextRotation.value.z, nextRotation.value.w));
         }
 
         private void EnsureSubmarineState()

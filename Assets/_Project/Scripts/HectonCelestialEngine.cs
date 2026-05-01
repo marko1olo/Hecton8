@@ -1879,7 +1879,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             _planetShineLight.intensity = 0f;
             _planetShineLight.shadows = LightShadows.None;
             _planetShineLight.renderMode = LightRenderMode.Auto;
-            _planetShineLight.cullingMask = ~HectonLayerMasks.CelestialLayerMask;
+            _planetShineLight.cullingMask = HectonLayerMasks.AllDefinedProjectLayersMask & ~HectonLayerMasks.CelestialLayerMask;
         }
 
         private void CleanupPlanetShineLight()

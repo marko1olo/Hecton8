@@ -5,6 +5,12 @@ Verification: `PENDING VERIFICATION`
 
 Short entry point for kelp/coral/flora work. This file does not replace `AGENTS.md` or `Docs/PROCEDURAL_ASSET_PIPELINE.md`. It exists so an agent does not need to parse large legacy flora docs before acting.
 
+## 2026-05-01 Current-State Boundary
+
+- Use this as flora execution orientation, not as runtime proof.
+- Completion, beauty, performance, texture import, material validity, and scene/runtime scatter wiring remain `PENDING VERIFICATION` until validators, console, profiler, or asset readback prove them.
+- Current project truth starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+
 ## Authority Order
 
 1. `AGENTS.md`

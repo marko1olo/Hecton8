@@ -632,12 +632,12 @@ namespace LlockhamIndustries.Decals
             {
                 if (instanceID == 0)
                 {
-                    instanceID = GetInstanceID();
+                    instanceID = unchecked((int)EntityId.ToULong(GetEntityId()));
                 }
-                else if (instanceID != GetInstanceID())
+                else if (instanceID != unchecked((int)EntityId.ToULong(GetEntityId())))
                 {
                     //Duplicate detected
-                    instanceID = GetInstanceID();
+                    instanceID = unchecked((int)EntityId.ToULong(GetEntityId()));
 
                     //Clone properties
                     properties = (ProjectionProperty[])properties.Clone();

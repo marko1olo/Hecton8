@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
@@ -23,7 +24,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Map Tab")]
-    public sealed class PDAMapTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable
+    public sealed class PDAMapTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPDAEventListener
     {
         private const string SonarMapShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader";
         private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
@@ -35,6 +36,10 @@ namespace Hecton8.UI
         private const int PointCloudAxis = 16;
         private const int PointCloudCapacity = PointCloudAxis * PointCloudAxis * PointCloudAxis;
         private const int SonarPointStrideBytes = 32;
+        private const int MaxMarkerVisuals = 64;
+        private const int MarkerUpdateQueueCapacity = 128;
+        private const int MaxMarkerUiUpdatesPerLateFrame = 10;
+        private const float MarkerVisualSize = 7f;
 
         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
@@ -263,10 +268,21 @@ namespace Hecton8.UI
         private float sourceRefreshInterval = 0.2f;
 
         private readonly Vector4[] _threatPings = new Vector4[MaxThreatPings]; // COLD ALLOC: Vector4[8] - PDA sonar-map threat ping upload cache - owner: PDAMapTab
+        private readonly uint[] _pendingMarkerHashes = new uint[MarkerUpdateQueueCapacity]; // COLD ALLOC: uint[128] - time-sliced PDA marker update queue - owner: PDAMapTab
+        private readonly RectTransform[] _markerVisualRoots = new RectTransform[MaxMarkerVisuals]; // COLD ALLOC: RectTransform[64] - prebuilt PDA map marker visual pool - owner: PDAMapTab
+        private readonly CanvasGroup[] _markerVisualGroups = new CanvasGroup[MaxMarkerVisuals]; // COLD ALLOC: CanvasGroup[64] - marker visibility controls without SetActive - owner: PDAMapTab
+        private readonly Image[] _markerVisualImages = new Image[MaxMarkerVisuals]; // COLD ALLOC: Image[64] - marker icon tint targets - owner: PDAMapTab
+        private readonly uint[] _markerHashByVisualSlot = new uint[MaxMarkerVisuals]; // COLD ALLOC: uint[64] - marker hash to visual slot ownership - owner: PDAMapTab
+        private readonly Dictionary<uint, int> _markerVisualSlotByHash = new Dictionary<uint, int>(MaxMarkerVisuals); // COLD ALLOC: Dictionary<uint,int>[64] - marker visual slot lookup - owner: PDAMapTab
         private bool _registered;
         private bool _registeredLateFrame;
+        private bool _pdaEventsRegistered;
         private float _refreshCountdown;
         private float _animationTime;
+        private int _pendingMarkerReadIndex;
+        private int _pendingMarkerWriteIndex;
+        private int _pendingMarkerCount;
+        private int _nextMarkerVisualSlot;
         private int _activeVolumeVersion = -1;
         private int _activeThreatPingCount;
         private Texture3D _sdfTexture;
@@ -285,6 +301,7 @@ namespace Hecton8.UI
         private HectonVoxelVolume _activeVolume;
         private CharBufferPool.Lease _statusBufferLease;
         private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] - PDA map point-cloud basis corners - owner: PDAMapTab
+        private RectTransform _markerOverlayRoot;
 
         private void Awake()
         {
@@ -295,21 +312,27 @@ namespace Hecton8.UI
         {
             EnsureBuilt();
             TryAcquireStatusBuffer();
+            TryRegisterPDAEvents();
             RegisterToTickManager();
             RefreshMapSource(force: true);
         }
 
         private void OnDisable()
         {
+            UnregisterPDAEvents();
             UnregisterFromTickManager();
             CompleteCartographyJobIfNeeded(applyTexture: false);
+            ClearPendingMarkerUpdates();
             ReleaseStatusBuffer();
         }
 
         private void OnDestroy()
         {
+            UnregisterPDAEvents();
+            PDAEvents.AssertUnregistered(this, nameof(PDAMapTab));
             UnregisterFromTickManager();
             CompleteCartographyJobIfNeeded(applyTexture: false);
+            ClearPendingMarkerUpdates();
             ReleaseStatusBuffer();
             ReleaseResources();
         }
@@ -339,6 +362,16 @@ namespace Hecton8.UI
         {
             CompleteCartographyJobIfNeeded(applyTexture: true);
             RenderPointCloud();
+            ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
+        }
+
+        /// <inheritdoc />
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            if ((PDAEventType)payload.EventType != PDAEventType.MarkerChanged)
+                return;
+
+            EnqueueMarkerUpdate(payload.MarkerHashID);
         }
 
         private void RegisterToTickManager()
@@ -381,6 +414,24 @@ namespace Hecton8.UI
             _registeredLateFrame = true;
         }
 
+        private void TryRegisterPDAEvents()
+        {
+            if (_pdaEventsRegistered)
+                return;
+
+            PDAEvents.Register(this);
+            _pdaEventsRegistered = true;
+        }
+
+        private void UnregisterPDAEvents()
+        {
+            if (!_pdaEventsRegistered)
+                return;
+
+            PDAEvents.Unregister(this);
+            _pdaEventsRegistered = false;
+        }
+
         private void EnsureBuilt()
         {
             RectTransform root = transform as RectTransform;
@@ -413,6 +464,8 @@ namespace Hecton8.UI
                 mapImage.color = Color.white;
                 mapImage.raycastTarget = false;
             }
+
+            EnsureMarkerOverlayBuilt();
 
             if (statusLabel == null)
             {
@@ -476,6 +529,43 @@ namespace Hecton8.UI
             RectTransform rect = owner.GetComponent<RectTransform>();
             rect.SetParent(parent, false);
             return rect;
+        }
+
+        private void EnsureMarkerOverlayBuilt()
+        {
+            if (_markerOverlayRoot != null || mapImage == null)
+                return;
+
+            RectTransform mapRect = mapImage.rectTransform;
+            if (mapRect == null)
+                return;
+
+            _markerOverlayRoot = CreateRect("MarkerOverlay", mapRect);
+            _markerOverlayRoot.anchorMin = Vector2.zero;
+            _markerOverlayRoot.anchorMax = Vector2.one;
+            _markerOverlayRoot.offsetMin = Vector2.zero;
+            _markerOverlayRoot.offsetMax = Vector2.zero;
+
+            for (int i = 0; i < MaxMarkerVisuals; i++)
+            {
+                RectTransform markerRoot = CreateRect("Marker", _markerOverlayRoot);
+                markerRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                markerRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                markerRoot.sizeDelta = new Vector2(MarkerVisualSize, MarkerVisualSize);
+
+                Image markerImage = markerRoot.gameObject.AddComponent<Image>();
+                markerImage.raycastTarget = false;
+                markerImage.color = Color.clear;
+
+                CanvasGroup group = markerRoot.gameObject.AddComponent<CanvasGroup>();
+                group.alpha = 0f;
+                group.blocksRaycasts = false;
+                group.interactable = false;
+
+                _markerVisualRoots[i] = markerRoot;
+                _markerVisualGroups[i] = group;
+                _markerVisualImages[i] = markerImage;
+            }
         }
 
         private void RefreshMapSource(bool force)
@@ -830,6 +920,158 @@ namespace Hecton8.UI
                 receiveShadows = false
             };
             Graphics.RenderPrimitives(renderParams, MeshTopology.Points, _pointCloudVertexCount);
+        }
+
+        private void EnqueueMarkerUpdate(uint markerHashId)
+        {
+            if (markerHashId == 0u)
+                return;
+
+            if (_pendingMarkerCount >= MarkerUpdateQueueCapacity)
+            {
+                _pendingMarkerReadIndex++;
+                if (_pendingMarkerReadIndex >= MarkerUpdateQueueCapacity)
+                    _pendingMarkerReadIndex = 0;
+                _pendingMarkerCount--;
+            }
+
+            _pendingMarkerHashes[_pendingMarkerWriteIndex] = markerHashId;
+            _pendingMarkerWriteIndex++;
+            if (_pendingMarkerWriteIndex >= MarkerUpdateQueueCapacity)
+                _pendingMarkerWriteIndex = 0;
+
+            _pendingMarkerCount++;
+        }
+
+        private bool TryDequeueMarkerUpdate(out uint markerHashId)
+        {
+            markerHashId = 0u;
+            if (_pendingMarkerCount <= 0)
+                return false;
+
+            markerHashId = _pendingMarkerHashes[_pendingMarkerReadIndex];
+            _pendingMarkerHashes[_pendingMarkerReadIndex] = 0u;
+            _pendingMarkerReadIndex++;
+            if (_pendingMarkerReadIndex >= MarkerUpdateQueueCapacity)
+                _pendingMarkerReadIndex = 0;
+
+            _pendingMarkerCount--;
+            return markerHashId != 0u;
+        }
+
+        private void ProcessPendingMarkerUpdates(int maxUpdates)
+        {
+            if (_pendingMarkerCount <= 0 || maxUpdates <= 0)
+                return;
+
+            EnsureMarkerOverlayBuilt();
+            if (_markerOverlayRoot == null)
+            {
+                ClearPendingMarkerUpdates();
+                return;
+            }
+
+            PDAMarkerRegistry markerRegistry = PDAMarkerRegistry.Instance;
+            if (markerRegistry == null)
+            {
+                ClearPendingMarkerUpdates();
+                return;
+            }
+
+            int processed = 0;
+            while (processed < maxUpdates && TryDequeueMarkerUpdate(out uint markerHashId))
+            {
+                if (!markerRegistry.TryGetMarkerByHash(markerHashId, out PDAMarkerSnapshot marker))
+                {
+                    processed++;
+                    continue;
+                }
+
+                ApplyMarkerVisualization(in marker);
+                processed++;
+            }
+        }
+
+        private void ApplyMarkerVisualization(in PDAMarkerSnapshot marker)
+        {
+            if (!TryResolveMarkerVisualSlot(marker.MarkerHashID, out int slot))
+                return;
+
+            RectTransform markerRoot = _markerVisualRoots[slot];
+            CanvasGroup group = _markerVisualGroups[slot];
+            Image markerImage = _markerVisualImages[slot];
+            if (markerRoot == null || group == null || markerImage == null || _markerOverlayRoot == null)
+                return;
+
+            Vector3 playerPosition = ResolvePlayerPosition();
+            float radius = Mathf.Max(1f, AcousticOverlayRadiusMeters);
+            float normalizedX = Mathf.Clamp01(((marker.Position.x - playerPosition.x) / (radius * 2f)) + 0.5f);
+            float normalizedY = Mathf.Clamp01(((marker.Position.z - playerPosition.z) / (radius * 2f)) + 0.5f);
+            Rect overlayRect = _markerOverlayRoot.rect;
+            markerRoot.anchoredPosition = new Vector2(
+                (normalizedX - 0.5f) * overlayRect.width,
+                (normalizedY - 0.5f) * overlayRect.height);
+
+            markerImage.color = ResolveMarkerColor(marker.IconType);
+            group.alpha = 1f;
+            group.blocksRaycasts = false;
+            group.interactable = false;
+        }
+
+        private bool TryResolveMarkerVisualSlot(uint markerHashId, out int slot)
+        {
+            if (markerHashId == 0u)
+            {
+                slot = -1;
+                return false;
+            }
+
+            if (_markerVisualSlotByHash.TryGetValue(markerHashId, out slot))
+                return true;
+
+            slot = _nextMarkerVisualSlot;
+            _nextMarkerVisualSlot++;
+            if (_nextMarkerVisualSlot >= MaxMarkerVisuals)
+                _nextMarkerVisualSlot = 0;
+
+            uint previousHash = _markerHashByVisualSlot[slot];
+            if (previousHash != 0u)
+                _markerVisualSlotByHash.Remove(previousHash);
+
+            _markerHashByVisualSlot[slot] = markerHashId;
+            _markerVisualSlotByHash[markerHashId] = slot;
+            return true;
+        }
+
+        private static Color ResolveMarkerColor(MarkerIconType iconType)
+        {
+            switch (iconType)
+            {
+                case MarkerIconType.Resource:
+                    return new Color(0.32f, 0.94f, 0.58f, 0.9f);
+                case MarkerIconType.Hazard:
+                    return new Color(1f, 0.25f, 0.18f, 0.92f);
+                case MarkerIconType.Shelter:
+                    return new Color(0.35f, 0.72f, 1f, 0.9f);
+                case MarkerIconType.Objective:
+                    return new Color(1f, 0.85f, 0.28f, 0.94f);
+                case MarkerIconType.Vehicle:
+                    return new Color(0.82f, 0.62f, 1f, 0.9f);
+                case MarkerIconType.Beacon:
+                    return new Color(0.42f, 1f, 0.94f, 0.9f);
+                default:
+                    return new Color(0.7f, 0.96f, 1f, 0.86f);
+            }
+        }
+
+        private void ClearPendingMarkerUpdates()
+        {
+            for (int i = 0; i < _pendingMarkerHashes.Length; i++)
+                _pendingMarkerHashes[i] = 0u;
+
+            _pendingMarkerReadIndex = 0;
+            _pendingMarkerWriteIndex = 0;
+            _pendingMarkerCount = 0;
         }
 
         private void EnsureSdfTexture(Vector3Int gridDimensions)

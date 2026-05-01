@@ -1,0 +1,1088 @@
+diff --git a/Assets/_Project/Art/Shaders/HectonCausticsProjector.compute b/Assets/_Project/Art/Shaders/HectonCausticsProjector.compute
+index bb77eea9..f0d73223 100644
+--- a/Assets/_Project/Art/Shaders/HectonCausticsProjector.compute
++++ b/Assets/_Project/Art/Shaders/HectonCausticsProjector.compute
+@@ -73,11 +73,22 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
+     float sharpness = max(_HectonCausticsSimulationParamsB.x, 0.1);
+     float secondaryWeight = saturate(_HectonCausticsSimulationParamsB.y);
+     float timeValue = _HectonCausticsSimulationParamsB.z;
++    float waveDisplacement = _HectonCausticsSimulationParamsC.x;
++    float2 waveFlow = _HectonCausticsSimulationParamsC.yz;
++    float wavePhase = _HectonCausticsSimulationParamsC.w;
++    float waveDisplacementAbs = abs(waveDisplacement);
++    float2 waveOffset = waveFlow * 0.0125 + float2(waveDisplacement * 0.018, -waveDisplacement * 0.013);
++    uv += waveOffset;
++    primaryDensity *= lerp(0.94, 1.08, saturate(waveDisplacementAbs * 0.2));
++    secondaryDensity *= lerp(0.92, 1.12, saturate(length(waveFlow) * 0.08));
+ 
+-    float primaryLayer = VoronoiRidge(uv + float2(timeValue * primarySpeed, -timeValue * primarySpeed * 0.61), primaryDensity, timeValue * primarySpeed);
+-    float secondaryLayer = VoronoiRidge(uv + float2(-timeValue * secondarySpeed * 0.73, timeValue * secondarySpeed), secondaryDensity, timeValue * secondarySpeed + 17.0);
++    float primaryTime = timeValue * primarySpeed + wavePhase;
++    float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0;
++    float primaryLayer = VoronoiRidge(uv + float2(primaryTime, -primaryTime * 0.61), primaryDensity, primaryTime);
++    float secondaryLayer = VoronoiRidge(uv + float2(-secondaryTime * 0.73, secondaryTime), secondaryDensity, secondaryTime);
+     float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
+     combined = pow(saturate(combined * 2.3), sharpness);
++    combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
+     combined = saturate(combined * 1.35);
+ 
+     _HectonCausticsOutput[dispatchThreadId.xy] = combined;
+diff --git a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
+index 9abddd6e..ecc5dd6c 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
+@@ -469,6 +469,11 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
+             return lerp(-_HectonCaveVoxelHalfExtents.w, _HectonCaveVoxelHalfExtents.w, encoded);
+         }
+ 
++        float ResolveCaveVoxelFogFade(float signedDistance)
++        {
++            return saturate(signedDistance * 2.0);
++        }
++
+         float EvaluateFlashlightVoxelShadowRay(float3 rayOriginWS, float3 rayDirectionWS, float rayLength)
+         {
+             if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5 || rayLength <= 0.0001)
+@@ -656,8 +661,14 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
+             {
+                 float travelDistance = min(rayLength, ((stepIndex + jitter) * stepLength));
+                 float3 samplePositionWS = cameraPositionWS + rayDirectionWS * travelDistance;
+-                if (_HectonCaveVoxelActive > 0.5 && SampleCaveVoxelSignedDistance(samplePositionWS) <= 0.02)
+-                    break;
++                float caveFogFade = 1.0;
++                if (_HectonCaveVoxelActive > 0.5)
++                {
++                    float signedDistance = SampleCaveVoxelSignedDistance(samplePositionWS);
++                    caveFogFade = ResolveCaveVoxelFogFade(signedDistance);
++                    if (caveFogFade <= 0.0001)
++                        break;
++                }
+ 
+                 half3 scattering =
+                     EvaluateHeadlightScattering(samplePositionWS, rayDirectionWS) +
+@@ -673,9 +684,10 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
+                 float siltField = ResolveSiltField(samplePositionWS + wakeTurbulence + brakeTurbulence, rayDirectionWS, surfaceProximity);
+                 siltField *= lerp(1.0, 1.0 + wakeDisplacement * 1.35, wakeDisplacement);
+                 siltField *= 1.0 + brakeImpulse * 2.4;
+-                scattering *= (1.0 + siltField);
++                scattering *= (1.0 + siltField) * caveFogFade;
+                 float distanceFade = exp2(-travelDistance * extinction);
+                 distanceFade *= exp2(-(siltField + brakeImpulse * 0.75) * 0.035);
++                distanceFade *= caveFogFade;
+                 accumulated += scattering * (distanceFade * stepLength);
+             }
+ 
+diff --git a/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs b/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+index bdcca1c9..856e49ca 100644
+--- a/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
++++ b/Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs
+@@ -1,5 +1,6 @@
+ using System.Runtime.InteropServices;
+ using Hecton8.Core;
++using Hecton8.Optimization;
+ using Hecton8.World;
+ using Unity.Collections;
+ using Unity.Mathematics;
+@@ -66,8 +67,8 @@ namespace Hecton8.Environment
+         [SerializeField] private Material marineSnowMaterial;
+ 
+         [Header("── Population ─────────────────")]
+-        [Tooltip("Maximum compute-simulated marine-snow particles. MX350 budget = 32768.")]
+-        [SerializeField, Range(512, 32768)] private int maxParticles = 32768;
++        [Tooltip("Maximum compute-simulated plankton particles. Runtime buffer sizing supports up to 100000 particles; tune lower on MX350 scenes that cannot afford the overdraw.")]
++        [SerializeField, Range(512, 100000)] private int maxParticles = 100000;
+         [Tooltip("Empty safety radius around the camera to avoid particles clipping through the visor.")]
+         [SerializeField, Range(0.1f, 4f)] private float innerRadius = 0.8f;
+         [Tooltip("Outer shell radius. Particles respawn to the ring when they drift beyond this distance.")]
+@@ -126,6 +127,7 @@ namespace Hecton8.Environment
+         private float _flowFieldCellSize;
+         private float _flowFieldUploadTimer;
+         private float _simulationTime;
++        private int _activeParticleCount;
+         private bool _registeredTick;
+         private bool _buffersReady;
+         private bool _staticBindingsDirty = true;
+@@ -136,6 +138,10 @@ namespace Hecton8.Environment
+         private float _lastSubmergeImpulse;
+         private Vector3 _flowFieldCenterWS;
+         private Vector3 _lastUploadedFlowFieldCenterWS;
++        [SerializeField] private int _debugActiveParticleCount;
++        [SerializeField] private float _debugAdaptiveRenderScale = 1f;
++        [SerializeField] private float _debugAdaptiveBudgetScale = 1f;
++        [SerializeField] private VRAMMonitor.VRAMPressureState _debugAdaptiveVramPressureState;
+ 
+         /// <summary>
+         /// True when the compute path has all required resources and can replace the fallback particle system.
+@@ -236,6 +242,7 @@ namespace Hecton8.Environment
+             if (!_buffersReady)
+                 return;
+ 
++            _activeParticleCount = ResolveActiveParticleCount();
+             RefreshFlowFieldUpload(dt);
+             ApplyStaticBindingsIfNeeded();
+             UpdateFrameConstants(math.max(0f, dt));
+@@ -456,7 +463,7 @@ namespace Hecton8.Environment
+                     math.min(verticalSpan.x, verticalSpan.y),
+                     math.max(verticalSpan.x, verticalSpan.y)),
+                 MetaParams = new Vector4(
+-                    maxParticles,
++                    _activeParticleCount,
+                     _flowFieldResolution,
+                     Time.frameCount & 1023,
+                     activeFlag)
+@@ -484,7 +491,7 @@ namespace Hecton8.Environment
+             if (_flowFieldBuffer != null)
+                 marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, _flowFieldBuffer);
+ 
+-            int groupCount = (math.max(64, maxParticles) + ThreadGroupSize - 1) / ThreadGroupSize;
++            int groupCount = (_activeParticleCount + ThreadGroupSize - 1) / ThreadGroupSize;
+             marineSnowCompute.Dispatch(_kernelIndex, groupCount, 1, 1);
+ 
+             marineSnowMaterial.SetBuffer(ShaderIds.ParticlesRenderId, writeBuffer);
+@@ -510,7 +517,7 @@ namespace Hecton8.Environment
+                 camera = _targetCameraComponent,
+                 lightProbeUsage = LightProbeUsage.Off
+             };
+-            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, math.max(64, maxParticles));
++            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, _activeParticleCount);
+         }
+ 
+         private void ReleaseBuffers()
+@@ -545,6 +552,39 @@ namespace Hecton8.Environment
+             value ^= value >> 14;
+             return (value & 0x00FFFFFFu) * (1f / 16777215f);
+         }
++
++        private int ResolveActiveParticleCount()
++        {
++            int capacity = math.max(64, maxParticles);
++            float budgetScale = 1f;
++
++            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
++            float renderScale = scaler != null ? math.saturate(scaler.CurrentRenderScale) : 1f;
++            budgetScale *= math.clamp(renderScale, 0.45f, 1f);
++            _debugAdaptiveRenderScale = renderScale;
++
++            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
++            VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
++                ? vramMonitor.PressureState
++                : VRAMMonitor.VRAMPressureState.Stable;
++
++            switch (pressureState)
++            {
++                case VRAMMonitor.VRAMPressureState.Critical:
++                    budgetScale *= 0.45f;
++                    break;
++                case VRAMMonitor.VRAMPressureState.Warning:
++                    budgetScale *= 0.7f;
++                    break;
++            }
++
++            _debugAdaptiveVramPressureState = pressureState;
++            _debugAdaptiveBudgetScale = budgetScale;
++
++            int resolvedCount = math.clamp((int)math.round(capacity * budgetScale), 64, capacity);
++            _debugActiveParticleCount = resolvedCount;
++            return resolvedCount;
++        }
+     }
+ }
+ 
+diff --git a/Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs b/Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs
+index 806abce8..72988cb4 100644
+--- a/Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs
++++ b/Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs
+@@ -102,11 +102,14 @@ namespace Hecton8.Visor
+         private bool _computeReady;
+         private int _kernelIndex = -1;
+         private float _fade01;
++        private IHectonOceanKinematics _oceanKinematics;
+         private HectonSurvivalSystem _survivalSystem;
+         private Transform _playerTransform;
+         private Camera _gameplayCamera;
+         private RenderTexture _causticsTexture;
+         private Vector4 _worldRect;
++        [SerializeField] private float _debugWaveDisplacement;
++        [SerializeField] private Vector2 _debugWaveFlow;
+ 
+         private void Awake()
+         {
+@@ -156,10 +159,11 @@ namespace Hecton8.Visor
+ 
+             float waterLevel = ResolveWaterLevel();
+             float timeValue = Time.unscaledTime;
++            Vector4 waveCoupling = ResolveWaveCoupling(waterLevel);
+             causticsCompute.SetTexture(_kernelIndex, _CausticsOutputId, _causticsTexture);
+             causticsCompute.SetVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
+             causticsCompute.SetVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, 0f));
+-            causticsCompute.SetVector(_CausticsSimulationParamsCId, new Vector4(_worldRect.x, _worldRect.y, _worldRect.z, _worldRect.w));
++            causticsCompute.SetVector(_CausticsSimulationParamsCId, waveCoupling);
+             causticsCompute.SetVector(_CausticsTexelSizeId, new Vector4(1f / FieldResolution, 1f / FieldResolution, FieldResolution, FieldResolution));
+ 
+             int dispatchCount = (int)math.ceil(FieldResolution / (float)ThreadGroupSize);
+@@ -222,6 +226,9 @@ namespace Hecton8.Visor
+                     ? GlobalRegistry.Player.PlayerCamera
+                     : ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
+             }
++
++            if (_oceanKinematics == null || !_oceanKinematics.IsAvailable)
++                _oceanKinematics = HectonOceanRegistry.ActiveProvider;
+         }
+ 
+         private void EnsureResources()
+@@ -266,6 +273,33 @@ namespace Hecton8.Visor
+             _computeReady = _kernelIndex >= 0;
+         }
+ 
++        private Vector4 ResolveWaveCoupling(float waterLevel)
++        {
++            _debugWaveDisplacement = 0f;
++            _debugWaveFlow = Vector2.zero;
++
++            if (_playerTransform == null || _oceanKinematics == null || !_oceanKinematics.IsAvailable)
++                return Vector4.zero;
++
++            float3 samplePosition = _playerTransform.position;
++            samplePosition.y = waterLevel;
++            if (!_oceanKinematics.TrySampleWaveKinematics(
++                    samplePosition,
++                    minSpatialLength: 2f,
++                    out _,
++                    out _,
++                    out float3 surfaceVelocity,
++                    out float3 displacement))
++            {
++                return Vector4.zero;
++            }
++
++            _debugWaveDisplacement = displacement.y;
++            _debugWaveFlow = new Vector2(surfaceVelocity.x, surfaceVelocity.z);
++            float couplingPhase = displacement.y * 0.31f + math.length(surfaceVelocity.xz) * 0.08f;
++            return new Vector4(displacement.y, surfaceVelocity.x, surfaceVelocity.z, couplingPhase);
++        }
++
+         private void ReleaseResources()
+         {
+             if (_causticsTexture != null)
+diff --git a/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheBootstrap.cs b/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheBootstrap.cs
+index 8026ffe2..fdb87750 100644
+--- a/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheBootstrap.cs
++++ b/Assets/_Project/Scripts/World/HectonCrestOceanDepthCacheBootstrap.cs
+@@ -45,6 +45,8 @@ namespace Hecton8.World
+         private const int DefaultCaptureLayerMask = 1;
+         private static int TerrainLayer = int.MinValue;
+         private static int TerrainLayerWithTrailingSpace = int.MinValue;
++        private static int VoxelCaveLayer = int.MinValue;
++        private static int VoxelCaveLayerWithTrailingSpace = int.MinValue;
+ 
+         [Header("-- References ----------------")]
+         [Tooltip("Explicit Crest ocean owner. Auto-resolved from the prefab root when left empty.")]
+@@ -105,6 +107,12 @@ namespace Hecton8.World
+ 
+             if (TerrainLayerWithTrailingSpace == int.MinValue)
+                 TerrainLayerWithTrailingSpace = LayerMask.NameToLayer("Terrain ");
++
++            if (VoxelCaveLayer == int.MinValue)
++                VoxelCaveLayer = LayerMask.NameToLayer("VoxelCave");
++
++            if (VoxelCaveLayerWithTrailingSpace == int.MinValue)
++                VoxelCaveLayerWithTrailingSpace = LayerMask.NameToLayer("VoxelCave ");
+         }
+ 
+         private void OnEnable()
+@@ -606,18 +614,26 @@ namespace Hecton8.World
+ 
+         private static int ResolveCaptureLayerMask()
+         {
+-            int resolvedMask = LayerMask.GetMask("Default", "Terrain", "Terrain ");
++            int resolvedMask = LayerMask.GetMask("Default", "Terrain", "Terrain ", "VoxelCave", "VoxelCave ");
+             if (resolvedMask != 0)
+                 return resolvedMask;
+ 
++            int fallbackMask = DefaultCaptureLayerMask;
+             int terrainLayer = TerrainLayer;
+             if (terrainLayer < 0)
+                 terrainLayer = TerrainLayerWithTrailingSpace;
+ 
+             if (terrainLayer >= 0)
+-                return DefaultCaptureLayerMask | (1 << terrainLayer);
++                fallbackMask |= 1 << terrainLayer;
++
++            int voxelCaveLayer = VoxelCaveLayer;
++            if (voxelCaveLayer < 0)
++                voxelCaveLayer = VoxelCaveLayerWithTrailingSpace;
++
++            if (voxelCaveLayer >= 0)
++                fallbackMask |= 1 << voxelCaveLayer;
+ 
+-            return DefaultCaptureLayerMask;
++            return fallbackMask;
+         }
+ 
+         private static bool IsFinite(float value)
+
+
+# Untracked files
+
+diff --git a/Assets/_Project/Scripts/World/WreckMaterialRegistry.cs b/Assets/_Project/Scripts/World/WreckMaterialRegistry.cs
+new file mode 100644
+index 00000000..76b61b70
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/WreckMaterialRegistry.cs
+@@ -0,0 +1,585 @@
++using Hecton8.Core;
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEngine;
++using UnityEngine.Rendering;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Owns the render contracts for procedural wreck modules and publishes them through BRG direct draws.
++    /// </summary>
++    [DisallowMultipleComponent]
++    public sealed class WreckMaterialRegistry : MonoBehaviour, IOriginShiftListener
++    {
++        private const int MaxModuleContracts = 16;
++        private const string IndirectWreckShaderName = "Hecton8/World/WreckIndirectLit";
++        private static readonly int _WreckMatricesId = Shader.PropertyToID("_HectonWreckMatrices");
++
++        [System.Serializable]
++        private struct ModuleRenderContract
++        {
++            [Tooltip("Optional mesh override. When empty, the generator structural mesh for the same module slot is used.")]
++            public Mesh MeshOverride;
++
++            [Tooltip("Optional material override. When empty, the tier fallback material is used.")]
++            public Material MaterialOverride;
++
++            [Tooltip("Submesh index used by the BRG draw.")]
++            public int SubMeshIndex;
++
++            [Tooltip("Shadow mode used by the BRG draw.")]
++            public ShadowCastingMode ShadowCastingMode;
++
++            [Tooltip("Receive-shadows flag used by the BRG draw.")]
++            public bool ReceiveShadows;
++        }
++
++        private sealed class ModuleBatch
++        {
++            private readonly WreckMaterialRegistry _owner;
++            private readonly int _moduleIndex;
++            private BatchRendererGroup _batchRendererGroup;
++            private NativeArray<MetadataValue> _batchMetadata;
++            private GraphicsBuffer _batchHandleBuffer;
++            private BatchID _batchId;
++            private BatchMeshID _batchMeshId;
++            private BatchMaterialID _batchMaterialId;
++            private Mesh _registeredMesh;
++            private Material _registeredMaterial;
++            private Material _runtimeMaterial;
++            private Material _materialSource;
++            private Material _runtimeMaterialSource;
++            private Shader _runtimeShader;
++            private GraphicsBuffer _matrixBuffer;
++            private NativeList<Matrix4x4> _matrices;
++            private Bounds _drawBounds;
++            private Mesh _mesh;
++            private int _subMeshIndex;
++            private int _layer;
++            private ShadowCastingMode _shadowCastingMode;
++            private bool _receiveShadows;
++            private bool _ownsRuntimeMaterial;
++
++            public ModuleBatch(WreckMaterialRegistry owner, int moduleIndex)
++            {
++                _owner = owner;
++                _moduleIndex = moduleIndex;
++            }
++
++            public bool HasContent => _matrices.IsCreated && _matrices.Length > 0;
++
++            public void EnsureCapacity(int minimumCapacity)
++            {
++                int nextCapacity = math.max(1, minimumCapacity);
++                if (!_matrices.IsCreated)
++                {
++                    _matrices = new NativeList<Matrix4x4>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxPlacements] - BRG wreck module matrix staging - owner: WreckMaterialRegistry
++                    return;
++                }
++
++                if (_matrices.Capacity < nextCapacity)
++                    _matrices.Capacity = nextCapacity;
++            }
++
++            public void Reset()
++            {
++                if (_matrices.IsCreated)
++                    _matrices.Clear();
++            }
++
++            public void Configure(
++                Mesh mesh,
++                Material material,
++                int subMeshIndex,
++                ShadowCastingMode shadowCastingMode,
++                bool receiveShadows,
++                int layer)
++            {
++                _mesh = mesh;
++                _materialSource = material;
++                _subMeshIndex = math.max(0, subMeshIndex);
++                _shadowCastingMode = shadowCastingMode;
++                _receiveShadows = receiveShadows;
++                _layer = layer;
++            }
++
++            public void AddMatrix(Matrix4x4 matrix)
++            {
++                if (_matrices.IsCreated)
++                    _matrices.Add(matrix);
++            }
++
++            public void Publish(Bounds drawBounds)
++            {
++                _drawBounds = drawBounds;
++                if (_mesh == null || _materialSource == null || !_matrices.IsCreated || _matrices.Length <= 0)
++                    return;
++
++                EnsureResources();
++                EnsureRuntimeMaterial();
++                EnsureMatrixBufferCapacity(_matrices.Length);
++                if (_batchRendererGroup == null || _runtimeMaterial == null || _matrixBuffer == null)
++                    return;
++
++                GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _matrices.AsArray(), _matrices.Length);
++                _runtimeMaterial.SetBuffer(_WreckMatricesId, _matrixBuffer);
++                _batchRendererGroup.SetBatchBuffer(_batchId, _matrixBuffer.bufferHandle);
++                SyncBatchRegistration();
++                _batchRendererGroup.SetGlobalBounds(_drawBounds);
++            }
++
++            public void ApplyOriginShift(Vector3 runtimeOffset)
++            {
++                if (_matrices.IsCreated)
++                {
++                    int count = _matrices.Length;
++                    for (int i = 0; i < count; i++)
++                    {
++                        Matrix4x4 matrix = _matrices[i];
++                        matrix.m03 += runtimeOffset.x;
++                        matrix.m13 += runtimeOffset.y;
++                        matrix.m23 += runtimeOffset.z;
++                        _matrices[i] = matrix;
++                    }
++
++                    if (_matrixBuffer != null && count > 0)
++                        GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _matrices.AsArray(), count);
++                }
++
++                _drawBounds.center += runtimeOffset;
++                if (_batchRendererGroup != null)
++                    _batchRendererGroup.SetGlobalBounds(_drawBounds);
++            }
++
++            public void Dispose()
++            {
++                if (_batchRendererGroup != null)
++                {
++                    if (!_batchMeshId.Equals(default))
++                        _batchRendererGroup.UnregisterMesh(_batchMeshId);
++                    if (!_batchMaterialId.Equals(default))
++                        _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
++                    _batchRendererGroup.Dispose();
++                    _batchRendererGroup = null;
++                }
++
++                if (_batchMetadata.IsCreated)
++                    _batchMetadata.Dispose();
++
++                if (_batchHandleBuffer != null)
++                {
++                    _batchHandleBuffer.Release();
++                    _batchHandleBuffer = null;
++                }
++
++                if (_matrixBuffer != null)
++                {
++                    _matrixBuffer.Release();
++                    _matrixBuffer = null;
++                }
++
++                if (_ownsRuntimeMaterial && _runtimeMaterial != null)
++                {
++                    if (Application.isPlaying)
++                        Object.Destroy(_runtimeMaterial);
++                    else
++                        Object.DestroyImmediate(_runtimeMaterial);
++                }
++
++                _runtimeMaterial = null;
++                _materialSource = null;
++                _runtimeMaterialSource = null;
++                _runtimeShader = null;
++                _registeredMaterial = null;
++                _registeredMesh = null;
++                _batchMeshId = default;
++                _batchMaterialId = default;
++                _batchId = default;
++                if (_matrices.IsCreated)
++                    _matrices.Dispose();
++            }
++
++            private void EnsureResources()
++            {
++                if (_batchRendererGroup != null)
++                    return;
++
++                _batchRendererGroup = new BatchRendererGroup(new BatchRendererGroupCreateInfo
++                {
++                    cullingCallback = OnPerformCulling,
++                    userContext = System.IntPtr.Zero
++                });
++                _batchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for wreck module renderer - owner: WreckMaterialRegistry
++                _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for wreck module renderer - owner: WreckMaterialRegistry
++                _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
++            }
++
++            private void EnsureRuntimeMaterial()
++            {
++                Shader runtimeShader = _owner.ResolveRuntimeShader(_materialSource);
++                if (_runtimeMaterial != null &&
++                    _runtimeMaterialSource == _materialSource &&
++                    _runtimeShader == runtimeShader)
++                {
++                    return;
++                }
++
++                if (_ownsRuntimeMaterial && _runtimeMaterial != null)
++                {
++                    if (Application.isPlaying)
++                        Object.Destroy(_runtimeMaterial);
++                    else
++                        Object.DestroyImmediate(_runtimeMaterial);
++                }
++
++                _runtimeMaterial = null;
++                _ownsRuntimeMaterial = false;
++                _runtimeMaterialSource = null;
++                _runtimeShader = null;
++                _registeredMaterial = null;
++                _batchMaterialId = default;
++
++                if (_materialSource == null || runtimeShader == null)
++                    return;
++
++                _runtimeMaterial = new Material(runtimeShader)
++                {
++                    hideFlags = HideFlags.HideAndDontSave,
++                    name = $"__WreckModule_{_moduleIndex}_BRG",
++                    enableInstancing = true
++                }; // COLD ALLOC: Material[1] - BRG-local wreck module material clone - owner: WreckMaterialRegistry
++                _runtimeMaterial.CopyPropertiesFromMaterial(_materialSource);
++                _ownsRuntimeMaterial = true;
++                _runtimeMaterialSource = _materialSource;
++                _runtimeShader = runtimeShader;
++            }
++
++            private void EnsureMatrixBufferCapacity(int instanceCount)
++            {
++                int required = Mathf.NextPowerOfTwo(math.max(1, instanceCount));
++                if (_matrixBuffer != null && _matrixBuffer.count >= required)
++                    return;
++
++                if (_matrixBuffer != null)
++                    _matrixBuffer.Release();
++
++                _matrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - wreck module matrix upload buffer - owner: WreckMaterialRegistry
++            }
++
++            private void SyncBatchRegistration()
++            {
++                if (_batchRendererGroup == null || _mesh == null || _runtimeMaterial == null)
++                    return;
++
++                if (_registeredMesh != _mesh)
++                {
++                    if (!_batchMeshId.Equals(default))
++                        _batchRendererGroup.UnregisterMesh(_batchMeshId);
++
++                    _batchMeshId = _batchRendererGroup.RegisterMesh(_mesh);
++                    _registeredMesh = _mesh;
++                }
++
++                if (_registeredMaterial != _runtimeMaterial)
++                {
++                    if (!_batchMaterialId.Equals(default))
++                        _batchRendererGroup.UnregisterMaterial(_batchMaterialId);
++
++                    _batchMaterialId = _batchRendererGroup.RegisterMaterial(_runtimeMaterial);
++                    _registeredMaterial = _runtimeMaterial;
++                }
++            }
++
++            private JobHandle OnPerformCulling(
++                BatchRendererGroup rendererGroup,
++                BatchCullingContext cullingContext,
++                BatchCullingOutput cullingOutput,
++                System.IntPtr userContext)
++            {
++                int instanceCount = _matrices.IsCreated ? _matrices.Length : 0;
++                if (instanceCount <= 0 ||
++                    _batchId.Equals(default) ||
++                    _batchMeshId.Equals(default) ||
++                    _batchMaterialId.Equals(default))
++                {
++                    HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
++                        cullingOutput,
++                        HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
++                    return default;
++                }
++
++                if (!HectonBatchRendererGroupUtility.IsBoundsVisible(cullingContext.cullingPlanes, _drawBounds))
++                {
++                    HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
++                        cullingOutput,
++                        HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(0, 0, 0));
++                    return default;
++                }
++
++                NativeArray<byte> visibilityMask = new NativeArray<byte>(instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                int planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
++                NativeArray<float4> cullingPlanes = default;
++                if (planeCount > 0)
++                {
++                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
++                    {
++                        Plane plane = cullingContext.cullingPlanes[planeIndex];
++                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
++                    }
++                }
++
++                unsafe
++                {
++                    BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(instanceCount, 1, 1);
++                    JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
++                    {
++                        Matrices = _matrices.AsArray(),
++                        CullingPlanes = cullingPlanes,
++                        VisibilityMask = visibilityMask,
++                        InstanceCount = instanceCount,
++                        PlaneCount = planeCount,
++                        EnableCpuCulling = true,
++                        GlobalOffset = float3.zero,
++                        RadiusScale = 1.7321f,
++                        MinRadius = 0.5f
++                    }.Schedule(instanceCount, 64);
++
++                    JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
++                    {
++                        VisibilityMask = visibilityMask,
++                        InstanceCount = instanceCount,
++                        BatchId = _batchId,
++                        MeshId = _batchMeshId,
++                        MaterialId = _batchMaterialId,
++                        Layer = _layer,
++                        SubMeshIndex = _subMeshIndex,
++                        ShadowCastingMode = _shadowCastingMode,
++                        ReceiveShadows = _receiveShadows,
++                        MotionMode = MotionVectorGenerationMode.Object,
++                        VisibleInstances = output.visibleInstances,
++                        DrawCommands = output.drawCommands,
++                        DrawRanges = output.drawRanges,
++                        OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
++                    }.Schedule(visibilityHandle);
++
++                    JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
++                    if (cullingPlanes.IsCreated)
++                        disposeHandle = cullingPlanes.Dispose(disposeHandle);
++
++                    return disposeHandle;
++                }
++            }
++        }
++
++        [Header("Indirect Shader")]
++        [SerializeField]
++        [Tooltip("Shader used by BRG wreck draws. Must consume _HectonWreckMatrices in the vertex path.")]
++        private Shader indirectWreckShader;
++
++        [Header("Tier Fallback Materials")]
++        [SerializeField]
++        [Tooltip("Fallback material used for Essential-tier wreck modules when no module override is configured.")]
++        private Material essentialTierMaterial;
++
++        [SerializeField]
++        [Tooltip("Fallback material used for Detail-tier wreck modules when no module override is configured.")]
++        private Material detailTierMaterial;
++
++        [SerializeField]
++        [Tooltip("Fallback material used for Clutter-tier wreck modules when no module override is configured.")]
++        private Material clutterTierMaterial;
++
++        [Header("Module Contracts")]
++        [SerializeField]
++        [Tooltip("Optional per-slot module render overrides. Slot index must match the generator module-definition index.")]
++        private ModuleRenderContract[] moduleContracts = new ModuleRenderContract[MaxModuleContracts];
++
++        private ModuleBatch[] _moduleBatches;
++
++        private void Awake()
++        {
++            ResolveIndirectShader();
++            EnsureBatches();
++        }
++
++        private void OnEnable()
++        {
++            ResolveIndirectShader();
++            EnsureBatches();
++            HectonFloatingOrigin.RegisterListener(this);
++        }
++
++        private void OnDisable()
++        {
++            HectonFloatingOrigin.UnregisterListener(this);
++            DisposeBatches();
++        }
++
++        private void OnDestroy()
++        {
++            HectonFloatingOrigin.UnregisterListener(this);
++            DisposeBatches();
++        }
++
++        public void OnOriginShift(in OriginShiftEventData shiftData)
++        {
++            if (!_HasUsableShift(shiftData.ShiftOffset))
++                return;
++
++            Vector3 runtimeOffset = -shiftData.ShiftOffset;
++            EnsureBatches();
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i]?.ApplyOriginShift(runtimeOffset);
++        }
++
++        /// <summary>
++        /// Publishes one wreck instance stream into the BRG-owned module batches.
++        /// </summary>
++        public void Publish(
++            ProceduralWreckModuleDefinition[] moduleDefinitions,
++            NativeArray<Matrix4x4> worldMatrices,
++            NativeArray<byte> moduleIds,
++            int instanceCount,
++            Bounds worldBounds)
++        {
++            EnsureBatches();
++            ResetAllBatches();
++
++            int moduleDefinitionCount = math.min(
++                math.min(moduleDefinitions != null ? moduleDefinitions.Length : 0, MaxModuleContracts),
++                _moduleBatches.Length);
++
++            for (int moduleIndex = 0; moduleIndex < moduleDefinitionCount; moduleIndex++)
++            {
++                ProceduralWreckModuleDefinition definition = moduleDefinitions[moduleIndex];
++                if (!definition.EmitsGeometry)
++                    continue;
++
++                Mesh mesh = moduleContracts != null &&
++                            moduleIndex < moduleContracts.Length &&
++                            moduleContracts[moduleIndex].MeshOverride != null
++                    ? moduleContracts[moduleIndex].MeshOverride
++                    : definition.StructuralMesh;
++                Material material = ResolveMaterialForModule(moduleIndex, definition.DrawCallPriority);
++                if (mesh == null || material == null)
++                    continue;
++
++                ModuleRenderContract contract = moduleContracts != null && moduleIndex < moduleContracts.Length
++                    ? moduleContracts[moduleIndex]
++                    : default;
++
++                ModuleBatch batch = _moduleBatches[moduleIndex];
++                batch.EnsureCapacity(math.max(1, instanceCount));
++                batch.Configure(
++                    mesh,
++                    material,
++                    contract.SubMeshIndex,
++                    contract.ShadowCastingMode,
++                    contract.ReceiveShadows,
++                    gameObject.layer);
++            }
++
++            int safeCount = math.min(instanceCount, math.min(worldMatrices.Length, moduleIds.Length));
++            for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex++)
++            {
++                int moduleIndex = moduleIds[instanceIndex];
++                if (moduleIndex < 0 || moduleIndex >= moduleDefinitionCount)
++                    continue;
++
++                ModuleBatch batch = _moduleBatches[moduleIndex];
++                if (batch == null)
++                    continue;
++
++                batch.AddMatrix(worldMatrices[instanceIndex]);
++            }
++
++            for (int moduleIndex = 0; moduleIndex < moduleDefinitionCount; moduleIndex++)
++            {
++                ModuleBatch batch = _moduleBatches[moduleIndex];
++                if (batch == null || !batch.HasContent)
++                    continue;
++
++                batch.Publish(worldBounds);
++            }
++        }
++
++        private void EnsureBatches()
++        {
++            if (_moduleBatches != null && _moduleBatches.Length == MaxModuleContracts)
++                return;
++
++            _moduleBatches = new ModuleBatch[MaxModuleContracts]; // COLD ALLOC: ModuleBatch[16] - procedural wreck BRG owners by module slot - owner: WreckMaterialRegistry
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i] = new ModuleBatch(this, i);
++        }
++
++        private void ResetAllBatches()
++        {
++            if (_moduleBatches == null)
++                return;
++
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i]?.Reset();
++        }
++
++        private void DisposeBatches()
++        {
++            if (_moduleBatches == null)
++                return;
++
++            for (int i = 0; i < _moduleBatches.Length; i++)
++                _moduleBatches[i]?.Dispose();
++
++            _moduleBatches = null;
++        }
++
++        private Material ResolveMaterialForModule(int moduleIndex, WreckLodTier tier)
++        {
++            if (moduleContracts != null &&
++                moduleIndex >= 0 &&
++                moduleIndex < moduleContracts.Length &&
++                moduleContracts[moduleIndex].MaterialOverride != null)
++            {
++                return moduleContracts[moduleIndex].MaterialOverride;
++            }
++
++            return tier switch
++            {
++                WreckLodTier.Essential => essentialTierMaterial,
++                WreckLodTier.Detail => detailTierMaterial,
++                _ => clutterTierMaterial
++            };
++        }
++
++        private void ResolveIndirectShader()
++        {
++            if (indirectWreckShader == null)
++                indirectWreckShader = Shader.Find(IndirectWreckShaderName);
++        }
++
++        private Shader ResolveRuntimeShader(Material sourceMaterial)
++        {
++            ResolveIndirectShader();
++            if (sourceMaterial == null)
++                return indirectWreckShader;
++
++            Shader sourceShader = sourceMaterial.shader;
++            if (sourceShader != null &&
++                string.Equals(sourceShader.name, IndirectWreckShaderName, System.StringComparison.Ordinal))
++            {
++                return sourceShader;
++            }
++
++            return indirectWreckShader != null ? indirectWreckShader : sourceShader;
++        }
++
++        private static bool _HasUsableShift(Vector3 shiftOffset)
++        {
++            return shiftOffset.sqrMagnitude > 0.0001f;
++        }
++    }
++}
+diff --git a/Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader b/Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader
+new file mode 100644
+index 00000000..06457e3d
+--- /dev/null
++++ b/Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader
+@@ -0,0 +1,165 @@
++Shader "Hecton8/World/WreckIndirectLit"
++{
++    Properties
++    {
++        _BaseMap("Base Map", 2D) = "white" {}
++        _BaseColor("Base Color", Color) = (1, 1, 1, 1)
++        _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
++        _Cutoff("Alpha Cutoff", Range(0, 1)) = 0.5
++    }
++
++    SubShader
++    {
++        Tags
++        {
++            "RenderPipeline" = "UniversalPipeline"
++            "Queue" = "Geometry"
++            "RenderType" = "Opaque"
++        }
++
++        Cull Back
++        ZWrite On
++
++        HLSLINCLUDE
++        #pragma target 4.5
++        #pragma multi_compile _ DOTS_INSTANCING_ON
++        #pragma shader_feature_local_fragment _ALPHATEST_ON
++
++        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
++        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
++
++        StructuredBuffer<float4x4> _HectonWreckMatrices;
++        TEXTURE2D(_BaseMap);
++        SAMPLER(sampler_BaseMap);
++
++        CBUFFER_START(UnityPerMaterial)
++            float4 _BaseMap_ST;
++            float4 _BaseColor;
++            float4 _EmissionColor;
++            float _Cutoff;
++        CBUFFER_END
++
++        struct Attributes
++        {
++            float4 positionOS : POSITION;
++            float3 normalOS : NORMAL;
++            float2 uv : TEXCOORD0;
++            uint instanceID : SV_InstanceID;
++        };
++
++        struct Varyings
++        {
++            float4 positionCS : SV_POSITION;
++            float3 positionWS : TEXCOORD0;
++            float3 normalWS : TEXCOORD1;
++            float2 uv : TEXCOORD2;
++        };
++
++        float4x4 ResolveWreckMatrix(uint instanceID)
++        {
++            return _HectonWreckMatrices[instanceID];
++        }
++
++        float3 TransformWreckNormal(float4x4 instanceMatrix, float3 normalOS)
++        {
++            return normalize(mul((float3x3)instanceMatrix, normalOS));
++        }
++
++        Varyings Vert(Attributes input)
++        {
++            Varyings output;
++            float4x4 instanceMatrix = ResolveWreckMatrix(input.instanceID);
++            float4 positionWS = mul(instanceMatrix, float4(input.positionOS.xyz, 1.0));
++            output.positionWS = positionWS.xyz;
++            output.normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
++            output.positionCS = TransformWorldToHClip(positionWS.xyz);
++            output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
++            return output;
++        }
++
++        half4 SampleWreckSurface(float2 uv)
++        {
++            return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
++        }
++
++        half4 Frag(Varyings input) : SV_Target
++        {
++            half4 surface = SampleWreckSurface(input.uv);
++        #if defined(_ALPHATEST_ON)
++            clip(surface.a - _Cutoff);
++        #endif
++
++            float3 normalWS = normalize(input.normalWS);
++            float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
++            Light mainLight = GetMainLight(shadowCoord);
++            half ndotl = saturate(dot(normalWS, mainLight.direction));
++            half3 diffuse = surface.rgb * (SampleSH(normalWS) + (mainLight.color * (ndotl * mainLight.shadowAttenuation)));
++            diffuse += _EmissionColor.rgb;
++            return half4(diffuse, 1.0h);
++        }
++
++        float4 GetShadowPositionHClip(Attributes input)
++        {
++            float4x4 instanceMatrix = ResolveWreckMatrix(input.instanceID);
++            float4 positionWS = mul(instanceMatrix, float4(input.positionOS.xyz, 1.0));
++            float3 normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
++            float3 lightDirectionWS = _MainLightPosition.xyz;
++            float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS.xyz, normalWS, lightDirectionWS));
++        #if UNITY_REVERSED_Z
++            positionCS.z = min(positionCS.z, UNITY_NEAR_CLIP_VALUE);
++        #else
++            positionCS.z = max(positionCS.z, UNITY_NEAR_CLIP_VALUE);
++        #endif
++            return positionCS;
++        }
++        ENDHLSL
++
++        Pass
++        {
++            Name "ForwardLit"
++            Tags { "LightMode" = "UniversalForward" }
++
++            HLSLPROGRAM
++            #pragma vertex Vert
++            #pragma fragment Frag
++            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
++            ENDHLSL
++        }
++
++        Pass
++        {
++            Name "ShadowCaster"
++            Tags { "LightMode" = "ShadowCaster" }
++            ColorMask 0
++
++            HLSLPROGRAM
++            #pragma vertex ShadowVert
++            #pragma fragment ShadowFrag
++            #pragma multi_compile_shadowcaster
++
++            struct ShadowVaryings
++            {
++                float4 positionCS : SV_POSITION;
++                float2 uv : TEXCOORD0;
++            };
++
++            ShadowVaryings ShadowVert(Attributes input)
++            {
++                ShadowVaryings output;
++                output.positionCS = GetShadowPositionHClip(input);
++                output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
++                return output;
++            }
++
++            half4 ShadowFrag(ShadowVaryings input) : SV_Target
++            {
++                half alpha = SampleWreckSurface(input.uv).a;
++            #if defined(_ALPHATEST_ON)
++                clip(alpha - _Cutoff);
++            #endif
++                return 0.0h;
++            }
++            ENDHLSL
++        }
++    }
++}

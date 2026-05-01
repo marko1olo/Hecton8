@@ -1051,8 +1051,16 @@ namespace Hecton8.World
             for (int i = 0; i < _destroyedFloraScratch.Length; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = _destroyedFloraScratch[i];
-                if (deltaRecord.InstanceUid == 0u ||
-                    !destructibleOrganicManager.IsMaterialClassRegrowable(deltaRecord.ItemPersistentIdHash))
+                if (deltaRecord.InstanceUid == 0u)
+                    continue;
+
+                if (!destructibleOrganicManager.HasTemplatePersistentIdHash(deltaRecord.ItemPersistentIdHash))
+                {
+                    registry.TryClearDestroyedFlora(deltaRecord.InstanceUid);
+                    continue;
+                }
+
+                if (!destructibleOrganicManager.IsMaterialClassRegrowable(deltaRecord.ItemPersistentIdHash))
                 {
                     continue;
                 }
@@ -1106,8 +1114,16 @@ namespace Hecton8.World
             for (int i = 0; i < _destroyedFloraScratch.Length; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = _destroyedFloraScratch[i];
-                if (deltaRecord.InstanceUid == 0u ||
-                    !destructibleOrganicManager.IsMaterialClassRegrowable(deltaRecord.ItemPersistentIdHash))
+                if (deltaRecord.InstanceUid == 0u)
+                    continue;
+
+                if (!destructibleOrganicManager.HasTemplatePersistentIdHash(deltaRecord.ItemPersistentIdHash))
+                {
+                    registry.TryClearFloraStateOverride(deltaRecord.InstanceUid);
+                    continue;
+                }
+
+                if (!destructibleOrganicManager.IsMaterialClassRegrowable(deltaRecord.ItemPersistentIdHash))
                 {
                     continue;
                 }

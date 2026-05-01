@@ -1,38 +1,61 @@
 # Root Docs Reference
 
-Date: `2026-04-17`
+Date: `2026-05-01`
 Status: `PENDING VERIFICATION`
 
-Purpose: explain what still remains in repo root after cleanup and where former root references were relocated.
+Purpose: explain what still remains in repository root versus `Docs/` after the current documentation cleanup.
 
-Root is now reduced to the smallest practical active set.
+This file is navigation only.
+It is not runtime proof.
 
-## Kept In Root
+## Repository Root Text Files Seen In Current Scan
 
-- `MASTER_RELEASE_WORK_PLAN.md` - broad production roadmap anchor.
-- `BUILD_PLAYTEST_ISSUES.md` - live validation ledger for build/runtime observations.
+| File | Current handling |
+|---|---|
+| `AGENTS.md` | active operating contract; keep in root |
+| `MASTER_RELEASE_WORK_PLAN.md` | active production roadmap anchor; keep in root unless a later roadmap migration is approved |
+| `BUILD_PLAYTEST_ISSUES.md` | active validation/build observation ledger; keep in root unless a later QA migration is approved |
+| `DOCS_GAMEPLAY_API.md` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/` |
+| `THIRD_PARTY_POISON.md` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/`; current ACL reference is `Docs/ARCHITECTURE/THIRD_PARTY_POISON.md` |
+| `NAMING_VIOLATIONS.md` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/` |
+| `cyrillic_violations.txt` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/` |
+| `OUR PRINCIPLES - Copy.txt` | moved to `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/`; current doctrine is `AGENTS.md` plus `.agents-skills/` |
 
-## Moved Out Of Root
+## Root `Docs/` Surface After This Cleanup
 
-- `AI_CREATURE_ROSTER_ENTERPRISE.md` -> `Docs/AI_Fauna/AI_CREATURE_ROSTER_ENTERPRISE.md`
-- `AI_FAUNA_WORLD_INTEGRATION_REPORT.md` -> `Docs/AI_Fauna/AI_FAUNA_WORLD_INTEGRATION_REPORT.md`
-- `TERRAIN_108_BIOMES_VISION.md` -> `Docs/Legacy_World_Reference/TERRAIN_108_BIOMES_VISION.md`
-- `terrain_description.txt` -> `Docs/Legacy_World_Reference/terrain_description.txt`
-- `беклог.txt` -> `Docs/Legacy_Backlog/беклог.txt`
-- `спецификации.txt` -> `Docs/Legacy_Backlog/спецификации.txt`
-- `Полный_список_недоработок_и_план_разработки_—_Project_Submerge_(HECTON-8) - ЧИТАТЬ, рядом создать документ - что и как испарвляем, дианмично обновлять.md` -> `Docs/Legacy_Backlog/Полный_список_недоработок_и_план_разработки_—_Project_Submerge_(HECTON-8) - ЧИТАТЬ, рядом создать документ - что и как испарвляем, дианмично обновлять.md`
-- `Что_и_как_исправляем_—_живой_план.md` -> `Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md`
+Flat redirect stubs for flora and scatter documents were moved out of root `Docs/`.
+The current root `Docs/` folder is reduced to broad active anchors and indexes:
 
-## Why They Were Moved
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`
+- `Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
+- `Docs/PROCEDURAL_ASSET_PIPELINE.md`
+- `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
+- `Docs/QUALITY_GATES.md`
+- `Docs/SYSTEMS_CONTRACTS.md`
+- `Docs/ROOT_DOCS_REFERENCE.md`
 
-- They are still useful references, but not active runtime authority.
-- Keeping them in root created noise and hid the real active anchors.
-- Their link surface was small enough to absorb relocation safely.
+## Deprecated Root Redirect Stubs
+
+The old flat redirect stubs now live in:
+
+- `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/README.md`
+
+The encoding-damaged geology production plan now lives in:
+
+- `Docs/DEPRECATED/Encoding_Damaged_2026-05-01/README.md`
+
+The old repository-root legacy/scanner artifacts now live in:
+
+- `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/README.md`
+
+Current canonical bundle entry points:
+
+- `Docs/Flora_Pipeline/README.md`
+- `Docs/Scatter_Runtime/README.md`
 
 ## Future Cleanup Candidate
 
-If you want an even stricter root later:
-
-1. decide whether `MASTER_RELEASE_WORK_PLAN.md` should stay in root or move into `Docs`
-2. decide whether `BUILD_PLAYTEST_ISSUES.md` should stay in root or move into `Docs`
-3. replace oversized legacy backlog docs with cleaner maintained summaries if they are still consulted
+The repository root text surface is now limited to active anchors.
+If new root text files appear, classify them before treating them as current authority.

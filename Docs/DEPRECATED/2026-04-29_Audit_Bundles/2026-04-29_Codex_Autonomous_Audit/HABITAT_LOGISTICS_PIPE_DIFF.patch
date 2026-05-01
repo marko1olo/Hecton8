@@ -1,0 +1,795 @@
+﻿diff --git a/Assets/_Project/Scripts/ConstructionManager.cs b/Assets/_Project/Scripts/ConstructionManager.cs
+index 7a467c26..f2b74df9 100644
+--- a/Assets/_Project/Scripts/ConstructionManager.cs
++++ b/Assets/_Project/Scripts/ConstructionManager.cs
+@@ -103,6 +103,7 @@ namespace Hecton8.Construction
+         /// Pre-allocated. Swap-remove Ð´Ð»Ñ O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ñ.
+         /// </summary>
+         private List<GameObject> _spawnedModules;
++        private HabitatGraphManager _habitatGraphManager;
+         private bool _tickRegistered;
+         private float _slowTickAccumulator;
+         private float _ambientAccidentTimer;
+@@ -152,6 +153,8 @@ namespace Hecton8.Construction
+ 
+             // â”€â”€ Pre-allocate â”€â”€
+             _spawnedModules = new List<GameObject>(initialCapacity);
++            // COLD ALLOC: HabitatGraphManager[1] — persistent placed-module CSR adjacency owner — owner: ConstructionManager
++            _habitatGraphManager = new HabitatGraphManager(initialCapacity);
+             _ambientAccidentTimer = 0f;
+         }
+ 
+@@ -172,6 +175,11 @@ namespace Hecton8.Construction
+         private void OnDestroy()
+         {
+             TryUnregister();
++            if (_habitatGraphManager != null)
++            {
++                _habitatGraphManager.Dispose();
++                _habitatGraphManager = null;
++            }
+ 
+             if (_instance == this)
+                 _instance = null;
+@@ -234,6 +242,7 @@ namespace Hecton8.Construction
+ 
+             // â”€â”€ Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð² Ñ€ÐµÐµÑÑ‚Ñ€ â”€â”€
+             _spawnedModules.Add(module);
++            RefreshHabitatGraph();
+ 
+             UpdateDiagnostics();
+         }
+@@ -274,6 +283,7 @@ namespace Hecton8.Construction
+             if (module == null) return;
+ 
+             SwapRemove(module);
++            RefreshHabitatGraph();
+ 
+             UpdateDiagnostics();
+         }
+@@ -327,6 +337,7 @@ namespace Hecton8.Construction
+             }
+ 
+             _spawnedModules.Clear();
++            RefreshHabitatGraph();
+ 
+             UpdateDiagnostics();
+         }
+@@ -833,5 +844,13 @@ namespace Hecton8.Construction
+         {
+             _debugModuleCount = _spawnedModules.Count;
+         }
++
++        private void RefreshHabitatGraph()
++        {
++            if (_habitatGraphManager == null || _spawnedModules == null)
++                return;
++
++            _habitatGraphManager.Rebuild(_spawnedModules);
++        }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs b/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
+index 983332be..38e8edc6 100644
+--- a/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
++++ b/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
+@@ -2,6 +2,7 @@ using System.Collections.Generic;
+ using System.Runtime.InteropServices;
+ using Unity.Burst;
+ using Unity.Collections;
++using Unity.Collections.LowLevel.Unsafe;
+ using Unity.Jobs;
+ using Unity.Mathematics;
+ using UnityEngine;
+@@ -24,49 +25,44 @@ namespace Hecton8.Core
+         private const int DefaultBatchCapacity = 100;
+         private const string PrimaryShaderName = "Universal Render Pipeline/Lit";
+         private const string FallbackShaderName = "Standard";
+-        private const float PipeLodDistanceMeters = 40f;
+-        private const float PipeLodDistanceMetersSq = PipeLodDistanceMeters * PipeLodDistanceMeters;
+-
+-        private const float PipeRadiusMeters = 0.06f;
++        private const float PipeLodRefreshThresholdMetersSq = 1f;
+         private const float RelayRadiusMeters = 0.028f;
+-
+         private const float TwoPi = math.PI * 2f;
+ 
+         private enum BatchKind : byte
+         {
+             PipesNear = 0,
+             PipesFar = 1,
+-            RelayPowered = 2,
+-            RelayUnpowered = 3
++            PipesLine = 2,
++            RelayPowered = 3,
++            RelayUnpowered = 4
+         }
+ 
+-        private struct LinkRegistration
++        [StructLayout(LayoutKind.Sequential)]
++        private struct TubeVertex
+         {
+-            public float3 Start;
+-            public float3 End;
++            public float3 Position;
++            public float3 Normal;
+         }
+ 
+         [StructLayout(LayoutKind.Sequential)]
+-        private struct TubeVertex
++        private struct LineVertex
+         {
+             public float3 Position;
+-            public float3 Normal;
+         }
+ 
+         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+         private struct BuildTubeFramesJob : IJobParallelFor
+         {
+-            [ReadOnly] public NativeArray<float3> StartPoints;
+-            [ReadOnly] public NativeArray<float3> EndPoints;
++            [ReadOnly] public NativeArray<SplineDescriptor> Descriptors;
+             public NativeArray<float3> SampleCenters;
+             public NativeArray<float3> SampleNormals;
+             public NativeArray<float3> SampleBinormals;
+ 
+             public void Execute(int linkIndex)
+             {
+-                float3 start = StartPoints[linkIndex];
+-                float3 end = EndPoints[linkIndex];
+-                ResolveSplineControlPoints(start, end, out float3 p0, out float3 p1, out float3 p2, out float3 p3);
++                SplineDescriptor descriptor = Descriptors[linkIndex];
++                LogisticsPipeBuilder.ResolveControlPoints(in descriptor, out float3 p0, out float3 p1, out float3 p2, out float3 p3);
+ 
+                 int sampleBaseIndex = linkIndex * SamplesPerLink;
+                 float3 previousTangent = new float3(0f, 1f, 0f);
+@@ -76,18 +72,20 @@ namespace Hecton8.Core
+                 for (int sampleIndex = 0; sampleIndex < SamplesPerLink; sampleIndex++)
+                 {
+                     float t = SamplesPerLink > 1 ? sampleIndex / (float)(SamplesPerLink - 1) : 0f;
+-                    float3 center = EvaluateCatmullRom(p0, p1, p2, p3, t);
+-                    float3 tangent = SafeNormalize(EvaluateCatmullRomTangent(p0, p1, p2, p3, t), new float3(0f, 1f, 0f));
++                    float3 center = LogisticsPipeBuilder.EvaluateSpline(p0, p1, p2, p3, t);
++                    float3 tangent = LogisticsPipeBuilder.SafeNormalize(
++                        LogisticsPipeBuilder.EvaluateTangent(p0, p1, p2, p3, t),
++                        new float3(0f, 1f, 0f));
+ 
+                     float3 normal;
+                     float3 binormal;
+                     if (sampleIndex == 0)
+                     {
+-                        ConnectionSplineBatchRenderer.ResolveInitialFrame(tangent, out normal, out binormal);
++                        LogisticsPipeBuilder.ResolveInitialFrame(tangent, out normal, out binormal);
+                     }
+                     else
+                     {
+-                        ConnectionSplineBatchRenderer.TransportFrame(previousTangent, tangent, previousNormal, previousBinormal, out normal, out binormal);
++                        LogisticsPipeBuilder.TransportFrame(previousTangent, tangent, previousNormal, previousBinormal, out normal, out binormal);
+                     }
+ 
+                     int sampleWriteIndex = sampleBaseIndex + sampleIndex;
+@@ -175,29 +173,29 @@ namespace Hecton8.Core
+ 
+         private sealed class BatchState
+         {
+-            // COLD ALLOC: Dictionary<long, LinkRegistration>[100] — active link registry per visual batch — owner: ConnectionSplineBatchRenderer.BatchState
+-            public readonly Dictionary<long, LinkRegistration> Registrations = new Dictionary<long, LinkRegistration>(DefaultBatchCapacity);
++            // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] — active link registry per visual batch — owner: ConnectionSplineBatchRenderer.BatchState
++            public readonly Dictionary<long, SplineDescriptor> Registrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
+ 
+             public Mesh Mesh;
+             public MeshFilter Filter;
+             public MeshRenderer Renderer;
+             public Material Material;
+-            public NativeArray<float3> StartPoints;
+-            public NativeArray<float3> EndPoints;
++            public NativeArray<SplineDescriptor> Descriptors;
+             public NativeArray<float3> SampleCenters;
+             public NativeArray<float3> SampleNormals;
+             public NativeArray<float3> SampleBinormals;
+             public NativeArray<TubeVertex> VertexFront;
+             public NativeArray<TubeVertex> VertexBack;
++            public NativeArray<LineVertex> LineFront;
++            public NativeArray<LineVertex> LineBack;
+             public NativeArray<int> Indices;
+             public JobHandle FrameBuildHandle;
+             public JobHandle VertexBuildHandle;
+             public JobHandle IndexBuildHandle;
+             public bool BuildPending;
+             public bool Dirty;
+-            public int ActiveLinkCount;
+             public int GeneratedVertexCount;
+-            public int GeneratedTriangleCount;
++            public int GeneratedIndexCount;
+             public Color Color;
+             public float Radius;
+             public BatchKind Kind;
+@@ -205,22 +203,35 @@ namespace Hecton8.Core
+             public int VerticesPerLink;
+             public int IndicesPerLink;
+             public int QuadsPerLink;
++            public MeshTopology Topology;
+         }
+ 
+         private static ConnectionSplineBatchRenderer _instance;
+ 
+-        // COLD ALLOC: BatchState[3] — persistent shared tube-render batches for pipes and relay cables — owner: ConnectionSplineBatchRenderer
+-        private readonly BatchState[] _batches = new BatchState[4];
++        // COLD ALLOC: BatchState[5] — persistent shared tube/line render batches for pipes and relay cables — owner: ConnectionSplineBatchRenderer
++        private readonly BatchState[] _batches = new BatchState[5];
++        // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] — master logistics-pipe registry for distance-based batch reassignment — owner: ConnectionSplineBatchRenderer
++        private readonly Dictionary<long, SplineDescriptor> _pipeRegistrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
++
++        private bool _pipeLodDirty = true;
++        private float3 _lastPipeObserverPosition;
++        private bool _hasLastPipeObserverPosition;
+ 
++        /// <summary>Compatibility overload for existing point-to-point logistics pipes.</summary>
+         public static void SubmitPipeLink(long linkId, Vector3 start, Vector3 end, Color color)
++        {
++            SplineDescriptor descriptor = LogisticsPipeBuilder.CreateLinearDescriptor(
++                start,
++                end,
++                LogisticsPipeBuilder.DefaultPipeRadiusMeters,
++                PipeRenderFlags.None);
++            SubmitPipeLink(linkId, descriptor, color);
++        }
++
++        internal static void SubmitPipeLink(long linkId, SplineDescriptor descriptor, Color color)
+         {
+             ConnectionSplineBatchRenderer instance = ResolveInstance();
+-            BatchState activeBatch = instance.ResolvePipeBatch(start, end);
+-            BatchState inactiveBatch = activeBatch.Kind == BatchKind.PipesNear
+-                ? instance._batches[(int)BatchKind.PipesFar]
+-                : instance._batches[(int)BatchKind.PipesNear];
+-            instance.RemoveLink(inactiveBatch, linkId);
+-            instance.UpsertLink(activeBatch, linkId, start, end, color);
++            instance.UpsertPipeLink(linkId, descriptor, color);
+         }
+ 
+         public static void RemovePipeLink(long linkId)
+@@ -228,8 +239,11 @@ namespace Hecton8.Core
+             if (_instance == null)
+                 return;
+ 
++            _instance._pipeRegistrations.Remove(linkId);
+             _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesNear], linkId);
+             _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesFar], linkId);
++            _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesLine], linkId);
++            _instance._pipeLodDirty = true;
+         }
+ 
+         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
+@@ -238,10 +252,19 @@ namespace Hecton8.Core
+             instance._batches[(int)BatchKind.RelayPowered].Color = poweredColor;
+             instance._batches[(int)BatchKind.RelayUnpowered].Color = unpoweredColor;
+ 
++            float3 chordDirection = LogisticsPipeBuilder.SafeNormalize((float3)end - (float3)start, new float3(0f, 0f, 1f));
++            SplineDescriptor descriptor = LogisticsPipeBuilder.CreateSocketDescriptor(
++                start,
++                end,
++                chordDirection,
++                -chordDirection,
++                RelayRadiusMeters,
++                PipeRenderFlags.None);
++
+             BatchState activeBatch = instance._batches[hasPower ? (int)BatchKind.RelayPowered : (int)BatchKind.RelayUnpowered];
+             BatchState inactiveBatch = instance._batches[hasPower ? (int)BatchKind.RelayUnpowered : (int)BatchKind.RelayPowered];
+             instance.RemoveLink(inactiveBatch, linkId);
+-            instance.UpsertLink(activeBatch, linkId, start, end, hasPower ? poweredColor : unpoweredColor);
++            instance.UpsertLink(activeBatch, linkId, descriptor);
+         }
+ 
+         public static void RemoveRelayLink(long linkId)
+@@ -276,14 +299,17 @@ namespace Hecton8.Core
+             }
+ 
+             _instance = this;
+-            InitializeBatch((int)BatchKind.PipesNear, BatchKind.PipesNear, new Color(0.30f, 0.82f, 0.95f, 0.88f), PipeRadiusMeters, NearPipeRadialSegments);
+-            InitializeBatch((int)BatchKind.PipesFar, BatchKind.PipesFar, new Color(0.30f, 0.82f, 0.95f, 0.88f), PipeRadiusMeters, FarPipeRadialSegments);
+-            InitializeBatch((int)BatchKind.RelayPowered, BatchKind.RelayPowered, new Color(0.25f, 0.95f, 1f, 0.95f), RelayRadiusMeters, RelayRadialSegments);
+-            InitializeBatch((int)BatchKind.RelayUnpowered, BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters, RelayRadialSegments);
++            Color pipeColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
++            InitializeBatch((int)BatchKind.PipesNear, BatchKind.PipesNear, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters, NearPipeRadialSegments, MeshTopology.Triangles);
++            InitializeBatch((int)BatchKind.PipesFar, BatchKind.PipesFar, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters, FarPipeRadialSegments, MeshTopology.Triangles);
++            InitializeBatch((int)BatchKind.PipesLine, BatchKind.PipesLine, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters, 0, MeshTopology.Lines);
++            InitializeBatch((int)BatchKind.RelayPowered, BatchKind.RelayPowered, new Color(0.25f, 0.95f, 1f, 0.95f), RelayRadiusMeters, RelayRadialSegments, MeshTopology.Triangles);
++            InitializeBatch((int)BatchKind.RelayUnpowered, BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters, RelayRadialSegments, MeshTopology.Triangles);
+         }
+ 
+         private void LateUpdate()
+         {
++            RefreshPipeBatchAssignments();
+             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
+                 ProcessBatch(_batches[batchIndex]);
+         }
+@@ -297,18 +323,19 @@ namespace Hecton8.Core
+                 _instance = null;
+         }
+ 
+-        private void InitializeBatch(int index, BatchKind kind, Color color, float radius, int radialSegments)
++        private void InitializeBatch(int index, BatchKind kind, Color color, float radius, int radialSegments, MeshTopology topology)
+         {
+-            int safeRadialSegments = math.max(3, radialSegments);
++            int safeRadialSegments = topology == MeshTopology.Triangles ? math.max(3, radialSegments) : 0;
+             BatchState batch = new BatchState
+             {
+                 Kind = kind,
+                 Color = color,
+                 Radius = radius,
+                 RadialSegments = safeRadialSegments,
+-                VerticesPerLink = SamplesPerLink * safeRadialSegments,
+-                IndicesPerLink = (SamplesPerLink - 1) * safeRadialSegments * 6,
+-                QuadsPerLink = (SamplesPerLink - 1) * safeRadialSegments
++                VerticesPerLink = topology == MeshTopology.Triangles ? SamplesPerLink * safeRadialSegments : 2,
++                IndicesPerLink = topology == MeshTopology.Triangles ? (SamplesPerLink - 1) * safeRadialSegments * 6 : 2,
++                QuadsPerLink = topology == MeshTopology.Triangles ? (SamplesPerLink - 1) * safeRadialSegments : 0,
++                Topology = topology
+             };
+ 
+             GameObject child = new GameObject(((BatchKind)index).ToString())
+@@ -321,7 +348,7 @@ namespace Hecton8.Core
+             batch.Renderer = child.AddComponent<MeshRenderer>();
+             batch.Mesh = new Mesh
+             {
+-                name = $"MSH_{((BatchKind)index)}_SplineTubes"
++                name = $"MSH_{((BatchKind)index)}_SplineBatch"
+             };
+             batch.Mesh.MarkDynamic();
+             batch.Filter.sharedMesh = batch.Mesh;
+@@ -335,17 +362,73 @@ namespace Hecton8.Core
+             _batches[index] = batch;
+         }
+ 
+-        private BatchState ResolvePipeBatch(Vector3 start, Vector3 end)
++        private void RefreshPipeBatchAssignments()
++        {
++            float3 observerPosition = ResolveObserverPosition(out bool hasObserver);
++            bool observerMoved = hasObserver &&
++                                (!_hasLastPipeObserverPosition ||
++                                 math.lengthsq(observerPosition - _lastPipeObserverPosition) > PipeLodRefreshThresholdMetersSq);
++
++            if (!_pipeLodDirty && !observerMoved)
++                return;
++
++            ClearPipeBatch(_batches[(int)BatchKind.PipesNear]);
++            ClearPipeBatch(_batches[(int)BatchKind.PipesFar]);
++            ClearPipeBatch(_batches[(int)BatchKind.PipesLine]);
++
++            Dictionary<long, SplineDescriptor>.Enumerator enumerator = _pipeRegistrations.GetEnumerator();
++            while (enumerator.MoveNext())
++            {
++                KeyValuePair<long, SplineDescriptor> pair = enumerator.Current;
++                PipeVisualLod lod = hasObserver
++                    ? LogisticsPipeBuilder.ResolveVisualLod(pair.Value, observerPosition)
++                    : PipeVisualLod.Tube8;
++
++                BatchState targetBatch = ResolvePipeBatch(lod);
++                targetBatch.Registrations[pair.Key] = pair.Value;
++                targetBatch.Dirty = true;
++            }
++
++            _pipeLodDirty = false;
++            _lastPipeObserverPosition = observerPosition;
++            _hasLastPipeObserverPosition = hasObserver;
++        }
++
++        private void ClearPipeBatch(BatchState batch)
++        {
++            if (batch == null || batch.Registrations.Count <= 0)
++                return;
++
++            batch.Registrations.Clear();
++            batch.Dirty = true;
++        }
++
++        private BatchState ResolvePipeBatch(PipeVisualLod lod)
++        {
++            switch (lod)
++            {
++                case PipeVisualLod.Tube4:
++                    return _batches[(int)BatchKind.PipesFar];
++
++                case PipeVisualLod.Line:
++                    return _batches[(int)BatchKind.PipesLine];
++
++                default:
++                    return _batches[(int)BatchKind.PipesNear];
++            }
++        }
++
++        private float3 ResolveObserverPosition(out bool hasObserver)
+         {
+             Transform playerTransform = BootstrapState.CurrentPlayerTransform;
+             if (playerTransform == null)
+-                return _batches[(int)BatchKind.PipesNear];
++            {
++                hasObserver = false;
++                return float3.zero;
++            }
+ 
+-            float3 midpoint = ((float3)start + (float3)end) * 0.5f;
+-            float distanceSq = math.lengthsq(midpoint - (float3)playerTransform.position);
+-            return distanceSq > PipeLodDistanceMetersSq
+-                ? _batches[(int)BatchKind.PipesFar]
+-                : _batches[(int)BatchKind.PipesNear];
++            hasObserver = true;
++            return playerTransform.position;
+         }
+ 
+         private static Material CreateRuntimeMaterial(Color color)
+@@ -383,17 +466,21 @@ namespace Hecton8.Core
+                 material.SetColor("_Color", color);
+         }
+ 
+-        private void UpsertLink(BatchState batch, long linkId, Vector3 start, Vector3 end, Color color)
++        private void UpsertPipeLink(long linkId, SplineDescriptor descriptor, Color color)
++        {
++            _batches[(int)BatchKind.PipesNear].Color = color;
++            _batches[(int)BatchKind.PipesFar].Color = color;
++            _batches[(int)BatchKind.PipesLine].Color = color;
++            _pipeRegistrations[linkId] = descriptor;
++            _pipeLodDirty = true;
++        }
++
++        private void UpsertLink(BatchState batch, long linkId, SplineDescriptor descriptor)
+         {
+             if (batch == null)
+                 return;
+ 
+-            batch.Color = color;
+-            batch.Registrations[linkId] = new LinkRegistration
+-            {
+-                Start = start,
+-                End = end
+-            };
++            batch.Registrations[linkId] = descriptor;
+             batch.Dirty = true;
+         }
+ 
+@@ -438,11 +525,10 @@ namespace Hecton8.Core
+         private void ScheduleBatchBuild(BatchState batch)
+         {
+             int linkCount = batch.Registrations.Count;
+-            batch.ActiveLinkCount = linkCount;
+             if (linkCount <= 0)
+             {
+                 batch.GeneratedVertexCount = 0;
+-                batch.GeneratedTriangleCount = 0;
++                batch.GeneratedIndexCount = 0;
+                 batch.Mesh.Clear(false);
+                 batch.Renderer.enabled = false;
+                 batch.Dirty = false;
+@@ -452,25 +538,29 @@ namespace Hecton8.Core
+             EnsureBatchCapacity(batch, linkCount);
+ 
+             int writeIndex = 0;
+-            Dictionary<long, LinkRegistration>.Enumerator enumerator = batch.Registrations.GetEnumerator();
++            Dictionary<long, SplineDescriptor>.Enumerator enumerator = batch.Registrations.GetEnumerator();
+             while (enumerator.MoveNext())
+             {
+-                LinkRegistration registration = enumerator.Current.Value;
+-                batch.StartPoints[writeIndex] = registration.Start;
+-                batch.EndPoints[writeIndex] = registration.End;
++                batch.Descriptors[writeIndex] = enumerator.Current.Value;
+                 writeIndex++;
+             }
+ 
++            if (batch.Topology == MeshTopology.Lines)
++            {
++                BuildLineBatch(batch, linkCount);
++                batch.Dirty = false;
++                return;
++            }
++
+             int vertexCount = linkCount * batch.VerticesPerLink;
+             int quadCount = linkCount * batch.QuadsPerLink;
+             int indexCount = quadCount * 6;
+             batch.GeneratedVertexCount = vertexCount;
+-            batch.GeneratedTriangleCount = indexCount / 3;
++            batch.GeneratedIndexCount = indexCount;
+ 
+             BuildTubeFramesJob frameJob = new BuildTubeFramesJob
+             {
+-                StartPoints = batch.StartPoints,
+-                EndPoints = batch.EndPoints,
++                Descriptors = batch.Descriptors,
+                 SampleCenters = batch.SampleCenters,
+                 SampleNormals = batch.SampleNormals,
+                 SampleBinormals = batch.SampleBinormals
+@@ -502,24 +592,59 @@ namespace Hecton8.Core
+             batch.Dirty = false;
+         }
+ 
++        private void BuildLineBatch(BatchState batch, int linkCount)
++        {
++            int vertexCount = linkCount * 2;
++            batch.GeneratedVertexCount = vertexCount;
++            batch.GeneratedIndexCount = vertexCount;
++
++            for (int linkIndex = 0; linkIndex < linkCount; linkIndex++)
++            {
++                SplineDescriptor descriptor = batch.Descriptors[linkIndex];
++                int vertexBaseIndex = linkIndex * 2;
++                batch.LineBack[vertexBaseIndex] = new LineVertex { Position = descriptor.Start };
++                batch.LineBack[vertexBaseIndex + 1] = new LineVertex { Position = descriptor.End };
++                batch.Indices[vertexBaseIndex] = vertexBaseIndex;
++                batch.Indices[vertexBaseIndex + 1] = vertexBaseIndex + 1;
++            }
++
++            NativeArray<LineVertex> swap = batch.LineFront;
++            batch.LineFront = batch.LineBack;
++            batch.LineBack = swap;
++            UploadBatchMesh(batch);
++        }
++
+         private void UploadBatchMesh(BatchState batch)
+         {
+             ApplyMaterialColor(batch.Material, batch.Color);
+ 
+             int vertexCount = batch.GeneratedVertexCount;
+-            int indexCount = batch.GeneratedTriangleCount * 3;
++            int indexCount = batch.GeneratedIndexCount;
+ 
+             Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
+             Mesh.MeshData meshData = meshDataArray[0];
+-            meshData.SetVertexBufferParams(
+-                vertexCount,
+-                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+-                new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3));
+-            meshData.SetIndexBufferParams(indexCount, IndexFormat.UInt32);
+-            meshData.GetVertexData<TubeVertex>().CopyFrom(batch.VertexFront.GetSubArray(0, vertexCount));
+-            meshData.GetIndexData<int>().CopyFrom(batch.Indices.GetSubArray(0, indexCount));
++
++            if (batch.Topology == MeshTopology.Lines)
++            {
++                meshData.SetVertexBufferParams(
++                    vertexCount,
++                    new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3));
++                meshData.SetIndexBufferParams(indexCount, IndexFormat.UInt32);
++                CopyToMeshBuffer(batch.LineFront, vertexCount, meshData.GetVertexData<LineVertex>());
++            }
++            else
++            {
++                meshData.SetVertexBufferParams(
++                    vertexCount,
++                    new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
++                    new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3));
++                meshData.SetIndexBufferParams(indexCount, IndexFormat.UInt32);
++                CopyToMeshBuffer(batch.VertexFront, vertexCount, meshData.GetVertexData<TubeVertex>());
++            }
++
++            CopyToMeshBuffer(batch.Indices, indexCount, meshData.GetIndexData<int>());
+             meshData.subMeshCount = 1;
+-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, indexCount, MeshTopology.Triangles), MeshUpdateFlags.DontRecalculateBounds);
++            meshData.SetSubMesh(0, new SubMeshDescriptor(0, indexCount, batch.Topology), MeshUpdateFlags.DontRecalculateBounds);
+ 
+             batch.Mesh.Clear(false);
+             Mesh.ApplyAndDisposeWritableMeshData(
+@@ -530,18 +655,45 @@ namespace Hecton8.Core
+             batch.Renderer.enabled = vertexCount > 0 && indexCount > 0 && batch.Material != null;
+         }
+ 
++        private static unsafe void CopyToMeshBuffer<T>(NativeArray<T> source, int count, NativeArray<T> destination)
++            where T : unmanaged
++        {
++            if (count <= 0)
++                return;
++
++            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
++            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
++            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)count * UnsafeUtility.SizeOf<T>());
++        }
++
+         private static Bounds ComputeBounds(BatchState batch, int vertexCount)
+         {
+             if (vertexCount <= 0)
+                 return new Bounds(Vector3.zero, Vector3.zero);
+ 
+-            float3 min = batch.VertexFront[0].Position;
+-            float3 max = min;
+-            for (int vertexIndex = 1; vertexIndex < vertexCount; vertexIndex++)
++            float3 min;
++            float3 max;
++            if (batch.Topology == MeshTopology.Lines)
+             {
+-                float3 position = batch.VertexFront[vertexIndex].Position;
+-                min = math.min(min, position);
+-                max = math.max(max, position);
++                min = batch.LineFront[0].Position;
++                max = min;
++                for (int vertexIndex = 1; vertexIndex < vertexCount; vertexIndex++)
++                {
++                    float3 position = batch.LineFront[vertexIndex].Position;
++                    min = math.min(min, position);
++                    max = math.max(max, position);
++                }
++            }
++            else
++            {
++                min = batch.VertexFront[0].Position;
++                max = min;
++                for (int vertexIndex = 1; vertexIndex < vertexCount; vertexIndex++)
++                {
++                    float3 position = batch.VertexFront[vertexIndex].Position;
++                    min = math.min(min, position);
++                    max = math.max(max, position);
++                }
+             }
+ 
+             float3 size = math.max(max - min, new float3(0.02f, 0.02f, 0.02f));
+@@ -552,14 +704,32 @@ namespace Hecton8.Core
+         private static void EnsureBatchCapacity(BatchState batch, int linkCapacity)
+         {
+             int safeLinkCapacity = math.max(1, linkCapacity);
+-            EnsureArrayCapacity(ref batch.StartPoints, safeLinkCapacity);
+-            EnsureArrayCapacity(ref batch.EndPoints, safeLinkCapacity);
++            EnsureArrayCapacity(ref batch.Descriptors, safeLinkCapacity);
++            EnsureArrayCapacity(ref batch.Indices, safeLinkCapacity * batch.IndicesPerLink);
++
++            if (batch.Topology == MeshTopology.Lines)
++            {
++                EnsureArrayCapacity(ref batch.LineFront, safeLinkCapacity * 2);
++                EnsureArrayCapacity(ref batch.LineBack, safeLinkCapacity * 2);
++                return;
++            }
++
+             EnsureArrayCapacity(ref batch.SampleCenters, safeLinkCapacity * SamplesPerLink);
+             EnsureArrayCapacity(ref batch.SampleNormals, safeLinkCapacity * SamplesPerLink);
+             EnsureArrayCapacity(ref batch.SampleBinormals, safeLinkCapacity * SamplesPerLink);
+             EnsureArrayCapacity(ref batch.VertexFront, safeLinkCapacity * batch.VerticesPerLink);
+             EnsureArrayCapacity(ref batch.VertexBack, safeLinkCapacity * batch.VerticesPerLink);
+-            EnsureArrayCapacity(ref batch.Indices, safeLinkCapacity * batch.IndicesPerLink);
++        }
++
++        private static void EnsureArrayCapacity(ref NativeArray<SplineDescriptor> array, int requiredLength)
++        {
++            if (array.IsCreated && array.Length >= requiredLength)
++                return;
++
++            if (array.IsCreated)
++                array.Dispose();
++
++            array = new NativeArray<SplineDescriptor>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+         }
+ 
+         private static void EnsureArrayCapacity(ref NativeArray<float3> array, int requiredLength)
+@@ -584,6 +754,17 @@ namespace Hecton8.Core
+             array = new NativeArray<TubeVertex>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+         }
+ 
++        private static void EnsureArrayCapacity(ref NativeArray<LineVertex> array, int requiredLength)
++        {
++            if (array.IsCreated && array.Length >= requiredLength)
++                return;
++
++            if (array.IsCreated)
++                array.Dispose();
++
++            array = new NativeArray<LineVertex>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++        }
++
+         private static void EnsureArrayCapacity(ref NativeArray<int> array, int requiredLength)
+         {
+             if (array.IsCreated && array.Length >= requiredLength)
+@@ -608,11 +789,8 @@ namespace Hecton8.Core
+                 batch.BuildPending = false;
+             }
+ 
+-            if (batch.StartPoints.IsCreated)
+-                batch.StartPoints.Dispose();
+-
+-            if (batch.EndPoints.IsCreated)
+-                batch.EndPoints.Dispose();
++            if (batch.Descriptors.IsCreated)
++                batch.Descriptors.Dispose();
+ 
+             if (batch.SampleCenters.IsCreated)
+                 batch.SampleCenters.Dispose();
+@@ -629,6 +807,12 @@ namespace Hecton8.Core
+             if (batch.VertexBack.IsCreated)
+                 batch.VertexBack.Dispose();
+ 
++            if (batch.LineFront.IsCreated)
++                batch.LineFront.Dispose();
++
++            if (batch.LineBack.IsCreated)
++                batch.LineBack.Dispose();
++
+             if (batch.Indices.IsCreated)
+                 batch.Indices.Dispose();
+ 
+@@ -638,93 +822,5 @@ namespace Hecton8.Core
+             if (batch.Material != null)
+                 Destroy(batch.Material);
+         }
+-
+-        private static void ResolveSplineControlPoints(float3 start, float3 end, out float3 p0, out float3 p1, out float3 p2, out float3 p3)
+-        {
+-            float3 delta = end - start;
+-            float length = math.length(delta);
+-            float archHeight = math.min(length * 0.12f, 0.75f);
+-            float3 arch = new float3(0f, archHeight, 0f);
+-            p0 = start - delta * 0.25f + arch * 0.35f;
+-            p1 = start;
+-            p2 = end;
+-            p3 = end + delta * 0.25f + arch * 0.35f;
+-        }
+-
+-        private static float3 EvaluateCatmullRom(float3 p0, float3 p1, float3 p2, float3 p3, float t)
+-        {
+-            float tt = t * t;
+-            float ttt = tt * t;
+-            return 0.5f * (
+-                (2f * p1) +
+-                (-p0 + p2) * t +
+-                (2f * p0 - 5f * p1 + 4f * p2 - p3) * tt +
+-                (-p0 + 3f * p1 - 3f * p2 + p3) * ttt);
+-        }
+-
+-        private static float3 EvaluateCatmullRomTangent(float3 p0, float3 p1, float3 p2, float3 p3, float t)
+-        {
+-            float tt = t * t;
+-            return 0.5f * (
+-                (-p0 + p2) +
+-                (2f * (2f * p0 - 5f * p1 + 4f * p2 - p3)) * t +
+-                (3f * (-p0 + 3f * p1 - 3f * p2 + p3)) * tt);
+-        }
+-
+-        private static void ResolveInitialFrame(float3 tangent, out float3 normal, out float3 binormal)
+-        {
+-            float3 referenceUp = math.abs(tangent.y) > 0.98f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
+-            normal = SafeNormalize(referenceUp - tangent * math.dot(referenceUp, tangent), new float3(0f, 0f, 1f));
+-            binormal = SafeNormalize(math.cross(tangent, normal), new float3(1f, 0f, 0f));
+-            normal = SafeNormalize(math.cross(binormal, tangent), new float3(0f, 1f, 0f));
+-        }
+-
+-        private static void TransportFrame(float3 previousTangent, float3 currentTangent, float3 previousNormal, float3 previousBinormal, out float3 normal, out float3 binormal)
+-        {
+-            float3 rotationAxis = math.cross(previousTangent, currentTangent);
+-            float axisLengthSq = math.lengthsq(rotationAxis);
+-            float tangentDot = math.clamp(math.dot(previousTangent, currentTangent), -1f, 1f);
+-
+-            if (axisLengthSq <= 0.000001f)
+-            {
+-                if (tangentDot < -0.9999f)
+-                {
+-                    float3 fallbackAxis = math.abs(previousTangent.y) > 0.98f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
+-                    rotationAxis = SafeNormalize(math.cross(previousTangent, fallbackAxis), new float3(0f, 0f, 1f));
+-                    normal = RotateAroundAxis(previousNormal, rotationAxis, -1f, 0f);
+-                    binormal = SafeNormalize(math.cross(currentTangent, normal), previousBinormal);
+-                    normal = SafeNormalize(math.cross(binormal, currentTangent), previousNormal);
+-                    return;
+-                }
+-
+-                normal = previousNormal;
+-                binormal = previousBinormal;
+-                return;
+-            }
+-
+-            float axisLength = math.sqrt(axisLengthSq);
+-            float3 axis = rotationAxis / axisLength;
+-            normal = RotateAroundAxis(previousNormal, axis, tangentDot, axisLength);
+-            binormal = RotateAroundAxis(previousBinormal, axis, tangentDot, axisLength);
+-            normal = SafeNormalize(normal - currentTangent * math.dot(normal, currentTangent), previousNormal);
+-            binormal = SafeNormalize(math.cross(currentTangent, normal), previousBinormal);
+-            normal = SafeNormalize(math.cross(binormal, currentTangent), previousNormal);
+-        }
+-
+-        private static float3 RotateAroundAxis(float3 vector, float3 axis, float cosTheta, float sinTheta)
+-        {
+-            return vector * cosTheta +
+-                   math.cross(axis, vector) * sinTheta +
+-                   axis * math.dot(axis, vector) * (1f - cosTheta);
+-        }
+-
+-        private static float3 SafeNormalize(float3 value, float3 fallback)
+-        {
+-            float lengthSq = math.lengthsq(value);
+-            if (lengthSq <= 0.000001f)
+-                return fallback;
+-
+-            return value * math.rsqrt(lengthSq);
+-        }
+     }
+ }

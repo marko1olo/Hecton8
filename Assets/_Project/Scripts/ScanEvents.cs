@@ -87,6 +87,8 @@ namespace Hecton8.Gameplay
         private static readonly Dictionary<uint, ScanEntryMetadata> _entryMetadataByHash = new Dictionary<uint, ScanEntryMetadata>(128);
         private static NativeQueue<ScanEventPayload> _pendingEvents;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

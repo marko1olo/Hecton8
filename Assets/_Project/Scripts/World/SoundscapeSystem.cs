@@ -22,6 +22,7 @@ using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -37,16 +38,84 @@ namespace Hecton8.World
         Thermal     = 6    // 4000-5000м
     }
 
+    /// <summary>
+    /// Listener contract for queue-backed soundscape tier notifications.
+    /// </summary>
+    public interface ISoundscapeEventListener
+    {
+        /// <summary>Called when the active soundscape tier changes.</summary>
+        /// <param name="oldTier">Previous tier.</param>
+        /// <param name="newTier">New tier.</param>
+        void OnSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier);
+    }
+
     public static class SoundscapeEvents
     {
+        private struct SoundscapeEventPayload
+        {
+            public SoundscapeTier OldTier;
+            public SoundscapeTier NewTier;
+        }
+
+        private static readonly RegistryBucket<Action<SoundscapeTier, SoundscapeTier>> _tierChangedListeners = new RegistryBucket<Action<SoundscapeTier, SoundscapeTier>>(16);
+        private static NativeQueue<SoundscapeEventPayload> _pendingEvents;
+
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => OnTierChanged = null;
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _tierChangedListeners.Clear();
+        }
 
         /// <summary>Звуковой тир изменился. (oldTier, newTier)</summary>
-        public static event Action<SoundscapeTier, SoundscapeTier> OnTierChanged;
+        public static void RegisterTierChanged(Action<SoundscapeTier, SoundscapeTier> listener)
+        {
+            if (listener != null && !_tierChangedListeners.Contains(listener))
+                _tierChangedListeners.Register(listener);
+        }
+
+        public static void UnregisterTierChanged(Action<SoundscapeTier, SoundscapeTier> listener)
+        {
+            if (listener != null && _tierChangedListeners.Contains(listener))
+                _tierChangedListeners.Unregister(listener);
+        }
 
         public static void RaiseTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
-            => OnTierChanged?.Invoke(oldTier, newTier);
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new SoundscapeEventPayload
+            {
+                OldTier = oldTier,
+                NewTier = newTier
+            });
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out SoundscapeEventPayload payload))
+            {
+                Action<SoundscapeTier, SoundscapeTier>[] rawArray = _tierChangedListeners.RawArray;
+                int count = _tierChangedListeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i]?.Invoke(payload.OldTier, payload.NewTier);
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+                _pendingEvents = new NativeQueue<SoundscapeEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SoundscapeEventPayload>[16] - soundscape tier event lane flushed by SystemDispatcher - owner: SoundscapeEvents
+        }
     }
 
     [DisallowMultipleComponent]

@@ -1358,7 +1358,6 @@ namespace Hecton8.Physics
             }
 
             Vector3 directionAwayFromAnchor = separation / distance;
-            Vector3 directionTowardAnchor = -directionAwayFromAnchor;
             float targetDistance = ResolvePrimaryConstraintTargetDistance();
             float extension = distance - targetDistance;
             if (extension <= 0f)
@@ -1371,43 +1370,51 @@ namespace Hecton8.Physics
                 ? Vector3.zero
                 : _playerRigidbody.GetPointVelocity(anchorPositionWS);
             Vector3 payloadVelocity = _payloadBody.GetPointVelocity(payloadPositionWS);
-            float3 requestedAcceleration3 = HectonContactJob.ResolveTractorBeamPdAcceleration(
-                constraintAnchorPosition,
-                payloadPositionWS,
+            Vector3 targetPayloadPosition = constraintAnchorPosition + directionAwayFromAnchor * targetDistance;
+            float safeReducedMass = math.max(_reducedMass, 0.0001f);
+            float maxForceMagnitude = math.max(0f, _maxCableAcceleration) * safeReducedMass;
+            Vector3 clampedPayloadVelocity = ClampPdDerivativeVelocity(
                 anchorVelocity,
                 payloadVelocity,
+                _dampingCoefficient,
+                maxForceMagnitude);
+            float3 requestedForce3 = HectonContactJob.ResolveTractorBeamPdForce(
+                targetPayloadPosition,
+                payloadPositionWS,
+                anchorVelocity,
+                clampedPayloadVelocity,
                 _springStiffness,
                 _dampingCoefficient,
-                _reducedMass,
-                _maxCableAcceleration);
-            Vector3 requestedAccelerationVector = new Vector3(
-                requestedAcceleration3.x,
-                requestedAcceleration3.y,
-                requestedAcceleration3.z);
-            float requestedAcceleration = requestedAccelerationVector.magnitude;
-            if (requestedAcceleration <= 0f)
+                maxForceMagnitude);
+            Vector3 requestedForceVector = new Vector3(
+                requestedForce3.x,
+                requestedForce3.y,
+                requestedForce3.z);
+            float requestedForceMagnitude = requestedForceVector.magnitude;
+            if (requestedForceMagnitude <= 0f)
             {
                 _primaryConstraintForceMagnitude = 0f;
                 return;
             }
 
-            _primaryConstraintForceMagnitude = requestedAcceleration;
-            ApplyReducedMassReactionForce(anchorPositionWS, requestedAccelerationVector);
+            Vector3 requestedAccelerationVector = requestedForceVector / safeReducedMass;
+            _primaryConstraintForceMagnitude = requestedForceMagnitude;
+            ApplyReducedMassReactionForce(anchorPositionWS, requestedForceVector);
             ApplyClampedAcceleration(_payloadBody, requestedAccelerationVector, _maxCableAcceleration);
         }
 
-        private void ApplyReducedMassReactionForce(Vector3 anchorPositionWS, Vector3 payloadAcceleration)
+        private void ApplyReducedMassReactionForce(Vector3 anchorPositionWS, Vector3 payloadForce)
         {
             if (_tetherClass != TetherClass.TowCable ||
                 _bendPointCount > 0 ||
                 _playerRigidbody == null ||
                 _playerRigidbody.isKinematic ||
-                payloadAcceleration.sqrMagnitude <= MinVectorMagnitudeSq)
+                payloadForce.sqrMagnitude <= MinVectorMagnitudeSq)
             {
                 return;
             }
 
-            Vector3 reactionForce = -payloadAcceleration * math.max(_reducedMass, 0.0001f);
+            Vector3 reactionForce = -payloadForce;
             if (reactionForce.sqrMagnitude <= MinVectorMagnitudeSq)
                 return;
 
@@ -1522,6 +1529,30 @@ namespace Hecton8.Physics
                 return value;
 
             return value.normalized * maxMagnitude;
+        }
+
+        private static Vector3 ClampPdDerivativeVelocity(
+            Vector3 targetVelocity,
+            Vector3 currentVelocity,
+            float dampingCoefficient,
+            float maxDerivativeForceMagnitude)
+        {
+            if (!IsFinite(targetVelocity) || !IsFinite(currentVelocity))
+                return targetVelocity;
+
+            float safeDamping = math.max(0f, dampingCoefficient);
+            float safeMaxForce = math.max(0f, maxDerivativeForceMagnitude);
+            if (safeDamping <= MinDistance || safeMaxForce <= 0f)
+                return currentVelocity;
+
+            Vector3 velocityError = currentVelocity - targetVelocity;
+            float errorMagnitudeSq = velocityError.sqrMagnitude;
+            float maxVelocityError = safeMaxForce / safeDamping;
+            float maxVelocityErrorSq = maxVelocityError * maxVelocityError;
+            if (errorMagnitudeSq <= maxVelocityErrorSq)
+                return currentVelocity;
+
+            return targetVelocity + velocityError * (maxVelocityError * math.rsqrt(errorMagnitudeSq));
         }
 
         private static bool IsFinite(Vector3 value)

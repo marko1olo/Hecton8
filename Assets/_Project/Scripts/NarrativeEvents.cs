@@ -41,6 +41,8 @@ namespace Hecton8.Core
         private static readonly Dictionary<uint, string> _discoveryIdsByHash = new Dictionary<uint, string>(64);
         private static NativeQueue<NarrativeEventPayload> _pendingEvents;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

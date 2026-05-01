@@ -1432,10 +1432,7 @@ namespace Hecton8.UI
 
             if (_inventoryMassOverCapacity)
             {
-                _massPulsePhase += Mathf.Max(0f, deltaTime) * 4.2f;
-                if (_massPulsePhase >= Mathf.PI * 2f)
-                    _massPulsePhase -= Mathf.PI * 2f;
-
+                _massPulsePhase = Mathf.Repeat(Time.unscaledTime * 4.2f, Mathf.PI * 2f);
                 ApplySummaryMassVertexColor(ResolvePulsedMassColor(_massPulsePhase));
                 return;
             }

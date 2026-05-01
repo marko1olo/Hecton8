@@ -18,6 +18,7 @@ namespace Hecton8.Construction
         private const float DefaultPressureDelta = 4f;
         private const float DefaultFluidRadiusScale = 0.75f;
         private const float DefaultDecalScaleMeters = 0.72f;
+        private const float MaxDecalScaleMultiplier = 3f;
         private const float IntegritySocketThreshold = 0.5f;
         private const float DefaultInGameDaySeconds = 3600f;
         private const float ParasiteStructuralCollapseDelaySeconds = DefaultInGameDaySeconds * 2f;
@@ -48,6 +49,7 @@ namespace Hecton8.Construction
 
         private struct ParasiteSporeHazardState
         {
+            public Vector3 Position;
             public float Intensity;
             public float Radius;
         }
@@ -315,9 +317,13 @@ namespace Hecton8.Construction
             int moduleInstanceId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
             bool isBelowThreshold = baseModule.IntegrityStateNormalized < IntegritySocketThreshold ||
                                     baseModule.BulkheadFloodStress01 > 0.001f;
+            float parasiteVisual01 = baseModule.AttachedParasiteCount > 0
+                ? Mathf.Clamp01(Mathf.Max(0.25f, baseModule.ParasiteInfectionLevel))
+                : 0f;
+            bool hasParasiteVisual = parasiteVisual01 > 0.001f;
             bool hadLatchedState = _integritySocketStates.TryGetValue(moduleInstanceId, out bool wasBelowThreshold) && wasBelowThreshold;
 
-            if (!isBelowThreshold)
+            if (!isBelowThreshold && !hasParasiteVisual)
             {
                 _integritySocketStates[moduleInstanceId] = false;
                 if (_integrityDecalStates.Remove(moduleInstanceId))
@@ -325,10 +331,12 @@ namespace Hecton8.Construction
                 return;
             }
 
-            int decalAtlasIndex = ResolveIntegrityDecalAtlasIndex(
-                baseModule.IntegrityStateNormalized,
-                baseModule.BulkheadFloodStress01);
-            Matrix4x4 decalMatrix = BuildIntegrityDecalMatrix(baseModule);
+            int decalAtlasIndex = hasParasiteVisual
+                ? RustDecalAtlasIndex
+                : ResolveIntegrityDecalAtlasIndex(
+                    baseModule.IntegrityStateNormalized,
+                    baseModule.BulkheadFloodStress01);
+            Matrix4x4 decalMatrix = BuildIntegrityDecalMatrix(baseModule, parasiteVisual01);
             _integrityDecalStates[moduleInstanceId] = new IntegrityDecalState
             {
                 DecalMatrix = decalMatrix,
@@ -336,7 +344,7 @@ namespace Hecton8.Construction
             };
             RebuildGlobalDecalBuffer();
 
-            if (hadLatchedState)
+            if (hadLatchedState || !isBelowThreshold)
                 return;
 
             _integritySocketStates[moduleInstanceId] = true;
@@ -371,7 +379,7 @@ namespace Hecton8.Construction
             if (moduleRuntimeId == 0)
                 return;
 
-            if (!baseModule.TryGetParasiteSporeHazard(out _, out float radius, out float intensity))
+            if (!baseModule.TryGetParasiteSporeHazard(out Vector3 position, out float radius, out float intensity))
             {
                 ClearParasiteSporeHazard(baseModule);
                 return;
@@ -379,6 +387,7 @@ namespace Hecton8.Construction
 
             _parasiteSporeHazards[moduleRuntimeId] = new ParasiteSporeHazardState
             {
+                Position = position,
                 Intensity = Mathf.Clamp01(intensity),
                 Radius = Mathf.Max(0.1f, radius)
             };
@@ -431,6 +440,27 @@ namespace Hecton8.Construction
             return intensity > 0.001f;
         }
 
+        internal static bool TryGetParasiteSporeHazard(BaseModule baseModule, out Vector3 position, out float intensity, out float radius)
+        {
+            position = Vector3.zero;
+            intensity = 0f;
+            radius = 0f;
+            if (baseModule == null)
+                return false;
+
+            int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
+            if (moduleRuntimeId == 0 ||
+                !_parasiteSporeHazards.TryGetValue(moduleRuntimeId, out ParasiteSporeHazardState state))
+            {
+                return false;
+            }
+
+            position = state.Position;
+            intensity = state.Intensity;
+            radius = state.Radius;
+            return intensity > 0.001f;
+        }
+
         private static void DispatchParasiteStructuralCollapse(BaseModule baseModule, float infectionLevel, float addedMassKilograms)
         {
             if (baseModule == null)
@@ -453,6 +483,10 @@ namespace Hecton8.Construction
             TryDispatchParasiteCollapseBox(collapseCenter, halfExtents);
 
             baseModule.SetIntegrityState(BaseModuleIntegrityState.Ruptured);
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            if (floraInteractionManager != null)
+                floraInteractionManager.KillAttachedParasites(baseModule);
+
             int moduleRuntimeId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
             if (moduleRuntimeId != 0)
                 _moduleRuptureStates[moduleRuntimeId] = true;
@@ -536,7 +570,7 @@ namespace Hecton8.Construction
             return Matrix4x4.TRS(ruptureWorldPosition, rotation, scale);
         }
 
-        private static Matrix4x4 BuildIntegrityDecalMatrix(BaseModule baseModule)
+        private static Matrix4x4 BuildIntegrityDecalMatrix(BaseModule baseModule, float parasiteVisual01)
         {
             Transform moduleTransform = baseModule.transform;
             Vector3 worldPosition = moduleTransform.position;
@@ -553,7 +587,10 @@ namespace Hecton8.Construction
 
             float damage01 = Mathf.Clamp01(1f - baseModule.IntegrityStateNormalized);
             float stress01 = Mathf.Clamp01(baseModule.BulkheadFloodStress01);
-            float scaleMeters = DefaultDecalScaleMeters * (1f + (damage01 * 1.2f) + (stress01 * 1.8f));
+            float scaleMultiplier = Mathf.Min(
+                MaxDecalScaleMultiplier,
+                1f + (damage01 * 1.2f) + (stress01 * 1.8f) + (Mathf.Clamp01(parasiteVisual01) * 1.4f));
+            float scaleMeters = DefaultDecalScaleMeters * scaleMultiplier;
             return Matrix4x4.TRS(worldPosition, Quaternion.LookRotation(forward, Vector3.up), Vector3.one * scaleMeters);
         }
 

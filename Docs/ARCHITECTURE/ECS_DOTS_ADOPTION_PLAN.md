@@ -4,6 +4,13 @@ Date: 2026-04-30
 Status: PENDING VERIFICATION
 Scope: roadmap only. No `com.unity.entities` production migration was performed in this pass.
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current project truth.
+- DOTS/Entities remains prototype/experimental architecture, not the production backbone.
+- The removal criteria below are future gates, not current proof.
+- Do not enable live ECS ownership for save, UI, player, bootstrap, active fauna, pooled physics, or scatter placement without profiler parity and runtime validation.
+
 ## Mandates Followed
 
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
@@ -126,13 +133,13 @@ Required bridge systems:
 
 ## Phase 4 - Removal Criteria
 
-Remove the old NativeArray service path only after all criteria are met:
+Remove the old NativeArray service path only after all criteria are met and freshly verified:
 
 - CPU frame time is equal or lower on MX350 target hardware.
 - GC remains `0 B/frame` in hot paths.
 - Save/load stable IDs survive scene reload and version migration.
 - Native memory lifetime is owned by ECS worlds and disposed on world teardown.
-- Console has 0 errors and 0 warnings in both Entities-enabled and Entities-disabled configurations.
+- Fresh console queries return `0` errors and `0` warnings in both Entities-enabled and Entities-disabled configurations.
 
 ## Rejected Moves
 

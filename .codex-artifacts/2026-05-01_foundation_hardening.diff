@@ -1,0 +1,1543 @@
+﻿diff --git a/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs b/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
+index 026ea83d..9652576d 100644
+--- a/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
++++ b/Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs
+@@ -764,7 +764,10 @@ namespace Hecton8.Core
+ 
+             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
+-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)count * UnsafeUtility.SizeOf<T>());
++            long copyBytes = (long)count * UnsafeUtility.SizeOf<T>();
++            long destinationBytes = (long)destination.Length * UnsafeUtility.SizeOf<T>();
++            if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
++                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(ConnectionSplineBatchRenderer));
+         }
+ 
+         private static Bounds ComputeBounds(BatchState batch, int vertexCount)
+diff --git a/Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs b/Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs
+index 933f86d5..658d5c2b 100644
+--- a/Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs
++++ b/Assets/_Project/Scripts/Core/GlobalTelemetryBus.cs
+@@ -20,7 +20,9 @@ namespace Hecton8.Core
+         ItemCrafted = 2,
+         BootstrapDependencyCycle = 3,
+         JobBarrierStall = 4,
+-        PoolExhausted = 5
++        PoolExhausted = 5,
++        DependencyOrderWarning = 6,
++        InteractionPacketOverflow = 7
+     }
+ 
+     [StructLayout(LayoutKind.Sequential)]
+@@ -45,6 +47,7 @@ namespace Hecton8.Core
+         private const string ExportFolderName = "Telemetry";
+         private const string BinaryExtension = ".tbin";
+         private const string JsonExtension = ".json";
++        // COLD ALLOC: WaitCallback[1] - background telemetry export entry point - owner: GlobalTelemetryBus
+         private static readonly WaitCallback _backgroundExportCallback = ExecuteBackgroundExport;
+ 
+         private static NativeArray<TelemetryEvent> _ringBuffer;
+@@ -53,6 +56,7 @@ namespace Hecton8.Core
+         private static int _writeCursor;
+         private static float _nextDrainTimeSeconds = DrainIntervalSeconds;
+         private static int _exportInFlight;
++        private static int _mmfWriteInProgress;
+         private static int _pendingEventCount;
+         private static int _pendingByteCount;
+         private static string _pendingBinaryPath;
+@@ -95,6 +99,7 @@ namespace Hecton8.Core
+             _writeCursor = 0;
+             _nextDrainTimeSeconds = DrainIntervalSeconds;
+             _exportInFlight = 0;
++            _mmfWriteInProgress = 0;
+             _pendingEventCount = 0;
+             _pendingByteCount = 0;
+             _pendingBinaryPath = null;
+@@ -170,6 +175,36 @@ namespace Hecton8.Core
+                 default);
+         }
+ 
++        /// <summary>
++        /// Publishes a dependency-order warning using precomputed stable hashes.
++        /// </summary>
++        /// <param name="serviceHash">Service slot hash that was accessed before registration.</param>
++        /// <param name="requesterHash">Optional requester hash. Zero when unknown.</param>
++        public static void PublishDependencyOrderWarning(uint serviceHash, uint requesterHash)
++        {
++            Publish(
++                TelemetryEventType.DependencyOrderWarning,
++                serviceHash,
++                requesterHash,
++                1f,
++                default);
++        }
++
++        /// <summary>
++        /// Publishes a dropped interaction-packet overflow event without managed payload text.
++        /// </summary>
++        /// <param name="frameCapacity">Per-frame interaction packet capacity.</param>
++        /// <param name="queuedCount">Current queued interaction signal count.</param>
++        public static void PublishInteractionPacketOverflow(int frameCapacity, int queuedCount)
++        {
++            Publish(
++                TelemetryEventType.InteractionPacketOverflow,
++                unchecked((uint)frameCapacity),
++                unchecked((uint)math.max(0, queuedCount)),
++                1f,
++                default);
++        }
++
+         public static void LateFrameUpdate(float unscaledTimeSeconds)
+         {
+             if (!_ringBuffer.IsCreated)
+@@ -188,6 +223,41 @@ namespace Hecton8.Core
+             BeginSnapshotCopy();
+         }
+ 
++        /// <summary>
++        /// Attempts a crash-path synchronous export of the global telemetry ring.
++        /// Returns false when a background MMF write already owns the export scratch state.
++        /// </summary>
++        public static bool TryEmergencyFlushSynchronous()
++        {
++            if (!Application.isPlaying)
++                return false;
++
++            EnsureInitialized();
++            if (Interlocked.CompareExchange(ref _exportInFlight, 1, 0) != 0)
++                return false;
++
++            try
++            {
++                int writeCursor = Volatile.Read(ref _writeCursor);
++                int totalWritten = math.min(writeCursor, Capacity);
++                if (totalWritten <= 0)
++                    return false;
++
++                CopySnapshotUnbounded(writeCursor - totalWritten, totalWritten);
++                PrepareExportState(totalWritten, DateTime.UtcNow.Ticks);
++                return WritePreparedExportToMmf();
++            }
++            finally
++            {
++                _snapshotInProgress = false;
++                _snapshotStartIndex = 0;
++                _snapshotTotalCount = 0;
++                _snapshotCopiedCount = 0;
++                ClearPendingExportState();
++                Interlocked.Exchange(ref _exportInFlight, 0);
++            }
++        }
++
+         private static void Publish(
+             TelemetryEventType eventType,
+             uint subjectHash,
+@@ -276,24 +346,21 @@ namespace Hecton8.Core
+             CompleteSnapshotCopy();
+         }
+ 
+-        private static unsafe void CompleteSnapshotCopy()
++        private static void CopySnapshotUnbounded(int startIndex, int totalCount)
+         {
+-            int eventSizeBytes = UnsafeUtility.SizeOf<TelemetryEvent>();
+-            WriteHeader(_snapshotTotalCount, eventSizeBytes);
+-
+-            fixed (byte* exportBytesPtr = _exportBytes)
++            for (int i = 0; i < totalCount; i++)
+             {
+-                byte* payloadPtr = exportBytesPtr + BinaryHeaderSizeBytes;
+-                UnsafeUtility.MemCpy(
+-                    payloadPtr,
+-                    _snapshotBuffer.GetUnsafeReadOnlyPtr(),
+-                    _snapshotTotalCount * eventSizeBytes);
++                int ringIndex = (startIndex + i) % Capacity;
++                if (ringIndex < 0)
++                    ringIndex += Capacity;
++
++                _snapshotBuffer[i] = _ringBuffer[ringIndex];
+             }
++        }
+ 
+-            _pendingTelemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
+-            _pendingGeneratedUtcTicks = DateTime.UtcNow.Ticks;
+-            _pendingEventCount = _snapshotTotalCount;
+-            _pendingByteCount = BinaryHeaderSizeBytes + (_snapshotTotalCount * eventSizeBytes);
++        private static void CompleteSnapshotCopy()
++        {
++            PrepareExportState(_snapshotTotalCount, DateTime.UtcNow.Ticks);
+             _snapshotInProgress = false;
+             _snapshotStartIndex = 0;
+             _snapshotTotalCount = 0;
+@@ -301,25 +368,73 @@ namespace Hecton8.Core
+             ThreadPool.QueueUserWorkItem(_backgroundExportCallback);
+         }
+ 
+-        private static unsafe void WriteHeader(int eventCount, int eventSizeBytes)
++        private static void PrepareExportState(int eventCount, long generatedUtcTicks)
++        {
++            int eventSizeBytes = UnsafeUtility.SizeOf<TelemetryEvent>();
++            WriteHeader(eventCount, eventSizeBytes);
++
++            unsafe
++            {
++                fixed (byte* exportBytesPtr = _exportBytes)
++                {
++                    byte* payloadPtr = exportBytesPtr + BinaryHeaderSizeBytes;
++                    int copyBytes = eventCount * eventSizeBytes;
++                    int destinationBytes = _exportBytes.Length - BinaryHeaderSizeBytes;
++                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
++                            payloadPtr,
++                            destinationBytes,
++                            _snapshotBuffer.GetUnsafeReadOnlyPtr(),
++                            copyBytes))
++                    {
++                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(GlobalTelemetryBus));
++                    }
++                }
++            }
++
++            _pendingTelemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
++            _pendingGeneratedUtcTicks = generatedUtcTicks;
++            _pendingEventCount = eventCount;
++            _pendingByteCount = BinaryHeaderSizeBytes + (eventCount * eventSizeBytes);
++        }
++
++        private static void WriteHeader(int eventCount, int eventSizeBytes)
+         {
+-            fixed (byte* exportBytesPtr = _exportBytes)
++            unsafe
+             {
+-                uint* header = (uint*)exportBytesPtr;
+-                header[0] = BinaryMagic;
+-                header[1] = Version;
+-                header[2] = (uint)eventCount;
+-                header[3] = (uint)eventSizeBytes;
++                fixed (byte* exportBytesPtr = _exportBytes)
++                {
++                    uint* header = (uint*)exportBytesPtr;
++                    header[0] = BinaryMagic;
++                    header[1] = Version;
++                    header[2] = (uint)eventCount;
++                    header[3] = (uint)eventSizeBytes;
++                }
+             }
+         }
+ 
+-        private static unsafe void ExecuteBackgroundExport(object state)
++        private static void ExecuteBackgroundExport(object state)
+         {
++            try
++            {
++                WritePreparedExportToMmf();
++            }
++            finally
++            {
++                ClearPendingExportState();
++                Interlocked.Exchange(ref _exportInFlight, 0);
++            }
++        }
++
++        private static bool WritePreparedExportToMmf()
++        {
++            if (Interlocked.CompareExchange(ref _mmfWriteInProgress, 1, 0) != 0)
++                return false;
++
+             try
+             {
+                 string telemetryDirectory = _pendingTelemetryDirectory;
+                 if (string.IsNullOrEmpty(telemetryDirectory))
+-                    return;
++                    return false;
+ 
+                 Directory.CreateDirectory(telemetryDirectory);
+                 DateTime generatedUtc = _pendingGeneratedUtcTicks > 0L
+@@ -364,17 +479,23 @@ namespace Hecton8.Core
+                     builder.Append("\"}");
+                     File.WriteAllText(_pendingJsonPath, builder.ToString(), Encoding.UTF8);
+                 }
++
++                return true;
+             }
+             finally
+             {
+-                _pendingEventCount = 0;
+-                _pendingByteCount = 0;
+-                _pendingBinaryPath = null;
+-                _pendingJsonPath = null;
+-                _pendingTelemetryDirectory = null;
+-                _pendingGeneratedUtcTicks = 0L;
+-                Interlocked.Exchange(ref _exportInFlight, 0);
++                Interlocked.Exchange(ref _mmfWriteInProgress, 0);
+             }
+         }
++
++        private static void ClearPendingExportState()
++        {
++            _pendingEventCount = 0;
++            _pendingByteCount = 0;
++            _pendingBinaryPath = null;
++            _pendingJsonPath = null;
++            _pendingTelemetryDirectory = null;
++            _pendingGeneratedUtcTicks = 0L;
++        }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/Core/SystemDispatcher.cs b/Assets/_Project/Scripts/Core/SystemDispatcher.cs
+index fe006f3a..9d48e71d 100644
+--- a/Assets/_Project/Scripts/Core/SystemDispatcher.cs
++++ b/Assets/_Project/Scripts/Core/SystemDispatcher.cs
+@@ -30,6 +30,7 @@ namespace Hecton8.Core
+         private const float FixedStepSeconds = 0.02f;
+         private const int MaxFixedSubstepsPerFrame = 3;
+         private const int MaxLateFrameEventsPerFrame = 1000;
++        private const int MaxPdaEventsPerFrame = 30;
+         private const float CircuitBreakerLogIntervalSeconds = 5f;
+         private const string SlowDispatcherPhaseWarningMessage = "[SystemDispatcher] Dispatcher phase exceeded slow threshold.";
+         private const string FoveatedFrameCompleteWarningMessage = "[SystemDispatcher] Foveated frame completion exceeded slow threshold.";
+@@ -481,7 +482,7 @@ namespace Hecton8.Core
+             AudioLogEvents.FlushPending();
+             Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
+             Hecton8.UI.NotificationEvents.FlushPending();
+-            Hecton8.UI.PDAEvents.FlushPending();
++            Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame);
+             Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
+             ObjectPoolDiagnostics.FlushPending();
+             Hecton8.AtlasSignal.Atlas6Events.FlushPending();
+@@ -496,7 +497,7 @@ namespace Hecton8.Core
+         /// Consumes one deferred event dispatch slot from the current LateUpdate budget.
+         /// </summary>
+         /// <returns>True when an event queue may dispatch one payload this frame.</returns>
+-        internal static bool TryConsumeLateFrameEventDispatch()
++        public static bool TryConsumeLateFrameEventDispatch()
+         {
+             if (!_lateFrameEventBudgetActive)
+                 return true;
+@@ -1112,7 +1113,10 @@ namespace Hecton8.Core
+             {
+                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
++                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
++                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
++                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
++                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+             }
+ 
+             destination.UnlockBufferAfterWrite<T>(safeCount);
+@@ -1131,7 +1135,10 @@ namespace Hecton8.Core
+             fixed (T* sourcePtr = source)
+             {
+                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
++                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
++                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
++                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
++                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+             }
+ 
+             destination.UnlockBufferAfterWrite<T>(safeCount);
+diff --git a/Assets/_Project/Scripts/CrashTelemetryBuffer.cs b/Assets/_Project/Scripts/CrashTelemetryBuffer.cs
+index 76a01cb0..dbfc6c01 100644
+--- a/Assets/_Project/Scripts/CrashTelemetryBuffer.cs
++++ b/Assets/_Project/Scripts/CrashTelemetryBuffer.cs
+@@ -35,10 +35,13 @@ namespace Hecton8.Core
+         private const int ExportScratchSizeBytes = CrashExportHeaderSizeBytes + (ExportSnapshotEntries * DebugLogEntrySizeBytes);
+         private const int ExportStateIdle = 0;
+         private const int ExportStateQueued = 1;
++        private const int LiveTelemetryStateIdle = 0;
++        private const int LiveTelemetryStateQueued = 1;
+         private const int RecorderCapacity = 1;
+         private const int LiveTelemetryWriteIntervalFrames = 60;
+         private const int LiveTelemetryRecordSizeBytes = 32;
+         private const float PlayerResolveCooldownSeconds = 1f;
++        private const float OriginShiftTelemetryIntervalSeconds = 1f;
+         private const float SevereFrameTimeSeconds = 0.025f;
+         private const float MaximumTrackedWorldMagnitude = 1000000f;
+         private const float MaximumReservedMemoryMb = 4096f;
+@@ -60,6 +63,7 @@ namespace Hecton8.Core
+         private static readonly string[] _GcAllocCandidates = { "GC Allocated In Frame" };
+ 
+         private static readonly WaitCallback _backgroundExportCallback = ExecuteBackgroundExport;
++        private static readonly WaitCallback _backgroundLiveTelemetryCallback = ExecuteBackgroundLiveTelemetryWrite;
+         private static CrashTelemetryBuffer _instance;
+         private static int _runtimeFaultFlags;
+ 
+@@ -87,6 +91,7 @@ namespace Hecton8.Core
+             AI = 1u << 2,
+             Fluid = 1u << 3,
+             Bootstrap = 1u << 4,
++            OriginShift = 1u << 5,
+         }
+ 
+         private enum ExportReason : uint
+@@ -142,10 +147,10 @@ namespace Hecton8.Core
+ 
+         private NativeArray<DebugLogEntry> _ringBuffer;
+         private NativeArray<DebugLogEntry> _exportSnapshot;
+-        private NativeArray<byte> _liveTelemetryScratch;
+         private Transform _playerTransform;
+         private HectonSurvivalSystem _survivalSystem;
+         private float _playerResolveCooldown;
++        private float _nextOriginShiftTelemetryTime;
+         private float _lastFixedDeltaTime;
+         private long _writeCursor;
+         private uint _stickyErrorFlags;
+@@ -154,12 +159,12 @@ namespace Hecton8.Core
+         private int _lastExportFrame = int.MinValue;
+         private int _threadedFaultFlags;
+         private int _exportState;
++        private int _liveTelemetryWriteState;
+         private int _pendingExportBytes;
+         private string _pendingExportPath;
+         private string _liveTelemetryPath;
+         private NativeArray<byte> _exportScratch;
+-        private MemoryMappedFile _liveTelemetryMappedFile;
+-        private MemoryMappedViewAccessor _liveTelemetryViewAccessor;
++        private LiveTelemetryRecord _pendingLiveTelemetryRecord;
+         private ProfilerRecorder _frameTimeRecorder;
+         private ProfilerRecorder _gcAllocRecorder;
+         private int _lastLiveTelemetryWriteFrame = int.MinValue;
+@@ -238,6 +243,28 @@ namespace Hecton8.Core
+             OrRuntimeFaultFlags((int)ErrorBits.NanPhysics);
+         }
+ 
++        /// <summary>
++        /// Reports a critical save-system fault into the crash telemetry stream.
++        /// </summary>
++        public static void ReportSaveSystemCriticalFault()
++        {
++            OrRuntimeFaultFlags((int)ErrorBits.ErrorLogged);
++        }
++
++        /// <summary>
++        /// Records a rate-limited floating-origin shift vector sample into the telemetry ring.
++        /// </summary>
++        /// <param name="shiftOffset">Runtime-space shift vector applied this frame.</param>
++        /// <param name="shiftSequence">Committed floating-origin sequence.</param>
++        public static void ReportOriginShift(Vector3 shiftOffset, uint shiftSequence)
++        {
++            CrashTelemetryBuffer instance = _instance;
++            if (instance == null || !instance._ringBuffer.IsCreated)
++                return;
++
++            instance.WriteOriginShiftTelemetry(shiftOffset, shiftSequence);
++        }
++
+         /// <summary>
+         /// Writes one bootstrap phase duration sample into the crash telemetry ring.
+         /// </summary>
+@@ -437,6 +464,39 @@ namespace Hecton8.Core
+             _writeCursor++;
+         }
+ 
++        private void WriteOriginShiftTelemetry(Vector3 shiftOffset, uint shiftSequence)
++        {
++            float now = Time.unscaledTime;
++            if (now < _nextOriginShiftTelemetryTime)
++                return;
++
++            float3 shift3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
++            if (!math.all(math.isfinite(shift3)))
++                return;
++
++            _nextOriginShiftTelemetryTime = now + OriginShiftTelemetryIntervalSeconds;
++            uint frameIndex = unchecked((uint)Time.frameCount);
++            int writeIndex = (int)(frameIndex % RingCapacity);
++
++            DebugLogEntry entry = default;
++            entry.FrameIndex = frameIndex;
++            entry.SystemMask = (uint)SystemBits.OriginShift;
++            entry.DeltaTime = 0f;
++            entry.FixedDeltaTime = _lastFixedDeltaTime;
++            entry.GpuFrameTime = 0f;
++            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
++            entry.PlayerAup = shift3;
++            entry.ActiveChunkCount = SampleActiveChunkCount();
++            entry.ErrorFlags = 0u;
++            entry.ExportReason = (uint)ExportReason.None;
++            entry.AupShiftSequence = shiftSequence;
++            entry.AiStatePacked = PackAiState();
++            entry.SubsystemHeatPacked = PackSubsystemHeat();
++            entry.LastOriginShiftFrame = frameIndex;
++            _ringBuffer[writeIndex] = entry;
++            _writeCursor++;
++        }
++
+         private static uint PackBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
+         {
+             double positiveMilliseconds = elapsedMilliseconds > 0d ? elapsedMilliseconds : 0d;
+@@ -469,16 +529,13 @@ namespace Hecton8.Core
+             // COLD ALLOC: NativeArray<byte>[19216] - binary export scratch for 16B header + 300 x 64B entries - owner: CrashTelemetryBuffer
+             _exportScratch = new NativeArray<byte>(ExportScratchSizeBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+ 
+-            // COLD ALLOC: NativeArray<byte>[32] - fixed-size live MMF telemetry payload staging - owner: CrashTelemetryBuffer
+-            _liveTelemetryScratch = new NativeArray<byte>(LiveTelemetryRecordSizeBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+             _liveTelemetryPath = Path.Combine(Application.persistentDataPath, LiveTelemetryFileName);
+             InitializeLiveTelemetryMmf();
+             MemoryBudgetTracker.Register(
+                 MemoryBudgetOwnerName,
+                 ((long)_ringBuffer.Length * DebugLogEntrySizeBytes) +
+                 ((long)_exportSnapshot.Length * DebugLogEntrySizeBytes) +
+-                _exportScratch.Length +
+-                _liveTelemetryScratch.Length,
++                _exportScratch.Length,
+                 PersistentMemoryBudgetBytes);
+         }
+ 
+@@ -493,15 +550,12 @@ namespace Hecton8.Core
+             if (_exportScratch.IsCreated)
+                 _exportScratch.Dispose();
+ 
+-            if (_liveTelemetryScratch.IsCreated)
+-                _liveTelemetryScratch.Dispose();
+-
+             _ringBuffer = default;
+             _exportSnapshot = default;
+             _exportScratch = default;
+-            _liveTelemetryScratch = default;
+             DisposeLiveTelemetryMmf();
+             _liveTelemetryPath = null;
++            Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
+             DisposeRecorder(ref _frameTimeRecorder);
+             DisposeRecorder(ref _gcAllocRecorder);
+             MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
+@@ -818,16 +872,7 @@ namespace Hecton8.Core
+                         stream.SetLength(LiveTelemetryRecordSizeBytes);
+                 }
+ 
+-                _liveTelemetryMappedFile = MemoryMappedFile.CreateFromFile(
+-                    _liveTelemetryPath,
+-                    FileMode.Open,
+-                    null,
+-                    LiveTelemetryRecordSizeBytes,
+-                    MemoryMappedFileAccess.ReadWrite);
+-                _liveTelemetryViewAccessor = _liveTelemetryMappedFile.CreateViewAccessor(
+-                    0L,
+-                    LiveTelemetryRecordSizeBytes,
+-                    MemoryMappedFileAccess.Write);
++                Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
+             }
+             catch (Exception exception)
+             {
+@@ -842,22 +887,12 @@ namespace Hecton8.Core
+ 
+         private void DisposeLiveTelemetryMmf()
+         {
+-            if (_liveTelemetryViewAccessor != null)
+-            {
+-                _liveTelemetryViewAccessor.Dispose();
+-                _liveTelemetryViewAccessor = null;
+-            }
+-
+-            if (_liveTelemetryMappedFile != null)
+-            {
+-                _liveTelemetryMappedFile.Dispose();
+-                _liveTelemetryMappedFile = null;
+-            }
++            Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
+         }
+ 
+-        private unsafe void TryWriteLiveTelemetry(uint frameIndex, float dt, float reservedMemoryMb, uint activeChunkCount)
++        private void TryWriteLiveTelemetry(uint frameIndex, float dt, float reservedMemoryMb, uint activeChunkCount)
+         {
+-            if (!_liveTelemetryScratch.IsCreated || _liveTelemetryViewAccessor == null)
++            if (string.IsNullOrEmpty(_liveTelemetryPath))
+                 return;
+ 
+             int frameNumber = unchecked((int)frameIndex);
+@@ -875,26 +910,82 @@ namespace Hecton8.Core
+             record.DeltaTime = dt;
+             record.ReservedMemoryMb = reservedMemoryMb;
+ 
+-            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_liveTelemetryScratch);
+-            UnsafeUtility.MemClear(source, LiveTelemetryRecordSizeBytes);
+-            UnsafeUtility.CopyStructureToPtr(ref record, source);
++            if (Interlocked.CompareExchange(ref _liveTelemetryWriteState, LiveTelemetryStateQueued, LiveTelemetryStateIdle) != LiveTelemetryStateIdle)
++                return;
++
++            _pendingLiveTelemetryRecord = record;
++            ThreadPool.UnsafeQueueUserWorkItem(_backgroundLiveTelemetryCallback, this);
++        }
++
++        private static void ExecuteBackgroundLiveTelemetryWrite(object state)
++        {
++            if (state is CrashTelemetryBuffer crashTelemetryBuffer)
++                crashTelemetryBuffer.WritePendingLiveTelemetryToMmf();
++        }
+ 
+-            byte* mappedBaseAddress = null;
++        private unsafe void WritePendingLiveTelemetryToMmf()
++        {
+             try
+             {
+-                _liveTelemetryViewAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedBaseAddress);
+-                if (mappedBaseAddress == null)
++                string liveTelemetryPath = _liveTelemetryPath;
++                if (string.IsNullOrEmpty(liveTelemetryPath))
+                     return;
+ 
+-                byte* destination = mappedBaseAddress + (int)_liveTelemetryViewAccessor.PointerOffset;
+-                UnsafeUtility.MemClear(destination, LiveTelemetryRecordSizeBytes);
+-                UnsafeUtility.MemCpy(destination, source, LiveTelemetryRecordSizeBytes);
+-                _liveTelemetryViewAccessor.Flush();
++                string directory = Path.GetDirectoryName(liveTelemetryPath);
++                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
++                    Directory.CreateDirectory(directory);
++
++                using FileStream stream = new FileStream(liveTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
++                if (stream.Length != LiveTelemetryRecordSizeBytes)
++                    stream.SetLength(LiveTelemetryRecordSizeBytes);
++
++                using MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
++                    stream,
++                    null,
++                    LiveTelemetryRecordSizeBytes,
++                    MemoryMappedFileAccess.ReadWrite,
++                    HandleInheritability.None,
++                    leaveOpen: false);
++                using MemoryMappedViewAccessor viewAccessor = mappedFile.CreateViewAccessor(0L, LiveTelemetryRecordSizeBytes, MemoryMappedFileAccess.Write);
++
++                LiveTelemetryRecord record = _pendingLiveTelemetryRecord;
++                byte* mappedBaseAddress = null;
++                try
++                {
++                    viewAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedBaseAddress);
++                    if (mappedBaseAddress == null)
++                        return;
++
++                    byte* destination = mappedBaseAddress + (int)viewAccessor.PointerOffset;
++                    UnsafeUtility.MemClear(destination, LiveTelemetryRecordSizeBytes);
++                    UnsafeUtility.CopyStructureToPtr(ref record, destination);
++                    viewAccessor.Flush();
++                    stream.Flush(true);
++                }
++                finally
++                {
++                    if (mappedBaseAddress != null)
++                        viewAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
++                }
++            }
++            catch (UnauthorizedAccessException exception)
++            {
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                Debug.LogException(exception);
++#endif
++            }
++            catch (IOException exception)
++            {
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                Debug.LogException(exception);
++#endif
++            }
++            catch (Exception)
++            {
+             }
+             finally
+             {
+-                if (mappedBaseAddress != null)
+-                    _liveTelemetryViewAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
++                Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
+             }
+         }
+ 
+@@ -931,6 +1022,7 @@ namespace Hecton8.Core
+ 
+                     if (writeSynchronously)
+                     {
++                        GlobalTelemetryBus.TryEmergencyFlushSynchronous();
+                         WritePreparedExportToDisk();
+                         return;
+                     }
+@@ -965,6 +1057,7 @@ namespace Hecton8.Core
+                     ? 0u
+                     : unchecked((uint)math.min(_writeCursor, uint.MaxValue));
+                 PreparePendingExportMetadata(triggerFrame);
++                GlobalTelemetryBus.TryEmergencyFlushSynchronous();
+                 WritePreparedExportToDisk();
+             }
+             catch (Exception)
+@@ -1010,7 +1103,16 @@ namespace Hecton8.Core
+                 UnsafeUtility.MemClear(destination, totalBytes);
+                 UnsafeUtility.CopyStructureToPtr(ref header, destination);
+                 void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_exportSnapshot);
+-                UnsafeUtility.MemCpy(destination + CrashExportHeaderSizeBytes, snapshotPtr, entryBytes);
++                int destinationBytes = _exportScratch.Length - CrashExportHeaderSizeBytes;
++                if (!UnsafeMemoryCopyGuard.TryMemCpy(
++                        destination + CrashExportHeaderSizeBytes,
++                        destinationBytes,
++                        snapshotPtr,
++                        entryBytes))
++                {
++                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
++                    return 0;
++                }
+ 
+                 return totalBytes;
+             }
+diff --git a/Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs b/Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs
+index 063e3a4a..1834acbf 100644
+--- a/Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs
++++ b/Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs
+@@ -1,5 +1,6 @@
+ #if UNITY_EDITOR
+ using System;
++using System.Diagnostics;
+ using System.IO;
+ using System.Reflection;
+ using System.Text;
+@@ -19,6 +20,7 @@ namespace Hecton8.Editor
+         private const string CoreAsmdefPath = "Assets/_Project/Scripts/Hecton8.Core.asmdef";
+         private const string EnforceEnvironmentVariable = "HECTON_COMPLIANCE_ENFORCE";
+         private const int MaxReportedViolations = 128;
++        private const long DeferredValidationBudgetMilliseconds = 8L;
+         private const string ComplianceFailureMessage =
+             "[HectonComplianceValidator] Compliance gate failed. CI must reject this compilation until violations are removed.";
+         private const string BurstContractMessage =
+@@ -36,6 +38,8 @@ namespace Hecton8.Editor
+             "VolumetricLightBeam"
+         };
+ 
++        private static DeferredValidationRun s_deferredRun;
++
+         static HectonComplianceValidator()
+         {
+             EditorApplication.delayCall -= ValidateAfterAssemblyReload;
+@@ -73,7 +77,13 @@ namespace Hecton8.Editor
+             }
+ 
+             bool enforce = ShouldEnforceAsBuildGate();
+-            ValidateAllContracts(throwOnFailure: enforce, reportToConsole: enforce);
++            if (enforce)
++            {
++                ValidateAllContracts(throwOnFailure: true, reportToConsole: true);
++                return;
++            }
++
++            ScheduleDeferredValidation();
+         }
+ 
+         private static void ValidateAllContracts(bool throwOnFailure, bool reportToConsole)
+@@ -86,6 +96,188 @@ namespace Hecton8.Editor
+             FailIfRequired(report, throwOnFailure, reportToConsole);
+         }
+ 
++        private static void ScheduleDeferredValidation()
++        {
++            s_deferredRun = new DeferredValidationRun();
++            EditorApplication.delayCall -= ContinueDeferredValidation;
++            EditorApplication.delayCall += ContinueDeferredValidation;
++        }
++
++        private static void ContinueDeferredValidation()
++        {
++            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
++            {
++                EditorApplication.delayCall -= ContinueDeferredValidation;
++                EditorApplication.delayCall += ContinueDeferredValidation;
++                return;
++            }
++
++            DeferredValidationRun run = s_deferredRun;
++            if (run == null)
++                return;
++
++            Stopwatch stopwatch = Stopwatch.StartNew();
++            while (stopwatch.ElapsedMilliseconds < DeferredValidationBudgetMilliseconds)
++            {
++                if (!StepDeferredValidation(run))
++                    break;
++            }
++
++            if (!run.IsComplete)
++            {
++                EditorApplication.delayCall -= ContinueDeferredValidation;
++                EditorApplication.delayCall += ContinueDeferredValidation;
++                return;
++            }
++
++            SessionState.SetInt("HectonComplianceValidator.TotalViolations", run.Report.Count);
++            s_deferredRun = null;
++        }
++
++        private static bool StepDeferredValidation(DeferredValidationRun run)
++        {
++            switch (run.Phase)
++            {
++                case DeferredValidationPhase.BurstContracts:
++                    return StepBurstValidation(run);
++                case DeferredValidationPhase.LayerMask:
++                    return StepLayerMaskValidation(run);
++                case DeferredValidationPhase.GameplayLinq:
++                    return StepGameplayLinqValidation(run);
++                case DeferredValidationPhase.CoreAsmdef:
++                    ValidateCoreAsmdefAcl(run.Report);
++                    run.Phase = DeferredValidationPhase.Complete;
++                    return true;
++                default:
++                    run.IsComplete = true;
++                    return false;
++            }
++        }
++
++        private static bool StepBurstValidation(DeferredValidationRun run)
++        {
++            if (run.Assemblies == null)
++                run.Assemblies = AppDomain.CurrentDomain.GetAssemblies();
++
++            while (run.AssemblyIndex < run.Assemblies.Length)
++            {
++                if (run.CurrentTypes == null)
++                {
++                    Assembly assembly = run.Assemblies[run.AssemblyIndex];
++                    if (!ShouldScanAssembly(assembly))
++                    {
++                        run.AssemblyIndex++;
++                        continue;
++                    }
++
++                    run.CurrentTypes = GetTypesSafe(assembly);
++                    run.TypeIndex = 0;
++                }
++
++                if (run.TypeIndex >= run.CurrentTypes.Length)
++                {
++                    run.CurrentTypes = null;
++                    run.AssemblyIndex++;
++                    continue;
++                }
++
++                Type type = run.CurrentTypes[run.TypeIndex++];
++                if (type == null || !type.IsValueType || type.IsEnum || !ImplementsUnityJob(type))
++                    return true;
++
++                if (!HasRequiredBurstCompileContract(type))
++                {
++                    run.BurstViolationCount++;
++                    run.Report.Add("BURST001", type.FullName, 0, BurstContractMessage);
++                }
++
++                return true;
++            }
++
++            SessionState.SetInt("HectonComplianceValidator.BurstContractViolations", run.BurstViolationCount);
++            run.Phase = DeferredValidationPhase.LayerMask;
++            return true;
++        }
++
++        private static bool StepLayerMaskValidation(DeferredValidationRun run)
++        {
++            if (run.RuntimeScriptPaths == null)
++                run.RuntimeScriptPaths = GetRuntimeScriptPaths();
++
++            while (run.PathIndex < run.RuntimeScriptPaths.Length)
++            {
++                if (run.CurrentLines == null)
++                {
++                    run.CurrentPath = run.RuntimeScriptPaths[run.PathIndex];
++                    run.CurrentLines = ReadAllLinesSafe(run.CurrentPath);
++                    run.LineIndex = 0;
++                }
++
++                if (run.LineIndex >= run.CurrentLines.Length)
++                {
++                    run.CurrentLines = null;
++                    run.PathIndex++;
++                    continue;
++                }
++
++                int lineIndex = run.LineIndex++;
++                string codeLine = StripLineComment(run.CurrentLines[lineIndex]);
++                if (codeLine.IndexOf("LayerMask.NameToLayer", StringComparison.Ordinal) < 0)
++                    return true;
++
++                string methodName = ResolveContainingMethodName(run.CurrentLines, lineIndex);
++                if (IsAllowedLayerInitializer(methodName))
++                    return true;
++
++                run.LayerMaskViolationCount++;
++                run.Report.Add(
++                    "LAYER001",
++                    run.CurrentPath,
++                    lineIndex + 1,
++                    "LayerMask.NameToLayer is only allowed in Awake or explicit initialization/cache methods.");
++                return true;
++            }
++
++            SessionState.SetInt("HectonComplianceValidator.LayerMaskViolations", run.LayerMaskViolationCount);
++            run.PathIndex = 0;
++            run.CurrentLines = null;
++            run.Phase = DeferredValidationPhase.GameplayLinq;
++            return true;
++        }
++
++        private static bool StepGameplayLinqValidation(DeferredValidationRun run)
++        {
++            if (run.RuntimeScriptPaths == null)
++                run.RuntimeScriptPaths = GetRuntimeScriptPaths();
++
++            if (run.PathIndex >= run.RuntimeScriptPaths.Length)
++            {
++                SessionState.SetInt("HectonComplianceValidator.GameplayLinqViolations", run.GameplayLinqViolationCount);
++                run.Phase = DeferredValidationPhase.CoreAsmdef;
++                return true;
++            }
++
++            string path = run.RuntimeScriptPaths[run.PathIndex++];
++            string text = ReadAllTextSafe(path);
++            if (text.Length == 0 ||
++                text.IndexOf("namespace Hecton8.Gameplay", StringComparison.Ordinal) < 0)
++            {
++                return true;
++            }
++
++            int usingIndex = text.IndexOf("using System.Linq;", StringComparison.Ordinal);
++            if (usingIndex < 0)
++                return true;
++
++            run.GameplayLinqViolationCount++;
++            run.Report.Add(
++                "LINQ001",
++                path,
++                GetLineNumber(text, usingIndex),
++                "System.Linq is forbidden in Hecton8.Gameplay runtime code.");
++            return true;
++        }
++
+         private static void ValidateBurstContracts(ComplianceReport report)
+         {
+             int violationCount = 0;
+@@ -497,6 +689,34 @@ namespace Hecton8.Editor
+                 return message.ToString();
+             }
+         }
++
++        private enum DeferredValidationPhase
++        {
++            BurstContracts,
++            LayerMask,
++            GameplayLinq,
++            CoreAsmdef,
++            Complete
++        }
++
++        private sealed class DeferredValidationRun
++        {
++            public readonly ComplianceReport Report = new ComplianceReport();
++            public DeferredValidationPhase Phase;
++            public Assembly[] Assemblies;
++            public Type[] CurrentTypes;
++            public string[] RuntimeScriptPaths;
++            public string[] CurrentLines;
++            public string CurrentPath;
++            public int AssemblyIndex;
++            public int TypeIndex;
++            public int PathIndex;
++            public int LineIndex;
++            public int BurstViolationCount;
++            public int LayerMaskViolationCount;
++            public int GameplayLinqViolationCount;
++            public bool IsComplete;
++        }
+     }
+ }
+ #endif
+diff --git a/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs b/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs
+index cc4ec125..463c9b82 100644
+--- a/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs
++++ b/Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs
+@@ -42,7 +42,7 @@ namespace Hecton8.Debugging
+         {
+             try
+             {
+-                await Awaitable.WaitForSecondsAsync(startupDelay, cancellationToken: cancellationToken);
++                await DelayRealtimeAsync(startupDelay, cancellationToken);
+ 
+                 if (cancellationToken.IsCancellationRequested || this == null)
+                     return;
+@@ -88,7 +88,7 @@ namespace Hecton8.Debugging
+                 }
+ 
+                 float waitTime = Mathf.Max(0.1f, recipe.craftTime + completionPadding);
+-                await Awaitable.WaitForSecondsAsync(waitTime, cancellationToken: cancellationToken);
++                await DelayRealtimeAsync(waitTime, cancellationToken);
+ 
+                 if (cancellationToken.IsCancellationRequested || this == null)
+                     return;
+@@ -118,6 +118,13 @@ namespace Hecton8.Debugging
+             }
+         }
+ 
++        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
++        {
++            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
++            while (!cancellationToken.IsCancellationRequested && Time.realtimeSinceStartup < deadline)
++                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
++        }
++
+         private Fabricator FindTargetFabricator()
+         {
+             Fabricator[] all = FindObjectsByType<Fabricator>(FindObjectsInactive.Exclude);
+diff --git a/Assets/_Project/Scripts/Fauna/ProceduralLeviathanSpineIK.cs b/Assets/_Project/Scripts/Fauna/ProceduralLeviathanSpineIK.cs
+index 932029d4..5cfb63be 100644
+--- a/Assets/_Project/Scripts/Fauna/ProceduralLeviathanSpineIK.cs
++++ b/Assets/_Project/Scripts/Fauna/ProceduralLeviathanSpineIK.cs
+@@ -708,6 +708,8 @@ namespace Hecton8.AI
+ 
+         private void DisposeRuntimeBuffers()
+         {
++            CompletePendingJob();
++
+             if (_vertebraAccessArray.isCreated)
+                 _vertebraAccessArray.Dispose();
+ 
+diff --git a/Assets/_Project/Scripts/HectonVoxelEngine.cs b/Assets/_Project/Scripts/HectonVoxelEngine.cs
+index 9ee693b5..5794caa3 100644
+--- a/Assets/_Project/Scripts/HectonVoxelEngine.cs
++++ b/Assets/_Project/Scripts/HectonVoxelEngine.cs
+@@ -4304,9 +4304,12 @@ public class HectonVoxelEngine : MonoBehaviour
+         if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
+         {
+             GameObject pooled = ObjectPoolManager.Instance.Spawn(voxelVolumePrefab, Vector3.zero, Quaternion.identity);
+-            PrepareVolumeForBuild(pooled);
+-            HectonFloatingOrigin.MarkShiftTargetsDirty();
+-            return pooled;
++            if (pooled != null)
++            {
++                PrepareVolumeForBuild(pooled);
++                HectonFloatingOrigin.MarkShiftTargetsDirty();
++                return pooled;
++            }
+         }
+ 
+         var go = new GameObject("CaveVolume");
+diff --git a/Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs b/Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs
+index 5faab36e..ec8b0924 100644
+--- a/Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs
++++ b/Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs
+@@ -23,6 +23,7 @@ namespace Hecton8.PDA
+         private const int MaskAxisLength = ExplorationMapDTO.MortonMaskAxisLength;
+         private const int MaskOriginOffset = ExplorationMapDTO.MortonMaskOriginOffset;
+         private const int MaskBitCount = ExplorationMapDTO.MortonMaskBitCount;
++        private const int TotalChunkCapacity = MaskBitCount;
+         private const int MaskWordCount = ExplorationMapDTO.MortonMaskWordCount;
+         private const int MaskByteCount = ExplorationMapDTO.MortonMaskByteCount;
+         private const int LocalMask = MaskAxisLength - 1;
+@@ -235,7 +236,11 @@ namespace Hecton8.PDA
+                 {
+                     void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(maskWords);
+                     if (byteCount > 0)
+-                        UnsafeUtility.MemCpy(destination, source, byteCount);
++                    {
++                        int destinationBytes = data.explorationMap.exploredMortonMaskBytes.Length;
++                        if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, destinationBytes, source, byteCount))
++                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerExplorationTracker));
++                    }
+                 }
+             }
+ 
+@@ -301,6 +306,9 @@ namespace Hecton8.PDA
+             if (!TryEncodeBitIndex(chunkX, chunkY, chunkZ, out int bitIndex))
+                 return false;
+ 
++            if ((uint)bitIndex >= (uint)TotalChunkCapacity)
++                return false;
++
+             if (_exploredChunkMask.IsSet(bitIndex))
+                 return false;
+ 
+@@ -418,7 +426,9 @@ namespace Hecton8.PDA
+                 UnsafeUtility.MemClear(destination, maskWords.Length * sizeof(ulong));
+                 fixed (byte* source = dto.exploredMortonMaskBytes)
+                 {
+-                    UnsafeUtility.MemCpy(destination, source, byteCount);
++                    int destinationBytes = maskWords.Length * sizeof(ulong);
++                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, destinationBytes, source, byteCount))
++                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerExplorationTracker));
+                 }
+             }
+ 
+@@ -470,6 +480,12 @@ namespace Hecton8.PDA
+             }
+ 
+             bitIndex = EncodeLocalMortonIndex(localX, localY, localZ);
++            if ((uint)bitIndex >= (uint)TotalChunkCapacity)
++            {
++                bitIndex = -1;
++                return false;
++            }
++
+             return true;
+         }
+ 
+diff --git a/Assets/_Project/Scripts/PlayerInventory.cs b/Assets/_Project/Scripts/PlayerInventory.cs
+index d7af49f0..ed35b62e 100644
+--- a/Assets/_Project/Scripts/PlayerInventory.cs
++++ b/Assets/_Project/Scripts/PlayerInventory.cs
+@@ -45,6 +45,7 @@ namespace Hecton8.Inventory
+         private const float RadioactiveHalfLifeBaseSeconds = 1800f;
+         private const float Ln2 = 0.6931471805599453f;
+         private const float KineticDamageThresholdG = 50f;
++        private const string RadixSortBufferMismatchLog = "[PlayerInventory] Critical radix sort buffer mismatch. Sorting bypassed.";
+         internal const ushort DegradedQualityMilliThreshold = 250;
+         private static readonly int _DepletedLeadHashId = LocHash.Compute("Data_DepletedLead");
+ 
+@@ -346,6 +347,9 @@ namespace Hecton8.Inventory
+ 
+             private int FindAdjacentReactivePartner(int anchorIndex, int slotCount, int safeColumns, int safeRows)
+             {
++                if (anchorIndex < 0 || anchorIndex >= slotCount)
++                    return -1;
++
+                 ushort flags = ItemStateFlags[anchorIndex];
+                 bool isRadioactive = (flags & RadioactiveMask) != 0;
+                 bool isFlammable = (flags & FlammableMask) != 0;
+@@ -378,7 +382,7 @@ namespace Hecton8.Inventory
+                 bool sourceRadioactive,
+                 bool sourceFlammable)
+             {
+-                if ((uint)x >= (uint)safeColumns || (uint)y >= (uint)safeRows)
++                if (x < 0 || x >= safeColumns || y < 0 || y >= safeRows)
+                     return -1;
+ 
+                 int candidateIndex = y * safeColumns + x;
+@@ -1276,14 +1280,8 @@ namespace Hecton8.Inventory
+             if (count <= 0)
+                 return;
+ 
+-            if (!_sortEntriesNative.IsCreated ||
+-                !_sortScratchNative.IsCreated ||
+-                !_sortRadixCounts.IsCreated ||
+-                count > _sortEntriesNative.Length ||
+-                count > _sortScratchNative.Length)
+-            {
++            if (!TryValidateRadixSortBuffers(count))
+                 return;
+-            }
+ 
+             for (int i = 0; i < count; i++)
+                 _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
+@@ -1333,6 +1331,33 @@ namespace Hecton8.Inventory
+             NotifyInventoryChanged();
+         }
+ 
++        private bool TryValidateRadixSortBuffers(int itemCount)
++        {
++            if (!_sortEntriesNative.IsCreated ||
++                !_sortScratchNative.IsCreated ||
++                !_sortRadixCounts.IsCreated ||
++                _sortBuffer == null ||
++                _sortedPlacements == null ||
++                itemCount > _sortEntriesNative.Length ||
++                itemCount > _sortScratchNative.Length ||
++                itemCount > _sortBuffer.Length ||
++                itemCount > _sortedPlacements.Length)
++            {
++                return false;
++            }
++
++            bool lengthMismatch = _sortEntriesNative.Length != _sortScratchNative.Length ||
++                                  _sortEntriesNative.Length != _sortBuffer.Length ||
++                                  _sortEntriesNative.Length != _sortedPlacements.Length;
++            if (!lengthMismatch)
++                return true;
++
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            Debug.LogError(RadixSortBufferMismatchLog);
++#endif
++            return false;
++        }
++
+         internal bool TryMoveOrSwapAnchor(int sourceAnchorX, int sourceAnchorY, int targetCellX, int targetCellY)
+         {
+             if (_grid == null ||
+@@ -2464,7 +2489,15 @@ namespace Hecton8.Inventory
+             }
+ 
+             int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
++            // InventoryGrid.RemoveAnchorAt clears the SOA ItemHashID before trauma/audio dispatch can read the slot again.
+             _grid.RemoveAnchorAt(anchorIndex);
++            ClearDestroyedAnchorRuntimeState(anchorIndex);
++            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
++            return true;
++        }
++
++        private void ClearDestroyedAnchorRuntimeState(int anchorIndex)
++        {
+             _stackCounts[anchorIndex] = 0;
+             _craftLockedCounts[anchorIndex] = 0;
+             _anchorStateFlags[anchorIndex] = 0;
+@@ -2472,9 +2505,9 @@ namespace Hecton8.Inventory
+             _itemGeneticsWords[anchorIndex] = 0u;
+             _qualityMilli[anchorIndex] = 0;
+             _lastUpdateUnixSeconds[anchorIndex] = 0;
++            if (_thermalRunawayByAnchor.IsCreated && (uint)anchorIndex < (uint)_thermalRunawayByAnchor.Length)
++                _thermalRunawayByAnchor[anchorIndex] = 0f;
+             ClearAnchorPhysicalMetadata(anchorIndex);
+-            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
+-            return true;
+         }
+ 
+         private bool ResolveInventoryPressurizedContainerProtection()
+@@ -2697,7 +2730,10 @@ namespace Hecton8.Inventory
+ 
+             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
+             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
+-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, copyLength * UnsafeUtility.SizeOf<ushort>());
++            int copyBytes = copyLength * UnsafeUtility.SizeOf<ushort>();
++            int destinationBytes = destination.Length * UnsafeUtility.SizeOf<ushort>();
++            if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
++                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerInventory));
+         }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+index 639301bc..54ce5989 100644
+--- a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
++++ b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+@@ -1,5 +1,7 @@
+ using System;
+ using System.Collections.Generic;
++using System.Runtime.InteropServices;
++using Hecton8.Core;
+ using Hecton8.World;
+ using Hecton.Localization;
+ using Unity.Collections.LowLevel.Unsafe;
+@@ -17,9 +19,15 @@ namespace Hecton8.SaveSystem
+         private const float BiologicalDecayRatePerSecond = 0.001f;
+         private const int NullCollectionCount = -1;
+         private static readonly byte[] s_lz4CompressionDictionary = SaveCompressionDictionary.Bytes;
++        private static readonly GCHandle s_lz4CompressionDictionaryHandle = GCHandle.Alloc(s_lz4CompressionDictionary, GCHandleType.Pinned);
++        private static readonly IntPtr s_lz4CompressionDictionaryPtr = s_lz4CompressionDictionaryHandle.AddrOfPinnedObject();
+ 
+         internal static int Lz4CompressionDictionaryLength => Lz4CompressionDictionarySizeBytes;
+-        internal static bool HasLz4CompressionDictionary => true;
++        internal static bool HasLz4CompressionDictionary =>
++            s_lz4CompressionDictionary != null &&
++            s_lz4CompressionDictionary.Length >= Lz4CompressionDictionarySizeBytes &&
++            s_lz4CompressionDictionaryHandle.IsAllocated &&
++            s_lz4CompressionDictionaryPtr != IntPtr.Zero;
+ 
+         [Unity.Burst.BurstDiscard]
+         internal static void CopyLz4CompressionDictionary(byte* destinationPtr, int destinationCapacity)
+@@ -27,9 +35,13 @@ namespace Hecton8.SaveSystem
+             if (destinationPtr == null || destinationCapacity < Lz4CompressionDictionarySizeBytes)
+                 return;
+ 
+-            fixed (byte* sourcePtr = s_lz4CompressionDictionary)
++            if (!UnsafeMemoryCopyGuard.TryMemCpy(
++                    destinationPtr,
++                    destinationCapacity,
++                    (void*)s_lz4CompressionDictionaryPtr,
++                    Lz4CompressionDictionarySizeBytes))
+             {
+-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, Lz4CompressionDictionarySizeBytes);
++                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
+             }
+         }
+ 
+@@ -1854,7 +1866,12 @@ namespace Hecton8.SaveSystem
+ 
+                 fixed (T* sourcePtr = values)
+                 {
+-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
++                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
++                    {
++                        Error = "Struct array copy exceeded the raw buffer ceiling.";
++                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
++                        return false;
++                    }
+                 }
+ 
+                 _cursor += byteCount;
+@@ -1886,7 +1903,12 @@ namespace Hecton8.SaveSystem
+ 
+                 fixed (T* sourcePtr = values)
+                 {
+-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
++                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
++                    {
++                        Error = "Struct array slice copy exceeded the raw buffer ceiling.";
++                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
++                        return false;
++                    }
+                 }
+ 
+                 _cursor += byteCount;
+@@ -1958,7 +1980,12 @@ namespace Hecton8.SaveSystem
+ 
+                 fixed (char* sourcePtr = value)
+                 {
+-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
++                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
++                    {
++                        Error = "String payload copy exceeded the raw buffer ceiling.";
++                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
++                        return false;
++                    }
+                 }
+ 
+                 _cursor += byteCount;
+@@ -2048,7 +2075,12 @@ namespace Hecton8.SaveSystem
+                 values = new T[count];
+                 fixed (T* destinationPtr = values)
+                 {
+-                    UnsafeUtility.MemCpy(destinationPtr, _buffer + _cursor, byteCount);
++                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, byteCount, _buffer + _cursor, byteCount))
++                    {
++                        SetError("Struct array read copy exceeded the destination byte range.");
++                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
++                        return false;
++                    }
+                 }
+ 
+                 _cursor += byteCount;
+diff --git a/Assets/_Project/Scripts/SaveSidecarStorage.cs b/Assets/_Project/Scripts/SaveSidecarStorage.cs
+index 53230643..ef17b29d 100644
+--- a/Assets/_Project/Scripts/SaveSidecarStorage.cs
++++ b/Assets/_Project/Scripts/SaveSidecarStorage.cs
+@@ -1,5 +1,6 @@
+ using System;
+ using System.IO;
++using Hecton8.Core;
+ using Unity.Collections;
+ using Unity.Collections.LowLevel.Unsafe;
+ using UnityEngine;
+@@ -346,7 +347,12 @@ namespace Hecton8.SaveSystem
+ 
+                 fixed (char* sourcePtr = value)
+                 {
+-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
++                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
++                    {
++                        Error = "Sidecar string copy exceeded the allocated byte range.";
++                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveSidecarStorage));
++                        return false;
++                    }
+                 }
+ 
+                 _cursor += byteCount;
+
+--- UNTRACKED DIFF: Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs
+diff --git a/Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs b/Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs
+new file mode 100644
+index 00000000..f6c077b1
+--- /dev/null
++++ b/Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs
+@@ -0,0 +1,61 @@
++using System.Runtime.CompilerServices;
++using Unity.Collections.LowLevel.Unsafe;
++using UnityEngine;
++
++namespace Hecton8.Core
++{
++    /// <summary>
++    /// Central guard for raw native memory copies.
++    /// </summary>
++    public static unsafe class UnsafeMemoryCopyGuard
++    {
++        /// <summary>
++        /// Copies native memory only when the source byte range fits the destination byte range.
++        /// </summary>
++        /// <param name="destination">Destination pointer.</param>
++        /// <param name="destinationSizeBytes">Writable destination byte capacity from the current destination offset.</param>
++        /// <param name="source">Source pointer.</param>
++        /// <param name="sourceSizeBytes">Readable source byte count.</param>
++        /// <returns>True when the copy executed.</returns>
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static bool TryMemCpy(
++            void* destination,
++            long destinationSizeBytes,
++            void* source,
++            long sourceSizeBytes)
++        {
++            if (!CanCopy(destination, destinationSizeBytes, source, sourceSizeBytes))
++                return false;
++
++            UnsafeUtility.MemCpy(destination, source, sourceSizeBytes);
++            return true;
++        }
++
++        /// <summary>
++        /// Returns whether a native copy is inside bounds.
++        /// </summary>
++        [MethodImpl(MethodImplOptions.AggressiveInlining)]
++        public static bool CanCopy(
++            void* destination,
++            long destinationSizeBytes,
++            void* source,
++            long sourceSizeBytes)
++        {
++            return destination != null &&
++                   source != null &&
++                   sourceSizeBytes >= 0L &&
++                   destinationSizeBytes >= 0L &&
++                   sourceSizeBytes <= destinationSizeBytes;
++        }
++
++        /// <summary>
++        /// Reports an unsafe native copy attempt from a cold or failure path.
++        /// </summary>
++        [System.Diagnostics.Conditional("UNITY_EDITOR")]
++        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
++        public static void ReportRejectedCopy(string owner)
++        {
++            Debug.LogError("[UnsafeMemoryCopyGuard] Rejected out-of-bounds MemCpy in " + owner + ".");
++        }
++    }
++}
+
+--- UNTRACKED DIFF: Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs.meta
+diff --git a/Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs.meta b/Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs.meta
+new file mode 100644
+index 00000000..7a2ec32c
+--- /dev/null
++++ b/Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: b4ddd2c7a19b3804889eba7cb3209703
+\ No newline at end of file
+
+--- UNTRACKED DIFF: Docs/Reports/FOUNDATION_HARDENING_SURGERY_LOG_2026-05-01.md
+diff --git a/Docs/Reports/FOUNDATION_HARDENING_SURGERY_LOG_2026-05-01.md b/Docs/Reports/FOUNDATION_HARDENING_SURGERY_LOG_2026-05-01.md
+new file mode 100644
+index 00000000..1ab2d726
+--- /dev/null
++++ b/Docs/Reports/FOUNDATION_HARDENING_SURGERY_LOG_2026-05-01.md
+@@ -0,0 +1,137 @@
++# Foundation Hardening Surgery Log
++
++Date: 2026-05-01
++Status: PENDING VERIFICATION
++
++Requested MCP console proof of `0` errors failed. Unity returned two compile errors in `GameBootstrapper.cs` and three obsolete API warnings outside this patch scope.
++
++## Mandates Followed
++
++- `OPT_Zero_GC_Policy_AllocFree_Mandate`
++- `OPT_Native_Memory_Collections_JobSystem_Protocol`
++- `ARCH_Global_Registry_ServiceLocator_DI_Init`
++- `AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC`
++- `STRM_Asset_Lifecycle_Addressables_Loading_Memory`
++- `PROJECT_LTS_Compatibility_Layer`
++
++## Changes Made
++
++### Compliance validator scheduling
++
++`HectonComplianceValidator` no longer executes the full editor compliance sweep in one post-reload callback during normal editor use.
++
++- Normal editor reload: time-sliced through repeated `EditorApplication.delayCall`.
++- Per-slice budget: `8 ms`.
++- CI / hard-failure mode: synchronous validation still runs when `Application.isBatchMode` or `HECTON_COMPLIANCE_ENFORCE=1`.
++- Static bypass guard: `ShouldEnforceAsBuildGate()` checks `HECTON_COMPLIANCE_ENFORCE` for exact value `1`.
++
++### Pool exhaustion safety
++
++`HectonVoxelEngine.SpawnVolume()` now checks the result of `ObjectPoolManager.Instance.Spawn(...)` before `PrepareVolumeForBuild(...)`.
++
++If the pool returns `null`, the method falls through to the existing fallback volume construction path instead of dereferencing `null`.
++
++`DebrisManager` was reviewed. It does not call `ObjectPoolManager.Spawn`; it uses fixed native/managed slot arrays and already checks `CountFreeSlots()` and `FindFreeSlot()` before writing slot state.
++
++### TransformAccessArray dispose race
++
++`ProceduralLeviathanSpineIK.DisposeRuntimeBuffers()` now calls `CompletePendingJob()` before `_vertebraAccessArray.Dispose()`.
++
++This makes the disposal method safe even if future callers invoke it without a prior explicit complete.
++
++### UnsafeUtility.MemCpy bounds checking
++
++Added `Hecton8.Core.UnsafeMemoryCopyGuard`.
++
++Core logic:
++
++```csharp
++return destination != null &&
++       source != null &&
++       sourceSizeBytes >= 0L &&
++       destinationSizeBytes >= 0L &&
++       sourceSizeBytes <= destinationSizeBytes;
++```
++
++Patched checked copy sites in:
++
++- `SaveBinaryPayloadCodec`
++- `SaveSidecarStorage`
++- `SystemDispatcher`
++- `ConnectionSplineBatchRenderer`
++- `GlobalTelemetryBus`
++- `CrashTelemetryBuffer`
++- `PlayerInventory`
++- `PlayerExplorationTracker`
++
++Remaining debt:
++
++- Static scan still finds raw `UnsafeUtility.MemCpy` calls in `VoxelDeltaProcessor`, `QuestStateManager`, `SaveManager`, `SaveDataMigration_AupV8`, and `SaveBinaryStorage`.
++- Verdict: MemCpy mandate is partially enforced, not complete.
++
++### Dead code meta sync
++
++Filesystem scan:
++
++- Missing `.cs.meta`: `0`
++- Orphan `.cs.meta`: `0`
++- Graveyard-deleted pairs confirmed absent for `WeakToolsRuntimeSmokeTester`, `MantaAcousticRuntimeVerifier`, and `PhysicalInteractionRuntimeVerifier`.
++
++### Awaitable smoke tester GC scan
++
++Static scan over `*SmokeTester*.cs` and `*Verifier*.cs` found:
++
++- `StartCoroutine`: `0`
++- `IEnumerator`: `0`
++- `yield return new WaitForSeconds`: `0`
++- `WaitForSeconds(...)`: `0`
++- `Awaitable.WaitForSecondsAsync`: `0` after patching `FabricationRuntimeSmokeTester`
++
++Delay pattern is now realtime loops over `Awaitable.NextFrameAsync`, matching the existing smoke tester pattern.
++
++## MCP Console
++
++`refresh_unity`:
++
++- `success=true`
++- `compile_requested=true`
++- resulting state: `compiling`
++
++`read_console` returned:
++
++- `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs(348,13): error CS0103: The name 'ReleaseAddressableUIPrefabs' does not exist in the current context`
++- `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs(793,24): error CS0103: The name 'LoadAddressableUIPrefabsAsync' does not exist in the current context`
++- `CraftingEvents.cs(452,35): warning CS0618: Object.GetInstanceID() is obsolete`
++- `InteractionEvents.cs(354,35): warning CS0618: Object.GetInstanceID() is obsolete`
++- `InteractionEvents.cs(361,35): warning CS0618: Object.GetInstanceID() is obsolete`
++
++## Regression Model
++
++CPU: validator normal mode now has an 8 ms editor slice budget instead of one large post-reload reflection/source scan.
++
++GC: gameplay hot path changes are branch checks and pointer-size checks only. Smoke tester delay loops avoid coroutine wait objects.
++
++Memory: one new script and `.meta`; no runtime containers or cache growth.
++
++Cadence: TransformAccessArray disposal now blocks only during teardown/rebuild disposal, not per-frame scheduling.
++
++Correctness: raw `MemCpy` debt remains in several save/voxel/quest paths. Full mandate compliance requires converting those remaining call sites to `UnsafeMemoryCopyGuard`.
++
++## Verification Verdict
++
++- Validator performance hardening: PATCHED, editor runtime not benchmarked.
++- Pool null safety: PATCHED for confirmed voxel pool dereference; DebrisManager reviewed.
++- TransformAccessArray race: PATCHED.
++- MemCpy bounds: PARTIAL, raw call sites remain.
++- Dead meta sync: PASS static filesystem scan.
++- Awaitable smoke tester scan: PASS static token scan.
++- CI hard-failure env guard: PASS static source inspection, not executed in batchmode.
++- MCP clean console: FAIL.
++
++## Diff Artifact
++
++Full diff artifact:
++
++`C:\hades\Hecton8\.codex-artifacts\2026-05-01_foundation_hardening.diff`
++
++STATUS: PENDING VERIFICATION

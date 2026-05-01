@@ -78,6 +78,8 @@ namespace Hecton8.Interaction
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -351,14 +353,14 @@ namespace Hecton8.Interaction
         private static uint ComputeInteractableHash(IInteractable target)
         {
             return target is UnityEngine.Object targetObject
-                ? unchecked((uint)targetObject.GetInstanceID())
+                ? unchecked((uint)EntityId.ToULong(targetObject.GetEntityId()))
                 : 0u;
         }
 
         private static uint ComputeTransformHash(Transform transform)
         {
             return transform != null
-                ? unchecked((uint)transform.GetInstanceID())
+                ? unchecked((uint)EntityId.ToULong(transform.GetEntityId()))
                 : 0u;
         }
     }

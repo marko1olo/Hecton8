@@ -122,6 +122,7 @@ namespace Hecton8.Interaction
         private Ray           _ray;
         private RaycastHit    _hitInfo;
         private readonly RaycastHit[] _raycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe buffer.
+        private static readonly int _DefaultInteractableLayerMask = HectonLayerMasks.InteractableLayerMask;
 
         /// <summary>
         /// Tracks whether this component successfully registered
@@ -191,7 +192,7 @@ namespace Hecton8.Interaction
                     "Nothing. Raycasts will hit nothing. Set it to " +
                     "the 'Interactable' layer.", this);
             }
-            else if (interactableMask.value == ~0)
+            else if (HectonLayerMasks.IsEverythingLayerMask(interactableMask.value))
             {
                 Debug.LogWarning(
                     "[PlayerInteraction] interactableMask is set to " +
@@ -338,19 +339,20 @@ namespace Hecton8.Interaction
 
             // USE GLOBAL CACHE — Zero Redundancy
             var cache = GlobalQueryCacheManager.GetContext("PlayerLook");
-            if (!cache.TryGet(_ray, effectiveReach, (int)interactableMask, out QueryResult qResult))
+            int resolvedInteractableMask = ResolveInteractableLayerMask();
+            if (!cache.TryGet(_ray, effectiveReach, resolvedInteractableMask, out QueryResult qResult))
             {
                 int hitCount = Physics.RaycastNonAlloc(
                     _ray,
                     _raycastHits,
                     effectiveReach,
-                    interactableMask,
+                    resolvedInteractableMask,
                     QueryTriggerInteraction.Ignore);
 
                 bool hit = hitCount > 0;
                 _hitInfo = hit ? _raycastHits[0] : default;
                 qResult = new QueryResult { hasHit = hit, hit = hit ? _hitInfo : default };
-                cache.Set(_ray, effectiveReach, (int)interactableMask, qResult);
+                cache.Set(_ray, effectiveReach, resolvedInteractableMask, qResult);
             }
             else
             {
@@ -374,6 +376,12 @@ namespace Hecton8.Interaction
             {
                 ClearHover();
             }
+        }
+
+        private int ResolveInteractableLayerMask()
+        {
+            int mask = interactableMask.value;
+            return HectonLayerMasks.IsEverythingLayerMask(mask) ? _DefaultInteractableLayerMask : mask;
         }
 
         // ====================================================================

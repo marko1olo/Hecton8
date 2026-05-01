@@ -17,6 +17,8 @@ namespace Hecton8.World
         order = 112)]
     public sealed class FloraDataTemplate : ScriptableObject
     {
+        private const float MinimumPulseFrequencyHz = 0.01f;
+
         [Flags]
         public enum VulnerabilityMask : uint
         {
@@ -339,10 +341,11 @@ namespace Hecton8.World
         public Color BioluminescenceColor => bioluminescenceColor.linear;
 
         /// <summary>Authored shader pulse frequency in Hertz.</summary>
-        public float PulseFrequency => Mathf.Max(0.05f, pulseFrequency);
+        public float PulseFrequency => Mathf.Max(MinimumPulseFrequencyHz, pulseFrequency);
 
         /// <summary>True when a mature instance emits a periodic hostile acoustic pulse.</summary>
-        public bool EmitsMatureSporeAcoustic => matureSporeAcousticEmitter;
+        public bool EmitsMatureSporeAcoustic => matureSporeAcousticEmitter ||
+            (GeneticsMask & (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic) != 0UL;
 
         /// <summary>Optional authored clip for mature spore pulses.</summary>
         public AudioClip MatureSporeAcousticClip => matureSporeAcousticClip;
@@ -411,7 +414,7 @@ namespace Hecton8.World
         public float ModuleInfectionRadiusMeters => Mathf.Max(0.25f, moduleInfectionRadiusMeters);
 
         /// <summary>Pulse frequency in Hertz used by host-module infection shading.</summary>
-        public float ModuleInfectionPulseFrequency => Mathf.Max(0.05f, moduleInfectionPulseFrequency);
+        public float ModuleInfectionPulseFrequency => Mathf.Max(MinimumPulseFrequencyHz, moduleInfectionPulseFrequency);
 
         /// <summary>True when this flora is activated by sustained host-module heat.</summary>
         public bool IsThermophilicModuleGrowth => thermophilicModuleGrowth;
@@ -473,7 +476,7 @@ namespace Hecton8.World
 
             maxHealth = Mathf.Max(0.1f, maxHealth);
             growthTimeSeconds = Mathf.Max(1f, growthTimeSeconds);
-            pulseFrequency = Mathf.Max(0.05f, pulseFrequency);
+            pulseFrequency = Mathf.Max(MinimumPulseFrequencyHz, pulseFrequency);
             matureSporeAcousticVolume = Mathf.Clamp01(matureSporeAcousticVolume);
             swaySpeed = Mathf.Max(0f, swaySpeed);
             bendAmplitude = Mathf.Clamp(bendAmplitude, 0f, 2f);
@@ -483,7 +486,7 @@ namespace Hecton8.World
             modulePowerDrainWatts = Mathf.Max(0f, modulePowerDrainWatts);
             moduleInfectionStrength = Mathf.Clamp01(moduleInfectionStrength);
             moduleInfectionRadiusMeters = Mathf.Max(0.25f, moduleInfectionRadiusMeters);
-            moduleInfectionPulseFrequency = Mathf.Max(0.05f, moduleInfectionPulseFrequency);
+            moduleInfectionPulseFrequency = Mathf.Max(MinimumPulseFrequencyHz, moduleInfectionPulseFrequency);
             thermalActivationTemperatureCelsius = Mathf.Max(0f, thermalActivationTemperatureCelsius);
             thermalActivationDwellSeconds = Mathf.Max(1f, thermalActivationDwellSeconds);
         }

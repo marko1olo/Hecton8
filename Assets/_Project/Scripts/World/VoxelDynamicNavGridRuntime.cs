@@ -36,6 +36,7 @@ namespace Hecton8.World
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const float DynamicObstacleChunkSizeMeters = 16f;
         private const double PartialClearanceDilationBudgetMilliseconds = 1.0d;
+        private const int NavGridIndexMask = 0x0FFF;
         private const int DynamicClearanceFallbackScheduleCount = 1;
         private const float DynamicClearanceWarningCooldownSeconds = 5f;
         private const int MaxPersistentDynamicObstacleCount = 512;
@@ -335,9 +336,9 @@ namespace Hecton8.World
                             }
 
                             int distance = MaxDistance;
-                            distance = math.min(distance, ReadNeighborDistance(x - 1, y, z, flatIndex - 1) + 1);
-                            distance = math.min(distance, ReadNeighborDistance(x, y - 1, z, flatIndex - width) + 1);
-                            distance = math.min(distance, ReadNeighborDistance(x, y, z - 1, flatIndex - (width * height)) + 1);
+                            distance = math.min(distance, ReadNeighborDistance(x - 1, y, z) + 1);
+                            distance = math.min(distance, ReadNeighborDistance(x, y - 1, z) + 1);
+                            distance = math.min(distance, ReadNeighborDistance(x, y, z - 1) + 1);
                             DistanceMap[flatIndex] = (ushort)math.min(distance, MaxDistance);
                         }
                     }
@@ -354,9 +355,9 @@ namespace Hecton8.World
                                 continue;
 
                             int distance = DistanceMap[flatIndex];
-                            distance = math.min(distance, ReadNeighborDistance(x + 1, y, z, flatIndex + 1) + 1);
-                            distance = math.min(distance, ReadNeighborDistance(x, y + 1, z, flatIndex + width) + 1);
-                            distance = math.min(distance, ReadNeighborDistance(x, y, z + 1, flatIndex + (width * height)) + 1);
+                            distance = math.min(distance, ReadNeighborDistance(x + 1, y, z) + 1);
+                            distance = math.min(distance, ReadNeighborDistance(x, y + 1, z) + 1);
+                            distance = math.min(distance, ReadNeighborDistance(x, y, z + 1) + 1);
 
                             ushort resolvedDistance = (ushort)math.min(distance, MaxDistance);
                             DistanceMap[flatIndex] = resolvedDistance;
@@ -368,15 +369,22 @@ namespace Hecton8.World
                 }
             }
 
-            private int ReadNeighborDistance(int x, int y, int z, int flatIndex)
+            private int ReadNeighborDistance(int x, int y, int z)
             {
                 if (x < 0 || y < 0 || z < 0 || x >= Dimensions.x || y >= Dimensions.y || z >= Dimensions.z)
                     return ushort.MaxValue;
 
+                int rawIndex = x + (y * Dimensions.x) + (z * Dimensions.x * Dimensions.y);
+                int flatIndex = DistanceMap.Length <= NavGridIndexMask + 1
+                    ? rawIndex & NavGridIndexMask
+                    : rawIndex;
                 if (x >= RegionMin.x && x <= RegionMax.x &&
                     y >= RegionMin.y && y <= RegionMax.y &&
                     z >= RegionMin.z && z <= RegionMax.z)
                 {
+                    if (flatIndex < 0 || flatIndex >= DistanceMap.Length)
+                        return ushort.MaxValue;
+
                     return DistanceMap[flatIndex];
                 }
 
@@ -453,6 +461,7 @@ namespace Hecton8.World
             public JobHandle PendingDynamicUpdateHandle;
             public bool HasPendingDynamicUpdate;
             public bool PendingRemoval;
+            public bool PortalsReady;
             public int3 PendingRegionMin;
             public int3 PendingRegionMax;
             public PortalNode[] Portals = System.Array.Empty<PortalNode>();
@@ -504,6 +513,7 @@ namespace Hecton8.World
                 PendingDynamicUpdateHandle = default;
                 HasPendingDynamicUpdate = false;
                 PendingRemoval = false;
+                PortalsReady = false;
                 PendingRegionMin = int3.zero;
                 PendingRegionMax = int3.zero;
                 IsDirty = false;
@@ -626,6 +636,7 @@ namespace Hecton8.World
             EnsureBuffer(ref record.NextDistance, pointCount);
             EnsurePortalWorkCapacity(record);
             record.IsPureVoid = false;
+            record.PortalsReady = false;
 
             outputBuffer = record.Next;
             baseOutputBuffer = record.BaseNext;
@@ -657,11 +668,13 @@ namespace Hecton8.World
             EvaluatePureVoidState(record);
             if (record.IsPureVoid)
             {
+                record.PortalsReady = true;
                 _portalGraphDirty = true;
                 return;
             }
 
             RebuildPortals(record);
+            record.PortalsReady = true;
             EnsurePortalGraphScratchCapacityForRecords();
             _portalGraphDirty = true;
         }
@@ -809,6 +822,7 @@ namespace Hecton8.World
                 record.PendingRegionMax = int3.zero;
                 if (!record.IsPureVoid)
                     RebuildPortals(record);
+                record.PortalsReady = true;
                 _portalGraphDirty = true;
             }
 
@@ -891,6 +905,7 @@ namespace Hecton8.World
                 }
 
                 record.HasPendingDynamicUpdate = true;
+                record.PortalsReady = false;
                 scheduledAnyRecord = true;
             }
 
@@ -909,6 +924,16 @@ namespace Hecton8.World
             }
 
             return false;
+        }
+
+        private static bool IsPortalRouteReady(VolumeRecord startRecord, VolumeRecord endRecord)
+        {
+            return startRecord != null &&
+                   endRecord != null &&
+                   !startRecord.HasPendingDynamicUpdate &&
+                   !endRecord.HasPendingDynamicUpdate &&
+                   startRecord.PortalsReady &&
+                   endRecord.PortalsReady;
         }
 
         private static bool TryDequeueValidDynamicClearRequest(out DynamicObstacleClearRequest request)
@@ -991,7 +1016,8 @@ namespace Hecton8.World
                 !TryResolveRecord(endWorldPosition, out VolumeRecord endRecord) ||
                 startRecord == null ||
                 endRecord == null ||
-                startRecord == endRecord)
+                startRecord == endRecord ||
+                !IsPortalRouteReady(startRecord, endRecord))
             {
                 return false;
             }
@@ -1153,7 +1179,8 @@ namespace Hecton8.World
                 !TryResolveRecord(endWorldPosition, out VolumeRecord endRecord) ||
                 startRecord == null ||
                 endRecord == null ||
-                startRecord == endRecord)
+                startRecord == endRecord ||
+                !IsPortalRouteReady(startRecord, endRecord))
             {
                 return false;
             }
@@ -1462,6 +1489,7 @@ namespace Hecton8.World
 
             ReleaseVoxelBuffers(record);
             record.IsPureVoid = true;
+            record.PortalsReady = true;
             record.PortalCount = 0;
             record.FaceVisitStamp = 0;
         }
@@ -1488,6 +1516,14 @@ namespace Hecton8.World
 
         private static void ReleaseVoxelBuffers(VolumeRecord record)
         {
+            if (record.HasPendingDynamicUpdate)
+            {
+                // [BLOCKING_SYNC_POINT] Pure-void stripping is a disposal boundary; native buffers cannot be freed while dilation reads them.
+                record.PendingDynamicUpdateHandle.Complete();
+                record.PendingDynamicUpdateHandle = default;
+                record.HasPendingDynamicUpdate = false;
+            }
+
             if (record.Current.IsCreated)
                 record.Current.Dispose();
             if (record.Next.IsCreated)
@@ -1900,7 +1936,7 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 VolumeRecord record = enumerator.Current.Value;
-                if (record == null || record.PortalCount <= 0)
+                if (record == null || !record.PortalsReady || record.PortalCount <= 0)
                     continue;
 
                 for (int portalIndex = 0; portalIndex < record.PortalCount; portalIndex++)

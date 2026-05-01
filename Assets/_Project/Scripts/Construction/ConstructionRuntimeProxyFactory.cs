@@ -2,6 +2,7 @@ using Hecton8.Building;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Construction
 {
@@ -24,6 +25,7 @@ namespace Hecton8.Construction
         private static Material s_validGhostMaterial;
         private static Material s_invalidGhostMaterial;
         private static Material s_finalProxyMaterial;
+        private static Mesh s_wireBoxMesh;
         private static int s_socketLayer = int.MinValue;
 
         internal static bool TryCreateGhostProxy(BuildableData data, Vector3 position, Quaternion rotation, LayerMask blockingMask, out GameObject proxyRoot)
@@ -85,17 +87,17 @@ namespace Hecton8.Construction
             structuralCollider.size = template.ProxyBoundsSize;
             structuralCollider.isTrigger = ghostProxy;
 
-            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visual.name = "ProxyVisual";
+            GameObject visual = new GameObject("ProxyVisual");
             visual.transform.SetParent(root.transform, false);
             visual.transform.localPosition = template.ProxyBoundsCenter;
             visual.transform.localRotation = Quaternion.identity;
             visual.transform.localScale = template.ProxyBoundsSize;
-            if (visual.TryGetComponent(out Collider visualCollider))
-                Object.Destroy(visualCollider);
 
-            if (visual.TryGetComponent(out Renderer renderer))
-                renderer.sharedMaterial = ghostProxy ? s_validGhostMaterial : s_finalProxyMaterial;
+            MeshFilter meshFilter = visual.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = EnsureWireBoxMesh();
+
+            MeshRenderer renderer = visual.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = ghostProxy ? s_validGhostMaterial : s_finalProxyMaterial;
 
             CreateSockets(root.transform, template.SocketDefinitions);
             return root;
@@ -152,13 +154,50 @@ namespace Hecton8.Construction
         private static void EnsureSharedMaterials()
         {
             if (s_validGhostMaterial == null)
-                s_validGhostMaterial = CreateUnlitColorMaterial(new Color(0.92f, 0.98f, 1f, 0.22f));
+                s_validGhostMaterial = CreateUnlitColorMaterial(Color.white);
 
             if (s_invalidGhostMaterial == null)
-                s_invalidGhostMaterial = CreateUnlitColorMaterial(new Color(1f, 0.28f, 0.22f, 0.22f));
+                s_invalidGhostMaterial = CreateUnlitColorMaterial(new Color(1f, 0.18f, 0.12f, 1f));
 
             if (s_finalProxyMaterial == null)
-                s_finalProxyMaterial = CreateUnlitColorMaterial(new Color(0.92f, 0.95f, 1f, 0.72f));
+                s_finalProxyMaterial = CreateUnlitColorMaterial(Color.white);
+        }
+
+        private static Mesh EnsureWireBoxMesh()
+        {
+            if (s_wireBoxMesh != null)
+                return s_wireBoxMesh;
+
+            // COLD ALLOC: Mesh[1] — shared unit wire box for generated module proxies — owner: ConstructionRuntimeProxyFactory
+            s_wireBoxMesh = new Mesh
+            {
+                name = "H8_RuntimeModuleWireBox"
+            };
+
+            // COLD ALLOC: Vector3[8] — shared unit wire box vertices for generated module proxies — owner: ConstructionRuntimeProxyFactory
+            s_wireBoxMesh.vertices = new[]
+            {
+                new Vector3(-0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f, -0.5f,  0.5f),
+                new Vector3(-0.5f, -0.5f,  0.5f),
+                new Vector3(-0.5f,  0.5f, -0.5f),
+                new Vector3( 0.5f,  0.5f, -0.5f),
+                new Vector3( 0.5f,  0.5f,  0.5f),
+                new Vector3(-0.5f,  0.5f,  0.5f)
+            };
+            s_wireBoxMesh.SetIndices(
+                // COLD ALLOC: int[24] — shared unit wire box edge indices for generated module proxies — owner: ConstructionRuntimeProxyFactory
+                new[]
+                {
+                    0, 1, 1, 2, 2, 3, 3, 0,
+                    4, 5, 5, 6, 6, 7, 7, 4,
+                    0, 4, 1, 5, 2, 6, 3, 7
+                },
+                MeshTopology.Lines,
+                0);
+            s_wireBoxMesh.RecalculateBounds();
+            return s_wireBoxMesh;
         }
 
         private static Material CreateUnlitColorMaterial(Color color)

@@ -1,6 +1,6 @@
 # System Interconnect Matrix
 
-Date: `2026-04-30`
+Date: `2026-05-01`
 Status: `PENDING VERIFICATION`
 
 Mandates followed:
@@ -9,37 +9,54 @@ Mandates followed:
 - `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 - `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+- `DATA_Save_Persistence_Binary_Delta_Checksum.txt`
 - `STRM_Persistent_Object_Registry.txt`
 - `AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt`
 - `UI_Data_Streaming_ZeroGC_Optimization.txt`
 
 ## Scope Correction
 
-The request wording was inaccurate.
+Current modding boundary:
 
-- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs` is a managed generic event bus for mod-facing traffic.
-- `HectonEventBus` is not `NativeQueue`-backed.
-- The first-party queue-backed nervous system is the set of static event lanes flushed by `SystemDispatcher.LateUpdate()`.
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs` is a blittable-only mod event bridge.
+- `Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs` owns sandboxed command queues, AUP rebasing, raycast proxy requests, mod render matrix injection, command-flood throttling, spawn arbitration, and heap-quota eviction events.
+- The first-party queue-backed nervous system remains the set of static event lanes flushed by `SystemDispatcher.LateUpdate()`.
+- Mod persistent payloads use isolated protected 16 KB indexed sectors in `SaveBinaryStorage`; legacy `SaveData.CustomModData` is retained as a fallback index.
+
+Current-state boundary:
+
+- This matrix maps lane ownership and flush order.
+- It is not runtime profiler proof. Code validators passed for the edited scripts; console/play-mode GC proof is separate.
+- `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` remains the historic risk authority for event cascade/depth concerns.
 
 ## Verified LateUpdate Flush Order
 
 Source: `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 
-1. `NarrativeEvents.FlushPending()`
-2. `Hecton8.Interaction.InteractionEvents.FlushPending()`
-3. `Hecton8.Crafting.CraftingEvents.FlushPending()`
-4. `ScanEvents.FlushPending()`
-5. `SaveEvents.FlushPending()`
-6. `QuestEvents.FlushPending()`
-7. `AudioLogEvents.FlushPending()`
-8. `Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending()`
-9. `Hecton8.UI.NotificationEvents.FlushPending()`
-10. `Hecton8.UI.PDAEvents.FlushPending()`
-11. `Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents()`
-12. `ObjectPoolDiagnostics.FlushPending()`
-13. `Hecton8.AtlasSignal.Atlas6Events.FlushPending()`
-14. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
-15. `WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount)`
+1. `CompleteDispatcherRaycasts()`
+2. `ILateFrameTickable.LateFrameTick()` lane pass
+3. `ThreadSafeCommandQueue.DrainToMainThread()` if budget remains
+4. `Hecton8.Modding.ModCommandDispatcher.DrainLateFrame()`
+5. `NarrativeEvents.FlushPending()`
+6. `Hecton8.Interaction.InteractionEvents.FlushPending()`
+7. `Hecton8.Crafting.CraftingEvents.FlushPending()`
+8. `ScanEvents.FlushPending()`
+9. `SaveEvents.FlushPending()`
+10. `QuestEvents.FlushPending()`
+11. `AudioLogEvents.FlushPending()`
+12. `HectonSubmarineOsEvents.FlushPending()`
+13. `FlashlightEvents.FlushPending()`
+14. `WeatherEvents.FlushPending()`
+15. `Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending()`
+16. `Hecton8.UI.NotificationEvents.FlushPending()`
+17. `Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame)`
+18. `Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents()`
+19. `ObjectPoolDiagnostics.FlushPending()`
+20. `Hecton8.AtlasSignal.Atlas6Events.FlushPending()`
+21. `GlobalRegistry.FlushPendingServiceReboundEvents()`
+22. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
+23. `WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount)`
 
 ## Queue-Backed Lanes
 
@@ -57,6 +74,7 @@ Source: `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 | `PDAEvents` | `NativeQueue<PDAEventPayload>` | `IPDAEventListener` | `RaiseOpened`, `RaiseClosed`, `RaiseTabChanged`, `RaiseMapChunkExplored`, `RaiseMarkerChanged`, `RaiseLogbookChanged` | `SystemDispatcher.LateUpdate()` | PDA open/tab/map/marker/logbook lane. |
 | `SceneBootstrap` | `NativeQueue<SceneBootstrapEventPayload>` | `ISceneBootstrapEventListener` | private `RaiseGameReadyEvent`, private `RaiseBootstrapFailedEvent` | `SystemDispatcher.LateUpdate()` via `FlushPendingEvents()` | Queue producer is internal to bootstrap orchestration. |
 | `Atlas6Events` | `NativeQueue<Atlas6EventPayload>` | `IAtlas6EventListener` | `RaisePlayerStatusChanged`, `RaiseDirectiveConflict`, `RaiseBarterAccepted`, `RaiseScarcityDirective` | `SystemDispatcher.LateUpdate()` | Declared inside `Atlas6DirectiveSystem.cs`; separate lane from `AtlasSignalEvents`. |
+| `ModCommandDispatcher` | `NativeQueue<ModCommand>`, `NativeQueue<ModAupCommand>`, `NativeQueue<ModRenderInstanceCommand>` | `IModCommandKernel`, `IDispatcherRaycastReceiver`, `HectonEventBus` unmanaged result payloads | `Request`, `RequestAup`, `RequestRenderInstance` | `SystemDispatcher.LateUpdate()` before first-party event flushes | Commands are throttled to 128/mod/tick and drained after dispatcher raycasts complete. |
 
 ## Spatial Memory Lane
 
@@ -73,11 +91,11 @@ Transient spatial records live in `NativeParallelMultiHashMap<uint, TransientEve
 
 `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs`
 
-- publish surface: `Publish<TEvent>(TEvent evt)`
-- delivery model: immediate managed dispatch
-- internal shape: managed subscription dictionaries/lists
-- queue lane: none
-- ownership role: mod/API event surface, not first-party `NativeQueue` infrastructure
+- publish surface: unmanaged `Publish<TPayload>(in TPayload payload)` and byte-span bridge APIs
+- delivery model: immediate mod callback dispatch with watchdog and recursion depth guard
+- internal shape: managed subscriber tables; payload contract is `unmanaged`
+- queue lane: result queues are owned by `ModCommandDispatcher`, then published through this bridge
+- ownership role: mod/API event surface, not a first-party gameplay `NativeQueue` bus
 
 ## Dependency Graph
 
@@ -91,14 +109,52 @@ Transient spatial records live in `NativeParallelMultiHashMap<uint, TransientEve
 Side branch:
 
 `mod producers`
--> `HectonEventBus.Publish<TEvent>()`
--> `managed subscription list walk`
+-> `HectonAPI.Commands.RequestAup(...)` / `RequestRenderInstance(...)`
+-> `ModCommandDispatcher` NativeQueue
+-> late-frame security gate / AUP rebase / conflict arbitration
+-> engine kernel or proxied dispatcher raycast lane
+-> unmanaged result payload
+-> `HectonEventBus.Publish(in payload)`
+
+Save side branch:
+
+`mod producers`
+-> `HectonAPI.Persistence.SetModString(...)`
+-> `ModSaveStateStore`
+-> `SaveManager.ExecuteVerifiedSavePipeline(...)`
+-> `SaveBinaryStorage.TryCommitModPayloadSubSector(...)`
+-> indexed sector directory entry with `0x4D50` top-bit prefix
+
+## Mod-MMF Paging Path
+
+Source files:
+
+- `Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs`
+- `Assets/_Project/Scripts/SaveManager.cs`
+- `Assets/_Project/Scripts/SaveBinaryStorage.cs`
+- `Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md`
+
+Binary layout per isolated mod payload sector:
+
+- sector directory key: `ComputeModPayloadSectorHash(modHash, pagedSectorHash)` with reserved top-bit prefix `0x4D50`
+- raw protected block size: `16,384` bytes
+- header: 32 bytes
+- payload budget: `16,352` bytes
+- header fields: `Magic:uint`, `Version:ushort`, `HeaderSize:ushort`, `ModHash:uint`, `PayloadLength:ushort`, `Flags:ushort`, `PagedSectorHash:long`, `PayloadChecksum:uint`, `Reserved:uint`
+- compression: existing protected LZ4 indexed-sector writer
+- corruption behavior: invalid header/checksum skips that mod sub-sector; base save metadata and first-party world sectors remain authoritative
+
+Spatial mod record path:
+
+`ModWorldPersistenceManager`
+-> `ModWorldSpawnRecord` stores `SpawnHash:uint`, AUP `GridX/GridY/GridZ:int64`, AUP `LocalX/LocalY/LocalZ:float`, and legacy runtime `Position`
+-> restore converts AUP through current floating-origin offset before pooled proxy spawn
 
 ## Architectural Findings
 
 - There is no single queue-backed monolithic bus.
 - The project uses multiple lane-specific buses with explicit listener contracts.
-- `HectonEventBus` and the first-party static queue buses should not be merged conceptually in docs.
+- `HectonEventBus`, `ModCommandDispatcher`, and the first-party static queue buses should not be merged conceptually in docs.
 - `Atlas6Events` being nested inside `Atlas6DirectiveSystem.cs` increases discoverability risk; the lane exists, but the ownership surface is hidden in a gameplay file rather than a dedicated event file.
 
 ## Regression Model

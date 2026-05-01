@@ -1,5 +1,14 @@
 # THIRD-PARTY POISON
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this boundary as current runtime truth.
+- This document is an anti-corruption contract, not proof that every Crest/MapMagic binding, material path, renderer feature, or scene object currently complies.
+- Re-open adapters, scene bindings, and current console evidence before touching third-party integration.
+
 ## Scope
 
 This document defines the runtime boundary between first-party HECTON-8 systems and third-party assets.

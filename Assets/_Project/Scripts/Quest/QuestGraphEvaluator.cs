@@ -233,16 +233,22 @@ namespace Hecton8.Quest
             _pendingSignals.Enqueue(payload);
         }
 
-        private void DrainPendingSignals()
+        private bool DrainPendingSignals()
         {
             if (_stateManager == null || !_pendingSignals.IsCreated || _isDrainingSignals)
-                return;
+                return true;
 
             _isDrainingSignals = true;
             try
             {
-                while (_pendingSignals.TryDequeue(out QuestSignalPayload payload))
+                while (!_pendingSignals.IsEmpty())
                 {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return false;
+
+                    if (!_pendingSignals.TryDequeue(out QuestSignalPayload payload))
+                        break;
+
                     _stateManager.EvaluateSignal(payload);
                     _onResultsAvailable?.Invoke();
                 }
@@ -251,6 +257,8 @@ namespace Hecton8.Quest
             {
                 _isDrainingSignals = false;
             }
+
+            return true;
         }
 
         internal static void FlushPendingSignals()
@@ -258,7 +266,10 @@ namespace Hecton8.Quest
             QuestGraphEvaluator[] rawArray = _activeEvaluators.RawArray;
             int count = _activeEvaluators.Count;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].DrainPendingSignals();
+            {
+                if (!rawArray[i].DrainPendingSignals())
+                    return;
+            }
         }
 
         private static float MapDepthTierToMeters(int tier)

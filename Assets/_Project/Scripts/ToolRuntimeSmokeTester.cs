@@ -5,7 +5,8 @@
 // then restores the original quick-slot assignments.
 // ============================================================================
 
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -72,7 +73,7 @@ namespace Hecton8.Dev
             if (!runOnStart || _isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
         [ContextMenu("Run Tool Runtime Smoke Pass")]
@@ -81,7 +82,7 @@ namespace Hecton8.Dev
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
         public void ConfigureForDevRun(
@@ -116,7 +117,7 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR
             AutoResolveDefaultAssets();
 #endif
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
             return true;
         }
 
@@ -128,185 +129,216 @@ namespace Hecton8.Dev
                 $"lastTool={_debugLastToolName} lastPass={_debugLastPass} issue={issue}";
         }
 
-        private IEnumerator RunSmokePass()
+        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
-                yield break;
+                return;
 
             AutoResolveSceneReferences();
             if (toolManager == null || playerInventory == null)
             {
                 _debugLastIssue = "Missing PlayerToolManager or PlayerInventory.";
                 Debug.LogWarning("[ToolSmoke] Missing PlayerToolManager or PlayerInventory.");
-                yield break;
+                return;
             }
 
             _isRunning = true;
-            _debugPassCount = 0;
-            _debugFailCount = 0;
-            _debugLastIssue = string.Empty;
-            _debugLastToolName = "None";
-            _debugLastPass = false;
-
-            if (startupDelay > 0f)
-                yield return new WaitForSecondsRealtime(startupDelay);
-
-            GameObject[] originalAssignments = new GameObject[toolManager.SlotCount];
-            for (int i = 0; i < originalAssignments.Length; i++)
-                originalAssignments[i] = toolManager.GetAssignedToolPrefab(i);
-
-            int originalSlot = toolManager.CurrentSlotIndex;
-
-            int passed = 0;
-            int failed = 0;
-
-            Debug.Log("[ToolSmoke] Starting runtime smoke pass.");
-
-            for (int i = 0; i < heldToolPrefabs.Length; i++)
+            try
             {
-                GameObject prefab = heldToolPrefabs[i];
-                if (prefab == null)
-                    continue;
+                _debugPassCount = 0;
+                _debugFailCount = 0;
+                _debugLastIssue = string.Empty;
+                _debugLastToolName = "None";
+                _debugLastPass = false;
 
-                string toolName = prefab.name;
-                _debugLastToolName = toolName;
-                if (!prefab.TryGetComponent(out PlayerTool prefabTool) || prefabTool.ToolData == null)
-                {
-                    Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
-                    continue;
-                }
+                if (startupDelay > 0f)
+                    await DelayRealtimeAsync(startupDelay, cancellationToken);
 
-                LogVerbose($"BEGIN {toolName}");
-
-                bool setupFailed = false;
-
-                LogVerbose($"HOLSTER {toolName}");
-                toolManager.Holster();
-                float holsterElapsed = 0f;
-                while (holsterElapsed < equipTimeout)
-                {
-                    if (!toolManager.IsSwapping &&
-                        toolManager.CurrentTool == null &&
-                        toolManager.CurrentSlotIndex < 0)
-                        break;
-
-                    holsterElapsed += Time.unscaledDeltaTime;
-                    yield return null;
-                }
-
-                if (holsterElapsed >= equipTimeout &&
-                    (toolManager.IsSwapping || toolManager.CurrentTool != null || toolManager.CurrentSlotIndex >= 0))
-                {
-                    Debug.LogWarning(
-                        $"[ToolSmoke] HOLSTER WAIT TIMEOUT slot={toolManager.CurrentSlotIndex} " +
-                        $"tool={(toolManager.CurrentTool != null ? toolManager.CurrentTool.GetType().Name : "null")} " +
-                        $"swapping={toolManager.IsSwapping}");
-                }
-
-                try
-                {
-                    if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId)))
-                        playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId), 1);
-
-                    LogVerbose($"ASSIGN {toolName}");
-                    toolManager.SetAssignedToolPrefab(0, prefab, holsterIfCurrentInvalid: false);
-                    LogVerbose($"SWITCH {toolName}");
-                    toolManager.SwitchToSlot(0);
-                    LogVerbose($"REQUESTED equip {toolName}");
-                }
-                catch (System.Exception ex)
-                {
-                    failed++;
-                    _debugFailCount++;
-                    _debugLastIssue = "Setup exception for " + toolName;
-                    _debugLastPass = false;
-                    setupFailed = true;
-                    Debug.LogError($"[ToolSmoke] SETUP EXCEPTION {toolName}: {ex}");
-                }
-
-                if (setupFailed)
-                    continue;
-
-                float elapsed = 0f;
-                while (elapsed < equipTimeout)
-                {
-                    PlayerTool currentTool = toolManager.CurrentTool;
-                    if (toolManager.CurrentSlotIndex == 0 &&
-                        currentTool != null &&
-                        ReferenceEquals(currentTool.ToolData, prefabTool.ToolData) &&
-                        !toolManager.IsSwapping)
-                        break;
-
-                    elapsed += Time.unscaledDeltaTime;
-                    yield return null;
-                }
-
-                PlayerTool liveTool = toolManager.CurrentTool;
-                if (liveTool == null || !ReferenceEquals(liveTool.ToolData, prefabTool.ToolData))
-                {
-                    failed++;
-                    _debugFailCount++;
-                    _debugLastIssue = "Equip timeout/mismatch for " + toolName;
-                    _debugLastPass = false;
-                    Debug.LogWarning(
-                        $"[ToolSmoke] FAIL {toolName}: equip timeout/mismatch. " +
-                        $"live={(liveTool != null ? liveTool.GetType().Name : "null")}, " +
-                        $"slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
-                    continue;
-                }
-
-                LogVerbose(
-                    $"EQUIPPED {toolName} -> live={liveTool.GetType().Name}, slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
-
-                yield return new WaitForSecondsRealtime(settleDelay);
-                LogVerbose($"SETTLED {toolName}");
-
-                bool stepPassed = RunToolInvocation(toolName, liveTool);
-                if (stepPassed)
-                {
-                    passed++;
-                    _debugPassCount++;
-                    _debugLastIssue = string.Empty;
-                    _debugLastPass = true;
-                }
-                else
-                {
-                    failed++;
-                    _debugFailCount++;
-                    _debugLastIssue = "Invocation failed for " + toolName;
-                    _debugLastPass = false;
-                }
-
-                yield return new WaitForSecondsRealtime(betweenToolsDelay);
-            }
-
-            if (restoreOriginalLoadout)
-            {
-                toolManager.Holster();
-                float holsterElapsed = 0f;
-                while (holsterElapsed < equipTimeout)
-                {
-                    if (!toolManager.IsSwapping &&
-                        toolManager.CurrentTool == null &&
-                        toolManager.CurrentSlotIndex < 0)
-                        break;
-
-                    holsterElapsed += Time.unscaledDeltaTime;
-                    yield return null;
-                }
-
+                GameObject[] originalAssignments = new GameObject[toolManager.SlotCount];
                 for (int i = 0; i < originalAssignments.Length; i++)
-                    toolManager.SetAssignedToolPrefab(i, originalAssignments[i], holsterIfCurrentInvalid: false);
+                    originalAssignments[i] = toolManager.GetAssignedToolPrefab(i);
 
-                if (originalSlot >= 0 && originalSlot < originalAssignments.Length && originalAssignments[originalSlot] != null)
+                int originalSlot = toolManager.CurrentSlotIndex;
+
+                int passed = 0;
+                int failed = 0;
+
+                Debug.Log("[ToolSmoke] Starting runtime smoke pass.");
+
+                for (int i = 0; i < heldToolPrefabs.Length; i++)
                 {
-                    toolManager.SwitchToSlot(originalSlot);
-                    yield return null;
-                }
-            }
+                    GameObject prefab = heldToolPrefabs[i];
+                    if (prefab == null)
+                        continue;
 
-            Debug.Log($"[ToolSmoke] COMPLETE pass={passed} fail={failed}");
-            _isRunning = false;
+                    string toolName = prefab.name;
+                    _debugLastToolName = toolName;
+                    if (!prefab.TryGetComponent(out PlayerTool prefabTool) || prefabTool.ToolData == null)
+                    {
+                        Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
+                        continue;
+                    }
+
+                    LogVerbose($"BEGIN {toolName}");
+
+                    bool setupFailed = false;
+
+                    LogVerbose($"HOLSTER {toolName}");
+                    toolManager.Holster();
+                    float holsterElapsed = 0f;
+                    while (holsterElapsed < equipTimeout)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!toolManager.IsSwapping &&
+                            toolManager.CurrentTool == null &&
+                            toolManager.CurrentSlotIndex < 0)
+                            break;
+
+                        holsterElapsed += Time.unscaledDeltaTime;
+                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    }
+
+                    if (holsterElapsed >= equipTimeout &&
+                        (toolManager.IsSwapping || toolManager.CurrentTool != null || toolManager.CurrentSlotIndex >= 0))
+                    {
+                        Debug.LogWarning(
+                            $"[ToolSmoke] HOLSTER WAIT TIMEOUT slot={toolManager.CurrentSlotIndex} " +
+                            $"tool={(toolManager.CurrentTool != null ? toolManager.CurrentTool.GetType().Name : "null")} " +
+                            $"swapping={toolManager.IsSwapping}");
+                    }
+
+                    try
+                    {
+                        if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId)))
+                            playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(prefabTool.ToolData.PersistentId), 1);
+
+                        LogVerbose($"ASSIGN {toolName}");
+                        toolManager.SetAssignedToolPrefab(0, prefab, holsterIfCurrentInvalid: false);
+                        LogVerbose($"SWITCH {toolName}");
+                        toolManager.SwitchToSlot(0);
+                        LogVerbose($"REQUESTED equip {toolName}");
+                    }
+                    catch (Exception ex)
+                    {
+                        failed++;
+                        _debugFailCount++;
+                        _debugLastIssue = "Setup exception for " + toolName;
+                        _debugLastPass = false;
+                        setupFailed = true;
+                        Debug.LogError($"[ToolSmoke] SETUP EXCEPTION {toolName}: {ex}");
+                    }
+
+                    if (setupFailed)
+                        continue;
+
+                    float elapsed = 0f;
+                    while (elapsed < equipTimeout)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        PlayerTool currentTool = toolManager.CurrentTool;
+                        if (toolManager.CurrentSlotIndex == 0 &&
+                            currentTool != null &&
+                            ReferenceEquals(currentTool.ToolData, prefabTool.ToolData) &&
+                            !toolManager.IsSwapping)
+                            break;
+
+                        elapsed += Time.unscaledDeltaTime;
+                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    }
+
+                    PlayerTool liveTool = toolManager.CurrentTool;
+                    if (liveTool == null || !ReferenceEquals(liveTool.ToolData, prefabTool.ToolData))
+                    {
+                        failed++;
+                        _debugFailCount++;
+                        _debugLastIssue = "Equip timeout/mismatch for " + toolName;
+                        _debugLastPass = false;
+                        Debug.LogWarning(
+                            $"[ToolSmoke] FAIL {toolName}: equip timeout/mismatch. " +
+                            $"live={(liveTool != null ? liveTool.GetType().Name : "null")}, " +
+                            $"slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
+                        continue;
+                    }
+
+                    LogVerbose(
+                        $"EQUIPPED {toolName} -> live={liveTool.GetType().Name}, slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
+
+                    await DelayRealtimeAsync(settleDelay, cancellationToken);
+                    LogVerbose($"SETTLED {toolName}");
+
+                    bool stepPassed = RunToolInvocation(toolName, liveTool);
+                    if (stepPassed)
+                    {
+                        passed++;
+                        _debugPassCount++;
+                        _debugLastIssue = string.Empty;
+                        _debugLastPass = true;
+                    }
+                    else
+                    {
+                        failed++;
+                        _debugFailCount++;
+                        _debugLastIssue = "Invocation failed for " + toolName;
+                        _debugLastPass = false;
+                    }
+
+                    await DelayRealtimeAsync(betweenToolsDelay, cancellationToken);
+                }
+
+                if (restoreOriginalLoadout)
+                {
+                    toolManager.Holster();
+                    float holsterElapsed = 0f;
+                    while (holsterElapsed < equipTimeout)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!toolManager.IsSwapping &&
+                            toolManager.CurrentTool == null &&
+                            toolManager.CurrentSlotIndex < 0)
+                            break;
+
+                        holsterElapsed += Time.unscaledDeltaTime;
+                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    }
+
+                    for (int i = 0; i < originalAssignments.Length; i++)
+                        toolManager.SetAssignedToolPrefab(i, originalAssignments[i], holsterIfCurrentInvalid: false);
+
+                    if (originalSlot >= 0 && originalSlot < originalAssignments.Length && originalAssignments[originalSlot] != null)
+                    {
+                        toolManager.SwitchToSlot(originalSlot);
+                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    }
+                }
+
+                Debug.Log($"[ToolSmoke] COMPLETE pass={passed} fail={failed}");
+            }
+            catch (OperationCanceledException)
+            {
+                _debugLastIssue = "Cancelled";
+                LogVerbose("Cancelled.");
+            }
+            catch (Exception ex)
+            {
+                _debugFailCount++;
+                _debugLastIssue = "Unhandled exception";
+                _debugLastPass = false;
+                Debug.LogError($"[ToolSmoke] UNHANDLED EXCEPTION: {ex}");
+            }
+            finally
+            {
+                _isRunning = false;
+            }
+        }
+
+        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
         }
 
         private bool RunToolInvocation(string toolName, PlayerTool liveTool)

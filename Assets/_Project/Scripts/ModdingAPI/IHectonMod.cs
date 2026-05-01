@@ -25,4 +25,17 @@ namespace Hecton8.Modding
         /// </summary>
         void OnUnload();
     }
+
+    /// <summary>
+    /// Required contract for managed code mods.
+    /// Loader rejects mods whose required API is newer than the engine facade.
+    /// Older API versions are accepted only through registered compatibility shims.
+    /// </summary>
+    public interface IHectonVersionedMod : IHectonMod
+    {
+        /// <summary>
+        /// Minimum HECTON-8 modding API version required by this mod.
+        /// </summary>
+        int RequiredAPIVersion { get; }
+    }
 }

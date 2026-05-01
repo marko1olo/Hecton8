@@ -37,7 +37,8 @@ using Hecton8.UI;
 using Hecton8.Input;
 using Hecton8.Tools;
 using Hecton8.Visor;
-using System;
+using System.Runtime.InteropServices;
+using Unity.Collections;
 using VLB;
 using UnityEngine;
 
@@ -47,24 +48,152 @@ namespace Hecton8.Gameplay
     /// Глобальная шина событий фонаря. Zero GC, thread-safe.
     /// Подписчики: HUD, аудио, аналитика.
     /// </summary>
+    public enum FlashlightEventType : byte
+    {
+        Toggled = 0,
+        BatteryDepleted = 1,
+        Overheat = 2,
+        FlickerStart = 3
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FlashlightEventPayload
+    {
+        public float BatteryPercent;
+        public float Heat01;
+        public ushort EventType;
+        public ushort StateBits;
+
+        public bool IsOn => (StateBits & 1u) != 0u;
+    }
+
+    public interface IFlashlightEventListener
+    {
+        void OnFlashlightEvent(in FlashlightEventPayload payload);
+    }
+
     public static class FlashlightEvents
     {
-        /// <summary>Fired when flashlight toggles. Parameter: new state (true=on).</summary>
-        public static event Action<bool> OnToggled;
+        private const int ListenerCapacity = 16;
 
-        /// <summary>Fired when battery critically low and flashlight auto-shuts down.</summary>
-        public static event Action OnBatteryDepleted;
+        // COLD ALLOC: RegistryBucket<IFlashlightEventListener>[16] - flashlight deferred listeners - owner: FlashlightEvents
+        private static readonly RegistryBucket<IFlashlightEventListener> _listeners = new RegistryBucket<IFlashlightEventListener>(ListenerCapacity);
+        private static NativeQueue<FlashlightEventPayload> _pendingEvents;
 
-        /// <summary>Fired when flashlight overheats and auto-shuts down.</summary>
-        public static event Action OnOverheat;
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
 
-        /// <summary>Fired when flickering starts (low battery or high heat).</summary>
-        public static event Action OnFlickerStart;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
 
-        internal static void RaiseToggled(bool isOn) => OnToggled?.Invoke(isOn);
-        internal static void RaiseBatteryDepleted() => OnBatteryDepleted?.Invoke();
-        internal static void RaiseOverheat() => OnOverheat?.Invoke();
-        internal static void RaiseFlickerStart() => OnFlickerStart?.Invoke();
+            _listeners.Clear();
+        }
+
+        public static void Register(IFlashlightEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        public static void Unregister(IFlashlightEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            if (_listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (!_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out FlashlightEventPayload payload))
+                    return;
+
+                DispatchRegisteredListeners(in payload);
+            }
+        }
+
+        internal static void RaiseToggled(bool isOn, float batteryPercent, float heat01)
+        {
+            Enqueue(FlashlightEventType.Toggled, isOn, batteryPercent, heat01);
+        }
+
+        internal static void RaiseBatteryDepleted(float batteryPercent, float heat01)
+        {
+            Enqueue(FlashlightEventType.BatteryDepleted, false, batteryPercent, heat01);
+        }
+
+        internal static void RaiseOverheat(float batteryPercent, float heat01)
+        {
+            Enqueue(FlashlightEventType.Overheat, false, batteryPercent, heat01);
+        }
+
+        internal static void RaiseFlickerStart(bool isOn, float batteryPercent, float heat01)
+        {
+            Enqueue(FlashlightEventType.FlickerStart, isOn, batteryPercent, heat01);
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+                _pendingEvents = new NativeQueue<FlashlightEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FlashlightEventPayload>[16] - deferred flashlight event lane - owner: FlashlightEvents
+        }
+
+        private static void Enqueue(FlashlightEventType eventType, bool isOn, float batteryPercent, float heat01)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(new FlashlightEventPayload
+            {
+                BatteryPercent = batteryPercent,
+                Heat01 = heat01,
+                EventType = (ushort)eventType,
+                StateBits = isOn ? (ushort)1 : (ushort)0
+            });
+        }
+
+        private static void DispatchRegisteredListeners(in FlashlightEventPayload payload)
+        {
+            int count = _listeners.Count;
+            if (count <= 0)
+                return;
+
+            IFlashlightEventListener[] rawArray = _listeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnFlashlightEvent(in payload);
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
+        }
     }
 
     [DisallowMultipleComponent]
@@ -440,7 +569,7 @@ namespace Hecton8.Gameplay
                 flashlightLight.enabled = true;
 
             PlaySound(toggleOnSound);
-            FlashlightEvents.RaiseToggled(true);
+            FlashlightEvents.RaiseToggled(true, EnergyPercent, _heatLevel);
         }
 
         public void TurnOff()
@@ -451,7 +580,7 @@ namespace Hecton8.Gameplay
             _lowBatteryWarningPlayed = false;
 
             PlaySound(toggleOffSound);
-            FlashlightEvents.RaiseToggled(false);
+            FlashlightEvents.RaiseToggled(false, EnergyPercent, _heatLevel);
         }
 
         internal void TriggerExternalInterference(float normalizedIntensity, float holdDuration, float recoverySpeed)
@@ -807,7 +936,7 @@ namespace Hecton8.Gameplay
 
                 if (energyPercent <= 1f)
                 {
-                    FlashlightEvents.RaiseBatteryDepleted();
+                    FlashlightEvents.RaiseBatteryDepleted(energyPercent, _heatLevel);
                     TurnOff();
                 }
             }
@@ -825,7 +954,7 @@ namespace Hecton8.Gameplay
 
             TurnOff();
             PlaySound(overheatSound);
-            FlashlightEvents.RaiseOverheat();
+            FlashlightEvents.RaiseOverheat(EnergyPercent, _heatLevel);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -836,11 +965,11 @@ namespace Hecton8.Gameplay
         {
             bool shouldFlicker = false;
             bool batteryOrHeatFlicker = false;
+            float energyPercent = EnergyPercent;
 
             // Trigger flickering on low battery
             if (_externalBatteryTool != null)
             {
-                float energyPercent = EnergyPercent;
                 if (energyPercent <= lowBatteryThreshold)
                 {
                     shouldFlicker = true;
@@ -849,7 +978,7 @@ namespace Hecton8.Gameplay
             }
             else if (enableBatteryDrain && survivalSystem != null)
             {
-                float energyPercent = survivalSystem.EnergyPercent;
+                energyPercent = survivalSystem.EnergyPercent;
                 if (energyPercent <= lowBatteryThreshold)
                 {
                     shouldFlicker = true;
@@ -872,7 +1001,7 @@ namespace Hecton8.Gameplay
                 if (!_isFlickering)
                 {
                     _isFlickering = true;
-                    FlashlightEvents.RaiseFlickerStart();
+                    FlashlightEvents.RaiseFlickerStart(_isOn, energyPercent, _heatLevel);
                 }
 
                 _flickerTimer += deltaTime * flickerFrequency;

@@ -129,7 +129,8 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
 
                     if (occluded > 0.5)
                     {
-                        float bayer = Bayer4x4(screenUV * _ScaledScreenParams.xy);
+                        float2 screenPixel = floor(input.positionCS.xy);
+                        float bayer = Bayer4x4(screenPixel);
                         clip((alpha * 0.25) - bayer);
                     }
                 }

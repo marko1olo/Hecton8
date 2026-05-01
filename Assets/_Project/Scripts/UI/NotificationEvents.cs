@@ -34,6 +34,8 @@ namespace Hecton8.UI
         private static readonly Dictionary<uint, string> _messagesByHash = new Dictionary<uint, string>(64);
         private static NativeQueue<NotificationEventPayload> _pendingEvents;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -94,6 +96,18 @@ namespace Hecton8.UI
                 : unchecked((uint)LocHash.Compute(message));
         }
 
+        public static uint RegisterMessage(string message)
+        {
+            uint messageHash = ComputeMessageHash(message);
+            if (messageHash == 0u)
+                return 0u;
+
+            if (!_messagesByHash.ContainsKey(messageHash))
+                _messagesByHash.Add(messageHash, message);
+
+            return messageHash;
+        }
+
         public static bool TryResolveMessage(uint messageHash, out string message)
         {
             return _messagesByHash.TryGetValue(messageHash, out message);
@@ -116,12 +130,9 @@ namespace Hecton8.UI
 
         private static void Publish(string message, NotificationEventSeverity severity)
         {
-            uint messageHash = ComputeMessageHash(message);
+            uint messageHash = RegisterMessage(message);
             if (messageHash == 0u)
                 return;
-
-            if (!_messagesByHash.ContainsKey(messageHash))
-                _messagesByHash.Add(messageHash, message);
 
             EnsureInitialized();
             _pendingEvents.Enqueue(new NotificationEventPayload

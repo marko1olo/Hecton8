@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.Input;
 using TMPro;
 using UnityEngine;
@@ -146,7 +147,8 @@ namespace Hecton8.UI
             Unsubscribe();
 
             // TASK 17: Save overrides when closing Settings section
-            if (RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding != null)
             {
                 rebinding.SaveOverrides();
             }
@@ -187,7 +189,7 @@ namespace Hecton8.UI
                 return;
 
             InputManager input = InputManager.Instance;
-            RebindingManager.TryGetInstance(out RebindingManager rebinding);
+            IInputBindingService rebinding = ResolveRebindingService();
             if (input == null || rebinding == null)
                 return;
 
@@ -220,7 +222,7 @@ namespace Hecton8.UI
                 input.OnTabPrevious -= HandleTabPrevious;
             }
 
-            RebindingManager.TryGetInstance(out RebindingManager rebinding);
+            IInputBindingService rebinding = ResolveRebindingService();
             if (rebinding != null)
             {
                 rebinding.OnRebindStarted -= HandleRebindStarted;
@@ -236,7 +238,8 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
             if (_rows.Length == 0) return;
-            if (RebindingManager.TryGetInstance(out RebindingManager rebinding) && rebinding.IsRebinding) return;
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding != null && rebinding.IsRebinding) return;
 
             int delta = 0;
             if (direction.y > 0.35f) delta = -1;
@@ -252,7 +255,8 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
             if (_rows.Length == 0) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null)
             {
                 SetStatus(StatusRebindingUnavailable);
                 return;
@@ -289,7 +293,8 @@ namespace Hecton8.UI
         private void HandleTabNext()
         {
             if (!IsActive) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null)
             {
                 SetStatus(StatusRebindingUnavailable);
                 return;
@@ -302,7 +307,8 @@ namespace Hecton8.UI
         private void HandleTabPrevious()
         {
             if (!IsActive) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null)
             {
                 SetStatus(StatusRebindingUnavailable);
                 return;
@@ -322,7 +328,8 @@ namespace Hecton8.UI
         private void HandleCancel()
         {
             if (!IsActive) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null)
             {
                 SetStatus(StatusRebindingUnavailable);
                 return;
@@ -441,7 +448,8 @@ namespace Hecton8.UI
         /// </summary>
         private void OnApplyClicked()
         {
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null)
             {
                 SetStatus(StatusRebindingUnavailable);
                 return;
@@ -456,7 +464,8 @@ namespace Hecton8.UI
         /// </summary>
         private void OnCancelClicked()
         {
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null)
             {
                 SetStatus(StatusRebindingUnavailable);
                 return;
@@ -472,7 +481,8 @@ namespace Hecton8.UI
         /// </summary>
         private void OnResetToDefaultsClicked()
         {
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding))
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null)
             {
                 SetStatus(StatusRebindingUnavailable);
                 return;
@@ -500,8 +510,12 @@ namespace Hecton8.UI
             }
 
             action.RemoveBindingOverride(bindingIndex);
-            if (saveAfterRowReset && RebindingManager.TryGetInstance(out RebindingManager rebinding))
-                rebinding.SaveOverrides();
+            if (saveAfterRowReset)
+            {
+                IInputBindingService rebinding = ResolveRebindingService();
+                if (rebinding != null)
+                    rebinding.SaveOverrides();
+            }
 
             RefreshRowBinding(row);
             UpdateStatusForSelected();
@@ -808,6 +822,11 @@ namespace Hecton8.UI
             if (value >= max) return 0;
             if (value < 0) return max - 1;
             return value;
+        }
+
+        private static IInputBindingService ResolveRebindingService()
+        {
+            return GlobalRegistry.InputBinding;
         }
 
         private static RebindRow[] BuildDefaultRows()

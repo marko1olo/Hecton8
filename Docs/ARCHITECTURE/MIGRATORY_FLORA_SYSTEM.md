@@ -1,5 +1,14 @@
 # Migratory Flora System
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this system map as current runtime truth.
+- This document is a flora/scatter architecture reference, not proof that migratory islands, spatial hash records, GPUI, or fauna queries are live in current scenes.
+- Re-open `WorldProceduralScatterDirector*`, `FloraRegrowthDirector`, and current scatter assets before surgery.
+
 ## Runtime Owners
 
 `WorldProceduralScatterDirectorMigratorySargassum` owns drifting Sargassum islands as data-only records. It does not spawn runtime flora GameObjects. Islands are selected from deterministic canopy-kelp scatter placements, lifted into the water column, and registered into `HectonSpatialHash` as signal volumes so fauna systems can query the moving canopy.

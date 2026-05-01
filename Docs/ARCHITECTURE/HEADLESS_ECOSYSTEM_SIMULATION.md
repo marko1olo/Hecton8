@@ -1,6 +1,13 @@
 # Headless Ecosystem Simulation
 
 Status: implementation contract for hibernated fauna sectors.
+Verification: PENDING VERIFICATION
+
+2026-05-01 current-state boundary:
+
+- This is the headless ecosystem implementation contract, not proof of live headless correctness.
+- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Headless fauna, AUP route ownership, hibernation catch-up, and save-sector reconciliation remain high-risk until runtime tests prove no presentation dependency and no persistence drift.
 
 Missing prerequisite: `Docs/ARCHITECTURE/AI_PACING_MODEL.md` was requested by the operation prompt but is not present in this repository. This document anchors the current implementation against `EcosystemDirector`, `FaunaDirector`, and `PersistentWorldRegistry`.
 
@@ -10,9 +17,9 @@ Headless ecosystem simulation keeps Tier 2 fauna alive, hungry, migrating, repro
 
 ## Simulation Tiers
 
-- Tier 0: near-field full Unity presentation, physics, cognition, and scanning hooks.
-- Tier 1: data-only fauna slot updated by the Burst data-only LOD job, with presentation and colliders disabled.
-- Tier 2: hibernated MMF-sector record. No active `FaunaBrain`, no collider, no animator, no spatial hash runtime entry.
+- Tier 0, `<40m`: near-field full Unity presentation, physics, cognition, and scanning hooks.
+- Tier 1, `40m-150m`: data-only fauna slot updated by the Burst data-only LOD job, with presentation and colliders disabled.
+- Tier 2, `>150m`: hibernated MMF-sector record. No active `FaunaBrain`, no collider, no animator, no spatial hash runtime entry.
 
 Tier 2 handoff writes the compact hibernation record before destroying the runtime instance. Rehydration consumes the saved record, applies metabolic catch-up, then returns the creature to a Tier 1 slot before it can enter full simulation.
 

@@ -47,6 +47,8 @@ namespace Hecton8.Quest
         private static readonly RegistryBucket<IQuestEventListener> _listeners = new RegistryBucket<IQuestEventListener>(16);
         private static NativeQueue<QuestEventPayload> _pendingEvents;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

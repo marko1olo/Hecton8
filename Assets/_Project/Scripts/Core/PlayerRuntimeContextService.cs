@@ -493,6 +493,12 @@ namespace Hecton8.Core
             movementState.UnderwaterStressIntensity01 = underwaterStress01;
             movementState.Flags = flags;
             _runtimeContext.PublishMovementState(in movementState);
+
+            PlayerLookState lookState = default;
+            lookState.EyePosition = _playerCamera != null ? (float3)_playerCamera.transform.position : (float3)_playerTransform.position;
+            lookState.AimForward = math.normalizesafe(cameraForward, forward);
+            lookState.Flags = flags;
+            _runtimeContext.PublishLookState(in lookState);
         }
 
         private void RefreshDynamicContextReferences()

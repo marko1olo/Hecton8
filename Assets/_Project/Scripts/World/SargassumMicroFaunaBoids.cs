@@ -23,7 +23,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-101)]
-    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IOriginShiftListener
+    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener
     {
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
@@ -1342,8 +1342,8 @@ namespace Hecton8.World
             RefreshThreatVoxelPayload();
             RefreshSpawnData(force: true);
             PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
-            SargassumGlobalDragManager.OnMassiveDisplacement += HandleMassiveDisplacement;
-            FlashlightEvents.OnToggled += HandleFlashlightToggled;
+            SargassumGlobalDragManager.RegisterMassiveDisplacement(HandleMassiveDisplacement);
+            FlashlightEvents.Register(this);
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
@@ -1354,8 +1354,8 @@ namespace Hecton8.World
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            SargassumGlobalDragManager.OnMassiveDisplacement -= HandleMassiveDisplacement;
-            FlashlightEvents.OnToggled -= HandleFlashlightToggled;
+            SargassumGlobalDragManager.UnregisterMassiveDisplacement(HandleMassiveDisplacement);
+            FlashlightEvents.Unregister(this);
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             HectonFloatingOrigin.UnregisterListener(this);
             _headlightPanicTimer = 0f;
@@ -1414,8 +1414,8 @@ namespace Hecton8.World
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            SargassumGlobalDragManager.OnMassiveDisplacement -= HandleMassiveDisplacement;
-            FlashlightEvents.OnToggled -= HandleFlashlightToggled;
+            SargassumGlobalDragManager.UnregisterMassiveDisplacement(HandleMassiveDisplacement);
+            FlashlightEvents.Unregister(this);
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
@@ -3401,6 +3401,22 @@ namespace Hecton8.World
 
             _headlightPanicTimer = deepHeadlightPanicDuration;
             _debugHeadlightPanic01 = 1f;
+        }
+
+        /// <inheritdoc />
+        public void OnFlashlightEvent(in Hecton8.Gameplay.FlashlightEventPayload payload)
+        {
+            switch ((Hecton8.Gameplay.FlashlightEventType)payload.EventType)
+            {
+                case Hecton8.Gameplay.FlashlightEventType.Toggled:
+                case Hecton8.Gameplay.FlashlightEventType.FlickerStart:
+                    HandleFlashlightToggled(payload.IsOn);
+                    break;
+                case Hecton8.Gameplay.FlashlightEventType.BatteryDepleted:
+                case Hecton8.Gameplay.FlashlightEventType.Overheat:
+                    HandleFlashlightToggled(false);
+                    break;
+            }
         }
 
         private void HandleSonarPingSent(float intensity)

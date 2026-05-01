@@ -19,6 +19,7 @@ namespace Hecton8.Crafting
         public const int MaxRecipeIngredientCount = 32;
         public const int MaxDeconstructionOutputCount = MaxRecipeIngredientCount;
         public const int MaxRecursiveDeconstructionNodeCount = 64;
+        private const int MaxDeconstructionRecursionDepth = 64;
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateRecipeAvailabilityJob : IJob
@@ -215,10 +216,22 @@ namespace Hecton8.Crafting
 
             NativeArray<int2> sourceCosts = recipeCosts;
             int sourceCostCount = recipeCostCount;
-            if (TryFlattenDeconstructionCosts(itemCatalog, fabricator, recipeCosts, recipeCostCount, flattenedCosts, out int flattenedCostCount))
+            bool resolvedForceScrapYield = forceScrapYield;
+            if (TryFlattenDeconstructionCosts(
+                    itemCatalog,
+                    fabricator,
+                    recipeCosts,
+                    recipeCostCount,
+                    flattenedCosts,
+                    out int flattenedCostCount,
+                    out bool recursionGuardTripped))
             {
                 sourceCosts = flattenedCosts;
                 sourceCostCount = flattenedCostCount;
+            }
+            else if (recursionGuardTripped)
+            {
+                resolvedForceScrapYield = true;
             }
 
             outputCount[0] = 0;
@@ -231,7 +244,7 @@ namespace Hecton8.Crafting
                 ResultQuantity = 1,
                 ReclaimPercent = math.clamp(reclaimPercent, 0, 100),
                 ScrapItemHashId = scrapItemHashId,
-                ForceScrapYield = forceScrapYield ? (byte)1 : (byte)0
+                ForceScrapYield = resolvedForceScrapYield ? (byte)1 : (byte)0
             }.Run();
 
             return outputCount[0] > 0;
@@ -243,9 +256,11 @@ namespace Hecton8.Crafting
             NativeArray<int2> recipeCosts,
             int recipeCostCount,
             NativeArray<int2> flattenedCosts,
-            out int flattenedCostCount)
+            out int flattenedCostCount,
+            out bool recursionGuardTripped)
         {
             flattenedCostCount = 0;
+            recursionGuardTripped = false;
             if (itemCatalog == null || fabricator == null || !recipeCosts.IsCreated || !flattenedCosts.IsCreated)
                 return false;
 
@@ -266,7 +281,10 @@ namespace Hecton8.Crafting
                         cost.y,
                         flattenedCosts,
                         ref flattenedCostCount,
-                        ref visitedNodeCount))
+                        ref visitedNodeCount,
+                        0,
+                        cost.x,
+                        ref recursionGuardTripped))
                 {
                     flattenedCostCount = 0;
                     return false;
@@ -283,13 +301,20 @@ namespace Hecton8.Crafting
             int quantity,
             NativeArray<int2> flattenedCosts,
             ref int flattenedCostCount,
-            ref int visitedNodeCount)
+            ref int visitedNodeCount,
+            int recursionDepth,
+            int rootHashId,
+            ref bool recursionGuardTripped)
         {
             if (itemHashId == 0 || quantity <= 0)
                 return true;
 
-            if (visitedNodeCount++ >= MaxRecursiveDeconstructionNodeCount)
-                return TryAddMergedCost(flattenedCosts, ref flattenedCostCount, itemHashId, quantity);
+            if (recursionDepth >= MaxDeconstructionRecursionDepth ||
+                visitedNodeCount++ >= MaxRecursiveDeconstructionNodeCount)
+            {
+                recursionGuardTripped = true;
+                return false;
+            }
 
             if (!Fabricator.TryResolveRecipeForResultHash(itemCatalog, itemHashId, out RecipeData subRecipe) ||
                 subRecipe == null ||
@@ -311,6 +336,12 @@ namespace Hecton8.Crafting
                 if (ingredientHashId == 0 || adjustedAmount <= 0)
                     continue;
 
+                if (ingredientHashId == itemHashId || ingredientHashId == rootHashId)
+                {
+                    recursionGuardTripped = true;
+                    return false;
+                }
+
                 long scaledLong = ((long)adjustedAmount * quantity + safeResultQuantity - 1L) / safeResultQuantity;
                 int scaledQuantity = scaledLong > int.MaxValue ? int.MaxValue : (int)scaledLong;
                 if (!TryAddFlattenedCostRecursive(
@@ -320,7 +351,10 @@ namespace Hecton8.Crafting
                         scaledQuantity,
                         flattenedCosts,
                         ref flattenedCostCount,
-                        ref visitedNodeCount))
+                        ref visitedNodeCount,
+                        recursionDepth + 1,
+                        rootHashId,
+                        ref recursionGuardTripped))
                 {
                     return false;
                 }

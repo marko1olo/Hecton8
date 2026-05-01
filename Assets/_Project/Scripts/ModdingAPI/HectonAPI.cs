@@ -4,6 +4,7 @@ using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Economy;
 using Hecton8.Ecosystem;
@@ -39,10 +40,36 @@ namespace Hecton8.Modding
             /// <returns>
             /// A disposable subscription token. Dispose it from <c>IHectonMod.OnUnload()</c> to stop receiving events.
             /// </returns>
-            public static HectonEventSubscription Subscribe<TEvent>(Action<TEvent> handler, string subscriberId = null)
+            internal static HectonEventSubscription Subscribe<TEvent>(Action<TEvent> handler, string subscriberId = null)
                 where TEvent : HectonEvent
             {
                 return HectonEventBus.Subscribe(handler, subscriberId);
+            }
+
+            /// <summary>
+            /// Subscribes to a mod-facing unmanaged payload stream.
+            /// </summary>
+            /// <typeparam name="TPayload">Unmanaged payload type.</typeparam>
+            /// <param name="handler">Payload handler.</param>
+            /// <param name="subscriberId">Optional stable diagnostic ID.</param>
+            /// <returns>A disposable subscription token.</returns>
+            public static HectonEventSubscription Subscribe<TPayload>(
+                HectonUnmanagedEventHandler<TPayload> handler,
+                string subscriberId = null)
+                where TPayload : unmanaged
+            {
+                return HectonEventBus.Subscribe(handler, subscriberId);
+            }
+
+            /// <summary>
+            /// Subscribes to immutable native queue payload bytes.
+            /// </summary>
+            /// <param name="handler">Native byte payload handler.</param>
+            /// <param name="subscriberId">Optional stable diagnostic ID.</param>
+            /// <returns>A disposable subscription token.</returns>
+            public static HectonEventSubscription SubscribeNative(HectonNativeEventHandler handler, string subscriberId = null)
+            {
+                return HectonEventBus.SubscribeNative(handler, subscriberId);
             }
 
             /// <summary>
@@ -65,10 +92,111 @@ namespace Hecton8.Modding
             /// The same payload instance after all handlers ran.
             /// This lets caller code inspect mutations or cancellation state.
             /// </returns>
-            public static TEvent Publish<TEvent>(TEvent evt)
+            internal static TEvent Publish<TEvent>(TEvent evt)
                 where TEvent : HectonEvent
             {
                 return HectonEventBus.Publish(evt);
+            }
+
+            /// <summary>
+            /// Publishes a mod-facing unmanaged payload event.
+            /// </summary>
+            /// <typeparam name="TPayload">Unmanaged payload type.</typeparam>
+            /// <param name="payload">Blittable payload.</param>
+            public static void Publish<TPayload>(in TPayload payload)
+                where TPayload : unmanaged
+            {
+                HectonEventBus.Publish(in payload);
+            }
+        }
+
+        /// <summary>
+        /// Command-facing mod API. Commands are requests; engine systems validate and execute during late-frame drain.
+        /// </summary>
+        public static class Commands
+        {
+            /// <summary>
+            /// Enqueues a sandboxed command request.
+            /// </summary>
+            /// <param name="command">Command packet. Mod identity is assigned by the engine.</param>
+            /// <returns>True when the command was queued.</returns>
+            public static bool Request(in ModCommand command)
+            {
+                return ModCommandDispatcher.Request(in command);
+            }
+
+            /// <summary>
+            /// Enqueues an Absolute Universe Position command. Required for spawn, move, effect, heat, and raycast requests.
+            /// </summary>
+            /// <param name="command">AUP-backed command packet.</param>
+            /// <returns>True when the command was queued.</returns>
+            public static bool RequestAup(in ModAupCommand command)
+            {
+                return ModCommandDispatcher.RequestAup(in command);
+            }
+
+            /// <summary>
+            /// Enqueues one matrix for the reserved mod instancing graphics layer.
+            /// </summary>
+            /// <param name="command">Render instance packet.</param>
+            /// <returns>True when the matrix entered the frame queue.</returns>
+            public static bool RequestRenderInstance(in ModRenderInstanceCommand command)
+            {
+                return ModCommandDispatcher.RequestRenderInstance(in command);
+            }
+        }
+
+        /// <summary>
+        /// Resource-facing mod API. Mods receive hash identifiers only.
+        /// </summary>
+        public static class Resources
+        {
+            /// <summary>
+            /// Current mod resource proxy.
+            /// </summary>
+            public static IModResourceProxy Proxy => ModResourceProxy.Instance;
+
+            /// <summary>
+            /// Resolves a prefab asset name to a hash identifier.
+            /// </summary>
+            public static bool TryResolvePrefab(string assetName, out uint hashId)
+            {
+                return ModResourceProxy.Instance.TryResolvePrefab(assetName, out hashId);
+            }
+
+            /// <summary>
+            /// Resolves an audio clip asset name to a hash identifier.
+            /// </summary>
+            public static bool TryResolveAudioClip(string assetName, out uint hashId)
+            {
+                return ModResourceProxy.Instance.TryResolveAudioClip(assetName, out hashId);
+            }
+
+            /// <summary>
+            /// Resolves a texture asset name to a hash identifier.
+            /// </summary>
+            public static bool TryResolveTexture(string assetName, out uint hashId)
+            {
+                return ModResourceProxy.Instance.TryResolveTexture(assetName, out hashId);
+            }
+        }
+
+        /// <summary>
+        /// Telemetry-facing mod API. Payloads are pre-hashed and written to the global ring buffer.
+        /// </summary>
+        public static class Telemetry
+        {
+            /// <summary>
+            /// Writes a mod telemetry marker.
+            /// </summary>
+            /// <param name="markerHash">Stable marker hash.</param>
+            /// <param name="scalarValue">Optional scalar payload.</param>
+            public static void Publish(uint markerHash, float scalarValue)
+            {
+                if (!ModExecutionScope.HasActiveMod)
+                    throw new IllegalContractException("Mod telemetry writes must originate from an active mod execution scope.");
+
+                GlobalTelemetryBus.PublishModTelemetry(ModExecutionScope.CurrentModHash, markerHash, scalarValue);
             }
         }
 
@@ -275,9 +403,9 @@ namespace Hecton8.Modding
             /// <param name="modId">Stable owner mod identifier.</param>
             /// <param name="assetName">AssetBundle asset name or mod-relative prefab asset path.</param>
             /// <returns>The loaded prefab asset, or null when no matching asset exists.</returns>
-            public static GameObject LoadPrefab(string modId, string assetName)
+            internal static GameObject LoadPrefab(string modId, string assetName)
             {
-                return ModAssetManager.LoadPrefab(modId, assetName);
+                throw new IllegalContractException("Mods cannot receive Unity prefab references. Use HectonAPI.Resources.TryResolvePrefab and submit a ModCommand.");
             }
 
             /// <summary>
@@ -287,9 +415,9 @@ namespace Hecton8.Modding
             /// <param name="modId">Stable owner mod identifier.</param>
             /// <param name="assetName">AssetBundle asset name for the target clip.</param>
             /// <returns>The loaded audio clip, or null when no matching clip exists.</returns>
-            public static AudioClip LoadAudioClip(string modId, string assetName)
+            internal static AudioClip LoadAudioClip(string modId, string assetName)
             {
-                return ModAssetManager.LoadAudioClip(modId, assetName);
+                throw new IllegalContractException("Mods cannot receive Unity audio clip references. Use HectonAPI.Resources.TryResolveAudioClip.");
             }
 
             /// <summary>
@@ -300,9 +428,9 @@ namespace Hecton8.Modding
             /// <param name="modId">Stable owner mod identifier.</param>
             /// <param name="assetName">AssetBundle asset name or mod-relative PNG path.</param>
             /// <returns>The loaded texture, or null when no supported source resolves successfully.</returns>
-            public static Texture2D LoadTexture(string modId, string assetName)
+            internal static Texture2D LoadTexture(string modId, string assetName)
             {
-                return ModAssetManager.LoadTexture(modId, assetName);
+                throw new IllegalContractException("Mods cannot receive Unity texture references. Use HectonAPI.Resources.TryResolveTexture.");
             }
         }
 
@@ -441,10 +569,10 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="playerObject">Current bootstrap player object when available.</param>
             /// <returns>True when a player object is currently published by the official bootstrap pipeline.</returns>
-            public static bool TryGetPlayerObject(out GameObject playerObject)
+            internal static bool TryGetPlayerObject(out GameObject playerObject)
             {
-                playerObject = SceneBootstrap.CurrentPlayerObject;
-                return playerObject != null;
+                playerObject = null;
+                throw new IllegalContractException("Mods cannot receive Unity GameObject references. Use TryGetPlayerEntityHash.");
             }
 
             /// <summary>
@@ -452,10 +580,24 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="playerTransform">Current bootstrap player transform when available.</param>
             /// <returns>True when a player transform is currently published by the official bootstrap pipeline.</returns>
-            public static bool TryGetPlayerTransform(out Transform playerTransform)
+            internal static bool TryGetPlayerTransform(out Transform playerTransform)
             {
-                playerTransform = SceneBootstrap.CurrentPlayerTransform;
-                return playerTransform != null;
+                playerTransform = null;
+                throw new IllegalContractException("Mods cannot receive Unity Transform references. Use TryGetPlayerEntityHash.");
+            }
+
+            /// <summary>
+            /// Resolves the live player entity hash without exposing Unity object references.
+            /// </summary>
+            /// <param name="playerHash">Current player entity hash.</param>
+            /// <returns>True when a player object is currently published.</returns>
+            public static bool TryGetPlayerEntityHash(out uint playerHash)
+            {
+                GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
+                playerHash = playerObject != null
+                    ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId()))
+                    : 0u;
+                return playerHash != 0u;
             }
 
             /// <summary>
@@ -467,10 +609,9 @@ namespace Hecton8.Modding
             /// <param name="position">World position for the spawned instance.</param>
             /// <param name="rotation">World rotation for the spawned instance.</param>
             /// <returns>The spawned instance, or null when the prefab or world owners are unavailable.</returns>
-            public static GameObject SpawnPersistentPrefab(string modId, string assetName, Vector3 position, Quaternion rotation)
+            internal static GameObject SpawnPersistentPrefab(string modId, string assetName, Vector3 position, Quaternion rotation)
             {
-                return ModWorldPersistenceManager.EnsureRuntimeInstance()
-                    .SpawnPersistentPrefab(modId, assetName, position, rotation);
+                throw new IllegalContractException("Mods cannot spawn Unity prefabs directly. Resolve a resource hash and submit a ModCommand.");
             }
 
             /// <summary>
@@ -478,9 +619,9 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="instance">Live instance created by <see cref="SpawnPersistentPrefab"/>.</param>
             /// <returns>True when the instance was recognized and removed successfully.</returns>
-            public static bool DespawnPersistentInstance(GameObject instance)
+            internal static bool DespawnPersistentInstance(GameObject instance)
             {
-                return ModWorldPersistenceManager.EnsureRuntimeInstance().DespawnPersistentInstance(instance);
+                throw new IllegalContractException("Mods cannot despawn Unity instances directly. Submit a validated ModCommand.");
             }
         }
 

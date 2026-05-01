@@ -5,6 +5,12 @@ Status: PENDING VERIFICATION
 Scope: detailed source-backed map for first-party UI, HUD, visor, PDA, and audio presentation ownership
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- This file maps presentation ownership; it does not prove UI/audio runtime cost, zero-GC HUD behavior, or clean scene wiring.
+- Presentation-owned gameplay transitions remain a known risk class. Gameplay state must not depend on Camera, UI, or Animator events without a logic-owned fallback.
+
 ## Purpose
 
 Older active docs already established two true facts:

@@ -37,7 +37,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ISaveable, ISlowTickable, ILogisticsService
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService
     {
         private const float SlowTickDeltaTime = 0.5f;
 
@@ -85,11 +85,14 @@ namespace Hecton8.Construction
         /// Pre-allocated. Swap-remove Ð´Ð»Ñ O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ñ.
         /// </summary>
         private List<GameObject> _spawnedModules;
+        private List<BaseModule> _spawnedBaseModules;
         private HabitatGraphManager _habitatGraphManager;
         private bool _tickRegistered;
+        private bool _lateFrameTickRegistered;
         private bool _logisticsServiceRegistered;
         private bool _saveRegistered;
         private bool _isInitialized;
+        private bool _habitatGraphDirty;
         private float _slowTickAccumulator;
         private float _ambientAccidentTimer;
         private int _ambientAccidentCursor;
@@ -117,6 +120,9 @@ namespace Hecton8.Construction
         /// <summary>Read-only Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÑÐ¿Ð¸ÑÐºÑƒ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ (Ð´Ð»Ñ UI, minimap).</summary>
         public IReadOnlyList<GameObject> SpawnedModules => _spawnedModules;
 
+        /// <summary>Cached BaseModule view for hot-path gameplay systems that must not scan components.</summary>
+        internal IReadOnlyList<BaseModule> SpawnedBaseModules => _spawnedBaseModules;
+
         /// <summary>Read-only Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ñƒ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð´Ð»Ñ build tools/UI.</summary>
         public ModuleCatalog Catalog => catalog;
 
@@ -133,6 +139,7 @@ namespace Hecton8.Construction
             _isInitialized = true;
             TryRegisterLogisticsService();
             TryRegisterTick();
+            TryRegisterLateFrameTick();
             TryRegisterSaveParticipant();
         }
 
@@ -145,6 +152,7 @@ namespace Hecton8.Construction
             // â”€â”€ Service â”€â”€
             // â”€â”€ Pre-allocate â”€â”€
             _spawnedModules = new List<GameObject>(initialCapacity);
+            _spawnedBaseModules = new List<BaseModule>(initialCapacity); // COLD ALLOC: List<BaseModule>[initialCapacity] - cached BaseModule registry for hot-path construction consumers - owner: ConstructionManager
             // COLD ALLOC: HabitatGraphManager[1] — persistent placed-module CSR adjacency owner — owner: ConstructionManager
             _habitatGraphManager = new HabitatGraphManager(initialCapacity);
             _ambientAccidentTimer = 0f;
@@ -158,12 +166,14 @@ namespace Hecton8.Construction
 
             TryRegisterLogisticsService();
             TryRegisterTick();
+            TryRegisterLateFrameTick();
             TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
             TryUnregisterTick();
+            TryUnregisterLateFrameTick();
             TryUnregisterLogisticsService();
             _slowTickAccumulator = 0f;
             TryUnregisterSaveParticipant();
@@ -172,6 +182,7 @@ namespace Hecton8.Construction
         private void OnDestroy()
         {
             TryUnregisterTick();
+            TryUnregisterLateFrameTick();
             TryUnregisterLogisticsService();
             TryUnregisterSaveParticipant();
             _isInitialized = false;
@@ -197,6 +208,14 @@ namespace Hecton8.Construction
                 _slowTickAccumulator = SlowTickDeltaTime;
 
             SlowTick();
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_habitatGraphDirty)
+                return;
+
+            RefreshHabitatGraph();
         }
 
         public void SlowTick()
@@ -243,6 +262,9 @@ namespace Hecton8.Construction
 
             // â”€â”€ Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ Ð² Ñ€ÐµÐµÑÑ‚Ñ€ â”€â”€
             _spawnedModules.Add(module);
+            if (module.TryGetComponent(out BaseModule baseModule) && !ContainsBaseModuleRef(baseModule))
+                _spawnedBaseModules.Add(baseModule);
+
             RefreshHabitatGraph();
             if (module.TryGetComponent(out BaseModuleNavModifier navModifier))
                 navModifier.RefreshVegetationExclusion();
@@ -289,6 +311,7 @@ namespace Hecton8.Construction
             if (module == null) return;
 
             SwapRemove(module);
+            RemoveBaseModule(module);
             RefreshHabitatGraph();
 
             UpdateDiagnostics();
@@ -316,10 +339,12 @@ namespace Hecton8.Construction
             if (_habitatGraphManager == null || sourceModule == null || destinationModule == null)
                 return false;
 
-            if (!_habitatGraphManager.TryAddTemporaryBypass(sourceModule.gameObject, destinationModule.gameObject))
+            if (!_habitatGraphManager.TryAddTemporaryBypass(sourceModule.gameObject, destinationModule.gameObject, out bool injectedDirectly))
                 return false;
 
-            RefreshHabitatGraph();
+            if (!injectedDirectly)
+                RefreshHabitatGraph();
+
             return true;
         }
 
@@ -352,6 +377,7 @@ namespace Hecton8.Construction
             }
 
             _spawnedModules.Clear();
+            _spawnedBaseModules.Clear();
             RefreshHabitatGraph();
 
             UpdateDiagnostics();
@@ -801,6 +827,21 @@ namespace Hecton8.Construction
             return false;
         }
 
+        private bool ContainsBaseModuleRef(BaseModule module)
+        {
+            if (module == null || _spawnedBaseModules == null)
+                return false;
+
+            int count = _spawnedBaseModules.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(_spawnedBaseModules[i], module))
+                    return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Swap-remove: O(1) ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ðµ Ð±ÐµÐ· ÑÐ´Ð²Ð¸Ð³Ð° Ð¼Ð°ÑÑÐ¸Ð²Ð°.
         /// ÐŸÐ¾Ñ€ÑÐ´Ð¾Ðº Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð½Ðµ Ð³Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ñ€Ð¾Ð²Ð°Ð½ (Ð´Ð¾Ð¿ÑƒÑÑ‚Ð¸Ð¼Ð¾ Ð´Ð»Ñ ÑÑ‚Ð¾Ð¹ ÑÐ¸ÑÑ‚ÐµÐ¼Ñ‹).
@@ -820,6 +861,27 @@ namespace Hecton8.Construction
             }
         }
 
+        private void RemoveBaseModule(GameObject module)
+        {
+            if (module == null || _spawnedBaseModules == null)
+                return;
+
+            if (!module.TryGetComponent(out BaseModule baseModule))
+                return;
+
+            int count = _spawnedBaseModules.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (!ReferenceEquals(_spawnedBaseModules[i], baseModule))
+                    continue;
+
+                int last = count - 1;
+                _spawnedBaseModules[i] = _spawnedBaseModules[last];
+                _spawnedBaseModules.RemoveAt(last);
+                return;
+            }
+        }
+
         /// <summary>
         /// ÐžÑ‡Ð¸Ñ‰Ð°ÐµÑ‚ null-ÑÑÑ‹Ð»ÐºÐ¸ Ð¸Ð· ÑÐ¿Ð¸ÑÐºÐ° (Ð·Ð°Ñ‰Ð¸Ñ‚Ð° Ð¾Ñ‚ Destroy Ð¸Ð·Ð²Ð½Ðµ).
         /// Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¿ÐµÑ€ÐµÐ´ Save Ð´Ð»Ñ Ð³Ð°Ñ€Ð°Ð½Ñ‚Ð¸Ð¸ Ñ†ÐµÐ»Ð¾ÑÑ‚Ð½Ð¾ÑÑ‚Ð¸.
@@ -834,6 +896,19 @@ namespace Hecton8.Construction
                     _spawnedModules[i] = _spawnedModules[last];
                     _spawnedModules.RemoveAt(last);
                 }
+            }
+
+            if (_spawnedBaseModules == null)
+                return;
+
+            for (int i = _spawnedBaseModules.Count - 1; i >= 0; i--)
+            {
+                if (_spawnedBaseModules[i] != null)
+                    continue;
+
+                int last = _spawnedBaseModules.Count - 1;
+                _spawnedBaseModules[i] = _spawnedBaseModules[last];
+                _spawnedBaseModules.RemoveAt(last);
             }
         }
 
@@ -862,6 +937,18 @@ namespace Hecton8.Construction
             _tickRegistered = true;
         }
 
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameTickRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameTickRegistered = true;
+        }
+
         private void TryUnregisterTick()
         {
             if (!_tickRegistered)
@@ -869,6 +956,15 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameTickRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameTickRegistered = false;
         }
 
         private void TryRegisterSaveParticipant()
@@ -1026,9 +1122,19 @@ namespace Hecton8.Construction
         private void RefreshHabitatGraph()
         {
             if (_habitatGraphManager == null || _spawnedModules == null)
+            {
+                _habitatGraphDirty = false;
                 return;
+            }
 
             _habitatGraphManager.Rebuild(_spawnedModules);
+            _habitatGraphDirty = false;
+        }
+
+        private void MarkHabitatGraphDirty()
+        {
+            _habitatGraphDirty = true;
+            TryRegisterLateFrameTick();
         }
 
         internal void NotifyModuleEmergencyStateChanged(BaseModule module)
@@ -1044,7 +1150,11 @@ namespace Hecton8.Construction
             if (_habitatGraphManager == null || module == null)
                 return;
 
-            RefreshHabitatGraph();
+            FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            if (floraInteractionManager != null)
+                floraInteractionManager.KillAttachedParasites(module);
+
+            MarkHabitatGraphDirty();
         }
 
         internal void NotifyModuleParasiteRootStateChanged(BaseModule module)
@@ -1052,7 +1162,7 @@ namespace Hecton8.Construction
             if (_habitatGraphManager == null || module == null)
                 return;
 
-            RefreshHabitatGraph();
+            MarkHabitatGraphDirty();
         }
 
         internal bool TryResolveFungalMindTarget(BaseModule sourceModule, out BaseModule targetModule, out float targetPotential)

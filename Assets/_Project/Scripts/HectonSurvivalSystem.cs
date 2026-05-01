@@ -570,6 +570,29 @@ namespace Hecton8.Gameplay
             _runtimeContext.PublishSurvivalState(in survivalState);
         }
 
+        private void PublishHeadlessUIState()
+        {
+            float maxOxygen = stats != null ? math.max(0.01f, ResolveRuntimeMaxOxygenCapacity()) : 100f;
+            float maxEnergy = stats != null ? math.max(0.01f, stats.MaxEnergy) : 100f;
+            float maxIntegrity = stats != null ? math.max(0.01f, stats.MaxIntegrity) : 100f;
+            float carryCapacityKg = stats != null ? math.max(0.01f, stats.CarryCapacityKg) : 200f;
+
+            UIStateStore.WriteHUDSurvivalState(
+                math.saturate(oxygen / maxOxygen),
+                math.saturate(energy / maxEnergy),
+                math.saturate(integrity / maxIntegrity),
+                math.max(0f, depth),
+                math.max(1f, pressure),
+                ResolveEffectiveSafeDepthMeters(),
+                math.max(0f, oxygen),
+                math.max(0f, energy),
+                math.max(0f, integrity),
+                math.max(0f, weight),
+                carryCapacityKg,
+                math.saturate(weight / carryCapacityKg),
+                Time.unscaledTime);
+        }
+
         // ═════════════════════════════════════════════════════════
         //  TICK SYSTEMS
         // ═════════════════════════════════════════════════════════
@@ -586,6 +609,7 @@ namespace Hecton8.Gameplay
             PushPressureHullStress();
             UpdateOxygenGraceState(deltaTime);
             PublishRuntimeContextState();
+            PublishHeadlessUIState();
             PublishDirty();
             CheckLethalConditions();
         }
@@ -607,6 +631,7 @@ namespace Hecton8.Gameplay
             HandleInjuries(dt);
             ApplyInjuryMovementPenalty();
             PublishRuntimeContextState();
+            PublishHeadlessUIState();
         }
 
         // ═════════════════════════════════════════════════════════

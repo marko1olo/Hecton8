@@ -35,10 +35,13 @@ namespace Hecton8.Core
         private const int ExportScratchSizeBytes = CrashExportHeaderSizeBytes + (ExportSnapshotEntries * DebugLogEntrySizeBytes);
         private const int ExportStateIdle = 0;
         private const int ExportStateQueued = 1;
+        private const int LiveTelemetryStateIdle = 0;
+        private const int LiveTelemetryStateQueued = 1;
         private const int RecorderCapacity = 1;
         private const int LiveTelemetryWriteIntervalFrames = 60;
         private const int LiveTelemetryRecordSizeBytes = 32;
         private const float PlayerResolveCooldownSeconds = 1f;
+        private const float OriginShiftTelemetryIntervalSeconds = 1f;
         private const float SevereFrameTimeSeconds = 0.025f;
         private const float MaximumTrackedWorldMagnitude = 1000000f;
         private const float MaximumReservedMemoryMb = 4096f;
@@ -49,6 +52,7 @@ namespace Hecton8.Core
         private const string ExportFileExtension = ".hbin";
         private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fff";
         private const string LiveTelemetryFileName = "runtime_telemetry.bin";
+        private const string CrashTelemetryFileName = "crash_telemetry_latest.hbin";
         private const long PersistentMemoryBudgetBytes = 786432L;
         private const string MemoryBudgetOwnerName = "CrashTelemetryBuffer";
         private static readonly string[] _FrameTimeCandidates =
@@ -60,6 +64,7 @@ namespace Hecton8.Core
         private static readonly string[] _GcAllocCandidates = { "GC Allocated In Frame" };
 
         private static readonly WaitCallback _backgroundExportCallback = ExecuteBackgroundExport;
+        private static readonly WaitCallback _backgroundLiveTelemetryCallback = ExecuteBackgroundLiveTelemetryWrite;
         private static CrashTelemetryBuffer _instance;
         private static int _runtimeFaultFlags;
 
@@ -76,6 +81,10 @@ namespace Hecton8.Core
             ErrorLogged = 1u << 6,
             OutOfBoundsPlayerPosition = 1u << 7,
             NanPhysics = 1u << 8,
+            EventCascadeWarning = 1u << 9,
+            TemporalCompression = 1u << 10,
+            BusCongestionWarning = 1u << 11,
+            KineticAnomaly = 1u << 12,
         }
 
         [Flags]
@@ -87,6 +96,8 @@ namespace Hecton8.Core
             AI = 1u << 2,
             Fluid = 1u << 3,
             Bootstrap = 1u << 4,
+            OriginShift = 1u << 5,
+            EventBus = 1u << 6,
         }
 
         private enum ExportReason : uint
@@ -98,6 +109,8 @@ namespace Hecton8.Core
             ApplicationQuit = 4u,
             AppDomainUnhandledException = 5u,
             BootstrapPhaseDuration = 6u,
+            BusCongestionWarning = 7u,
+            KineticAnomaly = 8u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -142,10 +155,10 @@ namespace Hecton8.Core
 
         private NativeArray<DebugLogEntry> _ringBuffer;
         private NativeArray<DebugLogEntry> _exportSnapshot;
-        private NativeArray<byte> _liveTelemetryScratch;
         private Transform _playerTransform;
         private HectonSurvivalSystem _survivalSystem;
         private float _playerResolveCooldown;
+        private float _nextOriginShiftTelemetryTime;
         private float _lastFixedDeltaTime;
         private long _writeCursor;
         private uint _stickyErrorFlags;
@@ -154,12 +167,19 @@ namespace Hecton8.Core
         private int _lastExportFrame = int.MinValue;
         private int _threadedFaultFlags;
         private int _exportState;
+        private int _liveTelemetryWriteState;
         private int _pendingExportBytes;
         private string _pendingExportPath;
         private string _liveTelemetryPath;
+        private string _crashTelemetryPath;
+        private FileStream _liveTelemetryStream;
+        private MemoryMappedFile _liveTelemetryMmf;
+        private MemoryMappedViewAccessor _liveTelemetryView;
+        private FileStream _crashTelemetryStream;
+        private MemoryMappedFile _crashTelemetryMmf;
+        private MemoryMappedViewAccessor _crashTelemetryView;
         private NativeArray<byte> _exportScratch;
-        private MemoryMappedFile _liveTelemetryMappedFile;
-        private MemoryMappedViewAccessor _liveTelemetryViewAccessor;
+        private LiveTelemetryRecord _pendingLiveTelemetryRecord;
         private ProfilerRecorder _frameTimeRecorder;
         private ProfilerRecorder _gcAllocRecorder;
         private int _lastLiveTelemetryWriteFrame = int.MinValue;
@@ -236,6 +256,84 @@ namespace Hecton8.Core
         public static void ReportNanPhysicsRecovery()
         {
             OrRuntimeFaultFlags((int)ErrorBits.NanPhysics);
+        }
+
+        /// <summary>
+        /// Reports a critical save-system fault into the crash telemetry stream.
+        /// </summary>
+        public static void ReportSaveSystemCriticalFault()
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.ErrorLogged);
+        }
+
+        /// <summary>
+        /// Reports a dropped event payload caused by recursive cascade protection.
+        /// </summary>
+        public static void ReportEventCascadeWarning()
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.EventCascadeWarning);
+        }
+
+        /// <summary>
+        /// Reports a fixed-step catch-up clamp caused by a frame hitch.
+        /// </summary>
+        public static void ReportTemporalCompression()
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.TemporalCompression);
+        }
+
+        /// <summary>
+        /// Reports a NativeQueue event bus that exceeded its frame budget for consecutive frames.
+        /// </summary>
+        /// <param name="queueHash">Stable queue identifier hash.</param>
+        /// <param name="pendingCount">Pending payload count at the congestion point.</param>
+        /// <param name="entityCount">Current spatial entity count.</param>
+        public static void ReportBusCongestionWarning(uint queueHash, int pendingCount, int entityCount)
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.BusCongestionWarning);
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteBusCongestionTelemetry(queueHash, pendingCount, entityCount);
+        }
+
+        /// <summary>
+        /// Reports a dropped payload caused by the hard managed-event recursion circuit breaker.
+        /// </summary>
+        public static void ReportRecursiveCascadeCritical()
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.EventCascadeWarning);
+        }
+
+        /// <summary>
+        /// Records a rate-limited floating-origin shift vector sample into the telemetry ring.
+        /// </summary>
+        /// <param name="shiftOffset">Runtime-space shift vector applied this frame.</param>
+        /// <param name="shiftSequence">Committed floating-origin sequence.</param>
+        public static void ReportOriginShift(Vector3 shiftOffset, uint shiftSequence)
+        {
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteOriginShiftTelemetry(shiftOffset, shiftSequence);
+        }
+
+        /// <summary>
+        /// Records a high-G physics anomaly into the telemetry ring.
+        /// </summary>
+        /// <param name="runtimePosition">Runtime-space body position where the anomaly was observed.</param>
+        /// <param name="deltaVelocity">Velocity delta measured across the fixed step.</param>
+        /// <param name="accelerationMetersPerSecondSq">Resolved acceleration magnitude.</param>
+        public static void ReportKineticAnomaly(Vector3 runtimePosition, Vector3 deltaVelocity, float accelerationMetersPerSecondSq)
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.KineticAnomaly);
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteKineticAnomalyTelemetry(runtimePosition, deltaVelocity, accelerationMetersPerSecondSq);
         }
 
         /// <summary>
@@ -437,6 +535,96 @@ namespace Hecton8.Core
             _writeCursor++;
         }
 
+        private void WriteOriginShiftTelemetry(Vector3 shiftOffset, uint shiftSequence)
+        {
+            float now = Time.unscaledTime;
+            if (now < _nextOriginShiftTelemetryTime)
+                return;
+
+            float3 shift3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!math.all(math.isfinite(shift3)))
+                return;
+
+            _nextOriginShiftTelemetryTime = now + OriginShiftTelemetryIntervalSeconds;
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.OriginShift;
+            entry.DeltaTime = 0f;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = 0f;
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = shift3;
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = 0u;
+            entry.ExportReason = (uint)ExportReason.None;
+            entry.AupShiftSequence = shiftSequence;
+            entry.AiStatePacked = PackAiState();
+            entry.SubsystemHeatPacked = PackSubsystemHeat();
+            entry.LastOriginShiftFrame = frameIndex;
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private void WriteBusCongestionTelemetry(uint queueHash, int pendingCount, int entityCount)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.EventBus;
+            entry.DeltaTime = Time.unscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)math.max(0, entityCount));
+            entry.ErrorFlags = (uint)ErrorBits.BusCongestionWarning;
+            entry.ExportReason = (uint)ExportReason.BusCongestionWarning;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = queueHash;
+            entry.SubsystemHeatPacked = unchecked((uint)math.max(0, pendingCount));
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+            TryExportSnapshot(ExportReason.BusCongestionWarning, (uint)ErrorBits.BusCongestionWarning, writeSynchronously: false);
+        }
+
+        private void WriteKineticAnomalyTelemetry(Vector3 runtimePosition, Vector3 deltaVelocity, float accelerationMetersPerSecondSq)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+            float3 absolutePosition = ToAbsoluteUniversePosition(runtimePosition);
+            float3 deltaVelocity3 = new float3(deltaVelocity.x, deltaVelocity.y, deltaVelocity.z);
+            if (!math.all(math.isfinite(absolutePosition)) || !math.all(math.isfinite(deltaVelocity3)))
+                return;
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Physics;
+            entry.DeltaTime = Time.unscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = math.max(0f, accelerationMetersPerSecondSq);
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = absolutePosition;
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.KineticAnomaly;
+            entry.ExportReason = (uint)ExportReason.KineticAnomaly;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackSignedVectorComponent(deltaVelocity3.x) |
+                                  (PackSignedVectorComponent(deltaVelocity3.y) << 10) |
+                                  (PackSignedVectorComponent(deltaVelocity3.z) << 20);
+            entry.SubsystemHeatPacked = PackSubsystemHeat();
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
         private static uint PackBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
         {
             double positiveMilliseconds = elapsedMilliseconds > 0d ? elapsedMilliseconds : 0d;
@@ -462,46 +650,68 @@ namespace Hecton8.Core
 
             // COLD ALLOC: NativeArray<DebugLogEntry>[300] - lockless telemetry ring buffer - owner: CrashTelemetryBuffer
             _ringBuffer = new NativeArray<DebugLogEntry>(RingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _ringBuffer,
+                nameof(CrashTelemetryBuffer),
+                nameof(_ringBuffer),
+                NativeAllocationLifetime.Session);
 
             // COLD ALLOC: NativeArray<DebugLogEntry>[300] - pre-crash binary export snapshot staging buffer - owner: CrashTelemetryBuffer
             _exportSnapshot = new NativeArray<DebugLogEntry>(ExportSnapshotEntries, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _exportSnapshot,
+                nameof(CrashTelemetryBuffer),
+                nameof(_exportSnapshot),
+                NativeAllocationLifetime.Session);
 
             // COLD ALLOC: NativeArray<byte>[19216] - binary export scratch for 16B header + 300 x 64B entries - owner: CrashTelemetryBuffer
             _exportScratch = new NativeArray<byte>(ExportScratchSizeBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _exportScratch,
+                nameof(CrashTelemetryBuffer),
+                nameof(_exportScratch),
+                NativeAllocationLifetime.Session);
 
-            // COLD ALLOC: NativeArray<byte>[32] - fixed-size live MMF telemetry payload staging - owner: CrashTelemetryBuffer
-            _liveTelemetryScratch = new NativeArray<byte>(LiveTelemetryRecordSizeBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _liveTelemetryPath = Path.Combine(Application.persistentDataPath, LiveTelemetryFileName);
+            _crashTelemetryPath = Path.Combine(Application.persistentDataPath, CrashTelemetryFileName);
             InitializeLiveTelemetryMmf();
+            InitializeCrashTelemetryMmf();
             MemoryBudgetTracker.Register(
                 MemoryBudgetOwnerName,
                 ((long)_ringBuffer.Length * DebugLogEntrySizeBytes) +
                 ((long)_exportSnapshot.Length * DebugLogEntrySizeBytes) +
-                _exportScratch.Length +
-                _liveTelemetryScratch.Length,
+                _exportScratch.Length,
                 PersistentMemoryBudgetBytes);
         }
 
         private void DisposeBuffers()
         {
             if (_ringBuffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_ringBuffer);
                 _ringBuffer.Dispose();
+            }
 
             if (_exportSnapshot.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_exportSnapshot);
                 _exportSnapshot.Dispose();
+            }
 
             if (_exportScratch.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_exportScratch);
                 _exportScratch.Dispose();
-
-            if (_liveTelemetryScratch.IsCreated)
-                _liveTelemetryScratch.Dispose();
+            }
 
             _ringBuffer = default;
             _exportSnapshot = default;
             _exportScratch = default;
-            _liveTelemetryScratch = default;
             DisposeLiveTelemetryMmf();
+            DisposeCrashTelemetryMmf();
             _liveTelemetryPath = null;
+            _crashTelemetryPath = null;
+            Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
             DisposeRecorder(ref _frameTimeRecorder);
             DisposeRecorder(ref _gcAllocRecorder);
             MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
@@ -812,22 +1022,20 @@ namespace Hecton8.Core
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(_liveTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
-                {
-                    if (stream.Length != LiveTelemetryRecordSizeBytes)
-                        stream.SetLength(LiveTelemetryRecordSizeBytes);
-                }
+                _liveTelemetryStream = new FileStream(_liveTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                if (_liveTelemetryStream.Length != LiveTelemetryRecordSizeBytes)
+                    _liveTelemetryStream.SetLength(LiveTelemetryRecordSizeBytes);
 
-                _liveTelemetryMappedFile = MemoryMappedFile.CreateFromFile(
-                    _liveTelemetryPath,
-                    FileMode.Open,
+                _liveTelemetryMmf = MemoryMappedFile.CreateFromFile(
+                    _liveTelemetryStream,
                     null,
                     LiveTelemetryRecordSizeBytes,
-                    MemoryMappedFileAccess.ReadWrite);
-                _liveTelemetryViewAccessor = _liveTelemetryMappedFile.CreateViewAccessor(
-                    0L,
-                    LiveTelemetryRecordSizeBytes,
-                    MemoryMappedFileAccess.Write);
+                    MemoryMappedFileAccess.ReadWrite,
+                    HandleInheritability.None,
+                    leaveOpen: true);
+                _liveTelemetryView = _liveTelemetryMmf.CreateViewAccessor(0L, LiveTelemetryRecordSizeBytes, MemoryMappedFileAccess.Write);
+
+                Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
             }
             catch (Exception exception)
             {
@@ -842,22 +1050,65 @@ namespace Hecton8.Core
 
         private void DisposeLiveTelemetryMmf()
         {
-            if (_liveTelemetryViewAccessor != null)
-            {
-                _liveTelemetryViewAccessor.Dispose();
-                _liveTelemetryViewAccessor = null;
-            }
+            Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
+            _liveTelemetryView?.Dispose();
+            _liveTelemetryView = null;
+            _liveTelemetryMmf?.Dispose();
+            _liveTelemetryMmf = null;
+            _liveTelemetryStream?.Dispose();
+            _liveTelemetryStream = null;
+        }
 
-            if (_liveTelemetryMappedFile != null)
+        private void InitializeCrashTelemetryMmf()
+        {
+            DisposeCrashTelemetryMmf();
+            if (string.IsNullOrEmpty(_crashTelemetryPath))
+                return;
+
+            try
             {
-                _liveTelemetryMappedFile.Dispose();
-                _liveTelemetryMappedFile = null;
+                string directory = Path.GetDirectoryName(_crashTelemetryPath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                _crashTelemetryStream = new FileStream(_crashTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+                if (_crashTelemetryStream.Length != ExportScratchSizeBytes)
+                    _crashTelemetryStream.SetLength(ExportScratchSizeBytes);
+
+                _crashTelemetryMmf = MemoryMappedFile.CreateFromFile(
+                    _crashTelemetryStream,
+                    null,
+                    ExportScratchSizeBytes,
+                    MemoryMappedFileAccess.ReadWrite,
+                    HandleInheritability.None,
+                    leaveOpen: true);
+                _crashTelemetryView = _crashTelemetryMmf.CreateViewAccessor(0L, ExportScratchSizeBytes, MemoryMappedFileAccess.Write);
+            }
+            catch (Exception exception)
+            {
+                DisposeCrashTelemetryMmf();
+                _crashTelemetryPath = null;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
             }
         }
 
-        private unsafe void TryWriteLiveTelemetry(uint frameIndex, float dt, float reservedMemoryMb, uint activeChunkCount)
+        private void DisposeCrashTelemetryMmf()
         {
-            if (!_liveTelemetryScratch.IsCreated || _liveTelemetryViewAccessor == null)
+            Volatile.Write(ref _exportState, ExportStateIdle);
+            _crashTelemetryView?.Dispose();
+            _crashTelemetryView = null;
+            _crashTelemetryMmf?.Dispose();
+            _crashTelemetryMmf = null;
+            _crashTelemetryStream?.Dispose();
+            _crashTelemetryStream = null;
+        }
+
+        private void TryWriteLiveTelemetry(uint frameIndex, float dt, float reservedMemoryMb, uint activeChunkCount)
+        {
+            if (string.IsNullOrEmpty(_liveTelemetryPath))
                 return;
 
             int frameNumber = unchecked((int)frameIndex);
@@ -875,26 +1126,64 @@ namespace Hecton8.Core
             record.DeltaTime = dt;
             record.ReservedMemoryMb = reservedMemoryMb;
 
-            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_liveTelemetryScratch);
-            UnsafeUtility.MemClear(source, LiveTelemetryRecordSizeBytes);
-            UnsafeUtility.CopyStructureToPtr(ref record, source);
+            if (Interlocked.CompareExchange(ref _liveTelemetryWriteState, LiveTelemetryStateQueued, LiveTelemetryStateIdle) != LiveTelemetryStateIdle)
+                return;
 
-            byte* mappedBaseAddress = null;
+            _pendingLiveTelemetryRecord = record;
+            ThreadPool.UnsafeQueueUserWorkItem(_backgroundLiveTelemetryCallback, this);
+        }
+
+        private static void ExecuteBackgroundLiveTelemetryWrite(object state)
+        {
+            if (state is CrashTelemetryBuffer crashTelemetryBuffer)
+                crashTelemetryBuffer.WritePendingLiveTelemetryToMmf();
+        }
+
+        private unsafe void WritePendingLiveTelemetryToMmf()
+        {
             try
             {
-                _liveTelemetryViewAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedBaseAddress);
-                if (mappedBaseAddress == null)
+                if (_liveTelemetryView == null)
                     return;
 
-                byte* destination = mappedBaseAddress + (int)_liveTelemetryViewAccessor.PointerOffset;
-                UnsafeUtility.MemClear(destination, LiveTelemetryRecordSizeBytes);
-                UnsafeUtility.MemCpy(destination, source, LiveTelemetryRecordSizeBytes);
-                _liveTelemetryViewAccessor.Flush();
+                LiveTelemetryRecord record = _pendingLiveTelemetryRecord;
+                byte* mappedBaseAddress = null;
+                try
+                {
+                    _liveTelemetryView.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedBaseAddress);
+                    if (mappedBaseAddress == null)
+                        return;
+
+                    byte* destination = mappedBaseAddress + (int)_liveTelemetryView.PointerOffset;
+                    UnsafeUtility.MemClear(destination, LiveTelemetryRecordSizeBytes);
+                    UnsafeUtility.CopyStructureToPtr(ref record, destination);
+                    _liveTelemetryView.Flush();
+                    _liveTelemetryStream?.Flush(true);
+                }
+                finally
+                {
+                    if (mappedBaseAddress != null)
+                        _liveTelemetryView.SafeMemoryMappedViewHandle.ReleasePointer();
+                }
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
+            }
+            catch (IOException exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
+            }
+            catch (Exception)
+            {
             }
             finally
             {
-                if (mappedBaseAddress != null)
-                    _liveTelemetryViewAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
             }
         }
 
@@ -931,6 +1220,7 @@ namespace Hecton8.Core
 
                     if (writeSynchronously)
                     {
+                        GlobalTelemetryBus.TryEmergencyFlushSynchronous();
                         WritePreparedExportToDisk();
                         return;
                     }
@@ -965,6 +1255,7 @@ namespace Hecton8.Core
                     ? 0u
                     : unchecked((uint)math.min(_writeCursor, uint.MaxValue));
                 PreparePendingExportMetadata(triggerFrame);
+                GlobalTelemetryBus.TryEmergencyFlushSynchronous();
                 WritePreparedExportToDisk();
             }
             catch (Exception)
@@ -1010,7 +1301,16 @@ namespace Hecton8.Core
                 UnsafeUtility.MemClear(destination, totalBytes);
                 UnsafeUtility.CopyStructureToPtr(ref header, destination);
                 void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_exportSnapshot);
-                UnsafeUtility.MemCpy(destination + CrashExportHeaderSizeBytes, snapshotPtr, entryBytes);
+                int destinationBytes = _exportScratch.Length - CrashExportHeaderSizeBytes;
+                if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                        destination + CrashExportHeaderSizeBytes,
+                        destinationBytes,
+                        snapshotPtr,
+                        entryBytes))
+                {
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                    return 0;
+                }
 
                 return totalBytes;
             }
@@ -1018,9 +1318,7 @@ namespace Hecton8.Core
 
         private void PreparePendingExportMetadata(uint triggerFrame)
         {
-            string timestampUtc = DateTime.UtcNow.ToString(ExportTimestampFormat);
-            string fileStem = ExportFilePrefix + timestampUtc + "_f" + triggerFrame;
-            _pendingExportPath = Path.Combine(Application.persistentDataPath, fileStem + ExportFileExtension);
+            _pendingExportPath = _crashTelemetryPath;
         }
 
         private static void ExecuteBackgroundExport(object state)
@@ -1033,18 +1331,35 @@ namespace Hecton8.Core
         {
             try
             {
-                string exportPath = _pendingExportPath;
                 int exportBytes = _pendingExportBytes;
-                if (!string.IsNullOrEmpty(exportPath) && exportBytes > 0)
+                if (_crashTelemetryView != null && exportBytes > 0)
                 {
-                    string directory = Path.GetDirectoryName(exportPath);
-                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                        Directory.CreateDirectory(directory);
-
                     unsafe
                     {
-                        void* exportPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_exportScratch);
-                        AsyncWriteManager.WriteAll(exportPath, exportPtr, exportBytes, out _);
+                        byte* mappedBaseAddress = null;
+                        try
+                        {
+                            _crashTelemetryView.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedBaseAddress);
+                            if (mappedBaseAddress == null)
+                                return;
+
+                            byte* destination = mappedBaseAddress + (int)_crashTelemetryView.PointerOffset;
+                            UnsafeUtility.MemClear(destination, ExportScratchSizeBytes);
+                            void* exportPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_exportScratch);
+                            if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, ExportScratchSizeBytes, exportPtr, exportBytes))
+                            {
+                                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                                return;
+                            }
+
+                            _crashTelemetryView.Flush();
+                            _crashTelemetryStream?.Flush(true);
+                        }
+                        finally
+                        {
+                            if (mappedBaseAddress != null)
+                                _crashTelemetryView.SafeMemoryMappedViewHandle.ReleasePointer();
+                        }
                     }
                 }
             }
@@ -1120,6 +1435,13 @@ namespace Hecton8.Core
         {
             float normalized = math.saturate((temperatureCelsius + 50f) / 150f);
             return QuantizeUnitToByte(normalized);
+        }
+
+        private static uint PackSignedVectorComponent(float value)
+        {
+            float clamped = math.clamp(value, -511f, 511f);
+            int quantized = (int)math.round(clamped);
+            return unchecked((uint)(quantized + 511) & 0x3FFu);
         }
     }
 }

@@ -34,5 +34,21 @@ namespace Hecton8.Modding
         /// Stable mod IDs that must load before this package is allowed to execute.
         /// </summary>
         public string[] Dependencies;
+
+        /// <summary>
+        /// Minimum integer API version required by this mod package.
+        /// </summary>
+        public int RequiredAPIVersion;
+
+        /// <summary>
+        /// Stable FNV-1a hash of <see cref="Id"/> used for runtime O(1) lookups.
+        /// </summary>
+        public uint StableIdHash;
+
+        /// <summary>
+        /// Arbitration priority used when multiple mods request mutually exclusive world actions.
+        /// Higher values win spawn-conflict arbitration.
+        /// </summary>
+        public int ModPriority;
     }
 }

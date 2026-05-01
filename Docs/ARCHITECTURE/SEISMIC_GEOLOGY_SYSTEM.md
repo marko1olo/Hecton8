@@ -1,5 +1,15 @@
 # Seismic Geology System
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+2026-05-01 current-state boundary:
+
+- This is the readable geology/seismic reference replacing encoding-damaged geology production notes in active docs.
+- It describes intended owner boundaries and data flow, not Play Mode proof.
+- Runtime terrain/voxel mutation, MapMagic terrain interaction, and vent/sediment coupling still require source re-open plus Unity verification before surgery.
+- For broader current system ownership, read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+
 ## Owners
 - `RandomEventSystem`: emits `SeismicShockwaveEvent`.
 - `WorldGenerativeGeologyVoxelBridgeDirector`: converts the shockwave payload into a deterministic trench line in runtime AUP.

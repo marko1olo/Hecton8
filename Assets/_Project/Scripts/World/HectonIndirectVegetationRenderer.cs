@@ -300,6 +300,7 @@ namespace Hecton8.World
         private NativeArray<MetadataValue> _batchMetadata;
         private GraphicsBuffer _batchHandleBuffer;
         private BatchID _batchId;
+        private GraphicsBuffer _registeredBatchBuffer;
         private BatchMeshID _nearBatchMeshId;
         private BatchMeshID _farBatchMeshId;
         private Mesh _registeredNearMesh;
@@ -1112,7 +1113,7 @@ namespace Hecton8.World
                 ? _explicitBounds
                 : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             SyncBatchRegistration(nearMesh, farMesh);
-            _batchRendererGroup.SetBatchBuffer(_batchId, _instanceMatrixBuffer.bufferHandle);
+            SyncBatchBuffer(_instanceMatrixBuffer);
             _batchRendererGroup.SetGlobalBounds(drawBounds);
             UpdateMotionVectorHistory();
         }
@@ -1352,6 +1353,7 @@ namespace Hecton8.World
                 cullCamera == null ||
                 nearMesh == null ||
                 _cullingCompute == null ||
+                _clearIndirectArgsKernel < 0 ||
                 _instanceMatrixBuffer == null ||
                 _instanceCount <= 0)
             {
@@ -1457,9 +1459,17 @@ namespace Hecton8.World
 
             Mesh nearMesh = ResolveNearRenderMesh();
             Mesh farMesh = _farLodDistance > _nearLodDistance ? ResolveImpostorRenderMesh() : null;
-            ClearIndirectArgsBuffer(_indirectArgsLod0Buffer, nearMesh);
-            ClearIndirectArgsBuffer(_indirectArgsLod1Buffer, farMesh != null ? farMesh : nearMesh);
-            ClearIndirectArgsBuffer(_indirectArgsShadowBuffer, nearMesh);
+            if (!ClearIndirectArgsBuffer(_indirectArgsLod0Buffer, nearMesh) ||
+                !ClearIndirectArgsBuffer(_indirectArgsLod1Buffer, farMesh != null ? farMesh : nearMesh) ||
+                !ClearIndirectArgsBuffer(_indirectArgsShadowBuffer, nearMesh))
+            {
+                return;
+            }
+
+            GraphicsFence indirectArgsClearFence = Graphics.CreateGraphicsFence(
+                GraphicsFenceType.AsyncQueueSynchronisation,
+                SynchronisationStageFlags.ComputeProcessing);
+            Graphics.WaitOnAsyncGraphicsFence(indirectArgsClearFence);
 
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceMatricesId, _instanceMatrixBuffer);
             _cullingCompute.SetBuffer(_cullFloraKernel, _SourceDataId, activeInstanceDataBuffer);
@@ -1628,14 +1638,14 @@ namespace Hecton8.World
                 argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU-cleared indirect indexed draw arguments for vegetation pass - owner: HectonIndirectVegetationRenderer
         }
 
-        private void ClearIndirectArgsBuffer(GraphicsBuffer argsBuffer, Mesh mesh)
+        private bool ClearIndirectArgsBuffer(GraphicsBuffer argsBuffer, Mesh mesh)
         {
             if (_cullingCompute == null ||
                 _clearIndirectArgsKernel < 0 ||
                 argsBuffer == null ||
                 mesh == null)
             {
-                return;
+                return false;
             }
 
             _cullingCompute.SetBuffer(_clearIndirectArgsKernel, _IndirectArgsBufferId, argsBuffer);
@@ -1646,6 +1656,7 @@ namespace Hecton8.World
             uint baseVertexIndex = (uint)mesh.GetBaseVertex(_subMeshIndex);
             _cullingCompute.SetInt(_IndirectBaseVertexIndexId, baseVertexIndex > int.MaxValue ? int.MaxValue : (int)baseVertexIndex);
             _cullingCompute.Dispatch(_clearIndirectArgsKernel, 1, 1, 1);
+            return true;
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)
@@ -1831,6 +1842,18 @@ namespace Hecton8.World
 
             batchMaterialId = material != null ? _batchRendererGroup.RegisterMaterial(material) : default;
             registeredMaterial = material;
+        }
+
+        private void SyncBatchBuffer(GraphicsBuffer matrixBuffer)
+        {
+            if (_batchRendererGroup == null || _batchId.Equals(default) || matrixBuffer == null)
+                return;
+
+            if (ReferenceEquals(_registeredBatchBuffer, matrixBuffer))
+                return;
+
+            _batchRendererGroup.SetBatchBuffer(_batchId, matrixBuffer.bufferHandle);
+            _registeredBatchBuffer = matrixBuffer;
         }
 
         private void UpdateMotionVectorHistory()
@@ -2237,6 +2260,7 @@ namespace Hecton8.World
             }
 
             _batchId = default;
+            _registeredBatchBuffer = null;
             _registeredNearMesh = null;
             _registeredFarMesh = null;
             _registeredNearBrgMaterial = null;

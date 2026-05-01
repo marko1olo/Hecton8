@@ -1,0 +1,1558 @@
+Вот твой отчет. Как Lead Architect и Senior QA, я посмотрел на этот «FULL IMMERSION BUILD». Спойлер: иммунитет к GC здесь только на словах, физика конфликтует сама с собой, а хваленый Zero-GC Policy пробит в нескольких горячих путях.
+
+Для скрипта, который крутится в ядре выживача на 4 км глубине (и, видимо, должен жрать минимум тактов CPU для работы на MX350), здесь слишком много монолитного main-thread мусора. Вы заявляете Burst/Jobs в контексте проекта, но в скрипте на 3000 строк нет ни одного Job-а. Вся математика волн и физика считается в основном потоке.
+
+Перейдем к вскрытию.
+
+🚨 КРИТИЧЕСКИЕ ОБСЕРЫ (БАГИ И ЛОГИЧЕСКИЕ ДЫРЫ)
+
+1. Самоуничтожение импульсов через ClampVelocity (Физический конфликт)
+В FixedTick вы вызываете ApplyWipeoutRecoveryForces(), добавляете импульс от взрыва/столкновения (например, при TriggerTransportBailout), а на следующей же строке вызываете ClampVelocity(suit).
+Что происходит: Игрок получает мощный импульс от Wipeout (скажем, 25 m/s). В этом же кадре ClampVelocity видит, что скорость выше suit.maxWalkSpeed (например, 5 m/s), и моментально обрезает вектор скорости. Ваш Bailout/Wipeout ощущается как удар в бетонную стену — игрок просто замирает на месте.
+Решение: ClampVelocity обязан отключаться или динамически расширять лимиты, если _wipeoutTimer > 0 или если на Ригидбоди действует внешний импульс.
+
+2. State Machine Hole: Экзокостюмы бессмертны к пучине
+Посмотри на строку ~2488 в FixedTick:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_isWalking) { 
+    WalkPhysics(suit, fixedDeltaTime); 
+    // ...
+} else { 
+    SwimPhysics(suit, fixedDeltaTime, activeTransportPreset); 
+    // ... ЗДЕСЬ ApplySargassumEntanglementForce, ApplyAbyssalCableEntanglementForce, ApplyThermalUpdrafts
+}
+
+Метод ShouldUseLandLocomotion возвращает true, если активен Экзокостюм (IsExosuitTransportActive()). Из-за этого _isWalking становится true. Следовательно, блок else игнорируется.
+Итог: Если игрок в Экзокостюме, на него физически не действуют термальные гейзеры, течения бездны, кабельные ловушки и саргассум. Экзокостюм просто "проходит" сквозь эндгейм-угрозы.
+
+3. Бесконечный цикл имплозии (Fatal Pressure Loop)
+Смотрим в UpdateHullStress:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_hullStressIntensity < crushDepthImplosionThreshold || _wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f) return; 
+StartFatalPressureSequence();
+
+Когда таймер фатального давления истекает, вызывается TriggerFatalPressureImplosion(), который делает StartWipeout(). Внимание: он не убивает игрока напрямую, а вешает на него _wipeoutTimer и передает травму в _survivalSystem.
+Итог: Если ХП позволяет пережить травму, _wipeoutTimer становится > 0. Это блокирует старт новой имплозии. Wipeout кончается -> давление все еще фатальное -> таймер запускается заново -> снова Wipeout. Игрок будет дергаться в бесконечном цикле микро-имплозий.
+
+4. Рассинхрон OnCollisionEnter и GameTickManager
+Скрипт отписан от стандартных Update/FixedUpdate (работает через ваш ITickable / IFixedTickable). НО! Вы используете юнитишный OnCollisionEnter.
+Callback столкновений стреляет во время внутренней фазы физики Unity. Если ваш кастомный GameTickManager работает не в жесткой синхронизации с Physics.autoSimulation, вы меняете стейт (например _wipeoutTimer) в непредсказуемый момент между кастомными тиками. Это приведет к плавающим глитчам и потере кадров ввода.
+
+5. Телепортация ломает Continuous Dynamic
+В TryApplyStepAssist:
+
+code
+C#
+download
+content_copy
+expand_less
+Vector3 newPosition = _rb.position; ...
+_rb.position = newPosition; // ЗЛО
+
+Менять transform.position / rb.position напрямую у Rigidbody с ContinuousDynamic — это выстрел в ногу. Вы ломаете интерполяцию, убиваете кэш CCD и можете провалиться сквозь коллайдеры на следующем кадре.
+Заменить на: _rb.MovePosition(newPosition).
+
+🗑️ PERFORMANCE SLOP (HOT PATH ВИОЛЯЦИИ)
+
+1. Убийственный TryGetComponent в Update-цикле
+Строка 1269 внутри Tick():
+
+code
+C#
+download
+content_copy
+expand_less
+if (_swimPresentationController == null)
+    TryGetComponent(out _swimPresentationController);
+
+Если у игрока нет этого компонента (а судя по коду, он опциональный), TryGetComponent будет вызываться каждый кадр. Это не Zero-GC, это смерть для MX350.
+Решение: Искать один раз в Awake и выставлять флаг _hasCheckedSwimPresentationController.
+
+2. Тормоза от _capsuleCollider.bounds
+Метод GetBodyBottomY():
+
+code
+C#
+download
+content_copy
+expand_less
+if (_capsuleCollider != null) return _capsuleCollider.bounds.min.y;
+
+Этот метод вызывается внутри ComputeImmersionRatio, GroundCheck, UpdateBottomClearance — по 5-6 раз за FixedTick. В Unity обращение к collider.bounds провоцирует пересчет AABB (Axis-Aligned Bounding Box) на стороне C++. Это невероятно тяжелая операция для вызова в цикле.
+Решение: Считайте математически: _rb.position.y + _capsuleCollider.center.y - (_capsuleCollider.height * 0.5f).
+
+3. Тяжелый поиск Океана (O(N) по всей сцене)
+В ResolveOceanKinematics() (стр. 1836):
+
+code
+C#
+download
+content_copy
+expand_less
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+// ... затем GetComponentsInChildren по ВСЕМ рутам
+
+Да, вы используете NonAlloc-версии, но поиск компонентов по графу всей сцены раз в секунду (_nextOceanKinematicsResolveTime) — это чудовищный архитектурный провал.
+Решение: Океан (Crest API) должен сам регистрироваться в глобальном Service Locator (например, OceanProvider.Instance) при старте. Никаких сканирований сцены из контроллера игрока.
+
+🏗️ АРХИТЕКТУРНАЯ ГРЯЗЬ И ИЗБЫТОЧНОСТЬ
+
+1. Жесткая привязка Camera Yaw к World Space (Motion Sickness Guarantee)
+Вы инициализируете и храните _cameraYaw как World Space угол. Если игрок зайдет внутрь движущейся подлодки (шлюза/рэка) и корабль начнет поворачивать, _cameraYaw останется прежним. Моделька игрока и камера будут крутиться внутри комнаты как юла.
+Для NASA-punk с транспортом камера и движение должны считаться относительно локального пространства текущего родительского Rigidbody (опорной поверхности).
+
+2. Мертвый код и дубликаты
+
+ConsumeJumpRequest() делает _jumpRequested = false; _jumpBufferTimer = 0f;. Но в FixedTick есть отдельный блок: if (_jumpBufferTimer > 0f) { ... if (_jumpBufferTimer <= 0) { _jumpRequested = false; } }. Код рассыпан и дублируется.
+
+Множественные Mathf.Clamp угла камеры. Сначала в ApplyLookInput, потом в ApplyFatalPressureLookClamp, потом еще раз в ApplyCameraState. Выберите одно место сборки конечного угла.
+
+3. Помойка в инспекторе (Diagnostics)
+Строки 500-550: 50+ полей _debug... с #pragma warning disable CS0414. Это загрязняет память класса. В серьезном проекте под это пишется кастомный [CustomEditor] или отдельный класс PlayerMovementDebugger, который рисует данные через Handles или GUI, не засоряя монобех. Вынесите это из основного класса.
+
+4.AddComponent в Awake
+
+code
+C#
+download
+content_copy
+expand_less
+if (!TryGetComponent(out _heavyTowWinch)) {
+    _heavyTowWinch = gameObject.AddComponent<HeavyTowWinch>(); // COLD ALLOC
+}
+
+Да, аллокация "холодная", но зачем? Используйте [RequireComponent(typeof(HeavyTowWinch))]. Unity автоматически добавит его при создании префаба. Никаких рантайм-аллокаций памяти под новые компоненты.
+
+🔪 ВЕРДИКТ И РЕКОМЕНДАЦИИ ПО РЕФАКТОРИНГУ
+
+Вырезать TryGetComponent из Tick и FixedTick немедленно. Кэшировать всё жестко на старте.
+
+Переписать ClampVelocity: он не должен трогать rb.linearVelocity напрямую, если игрок находится в состоянии Wipeout, или если недавно был применен импульс (добавьте _velocityClampBypassTimer).
+
+Пересобрать стейт-машину в FixedTick. Логика экзокостюма (_isWalking) не должна исключать применение физики подводных течений (else-блок). Разделите расчет "Locomotion" (Walk/Swim) и "Environment Forces" (Currents, Sargassum, Entanglement). Это две разные зоны ответственности, они должны работать параллельно.
+
+Убрать bounds: Заменить _capsuleCollider.bounds на математический расчет высоты.
+
+Job System: Если хотите реальный перфоманс на сложных вычислениях волн Креста и турбулентности — вынесите расчет ApplyUnderwaterTurbulence и сэмплинга океана в IJob. Скармливайте туда координаты 5 сэмплов, получайте обратно вектора сил. Сейчас это чистый Main Thread.
+
+Код богат на фичи, но архитектурно это «Spaghetti Monster», который держится на костылях из таймеров. Требуется жесткая сепарация физики передвижения от физики окружения.
+
+
+Привет. Код посмотрел. Если коротко: для прототипа — пойдет, но для продакшена с таргетом в 60 FPS на MX350 и Zero-GC — это катастрофа.
+
+Скрипт представляет собой классический God Object (3000+ строк), который лезет и в камеру, и в физику, и в UI, и в инпут. Вы заявляете использование Burst и Jobs, но этот скрипт — это 100% однопоточное месиво на главном потоке без единой джобы, перегруженное тяжелой математикой.
+
+Ниже — хирургический разбор критических обсеров и архитектурной грязи.
+
+🚨 КРИТИЧЕСКИЕ ОБСЕРЫ (БАГИ, УТЕЧКИ, ПРОСАДКИ FPS)
+1. CPU-Киллер: Бесконечный спам TryGetComponent и GetComponentInChildren
+
+Вы сделали кэширование для _underwaterVisuals (через флаг _resolvedUnderwaterVisuals), но забыли сделать это для ToolManager и TransportCoordinator!
+
+code
+C#
+download
+content_copy
+expand_less
+private void ResolvePlayerToolManager() {
+    if (_playerToolManager != null) return;
+    if (!TryGetComponent(out _playerToolManager))
+        _playerToolManager = GetComponentInChildren<PlayerToolManager>(true); // УБИЙЦА
+}
+
+Суть бага: Если на игроке нет PlayerToolManager, этот метод будет вызываться КАЖДЫЙ КАДР (в Tick и FixedTick). Поиск GetComponentInChildren(true) обходит всю иерархию игрока (со всеми костями и UI). Это уничтожит перфоманс на MX350.
+Лечение: Добавить _resolvedPlayerToolManager и _resolvedPlayerTransportCoordinator, как вы это сделали для других компонентов.
+
+2. Фриз игры раз в секунду: ResolveOceanKinematics
+code
+C#
+download
+content_copy
+expand_less
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+// ...
+rootObject.GetComponentsInChildren(true, _sceneOceanProviderBuffer);
+
+Если адаптер Crest не найден, этот кусок кода вызывается раз в секунду. Он делает GetComponentsInChildren по ВСЕЙ СЦЕНЕ. В игре про выживание, где на дне лежат тысячи обломков (Nasa-punk wrecked environments), этот метод вызовет спайк (фрейм-дроп) длительностью в 10-50 мс каждую гребаную секунду.
+Лечение: Никаких сканов сцены. Океан должен регистрировать себя сам при старте (ServiceLocator или глобальный Singleton OceanKinematicsRegistry.Active).
+
+3. Потеря точности Float (Floating Point Degradation)
+code
+C#
+download
+content_copy
+expand_less
+_currentTimer += fixedDeltaTime; 
+if (_currentTimer > 100000f) _currentTimer -= 100000f;
+...
+float lateralOscillation = math.sin(turbulencePhase * TwoPi + ...); // turbulencePhase = _currentTimer * freq
+
+Число 100 000 для float — это смерть точности фазы. Шаг флоата на таких значениях огромный. math.sin(100000 * 6.28) превратит ваши плавные волны турбулентности в дерганое месиво (джиттер) спустя 2-3 часа игры.
+Лечение: Сбрасывайте таймер по модулю (1f / frequency) или хотя бы на 1000f.
+
+4. Промах GroundCheck (Размер буфера)
+code
+C#
+download
+content_copy
+expand_less
+private readonly RaycastHit[] _groundHitBuffer = new RaycastHit[8];
+
+Сфера кастится с размером буфера = 8. Если вы стоите в густых саргассовых водорослях (у которых есть коллайдеры), или вокруг валяются 8 камней/обломков — луч заполнит буфер мусором, не дойдет до реальной земли, и _isGrounded вернет false. Игрок "застрянет" в воздухе или потеряет управление.
+Лечение: Увеличьте буфер хотя бы до 32 и жестко фильтруйте groundLayers, чтобы туда не попадал мелкий мусор.
+
+🏗 АРХИТЕКТУРНАЯ ГРЯЗЬ И ЛОГИЧЕСКИЕ ДЫРЫ
+1. Нарушение инкапсуляции камеры (Sync Mismatch)
+code
+C#
+download
+content_copy
+expand_less
+_cameraWorldRotation = Quaternion.Euler(finalPitch, _cameraYaw, finalRoll);
+playerCamera.rotation = _cameraWorldRotation;
+playerCamera.localPosition = finalPos;
+
+Этот код в конце Tick() жестко перезаписывает трансформацию камеры. Если у вас есть Cinemachine, процедурная отдача от оружия (Weapon Sway), тряска от взрывов — они все сломаются, потому что скрипт мувмента форсит трансформ под себя.
+Рекомендация: Скрипт перемещения не должен трогать playerCamera напрямую. Он должен отдавать CameraJuiceOutput в специальный CameraRigController, который уже смешивает мувмент, отдачу и эффекты в один финальный трансформ.
+
+2. Дыра в State Machine: Экзокостюм бессмертен к течениям
+
+Смотрим в ResolveLocomotionMode: Экзокостюм считается режимом ходьбы (_isWalking = true).
+Смотрим в физику: if (_isWalking) { WalkPhysics(); } else { SwimPhysics(); ApplyAbyssalCurrents(); ApplyThermalUpdrafts(); }.
+Итог: Если игрок находится в Экзокостюме на глубине 4 км, он абсолютно игнорирует термальные гейзеры (ApplyThermalUpdrafts) и абиссальные даундарфты (ApplyAbyssalCurrents), потому что этот код просто не вызывается в блоке WalkPhysics. Это убивает геймдизайн глубоководных опасностей.
+
+3. Legacy-мусор (Хардкод инпута)
+code
+C#
+download
+content_copy
+expand_less
+if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed)
+
+Целый блок ReadMoveFallback и ReadLookFallback жестко опрашивает Keyboard.current и Mouse.current. Вы используете новую Unity Input System (судя по InputManager), на кой черт вам этот фоллбек в продакшене? Это мертвый код, который только усложняет дебаг и ломает ремаппинг клавиш.
+Рекомендация: Удалить полностью. Если InputManager отвалился — игра должна падать или стоять на месте, а не костыльно читать WASD.
+
+4. Жуткая связность (Violation of SOLID)
+code
+C#
+download
+content_copy
+expand_less
+if (provider is Crest5KinematicsAdapter) return 200;
+if (provider is Crest4KinematicsAdapter) return 100;
+
+Скрипт игрока "знает" про версии адаптеров океана Crest! Это дно архитектуры. Завтра вы перейдете на Crest 6 или кастомный океан, и вам придется лезть в логику игрока. Адаптеры должны реализовать свойство int Priority { get; } в интерфейсе IHectonOceanKinematics.
+
+5. Булимия апдейтов курсора
+code
+C#
+download
+content_copy
+expand_less
+if (_inputCleared || Cursor.lockState != CursorLockMode.Locked) {
+    Cursor.lockState = CursorLockMode.Locked;
+    Cursor.visible = false;
+}
+
+Спамить лок курсора в каждом Tick (Update) — дурной тон. Это ломает эдитор при дебаге (невозможно нажать паузу или выделить объект, курсор вечно исчезает) и может конфликтовать с UI-системой. Курсор должен лочиться только по событиям (OnMenuClosed / OnGameplayStarted).
+
+🔪 РЕЗЮМЕ ДЛЯ РЕФАКТОРИНГА (ЧТО ДЕЛАТЬ ПРЯМО СЕЙЧАС)
+
+Добавить флаги кэширования: _resolvedPlayerToolManager и _resolvedPlayerTransportCoordinator. Это немедленно поднимет FPS.
+
+Удалить фоллбеки инпута: Убейте методы ReadVerticalFallbackKeys, ReadMoveFallback, ReadLookFallback.
+
+Решить проблему ResolveOceanKinematics: Сделайте так, чтобы OceanKinematicsProvider сам регистрировал себя в статической переменной HectonOceanRegistry.ActiveProvider при Awake. Уберите GetComponentsInChildren из скрипта игрока.
+
+Починить таймер волн: Изменить сброс _currentTimer на if (_currentTimer > TwoPi * 100f) _currentTimer -= TwoPi * 100f; (важно учитывать множители частоты, чтобы не было срыва фазы).
+
+Оторвать камеру: Перенести применение _cameraWorldRotation и localPosition в отдельный PlayerCameraRig, который будет слушать HectonPlayerMovement.
+
+Вынести тяжелую математику в Jobs: Для 60 FPS на слабом железе расчеты в ApplyUnderwaterTurbulence и UpdateDynamicWaveSampling должны быть вынесены в IJob с использованием [BurstCompile]. Сейчас процессор молотит кучу матричных преобразований, кватернионов и синусов в основном потоке.
+
+СТАТУС АУДИТА: ПРОВАЛЕН. КОД КРАСНЫЙ.
+
+Скрипт представляет собой классический «God Object» (почти 3500 строк), в который запихали абсолютно всё: от физики и инпутов до парсинга лора водорослей (Sargassum), глитчей визора и проверки перегрева джетпаков экзокостюма. Для Zero-GC политики и 60 FPS на слабом железе здесь допущены критические архитектурные и перформанс-преступления.
+
+Если мы зальем это в main, игра будет фризить раз в секунду, физика сойдет с ума, а мобильные/low-end процессоры (типа MX350) просто сгорят от перерасчета тензоров инерции.
+
+Ниже детальный разбор и план по спасению.
+
+🚨 КРИТИЧЕСКИЕ ОБСЕРЫ (Баги, Утечки, Спайки производительности)
+1. The "1-Second Hitch" (Смертельный фриз в FixedTick)
+
+Где: UpdateOceanWaterHeight() -> ResolveOceanKinematics(bool forceSceneSearch)
+Проблема: Если адаптер океана (Crest) не найден в сцене, скрипт каждую секунду делает это:
+
+code
+C#
+download
+content_copy
+expand_less
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+// ... и в цикле:
+rootObject.GetComponentsInChildren(true, _sceneOceanProviderBuffer);
+
+Последствия: GetComponentsInChildren(true) по всей иерархии сцены внутри FixedTick. На тяжелой сцене это вызовет мощнейший спайк CPU (глубокий фриз на 10–50 мс) каждую секунду.
+Лечение: Жестоко вырезать. Сервисы уровня OceanKinematics обязаны регистрировать себя в глобальном ServiceLocator / DI или Singleton при OnEnable. Плеер не должен бегать по сцене и искать океан.
+
+2. Аннигиляция Импульсов (Wipeout / Bailout Bug)
+
+Где: StartWipeout() / TriggerTransportBailout() и ClampVelocity()
+Проблема: При аварии скрипт честно бьет игрока импульсом: _rb.AddForce(bailoutImpulse, ForceMode.Impulse);. Но сразу после этого в том же или следующем FixedTick вызывается ClampVelocity(suit).
+
+code
+C#
+download
+content_copy
+expand_less
+if (fullSqr > maxSqr) {
+    float scale = maxSpd / math.sqrt(fullSqr);
+    _velocity.x *= scale; _velocity.y *= scale; _velocity.z *= scale;
+    _rb.linearVelocity = _velocity;
+}
+
+Последствия: Любой взрыв, выброс из транспорта или рывок от щупалец будет мгновенно обрезан до скорости плавания (maxSwimSpeed). Вместо зрелищного отлета на 15 метров, игрок сделает жалкий "пук" и мягко поплывет.
+Лечение: Добавить _impulseBypassTimer. Если игрок в состоянии Wipeout/Bailout, ClampVelocity не должен обрезать скорость (или должен использовать отдельный, гораздо больший лимит).
+
+3. Ежекадровый Native-вызов TryGetComponent (Performance Slop)
+
+Где: В методе Tick(float deltaTime)
+
+code
+C#
+download
+content_copy
+expand_less
+if (_swimPresentationController == null)
+    TryGetComponent(out _swimPresentationController);
+
+Проблема: Метод выполняется каждый кадр рендера (Update). Если на префабе игрока нет (и не должно быть) PlayerSwimPresentationController, скрипт будет дергать C++ слой Unity TryGetComponent 60/144 раза в секунду. Это утечка процессорного времени.
+Лечение: Ввести флаг кеширования _resolvedSwimPresentation, как это уже сделано (правильно) в IsHeavyCarryActive().
+
+4. Физическое самоубийство (Recalculate Center Of Mass)
+
+Где: UpdateHeavyTowRuntimeResponse() (вызывается из FixedTick)
+
+code
+C#
+download
+content_copy
+expand_less
+if (_rb != null)
+    _rb.centerOfMass = _baseCenterOfMass + _heavyTowCenterOfMassOffset;
+
+Проблема: Присвоение Rigidbody.centerOfMass заставляет внутренний движок PhysX заново пересчитывать тензор инерции и будить (Wake up) коллайдеры. Скрипт делает это каждый FixedTick, даже если _heavyTowCenterOfMassOffset равен Vector3.zero (когда мы ничего не тащим).
+Лечение: Завернуть в проверку на изменения:
+
+code
+C#
+download
+content_copy
+expand_less
+var targetCoM = _baseCenterOfMass + _heavyTowCenterOfMassOffset;
+if (math.distancesq(_rb.centerOfMass, targetCoM) > 0.0001f)
+    _rb.centerOfMass = targetCoM;
+5. GC-Аллокации в Ивентах (Zero-GC Violation)
+
+Где: HandleSargassumEntanglementStrain
+
+code
+C#
+download
+content_copy
+expand_less
+SargassumGlobalDragManager.RaiseEntanglementStrain(
+    new SargassumGlobalDragManager.EntanglementStrainSignal { ... }
+);
+
+Проблема: Если EntanglementStrainSignal это класс (class), то при высоких нагрузках (запутывание в водорослях длится секунды) это будет создавать мусор каждую физическую итерацию.
+Лечение: Убедиться, что EntanglementStrainSignal определен как struct (желательно readonly struct). Передавать через in.
+
+🗑 АРХИТЕКТУРНАЯ ГРЯЗЬ (Logical Redundancy)
+1. Разтроение Личности Ветра и Течений (Dual/Triple Current Systems)
+
+Где: ApplyAmbientCurrent() и ResolveAbyssalAmbientFlowWithNoise()
+
+code
+C#
+download
+content_copy
+expand_less
+Unity.Mathematics.float3 phantom = CurrentManager.SampleCurrent(...);
+Vector3 localVolumeCurrent = Hecton8.Physics.CurrentVolume.SampleAt(currentPosition);
+
+Симптомы: Скрипт одновременно опрашивает CurrentManager (старая или сторонняя система), CurrentVolume (какая-то новая локальная волюметрика) и AbyssalThermalManager.
+Вердикт: Это дублирование логики и двойная плата CPU за сэмплинги. Все векторы течений должны сливаться (merge) в одном месте (например, в менеджере погоды/течений), а игрок должен делать ровно 1 запрос за один FixedTick: EnvironmentSystem.GetTotalCurrentAt(pos).
+
+2. Проверка Инпутов каждый кадр в Tick
+
+Где: Tick() -> RefreshInputManagerBinding();
+
+code
+C#
+download
+content_copy
+expand_less
+private void RefreshInputManagerBinding() {
+    InputManager currentManager = InputManager.Instance;
+    if (ReferenceEquals(_inputManager, currentManager) ... ) return;
+}
+
+Нейронка попыталась сделать "самовосстанавливающуюся" ссылку на InputManager. Но дергать Singleton InputManager.Instance каждый кадр — это грязный хак. InputManager должен жить дольше игрока, либо подписывать/отписывать игрока через ивенты старта/смерти.
+
+3. God Class (Нарушение SRP)
+
+Скрипт игрока знает про плотность водорослей (Sargassum), про звуки рвущихся кабелей, про температурные апдрафты (Thermal), про эхолокацию (Sonar) и количество паразитов на хулле:
+
+AdvanceSargassumInfluence
+
+AdvanceAbyssalThermalInfluence
+
+ApplyParasiteLatchForces
+
+TriggerActiveSonarPing
+
+Почему это плохо: Добавление новой механики заставляет нас снова лезть в 3500-строчный монолит.
+Как нужно по уму (на будущее): Внедрить систему Модификаторов (Modifiers/ForceProviders). Скрипт игрока должен просто иметь список активных IExternalForceProvider. Менеджер паразитов сам применяет силу. Менеджер водорослей сам вешает дебафф на скорость. Скрипт движения должен только предоставлять API: ApplyExternalForce(Vector3 force), SetSpeedMultiplier(string key, float mult).
+
+🔨 РЕЗЮМЕ / ЧТО ДЕЛАТЬ СЕЙЧАС (Хирургия)
+
+Немедленно вырезать поиск океана через GetComponentsInChildren. Перепиши ResolveOceanKinematics на чтение заранее зарегистрированного адаптера из ServiceLocator или статического контекста.
+
+Починить ClampVelocity, добавив обход (Bypass) лимитов на время _wipeoutTimer > 0 и _transportBailoutCooldownTimer > 0.
+
+Закрыть спам-доступ к Rigidbody.centerOfMass (добавить проверку на изменение).
+
+Пофиксить TryGetComponent внутри Tick.
+
+Вынести логику InputManager в стандартные OnEnable / OnDisable без проверки RefreshInputManagerBinding в каждом кадре.
+
+Всё остальное математически (Burst-friendly math., отсутствие Vector3.Distance, преаллокации буферов RaycastHit[8]) написано весьма добротно. Векторная математика и кватернионы используются экономно, _rb.useGravity = false с кастомным применением работает корректно.
+
+Итог: Архитектура грязновата (перенасыщена зонами ответственности), но с точки зрения CPU, если исправить вышеуказанные 4 пункта, скрипт без проблем войдет в Zero-GC рамки и будет держать 60 FPS на слабом железе. Отправь это на доработку.
+Код проанализирован. Как Principal Physics Engineer, я вижу амбициозную и сложную систему (впечатляющий гибрид кинематики и rigidbody-динамики), но она усыпана архитектурными и математическими минами.
+
+Вот детальный разбор критических уязвимостей, которые приведут к глитчам, падению FPS, крашам физики и сломанным стейт-машинам.
+
+🚨 1. State Machine Race Conditions: Конфликт Exosuit и Buoyancy
+
+Метод: ResolveLocomotionMode & FixedTick (Блок 8. Mode Detection)
+Проблема: Экзокостюм живет в состоянии квантовой неопределенности — он одновременно ходит и плывет, но с гравитацией из черной дыры.
+
+В ShouldUseLandLocomotion() жестко прописано: if (IsExosuitTransportActive()) return true;. Это заставляет флаг _isWalking всегда быть true.
+
+Из-за этого в FixedTick всегда вызывается WalkPhysics, даже если игрок в экзокостюме находится на глубине 2 км. SwimPhysics для экзокостюма отключен аппаратно.
+
+Смертельный конфликт: Для экзокостюма скрипт применяет гравитацию: _gravityScale = exosuitNegativeBuoyancyScale; (значение > 1). Однако контроллер нигде не отключает компонент BuoyancyObject.
+
+Итог: На дне моря на Ригидбоди одновременно действует умноженная гравитация (вниз) и расчет плавучести от BuoyancyObject (вверх). Это приведет к дичайшему высокочастотному джиттеру (микропрыжкам) на неровных поверхностях, так как физический движок будет разрываться между двумя противоположными силами.
+
+🚨 2. Утечка абстракции (Crest Facade Leak)
+
+Метод: ResolveOceanKinematicsProviderPriority
+Проблема: Паттерн Фасад (IHectonOceanKinematics) сломан хардкодом конкретных реализаций.
+
+В коде есть строки: if (provider is Crest5KinematicsAdapter) return 200; и if (provider is Crest4KinematicsAdapter) return 100;.
+
+Итог: Если вы решите полностью удалить старый ассет Crest 4 (что логично при переходе на v5) и удалите его asmdef/скрипты, этот класс перестанет компилироваться (TypeLoadException). Фасад не должен знать о классах, которые под ним лежат.
+
+🚨 3. FPS-Dependence: Потерянные dt в стрессе корпуса
+
+Метод: UpdateHullStress & FixedTick (блок Fatal Pressure)
+Проблема: Классическая ошибка перезаписи таймеров при FixedUpdate-лагах.
+
+Смотрим на сброс кулдаунов стонов корпуса и глитчей визора:
+
+code
+C#
+download
+content_copy
+expand_less
+_fatalPressureSequenceGlitchPulseTimer = math.lerp(fatalPressureGlitchPulseIntervalMax, fatalPressureGlitchPulseIntervalMin, _fatalPressureSequenceIntensity);
+code
+C#
+download
+content_copy
+expand_less
+_hullStressGroanCooldownTimer = math.lerp(crushDepthGroanIntervalMax, crushDepthGroanIntervalMin, groanT);
+
+Итог: При просадке FPS fixedDeltaTime может стать большим. Вместо того чтобы добавлять/вычитать дельту (т.е. += lerp_value), таймер просто переназначается =. Отрицательный дефицит времени (overshoot) «проглатывается». При лагах звуки скрежета металла и глитчи на экране будут происходить гораздо реже, чем задумано по таймингам.
+
+🚨 4. Убийца производительности: Exosuit Foot Probes
+
+Метод: TryResolveExosuitFootSlope & ResolveOceanKinematics
+Проблема: Спам тяжелыми кастами и обходом сцены.
+
+Каждый FixedTick, если вы в экзокостюме, код делает:
+
+SphereCastNonAlloc (в GroundCheck)
+
+Ещё один SphereCastNonAlloc (в UpdateBottomClearance)
+
+Два RaycastNonAlloc для левой и правой ноги.
+
+Итог: 4 тяжелых луча каждый кадр физики на каждого игрока. Никакого кэширования нет. Лучи ног стреляют вниз даже когда экзокостюм находится в воздухе/прыжке.
+
+Бомба замедленного действия: В ResolveOceanKinematics есть код: gameObject.scene.GetRootGameObjects(_sceneRootBuffer);, за которым следует GetComponentsInChildren. Если Crest недоступен (например, в пещере), этот код запускается каждую 1 секунду. Он сканирует всю иерархию сцены. Это приведет к микрофризу длиной в 2-5 мс каждую секунду.
+
+🚨 5. Взрыв физики (NaN): Heavy Tow и Hooke's Law
+
+Методы: ApplyCuttingTensionPhysics и ApplySargassumEntanglementForce
+Проблема: Явное интегрирование Эйлера (Explicit Euler) на жестких пружинах с умножением массы.
+
+В методе расчета натяжения саргассума:
+
+code
+C#
+download
+content_copy
+expand_less
+_forceVector = -springDirection * totalForceMagnitude * _rb.mass;
+_rb.AddForce(_forceVector, ForceMode.Force);
+
+ОШИБКА: ForceMode.Force в Unity уже учитывает массу объекта под капотом (формула a = F / m). Если вы умножаете силу на _rb.mass, вы делаете ускорение независимым от массы. Легкий игрок (80 кг) и тяжелый буксируемый груз (1000 кг) получат одинаково гигантское ускорение.
+
+В ApplyCuttingTensionPhysics пружина считается как extension * cuttingTensionSpring. Коэффициент жесткости в инспекторе может быть до 120. Без неявного решателя (Implicit Solver) или мультистеппинга, при резком рывке лебедки extension станет огромным. Сила приложится в одном кадре, Ригидбоди перелетит точку крепления, на следующем кадре пружина ударит в обратную сторону в 2 раза сильнее. На 3-м кадре позиция улетит в Infinity, а ригидбоди пропадет с экрана (NaN velocity).
+
+🗑️ 6. ВЕРДИКТ: "Грязные" методы (Zero-GC Violations)
+
+Контроллер позиционируется как "Zero-GC", но оставляет мусор:
+
+Аллокации в HandleSargassumEntanglementStrain:
+
+code
+C#
+download
+content_copy
+expand_less
+SargassumGlobalDragManager.RaiseEntanglementStrain(new SargassumGlobalDragManager.EntanglementStrainSignal { ... });
+
+Если EntanglementStrainSignal это class, а не struct, вы аллоцируете объект каждый FixedUpdate, пока игрок застрял в водорослях. Это вызовет срабатывание Garbage Collector'а прямо во время экшена.
+
+Скрытая аллокация C#-строк (Editor):
+
+code
+C#
+download
+content_copy
+expand_less
+_debugSuitName = currentSuitData != null ? currentSuitData.name : "NONE";
+
+Обращение к свойству .name у любого UnityEngine.Object (включая ScriptableObject) порождает вызов в C++ ядро и возвращает новую аллоцированную строку. Вызов этого кода загрязняет кучу, ломая чистоту профайлинга при дебаге.
+
+Перераспределение массива в GetRootGameObjects:
+
+code
+C#
+download
+content_copy
+expand_less
+_sceneRootBuffer.Clear();
+gameObject.scene.GetRootGameObjects(_sceneRootBuffer);
+
+Изначально _sceneRootBuffer имеет емкость 16. Если в сцене больше 16 корневых объектов, вызов GetRootGameObjects заставит List<GameObject> создать новый массив большего размера под капотом (GC Alloc). Нужно либо увеличить изначальную емкость new List<GameObject>(256), либо вообще избавиться от поиска по всей сцене.
+
+
+
+-=-==--=-==--=-==-=-=-
+ВЫШЕ БЫЛИ ПРЕДЪЯВЫ ПО HECTON PLAYER MOVEMENT
+-==--=-=-==-=-
+ИДЁМ ДАЛЬШЕ
+
+HectonMapMagicVegetationBridge.cs
+
+АНАЛИЗ
+
+
+----
+
+
+Привет. Я провёл ревью этого монстра. Код выглядит так, будто кто-то очень старался написать High-Performance C#, но застрял одной ногой в 2015 году с managed-массивами, а другой — в модном Burst Compiler, не понимая жизненного цикла памяти.
+
+Для игры с жесткой Zero-GC политикой и таргетом в стабильные 60 FPS на средних спеках здесь допущено несколько фатальных архитектурных просчетов.
+
+Ниже — детальный разбор. Разрезаем.
+
+🚨 КРИТИЧЕСКИЕ ОБСЕРЫ (Баги, Утечки, Краши)
+
+1. Double Buffering Failure & Use-After-Free (Экспорт NativeArray)
+Ты отдаешь наружу свойства вроде ActiveSurfaceMatricesNative для внешних систем (AI, Crest API). Но посмотри, как ты их ресайзишь в EnsureNativeCapacity:
+
+code
+C#
+download
+content_copy
+expand_less
+if (cache.IsCreated) {
+    if (cache.Length > 0) NativeArray<T>.Copy(cache, expanded, cache.Length);
+    cache.Dispose(); // <--- ФАТАЛИТИ
+}
+cache = expanded;
+
+Если в этот момент любая внешняя Burst-джоба читает ActiveSurfaceMatricesNative (а она читает, так как двойной буферизации для экспорта нет), ты ловишь жесткий краш движка (Use-After-Free). Экспортируемые нативные массивы нельзя просто так диспоузить по ходу кадра. Нужен Ring Buffer или хотя бы честный Double Buffering (Current/Next) с пиннингом хэндлов.
+
+2. O(N * C) Убийство CPU в ThreatPropagationJob
+Внутри ThreatPropagationJob.Execute (выполняется для каждой ячейки сетки, которых могут быть десятки тысяч) ты вызываешь SampleThreatAttractorAtPosition.
+Внутри него:
+
+code
+C#
+download
+content_copy
+expand_less
+for (int i = 0; i < chunkCount; i++) {
+    VegetationDensityChunkRecord chunk = chunks[i];
+    if (position.x < chunk.MinX ... ) continue; 
+    // ...
+
+Каждую из 40,000 ячеек ты прогоняешь через цикл по chunkCount (до 256 чанков). Это 10,000,000+ итераций линейного поиска за тик. Burst это прожует, но это отвратительный перфоманс-слоп. ThreatAttractorGrid должен сэмплироваться за 
+𝑂
+(
+1
+)
+O(1)
+ через математический маппинг координат в индекс сетки, а не через AABB-брутфорс чанков.
+
+3. Инвалидация кучи в NativeAStarJob (Binary Min-Heap)
+В HeapPushOrDecrease ты написал защиту:
+
+code
+C#
+download
+content_copy
+expand_less
+if (!HeapNodes.IsCreated || heapCount >= HeapNodes.Length) return;
+
+Если куча заполняется (а MaxExpandedNodes может не совпасть с реальным графом, или эвристика загонит алгоритм в угол), узел просто молча игнорируется. Путь не будет найден, а алгоритм сделает вид, что все нормально, вместо того чтобы вернуть ошибку или расширить буфер. Бесконечного цикла при поиске в "пустой" Dead Zone не будет (спасибо счетчику expandedNodes < MaxExpandedNodes), но путь будет ломаться в самых неожиданных местах.
+
+4. Memory Leak: Terrain Hole Lifecycle
+Ты вызываешь RegisterTerrainHole, который складывает дыры в _terrainHoleRecords. И всё.
+Если "Агент-Воксельщик" (или игрок) пробурит пещеру, уплывет на 10 км и не вызовет UnregisterTerrainHole, этот нативный массив будет пухнуть бесконечно. Для открытого мира это чистая утечка памяти. Необходим механизм Spatial Eviction (очистка по дистанции) или привязка жизненного цикла Hole к чанку (Chunk-based holes), чтобы при выгрузке чанка выгружались и дыры.
+
+5. Allocator Spike в SlowTick
+В методе RebuildArtificialStructureThreatSnapshot() ты делаешь это:
+
+code
+C#
+download
+content_copy
+expand_less
+if (!_artificialStructureHashNative.IsCreated || _artificialStructureHashNative.Capacity < hashCapacity) {
+    if (_artificialStructureHashNative.IsCreated) _artificialStructureHashNative.Dispose();
+    _artificialStructureHashNative = new NativeParallelMultiHashMap<int, int>(hashCapacity, Allocator.Persistent);
+}
+
+hashCapacity плавает в зависимости от EstimateArtificialStructureHashEntries. Если игрок плывет по границе мега-структуры, hashCapacity будет прыгать вверх-вниз. Ты будешь постоянно делать Dispose и выделять новую память в куче (внутри SlowTick!). Зафиксируй Capacity с запасом или используй метод .Capacity = newCapacity (у NativeParallelMultiHashMap это поддерживается без пересоздания объекта).
+
+6. Заморозка стриминга при дефрагментации
+В Tick у тебя написано:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_poolDefragScheduled) return;
+
+Пока работает DefragPoolJob, ты полностью блокируешь стриминг чанков (ProcessPendingChunkBuilds не вызывается). В быстрой лодке игрок вылетит за пределы стриминга, потому что движок решил потратить 3 кадра на дефрагментацию пула. Дефрагментация не должна блокировать создание новых чанков, она должна работать только с выгружаемыми/существующими.
+
+💩 АРХИТЕКТУРНАЯ ГРЯЗЬ (Мусор, Дубликаты, Нарушения GC-политики)
+
+1. Шизофрения Managed и Native массивов
+Ты поддерживаешь ДВА зеркальных хранилища: Matrix4x4[] ActiveSurfaceMatrices и NativeArray<Matrix4x4> ActiveSurfaceMatricesNative. И ты синхронизируешь их через:
+
+code
+C#
+download
+content_copy
+expand_less
+NativeArray<Matrix4x4>.Copy(...);
+CopyNativeToManaged(...); // <-- GC аллокации при ресайзе, двойной расход RAM
+
+Для чего? Если рендереру (ComputeBuffer.SetData) нужны Native-массивы, а джобам нужны Native-массивы, полностью выпили managed-массивы. Тебе вообще не нужны int[], Vector3[] на уровне агрегации. Это пережиток старого Unity.
+
+2. Нарушение Zero-GC в Chunk Payloads
+В методе BuildChunkAbyssalNavPayload:
+
+code
+C#
+download
+content_copy
+expand_less
+if (nodes == null) nodes = AllocateVector3PayloadArray(maxNodeCount); 
+// который внутри делает return new Vector3[count];
+
+Каждый раз, когда собирается чанк (а это происходит десятки раз в секунду при быстром движении), ты выделяешь новые managed-массивы для графа путей и структуры мега-обломков. Это вызывает жесткий спайк GC.
+Решение: Используй NativeList<Vector3> в структуре пейлоада или выделяй из глобального NativeSlabAllocator.
+
+3. Performance Slop: Camera GetComponent
+В методе ResolveActiveViewCamera():
+
+code
+C#
+download
+content_copy
+expand_less
+_cachedViewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+И это вызывается раз в секунду (CameraResolveRetryInterval = 1f), если камера не найдена. Если игрок умер/камера временно отключена, у тебя каждую секунду по иерархии бежит тяжелейший GetComponentInChildren. Камера должна сама регистрировать себя в HectonMapMagicVegetationBridge.Instance.SetViewCamera(). Никогда не ищи камеру через Reflection-подобные методы в апдейте.
+
+4. Иллюзия State Machine Integrity
+В задаче указано: "Проверь, нет ли конфликтов, когда два режима пытаются управлять Rigidbody".
+Скрипт читает _playerRigidbody.linearVelocity, но не пишет в него. С точки зрения State Machine здесь все безопасно, скрипт выступает чистым observer'ом. За это плюс.
+
+🔪 ВЕРДИКТ И РЕКОМЕНДАЦИИ
+
+Код нужно рефакторить. Текущая версия съест весь RAM двойными буферами и уронит фреймрейт из-за кривого сэмплинга Threat Grid.
+
+Вырезать Managed Arrays полностью. Оставь только NativeArray. Методы CopyActiveSurfaceInstances удали, пусть внешние системы читают Native-данные (передавай им NativeSlice или read-only view).
+
+Переписать Threat Grid Sampling. Преврати SampleThreatAttractorAtPosition в O(1) чтение из ThreatAttractorGrid по индексам. Линейный поиск по чанкам внутри Burst-джобы — это преступление.
+
+Безопасный экспорт NativeBuffer'ов. Реализуй систему версионирования (Double Buffering) для _surfaceAggregateMatricesNative. У тебя должен быть Front Buffer (который сейчас читает AI/Crest) и Back Buffer (в который пишет мост). В конце кадра просто меняйте ссылки атомарно.
+
+Spatial Hashing для Terrain Holes. Сделай очистку дыр, дистанция до которых превышает 2x residentRadius. Иначе игра просто задохнется в памяти через 2 часа геймплея.
+
+Убрать new в AllocateVector3PayloadArray. Переведи ChunkAbyssalNavPayload на нативные коллекции, аллоцируемые из заранее созданного пула памяти (Memory Arena).
+
+Код масштабный, математика хороша (ворлей/шумы для водорослей сделаны грамотно), но связки между системами нужно срочно изолировать от GC и Data-Races.
+Приветствую. Я внимательно препарировал твой 6500-строчный монолит. Для системы, которая должна работать на глубине 4 км в NASA-punk сеттинге при жесткой Zero-GC политике и целевых 60 FPS на MX350, здесь есть как проблески гениальности, так и абсолютно фатальные архитектурные дыры.
+
+С точки зрения Burst, Jobs и общей математики — код написан инженером, который понимает, что делает. Но на стыке Unity API и управления памятью мы имеем катастрофу. Если пустить этот код в прод, игра будет фризить каждые 5-10 секунд, а через час игры сожрет всю RAM и крашнется из-за фрагментации.
+
+Ниже подробный разбор по двум векторам: Критические обсеры (Блокеры) и Архитектурная грязь.
+
+🚨 КРИТИЧЕСКИЕ ОБСЕРЫ (Fatals & Memory Leaks)
+1. Убийство Main Thread при отмене джобов (Job Dependency Hazard)
+
+В методе CancelChunkBuildJob:
+
+code
+C#
+download
+content_copy
+expand_less
+jobState.Handle.Complete(); // <--- ФАТАЛ
+DisposeJobState(jobState);
+_chunkBuildJobs.Remove(key);
+
+Если игрок быстро развернется на 180 градусов (или будет телепортирован), система решит эвиктнуть 10-20 чанков. Ты блокируешь главный поток, заставляя его ждать завершения генерации чанков, которые ты тут же удалишь! Это гарантированный микрофриз (или макрофриз на 50+ мс).
+Решение: Переносить отмененные джобы в List<ChunkBuildJobState> _pendingDisposal, каждый кадр в Tick проверять if (job.Handle.IsCompleted), и только тогда диспоузить нативные массивы.
+
+2. GC-Спам через ComputeBuffer (Zero-GC Policy Violation)
+
+Посмотри на метод EnsureStructuredBuffer:
+
+code
+C#
+download
+content_copy
+expand_less
+if (buffer != null && buffer.count >= count) return;
+ReleaseBuffer(ref buffer);
+buffer = new ComputeBuffer(count, stride, ComputeBufferType.Structured);
+
+Ты не округляешь count до следующей степени двойки! По мере движения игрока count меняется (например, с 15000 на 15050). Ты каждый раз вызываешь Release() и new ComputeBuffer(). Синхронное пересоздание объектов в VRAM на главном потоке убьет FPS и замусорит GC.
+Решение: Расти экспоненциально (Mathf.NextPowerOfTwo), а рендереру передавать актуальный count для отрисовки, чтобы не рисовать мусор в хвосте буфера.
+
+3. Катастрофические аллокации TerrainData
+
+В методе CacheTileMasks:
+
+code
+C#
+download
+content_copy
+expand_less
+float[,,] alphamaps = terrainData.GetAlphamaps(0, 0, alphamapResolution, alphamapResolution);
+float[,] heights = terrainData.GetHeights(0, 0, heightResolution, heightResolution);
+
+GetAlphamaps и GetHeights в Unity каждый вызов создают новые managed-массивы. Для тайла 1024x1024 это десятки мегабайт GC-мусора. Это происходит прямо в Tick() через TryValidateResidentTileCaches!
+Решение: Использовать Unity 2022+ API TerrainData.SyncHeightmap() и читать heightmapTexture.GetPixelData<ushort>() (или Graphics.CopyTexture), а для альфы читать напрямую из terrainData.alphamapTextures. Либо запросить у MapMagic их внутренние Native-структуры.
+
+4. Native Persistent Фрагментация в ScheduleChunkBuild
+
+Ты аллоцируешь массивы под джобы с Allocator.Persistent:
+
+code
+C#
+download
+content_copy
+expand_less
+jobState.GrassRecords = AllocateJobRecordArray(grassCountX * grassCountZ); // Внутри new NativeArray(..., Allocator.Persistent)
+
+И диспоузишь их в FinalizeCompletedChunkBuilds. Тысячи аллокаций/деаллокаций Persistent памяти в минуту приведут к фрагментации на уровне аллокатора ОС.
+Решение: Использовать Allocator.TempJob (если генерация гарантированно укладывается в 4 кадра), либо использовать глобальный кольцевой буфер/Scratchpad Pool для рабочих данных джобов.
+
+5. Утечка Managed памяти на горячем пути в FinalizeCompletedChunkBuilds
+
+Методы вроде AllocateVector3PayloadArray или AllocateMegaWreckSectionPayloadArray делают тупо new Vector3[count] и new MegaWreckStreamSection[count]. Это вызывается из Tick() при финализации каждого чанка. У тебя сотни массивов будут создаваться и улетать в GC.
+Решение: Упаковать навигационные ноды и wreck-секции в единый плоский NativeList<T> или хотя бы использовать ArrayPool.
+
+6. Утечка Жизненного Цикла Terrain Holes
+
+Ты регистрируешь пещеры через RegisterTerrainHole. Если система, которая их регистрирует (например, стример вокселей), крашнется или просто "забудет" вызвать UnregisterTerrainHole, _terrainHoleRecords будет расти вечно.
+Каждый чанк в цикле CountTerrainHolesIntersectingChunk проверяет все дыры. О(N) деградирует со временем.
+Решение: Добавить пространственное хеширование (или QuadTree) для дыр и автоматическую сборку мусора для SourceType.CaveEntrance по дистанции от игрока.
+
+⚙️ ОЦЕНКА LOW-LEVEL & BURST INTEGRITY
+
+Native Pool Fragmentation (DefragPoolJob): Безопасно. Логика двойной буферизации с отложенным RebuildAndBindActiveBuffers исключает чтение рендерером мусора в момент дефрагментации. Пересечения памяти нет, так как копирование идет из SourcePool в ScratchPool. НО: Ты берешь чанки из Dictionary.Enumerator в BuildPoolDefragPlan. Порядок итерации словаря квази-случаен. Дефрагментация физически уничтожит пространственную локальность (Spatial Locality) чанков в нативном буфере, что убьет GPU Cache Hit Rate при инстансинге. Сортируй keys по Z-order или дистанции перед копированием.
+
+Binary Min-Heap Integrity (NativeAStarJob): Написано отлично. Защита через MaxExpandedNodes есть, HeapNodes выделяется ровно под размер графа (OOM не будет). Логика ThreatPenaltyWeight, где 0 угрозы = штраф, идеально реализует логику "хищник идет на шум" (low-threat water penalization).
+
+Double Buffering Logic: Реализовано грамотно. Main thread читает из _ecosystemThreatGridCurrentNative через float-view, пока Burst пишет в NextNative. При синхронизации указатели атомарно свапаются. Здесь проблем нет.
+
+🧹 АРХИТЕКТУРНАЯ ГРЯЗЬ (Performance Slop)
+1. Шизофрения дублирования массивов (Shadow Arrays)
+
+В методе CopyChunkSliceToAggregate ты копируешь данные из пула:
+
+code
+C#
+download
+content_copy
+expand_less
+NativeArray<Matrix4x4>.Copy(... nativeMatrices ...);
+CopyNativeToManaged(... managedMatrices ...);
+
+Зачем ты держишь в памяти 7 гигантских managed-массивов (_surfaceAggregateMatrices и т.д.) и параллельно 7 NativeArray? Чтобы выставить публичные свойства вроде ActiveSurfaceMatrices? Ты тратишь 40-50 МБ RAM и драгоценное время CPU на копирование памяти в managed кучу каждый раз, когда меняется чанк.
+Вырезать: Удали все managed массивы агрегации. Оставь только NativeArray. Кому нужны данные — пусть читают ActiveSurfaceMatricesNative напрямую. Unity 6 прекрасно работает с нативными буферами.
+
+2. Спам GetComponent
+
+В ResolveActiveViewCamera:
+
+code
+C#
+download
+content_copy
+expand_less
+if (!playerTransform.TryGetComponent(out _cachedViewCamera))
+    _cachedViewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+Вызывается раз в секунду (CameraResolveRetryInterval), если камера почему-то отвалилась. GetComponentInChildren по всей иерархии игрока — это тяжелейшая операция.
+Решение: Используй Camera.main или заставь систему камер сабмитить свою ссылку через статический эвент. Хватит искать компоненты в рантайме.
+
+3. Избыточные проверки Bounds
+
+Ты написал DoesChunkBoundsIntersectCircle, GetBoundsDistanceSqr, EvaluateChunkEvictionScore и HasNewPermanentEchoInBounds. Везде повторяется одна и та же логика Mathf.Clamp для поиска ближайшей точки на AABB.
+Решение: Вынеси это во вспомогательную математическую struct в Burst-компилируемом контексте или хотя бы используй [MethodImpl(MethodImplOptions.AggressiveInlining)].
+
+📝 ВЕРДИКТ
+
+Код — мощный монстр, который написан человеком, понимающим, как работает потоковая подгрузка мира и нативные вычисления. Burst-составляющая (A*, диффузия угроз, волновые функции) великолепна.
+
+Но на уровне интеграции — это решето для Garbage Collector'а.
+
+Что делать прямо сейчас (Action Plan):
+
+Переписать работу с ComputeBuffer на выделение Mathf.NextPowerOfTwo.
+
+В CancelChunkBuildJob заменить job.Handle.Complete() на асинхронную отложенную очистку.
+
+Выкинуть GetHeights() / GetAlphamaps(), они несовместимы с политикой Zero-GC. Искать обходные пути чтения RAW-текстур тайлов MapMagic.
+
+Выпилить все дублирующие Managed-массивы (_surfaceAggregateMatrices и прочие), оставить только Native-пайплайн.
+
+Для ChunkAbyssalNavPayload написать кастомный Native-аллокатор (или пулинг) вместо `new Vector3
+
+Как Lead Low-Level Engineer и Senior QA Architect, я провел ревью этого монстра на 6800 строк. Скрипт выглядит как попытка написать AAA-систему, но под капотом спрятаны мины, которые разорвут перформанс и память на куски.
+
+Твой код не пройдет Zero-GC Policy, а интеграция с Burst/Jobs имеет фатальные архитектурные дыры. Разберем по порядку.
+
+🛠 ЧАСТЬ 1: ОТЧЕТ LEAD LOW-LEVEL ENGINEER (Burst, Memory, Jobs)
+1. Утечка данных при псевдо-Double Buffering (ФАТАЛЬНО)
+
+Ты просил проверить атомарность переключения ActiveSurfaceMatricesNative. Там нет Double Buffering, это иллюзия.
+Посмотри на EnsureNativeCapacity<T> (строка 6050):
+
+code
+C#
+download
+content_copy
+expand_less
+if (cache.IsCreated) {
+    if (cache.Length > 0) NativeArray<T>.Copy(cache, expanded, cache.Length);
+    cache.Dispose(); // <--- ВОТ ЗДЕСЬ ВСЕ УМРЕТ
+}
+cache = expanded;
+
+Метод TryGetActiveSurfaceNativePayload отдает ссылку на _surfaceAggregateMatricesNative внешним системам (AI, Ocean Currents). Если чанк загрузился/выгрузился, RebuildAndBindActiveBuffers вызовет EnsureNativeCapacity, который сделает .Dispose() массиву, пока внешняя Job'а его читает.
+Результат: InvalidOperationException: Use After Free или хард-краш Unity.
+Решение: Отдавать наружу только структуры-хэндлы с двойной буферизацией (через индексы 0/1), где старый буфер не убивается, пока JobHandle читателей не завершен. Либо жестко завязывать зависимости через JobHandle.
+
+2. Native Pool Fragmentation & DefragPoolJob
+
+Здесь ты справился лучше. Логика сдвига безопасна, так как DefragPoolJob пишет в _surfaceDefragScratchPool. Свап массивов SwapChunkPools происходит синхронно в CompleteNativePoolDefragIfReady на главном потоке. Renderer не обращается к Pool напрямую, он читает из AggregateNative-массивов, которые пересобираются после дефрагментации.
+Но есть минус: После дефрага ты вызываешь RebuildAndBindActiveBuffers(), который делает массивный NativeArray.Copy всех 60 000+ матриц на Main Thread. Это вызовет спайк кадра.
+
+3. Binary Min-Heap Integrity (NativeAStarJob)
+
+Риска переполнения и ухода в бесконечный цикл в Dead Zone нет благодаря жесткому капу MaxExpandedNodes и проверке heapCount >= HeapNodes.Length перед пушом. Срыв стека предотвращен.
+Однако: Твоя эвристика HeuristicCost считает чистую евклидову дистанцию, а GScore накручивается множителями (InteriorTraversalCostMultiplier, пенальти за угрозу). Если множитель меньше 1.0 (например, InteriorTraversalCostMultiplier = 0.82f), эвристика становится недопустимой (Inadmissible). A* выродится в жадный поиск и начнет выдавать кривые неоптимальные пути. Эвристика никогда не должна превышать реальную стоимость шага.
+
+4. Terrain Hole Lifecycle (Утечка памяти и перформанса)
+
+Ты абсолютно прав. RegisterTerrainHole пишет в персистентный массив. Никакого Garbage Collection по дистанции.
+Если воксельный бур игрока оставит 500 дыр позади, массив _terrainHoleRecordsNative разрастется. Но что хуже: GenerateAnchoredVegetationJob на каждой итерации прогоняет проверку IsInsideTerrainHoleStatic через весь этот массив O(N). При 1000 старых дыр, спаун чанка замедлится в сотни раз.
+Решение: Ввести пространственный Spatial Hash Grid для Terrain Holes или автоматический LRU-кеш (эвиктить дыры, если дистанция до игрока > 3000м).
+
+5. Threat Grid Diffusion
+
+Алгоритм ThreatPropagationJob написан отлично. Чтение 8 соседей O(N) вместо квадратичной сложности. Трюк с ShiftX/ShiftZ (виртуальное смещение вместо физического копирования сетки) — мое почтение, это очень элегантно с точки зрения кеш-промахов.
+
+🦠 ЧАСТЬ 2: ОТЧЕТ SENIOR QA / LEAD ARCHITECT (Архитектура, GC, Bugs)
+
+Твой код проваливает Zero-GC Policy. Вызов new в горячих путях.
+
+1. GC Allocations в SlowTick и Tick (КРИТИЧНО)
+
+В SlowTick вызывается TryBootstrapExistingTiles(). В нем: mapMagicBridge.RuntimeMapMagicObject.GetComponentsInChildren<TerrainTile>(true). Если мир пока не загружен (_tileStates.Count == 0), эта строка спамит выделением пустого C# массива каждый SlowTick.
+
+В FinalizeCompletedChunkBuilds (которая вызывается в Tick!) вызывается BuildChunkAbyssalNavPayload. Смотрим внутрь:
+
+code
+C#
+download
+content_copy
+expand_less
+nodes = AllocateVector3PayloadArray(maxNodeCount); // Возвращает new Vector3[count];
+
+Каждый сгенерированный чанк (а они стримятся постоянно при езде) выделяет 4 managed-массива на хипе! Это вызовет срабатывание Garbage Collector'а посреди езды, обеспечен микрофриз.
+Решение: Вырезать Managed массивы. Использовать UnsafeList<Vector3> или кастомный нативный аллокатор для хранения графов навигации чанков.
+
+2. Архитектурная грязь: Floating Origin Спайк
+
+Функция ApplyWorldOffsetToAllChunks(Vector3 offset) — это приговор.
+При World Shift (когда игрок отплыл на 5000м) ты:
+
+Завершаешь ВСЕ Job-ы.
+
+Идешь циклом по всем чанкам и вызываешь ScheduleShiftChunkSlice, который переписывает Matrix4x4 каждой травинки (сотни тысяч инстансов).
+
+Перезаписываешь все кеши на Main Thread.
+Это заморозит игру на 200-500мс.
+Решение: Floating Origin не должен переписывать байты в памяти. Передай Vector3 GlobalOffset глобальной переменной в Shader (для рендера) и в _surfaceAggregateMatricesNative просто учитывай этот оффсет при отдаче данных (или в Job'ах A* / коллизий). Матрицы в пуле должны оставаться в локальной координатной сетке мира!
+
+3. State Machine и RigidBody
+
+В UpdatePlayerMotionState есть проверка:
+
+code
+C#
+download
+content_copy
+expand_less
+if (playerTransform != null && (_playerRigidbody == null || _playerRigidbody.transform != playerTransform))
+    playerTransform.TryGetComponent(out _playerRigidbody);
+
+Это вызывается из SlowTick. TryGetComponent хоть и быстр, но делать это постоянно, если у игрока действительно нет Rigidbody (например, он в экзокостюме на кастомной кинематике) — это пустая трата циклов.
+Решение: Флаг _hasCheckedRigidbody, чтобы не пытаться доставать его постоянно, если его изначально нет.
+
+4. Состояние гонки (Race Condition) в Float View
+
+Функция GetThreatGridFloatView():
+
+code
+C#
+download
+content_copy
+expand_less
+for (int i = 0; i < _ecosystemThreatGridCellCount; i++)
+    _ecosystemThreatGridFloatViewNative[i] = DecodeThreatByte(_ecosystemThreatGridCurrentNative[i]);
+
+Она вызывается из Main Thread. Если внешняя система в этот момент асинхронно читает _ecosystemThreatGridFloatViewNative через Job, будет Race Condition.
+
+📝 РЕЗЮМЕ И ЭКШЕН-ПЛАН (ЧТО ВЫРЕЗАТЬ И ИСПРАВИТЬ)
+
+Убить Dispose() в EnsureNativeCapacity: Заменить на реальный Double Buffering с отложенным Dispose (используя Unity.Collections.LowLevel.Unsafe.UnsafeList или счетчики ссылок), либо заставить всех читателей возвращать JobHandle, чтобы ты мог вызывать .Dispose(JobHandle).
+
+
+-==--==-=-=- ВЫШЕЛ БЫЛ АНАЛИЗ ВЕГЕТЕЙШН БРИДЖ
+
+=-==-=-=-=--=
+АНАЛИЗ SargassumMicroFaunaBoids
+
+
+----
+
+Как Senior QA Automation Engineer, Lead Architect и Senior Graphics & AI Programmer, я провел аудит этого кода.
+
+Скрипт писали как минимум два разных человека (или нейросеть с раздвоением личности): один аккуратно расставлял NonAlloc и кешировал массивы, а второй вставил гвоздь в шину PCIe и залил Update вызовами GetComponent.
+
+Для MX350 этот код — смертный приговор. Он нарушает фундаментальные правила работы с GPU и физическим пайплайном Unity. Вот твой хирургический отчет.
+
+🚨 КРИТИЧЕСКИЕ ОБСЕРЫ (Баги, Утечки, Тормоза)
+
+1. Убийство шины PCIe (Синхронные stall-ы каждый кадр)
+В методе BindSimulationUniforms (который вызывается каждый Tick!) есть вот этот кусок:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_latchStatsBuffer != null && _latchStatsClear != null) {
+    System.Array.Clear(_latchStatsClear, 0, _latchStatsClear.Length);
+    _latchStatsBuffer.SetData(_latchStatsClear); // ОШИБКА ФАТАЛЬНОГО УРОВНЯ
+    boidCompute.SetBuffer(_kernelIndex, _LatchStatsId, _latchStatsBuffer);
+}
+
+Почему это катастрофа: Ты делаешь синхронный CPU->GPU трансфер 7 интов каждый кадр. Хуже того, ты делаешь это в тот же буфер, из которого параллельно идет AsyncGPUReadback! CPU отправляет данные, GPU пытается их читать/писать, Readback ждет... Ты получаешь Pipeline Stall, который заставит драйвер MX350 блокировать основной поток.
+
+Решение: Напиши отдельный малюсенький CSClear кернел в Compute Shader (1 thread group), который будет обнулять этот буфер на стороне видеокарты перед основным диспатчем. Никаких SetData в Update!
+
+2. State Machine Integrity & Physics Loop Violation
+В Tick (который работает в Update) вызываются:
+
+_playerMovement.RequestExternalHullStress(...)
+
+_playerMovement.ApplyParasiteLatchInfluence(...)
+
+_playerMovement.ApplyEnvironmentalDrag(...)
+А в FixedTick (физический шаг) вызывается:
+
+_playerMovement.ApplyPhysicalTrauma(...)
+
+targetBody.AddForce(...)
+
+Почему это баг: Ты модифицируешь drag и state физического объекта (RigidBody/PlayerMovement) с плавающей частотой Update, а интеграция физики происходит в FixedUpdate. Это приведет к race conditions, нестабильной скорости буксировщика и непредсказуемым физическим глитчам при просадках FPS. Все ApplyDrag и влияния паразитов обязаны переехать в FixedTick.
+
+3. Классическая ловушка GetComponent в горячем цикле
+Метод ResolveDependencies() вызывается в начале каждого Tick.
+
+code
+C#
+download
+content_copy
+expand_less
+if (_playerMovement == null && playerTransform != null)
+    playerTransform.TryGetComponent(out _playerMovement);
+if (viewCamera == null && playerTransform != null)
+    viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+Почему это баг: Если у игрока нет HectonPlayerMovement или он отключен, TryGetComponent вернет null. В следующем кадре _playerMovement все еще null, и тяжелый рефлекшн-поиск (особенно GetComponentInChildren) запустится снова. Это сожрет 1-2 мс процессорного времени просто на поиск несуществующих компонентов каждый кадр.
+
+Решение: Флаги инициализации. Искать зависимости нужно один раз (например, при спавне игрока или подписке на эвент его появления).
+
+4. VRAM Hostage (Утечка видеопамяти при отключении)
+В OnDisable нет вызова ReleaseBuffers(). Буферы удаляются только в OnDestroy(). Если ты деактивируешь GO (например, сменил биом или игрок зашел в шлюз), в VRAM остаются висеть 9 ComputeBuffer (~несколько мегабайт). Если таких зон на карте несколько — VRAM закончится.
+
+Решение: Либо делай Release в OnDisable, либо (лучше) вынеси буферы в глобальный менеджер, чтобы они переиспользовались между всеми роями на уровне.
+
+5. Ежекадровый спам SetData в UpdateMassiveThreats
+
+code
+C#
+download
+content_copy
+expand_less
+if (!changed) return;
+RecalculateMassiveThreatCount();
+_massiveThreatBuffer.SetData(_massiveThreats);
+
+Так как RemainingDuration уменьшается каждый кадр через deltaTime, changed всегда true, пока есть хоть один левиафан. Это означает ежекадровую загрузку 160 байт (Массив структур) с CPU на GPU.
+
+Решение: Передай _simulationTime в Compute Shader и передавай угрозе фиксированный EndTime = _simulationTime + Duration. Пусть GPU сам игнорирует угрозы, у которых _SimulationTime > EndTime. SetData нужно вызывать только в момент появления новой угрозы (внутри HandleMassiveDisplacement).
+
+🧠 АРХИТЕКТУРНАЯ ГРЯЗЬ (Graphics & AI)
+
+1. Jitter и Телепортация при смене стейтов Boids
+Ты просил проверить переход между режимами Calm/Panic/Formation.
+Посмотри на RefreshSpawnData: если уровень угрозы пересекает leviathanThreatThreshold, флаг _lastDeepLeviathanMode меняется. Это вызывает BuildDeepSpawnData(), который в свою очередь вызывает BuildLeviathanSpawnSet(), а тот делает _boidsBufferA.SetData(_spawnData).
+
+Вердикт: При переходе в режим атаки Левиафана весь рой (1000 рыб) мгновенно ТЕЛЕПОРТИРУЕТСЯ из облака вокруг игрока в геометрически ровный сплайн. Это выглядит как уродливый визуальный глитч. Смена формации должна происходить только внутри Compute Shader через Lerp сил притяжения, а не перезаписью позиций с CPU!
+
+2. Фейковый LOD и Выгорание GPU
+В конце Tick() есть проверка CheckFrustumVisibility(). Она используется только для того, чтобы отменить Graphics.DrawMeshInstancedIndirect.
+Но сам boidCompute.Dispatch крутится всегда. Даже если игрок уплыл на 2 километра, GPU каждый кадр считает коллизии, страх и физику для тысяч боидов. Для MX350 это смерть.
+
+Решение: В Tick() добавь проверку sqrMagnitude дистанции от камеры до _fieldCenter. Если дистанция больше 100 метров — делай return ДО Dispatch. Не грей видеокарту вхолостую.
+
+3. Leviathan Spline Reconstruction Desync (Рассинхрон CPU и GPU)
+Чтобы проверять урон, на CPU воссоздается голова Левиафана:
+
+code
+C#
+download
+content_copy
+expand_less
+float wavePhase = _simulationTime * leviathanWaveFrequency;
+float lateralWave = Mathf.Sin(wavePhase) * ...
+
+Спустя пару часов игры (если игрок не перезагружался) значение _simulationTime достигнет сотен тысяч. В этот момент Mathf.Sin на CPU (который использует одни инструкции FPU) и sin() в HLSL на GPU (который использует 32-bit fast math) начнут расходиться.
+Голова левиафана визуально будет находиться в метре от того места, где CPU обсчитывает ApplyPhysicalTrauma. Игрок будет получать урон "из воздуха", а прямое столкновение не будет регистрироваться.
+
+Решение: Либо переодически сбрасывать _simulationTime через mod (например, _simulationTime %= 1000f; на CPU и передавать чистый остаток на GPU), либо (что надежнее) забирать координаты головы через AsyncGPUReadback вместе с параметрами дронов-паразитов!
+
+4. Очередь AsyncGPUReadback
+
+code
+C#
+download
+content_copy
+expand_less
+_parasiteLatchReadbackRequest = AsyncGPUReadback.Request(_latchStatsBuffer);
+_parasiteLatchReadbackPending = true;
+
+Если компонент выключается/уничтожается, пока _parasiteLatchReadbackPending == true, а буфер уничтожен через Release(), при попытке доступа _parasiteLatchReadbackRequest.GetData<int>() выкинет Native Exception и уронит редактор/билд.
+
+Решение: В OnDisable обязательно проверять if (_parasiteLatchReadbackPending) _parasiteLatchReadbackRequest.WaitForCompletion(); или хотя бы ловить ошибку уничтоженного хендла.
+
+🔪 ИТОГОВЫЕ РЕКОМЕНДАЦИИ ПО РЕФАКТОРИНГУ:
+
+Вырежи очистку буфера на CPU: Напиши ClearStats.compute, диспетчеризуй его перед boidCompute.Dispatch. Убери _latchStatsClear.
+
+Исправь архитектуру обновлений: Перенеси всю раздачу сил (HullStress, Drag) в FixedTick, закэшировав значения из Tick.
+
+Убей TryGetComponent спам: Сделай один InitializePlayer(Transform player) метод, который снаружи дергает ZoneDirector при смене игрока, а не ищи его каждый кадр.
+
+Убери SetData при апдейте: MassiveThreat и FormationObstacle должны жить на GPU по времени (ExpiryTime). Не заливай их данные ежекадрово.
+
+Прекрати телепортировать боидов: Переход в форму Левиафана должен быть плавным смешиванием весов (Weight) внутри шейдера, а не перегенерацией _spawnData на CPU.
+
+Статус кода: REJECTED (Needs Major Rework). При текущем виде он будет фризить на MX350 из-за PCIe stall'ов и выжрет CPU на поиске компонентов.
+
+
+Код принят на хирургический стол.
+Ты прислал классический пример скрипта, который на мощном ПК разработчика выдаст 144 FPS, а на целевой MX350 заставит игру захлебнуться в микрофризах и вылетах.
+
+В коде есть фатальные архитектурные просчеты, гонки данных (race conditions) на шине PCIe, утечки нативной памяти и инвалидация стейт-машины.
+
+Разбираем это говно на запчасти.
+
+🚨 1. КРИТИЧЕСКИЕ ОБСЕРЫ (Баги, Краши, Утечки)
+
+1. Уничтожение шины PCIe и Race Condition в AsyncGPUReadback
+В методе BindSimulationUniforms() (вызывается каждый кадр) ты делаешь это:
+
+code
+C#
+download
+content_copy
+expand_less
+System.Array.Clear(_latchStatsClear, 0, _latchStatsClear.Length);
+_latchStatsBuffer.SetData(_latchStatsClear);
+
+А в UpdateParasiteLatchReadback() ты асинхронно читаешь этот же буфер раз в 0.12 сек.
+
+Смерть для MX350: SetData каждый кадр форсирует синхронизацию CPU->GPU. Это ломает пайплайн команд и жрет пропускную способность PCIe.
+
+Race Condition: AsyncGPUReadback выполняется отложенно (до 3 кадров). Так как ты затираешь буфер нулями со стороны CPU каждый кадр, твой Readback с вероятностью 80% прочитает эти самые нули ДО того, как Compute Shader успеет записать в них данные через InterlockedAdd. Ты будешь получать рваные данные о дронах.
+
+Решение: Напиши крошечный kernel CSClearStats в Compute Shader и диспатчи его перед основным. Убери SetData из горячего цикла навсегда.
+
+2. Гарантированный Native Crash при выходе из игры / выгрузке сцены
+В UpdateParasiteLatchReadback ты создаешь асинхронный запрос:
+
+code
+C#
+download
+content_copy
+expand_less
+_parasiteLatchReadbackRequest = AsyncGPUReadback.Request(_latchStatsBuffer);
+
+В OnDestroy() / OnDisable() ты вызываешь ReleaseBuffers(), который делает _latchStatsBuffer.Release().
+
+Итог: Если компонент отключается (смерть игрока, выгрузка чанка), пока висит _parasiteLatchReadbackPending == true, Unity попытается записать данные в освобожденный участок видеопамяти. Получишь жесткий вылет движка (Access Violation).
+
+Решение: В OnDisable перед релизом буферов обязательно делай _parasiteLatchReadbackRequest.WaitForCompletion();.
+
+3. Утечка Native Memory (C# Job System)
+Метод BuildLeviathanData() вызывается в SlowTick. Смотрим сюда:
+
+code
+C#
+download
+content_copy
+expand_less
+if (_mapMagicVegetationBridge.TryGetLatestAbyssalPathPayload(out Unity.Collections.NativeArray<Vector3> path, out int pathCount) && pathCount > 1) {
+    _leviathanPathNodeCount = CopyLeviathanPathNodes(path, pathCount);
+}
+
+Где path.Dispose()? Если TryGetLatestAbyssalPathPayload аллоцирует NativeArray (что логично для передачи из Job'ов в Main Thread) и возвращает через out, ты теряешь ссылку на него каждый SlowTick. За 10 минут игры память переполнится. Убедись в контракте моста, кто владелец памяти.
+
+4. Рассинхрон State Machine (Дерганье боидов)
+В Tick (каждый кадр) ты обновляешь флаги:
+
+code
+C#
+download
+content_copy
+expand_less
+_deepModeActive = IsDeepModeActive(); // Проверка по глубине Y
+
+В этот же момент BindSimulationUniforms скармливает _DeepModeId в Compute Shader.
+НО позиции якорей и _spawnData обновляются только в SlowTick!
+
+Итог: Игрок пересекает глубину deepSeaWorldYThreshold. В текущем кадре шейдер переключается на логику Deep Sea, но получает старые якоря из мелководья (потому что RefreshSpawnData еще не вызвался). Рой боидов мгновенно телепортируется или разлетается на куски, а через полсекунды (когда сработает SlowTick) "дернется" к правильным координатам.
+
+Решение: Кэшируй _deepModeActive и меняй его ТОЛЬКО внутри RefreshSpawnData.
+
+🗑 2. АРХИТЕКТУРНАЯ ГРЯЗЬ (Performance Slop)
+
+1. GetComponent Спам в Горячем Цикле
+Метод ResolveDependencies() вызывается в Tick(dt).
+Если playerTransform равен null (игрок умер или сел в другой транспорт), скрипт начинает каждый кадр молотить:
+
+code
+C#
+download
+content_copy
+expand_less
+playerTransform.TryGetComponent(out _playerMovement);
+playerTransform.TryGetComponent(out _playerHealth);
+viewCamera = playerTransform.GetComponentInChildren<Camera>(true);
+
+Это чудовищный оверхед. GetComponent в Update/Tick — строжайшее табу для Zero-GC проектов.
+
+Решение: Ищи игрока и камеру через события (Event Bus: OnPlayerSpawned / OnPlayerDied).
+
+2. Фейковый LOD и Culling (GPU молотит вхолостую)
+Метод CheckFrustumVisibility() отключает DrawMeshInstancedIndirect, если боиды вне экрана.
+Но boidCompute.Dispatch все равно вызывается! Если игрок находится в 5 километрах от этой зоны, видеокарта MX350 продолжает считать физику, коллизии и сепарацию для 2048 невидимых частиц.
+
+Решение: Введи дистанционный Culling. Если расстояние до игрока > 200 метров — делай return; в самом начале Tick и не дергай boidCompute.
+
+3. Инвалидная математика Левиафана (Spline Reconstruction Jitter)
+Логика реконструкции скорости:
+
+code
+C#
+download
+content_copy
+expand_less
+_leviathanHeadVelocityWS = hadPreviousHead && dt > 0.0001f 
+    ? (headPositionWS - previousHeadPosition) / dt 
+    : headForwardWS * cruiseSpeed;
+
+Ты прибавляешь к headPositionWS синусоиды (lateralWave, verticalWaveOffset). Вычисление скорости через дискретную дельту позиции с наложенным синусом при плавающем dt (Delta Time) даст дикий шум.
+_leviathanHeadVelocityWS.magnitude будет скакать от 1 до 100 из кадра в кадр. Из-за этого проверки вроде _leviathanHeadVelocityWS.magnitude < leviathanShockwaveSpeedThreshold будут срабатывать хаотично.
+
+Решение: Скорость левиафана для физики (Trauma, Shockwave) должна браться как чистая математическая производная вектора движения по сплайну, игнорируя визуальные волновые осцилляции.
+
+4. Collider .bounds Recalculation Overhead
+В HarvestFormationObstacles():
+
+code
+C#
+download
+content_copy
+expand_less
+Bounds bounds = collider.bounds;
+
+Вызов .bounds у коллайдера в Unity — это не чтение свойства. Это синхронизация с физическим движком (PhysX) и перерасчет AABB с учетом текущей матрицы трансформации. Делать это для 32 объектов в SlowTick можно, но если в слой попадет MeshCollider сложного руина — будет спайк.
+
+Решение: Если скалы статичные — кэшируй их AABB при спавне чанка.
+
+🛠 ЧТО ДЕЛАТЬ (Хирургическое вмешательство)
+
+Вырезать SetData(_latchStatsClear) из Tick. Заменить на boidCompute.Dispatch(ClearKernel, 1, 1, 1);.
+
+Залочить смену режимов (State Machine): Tick должен брать стейт из буфера, который подготавливает SlowTick. Переключать логику можно ТОЛЬКО когда на CPU готовы новые данные для отправки.
+
+Добавить WaitForCompletion() на AsyncGPUReadback в блоке деинициализации.
+
+Убрать ResolveDependencies из Tick. Подпишись на GlobalPlayerReference.OnChanged.
+
+Добавить Spatial Culling: Если sqrMagnitude от _fieldCenter до playerTransform.position > 40000 (200м), глушить Tick полностью (не диспатчить шейдер).
+
+Obstacle Proxy Buffer (16 штук) — для GPU норм, но на уровне геймдизайна 16 прокси мало. Убедись, что радиус formationObstacleSearchRadius (сейчас до 80м) не захватывает больше 16 скал, иначе боиды будут пролетать сквозь "не влезшие" в буфер камни. Сортируй результаты OverlapSphereNonAlloc по дистанции и бери 16 ближайших. Сейчас ты берешь первые попавшиеся в массиве от движка (а он отдает их в произвольном порядке!).
+
+Сделай эти правки, иначе фреймтайм на MX350 будет выглядеть как кардиограмма больного аритмией.
+=--==-=-=-=-=-=-=-
+
+ЭТО БЫЛ АНАЛИХЗ САРГАССУМ БОЙДС
+
+
+-==-=-=-=-=-
+
+АНАЛИЗ HectonVoxelEngine
+
+
+---
+ОТЧЕТ ОБ АУДИТЕ: HectonVoxelEngine.cs
+
+Кому: Lead Developer, HECTON-8
+От кого: Senior QA Automation Engineer / Lead Geometry Scientist
+Статус: 🔴 REJECTED (Критические архитектурные дефекты, утечки памяти, деградация SDF)
+
+Код выглядит так, будто кто-то прочитал статью про Marching Cubes в 2015 году, прикрутил Burst и решил, что этого достаточно для ААА. Вы нарушаете базовые правила Unity Jobs, ломаете математику SDF и допускаете пробоины в Floating Origin.
+
+Ниже — хирургический разбор того, почему этот скрипт не пройдет QA-гейт и убьет перформанс на таргете (MX350).
+
+ЧАСТЬ 1: КРИТИЧЕСКИЕ ОБСЕРЫ (БАГИ И УТЕЧКИ)
+
+(Роль: QA & Lead Architect)
+
+1. Native Memory Leak (Скрытая утечка при асинхронной отмене)
+
+В методах GenerateVolumeAsync и RebuildVolumeAsync вы инициализируете графы пещер (NativeArrays) ДО блока try-finally и до получения scratchLease:
+
+code
+C#
+download
+content_copy
+expand_less
+CaveGraphGenerator.Generate(..., out var caveNodes, ...);
+VoxelStreamingScratchLease scratchLease = await AcquireStreamingScratchLeaseAsync(..., ct);
+try { ... } 
+finally { scratchLease.Dispose(); caveNodes.Dispose(); ... }
+
+Проблема: Если AcquireStreamingScratchLeaseAsync выкинет OperationCanceledException из-за сработавшего CancellationToken во время ожидания, блок finally не выполнится. caveNodes, caveTunnels и другие массивы навсегда останутся в unmanaged памяти.
+Решение: Оборачивайте аллокации в try-finally СРАЗУ после их создания.
+
+2. Sync Mismatch: Разрыв Floating Origin (Пространственный рассинхрон)
+
+Вы фиксируете shiftAtStart в начале генерации и корректно смещаете targetGO.transform.position = -shiftDelta; в конце. Но вы забыли про Spawn Points!
+
+code
+C#
+download
+content_copy
+expand_less
+ScavengePopulator.Instance.RegisterSpawnPoint((Vector3)data.position, ...);
+
+Координаты data.position были вычислены в джобе VoxelSpawnPointJob на основе старого пространства. Если во время await'ов произошел сдвиг мира, спавн-поинты улетят в бездну, потому что вы не применили к ним -shiftDelta при регистрации. Точки спавна лута и флоры окажутся вне пещеры.
+
+3. Performance Slop: Квадратные корни в самом горячем цикле (VoxelDensityJob)
+
+Внутри VoxelDensityJob (который выполняется миллионы раз) вы используете math.distance:
+
+В ApplyEdgeSeal
+
+В EvaluateEntranceSkirtSDF
+
+В EvaluateCraterModifiers
+Проблема: math.distance под капотом использует math.sqrt(). Это убивает авто-векторизацию и жжет циклы CPU.
+Решение: Заменить на math.lengthsq (квадрат дистанции) и сравнивать с radius * radius.
+
+ЧАСТЬ 2: ДЕТСАДОВСКАЯ ГЕОМЕТРИЯ (SDF & NORMALS)
+
+(Роль: Lead Geometry Scientist)
+
+1. SDF Distortion & "The Minecraft Look" (Деградация метрики SDF)
+
+Вы тупо вычитаете FBM шум из дистанции в EvaluateCaveSDF:
+
+code
+C#
+download
+content_copy
+expand_less
+caveDist -= EvaluateFractalNoiseCarve(warpedPos, wp, caveDist);
+
+Проблема: Это математическое преступление. Вычитание высокочастотного шума напрямую из SDF нарушает Липшицеву непрерывность (Lipschitz continuity). Пространство перестает быть Евклидовым. Marching Cubes, экстраполируя пересечения, будет выдавать ступенчатые, рваные полигоны (тот самый "майнкрафт"), а не органический камень, потому что градиент плотности становится диким.
+Решение: Шум необходимо делить на его производную, либо домножать финальный carveMask на понижающий коэффициент bounding-box (обычно 0.5f - 0.8f от амплитуды).
+
+2. Analytical Normal Precision (Мертвые нормали)
+
+В VoxelNormalJob вы используете 4-выборочный метод тетраэдра:
+
+code
+C#
+download
+content_copy
+expand_less
+float3 gradient = e0 * d0 + e1 * d1 + e2 * d2 + e3 * d3;
+
+Для гладких сфер это работает. Для пещер с добавлением FractalNoise3D и слоистых террас (Terraces) этот метод даст отвратительные "пластиковые" артефакты шейдинга. Тетраэдральная аппроксимация на высокочастотном шуме выдает скошенные вектора.
+Решение: Перепишите VoxelNormalJob на 6-tap Central Difference метод (центральная разность: d(x+e) - d(x-e) для каждой оси). Для каменной породы это мастхэв, иначе свет будет бликовать как на полиэтилене.
+
+3. Triplanar Phase Sync (Плывущие текстуры)
+
+Вы передаете targetGO.transform.position = -shiftDelta. Сам меш остается в координатах пре-шифта.
+Когда шейдер попытается наложить Triplanar Mapping по мировым координатам (_WorldSpaceCameraPos или Transform.localToWorld), фаза шума текстур сдвинется ровно на shiftDelta. Игрок увидит, как текстуры "едут" по стенам пещеры при каждом обновлении Floating Origin.
+Решение: Вы должны запекать "Absolute World Position" (до применения Floating Origin) в дополнительный UV-канал (например, UV3) во время фазы генерации меша, и использовать этот UV3 канал для Triplanar Mapping в шейдере voxelMaterial.
+
+4. Crater Carving Performance (Сложность O(N*M))
+
+В EvaluateCraterModifiers вы итерируете массив ВСЕХ кратеров для КАЖДОГО вокселя. Если на тайле 10 кратеров, вы делаете 10 проверок для 2,000,000 вокселей.
+Решение: Быстрый AABB check перед вычислением точной дистанции:
+
+code
+C#
+download
+content_copy
+expand_less
+if (math.abs(wp.x - crater.position.x) > crater.radius + crater.blendRadius) continue;
+ЧАСТЬ 3: АРХИТЕКТУРНАЯ ГРЯЗЬ И РЕКОМЕНДАЦИИ
+
+1. Logical Redundancy (Огромный копипаст):
+Методы GenerateVolumeAsync, GenerateVolumeFromDataAsync и RebuildVolumeAsync дублируют пайплайн: инициализация массивов -> лупы MapMagic -> джобы MC -> джобы Weld -> сборка меша. Это более 500 строк дублирующегося кода.
+Приказ: Вынести весь процесс обработки (с 1 по 6 фазу) в приватный метод ExecuteVoxelPipelineAsync. На вход подавать уже готовые массивы nodes, tunnels, etc.
+
+2. Инвалидация Box-Collider (Мелочь, но больно):
+Вы собираете MeshCollider асинхронно, но если пещера огромная, Unity Physics зафризит Main Thread при присвоении mcol.sharedMesh = mesh.
+Приказ: В Unity 6 используйте Physics.BakeMesh(mesh.GetInstanceID(), false) внутри Burst-джобы ДО возврата на Main Thread, чтобы физика не заикалась.
+
+3. VoxelColorJob Depth Bounding:
+В float depth = math.saturate(-p.y / math.max(maxDepth, 1f));
+Для глубоководной игры 0 может быть не поверхностью океана, а локальным нулем чанка. Убедитесь, что p.y здесь — это абсолютная мировая глубина, не искаженная локальным Origin Shift. Иначе градиент биома (цвет воды, туман) сломается.
+
+ВЕРДИКТ:
+
+Архитектурно задумка пулинга вокселей и Burst-scratch-слотов отличная. Но реализация математики и интеграция в экосистему движка (Floating Origin, Cancellation Tokens) выполнена дилетантом.
+
+Исправить утечки и математику SDF немедленно. Код к мерджу не допускаю.
+ОТЧЕТ ОБ АУДИТЕ: HectonVoxelEngine.cs
+
+Кому: Команда Hecton-8
+От кого: Senior QA Automation Engineer / Lead Architect & Lead Geometry Scientist
+Вердикт: Архитектура имеет потенциал, но текущая реализация обвалит FPS на вашем MX350 до однозначных значений, порвет GC и выдаст визуальные артефакты уровня инди-поделок из 2014 года. Код нужно хирургически вскрывать.
+
+ЧАСТЬ 1: АНАЛИЗ ОТ LEAD ARCHITECT & QA
+
+Ваша Zero-GC политика существует только на бумаге. Асинхронность сырая, а вычисления грузят Main Thread.
+
+🚨 КРИТИЧЕСКИЕ ОБСЕРЫ (Утечки, Bottlenecks, Краши)
+
+Main Thread Murder (Фейковая Асинхронность)
+В методах GenerateVolumeAsync и GenerateVolumeFromDataAsync происходит сэмплинг высот:
+
+code
+C#
+download
+content_copy
+expand_less
+for (int iz = 0; iz < ptsZ; iz++)
+    for (int ix = 0; ix < ptsX; ix++)
+        if (mapMagicBridge.TryGetHeight(wx, wz, out float height)) // ...
+
+Сетка 128x128 (129³ точек) = 16 641 вызов TryGetHeight на Main Thread за один кадр. Если MapMagic внутри делает Raycast или лезет в хэшмапы, это вызовет чудовищный спайк (фриз на 10–50 мс).
+Лечение: Heightmap должен генерироваться асинхронно через MapMagic API (например, запрос матрицы высот) и передаваться в Job.
+
+Native Memory Allocation Spam (Нарушение Zero-GC)
+В Phase 5 и RebuildVolumeAsync вы динамически аллоцируете память, замаскировав это Allocator.Persistent:
+
+code
+C#
+download
+content_copy
+expand_less
+var normals = new NativeArray<float3>(weldedCount, Allocator.Persistent...);
+var biomeVals = new NativeArray<float>(...);
+var colors = new NativeArray<Color>(...);
+var spawnPointList = new NativeList<CaveSpawnData>(...);
+
+В finally они диспозятся. Это не утечка, но это Cold Allocation на каждый вызов генерации! У вас есть VoxelStreamingScratchSlot — почему эти массивы не добавлены в пул? Размеры известны (по maxVerts), просто допишите их в ScratchSlot.
+
+Копирование данных на Main Thread вместо .Reinterpret
+В методе BuildWeldedMeshNative:
+
+code
+C#
+download
+content_copy
+expand_less
+var mPos = new NativeArray<Vector3>(vertCount, Allocator.Temp...);
+for (int i = 0; i < vertCount; i++) mPos[i] = (Vector3)positions[i]; // ЖЕСТЬ
+mesh.SetVertices(mPos);
+
+Вы в цикле на Main Thread копируете 100 000+ вершин из float3 в Vector3?
+Лечение: Unity API позволяет передавать данные напрямую без копирования:
+mesh.SetVertices(positions.Reinterpret<Vector3>());
+То же самое для normals и colors. Удалите этот позорный цикл.
+
+Алгоритмическая катастрофа: O(V * N) в Burst Job
+Внутри VoxelDensityJob.EvaluateCaveSDF каждый воксель (а их 
+129
+3
+≈
+2.1
+129
+3
+≈2.1
+ млн) итерируется по ВСЕМ caveNodes, caveTunnels, caveEntrances и caveStructures.
+2 млн вокселей * 50 структур = 100 миллионов проверок SDF за один чанк.
+Лечение: Внедрить Spatial Grid / Bounding Box Culling внутри Job. Вычислять SDF структуры только если distance(voxel, bounds.center) < bounds.extents + blendRadius.
+
+🧹 АРХИТЕКТУРНАЯ ГРЯЗЬ И ЛОГИЧЕСКОЕ ДУБЛИРОВАНИЕ
+
+Рассинхрон Floating Origin (Смертельная ошибка)
+В GenerateVolumeAsync вы запоминаете shiftAtStart = HectonFloatingOrigin.Instance.TotalOffset, а в EvaluateCaveSDF передаете wp (World Position).
+Проблема: Шум Фрактала (FractalNoise3D(wp, ...)) использует wp. Если игрок прошел 5 км, произошел шифт координат. Координаты генерации поменялись. Итог: Пещера изменит свою геометрию (стены "поплывут") при загрузке того же самого сида с другими значениями TotalOffset!
+Лечение: В ApplyDomainWarp и FractalNoise3D передавать не wp, а AbsoluteUniversePosition (wp + HectonFloatingOrigin.Instance.TotalOffset).
+
+Двойной код
+Логика генерации в GenerateVolumeAsync и GenerateVolumeFromDataAsync дублируется на 85%. Оба метода нужно свести к одному приватному ExecuteGenerationPipeline(NativeArrays...), который будет принимать либо готовые массивы, либо генерировать их.
+
+ЧАСТЬ 2: АНАЛИЗ ОТ LEAD GEOMETRY SCIENTIST
+
+Для NASA-punk на глубине 4 км этот визуал слишком примитивен. Выглядит как раздутый Minecraft.
+
+🚨 КРИТИЧЕСКИЕ ТОЧКИ ПРОВЕРКИ (Геометрия)
+
+Analytical Normal Precision (Детсадовские нормали)
+
+code
+C#
+download
+content_copy
+expand_less
+float3 e0 = new float3(1f, -1f, -1f); // ...
+float3 gradient = e0 * d0 + e1 * d1 + e2 * d2 + e3 * d3;
+
+Используется 4-сэмпловый тетраэдральный метод (Тетраэдр). Для базовых сфер это ОК. Для вашей "слоистой" породы с FBM-шумом (EvaluateWallDetail) это даст диагональный Bias (скосы нормалей) и артефакты гранёности при освещении фарами подлодки.
+Лечение: Переписать VoxelNormalJob на классический Central Differences (6 сэмплов по осям X, Y, Z). Да, это 6 выборок SDF вместо 4, но освещение станет абсолютно ровным.
+
+SDF Ellipsoid (Грязная аппроксимация)
+
+code
+C#
+download
+content_copy
+expand_less
+return (lenScaled - 1f) * math.cmin(radii);
+
+Это дешевая аппроксимация. За её пределами (в Exterior) дистанция искажается. Когда вы сливаете эллипсоид с туннелем через SmoothMin, искаженный градиент даст "пузыри" или резкие разрывы (пинчи) на стыке.
+Лечение: Использовать точный (аналитический) SDF эллипсоида, либо заменить эллипсоиды на растянутые капсулы.
+
+Voxel Skirting (Дырявые юбки у входов)
+EvaluateEntranceSkirtSDF клипает вход по: terrainClip = wp.y - SampleTerrainHeight(wp.xz).
+Но SampleTerrainHeight берет билинейную интерполяцию из сетки вокселей, а не с фактического меша MapMagic! Меш террейна и изоповерхность вокселей не совпадут. Игрок увидит щели между пещерой и дном океана.
+Лечение: Увеличить embedDepth, чтобы юбка с запасом уходила сквозь геометрию террейна, плюс добавить Depth Bias в шейдере voxelMaterial.
+
+Triplanar Phase Sync & Visuals
+Метод VoxelColorJob записывает: R = slope, G = depth, B = interiorFade. Это уровень прототипа.
+Где Curvature (кривизна поверхности)? В пещерах AAA-класса края камней должны быть вытерты (для этого нужен Ambient Occlusion и Curvature Map).
+Лечение: Поскольку Marching Cubes не дает Dual Contouring острых углов, вам нужно запечь Curvature в вершинах. Вычисляйте кривизну через разницу нормалей соседних узлов сетки и пакуйте её в A-канал Vertex Color.
+
+Smooth Min (smin) Artifacts
+В функции SmoothMin:
+
+code
+C#
+download
+content_copy
+expand_less
+k = math.max(k, 0.0001f);
+float h = math.max(k - math.abs(a - b), 0f) / k;
+
+Функция полиномиального SmoothMin хороша, но при пересечении множества примитивов в одной точке (например, 3 туннеля сходятся в одном Node) она нарушает Lipschitz Continuity. Появятся артефакты (вспучивания). Используйте Exponential Smooth Min (smin_exp) или делайте SmoothUnion последовательно с сортировкой дистанций.
+
+РЕЗЮМЕ ДЛЯ ЭКЗЕКУЦИИ
+
+Выпилить копирование массивов (внедрить .Reinterpret).
+
+Добавить AbsoluteUniversePosition для шума (починить Floating Origin).
+
+Перенести генерацию высот в Burst/Job, убрать с Main Thread.
+
+Добавить Bounding Box Culling в цикл расчета SDF.
+
+Заменить тетраэдральные нормали на 6-сэмпловые.
+
+Вынести NativeArray аллокации из GenerateVolume в ScratchSlot.

@@ -45,6 +45,7 @@ namespace Hecton8.Inventory
         private const float RadioactiveHalfLifeBaseSeconds = 1800f;
         private const float Ln2 = 0.6931471805599453f;
         private const float KineticDamageThresholdG = 50f;
+        private const string RadixSortBufferMismatchLog = "[PlayerInventory] Critical radix sort buffer mismatch. Sorting bypassed.";
         internal const ushort DegradedQualityMilliThreshold = 250;
         private static readonly int _DepletedLeadHashId = LocHash.Compute("Data_DepletedLead");
 
@@ -346,6 +347,9 @@ namespace Hecton8.Inventory
 
             private int FindAdjacentReactivePartner(int anchorIndex, int slotCount, int safeColumns, int safeRows)
             {
+                if (anchorIndex < 0 || anchorIndex >= slotCount)
+                    return -1;
+
                 ushort flags = ItemStateFlags[anchorIndex];
                 bool isRadioactive = (flags & RadioactiveMask) != 0;
                 bool isFlammable = (flags & FlammableMask) != 0;
@@ -378,7 +382,7 @@ namespace Hecton8.Inventory
                 bool sourceRadioactive,
                 bool sourceFlammable)
             {
-                if ((uint)x >= (uint)safeColumns || (uint)y >= (uint)safeRows)
+                if (x < 0 || x >= safeColumns || y < 0 || y >= safeRows)
                     return -1;
 
                 int candidateIndex = y * safeColumns + x;
@@ -1276,14 +1280,8 @@ namespace Hecton8.Inventory
             if (count <= 0)
                 return;
 
-            if (!_sortEntriesNative.IsCreated ||
-                !_sortScratchNative.IsCreated ||
-                !_sortRadixCounts.IsCreated ||
-                count > _sortEntriesNative.Length ||
-                count > _sortScratchNative.Length)
-            {
+            if (!TryValidateRadixSortBuffers(count))
                 return;
-            }
 
             for (int i = 0; i < count; i++)
                 _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
@@ -1331,6 +1329,33 @@ namespace Hecton8.Inventory
             }
 
             NotifyInventoryChanged();
+        }
+
+        private bool TryValidateRadixSortBuffers(int itemCount)
+        {
+            if (!_sortEntriesNative.IsCreated ||
+                !_sortScratchNative.IsCreated ||
+                !_sortRadixCounts.IsCreated ||
+                _sortBuffer == null ||
+                _sortedPlacements == null ||
+                itemCount > _sortEntriesNative.Length ||
+                itemCount > _sortScratchNative.Length ||
+                itemCount > _sortBuffer.Length ||
+                itemCount > _sortedPlacements.Length)
+            {
+                return false;
+            }
+
+            bool lengthMismatch = _sortEntriesNative.Length != _sortScratchNative.Length ||
+                                  _sortEntriesNative.Length != _sortBuffer.Length ||
+                                  _sortEntriesNative.Length != _sortedPlacements.Length;
+            if (!lengthMismatch)
+                return true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(RadixSortBufferMismatchLog);
+#endif
+            return false;
         }
 
         internal bool TryMoveOrSwapAnchor(int sourceAnchorX, int sourceAnchorY, int targetCellX, int targetCellY)
@@ -1827,11 +1852,13 @@ namespace Hecton8.Inventory
         private void PublishEncumbranceChanged()
         {
             float carryCapacityKg = ResolveCarryCapacityKilograms();
+            float load01 = math.saturate(TotalMassKg / carryCapacityKg);
+            UIStateStore.WriteInventoryLoadState(TotalMassKg, carryCapacityKg, load01, Time.unscaledTime);
             InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
                 this,
                 TotalMassKg,
                 carryCapacityKg,
-                math.saturate(TotalMassKg / carryCapacityKg)));
+                load01));
         }
 
         private float ResolveCarryCapacityKilograms()
@@ -2464,7 +2491,15 @@ namespace Hecton8.Inventory
             }
 
             int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
+            // InventoryGrid.RemoveAnchorAt clears the SOA ItemHashID before trauma/audio dispatch can read the slot again.
             _grid.RemoveAnchorAt(anchorIndex);
+            ClearDestroyedAnchorRuntimeState(anchorIndex);
+            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
+            return true;
+        }
+
+        private void ClearDestroyedAnchorRuntimeState(int anchorIndex)
+        {
             _stackCounts[anchorIndex] = 0;
             _craftLockedCounts[anchorIndex] = 0;
             _anchorStateFlags[anchorIndex] = 0;
@@ -2472,9 +2507,9 @@ namespace Hecton8.Inventory
             _itemGeneticsWords[anchorIndex] = 0u;
             _qualityMilli[anchorIndex] = 0;
             _lastUpdateUnixSeconds[anchorIndex] = 0;
+            if (_thermalRunawayByAnchor.IsCreated && (uint)anchorIndex < (uint)_thermalRunawayByAnchor.Length)
+                _thermalRunawayByAnchor[anchorIndex] = 0f;
             ClearAnchorPhysicalMetadata(anchorIndex);
-            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
-            return true;
         }
 
         private bool ResolveInventoryPressurizedContainerProtection()
@@ -2697,7 +2732,10 @@ namespace Hecton8.Inventory
 
             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, copyLength * UnsafeUtility.SizeOf<ushort>());
+            int copyBytes = copyLength * UnsafeUtility.SizeOf<ushort>();
+            int destinationBytes = destination.Length * UnsafeUtility.SizeOf<ushort>();
+            if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerInventory));
         }
     }
 }

@@ -129,6 +129,33 @@ This is stricter and more truthful than pretending the current schema can contai
 - `BaitFeedingLock`: dropped organic bait items are surfaced to fauna through `PickupItem.IsFaunaBait`, allowing herbivores, scavengers, and smaller predators to enter a local feeding lock near the bait source.
 - `AudioMaterialID`: `1 = Organic`, `2 = Brittle`, `3 = Metallic`
 
+## 2026-05-01 Content Delta - Hadal Carbon And Meteorite Resources
+
+Current workspace contains three additional raw item assets and three matching resource-node templates not covered by the older `02_ACTUAL_REPORTS` ledger section.
+
+Item assets:
+
+| Item Asset | Stable ID | Item HashID | Hex | Tier | Family | AudioMaterialID | Depth |
+|---|---|---:|---|---:|---:|---:|---|
+| `Data_CarbonGraphite.asset` | `Data_CarbonGraphite` | 2008184373 | `0x77B27635` | 4 | 6 | 2 | 3200-6000 |
+| `Data_PressureDiamond.asset` | `Data_PressureDiamond` | -1593575957 | `0xA103F5EB` | 4 | 6 | 2 | 3500-6000 |
+| `Data_VoidGlassMeteorite.asset` | `Data_VoidGlassMeteorite` | 1720811528 | `0x66918008` | 5 | 6 | 1 | explicit node depth owns placement |
+
+Resource-node templates:
+
+| Node Template | Stable ID | Entity HashID | Hex | Yield Item | Placement Probability | Valid Layers | Runtime owner note |
+|---|---|---:|---|---|---:|---:|---|
+| `ResourceNodeTemplate_CarbonGraphiteNodule.asset` | `resource.node.carbon_graphite_nodule` | -645249103 | `0xD98A47B1` | `Data_CarbonGraphite` | 0.18 | 1792 | pressure-metamorphism source candidate |
+| `ResourceNodeTemplate_PressureDiamond.asset` | `resource.node.pressure_diamond` | -1829783455 | `0x92EFB861` | `Data_PressureDiamond` | 0 | 1792 | pressure-metamorphism output candidate |
+| `ResourceNodeTemplate_VoidGlassMeteorite.asset` | `resource.node.void_glass_meteorite` | 307316757 | `0x12514815` | `Data_VoidGlassMeteorite` | 0 | 1792 | `ResourceDistributionDirector` resolves this stable ID for rare impact spawns |
+
+Authoring constraints observed from YAML:
+
+- All three node templates use `colliderShape: 1` and have `nodeMesh` / `nodeMaterial` empty, so ghost/proxy visual policy still needs validator execution before this can be called art-complete.
+- `CarbonGraphiteNodule` and `PressureDiamond` support autonomous extraction; `VoidGlassMeteorite` does not.
+- `VoidGlassMeteorite` carries radiation through the item asset (`radiationSvPerSecond: 1.4`) and through `ResourceDistributionDirector` impact hazard settings.
+- Hash values above were recomputed from `LocHash.Compute` algorithm in `LocRegistry.cs`; editor collision validator was not executed in this pass.
+
 ## Validation Boundary
 
 What this ledger now covers:

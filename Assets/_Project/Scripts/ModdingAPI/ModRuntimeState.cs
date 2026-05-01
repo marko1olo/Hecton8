@@ -7,6 +7,8 @@ using Hecton8.Ecosystem;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Modding
@@ -14,8 +16,12 @@ namespace Hecton8.Modding
     internal static class ModExecutionScope
     {
         [System.ThreadStatic] private static string _currentModId;
+        [System.ThreadStatic] private static uint _currentModHash;
+        [System.ThreadStatic] private static int _scopeDepth;
 
         internal static string CurrentModId => string.IsNullOrWhiteSpace(_currentModId) ? "anonymous" : _currentModId;
+        internal static uint CurrentModHash => _currentModHash;
+        internal static bool HasActiveMod => _scopeDepth > 0;
 
         internal static Scope Enter(string modId)
         {
@@ -25,16 +31,24 @@ namespace Hecton8.Modding
         internal readonly struct Scope : System.IDisposable
         {
             private readonly string _previousModId;
+            private readonly uint _previousModHash;
+            private readonly int _previousScopeDepth;
 
             internal Scope(string modId)
             {
                 _previousModId = _currentModId;
+                _previousModHash = _currentModHash;
+                _previousScopeDepth = _scopeDepth;
                 _currentModId = string.IsNullOrWhiteSpace(modId) ? "anonymous" : modId;
+                _currentModHash = ModCommandDispatcher.ComputeModHash(_currentModId);
+                _scopeDepth = _previousScopeDepth + 1;
             }
 
             public void Dispose()
             {
                 _currentModId = _previousModId;
+                _currentModHash = _previousModHash;
+                _scopeDepth = _previousScopeDepth;
             }
         }
     }
@@ -42,12 +56,22 @@ namespace Hecton8.Modding
     internal static class ModSaveStateStore
     {
         // COLD ALLOC: Dictionary<string,string>[64] — custom mod save payload map persisted inside SaveData — owner: ModSaveStateStore
-        private static readonly Dictionary<string, string> _customModData = new Dictionary<string, string>(64);
+        private struct ModSaveEntry
+        {
+            public string Key;
+            public string Value;
+            public uint KeyHash;
+            public uint ModHash;
+        }
+
+        private static readonly List<ModSaveEntry> _customModData = new List<ModSaveEntry>(64);
+        private static readonly Dictionary<uint, int> _customModIndexByHash = new Dictionary<uint, int>(64);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _customModData.Clear();
+            _customModIndexByHash.Clear();
         }
 
         internal static void SetModString(string key, string value)
@@ -58,7 +82,43 @@ namespace Hecton8.Modding
                 return;
             }
 
-            _customModData[key] = value ?? string.Empty;
+            uint keyHash = ModCommandDispatcher.ComputeModHash(key);
+            if (_customModIndexByHash.TryGetValue(keyHash, out int index) && index >= 0 && index < _customModData.Count)
+            {
+                ModSaveEntry entry = _customModData[index];
+                if (entry.Key == key || string.IsNullOrEmpty(entry.Key))
+                {
+                    entry.Key = key;
+                    entry.Value = value ?? string.Empty;
+                    entry.ModHash = ResolvePersistenceOwnerHash(key);
+                    _customModData[index] = entry;
+                    return;
+                }
+            }
+
+            for (int i = 0; i < _customModData.Count; i++)
+            {
+                ModSaveEntry entry = _customModData[i];
+                if (entry.Key != key && !string.IsNullOrEmpty(entry.Key))
+                    continue;
+
+                entry.Key = key;
+                entry.Value = value ?? string.Empty;
+                entry.KeyHash = keyHash;
+                entry.ModHash = ResolvePersistenceOwnerHash(key);
+                _customModData[i] = entry;
+                _customModIndexByHash[keyHash] = i;
+                return;
+            }
+
+            _customModIndexByHash[keyHash] = _customModData.Count;
+            _customModData.Add(new ModSaveEntry
+            {
+                Key = key,
+                Value = value ?? string.Empty,
+                KeyHash = keyHash,
+                ModHash = ResolvePersistenceOwnerHash(key)
+            });
         }
 
         internal static string GetModString(string key, string defaultValue)
@@ -66,9 +126,22 @@ namespace Hecton8.Modding
             if (string.IsNullOrWhiteSpace(key))
                 return defaultValue ?? string.Empty;
 
-            return _customModData.TryGetValue(key, out string value)
-                ? value
-                : (defaultValue ?? string.Empty);
+            uint keyHash = ModCommandDispatcher.ComputeModHash(key);
+            if (_customModIndexByHash.TryGetValue(keyHash, out int index) && index >= 0 && index < _customModData.Count)
+            {
+                ModSaveEntry entry = _customModData[index];
+                if (entry.Key == key || string.IsNullOrEmpty(entry.Key))
+                    return entry.Value ?? string.Empty;
+            }
+
+            for (int i = 0; i < _customModData.Count; i++)
+            {
+                ModSaveEntry entry = _customModData[i];
+                if (entry.Key == key || (entry.KeyHash == keyHash && string.IsNullOrEmpty(entry.Key)))
+                    return entry.Value ?? string.Empty;
+            }
+
+            return defaultValue ?? string.Empty;
         }
 
         internal static void PopulateSaveData(SaveData data)
@@ -86,21 +159,197 @@ namespace Hecton8.Modding
                 data.CustomModData.Clear();
             }
 
-            Dictionary<string, string>.Enumerator enumerator = _customModData.GetEnumerator();
+            List<ModSaveEntry>.Enumerator enumerator = _customModData.GetEnumerator();
             while (enumerator.MoveNext())
-                data.CustomModData[enumerator.Current.Key] = enumerator.Current.Value;
+            {
+                ModSaveEntry entry = enumerator.Current;
+                if (!string.IsNullOrWhiteSpace(entry.Key))
+                    data.CustomModData[entry.Key] = entry.Value ?? string.Empty;
+            }
         }
 
         internal static void LoadFromSaveData(SaveData data)
         {
             _customModData.Clear();
+            _customModIndexByHash.Clear();
 
             if (data == null || data.CustomModData == null || data.CustomModData.Count == 0)
                 return;
 
             Dictionary<string, string>.Enumerator enumerator = data.CustomModData.GetEnumerator();
             while (enumerator.MoveNext())
-                _customModData[enumerator.Current.Key] = enumerator.Current.Value;
+            {
+                string key = enumerator.Current.Key;
+                if (string.IsNullOrWhiteSpace(key))
+                    continue;
+
+                uint keyHash = ModCommandDispatcher.ComputeModHash(key);
+                _customModIndexByHash[keyHash] = _customModData.Count;
+                _customModData.Add(new ModSaveEntry
+                {
+                    Key = key,
+                    Value = enumerator.Current.Value ?? string.Empty,
+                    KeyHash = keyHash,
+                    ModHash = ResolvePersistenceOwnerHash(key)
+                });
+            }
+        }
+
+        internal static bool TryCommitMmfPayloads(string absoluteSavePath, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absoluteSavePath) || _customModData.Count == 0)
+                return true;
+
+            for (int i = 0; i < _customModData.Count; i++)
+            {
+                ModSaveEntry entry = _customModData[i];
+                if (entry.ModHash == 0u || entry.KeyHash == 0u)
+                    continue;
+
+                string value = entry.Value ?? string.Empty;
+                int payloadLength = value.Length * sizeof(char);
+                if (payloadLength > SaveBinaryStorage.ModPayloadMaxBytes)
+                {
+                    error = "Mod payload exceeds isolated sub-sector budget.";
+                    continue;
+                }
+
+                NativeArray<byte> payloadBytes = default;
+                try
+                {
+                    payloadBytes = new NativeArray<byte>(
+                        math.max(1, payloadLength),
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory);
+
+                    for (int charIndex = 0; charIndex < value.Length; charIndex++)
+                    {
+                        char character = value[charIndex];
+                        int byteIndex = charIndex * sizeof(char);
+                        payloadBytes[byteIndex] = (byte)(character & 0xFF);
+                        payloadBytes[byteIndex + 1] = (byte)(character >> 8);
+                    }
+
+                    string tempOverridePath = absoluteSavePath +
+                                              ".mod_" +
+                                              entry.ModHash.ToString("X8") +
+                                              "_" +
+                                              entry.KeyHash.ToString("X8") +
+                                              ".sectmp";
+
+                    if (!SaveBinaryStorage.TryCommitModPayloadSubSector(
+                            absoluteSavePath,
+                            tempOverridePath,
+                            entry.ModHash,
+                            entry.KeyHash,
+                            payloadBytes,
+                            payloadLength,
+                            out string commitError))
+                    {
+                        error = commitError;
+                    }
+                }
+                finally
+                {
+                    if (payloadBytes.IsCreated)
+                        payloadBytes.Dispose();
+                }
+            }
+
+            return string.IsNullOrEmpty(error);
+        }
+
+        internal static bool TryLoadMmfPayloads(string absoluteSavePath, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absoluteSavePath))
+                return true;
+
+            List<SaveBinaryStorage.ModPayloadSectorInfo> sectors = new List<SaveBinaryStorage.ModPayloadSectorInfo>(32);
+            if (!SaveBinaryStorage.TryReadIndexedModPayloadDirectory(absoluteSavePath, sectors, out error))
+                return false;
+
+            for (int i = 0; i < sectors.Count; i++)
+            {
+                SaveBinaryStorage.ModPayloadSectorInfo sector = sectors[i];
+                if (sector.ModHash == 0u || sector.PagedSectorHash == 0L || sector.PayloadLength < 0)
+                    continue;
+
+                NativeArray<byte> payloadBytes = default;
+                try
+                {
+                    payloadBytes = new NativeArray<byte>(
+                        math.max(1, sector.PayloadLength),
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory);
+
+                    if (!SaveBinaryStorage.TryReadModPayloadSubSector(
+                            absoluteSavePath,
+                            sector.ModHash,
+                            sector.PagedSectorHash,
+                            payloadBytes,
+                            out int payloadLength,
+                            out string readError))
+                    {
+                        error = readError;
+                        continue;
+                    }
+
+                    string value = DecodeUtf16Payload(payloadBytes, payloadLength);
+                    uint keyHash = unchecked((uint)sector.PagedSectorHash);
+                    if (_customModIndexByHash.TryGetValue(keyHash, out int existingIndex) &&
+                        existingIndex >= 0 &&
+                        existingIndex < _customModData.Count)
+                    {
+                        ModSaveEntry existing = _customModData[existingIndex];
+                        existing.Value = value;
+                        existing.ModHash = sector.ModHash;
+                        _customModData[existingIndex] = existing;
+                        continue;
+                    }
+
+                    _customModIndexByHash[keyHash] = _customModData.Count;
+                    _customModData.Add(new ModSaveEntry
+                    {
+                        Key = string.Empty,
+                        Value = value,
+                        KeyHash = keyHash,
+                        ModHash = sector.ModHash
+                    });
+                }
+                finally
+                {
+                    if (payloadBytes.IsCreated)
+                        payloadBytes.Dispose();
+                }
+            }
+
+            return string.IsNullOrEmpty(error);
+        }
+
+        private static uint ResolvePersistenceOwnerHash(string key)
+        {
+            uint currentModHash = ModExecutionScope.CurrentModHash;
+            return currentModHash != 0u
+                ? currentModHash
+                : ModCommandDispatcher.ComputeModHash(key);
+        }
+
+        private static string DecodeUtf16Payload(NativeArray<byte> payloadBytes, int payloadLength)
+        {
+            if (!payloadBytes.IsCreated || payloadLength <= 0)
+                return string.Empty;
+
+            int charCount = payloadLength / sizeof(char);
+            char[] characters = new char[charCount]; // COLD ALLOC: char[payload chars] - save payload UTF-16 decode on load - owner: ModSaveStateStore
+            for (int i = 0; i < charCount; i++)
+            {
+                int byteIndex = i * sizeof(char);
+                characters[i] = (char)(payloadBytes[byteIndex] | (payloadBytes[byteIndex + 1] << 8));
+            }
+
+            return new string(characters);
         }
     }
 

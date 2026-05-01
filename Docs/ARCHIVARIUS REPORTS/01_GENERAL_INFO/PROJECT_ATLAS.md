@@ -1,7 +1,7 @@
 # PROJECT ATLAS
 
-Version: 1.4.0
-Date: 2026-04-30
+Version: 1.4.3
+Date: 2026-05-01
 Status: PENDING VERIFICATION
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`
@@ -20,7 +20,7 @@ It answers four narrow questions:
 
 ## 2. Workspace Snapshot
 
-Repository root observed on 2026-04-30 contains these top-level entries of interest:
+Repository root observed on 2026-05-01 contains these top-level entries of interest:
 
 - `.agents-skills`
 - `Assets`
@@ -35,7 +35,7 @@ Repository root observed on 2026-04-30 contains these top-level entries of inter
 - `Tools`
 - `Logs`
 - `AGENTS.md`
-- root audit/report markdown files
+- active root text files: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`
 
 High-noise surfaces also exist:
 
@@ -55,8 +55,9 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1038`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `998`
+Observed first-party C# file count under `Assets/_Project`: `1060`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1020`
+Observed first-party C# line count under `Assets/_Project/Scripts`: `544728`
 
 This is physical file count only.
 It does not imply quality, cohesion, or compile health.
@@ -76,6 +77,12 @@ Third-party and package-heavy surfaces visible in the workspace:
 
 Presence on disk does not equal approved runtime usage.
 Allowed usage remains constrained by `AGENTS.md`.
+
+DOTS / Entities package boundary:
+
+- `com.unity.entities` is not declared in the current `Packages/manifest.json`.
+- `Assets/_Project/Scripts/World/Dots/Hecton8.World.Dots.asmdef` exists, but it is define-gated, `autoReferenced: false`, and not a live production assembly path without package/define proof.
+- Current first-party source scan found no active `Unity.Entities`, `IComponentData`, `SystemBase`, or `ISystem` usage under `Assets/_Project/Scripts`.
 
 ## 5. Mandate Registry
 
@@ -105,12 +112,16 @@ Current active anchors include:
 - `HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`
 - `PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
 - `PROCEDURAL_ASSET_PIPELINE.md`
+- `ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md`
+- `ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
 - `ARCHITECTURE/DISPATCH_PIPELINE.md`
 - `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
-- `Reports/ILLEGAL_SINGLETONS.md`
-- `Reports/GC_HOTPATH_VIOLATIONS.md`
-- `Reports/BOOT_ORDER_VIOLATIONS.md`
-- `Reports/NATIVE_ALLOCATION_AUDIT.md`
+- `Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+- `Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+- `Reports/TOTAL_CODEBASE_AUDIT_V2.md`
+- `Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+- `Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
+- `Reports/DOOMSDAY_FLAW_REPORT.md`
 
 ### 6.2 `Docs/ARCHIVARIUS REPORTS`
 
@@ -121,16 +132,18 @@ This atlas is specifically aligned with:
 
 Coverage snapshot from current reverification pass:
 
-- `01_GENERAL_INFO` markdown files: `22`
+- `01_GENERAL_INFO` markdown files: `24`
 - `02_ACTUAL_REPORTS` markdown files: `46`
 - `02_ACTUAL_REPORTS` csv files: `1`
-- `02_ACTUAL_REPORTS` patch artifacts: `8`
-- total indexed docs/datasets in folders `01` and `02`: `69`
-- total physical non-meta files in folders `01` and `02`: `77`
+- `02_ACTUAL_REPORTS` patch artifacts: `9`
+- total indexed docs/datasets in folders `01` and `02`: `71`
+- total physical non-meta files in folders `01` and `02`: `80`
 
 Canonical entry files inside this bundle:
 
 - `MASTER_INDEX.md`
+- `DOC_AUTHORITY_CLASSIFICATION.md`
+- `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
 - `DOCSET_COVERAGE_MATRIX.md`
 - `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md`
 - `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md`
@@ -139,7 +152,7 @@ Canonical entry files inside this bundle:
 - `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md`
 - `PLAYER_GAMEPLAY_CORE_MAP.md`
 - `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`
- - `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md`
+- `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md`
 - `INTERFACE_CONTRACT_TABLE.md`
 - `INTERFACE_HEALTH_DASHBOARD.md`
 - `EVENT_BUS_MAP.md`
@@ -153,28 +166,37 @@ Canonical entry files inside this bundle:
 - `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md`
- - `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`
- - `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+- `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`
+- `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
 
 ### 6.3 Current Live Console Truth
 
-Current reachable Unity console state is not clean.
+Latest MCP console snapshot in the later 2026-05-01 documentation pass returned `0` error/warning entries.
 
-This pass confirmed repeated editor-side `NullReferenceException` spam through:
+This is not Play Mode proof and not runtime certification.
+
+Previous editor-runtime forensic work had confirmed repeated editor-side `NullReferenceException` spam through:
 
 - `WorldProceduralScatterDirector.get__desiredPlacements()`
 - `WorldProceduralScatterDirector.BuildScatterPreviewGizmoSnapshot(...)`
 - `Editor/WorldProceduralScatterPreviewGizmoDrawer.DrawScatterPreviewGizmos(...)`
 
-Authority file for this snapshot:
+Current interpretation:
+
+- treat the scatter gizmo `NullReferenceException` as a previous active risk until a targeted repro proves it gone
+- treat the latest empty MCP console read as a narrow editor-console snapshot only
+- do not infer clean Play Mode, clean boot, or zero runtime errors from the empty snapshot
+
+Authority files for this boundary:
 
 - `02_ACTUAL_REPORTS/2026-04-30_EDITOR_RUNTIME_FORENSICS.md`
+- `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 
 ## 7. Architecture Signals Rechecked Against Source
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `27` interfaces, not `19`.
+- `GlobalRegistryContracts.cs` now contains `31` interfaces, not `19`.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -277,10 +299,10 @@ These active docs were stale against current code before this pass:
 
 Current source-backed audit outputs now include:
 
-- `Docs/Reports/ILLEGAL_SINGLETONS.md`
-- `Docs/Reports/GC_HOTPATH_VIOLATIONS.md`
-- `Docs/Reports/BOOT_ORDER_VIOLATIONS.md`
-- `Docs/Reports/NATIVE_ALLOCATION_AUDIT.md`
+- `Docs/Reports/TOTAL_CODEBASE_AUDIT_V2.md`
+- `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+- `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
+- `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
 - `Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
 
 Current evidence-backed deltas from this pass:
@@ -354,19 +376,22 @@ Mandates followed for this update:
 Current measured source surface:
 
 - `Assets/_Project/Scripts`: `1020` C# files.
-- Script LOC by PowerShell line count: `466768`.
+- Script LOC by PowerShell line count: `544728`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `15`, all in remaining runtime smoke/verifier harnesses.
-- `Docs`: `544` non-meta files.
-- `Docs/ARCHIVARIUS REPORTS`: `117` non-meta files.
+- `Docs`: `584` non-meta files in the current filesystem view.
+- `Docs/ARCHIVARIUS REPORTS`: `119` non-meta files in the current filesystem view.
+
+These counts are orientation data only. They are not readiness metrics and should not drive task priority.
 
 Current active forensic reports to read before older atlas claims:
 
-1. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
-2. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
-3. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
-4. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
-5. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
-6. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
+1. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+2. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
+3. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
+4. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+5. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
+6. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
+7. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
 
 Current risk corrections:
 
@@ -375,6 +400,7 @@ Current risk corrections:
 - Event topology is stronger than old docs implied because late-frame dispatch budgeting exists, but recursive generation/depth is not globally proven safe.
 - Core asmdef purification is not complete. The current safe position is staged bridge extraction, not blind reference removal.
 - Object pool exhaustion behavior is safer by source review: spawn exhaustion publishes pool-exhausted telemetry and returns `null`; no global runtime instantiation purity claim is made for the entire project.
+- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is now the conceptual entry point for current system ownership. It is not a runtime proof document.
 
 Verification state:
 

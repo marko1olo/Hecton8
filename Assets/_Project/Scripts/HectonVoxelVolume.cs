@@ -65,6 +65,10 @@ namespace Hecton8.Caves
         private const byte DefaultDeltaMaterialId = 0;
         private const byte SedimentDeltaMaterialId = 1;
         private const byte MagmaDeltaMaterialId = 2;
+        private static readonly int _CollapseImpulseLayerMask = HectonLayerMasks.MountedSweepLayerMask;
+        private const float OrganicRootMoundMinimumOverlapMeters = 0.25f;
+        private const float OrganicRootMoundSeabedProbeStepMeters = 0.5f;
+        private const int OrganicRootMoundSeabedProbeSteps = 16;
 
         private HectonVoxelEngine _engine;
         private VoxelDeltaProcessor _deltaProcessor;
@@ -903,7 +907,35 @@ namespace Hecton8.Caves
 
             SetBakeState(VoxelBakeState.Pending);
             Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
-            _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, radius, strength, DefaultDeltaMaterialId);
+            float resolvedRadius = ResolveOrganicRootMoundWeldRadius(pos, radius);
+            _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, resolvedRadius, strength, DefaultDeltaMaterialId);
+        }
+
+        private float ResolveOrganicRootMoundWeldRadius(Vector3 runtimePosition, float authoredRadius)
+        {
+            float safeRadius = Mathf.Max(0.01f, authoredRadius);
+            if (!TrySampleDensity(runtimePosition, out float densityAtRoot))
+                return safeRadius;
+
+            if (densityAtRoot >= 0f)
+                return safeRadius;
+
+            float distanceToSeabed = Mathf.Abs(densityAtRoot);
+            for (int i = 1; i <= OrganicRootMoundSeabedProbeSteps; i++)
+            {
+                float probeDistance = i * OrganicRootMoundSeabedProbeStepMeters;
+                Vector3 probePosition = runtimePosition + Vector3.down * probeDistance;
+                if (!TrySampleDensity(probePosition, out float probeDensity))
+                    continue;
+
+                if (probeDensity >= 0f)
+                {
+                    distanceToSeabed = Mathf.Min(distanceToSeabed, probeDistance);
+                    break;
+                }
+            }
+
+            return Mathf.Max(safeRadius, distanceToSeabed + OrganicRootMoundMinimumOverlapMeters);
         }
 
         /// <summary>
@@ -1012,6 +1044,11 @@ namespace Hecton8.Caves
             float safeBurnRadius = Mathf.Max(safeRadius, burnRadiusMeters);
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             int acceptedSegments = 0;
+            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localVolumeBounds))
+                return 0;
+
+            Bounds runtimeVolumeBounds = BuildRuntimeAabb(transform, localVolumeBounds);
+            runtimeVolumeBounds.Expand((safeRadius + _voxelSize) * 2f);
             SetBakeState(VoxelBakeState.Pending);
 
             for (int i = 1; i < safePointCount; i++)
@@ -1024,6 +1061,10 @@ namespace Hecton8.Caves
                 Vector3 segment = end - start;
                 float segmentLengthSq = segment.sqrMagnitude;
                 if (segmentLengthSq <= _voxelSize * _voxelSize * 0.01f)
+                    continue;
+
+                Bounds segmentBounds = BuildRuntimeSegmentAabb(start, end, safeRadius);
+                if (!segmentBounds.Intersects(runtimeVolumeBounds))
                     continue;
 
                 Vector3 absoluteStart = HectonFloatingOrigin.ToAbsoluteUniversePosition(start);
@@ -1914,7 +1955,7 @@ namespace Hecton8.Caves
                 halfExtents + Vector3.one * 2f,
                 _collapseImpulseColliders,
                 Quaternion.identity,
-                ~0,
+                _CollapseImpulseLayerMask,
                 QueryTriggerInteraction.Ignore);
             if (hitCount <= 0)
                 return;
@@ -2006,6 +2047,31 @@ namespace Hecton8.Caves
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private static Bounds BuildRuntimeSegmentAabb(Vector3 start, Vector3 end, float radius)
+        {
+            Vector3 min = Vector3.Min(start, end);
+            Vector3 max = Vector3.Max(start, end);
+            float padding = Mathf.Max(0f, radius);
+            Bounds bounds = new Bounds((min + max) * 0.5f, max - min);
+            bounds.Expand(padding * 2f);
+            return bounds;
+        }
+
+        private static Bounds BuildRuntimeAabb(Transform cachedTransform, Bounds localBounds)
+        {
+            Vector3 min = localBounds.min;
+            Vector3 max = localBounds.max;
+            Bounds runtimeBounds = new Bounds(cachedTransform.TransformPoint(new Vector3(min.x, min.y, min.z)), Vector3.zero);
+            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, min.y, min.z)));
+            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(min.x, max.y, min.z)));
+            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, max.y, min.z)));
+            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(min.x, min.y, max.z)));
+            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, min.y, max.z)));
+            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(min.x, max.y, max.z)));
+            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, max.y, max.z)));
+            return runtimeBounds;
         }
 
         private bool AppendCraterStamp(Vector3 absolutePosition, float radius, bool queueRebuild)

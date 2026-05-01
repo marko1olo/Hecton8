@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Hecton8.Input;
 using TMPro;
 using UnityEngine;
@@ -159,7 +160,7 @@ namespace Hecton8.UI
             if (_subscribed) return;
 
             var input = InputManager.Instance;
-            RebindingManager.TryGetInstance(out RebindingManager rebinding);
+            IInputBindingService rebinding = ResolveRebindingService();
             if (input == null || rebinding == null)
                 return;
 
@@ -197,7 +198,7 @@ namespace Hecton8.UI
                 input.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
             }
 
-            RebindingManager.TryGetInstance(out RebindingManager rebinding);
+            IInputBindingService rebinding = ResolveRebindingService();
             if (rebinding != null)
             {
                 rebinding.OnRebindStarted -= HandleRebindStarted;
@@ -217,7 +218,8 @@ namespace Hecton8.UI
         {
             if (!IsControlsTabActive) return;
             if (rows == null || rows.Length == 0) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null || rebinding.IsRebinding) return;
 
             int delta = 0;
             if (direction.y > 0.35f) delta = -1;
@@ -231,7 +233,8 @@ namespace Hecton8.UI
         {
             if (!IsControlsTabActive) return;
             if (rows == null || rows.Length == 0) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null || rebinding.IsRebinding) return;
 
             if (!TryGetSelectedRow(out RebindRow row, out _))
             {
@@ -269,7 +272,8 @@ namespace Hecton8.UI
         private void HandleCancel()
         {
             if (!PlayerPDA.IsOpen) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || !rebinding.IsRebinding) return;
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null || !rebinding.IsRebinding) return;
             rebinding.CancelRebind();
         }
 
@@ -277,7 +281,8 @@ namespace Hecton8.UI
         {
             if (!IsControlsTabActive) return;
             if (rows == null || rows.Length == 0) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null || rebinding.IsRebinding) return;
 
             ResetSelectedBinding();
         }
@@ -285,7 +290,8 @@ namespace Hecton8.UI
         private void HandleTabPrevious()
         {
             if (!IsControlsTabActive) return;
-            if (!RebindingManager.TryGetInstance(out RebindingManager rebinding) || rebinding.IsRebinding) return;
+            IInputBindingService rebinding = ResolveRebindingService();
+            if (rebinding == null || rebinding.IsRebinding) return;
 
             rebinding.ClearOverrides();
             RefreshAllBindings();
@@ -385,7 +391,8 @@ namespace Hecton8.UI
             action.RemoveBindingOverride(bindingIndex);
             if (saveAfterRowReset)
             {
-                if (RebindingManager.TryGetInstance(out RebindingManager rebinding))
+                IInputBindingService rebinding = ResolveRebindingService();
+                if (rebinding != null)
                     rebinding.SaveOverrides();
             }
 
@@ -991,6 +998,11 @@ namespace Hecton8.UI
             if (value >= max) return 0;
             if (value < 0) return max - 1;
             return value;
+        }
+
+        private static IInputBindingService ResolveRebindingService()
+        {
+            return GlobalRegistry.InputBinding;
         }
 
         public void Configure(PlayerPDA pda, TextMeshProUGUI statusOutput, int tabIndex)

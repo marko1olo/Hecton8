@@ -602,13 +602,10 @@ namespace Hecton8.Core
 
             if (batch.BuildPending)
             {
-                if (!batch.FrameBuildHandle.IsCompleted || !batch.VertexBuildHandle.IsCompleted || !batch.IndexBuildHandle.IsCompleted)
+                if (!IsBatchBuildCompleted(batch))
                     return;
 
-                batch.FrameBuildHandle.Complete();
-                batch.VertexBuildHandle.Complete();
-                batch.IndexBuildHandle.Complete();
-                batch.BuildPending = false;
+                CompletePendingBuildIfNeeded(batch);
 
                 NativeArray<TubeVertex> swap = batch.VertexFront;
                 batch.VertexFront = batch.VertexBack;
@@ -764,7 +761,10 @@ namespace Hecton8.Core
 
             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)count * UnsafeUtility.SizeOf<T>());
+            long copyBytes = (long)count * UnsafeUtility.SizeOf<T>();
+            long destinationBytes = (long)destination.Length * UnsafeUtility.SizeOf<T>();
+            if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(ConnectionSplineBatchRenderer));
         }
 
         private static Bounds ComputeBounds(BatchState batch, int vertexCount)
@@ -805,6 +805,7 @@ namespace Hecton8.Core
         private static void EnsureBatchCapacity(BatchState batch, int linkCapacity)
         {
             int safeLinkCapacity = math.max(1, linkCapacity);
+            CompletePendingBuildIfNeeded(batch);
             EnsureArrayCapacity(ref batch.Descriptors, safeLinkCapacity);
             EnsureArrayCapacity(ref batch.Indices, safeLinkCapacity * batch.IndicesPerLink);
 
@@ -828,9 +829,13 @@ namespace Hecton8.Core
                 return;
 
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+            }
 
             array = new NativeArray<SplineDescriptor>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), nameof(BatchState.Descriptors), NativeAllocationLifetime.Session);
         }
 
         private static void EnsureArrayCapacity(ref NativeArray<float3> array, int requiredLength)
@@ -839,9 +844,13 @@ namespace Hecton8.Core
                 return;
 
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+            }
 
             array = new NativeArray<float3>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), "float3BatchArray", NativeAllocationLifetime.Session);
         }
 
         private static void EnsureArrayCapacity(ref NativeArray<TubeVertex> array, int requiredLength)
@@ -850,9 +859,13 @@ namespace Hecton8.Core
                 return;
 
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+            }
 
             array = new NativeArray<TubeVertex>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), "tubeVertexBatchArray", NativeAllocationLifetime.Session);
         }
 
         private static void EnsureArrayCapacity(ref NativeArray<LineVertex> array, int requiredLength)
@@ -861,9 +874,13 @@ namespace Hecton8.Core
                 return;
 
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+            }
 
             array = new NativeArray<LineVertex>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), "lineVertexBatchArray", NativeAllocationLifetime.Session);
         }
 
         private static void EnsureArrayCapacity(ref NativeArray<int> array, int requiredLength)
@@ -872,9 +889,13 @@ namespace Hecton8.Core
                 return;
 
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+            }
 
             array = new NativeArray<int>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), "indexBatchArray", NativeAllocationLifetime.Session);
         }
 
         private static void DisposeBatch(BatchState batch)
@@ -882,46 +903,98 @@ namespace Hecton8.Core
             if (batch == null)
                 return;
 
-            if (batch.BuildPending)
-            {
-                batch.FrameBuildHandle.Complete();
-                batch.VertexBuildHandle.Complete();
-                batch.IndexBuildHandle.Complete();
-                batch.BuildPending = false;
-            }
+            CompletePendingBuildIfNeeded(batch);
 
             if (batch.Descriptors.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.Descriptors);
                 batch.Descriptors.Dispose();
+            }
 
             if (batch.SampleCenters.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.SampleCenters);
                 batch.SampleCenters.Dispose();
+            }
 
             if (batch.SampleNormals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.SampleNormals);
                 batch.SampleNormals.Dispose();
+            }
 
             if (batch.SampleBinormals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.SampleBinormals);
                 batch.SampleBinormals.Dispose();
+            }
 
             if (batch.VertexFront.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.VertexFront);
                 batch.VertexFront.Dispose();
+            }
 
             if (batch.VertexBack.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.VertexBack);
                 batch.VertexBack.Dispose();
+            }
 
             if (batch.LineFront.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.LineFront);
                 batch.LineFront.Dispose();
+            }
 
             if (batch.LineBack.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.LineBack);
                 batch.LineBack.Dispose();
+            }
 
             if (batch.Indices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(batch.Indices);
                 batch.Indices.Dispose();
+            }
 
             if (batch.Mesh != null)
                 Destroy(batch.Mesh);
 
             if (batch.Material != null)
                 Destroy(batch.Material);
+        }
+
+        private static bool IsBatchBuildCompleted(BatchState batch)
+        {
+            return batch.FrameBuildHandle.IsCompleted &&
+                   batch.VertexBuildHandle.IsCompleted &&
+                   batch.IndexBuildHandle.IsCompleted;
+        }
+
+        private static void CompletePendingBuildIfNeeded(BatchState batch)
+        {
+            if (batch == null || !batch.BuildPending)
+                return;
+
+            CompleteBuildHandle(ref batch.FrameBuildHandle);
+            CompleteBuildHandle(ref batch.VertexBuildHandle);
+            CompleteBuildHandle(ref batch.IndexBuildHandle);
+            batch.BuildPending = false;
+        }
+
+        private static void CompleteBuildHandle(ref JobHandle handle)
+        {
+            if (!handle.IsCompleted)
+            {
+                handle.Complete();
+                handle = default;
+                return;
+            }
+
+            handle.Complete();
+            handle = default;
         }
     }
 }

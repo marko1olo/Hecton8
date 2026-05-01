@@ -6,6 +6,14 @@ Target: NVIDIA MX350 2GB VRAM · i5-1135G7 · 12GB RAM
 Engine: Unity 6000.x · URP Forward+
 Tools: MapMagic 2.1.18 · GPU Instancer Pro · Mantis LOD · Mesh Baker
 
+2026-05-01 current-state boundary:
+
+- This is the procedural asset production contract, not proof that a specific generated asset exists or is wired.
+- Current project/system truth starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- For procedural world placement ownership, read `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`.
+- For readable geology/seismic ownership, read `Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md`.
+- The deprecated `Docs/HECTON8_GEOLOGY_PRODUCTION_PLAN.md` path must not be used as active authority.
+
 ---
 
 ## ПРИОРИТЕТ РЕЗУЛЬТАТА

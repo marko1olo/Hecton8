@@ -2618,7 +2618,7 @@ namespace Hecton8.World
     }
 
 #if UNITY_EDITOR
-    internal static class HectonCompoundColliderAutoFitter
+    public static class HectonCompoundColliderAutoFitter
     {
         private const string GeneratedRootName = "__CompoundCollider_AUTO";
         private const float MinimumColliderSize = 0.025f;

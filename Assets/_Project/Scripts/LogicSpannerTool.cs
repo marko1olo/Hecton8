@@ -164,9 +164,22 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            module = hit.collider != null
-                ? hit.collider.GetComponent<BaseModule>() ?? hit.collider.GetComponentInParent<BaseModule>()
-                : null;
+            module = null;
+            if (hit.collider == null)
+                return false;
+
+            if (hit.collider.TryGetComponent(out module))
+                return module != null;
+
+            Transform current = hit.collider.transform.parent;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out module))
+                    return module != null;
+
+                current = current.parent;
+            }
+
             return module != null;
         }
 

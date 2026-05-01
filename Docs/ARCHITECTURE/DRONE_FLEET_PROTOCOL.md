@@ -2,6 +2,12 @@
 
 Status: PENDING VERIFICATION
 
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this protocol as current runtime truth.
+- This document is a fleet architecture contract, not proof that active scenes, native buffers, render submission, or hub requests are runtime-validated.
+- Re-open `DroneFleetManager`, `RepairDroneHub`, logistics owners, and profiler/console evidence before surgery.
+
 ## Scope
 
 Runtime owners:
@@ -143,8 +149,8 @@ Effect:
 
 This document proves owner mapping and intended data flow only.
 
-Not proven without Unity runtime logs:
+Not proven without fresh Unity runtime logs:
 - project compile-green state
-- MCP console 0 errors
+- MCP console has zero current errors
 - GCMonitor 0 B/frame
 - render shader support for `_DroneMatrices` or `_InstanceMatrices`

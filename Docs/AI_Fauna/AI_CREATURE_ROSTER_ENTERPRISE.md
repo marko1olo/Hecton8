@@ -1,4 +1,14 @@
-﻿# AI Creature Roster Enterprise
+# AI Creature Roster Enterprise
+
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- This roster is retained as reference, but much of the prose is encoding-damaged.
+- Treat stable `ID`, fauna family, and biome family fields as pointers only.
+- Do not use this prose as production writing, runtime truth, or final design copy until it is re-authored from source.
+- Current runtime fauna truth must be checked in source, registries, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 ## Что это
 
@@ -189,4 +199,3 @@
 - `Суть`: Длинный тёмный перехватчик для открытой глубины.
 - `Подходит для`: fauna.family.void_apex, fauna.family.abyssal_sparse
 - `Биомы`: biome.family.abyssal_silt, biome.family.rift_void
-

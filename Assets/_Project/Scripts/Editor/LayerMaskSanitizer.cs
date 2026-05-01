@@ -43,7 +43,7 @@ namespace Hecton8.Editor.Validation
                     if (!IsManagedDataAsset(assetPath))
                         continue;
 
-                    UnityEngine.Object asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
+                    ScriptableObject asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath);
                     if (asset == null)
                         continue;
 
@@ -83,6 +83,9 @@ namespace Hecton8.Editor.Validation
             {
                 string assetPath = assetPaths[i];
                 if (!IsManagedDataAsset(assetPath) || !assetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (AssetDatabase.LoadAssetAtPath<ScriptableObject>(assetPath) == null)
                     continue;
 
                 string absolutePath = ToAbsolutePath(assetPath);

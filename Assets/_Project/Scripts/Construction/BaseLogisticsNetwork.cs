@@ -421,6 +421,16 @@ namespace Hecton8.Construction
 
         public static void CommitReservedViaCommandQueue(LogisticsReservation reservation)
         {
+            CommitReservedViaCommandQueue(reservation, 0);
+        }
+
+        /// <summary>
+        /// Enqueues storage reservation commit commands and tags them with an optional requester id for commit acknowledgement.
+        /// </summary>
+        /// <param name="reservation">Prepared logistics reservation.</param>
+        /// <param name="requesterId">Optional requester id notified by the command queue after commit.</param>
+        public static void CommitReservedViaCommandQueue(LogisticsReservation reservation, int requesterId)
+        {
             if (reservation == null || !reservation.IsPrepared)
                 return;
 
@@ -434,7 +444,7 @@ namespace Hecton8.Construction
 
                 int token = ThreadSafeCommandQueue.RegisterGameObjectTarget(crate.gameObject);
                 if (token > 0)
-                    ThreadSafeCommandQueue.Enqueue(EntityCommand.CreateCommitStorageReservation(token, reservationId));
+                    ThreadSafeCommandQueue.Enqueue(EntityCommand.CreateCommitStorageReservation(token, reservationId, requesterId));
                 else
                     crate.CommitReservation(reservationId);
             }

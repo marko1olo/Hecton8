@@ -14,6 +14,12 @@ MANDATES FOLLOWED:
 - `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`
 - `VOX_Voxel_World_Logic_Carving_Persistence.txt`
 
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger as current project truth.
+- `Assets/_Project/Data/Scavenging/ResourceNodes/` remains the authored data source for this ledger, but this document is not proof that all resource nodes, hash IDs, layers, or runtime spawn paths are scene-validated.
+- Re-open current assets and source before changing IDs or layer contracts.
+
 ## Purpose
 
 This ledger tracks stable authored identifiers and runtime `LocHash` values for the HECTON-8 resource-node matrix.
@@ -120,6 +126,17 @@ Source of truth: `Assets/_Project/Scripts/Core/HectonLayerMasks.cs` and `Project
 - `AudioMaterialID`: `1 = Organic`, `2 = Brittle`, `3 = Metallic`
 - `Attachment Surface`: `Any = floating/freeform`, `Seabed = terrain-anchored`, `Metal = artificial-structure overgrowth`
 - `Cable Bloom` and `Rust Moss` are authored as parasitic module flora. `Thermal Tubeworm` is authored as thermophilic module flora with a 100 C / 300 s activation gate.
+
+### Flora Audio-Visual Sync Parameters
+
+- Visual owner: `Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader`.
+- Audio owner: `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs` dispatching through `SpatialAudioManager.PlaySporeEmissionAtAup(...)`.
+- Mature toxic acoustic cadence is locked to `1.0 / max(PulseFrequency, 0.01 Hz)`.
+- Shared shader/audio phase seed: `phase01 = frac(SimulationTimeSeconds * PulseFrequency + ((position.x * 0.07 + position.z * 0.05) / 2PI))`.
+- Acoustic event target phase: `0.25`, matching the shader sine crest.
+- Edge-inward necrosis uses the health payload from `HectonVegetationInstanceData.HealthNormalized`; shader clip term is `clip(edgeSignal - saturate(1.0 - saturate(health01) + noise * 0.22))`.
+- Current-reactive bioluminescence multiplier remains `1.0 + flowMagnitude * 0.5`, sourced from the indirect vegetation flow-field sample.
+- Distance LOD dimming starts at 50 m and dither-suppresses biolum contribution by 90 m to reduce far-field emission pressure on MX350.
 
 ## 64-bit Flora Genetic Trait Definitions
 

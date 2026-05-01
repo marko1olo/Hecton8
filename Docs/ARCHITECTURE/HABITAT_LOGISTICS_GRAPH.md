@@ -5,6 +5,12 @@ Status: `PENDING VERIFICATION`
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
 
+2026-05-01 current-state boundary:
+
+- This is the habitat logistics architecture contract, not construction stress-test proof.
+- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, `ConstructionManager`, and pipe rendering remain active review surfaces for native lifetime, save/load restoration, graph rebuild storms, and authority boundaries.
+
 Supersedes: transient construction notes spread across dated audit bundles. Older one-shot construction writeups remain historical material, not architecture authority.
 
 ## Scope
@@ -236,25 +242,50 @@ Implosion is one-shot per module. Runtime effects:
 
 Unity joint destruction is intentionally not used. Project physics mandate forbids Unity joints, including `ConfigurableJoint`. The authoritative equivalent is CSR edge severing: during the next rebuild, any edge connected to an imploded module is marked ruptured and excluded from CSR publication.
 
+## Pressure Buckling Stress
+
+Deep-sea compression is mechanical, not visual-only. Each `BaseModule` publishes:
+
+```csharp
+CompressionAlpha01 = (1 - PressureCompressionAxisScale) / MaximumAxisLoss
+```
+
+During `HabitatGraphManager.ApplyHydrodynamicStress(dt)`, every non-severed CSR edge compares endpoint compression:
+
+```csharp
+deltaCompression = abs(CompressionAlphaA - CompressionAlphaB)
+if deltaCompression > 0.15:
+    overload01 = saturate((deltaCompression - 0.15) / 0.85)
+    damage = overload01 * JointShearDamagePerSecond * dt * MaxIntegrity
+```
+
+Both endpoint modules receive the integrity damage. When normalized joint stress reaches `0.8`, `ProceduralAudioEvents.RaiseStructuralStressTriggered` publishes a zero-allocation structural groan event into the procedural audio renderer.
+
 ## Emergency Power Rerouting
 
-Power routing uses the same logistics graph principles, but the owner is `PowerGrid`.
+Power routing uses the same logistics graph principles, but the owner is `PowerGrid` / `LogisticsNetworkGraph`.
 
 Reroute rule:
 
 - ruptured `PowerNode` endpoints do not publish power edges
 - consumers on ruptured nodes are rejected by `LogisticsNetworkGraph.CanServeConsumer`
-- the remaining CSR graph naturally performs BFS / component traversal around the failed node if an alternate physical path exists
+- the remaining CSR graph performs capped component traversal around the failed node if an alternate physical path exists
 - if no alternate path exists, the consumer becomes isolated and brownout is applied
 
-Resistance remains part of the scheduled distribution solve:
+Looped networks are solved by conductance relaxation, not greedy propagation. Component demand is dispatched against component generation, then residual injection is cancelled at the component anchor so supply equals demand:
 
 ```csharp
 CombinedResistance = EdgeResistance + SourceNode.Resistance + DestinationNode.Resistance
 Conductance = 1 / CombinedResistance
+Potential[i] = (sum(Conductance[i,j] * Potential[j]) + NetInjection[i]) / sum(Conductance[i,j])
+Flow(i,j) = (Potential[i] - Potential[j]) / CombinedResistance
 ```
 
-High-resistance alternate paths reduce propagated potential and increase node load. Overloaded nodes inherit `LogisticsNodeFlags.Overloaded`; consumer priority and component supply ratio then determine the brownout tier.
+Jacobi relaxation is capped at `8` iterations with convergence cutoff `0.01`. BFS/component traversal is capped at `MAX_SEARCH_DEPTH = 100`; paths beyond that are treated as isolated to protect frame time. High-resistance alternate paths reduce potential and increase branch load. Overloaded nodes inherit `LogisticsNodeFlags.Overloaded`; consumer priority and component supply ratio then determine the brownout tier.
+
+## Logic Spanner Bypass
+
+The Logic Spanner inserts a temporary bypass edge between two placed modules. If the live CSR buffers have preallocated capacity, `HabitatGraphManager` inserts two directed edges directly into `EdgeDestinations` / `EdgeResistance` and updates offsets in place. If capacity is exhausted, the tool falls back to a full graph rebuild. Temporary bypass records are capped; runtime insertion never grows the backing `List<T>`.
 
 ## Bishop Frame Spline Contract
 

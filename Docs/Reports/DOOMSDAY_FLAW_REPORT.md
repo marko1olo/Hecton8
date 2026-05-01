@@ -2,7 +2,7 @@
 
 Generated: 2026-05-01  
 Mode: Deep Flaw Discovery / Forensics / QA Architecture  
-Status: MCP CONSOLE VERIFIED FOR SCRIPT ERRORS; RUNTIME/GC/MEMORY NOT MEASURED  
+Status: PENDING VERIFICATION - previous MCP console read was clean, current session not rechecked
 Scope: `Assets/_Project/Scripts/`
 
 ## Executive Read
@@ -11,8 +11,9 @@ This is a static forensic report. No Play Mode was launched. No GCMonitor, Jobs 
 
 Scan surface:
 
-- `Assets/_Project/Scripts/`: 1019 C# files.
-- First-party C# LOC scanned: 466269.
+- `Assets/_Project/Scripts/`: 1020 C# files.
+- First-party C# LOC scanned during the original Doomsday pass: 466768.
+- Current 2026-05-01 filesystem LOC under `Assets/_Project/Scripts`: 544728. Findings remain static-review findings and need a fresh full re-run for the new delta.
 - `.agents-skills`: 52 mandate files indexed.
 - Mandates loaded for classification: `OPT_Zero_GC_Policy_AllocFree_Mandate`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `MATH_Coordinate_Precision_AUP_FloatingOrigin`, `CORE_Submarine_Vehicles_Kinematics_AUP`, `PHYS_Physics_Integrity_Determinism_ForceMode`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `DBG_Telemetry_Crash_Reporting_PostMortem`.
 
@@ -23,7 +24,7 @@ Primary risk model:
 - Native memory: 122 files contain `Allocator.Persistent` or `Allocator.TempJob`; the one clear no-local-dispose outlier is BRG direct-draw TempJob memory.
 - Physics correctness: `~0` / Everything masks and default layer fallbacks remain in runtime query paths.
 - AUP correctness: `FaunaBrain` caches raw world-space route points without implementing origin-shift listener behavior.
-- Event safety: `SystemDispatcher` now has a late-frame budget breaker, but same-frame generation split is not proven across event lanes; `HectonEventBus` tracks dispatch depth but has no maximum depth cap.
+- Event safety: `SystemDispatcher` has a late-frame budget breaker and `HectonEventBus` now has a hard max-depth cap. Same-frame generation split is still not proven across NativeQueue-backed event lanes.
 
 ## Surgery Log: 3 Most Dangerous Flaws
 
@@ -149,6 +150,12 @@ Regression model:
 
 ### HIGH-02: Collision Matrix Holes Via Everything / Default Masks
 
+2026-05-01 source delta:
+
+- Patched to named/fallback masks: `GravityTetherTool`, `PhysicalInteractionHandler`, `PlayerInteraction`, `HectonMusicDirector`, `HectonVoxelVolume`, `ResourceNode`, `SubmarineFluidDynamics`, `AbyssalThermalManager`.
+- Still open pending scene-layer verification: `AutonomousExtractorSystem`, `WorldCaveDirector`, `WorldProceduralFieldSampler`.
+- Runtime proof is absent; Play Mode was not launched.
+
 Evidence:
 
 - `Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs:706` uses `Physics.OverlapSphereNonAlloc`; `:710` passes `~0`.
@@ -215,7 +222,7 @@ Regression model:
 - Correctness: prevents kilometer-scale path drift.
 - Failure mode if done badly: double-applying shift to waypoints.
 
-### HIGH-04: Event Bus Has Budget Breaker But No Generation Split Proof
+### HIGH-04: Event Bus Has Budget Breaker And Depth Cap, But No Generation Split Proof
 
 Evidence:
 
@@ -227,11 +234,13 @@ Evidence:
 - `Assets/_Project/Scripts/Interaction/InteractionEvents.cs:127` `FlushPending()` drains while the queue is non-empty.
 - `Assets/_Project/Scripts/Interaction/InteractionEvents.cs:331` `DrainWithoutDispatch()` drains with no dispatch, used when there are no listeners.
 - `Assets/_Project/Scripts/CraftingEvents.cs:151` `FlushPending()` uses the same budgeted pattern.
-- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs:294` and `:416` have `_dispatchDepth`, but no max-depth constant or cap was found.
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs:136` defines `MaxDispatchDepth = 4`.
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs:321-337` rejects dispatch when the global depth reaches the cap.
+- `Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs:462`, `:616`, and `:778` route unmanaged, native-byte, and managed event dispatch through the global guard.
 
 Failure path:
 
-The previous unbounded-event defect is partially addressed: late-frame event dispatch now has a frame budget. The remaining risk is same-frame reenqueue and managed mod bus recursion. The flush drains the active queue while it is non-empty; events published during handling can extend the same lane until the global budget trips.
+The previous unbounded-event defect is partially addressed: late-frame event dispatch has a frame budget and the managed mod bus has a hard recursion-depth cap. The remaining risk is same-frame reenqueue in NativeQueue-backed lanes. The flush drains the active queue while it is non-empty; events published during handling can extend the same lane until the global budget trips.
 
 Mathematical reason:
 
@@ -239,9 +248,8 @@ The new upper bound is `MaxLateFrameEventsPerFrame = 1000`, so infinite same-fra
 
 Required fix:
 
-- Keep the current budget breaker.
+- Keep the current budget breaker and existing `HectonEventBus` depth cap.
 - Add generation split: front queue drained this frame, back queue receives publishes during flush.
-- Add max-depth cap to `HectonEventBus` managed/native channels, not just `_dispatchDepth` tracking.
 - Emit zero-alloc telemetry when budget trips or depth cap rejects/defer events.
 
 Regression model:
@@ -343,11 +351,12 @@ Current state:
 
 - `SystemDispatcher` has a global late-frame dispatch budget and logs circuit-breaker trips in editor/development builds.
 - Event lanes call `SystemDispatcher.TryConsumeLateFrameEventDispatch()`.
+- `HectonEventBus` defines `MaxDispatchDepth = 4` and rejects managed/native mod event dispatch beyond that depth.
 
 Remaining gap:
 
 - No generation split is proven.
-- Managed `HectonEventBus` dispatch depth is tracked but not capped.
+- NativeQueue-backed first-party lanes can still process same-frame reenqueue until the global budget trips.
 
 Minimum acceptable model:
 
@@ -388,5 +397,5 @@ rg -n "while \([^\n]*TryDequeue|FlushPending|_dispatchDepth|MaxFlush|Max.*PerFra
 - Native memory/job protocol: `.Complete()` findings classified against dispatcher-owned barrier rule.
 - AUP/floating-origin: raw world position caches checked against listener/AUP contract.
 - Physics integrity: NonAlloc use separated from layer-mask correctness; Everything/default masks flagged.
-- Global registry/event architecture: dispatcher circuit breaker verified; generation split and HectonEventBus depth cap remain gaps.
+- Global registry/event architecture: dispatcher circuit breaker and `HectonEventBus` depth cap verified by source; generation split remains a gap.
 - Telemetry/post-mortem: no fake runtime proof; unmeasured items stay `PENDING VERIFICATION`.

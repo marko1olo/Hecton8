@@ -1,5 +1,14 @@
 # SAVE_PAGING_PROTOCOL
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+2026-05-01 current-state boundary:
+
+- This is the save paging protocol contract, not evidence that every sector path has been stress-tested.
+- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Dirty-sector commit, `.sectmp` recovery, `.bak` fallback, and MMF offset correctness must be verified with runtime save/load/corruption tests before status can improve.
+
 ## Scope
 
 Owner files:
@@ -34,6 +43,12 @@ Sector paging integrity path:
 4. if any protected sub-block fails, storage rejects the primary sector block
 5. storage retries that same `SectorHash` from `"{slot}.sav.bak"`
 6. only the failed sector falls back; the rest of the world remains resident
+
+## Construction Graph Integrity Boundary
+
+`ConstructionDTO` currently lives in the indexed metadata block, not in a standalone persistent-world sector. The metadata block is still protected by the same `16 KB` LZ4 sub-block framing and low-32-of-`XXHash3-64` validation used for sectors, so `ModuleGraphNodeDTO` payload bytes are protected against partial compressed-block corruption.
+
+Sector-local fallback semantics require a separate construction-sector key before a failed construction graph can be restored independently from `*.sav.bak` while leaving inventory metadata from the primary save resident. Until that sector split exists, a failed metadata block remains a whole-metadata failure, while persistent-world sector failures remain sector-local.
 
 ## Master Index
 

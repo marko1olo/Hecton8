@@ -34,6 +34,8 @@ namespace Hecton8.SaveSystem
         private static readonly RegistryBucket<ISaveEventListener> _listeners = new RegistryBucket<ISaveEventListener>(16);
         private static NativeQueue<SaveEventPayload> _pendingEvents;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

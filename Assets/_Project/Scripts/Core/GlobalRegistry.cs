@@ -1,4 +1,7 @@
 using System;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using Hecton.Localization;
 using Hecton8.Construction;
 using Hecton8.Quest;
 using Hecton8.Gameplay;
@@ -8,6 +11,7 @@ using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.Tools;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -24,8 +28,31 @@ namespace Hecton8.Core
         private static readonly RegistryBucket<IFixedTickable> _fixedTickables = new RegistryBucket<IFixedTickable>(256);
         private static readonly RegistryBucket<ISlowTickable> _slowTickables = new RegistryBucket<ISlowTickable>(256);
         private static readonly RegistryBucket<IGlobalRegistryHotSwapListener> _hotSwapListeners = new RegistryBucket<IGlobalRegistryHotSwapListener>(256);
+        private static readonly RegistryBucket<IRegistryEventListener> _registryEventListeners = new RegistryBucket<IRegistryEventListener>(64);
+        // COLD ALLOC: NoOpInputService[1] - null-object fallback for premature GlobalRegistry.Input reads - owner: GlobalRegistry
+        private static readonly IInputService _noOpInputService = new NoOpInputService();
+        private static readonly uint _inputDependencyWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.Input"));
+        private const int MaxPendingServiceRebounds = 64;
+
+        private struct RegistryReboundReferenceSlot
+        {
+            public object PreviousService;
+            public object CurrentService;
+
+            public void Clear()
+            {
+                PreviousService = null;
+                CurrentService = null;
+            }
+        }
+
+        // COLD ALLOC: RegistryReboundReferenceSlot[64] - service rebound managed sidecar slots - owner: GlobalRegistry
+        private static readonly RegistryReboundReferenceSlot[] _serviceReboundReferenceSlots = new RegistryReboundReferenceSlot[MaxPendingServiceRebounds];
+        // COLD ALLOC: bool[64] - service rebound sidecar occupancy map - owner: GlobalRegistry
+        private static readonly bool[] _serviceReboundReferenceSlotOccupied = new bool[MaxPendingServiceRebounds];
 
         private static IInputService _input;
+        private static IInputBindingService _inputBinding;
         private static IPhysicsService _physics;
         private static IAudioService _audio;
         private static ISceneService _scene;
@@ -55,6 +82,7 @@ namespace Hecton8.Core
         private static IQuestSystem _questSystem;
         private static PersistentWorldRegistry _persistentWorldRegistry;
         private static IPDALogbookService _pdaLogbook;
+        private static IProfileService _profile;
         private static HectonFluidEngine _fluidRuntime;
         private static AbyssalThermalManager _thermodynamicsRuntime;
         private static HectonNarrativeDirector _narrativeDirectorRuntime;
@@ -66,16 +94,37 @@ namespace Hecton8.Core
         private static HectonHardwareProfile _hardwareProfile;
         private static bool _hasHardwareProfile;
         private static bool _dispatcherRegistrationErrorLogged;
-
-        /// <summary>
-        /// Fired after a live service slot is safely rebound to a different instance.
-        /// </summary>
-        public static event Action<ServiceReboundEvent> ServiceRebound;
+        private static bool _inputFallbackWarningPublished;
+        private static NativeQueue<RegistryEventPayload> _pendingServiceRebounds;
+        private static int _serviceReboundReferenceWriteIndex;
+        private static int _serviceReboundReferencePendingCount;
+        private static bool _serviceReboundOverflowLogged;
 
         /// <summary>
         /// Registered input service slot.
         /// </summary>
-        public static IInputService Input => _input;
+        public static IInputService Input
+        {
+            get
+            {
+                if (_input != null)
+                    return _input;
+
+                PublishInputFallbackWarning();
+                return _noOpInputService;
+            }
+        }
+
+        /// <summary>
+        /// Raw registered input service slot for bootstrap/service-owner validation.
+        /// Callers outside service initialization should use <see cref="Input"/>.
+        /// </summary>
+        internal static IInputService RegisteredInput => _input;
+
+        /// <summary>
+        /// Registered input binding service slot.
+        /// </summary>
+        public static IInputBindingService InputBinding => _inputBinding;
 
         /// <summary>
         /// Registered physics service slot.
@@ -234,6 +283,11 @@ namespace Hecton8.Core
         public static IPDALogbookService PDALogbook => _pdaLogbook;
 
         /// <summary>
+        /// Registered global meta profile service slot.
+        /// </summary>
+        public static IProfileService Profile => _profile;
+
+        /// <summary>
         /// Registered fluid simulation runtime owner.
         /// </summary>
         public static HectonFluidEngine Fluid => _fluidRuntime;
@@ -289,6 +343,16 @@ namespace Hecton8.Core
         public static HectonQualityTier QualityTier => _hasHardwareProfile ? _hardwareProfile.QualityTier : HectonQualityTier.Unknown;
 
         /// <summary>
+        /// Count of persistent native allocations registered with the memory sentinel.
+        /// </summary>
+        public static int NativeAllocationCount => NativeMemorySentinel.ActiveAllocationCount;
+
+        /// <summary>
+        /// Total persistent native bytes registered with the memory sentinel.
+        /// </summary>
+        public static long NativeTrackedBytes => NativeMemorySentinel.TrackedBytes;
+
+        /// <summary>
         /// Dense multi-instance update registry.
         /// </summary>
         public static RegistryBucket<IUpdatable> Updatables => _updatables;
@@ -313,10 +377,18 @@ namespace Hecton8.Core
         /// </summary>
         public static RegistryBucket<IGlobalRegistryHotSwapListener> HotSwapListeners => _hotSwapListeners;
 
+        /// <summary>
+        /// Dense registry of native registry-event listeners.
+        /// </summary>
+        public static RegistryBucket<IRegistryEventListener> RegistryEventListeners => _registryEventListeners;
+
+        public static int PendingServiceReboundCount => _pendingServiceRebounds.IsCreated ? _pendingServiceRebounds.Count : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _input = null;
+            _inputBinding = null;
             _physics = null;
             _audio = null;
             _scene = null;
@@ -345,6 +417,7 @@ namespace Hecton8.Core
             _questSystem = null;
             _persistentWorldRegistry = null;
             _pdaLogbook = null;
+            _profile = null;
             _fluidRuntime = null;
             _thermodynamicsRuntime = null;
             _narrativeDirectorRuntime = null;
@@ -356,13 +429,25 @@ namespace Hecton8.Core
             _hardwareProfile = default;
             _hasHardwareProfile = false;
             _dispatcherRegistrationErrorLogged = false;
-            ServiceRebound = null;
+            _inputFallbackWarningPublished = false;
+            if (_pendingServiceRebounds.IsCreated)
+            {
+                _pendingServiceRebounds.Dispose();
+                _pendingServiceRebounds = default;
+            }
+
+            ClearServiceReboundReferenceSlots();
+            _serviceReboundReferenceWriteIndex = 0;
+            _serviceReboundReferencePendingCount = 0;
+            _serviceReboundOverflowLogged = false;
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
             _renderables.Clear();
             _hotSwapListeners.Clear();
+            _registryEventListeners.Clear();
             SystemDispatcher.ClearAllLanes();
+            NativeMemorySentinel.ResetForSubsystemReload();
         }
 
         /// <summary>
@@ -418,6 +503,14 @@ namespace Hecton8.Core
         public static void RegisterInputService(IInputService instance)
         {
             RegisterService(ref _input, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative input binding service.
+        /// </summary>
+        public static void RegisterInputBindingService(IInputBindingService instance)
+        {
+            RegisterService(ref _inputBinding, instance);
         }
 
         /// <summary>
@@ -679,6 +772,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative global profile service.
+        /// </summary>
+        public static void RegisterProfileService(IProfileService instance)
+        {
+            RegisterServiceAllowSameInstance(ref _profile, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative fluid simulation runtime owner.
         /// </summary>
         public static void RegisterFluidRuntime(HectonFluidEngine instance)
@@ -723,6 +824,14 @@ namespace Hecton8.Core
         public static void UnregisterInputService(IInputService instance)
         {
             UnregisterService(ref _input, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the authoritative input binding service.
+        /// </summary>
+        public static void UnregisterInputBindingService(IInputBindingService instance)
+        {
+            UnregisterService(ref _inputBinding, instance);
         }
 
         /// <summary>
@@ -984,6 +1093,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the authoritative global profile service.
+        /// </summary>
+        public static void UnregisterProfileService(IProfileService instance)
+        {
+            UnregisterService(ref _profile, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current fluid simulation runtime owner if the owner matches.
         /// </summary>
         public static void UnregisterFluidRuntime(HectonFluidEngine instance)
@@ -1165,6 +1282,18 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a listener for deferred registry event payloads.
+        /// </summary>
+        public static void RegisterRegistryEventListener(IRegistryEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_registryEventListeners.Contains(listener))
+                _registryEventListeners.Register(listener);
+        }
+
+        /// <summary>
         /// Unregisters an update owner from both the global bucket and its dispatcher lane.
         /// </summary>
         /// <param name="item">Update owner.</param>
@@ -1245,6 +1374,18 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a deferred registry event listener.
+        /// </summary>
+        public static void UnregisterRegistryEventListener(IRegistryEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_registryEventListeners.Contains(listener))
+                _registryEventListeners.Unregister(listener);
+        }
+
+        /// <summary>
         /// Safely replaces the thermodynamics service slot and notifies explicit hot-swap listeners.
         /// </summary>
         /// <param name="instance">Replacement service instance, or null to clear the slot.</param>
@@ -1294,6 +1435,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void ClearRuntimeBuckets()
         {
+            NativeMemorySentinel.ReportSceneLifetimeLeaks(nameof(ClearRuntimeBuckets));
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
@@ -1316,6 +1458,15 @@ namespace Hecton8.Core
             return false;
         }
 
+        private static void PublishInputFallbackWarning()
+        {
+            if (_inputFallbackWarningPublished || !Application.isPlaying)
+                return;
+
+            _inputFallbackWarningPublished = true;
+            GlobalTelemetryBus.PublishDependencyOrderWarning(_inputDependencyWarningHash, 0u);
+        }
+
         private static void RegisterService<T>(ref T slot, T instance) where T : class
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1330,9 +1481,9 @@ namespace Hecton8.Core
             if (ReferenceEquals(previousService, instance))
                 return;
 
-            slot = instance;
+            Volatile.Write(ref slot, instance);
             if (previousService != null)
-                PublishServiceRebound(ResolveServiceSlot<T>(), previousService, instance);
+                QueueServiceRebound(ResolveServiceSlot<T>(), previousService, instance);
         }
 
         private static void RegisterServiceAllowSameInstance<T>(ref T slot, T instance) where T : class
@@ -1349,8 +1500,8 @@ namespace Hecton8.Core
             if (ReferenceEquals(previousService, instance))
                 return;
 
-            slot = instance;
-            PublishServiceRebound(serviceSlot, previousService, instance);
+            Volatile.Write(ref slot, instance);
+            QueueServiceRebound(serviceSlot, previousService, instance);
         }
 
         private static void UnregisterService<T>(ref T slot, T instance) where T : class
@@ -1363,16 +1514,140 @@ namespace Hecton8.Core
                 return;
             }
 
+            T previousService = slot;
             slot = null;
+            QueueServiceRebound(ResolveServiceSlot<T>(), previousService, null);
         }
 
-        private static void PublishServiceRebound(
+        /// <summary>
+        /// Flushes all queued service rebound events in one deterministic late-frame batch.
+        /// </summary>
+        public static void FlushPendingServiceReboundEvents()
+        {
+            if (!_pendingServiceRebounds.IsCreated)
+                return;
+
+            while (!_pendingServiceRebounds.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingServiceRebounds.TryDequeue(out RegistryEventPayload payload))
+                    return;
+
+                RegistryReboundReferenceSlot referenceSlot = default;
+                if ((uint)payload.ReferenceSlot < MaxPendingServiceRebounds &&
+                    _serviceReboundReferenceSlotOccupied[payload.ReferenceSlot])
+                {
+                    referenceSlot = _serviceReboundReferenceSlots[payload.ReferenceSlot];
+                }
+
+                DispatchRegistryEvent(in payload);
+                NotifyHotSwapListeners(
+                    (GlobalRegistryServiceSlot)payload.ServiceSlot,
+                    referenceSlot.PreviousService,
+                    referenceSlot.CurrentService);
+                ReleaseServiceReboundReferenceSlot(payload.ReferenceSlot);
+            }
+        }
+
+        private static void QueueServiceRebound(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
         {
-            ServiceRebound?.Invoke(new ServiceReboundEvent(serviceSlot, previousService, currentService));
-            NotifyHotSwapListeners(serviceSlot, previousService, currentService);
+            if (serviceSlot == GlobalRegistryServiceSlot.Unknown)
+                return;
+
+            EnsureServiceReboundQueue();
+            int referenceSlot = ReserveServiceReboundReferenceSlot(previousService, currentService);
+            if (referenceSlot < 0)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_serviceReboundOverflowLogged)
+                {
+                    _serviceReboundOverflowLogged = true;
+                    Debug.LogError("[GlobalRegistry] Service rebound queue overflow. Increase MaxPendingServiceRebounds.");
+                }
+#endif
+                return;
+            }
+
+            _pendingServiceRebounds.Enqueue(new RegistryEventPayload
+            {
+                PreviousServiceHash = ComputeObjectHash(previousService),
+                CurrentServiceHash = ComputeObjectHash(currentService),
+                ReferenceSlot = referenceSlot,
+                FrameIndex = unchecked((uint)Time.frameCount),
+                ServiceSlot = (ushort)serviceSlot,
+                EventType = (ushort)RegistryEventType.ServiceRebound
+            });
+        }
+
+        private static void EnsureServiceReboundQueue()
+        {
+            if (!_pendingServiceRebounds.IsCreated)
+                _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
+        }
+
+        private static int ReserveServiceReboundReferenceSlot(object previousService, object currentService)
+        {
+            if (_serviceReboundReferencePendingCount >= MaxPendingServiceRebounds)
+                return -1;
+
+            for (int attempt = 0; attempt < MaxPendingServiceRebounds; attempt++)
+            {
+                int slot = _serviceReboundReferenceWriteIndex;
+                _serviceReboundReferenceWriteIndex = (_serviceReboundReferenceWriteIndex + 1) % MaxPendingServiceRebounds;
+                if (_serviceReboundReferenceSlotOccupied[slot])
+                    continue;
+
+                _serviceReboundReferenceSlotOccupied[slot] = true;
+                _serviceReboundReferenceSlots[slot].PreviousService = previousService;
+                _serviceReboundReferenceSlots[slot].CurrentService = currentService;
+                _serviceReboundReferencePendingCount++;
+                return slot;
+            }
+
+            return -1;
+        }
+
+        private static void ReleaseServiceReboundReferenceSlot(int slot)
+        {
+            if ((uint)slot >= MaxPendingServiceRebounds || !_serviceReboundReferenceSlotOccupied[slot])
+                return;
+
+            _serviceReboundReferenceSlots[slot].Clear();
+            _serviceReboundReferenceSlotOccupied[slot] = false;
+            if (_serviceReboundReferencePendingCount > 0)
+                _serviceReboundReferencePendingCount--;
+        }
+
+        private static void ClearServiceReboundReferenceSlots()
+        {
+            for (int index = 0; index < MaxPendingServiceRebounds; index++)
+            {
+                _serviceReboundReferenceSlots[index].Clear();
+                _serviceReboundReferenceSlotOccupied[index] = false;
+            }
+        }
+
+        private static void DispatchRegistryEvent(in RegistryEventPayload payload)
+        {
+            IRegistryEventListener[] listeners = _registryEventListeners.RawArray;
+            for (int index = _registryEventListeners.Count - 1; index >= 0; index--)
+            {
+                IRegistryEventListener listener = listeners[index];
+                if (listener == null)
+                    continue;
+
+                listener.OnRegistryEvent(in payload);
+            }
+        }
+
+        private static uint ComputeObjectHash(object value)
+        {
+            return value == null ? 0u : unchecked((uint)RuntimeHelpers.GetHashCode(value));
         }
 
         private static void NotifyHotSwapListeners(
@@ -1395,6 +1670,7 @@ namespace Hecton8.Core
         {
             Type serviceType = typeof(T);
             if (serviceType == typeof(IInputService)) return GlobalRegistryServiceSlot.Input;
+            if (serviceType == typeof(IInputBindingService)) return GlobalRegistryServiceSlot.InputBinding;
             if (serviceType == typeof(IPhysicsService)) return GlobalRegistryServiceSlot.Physics;
             if (serviceType == typeof(IAudioService)) return GlobalRegistryServiceSlot.Audio;
             if (serviceType == typeof(ISceneService)) return GlobalRegistryServiceSlot.Scene;
@@ -1424,6 +1700,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
+            if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
             if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
             if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
@@ -1433,6 +1710,47 @@ namespace Hecton8.Core
             if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;
             if (serviceType == typeof(GlobalPhysicsStateManager)) return GlobalRegistryServiceSlot.PhysicsStateManager;
             return GlobalRegistryServiceSlot.Unknown;
+        }
+
+        private sealed class NoOpInputService : IInputService
+        {
+            public bool IsInitialized => false;
+            public bool IsPlayerInputEnabled => false;
+
+            public event Action OnInteract { add { } remove { } }
+            public event Action OnToolSlot1 { add { } remove { } }
+            public event Action OnToolSlot2 { add { } remove { } }
+            public event Action OnToolSlot3 { add { } remove { } }
+            public event Action OnToolSlot4 { add { } remove { } }
+            public event Action OnPrimaryAction { add { } remove { } }
+            public event Action OnSecondaryAction { add { } remove { } }
+            public event Action OnPDA { add { } remove { } }
+            public event Action OnInventory { add { } remove { } }
+            public event Action OnCancel { add { } remove { } }
+            public event Action OnTabNext { add { } remove { } }
+            public event Action OnTabPrevious { add { } remove { } }
+
+            public PlayerInputState GetState()
+            {
+                return default;
+            }
+
+            public void BufferAction(PlayerBufferedAction action)
+            {
+            }
+
+            public bool TryConsumeBufferedAction(PlayerBufferedAction action, float maxAgeSeconds)
+            {
+                return false;
+            }
+
+            public void SwitchToPlayerInput()
+            {
+            }
+
+            public void SwitchToUIInput()
+            {
+            }
         }
     }
 }

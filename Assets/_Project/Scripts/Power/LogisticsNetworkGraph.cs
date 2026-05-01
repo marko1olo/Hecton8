@@ -560,6 +560,10 @@ namespace Hecton8.Power
                 if (!IsValidNodeIndex(startNodeIndex))
                     return 0;
 
+                int searchBudget = math.min(NodeCount, MaxSearchDepth);
+                if (searchBudget <= 0)
+                    return 0;
+
                 ClearVisited();
                 int head = 0;
                 int tail = 0;
@@ -567,7 +571,7 @@ namespace Hecton8.Power
                 TraversalQueue[tail++] = startNodeIndex;
 
                 int visitedCount = 0;
-                while (head < tail)
+                while (head < tail && visitedCount < searchBudget)
                 {
                     int nodeIndex = TraversalQueue[head++];
                     visitedCount++;
@@ -578,6 +582,9 @@ namespace Hecton8.Power
                     {
                         int destinationNodeIndex = EdgeDestinations[edgeIndex];
                         if (!IsValidNodeIndex(destinationNodeIndex) || Visited[destinationNodeIndex] != 0)
+                            continue;
+
+                        if (tail >= searchBudget)
                             continue;
 
                         Visited[destinationNodeIndex] = 1;
@@ -591,6 +598,10 @@ namespace Hecton8.Power
             private int TraverseProducerReachability()
             {
                 ClearVisited();
+                int searchBudget = math.min(NodeCount, MaxSearchDepth);
+                if (searchBudget <= 0)
+                    return 0;
+
                 int head = 0;
                 int tail = 0;
 
@@ -601,12 +612,15 @@ namespace Hecton8.Power
                     if (!IsValidNodeIndex(nodeIndex) || Visited[nodeIndex] != 0)
                         continue;
 
+                    if (tail >= searchBudget)
+                        break;
+
                     Visited[nodeIndex] = 1;
                     TraversalQueue[tail++] = nodeIndex;
                 }
 
                 int visitedCount = 0;
-                while (head < tail)
+                while (head < tail && visitedCount < searchBudget)
                 {
                     int sourceNodeIndex = TraversalQueue[head++];
                     visitedCount++;
@@ -617,6 +631,9 @@ namespace Hecton8.Power
                     {
                         int destinationNodeIndex = EdgeDestinations[edgeIndex];
                         if (!IsValidNodeIndex(destinationNodeIndex) || Visited[destinationNodeIndex] != 0)
+                            continue;
+
+                        if (tail >= searchBudget)
                             continue;
 
                         Visited[destinationNodeIndex] = 1;
@@ -949,6 +966,7 @@ namespace Hecton8.Power
 
         private const int MinPriority = 0;
         private const int MaxPriority = 100;
+        private const int MaxSearchDepth = 100;
         private const int MaxJacobiIterations = 8;
         private const int ParallelNodeBatchSize = 64;
         private const float MinResistance = 0.0001f;
@@ -2029,18 +2047,22 @@ namespace Hecton8.Power
             if (!IsValidNodeIndex(startNodeIndex))
                 return 0;
 
+            int searchBudget = math.min(_nodeCount, MaxSearchDepth);
+            if (searchBudget <= 0)
+                return 0;
+
             for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
                 _visited[nodeIndex] = 0;
 
-            _bfsQueue.Clear();
+            int head = 0;
+            int tail = 0;
             _visited[startNodeIndex] = 1;
-            _bfsQueue.Enqueue(startNodeIndex);
+            _traversalQueue[tail++] = startNodeIndex;
 
             int visitedCount = 0;
-            int traversalWatchdog = math.max(1, _nodeCount + 1);
-            while (_bfsQueue.Count > 0 && traversalWatchdog-- > 0)
+            while (head < tail && visitedCount < searchBudget)
             {
-                int nodeIndex = _bfsQueue.Dequeue();
+                int nodeIndex = _traversalQueue[head++];
                 visitedCount++;
 
                 int edgeStart = _edgeOffsets[nodeIndex];
@@ -2051,28 +2073,28 @@ namespace Hecton8.Power
                     if (!IsValidNodeIndex(destinationNodeIndex) || _visited[destinationNodeIndex] != 0)
                         continue;
 
+                    if (tail >= searchBudget)
+                        continue;
+
                     _visited[destinationNodeIndex] = 1;
-                    _bfsQueue.Enqueue(destinationNodeIndex);
+                    _traversalQueue[tail++] = destinationNodeIndex;
                 }
             }
-
-            if (_bfsQueue.Count > 0)
-                _bfsQueue.Clear();
 
             return visitedCount;
         }
 
         private int TraverseProducerReachability()
         {
-            return TraverseProducerReachability(false);
-        }
-
-        private int TraverseProducerReachability(bool accumulateFlow)
-        {
             for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
                 _visited[nodeIndex] = 0;
 
-            _bfsQueue.Clear();
+            int searchBudget = math.min(_nodeCount, MaxSearchDepth);
+            if (searchBudget <= 0)
+                return 0;
+
+            int head = 0;
+            int tail = 0;
 
             int producerCount = _producers.Length;
             for (int producerIndex = 0; producerIndex < producerCount; producerIndex++)
@@ -2081,15 +2103,17 @@ namespace Hecton8.Power
                 if (!IsValidNodeIndex(nodeIndex) || _visited[nodeIndex] != 0)
                     continue;
 
+                if (tail >= searchBudget)
+                    break;
+
                 _visited[nodeIndex] = 1;
-                _bfsQueue.Enqueue(nodeIndex);
+                _traversalQueue[tail++] = nodeIndex;
             }
 
             int visitedCount = 0;
-            int traversalWatchdog = math.max(1, _nodeCount + 1);
-            while (_bfsQueue.Count > 0 && traversalWatchdog-- > 0)
+            while (head < tail && visitedCount < searchBudget)
             {
-                int sourceNodeIndex = _bfsQueue.Dequeue();
+                int sourceNodeIndex = _traversalQueue[head++];
                 visitedCount++;
 
                 int edgeStart = _edgeOffsets[sourceNodeIndex];
@@ -2100,56 +2124,18 @@ namespace Hecton8.Power
                     if (!IsValidNodeIndex(destinationNodeIndex))
                         continue;
 
-                    if (accumulateFlow)
-                        AccumulateDirectedFlow(sourceNodeIndex, destinationNodeIndex, edgeIndex);
-
                     if (_visited[destinationNodeIndex] != 0)
                         continue;
 
+                    if (tail >= searchBudget)
+                        continue;
+
                     _visited[destinationNodeIndex] = 1;
-                    _bfsQueue.Enqueue(destinationNodeIndex);
+                    _traversalQueue[tail++] = destinationNodeIndex;
                 }
             }
 
-            if (_bfsQueue.Count > 0)
-                _bfsQueue.Clear();
-
             return visitedCount;
-        }
-
-        private void AccumulateDirectedFlow(int sourceNodeIndex, int destinationNodeIndex, int edgeIndex)
-        {
-            LogisticsNode sourceNode = _nodeBuffer[sourceNodeIndex];
-            LogisticsNode destinationNode = _nodeBuffer[destinationNodeIndex];
-            float combinedResistance = math.max(
-                MinResistance,
-                _edgeResistance[edgeIndex] + sourceNode.Resistance + destinationNode.Resistance);
-
-            if (ShouldApplyGraphRuptureResistance(sourceNode.Flags, destinationNode.Flags))
-            {
-                combinedResistance *= RuptureResistanceMultiplier;
-            }
-
-            float propagatedPotential = sourceNode.Potential * (1f / (1f + combinedResistance));
-            if (propagatedPotential <= destinationNode.Potential + Epsilon)
-                return;
-
-            float flowRate = (sourceNode.Potential - destinationNode.Potential) / combinedResistance;
-            if (flowRate <= 0f)
-                return;
-
-            destinationNode.Potential = propagatedPotential;
-            sourceNode.CurrentLoad += flowRate;
-            destinationNode.CurrentLoad += flowRate;
-
-            if (sourceNode.CurrentLoad > sourceNode.Capacity * 1.15f)
-                sourceNode.Flags |= LogisticsNodeFlags.Overloaded;
-
-            if (destinationNode.CurrentLoad > destinationNode.Capacity * 1.15f)
-                destinationNode.Flags |= LogisticsNodeFlags.Overloaded;
-
-            _nodeBuffer[sourceNodeIndex] = sourceNode;
-            _nodeBuffer[destinationNodeIndex] = destinationNode;
         }
 
         private float ResolveCombinedResistance(int sourceNodeIndex, int destinationNodeIndex, int edgeIndex)

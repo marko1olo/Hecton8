@@ -404,7 +404,7 @@ namespace Hecton8.Core
             if (_registeredInputService)
                 return;
 
-            if (ReferenceEquals(GlobalRegistry.Input, this))
+            if (ReferenceEquals(GlobalRegistry.RegisteredInput, this))
             {
                 _registeredInputService = true;
                 return;
@@ -419,7 +419,7 @@ namespace Hecton8.Core
             if (!_registeredInputService)
                 return;
 
-            if (ReferenceEquals(GlobalRegistry.Input, this))
+            if (ReferenceEquals(GlobalRegistry.RegisteredInput, this))
                 GlobalRegistry.UnregisterInputService(this);
 
             _registeredInputService = false;

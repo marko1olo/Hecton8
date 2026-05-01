@@ -1,0 +1,1990 @@
+﻿diff --git a/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs b/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+index 1bd3d6ed..33559ed1 100644
+--- a/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
++++ b/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+@@ -21,6 +21,10 @@ using Hecton8.World;
+ using Unity.Collections;
+ using Unity.Collections.LowLevel.Unsafe;
+ using Unity.Jobs;
++#if UNITY_ADDRESSABLES_EXIST
++using UnityEngine.AddressableAssets;
++using UnityEngine.ResourceManagement.AsyncOperations;
++#endif
+ using UnityEngine;
+ using UnityEngine.Audio;
+ using UnityEngine.SceneManagement;
+@@ -45,6 +49,8 @@ namespace Hecton8.Bootstrap
+         private const string CrashTelemetryRuntimeName = "[CrashTelemetryBuffer]";
+         private const string HeadlessCommandLineArg = "-headless";
+         private const int OptionalServiceTimeoutMilliseconds = 2000;
++        private const int ShaderWarmupTimeoutMilliseconds = 5000;
++        private const int SuspiciousGraphicsMemoryFallbackThresholdMb = 256;
+         private const string FatalBootOverlayMessageTemplate =
+             "BIOS ERROR 0xBOOT_FATAL\nPHASE: {0}\nACTION: SEE fatal_boot_crash.log";
+         private const int FatalBootCrashLogBufferBytes = 24576;
+@@ -176,10 +182,18 @@ namespace Hecton8.Bootstrap
+         [Header("Bootstrap Prewarm")]
+         [Tooltip("Shader variant collections warmed during MemoryPreWarm before scene or player activation.")]
+         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
++#if UNITY_ADDRESSABLES_EXIST
++        [Header("Bootstrap UI")]
++        [Tooltip("Addressable HUD/PDA prefabs that must instantiate before UI bootstrap can complete.")]
++        [SerializeField] private AssetReferenceGameObject[] uiAddressablePrefabs;
++#endif
+ 
+         private bool _bootstrapRunInProgress;
+         private bool _sceneActivationRunInProgress;
+         private SceneBootstrap _pendingSceneBootstrap;
++#if UNITY_ADDRESSABLES_EXIST
++        private AsyncOperationHandle<GameObject>[] _uiPrefabInstanceHandles;
++#endif
+         // COLD ALLOC: BootstrapDependencyNode[22] - cached Kahn topological service execution order - owner: GameBootstrapper
+         private readonly BootstrapDependencyNode[] _bootstrapExecutionOrder = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
+         private int _bootstrapExecutionOrderCount;
+@@ -330,6 +344,9 @@ namespace Hecton8.Bootstrap
+ 
+         private void OnDestroy()
+         {
++#if UNITY_ADDRESSABLES_EXIST
++            ReleaseAddressableUIPrefabs();
++#endif
+             if (_instance == this)
+                 _instance = null;
+         }
+@@ -471,95 +488,146 @@ namespace Hecton8.Bootstrap
+ 
+         private async Awaitable<bool> InitializeHardwareCheckPhaseAsync(CancellationToken ct)
+         {
+-            ct.ThrowIfCancellationRequested();
+-            _headlessBootMode = HasCommandLineArg(HeadlessCommandLineArg);
+-            global::Hecton8.Core.HectonHardwareProfile hardwareProfile = CaptureHardwareProfile();
+-            GlobalRegistry.RegisterHardwareProfile(in hardwareProfile);
++            try
++            {
++                ct.ThrowIfCancellationRequested();
++                _headlessBootMode = HasCommandLineArg(HeadlessCommandLineArg);
++                global::Hecton8.Core.HectonHardwareProfile hardwareProfile = CaptureHardwareProfile();
++                GlobalRegistry.RegisterHardwareProfile(in hardwareProfile);
+ 
+-            Scene activeScene = SceneManager.GetActiveScene();
+-            if (!TryRecoverEntryVector(activeScene, false))
+-                return false;
++                Scene activeScene = SceneManager.GetActiveScene();
++                if (!TryRecoverEntryVector(activeScene, false))
++                    return false;
+ 
+-            RegisterSceneLoadGuard();
+-            if (!_headlessBootMode)
+-                EnsureBootstrapAudioListener(activeScene);
++                RegisterSceneLoadGuard();
++                if (!_headlessBootMode)
++                    EnsureBootstrapAudioListener(activeScene);
+ 
+-            bool dependencyGraphValid = TryBuildBootstrapDependencyExecutionOrder(
+-                _bootstrapExecutionOrder,
+-                out _bootstrapExecutionOrderCount);
+-            await Awaitable.NextFrameAsync(cancellationToken: ct);
+-            return dependencyGraphValid;
++                bool dependencyGraphValid = TryBuildBootstrapDependencyExecutionOrder(
++                    _bootstrapExecutionOrder,
++                    out _bootstrapExecutionOrderCount);
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return dependencyGraphValid;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private async Awaitable<bool> InitializeMemoryPreWarmPhaseAsync(CancellationToken ct)
+         {
+-            _preWarmAssetsReady = false;
+-            NativeArenaAllocator.Initialize();
+-            if (!_headlessBootMode)
++            try
+             {
+-                VRAMEnforcer.InitializeRuntimeBudget();
+-                SceneInstantiationGate.EnsureRuntimeInstance();
+-            }
++                _preWarmAssetsReady = false;
++                NativeArenaAllocator.Initialize();
++                if (!_headlessBootMode)
++                {
++                    VRAMEnforcer.InitializeRuntimeBudget();
++                    SceneInstantiationGate.EnsureRuntimeInstance();
++                }
+ 
+-            if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
+-                return false;
++                if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
++                    return false;
+ 
+-            _preWarmAssetsReady = true;
+-            await Awaitable.NextFrameAsync(cancellationToken: ct);
+-            return true;
++                _preWarmAssetsReady = true;
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return true;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private async Awaitable<bool> InitializeCoreServicesPhaseAsync(CancellationToken ct)
+         {
+-            bool initialized = InitializeCoreLayer();
+-            await Awaitable.NextFrameAsync(cancellationToken: ct);
+-            return initialized;
++            try
++            {
++                bool initialized = InitializeCoreLayer();
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return initialized;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private async Awaitable<bool> InitializeEnvironmentPhaseAsync(CancellationToken ct)
+         {
+-            bool initialized = InitializeEnvironmentLayer();
+-            await Awaitable.NextFrameAsync(cancellationToken: ct);
+-            return initialized;
++            try
++            {
++                bool initialized = InitializeEnvironmentLayer();
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return initialized;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private async Awaitable<bool> InitializePlayerPhaseAsync(CancellationToken ct)
+         {
+-            bool initialized = InitializePlayerLayer();
+-            await Awaitable.NextFrameAsync(cancellationToken: ct);
+-            return initialized;
++            try
++            {
++                bool initialized = InitializePlayerLayer();
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return initialized;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private async Awaitable<bool> InitializeUIPhaseAsync(CancellationToken ct)
+         {
+-            InitializeUILayer();
+-            await Awaitable.NextFrameAsync(cancellationToken: ct);
+-            return true;
++            try
++            {
++                if (!await InitializeUILayerAsync(ct))
++                    return false;
++
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return true;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private async Awaitable<bool> InitializeSceneActivatePhaseAsync(CancellationToken ct)
+         {
+-            Scene activeScene = SceneManager.GetActiveScene();
+-            if (IsBootstrapScene(activeScene))
++            try
+             {
+-                GameStartContextHolder.Reset();
+-                if (_headlessBootMode)
++                Scene activeScene = SceneManager.GetActiveScene();
++                if (IsBootstrapScene(activeScene))
+                 {
+-                    BootstrapStatus.MarkMainMenuReached();
+-                    return true;
+-                }
++                    GameStartContextHolder.Reset();
++                    if (_headlessBootMode)
++                    {
++                        BootstrapStatus.MarkMainMenuReached();
++                        return true;
++                    }
+ 
+-                return await LoadMainMenuAsync(ct);
+-            }
++                    return await LoadMainMenuAsync(ct);
++                }
+ 
+-            SceneBootstrap sceneBootstrap = _pendingSceneBootstrap;
+-            if (sceneBootstrap == null)
+-                sceneBootstrap = UnityEngine.Object.FindAnyObjectByType<SceneBootstrap>();
++                SceneBootstrap sceneBootstrap = _pendingSceneBootstrap;
++                if (sceneBootstrap == null)
++                    sceneBootstrap = UnityEngine.Object.FindAnyObjectByType<SceneBootstrap>();
+ 
+-            if (sceneBootstrap == null)
+-                return true;
++                if (sceneBootstrap == null)
++                    return true;
+ 
+-            return await ExecuteSceneActivationAsync(sceneBootstrap, ct);
++                return await ExecuteSceneActivationAsync(sceneBootstrap, ct);
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private async Awaitable<bool> RunSceneActivationAsync(SceneBootstrap sceneBootstrap, CancellationToken ownerToken)
+@@ -568,6 +636,10 @@ namespace Hecton8.Bootstrap
+             {
+                 return await ExecuteSceneActivationAsync(sceneBootstrap, ownerToken);
+             }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+             finally
+             {
+                 if (ReferenceEquals(_pendingSceneBootstrap, sceneBootstrap))
+@@ -579,53 +651,71 @@ namespace Hecton8.Bootstrap
+ 
+         private static async Awaitable<bool> ExecuteSceneActivationAsync(SceneBootstrap sceneBootstrap, CancellationToken ct)
+         {
+-            if (sceneBootstrap == null)
+-                return false;
++            try
++            {
++                if (sceneBootstrap == null)
++                    return false;
+ 
+-            return await sceneBootstrap.ExecuteSceneActivationAsync(ct);
++                return await sceneBootstrap.ExecuteSceneActivationAsync(ct);
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private static async Awaitable<bool> LoadMainMenuAsync(CancellationToken ct)
+         {
+-            AsyncOperation loadOperation = SceneManager.LoadSceneAsync(MainMenuSceneName, LoadSceneMode.Single);
+-            if (loadOperation == null)
+-                return false;
+-
+-            loadOperation.allowSceneActivation = false;
+-            int waitFrames = 0;
+-            while (loadOperation.progress < 0.9f)
++            AsyncOperation loadOperation = null;
++            try
+             {
+-                ct.ThrowIfCancellationRequested();
+-                if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
+-                {
+-                    LogBootstrapSceneLoadWatchdog("main-menu load", loadOperation.progress, waitFrames);
++                loadOperation = SceneManager.LoadSceneAsync(MainMenuSceneName, LoadSceneMode.Single);
++                if (loadOperation == null)
+                     return false;
+-                }
+ 
+-                waitFrames++;
+-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+-            }
++                loadOperation.allowSceneActivation = false;
++                int waitFrames = 0;
++                while (loadOperation.progress < 0.9f)
++                {
++                    ct.ThrowIfCancellationRequested();
++                    if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
++                    {
++                        LogBootstrapSceneLoadWatchdog("main-menu load", loadOperation.progress, waitFrames);
++                        return false;
++                    }
+ 
+-            if (!await WaitForBootstrapActivationGatesAsync(ct))
+-                return false;
++                    waitFrames++;
++                    await Awaitable.NextFrameAsync(cancellationToken: ct);
++                }
+ 
+-            loadOperation.allowSceneActivation = true;
+-            waitFrames = 0;
+-            while (!loadOperation.isDone)
+-            {
+-                ct.ThrowIfCancellationRequested();
+-                if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
+-                {
+-                    LogBootstrapSceneLoadWatchdog("main-menu activation", loadOperation.progress, waitFrames);
++                if (!await WaitForBootstrapActivationGatesAsync(ct))
+                     return false;
++
++                loadOperation.allowSceneActivation = true;
++                waitFrames = 0;
++                while (!loadOperation.isDone)
++                {
++                    ct.ThrowIfCancellationRequested();
++                    if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
++                    {
++                        LogBootstrapSceneLoadWatchdog("main-menu activation", loadOperation.progress, waitFrames);
++                        return false;
++                    }
++
++                    waitFrames++;
++                    await Awaitable.NextFrameAsync(cancellationToken: ct);
+                 }
+ 
+-                waitFrames++;
+-                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                BootstrapStatus.MarkMainMenuReached();
++                return true;
+             }
++            catch (OperationCanceledException)
++            {
++                if (loadOperation != null && !loadOperation.isDone)
++                    loadOperation.allowSceneActivation = true;
+ 
+-            BootstrapStatus.MarkMainMenuReached();
+-            return true;
++                return false;
++            }
+         }
+ 
+         private static void LogBootstrapSceneLoadWatchdog(string stageName, float progress, int waitFrames)
+@@ -694,32 +784,137 @@ namespace Hecton8.Bootstrap
+             return true;
+         }
+ 
+-        private void InitializeUILayer()
++        private async Awaitable<bool> InitializeUILayerAsync(CancellationToken ct)
+         {
+             // No UI-layer GlobalRegistry adapter exists yet.
+             // Existing menu/HUD ownership remains on scene-authored controllers.
++            UIStateStore.EnsureInitialized();
++#if UNITY_ADDRESSABLES_EXIST
++            if (!await LoadAddressableUIPrefabsAsync(ct))
++                return false;
++#endif
++            await Awaitable.NextFrameAsync(cancellationToken: ct);
++            return true;
+         }
+ 
+-        private async Awaitable<bool> WarmConfiguredShaderVariantCollectionsAsync(CancellationToken ct)
++        private async Awaitable<bool> LoadAddressableUIPrefabsAsync(CancellationToken ct)
+         {
+-            if (_headlessBootMode)
++#if UNITY_ADDRESSABLES_EXIST
++            int prefabCount = uiAddressablePrefabs != null ? uiAddressablePrefabs.Length : 0;
++            if (prefabCount <= 0)
+                 return true;
+ 
+-            int collectionCount = shaderVariantCollections != null ? shaderVariantCollections.Length : 0;
+-            for (int i = 0; i < collectionCount; i++)
++            if (_uiPrefabInstanceHandles == null || _uiPrefabInstanceHandles.Length != prefabCount)
++            {
++                ReleaseAddressableUIPrefabs();
++                _uiPrefabInstanceHandles = new AsyncOperationHandle<GameObject>[prefabCount]; // COLD ALLOC: AsyncOperationHandle<GameObject>[uiAddressablePrefabs.Length] - UI bootstrap readiness handles - owner: GameBootstrapper
++            }
++
++            for (int i = 0; i < prefabCount; i++)
+             {
+                 ct.ThrowIfCancellationRequested();
+-                ShaderVariantCollection collection = shaderVariantCollections[i];
+-                if (collection == null)
++                AssetReferenceGameObject prefabReference = uiAddressablePrefabs[i];
++                if (prefabReference == null || !prefabReference.RuntimeKeyIsValid())
+                     continue;
+ 
+-                collection.WarmUp();
+-                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                AsyncOperationHandle<GameObject> existingHandle = _uiPrefabInstanceHandles[i];
++                if (existingHandle.IsValid())
++                    continue;
++
++                _uiPrefabInstanceHandles[i] = prefabReference.InstantiateAsync(transform);
++            }
++
++            for (int i = 0; i < prefabCount; i++)
++            {
++                AsyncOperationHandle<GameObject> handle = _uiPrefabInstanceHandles[i];
++                if (!handle.IsValid())
++                    continue;
++
++                while (!handle.IsDone)
++                {
++                    ct.ThrowIfCancellationRequested();
++                    await Awaitable.NextFrameAsync(cancellationToken: ct);
++                    handle = _uiPrefabInstanceHandles[i];
++                }
++
++                if (handle.Status != AsyncOperationStatus.Succeeded || handle.Result == null)
++                {
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                    Debug.LogError("[GameBootstrapper] UI addressable prefab failed during bootstrap UI gate.");
++#endif
++                    return false;
++                }
+             }
+ 
+             await Awaitable.NextFrameAsync(cancellationToken: ct);
++            return true;
++#else
++            ct.ThrowIfCancellationRequested();
+             await Awaitable.NextFrameAsync(cancellationToken: ct);
+             return true;
++#endif
++        }
++
++        private void ReleaseAddressableUIPrefabs()
++        {
++#if UNITY_ADDRESSABLES_EXIST
++            if (_uiPrefabInstanceHandles == null)
++                return;
++
++            for (int i = 0; i < _uiPrefabInstanceHandles.Length; i++)
++            {
++                AsyncOperationHandle<GameObject> handle = _uiPrefabInstanceHandles[i];
++                if (handle.IsValid())
++                    Addressables.ReleaseInstance(handle);
++
++                _uiPrefabInstanceHandles[i] = default;
++            }
++#endif
++        }
++
++        private async Awaitable<bool> WarmConfiguredShaderVariantCollectionsAsync(CancellationToken ct)
++        {
++            try
++            {
++                if (_headlessBootMode)
++                    return true;
++
++                Stopwatch warmupStopwatch = Stopwatch.StartNew();
++                int collectionCount = shaderVariantCollections != null ? shaderVariantCollections.Length : 0;
++                for (int i = 0; i < collectionCount; i++)
++                {
++                    ct.ThrowIfCancellationRequested();
++                    if (warmupStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds)
++                    {
++                        LogOptionalBootstrapWarning("Shader warmup exceeded 5000ms before all collections completed. Remaining warmup skipped.");
++                        return true;
++                    }
++
++                    ShaderVariantCollection collection = shaderVariantCollections[i];
++                    if (collection == null)
++                        continue;
++
++                    Stopwatch collectionStopwatch = Stopwatch.StartNew();
++                    collection.WarmUp();
++                    collectionStopwatch.Stop();
++                    if (collectionStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds ||
++                        warmupStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds)
++                    {
++                        LogOptionalBootstrapWarning("Shader warmup exceeded 5000ms. Remaining warmup skipped.");
++                        return true;
++                    }
++
++                    await Awaitable.NextFrameAsync(cancellationToken: ct);
++                }
++
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return true;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
++            }
+         }
+ 
+         private static bool AreBootstrapActivationGatesReady()
+@@ -733,21 +928,28 @@ namespace Hecton8.Bootstrap
+ 
+         private static async Awaitable<bool> WaitForBootstrapActivationGatesAsync(CancellationToken ct)
+         {
+-            int waitFrames = 0;
+-            while (!AreBootstrapActivationGatesReady())
++            try
+             {
+-                ct.ThrowIfCancellationRequested();
+-                if (waitFrames >= BootstrapJobWaitWatchdogFrames)
++                int waitFrames = 0;
++                while (!AreBootstrapActivationGatesReady())
+                 {
+-                    LogBootstrapSceneLoadWatchdog("asset activation gates", 0.9f, waitFrames);
+-                    return false;
++                    ct.ThrowIfCancellationRequested();
++                    if (waitFrames >= BootstrapJobWaitWatchdogFrames)
++                    {
++                        LogBootstrapSceneLoadWatchdog("asset activation gates", 0.9f, waitFrames);
++                        return false;
++                    }
++
++                    waitFrames++;
++                    await Awaitable.NextFrameAsync(cancellationToken: ct);
+                 }
+ 
+-                waitFrames++;
+-                await Awaitable.NextFrameAsync(cancellationToken: ct);
++                return true;
++            }
++            catch (OperationCanceledException)
++            {
++                return false;
+             }
+-
+-            return true;
+         }
+ 
+         private bool InitializeBootstrapLayerNodes(BootstrapPhase phase)
+@@ -908,7 +1110,7 @@ namespace Hecton8.Bootstrap
+                 }
+ 
+                 case BootstrapDependencyNode.InputDispatcher:
+-                    return EnsureInputDispatcherRegistered() != null && GlobalRegistry.Input != null;
++                    return EnsureInputDispatcherRegistered() != null && GlobalRegistry.RegisteredInput != null;
+ 
+                 case BootstrapDependencyNode.PlayerRuntimeContextService:
+                 {
+@@ -1196,7 +1398,7 @@ namespace Hecton8.Bootstrap
+ 
+         private static InputDispatcher EnsureInputDispatcherRegistered()
+         {
+-            if (GlobalRegistry.Input is InputDispatcher registeredDispatcher)
++            if (GlobalRegistry.RegisteredInput is InputDispatcher registeredDispatcher)
+             {
+                 registeredDispatcher.BindNativeInputManager(_bootstrapInputManager);
+                 return registeredDispatcher;
+@@ -1322,11 +1524,15 @@ namespace Hecton8.Bootstrap
+             int graphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
+             int systemMemoryMb = Mathf.Max(0, SystemInfo.systemMemorySize);
+             int processorCount = Mathf.Max(1, SystemInfo.processorCount);
++            global::Hecton8.Core.HectonQualityTier qualityTier = graphicsMemoryMb < SuspiciousGraphicsMemoryFallbackThresholdMb
++                ? global::Hecton8.Core.HectonQualityTier.Low
++                : ResolveQualityTier(graphicsMemoryMb, systemMemoryMb, processorCount);
++
+             return new global::Hecton8.Core.HectonHardwareProfile(
+                 graphicsMemoryMb,
+                 systemMemoryMb,
+                 processorCount,
+-                ResolveQualityTier(graphicsMemoryMb, systemMemoryMb, processorCount));
++                qualityTier);
+         }
+ 
+         private static global::Hecton8.Core.HectonQualityTier ResolveQualityTier(int graphicsMemoryMb, int systemMemoryMb, int processorCount)
+@@ -1458,10 +1664,19 @@ namespace Hecton8.Bootstrap
+             }
+ 
+             Debug.LogError(cycleReport.ToString());
+-            BootstrapBiosErrorOverlay.Show("BIOS ERROR 0xBOOT_CYCLE\nACTION: SEE CONSOLE / TELEMETRY");
++            bool biosShown = BootstrapBiosErrorOverlay.Show("BIOS ERROR 0xBOOT_CYCLE\nACTION: SEE CONSOLE / TELEMETRY");
++            QuitForFatalBootstrapCycleInReleaseIfNeeded(biosShown);
+             return false;
+         }
+ 
++        private static void QuitForFatalBootstrapCycleInReleaseIfNeeded(bool biosShown)
++        {
++#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
++            if (!biosShown && Application.isPlaying)
++                Application.Quit(-1);
++#endif
++        }
++
+         private static string ResolveBootstrapDependencyNodeName(BootstrapDependencyNode node)
+         {
+             int index = (int)node;
+@@ -1616,6 +1831,10 @@ namespace Hecton8.Bootstrap
+                     await Awaitable.NextFrameAsync(cancellationToken: ct);
+                 }
+             }
++            catch (OperationCanceledException)
++            {
++                throw;
++            }
+             finally
+             {
+                 handle.Complete();
+@@ -1735,6 +1954,20 @@ namespace Hecton8.Bootstrap
+         {
+         }
+ 
++        /// <summary>
++        /// Compatibility stub for legacy callers that still name one-shot playback.
++        /// </summary>
++        public void PlayOneShot(AudioClip clip)
++        {
++        }
++
++        /// <summary>
++        /// Compatibility stub for legacy callers that still name one-shot playback.
++        /// </summary>
++        public void PlayOneShot(AudioClip clip, float volume)
++        {
++        }
++
+         /// <inheritdoc />
+         public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)
+         {
+@@ -1780,9 +2013,9 @@ namespace Hecton8.Bootstrap
+ 
+     internal static class BootstrapBiosErrorOverlay
+     {
+-        internal static void Show(string message)
++        internal static bool Show(string message)
+         {
+-            HardwareErrorCanvas.Show(message);
++            return HardwareErrorCanvas.Show(message);
+         }
+ 
+         internal static void Hide()
+@@ -1807,20 +2040,28 @@ namespace Hecton8.Bootstrap
+             _instance = null;
+         }
+ 
+-        internal static void Show(string message)
++        internal static bool Show(string message)
+         {
+             if (GameBootstrapper.IsHeadlessBootMode || Application.isBatchMode)
+             {
+                 // One-time critical init failure; headless cannot render the BIOS canvas.
+                 Debug.LogError(message);
+-                return;
++                return false;
+             }
+ 
+-            HardwareErrorCanvas overlay = EnsureInstance();
+-            if (overlay == null)
+-                return;
++            try
++            {
++                HardwareErrorCanvas overlay = EnsureInstance();
++                if (overlay == null)
++                    return false;
+ 
+-            overlay.ApplyMessage(message);
++                return overlay.ApplyMessage(message);
++            }
++            catch (Exception exception)
++            {
++                Debug.LogException(exception);
++                return false;
++            }
+         }
+ 
+         internal static void Hide()
+@@ -1866,15 +2107,16 @@ namespace Hecton8.Bootstrap
+             BuildVisualTree();
+         }
+ 
+-        private void ApplyMessage(string message)
++        private bool ApplyMessage(string message)
+         {
+             if (_messageText == null)
+                 BuildVisualTree();
+ 
+             if (_messageText == null)
+-                return;
++                return false;
+ 
+             _messageText.text = message;
++            return true;
+         }
+ 
+         private void BuildVisualTree()
+diff --git a/Assets/_Project/Scripts/Construction/CultivationManager.cs b/Assets/_Project/Scripts/Construction/CultivationManager.cs
+index f9ab5711..a399e42b 100644
+--- a/Assets/_Project/Scripts/Construction/CultivationManager.cs
++++ b/Assets/_Project/Scripts/Construction/CultivationManager.cs
+@@ -7,6 +7,7 @@ using Hecton8.Items;
+ using Hecton8.SaveSystem;
+ using Hecton8.World;
+ using Unity.Collections;
++using Unity.Mathematics;
+ using UnityEngine;
+ 
+ namespace Hecton8.Construction
+@@ -27,7 +28,8 @@ namespace Hecton8.Construction
+         private const ulong GeneOxygenProducing = (ulong)GeneticTraitProfile.GeneticTraitMask.OxygenProducing;
+         private const ulong GeneToxic = (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
+         private const ulong GeneRapidGrowth = (ulong)GeneticTraitProfile.GeneticTraitMask.FastGrowing;
+-        private const ulong SpliceMutationGeneMask = GeneBioluminescent | GeneOxygenProducing | GeneToxic | GeneRapidGrowth;
++        private const ulong DefinedCultivationGeneMask = 0x000000000000000FUL;
++        private const ulong SpliceMutationGeneMask = (GeneBioluminescent | GeneOxygenProducing | GeneToxic | GeneRapidGrowth) & DefinedCultivationGeneMask;
+ 
+         /// <summary>
+         /// Fixed cultivation slot payload shared with atmosphere jobs without managed allocation.
+@@ -119,6 +121,7 @@ namespace Hecton8.Construction
+         private NativeArray<CultivationSlotState> _slots;
+         private bool _registered;
+         private uint _slowTickSequence;
++        private float _lastGrowthUnscaledTime;
+         private int _hazardZoneId;
+         private int _rotHazardZoneId;
+ 
+@@ -163,6 +166,7 @@ namespace Hecton8.Construction
+ 
+         private void OnEnable()
+         {
++            _lastGrowthUnscaledTime = Time.unscaledTime;
+             TryRegister();
+         }
+ 
+@@ -212,7 +216,7 @@ namespace Hecton8.Construction
+                 (unchecked((uint)seedItemHashIdB) * 0x9E3779B9u);
+             XorShift32State mutationRng = new XorShift32State(seed);
+             ulong mutationMask = ((ulong)mutationRng.NextUInt()) & SpliceMutationGeneMask;
+-            resultMask = (geneticsMaskA | geneticsMaskB) ^ mutationMask;
++            resultMask = ((geneticsMaskA | geneticsMaskB) ^ mutationMask) & DefinedCultivationGeneMask;
+ 
+             outputSeedItemHashId = ResolveHybridSeedItemHash(seedItemHashIdA, seedItemHashIdB, resultMask);
+             if (outputSeedItemHashId == 0 || !inventory.TryAddItemWithGenetics(outputSeedItemHashId, resultMask))
+@@ -286,7 +290,7 @@ namespace Hecton8.Construction
+             for (int i = 0; i < copyCount; i++)
+             {
+                 geneticsMasks[i] = unchecked((uint)_slots[i].GeneticsMask);
+-                growthValues[i] = _slots[i].Growth01;
++                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
+             }
+ 
+             return copyCount;
+@@ -304,7 +308,7 @@ namespace Hecton8.Construction
+             for (int i = 0; i < copyCount; i++)
+             {
+                 geneticsMasks[i] = _slots[i].GeneticsMask;
+-                growthValues[i] = _slots[i].Growth01;
++                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
+             }
+ 
+             return copyCount;
+@@ -322,7 +326,7 @@ namespace Hecton8.Construction
+             for (int i = 0; i < copyCount; i++)
+             {
+                 geneticsMasks[i] = unchecked((uint)_slots[i].GeneticsMask);
+-                growthValues[i] = _slots[i].Growth01;
++                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
+                 qualityValues[i] = NormalizeQuality01(_slots[i].Quality01);
+             }
+ 
+@@ -341,7 +345,7 @@ namespace Hecton8.Construction
+             for (int i = 0; i < copyCount; i++)
+             {
+                 geneticsMasks[i] = _slots[i].GeneticsMask;
+-                growthValues[i] = _slots[i].Growth01;
++                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
+                 qualityValues[i] = NormalizeQuality01(_slots[i].Quality01);
+             }
+ 
+@@ -379,8 +383,8 @@ namespace Hecton8.Construction
+                     continue;
+ 
+                 seedIds[writeIndex] = item.PersistentId;
+-                geneticsMasks[writeIndex] = slot.GeneticsMask;
+-                growthValues[writeIndex] = Mathf.Clamp01(slot.Growth01);
++                geneticsMasks[writeIndex] = SanitizeGeneticsMask(slot.GeneticsMask);
++                growthValues[writeIndex] = NormalizeGrowth01(slot.Growth01);
+                 qualityValues[writeIndex] = NormalizeQuality01(slot.Quality01);
+                 writeIndex++;
+             }
+@@ -406,8 +410,6 @@ namespace Hecton8.Construction
+ 
+             int safeCount = Mathf.Max(0, moduleDto.cultivationSlotCount);
+             safeCount = Mathf.Min(safeCount, moduleDto.cultivationSeedItemIds != null ? moduleDto.cultivationSeedItemIds.Length : 0);
+-            safeCount = Mathf.Min(safeCount, moduleDto.cultivationGeneticsMasks != null ? moduleDto.cultivationGeneticsMasks.Length : 0);
+-            safeCount = Mathf.Min(safeCount, moduleDto.cultivationGrowth01 != null ? moduleDto.cultivationGrowth01.Length : 0);
+             safeCount = Mathf.Min(safeCount, MaxCultivationSlots);
+             for (int i = 0; i < safeCount; i++)
+             {
+@@ -425,8 +427,8 @@ namespace Hecton8.Construction
+                 _slots[i] = new CultivationSlotState
+                 {
+                     SeedItemHashId = itemHashId,
+-                    GeneticsMask = moduleDto.cultivationGeneticsMasks[i],
+-                    Growth01 = Mathf.Clamp01(moduleDto.cultivationGrowth01[i]),
++                    GeneticsMask = ResolveSavedGeneticsMask(moduleDto, i, itemHashId),
++                    Growth01 = ResolveSavedGrowth01(moduleDto, i),
+                     Quality01 = moduleDto.cultivationQuality01 != null && i < moduleDto.cultivationQuality01.Length
+                         ? NormalizeQuality01(moduleDto.cultivationQuality01[i])
+                         : 1f
+@@ -455,6 +457,7 @@ namespace Hecton8.Construction
+             int floodedRotDeathCount = 0;
+             ulong combinedTraitMask = 0UL;
+             bool moduleFlooded = targetModule != null && targetModule.IsFlooded;
++            float growthDeltaSeconds = ResolveGrowthDeltaSeconds();
+ 
+             for (int i = 0; i < _slots.Length; i++)
+             {
+@@ -482,7 +485,7 @@ namespace Hecton8.Construction
+                 }
+ 
+                 float growthMultiplier = ResolveGrowthRateMultiplier(slot.GeneticsMask);
+-                slot.Growth01 = Mathf.Clamp01(slot.Growth01 + (SlowTickDt / GrowthDurationSeconds) * growthMultiplier);
++                slot.Growth01 = NormalizeGrowth01(slot.Growth01 + (growthDeltaSeconds / GrowthDurationSeconds) * growthMultiplier);
+                 _slots[i] = slot;
+ 
+                 if (slot.Growth01 < MatureThreshold)
+@@ -690,7 +693,8 @@ namespace Hecton8.Construction
+ 
+         private ulong ResolveEffectiveGeneticsMask(int seedItemHashId, ulong geneticsMask)
+         {
+-            return geneticsMask != 0UL ? geneticsMask : ResolveDefaultGeneticsMask(seedItemHashId);
++            ulong resolvedMask = geneticsMask != 0UL ? geneticsMask : ResolveDefaultGeneticsMask(seedItemHashId);
++            return SanitizeGeneticsMask(resolvedMask);
+         }
+ 
+         private ulong ResolveDefaultGeneticsMask(int seedItemHashId)
+@@ -704,12 +708,64 @@ namespace Hecton8.Construction
+                 if (template == null || template.CultivationSeedHashId != seedItemHashId)
+                     continue;
+ 
+-                return template.GeneticsMask;
++                return SanitizeGeneticsMask(template.GeneticsMask);
+             }
+ 
+             return 0UL;
+         }
+ 
++        private ulong ResolveSavedGeneticsMask(ModuleDTO moduleDto, int slotIndex, int seedItemHashId)
++        {
++            ulong savedMask = 0UL;
++            if (moduleDto.cultivationGeneticsMasks != null &&
++                slotIndex >= 0 &&
++                slotIndex < moduleDto.cultivationGeneticsMasks.Length)
++            {
++                savedMask = moduleDto.cultivationGeneticsMasks[slotIndex];
++            }
++
++            return ResolveEffectiveGeneticsMask(seedItemHashId, savedMask);
++        }
++
++        private static ulong SanitizeGeneticsMask(ulong geneticsMask)
++        {
++            return geneticsMask & DefinedCultivationGeneMask;
++        }
++
++        private static float ResolveSavedGrowth01(ModuleDTO moduleDto, int slotIndex)
++        {
++            if (moduleDto.cultivationGrowth01 == null ||
++                slotIndex < 0 ||
++                slotIndex >= moduleDto.cultivationGrowth01.Length)
++            {
++                return 0f;
++            }
++
++            return NormalizeGrowth01(moduleDto.cultivationGrowth01[slotIndex]);
++        }
++
++        private static float NormalizeGrowth01(float growth01)
++        {
++            return !float.IsNaN(growth01) && !float.IsInfinity(growth01)
++                ? Mathf.Clamp01(growth01)
++                : 0f;
++        }
++
++        private float ResolveGrowthDeltaSeconds()
++        {
++            if (!Application.isPlaying)
++                return SlowTickDt;
++
++            float now = Time.unscaledTime;
++            float deltaSeconds = _lastGrowthUnscaledTime > 0f ? now - _lastGrowthUnscaledTime : SlowTickDt;
++            _lastGrowthUnscaledTime = now;
++
++            if (float.IsNaN(deltaSeconds) || float.IsInfinity(deltaSeconds) || deltaSeconds <= 0f)
++                return SlowTickDt;
++
++            return Mathf.Min(deltaSeconds, SlowTickDt * 4f);
++        }
++
+         private int ResolveHybridSeedItemHash(int primarySeedHashId, int secondarySeedHashId, ulong resultMask)
+         {
+             int bestSeedHashId = primarySeedHashId != 0 ? primarySeedHashId : secondarySeedHashId;
+@@ -723,7 +779,7 @@ namespace Hecton8.Construction
+                     if (template == null || template.CultivationSeedHashId == 0)
+                         continue;
+ 
+-                    int score = CountBits(template.GeneticsMask & resultMask) * 4;
++                    int score = CountBits(SanitizeGeneticsMask(template.GeneticsMask) & resultMask) * 4;
+                     if (template.CultivationSeedHashId == primarySeedHashId || template.CultivationSeedHashId == secondarySeedHashId)
+                         score += 3;
+ 
+@@ -818,7 +874,9 @@ namespace Hecton8.Construction
+ 
+         private static float NormalizeQuality01(float quality01)
+         {
+-            return float.IsFinite(quality01) ? Mathf.Clamp01(quality01) : 0f;
++            return !float.IsNaN(quality01) && !float.IsInfinity(quality01)
++                ? Mathf.Clamp01(quality01)
++                : 0f;
+         }
+ 
+         private static int CountBits(ulong value)
+diff --git a/Assets/_Project/Scripts/Core/UIStateStore.cs b/Assets/_Project/Scripts/Core/UIStateStore.cs
+index 25ffd196..45d9f0f7 100644
+--- a/Assets/_Project/Scripts/Core/UIStateStore.cs
++++ b/Assets/_Project/Scripts/Core/UIStateStore.cs
+@@ -86,10 +86,19 @@ namespace Hecton8.Core
+             return _states[(int)UIStateSlot.PDA];
+         }
+ 
++        /// <summary>
++        /// Returns a read-only view over the core-owned UI state array for visual presenters.
++        /// </summary>
++        public static NativeArray<UIStateData>.ReadOnly GetReadOnlyStates()
++        {
++            EnsureInitialized();
++            return _states.AsReadOnly();
++        }
++
+         /// <summary>
+         /// Writes the authoritative PDA open state and active tab.
+         /// </summary>
+-        public static void SetPDAOpenState(bool isOpen, int activeTab, float openDurationSeconds)
++        internal static void SetPDAOpenState(bool isOpen, int activeTab, float openDurationSeconds)
+         {
+             EnsureInitialized();
+             int tab = Mathf.Clamp(activeTab, 0, ushort.MaxValue);
+@@ -108,7 +117,7 @@ namespace Hecton8.Core
+         /// <summary>
+         /// Writes the authoritative PDA active tab without changing the open flag.
+         /// </summary>
+-        public static void SetPDAActiveTab(int previousTab, int currentTab)
++        internal static void SetPDAActiveTab(int previousTab, int currentTab)
+         {
+             EnsureInitialized();
+             UIStateData state = _states[(int)UIStateSlot.PDA];
+@@ -122,7 +131,7 @@ namespace Hecton8.Core
+         /// <summary>
+         /// Updates PDA logbook counters without storing any managed log strings.
+         /// </summary>
+-        public static void SetPDALogbookState(int entryCount, uint latestEventHash)
++        internal static void SetPDALogbookState(int entryCount, uint latestEventHash)
+         {
+             EnsureInitialized();
+             UIStateData state = _states[(int)UIStateSlot.PDA];
+@@ -135,7 +144,7 @@ namespace Hecton8.Core
+         /// <summary>
+         /// Appends one event-sourced PDA log hash into the fixed native ring.
+         /// </summary>
+-        public static void AppendPDALogEventHash(uint eventHash)
++        internal static void AppendPDALogEventHash(uint eventHash)
+         {
+             if (eventHash == 0u)
+                 return;
+diff --git a/Assets/_Project/Scripts/CraftingEvents.cs b/Assets/_Project/Scripts/CraftingEvents.cs
+index 4e2f573e..ca039c2b 100644
+--- a/Assets/_Project/Scripts/CraftingEvents.cs
++++ b/Assets/_Project/Scripts/CraftingEvents.cs
+@@ -100,6 +100,8 @@ namespace Hecton8.Crafting
+         private static readonly CraftingReferenceSlot[] _referenceSlots = new CraftingReferenceSlot[ReferenceSlotCapacity];
+         // COLD ALLOC: bool[128] - reference slot occupancy map prevents wrap overwrite before deferred flush - owner: CraftingEvents
+         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
++        // COLD ALLOC: int[128] - reference slots released only after LateUpdate dispatch resolves listeners - owner: CraftingEvents
++        private static readonly int[] _referenceSlotsPendingRelease = new int[ReferenceSlotCapacity];
+         private static NativeQueue<CraftingEventPayload> _pendingEvents;
+         private static int _referenceWriteIndex;
+         private static int _referencePendingCount;
+@@ -156,21 +158,34 @@ namespace Hecton8.Crafting
+                 return;
+             }
+ 
++            int releaseCount = 0;
+             while (!_pendingEvents.IsEmpty())
+             {
+                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
++                {
++                    ReleaseProcessedReferenceSlots(releaseCount);
+                     return;
++                }
+ 
+                 if (!_pendingEvents.TryDequeue(out CraftingEventPayload payload))
++                {
++                    ReleaseProcessedReferenceSlots(releaseCount);
+                     return;
++                }
+ 
+                 ICraftingEventListener[] rawArray = _listeners.RawArray;
+                 int count = _listeners.Count;
+                 for (int i = count - 1; i >= 0; i--)
+                     rawArray[i].OnCraftingEvent(in payload);
+ 
+-                ReleaseReferenceSlot(payload.ReferenceSlot);
++                if (IsValidReferenceSlot(payload.ReferenceSlot) && releaseCount < ReferenceSlotCapacity)
++                {
++                    _referenceSlotsPendingRelease[releaseCount] = payload.ReferenceSlot;
++                    releaseCount++;
++                }
+             }
++
++            ReleaseProcessedReferenceSlots(releaseCount);
+         }
+ 
+         /// <summary>
+@@ -397,6 +412,16 @@ namespace Hecton8.Crafting
+                 _referencePendingCount--;
+         }
+ 
++        private static void ReleaseProcessedReferenceSlots(int releaseCount)
++        {
++            for (int i = 0; i < releaseCount; i++)
++            {
++                int referenceSlot = _referenceSlotsPendingRelease[i];
++                _referenceSlotsPendingRelease[i] = -1;
++                ReleaseReferenceSlot(referenceSlot);
++            }
++        }
++
+         private static bool IsValidReferenceSlot(int referenceSlot)
+         {
+             return (uint)referenceSlot < ReferenceSlotCapacity;
+@@ -417,13 +442,14 @@ namespace Hecton8.Crafting
+             {
+                 _referenceSlots[i].Clear();
+                 _referenceSlotOccupied[i] = false;
++                _referenceSlotsPendingRelease[i] = -1;
+             }
+         }
+ 
+         private static uint ComputeFabricatorHash(Fabricator fabricator)
+         {
+             return fabricator != null
+-                ? unchecked((uint)fabricator.GetInstanceID())
++                ? unchecked((uint)EntityId.ToULong(fabricator.GetEntityId()))
+                 : 0u;
+         }
+ 
+diff --git a/Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs b/Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs
+index 1c9ec1b8..b3c6ade2 100644
+--- a/Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs
++++ b/Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs
+@@ -1,5 +1,6 @@
+ using System;
+ using System.Collections.Generic;
++using Hecton.Localization;
+ using Hecton8.SaveSystem;
+ using UnityEngine;
+ 
+@@ -24,8 +25,9 @@ namespace Hecton8.PDA
+     /// </summary>
+     public readonly struct PDAMarkerSnapshot
+     {
+-        public PDAMarkerSnapshot(string markerId, string title, Vector3 position, MarkerIconType iconType, bool visibleOnHud)
++        public PDAMarkerSnapshot(uint markerHashId, string markerId, string title, Vector3 position, MarkerIconType iconType, bool visibleOnHud)
+         {
++            MarkerHashID = markerHashId;
+             MarkerId = markerId ?? string.Empty;
+             Title = title ?? string.Empty;
+             Position = position;
+@@ -33,6 +35,9 @@ namespace Hecton8.PDA
+             VisibleOnHud = visibleOnHud;
+         }
+ 
++        /// <summary>Stable hashed marker identifier used by native PDA payloads.</summary>
++        public uint MarkerHashID { get; }
++
+         /// <summary>Stable marker identifier persisted in save data.</summary>
+         public string MarkerId { get; }
+ 
+@@ -58,6 +63,7 @@ namespace Hecton8.PDA
+     {
+         private struct MarkerRecord
+         {
++            public uint markerHashId;
+             public string markerId;
+             public string title;
+             public Vector3 position;
+@@ -69,6 +75,8 @@ namespace Hecton8.PDA
+         private readonly List<MarkerRecord> _markers = new List<MarkerRecord>(32);
+         // COLD ALLOC: Dictionary<string,int>[32] - marker lookup table - owner: PDAMarkerRegistry
+         private readonly Dictionary<string, int> _markerIndexById = new Dictionary<string, int>(32, StringComparer.Ordinal);
++        // COLD ALLOC: Dictionary<uint,int>[32] - hash lookup for native PDA marker events - owner: PDAMarkerRegistry
++        private readonly Dictionary<uint, int> _markerIndexByHash = new Dictionary<uint, int>(32);
+         private bool _registeredToSave;
+         private int _nextSequence = 1;
+ 
+@@ -145,6 +153,7 @@ namespace Hecton8.PDA
+             string markerId = BuildNextMarkerId();
+             MarkerRecord record = new MarkerRecord
+             {
++                markerHashId = ComputeMarkerHash(markerId),
+                 markerId = markerId,
+                 title = trimmedTitle,
+                 position = position,
+@@ -153,9 +162,10 @@ namespace Hecton8.PDA
+             };
+ 
+             _markerIndexById[markerId] = _markers.Count;
++            _markerIndexByHash[record.markerHashId] = _markers.Count;
+             _markers.Add(record);
+             marker = ToSnapshot(record);
+-            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
++            Hecton8.UI.PDAEvents.RaiseMarkerChanged(record.markerHashId, _markers.Count);
+             MarkersChanged?.Invoke();
+             return true;
+         }
+@@ -168,18 +178,21 @@ namespace Hecton8.PDA
+             if (string.IsNullOrWhiteSpace(markerId) || !_markerIndexById.TryGetValue(markerId, out int markerIndex))
+                 return false;
+ 
++            MarkerRecord removedRecord = _markers[markerIndex];
+             int lastIndex = _markers.Count - 1;
+             MarkerRecord lastRecord = _markers[lastIndex];
+             _markers.RemoveAt(lastIndex);
+             _markerIndexById.Remove(markerId);
++            _markerIndexByHash.Remove(removedRecord.markerHashId);
+ 
+             if (markerIndex < _markers.Count)
+             {
+                 _markers[markerIndex] = lastRecord;
+                 _markerIndexById[lastRecord.markerId] = markerIndex;
++                _markerIndexByHash[lastRecord.markerHashId] = markerIndex;
+             }
+ 
+-            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
++            Hecton8.UI.PDAEvents.RaiseMarkerChanged(removedRecord.markerHashId, _markers.Count);
+             MarkersChanged?.Invoke();
+             return true;
+         }
+@@ -195,7 +208,7 @@ namespace Hecton8.PDA
+             MarkerRecord record = _markers[markerIndex];
+             record.position = position;
+             _markers[markerIndex] = record;
+-            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
++            Hecton8.UI.PDAEvents.RaiseMarkerChanged(record.markerHashId, _markers.Count);
+             MarkersChanged?.Invoke();
+             return true;
+         }
+@@ -214,11 +227,27 @@ namespace Hecton8.PDA
+ 
+             record.visibleOnHud = visibleOnHud;
+             _markers[markerIndex] = record;
+-            Hecton8.UI.PDAEvents.RaiseMarkerChanged(_markers.Count);
++            Hecton8.UI.PDAEvents.RaiseMarkerChanged(record.markerHashId, _markers.Count);
+             MarkersChanged?.Invoke();
+             return true;
+         }
+ 
++        /// <summary>
++        /// Resolves a native marker hash into a current snapshot.
++        /// </summary>
++        public bool TryGetMarkerByHash(uint markerHashId, out PDAMarkerSnapshot marker)
++        {
++            marker = default;
++            if (markerHashId == 0u || !_markerIndexByHash.TryGetValue(markerHashId, out int markerIndex))
++                return false;
++
++            if ((uint)markerIndex >= (uint)_markers.Count)
++                return false;
++
++            marker = ToSnapshot(_markers[markerIndex]);
++            return true;
++        }
++
+         /// <summary>
+         /// Copies marker snapshots into a caller-owned buffer.
+         /// </summary>
+@@ -306,6 +335,7 @@ namespace Hecton8.PDA
+         {
+             _markers.Clear();
+             _markerIndexById.Clear();
++            _markerIndexByHash.Clear();
+             _nextSequence = 1;
+ 
+             if (data == null)
+@@ -321,6 +351,7 @@ namespace Hecton8.PDA
+ 
+                 MarkerRecord record = new MarkerRecord
+                 {
++                    markerHashId = ComputeMarkerHash(entry.markerId),
+                     markerId = entry.markerId,
+                     title = string.IsNullOrWhiteSpace(entry.title) ? BuildDefaultTitle((MarkerIconType)entry.iconType) : entry.title,
+                     position = entry.GetPosition(),
+@@ -329,6 +360,7 @@ namespace Hecton8.PDA
+                 };
+ 
+                 _markerIndexById[record.markerId] = _markers.Count;
++                _markerIndexByHash[record.markerHashId] = _markers.Count;
+                 _markers.Add(record);
+             }
+ 
+@@ -368,6 +400,13 @@ namespace Hecton8.PDA
+             return markerId;
+         }
+ 
++        private static uint ComputeMarkerHash(string markerId)
++        {
++            return !string.IsNullOrWhiteSpace(markerId)
++                ? unchecked((uint)LocHash.Compute(markerId))
++                : 0u;
++        }
++
+         private static string BuildDefaultTitle(MarkerIconType iconType)
+         {
+             switch (iconType)
+@@ -391,7 +430,7 @@ namespace Hecton8.PDA
+ 
+         private static PDAMarkerSnapshot ToSnapshot(MarkerRecord record)
+         {
+-            return new PDAMarkerSnapshot(record.markerId, record.title, record.position, record.iconType, record.visibleOnHud);
++            return new PDAMarkerSnapshot(record.markerHashId, record.markerId, record.title, record.position, record.iconType, record.visibleOnHud);
+         }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/PlayerPDA.cs b/Assets/_Project/Scripts/PlayerPDA.cs
+index 89f73080..e8cc3a51 100644
+--- a/Assets/_Project/Scripts/PlayerPDA.cs
++++ b/Assets/_Project/Scripts/PlayerPDA.cs
+@@ -76,6 +76,8 @@ namespace Hecton8.UI
+         public int CurrentTab;
+         public int PayloadA;
+         public int PayloadB;
++        public uint MarkerHashID;
++        public uint LogEventHashID;
+         public ushort EventType;
+         public ushort Reserved;
+     }
+@@ -131,15 +133,31 @@ namespace Hecton8.UI
+             Debug.LogError($"[PDAEvents] {ownerName} was destroyed while still registered as an IPDAEventListener.");
+         }
+ 
++        /// <summary>
++        /// Flushes all queued PDA events through registered listeners.
++        /// </summary>
+         public static void FlushPending()
++        {
++            FlushPending(int.MaxValue);
++        }
++
++        /// <summary>
++        /// Flushes a capped number of queued PDA events through registered listeners.
++        /// </summary>
++        /// <param name="maxEventsPerFrame">Maximum payload count to dequeue this frame.</param>
++        public static void FlushPending(int maxEventsPerFrame)
+         {
+             if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+             {
+-                DrainWithoutDispatch();
++                DrainWithoutDispatch(maxEventsPerFrame);
+                 return;
+             }
+ 
+-            while (!_pendingEvents.IsEmpty())
++            if (maxEventsPerFrame <= 0)
++                return;
++
++            int processedCount = 0;
++            while (!_pendingEvents.IsEmpty() && processedCount < maxEventsPerFrame)
+             {
+                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                     return;
+@@ -151,12 +169,13 @@ namespace Hecton8.UI
+                 int count = _listeners.Count;
+                 for (int i = count - 1; i >= 0; i--)
+                     rawArray[i].OnPDAEvent(in payload);
++
++                processedCount++;
+             }
+         }
+ 
+         internal static void RaiseOpened(int tab)
+         {
+-            UIStateStore.SetPDAOpenState(true, tab, 0f);
+             Enqueue(new PDAEventPayload
+             {
+                 DurationSeconds = 0f,
+@@ -169,7 +188,6 @@ namespace Hecton8.UI
+ 
+         internal static void RaiseClosed(float duration)
+         {
+-            UIStateStore.SetPDAOpenState(false, -1, duration);
+             Enqueue(new PDAEventPayload
+             {
+                 DurationSeconds = duration,
+@@ -182,7 +200,6 @@ namespace Hecton8.UI
+ 
+         internal static void RaiseTabChanged(int oldTab, int newTab)
+         {
+-            UIStateStore.SetPDAActiveTab(oldTab, newTab);
+             Enqueue(new PDAEventPayload
+             {
+                 DurationSeconds = 0f,
+@@ -202,6 +219,8 @@ namespace Hecton8.UI
+                 CurrentTab = -1,
+                 PayloadA = 0,
+                 PayloadB = 0,
++                MarkerHashID = 0u,
++                LogEventHashID = 0u,
+                 EventType = (ushort)PDAEventType.LowBatteryShutdown,
+                 Reserved = 0
+             });
+@@ -216,12 +235,14 @@ namespace Hecton8.UI
+                 CurrentTab = -1,
+                 PayloadA = chunkX,
+                 PayloadB = chunkY,
++                MarkerHashID = 0u,
++                LogEventHashID = 0u,
+                 EventType = (ushort)PDAEventType.MapChunkExplored,
+                 Reserved = 0
+             });
+         }
+ 
+-        internal static void RaiseMarkerChanged(int markerCount)
++        internal static void RaiseMarkerChanged(uint markerHashId, int markerCount)
+         {
+             Enqueue(new PDAEventPayload
+             {
+@@ -230,6 +251,8 @@ namespace Hecton8.UI
+                 CurrentTab = -1,
+                 PayloadA = markerCount,
+                 PayloadB = 0,
++                MarkerHashID = markerHashId,
++                LogEventHashID = 0u,
+                 EventType = (ushort)PDAEventType.MarkerChanged,
+                 Reserved = 0
+             });
+@@ -237,14 +260,15 @@ namespace Hecton8.UI
+ 
+         internal static void RaiseLogbookChanged(int entryCount, uint latestEventHash = 0u)
+         {
+-            UIStateStore.SetPDALogbookState(entryCount, latestEventHash);
+             Enqueue(new PDAEventPayload
+             {
+                 DurationSeconds = 0f,
+                 PreviousTab = -1,
+                 CurrentTab = -1,
+                 PayloadA = entryCount,
+-                PayloadB = unchecked((int)latestEventHash),
++                PayloadB = 0,
++                MarkerHashID = 0u,
++                LogEventHashID = latestEventHash,
+                 EventType = (ushort)PDAEventType.LogbookChanged,
+                 Reserved = 0
+             });
+@@ -274,13 +298,18 @@ namespace Hecton8.UI
+             _pendingEvents.Enqueue(payload);
+         }
+ 
+-        private static void DrainWithoutDispatch()
++        private static void DrainWithoutDispatch(int maxEventsPerFrame)
+         {
+             if (!_pendingEvents.IsCreated)
+                 return;
+ 
+-            while (_pendingEvents.TryDequeue(out _))
++            if (maxEventsPerFrame <= 0)
++                return;
++
++            int processedCount = 0;
++            while (processedCount < maxEventsPerFrame && _pendingEvents.TryDequeue(out _))
+             {
++                processedCount++;
+             }
+         }
+     }
+@@ -1105,12 +1134,22 @@ namespace Hecton8.UI
+ 
+         private void PopTabHistory()
+         {
+-            if (_tabHistoryCount <= 0) return;
++            if (!TryPopTabHistory(out int previousTab))
++                return;
+ 
+-            int previousTab = _tabHistory[--_tabHistoryCount];
+             SetActiveTab(previousTab);
+         }
+ 
++        private bool TryPopTabHistory(out int previousTab)
++        {
++            previousTab = 0;
++            if (_tabHistoryCount <= 0)
++                return false;
++
++            previousTab = _tabHistory[--_tabHistoryCount];
++            return true;
++        }
++
+         private void ClearTabHistory()
+         {
+             _tabHistoryCount = 0;
+@@ -1153,34 +1192,24 @@ namespace Hecton8.UI
+             // the UI map might also have a toggle or the Player map is disabled.
+             // In our case, Open() switches to UI, but UI map might not have "PDA" action.
+             // If InputManager handles "PDA" in both maps or if we stay in Player map for toggle:
+-            Toggle();
++            EnqueuePDAStateCommand(IsOpen ? -1 : defaultTab);
+         }
+ 
+         private void HandleInventoryInput()
+         {
+-            if (!IsOpen)
+-            {
+-                Open(0);
+-                return;
+-            }
+-
+-            SetActiveTab(0);
++            EnqueuePDAStateCommand(0);
+         }
+ 
+         private void HandleCancelInput()
+         {
+             if (IsOpen)
+-            {
+-                Close();
+-            }
++                EnqueuePDAStateCommand(-1);
+         }
+ 
+         private void HandleBackInput()
+         {
+-            if (IsOpen && enableTabHistory)
+-            {
+-                PopTabHistory();
+-            }
++            if (IsOpen && enableTabHistory && TryPopTabHistory(out int previousTab))
++                EnqueuePDAStateCommand(previousTab);
+         }
+         private void HandleTabNextInput()
+         {
+@@ -1189,7 +1218,15 @@ namespace Hecton8.UI
+ 
+             int next = _activeTab + 1;
+             if (next >= tabs.Length) next = 0;
+-            SetActiveTab(next);
++            EnqueuePDAStateCommand(next);
++        }
++
++        private static void EnqueuePDAStateCommand(int tabIndex)
++        {
++            EntityCommand command = tabIndex < 0
++                ? EntityCommand.CreateClosePDA()
++                : EntityCommand.CreateOpenPDATab(tabIndex);
++            ThreadSafeCommandQueue.Enqueue(in command);
+         }
+     }
+ 
+diff --git a/Assets/_Project/Scripts/UI/PDAConstructionTab.cs b/Assets/_Project/Scripts/UI/PDAConstructionTab.cs
+index ca06b4d0..1725aecc 100644
+--- a/Assets/_Project/Scripts/UI/PDAConstructionTab.cs
++++ b/Assets/_Project/Scripts/UI/PDAConstructionTab.cs
+@@ -73,6 +73,7 @@ namespace Hecton8.UI
+         private bool[] _cardVisibility;
+         private readonly StringBuilder _sb = new StringBuilder(512);
+         private bool _tickRegistered;
++        private bool _pdaEventsRegistered;
+         private bool _summaryDirty;
+         private bool _catalogDirty;
+         private bool _layoutDirty;
+@@ -211,7 +212,7 @@ namespace Hecton8.UI
+         private void Subscribe()
+         {
+             RefreshSubscriptions();
+-            PDAEvents.Register(this);
++            TryRegisterPDAEvents();
+         }
+ 
+         private void Unsubscribe()
+@@ -229,7 +230,7 @@ namespace Hecton8.UI
+                 _subscribedToolManager = null;
+             }
+ 
+-            PDAEvents.Unregister(this);
++            UnregisterPDAEvents();
+         }
+ 
+         private void OnDestroy()
+@@ -238,6 +239,24 @@ namespace Hecton8.UI
+             PDAEvents.AssertUnregistered(this, nameof(PDAConstructionTab));
+         }
+ 
++        private void TryRegisterPDAEvents()
++        {
++            if (_pdaEventsRegistered)
++                return;
++
++            PDAEvents.Register(this);
++            _pdaEventsRegistered = true;
++        }
++
++        private void UnregisterPDAEvents()
++        {
++            if (!_pdaEventsRegistered)
++                return;
++
++            PDAEvents.Unregister(this);
++            _pdaEventsRegistered = false;
++        }
++
+         private void RefreshSubscriptions()
+         {
+             if (!ReferenceEquals(_subscribedInventory, playerInventory))
+@@ -886,7 +905,7 @@ namespace Hecton8.UI
+                     return;
+                 }
+ 
+-                playerPDA?.Close();
++                QueueClosePDACommand();
+                 hudNotification?.ShowInfo("CONSTRUCTION MATRIX - FIELD PREVIEW ACTIVE");
+                 return;
+             }
+@@ -916,10 +935,16 @@ namespace Hecton8.UI
+             }
+ 
+             toolManager.SwitchToSlot(builderSlot);
+-            playerPDA?.Close();
++            QueueClosePDACommand();
+             hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - FIELD PREVIEW [S{builderSlot + 1}]");
+         }
+ 
++        private static void QueueClosePDACommand()
++        {
++            EntityCommand command = EntityCommand.CreateClosePDA();
++            ThreadSafeCommandQueue.Enqueue(in command);
++        }
++
+         internal void InvokeDeployAction()
+         {
+             if (toolManager == null || playerBuilder == null)
+diff --git a/Assets/_Project/Scripts/UI/PDADataLogTab.cs b/Assets/_Project/Scripts/UI/PDADataLogTab.cs
+index 06be7802..fd76198d 100644
+--- a/Assets/_Project/Scripts/UI/PDADataLogTab.cs
++++ b/Assets/_Project/Scripts/UI/PDADataLogTab.cs
+@@ -114,6 +114,7 @@ namespace Hecton8.UI
+         private int _selectedIndex = -1;
+         private bool _built;
+         private bool _registered;
++        private bool _pdaEventsRegistered;
+         private bool _dirty;
+         private bool _detailVisible = true;
+ 
+@@ -231,7 +232,7 @@ namespace Hecton8.UI
+             TryRegister();
+ 
+             AudioLogEvents.Register(this);
+-            PDAEvents.Register(this);
++            TryRegisterPDAEvents();
+             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+ 
+             RebuildLoreBindingCache();
+@@ -243,7 +244,7 @@ namespace Hecton8.UI
+             TryUnregister();
+ 
+             AudioLogEvents.Unregister(this);
+-            PDAEvents.Unregister(this);
++            UnregisterPDAEvents();
+             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+         }
+ 
+@@ -251,7 +252,7 @@ namespace Hecton8.UI
+         {
+             TryUnregister();
+             AudioLogEvents.Unregister(this);
+-            PDAEvents.Unregister(this);
++            UnregisterPDAEvents();
+             LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+             PDAEvents.AssertUnregistered(this, nameof(PDADataLogTab));
+             if (_runtimeHologramMaterial != null)
+@@ -261,6 +262,24 @@ namespace Hecton8.UI
+             }
+         }
+ 
++        private void TryRegisterPDAEvents()
++        {
++            if (_pdaEventsRegistered)
++                return;
++
++            PDAEvents.Register(this);
++            _pdaEventsRegistered = true;
++        }
++
++        private void UnregisterPDAEvents()
++        {
++            if (!_pdaEventsRegistered)
++                return;
++
++            PDAEvents.Unregister(this);
++            _pdaEventsRegistered = false;
++        }
++
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         //  ITickable
+         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+diff --git a/Assets/_Project/Scripts/UI/PDAMapTab.cs b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+index 0b64221b..86824d9a 100644
+--- a/Assets/_Project/Scripts/UI/PDAMapTab.cs
++++ b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+@@ -1,4 +1,5 @@
+ using System;
++using System.Collections.Generic;
+ using System.Runtime.InteropServices;
+ using Hecton8.Audio;
+ using Hecton8.Bootstrap;
+@@ -23,7 +24,7 @@ namespace Hecton8.UI
+     /// </summary>
+     [DisallowMultipleComponent]
+     [AddComponentMenu("Hecton8/UI/PDA Map Tab")]
+-    public sealed class PDAMapTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable
++    public sealed class PDAMapTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPDAEventListener
+     {
+         private const string SonarMapShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader";
+         private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
+@@ -35,6 +36,10 @@ namespace Hecton8.UI
+         private const int PointCloudAxis = 16;
+         private const int PointCloudCapacity = PointCloudAxis * PointCloudAxis * PointCloudAxis;
+         private const int SonarPointStrideBytes = 32;
++        private const int MaxMarkerVisuals = 64;
++        private const int MarkerUpdateQueueCapacity = 128;
++        private const int MaxMarkerUiUpdatesPerLateFrame = 10;
++        private const float MarkerVisualSize = 7f;
+ 
+         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
+         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
+@@ -263,10 +268,21 @@ namespace Hecton8.UI
+         private float sourceRefreshInterval = 0.2f;
+ 
+         private readonly Vector4[] _threatPings = new Vector4[MaxThreatPings]; // COLD ALLOC: Vector4[8] - PDA sonar-map threat ping upload cache - owner: PDAMapTab
++        private readonly uint[] _pendingMarkerHashes = new uint[MarkerUpdateQueueCapacity]; // COLD ALLOC: uint[128] - time-sliced PDA marker update queue - owner: PDAMapTab
++        private readonly RectTransform[] _markerVisualRoots = new RectTransform[MaxMarkerVisuals]; // COLD ALLOC: RectTransform[64] - prebuilt PDA map marker visual pool - owner: PDAMapTab
++        private readonly CanvasGroup[] _markerVisualGroups = new CanvasGroup[MaxMarkerVisuals]; // COLD ALLOC: CanvasGroup[64] - marker visibility controls without SetActive - owner: PDAMapTab
++        private readonly Image[] _markerVisualImages = new Image[MaxMarkerVisuals]; // COLD ALLOC: Image[64] - marker icon tint targets - owner: PDAMapTab
++        private readonly uint[] _markerHashByVisualSlot = new uint[MaxMarkerVisuals]; // COLD ALLOC: uint[64] - marker hash to visual slot ownership - owner: PDAMapTab
++        private readonly Dictionary<uint, int> _markerVisualSlotByHash = new Dictionary<uint, int>(MaxMarkerVisuals); // COLD ALLOC: Dictionary<uint,int>[64] - marker visual slot lookup - owner: PDAMapTab
+         private bool _registered;
+         private bool _registeredLateFrame;
++        private bool _pdaEventsRegistered;
+         private float _refreshCountdown;
+         private float _animationTime;
++        private int _pendingMarkerReadIndex;
++        private int _pendingMarkerWriteIndex;
++        private int _pendingMarkerCount;
++        private int _nextMarkerVisualSlot;
+         private int _activeVolumeVersion = -1;
+         private int _activeThreatPingCount;
+         private Texture3D _sdfTexture;
+@@ -285,6 +301,7 @@ namespace Hecton8.UI
+         private HectonVoxelVolume _activeVolume;
+         private CharBufferPool.Lease _statusBufferLease;
+         private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] - PDA map point-cloud basis corners - owner: PDAMapTab
++        private RectTransform _markerOverlayRoot;
+ 
+         private void Awake()
+         {
+@@ -295,21 +312,27 @@ namespace Hecton8.UI
+         {
+             EnsureBuilt();
+             TryAcquireStatusBuffer();
++            TryRegisterPDAEvents();
+             RegisterToTickManager();
+             RefreshMapSource(force: true);
+         }
+ 
+         private void OnDisable()
+         {
++            UnregisterPDAEvents();
+             UnregisterFromTickManager();
+             CompleteCartographyJobIfNeeded(applyTexture: false);
++            ClearPendingMarkerUpdates();
+             ReleaseStatusBuffer();
+         }
+ 
+         private void OnDestroy()
+         {
++            UnregisterPDAEvents();
++            PDAEvents.AssertUnregistered(this, nameof(PDAMapTab));
+             UnregisterFromTickManager();
+             CompleteCartographyJobIfNeeded(applyTexture: false);
++            ClearPendingMarkerUpdates();
+             ReleaseStatusBuffer();
+             ReleaseResources();
+         }
+@@ -339,6 +362,16 @@ namespace Hecton8.UI
+         {
+             CompleteCartographyJobIfNeeded(applyTexture: true);
+             RenderPointCloud();
++            ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
++        }
++
++        /// <inheritdoc />
++        public void OnPDAEvent(in PDAEventPayload payload)
++        {
++            if ((PDAEventType)payload.EventType != PDAEventType.MarkerChanged)
++                return;
++
++            EnqueueMarkerUpdate(payload.MarkerHashID);
+         }
+ 
+         private void RegisterToTickManager()
+@@ -381,6 +414,24 @@ namespace Hecton8.UI
+             _registeredLateFrame = true;
+         }
+ 
++        private void TryRegisterPDAEvents()
++        {
++            if (_pdaEventsRegistered)
++                return;
++
++            PDAEvents.Register(this);
++            _pdaEventsRegistered = true;
++        }
++
++        private void UnregisterPDAEvents()
++        {
++            if (!_pdaEventsRegistered)
++                return;
++
++            PDAEvents.Unregister(this);
++            _pdaEventsRegistered = false;
++        }
++
+         private void EnsureBuilt()
+         {
+             RectTransform root = transform as RectTransform;
+@@ -414,6 +465,8 @@ namespace Hecton8.UI
+                 mapImage.raycastTarget = false;
+             }
+ 
++            EnsureMarkerOverlayBuilt();
++
+             if (statusLabel == null)
+             {
+                 GameObject statusOwner = new GameObject("MapStatus", typeof(RectTransform));
+@@ -478,6 +531,43 @@ namespace Hecton8.UI
+             return rect;
+         }
+ 
++        private void EnsureMarkerOverlayBuilt()
++        {
++            if (_markerOverlayRoot != null || mapImage == null)
++                return;
++
++            RectTransform mapRect = mapImage.rectTransform;
++            if (mapRect == null)
++                return;
++
++            _markerOverlayRoot = CreateRect("MarkerOverlay", mapRect);
++            _markerOverlayRoot.anchorMin = Vector2.zero;
++            _markerOverlayRoot.anchorMax = Vector2.one;
++            _markerOverlayRoot.offsetMin = Vector2.zero;
++            _markerOverlayRoot.offsetMax = Vector2.zero;
++
++            for (int i = 0; i < MaxMarkerVisuals; i++)
++            {
++                RectTransform markerRoot = CreateRect("Marker", _markerOverlayRoot);
++                markerRoot.anchorMin = new Vector2(0.5f, 0.5f);
++                markerRoot.anchorMax = new Vector2(0.5f, 0.5f);
++                markerRoot.sizeDelta = new Vector2(MarkerVisualSize, MarkerVisualSize);
++
++                Image markerImage = markerRoot.gameObject.AddComponent<Image>();
++                markerImage.raycastTarget = false;
++                markerImage.color = Color.clear;
++
++                CanvasGroup group = markerRoot.gameObject.AddComponent<CanvasGroup>();
++                group.alpha = 0f;
++                group.blocksRaycasts = false;
++                group.interactable = false;
++
++                _markerVisualRoots[i] = markerRoot;
++                _markerVisualGroups[i] = group;
++                _markerVisualImages[i] = markerImage;
++            }
++        }
++
+         private void RefreshMapSource(bool force)
+         {
+             if (TryGetEmpBlindState(out _))
+@@ -832,6 +922,158 @@ namespace Hecton8.UI
+             Graphics.RenderPrimitives(renderParams, MeshTopology.Points, _pointCloudVertexCount);
+         }
+ 
++        private void EnqueueMarkerUpdate(uint markerHashId)
++        {
++            if (markerHashId == 0u)
++                return;
++
++            if (_pendingMarkerCount >= MarkerUpdateQueueCapacity)
++            {
++                _pendingMarkerReadIndex++;
++                if (_pendingMarkerReadIndex >= MarkerUpdateQueueCapacity)
++                    _pendingMarkerReadIndex = 0;
++                _pendingMarkerCount--;
++            }
++
++            _pendingMarkerHashes[_pendingMarkerWriteIndex] = markerHashId;
++            _pendingMarkerWriteIndex++;
++            if (_pendingMarkerWriteIndex >= MarkerUpdateQueueCapacity)
++                _pendingMarkerWriteIndex = 0;
++
++            _pendingMarkerCount++;
++        }
++
++        private bool TryDequeueMarkerUpdate(out uint markerHashId)
++        {
++            markerHashId = 0u;
++            if (_pendingMarkerCount <= 0)
++                return false;
++
++            markerHashId = _pendingMarkerHashes[_pendingMarkerReadIndex];
++            _pendingMarkerHashes[_pendingMarkerReadIndex] = 0u;
++            _pendingMarkerReadIndex++;
++            if (_pendingMarkerReadIndex >= MarkerUpdateQueueCapacity)
++                _pendingMarkerReadIndex = 0;
++
++            _pendingMarkerCount--;
++            return markerHashId != 0u;
++        }
++
++        private void ProcessPendingMarkerUpdates(int maxUpdates)
++        {
++            if (_pendingMarkerCount <= 0 || maxUpdates <= 0)
++                return;
++
++            EnsureMarkerOverlayBuilt();
++            if (_markerOverlayRoot == null)
++            {
++                ClearPendingMarkerUpdates();
++                return;
++            }
++
++            PDAMarkerRegistry markerRegistry = PDAMarkerRegistry.Instance;
++            if (markerRegistry == null)
++            {
++                ClearPendingMarkerUpdates();
++                return;
++            }
++
++            int processed = 0;
++            while (processed < maxUpdates && TryDequeueMarkerUpdate(out uint markerHashId))
++            {
++                if (!markerRegistry.TryGetMarkerByHash(markerHashId, out PDAMarkerSnapshot marker))
++                {
++                    processed++;
++                    continue;
++                }
++
++                ApplyMarkerVisualization(in marker);
++                processed++;
++            }
++        }
++
++        private void ApplyMarkerVisualization(in PDAMarkerSnapshot marker)
++        {
++            if (!TryResolveMarkerVisualSlot(marker.MarkerHashID, out int slot))
++                return;
++
++            RectTransform markerRoot = _markerVisualRoots[slot];
++            CanvasGroup group = _markerVisualGroups[slot];
++            Image markerImage = _markerVisualImages[slot];
++            if (markerRoot == null || group == null || markerImage == null || _markerOverlayRoot == null)
++                return;
++
++            Vector3 playerPosition = ResolvePlayerPosition();
++            float radius = Mathf.Max(1f, AcousticOverlayRadiusMeters);
++            float normalizedX = Mathf.Clamp01(((marker.Position.x - playerPosition.x) / (radius * 2f)) + 0.5f);
++            float normalizedY = Mathf.Clamp01(((marker.Position.z - playerPosition.z) / (radius * 2f)) + 0.5f);
++            Rect overlayRect = _markerOverlayRoot.rect;
++            markerRoot.anchoredPosition = new Vector2(
++                (normalizedX - 0.5f) * overlayRect.width,
++                (normalizedY - 0.5f) * overlayRect.height);
++
++            markerImage.color = ResolveMarkerColor(marker.IconType);
++            group.alpha = 1f;
++            group.blocksRaycasts = false;
++            group.interactable = false;
++        }
++
++        private bool TryResolveMarkerVisualSlot(uint markerHashId, out int slot)
++        {
++            if (markerHashId == 0u)
++            {
++                slot = -1;
++                return false;
++            }
++
++            if (_markerVisualSlotByHash.TryGetValue(markerHashId, out slot))
++                return true;
++
++            slot = _nextMarkerVisualSlot;
++            _nextMarkerVisualSlot++;
++            if (_nextMarkerVisualSlot >= MaxMarkerVisuals)
++                _nextMarkerVisualSlot = 0;
++
++            uint previousHash = _markerHashByVisualSlot[slot];
++            if (previousHash != 0u)
++                _markerVisualSlotByHash.Remove(previousHash);
++
++            _markerHashByVisualSlot[slot] = markerHashId;
++            _markerVisualSlotByHash[markerHashId] = slot;
++            return true;
++        }
++
++        private static Color ResolveMarkerColor(MarkerIconType iconType)
++        {
++            switch (iconType)
++            {
++                case MarkerIconType.Resource:
++                    return new Color(0.32f, 0.94f, 0.58f, 0.9f);
++                case MarkerIconType.Hazard:
++                    return new Color(1f, 0.25f, 0.18f, 0.92f);
++                case MarkerIconType.Shelter:
++                    return new Color(0.35f, 0.72f, 1f, 0.9f);
++                case MarkerIconType.Objective:
++                    return new Color(1f, 0.85f, 0.28f, 0.94f);
++                case MarkerIconType.Vehicle:
++                    return new Color(0.82f, 0.62f, 1f, 0.9f);
++                case MarkerIconType.Beacon:
++                    return new Color(0.42f, 1f, 0.94f, 0.9f);
++                default:
++                    return new Color(0.7f, 0.96f, 1f, 0.86f);
++            }
++        }
++
++        private void ClearPendingMarkerUpdates()
++        {
++            for (int i = 0; i < _pendingMarkerHashes.Length; i++)
++                _pendingMarkerHashes[i] = 0u;
++
++            _pendingMarkerReadIndex = 0;
++            _pendingMarkerWriteIndex = 0;
++            _pendingMarkerCount = 0;
++        }
++
+         private void EnsureSdfTexture(Vector3Int gridDimensions)
+         {
+             if (_sdfTexture != null &&
+diff --git a/Assets/_Project/Scripts/UI/PDATabButton.cs b/Assets/_Project/Scripts/UI/PDATabButton.cs
+index 4d25da81..38b6a5f3 100644
+--- a/Assets/_Project/Scripts/UI/PDATabButton.cs
++++ b/Assets/_Project/Scripts/UI/PDATabButton.cs
+@@ -6,6 +6,7 @@
+ // ============================================================================
+ 
+ using TMPro;
++using Hecton8.Core;
+ using UnityEngine;
+ using UnityEngine.UI;
+ 
+@@ -123,8 +124,8 @@ namespace Hecton8.UI
+ 
+         private void OnClick()
+         {
+-            if (_playerPDA != null)
+-                _playerPDA.SetActiveTab(_tabIndex);
++            EntityCommand command = EntityCommand.CreateOpenPDATab(_tabIndex);
++            ThreadSafeCommandQueue.Enqueue(in command);
+         }
+     }
+ }

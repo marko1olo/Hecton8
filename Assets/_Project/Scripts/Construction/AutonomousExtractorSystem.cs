@@ -707,7 +707,7 @@ namespace Hecton8.Construction
                 position,
                 safeRadius,
                 PlacementOverlapBuffer,
-                ~0,
+                HectonLayerMasks.StrictInteractionLayerMask,
                 QueryTriggerInteraction.Ignore);
             if (overlapCount <= 0)
                 return false;

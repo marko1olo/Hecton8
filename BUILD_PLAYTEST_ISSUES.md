@@ -7,6 +7,13 @@ Ledger Start Date: `2026-04-05`
 
 This file tracks confirmed build and playtest observations.
 
+2026-05-01 current-state boundary:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger for current project truth.
+- This ledger records build/playtest observations and coding follow-ups; it is not a global runtime certification report.
+- Items marked `[c]` are code-closed only until build/user proof confirms them.
+- If this file disagrees with current source, console, profiler, or fresh user evidence, the newer evidence wins.
+
 Rules:
 
 - Only log real observations from builds, live runs, or manual playtests

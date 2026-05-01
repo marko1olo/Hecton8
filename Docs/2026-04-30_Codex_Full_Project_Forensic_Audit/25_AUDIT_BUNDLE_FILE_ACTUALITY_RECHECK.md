@@ -43,31 +43,31 @@ Status discipline:
 
 ## 2. Fresh Repository Counters
 
-Snapshot date: 2026-04-30.
+Snapshot date: 2026-05-01.
 
 | Surface | Fresh count |
 |---|---:|
-| first-party C# under `Assets/_Project` | 1038 |
-| C# under `Assets/_Project/Scripts` | 998 |
+| first-party C# under `Assets/_Project` | 1060 |
+| C# under `Assets/_Project/Scripts` | 1020 |
 | C# tests under `Assets/_Project/Tests` | 4 |
-| non-meta files under `Assets/_Project/Data` | 1279 |
+| non-meta files under `Assets/_Project/Data` | 1287 |
 | prefabs under `Assets/_Project/Prefabs` | 378 |
-| first-party `.shader` files | 62 |
+| first-party `.shader` files | 65 |
 | first-party `.compute` files | 22 |
-| non-meta files under `Docs` after this addendum | 529 |
+| non-meta files under `Docs` after this addendum | 584 |
 
 Fresh folder source-size checks:
 
 | Folder | C# files | Lines |
 |---|---:|---:|
-| `Assets/_Project/Scripts/World` | 108 | 64,476 |
-| `Assets/_Project/Scripts/UI` | 78 | 36,339 |
-| `Assets/_Project/Scripts/Gameplay` | 104 | 33,995 |
-| `Assets/_Project/Scripts/Core` | 33 | 9,568 |
-| `Assets/_Project/Scripts/Construction` | 24 | 8,932 |
-| `Assets/_Project/Scripts/Visor` | 19 | 8,217 |
-| `Assets/_Project/Scripts/Audio` | 13 | 7,874 |
-| `Assets/_Project/Scripts/Fauna` | 15 | 7,759 |
+| `Assets/_Project/Scripts/World` | 115 | 71,255 |
+| `Assets/_Project/Scripts/UI` | 79 | 37,860 |
+| `Assets/_Project/Scripts/Gameplay` | 106 | 35,225 |
+| `Assets/_Project/Scripts/Core` | 35 | 10,639 |
+| `Assets/_Project/Scripts/Construction` | 25 | 10,866 |
+| `Assets/_Project/Scripts/Visor` | 19 | 8,464 |
+| `Assets/_Project/Scripts/Audio` | 13 | 7,880 |
+| `Assets/_Project/Scripts/Fauna` | 17 | 8,692 |
 | `Assets/_Project/Scripts/Optimization` | 22 | 4,294 |
 | `Assets/_Project/Scripts/VFX` | 5 | 2,132 |
 
@@ -80,7 +80,7 @@ Confirmed current facts:
 | Inventory save genetics path exists | `PlayerInventory.cs` writes `dto.itemGeneticsWords` |
 | Save genetics backing field exists | `SaveData.cs` defines `public uint[] itemGeneticsWords;` |
 | Resource node density ranges exist | `ResourceNodeTemplate.cs` defines `MinimumDensity` and `MaximumDensity` |
-| Dedicated `Scripts/Physics` folder contains implementation files | false, folder has 0 C# files |
+| Dedicated `Scripts/Physics` folder contains implementation files | true, folder contains current physics implementation files |
 | Physics namespace implementation exists | true, root-level `PhysicsApplySystem.cs` uses `Hecton8.Physics` |
 | Dedicated `Scripts/AI` folder exists | false |
 | AI implementation exists elsewhere | true, root-level `HectonDirectorAI.cs`, `EncounterDirector.cs`, `EncounterProfile.cs`, `ThreatCostTable.cs` under `Hecton8.Systems.AI` |
@@ -98,7 +98,7 @@ Interpretation:
 | `02_SYSTEM_REALITY_MATRIX.md` | current as model | System readiness percentages remain audit estimates, not measured runtime proof. |
 | `03_CODE_HEALTH_AND_RUNTIME_ARCHITECTURE.md` | current with caution | Architecture risks remain relevant; compile/editor claims must be read through `07`. |
 | `04_PLAYER_PERSPECTIVE_AND_READINESS.md` | current as qualitative assessment | Player-facing readiness remains non-metric and must not be used as a shipping proof. |
-| `05_EVIDENCE_LEDGER.md` | refreshed | First-party C# count updated to 1038. Other grep evidence remains static-code evidence. |
+| `05_EVIDENCE_LEDGER.md` | refreshed | First-party C# count updated to 1060 and script count to 1020. Other grep evidence remains static-code evidence. |
 | `06_CRITICAL_ACTION_QUEUE.md` | current with caution | Queue remains directionally valid; exact priorities require compile/runtime verification. |
 | `07_REVERIFICATION_ADDENDUM_2026-04-30.md` | current as correction layer | Supersedes earlier compile-error assumptions. |
 | `08_SUBSYSTEM_IMPLEMENTATION_CATALOG.md` | refreshed | World/Core/Visor line counts updated. |

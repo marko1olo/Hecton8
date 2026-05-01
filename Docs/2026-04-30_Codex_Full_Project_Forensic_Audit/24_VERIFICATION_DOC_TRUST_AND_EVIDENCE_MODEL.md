@@ -18,11 +18,11 @@ Static snapshot:
 
 | Surface | Count |
 |---|---:|
-| `Docs` non-meta files | 529 |
-| docs `*.md`/`*.txt` files | 412 |
+| `Docs` non-meta files | 584 |
+| docs `*.md`/`*.txt` files | 439 |
 | audit docs by filename | not authoritative because naming is inconsistent |
-| runtime smoke testers (`*SmokeTester*.cs`) | 12 |
-| verifier scripts (`*Verifier*.cs`) | 5 |
+| runtime smoke testers (`*SmokeTester*.cs`) | 11 |
+| verifier scripts (`*Verifier*.cs`) | 3 |
 | `Assets/_Project/Tests` non-meta files | 6 |
 
 `Assets/_Project/Tests` currently contains:
@@ -53,9 +53,8 @@ Verdict:
 ## 3. Smoke/runtime verification is materially real
 
 Evidence:
-- There are `12` runtime smoke-test style scripts:
+- There are `11` runtime smoke-test style scripts:
   - `ShellVerificationRuntimeSmokeTester`
-  - `WeakToolsRuntimeSmokeTester`
   - `SaveSystemRuntimeSmokeTester`
   - `WorldGenerativeGeologyRuntimeSmokeTester`
   - `UIRuntimeSmokeTester`
@@ -66,15 +65,11 @@ Evidence:
   - `BuilderRuntimeSmokeTester`
   - `BarterRuntimeSmokeTester`
   - `ScanRuntimeSmokeTester`
-- There are also `5` verifier scripts, including pause/state/scene recovery and domain-specific runtime verifiers.
+- There are also `3` verifier scripts:
+  - `StateRecoveryVerifier`
+  - `SceneTransitionVerifier`
+  - `PauseSystemVerifier`
 - Earlier passes already confirmed `ShellVerificationRuntimeSmokeTester` is not small or ceremonial.
-
-Verifier scripts:
-- `StateRecoveryVerifier`
-- `SceneTransitionVerifier`
-- `PauseSystemVerifier`
-- `PhysicalInteractionRuntimeVerifier`
-- `MantaAcousticRuntimeVerifier`
 
 What is genuinely good:
 - The project does try to execute scenario-level proof.
@@ -113,16 +108,16 @@ Verdict:
 ## 5. Documentation is a system, not a folder
 
 Evidence:
-- `Docs` contains `529` non-meta files.
+- `Docs` contains `584` non-meta files.
 - Largest branches include:
   - `_Archive` (`156`)
-  - `ARCHIVARIUS REPORTS` (`116` physical non-meta files)
-  - miscellaneous log bundles (`90`)
-  - `ARCHITECTURE` (`24`)
+  - `ARCHIVARIUS REPORTS` (`119` physical non-meta files)
+  - `DEPRECATED` (`199` physical non-meta files, including dated audit bundles, external/log bundles, root redirect stubs, encoding-damaged notes, old root artifacts, and moved legacy source-material folders)
+  - `ARCHITECTURE` (`29`)
   - active Codex forensic bundle (`28` numbered markdown files)
 - `ARCHIVARIUS REPORTS` itself is structured into:
-  - `01_GENERAL_INFO` (`22`)
-  - `02_ACTUAL_REPORTS` (`55`)
+  - `01_GENERAL_INFO` (`24`)
+  - `02_ACTUAL_REPORTS` (`56`)
   - `03_OBSOLETE` (`39`)
   - `04_DELETION_QUEUE` (`0`)
 - `DOC_GOVERNANCE.md` and `Docs/README.md` explicitly discuss archive rules and stale-doc management.
@@ -183,9 +178,9 @@ It does not yet have lightweight certainty.
 
 Current source/doc surface:
 
-- `Docs` now contains `544` non-meta files.
-- `Docs/ARCHIVARIUS REPORTS` now contains `117` non-meta files.
-- `ARCHIVARIUS REPORTS/01_GENERAL_INFO`: `22` direct files.
+- `Docs` now contains `584` non-meta files.
+- `Docs/ARCHIVARIUS REPORTS` now contains `119` non-meta files.
+- `ARCHIVARIUS REPORTS/01_GENERAL_INFO`: `24` direct files.
 - `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`: `56` direct non-meta files: `46` markdown, `9` patch files, `1` csv.
 - `ARCHIVARIUS REPORTS/03_OBSOLETE`: `39` recursive non-meta files.
 - `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit`: `29` markdown files.
@@ -193,10 +188,11 @@ Current source/doc surface:
 
 Smoke/verifier truth update:
 
-- Four old verifier/smoke files were removed in the recent purge path: `SaveSystemRuntimeSmokeTester`, `WeakToolsRuntimeSmokeTester`, `MantaAcousticRuntimeVerifier`, and `PhysicalInteractionRuntimeVerifier`.
-- Eight runtime smoke/verifier harnesses were migrated away from coroutines: `FabricationRuntimeSmokeTester`, `ScanRuntimeSmokeTester`, `BarterRuntimeSmokeTester`, `BuilderRuntimeSmokeTester`, `PauseSystemVerifier`, `SceneTransitionVerifier`, `UIRuntimeSmokeTester`, and `WorldGenerativeGeologyRuntimeSmokeTester`.
-- Strict current grep still finds `15` `StartCoroutine(` call sites under `Assets/_Project/Scripts`, all in remaining runtime smoke/verifier infrastructure.
-- Remaining coroutine owners: `FieldToolRuntimeSmokeTester`, `ToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, `Dev/ShellVerificationRuntimeSmokeTester`, and `Tools/StateRecoveryVerifier`.
+- Current filesystem still contains `SaveSystemRuntimeSmokeTester`; previous wording that listed it as removed was wrong.
+- Three old verifier/smoke names are absent from the current filesystem: `WeakToolsRuntimeSmokeTester`, `MantaAcousticRuntimeVerifier`, and `PhysicalInteractionRuntimeVerifier`.
+- Thirteen runtime smoke/verifier harnesses were migrated away from coroutines: `FabricationRuntimeSmokeTester`, `ScanRuntimeSmokeTester`, `BarterRuntimeSmokeTester`, `BuilderRuntimeSmokeTester`, `PauseSystemVerifier`, `SceneTransitionVerifier`, `UIRuntimeSmokeTester`, `WorldGenerativeGeologyRuntimeSmokeTester`, `StateRecoveryVerifier`, `ToolRuntimeSmokeTester`, `FieldToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, and `Dev/ShellVerificationRuntimeSmokeTester`.
+- Strict current grep finds `0` `StartCoroutine(` call sites under `Assets/_Project/Scripts` outside `Editor/**`.
+- Strict current grep also finds `0` `IEnumerator`, `yield return`, or `WaitForSecondsRealtime` hits under `Assets/_Project/Scripts` outside `Editor/**`.
 
 Verification boundary:
 

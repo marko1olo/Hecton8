@@ -5,6 +5,12 @@ Status: PENDING VERIFICATION
 Scope: source-backed map of current construction, habitat, logistics, and power integration
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- This file maps construction/base ownership; it does not prove long-session module stability, save/load restoration, or native-buffer lifetime safety.
+- `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, and logistics graph ownership remain active review surfaces for memory lifecycle and authority boundaries.
+
 ## Purpose
 
 Older docs had surgery logs and narrow remediations for equipment and habitat systems, but no broad active map tying construction, module templates, topology rebuilds, save/load, and power together.

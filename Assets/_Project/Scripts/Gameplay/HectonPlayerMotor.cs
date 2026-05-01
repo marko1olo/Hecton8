@@ -36,6 +36,7 @@ namespace Hecton8.Gameplay
         private const int ScheduledSweepMaxHits = 8;
         private const int HydrodynamicGhostHistoryCapacity = 4;
         private const float MaxHydrodynamicGhostBlend = 0.15f;
+        private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
@@ -433,8 +434,8 @@ namespace Hecton8.Gameplay
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             float3 drag3 = new float3(dragCoefficient.x, dragCoefficient.y, dragCoefficient.z);
             float speedMag = math.length(velocity3);
-            if (speedMag <= 0.0001f)
-                return velocity;
+            if (speedMag < DenormalVelocityFlushThresholdMetersPerSecond)
+                return Vector3.zero;
 
             float safeDt = math.max(dt, 0.0001f);
             float3 denominator = 1f + math.max(drag3, 0f) * speedMag * safeDt;
@@ -449,8 +450,8 @@ namespace Hecton8.Gameplay
         public static Vector3 AnalyticalQuadraticDrag(Vector3 velocity, float dragCoefficient, float dt)
         {
             float speed = velocity.magnitude;
-            if (speed <= 0.0001f)
-                return velocity;
+            if (speed < DenormalVelocityFlushThresholdMetersPerSecond)
+                return Vector3.zero;
 
             float safeDt = math.max(dt, 0.0001f);
             float denominator = 1f + math.max(0f, dragCoefficient) * speed * safeDt;

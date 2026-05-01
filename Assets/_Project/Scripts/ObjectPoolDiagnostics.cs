@@ -48,7 +48,9 @@ namespace Hecton8.Core
     {
         Warning = 0,
         Exhausted = 1,
-        SpawnRateAlert = 2
+        SpawnRateAlert = 2,
+        DataBusDepth = 3,
+        DataBusSaturated = 4
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -136,6 +138,8 @@ namespace Hecton8.Core
         private static readonly Dictionary<uint, string> _poolNamesByHash = new Dictionary<uint, string>(32);
         private static NativeQueue<PoolDiagnosticsEventPayload> _pendingEvents;
 
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+
         // ════════════════════════════════════════════════════════════
         //  INTERNAL STATE
         // ════════════════════════════════════════════════════════════
@@ -159,6 +163,7 @@ namespace Hecton8.Core
             new Dictionary<string, PoolMetrics>(32);
 
         private static int _lastDiagnosticsFrame = -1;
+        private static int _lastDataBusSaturationWarningFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -173,6 +178,7 @@ namespace Hecton8.Core
             _poolNamesByHash.Clear();
             _poolMetrics.Clear();
             _lastDiagnosticsFrame = -1;
+            _lastDataBusSaturationWarningFrame = -1;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -222,6 +228,25 @@ namespace Hecton8.Core
         public static bool TryResolvePoolName(uint poolHash, out string poolName)
         {
             return _poolNamesByHash.TryGetValue(poolHash, out poolName);
+        }
+
+        public static void PublishDataBusDepth(uint queueHash, int pendingCount)
+        {
+            if (queueHash == 0u || pendingCount < 0)
+                return;
+
+            EnsureInitialized();
+            bool saturated = pendingCount > 128;
+            _pendingEvents.Enqueue(new PoolDiagnosticsEventPayload
+            {
+                PoolHash = queueHash,
+                MetricValue = pendingCount,
+                EventType = (ushort)(saturated ? PoolDiagnosticsEventType.DataBusSaturated : PoolDiagnosticsEventType.DataBusDepth),
+                FlagValue = (ushort)(saturated ? 1 : 0)
+            });
+
+            if (saturated)
+                PublishDataBusSaturationWarning();
         }
 
         /// <summary>
@@ -422,6 +447,16 @@ namespace Hecton8.Core
                 EventType = (ushort)type,
                 FlagValue = (ushort)flagValue
             });
+        }
+
+        private static void PublishDataBusSaturationWarning()
+        {
+            int frame = Time.frameCount;
+            if (_lastDataBusSaturationWarningFrame == frame)
+                return;
+
+            _lastDataBusSaturationWarningFrame = frame;
+            Hecton8.UI.NotificationEvents.PushWarning("DATA_BUS_SATURATED");
         }
 
         private static void DrainWithoutDispatch()

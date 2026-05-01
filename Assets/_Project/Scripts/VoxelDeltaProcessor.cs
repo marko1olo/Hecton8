@@ -708,20 +708,28 @@ namespace Hecton8.Caves
                 cursor += UnsafeUtility.SizeOf<NativeSnapshotChunkHeader>();
 
                 void* dirtyMaskPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.DirtyMaskWords);
-                UnsafeUtility.MemCpy(snapshotPtr + cursor, dirtyMaskPtr, ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>());
-                cursor += ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>();
+                int dirtyMaskBytes = ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(snapshotPtr + cursor, snapshot.Length - cursor, dirtyMaskPtr, dirtyMaskBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
+                cursor += dirtyMaskBytes;
 
                 void* sdfPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.SdfValueBits);
-                UnsafeUtility.MemCpy(snapshotPtr + cursor, sdfPtr, ChunkCellCount * UnsafeUtility.SizeOf<ushort>());
-                cursor += ChunkCellCount * UnsafeUtility.SizeOf<ushort>();
+                int sdfBytes = ChunkCellCount * UnsafeUtility.SizeOf<ushort>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(snapshotPtr + cursor, snapshot.Length - cursor, sdfPtr, sdfBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
+                cursor += sdfBytes;
 
                 void* materialPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.MaterialIds);
-                UnsafeUtility.MemCpy(snapshotPtr + cursor, materialPtr, ChunkCellCount * UnsafeUtility.SizeOf<byte>());
-                cursor += ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+                int materialBytes = ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(snapshotPtr + cursor, snapshot.Length - cursor, materialPtr, materialBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
+                cursor += materialBytes;
 
                 void* flagsPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.CellFlags);
-                UnsafeUtility.MemCpy(snapshotPtr + cursor, flagsPtr, ChunkCellCount * UnsafeUtility.SizeOf<byte>());
-                cursor += ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+                int flagsBytes = ChunkCellCount * UnsafeUtility.SizeOf<byte>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(snapshotPtr + cursor, snapshot.Length - cursor, flagsPtr, flagsBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
+                cursor += flagsBytes;
             }
 
             writeEnumerator.Dispose();
@@ -831,21 +839,37 @@ namespace Hecton8.Caves
                 ChunkDeltaState state = GetOrCreateChunkState(new int3(chunkHeader.ChunkX, chunkHeader.ChunkY, chunkHeader.ChunkZ), chunkHeader.VoxelSize);
 
                 void* dirtyMaskPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.DirtyMaskWords);
-                UnsafeUtility.MemCpy(dirtyMaskPtr, snapshotPtr + cursor, dirtyMaskByteLength);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(dirtyMaskPtr, state.DirtyMaskWords.Length * UnsafeUtility.SizeOf<uint>(), snapshotPtr + cursor, dirtyMaskByteLength))
+                {
+                    error = "Voxel delta dirty-mask copy exceeded destination bounds.";
+                    return false;
+                }
                 cursor += dirtyMaskByteLength;
 
                 void* sdfPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.SdfValueBits);
-                UnsafeUtility.MemCpy(sdfPtr, snapshotPtr + cursor, sdfByteLength);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(sdfPtr, state.SdfValueBits.Length * UnsafeUtility.SizeOf<ushort>(), snapshotPtr + cursor, sdfByteLength))
+                {
+                    error = "Voxel delta SDF copy exceeded destination bounds.";
+                    return false;
+                }
                 cursor += sdfByteLength;
 
                 void* materialPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.MaterialIds);
-                UnsafeUtility.MemCpy(materialPtr, snapshotPtr + cursor, materialByteLength);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(materialPtr, state.MaterialIds.Length * UnsafeUtility.SizeOf<byte>(), snapshotPtr + cursor, materialByteLength))
+                {
+                    error = "Voxel delta material copy exceeded destination bounds.";
+                    return false;
+                }
                 cursor += materialByteLength;
 
                 if (snapshotHasFlags)
                 {
                     void* flagsPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(state.CellFlags);
-                    UnsafeUtility.MemCpy(flagsPtr, snapshotPtr + cursor, flagsByteLength);
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(flagsPtr, state.CellFlags.Length * UnsafeUtility.SizeOf<byte>(), snapshotPtr + cursor, flagsByteLength))
+                    {
+                        error = "Voxel delta flag copy exceeded destination bounds.";
+                        return false;
+                    }
                     cursor += flagsByteLength;
                 }
                 else
@@ -948,37 +972,70 @@ namespace Hecton8.Caves
                 Mathf.FloorToInt((boundsMax.x + boundsPadding) / voxelSize),
                 Mathf.FloorToInt((boundsMax.y + boundsPadding) / voxelSize),
                 Mathf.FloorToInt((boundsMax.z + boundsPadding) / voxelSize));
+            ResolveVolumeCellBounds(volume, out int3 volumeMinCell, out int3 volumeMaxCell, out _, out _);
+            if (!CellBoundsIntersect(minCell, maxCell, volumeMinCell, volumeMaxCell))
+                return;
+
+            minCell = math.max(minCell, volumeMinCell);
+            maxCell = math.min(maxCell, volumeMaxCell);
 
             int3 span = (maxCell - minCell) + 1;
             int candidateCount = math.max(0, span.x) * math.max(0, span.y) * math.max(0, span.z);
             if (candidateCount <= 0)
                 return;
 
-            EnsureScheduledCarveWriteCapacity(candidateCount);
-            _scheduledCarveRequest = request;
-
-            CarveSdfJob carveJob = new CarveSdfJob
+            bool scheduled = false;
+            try
             {
-                MinCell = minCell,
-                Span = span,
-                VoxelSize = voxelSize,
-                Radius = radius,
-                BlendRadius = blendRadius,
-                BlendStrength = ResolveBlendStrength(in request, voxelSize),
-                Center = segmentStart,
-                SegmentEnd = segmentEnd,
-                HalfExtents = halfExtents,
-                MaterialId = request.MaterialId,
-                DeltaFlags = request.DeltaFlags,
-                Shape = shape,
-                Writes = _scheduledCarveWrites
-            };
+                EnsureScheduledCarveWriteCapacity(candidateCount);
+                _scheduledCarveRequest = request;
 
-            using (_carveScheduleProfilerMarker.Auto())
+                CarveSdfJob carveJob = new CarveSdfJob
+                {
+                    MinCell = minCell,
+                    Span = span,
+                    VoxelSize = voxelSize,
+                    Radius = radius,
+                    BlendRadius = blendRadius,
+                    BlendStrength = ResolveBlendStrength(in request, voxelSize),
+                    Center = segmentStart,
+                    SegmentEnd = segmentEnd,
+                    HalfExtents = halfExtents,
+                    MaterialId = request.MaterialId,
+                    DeltaFlags = request.DeltaFlags,
+                    Shape = shape,
+                    Writes = _scheduledCarveWrites
+                };
+
+                using (_carveScheduleProfilerMarker.Auto())
+                {
+                    _scheduledCarveWriteCount = candidateCount;
+                    _scheduledCarveHandle = carveJob.Schedule(candidateCount, 64);
+                    _scheduledCarveRunning = true;
+                    scheduled = true;
+                }
+            }
+            catch (Exception exception)
             {
-                _scheduledCarveWriteCount = candidateCount;
-                _scheduledCarveHandle = carveJob.Schedule(candidateCount, 64);
-                _scheduledCarveRunning = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[VoxelDeltaProcessor] Failed to schedule voxel CSG carve: " + exception.Message, this);
+#endif
+            }
+            finally
+            {
+                if (!scheduled)
+                {
+                    _scheduledCarveHandle = default;
+                    _scheduledCarveRunning = false;
+                    _scheduledCarveWriteCount = 0;
+                    _scheduledCarveRequest = default;
+
+                    if (_scheduledCarveWrites.IsCreated)
+                    {
+                        _scheduledCarveWrites.Dispose();
+                        _scheduledCarveWrites = default;
+                    }
+                }
             }
         }
 
@@ -1407,6 +1464,13 @@ namespace Hecton8.Caves
         private static int3 FloorDiv(int3 value, int divisor)
         {
             return new int3(FloorDiv(value.x, divisor), FloorDiv(value.y, divisor), FloorDiv(value.z, divisor));
+        }
+
+        private static bool CellBoundsIntersect(int3 minA, int3 maxA, int3 minB, int3 maxB)
+        {
+            return minA.x <= maxB.x && maxA.x >= minB.x &&
+                   minA.y <= maxB.y && maxA.y >= minB.y &&
+                   minA.z <= maxB.z && maxA.z >= minB.z;
         }
 
         private static int FloorDiv(int value, int divisor)

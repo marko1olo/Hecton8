@@ -423,10 +423,10 @@ namespace Hecton8.Core
         /// Вечная корутина. WaitForSeconds кэширован — zero GC per yield.
         /// </summary>
         #if false
-        private System.Collections.IEnumerator SlowTickRoutine()
+        private object SlowTickRoutineDisabled()
         {
             // Первый yield — чтобы все системы успели зарегистрироваться
-            yield return null;
+            return null;
 
             while (true)
             {

@@ -6,7 +6,7 @@ namespace Hecton8.Construction
     /// <summary>
     /// Raised when a logistics pipe ruptures from sustained downstream blockage.
     /// </summary>
-    public sealed class LogisticsPipeOverpressureLeakEvent : HectonEvent
+    internal sealed class LogisticsPipeOverpressureLeakEvent : HectonEvent
     {
         public LogisticsPipeOverpressureLeakEvent(int pipeInstanceId, Vector3 worldPosition, float overpressureStress, int itemHashId)
         {

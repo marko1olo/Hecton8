@@ -5,6 +5,12 @@ Status: PENDING VERIFICATION
 Scope: source-backed ownership map for the current player-facing gameplay core
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- This file is still useful as a player-domain ownership map, but its source-line evidence was not fully revalidated in this pass.
+- Current player-domain risks include oversized `HectonPlayerMovement`, presentation-dependent gameplay branches, service authority drift, and unmeasured hot-path GC/CPU.
+
 ## Purpose
 
 This document exists to answer one narrow question:

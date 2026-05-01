@@ -1,7 +1,17 @@
 # Dispatch Pipeline
 
+Date: `2026-05-01`
+Status: `PENDING VERIFICATION`
+
 ## Scope
 This document is the authoritative handoff for future agents touching `SystemDispatcher`, `PhysicsApplySystem`, late-frame job ownership recovery, and structural command draining.
+
+Current-state boundary:
+
+- This document defines the required dispatch contract.
+- It is not proof that all current sources comply.
+- `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` still identifies cadence-sensitive local `.Complete()` ownership in `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick`.
+- Any future edit must move local barriers into explicit dispatcher-owned swap windows or document why the owner is a permitted end-window.
 
 ## Core Rule
 `Tick()` and `FixedTick()` may schedule jobs and read already-published front buffers.
@@ -90,6 +100,11 @@ These systems were explicitly moved off mid-tick `Complete()` patterns and into 
 - `LODSystemManager`: distance-job completion moved from `Tick()` to `LateFrameTick()`.
 
 These are the reference before/after cases for future audits. If a system schedules work in a gameplay lane and consumes it in that same lane on a later frame, it still violates the contract.
+
+2026-05-01 caveat:
+
+- `PostFixedTick()` is a valid swap-window concept only when owned and bounded by dispatcher cadence.
+- A local owner calling `.Complete()` in `PostFixedTick()` is still a review target until the wait is proven non-stalling or moved behind a dispatcher-owned completion policy.
 
 ## Scene Activation Gate
 `SceneRuntimeService.LoadSceneAsync()` now performs guarded async scene loads.

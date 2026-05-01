@@ -520,9 +520,7 @@ namespace Hecton8.Editor.Validation
             GameObject root = new GameObject(Path.GetFileNameWithoutExtension(prefabName));
             try
             {
-                BoxCollider collider = root.AddComponent<BoxCollider>();
-                collider.center = template.BoundingBoxCenter;
-                collider.size = SanitizeSize(template.BoundingBoxSize);
+                ConfigureFloraGhostCapsuleCollider(root, template);
 
                 EnsureWireframeProxy(root, template.BoundingBoxCenter, template.BoundingBoxSize, wireMesh, wireMaterial);
 
@@ -544,6 +542,52 @@ namespace Hecton8.Editor.Validation
                 Mathf.Max(0.1f, Mathf.Abs(value.x)),
                 Mathf.Max(0.1f, Mathf.Abs(value.y)),
                 Mathf.Max(0.1f, Mathf.Abs(value.z)));
+        }
+
+        private static void ConfigureFloraGhostCapsuleCollider(GameObject root, FloraDataTemplate template)
+        {
+            Vector3 size = SanitizeSize(template.BoundingBoxSize);
+            Vector3 extents = size * 0.5f;
+            int axis = ResolveFloraGhostCapsuleAxis(template.Category, template.ProxyShapeType, extents);
+            int secondaryA = (axis + 1) % 3;
+            int secondaryB = (axis + 2) % 3;
+            float secondaryMin = Mathf.Min(GetAxis(size, secondaryA), GetAxis(size, secondaryB));
+            float radius = Mathf.Max(0.05f, secondaryMin * 0.5f);
+
+            CapsuleCollider collider = root.AddComponent<CapsuleCollider>();
+            collider.center = template.BoundingBoxCenter;
+            collider.direction = axis;
+            collider.radius = radius;
+            collider.height = Mathf.Max(radius * 2f, GetAxis(size, axis));
+        }
+
+        private static int ResolveFloraGhostCapsuleAxis(
+            FloraDataTemplate.FloraCategory category,
+            FloraDataTemplate.ProxyShape proxyShape,
+            Vector3 extents)
+        {
+            if (category == FloraDataTemplate.FloraCategory.HarvestableKelp ||
+                category == FloraDataTemplate.FloraCategory.GiantSargassum)
+            {
+                return 1;
+            }
+
+            if (category == FloraDataTemplate.FloraCategory.HardCoral ||
+                proxyShape == FloraDataTemplate.ProxyShape.Fan ||
+                proxyShape == FloraDataTemplate.ProxyShape.SphereCluster)
+            {
+                return extents.x >= extents.z ? 0 : 2;
+            }
+
+            if (extents.y >= extents.x && extents.y >= extents.z)
+                return 1;
+
+            return extents.x >= extents.z ? 0 : 2;
+        }
+
+        private static float GetAxis(Vector3 value, int axis)
+        {
+            return axis == 0 ? value.x : (axis == 1 ? value.y : value.z);
         }
 
         private static void ResolveLocalBounds(GameObject root, out Vector3 localCenter, out Vector3 localSize)

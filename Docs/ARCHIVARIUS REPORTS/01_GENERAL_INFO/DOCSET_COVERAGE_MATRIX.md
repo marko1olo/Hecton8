@@ -1,6 +1,6 @@
 # HECTON-8 DOCSET COVERAGE MATRIX
 
-Date: 2026-04-30
+Date: 2026-05-01
 Status: PENDING VERIFICATION
 Scope: coverage map for active doc folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS`
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
@@ -28,28 +28,29 @@ Authority levels used below:
 
 ## Coverage Inventory Snapshot
 
-Filesystem snapshot: 2026-04-30.
+Filesystem snapshot: 2026-05-01.
 
 | Bucket | Current count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 22 |
+| `01_GENERAL_INFO` markdown files | 24 |
 | `02_ACTUAL_REPORTS` markdown files | 46 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| `02_ACTUAL_REPORTS` patch artifacts | 8 |
-| indexed docs/datasets in `01` + `02` | 69 |
-| physical non-meta files in `01` + `02` | 77 |
+| `02_ACTUAL_REPORTS` patch artifacts | 9 |
+| indexed docs/datasets in `01` + `02` | 71 |
+| physical non-meta files in `01` + `02` | 80 |
 
 Correction:
 - Earlier `19` / `43` folder-count claims are stale against the current filesystem.
 - The current source-backed coverage map includes `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, and `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`.
 - Patch artifacts are evidence files, not independent current-state authority.
+- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is now the first conceptual current-state entry point outside this Archivarius folder.
 
 ## Domain Coverage
 
 | Domain | Current coverage | Primary files | Secondary files | Authority | Current gap |
 |---|---|---|---|---|---|
-| Workspace orientation | strong | `PROJECT_ATLAS.md`, `MASTER_INDEX.md` | `STRUCTURAL_NARRATIVE.md` | PRIMARY | none beyond drift risk |
-| Docset health / trust boundaries | strong | `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`, `MASTER_INDEX.md` | `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`, this file | PRIMARY | older active bundles still need periodic downgrade checks |
+| Workspace orientation | strong | `PROJECT_ATLAS.md`, `MASTER_INDEX.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, `STRUCTURAL_NARRATIVE.md` | PRIMARY | none beyond drift risk |
+| Docset health / trust boundaries | strong | `DOC_AUTHORITY_CLASSIFICATION.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `PROJECT_ATLAS.md`, `MASTER_INDEX.md` | `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`, this file | PRIMARY | older active bundles still need periodic downgrade checks |
 | Bootstrap / init order | strong | `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`, `BUILD_DEPENDENCY_GRAPH.md` | `DEPENDENCY_GRAPH.md`, `FRAME_TIMELINE.md` | PRIMARY | no live bootstrap branch traversal proof |
 | Scene / prefab service-owner truth | medium | `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` | `PROJECT_ATLAS.md`, `BUILD_DEPENDENCY_GRAPH.md` | PRIMARY | scan is bounded to current first-party scenes/prefabs, not all runtime states |
 | GlobalRegistry / service ownership | strong | `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_HEALTH_DASHBOARD.md` | `INTERFACE_STRATEGY.md`, `DEPENDENCY_GRAPH.md`, `PROJECT_ATLAS.md` | PRIMARY | prefab/scene wiring proof still absent |
@@ -57,7 +58,7 @@ Correction:
 | Interface truth / contract drift | strong | `INTERFACE_HEALTH_DASHBOARD.md` | `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_STRATEGY.md` | PRIMARY | no automated diff against future source drift |
 | Event architecture | strong | `EVENT_FLOW_MAP.md` | `EVENT_BUS_MAP.md`, `FRAME_TIMELINE.md`, `2026-04-28_EVENT_LEAK_REPORT.md` | PRIMARY | full subscriber graph and teardown proof absent |
 | Tick / frame execution | medium | `FRAME_TIMELINE.md` | `STRUCTURAL_NARRATIVE.md`, `DEPENDENCY_GRAPH.md` | PRIMARY | no measured frame-budget replay |
-| Gameplay ownership across major domains | medium | `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` | `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` | PRIMARY | still not exhaustive down to every minor subsystem/file |
+| Gameplay ownership across major domains | strong | `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`, `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` | `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md` | PRIMARY | still not exhaustive down to every minor subsystem/file |
 | Tools / interaction / operational runtime | strong | `TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md` | `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`, `EVENT_FLOW_MAP.md` | PRIMARY | no live multi-tool traversal or stress proof |
 | Narrative / discovery / progression ownership | strong | `NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md` | `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md`, `2026-04-30_SAVE_PARTICIPANT_LEDGER.md`, `EVENT_FLOW_MAP.md`, `UI_AUDIO_PRESENTATION_SYSTEM_MAP.md` | PRIMARY | no live progression-arc traversal proof |
 | Player / gameplay core | medium | `PLAYER_GAMEPLAY_CORE_MAP.md` | `PROJECT_ATLAS.md`, `INTERFACE_HEALTH_DASHBOARD.md`, `FRAME_TIMELINE.md` | PRIMARY | no measured integrated player traversal proof |
@@ -97,7 +98,8 @@ Correction:
 
 | Task | Recommended read path |
 |---|---|
-| Need repo orientation fast | `PROJECT_ATLAS.md` -> `MASTER_INDEX.md` -> this file |
+| Need repo orientation fast | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `PROJECT_ATLAS.md` -> `MASTER_INDEX.md` -> this file |
+| Need blunt project-level verdict | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` -> source |
 | Need broad gameplay ownership | `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` -> `PLAYER_GAMEPLAY_CORE_MAP.md` -> `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` |
 | Need survival / damage / hazard ownership | `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md` -> `PLAYER_GAMEPLAY_CORE_MAP.md` -> `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md` -> `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` |
 | Need tools / interaction / operational ownership | `TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md` -> `PLAYER_GAMEPLAY_CORE_MAP.md` -> `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` -> `EVENT_FLOW_MAP.md` |
@@ -125,11 +127,13 @@ Correction:
 
 For current-source truth, prefer in this order:
 
-1. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
-2. `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
-3. current-source summaries in `01_GENERAL_INFO`
-4. current-source rewrites in `02_ACTUAL_REPORTS`
-5. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
+1. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+2. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+3. `PROJECT_ATLAS.md`
+4. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+5. current-source summaries in `01_GENERAL_INFO`
+6. current-source rewrites in `02_ACTUAL_REPORTS`
+7. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
 
 Do not treat dated bundles as current runtime proof.
 
@@ -157,9 +161,9 @@ Current doc counts:
 
 | Scope | Current Count |
 |---|---:|
-| `Docs` non-meta files | 544 |
-| `Docs/ARCHIVARIUS REPORTS` non-meta files | 117 |
-| `01_GENERAL_INFO` direct files | 22 |
+| `Docs` non-meta files | 584 |
+| `Docs/ARCHIVARIUS REPORTS` non-meta files | 119 |
+| `01_GENERAL_INFO` direct files | 24 |
 | `02_ACTUAL_REPORTS` direct non-meta files | 56 |
 | `02_ACTUAL_REPORTS` markdown files | 46 |
 | `02_ACTUAL_REPORTS` patch files | 9 |
@@ -171,12 +175,16 @@ New high-authority May 1 report inputs:
 
 | Report | Authority Level | Use |
 |---|---|---|
+| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md` | PRIMARY | active/reference/deprecated sorting and read-order authority |
+| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY | concept-level system authority and runtime-vs-transitional classification |
 | `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` | PRIMARY | current concurrency, headless, AUP, physics-mask, event-cascade risk map |
 | `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` | PRIMARY | current coroutine migration and object-pool exhaustion state |
 | `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md` | PRIMARY WITH CAUTION | Burst/loop/static scan state, but explicit refusal to claim clean MCP verification |
 | `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md` | SECONDARY | validator implementation notes; some compile-state notes are superseded by later reports |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | PRIMARY | updated reality matrix with May 1 delta |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY | updated current remediation queue |
+| `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY | current conceptual system-ownership entry point |
+| `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY | current blunt project-level verdict; source/doc-backed, not runtime proof |
 
 Coverage corrections:
 
@@ -184,5 +192,14 @@ Coverage corrections:
 - `EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but `DOOMSDAY_FLAW_REPORT.md` adds the missing risk statement: no proven hard max-depth/generation split for all event cascade paths.
 - `PROJECT_CONTENT_LEDGER.md` remains the content ledger, but validator execution proof is still not a live runtime proof.
 - `DEAD_CODE_GRAVEYARD.md` remains the deletion ledger. Its conclusions must be cross-checked before deleting additional code because the worktree is currently heavily modified by multiple agents.
+- `INTERFACE_HEALTH_DASHBOARD.md` now records the current `GlobalRegistryContracts.cs` count as `31` interfaces and marks `IGlobalRegistryHotSwapListener` as an empty seam.
+- `PROJECT_CONTENT_LEDGER.md` now includes the current hadal carbon / pressure diamond / void-glass meteorite assets found in the workspace.
+- `DEAD_CODE_GRAVEYARD.md` now corrects the stale `SaveSystemRuntimeSmokeTester` removal claim; the file exists and is Awaitable-based, but has no YAML attachment evidence.
+- `2026-04-30_EDITOR_RUNTIME_FORENSICS.md` now narrows the coroutine verification finding to the five files that still contain strict `StartCoroutine(` hits.
+- Early loose static reports `ILLEGAL_SINGLETONS.md`, `GC_HOTPATH_VIOLATIONS.md`, `BOOT_ORDER_VIOLATIONS.md`, and `NATIVE_ALLOCATION_AUDIT.md` were moved to `Docs/Reports/DEPRECATED/2026-04-29_Static_Audit_Snapshots/`.
+- External prompt/log/source-material bundles were moved under `Docs/DEPRECATED/External_And_Log_Bundles/`; they are historical inputs, not active project-state authority.
+- Old flat Flora/Scatter redirect stubs were moved under `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/`; canonical bundle entry points remain `Docs/Flora_Pipeline/README.md` and `Docs/Scatter_Runtime/README.md`.
+- Encoding-damaged geology notes were moved under `Docs/DEPRECATED/Encoding_Damaged_2026-05-01/`; current readable world/geology references are `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md` and `Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md`.
+- Old repository-root docs and scan artifacts were moved under `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/`; active root text files are now limited to `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 
 STATUS: PENDING VERIFICATION

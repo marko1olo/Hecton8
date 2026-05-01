@@ -7,6 +7,8 @@ using Hecton8.Power;
 using Hecton8.UI;
 using Hecton8.Visor;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -46,7 +48,8 @@ namespace Hecton8.Gameplay
         EmergencyLevelDanger = 11,
         EmergencyLevelEvacuate = 12,
         StationKeepingArmed = 13,
-        StationKeepingReleased = 14
+        StationKeepingReleased = 14,
+        HostileDroneDetected = 15
     }
 
     public readonly struct HectonSubmarineOsSnapshot
@@ -94,31 +97,220 @@ namespace Hecton8.Gameplay
     }
 
     /// <summary>
-    /// Static event bus for submarine OS telemetry and log requests.
+    /// Event discriminator for <see cref="SubmarineOsEventPayload"/>.
+    /// </summary>
+    public enum SubmarineOsEventType : byte
+    {
+        SnapshotUpdated = 0,
+        LogRequested = 1
+    }
+
+    /// <summary>
+    /// Unmanaged submarine OS event payload drained by <see cref="SystemDispatcher"/> in LateUpdate.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SubmarineOsEventPayload
+    {
+        public float PowerNormalized;
+        public float OxygenNormalized;
+        public float MaxPressureKPa;
+        public uint ModuleId;
+        public uint StatusBits;
+        public ushort EmergencyLevel;
+        public ushort EventType;
+        public ushort LogCode;
+        public ushort Priority;
+    }
+
+    /// <summary>
+    /// Listener contract for deferred submarine OS events.
+    /// </summary>
+    public interface ISubmarineOsEventListener
+    {
+        void OnSubmarineOsEvent(in SubmarineOsEventPayload payload);
+    }
+
+    /// <summary>
+    /// NativeQueue-backed submarine OS telemetry and log request bus.
     /// </summary>
     public static class HectonSubmarineOsEvents
     {
-        public delegate void SnapshotUpdatedHandler(in HectonSubmarineOsSnapshot snapshot);
-        public delegate void LogRequestedHandler(in HectonSubmarineOsLogRequest request);
+        private const int ListenerCapacity = 16;
+        private const uint GlobalSubmarineOsModuleId = 0x48534F53u; // "HSOS"
+        private const uint LowPowerModeStatusBit = 1u << 8;
+        private const uint LifeSupportCriticalStatusBit = 1u << 9;
+        private const uint StationKeepingStatusBit = 1u << 10;
 
-        public static event SnapshotUpdatedHandler OnSnapshotUpdated;
-        public static event LogRequestedHandler OnLogRequested;
+        // COLD ALLOC: RegistryBucket<ISubmarineOsEventListener>[16] - submarine OS deferred listeners - owner: HectonSubmarineOsEvents
+        private static readonly RegistryBucket<ISubmarineOsEventListener> _listeners = new RegistryBucket<ISubmarineOsEventListener>(ListenerCapacity);
+        private static NativeQueue<SubmarineOsEventPayload> _pendingEvents;
+
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnSnapshotUpdated = null;
-            OnLogRequested = null;
+            if (_pendingEvents.IsCreated)
+            {
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+        }
+
+        /// <summary>
+        /// Registers a deferred submarine OS event listener.
+        /// </summary>
+        public static void Register(ISubmarineOsEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a deferred submarine OS event listener.
+        /// </summary>
+        public static void Unregister(ISubmarineOsEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Flushes queued submarine OS events to listeners. Called by <see cref="SystemDispatcher"/>.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            if (_listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            while (!_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out SubmarineOsEventPayload payload))
+                    return;
+
+                DispatchRegisteredListeners(in payload);
+            }
         }
 
         public static void RaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
         {
-            OnSnapshotUpdated?.Invoke(snapshot);
+            uint statusBits = (uint)snapshot.SubsystemStatus;
+            if (snapshot.LowPowerModeActive)
+                statusBits |= LowPowerModeStatusBit;
+            if (snapshot.LifeSupportCriticalActive)
+                statusBits |= LifeSupportCriticalStatusBit;
+            if (snapshot.StationKeepingActive)
+                statusBits |= StationKeepingStatusBit;
+
+            Enqueue(new SubmarineOsEventPayload
+            {
+                PowerNormalized = snapshot.PowerNormalized,
+                OxygenNormalized = snapshot.OxygenNormalized,
+                MaxPressureKPa = snapshot.MaxPressureKPa,
+                ModuleId = GlobalSubmarineOsModuleId,
+                StatusBits = statusBits,
+                EmergencyLevel = (ushort)snapshot.EmergencyLevel,
+                EventType = (ushort)SubmarineOsEventType.SnapshotUpdated,
+                LogCode = 0,
+                Priority = 0
+            });
         }
 
         public static void RaiseLogRequested(in HectonSubmarineOsLogRequest request)
         {
-            OnLogRequested?.Invoke(request);
+            Enqueue(new SubmarineOsEventPayload
+            {
+                PowerNormalized = 0f,
+                OxygenNormalized = 0f,
+                MaxPressureKPa = 0f,
+                ModuleId = GlobalSubmarineOsModuleId,
+                StatusBits = 0u,
+                EmergencyLevel = 0,
+                EventType = (ushort)SubmarineOsEventType.LogRequested,
+                LogCode = (ushort)request.Code,
+                Priority = request.Priority
+            });
+        }
+
+        public static bool TryBuildSnapshot(in SubmarineOsEventPayload payload, out HectonSubmarineOsSnapshot snapshot)
+        {
+            snapshot = default;
+            if ((SubmarineOsEventType)payload.EventType != SubmarineOsEventType.SnapshotUpdated)
+                return false;
+
+            snapshot = new HectonSubmarineOsSnapshot(
+                (SubsystemStatus)(payload.StatusBits & 0xFFu),
+                (SubmarineEmergencyLevel)payload.EmergencyLevel,
+                payload.PowerNormalized,
+                payload.OxygenNormalized,
+                payload.MaxPressureKPa,
+                (payload.StatusBits & LowPowerModeStatusBit) != 0u,
+                (payload.StatusBits & LifeSupportCriticalStatusBit) != 0u,
+                (payload.StatusBits & StationKeepingStatusBit) != 0u);
+            return true;
+        }
+
+        public static bool TryBuildLogRequest(in SubmarineOsEventPayload payload, out HectonSubmarineOsLogRequest request)
+        {
+            request = default;
+            if ((SubmarineOsEventType)payload.EventType != SubmarineOsEventType.LogRequested)
+                return false;
+
+            request = new HectonSubmarineOsLogRequest(
+                (HectonSubmarineOsLogCode)payload.LogCode,
+                (byte)payload.Priority);
+            return true;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - deferred submarine OS event lane - owner: HectonSubmarineOsEvents
+        }
+
+        private static void Enqueue(in SubmarineOsEventPayload payload)
+        {
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+        }
+
+        private static void DispatchRegisteredListeners(in SubmarineOsEventPayload payload)
+        {
+            int count = _listeners.Count;
+            if (count <= 0)
+                return;
+
+            ISubmarineOsEventListener[] rawArray = _listeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnSubmarineOsEvent(in payload);
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            while (_pendingEvents.TryDequeue(out _))
+            {
+            }
         }
     }
 
@@ -153,6 +345,7 @@ namespace Hecton8.Gameplay
         private static readonly char[] s_multiFailureCaption = "MULTIPLE SYSTEM FAILURES".ToCharArray();
         private static readonly char[] s_emergencyDangerCaption = "EMERGENCY LEVEL DANGER".ToCharArray();
         private static readonly char[] s_abandonShipCaption = "ABANDON SHIP".ToCharArray();
+        private static readonly char[] s_hostileDroneCaption = "HOSTILE DRONE DETECTED".ToCharArray();
 
         private struct BrownoutLightBinding
         {
@@ -209,6 +402,7 @@ namespace Hecton8.Gameplay
         private bool _registeredSlowTick;
         private bool _runtimeLifecycleStarted;
         private bool _stationKeepingStateCached;
+        private int _hostileDroneAlarmCount;
         private HectonDroneFleetSnapshot _fleetSnapshot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -389,6 +583,13 @@ namespace Hecton8.Gameplay
         private void HandleFleetSnapshotUpdated(in HectonDroneFleetSnapshot snapshot)
         {
             _fleetSnapshot = snapshot;
+            int alarmSequence = Mathf.Max(snapshot.LogicLeechHijackCount, snapshot.HostileDroneCount > 0 ? 1 : 0);
+            if (alarmSequence <= _hostileDroneAlarmCount)
+                return;
+
+            _hostileDroneAlarmCount = alarmSequence;
+            PublishLog(HectonSubmarineOsLogCode.HostileDroneDetected, LogPriorityCritical);
+            PlayVoiceAlarm(multiSystemFailureClip, s_hostileDroneCaption, 1f);
         }
 
         private void TryRegister()

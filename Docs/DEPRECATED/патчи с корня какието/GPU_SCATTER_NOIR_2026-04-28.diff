@@ -1,0 +1,894 @@
+diff --git a/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl b/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+index 4153ce8a..c58eac65 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
++++ b/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+@@ -1,6 +1,8 @@
+ #ifndef HECTON_CORE_LIT_INCLUDED
+ #define HECTON_CORE_LIT_INCLUDED
+ 
++#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
++
+ #ifndef HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS
+ #define HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS 24
+ #endif
+@@ -21,15 +23,25 @@ float _HectonFlashlightShadowFloor;
+ float4 _HectonCaveVoxelHalfExtents;
+ float4x4 _HectonCaveVoxelWorldToLocal;
+ float4 _HectonCaveVoxelAoParams;
++float4 _HectonBiolumVolumeHalfExtents;
++float4 _HectonBiolumVolumeParams;
+ float4 _HectonProjectedCausticsWorldRect;
+ float4 _HectonProjectedCausticsParams;
+ float4 _HectonProjectedCausticsColor;
++float _HectonContactShadowStrength;
++float _HectonContactShadowSteps;
++float _HectonContactShadowBias;
++float _HectonContactShadowMaxDistance;
+ float _HectonCaveVoxelActive;
++float _HectonBiolumVolumeActive;
++float4x4 _HectonBiolumVolumeWorldToLocal;
+ 
+ TEXTURE3D(_VoxelDensityTex);
+ SAMPLER(sampler_VoxelDensityTex);
+ TEXTURE3D(_HectonCaveVoxelSdfTex);
+ SAMPLER(sampler_HectonCaveVoxelSdfTex);
++TEXTURE3D(_HectonBiolumVolumeTex);
++SAMPLER(sampler_HectonBiolumVolumeTex);
+ TEXTURE2D(_HectonProjectedCausticsTex);
+ SAMPLER(sampler_HectonProjectedCausticsTex);
+ 
+@@ -44,6 +56,8 @@ float HectonCoreLitResolveFlashlightShadowFloor()
+     return max(_HectonFlashlightShadowFloor, 0.02);
+ }
+ 
++bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon);
++
+ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS)
+ {
+     if (_HectonProjectedCausticsParams.x <= 0.0001)
+@@ -104,6 +118,72 @@ float HectonCoreLitEvaluateCaveAmbientFactor(float3 positionWS, float3 normalWS)
+     return lerp(1.0, floorValue, attenuation);
+ }
+ 
++float HectonCoreLitEvaluateMainLightContactShadow(float3 surfacePositionWS, float3 normalWS)
++{
++    if (_HectonContactShadowStrength <= 0.0001 || _HectonContactShadowMaxDistance <= 0.0001)
++        return 1.0;
++
++    Light mainLight = GetMainLight();
++    float3 lightDirectionWS = HectonCoreLitSafeNormalize(mainLight.direction);
++    float noL = saturate(dot(normalWS, lightDirectionWS));
++    if (noL <= 0.0001)
++        return 1.0;
++
++    float3 biasedSurfacePositionWS = surfacePositionWS + normalWS * max(_HectonContactShadowBias, 0.001);
++    int stepCount = clamp((int)round(_HectonContactShadowSteps), 1, 8);
++    float shadowOcclusion = 0.0;
++
++    [loop]
++    for (int stepIndex = 0; stepIndex < 8; stepIndex++)
++    {
++        if (stepIndex >= stepCount)
++            break;
++
++        float stepT = (stepIndex + 1.0) * rcp((float)stepCount + 1.0);
++        float3 raySampleWS = biasedSurfacePositionWS + lightDirectionWS * (_HectonContactShadowMaxDistance * stepT);
++        float4 raySampleCS = TransformWorldToHClip(raySampleWS);
++        if (raySampleCS.w <= 0.0)
++            continue;
++
++        float2 raySampleUV = raySampleCS.xy * rcp(raySampleCS.w) * 0.5 + 0.5;
++        if (raySampleUV.x <= 0.0 || raySampleUV.x >= 1.0 || raySampleUV.y <= 0.0 || raySampleUV.y >= 1.0)
++            continue;
++
++        float sampledRawDepth = SampleSceneDepth(raySampleUV);
++    #if UNITY_REVERSED_Z
++        float sampledDepthValid = step(0.0001, sampledRawDepth);
++    #else
++        float sampledDepthValid = step(sampledRawDepth, 0.9999);
++    #endif
++        if (sampledDepthValid <= 0.5)
++            continue;
++
++        float3 sampledScenePositionWS = ComputeWorldSpacePosition(raySampleUV, sampledRawDepth, UNITY_MATRIX_I_VP);
++        float sceneEyeDistance = distance(_WorldSpaceCameraPos, sampledScenePositionWS);
++        float rayEyeDistance = distance(_WorldSpaceCameraPos, raySampleWS);
++        float depthDiscontinuity = rayEyeDistance - sceneEyeDistance;
++        float occluded = step(max(_HectonContactShadowBias * 0.5, 0.001), depthDiscontinuity);
++        shadowOcclusion = max(shadowOcclusion, occluded * noL);
++    }
++
++    return lerp(1.0, 0.2, saturate(shadowOcclusion * _HectonContactShadowStrength));
++}
++
++float3 HectonCoreLitSampleBiolumVolumeRadiance(float3 positionWS)
++{
++    if (_HectonBiolumVolumeActive <= 0.5)
++        return 0.0;
++
++    float3 halfExtents = max(_HectonBiolumVolumeHalfExtents.xyz, float3(0.001, 0.001, 0.001));
++    float3 localPosition = mul(_HectonBiolumVolumeWorldToLocal, float4(positionWS, 1.0)).xyz;
++    float3 sampleUv = localPosition / (halfExtents * 2.0) + 0.5;
++    if (any(sampleUv < 0.0) || any(sampleUv > 1.0))
++        return 0.0;
++
++    float4 volumeSample = SAMPLE_TEXTURE3D_LOD(_HectonBiolumVolumeTex, sampler_HectonBiolumVolumeTex, sampleUv, 0);
++    return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0);
++}
++
+ bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon)
+ {
+     return _HectonCaveVoxelActive > 0.5 && HectonCoreLitSampleCaveVoxelSignedDistance(positionWS) <= surfaceEpsilon;
+diff --git a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
+index ecc5dd6c..62621a91 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader
+@@ -256,6 +256,42 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
+             return lerp(nxy0, nxy1, smoothFrac.z);
+         }
+ 
++        float3 ResolveShaftCurlNoise(float3 samplePosition)
++        {
++            const float epsilon = 0.37;
++            float3 xOffset = float3(epsilon, 0.0, 0.0);
++            float3 yOffset = float3(0.0, epsilon, 0.0);
++            float3 zOffset = float3(0.0, 0.0, epsilon);
++
++            float fxY1 = ValueNoise3(samplePosition + yOffset + float3(17.1, 9.3, 31.7));
++            float fxY0 = ValueNoise3(samplePosition - yOffset + float3(17.1, 9.3, 31.7));
++            float fxZ1 = ValueNoise3(samplePosition + zOffset + float3(17.1, 9.3, 31.7));
++            float fxZ0 = ValueNoise3(samplePosition - zOffset + float3(17.1, 9.3, 31.7));
++
++            float fyX1 = ValueNoise3(samplePosition + xOffset + float3(43.7, 13.9, 7.1));
++            float fyX0 = ValueNoise3(samplePosition - xOffset + float3(43.7, 13.9, 7.1));
++            float fyZ1 = ValueNoise3(samplePosition + zOffset + float3(43.7, 13.9, 7.1));
++            float fyZ0 = ValueNoise3(samplePosition - zOffset + float3(43.7, 13.9, 7.1));
++
++            float fzX1 = ValueNoise3(samplePosition + xOffset + float3(5.9, 27.4, 49.3));
++            float fzX0 = ValueNoise3(samplePosition - xOffset + float3(5.9, 27.4, 49.3));
++            float fzY1 = ValueNoise3(samplePosition + yOffset + float3(5.9, 27.4, 49.3));
++            float fzY0 = ValueNoise3(samplePosition - yOffset + float3(5.9, 27.4, 49.3));
++
++            float dFxDy = fxY1 - fxY0;
++            float dFxDz = fxZ1 - fxZ0;
++            float dFyDx = fyX1 - fyX0;
++            float dFyDz = fyZ1 - fyZ0;
++            float dFzDx = fzX1 - fzX0;
++            float dFzDy = fzY1 - fzY0;
++
++            float3 curl = float3(
++                dFzDy - dFyDz,
++                dFxDz - dFzDx,
++                dFyDx - dFxDy);
++            return SafeNormalize3(curl);
++        }
++
+         float ResolveSiltField(float3 samplePositionWS, float3 rayDirectionWS, float surfaceProximity)
+         {
+             float timePhase = _Time.y * _HectonSiltDriftSpeed;
+@@ -265,9 +301,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
+ 
+             float coarse = ValueNoise3(driftedPosition);
+             float fine = ValueNoise3(driftedPosition * 1.97 + 11.0);
++            float3 curlNoise = ResolveShaftCurlNoise(driftedPosition * 0.73 + float3(0.0, timePhase * 0.45, -timePhase * 0.31));
++            float curlDensity = saturate(length(curlNoise.xz) * 0.68 + abs(curlNoise.y) * 0.32);
++            float curlAlignment = saturate(dot(curlNoise, SafeNormalize3(rayDirectionWS + float3(0.0, 0.2, 0.0))) * 0.5 + 0.5);
+             float streakBias = saturate(dot(abs(rayDirectionWS), float3(0.22, 0.14, 0.64)));
+             float floorBoost = lerp(1.0, 1.0 + _HectonSiltFloorBoost, surfaceProximity * surfaceProximity);
+-            float density = saturate(coarse * 0.66 + fine * 0.34 + streakBias * 0.08 - 0.22);
++            float density = saturate(coarse * 0.52 + fine * 0.24 + curlDensity * 0.16 + curlAlignment * 0.12 + streakBias * 0.08 - 0.22);
+             return density * floorBoost * _HectonSiltStrength;
+         }
+ 
+diff --git a/Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader b/Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader
+index 06457e3d..40abffc0 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader
+@@ -3,8 +3,12 @@ Shader "Hecton8/World/WreckIndirectLit"
+     Properties
+     {
+         _BaseMap("Base Map", 2D) = "white" {}
++        _MaskMap("Mask Map", 2D) = "white" {}
+         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
+-        _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
++        [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
++        _Metallic("Metallic Scale", Range(0, 1)) = 0.0
++        _Smoothness("Smoothness Scale", Range(0, 1)) = 0.42
++        _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
+         _Cutoff("Alpha Cutoff", Range(0, 1)) = 0.5
+     }
+ 
+@@ -15,6 +19,7 @@ Shader "Hecton8/World/WreckIndirectLit"
+             "RenderPipeline" = "UniversalPipeline"
+             "Queue" = "Geometry"
+             "RenderType" = "Opaque"
++            "UniversalMaterialType" = "Lit"
+         }
+ 
+         Cull Back
+@@ -27,15 +32,21 @@ Shader "Hecton8/World/WreckIndirectLit"
+ 
+         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
++        #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+ 
+         StructuredBuffer<float4x4> _HectonWreckMatrices;
+         TEXTURE2D(_BaseMap);
+         SAMPLER(sampler_BaseMap);
++        TEXTURE2D(_MaskMap);
++        SAMPLER(sampler_MaskMap);
+ 
+         CBUFFER_START(UnityPerMaterial)
+             float4 _BaseMap_ST;
+             float4 _BaseColor;
+             float4 _EmissionColor;
++            float _Metallic;
++            float _Smoothness;
++            float _OcclusionStrength;
+             float _Cutoff;
+         CBUFFER_END
+ 
+@@ -52,7 +63,9 @@ Shader "Hecton8/World/WreckIndirectLit"
+             float4 positionCS : SV_POSITION;
+             float3 positionWS : TEXCOORD0;
+             float3 normalWS : TEXCOORD1;
+-            float2 uv : TEXCOORD2;
++            float3 viewDirWS : TEXCOORD2;
++            float2 uv : TEXCOORD3;
++            half fogFactor : TEXCOORD4;
+         };
+ 
+         float4x4 ResolveWreckMatrix(uint instanceID)
+@@ -60,9 +73,15 @@ Shader "Hecton8/World/WreckIndirectLit"
+             return _HectonWreckMatrices[instanceID];
+         }
+ 
++        float3 SafeNormalize3(float3 value)
++        {
++            float lenSq = dot(value, value);
++            return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
++        }
++
+         float3 TransformWreckNormal(float4x4 instanceMatrix, float3 normalOS)
+         {
+-            return normalize(mul((float3x3)instanceMatrix, normalOS));
++            return SafeNormalize3(mul((float3x3)instanceMatrix, normalOS));
+         }
+ 
+         Varyings Vert(Attributes input)
+@@ -73,7 +92,9 @@ Shader "Hecton8/World/WreckIndirectLit"
+             output.positionWS = positionWS.xyz;
+             output.normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
+             output.positionCS = TransformWorldToHClip(positionWS.xyz);
++            output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionWS.xyz));
+             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
++            output.fogFactor = ComputeFogFactor(output.positionCS.z);
+             return output;
+         }
+ 
+@@ -82,6 +103,38 @@ Shader "Hecton8/World/WreckIndirectLit"
+             return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+         }
+ 
++        half4 SamplePackedMask(float2 uv)
++        {
++            return SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv);
++        }
++
++        half3 EvaluateWreckLighting(
++            float3 positionWS,
++            half3 normalWS,
++            half3 viewDirWS,
++            half3 albedo,
++            half metallic,
++            half smoothness,
++            half ambientOcclusion)
++        {
++            half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
++            half3 color = SampleSH(normalWS) * albedo * ambientOcclusion * caveAmbientFactor;
++            half specularStrength = lerp(0.04h, 0.22h, metallic);
++            half specularPower = lerp(16.0h, 96.0h, smoothness);
++
++            float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
++            Light mainLight = GetMainLight(shadowCoord);
++            half3 lightDir = SafeNormalize3(mainLight.direction);
++            half nDotL = saturate(dot(normalWS, lightDir));
++            half3 halfDir = SafeNormalize3(lightDir + viewDirWS);
++            half specular = pow(saturate(dot(normalWS, halfDir)), specularPower) * smoothness * specularStrength;
++            half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadow(positionWS, normalWS);
++            color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
++
++            color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
++            return color;
++        }
++
+         half4 Frag(Varyings input) : SV_Target
+         {
+             half4 surface = SampleWreckSurface(input.uv);
+@@ -89,13 +142,25 @@ Shader "Hecton8/World/WreckIndirectLit"
+             clip(surface.a - _Cutoff);
+         #endif
+ 
+-            float3 normalWS = normalize(input.normalWS);
+-            float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+-            Light mainLight = GetMainLight(shadowCoord);
+-            half ndotl = saturate(dot(normalWS, mainLight.direction));
+-            half3 diffuse = surface.rgb * (SampleSH(normalWS) + (mainLight.color * (ndotl * mainLight.shadowAttenuation)));
+-            diffuse += _EmissionColor.rgb;
+-            return half4(diffuse, 1.0h);
++            half4 packedMask = SamplePackedMask(input.uv);
++            half metallic = saturate(packedMask.r * _Metallic);
++            half ambientOcclusion = saturate(lerp(1.0h, packedMask.g, _OcclusionStrength));
++            half smoothness = saturate(packedMask.b * _Smoothness);
++            half emissionMask = saturate(packedMask.a);
++
++            half3 normalWS = SafeNormalize3(input.normalWS);
++            half3 viewDirWS = SafeNormalize3(input.viewDirWS);
++            half3 litColor = EvaluateWreckLighting(
++                input.positionWS,
++                normalWS,
++                viewDirWS,
++                surface.rgb,
++                metallic,
++                smoothness,
++                ambientOcclusion);
++            half3 emission = _EmissionColor.rgb * emissionMask;
++            half3 finalColor = MixFog(litColor + emission, input.fogFactor);
++            return half4(finalColor, 1.0h);
+         }
+ 
+         float4 GetShadowPositionHClip(Attributes input)
+diff --git a/Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs b/Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs
+index 761c2d4f..d644c4cc 100644
+--- a/Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs
++++ b/Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs
+@@ -550,6 +550,10 @@ namespace Hecton8.Visor
+                 material.SetFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
+                 material.SetFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
+                 material.SetFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
++                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, Mathf.Clamp01(settings.contactShadowStrength));
++                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
++                Shader.SetGlobalFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
++                Shader.SetGlobalFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
+                 material.SetFloat(
+                     ShaderConstants.FlashlightShadowStepsId,
+                     SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048 ? 16f : 24f);
+@@ -663,8 +667,6 @@ namespace Hecton8.Visor
+         /// <inheritdoc />
+         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+         {
+-            return;
+-
+             if (settings == null ||
+                 _pass == null ||
+                 _raymarchMaterial == null ||
+diff --git a/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs b/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+index d33c8ec7..0b67794c 100644
+--- a/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
++++ b/Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs
+@@ -1,5 +1,6 @@
+ using System;
+ using System.Collections.Generic;
++using System.Runtime.InteropServices;
+ using Hecton8.AI;
+ using Hecton8.Core;
+ using MapMagic.Products;
+@@ -22,6 +23,25 @@ namespace Hecton8.World
+     [DisallowMultipleComponent]
+     public sealed class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
+     {
++        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
++        private struct PredatorFearNodeSnapshot
++        {
++            public float3 Position;
++            public float Radius;
++            public float Weight;
++            public int SpeciesId;
++            public float Padding;
++        }
++
++        private struct PredatorFearNodeState
++        {
++            public float3 Position;
++            public float Radius;
++            public float Weight;
++            public float ExpireTime;
++            public int SpeciesId;
++        }
++
+         private const string SandLayerName = "L_Sand";
+         private const string GreenSandLayerName = "L_sandGreen";
+         private const string RockLayerName = "L_Rocks";
+@@ -49,6 +69,9 @@ namespace Hecton8.World
+         private const int DensityTypeMaskAll = DensityTypeMaskGrass | DensityTypeMaskKelp | DensityTypeMaskSargassum;
+         private const float DefaultThreatGridRadius = 1000f;
+         private const float DefaultThreatGridCellSize = 10f;
++        private const int DefaultPredatorFearNodeCapacity = 32;
++        private const float DefaultPredatorFearSectorSizeMeters = 1000f;
++        private const float DefaultPredatorFearLifetimeSeconds = 900f;
+         private const float DefaultAbyssalNavGraphCellSize = 64f;
+         private const int InvalidTerrainHoleId = 0;
+         private const float DefaultTerrainHoleEvictionDistance = 3000f;
+@@ -489,6 +512,31 @@ namespace Hecton8.World
+         [Tooltip("Extra dead-zone keep chance injected when a permanent echo overlaps a dead-zone structure candidate.")]
+         private float permanentEchoDeadZoneKeepBoost = 0.18f;
+ 
++        [Header("Predator Fear Memory")]
++        [SerializeField, Range(4, 128)]
++        [Tooltip("Maximum active predator fear sectors retained in the bridge-owned navigation memory.")]
++        private int predatorFearNodeCapacity = DefaultPredatorFearNodeCapacity;
++
++        [SerializeField, Min(120f)]
++        [Tooltip("Lifetime in seconds for predator fear sectors before they decay out of the pathing memory.")]
++        private float predatorFearLifetimeSeconds = DefaultPredatorFearLifetimeSeconds;
++
++        [SerializeField, Min(100f)]
++        [Tooltip("Sector size in meters used when snapping fear writes onto the AUP ecosystem grid.")]
++        private float predatorFearSectorSizeMeters = DefaultPredatorFearSectorSizeMeters;
++
++        [SerializeField, Min(1f)]
++        [Tooltip("Horizontal radius in meters sampled around a snapped predator fear sector.")]
++        private float predatorFearNodeRadiusMeters = 500f;
++
++        [SerializeField, Range(0f, 4f)]
++        [Tooltip("Additional A* cost weight injected for predators traversing their remembered kill sectors.")]
++        private float predatorFearPathPenaltyWeight = 1.2f;
++
++        [SerializeField, Range(0f, 1f)]
++        [Tooltip("Immediate cognition pressure scale sampled from active predator fear sectors.")]
++        private float predatorFearCognitionPressureScale = 0.85f;
++
+         [Header("Abyssal Thermal Grid")]
+         [SerializeField, Min(100f)]
+         [Tooltip("Horizontal radius in meters covered by the 3D abyssal thermal grid around the player.")]
+@@ -831,6 +879,41 @@ namespace Hecton8.World
+             }
+         }
+ 
++        /// <summary>
++        /// Read-only active terrain height texture contract for GPU consumers that need the current player tile heightmap.
++        /// </summary>
++        public readonly struct TerrainHeightTexturePayload
++        {
++            public TerrainHeightTexturePayload(
++                Texture heightTexture,
++                Vector3 terrainPosition,
++                Vector3 terrainSize,
++                int heightmapResolution,
++                int cacheRevision)
++            {
++                HeightTexture = heightTexture;
++                TerrainPosition = terrainPosition;
++                TerrainSize = terrainSize;
++                HeightmapResolution = heightmapResolution;
++                CacheRevision = cacheRevision;
++            }
++
++            /// <summary>Current active terrain height texture for the resolved tile.</summary>
++            public Texture HeightTexture { get; }
++
++            /// <summary>World-space minimum corner of the terrain tile.</summary>
++            public Vector3 TerrainPosition { get; }
++
++            /// <summary>World-space size of the terrain tile.</summary>
++            public Vector3 TerrainSize { get; }
++
++            /// <summary>Heightmap resolution used by the active texture payload.</summary>
++            public int HeightmapResolution { get; }
++
++            /// <summary>Authoritative cache revision for the resolved tile.</summary>
++            public int CacheRevision { get; }
++        }
++
+         private struct TileNativeCacheBuffer
+         {
+             public NativeArray<byte> SandMaskNative;
+@@ -1477,6 +1560,7 @@ namespace Hecton8.World
+         private NativeArray<byte> _abyssalPathClosedFlagsNative;
+         private NativeArray<int> _abyssalPathHeapNodesNative;
+         private NativeArray<int> _abyssalPathHeapPositionsNative;
++        private NativeArray<PredatorFearNodeSnapshot> _predatorFearNodesSnapshotNative;
+         private HLODData[] _hlodRegistrySnapshot = Array.Empty<HLODData>();
+         private HLODData[] _visibleHlodSnapshot = Array.Empty<HLODData>();
+         private NativeArray<HLODData> _hlodRegistrySnapshotNative;
+@@ -1501,6 +1585,7 @@ namespace Hecton8.World
+         private int _artificialStructureCount;
+         private int _hlodRegistryCount;
+         private int _visibleHlodCount;
++        private int _predatorFearNodeCount;
+         private int _ecosystemThreatGridResolution;
+         private int _ecosystemThreatGridCellCount;
+         private int _ecosystemThreatGridResolutionY;
+@@ -1535,6 +1620,10 @@ namespace Hecton8.World
+         private JobHandle _aggregateRebuildHandle;
+         private Vector3 _ecosystemThreatGridCenter;
+         private Vector3 _scheduledThreatGridCenter;
++        // COLD ALLOC: PredatorFearNodeState[DefaultPredatorFearNodeCapacity] - bounded predator fear-sector memory aligned to ecosystem threat routing - owner: HectonMapMagicVegetationBridge
++        private PredatorFearNodeState[] _predatorFearNodes = Array.Empty<PredatorFearNodeState>();
++        private float _predatorFearSimulationTime;
++        private float _predatorFearPruneTimer;
+         private Vector3 _ecosystemThreatVoxelOrigin;
+         private Vector3 _scheduledThreatVoxelOrigin;
+         private Vector3 _ecosystemFlowFieldCenter;
+@@ -1692,6 +1781,12 @@ namespace Hecton8.World
+             permanentThreatEchoFloor = Mathf.Clamp01(permanentThreatEchoFloor);
+             permanentThreatEchoThreshold = Mathf.Clamp(permanentThreatEchoThreshold, Mathf.Max(0.3f, permanentThreatEchoFloor), 1f);
+             predatorSpawnThreatBonusMultiplier = Mathf.Clamp(predatorSpawnThreatBonusMultiplier, 0f, 3f);
++            predatorFearNodeCapacity = Mathf.Clamp(predatorFearNodeCapacity, 4, 128);
++            predatorFearLifetimeSeconds = Mathf.Max(120f, predatorFearLifetimeSeconds);
++            predatorFearSectorSizeMeters = Mathf.Max(100f, predatorFearSectorSizeMeters);
++            predatorFearNodeRadiusMeters = Mathf.Max(1f, predatorFearNodeRadiusMeters);
++            predatorFearPathPenaltyWeight = Mathf.Clamp(predatorFearPathPenaltyWeight, 0f, 4f);
++            predatorFearCognitionPressureScale = Mathf.Clamp01(predatorFearCognitionPressureScale);
+             permanentEchoTechnoJungleThresholdBias = Mathf.Clamp01(permanentEchoTechnoJungleThresholdBias);
+             permanentEchoDeadZoneKeepBoost = Mathf.Clamp01(permanentEchoDeadZoneKeepBoost);
+             thermalGridRadius = Mathf.Max(100f, thermalGridRadius);
+@@ -1882,6 +1977,16 @@ namespace Hecton8.World
+         public void Tick(float dt)
+         {
+             TryDisposeDeferredTileCacheReadbacks();
++            float clampedDt = Mathf.Max(0f, dt);
++            _predatorFearSimulationTime += clampedDt;
++            _predatorFearPruneTimer += clampedDt;
++            if (_predatorFearPruneTimer >= 1f)
++            {
++                _predatorFearPruneTimer = 0f;
++                CompactPredatorFearNodes(_predatorFearSimulationTime);
++                if (!_abyssalPathScheduled)
++                    SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
++            }
+ 
+             if (_externalThreatPulseHoldTimer > 0f)
+                 _externalThreatPulseHoldTimer = Mathf.Max(0f, _externalThreatPulseHoldTimer - dt);
+@@ -2250,6 +2355,32 @@ namespace Hecton8.World
+             return count > 0 && flowDirections.IsCreated;
+         }
+ 
++        /// <summary>
++        /// Returns the current player-tile height texture payload for GPU consumers that need direct heightmap sampling.
++        /// </summary>
++        public bool TryGetActiveHeightTexturePayload(out TerrainHeightTexturePayload payload)
++        {
++            payload = default;
++            if (playerTransform == null || !TryFindPlayerTileState(playerTransform.position, out TileRuntimeState state) || state == null)
++                return false;
++
++            Texture heightTexture = state.HeightTextureCache;
++            if (heightTexture == null || state.HeightmapResolution <= 1)
++                return false;
++
++            if (!TryGetActiveTileCache(state, out _, out _, out NativeArray<ushort> heightSamples) || !heightSamples.IsCreated)
++                return false;
++
++            TouchTileCacheState(state);
++            payload = new TerrainHeightTexturePayload(
++                heightTexture,
++                state.TerrainPosition,
++                state.TerrainSize,
++                state.HeightmapResolution,
++                state.CacheRevision);
++            return true;
++        }
++
+         /// <summary>
+         /// Returns the current surface semantic payload as native memory for AI and deep-biome consumers.
+         /// </summary>
+@@ -2473,6 +2604,205 @@ namespace Hecton8.World
+                    cellSize > 0f;
+         }
+ 
++        /// <summary>
++        /// Records a temporary species-scoped predator fear sector at the snapped AUP ecosystem cell center.
++        /// </summary>
++        public void RegisterPredatorFearNode(int speciesId, Vector3 worldPosition, float normalizedDamage)
++        {
++            if (speciesId == 0 || normalizedDamage < 0.3f)
++                return;
++
++            EnsurePredatorFearMemoryBuffers();
++            float currentTime = _predatorFearSimulationTime;
++            CompactPredatorFearNodes(currentTime);
++
++            float normalizedWeight = Mathf.Clamp01((normalizedDamage - 0.3f) / 0.7f);
++            if (normalizedWeight <= 0f)
++                return;
++
++            float3 sectorCenter = ResolvePredatorFearSectorCenter(worldPosition);
++            float sectorRadius = Mathf.Max(1f, predatorFearNodeRadiusMeters);
++            float expireTime = currentTime + Mathf.Max(120f, predatorFearLifetimeSeconds);
++
++            for (int i = 0; i < _predatorFearNodeCount; i++)
++            {
++                PredatorFearNodeState node = _predatorFearNodes[i];
++                if (node.SpeciesId != speciesId)
++                    continue;
++
++                float2 delta = new float2(node.Position.x - sectorCenter.x, node.Position.z - sectorCenter.z);
++                if (math.lengthsq(delta) > 1f)
++                    continue;
++
++                node.Position = sectorCenter;
++                node.Radius = Mathf.Max(node.Radius, sectorRadius);
++                node.Weight = Mathf.Max(node.Weight, normalizedWeight);
++                node.ExpireTime = Mathf.Max(node.ExpireTime, expireTime);
++                _predatorFearNodes[i] = node;
++                if (!_abyssalPathScheduled)
++                    SyncPredatorFearNodeSnapshot(currentTime);
++                return;
++            }
++
++            int writeIndex = _predatorFearNodeCount < _predatorFearNodes.Length
++                ? _predatorFearNodeCount
++                : FindWeakestPredatorFearNodeIndex(currentTime);
++
++            if (writeIndex < 0)
++                writeIndex = 0;
++
++            _predatorFearNodes[writeIndex] = new PredatorFearNodeState
++            {
++                Position = sectorCenter,
++                Radius = sectorRadius,
++                Weight = normalizedWeight,
++                ExpireTime = expireTime,
++                SpeciesId = speciesId
++            };
++
++            _predatorFearNodeCount = Mathf.Min(_predatorFearNodes.Length, Mathf.Max(_predatorFearNodeCount, writeIndex + 1));
++            if (!_abyssalPathScheduled)
++                SyncPredatorFearNodeSnapshot(currentTime);
++        }
++
++        /// <summary>
++        /// Samples the current species-scoped predator fear pressure at a world position.
++        /// </summary>
++        public float SamplePredatorFearPressure(Vector3 worldPosition, int speciesId)
++        {
++            if (speciesId == 0 || _predatorFearNodeCount <= 0)
++                return 0f;
++
++            float currentTime = _predatorFearSimulationTime;
++            float pressure = 0f;
++            float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
++            float3 position = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
++            for (int i = 0; i < _predatorFearNodeCount; i++)
++            {
++                PredatorFearNodeState node = _predatorFearNodes[i];
++                if (node.SpeciesId != speciesId || node.ExpireTime <= currentTime)
++                    continue;
++
++                float2 delta = new float2(position.x - node.Position.x, position.z - node.Position.z);
++                float radius = math.max(node.Radius, 1f);
++                float gate = 1f - math.saturate(math.length(delta) / radius);
++                if (gate <= 0f)
++                    continue;
++
++                float freshness = math.saturate((node.ExpireTime - currentTime) / lifetime);
++                pressure = math.max(pressure, node.Weight * freshness * gate);
++            }
++
++            return Mathf.Clamp01(pressure * predatorFearCognitionPressureScale);
++        }
++
++        private void EnsurePredatorFearMemoryBuffers()
++        {
++            int safeCapacity = Mathf.Clamp(predatorFearNodeCapacity, 4, 128);
++            if (_predatorFearNodes == null || _predatorFearNodes.Length != safeCapacity)
++            {
++                // COLD ALLOC: PredatorFearNodeState[safeCapacity] - bounded predator fear-sector memory aligned to ecosystem threat routing - owner: HectonMapMagicVegetationBridge
++                PredatorFearNodeState[] resized = new PredatorFearNodeState[safeCapacity];
++                int copyCount = Mathf.Min(_predatorFearNodeCount, resized.Length);
++                if (_predatorFearNodes != null && copyCount > 0)
++                    Array.Copy(_predatorFearNodes, resized, copyCount);
++
++                _predatorFearNodes = resized;
++                _predatorFearNodeCount = copyCount;
++            }
++
++            if (!_predatorFearNodesSnapshotNative.IsCreated || _predatorFearNodesSnapshotNative.Length != safeCapacity)
++            {
++                DisposeNativeArray(ref _predatorFearNodesSnapshotNative);
++                // COLD ALLOC: NativeArray<PredatorFearNodeSnapshot>[safeCapacity] - path-job snapshot of predator fear memory - owner: HectonMapMagicVegetationBridge
++                _predatorFearNodesSnapshotNative = new NativeArray<PredatorFearNodeSnapshot>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            }
++        }
++
++        private void CompactPredatorFearNodes(float currentTime)
++        {
++            if (_predatorFearNodeCount <= 0 || _predatorFearNodes == null)
++            {
++                _predatorFearNodeCount = 0;
++                return;
++            }
++
++            int writeIndex = 0;
++            for (int i = 0; i < _predatorFearNodeCount; i++)
++            {
++                PredatorFearNodeState node = _predatorFearNodes[i];
++                if (node.SpeciesId == 0 || node.ExpireTime <= currentTime || node.Weight <= 0f)
++                    continue;
++
++                if (writeIndex != i)
++                    _predatorFearNodes[writeIndex] = node;
++
++                writeIndex++;
++            }
++
++            _predatorFearNodeCount = writeIndex;
++        }
++
++        private int FindWeakestPredatorFearNodeIndex(float currentTime)
++        {
++            if (_predatorFearNodes == null || _predatorFearNodes.Length == 0)
++                return -1;
++
++            int weakestIndex = 0;
++            float weakestScore = float.MaxValue;
++            float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
++            int count = Mathf.Min(_predatorFearNodes.Length, Mathf.Max(_predatorFearNodeCount, 1));
++            for (int i = 0; i < count; i++)
++            {
++                PredatorFearNodeState node = _predatorFearNodes[i];
++                float freshness = Mathf.Clamp01((node.ExpireTime - currentTime) / lifetime);
++                float score = node.SpeciesId == 0 ? -1f : node.Weight * freshness;
++                if (score < weakestScore)
++                {
++                    weakestScore = score;
++                    weakestIndex = i;
++                }
++            }
++
++            return weakestIndex;
++        }
++
++        private float3 ResolvePredatorFearSectorCenter(Vector3 worldPosition)
++        {
++            float sectorSize = Mathf.Max(100f, predatorFearSectorSizeMeters);
++            return new float3(
++                Mathf.Round(worldPosition.x / sectorSize) * sectorSize,
++                worldPosition.y,
++                Mathf.Round(worldPosition.z / sectorSize) * sectorSize);
++        }
++
++        private void SyncPredatorFearNodeSnapshot(float currentTime)
++        {
++            if (!_predatorFearNodesSnapshotNative.IsCreated)
++                return;
++
++            CompactPredatorFearNodes(currentTime);
++            float lifetime = Mathf.Max(120f, predatorFearLifetimeSeconds);
++            int safeLength = _predatorFearNodesSnapshotNative.Length;
++            int activeCount = Mathf.Min(_predatorFearNodeCount, safeLength);
++            for (int i = 0; i < safeLength; i++)
++            {
++                PredatorFearNodeSnapshot snapshot = default;
++                if (i < activeCount)
++                {
++                    PredatorFearNodeState node = _predatorFearNodes[i];
++                    float freshness = Mathf.Clamp01((node.ExpireTime - currentTime) / lifetime);
++                    snapshot.Position = node.Position;
++                    snapshot.Radius = node.Radius;
++                    snapshot.Weight = node.Weight * freshness;
++                    snapshot.SpeciesId = node.SpeciesId;
++                    snapshot.Padding = 0f;
++                }
++
++                _predatorFearNodesSnapshotNative[i] = snapshot;
++            }
++        }
++
+         /// <summary>
+         /// Returns the current abyssal flow-field payload and metadata for external consumers.
+         /// </summary>
+@@ -2911,6 +3241,15 @@ namespace Hecton8.World
+         /// Schedules a bounded native abyssal A* solve between the nearest safe nav nodes to the provided world positions.
+         /// </summary>
+         public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, out JobHandle handle)
++        {
++            return TryScheduleAbyssalPath(startPosition, endPosition, 0, out handle);
++        }
++
++        /// <summary>
++        /// Schedules a bounded native abyssal A* solve between the nearest safe nav nodes to the provided world positions.
++        /// Species-aware predator fear penalties are applied when <paramref name="traversalSpeciesId"/> is non-zero.
++        /// </summary>
++        public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, int traversalSpeciesId, out JobHandle handle)
+         {
+             handle = default;
+             CompleteAbyssalPathJob(forceComplete: false);
+@@ -2921,6 +3260,9 @@ namespace Hecton8.World
+                 return false;
+             }
+ 
++            EnsurePredatorFearMemoryBuffers();
++            SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
++
+             float3 startProbe = new float3(startPosition.x, startPosition.y, startPosition.z);
+             float3 endProbe = new float3(endPosition.x, endPosition.y, endPosition.z);
+             bool hasStartHybridSample = VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(startProbe, out VoxelDynamicNavGridRuntime.HybridNavigationSample startHybridSample);
+@@ -2997,6 +3339,10 @@ namespace Hecton8.World
+                     HeapNodes = _abyssalPathHeapNodesNative,
+                     HeapPositions = _abyssalPathHeapPositionsNative,
+                     Path = _abyssalPathRawResultNative,
++                    PredatorFearNodes = _predatorFearNodesSnapshotNative,
++                    PredatorFearNodeCount = _predatorFearNodeCount,
++                    TraversalSpeciesId = traversalSpeciesId,
++                    PredatorFearPenaltyWeight = predatorFearPathPenaltyWeight,
+                     StartNode = startNode,
+                     EndNode = endNode,
+                     StartPosition = new float3(resolvedStartPosition.x, resolvedStartPosition.y, resolvedStartPosition.z),
+@@ -9488,21 +9834,20 @@ namespace Hecton8.World
+                 {
+                     BuildPortal(portalIndex, out float3 portalLeft, out float3 portalRight, out float3 portalAxis);
+                     float3 windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
+-                    if (ScalarTripleProduct(windingAxis, portalLeft - apex, portalRight - apex) < 0f)
+-                    {
+-                        float3 swap = portalLeft;
+-                        portalLeft = portalRight;
+-                        portalRight = swap;
+-                    }
++                    bool swapPortalWinding = ScalarTripleProduct(windingAxis, portalLeft - apex, portalRight - apex) < 0f;
++                    float3 originalPortalLeft = portalLeft;
++                    portalLeft = math.select(portalLeft, portalRight, swapPortalWinding);
++                    portalRight = math.select(portalRight, originalPortalLeft, swapPortalWinding);
+ 
+                     windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
+                     if (ScalarTripleProduct(windingAxis, right - apex, portalRight - apex) <= FunnelEpsilon)
+                     {
+-                        if (IsDegenerateRay(apex, right) || ScalarTripleProduct(windingAxis, left - apex, portalRight - apex) > FunnelEpsilon)
++                        bool tightenRight = IsDegenerateRay(apex, right) || ScalarTripleProduct(windingAxis, left - apex, portalRight - apex) > FunnelEpsilon;
++                        if (tightenRight)
+                         {
+-                            right = portalRight;
+-                            rightIndex = portalIndex;
+-                            fallbackAxis = portalAxis;
++                            right = math.select(right, portalRight, tightenRight);
++                            rightIndex = math.select(rightIndex, portalIndex, tightenRight);
++                            fallbackAxis = math.select(fallbackAxis, portalAxis, tightenRight);
+                         }
+                         else
+                         {
+@@ -9523,11 +9868,12 @@ namespace Hecton8.World
+                     windingAxis = ResolveWindingAxis(apex, left, right, portalLeft, portalRight, portalAxis, fallbackAxis);
+                     if (ScalarTripleProduct(windingAxis, left - apex, portalLeft - apex) >= -FunnelEpsilon)
+                     {
+-                        if (IsDegenerateRay(apex, left) || ScalarTripleProduct(windingAxis, right - apex, portalLeft - apex) < -FunnelEpsilon)
++                        bool tightenLeft = IsDegenerateRay(apex, left) || ScalarTripleProduct(windingAxis, right - apex, portalLeft - apex) < -FunnelEpsilon;
++                        if (tightenLeft)
+                         {
+-                            left = portalLeft;
+-                            leftIndex = portalIndex;
+-                            fallbackAxis = portalAxis;
++                            left = math.select(left, portalLeft, tightenLeft);
++                            leftIndex = math.select(leftIndex, portalIndex, tightenLeft);
++                            fallbackAxis = math.select(fallbackAxis, portalAxis, tightenLeft);
+                         }
+                         else
+                         {
+@@ -11967,6 +12313,19 @@ namespace Hecton8.World
+                 return;
+ 
+             ApplyWorldOffsetToAllChunks(shiftData.ShiftOffset);
++            if (_predatorFearNodeCount > 0)
++            {
++                float3 offset = shiftData.ShiftOffset;
++                for (int i = 0; i < _predatorFearNodeCount; i++)
++                {
++                    PredatorFearNodeState node = _predatorFearNodes[i];
++                    node.Position += offset;
++                    _predatorFearNodes[i] = node;
++                }
++
++                if (!_abyssalPathScheduled)
++                    SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
++            }
+         }
+ 
+         private void ClearAllResidency()
+@@ -13058,6 +13417,7 @@ namespace Hecton8.World
+             DisposeNativeArray(ref _abyssalPathClosedFlagsNative, disposeHandle);
+             DisposeNativeArray(ref _abyssalPathHeapNodesNative, disposeHandle);
+             DisposeNativeArray(ref _abyssalPathHeapPositionsNative, disposeHandle);
++            DisposeNativeArray(ref _predatorFearNodesSnapshotNative, disposeHandle);
+             DisposeNativeList(ref _abyssalPathRawResultNative, disposeHandle);
+             DisposeNativeList(ref _abyssalPathResultNative, disposeHandle);
+             _abyssalPathHandle = default;

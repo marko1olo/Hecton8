@@ -43,20 +43,20 @@ Hard rule:
 
 ## 2. Docset Count Synchronization
 
-Filesystem snapshot: 2026-04-30.
+Filesystem snapshot: 2026-05-01.
 
 | Bucket | Current count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 22 |
+| `01_GENERAL_INFO` markdown files | 24 |
 | `02_ACTUAL_REPORTS` markdown files | 46 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| `02_ACTUAL_REPORTS` patch artifacts | 8 |
-| indexed docs/datasets in `01` + `02` | 69 |
-| physical non-meta files in `01` + `02` | 77 |
+| `02_ACTUAL_REPORTS` patch artifacts | 9 |
+| indexed docs/datasets in `01` + `02` | 71 |
+| physical non-meta files in `01` + `02` | 80 |
 
 Correction:
 - Requested `19` / `43` totals conflict with the current filesystem.
-- Current true counts are `22` / `46`.
+- Current true counts are `24` / `46`.
 - `19` / `43` should be treated as stale unless files are deliberately moved or deleted in a separate cleanup.
 
 Coverage matrix synchronization:
@@ -137,7 +137,7 @@ Correctness:
 
 The stale compile-error claims about `itemGeneticsWords`, `MinimumDensity`, and `MaximumDensity` are purged from current truth.
 
-The current docset counts are `22` and `46`, not `19` and `43`.
+The current docset counts are `24` and `46`, not `19` and `43`.
 
 Verification posture remains mixed:
 - formal tests are low volume

@@ -18,6 +18,7 @@ namespace Hecton8.Interaction
     public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, IUpdatable, ILateFrameTickable
     {
         private const int MaxQueuedSignals = 256;
+        private const int MaxInteractionPacketsPerFrame = 256;
         private const int MaxQueuedRayRequests = 64;
         private const int MaxHitArbitrationHits = 8;
         private const int MinCommandsPerJob = 1;
@@ -55,6 +56,9 @@ namespace Hecton8.Interaction
         private int _stagedRequestCount;
         private int _scheduledRequestCount;
         private int _completedResultCount;
+        private int _packetAdmissionFrame = -1;
+        private int _packetAdmissionCount;
+        private int _lastOverflowWarningFrame = -1;
         private bool _scheduledRaycastActive;
         private bool _isInitialized;
         private bool _dispatcherRegistered;
@@ -83,13 +87,27 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public bool Publish(in InteractionSignal signal, Collider targetCollider)
         {
-            if (!_signalQueue.IsCreated || targetCollider == null || _queueCount >= MaxQueuedSignals)
+            if (!_signalQueue.IsCreated || targetCollider == null)
                 return false;
+
+            int currentFrame = Time.frameCount;
+            if (_packetAdmissionFrame != currentFrame)
+            {
+                _packetAdmissionFrame = currentFrame;
+                _packetAdmissionCount = 0;
+            }
+
+            if (_packetAdmissionCount >= MaxInteractionPacketsPerFrame || _queueCount >= MaxQueuedSignals)
+            {
+                LogInteractionOverflowOncePerFrame(currentFrame);
+                return false;
+            }
 
             _signalQueue.Enqueue(signal);
             _queuedTargetColliders[_queueTail] = targetCollider;
             _queueTail = (_queueTail + 1) % MaxQueuedSignals;
             _queueCount++;
+            _packetAdmissionCount++;
             return true;
         }
 
@@ -117,7 +135,6 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            CompleteScheduledRaycasts();
         }
 
         /// <inheritdoc />
@@ -136,6 +153,8 @@ namespace Hecton8.Interaction
             _queueHead = 0;
             _queueTail = 0;
             _queueCount = 0;
+            _packetAdmissionFrame = -1;
+            _packetAdmissionCount = 0;
         }
 
         private void Awake()
@@ -194,6 +213,7 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            CompleteScheduledRaycasts();
             FlushSignals();
             ScheduleStagedRaycasts();
         }
@@ -226,6 +246,18 @@ namespace Hecton8.Interaction
 
                 DispatchSignal(signal, targetCollider);
             }
+        }
+
+        private void LogInteractionOverflowOncePerFrame(int currentFrame)
+        {
+            if (_lastOverflowWarningFrame == currentFrame)
+                return;
+
+            _lastOverflowWarningFrame = currentFrame;
+            GlobalTelemetryBus.PublishInteractionPacketOverflow(MaxInteractionPacketsPerFrame, _queueCount);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[EquipmentInteractionHandler] Interaction packet capacity exceeded. Excess packets were dropped for this frame.");
+#endif
         }
 
         private void TryRegisterToDispatcher()
@@ -332,7 +364,7 @@ namespace Hecton8.Interaction
                 return;
 
             Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(new Vector3(signal.HitPoint.x, signal.HitPoint.y, signal.HitPoint.z));
-            if (ShouldSuppressBaseModuleCutDamage(targetCollider, runtimeHitPoint, in signal))
+            if (TryRouteBaseModuleAttachedFloraCut(targetCollider, runtimeHitPoint, in signal))
                 return;
 
             if (TryResolveSignalConsumer(targetCollider, out IInteractionSignalConsumer signalConsumer))
@@ -345,7 +377,7 @@ namespace Hecton8.Interaction
                 cuttable.ApplyCutDamage(signal.PowerDelivered, runtimeHitPoint);
         }
 
-        private static bool ShouldSuppressBaseModuleCutDamage(Collider targetCollider, Vector3 runtimeHitPoint, in InteractionSignal signal)
+        private static bool TryRouteBaseModuleAttachedFloraCut(Collider targetCollider, Vector3 runtimeHitPoint, in InteractionSignal signal)
         {
             EnsureLayerCache();
             if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
@@ -362,7 +394,7 @@ namespace Hecton8.Interaction
             if (!organicManager.TryResolveNearestConsumableFlora(
                 runtimeHitPoint,
                 AttachedFloraArbitrationRadiusMeters,
-                out _,
+                out Vector3 floraPosition,
                 out _))
             {
                 return false;
@@ -384,9 +416,11 @@ namespace Hecton8.Interaction
                 AttachedFloraArbitrationRadiusMeters * 2f,
                 layerMask,
                 QueryTriggerInteraction.Collide);
+            if (hitCount == _hitArbitrationHits.Length)
+                SortHitArbitrationHitsByDistance(hitCount);
 
-            if (hitCount <= 0)
-                return true;
+            bool sawHostModule = hitCount <= 0;
+            bool sawFloraCandidate = hitCount <= 0;
 
             for (int i = 0; i < hitCount; i++)
             {
@@ -395,11 +429,39 @@ namespace Hecton8.Interaction
                     continue;
 
                 if (hitCollider == targetCollider)
-                    return true;
+                {
+                    sawHostModule = true;
+                    continue;
+                }
 
                 BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
                 if (hitModule == module)
+                {
+                    sawHostModule = true;
+                    continue;
+                }
+
+                Vector3 hitPoint = _hitArbitrationHits[i].point;
+                if ((hitPoint - floraPosition).sqrMagnitude <= AttachedFloraArbitrationRadiusMeters * AttachedFloraArbitrationRadiusMeters)
+                    sawFloraCandidate = true;
+            }
+
+            if (sawHostModule || sawFloraCandidate)
+            {
+                FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+                uint capabilityMask = ToolCapabilityMasks.ResolveCapabilityMask((InteractionEffectType)signal.EffectType);
+                Vector3 hitNormal = new Vector3(signal.HitNormal.x, signal.HitNormal.y, signal.HitNormal.z);
+                if (floraInteractionManager != null &&
+                    floraInteractionManager.TryApplyModuleParasiteCut(
+                        floraPosition,
+                        hitNormal,
+                        direction,
+                        signal.PowerDelivered,
+                        signal.Source.Power,
+                        capabilityMask))
+                {
                     return true;
+                }
             }
 
             return true;
@@ -418,6 +480,24 @@ namespace Hecton8.Interaction
             if (_voxelLayer >= 0 && _voxelLayer < 32)
                 layerMask |= 1 << _voxelLayer;
             return layerMask;
+        }
+
+        private static void SortHitArbitrationHitsByDistance(int hitCount)
+        {
+            int safeCount = Mathf.Clamp(hitCount, 0, _hitArbitrationHits.Length);
+            for (int i = 1; i < safeCount; i++)
+            {
+                RaycastHit key = _hitArbitrationHits[i];
+                float keyDistance = key.distance;
+                int j = i - 1;
+                while (j >= 0 && _hitArbitrationHits[j].distance > keyDistance)
+                {
+                    _hitArbitrationHits[j + 1] = _hitArbitrationHits[j];
+                    j--;
+                }
+
+                _hitArbitrationHits[j + 1] = key;
+            }
         }
 
         private static bool CanApplyInteraction(in InteractionSignal signal, Collider targetCollider)

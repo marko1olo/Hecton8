@@ -73,14 +73,14 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            EmergencyServiceRelayEvents.OnRelayActivated += HandleRelayActivated;
+            EmergencyServiceRelayEvents.RegisterRelayActivated(HandleRelayActivated);
             InvalidateRelayCache();
             RefreshRelayDiscoveryState();
         }
 
         private void OnDisable()
         {
-            EmergencyServiceRelayEvents.OnRelayActivated -= HandleRelayActivated;
+            EmergencyServiceRelayEvents.UnregisterRelayActivated(HandleRelayActivated);
             InvalidateRelayCache();
             _currentRouteTarget = null;
             _lastGuidanceRelayId = null;

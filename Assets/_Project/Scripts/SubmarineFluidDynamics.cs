@@ -108,6 +108,8 @@ namespace Hecton8.Physics
         private const float ExteriorBoilingDepthSlopeCelsiusPerMeter = 1.2f;
         private const float ExteriorBoilingImpulseRadiusMeters = 4f;
         private const float ExteriorBoilingAccelerationMetersPerSecondSquared = 18f;
+        private static readonly int _ExteriorBoilingUpdraftLayerMask = HectonLayerMasks.MountedSweepLayerMask;
+        private const float MinimumAnalyticalDragModifier = 0.1f;
         private const float SplashSubmersionThreshold = 0.5f;
         private const float CriticalFillThreshold = 0.8f;
         private const float Epsilon = 0.0001f;
@@ -2417,7 +2419,7 @@ namespace Hecton8.Physics
             if (acceleration.sqrMagnitude <= 0.000001f)
                 return;
 
-            PhysicsForceRouter.QueueForce(body, acceleration, ForceMode.Acceleration);
+            PhysicsForceRouter.QueueAmbientForce(body, acceleration, ForceMode.Acceleration);
         }
 
         private Vector3 ResolveDepressurizationAcceleration(
@@ -2987,7 +2989,7 @@ namespace Hecton8.Physics
 
                 Vector3 scaledAcceleration = ApplyHydrodynamicLinearInertiaScale(sampleAcceleration);
                 if (scaledAcceleration.sqrMagnitude > Epsilon)
-                    PhysicsForceRouter.QueueForceAtPosition(_rigidbody, scaledAcceleration, worldPoint, ForceMode.Acceleration);
+                    PhysicsForceRouter.QueueAmbientForceAtPosition(_rigidbody, scaledAcceleration, worldPoint, ForceMode.Acceleration);
 
                 Vector3 equivalentForce = scaledAcceleration * rigidbodyMass;
                 totalEquivalentForce += equivalentForce;
@@ -3064,8 +3066,12 @@ namespace Hecton8.Physics
             float angularScale = math.max(0f, addedMassAngularDampingScale) *
                 (1f + (internalFloodRatio * 2f) + (criticalFloodRatio * CriticalFloodAddedMassAngularBoost));
             float floraDensity01 = math.saturate(_currentFloraDragDensity01);
-            float floraLinearMultiplier = math.lerp(1f, math.max(1f, floraDragLinearMultiplier), floraDensity01);
-            float floraAngularMultiplier = math.lerp(1f, math.max(1f, floraDragAngularMultiplier), floraDensity01);
+            float floraLinearMultiplier = math.max(
+                MinimumAnalyticalDragModifier,
+                math.lerp(1f, math.max(1f, floraDragLinearMultiplier), floraDensity01));
+            float floraAngularMultiplier = math.max(
+                MinimumAnalyticalDragModifier,
+                math.lerp(1f, math.max(1f, floraDragAngularMultiplier), floraDensity01));
             _debugFloraDragDensity = floraDensity01;
             if (!float.IsFinite(criticalFloodRatio) ||
                 !float.IsFinite(dampingSubmersion) ||
@@ -3235,7 +3241,7 @@ namespace Hecton8.Physics
                 cellCenter,
                 influenceRadius,
                 _exteriorThermalContacts,
-                ~0,
+                _ExteriorBoilingUpdraftLayerMask,
                 QueryTriggerInteraction.Ignore);
 
             for (int contactIndex = 0; contactIndex < contactCount; contactIndex++)
@@ -3269,7 +3275,7 @@ namespace Hecton8.Physics
             Vector3 updraftVelocity = Vector3.up * (ExteriorBoilingAccelerationMetersPerSecondSquared * 0.06f * intensity * playerDistanceT * fixedDeltaTime);
             _cachedPlayerMovement.ApplyExternalThermalUpdraft(updraftVelocity);
             if (_cachedPlayerRigidbody != null)
-                PhysicsForceRouter.QueueForce(_cachedPlayerRigidbody, Vector3.up * (ExteriorBoilingAccelerationMetersPerSecondSquared * intensity * playerDistanceT), ForceMode.Acceleration);
+                PhysicsForceRouter.QueueAmbientForce(_cachedPlayerRigidbody, Vector3.up * (ExteriorBoilingAccelerationMetersPerSecondSquared * intensity * playerDistanceT), ForceMode.Acceleration);
         }
 
         private void EnsurePlayerBindings()
@@ -3490,7 +3496,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            PhysicsForceRouter.QueueTorque(_rigidbody, worldTorque, ForceMode.Force);
+            PhysicsForceRouter.QueueAmbientTorque(_rigidbody, worldTorque, ForceMode.Force);
             _lastSloshTorqueLocal = localTorque;
         }
 

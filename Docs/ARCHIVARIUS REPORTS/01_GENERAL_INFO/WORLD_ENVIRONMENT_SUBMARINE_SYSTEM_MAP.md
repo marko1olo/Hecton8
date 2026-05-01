@@ -5,6 +5,12 @@ Status: PENDING VERIFICATION
 Scope: source-backed map of current world, environment, ocean, ecology, debris, and submarine runtime owners
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- This file remains useful as a domain ownership map, but it is not a runtime verification report.
+- Current unresolved risks for this domain include editor/Play Mode deadlock proof, local job completion ownership, scene/prefab wiring, and measured world/runtime performance.
+
 ## Purpose
 
 The active docset already had player, construction, save/load, registry, and broad gameplay ledgers.

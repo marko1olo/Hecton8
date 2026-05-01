@@ -167,17 +167,6 @@ namespace Hecton8.World
             if (viewerTransform == null && viewerCamera != null)
                 viewerTransform = viewerCamera.transform;
 
-            if (viewerCamera == null)
-            {
-                if (_fallbackViewerCamera == null && Time.unscaledTime >= _nextViewerFallbackResolveTime)
-                {
-                    _fallbackViewerCamera = Object.FindAnyObjectByType<Camera>(FindObjectsInactive.Exclude);
-                    _nextViewerFallbackResolveTime = Time.unscaledTime + ViewerFallbackRetryIntervalSeconds;
-                }
-
-                viewerCamera = _fallbackViewerCamera;
-            }
-
             _debugHasViewer = viewerTransform != null || viewerCamera != null;
         }
 
@@ -199,22 +188,7 @@ namespace Hecton8.World
             }
 
             _nextVolumeFallbackRefreshTime = Time.unscaledTime + VolumeFallbackRefreshIntervalSeconds;
-            HectonVoxelVolume[] fallbackVolumes =
-                Object.FindObjectsByType<HectonVoxelVolume>(FindObjectsInactive.Exclude); // COLD ALLOC: HectonVoxelVolume[] - fallback cave AO scan when WorldCaveDirector is unavailable - owner: HectonCaveVoxelAmbientOcclusionController
-            if (fallbackVolumes == null)
-            {
-                _debugVolumeCount = 0;
-                return;
-            }
-
-            for (int volumeIndex = 0; volumeIndex < fallbackVolumes.Length; volumeIndex++)
-            {
-                HectonVoxelVolume volume = fallbackVolumes[volumeIndex];
-                if (volume != null)
-                    _volumeBuffer.Add(volume);
-            }
-
-            _debugVolumeCount = _volumeBuffer.Count;
+            _debugVolumeCount = 0;
         }
 
         private void ResolveTargetOcclusion()

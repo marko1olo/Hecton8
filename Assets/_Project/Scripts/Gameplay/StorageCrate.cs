@@ -310,11 +310,8 @@ namespace Hecton8.Gameplay
             // Fire opening event
             OnOpening?.Invoke();
 
-            // If no animator, immediately open
-            if (animator == null)
-            {
-                CompleteOpen();
-            }
+            // Gameplay owns inventory access. Animation events are presentation-only.
+            CompleteOpen();
         }
 
         /// <summary>
@@ -760,8 +757,16 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void CommitReservation(int reservationId)
         {
+            TryCommitReservation(reservationId);
+        }
+
+        /// <summary>
+        /// Commit all slot reservations belonging to the provided logistics transaction and report whether inventory changed.
+        /// </summary>
+        public bool TryCommitReservation(int reservationId)
+        {
             if (containedItems == null || _reservedSlotIds == null || reservationId <= 0)
-                return;
+                return false;
 
             bool anyRemoved = false;
             for (int i = 0; i < containedItems.Length; i++)
@@ -769,14 +774,20 @@ namespace Hecton8.Gameplay
                 if (_reservedSlotIds[i] != reservationId)
                     continue;
 
-                containedItems[i] = null;
+                if (containedItems[i] != null)
+                {
+                    containedItems[i] = null;
+                    anyRemoved = true;
+                }
+
                 _reservedSlotIds[i] = 0;
                 SetContainedItemHash(i, null);
-                anyRemoved = true;
             }
 
             if (anyRemoved && IsEmpty())
                 OnEmpty?.Invoke();
+
+            return anyRemoved;
         }
 
         /// <summary>
@@ -863,6 +874,9 @@ namespace Hecton8.Gameplay
 
         private void CompleteOpen()
         {
+            if (_state == CrateState.Open)
+                return;
+
             _state = CrateState.Open;
 
             // Fire opened event

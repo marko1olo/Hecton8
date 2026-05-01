@@ -223,7 +223,9 @@ namespace Hecton8.Gameplay
         private float _cavitationEventTimer;
         private float _pendingEntanglementShearDamage;
         private float _pendingCavitationEngineDamage;
+        private float _entangledThrottleOutput;
         private float _microFractureLoad;
+        private float _pendingSafeDepthPenaltyMeters;
         private float _permanentSafeDepthPenaltyMeters;
         // COLD ALLOC: List<IDamageSignalReceiver>[1] â€” mounted transport damage listeners (player trauma dispatcher) â€” owner: MountablePlayerTransport
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
@@ -402,7 +404,10 @@ namespace Hecton8.Gameplay
             _driveVerticalInput = verticalInput;
             if (_vehicleMotor != null && _vehicleMotor.IsEntangled)
             {
+                _entangledThrottleOutput = ResolveThrottleOutput(ResolveThrottle(moveInput, verticalInput));
                 _currentThrottle = 0f;
+                _driveMoveInput = Vector2.zero;
+                _driveVerticalInput = 0f;
                 _transportActive = true;
                 return;
             }
@@ -521,8 +526,6 @@ namespace Hecton8.Gameplay
                 return;
 
             _previousPlatformPosition -= shiftOffset;
-            if (_vehicleMotor != null)
-                _vehicleMotor.ApplyOriginShift(shiftOffset);
         }
 
         /// <summary>Current propulsion force contributed by this transport.</summary>
@@ -921,8 +924,9 @@ namespace Hecton8.Gameplay
                 if (vegetationBridge != null)
                     vegetationBridge.TrySampleAbyssalFlow(_transportBody.position, out flowVelocity);
 
-                float throttleDemand = preset != null ? ResolveThrottle(_driveMoveInput, _driveVerticalInput) : 0f;
-                float throttleOutput = ResolveThrottleOutput(throttleDemand);
+                float throttleOutput = _entangledThrottleOutput;
+                _driveMoveInput = Vector2.zero;
+                _driveVerticalInput = 0f;
                 _currentThrottle = 0f;
                 _transportActive = true;
                 _vehicleMotor.AdvanceEntanglement(flowVelocity, entanglementCurrentAcceleration, entanglementCurrentDamping, fixedDeltaTime);
@@ -971,6 +975,9 @@ namespace Hecton8.Gameplay
             vegetationBridge.TrySampleAbyssalFlow(anchorPosition, out anchorFlowVelocity);
             float initialThrottleDemand = preset != null ? ResolveThrottle(_driveMoveInput, _driveVerticalInput) : 0f;
             float initialThrottleOutput = ResolveThrottleOutput(initialThrottleDemand);
+            _entangledThrottleOutput = initialThrottleOutput;
+            _driveMoveInput = Vector2.zero;
+            _driveVerticalInput = 0f;
             _currentThrottle = 0f;
             _transportActive = true;
             _vehicleMotor.AdvanceEntanglement(anchorFlowVelocity, entanglementCurrentAcceleration, entanglementCurrentDamping, fixedDeltaTime);
@@ -1009,6 +1016,7 @@ namespace Hecton8.Gameplay
             _cavitationEventTimer = 0f;
             _pendingEntanglementShearDamage = 0f;
             _pendingCavitationEngineDamage = 0f;
+            _entangledThrottleOutput = 0f;
             _entanglementTrackedCount = 0;
             for (int i = 0; i < _entanglementInstanceUids.Length; i++)
             {
@@ -1113,17 +1121,28 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _microFractureLoad += entanglementMicroFracturePerSecond * math.saturate(overload01) * math.max(0f, safeDeltaTime);
+            float localMicroFractureDamage = entanglementMicroFracturePerSecond * math.saturate(overload01) * math.max(0f, safeDeltaTime);
+            if (localMicroFractureDamage <= 0f)
+                return;
+
+            _microFractureLoad += localMicroFractureDamage;
             float fractureLimit = math.max(1f, entanglementMicroFractureLimit);
             if (_microFractureLoad < fractureLimit)
                 return;
 
-            _microFractureLoad -= fractureLimit;
-            float penaltyMeters = math.max(0f, entanglementDepthPenaltyPerMicroFractureMeters);
-            _permanentSafeDepthPenaltyMeters += penaltyMeters;
+            float fractureEvents = math.floor(_microFractureLoad / fractureLimit);
+            _microFractureLoad -= fractureEvents * fractureLimit;
+            _pendingSafeDepthPenaltyMeters += fractureEvents * math.max(0f, entanglementDepthPenaltyPerMicroFractureMeters);
+
+            float wholePenaltyMeters = math.floor(_pendingSafeDepthPenaltyMeters);
+            if (wholePenaltyMeters < 1f)
+                return;
+
+            _pendingSafeDepthPenaltyMeters -= wholePenaltyMeters;
+            _permanentSafeDepthPenaltyMeters += wholePenaltyMeters;
             ResolveVehicleUpgradeModule();
             if (_vehicleUpgradeModule != null)
-                _vehicleUpgradeModule.ApplyPermanentSafeDepthPenalty(penaltyMeters);
+                _vehicleUpgradeModule.ApplyPermanentSafeDepthPenalty(wholePenaltyMeters);
         }
 
         private void FlushPendingCavitationDamage()

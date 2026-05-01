@@ -2,9 +2,16 @@
 
 Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
-Date: `2026-04-12`
+Date: `2026-05-01`
 
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
+
+Current-state boundary:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as execution guidance.
+- This plan is still directionally valid, but it is not a runtime verification report.
+- Play Mode deadlock, editor responsiveness, zero-GC, and memory retention remain `PENDING VERIFICATION`.
+- DOTS remains optional/prototype-only until source and profiler evidence prove otherwise.
 
 This plan replaces vague "finish DOTS" thinking with a hard sequence:
 

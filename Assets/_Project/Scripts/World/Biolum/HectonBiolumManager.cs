@@ -319,13 +319,18 @@ namespace Hecton8.Biolum
         }
 
         /// <summary>
-        /// Find all biolum zones in scene.
+        /// Register all active biolum zones without a scene-wide object scan.
         /// </summary>
         private void FindExistingZones()
         {
-            HectonBiolumZone[] zones = Object.FindObjectsByType<HectonBiolumZone>(FindObjectsInactive.Exclude);
-            foreach (var zone in zones)
+            List<HectonBiolumZone> zones = HectonBiolumZone.ActiveZones;
+            int count = zones.Count;
+            for (int i = 0; i < count; i++)
             {
+                HectonBiolumZone zone = zones[i];
+                if (zone == null)
+                    continue;
+
                 zone.EnsureTickRegistration();
                 RegisterZone(zone);
             }

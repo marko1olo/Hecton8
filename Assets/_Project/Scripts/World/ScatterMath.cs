@@ -140,18 +140,24 @@ namespace Hecton8.World
         public static float EvaluateClusterPatchMask01(
             float worldX,
             float worldZ,
+            int chunkX,
+            int chunkZ,
             float clusterNoiseScale,
             int ruleIdHash,
             int familyHash)
         {
             float safeScale = math.max(0.0001f, clusterNoiseScale);
+            int chunkSalt = (chunkX * 73856093) ^ (chunkZ * 19349663);
+            float2 chunkOffset = new float2(
+                ((chunkX & 1023) * 0.173f) + ((chunkSalt & 255) * 0.00390625f),
+                ((chunkZ & 1023) * 0.197f) + (((chunkSalt >> 8) & 255) * 0.00390625f));
             float2 p = new float2(
                 (worldX * safeScale) + ((ruleIdHash & 255) * 0.03125f),
-                (worldZ * safeScale) + ((familyHash & 255) * 0.03125f));
+                (worldZ * safeScale) + ((familyHash & 255) * 0.03125f)) + chunkOffset;
 
-            float octaveA = ValueNoise01(p, ruleIdHash ^ familyHash ^ 0x51A3);
-            float octaveB = ValueNoise01((p * 1.93f) + new float2(11.7f, -7.1f), ruleIdHash ^ 0x2C1B);
-            float octaveC = ValueNoise01((p * 0.57f) + new float2(-19.4f, 23.8f), familyHash ^ 0x6D2F);
+            float octaveA = ValueNoise01(p, ruleIdHash ^ familyHash ^ chunkSalt ^ 0x51A3);
+            float octaveB = ValueNoise01((p * 1.93f) + new float2(11.7f, -7.1f), ruleIdHash ^ chunkSalt ^ 0x2C1B);
+            float octaveC = ValueNoise01((p * 0.57f) + new float2(-19.4f, 23.8f), familyHash ^ chunkSalt ^ 0x6D2F);
             return math.saturate((octaveA * 0.58f) + (octaveB * 0.28f) + (octaveC * 0.14f));
         }
 

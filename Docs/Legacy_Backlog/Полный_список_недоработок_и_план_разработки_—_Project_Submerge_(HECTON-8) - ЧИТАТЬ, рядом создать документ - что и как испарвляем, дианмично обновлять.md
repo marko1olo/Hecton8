@@ -1,5 +1,8 @@
 # Полный список недоработок и план разработки — Project Submerge (HECTON-8)
 
+Status: LEGACY REFERENCE
+Verification: PENDING VERIFICATION
+
 # Полный список недоработок и план разработки
 
 ## Project Submerge (HECTON-8) | Глубокий анализ кода + README + все планы

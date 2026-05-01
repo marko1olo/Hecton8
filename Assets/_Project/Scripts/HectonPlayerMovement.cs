@@ -56,6 +56,9 @@ namespace Hecton8.Gameplay
         private float _runtimeInventoryLoad01;
         private float _runtimeInventoryLoadRatio;
         private const float TwoPi = 2f * math.PI;
+        private const float LocalGravityOverrideBlendSeconds = 1f;
+        private const float MinLocalGravitySqr = 0.000001f;
+        private const float LocalGravityRetargetEpsilonSqr = 0.0001f;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
         private const int CrestBodySampleCount = 5;
         private const int CrestSampleCenter = 0;
@@ -1184,8 +1187,10 @@ namespace Hecton8.Gameplay
         private Vector3 _groundCheckOrigin;
         private Vector3 _cachedGravity;
         private Vector3 _localGravityOverride;
+        private Vector3 _localGravityOverrideBlendStart;
         private float _cachedGravityMagnitude;
         private float _localGravityOverrideTimer;
+        private float _localGravityOverrideBlendTimer;
         private bool _localGravityOverrideActive;
         private Vector3 _smoothedGroundNormal;
         private float _minGroundNormalY;
@@ -1750,8 +1755,16 @@ namespace Hecton8.Gameplay
         internal void RequestLocalGravityOverride(Vector3 gravityVector, float holdSeconds)
         {
             Vector3 safeGravity = HectonPlayerMotor.SafeVelocity(gravityVector);
-            if (safeGravity.sqrMagnitude <= 0.000001f || holdSeconds <= 0f)
+            if (safeGravity.sqrMagnitude <= MinLocalGravitySqr || holdSeconds <= 0f)
                 return;
+
+            bool sameTarget = _localGravityOverrideActive &&
+                              (_localGravityOverride - safeGravity).sqrMagnitude <= LocalGravityRetargetEpsilonSqr;
+            if (!sameTarget)
+            {
+                _localGravityOverrideBlendStart = ResolveCurrentGravityForOverrideBlend();
+                _localGravityOverrideBlendTimer = 0f;
+            }
 
             _localGravityOverride = safeGravity;
             _localGravityOverrideTimer = math.max(_localGravityOverrideTimer, holdSeconds);
@@ -2588,7 +2601,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            SargassumGlobalDragManager.OnEntanglementStrain += HandleSargassumEntanglementStrain;
+            SargassumGlobalDragManager.RegisterEntanglementStrain(HandleSargassumEntanglementStrain);
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             BindInventoryLoadSource();
             ResolvePlayerToolManager();
@@ -2620,7 +2633,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            SargassumGlobalDragManager.OnEntanglementStrain -= HandleSargassumEntanglementStrain;
+            SargassumGlobalDragManager.UnregisterEntanglementStrain(HandleSargassumEntanglementStrain);
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             UnbindInventoryLoadSource();
             UnsubscribeFromInput();
@@ -5288,7 +5301,7 @@ namespace Hecton8.Gameplay
             if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
             {
                 _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
-                _cachedGravity = _localGravityOverride;
+                _cachedGravity = ResolveBlendedLocalGravity(fixedDeltaTime);
                 if (_localGravityOverrideTimer <= 0f)
                     _localGravityOverrideActive = false;
             }
@@ -5296,6 +5309,8 @@ namespace Hecton8.Gameplay
             {
                 _cachedGravity = UnityEngine.Physics.gravity;
                 _localGravityOverrideActive = false;
+                _localGravityOverrideBlendTimer = 0f;
+                _localGravityOverrideBlendStart = _cachedGravity;
             }
 
             _cachedGravityMagnitude = _cachedGravity.magnitude;
@@ -5312,6 +5327,69 @@ namespace Hecton8.Gameplay
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  FixedTick Ã¢â‚¬â€ PHYSICS
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+
+        private Vector3 ResolveBlendedLocalGravity(float fixedDeltaTime)
+        {
+            Vector3 targetGravity = HectonPlayerMotor.SafeVelocity(_localGravityOverride);
+            if (targetGravity.sqrMagnitude <= MinLocalGravitySqr)
+                return ResolveCurrentGravityForOverrideBlend();
+
+            Vector3 startGravity = HectonPlayerMotor.SafeVelocity(_localGravityOverrideBlendStart);
+            if (startGravity.sqrMagnitude <= MinLocalGravitySqr)
+                startGravity = targetGravity;
+
+            _localGravityOverrideBlendTimer = math.min(
+                LocalGravityOverrideBlendSeconds,
+                _localGravityOverrideBlendTimer + math.max(0f, fixedDeltaTime));
+
+            float blend01 = math.saturate(_localGravityOverrideBlendTimer / LocalGravityOverrideBlendSeconds);
+            if (blend01 >= 1f)
+                return targetGravity;
+
+            return SlerpGravityVector(startGravity, targetGravity, blend01);
+        }
+
+        private Vector3 ResolveCurrentGravityForOverrideBlend()
+        {
+            Vector3 currentGravity = HectonPlayerMotor.SafeVelocity(_cachedGravity);
+            if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
+                return currentGravity;
+
+            currentGravity = HectonPlayerMotor.SafeVelocity(UnityEngine.Physics.gravity);
+            if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
+                return currentGravity;
+
+            return Vector3.down * 9.81f;
+        }
+
+        private static Vector3 SlerpGravityVector(Vector3 startGravity, Vector3 targetGravity, float blend01)
+        {
+            float startMagnitude = startGravity.magnitude;
+            float targetMagnitude = targetGravity.magnitude;
+            if (startMagnitude <= 0.0001f)
+                return targetGravity;
+
+            if (targetMagnitude <= 0.0001f)
+                return startGravity;
+
+            float3 startDirection = new float3(startGravity.x, startGravity.y, startGravity.z) * (1f / startMagnitude);
+            float3 targetDirection = new float3(targetGravity.x, targetGravity.y, targetGravity.z) * (1f / targetMagnitude);
+            quaternion startRotation = quaternion.LookRotationSafe(startDirection, ResolveGravitySlerpUp(startDirection));
+            quaternion targetRotation = quaternion.LookRotationSafe(targetDirection, ResolveGravitySlerpUp(targetDirection));
+            quaternion blendedRotation = math.slerp(startRotation, targetRotation, math.saturate(blend01));
+            float3 blendedDirection = math.mul(blendedRotation, new float3(0f, 0f, 1f));
+            float magnitude = math.lerp(startMagnitude, targetMagnitude, math.saturate(blend01));
+            return new Vector3(blendedDirection.x, blendedDirection.y, blendedDirection.z) * magnitude;
+        }
+
+        private static float3 ResolveGravitySlerpUp(float3 direction)
+        {
+            float3 up = math.up();
+            if (math.abs(math.dot(direction, up)) > 0.95f)
+                up = new float3(1f, 0f, 0f);
+
+            return up;
+        }
 
         public void FixedTick(float fixedDeltaTime)
         {
@@ -5685,6 +5763,8 @@ namespace Hecton8.Gameplay
             ApplyProceduralLinearDamping(fixedDeltaTime);
             ClampVelocity(suit);
             CaptureFixedInterpolationState();
+            Vector3 safeVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
+            UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, safeVelocity.magnitude, Time.unscaledTime);
             UpdateGroundDiagnostics();
             _useFixedFrameSpatialCache = false;
             }
@@ -8113,14 +8193,11 @@ namespace Hecton8.Gameplay
             float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
 
             // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based drag increase (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
-            float depthDragAdd = 0f;
-            if (_currentDepth > suit.depthSwimSlowdownStart && suit.depthDragIncreaseMax > 0f)
-            {
-                float depthT = math.saturate(
-                    (_currentDepth - suit.depthSwimSlowdownStart) /
-                    math.max(suit.depthSwimSlowdownEnd - suit.depthSwimSlowdownStart, 0.01f));
-                depthDragAdd = depthT * suit.depthDragIncreaseMax;
-            }
+            float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
+                _currentDepth,
+                suit.depthSwimSlowdownStart,
+                suit.depthSwimSlowdownEnd,
+                suit.depthDragIncreaseMax);
 
             float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
             if (isSurfaceSwim)
@@ -8137,8 +8214,7 @@ namespace Hecton8.Gameplay
             // Ã¢â€â‚¬Ã¢â€â‚¬ Quadratic drag Ã¢â€â‚¬Ã¢â€â‚¬
             if (speed > 0.01f)
             {
-                float dragAccelerationCoefficient = effectiveDragCoeff / math.max(_rb.mass, 0.0001f);
-                Vector3 dampedVelocity = HectonPlayerMotor.AnalyticalQuadraticDrag(_velocity, dragAccelerationCoefficient, fixedDeltaTime);
+                Vector3 dampedVelocity = PlayerSwimMotor.ApplyAnalyticalDrag(_velocity, effectiveDragCoeff, _rb.mass, fixedDeltaTime);
                 ApplyMotorVelocityChange(dampedVelocity - _velocity);
                 _velocity = dampedVelocity;
                 speed = _velocity.magnitude;
@@ -8156,14 +8232,11 @@ namespace Hecton8.Gameplay
                 return;
 
             // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based swim force reduction (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
-            float depthSlowdown = 1f;
-            if (_currentDepth > suit.depthSwimSlowdownStart && suit.depthSwimSlowdownMax > 0f)
-            {
-                float slowT = math.saturate(
-                    (_currentDepth - suit.depthSwimSlowdownStart) /
-                    math.max(suit.depthSwimSlowdownEnd - suit.depthSwimSlowdownStart, 0.01f));
-                depthSlowdown = 1f - slowT * suit.depthSwimSlowdownMax;
-            }
+            float depthSlowdown = PlayerSwimMotor.ResolveDepthSlowdown(
+                _currentDepth,
+                suit.depthSwimSlowdownStart,
+                suit.depthSwimSlowdownEnd,
+                suit.depthSwimSlowdownMax);
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;

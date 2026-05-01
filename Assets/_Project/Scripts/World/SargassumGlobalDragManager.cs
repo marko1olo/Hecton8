@@ -217,13 +217,33 @@ namespace Hecton8.World
         }
 
         private static SargassumGlobalDragManager _instance;
+        private static readonly RegistryBucket<Action<EntanglementStrainSignal>> _entanglementStrainListeners = new RegistryBucket<Action<EntanglementStrainSignal>>(16);
+        private static readonly RegistryBucket<Action<MassiveDisplacementSignal>> _massiveDisplacementListeners = new RegistryBucket<Action<MassiveDisplacementSignal>>(16);
+        private static NativeQueue<EntanglementStrainSignal> _pendingEntanglementStrain;
+        private static NativeQueue<MassiveDisplacementSignal> _pendingMassiveDisplacement;
+
+        public static int PendingEventCount =>
+            (_pendingEntanglementStrain.IsCreated ? _pendingEntanglementStrain.Count : 0) +
+            (_pendingMassiveDisplacement.IsCreated ? _pendingMassiveDisplacement.Count : 0);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _instance = null;
-            OnEntanglementStrain = null;
-            OnMassiveDisplacement = null;
+            if (_pendingEntanglementStrain.IsCreated)
+            {
+                _pendingEntanglementStrain.Dispose();
+                _pendingEntanglementStrain = default;
+            }
+
+            if (_pendingMassiveDisplacement.IsCreated)
+            {
+                _pendingMassiveDisplacement.Dispose();
+                _pendingMassiveDisplacement = default;
+            }
+
+            _entanglementStrainListeners.Clear();
+            _massiveDisplacementListeners.Clear();
         }
 
         [Header("── Runtime Wiring ──────────────────")]
@@ -607,6 +627,7 @@ namespace Hecton8.World
         private BatchID _scavengerBatchId;
         private BatchMeshID _scavengerBatchMeshId;
         private BatchMaterialID _scavengerBatchMaterialId;
+        private GraphicsBuffer _registeredScavengerBatchBuffer;
         private Mesh _registeredScavengerMesh;
         private Material _registeredScavengerMaterial;
         private Material _scavengerBrgMaterial;
@@ -653,15 +674,29 @@ namespace Hecton8.World
         public int SavePriority => 45;
         public int LoadPriority => 45;
 
-        /// <summary>
-        /// Raised when an entangled actor is actively fighting the canopy snare strongly enough to generate tension cues.
-        /// </summary>
-        public static event Action<EntanglementStrainSignal> OnEntanglementStrain;
+        public static void RegisterEntanglementStrain(Action<EntanglementStrainSignal> listener)
+        {
+            if (listener != null && !_entanglementStrainListeners.Contains(listener))
+                _entanglementStrainListeners.Register(listener);
+        }
 
-        /// <summary>
-        /// Raised when a leviathan-scale object tears or clears a local canopy region.
-        /// </summary>
-        public static event Action<MassiveDisplacementSignal> OnMassiveDisplacement;
+        public static void UnregisterEntanglementStrain(Action<EntanglementStrainSignal> listener)
+        {
+            if (listener != null && _entanglementStrainListeners.Contains(listener))
+                _entanglementStrainListeners.Unregister(listener);
+        }
+
+        public static void RegisterMassiveDisplacement(Action<MassiveDisplacementSignal> listener)
+        {
+            if (listener != null && !_massiveDisplacementListeners.Contains(listener))
+                _massiveDisplacementListeners.Register(listener);
+        }
+
+        public static void UnregisterMassiveDisplacement(Action<MassiveDisplacementSignal> listener)
+        {
+            if (listener != null && _massiveDisplacementListeners.Contains(listener))
+                _massiveDisplacementListeners.Unregister(listener);
+        }
 
         /// <summary>
         /// True while the manager has at least one active sargassum density cell.
@@ -709,7 +744,8 @@ namespace Hecton8.World
         /// </summary>
         public static void RaiseEntanglementStrain(EntanglementStrainSignal signal)
         {
-            OnEntanglementStrain?.Invoke(signal);
+            EnsureEventQueues();
+            _pendingEntanglementStrain.Enqueue(signal);
         }
 
         /// <summary>
@@ -718,7 +754,42 @@ namespace Hecton8.World
         /// <param name="signal">Displacement payload.</param>
         public static void RaiseMassiveDisplacement(MassiveDisplacementSignal signal)
         {
-            OnMassiveDisplacement?.Invoke(signal);
+            EnsureEventQueues();
+            _pendingMassiveDisplacement.Enqueue(signal);
+        }
+
+        public static void FlushPendingEvents()
+        {
+            if (_pendingEntanglementStrain.IsCreated)
+            {
+                while (_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                {
+                    Action<EntanglementStrainSignal>[] rawArray = _entanglementStrainListeners.RawArray;
+                    int count = _entanglementStrainListeners.Count;
+                    for (int i = count - 1; i >= 0; i--)
+                        rawArray[i]?.Invoke(signal);
+                }
+            }
+
+            if (_pendingMassiveDisplacement.IsCreated)
+            {
+                while (_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                {
+                    Action<MassiveDisplacementSignal>[] rawArray = _massiveDisplacementListeners.RawArray;
+                    int count = _massiveDisplacementListeners.Count;
+                    for (int i = count - 1; i >= 0; i--)
+                        rawArray[i]?.Invoke(signal);
+                }
+            }
+        }
+
+        private static void EnsureEventQueues()
+        {
+            if (!_pendingEntanglementStrain.IsCreated)
+                _pendingEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - sargassum strain event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
+
+            if (!_pendingMassiveDisplacement.IsCreated)
+                _pendingMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - sargassum displacement event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
         }
 
         private void Awake()
@@ -2352,6 +2423,7 @@ namespace Hecton8.World
             {
                 _scavengerMatrixBuffer.Release();
                 _scavengerMatrixBuffer = null;
+                _registeredScavengerBatchBuffer = null;
             }
 
             if (_scavengerMatricesNative.IsCreated)
@@ -2396,6 +2468,7 @@ namespace Hecton8.World
                 _scavengerBatchId = default;
                 _scavengerBatchMeshId = default;
                 _scavengerBatchMaterialId = default;
+                _registeredScavengerBatchBuffer = null;
                 _registeredScavengerMesh = null;
                 _registeredScavengerMaterial = null;
             }
@@ -2610,7 +2683,7 @@ namespace Hecton8.World
 
             activeMaterial.SetBuffer(_ScavengerMatricesId, _scavengerMatrixBuffer);
             SyncScavengerBatchRegistration(activeMesh, activeMaterial);
-            _scavengerBatchRendererGroup.SetBatchBuffer(_scavengerBatchId, _scavengerMatrixBuffer.bufferHandle);
+            SyncScavengerBatchBuffer(_scavengerMatrixBuffer);
             _scavengerBatchRendererGroup.SetGlobalBounds(_scavengerDrawBounds);
         }
 
@@ -2688,6 +2761,18 @@ namespace Hecton8.World
                 _scavengerBatchMaterialId = activeMaterial != null ? _scavengerBatchRendererGroup.RegisterMaterial(activeMaterial) : default;
                 _registeredScavengerMaterial = activeMaterial;
             }
+        }
+
+        private void SyncScavengerBatchBuffer(GraphicsBuffer matrixBuffer)
+        {
+            if (_scavengerBatchRendererGroup == null || _scavengerBatchId.Equals(default) || matrixBuffer == null)
+                return;
+
+            if (ReferenceEquals(_registeredScavengerBatchBuffer, matrixBuffer))
+                return;
+
+            _scavengerBatchRendererGroup.SetBatchBuffer(_scavengerBatchId, matrixBuffer.bufferHandle);
+            _registeredScavengerBatchBuffer = matrixBuffer;
         }
 
         private JobHandle OnPerformScavengerCulling(

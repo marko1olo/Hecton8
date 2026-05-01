@@ -66,7 +66,7 @@ namespace Hecton8.Physics
         private const int GpuReadbackRingSize = 3;
         private const int MaxAbyssalHeatSourceCount = 8;
         private const int MaxCavitationBurstEvents = 8;
-        private const int CavitationShockwaveHitCapacity = 24;
+        private const int CavitationShockwaveHitCapacity = 64;
         private const float AbyssalBiolumeSurgeHoldSeconds = 4f;
         private const string NonFiniteBuoyancyForceLog = "[HectonFluidEngine] Non-finite buoyancy force output detected. Zeroing packet.";
         private const string NonFiniteBuoyancyTorqueLog = "[HectonFluidEngine] Non-finite buoyancy torque output detected. Zeroing packet.";
@@ -138,6 +138,12 @@ namespace Hecton8.Physics
         private static void ResetStaticState()
         {
             _instance = null;
+            for (int i = 0; i < CavitationShockwaveHitCapacity; i++)
+            {
+                s_CavitationShockwaveColliders[i] = null;
+                s_CavitationShockwaveRigidbodies[i] = null;
+                s_CavitationShockwaveDistanceSq[i] = 0f;
+            }
         }
 
         public static HectonFluidEngine Instance
@@ -424,10 +430,12 @@ namespace Hecton8.Physics
         private int _scheduledForceCount;
         // COLD ALLOC: CavitationBurstEvent[8] — fixed post-fixed cavitation burst queue — owner: HectonFluidEngine
         private readonly CavitationBurstEvent[] _cavitationBurstQueue = new CavitationBurstEvent[MaxCavitationBurstEvents];
-        // COLD ALLOC: Collider[24] — nonalloc cavitation shockwave overlap buffer — owner: HectonFluidEngine
-        private readonly Collider[] _cavitationShockwaveColliders = new Collider[CavitationShockwaveHitCapacity];
-        // COLD ALLOC: Rigidbody[24] — deduplicated cavitation shockwave rigidbody targets — owner: HectonFluidEngine
-        private readonly Rigidbody[] _cavitationShockwaveRigidbodies = new Rigidbody[CavitationShockwaveHitCapacity];
+        // COLD ALLOC: Collider[64] — static nonalloc cavitation shockwave overlap buffer — owner: HectonFluidEngine
+        private static readonly Collider[] s_CavitationShockwaveColliders = new Collider[CavitationShockwaveHitCapacity];
+        // COLD ALLOC: Rigidbody[64] — static deduplicated cavitation shockwave rigidbody targets — owner: HectonFluidEngine
+        private static readonly Rigidbody[] s_CavitationShockwaveRigidbodies = new Rigidbody[CavitationShockwaveHitCapacity];
+        // COLD ALLOC: float[64] — static cavitation target distance ordering buffer for saturated overlaps — owner: HectonFluidEngine
+        private static readonly float[] s_CavitationShockwaveDistanceSq = new float[CavitationShockwaveHitCapacity];
         private int _cavitationBurstCount;
 
         /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
@@ -971,7 +979,7 @@ namespace Hecton8.Physics
                 if (TrySanitizePhysicsVector(force, NonFiniteBuoyancyForceLog, out Vector3 sanitizedForce) &&
                     sanitizedForce.sqrMagnitude > 0.0001f)
                 {
-                    PhysicsForceRouter.QueueForce(
+                    PhysicsForceRouter.QueueAmbientForce(
                         rb,
                         sanitizedForce,
                         ForceMode.Force);
@@ -980,7 +988,7 @@ namespace Hecton8.Physics
                 if (TrySanitizePhysicsVector(torque, NonFiniteBuoyancyTorqueLog, out Vector3 sanitizedTorque) &&
                     sanitizedTorque.sqrMagnitude > 0.0001f)
                 {
-                    PhysicsForceRouter.QueueTorque(
+                    PhysicsForceRouter.QueueAmbientTorque(
                         rb,
                         sanitizedTorque,
                         ForceMode.Force);
@@ -1067,17 +1075,18 @@ namespace Hecton8.Physics
             int colliderCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 burstEvent.Position,
                 burstEvent.Radius,
-                _cavitationShockwaveColliders,
+                s_CavitationShockwaveColliders,
                 cavitationShockwaveLayers,
                 QueryTriggerInteraction.Ignore);
             if (colliderCount <= 0)
                 return;
 
             int rigidbodyCount = 0;
+            bool saturatedOverlap = colliderCount >= CavitationShockwaveHitCapacity;
             for (int i = 0; i < colliderCount; i++)
             {
-                Collider hitCollider = _cavitationShockwaveColliders[i];
-                _cavitationShockwaveColliders[i] = null;
+                Collider hitCollider = s_CavitationShockwaveColliders[i];
+                s_CavitationShockwaveColliders[i] = null;
                 if (hitCollider == null)
                     continue;
 
@@ -1090,13 +1099,18 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                TryAppendCavitationShockwaveBody(candidateBody, ref rigidbodyCount);
+                float distanceSq = Vector3.SqrMagnitude(candidateBody.worldCenterOfMass - burstEvent.Position);
+                TryAppendCavitationShockwaveBody(candidateBody, distanceSq, saturatedOverlap, ref rigidbodyCount);
             }
+
+            if (saturatedOverlap && rigidbodyCount > 1)
+                SortCavitationShockwaveBodiesByDistance(rigidbodyCount);
 
             for (int i = 0; i < rigidbodyCount; i++)
             {
-                Rigidbody targetBody = _cavitationShockwaveRigidbodies[i];
-                _cavitationShockwaveRigidbodies[i] = null;
+                Rigidbody targetBody = s_CavitationShockwaveRigidbodies[i];
+                s_CavitationShockwaveRigidbodies[i] = null;
+                s_CavitationShockwaveDistanceSq[i] = 0f;
                 if (targetBody == null || targetBody.isKinematic)
                     continue;
 
@@ -1129,20 +1143,71 @@ namespace Hecton8.Physics
             }
         }
 
-        private void TryAppendCavitationShockwaveBody(Rigidbody candidateBody, ref int rigidbodyCount)
+        private static void TryAppendCavitationShockwaveBody(
+            Rigidbody candidateBody,
+            float distanceSq,
+            bool prioritizeByDistance,
+            ref int rigidbodyCount)
         {
-            int capacity = math.min(_cavitationShockwaveRigidbodies.Length, CavitationShockwaveHitCapacity);
-            if (rigidbodyCount >= capacity)
-                return;
+            int capacity = math.min(s_CavitationShockwaveRigidbodies.Length, CavitationShockwaveHitCapacity);
 
             for (int i = 0; i < rigidbodyCount; i++)
             {
-                if (_cavitationShockwaveRigidbodies[i] == candidateBody)
-                    return;
+                if (s_CavitationShockwaveRigidbodies[i] != candidateBody)
+                    continue;
+
+                if (distanceSq < s_CavitationShockwaveDistanceSq[i])
+                    s_CavitationShockwaveDistanceSq[i] = distanceSq;
+
+                return;
             }
 
-            _cavitationShockwaveRigidbodies[rigidbodyCount] = candidateBody;
-            rigidbodyCount++;
+            if (rigidbodyCount < capacity)
+            {
+                s_CavitationShockwaveRigidbodies[rigidbodyCount] = candidateBody;
+                s_CavitationShockwaveDistanceSq[rigidbodyCount] = distanceSq;
+                rigidbodyCount++;
+                return;
+            }
+
+            if (!prioritizeByDistance)
+                return;
+
+            int farthestIndex = 0;
+            float farthestDistanceSq = s_CavitationShockwaveDistanceSq[0];
+            for (int i = 1; i < capacity; i++)
+            {
+                if (s_CavitationShockwaveDistanceSq[i] <= farthestDistanceSq)
+                    continue;
+
+                farthestDistanceSq = s_CavitationShockwaveDistanceSq[i];
+                farthestIndex = i;
+            }
+
+            if (distanceSq >= farthestDistanceSq)
+                return;
+
+            s_CavitationShockwaveRigidbodies[farthestIndex] = candidateBody;
+            s_CavitationShockwaveDistanceSq[farthestIndex] = distanceSq;
+        }
+
+        private static void SortCavitationShockwaveBodiesByDistance(int rigidbodyCount)
+        {
+            for (int i = 1; i < rigidbodyCount; i++)
+            {
+                Rigidbody body = s_CavitationShockwaveRigidbodies[i];
+                float distanceSq = s_CavitationShockwaveDistanceSq[i];
+                int j = i - 1;
+                while (j >= 0 && s_CavitationShockwaveDistanceSq[j] > distanceSq)
+                {
+                    s_CavitationShockwaveRigidbodies[j + 1] = s_CavitationShockwaveRigidbodies[j];
+                    s_CavitationShockwaveDistanceSq[j + 1] = s_CavitationShockwaveDistanceSq[j];
+                    j--;
+                }
+
+                s_CavitationShockwaveRigidbodies[j + 1] = body;
+                s_CavitationShockwaveDistanceSq[j + 1] = distanceSq;
+            }
         }
 
         private void ReallocateNativeArrays(int requiredCount)
@@ -1939,6 +2004,7 @@ namespace Hecton8.Physics
         private const float ThermoclineVerticalAttenuation = 0.1f;
         private const float SurfaceStormLayerDepthMeters = 50f;
         private const float StormSurfaceTurbulenceStrength = 0.4f;
+        private const float JobGyroscopicFlowMaxTorquePerKg = 50f;
 
         // ── Input (ReadOnly) ──
         [ReadOnly] public NativeArray<float3>         positions;
@@ -2122,9 +2188,22 @@ namespace Hecton8.Physics
             float3 gyroscopicFlowTorque = gyroscopicAxis *
                                           (currentSpeed * volumeLever * lightTumbleBias * massStabilizer *
                                            subRatio * math.max(0f, p.currentResponse) * 3.25f);
+            float maxGyroscopicFlowTorque = JobGyroscopicFlowMaxTorquePerKg * math.max(0.01f, p.mass);
+            gyroscopicFlowTorque = ClampVectorMagnitude(gyroscopicFlowTorque, maxGyroscopicFlowTorque);
 
             resultForces[i] = ResolveFiniteFloat3OrZero(buoyancyForce + dragForce + currentF + dampingVec);
             resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque + gyroscopicFlowTorque);
+        }
+
+        private static float3 ClampVectorMagnitude(float3 value, float maxMagnitude)
+        {
+            float safeMaxMagnitude = math.max(0f, maxMagnitude);
+            float magnitudeSq = math.lengthsq(value);
+            float maxMagnitudeSq = safeMaxMagnitude * safeMaxMagnitude;
+            if (magnitudeSq <= maxMagnitudeSq || magnitudeSq <= 0.000001f)
+                return value;
+
+            return value * (safeMaxMagnitude * math.rsqrt(magnitudeSq));
         }
 
         private static float3 ResolveFiniteFloat3OrZero(float3 value)

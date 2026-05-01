@@ -1,5 +1,14 @@
 # KINEMATICS_AUP_INTEGRATION
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+2026-05-01 current-state boundary:
+
+- This is the kinematics/AUP integration map, not a Play Mode traversal or physics-stability proof.
+- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Player, vehicle, tether, voxel collider bake, and submarine contact paths still require source re-open plus runtime verification before surgical changes.
+
 Mandates followed:
 - `CORE_Submarine_Vehicles_Kinematics_AUP.txt`
 - `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`

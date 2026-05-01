@@ -1,0 +1,2066 @@
+﻿diff --git a/Assets/_Project/Scripts/Core/SystemDispatcher.cs b/Assets/_Project/Scripts/Core/SystemDispatcher.cs
+index fe006f3a..22e9a262 100644
+--- a/Assets/_Project/Scripts/Core/SystemDispatcher.cs
++++ b/Assets/_Project/Scripts/Core/SystemDispatcher.cs
+@@ -6,6 +6,7 @@ using UnityEngine;
+ using UnityEngine.Rendering;
+ using Hecton8.AI;
+ using Hecton8.Bootstrap;
++using Hecton8.Environment;
+ using Hecton8.Gameplay;
+ using Hecton8.Narrative;
+ using Hecton8.Quest;
+@@ -30,10 +31,14 @@ namespace Hecton8.Core
+         private const float FixedStepSeconds = 0.02f;
+         private const int MaxFixedSubstepsPerFrame = 3;
+         private const int MaxLateFrameEventsPerFrame = 1000;
++        private const int MaxPdaEventsPerFrame = 30;
++        private const int LateFrameCircuitBreakerLaneCapacity = 32;
+         private const float CircuitBreakerLogIntervalSeconds = 5f;
++        private const float AupNanInquisitorLogIntervalSeconds = 5f;
+         private const string SlowDispatcherPhaseWarningMessage = "[SystemDispatcher] Dispatcher phase exceeded slow threshold.";
+         private const string FoveatedFrameCompleteWarningMessage = "[SystemDispatcher] Foveated frame completion exceeded slow threshold.";
+         private const string JobHandleCompleteWarningMessage = "[SystemDispatcher] Job handle completion exceeded slow threshold.";
++        private const string AupNanInquisitorWarningMessage = "[SystemDispatcher] AUP NaN-Inquisitor detected invalid camera-relative results.";
+         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
+         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
+         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
+@@ -43,6 +48,25 @@ namespace Hecton8.Core
+         private static readonly ProfilerMarker _foveatedCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Foveated.Complete");
+         private static readonly ProfilerMarker _dispatcherRaycastScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Schedule");
+         private static readonly ProfilerMarker _dispatcherRaycastCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Complete");
++        private static readonly uint _ThreadSafeCommandQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ThreadSafeCommandQueue"));
++        private static readonly uint _NarrativeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("NarrativeEvents"));
++        private static readonly uint _InteractionEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("InteractionEvents"));
++        private static readonly uint _CraftingEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CraftingEvents"));
++        private static readonly uint _ScanEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ScanEvents"));
++        private static readonly uint _SaveEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SaveEvents"));
++        private static readonly uint _QuestEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("QuestEvents"));
++        private static readonly uint _AudioLogEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AudioLogEvents"));
++        private static readonly uint _SubmarineOsEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SubmarineOsEvents"));
++        private static readonly uint _FlashlightEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("FlashlightEvents"));
++        private static readonly uint _WeatherEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("WeatherEvents"));
++        private static readonly uint _AtlasSignalEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AtlasSignalEvents"));
++        private static readonly uint _NotificationEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("NotificationEvents"));
++        private static readonly uint _PdaEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PDAEvents"));
++        private static readonly uint _SceneBootstrapEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SceneBootstrapEvents"));
++        private static readonly uint _ObjectPoolDiagnosticsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ObjectPoolDiagnostics"));
++        private static readonly uint _Atlas6EventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Atlas6Events"));
++        private static readonly uint _RegistryEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("RegistryEvents"));
++        private static readonly uint _LateFrameBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.LateFrameEventBudget"));
+         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
+         {
+             new ProfilerMarker("H8.Dispatcher.Update.Core"),
+@@ -111,13 +135,23 @@ namespace Hecton8.Core
+         private static readonly IDispatcherRaycastReceiver[] _scheduledDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
+         // COLD ALLOC: int[256] — dispatcher-owned scheduled raycast request ids — owner: SystemDispatcher
+         private static readonly int[] _scheduledDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
++        // COLD ALLOC: uint[32] - late-frame circuit-breaker lane hash counters - owner: SystemDispatcher
++        private static readonly uint[] _lateFrameCircuitBreakerLaneHashes = new uint[LateFrameCircuitBreakerLaneCapacity];
++        // COLD ALLOC: ushort[32] - late-frame circuit-breaker lane hit counters - owner: SystemDispatcher
++        private static readonly ushort[] _lateFrameCircuitBreakerLaneCounts = new ushort[LateFrameCircuitBreakerLaneCapacity];
+         private float _slowTickAccumulator;
+         private float _fixedStepAccumulator;
+         private bool _serviceRegistered;
+         private static int _lateFrameEventDispatchBudget;
+         private static bool _lateFrameEventBudgetActive;
+         private static bool _lateFrameCircuitBreakerTripped;
++        private static uint _activeLateFrameEventLaneHash;
++        private static uint _dominantLateFrameCircuitBreakerLaneHash;
++        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
+         private static float _nextCircuitBreakerLogTime;
++        private static float _nextAupNanInquisitorLogTime;
++        private static bool _temporalCompressionActive;
++        private static int _temporalCompressionFrameCount;
+         private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
+         private static NativeList<RaycastCommand> _scheduledDispatcherRaycastCommands;
+         private static NativeArray<RaycastHit> _scheduledDispatcherRaycastHits;
+@@ -126,6 +160,16 @@ namespace Hecton8.Core
+         private static int _pendingDispatcherRaycastCount;
+         private static int _scheduledDispatcherRaycastCount;
+ 
++        /// <summary>
++        /// True when this frame dropped excess fixed-step catch-up time instead of exceeding the substep cap.
++        /// </summary>
++        public static bool IsTemporalCompressionActive => _temporalCompressionActive;
++
++        /// <summary>
++        /// Total frame count where temporal compression was entered since subsystem reset.
++        /// </summary>
++        public static int TemporalCompressionFrameCount => _temporalCompressionFrameCount;
++
+         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+         private static void ResetStaticState()
+         {
+@@ -137,7 +181,15 @@ namespace Hecton8.Core
+             _lateFrameEventDispatchBudget = 0;
+             _lateFrameEventBudgetActive = false;
+             _lateFrameCircuitBreakerTripped = false;
++            _activeLateFrameEventLaneHash = 0u;
++            _dominantLateFrameCircuitBreakerLaneHash = 0u;
++            _dominantLateFrameCircuitBreakerLaneCount = 0;
++            System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
++            System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
+             _nextCircuitBreakerLogTime = 0f;
++            _nextAupNanInquisitorLogTime = 0f;
++            _temporalCompressionActive = false;
++            _temporalCompressionFrameCount = 0;
+         }
+ 
+         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
+@@ -390,6 +442,7 @@ namespace Hecton8.Core
+                 return;
+ 
+             ThreadSafeCommandQueue.Initialize();
++            UIStateStore.EnsureInitialized();
+             GlobalRegistry.RegisterSystemDispatcher(this);
+             _serviceRegistered = true;
+         }
+@@ -469,22 +522,64 @@ namespace Hecton8.Core
+             BeginLateFrameEventBudget();
+             using (_lateFrameCommandQueueDrainProfilerMarker.Auto())
+             {
++                SetActiveLateFrameEventLane(_ThreadSafeCommandQueueHash);
++                ReportLateFrameQueueDepth(_ThreadSafeCommandQueueHash, ThreadSafeCommandQueue.PendingCount);
+                 if (!ThreadSafeCommandQueue.DrainMainThread())
+                     MarkLateFrameEventDispatchDeferred();
+             }
++            Hecton8.Modding.ModCommandDispatcher.DrainLateFrame();
++            SetActiveLateFrameEventLane(_NarrativeEventsQueueHash);
++            ReportLateFrameQueueDepth(_NarrativeEventsQueueHash, NarrativeEvents.PendingCount);
+             NarrativeEvents.FlushPending();
++            SetActiveLateFrameEventLane(_InteractionEventsQueueHash);
++            ReportLateFrameQueueDepth(_InteractionEventsQueueHash, Hecton8.Interaction.InteractionEvents.PendingCount);
+             Hecton8.Interaction.InteractionEvents.FlushPending();
++            SetActiveLateFrameEventLane(_CraftingEventsQueueHash);
++            ReportLateFrameQueueDepth(_CraftingEventsQueueHash, Hecton8.Crafting.CraftingEvents.PendingCount);
+             Hecton8.Crafting.CraftingEvents.FlushPending();
++            SetActiveLateFrameEventLane(_ScanEventsQueueHash);
++            ReportLateFrameQueueDepth(_ScanEventsQueueHash, ScanEvents.PendingCount);
+             ScanEvents.FlushPending();
++            SetActiveLateFrameEventLane(_SaveEventsQueueHash);
++            ReportLateFrameQueueDepth(_SaveEventsQueueHash, SaveEvents.PendingCount);
+             SaveEvents.FlushPending();
++            SetActiveLateFrameEventLane(_QuestEventsQueueHash);
++            ReportLateFrameQueueDepth(_QuestEventsQueueHash, QuestEvents.PendingCount);
+             QuestEvents.FlushPending();
++            SetActiveLateFrameEventLane(_AudioLogEventsQueueHash);
++            ReportLateFrameQueueDepth(_AudioLogEventsQueueHash, AudioLogEvents.PendingCount);
+             AudioLogEvents.FlushPending();
++            SetActiveLateFrameEventLane(_SubmarineOsEventsQueueHash);
++            ReportLateFrameQueueDepth(_SubmarineOsEventsQueueHash, HectonSubmarineOsEvents.PendingCount);
++            HectonSubmarineOsEvents.FlushPending();
++            SetActiveLateFrameEventLane(_FlashlightEventsQueueHash);
++            ReportLateFrameQueueDepth(_FlashlightEventsQueueHash, FlashlightEvents.PendingCount);
++            FlashlightEvents.FlushPending();
++            SetActiveLateFrameEventLane(_WeatherEventsQueueHash);
++            ReportLateFrameQueueDepth(_WeatherEventsQueueHash, WeatherEvents.PendingCount);
++            WeatherEvents.FlushPending();
++            SetActiveLateFrameEventLane(_AtlasSignalEventsQueueHash);
++            ReportLateFrameQueueDepth(_AtlasSignalEventsQueueHash, Hecton8.AtlasSignal.AtlasSignalEvents.PendingCount);
+             Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
++            SetActiveLateFrameEventLane(_NotificationEventsQueueHash);
++            ReportLateFrameQueueDepth(_NotificationEventsQueueHash, Hecton8.UI.NotificationEvents.PendingCount);
+             Hecton8.UI.NotificationEvents.FlushPending();
+-            Hecton8.UI.PDAEvents.FlushPending();
++            SetActiveLateFrameEventLane(_PdaEventsQueueHash);
++            ReportLateFrameQueueDepth(_PdaEventsQueueHash, Hecton8.UI.PDAEvents.PendingCount);
++            Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame);
++            SetActiveLateFrameEventLane(_SceneBootstrapEventsQueueHash);
++            ReportLateFrameQueueDepth(_SceneBootstrapEventsQueueHash, Hecton8.Bootstrap.SceneBootstrap.PendingEventCount);
+             Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
++            SetActiveLateFrameEventLane(_ObjectPoolDiagnosticsQueueHash);
++            ReportLateFrameQueueDepth(_ObjectPoolDiagnosticsQueueHash, ObjectPoolDiagnostics.PendingCount);
+             ObjectPoolDiagnostics.FlushPending();
++            SetActiveLateFrameEventLane(_Atlas6EventsQueueHash);
++            ReportLateFrameQueueDepth(_Atlas6EventsQueueHash, Hecton8.AtlasSignal.Atlas6Events.PendingCount);
+             Hecton8.AtlasSignal.Atlas6Events.FlushPending();
++            SetActiveLateFrameEventLane(_RegistryEventsQueueHash);
++            ReportLateFrameQueueDepth(_RegistryEventsQueueHash, GlobalRegistry.PendingServiceReboundCount);
++            GlobalRegistry.FlushPendingServiceReboundEvents();
++            ClearActiveLateFrameEventLane();
+             EndLateFrameEventBudget();
+             GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
+             WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
+@@ -496,7 +591,7 @@ namespace Hecton8.Core
+         /// Consumes one deferred event dispatch slot from the current LateUpdate budget.
+         /// </summary>
+         /// <returns>True when an event queue may dispatch one payload this frame.</returns>
+-        internal static bool TryConsumeLateFrameEventDispatch()
++        public static bool TryConsumeLateFrameEventDispatch()
+         {
+             if (!_lateFrameEventBudgetActive)
+                 return true;
+@@ -508,13 +603,32 @@ namespace Hecton8.Core
+             }
+ 
+             _lateFrameCircuitBreakerTripped = true;
++            RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
+             return false;
+         }
+ 
+         internal static void MarkLateFrameEventDispatchDeferred()
+         {
+             if (_lateFrameEventBudgetActive)
++            {
+                 _lateFrameCircuitBreakerTripped = true;
++                RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
++            }
++        }
++
++        private static void SetActiveLateFrameEventLane(uint queueHash)
++        {
++            _activeLateFrameEventLaneHash = queueHash;
++        }
++
++        private static void ClearActiveLateFrameEventLane()
++        {
++            _activeLateFrameEventLaneHash = 0u;
++        }
++
++        private static void ReportLateFrameQueueDepth(uint queueHash, int pendingCount)
++        {
++            ObjectPoolDiagnostics.PublishDataBusDepth(queueHash, pendingCount);
+         }
+ 
+         private static void BeginLateFrameEventBudget()
+@@ -522,6 +636,7 @@ namespace Hecton8.Core
+             _lateFrameEventDispatchBudget = MaxLateFrameEventsPerFrame;
+             _lateFrameCircuitBreakerTripped = false;
+             _lateFrameEventBudgetActive = true;
++            _activeLateFrameEventLaneHash = 0u;
+         }
+ 
+         private static void EndLateFrameEventBudget()
+@@ -531,6 +646,15 @@ namespace Hecton8.Core
+             _lateFrameEventDispatchBudget = 0;
+             _lateFrameCircuitBreakerTripped = false;
+ 
++            if (circuitBreakerTripped)
++            {
++                CrashTelemetryBuffer.ReportEventCascadeWarning();
++                GlobalTelemetryBus.PublishPerformanceWarning(
++                    _LateFrameBudgetWarningHash,
++                    _dominantLateFrameCircuitBreakerLaneHash,
++                    _dominantLateFrameCircuitBreakerLaneCount);
++            }
++
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+             float now = Time.unscaledTime;
+             if (circuitBreakerTripped && now >= _nextCircuitBreakerLogTime)
+@@ -541,6 +665,44 @@ namespace Hecton8.Core
+ #endif
+         }
+ 
++        private static void RecordLateFrameCircuitBreakerLane(uint queueHash)
++        {
++            if (queueHash == 0u)
++                return;
++
++            for (int i = 0; i < LateFrameCircuitBreakerLaneCapacity; i++)
++            {
++                uint recordedHash = _lateFrameCircuitBreakerLaneHashes[i];
++                if (recordedHash == queueHash)
++                {
++                    ushort nextCount = _lateFrameCircuitBreakerLaneCounts[i] == ushort.MaxValue
++                        ? ushort.MaxValue
++                        : (ushort)(_lateFrameCircuitBreakerLaneCounts[i] + 1);
++                    _lateFrameCircuitBreakerLaneCounts[i] = nextCount;
++                    if (nextCount >= _dominantLateFrameCircuitBreakerLaneCount)
++                    {
++                        _dominantLateFrameCircuitBreakerLaneHash = queueHash;
++                        _dominantLateFrameCircuitBreakerLaneCount = nextCount;
++                    }
++
++                    return;
++                }
++
++                if (recordedHash != 0u)
++                    continue;
++
++                _lateFrameCircuitBreakerLaneHashes[i] = queueHash;
++                _lateFrameCircuitBreakerLaneCounts[i] = 1;
++                if (_dominantLateFrameCircuitBreakerLaneCount == 0)
++                {
++                    _dominantLateFrameCircuitBreakerLaneHash = queueHash;
++                    _dominantLateFrameCircuitBreakerLaneCount = 1;
++                }
++
++                return;
++            }
++        }
++
+         private void FixedUpdate()
+         {
+         }
+@@ -548,10 +710,22 @@ namespace Hecton8.Core
+         private void RunFixedStepAccumulator(float unscaledDeltaTime, bool blockGameplayLanes)
+         {
+             if (unscaledDeltaTime <= 0f)
++            {
++                _temporalCompressionActive = false;
+                 return;
++            }
+ 
+             float maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+-            _fixedStepAccumulator = Mathf.Min(_fixedStepAccumulator + unscaledDeltaTime, maxAccumulatedTime);
++            float requestedAccumulatedTime = _fixedStepAccumulator + unscaledDeltaTime;
++            bool compressionActive = requestedAccumulatedTime > maxAccumulatedTime;
++            _temporalCompressionActive = compressionActive;
++            if (compressionActive)
++            {
++                _temporalCompressionFrameCount++;
++                CrashTelemetryBuffer.ReportTemporalCompression();
++            }
++
++            _fixedStepAccumulator = Mathf.Min(requestedAccumulatedTime, maxAccumulatedTime);
+ 
+             int substepCount = 0;
+             while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+@@ -605,9 +779,29 @@ namespace Hecton8.Core
+                             rawArray[itemIndex].PostFixedTick(fixedDeltaTime);
+                     }
+                 }
++
++                DrainAupNanInquisitor();
+             }
+         }
+ 
++        private static void DrainAupNanInquisitor()
++        {
++            int invalidResultCount = AUPMath.ConsumeInvalidResultCount();
++            if (invalidResultCount <= 0)
++                return;
++
++            CrashTelemetryBuffer.ReportNanPhysicsRecovery();
++
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            float now = Time.unscaledTime;
++            if (now < _nextAupNanInquisitorLogTime)
++                return;
++
++            _nextAupNanInquisitorLogTime = now + AupNanInquisitorLogIntervalSeconds;
++            Debug.LogError(AupNanInquisitorWarningMessage);
++#endif
++        }
++
+         private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
+         {
+             if (deltaTime <= 0f)
+@@ -649,16 +843,32 @@ namespace Hecton8.Core
+             if (!_pendingDispatcherRaycastCommands.IsCreated)
+             {
+                 _pendingDispatcherRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[256] — dispatcher-owned global deferred physics request lane — owner: SystemDispatcher
++                NativeMemorySentinel.RegisterNativeQueue(
++                    _pendingDispatcherRaycastCommands,
++                    MaxQueuedDispatcherRaycasts,
++                    nameof(SystemDispatcher),
++                    nameof(_pendingDispatcherRaycastCommands),
++                    NativeAllocationLifetime.Session);
+             }
+ 
+             if (!_scheduledDispatcherRaycastCommands.IsCreated)
+             {
+                 _scheduledDispatcherRaycastCommands = new NativeList<RaycastCommand>(MaxQueuedDispatcherRaycasts, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] — dispatcher-owned scheduled deferred raycast commands — owner: SystemDispatcher
++                NativeMemorySentinel.RegisterNativeList(
++                    _scheduledDispatcherRaycastCommands,
++                    nameof(SystemDispatcher),
++                    nameof(_scheduledDispatcherRaycastCommands),
++                    NativeAllocationLifetime.Session);
+             }
+ 
+             if (!_scheduledDispatcherRaycastHits.IsCreated)
+             {
+                 _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[256] — dispatcher-owned deferred raycast hit lane — owner: SystemDispatcher
++                NativeMemorySentinel.RegisterNativeArray(
++                    _scheduledDispatcherRaycastHits,
++                    nameof(SystemDispatcher),
++                    nameof(_scheduledDispatcherRaycastHits),
++                    NativeAllocationLifetime.Session);
+             }
+         }
+ 
+@@ -737,18 +947,21 @@ namespace Hecton8.Core
+ 
+             if (_pendingDispatcherRaycastCommands.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeQueue(nameof(SystemDispatcher), nameof(_pendingDispatcherRaycastCommands));
+                 _pendingDispatcherRaycastCommands.Dispose();
+                 _pendingDispatcherRaycastCommands = default;
+             }
+ 
+             if (_scheduledDispatcherRaycastCommands.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeList(nameof(SystemDispatcher), nameof(_scheduledDispatcherRaycastCommands));
+                 _scheduledDispatcherRaycastCommands.Dispose();
+                 _scheduledDispatcherRaycastCommands = default;
+             }
+ 
+             if (_scheduledDispatcherRaycastHits.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
+                 _scheduledDispatcherRaycastHits.Dispose();
+                 _scheduledDispatcherRaycastHits = default;
+             }
+@@ -1112,7 +1325,10 @@ namespace Hecton8.Core
+             {
+                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
++                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
++                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
++                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
++                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+             }
+ 
+             destination.UnlockBufferAfterWrite<T>(safeCount);
+@@ -1131,7 +1347,10 @@ namespace Hecton8.Core
+             fixed (T* sourcePtr = source)
+             {
+                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
++                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
++                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
++                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
++                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+             }
+ 
+             destination.UnlockBufferAfterWrite<T>(safeCount);
+diff --git a/Assets/_Project/Scripts/Core/UIStateStore.cs b/Assets/_Project/Scripts/Core/UIStateStore.cs
+index 25ffd196..6bc9028c 100644
+--- a/Assets/_Project/Scripts/Core/UIStateStore.cs
++++ b/Assets/_Project/Scripts/Core/UIStateStore.cs
+@@ -40,21 +40,68 @@ namespace Hecton8.Core
+         public float OpenDurationSeconds;
+     }
+ 
++    /// <summary>
++    /// Fixed slots in the core-owned numeric UI value buffer.
++    /// </summary>
++    public enum UIValueSlotId : int
++    {
++        Oxygen01 = 0,
++        Power01 = 1,
++        Health01 = 2,
++        DepthMeters = 3,
++        PressureAtm = 4,
++        SafeDepthMeters = 5,
++        OxygenCurrent = 6,
++        EnergyCurrent = 7,
++        IntegrityCurrent = 8,
++        InventoryMassKg = 9,
++        CarryCapacityKg = 10,
++        InventoryLoad01 = 11,
++        MovementSpeed = 12,
++        ToolHeat01 = 13,
++        Count = 14
++    }
++
++    /// <summary>
++    /// Blittable scalar UI value written by simulation and read by visual presenters.
++    /// </summary>
++    [StructLayout(LayoutKind.Sequential)]
++    public struct UIValueSlot
++    {
++        public uint Version;
++        public uint Flags;
++        public float Value;
++        public float PreviousValue;
++        public float LastWriteUnscaledTime;
++    }
++
+     /// <summary>
+     /// Core-owned native UI state. Visual UI reads this data; simulation commands can mutate it without a UI GameObject.
+     /// </summary>
+     public static class UIStateStore
+     {
+         public const int MaxPdaLogEvents = 256;
++        public const int UIStateHistoryFrames = 10;
+ 
+         private const int StateCount = (int)UIStateSlot.Count;
++        private const int ValueSlotCount = (int)UIValueSlotId.Count;
+ 
+         private static NativeArray<UIStateData> _states;
++        private static NativeArray<UIValueSlot> _valueSlots;
++        private static NativeArray<UIStateData> _historyStates;
+         private static NativeArray<uint> _pdaLogEventHashes;
++        private static NativeArray<float> _pdaLogEventTimestamps;
+         private static int _pdaLogWriteIndex;
+         private static int _pdaLogCount;
++        private static int _historyWriteIndex;
++        private static int _historyCount;
+ 
+-        public static bool IsInitialized => _states.IsCreated && _pdaLogEventHashes.IsCreated;
++        public static bool IsInitialized =>
++            _states.IsCreated &&
++            _valueSlots.IsCreated &&
++            _historyStates.IsCreated &&
++            _pdaLogEventHashes.IsCreated &&
++            _pdaLogEventTimestamps.IsCreated;
+ 
+         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+         private static void ResetStaticState()
+@@ -67,14 +114,24 @@ namespace Hecton8.Core
+         /// </summary>
+         public static void EnsureInitialized()
+         {
+-            if (_states.IsCreated && _pdaLogEventHashes.IsCreated)
++            if (IsInitialized)
+                 return;
+ 
+             Shutdown();
+             _states = new NativeArray<UIStateData>(StateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[StateCount] - headless UI simulation state - owner: UIStateStore
++            _valueSlots = new NativeArray<UIValueSlot>(ValueSlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIValueSlot>[ValueSlotCount] - headless numeric UI value bridge - owner: UIStateStore
++            _historyStates = new NativeArray<UIStateData>(UIStateHistoryFrames, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<UIStateData>[UIStateHistoryFrames] - PDA UI rollback snapshot ring - owner: UIStateStore
+             _pdaLogEventHashes = new NativeArray<uint>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[MaxPdaLogEvents] - PDA event-sourced log history - owner: UIStateStore
++            _pdaLogEventTimestamps = new NativeArray<float>(MaxPdaLogEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[MaxPdaLogEvents] - PDA event-sourced log timestamps - owner: UIStateStore
++            NativeMemorySentinel.RegisterNativeArray(_states, nameof(UIStateStore), nameof(_states), NativeAllocationLifetime.Session);
++            NativeMemorySentinel.RegisterNativeArray(_valueSlots, nameof(UIStateStore), nameof(_valueSlots), NativeAllocationLifetime.Session);
++            NativeMemorySentinel.RegisterNativeArray(_historyStates, nameof(UIStateStore), nameof(_historyStates), NativeAllocationLifetime.Session);
++            NativeMemorySentinel.RegisterNativeArray(_pdaLogEventHashes, nameof(UIStateStore), nameof(_pdaLogEventHashes), NativeAllocationLifetime.Session);
++            NativeMemorySentinel.RegisterNativeArray(_pdaLogEventTimestamps, nameof(UIStateStore), nameof(_pdaLogEventTimestamps), NativeAllocationLifetime.Session);
+             _pdaLogWriteIndex = 0;
+             _pdaLogCount = 0;
++            _historyWriteIndex = 0;
++            _historyCount = 0;
+         }
+ 
+         /// <summary>
+@@ -86,14 +143,58 @@ namespace Hecton8.Core
+             return _states[(int)UIStateSlot.PDA];
+         }
+ 
++        /// <summary>
++        /// Returns a read-only view over the core-owned UI state array for visual presenters.
++        /// </summary>
++        public static NativeArray<UIStateData>.ReadOnly GetReadOnlyStates()
++        {
++            EnsureInitialized();
++            return _states.AsReadOnly();
++        }
++
++        /// <summary>
++        /// Returns a read-only view over the flat numeric value slots.
++        /// </summary>
++        public static NativeArray<UIValueSlot>.ReadOnly GetReadOnlyValueSlots()
++        {
++            EnsureInitialized();
++            return _valueSlots.AsReadOnly();
++        }
++
++        /// <summary>
++        /// Reads a numeric UI slot if simulation has written it at least once.
++        /// </summary>
++        public static bool TryReadValue(UIValueSlotId slotId, out UIValueSlot valueSlot)
++        {
++            valueSlot = default;
++            int index = (int)slotId;
++            if ((uint)index >= ValueSlotCount)
++                return false;
++
++            EnsureInitialized();
++            valueSlot = _valueSlots[index];
++            return valueSlot.Version != 0u;
++        }
++
++        /// <summary>
++        /// Reads a numeric UI slot or returns the supplied fallback when the slot is unwritten.
++        /// </summary>
++        public static float ReadValueOrDefault(UIValueSlotId slotId, float fallback)
++        {
++            return TryReadValue(slotId, out UIValueSlot valueSlot)
++                ? valueSlot.Value
++                : fallback;
++        }
++
+         /// <summary>
+         /// Writes the authoritative PDA open state and active tab.
+         /// </summary>
+-        public static void SetPDAOpenState(bool isOpen, int activeTab, float openDurationSeconds)
++        internal static void SetPDAOpenState(bool isOpen, int activeTab, float openDurationSeconds)
+         {
+             EnsureInitialized();
+             int tab = Mathf.Clamp(activeTab, 0, ushort.MaxValue);
+             UIStateData state = _states[(int)UIStateSlot.PDA];
++            CapturePDAStateSnapshot(in state);
+             state.Version++;
+             state.CommandSequence++;
+             state.Flags = isOpen
+@@ -108,10 +209,11 @@ namespace Hecton8.Core
+         /// <summary>
+         /// Writes the authoritative PDA active tab without changing the open flag.
+         /// </summary>
+-        public static void SetPDAActiveTab(int previousTab, int currentTab)
++        internal static void SetPDAActiveTab(int previousTab, int currentTab)
+         {
+             EnsureInitialized();
+             UIStateData state = _states[(int)UIStateSlot.PDA];
++            CapturePDAStateSnapshot(in state);
+             state.Version++;
+             state.CommandSequence++;
+             state.PreviousTab = (ushort)Mathf.Clamp(previousTab, 0, ushort.MaxValue);
+@@ -122,10 +224,11 @@ namespace Hecton8.Core
+         /// <summary>
+         /// Updates PDA logbook counters without storing any managed log strings.
+         /// </summary>
+-        public static void SetPDALogbookState(int entryCount, uint latestEventHash)
++        internal static void SetPDALogbookState(int entryCount, uint latestEventHash)
+         {
+             EnsureInitialized();
+             UIStateData state = _states[(int)UIStateSlot.PDA];
++            CapturePDAStateSnapshot(in state);
+             state.Version++;
+             state.LogEntryCount = (uint)Mathf.Max(0, entryCount);
+             state.LatestLogEventHash = latestEventHash;
+@@ -135,13 +238,22 @@ namespace Hecton8.Core
+         /// <summary>
+         /// Appends one event-sourced PDA log hash into the fixed native ring.
+         /// </summary>
+-        public static void AppendPDALogEventHash(uint eventHash)
++        internal static void AppendPDALogEventHash(uint eventHash)
++        {
++            AppendPDALogEventHash(eventHash, Time.unscaledTime);
++        }
++
++        /// <summary>
++        /// Appends one event-sourced PDA log hash and timestamp into fixed native rings.
++        /// </summary>
++        internal static void AppendPDALogEventHash(uint eventHash, float timestampSeconds)
+         {
+             if (eventHash == 0u)
+                 return;
+ 
+             EnsureInitialized();
+             _pdaLogEventHashes[_pdaLogWriteIndex] = eventHash;
++            _pdaLogEventTimestamps[_pdaLogWriteIndex] = Mathf.Max(0f, timestampSeconds);
+             _pdaLogWriteIndex++;
+             if (_pdaLogWriteIndex >= MaxPdaLogEvents)
+                 _pdaLogWriteIndex = 0;
+@@ -150,18 +262,87 @@ namespace Hecton8.Core
+                 _pdaLogCount++;
+ 
+             UIStateData state = _states[(int)UIStateSlot.PDA];
++            CapturePDAStateSnapshot(in state);
+             state.Version++;
+             state.LogEntryCount = (uint)_pdaLogCount;
+             state.LatestLogEventHash = eventHash;
+             _states[(int)UIStateSlot.PDA] = state;
+         }
+ 
++        /// <summary>
++        /// Writes one numeric UI value slot without requiring any visual UI object to exist.
++        /// </summary>
++        public static void WriteValue(UIValueSlotId slotId, float value, float unscaledTimeSeconds)
++        {
++            int index = (int)slotId;
++            if ((uint)index >= ValueSlotCount || !IsFinite(value))
++                return;
++
++            EnsureInitialized();
++            UIValueSlot valueSlot = _valueSlots[index];
++            valueSlot.PreviousValue = valueSlot.Value;
++            valueSlot.Value = value;
++            valueSlot.LastWriteUnscaledTime = Mathf.Max(0f, unscaledTimeSeconds);
++            valueSlot.Version++;
++            _valueSlots[index] = valueSlot;
++        }
++
++        /// <summary>
++        /// Publishes the survival-facing HUD scalar snapshot into the headless value buffer.
++        /// </summary>
++        public static void WriteHUDSurvivalState(
++            float oxygen01,
++            float power01,
++            float health01,
++            float depthMeters,
++            float pressureAtm,
++            float safeDepthMeters,
++            float oxygenCurrent,
++            float energyCurrent,
++            float integrityCurrent,
++            float inventoryMassKg,
++            float carryCapacityKg,
++            float inventoryLoad01,
++            float unscaledTimeSeconds)
++        {
++            WriteValue(UIValueSlotId.Oxygen01, Mathf.Clamp01(oxygen01), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.Power01, Mathf.Clamp01(power01), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.Health01, Mathf.Clamp01(health01), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.DepthMeters, Mathf.Max(0f, depthMeters), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.PressureAtm, Mathf.Max(1f, pressureAtm), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.SafeDepthMeters, Mathf.Max(0f, safeDepthMeters), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.OxygenCurrent, Mathf.Max(0f, oxygenCurrent), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.EnergyCurrent, Mathf.Max(0f, energyCurrent), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.IntegrityCurrent, Mathf.Max(0f, integrityCurrent), unscaledTimeSeconds);
++            WriteInventoryLoadState(inventoryMassKg, carryCapacityKg, inventoryLoad01, unscaledTimeSeconds);
++        }
++
++        /// <summary>
++        /// Publishes the inventory load scalar snapshot into the headless value buffer.
++        /// </summary>
++        public static void WriteInventoryLoadState(float totalMassKg, float carryCapacityKg, float load01, float unscaledTimeSeconds)
++        {
++            WriteValue(UIValueSlotId.InventoryMassKg, Mathf.Max(0f, totalMassKg), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.CarryCapacityKg, Mathf.Max(0.01f, carryCapacityKg), unscaledTimeSeconds);
++            WriteValue(UIValueSlotId.InventoryLoad01, Mathf.Clamp01(load01), unscaledTimeSeconds);
++        }
++
+         /// <summary>
+         /// Resolves a log event hash by newest-first index.
+         /// </summary>
+         public static bool TryGetPDALogEventHash(int newestFirstIndex, out uint eventHash)
+         {
+             eventHash = 0u;
++            return TryGetPDALogEvent(newestFirstIndex, out eventHash, out _);
++        }
++
++        /// <summary>
++        /// Resolves a log event hash and timestamp by newest-first index.
++        /// </summary>
++        public static bool TryGetPDALogEvent(int newestFirstIndex, out uint eventHash, out float timestampSeconds)
++        {
++            eventHash = 0u;
++            timestampSeconds = 0f;
+             EnsureInitialized();
+             if ((uint)newestFirstIndex >= (uint)_pdaLogCount)
+                 return false;
+@@ -171,9 +352,32 @@ namespace Hecton8.Core
+                 index += MaxPdaLogEvents;
+ 
+             eventHash = _pdaLogEventHashes[index];
++            timestampSeconds = _pdaLogEventTimestamps[index];
+             return eventHash != 0u;
+         }
+ 
++        /// <summary>
++        /// Restores the PDA simulation state from the fixed rollback ring.
++        /// </summary>
++        public static bool TryRollbackPDAState(int framesBack)
++        {
++            EnsureInitialized();
++            if (_historyCount <= 0)
++                return false;
++
++            int safeFramesBack = Mathf.Clamp(framesBack, 1, _historyCount);
++            int index = _historyWriteIndex - safeFramesBack;
++            if (index < 0)
++                index += UIStateHistoryFrames;
++
++            UIStateData restored = _historyStates[index];
++            UIStateData current = _states[(int)UIStateSlot.PDA];
++            restored.Version = current.Version + 1u;
++            restored.CommandSequence = current.CommandSequence + 1u;
++            _states[(int)UIStateSlot.PDA] = restored;
++            return true;
++        }
++
+         /// <summary>
+         /// Clears transient UI state while keeping the native arrays resident.
+         /// </summary>
+@@ -182,10 +386,18 @@ namespace Hecton8.Core
+             EnsureInitialized();
+             for (int i = 0; i < _states.Length; i++)
+                 _states[i] = default;
++            for (int i = 0; i < _valueSlots.Length; i++)
++                _valueSlots[i] = default;
++            for (int i = 0; i < _historyStates.Length; i++)
++                _historyStates[i] = default;
+             for (int i = 0; i < _pdaLogEventHashes.Length; i++)
+                 _pdaLogEventHashes[i] = 0u;
++            for (int i = 0; i < _pdaLogEventTimestamps.Length; i++)
++                _pdaLogEventTimestamps[i] = 0f;
+             _pdaLogWriteIndex = 0;
+             _pdaLogCount = 0;
++            _historyWriteIndex = 0;
++            _historyCount = 0;
+         }
+ 
+         /// <summary>
+@@ -195,18 +407,59 @@ namespace Hecton8.Core
+         {
+             if (_states.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeArray(_states);
+                 _states.Dispose();
+                 _states = default;
+             }
+ 
++            if (_valueSlots.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_valueSlots);
++                _valueSlots.Dispose();
++                _valueSlots = default;
++            }
++
++            if (_historyStates.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_historyStates);
++                _historyStates.Dispose();
++                _historyStates = default;
++            }
++
+             if (_pdaLogEventHashes.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeArray(_pdaLogEventHashes);
+                 _pdaLogEventHashes.Dispose();
+                 _pdaLogEventHashes = default;
+             }
+ 
++            if (_pdaLogEventTimestamps.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_pdaLogEventTimestamps);
++                _pdaLogEventTimestamps.Dispose();
++                _pdaLogEventTimestamps = default;
++            }
++
+             _pdaLogWriteIndex = 0;
+             _pdaLogCount = 0;
++            _historyWriteIndex = 0;
++            _historyCount = 0;
++        }
++
++        private static void CapturePDAStateSnapshot(in UIStateData state)
++        {
++            _historyStates[_historyWriteIndex] = state;
++            _historyWriteIndex++;
++            if (_historyWriteIndex >= UIStateHistoryFrames)
++                _historyWriteIndex = 0;
++
++            if (_historyCount < UIStateHistoryFrames)
++                _historyCount++;
++        }
++
++        private static bool IsFinite(float value)
++        {
++            return !float.IsNaN(value) && !float.IsInfinity(value);
+         }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/HUDNotification.cs b/Assets/_Project/Scripts/HUDNotification.cs
+index e8f33472..8f2b3067 100644
+--- a/Assets/_Project/Scripts/HUDNotification.cs
++++ b/Assets/_Project/Scripts/HUDNotification.cs
+@@ -9,6 +9,7 @@ using Hecton8.Inventory;
+ using Hecton8.Items;
+ using Hecton.Localization;
+ using TMPro;
++using Unity.Collections;
+ using UnityEngine;
+ using UnityEngine.UI;
+ 
+@@ -34,13 +35,14 @@ namespace Hecton8.UI
+         }
+ 
+         private const int InventoryFullMessageCacheSize = 16;
++        private const int MaxNotificationQueueCapacity = 8;
+         private const string InventoryFullMessagePrefix = "INVENTORY FULL \u2014 CANNOT STORE ";
+         private const string FallbackInventoryItemName = "ITEM";
+ 
+         private struct NotificationRequest
+         {
+-            public string Message;
+-            public NotificationSeverity Severity;
++            public uint MessageHash;
++            public byte Severity;
+         }
+ 
+         [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+@@ -67,11 +69,11 @@ namespace Hecton8.UI
+         private float _currentAlpha;
+         private bool _built;
+         private bool _isShowing;
+-        private readonly System.Collections.Generic.List<NotificationRequest> _queue =
+-            new System.Collections.Generic.List<NotificationRequest>(8);
+-        private string _currentMessage;
++        private NativeArray<NotificationRequest> _queue;
++        private int _queueCount;
++        private uint _currentMessageHash;
+         private NotificationSeverity _currentSeverity;
+-        private string _lastEnqueuedMessage;
++        private uint _lastEnqueuedMessageHash;
+         private NotificationSeverity _lastEnqueuedSeverity;
+         private float _lastEnqueueTime = -999f;
+         private bool _registeredToTickManager;
+@@ -116,6 +118,18 @@ namespace Hecton8.UI
+             UnregisterFromTickManager();
+             InventoryEvents.OnInventoryFull -= OnInventoryFull;
+             NotificationEvents.Unregister(this);
++            _queueCount = 0;
++            _currentMessageHash = 0u;
++        }
++
++        private void OnDestroy()
++        {
++            if (_queue.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_queue);
++                _queue.Dispose();
++                _queue = default;
++            }
+         }
+ 
+         public void Tick(float deltaTime)
+@@ -138,11 +152,10 @@ namespace Hecton8.UI
+                     _currentAlpha = 0f;
+                     _isShowing = false;
+ 
+-                    if (_queue.Count > 0)
++                    if (_queueCount > 0)
+                     {
+-                        NotificationRequest next = _queue[0];
+-                        _queue.RemoveAt(0);
+-                        ShowImmediate(next.Message, next.Severity);
++                        NotificationRequest next = PopQueueFront();
++                        ShowImmediate(next.MessageHash, (NotificationSeverity)next.Severity);
+                     }
+                     else
+                     {
+@@ -198,77 +211,86 @@ namespace Hecton8.UI
+         {
+             EnsureBuilt();
+ 
+-            if (string.IsNullOrWhiteSpace(message))
++            uint messageHash = NotificationEvents.RegisterMessage(message);
++            if (messageHash == 0u)
++                return;
++
++            Enqueue(messageHash, severity);
++        }
++
++        private void Enqueue(uint messageHash, NotificationSeverity severity)
++        {
++            EnsureBuilt();
++            if (messageHash == 0u)
+                 return;
+ 
+-            string normalized = message.Trim();
+             float now = Time.unscaledTime;
+ 
+-            if (normalized == _currentMessage && severity == _currentSeverity && _timer > 0f)
++            if (messageHash == _currentMessageHash && severity == _currentSeverity && _timer > 0f)
+             {
+                 _timer = displayDuration;
+                 return;
+             }
+ 
+-            if (normalized == _lastEnqueuedMessage &&
++            if (messageHash == _lastEnqueuedMessageHash &&
+                 severity == _lastEnqueuedSeverity &&
+                 now - _lastEnqueueTime < repeatSuppressWindow)
+             {
+                 return;
+             }
+ 
+-            _lastEnqueuedMessage = normalized;
++            _lastEnqueuedMessageHash = messageHash;
+             _lastEnqueuedSeverity = severity;
+             _lastEnqueueTime = now;
+ 
+-            if (_timer <= 0f && _queue.Count == 0 && !_isShowing && _currentAlpha <= 0.01f)
++            if (_timer <= 0f && _queueCount == 0 && !_isShowing && _currentAlpha <= 0.01f)
+             {
+-                ShowImmediate(normalized, severity);
++                ShowImmediate(messageHash, severity);
+                 return;
+             }
+ 
+             if (severity == NotificationSeverity.Critical && _currentSeverity != NotificationSeverity.Critical)
+             {
+-                if (!string.IsNullOrWhiteSpace(_currentMessage) && _queue.Count < maxQueuedNotifications)
++                if (_currentMessageHash != 0u && _queueCount < ResolveQueueCapacity())
+                 {
+-                    _queue.Insert(0, new NotificationRequest
++                    InsertQueueFront(new NotificationRequest
+                     {
+-                        Message = _currentMessage,
+-                        Severity = _currentSeverity
++                        MessageHash = _currentMessageHash,
++                        Severity = (byte)_currentSeverity
+                     });
+                 }
+ 
+-                ShowImmediate(normalized, severity);
++                ShowImmediate(messageHash, severity);
+                 return;
+             }
+ 
+-            if (_queue.Count >= Mathf.Max(1, maxQueuedNotifications))
++            if (_queueCount >= ResolveQueueCapacity())
+             {
+                 if (severity <= NotificationSeverity.Info)
+                     return;
+ 
+-                _queue.RemoveAt(0);
++                RemoveQueueFront();
+             }
+ 
+-            _queue.Add(new NotificationRequest
++            PushQueueBack(new NotificationRequest
+             {
+-                Message = normalized,
+-                Severity = severity
++                MessageHash = messageHash,
++                Severity = (byte)severity
+             });
+         }
+ 
+-        private void ShowImmediate(string message, NotificationSeverity severity)
++        private void ShowImmediate(uint messageHash, NotificationSeverity severity)
+         {
+             RegisterToTickManager();
+-            ApplyVisuals(message, severity);
++            ApplyVisuals(messageHash, severity);
+             _timer = displayDuration;
+             _currentAlpha = 0f;
+             _isShowing = true;
+         }
+ 
+-        private void ApplyVisuals(string message, NotificationSeverity severity)
++        private void ApplyVisuals(uint messageHash, NotificationSeverity severity)
+         {
+-            _currentMessage = message;
++            _currentMessageHash = messageHash;
+             _currentSeverity = severity;
+ 
+             switch (severity)
+@@ -288,22 +310,12 @@ namespace Hecton8.UI
+             }
+ 
+             _lastStressCorruptionBucket = int.MinValue;
+-            string displayMessage = ResolveDisplayMessage(message);
+-            if (!string.Equals(_notifText.text, displayMessage, System.StringComparison.Ordinal))
+-                _notifText.text = displayMessage;
++            ApplyNotificationText(messageHash);
+         }
+ 
+         public void OnNotificationEvent(in NotificationEventPayload payload)
+         {
+-            if (!NotificationEvents.TryResolveMessage(payload.MessageHash, out string message))
+-                return;
+-
+-            OnPushNotification(message, payload.Severity);
+-        }
+-
+-        private void OnPushNotification(string message, ushort severity)
+-        {
+-            Enqueue(message, (NotificationSeverity)severity);
++            Enqueue(payload.MessageHash, (NotificationSeverity)payload.Severity);
+         }
+ 
+         private void OnInventoryFull(ItemData item)
+@@ -336,26 +348,117 @@ namespace Hecton8.UI
+                 return;
+ 
+             _lastStressCorruptionBucket = stressBucket;
+-            string displayMessage = ResolveDisplayMessage(_currentMessage);
+-            if (_notifText != null && !string.Equals(_notifText.text, displayMessage, System.StringComparison.Ordinal))
+-                _notifText.text = displayMessage;
++            ApplyNotificationText(_currentMessageHash);
++        }
++
++        private void ApplyNotificationText(uint messageHash)
++        {
++            if (_notifText == null || messageHash == 0u)
++                return;
++
++            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
++                return;
++
++            try
++            {
++                if (!TryWriteDisplayMessage(messageHash, lease.Buffer.AsSpan(), out int length))
++                    return;
++
++                _notifText.SetCharArray(lease.Buffer, 0, length);
++            }
++            finally
++            {
++                CharBufferPool.Release(lease);
++            }
+         }
+ 
+-        private static string ResolveDisplayMessage(string message)
++        private static bool TryWriteDisplayMessage(uint messageHash, Span<char> target, out int length)
+         {
+-            if (string.IsNullOrEmpty(message))
+-                return string.Empty;
++            length = 0;
++            if (messageHash == 0u || !NotificationEvents.TryResolveMessage(messageHash, out string message) || string.IsNullOrEmpty(message))
++                return false;
+ 
+             LocalizationManager manager = LocalizationManager.Instance;
+-            return manager != null
++            string displayMessage = manager != null
+                 ? manager.ApplyHullStressCorruptionIfNeeded(message)
+                 : message;
++            ReadOnlySpan<char> source = displayMessage.AsSpan();
++            length = Mathf.Min(source.Length, target.Length);
++            if (length <= 0)
++                return false;
++
++            source.Slice(0, length).CopyTo(target);
++            return true;
++        }
++
++        private int ResolveQueueCapacity()
++        {
++            EnsureQueue();
++            return Mathf.Clamp(maxQueuedNotifications, 1, _queue.Length);
++        }
++
++        private void EnsureQueue()
++        {
++            if (_queue.IsCreated)
++                return;
++
++            int capacity = Mathf.Clamp(maxQueuedNotifications, 1, MaxNotificationQueueCapacity);
++            _queue = new NativeArray<NotificationRequest>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<NotificationRequest>[capacity] - fixed HUD notification hash queue - owner: HUDNotification
++            NativeMemorySentinel.RegisterNativeArray(_queue, nameof(HUDNotification), nameof(_queue), NativeAllocationLifetime.Scene);
++            _queueCount = 0;
++        }
++
++        private void PushQueueBack(in NotificationRequest request)
++        {
++            EnsureQueue();
++            int capacity = ResolveQueueCapacity();
++            if (_queueCount >= capacity)
++                return;
++
++            _queue[_queueCount] = request;
++            _queueCount++;
++        }
++
++        private void InsertQueueFront(in NotificationRequest request)
++        {
++            EnsureQueue();
++            int capacity = ResolveQueueCapacity();
++            if (_queueCount >= capacity)
++                _queueCount = capacity - 1;
++
++            for (int i = _queueCount; i > 0; i--)
++                _queue[i] = _queue[i - 1];
++
++            _queue[0] = request;
++            _queueCount++;
++        }
++
++        private NotificationRequest PopQueueFront()
++        {
++            EnsureQueue();
++            NotificationRequest request = _queueCount > 0 ? _queue[0] : default;
++            RemoveQueueFront();
++            return request;
++        }
++
++        private void RemoveQueueFront()
++        {
++            if (!_queue.IsCreated || _queueCount <= 0)
++                return;
++
++            for (int i = 1; i < _queueCount; i++)
++                _queue[i - 1] = _queue[i];
++
++            _queueCount--;
++            _queue[_queueCount] = default;
+         }
+ 
+         private void EnsureBuilt()
+         {
+             if (_built) return;
+ 
++            EnsureQueue();
++
+             RectTransform self = transform as RectTransform;
+             if (self == null) return;
+ 
+diff --git a/Assets/_Project/Scripts/HectonPlayerMovement.cs b/Assets/_Project/Scripts/HectonPlayerMovement.cs
+index e427c762..e9d9a5d8 100644
+--- a/Assets/_Project/Scripts/HectonPlayerMovement.cs
++++ b/Assets/_Project/Scripts/HectonPlayerMovement.cs
+@@ -56,6 +56,9 @@ namespace Hecton8.Gameplay
+         private float _runtimeInventoryLoad01;
+         private float _runtimeInventoryLoadRatio;
+         private const float TwoPi = 2f * math.PI;
++        private const float LocalGravityOverrideBlendSeconds = 1f;
++        private const float MinLocalGravitySqr = 0.000001f;
++        private const float LocalGravityRetargetEpsilonSqr = 0.0001f;
+         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
+         private const int CrestBodySampleCount = 5;
+         private const int CrestSampleCenter = 0;
+@@ -1184,8 +1187,10 @@ namespace Hecton8.Gameplay
+         private Vector3 _groundCheckOrigin;
+         private Vector3 _cachedGravity;
+         private Vector3 _localGravityOverride;
++        private Vector3 _localGravityOverrideBlendStart;
+         private float _cachedGravityMagnitude;
+         private float _localGravityOverrideTimer;
++        private float _localGravityOverrideBlendTimer;
+         private bool _localGravityOverrideActive;
+         private Vector3 _smoothedGroundNormal;
+         private float _minGroundNormalY;
+@@ -1750,9 +1755,17 @@ namespace Hecton8.Gameplay
+         internal void RequestLocalGravityOverride(Vector3 gravityVector, float holdSeconds)
+         {
+             Vector3 safeGravity = HectonPlayerMotor.SafeVelocity(gravityVector);
+-            if (safeGravity.sqrMagnitude <= 0.000001f || holdSeconds <= 0f)
++            if (safeGravity.sqrMagnitude <= MinLocalGravitySqr || holdSeconds <= 0f)
+                 return;
+ 
++            bool sameTarget = _localGravityOverrideActive &&
++                              (_localGravityOverride - safeGravity).sqrMagnitude <= LocalGravityRetargetEpsilonSqr;
++            if (!sameTarget)
++            {
++                _localGravityOverrideBlendStart = ResolveCurrentGravityForOverrideBlend();
++                _localGravityOverrideBlendTimer = 0f;
++            }
++
+             _localGravityOverride = safeGravity;
+             _localGravityOverrideTimer = math.max(_localGravityOverrideTimer, holdSeconds);
+             _localGravityOverrideActive = true;
+@@ -5288,7 +5301,7 @@ namespace Hecton8.Gameplay
+             if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
+             {
+                 _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
+-                _cachedGravity = _localGravityOverride;
++                _cachedGravity = ResolveBlendedLocalGravity(fixedDeltaTime);
+                 if (_localGravityOverrideTimer <= 0f)
+                     _localGravityOverrideActive = false;
+             }
+@@ -5296,6 +5309,8 @@ namespace Hecton8.Gameplay
+             {
+                 _cachedGravity = UnityEngine.Physics.gravity;
+                 _localGravityOverrideActive = false;
++                _localGravityOverrideBlendTimer = 0f;
++                _localGravityOverrideBlendStart = _cachedGravity;
+             }
+ 
+             _cachedGravityMagnitude = _cachedGravity.magnitude;
+@@ -5313,6 +5328,69 @@ namespace Hecton8.Gameplay
+         //  FixedTick Ã¢â‚¬â€ PHYSICS
+         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+ 
++        private Vector3 ResolveBlendedLocalGravity(float fixedDeltaTime)
++        {
++            Vector3 targetGravity = HectonPlayerMotor.SafeVelocity(_localGravityOverride);
++            if (targetGravity.sqrMagnitude <= MinLocalGravitySqr)
++                return ResolveCurrentGravityForOverrideBlend();
++
++            Vector3 startGravity = HectonPlayerMotor.SafeVelocity(_localGravityOverrideBlendStart);
++            if (startGravity.sqrMagnitude <= MinLocalGravitySqr)
++                startGravity = targetGravity;
++
++            _localGravityOverrideBlendTimer = math.min(
++                LocalGravityOverrideBlendSeconds,
++                _localGravityOverrideBlendTimer + math.max(0f, fixedDeltaTime));
++
++            float blend01 = math.saturate(_localGravityOverrideBlendTimer / LocalGravityOverrideBlendSeconds);
++            if (blend01 >= 1f)
++                return targetGravity;
++
++            return SlerpGravityVector(startGravity, targetGravity, blend01);
++        }
++
++        private Vector3 ResolveCurrentGravityForOverrideBlend()
++        {
++            Vector3 currentGravity = HectonPlayerMotor.SafeVelocity(_cachedGravity);
++            if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
++                return currentGravity;
++
++            currentGravity = HectonPlayerMotor.SafeVelocity(UnityEngine.Physics.gravity);
++            if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
++                return currentGravity;
++
++            return Vector3.down * 9.81f;
++        }
++
++        private static Vector3 SlerpGravityVector(Vector3 startGravity, Vector3 targetGravity, float blend01)
++        {
++            float startMagnitude = startGravity.magnitude;
++            float targetMagnitude = targetGravity.magnitude;
++            if (startMagnitude <= 0.0001f)
++                return targetGravity;
++
++            if (targetMagnitude <= 0.0001f)
++                return startGravity;
++
++            float3 startDirection = new float3(startGravity.x, startGravity.y, startGravity.z) * (1f / startMagnitude);
++            float3 targetDirection = new float3(targetGravity.x, targetGravity.y, targetGravity.z) * (1f / targetMagnitude);
++            quaternion startRotation = quaternion.LookRotationSafe(startDirection, ResolveGravitySlerpUp(startDirection));
++            quaternion targetRotation = quaternion.LookRotationSafe(targetDirection, ResolveGravitySlerpUp(targetDirection));
++            quaternion blendedRotation = math.slerp(startRotation, targetRotation, math.saturate(blend01));
++            float3 blendedDirection = math.mul(blendedRotation, new float3(0f, 0f, 1f));
++            float magnitude = math.lerp(startMagnitude, targetMagnitude, math.saturate(blend01));
++            return new Vector3(blendedDirection.x, blendedDirection.y, blendedDirection.z) * magnitude;
++        }
++
++        private static float3 ResolveGravitySlerpUp(float3 direction)
++        {
++            float3 up = math.up();
++            if (math.abs(math.dot(direction, up)) > 0.95f)
++                up = new float3(1f, 0f, 0f);
++
++            return up;
++        }
++
+         public void FixedTick(float fixedDeltaTime)
+         {
+             SuitData suit = currentSuitData;
+@@ -5685,6 +5763,8 @@ namespace Hecton8.Gameplay
+             ApplyProceduralLinearDamping(fixedDeltaTime);
+             ClampVelocity(suit);
+             CaptureFixedInterpolationState();
++            Vector3 safeVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
++            UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, safeVelocity.magnitude, Time.unscaledTime);
+             UpdateGroundDiagnostics();
+             _useFixedFrameSpatialCache = false;
+             }
+@@ -8113,14 +8193,11 @@ namespace Hecton8.Gameplay
+             float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
+ 
+             // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based drag increase (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
+-            float depthDragAdd = 0f;
+-            if (_currentDepth > suit.depthSwimSlowdownStart && suit.depthDragIncreaseMax > 0f)
+-            {
+-                float depthT = math.saturate(
+-                    (_currentDepth - suit.depthSwimSlowdownStart) /
+-                    math.max(suit.depthSwimSlowdownEnd - suit.depthSwimSlowdownStart, 0.01f));
+-                depthDragAdd = depthT * suit.depthDragIncreaseMax;
+-            }
++            float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
++                _currentDepth,
++                suit.depthSwimSlowdownStart,
++                suit.depthSwimSlowdownEnd,
++                suit.depthDragIncreaseMax);
+ 
+             float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
+             if (isSurfaceSwim)
+@@ -8137,8 +8214,7 @@ namespace Hecton8.Gameplay
+             // Ã¢â€â‚¬Ã¢â€â‚¬ Quadratic drag Ã¢â€â‚¬Ã¢â€â‚¬
+             if (speed > 0.01f)
+             {
+-                float dragAccelerationCoefficient = effectiveDragCoeff / math.max(_rb.mass, 0.0001f);
+-                Vector3 dampedVelocity = HectonPlayerMotor.AnalyticalQuadraticDrag(_velocity, dragAccelerationCoefficient, fixedDeltaTime);
++                Vector3 dampedVelocity = PlayerSwimMotor.ApplyAnalyticalDrag(_velocity, effectiveDragCoeff, _rb.mass, fixedDeltaTime);
+                 ApplyMotorVelocityChange(dampedVelocity - _velocity);
+                 _velocity = dampedVelocity;
+                 speed = _velocity.magnitude;
+@@ -8156,14 +8232,11 @@ namespace Hecton8.Gameplay
+                 return;
+ 
+             // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based swim force reduction (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
+-            float depthSlowdown = 1f;
+-            if (_currentDepth > suit.depthSwimSlowdownStart && suit.depthSwimSlowdownMax > 0f)
+-            {
+-                float slowT = math.saturate(
+-                    (_currentDepth - suit.depthSwimSlowdownStart) /
+-                    math.max(suit.depthSwimSlowdownEnd - suit.depthSwimSlowdownStart, 0.01f));
+-                depthSlowdown = 1f - slowT * suit.depthSwimSlowdownMax;
+-            }
++            float depthSlowdown = PlayerSwimMotor.ResolveDepthSlowdown(
++                _currentDepth,
++                suit.depthSwimSlowdownStart,
++                suit.depthSwimSlowdownEnd,
++                suit.depthSwimSlowdownMax);
+ 
+             bool heavyCarryActive = IsHeavyCarryActive();
+             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
+diff --git a/Assets/_Project/Scripts/HectonSurvivalSystem.cs b/Assets/_Project/Scripts/HectonSurvivalSystem.cs
+index 11186eec..de4e0922 100644
+--- a/Assets/_Project/Scripts/HectonSurvivalSystem.cs
++++ b/Assets/_Project/Scripts/HectonSurvivalSystem.cs
+@@ -570,6 +570,29 @@ namespace Hecton8.Gameplay
+             _runtimeContext.PublishSurvivalState(in survivalState);
+         }
+ 
++        private void PublishHeadlessUIState()
++        {
++            float maxOxygen = stats != null ? math.max(0.01f, ResolveRuntimeMaxOxygenCapacity()) : 100f;
++            float maxEnergy = stats != null ? math.max(0.01f, stats.MaxEnergy) : 100f;
++            float maxIntegrity = stats != null ? math.max(0.01f, stats.MaxIntegrity) : 100f;
++            float carryCapacityKg = stats != null ? math.max(0.01f, stats.CarryCapacityKg) : 200f;
++
++            UIStateStore.WriteHUDSurvivalState(
++                math.saturate(oxygen / maxOxygen),
++                math.saturate(energy / maxEnergy),
++                math.saturate(integrity / maxIntegrity),
++                math.max(0f, depth),
++                math.max(1f, pressure),
++                ResolveEffectiveSafeDepthMeters(),
++                math.max(0f, oxygen),
++                math.max(0f, energy),
++                math.max(0f, integrity),
++                math.max(0f, weight),
++                carryCapacityKg,
++                math.saturate(weight / carryCapacityKg),
++                Time.unscaledTime);
++        }
++
+         // ═════════════════════════════════════════════════════════
+         //  TICK SYSTEMS
+         // ═════════════════════════════════════════════════════════
+@@ -586,6 +609,7 @@ namespace Hecton8.Gameplay
+             PushPressureHullStress();
+             UpdateOxygenGraceState(deltaTime);
+             PublishRuntimeContextState();
++            PublishHeadlessUIState();
+             PublishDirty();
+             CheckLethalConditions();
+         }
+@@ -607,6 +631,7 @@ namespace Hecton8.Gameplay
+             HandleInjuries(dt);
+             ApplyInjuryMovementPenalty();
+             PublishRuntimeContextState();
++            PublishHeadlessUIState();
+         }
+ 
+         // ═════════════════════════════════════════════════════════
+diff --git a/Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs b/Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs
+index e90c8b34..c81eba2a 100644
+--- a/Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs
++++ b/Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs
+@@ -18,6 +18,13 @@ namespace Hecton8.Optimization
+         private const int Tier56Slots = 2;
+         private const int Tier56WarningSlots = 0;
+         private const int StarvationFrameThreshold = 60;
++        private const long BytesPerMegabyte = 1024L * 1024L;
++        private const long UiMipDowngradeThresholdBytes = 1700L * BytesPerMegabyte;
++        private const long UiMipRestoreThresholdBytes = 1400L * BytesPerMegabyte;
++        private const int LowVramDeviceThresholdMb = 2048;
++        private const uint UiMipGateHighHash = 0xB157A301u;
++        private const uint UiMipGateRestoreHash = 0xB157A302u;
++        private const uint UiTextureContextHash = 0x71C0A11Du;
+ 
+         private static AssetLoadDispatcher _instance;
+ 
+@@ -39,9 +46,24 @@ namespace Hecton8.Optimization
+         private readonly List<AssetDispatchRequest> _inflightRequests = new List<AssetDispatchRequest>(64);
+         // COLD ALLOC: int[4] - tier-band inflight counters - owner: AssetLoadDispatcher
+         private readonly int[] _inflightCounts = new int[4];
++        private int _baselineGlobalTextureMipLimit;
++        private int _activeGlobalTextureMipLimit;
++        private long _lastObservedVramBytes;
++        private bool _mipGateInitialized;
++        private bool _uiMipBiasGateActive;
+ 
+         internal static AssetLoadDispatcher Instance => _instance;
+ 
++        internal static bool IsUiMipBiasGateActive => _instance != null && _instance._uiMipBiasGateActive;
++
++        internal static long LastObservedVramBytes => _instance != null ? _instance._lastObservedVramBytes : 0L;
++
++        internal static void ForceEvaluateUiMipBiasGate()
++        {
++            if (_instance != null)
++                _instance.EvaluateUiMipBiasGate();
++        }
++
+         private void Awake()
+         {
+             if (_instance != null && _instance != this)
+@@ -51,6 +73,7 @@ namespace Hecton8.Optimization
+             }
+ 
+             _instance = this;
++            CaptureMipBiasBaseline();
+         }
+ 
+         private void OnEnable()
+@@ -85,6 +108,7 @@ namespace Hecton8.Optimization
+         /// <inheritdoc />
+         public void Tick(float deltaTime)
+         {
++            EvaluateUiMipBiasGate();
+             AgeQueuedRequests();
+             DispatchWithinBudget();
+         }
+@@ -209,6 +233,71 @@ namespace Hecton8.Optimization
+                 governor.ForceDrainPendingReleaseQueue();
+         }
+ 
++        private void CaptureMipBiasBaseline()
++        {
++            if (_mipGateInitialized)
++                return;
++
++            _baselineGlobalTextureMipLimit = QualitySettings.globalTextureMipmapLimit;
++            _activeGlobalTextureMipLimit = _baselineGlobalTextureMipLimit;
++            _mipGateInitialized = true;
++        }
++
++        private void EvaluateUiMipBiasGate()
++        {
++            CaptureMipBiasBaseline();
++
++            int graphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
++            if (graphicsMemoryMb == 0 || graphicsMemoryMb > LowVramDeviceThresholdMb)
++            {
++                if (_uiMipBiasGateActive)
++                    RestoreUiMipBiasGate();
++                return;
++            }
++
++            VRAMMonitor monitor = VRAMMonitor.Instance;
++            if (monitor == null)
++                return;
++
++            monitor.GetVRAMBreakdown(out _, out _, out long totalVramBytes);
++            _lastObservedVramBytes = totalVramBytes;
++
++            if (totalVramBytes >= UiMipDowngradeThresholdBytes)
++            {
++                ApplyUiMipBiasGate(totalVramBytes);
++                return;
++            }
++
++            if (_uiMipBiasGateActive && totalVramBytes <= UiMipRestoreThresholdBytes)
++                RestoreUiMipBiasGate();
++        }
++
++        private void ApplyUiMipBiasGate(long observedVramBytes)
++        {
++            int requestedLimit = Mathf.Max(_baselineGlobalTextureMipLimit, 1);
++            int currentLimit = QualitySettings.globalTextureMipmapLimit;
++            int targetLimit = Mathf.Max(currentLimit, requestedLimit);
++            if (currentLimit != targetLimit)
++                QualitySettings.globalTextureMipmapLimit = targetLimit;
++
++            _activeGlobalTextureMipLimit = targetLimit;
++            if (_uiMipBiasGateActive)
++                return;
++
++            _uiMipBiasGateActive = true;
++            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateHighHash, UiTextureContextHash, observedVramBytes / (float)BytesPerMegabyte);
++        }
++
++        private void RestoreUiMipBiasGate()
++        {
++            if (QualitySettings.globalTextureMipmapLimit == _activeGlobalTextureMipLimit)
++                QualitySettings.globalTextureMipmapLimit = _baselineGlobalTextureMipLimit;
++
++            _uiMipBiasGateActive = false;
++            _activeGlobalTextureMipLimit = _baselineGlobalTextureMipLimit;
++            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateRestoreHash, UiTextureContextHash, _lastObservedVramBytes / (float)BytesPerMegabyte);
++        }
++
+         private void TryRegister()
+         {
+             if (_registeredTick)
+diff --git a/Assets/_Project/Scripts/PDAInventoryTab.cs b/Assets/_Project/Scripts/PDAInventoryTab.cs
+index 81238c2d..d115915d 100644
+--- a/Assets/_Project/Scripts/PDAInventoryTab.cs
++++ b/Assets/_Project/Scripts/PDAInventoryTab.cs
+@@ -17,6 +17,7 @@ using Hecton.Localization;
+ using Hecton8.Core;
+ using TMPro;
+ using Unity.Collections;
++using Unity.Mathematics;
+ using UnityEngine;
+ using UnityEngine.EventSystems;
+ using UnityEngine.Rendering;
+@@ -1507,6 +1508,7 @@ namespace Hecton8.UI
+             if (_runtimeHologramMaterial.HasProperty(GlitchAmountId))
+                 _runtimeHologramMaterial.SetFloat(GlitchAmountId, InventoryHologramGlitchAmount);
+ 
++            bool hasFrustumGate = TryResolveInventoryHologramViewGate(out Vector3 viewPosition, out Vector3 viewForward, out float minViewDot);
+             int visibleCount = 0;
+             for (int i = 0; i < _activeBlockCount && i < _inventoryHologramEntries.Length; i++)
+             {
+@@ -1522,6 +1524,11 @@ namespace Hecton8.UI
+                 Quaternion worldRotation = panelRotation * Quaternion.Euler(0f, yaw, 0f);
+                 float footprintMeters = Mathf.Max(0.008f, entry.FootprintPixels * pixelScaleMeters * InventoryHologramFootprintScale);
+                 Vector3 worldScale = new Vector3(footprintMeters, footprintMeters, Mathf.Max(InventoryHologramThicknessMeters, footprintMeters * 0.16f));
++                if (!IsFiniteHologramTransform(worldPosition, worldRotation, worldScale))
++                    continue;
++
++                if (hasFrustumGate && !PassesInventoryHologramFrustumGate(worldPosition, viewPosition, viewForward, minViewDot))
++                    continue;
+ 
+                 _inventoryHologramMatrices[visibleCount] = Matrix4x4.TRS(worldPosition, worldRotation, worldScale);
+                 _inventoryHologramMeshIndices[visibleCount] = entry.ProxyMeshIndex;
+@@ -1562,11 +1569,57 @@ namespace Hecton8.UI
+                     false,
+                     0,
+                     null,
+-                    LightProbeUsage.Off,
+-                    null);
++                   LightProbeUsage.Off,
++                   null);
+             }
+         }
+ 
++        private static bool TryResolveInventoryHologramViewGate(out Vector3 viewPosition, out Vector3 viewForward, out float minViewDot)
++        {
++            viewPosition = default;
++            viewForward = Vector3.forward;
++            minViewDot = -1f;
++
++            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
++            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
++            if (playerCamera == null)
++                return false;
++
++            Transform cameraTransform = playerCamera.transform;
++            viewPosition = cameraTransform.position;
++            viewForward = cameraTransform.forward;
++            float halfFovDegrees = Mathf.Clamp((playerCamera.fieldOfView * 0.5f) + 8f, 1f, 89f);
++            minViewDot = Mathf.Cos(halfFovDegrees * Mathf.Deg2Rad);
++            return true;
++        }
++
++        private static bool PassesInventoryHologramFrustumGate(Vector3 worldPosition, Vector3 viewPosition, Vector3 viewForward, float minViewDot)
++        {
++            Vector3 toHologram = worldPosition - viewPosition;
++            float sqrDistance = toHologram.sqrMagnitude;
++            if (sqrDistance <= 0.000001f)
++                return true;
++
++            float invDistance = 1f / Mathf.Sqrt(sqrDistance);
++            float viewDot = Vector3.Dot(viewForward, toHologram * invDistance);
++            return viewDot >= minViewDot;
++        }
++
++        private static bool IsFiniteHologramTransform(Vector3 position, Quaternion rotation, Vector3 scale)
++        {
++            float3 pos = new float3(position.x, position.y, position.z);
++            bool positionFinite = math.all(math.isfinite(pos));
++#if UNITY_ASSERTIONS
++            Debug.Assert(positionFinite);
++#endif
++            return positionFinite &&
++                   math.all(math.isfinite(new float4(rotation.x, rotation.y, rotation.z, rotation.w))) &&
++                   math.all(math.isfinite(new float3(scale.x, scale.y, scale.z))) &&
++                   scale.x > 0f &&
++                   scale.y > 0f &&
++                   scale.z > 0f;
++        }
++
+         private void ValidateSelectionAgainstGrid(InventoryGrid grid)
+         {
+             if (_selectedItem == null || grid == null)
+diff --git a/Assets/_Project/Scripts/PlayerInventory.cs b/Assets/_Project/Scripts/PlayerInventory.cs
+index d7af49f0..e5c6c819 100644
+--- a/Assets/_Project/Scripts/PlayerInventory.cs
++++ b/Assets/_Project/Scripts/PlayerInventory.cs
+@@ -45,6 +45,7 @@ namespace Hecton8.Inventory
+         private const float RadioactiveHalfLifeBaseSeconds = 1800f;
+         private const float Ln2 = 0.6931471805599453f;
+         private const float KineticDamageThresholdG = 50f;
++        private const string RadixSortBufferMismatchLog = "[PlayerInventory] Critical radix sort buffer mismatch. Sorting bypassed.";
+         internal const ushort DegradedQualityMilliThreshold = 250;
+         private static readonly int _DepletedLeadHashId = LocHash.Compute("Data_DepletedLead");
+ 
+@@ -346,6 +347,9 @@ namespace Hecton8.Inventory
+ 
+             private int FindAdjacentReactivePartner(int anchorIndex, int slotCount, int safeColumns, int safeRows)
+             {
++                if (anchorIndex < 0 || anchorIndex >= slotCount)
++                    return -1;
++
+                 ushort flags = ItemStateFlags[anchorIndex];
+                 bool isRadioactive = (flags & RadioactiveMask) != 0;
+                 bool isFlammable = (flags & FlammableMask) != 0;
+@@ -378,7 +382,7 @@ namespace Hecton8.Inventory
+                 bool sourceRadioactive,
+                 bool sourceFlammable)
+             {
+-                if ((uint)x >= (uint)safeColumns || (uint)y >= (uint)safeRows)
++                if (x < 0 || x >= safeColumns || y < 0 || y >= safeRows)
+                     return -1;
+ 
+                 int candidateIndex = y * safeColumns + x;
+@@ -1276,14 +1280,8 @@ namespace Hecton8.Inventory
+             if (count <= 0)
+                 return;
+ 
+-            if (!_sortEntriesNative.IsCreated ||
+-                !_sortScratchNative.IsCreated ||
+-                !_sortRadixCounts.IsCreated ||
+-                count > _sortEntriesNative.Length ||
+-                count > _sortScratchNative.Length)
+-            {
++            if (!TryValidateRadixSortBuffers(count))
+                 return;
+-            }
+ 
+             for (int i = 0; i < count; i++)
+                 _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
+@@ -1333,6 +1331,33 @@ namespace Hecton8.Inventory
+             NotifyInventoryChanged();
+         }
+ 
++        private bool TryValidateRadixSortBuffers(int itemCount)
++        {
++            if (!_sortEntriesNative.IsCreated ||
++                !_sortScratchNative.IsCreated ||
++                !_sortRadixCounts.IsCreated ||
++                _sortBuffer == null ||
++                _sortedPlacements == null ||
++                itemCount > _sortEntriesNative.Length ||
++                itemCount > _sortScratchNative.Length ||
++                itemCount > _sortBuffer.Length ||
++                itemCount > _sortedPlacements.Length)
++            {
++                return false;
++            }
++
++            bool lengthMismatch = _sortEntriesNative.Length != _sortScratchNative.Length ||
++                                  _sortEntriesNative.Length != _sortBuffer.Length ||
++                                  _sortEntriesNative.Length != _sortedPlacements.Length;
++            if (!lengthMismatch)
++                return true;
++
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            Debug.LogError(RadixSortBufferMismatchLog);
++#endif
++            return false;
++        }
++
+         internal bool TryMoveOrSwapAnchor(int sourceAnchorX, int sourceAnchorY, int targetCellX, int targetCellY)
+         {
+             if (_grid == null ||
+@@ -1827,11 +1852,13 @@ namespace Hecton8.Inventory
+         private void PublishEncumbranceChanged()
+         {
+             float carryCapacityKg = ResolveCarryCapacityKilograms();
++            float load01 = math.saturate(TotalMassKg / carryCapacityKg);
++            UIStateStore.WriteInventoryLoadState(TotalMassKg, carryCapacityKg, load01, Time.unscaledTime);
+             InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
+                 this,
+                 TotalMassKg,
+                 carryCapacityKg,
+-                math.saturate(TotalMassKg / carryCapacityKg)));
++                load01));
+         }
+ 
+         private float ResolveCarryCapacityKilograms()
+@@ -2464,7 +2491,15 @@ namespace Hecton8.Inventory
+             }
+ 
+             int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
++            // InventoryGrid.RemoveAnchorAt clears the SOA ItemHashID before trauma/audio dispatch can read the slot again.
+             _grid.RemoveAnchorAt(anchorIndex);
++            ClearDestroyedAnchorRuntimeState(anchorIndex);
++            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
++            return true;
++        }
++
++        private void ClearDestroyedAnchorRuntimeState(int anchorIndex)
++        {
+             _stackCounts[anchorIndex] = 0;
+             _craftLockedCounts[anchorIndex] = 0;
+             _anchorStateFlags[anchorIndex] = 0;
+@@ -2472,9 +2507,9 @@ namespace Hecton8.Inventory
+             _itemGeneticsWords[anchorIndex] = 0u;
+             _qualityMilli[anchorIndex] = 0;
+             _lastUpdateUnixSeconds[anchorIndex] = 0;
++            if (_thermalRunawayByAnchor.IsCreated && (uint)anchorIndex < (uint)_thermalRunawayByAnchor.Length)
++                _thermalRunawayByAnchor[anchorIndex] = 0f;
+             ClearAnchorPhysicalMetadata(anchorIndex);
+-            TotalWeight = Mathf.Max(0f, TotalWeight - descriptor.Weight * stackCount);
+-            return true;
+         }
+ 
+         private bool ResolveInventoryPressurizedContainerProtection()
+@@ -2697,7 +2732,10 @@ namespace Hecton8.Inventory
+ 
+             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
+             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
+-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, copyLength * UnsafeUtility.SizeOf<ushort>());
++            int copyBytes = copyLength * UnsafeUtility.SizeOf<ushort>();
++            int destinationBytes = destination.Length * UnsafeUtility.SizeOf<ushort>();
++            if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
++                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerInventory));
+         }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/SaveThumbnailSystem.cs b/Assets/_Project/Scripts/SaveThumbnailSystem.cs
+index 6546f20b..2e1bbe80 100644
+--- a/Assets/_Project/Scripts/SaveThumbnailSystem.cs
++++ b/Assets/_Project/Scripts/SaveThumbnailSystem.cs
+@@ -3,6 +3,7 @@ using System.Collections.Generic;
+ using System.IO;
+ using Hecton8.Bootstrap;
+ using Hecton8.Core;
++using Hecton8.Optimization;
+ using Unity.Collections;
+ using Unity.Collections.LowLevel.Unsafe;
+ using UnityEngine;
+@@ -133,6 +134,8 @@ namespace Hecton8.SaveSystem
+         /// </summary>
+         public static Sprite LoadThumbnail(string slotName)
+         {
++            AssetLoadDispatcher.ForceEvaluateUiMipBiasGate();
++
+             if (_spriteCache.TryGetValue(slotName, out Sprite cached))
+             {
+                 if (cached != null && cached.texture != null)
+@@ -241,6 +244,9 @@ namespace Hecton8.SaveSystem
+             _inflightRequest = default;
+             _hasInflightRequest = false;
+ 
++            if (!Application.isPlaying || inflightRequest.Camera == null)
++                return;
++
+             if (request.hasError)
+             {
+                 Debug.LogError($"[SaveThumbnailSystem] AsyncGPUReadback failed for '{inflightRequest.SlotName}'.");
+diff --git a/Assets/_Project/Scripts/UI/NotificationEvents.cs b/Assets/_Project/Scripts/UI/NotificationEvents.cs
+index 2a0e271d..8b8e7479 100644
+--- a/Assets/_Project/Scripts/UI/NotificationEvents.cs
++++ b/Assets/_Project/Scripts/UI/NotificationEvents.cs
+@@ -34,6 +34,8 @@ namespace Hecton8.UI
+         private static readonly Dictionary<uint, string> _messagesByHash = new Dictionary<uint, string>(64);
+         private static NativeQueue<NotificationEventPayload> _pendingEvents;
+ 
++        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
++
+         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+         private static void ResetStaticState()
+         {
+@@ -94,6 +96,18 @@ namespace Hecton8.UI
+                 : unchecked((uint)LocHash.Compute(message));
+         }
+ 
++        public static uint RegisterMessage(string message)
++        {
++            uint messageHash = ComputeMessageHash(message);
++            if (messageHash == 0u)
++                return 0u;
++
++            if (!_messagesByHash.ContainsKey(messageHash))
++                _messagesByHash.Add(messageHash, message);
++
++            return messageHash;
++        }
++
+         public static bool TryResolveMessage(uint messageHash, out string message)
+         {
+             return _messagesByHash.TryGetValue(messageHash, out message);
+@@ -116,13 +130,10 @@ namespace Hecton8.UI
+ 
+         private static void Publish(string message, NotificationEventSeverity severity)
+         {
+-            uint messageHash = ComputeMessageHash(message);
++            uint messageHash = RegisterMessage(message);
+             if (messageHash == 0u)
+                 return;
+ 
+-            if (!_messagesByHash.ContainsKey(messageHash))
+-                _messagesByHash.Add(messageHash, message);
+-
+             EnsureInitialized();
+             _pendingEvents.Enqueue(new NotificationEventPayload
+             {
+diff --git a/Assets/_Project/Scripts/UI/PDALoadoutTab.cs b/Assets/_Project/Scripts/UI/PDALoadoutTab.cs
+index 3a17dcaf..aec4810c 100644
+--- a/Assets/_Project/Scripts/UI/PDALoadoutTab.cs
++++ b/Assets/_Project/Scripts/UI/PDALoadoutTab.cs
+@@ -1432,10 +1432,7 @@ namespace Hecton8.UI
+ 
+             if (_inventoryMassOverCapacity)
+             {
+-                _massPulsePhase += Mathf.Max(0f, deltaTime) * 4.2f;
+-                if (_massPulsePhase >= Mathf.PI * 2f)
+-                    _massPulsePhase -= Mathf.PI * 2f;
+-
++                _massPulsePhase = Mathf.Repeat(Time.unscaledTime * 4.2f, Mathf.PI * 2f);
+                 ApplySummaryMassVertexColor(ResolvePulsedMassColor(_massPulsePhase));
+                 return;
+             }
+diff --git a/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs b/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+index 207af599..32f6376e 100644
+--- a/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
++++ b/Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs
+@@ -76,6 +76,7 @@ namespace Hecton8.UI
+         private const float DepthStreamThresholdMeters = 0.5f;
+         private const float TemperatureStreamThreshold = 0.1f;
+         private const float PressureStreamThreshold = 0.1f;
++        private const float CadenceDeltaEpsilon = 0.000001f;
+         private const float HeadingStreamThresholdDegrees = 1f;
+         private const float ToolDepletedWarningDurationSeconds = 2.25f;
+         private const float CorruptedModeThreshold = 0.75f;
+@@ -596,6 +597,7 @@ namespace Hecton8.UI
+         private Color _appliedWarning;
+         private CanvasScaler _cachedCanvasScaler;
+         private GraphicRaycaster _cachedGraphicRaycaster;
++        private Canvas _cachedGraphicRaycasterCanvas;
+         private HectonUIScaler _cachedUiScaler;
+         private HectonSurvivalSystem _depthSignalSource;
+         private IPlayerInventoryService _inventoryService;
+@@ -725,12 +727,14 @@ namespace Hecton8.UI
+ 
+         private void Awake()
+         {
++            ResolveGraphicRaycasterCold();
+             _scannerHologramPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — scanner visor hologram per-draw properties — owner: SuitHUDV4CanvasOverlay
+         }
+ 
+         private void OnEnable()
+         {
+             EnsureLayerCache();
++            ResolveGraphicRaycasterCold();
+             LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+             LocalizationManager.OnCorruptionVisualStateChanged += HandleCorruptionVisualStateChanged;
+             SceneBootstrap.Register(this);
+@@ -2692,20 +2696,23 @@ namespace Hecton8.UI
+             }
+ 
+             bool hasSurvivalStats = survival != null && survival.Stats != null;
+-            float oxygen = hasSurvivalStats ? Mathf.Clamp01(survival.OxygenNormalized) : 1f;
++            float oxygenFallback = hasSurvivalStats ? Mathf.Clamp01(survival.OxygenNormalized) : 1f;
++            float oxygen = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.Oxygen01, oxygenFallback));
++            float powerFallback = hasSurvivalStats ? Mathf.Clamp01(survival.EnergyNormalized) : 1f;
+             float power = _biosRecoveryMode
+                 ? _traumaTransportPower01
+-                : (hasSurvivalStats ? Mathf.Clamp01(survival.EnergyNormalized) : 1f);
+-            float health = hasSurvivalStats ? Mathf.Clamp01(survival.IntegrityNormalized) : 1f;
++                : Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.Power01, powerFallback));
++            float healthFallback = hasSurvivalStats ? Mathf.Clamp01(survival.IntegrityNormalized) : 1f;
++            float health = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.Health01, healthFallback));
+             health = Mathf.Min(health, _traumaHullIntegrity01);
+-            float depth = _depthMeters;
+-            float pressure = survival != null ? Mathf.Max(1f, survival.Pressure) : 1f + depth / 10f;
++            float depth = Mathf.Max(0f, ReadHeadlessUIValue(UIValueSlotId.DepthMeters, _depthMeters));
++            float pressure = Mathf.Max(1f, ReadHeadlessUIValue(UIValueSlotId.PressureAtm, survival != null ? Mathf.Max(1f, survival.Pressure) : 1f + depth / 10f));
+             float heading = playerMovement != null ? Mathf.Repeat(playerMovement.CameraYaw, 360f) : 0f;
+-            float safeDepth = hasSurvivalStats ? Mathf.Max(1f, survival.Stats.SafeDepth) : 50f;
++            float safeDepth = Mathf.Max(1f, ReadHeadlessUIValue(UIValueSlotId.SafeDepthMeters, hasSurvivalStats ? Mathf.Max(1f, survival.Stats.SafeDepth) : 50f));
+             float safeDepthNormalized = ResolveSafeDepthNormalized(depth, safeDepth);
+-            float oxygenCurrent = survival != null ? survival.Oxygen : oxygen * 100f;
+-            float energyCurrent = survival != null ? survival.Energy : power * 100f;
+-            float healthCurrent = survival != null ? survival.Integrity : health * 100f;
++            float oxygenCurrent = ReadHeadlessUIValue(UIValueSlotId.OxygenCurrent, survival != null ? survival.Oxygen : oxygen * 100f);
++            float energyCurrent = ReadHeadlessUIValue(UIValueSlotId.EnergyCurrent, survival != null ? survival.Energy : power * 100f);
++            float healthCurrent = ReadHeadlessUIValue(UIValueSlotId.IntegrityCurrent, survival != null ? survival.Integrity : health * 100f);
+             float stressPulse = _biosRecoveryMode ? 0f : UpdateStressPulse(dt);
+             Color pulsedPrimary = ResolveStressPulseColor(primary, warning, stressPulse, stressPulseBrightnessBoost, stressPulseWarningBlend);
+             Color pulsedDim = ResolveStressPulseColor(dim, warning, stressPulse, stressPulseBrightnessBoost * 0.45f, stressPulseWarningBlend * 0.38f);
+@@ -2982,15 +2989,26 @@ namespace Hecton8.UI
+ 
+         private void ResolveInventoryLoadValues(out float totalMassKg, out float carryCapacityKg, out float load01)
+         {
+-            totalMassKg = _playerInventory != null
++            float fallbackMassKg = _playerInventory != null
+                 ? Mathf.Max(0f, _playerInventory.TotalMassKg)
+                 : (survival != null ? Mathf.Max(0f, survival.Weight) : 0f);
+-            carryCapacityKg = survival != null && survival.Stats != null
++            float fallbackCapacityKg = survival != null && survival.Stats != null
+                 ? Mathf.Max(0.01f, survival.Stats.CarryCapacityKg)
+                 : 200f;
+-            load01 = playerMovement != null
++            float fallbackLoad01 = playerMovement != null
+                 ? Mathf.Clamp01(playerMovement.InventoryLoad01)
+-                : Mathf.Clamp01(totalMassKg / carryCapacityKg);
++                : Mathf.Clamp01(fallbackMassKg / fallbackCapacityKg);
++
++            totalMassKg = Mathf.Max(0f, ReadHeadlessUIValue(UIValueSlotId.InventoryMassKg, fallbackMassKg));
++            carryCapacityKg = Mathf.Max(0.01f, ReadHeadlessUIValue(UIValueSlotId.CarryCapacityKg, fallbackCapacityKg));
++            load01 = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.InventoryLoad01, fallbackLoad01));
++        }
++
++        private static float ReadHeadlessUIValue(UIValueSlotId slotId, float fallback)
++        {
++            return UIStateStore.TryReadValue(slotId, out UIValueSlot valueSlot)
++                ? valueSlot.Value
++                : fallback;
+         }
+ 
+         private bool PrepareLoadMassVertexRefresh(int version, Color loadColor, bool corruptedMode, int corruptionVersion, int corruptionSalt)
+@@ -3014,10 +3032,7 @@ namespace Hecton8.UI
+ 
+             if (load01 > 0.9f)
+             {
+-                _loadMassPulsePhase += Mathf.Max(0f, deltaTime) * 10f;
+-                if (_loadMassPulsePhase >= Mathf.PI * 2f)
+-                    _loadMassPulsePhase -= Mathf.PI * 2f;
+-
++                _loadMassPulsePhase = Mathf.Repeat(Time.unscaledTime * 10f, Mathf.PI * 2f);
+                 ApplyLoadMassVertexColor(ResolveLoadMassPulseColor(warning, _loadMassPulsePhase));
+                 return;
+             }
+@@ -3150,13 +3165,13 @@ namespace Hecton8.UI
+                 return false;
+ 
+             return !float.IsFinite(_lastStreamedOxygen01) ||
+-                   Mathf.Abs(oxygen01 - _lastStreamedOxygen01) >= OxygenStreamThreshold01 ||
++                   ExceedsCadenceDelta(oxygen01, _lastStreamedOxygen01, OxygenStreamThreshold01) ||
+                    !float.IsFinite(_lastStreamedDepthMeters) ||
+-                   Mathf.Abs(depthMeters - _lastStreamedDepthMeters) >= DepthStreamThresholdMeters ||
++                   ExceedsCadenceDelta(depthMeters, _lastStreamedDepthMeters, DepthStreamThresholdMeters) ||
+                    !float.IsFinite(_lastStreamedTemperature) ||
+-                   Mathf.Abs(localizedTemperature - _lastStreamedTemperature) >= TemperatureStreamThreshold ||
++                   ExceedsCadenceDelta(localizedTemperature, _lastStreamedTemperature, TemperatureStreamThreshold) ||
+                    !float.IsFinite(_lastStreamedPressure) ||
+-                   Mathf.Abs(pressureAtm - _lastStreamedPressure) >= PressureStreamThreshold;
++                   ExceedsCadenceDelta(pressureAtm, _lastStreamedPressure, PressureStreamThreshold);
+         }
+ 
+         private bool NeedsGaugeCadenceRefresh(bool cadenceGateOpen, float oxygen01, float power01, float health01)
+@@ -3165,11 +3180,19 @@ namespace Hecton8.UI
+                 return false;
+ 
+             return !float.IsFinite(_lastStreamedOxygen01) ||
+-                   Mathf.Abs(oxygen01 - _lastStreamedOxygen01) >= OxygenStreamThreshold01 ||
++                   ExceedsCadenceDelta(oxygen01, _lastStreamedOxygen01, OxygenStreamThreshold01) ||
+                    !float.IsFinite(_lastStreamedPower01) ||
+-                   Mathf.Abs(power01 - _lastStreamedPower01) >= OxygenStreamThreshold01 ||
++                   ExceedsCadenceDelta(power01, _lastStreamedPower01, OxygenStreamThreshold01) ||
+                    !float.IsFinite(_lastStreamedHealth01) ||
+-                   Mathf.Abs(health01 - _lastStreamedHealth01) >= OxygenStreamThreshold01;
++                   ExceedsCadenceDelta(health01, _lastStreamedHealth01, OxygenStreamThreshold01);
++        }
++
++        private static bool ExceedsCadenceDelta(float current, float previous, float threshold)
++        {
++            if (!float.IsFinite(current) || !float.IsFinite(previous))
++                return false;
++
++            return Mathf.Abs(current - previous) > threshold + CadenceDeltaEpsilon;
+         }
+ 
+         private static float DampHudValue(float displayValue, float targetValue, float dampFactor, float dt)
+@@ -4865,8 +4888,9 @@ namespace Hecton8.UI
+             float movementSpeed = playerMovement != null
+                 ? playerMovement.InterpolatedLinearVelocity.magnitude
+                 : 0f;
++            movementSpeed = Mathf.Max(0f, ReadHeadlessUIValue(UIValueSlotId.MovementSpeed, movementSpeed));
+             float velocityContribution = Mathf.Clamp(movementSpeed * reticleVelocityFactor, 0f, 36f);
+-            float heatContribution = ResolveReticleHeat01() * reticleHeatSpread;
++            float heatContribution = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.ToolHeat01, ResolveReticleHeat01())) * reticleHeatSpread;
+             float targetSpread = Mathf.Max(0f, reticleBaseSpread + velocityContribution + heatContribution);
+             float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, reticleSpreadBlendSpeed) * Mathf.Max(dt, 0.016f));
+             _reticleSpreadPixels = Mathf.Lerp(_reticleSpreadPixels, targetSpread, blendT);
+@@ -4943,6 +4967,7 @@ namespace Hecton8.UI
+             _appliedOverlaySortingOrder = 0;
+             _cachedCanvasScaler = null;
+             _cachedGraphicRaycaster = null;
++            _cachedGraphicRaycasterCanvas = null;
+             _cachedUiScaler = null;
+             _cachedHullStressWhisperBucket = int.MinValue;
+             _cachedHullStressWhisperText = null;
+@@ -4954,15 +4979,19 @@ namespace Hecton8.UI
+             if (targetCanvas == null)
+                 targetCanvas = GetComponent<Canvas>();
+ 
+-            if (targetCanvas != null &&
+-                (_cachedGraphicRaycaster == null || _cachedGraphicRaycaster.gameObject != targetCanvas.gameObject))
+-            {
+-                targetCanvas.TryGetComponent(out _cachedGraphicRaycaster);
+-            }
+-
+             return targetCanvas;
+         }
+ 
++        private void ResolveGraphicRaycasterCold()
++        {
++            Canvas canvas = ResolveTargetCanvas();
++            if (canvas == null || ReferenceEquals(_cachedGraphicRaycasterCanvas, canvas))
++                return;
++
++            canvas.TryGetComponent(out _cachedGraphicRaycaster);
++            _cachedGraphicRaycasterCanvas = canvas;
++        }
++
+         private CanvasScaler ResolveCanvasScaler()
+         {
+             Canvas canvas = ResolveTargetCanvas();

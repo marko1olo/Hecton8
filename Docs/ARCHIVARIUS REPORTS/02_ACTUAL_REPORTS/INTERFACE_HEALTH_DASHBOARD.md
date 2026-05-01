@@ -1,22 +1,22 @@
 # HECTON-8 INTERFACE HEALTH DASHBOARD
 
-Date: 2026-04-29
+Date: 2026-05-01
 Status: PENDING VERIFICATION
-Source basis: `GlobalRegistryContracts.cs` plus direct first-party class declaration scan in `Assets/_Project/Scripts`
-Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`
+Source basis: `GlobalRegistryContracts.cs` plus direct first-party class declaration scan in `Assets/_Project/Scripts`, with focused checks of `PDALogbookManager`, `UIStateStore`, and `FluidMathCore`
+Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
 
 ## Executive Summary
 
 | Metric | Count |
 |---|---:|
-| Total interfaces in `GlobalRegistryContracts.cs` | 27 |
-| Interfaces with at least one direct implementor found in current source scan | 27 |
-| Confirmed ghost interfaces in current pass | 0 |
+| Total interfaces in `GlobalRegistryContracts.cs` | 31 |
+| Interfaces with at least one direct implementor found in current source scan | 30 |
+| Confirmed empty extension seams in current pass | 1 |
 | Confirmed shadow/conflict cases in current pass | 0 |
-| Interfaces with only one narrow direct implementor | 14 |
+| Interfaces with only one narrow direct implementor | not recounted in this pass |
 
 Current interface debt is not "ghost contracts".
-Current debt is stale documentation, narrow single-owner surfaces, and unresolved runtime verification of actual scene registration order.
+Current debt is stale documentation, narrow single-owner surfaces, one empty hot-swap extension seam, and unresolved runtime verification of actual scene registration order.
 
 ## Inventory
 
@@ -49,12 +49,16 @@ Current debt is stale documentation, narrow single-owner surfaces, and unresolve
 | 25 | `IInteractionSignalService` | `EquipmentInteractionHandler` | LIVE | Queued interaction owner |
 | 26 | `IDebrisService` | `DebrisManager` | LIVE | Debris burst runtime owner |
 | 27 | `IEcosystemDirectorService` | `EcosystemDirector` | LIVE | Ecosystem-sector owner |
+| 28 | `IPDALogbookService` | `PDALogbookManager` | LIVE | Registry-backed PDA logbook service; simulation storage is hash/timestamp sourced through `UIStateStore`, not persistent UI strings |
+| 29 | `IFaunaSim` | `FaunaSimulationEngine`, `DemiurgeFaunaSimulationService` | LIVE / MIXED | Real dedicated service plus bootstrap fallback; single authority is not proven |
+| 30 | `IFluidSim` | `FluidMathCore` | LIVE | Physics namespace simulation service; direct deterministic owner remains `FluidMathCore` |
+| 31 | `IGlobalRegistryHotSwapListener` | none found in current source scan | EMPTY SEAM | Registry bucket and APIs exist; no direct listener implementor found |
 
 ## Corrections Against Older Claims
 
 | Older claim | Current verified state |
 |---|---|
-| `GlobalRegistryContracts.cs` had `19` interfaces | False now. Current file has `27` interfaces. |
+| `GlobalRegistryContracts.cs` had `19` or `27` interfaces | False now. Current file has `31` interfaces. |
 | `IAudioService` had no implementor | False. `SpatialAudioManager` implements `IAudioService` and registers itself. |
 | `IUIService` was fragmented across multiple implementors | False in current source scan. Direct implementor found: `SuitHUDV4CanvasOverlay`. |
 | `IRenderable` had a single owner | False. Current direct implementors include `HectonUnderwaterVisuals`, `HectonSubmarineOS`, and `MissionMarkerSystem`. |
@@ -62,10 +66,14 @@ Current debt is stale documentation, narrow single-owner surfaces, and unresolve
 
 ## Primary Findings
 
-### No Ghost Interfaces In The Current Pass
+### No Deletion-Safe Ghost Interface In The Current Pass
 
 The previous dashboard was outdated.
-Current direct source scan found at least one implementor for every interface in `GlobalRegistryContracts.cs`.
+Current direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`.
+
+`IGlobalRegistryHotSwapListener` currently has no direct implementor in the source scan.
+It is not deletion-safe because `GlobalRegistry` exposes listener registration infrastructure around it.
+Treat it as an empty extension seam, not dead code.
 
 ### Single-Owner Surfaces Still Need Discipline
 
@@ -91,6 +99,14 @@ It does not prove:
 
 That requires live Unity logs or play-mode instrumentation.
 
+## 2026-05-01 Sovereign UI Delta
+
+| Contract | Current evidence | Result |
+|---|---|---|
+| `IPDALogbookService` | `PDALogbookManager` writes log identity as `uint` event hashes plus timestamps into `UIStateStore`; `PDADataLogTab` reconstructs visible text through `LocRegistry` on demand | Simulation layer no longer owns persistent log strings |
+| `IFluidSim` | `FluidMathCore` remains the sole direct source-level implementor in the current scan | Contract is live and still single-owner at source level |
+| UI registry boundary | `Assets/_Project/Scripts/UI` scan found no active `FindAnyObjectByType`, `FindObjectOfType`, or `Camera.main` usage | UI controllers remain registry/context driven in this pass |
+
 ## Recommended Actions
 
 | Priority | Action | Reason |
@@ -98,6 +114,8 @@ That requires live Unity logs or play-mode instrumentation.
 | P0 | Update every dependent doc still claiming `IAudioService` ghost or `IUIService` fragmentation | Current code already contradicts those docs |
 | P1 | Keep `IUIService` single-owner semantics explicit in bootstrap/UI docs | Avoid reintroducing fake "many UI roots" claims |
 | P1 | Keep `IAudioService` ownership anchored on `SpatialAudioManager` unless runtime architecture is intentionally split | Prevent service-slot drift |
+| P1 | Treat `IFaunaSim` as mixed authority until the dedicated service and bootstrap fallback path are reconciled | Avoid two sources of fauna simulation truth |
+| P2 | Keep `IGlobalRegistryHotSwapListener` documented as an empty seam until a listener appears or architecture removes the hook deliberately | Prevent accidental deletion of registry extension infrastructure |
 | P2 | Add live registry-occupancy evidence from Unity when available | Source scan alone cannot prove scene presence |
 
 ## Regression Model
@@ -117,5 +135,26 @@ None. Markdown-only change.
 - scene/prefab wiring may still diverge from class declarations
 - uncommitted local files outside this scan could introduce alternate implementors
 - compile/runtime state still needs Unity-side confirmation
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-01 Interface Delta
+
+Current source check against `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` found `31` interfaces, not `27`.
+
+New / previously unlisted interfaces:
+
+| Interface | Current implementor(s) | State | Comment |
+|---|---|---|---|
+| `IPDALogbookService` | `PDALogbookManager` | LIVE | Registry-backed PDA logbook service. |
+| `IFaunaSim` | `FaunaSimulationEngine`, `DemiurgeFaunaSimulationService` | LIVE / MIXED | Real dedicated service exists, but bootstrap fallback service also implements the same contract. Ownership must be checked before claiming single authority. |
+| `IFluidSim` | `FluidMathCore` | LIVE | Physics namespace simulation service. |
+| `IGlobalRegistryHotSwapListener` | none found in current source scan | EMPTY SEAM | Registry bucket and register/unregister APIs exist, but no current implementor was found. This is not deletion-safe; it is an unused extension seam until a listener appears. |
+
+Correction:
+
+- Older dashboard claim "at least one implementor for every interface in `GlobalRegistryContracts.cs`" is now false.
+- Current truthful read: `30/31` interfaces have at least one source-level implementor; `IGlobalRegistryHotSwapListener` is registered infrastructure with no direct implementor.
+- Live scene presence remains unverified because MCP console/session proof was not available in the current pass.
 
 STATUS: PENDING VERIFICATION

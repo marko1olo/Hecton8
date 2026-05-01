@@ -189,7 +189,7 @@ namespace Hecton8.PDA
                 _entries.RemoveAt(0);
 
             _entries.Add(entry);
-            UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash));
+            UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash), playTimeSeconds);
             Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entries.Count, unchecked((uint)originHash));
             return true;
         }
@@ -272,7 +272,7 @@ namespace Hecton8.PDA
                 if (originHash != 0)
                 {
                     _seenOriginHashes.Add(originHash);
-                    UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash));
+                    UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash), entry.playTimeSeconds);
                 }
             }
 

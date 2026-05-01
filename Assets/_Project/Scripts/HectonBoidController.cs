@@ -717,7 +717,7 @@ namespace Hecton8.AI.GPU
                 worldBounds          = _simulationBounds,
                 shadowCastingMode    = shadowMode,
                 receiveShadows       = false,
-                renderingLayerMask   = (uint)renderingLayerMask
+                renderingLayerMask   = HectonLayerMasks.ToRenderingLayerMask(renderingLayerMask)
             };
         }
 

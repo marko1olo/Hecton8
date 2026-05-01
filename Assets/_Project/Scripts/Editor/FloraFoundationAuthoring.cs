@@ -32,6 +32,9 @@ namespace Hecton8.EditorTools
         private const string ElectrolyteSaltsItemPath = "Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset";
         private const string UrpLitShaderName = "Universal Render Pipeline/Lit";
         private const string ProxyColliderRigName = "__PROXY_COLLIDERS";
+        private const int CapsuleAxisX = 0;
+        private const int CapsuleAxisY = 1;
+        private const int CapsuleAxisZ = 2;
 
         private struct FloraSpec
         {
@@ -101,6 +104,55 @@ namespace Hecton8.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[FloraFoundationAuthoring] Templates={templates.Count} Scene='{ScenePath}' synced.");
+        }
+
+        [MenuItem("Hecton/Authoring/Auto Fit Selected Flora Colliders", priority = 184)]
+        public static void AutoFitSelectedFloraColliders()
+        {
+            GameObject[] selectedObjects = Selection.gameObjects;
+            if (selectedObjects == null || selectedObjects.Length == 0)
+            {
+                Debug.LogWarning("[FloraFoundationAuthoring] No flora GameObjects or prefab assets selected for collider fitting.");
+                return;
+            }
+
+            int fittedCount = 0;
+            for (int i = 0; i < selectedObjects.Length; i++)
+            {
+                GameObject selectedObject = selectedObjects[i];
+                if (selectedObject == null)
+                    continue;
+
+                string assetPath = AssetDatabase.GetAssetPath(selectedObject);
+                if (!string.IsNullOrEmpty(assetPath) && assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
+                {
+                    GameObject prefabRoot = PrefabUtility.LoadPrefabContents(assetPath);
+                    try
+                    {
+                        if (AutoFitPrimitiveColliderRig(prefabRoot))
+                        {
+                            PrefabUtility.SaveAsPrefabAsset(prefabRoot, assetPath);
+                            fittedCount++;
+                        }
+                    }
+                    finally
+                    {
+                        PrefabUtility.UnloadPrefabContents(prefabRoot);
+                    }
+
+                    continue;
+                }
+
+                if (AutoFitPrimitiveColliderRig(selectedObject))
+                {
+                    EditorUtility.SetDirty(selectedObject);
+                    if (selectedObject.scene.IsValid())
+                        EditorSceneManager.MarkSceneDirty(selectedObject.scene);
+                    fittedCount++;
+                }
+            }
+
+            Debug.Log($"[FloraFoundationAuthoring] Primitive flora collider rigs fitted: {fittedCount}.");
         }
 
         private static FloraSpec[] BuildSpecs()
@@ -636,36 +688,144 @@ namespace Hecton8.EditorTools
             switch (spec.Category)
             {
                 case FloraDataTemplate.FloraCategory.HarvestableKelp:
-                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.22f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.20f), spec.BoundsSize.y * 0.40f);
-                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.52f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.44f);
-                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.80f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.34f);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.22f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.20f), spec.BoundsSize.y * 0.40f, CapsuleAxisY);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.52f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.44f, CapsuleAxisY);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.80f, center.z), Mathf.Max(0.06f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.34f, CapsuleAxisY);
                     AddSphere(colliderRig, new Vector3(0f, spec.BoundsSize.y * 0.68f, 0f), Mathf.Max(0.08f, extents.x * 0.42f));
                     break;
                 case FloraDataTemplate.FloraCategory.HardCoral:
+                    int coralSpreadAxis = ResolveHorizontalCapsuleAxis(extents);
+                    float coralSpreadLength = coralSpreadAxis == CapsuleAxisX ? spec.BoundsSize.x : spec.BoundsSize.z;
+                    AddCapsule(colliderRig, center + new Vector3(0f, -extents.y * 0.08f, 0f), Mathf.Max(0.08f, Mathf.Min(extents.y, Mathf.Min(extents.x, extents.z)) * 0.42f), coralSpreadLength * 0.82f, coralSpreadAxis);
                     AddSphere(colliderRig, center, Mathf.Max(0.10f, extents.x * 0.44f));
                     AddSphere(colliderRig, center + new Vector3(extents.x * 0.34f, extents.y * 0.20f, 0f), Mathf.Max(0.08f, extents.x * 0.26f));
                     AddSphere(colliderRig, center + new Vector3(-extents.x * 0.30f, extents.y * 0.18f, extents.z * 0.18f), Mathf.Max(0.08f, extents.x * 0.24f));
                     AddSphere(colliderRig, center + new Vector3(0f, extents.y * 0.34f, -extents.z * 0.22f), Mathf.Max(0.08f, extents.x * 0.22f));
                     break;
                 case FloraDataTemplate.FloraCategory.GiantSargassum:
-                    AddCapsule(colliderRig, new Vector3(0f, spec.BoundsSize.y * 0.28f, 0f), Mathf.Max(0.08f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.32f);
+                    AddCapsule(colliderRig, new Vector3(0f, spec.BoundsSize.y * 0.28f, 0f), Mathf.Max(0.08f, Mathf.Min(extents.x, extents.z) * 0.16f), spec.BoundsSize.y * 0.32f, ResolveDominantCapsuleAxis(extents));
                     AddSphere(colliderRig, center + new Vector3(0f, extents.y * 0.10f, 0f), Mathf.Max(0.12f, extents.x * 0.28f));
                     AddSphere(colliderRig, center + new Vector3(extents.x * 0.42f, 0f, 0f), Mathf.Max(0.10f, extents.x * 0.22f));
                     AddSphere(colliderRig, center + new Vector3(-extents.x * 0.42f, 0f, extents.z * 0.10f), Mathf.Max(0.10f, extents.x * 0.22f));
                     AddSphere(colliderRig, center + new Vector3(0f, 0f, -extents.z * 0.38f), Mathf.Max(0.10f, extents.x * 0.20f));
                     break;
                 default:
-                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.30f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.46f);
-                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.64f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.14f), spec.BoundsSize.y * 0.28f);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.30f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.18f), spec.BoundsSize.y * 0.46f, CapsuleAxisY);
+                    AddCapsule(colliderRig, new Vector3(center.x, spec.BoundsSize.y * 0.64f, center.z), Mathf.Max(0.05f, Mathf.Min(extents.x, extents.z) * 0.14f), spec.BoundsSize.y * 0.28f, CapsuleAxisY);
                     AddSphere(colliderRig, new Vector3(0f, spec.BoundsSize.y * 0.78f, 0f), Mathf.Max(0.06f, extents.x * 0.22f));
                     break;
             }
         }
 
-        private static void AddCapsule(GameObject root, Vector3 center, float radius, float height)
+        private static bool AutoFitPrimitiveColliderRig(GameObject root)
+        {
+            if (root == null)
+                return false;
+
+            MeshCollider[] meshColliders = root.GetComponentsInChildren<MeshCollider>(true);
+            if (meshColliders != null && meshColliders.Length > 0)
+            {
+                Debug.LogError($"CRITICAL_ARCHITECTURE_VIOLATION: MeshCollider is forbidden on flora asset '{root.name}'. Use primitive collider auto-fitting only.");
+                throw new InvalidOperationException("CRITICAL_ARCHITECTURE_VIOLATION: MeshCollider is forbidden on flora assets.");
+            }
+
+            MeshFilter[] meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
+            if (meshFilters == null || meshFilters.Length == 0)
+                return false;
+
+            Bounds aggregateBounds = default;
+            bool hasBounds = false;
+            Transform rootTransform = root.transform;
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null || meshFilter.sharedMesh == null)
+                    continue;
+
+                EncapsulateMeshBoundsInRootSpace(rootTransform, meshFilter, ref aggregateBounds, ref hasBounds);
+            }
+
+            if (!hasBounds)
+                return false;
+
+            Transform existingRig = rootTransform.Find(ProxyColliderRigName);
+            if (existingRig != null)
+                UnityEngine.Object.DestroyImmediate(existingRig.gameObject);
+
+            GameObject colliderRig = new GameObject(ProxyColliderRigName);
+            colliderRig.transform.SetParent(rootTransform, false);
+            colliderRig.transform.localPosition = Vector3.zero;
+            colliderRig.transform.localRotation = Quaternion.identity;
+            colliderRig.transform.localScale = Vector3.one;
+
+            Vector3 size = aggregateBounds.size;
+            float maxHorizontal = Mathf.Max(size.x, size.z);
+            if (size.y >= maxHorizontal * 1.25f)
+            {
+                AddCapsule(colliderRig, aggregateBounds.center, Mathf.Max(0.04f, maxHorizontal * 0.5f), size.y, CapsuleAxisY);
+            }
+            else if (size.x >= Mathf.Max(size.y, size.z) * 1.25f)
+            {
+                AddCapsule(colliderRig, aggregateBounds.center, Mathf.Max(0.04f, Mathf.Max(size.y, size.z) * 0.5f), size.x, CapsuleAxisX);
+            }
+            else if (size.z >= Mathf.Max(size.y, size.x) * 1.25f)
+            {
+                AddCapsule(colliderRig, aggregateBounds.center, Mathf.Max(0.04f, Mathf.Max(size.y, size.x) * 0.5f), size.z, CapsuleAxisZ);
+            }
+            else
+            {
+                AddSphere(colliderRig, aggregateBounds.center, Mathf.Max(0.04f, Mathf.Max(size.x, Mathf.Max(size.y, size.z)) * 0.5f));
+            }
+
+            return true;
+        }
+
+        private static void EncapsulateMeshBoundsInRootSpace(Transform rootTransform, MeshFilter meshFilter, ref Bounds aggregateBounds, ref bool hasBounds)
+        {
+            Bounds meshBounds = meshFilter.sharedMesh.bounds;
+            Vector3 min = meshBounds.min;
+            Vector3 max = meshBounds.max;
+
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(min.x, min.y, min.z)), ref aggregateBounds, ref hasBounds);
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(max.x, min.y, min.z)), ref aggregateBounds, ref hasBounds);
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(min.x, max.y, min.z)), ref aggregateBounds, ref hasBounds);
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(min.x, min.y, max.z)), ref aggregateBounds, ref hasBounds);
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(max.x, max.y, min.z)), ref aggregateBounds, ref hasBounds);
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(max.x, min.y, max.z)), ref aggregateBounds, ref hasBounds);
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(min.x, max.y, max.z)), ref aggregateBounds, ref hasBounds);
+            EncapsulateRootLocalPoint(rootTransform, meshFilter.transform.TransformPoint(new Vector3(max.x, max.y, max.z)), ref aggregateBounds, ref hasBounds);
+        }
+
+        private static void EncapsulateRootLocalPoint(Transform rootTransform, Vector3 worldPoint, ref Bounds aggregateBounds, ref bool hasBounds)
+        {
+            Vector3 localPoint = rootTransform.InverseTransformPoint(worldPoint);
+            if (!hasBounds)
+            {
+                aggregateBounds = new Bounds(localPoint, Vector3.zero);
+                hasBounds = true;
+                return;
+            }
+
+            aggregateBounds.Encapsulate(localPoint);
+        }
+
+        private static int ResolveDominantCapsuleAxis(Vector3 extents)
+        {
+            if (extents.x >= extents.y && extents.x >= extents.z)
+                return CapsuleAxisX;
+
+            return extents.z > extents.y ? CapsuleAxisZ : CapsuleAxisY;
+        }
+
+        private static int ResolveHorizontalCapsuleAxis(Vector3 extents)
+        {
+            return extents.x >= extents.z ? CapsuleAxisX : CapsuleAxisZ;
+        }
+
+        private static void AddCapsule(GameObject root, Vector3 center, float radius, float height, int direction)
         {
             CapsuleCollider capsule = root.AddComponent<CapsuleCollider>();
-            capsule.direction = 1;
+            capsule.direction = Mathf.Clamp(direction, CapsuleAxisX, CapsuleAxisZ);
             capsule.center = center;
             capsule.radius = Mathf.Max(0.04f, radius);
             capsule.height = Mathf.Max(capsule.radius * 2f, height);

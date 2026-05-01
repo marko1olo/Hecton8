@@ -334,6 +334,14 @@ namespace Hecton8.Core
             return GetAvailableCount(prefab != null ? prefab.gameObject : null);
         }
 
+        internal int GetAvailableCountByPrefabId(int prefabId)
+        {
+            if (prefabId == 0 || _pools == null)
+                return 0;
+
+            return _pools.TryGetValue(prefabId, out Pool pool) ? pool.available.Count : 0;
+        }
+
         /// <summary>
         /// Returns whether a pool already exists for the given prefab.
         /// </summary>

@@ -232,6 +232,11 @@ namespace Hecton8.Environment
         private float _activeWeatherLutInfluence;
         private float _biomeLutBlend;
         private float _publishedBiolumeSurgeThreshold = 8f;
+        private float3 _lastWeatherEventCurrentVector;
+        private float3 _lastWeatherEventWindVector;
+        private uint _lastWeatherEventStateMask;
+        private float _lastWeatherEventIntensity;
+        private bool _hasPublishedWeatherEvent;
 
         /// <summary>
         /// True once the director has seeded its state and registered through <see cref="GlobalRegistry"/>.
@@ -302,6 +307,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalFloat(_NoirFogLutBlendId, 0f);
             Shader.SetGlobalVector(_NoirFogStratificationId, Vector4.zero);
             Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, 0f);
+            _hasPublishedWeatherEvent = false;
         }
 
         private void OnDestroy()
@@ -558,6 +564,27 @@ namespace Hecton8.Environment
             _debugCurrentVector = currentVectorManaged;
             _debugWindVector = windVectorManaged;
             _debugPhaseHoldTimer = _phaseHoldTimer;
+            PublishWeatherEventIfChanged();
+        }
+
+        private void PublishWeatherEventIfChanged()
+        {
+            uint stateMask = (uint)_runtimeSnapshot.StateMask;
+            if (_hasPublishedWeatherEvent &&
+                stateMask == _lastWeatherEventStateMask &&
+                math.abs(_runtimeSnapshot.WeatherIntensity - _lastWeatherEventIntensity) <= WeatherLutChangeEpsilon &&
+                math.lengthsq(_runtimeSnapshot.GlobalCurrentVector - _lastWeatherEventCurrentVector) <= CurrentSyncEpsilonSq &&
+                math.lengthsq(_runtimeSnapshot.GlobalWindVector - _lastWeatherEventWindVector) <= CurrentSyncEpsilonSq)
+            {
+                return;
+            }
+
+            _hasPublishedWeatherEvent = true;
+            _lastWeatherEventStateMask = stateMask;
+            _lastWeatherEventIntensity = _runtimeSnapshot.WeatherIntensity;
+            _lastWeatherEventCurrentVector = _runtimeSnapshot.GlobalCurrentVector;
+            _lastWeatherEventWindVector = _runtimeSnapshot.GlobalWindVector;
+            WeatherEvents.RaiseSnapshotUpdated(in _runtimeSnapshot);
         }
 
         private void UpdateBiomeLutState(float deltaTime, bool forceImmediate)

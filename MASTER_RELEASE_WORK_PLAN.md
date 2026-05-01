@@ -5,11 +5,18 @@ Approved For Use: `2026-04-05`
 Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this roadmap as current project truth.
+- This file is a product roadmap and historical working ledger, not a runtime proof document.
+- Where this roadmap says "source of truth", treat that as roadmap/product authority only; current source code, active docs indexes, and fresh verification logs win for implementation.
+- Play Mode deadlock, clean console, zero-GC, memory retention, and build readiness remain `PENDING VERIFICATION`.
+
 ## Summary
 
 This is the main production roadmap for HECTON-8.
 
-It replaces the previous master-plan as the single working source of truth for:
+It replaces the previous master-plan as the single working roadmap authority for:
 
 - product shell
 - build-truth blockers

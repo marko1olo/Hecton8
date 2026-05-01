@@ -4,7 +4,8 @@
 // Verifies real field-facing tool interactions without relying on live input.
 // ============================================================================
 
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Dev;
@@ -66,7 +67,7 @@ namespace Hecton8.Gameplay
             if (!runOnStart || _isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
         [ContextMenu("Run Field Tool Runtime Smoke Pass")]
@@ -75,85 +76,98 @@ namespace Hecton8.Gameplay
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
-        private IEnumerator RunSmokePass()
+        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
-                yield break;
+                return;
 
             AutoResolveSceneReferences();
             if (toolManager == null || playerInventory == null || playerBuilder == null || constructionManager == null)
             {
                 Debug.LogWarning($"[FieldToolSmoke] Missing references refs={DescribeRefs()}");
-                yield break;
+                return;
             }
 
             if (salvageProbeItem == null)
             {
                 Debug.LogWarning("[FieldToolSmoke] Missing salvage probe item.");
-                yield break;
+                return;
             }
 
             _isRunning = true;
-            _debugRunCount++;
-            _debugLastPhase = "Start";
-            _debugLastStep = "Begin";
-            _debugLastIssue = string.Empty;
-            if (startupDelay > 0f)
-                yield return new WaitForSecondsRealtime(startupDelay);
-
-            GameObject[] originalAssignments = SnapshotAssignments();
-            int originalSlot = toolManager.CurrentSlotIndex;
-
-            if (loadoutProvisioner != null)
+            try
             {
-                loadoutProvisioner.ProvisionFullToolKit();
-                loadoutProvisioner.ProvisionConstructionMaterials();
+                _debugRunCount++;
+                _debugLastPhase = "Start";
+                _debugLastStep = "Begin";
+                _debugLastIssue = string.Empty;
+                if (startupDelay > 0f)
+                    await DelayRealtimeAsync(startupDelay, cancellationToken);
+
+                GameObject[] originalAssignments = SnapshotAssignments();
+                int originalSlot = toolManager.CurrentSlotIndex;
+
+                if (loadoutProvisioner != null)
+                {
+                    loadoutProvisioner.ProvisionFullToolKit();
+                    loadoutProvisioner.ProvisionConstructionMaterials();
+                }
+
+                _debugLastStep = "WaitInitialToolIdle";
+                await WaitUntilAsync(
+                    () => toolManager != null && !toolManager.IsSwapping,
+                    equipTimeout * 2f,
+                    "Initial tool-manager settle",
+                    cancellationToken);
+
+                _debugLastPhase = "Salvage";
+                _debugLastStep = "RunSalvagePass";
+                bool salvagePass = await RunSalvagePassAsync(cancellationToken);
+                _debugLastSalvagePass = salvagePass;
+
+                _debugLastPhase = "Cutter";
+                _debugLastStep = "RunCutterPass";
+                bool cutterPass = await RunCutterPassAsync(cancellationToken);
+                _debugLastCutterPass = cutterPass;
+
+                _debugLastPhase = "Restore";
+                _debugLastStep = "RestoreLoadout";
+                await RestoreLoadoutAsync(originalAssignments, originalSlot, cancellationToken);
+
+                if (salvagePass && cutterPass)
+                {
+                    _debugLastPhase = "Complete";
+                    Debug.Log("[FieldToolSmoke] PASS salvage=True cutter=True");
+                }
+                else
+                {
+                    _debugLastPhase = "Failed";
+                    Debug.LogWarning($"[FieldToolSmoke] FAIL salvage={salvagePass} cutter={cutterPass}");
+                }
             }
-
-            _debugLastStep = "WaitInitialToolIdle";
-            yield return WaitUntil(
-                () => toolManager != null && !toolManager.IsSwapping,
-                equipTimeout * 2f,
-                "Initial tool-manager settle");
-
-            bool salvagePass = false;
-            bool cutterPass = false;
-
-            salvagePass = false;
-            _debugLastPhase = "Salvage";
-            _debugLastStep = "RunSalvagePass";
-            yield return RunSalvagePass(result => salvagePass = result);
-            _debugLastSalvagePass = salvagePass;
-
-            cutterPass = false;
-            _debugLastPhase = "Cutter";
-            _debugLastStep = "RunCutterPass";
-            yield return RunCutterPass(result => cutterPass = result);
-            _debugLastCutterPass = cutterPass;
-
-            _debugLastPhase = "Restore";
-            _debugLastStep = "RestoreLoadout";
-            yield return RestoreLoadout(originalAssignments, originalSlot);
-            _isRunning = false;
-
-            if (salvagePass && cutterPass)
+            catch (OperationCanceledException)
             {
-                _debugLastPhase = "Complete";
-                Debug.Log("[FieldToolSmoke] PASS salvage=True cutter=True");
+                _debugLastPhase = "Cancelled";
+                _debugLastIssue = "Cancelled";
+                LogVerbose("Cancelled.");
             }
-            else
+            catch (Exception ex)
             {
-                _debugLastPhase = "Failed";
-                Debug.LogWarning($"[FieldToolSmoke] FAIL salvage={salvagePass} cutter={cutterPass}");
+                _debugLastPhase = "Exception";
+                _debugLastIssue = "Unhandled exception";
+                Debug.LogError($"[FieldToolSmoke] UNHANDLED EXCEPTION: {ex}");
+            }
+            finally
+            {
+                _isRunning = false;
             }
         }
 
-        private IEnumerator RunSalvagePass(System.Action<bool> complete)
+        private async Awaitable<bool> RunSalvagePassAsync(CancellationToken cancellationToken)
         {
-            complete(false);
             _debugLastStep = "ResolveSalvagePrefab";
 
             GameObject salvagePrefab = toolManager.GetKnownToolPrefabForToolType<SalvageSamplerTool>();
@@ -161,14 +175,14 @@ namespace Hecton8.Gameplay
             {
                 _debugLastIssue = "Missing SalvageSamplerTool prefab registration";
                 Debug.LogWarning("[FieldToolSmoke] Missing SalvageSamplerTool prefab registration.");
-                yield break;
+                return false;
             }
 
             if (!salvagePrefab.TryGetComponent(out PlayerTool salvagePrefabTool) || salvagePrefabTool.ToolData == null)
             {
                 _debugLastIssue = "Salvage sampler prefab missing ToolData";
                 Debug.LogWarning("[FieldToolSmoke] Salvage sampler prefab is missing ToolData.");
-                yield break;
+                return false;
             }
 
             if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(salvagePrefabTool.ToolData.PersistentId)))
@@ -181,7 +195,7 @@ namespace Hecton8.Gameplay
             {
                 _debugLastIssue = "Failed to create salvage probe";
                 Debug.LogWarning("[FieldToolSmoke] Could not create salvage probe.");
-                yield break;
+                return false;
             }
 
             try
@@ -190,10 +204,11 @@ namespace Hecton8.Gameplay
                 if (!IsToolManagerHolstered())
                 {
                     toolManager.Holster();
-                    yield return WaitUntil(
+                    await WaitUntilAsync(
                         () => IsToolManagerHolstered(),
                         equipTimeout,
-                        "Holster before salvage");
+                        "Holster before salvage",
+                        cancellationToken);
                 }
 
                 _debugLastStep = "AssignSalvageSlot";
@@ -201,22 +216,23 @@ namespace Hecton8.Gameplay
                 _debugLastStep = "SwitchToSalvageSlot";
                 toolManager.SwitchToSlot(0);
                 _debugLastStep = "WaitEquipSalvage";
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => !toolManager.IsSwapping && toolManager.CurrentTool is SalvageSamplerTool,
                     equipTimeout,
-                    "Equip salvage sampler");
+                    "Equip salvage sampler",
+                    cancellationToken);
 
                 if (!(toolManager.CurrentTool is SalvageSamplerTool sampler))
                 {
                     _debugLastIssue = "Salvage sampler did not become active";
                     Debug.LogWarning("[FieldToolSmoke] Salvage sampler did not become active.");
-                    yield break;
+                    return false;
                 }
 
                 _debugLastStep = "UseSalvageSecondary";
                 sampler.UseSecondary(0f);
                 _debugLastStep = "SettleAfterSalvage";
-                yield return new WaitForSecondsRealtime(settleDelay);
+                await DelayRealtimeAsync(settleDelay, cancellationToken);
 
                 _debugLastStep = "VerifySalvage";
                 int afterCount = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(salvageProbeItem.PersistentId));
@@ -225,11 +241,11 @@ namespace Hecton8.Gameplay
                 {
                     _debugLastIssue = $"Salvage failed inventory={beforeCount}->{afterCount} probeActive={probe.activeSelf}";
                     Debug.LogWarning($"[FieldToolSmoke] Salvage failed inventory={beforeCount}->{afterCount} probeActive={probe.activeSelf}");
-                    yield break;
+                    return false;
                 }
 
                 Debug.Log($"[FieldToolSmoke] PASS salvage item={salvageProbeItem.itemName} inventory={beforeCount}->{afterCount}");
-                complete(true);
+                return true;
             }
             finally
             {
@@ -238,9 +254,8 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private IEnumerator RunCutterPass(System.Action<bool> complete)
+        private async Awaitable<bool> RunCutterPassAsync(CancellationToken cancellationToken)
         {
-            complete(false);
             _debugLastStep = "ResolveCutterPrefab";
 
             GameObject cutterPrefab = toolManager.GetKnownToolPrefabForToolType<LaserCutter>();
@@ -248,14 +263,14 @@ namespace Hecton8.Gameplay
             {
                 _debugLastIssue = "Missing LaserCutter prefab registration";
                 Debug.LogWarning("[FieldToolSmoke] Missing LaserCutter prefab registration.");
-                yield break;
+                return false;
             }
 
             if (!cutterPrefab.TryGetComponent(out PlayerTool cutterPrefabTool) || cutterPrefabTool.ToolData == null)
             {
                 _debugLastIssue = "Laser cutter prefab missing ToolData";
                 Debug.LogWarning("[FieldToolSmoke] Laser cutter prefab is missing ToolData.");
-                yield break;
+                return false;
             }
 
             if (!playerInventory.ContainsItem(Hecton.Localization.LocHash.Compute(cutterPrefabTool.ToolData.PersistentId)))
@@ -265,7 +280,7 @@ namespace Hecton8.Gameplay
             {
                 _debugLastIssue = "Builder has no active buildable";
                 Debug.LogWarning("[FieldToolSmoke] Builder has no active buildable.");
-                yield break;
+                return false;
             }
 
             Vector3 placePos = ResolvePlacementPose(cutterForwardDistance);
@@ -277,7 +292,7 @@ namespace Hecton8.Gameplay
             {
                 _debugLastIssue = "Could not deploy module for cutter pass";
                 Debug.LogWarning("[FieldToolSmoke] Could not deploy module for cutter pass.");
-                yield break;
+                return false;
             }
 
             BaseModule module = ResolveLastSpawnedModule();
@@ -285,17 +300,18 @@ namespace Hecton8.Gameplay
             {
                 _debugLastIssue = "No spawned module found after deploy";
                 Debug.LogWarning("[FieldToolSmoke] No spawned module found after deploy.");
-                yield break;
+                return false;
             }
 
             _debugLastStep = "HolsterForCutter";
             if (!IsToolManagerHolstered())
             {
                 toolManager.Holster();
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => IsToolManagerHolstered(),
                     equipTimeout,
-                    "Holster before cutter");
+                    "Holster before cutter",
+                    cancellationToken);
             }
 
             _debugLastStep = "AssignCutterSlot";
@@ -303,22 +319,23 @@ namespace Hecton8.Gameplay
             _debugLastStep = "SwitchToCutterSlot";
             toolManager.SwitchToSlot(1);
             _debugLastStep = "WaitEquipCutter";
-            yield return WaitUntil(
+            await WaitUntilAsync(
                 () => !toolManager.IsSwapping && toolManager.CurrentTool is LaserCutter,
                 equipTimeout,
-                "Equip laser cutter");
+                "Equip laser cutter",
+                cancellationToken);
 
             if (!(toolManager.CurrentTool is LaserCutter cutter))
             {
                 _debugLastIssue = "Laser cutter did not become active";
                 Debug.LogWarning("[FieldToolSmoke] Laser cutter did not become active.");
-                yield break;
+                return false;
             }
 
             _debugLastStep = "RecoverModuleWithCutter";
             bool recovered = cutter.DebugRecoverModule(module);
             _debugLastStep = "SettleAfterCutter";
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             _debugLastStep = "VerifyCutter";
             int afterModuleCount = constructionManager.ModuleCount;
@@ -329,11 +346,11 @@ namespace Hecton8.Gameplay
                 _debugLastIssue = $"Cutter failed recovered={recovered} registry={beforeModuleCount}->{afterModuleCount} moduleGone={moduleGone}";
                 Debug.LogWarning(
                     $"[FieldToolSmoke] Cutter failed recovered={recovered} registry={beforeModuleCount}->{afterModuleCount} moduleGone={moduleGone}");
-                yield break;
+                return false;
             }
 
             Debug.Log($"[FieldToolSmoke] PASS cutter registry={beforeModuleCount}->{afterModuleCount}");
-            complete(true);
+            return true;
         }
 
         private GameObject CreateSalvageProbe()
@@ -357,15 +374,19 @@ namespace Hecton8.Gameplay
             return probe;
         }
 
-        private IEnumerator RestoreLoadout(GameObject[] originalAssignments, int originalSlot)
+        private async Awaitable RestoreLoadoutAsync(
+            GameObject[] originalAssignments,
+            int originalSlot,
+            CancellationToken cancellationToken)
         {
             if (!IsToolManagerHolstered())
             {
                 toolManager.Holster();
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => IsToolManagerHolstered(),
                     equipTimeout,
-                    "Holster for restore");
+                    "Holster for restore",
+                    cancellationToken);
             }
 
             if (originalAssignments != null)
@@ -380,10 +401,11 @@ namespace Hecton8.Gameplay
                 originalAssignments[originalSlot] != null)
             {
                 toolManager.SwitchToSlot(originalSlot);
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => !toolManager.IsSwapping && toolManager.CurrentSlotIndex == originalSlot,
                     equipTimeout,
-                    "Restore original slot");
+                    "Restore original slot",
+                    cancellationToken);
             }
         }
 
@@ -436,30 +458,46 @@ namespace Hecton8.Gameplay
                    toolManager.CurrentSlotIndex < 0;
         }
 
-        private IEnumerator WaitUntil(System.Func<bool> predicate, float timeout, string label)
+        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
+        }
+
+        private async Awaitable<bool> WaitUntilAsync(
+            Func<bool> predicate,
+            float timeout,
+            string label,
+            CancellationToken cancellationToken)
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0.01f, timeout);
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 bool success = false;
                 try
                 {
                     success = predicate();
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogError($"[FieldToolSmoke] EXCEPTION {label}: {ex}");
-                    yield break;
+                    return false;
                 }
 
                 if (success)
-                    yield break;
+                    return true;
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             _debugLastIssue = $"TIMEOUT {label}";
             Debug.LogWarning($"[FieldToolSmoke] TIMEOUT {label} after {timeout:0.00}s");
+            return false;
         }
 
         private void AutoResolveSceneReferences()

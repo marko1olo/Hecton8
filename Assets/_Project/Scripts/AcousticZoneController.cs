@@ -728,7 +728,7 @@ namespace Hecton8.Audio
         {
             TryRegister();
             HectonAtmosphereManager.OnStateChanged += HandleAtmosphereStateChanged;
-            SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
+            SoundscapeEvents.RegisterTierChanged(HandleSoundscapeTierChanged);
             PhysicsEvents.OnImpact += HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             _stormInterferencePulseTimer = 0f;
@@ -785,7 +785,7 @@ namespace Hecton8.Audio
         private void OnDisable()
         {
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
-            SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            SoundscapeEvents.UnregisterTierChanged(HandleSoundscapeTierChanged);
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             _stormInterferencePulseTimer = 0f;
@@ -805,7 +805,7 @@ namespace Hecton8.Audio
         {
             TryUnregister();
             HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
-            SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+            SoundscapeEvents.UnregisterTierChanged(HandleSoundscapeTierChanged);
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
             ResetSourceLevelAcousticFallback();

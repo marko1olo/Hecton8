@@ -21,6 +21,10 @@ using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+#if UNITY_ADDRESSABLES_EXIST
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+#endif
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
@@ -45,6 +49,8 @@ namespace Hecton8.Bootstrap
         private const string CrashTelemetryRuntimeName = "[CrashTelemetryBuffer]";
         private const string HeadlessCommandLineArg = "-headless";
         private const int OptionalServiceTimeoutMilliseconds = 2000;
+        private const int ShaderWarmupTimeoutMilliseconds = 5000;
+        private const int SuspiciousGraphicsMemoryFallbackThresholdMb = 256;
         private const string FatalBootOverlayMessageTemplate =
             "BIOS ERROR 0xBOOT_FATAL\nPHASE: {0}\nACTION: SEE fatal_boot_crash.log";
         private const int FatalBootCrashLogBufferBytes = 24576;
@@ -176,10 +182,18 @@ namespace Hecton8.Bootstrap
         [Header("Bootstrap Prewarm")]
         [Tooltip("Shader variant collections warmed during MemoryPreWarm before scene or player activation.")]
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
+#if UNITY_ADDRESSABLES_EXIST
+        [Header("Bootstrap UI")]
+        [Tooltip("Addressable HUD/PDA prefabs that must instantiate before UI bootstrap can complete.")]
+        [SerializeField] private AssetReferenceGameObject[] uiAddressablePrefabs;
+#endif
 
         private bool _bootstrapRunInProgress;
         private bool _sceneActivationRunInProgress;
         private SceneBootstrap _pendingSceneBootstrap;
+#if UNITY_ADDRESSABLES_EXIST
+        private AsyncOperationHandle<GameObject>[] _uiPrefabInstanceHandles;
+#endif
         // COLD ALLOC: BootstrapDependencyNode[22] - cached Kahn topological service execution order - owner: GameBootstrapper
         private readonly BootstrapDependencyNode[] _bootstrapExecutionOrder = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
         private int _bootstrapExecutionOrderCount;
@@ -330,6 +344,9 @@ namespace Hecton8.Bootstrap
 
         private void OnDestroy()
         {
+#if UNITY_ADDRESSABLES_EXIST
+            ReleaseAddressableUIPrefabs();
+#endif
             if (_instance == this)
                 _instance = null;
         }
@@ -471,95 +488,146 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable<bool> InitializeHardwareCheckPhaseAsync(CancellationToken ct)
         {
-            ct.ThrowIfCancellationRequested();
-            _headlessBootMode = HasCommandLineArg(HeadlessCommandLineArg);
-            global::Hecton8.Core.HectonHardwareProfile hardwareProfile = CaptureHardwareProfile();
-            GlobalRegistry.RegisterHardwareProfile(in hardwareProfile);
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+                _headlessBootMode = HasCommandLineArg(HeadlessCommandLineArg);
+                global::Hecton8.Core.HectonHardwareProfile hardwareProfile = CaptureHardwareProfile();
+                GlobalRegistry.RegisterHardwareProfile(in hardwareProfile);
 
-            Scene activeScene = SceneManager.GetActiveScene();
-            if (!TryRecoverEntryVector(activeScene, false))
+                Scene activeScene = SceneManager.GetActiveScene();
+                if (!TryRecoverEntryVector(activeScene, false))
+                    return false;
+
+                RegisterSceneLoadGuard();
+                if (!_headlessBootMode)
+                    EnsureBootstrapAudioListener(activeScene);
+
+                bool dependencyGraphValid = TryBuildBootstrapDependencyExecutionOrder(
+                    _bootstrapExecutionOrder,
+                    out _bootstrapExecutionOrderCount);
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return dependencyGraphValid;
+            }
+            catch (OperationCanceledException)
+            {
                 return false;
-
-            RegisterSceneLoadGuard();
-            if (!_headlessBootMode)
-                EnsureBootstrapAudioListener(activeScene);
-
-            bool dependencyGraphValid = TryBuildBootstrapDependencyExecutionOrder(
-                _bootstrapExecutionOrder,
-                out _bootstrapExecutionOrderCount);
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            return dependencyGraphValid;
+            }
         }
 
         private async Awaitable<bool> InitializeMemoryPreWarmPhaseAsync(CancellationToken ct)
         {
-            _preWarmAssetsReady = false;
-            NativeArenaAllocator.Initialize();
-            if (!_headlessBootMode)
+            try
             {
-                VRAMEnforcer.InitializeRuntimeBudget();
-                SceneInstantiationGate.EnsureRuntimeInstance();
+                _preWarmAssetsReady = false;
+                NativeArenaAllocator.Initialize();
+                if (!_headlessBootMode)
+                {
+                    VRAMEnforcer.InitializeRuntimeBudget();
+                    SceneInstantiationGate.EnsureRuntimeInstance();
+                }
+
+                if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
+                    return false;
+
+                _preWarmAssetsReady = true;
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return true;
             }
-
-            if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
+            catch (OperationCanceledException)
+            {
                 return false;
-
-            _preWarmAssetsReady = true;
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            return true;
+            }
         }
 
         private async Awaitable<bool> InitializeCoreServicesPhaseAsync(CancellationToken ct)
         {
-            bool initialized = InitializeCoreLayer();
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            return initialized;
+            try
+            {
+                bool initialized = InitializeCoreLayer();
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return initialized;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private async Awaitable<bool> InitializeEnvironmentPhaseAsync(CancellationToken ct)
         {
-            bool initialized = InitializeEnvironmentLayer();
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            return initialized;
+            try
+            {
+                bool initialized = InitializeEnvironmentLayer();
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return initialized;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private async Awaitable<bool> InitializePlayerPhaseAsync(CancellationToken ct)
         {
-            bool initialized = InitializePlayerLayer();
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            return initialized;
+            try
+            {
+                bool initialized = InitializePlayerLayer();
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return initialized;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private async Awaitable<bool> InitializeUIPhaseAsync(CancellationToken ct)
         {
-            InitializeUILayer();
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            return true;
+            try
+            {
+                if (!await InitializeUILayerAsync(ct))
+                    return false;
+
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private async Awaitable<bool> InitializeSceneActivatePhaseAsync(CancellationToken ct)
         {
-            Scene activeScene = SceneManager.GetActiveScene();
-            if (IsBootstrapScene(activeScene))
+            try
             {
-                GameStartContextHolder.Reset();
-                if (_headlessBootMode)
+                Scene activeScene = SceneManager.GetActiveScene();
+                if (IsBootstrapScene(activeScene))
                 {
-                    BootstrapStatus.MarkMainMenuReached();
-                    return true;
+                    GameStartContextHolder.Reset();
+                    if (_headlessBootMode)
+                    {
+                        BootstrapStatus.MarkMainMenuReached();
+                        return true;
+                    }
+
+                    return await LoadMainMenuAsync(ct);
                 }
 
-                return await LoadMainMenuAsync(ct);
+                SceneBootstrap sceneBootstrap = _pendingSceneBootstrap;
+                if (sceneBootstrap == null)
+                    sceneBootstrap = UnityEngine.Object.FindAnyObjectByType<SceneBootstrap>();
+
+                if (sceneBootstrap == null)
+                    return true;
+
+                return await ExecuteSceneActivationAsync(sceneBootstrap, ct);
             }
-
-            SceneBootstrap sceneBootstrap = _pendingSceneBootstrap;
-            if (sceneBootstrap == null)
-                sceneBootstrap = UnityEngine.Object.FindAnyObjectByType<SceneBootstrap>();
-
-            if (sceneBootstrap == null)
-                return true;
-
-            return await ExecuteSceneActivationAsync(sceneBootstrap, ct);
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private async Awaitable<bool> RunSceneActivationAsync(SceneBootstrap sceneBootstrap, CancellationToken ownerToken)
@@ -567,6 +635,10 @@ namespace Hecton8.Bootstrap
             try
             {
                 return await ExecuteSceneActivationAsync(sceneBootstrap, ownerToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
             }
             finally
             {
@@ -579,53 +651,71 @@ namespace Hecton8.Bootstrap
 
         private static async Awaitable<bool> ExecuteSceneActivationAsync(SceneBootstrap sceneBootstrap, CancellationToken ct)
         {
-            if (sceneBootstrap == null)
-                return false;
+            try
+            {
+                if (sceneBootstrap == null)
+                    return false;
 
-            return await sceneBootstrap.ExecuteSceneActivationAsync(ct);
+                return await sceneBootstrap.ExecuteSceneActivationAsync(ct);
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private static async Awaitable<bool> LoadMainMenuAsync(CancellationToken ct)
         {
-            AsyncOperation loadOperation = SceneManager.LoadSceneAsync(MainMenuSceneName, LoadSceneMode.Single);
-            if (loadOperation == null)
-                return false;
-
-            loadOperation.allowSceneActivation = false;
-            int waitFrames = 0;
-            while (loadOperation.progress < 0.9f)
+            AsyncOperation loadOperation = null;
+            try
             {
-                ct.ThrowIfCancellationRequested();
-                if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
-                {
-                    LogBootstrapSceneLoadWatchdog("main-menu load", loadOperation.progress, waitFrames);
+                loadOperation = SceneManager.LoadSceneAsync(MainMenuSceneName, LoadSceneMode.Single);
+                if (loadOperation == null)
                     return false;
+
+                loadOperation.allowSceneActivation = false;
+                int waitFrames = 0;
+                while (loadOperation.progress < 0.9f)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
+                    {
+                        LogBootstrapSceneLoadWatchdog("main-menu load", loadOperation.progress, waitFrames);
+                        return false;
+                    }
+
+                    waitFrames++;
+                    await Awaitable.NextFrameAsync(cancellationToken: ct);
                 }
 
-                waitFrames++;
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
-            }
-
-            if (!await WaitForBootstrapActivationGatesAsync(ct))
-                return false;
-
-            loadOperation.allowSceneActivation = true;
-            waitFrames = 0;
-            while (!loadOperation.isDone)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
-                {
-                    LogBootstrapSceneLoadWatchdog("main-menu activation", loadOperation.progress, waitFrames);
+                if (!await WaitForBootstrapActivationGatesAsync(ct))
                     return false;
+
+                loadOperation.allowSceneActivation = true;
+                waitFrames = 0;
+                while (!loadOperation.isDone)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
+                    {
+                        LogBootstrapSceneLoadWatchdog("main-menu activation", loadOperation.progress, waitFrames);
+                        return false;
+                    }
+
+                    waitFrames++;
+                    await Awaitable.NextFrameAsync(cancellationToken: ct);
                 }
 
-                waitFrames++;
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                BootstrapStatus.MarkMainMenuReached();
+                return true;
             }
+            catch (OperationCanceledException)
+            {
+                if (loadOperation != null && !loadOperation.isDone)
+                    loadOperation.allowSceneActivation = true;
 
-            BootstrapStatus.MarkMainMenuReached();
-            return true;
+                return false;
+            }
         }
 
         private static void LogBootstrapSceneLoadWatchdog(string stageName, float progress, int waitFrames)
@@ -685,6 +775,16 @@ namespace Hecton8.Bootstrap
             if (Application.isPlaying)
                 DontDestroyOnLoad(inputManager.gameObject);
 
+            RebindingManager rebindingManager = UnityEngine.Object.FindAnyObjectByType<RebindingManager>(FindObjectsInactive.Include);
+            if (rebindingManager == null)
+            {
+                GameObject rebindingRoot = new GameObject("[RebindingManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned input binding service - owner: GameBootstrapper
+                rebindingManager = rebindingRoot.AddComponent<RebindingManager>();
+            }
+
+            if (Application.isPlaying && rebindingManager != null)
+                DontDestroyOnLoad(rebindingManager.gameObject);
+
             ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
             if (!InitializeBootstrapLayerNodes(BootstrapPhase.Player))
                 return false;
@@ -694,32 +794,137 @@ namespace Hecton8.Bootstrap
             return true;
         }
 
-        private void InitializeUILayer()
+        private async Awaitable<bool> InitializeUILayerAsync(CancellationToken ct)
         {
             // No UI-layer GlobalRegistry adapter exists yet.
             // Existing menu/HUD ownership remains on scene-authored controllers.
+            UIStateStore.EnsureInitialized();
+#if UNITY_ADDRESSABLES_EXIST
+            if (!await LoadAddressableUIPrefabsAsync(ct))
+                return false;
+#endif
+            await Awaitable.NextFrameAsync(cancellationToken: ct);
+            return true;
+        }
+
+        private async Awaitable<bool> LoadAddressableUIPrefabsAsync(CancellationToken ct)
+        {
+#if UNITY_ADDRESSABLES_EXIST
+            int prefabCount = uiAddressablePrefabs != null ? uiAddressablePrefabs.Length : 0;
+            if (prefabCount <= 0)
+                return true;
+
+            if (_uiPrefabInstanceHandles == null || _uiPrefabInstanceHandles.Length != prefabCount)
+            {
+                ReleaseAddressableUIPrefabs();
+                _uiPrefabInstanceHandles = new AsyncOperationHandle<GameObject>[prefabCount]; // COLD ALLOC: AsyncOperationHandle<GameObject>[uiAddressablePrefabs.Length] - UI bootstrap readiness handles - owner: GameBootstrapper
+            }
+
+            for (int i = 0; i < prefabCount; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                AssetReferenceGameObject prefabReference = uiAddressablePrefabs[i];
+                if (prefabReference == null || !prefabReference.RuntimeKeyIsValid())
+                    continue;
+
+                AsyncOperationHandle<GameObject> existingHandle = _uiPrefabInstanceHandles[i];
+                if (existingHandle.IsValid())
+                    continue;
+
+                _uiPrefabInstanceHandles[i] = prefabReference.InstantiateAsync(transform);
+            }
+
+            for (int i = 0; i < prefabCount; i++)
+            {
+                AsyncOperationHandle<GameObject> handle = _uiPrefabInstanceHandles[i];
+                if (!handle.IsValid())
+                    continue;
+
+                while (!handle.IsDone)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    await Awaitable.NextFrameAsync(cancellationToken: ct);
+                    handle = _uiPrefabInstanceHandles[i];
+                }
+
+                if (handle.Status != AsyncOperationStatus.Succeeded || handle.Result == null)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogError("[GameBootstrapper] UI addressable prefab failed during bootstrap UI gate.");
+#endif
+                    return false;
+                }
+            }
+
+            await Awaitable.NextFrameAsync(cancellationToken: ct);
+            return true;
+#else
+            ct.ThrowIfCancellationRequested();
+            await Awaitable.NextFrameAsync(cancellationToken: ct);
+            return true;
+#endif
+        }
+
+        private void ReleaseAddressableUIPrefabs()
+        {
+#if UNITY_ADDRESSABLES_EXIST
+            if (_uiPrefabInstanceHandles == null)
+                return;
+
+            for (int i = 0; i < _uiPrefabInstanceHandles.Length; i++)
+            {
+                AsyncOperationHandle<GameObject> handle = _uiPrefabInstanceHandles[i];
+                if (handle.IsValid())
+                    Addressables.ReleaseInstance(handle);
+
+                _uiPrefabInstanceHandles[i] = default;
+            }
+#endif
         }
 
         private async Awaitable<bool> WarmConfiguredShaderVariantCollectionsAsync(CancellationToken ct)
         {
-            if (_headlessBootMode)
-                return true;
-
-            int collectionCount = shaderVariantCollections != null ? shaderVariantCollections.Length : 0;
-            for (int i = 0; i < collectionCount; i++)
+            try
             {
-                ct.ThrowIfCancellationRequested();
-                ShaderVariantCollection collection = shaderVariantCollections[i];
-                if (collection == null)
-                    continue;
+                if (_headlessBootMode)
+                    return true;
 
-                collection.WarmUp();
+                Stopwatch warmupStopwatch = Stopwatch.StartNew();
+                int collectionCount = shaderVariantCollections != null ? shaderVariantCollections.Length : 0;
+                for (int i = 0; i < collectionCount; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (warmupStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds)
+                    {
+                        LogOptionalBootstrapWarning("Shader warmup exceeded 5000ms before all collections completed. Remaining warmup skipped.");
+                        return true;
+                    }
+
+                    ShaderVariantCollection collection = shaderVariantCollections[i];
+                    if (collection == null)
+                        continue;
+
+                    Stopwatch collectionStopwatch = Stopwatch.StartNew();
+                    collection.WarmUp();
+                    collectionStopwatch.Stop();
+                    if (collectionStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds ||
+                        warmupStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds)
+                    {
+                        LogOptionalBootstrapWarning("Shader warmup exceeded 5000ms. Remaining warmup skipped.");
+                        return true;
+                    }
+
+                    await Awaitable.NextFrameAsync(cancellationToken: ct);
+                }
+
                 await Awaitable.NextFrameAsync(cancellationToken: ct);
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return true;
             }
-
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
-            return true;
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private static bool AreBootstrapActivationGatesReady()
@@ -733,21 +938,28 @@ namespace Hecton8.Bootstrap
 
         private static async Awaitable<bool> WaitForBootstrapActivationGatesAsync(CancellationToken ct)
         {
-            int waitFrames = 0;
-            while (!AreBootstrapActivationGatesReady())
+            try
             {
-                ct.ThrowIfCancellationRequested();
-                if (waitFrames >= BootstrapJobWaitWatchdogFrames)
+                int waitFrames = 0;
+                while (!AreBootstrapActivationGatesReady())
                 {
-                    LogBootstrapSceneLoadWatchdog("asset activation gates", 0.9f, waitFrames);
-                    return false;
+                    ct.ThrowIfCancellationRequested();
+                    if (waitFrames >= BootstrapJobWaitWatchdogFrames)
+                    {
+                        LogBootstrapSceneLoadWatchdog("asset activation gates", 0.9f, waitFrames);
+                        return false;
+                    }
+
+                    waitFrames++;
+                    await Awaitable.NextFrameAsync(cancellationToken: ct);
                 }
 
-                waitFrames++;
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                return true;
             }
-
-            return true;
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         private bool InitializeBootstrapLayerNodes(BootstrapPhase phase)
@@ -908,7 +1120,7 @@ namespace Hecton8.Bootstrap
                 }
 
                 case BootstrapDependencyNode.InputDispatcher:
-                    return EnsureInputDispatcherRegistered() != null && GlobalRegistry.Input != null;
+                    return EnsureInputDispatcherRegistered() != null && GlobalRegistry.RegisteredInput != null;
 
                 case BootstrapDependencyNode.PlayerRuntimeContextService:
                 {
@@ -1196,7 +1408,7 @@ namespace Hecton8.Bootstrap
 
         private static InputDispatcher EnsureInputDispatcherRegistered()
         {
-            if (GlobalRegistry.Input is InputDispatcher registeredDispatcher)
+            if (GlobalRegistry.RegisteredInput is InputDispatcher registeredDispatcher)
             {
                 registeredDispatcher.BindNativeInputManager(_bootstrapInputManager);
                 return registeredDispatcher;
@@ -1322,11 +1534,15 @@ namespace Hecton8.Bootstrap
             int graphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
             int systemMemoryMb = Mathf.Max(0, SystemInfo.systemMemorySize);
             int processorCount = Mathf.Max(1, SystemInfo.processorCount);
+            global::Hecton8.Core.HectonQualityTier qualityTier = graphicsMemoryMb < SuspiciousGraphicsMemoryFallbackThresholdMb
+                ? global::Hecton8.Core.HectonQualityTier.Low
+                : ResolveQualityTier(graphicsMemoryMb, systemMemoryMb, processorCount);
+
             return new global::Hecton8.Core.HectonHardwareProfile(
                 graphicsMemoryMb,
                 systemMemoryMb,
                 processorCount,
-                ResolveQualityTier(graphicsMemoryMb, systemMemoryMb, processorCount));
+                qualityTier);
         }
 
         private static global::Hecton8.Core.HectonQualityTier ResolveQualityTier(int graphicsMemoryMb, int systemMemoryMb, int processorCount)
@@ -1458,8 +1674,17 @@ namespace Hecton8.Bootstrap
             }
 
             Debug.LogError(cycleReport.ToString());
-            BootstrapBiosErrorOverlay.Show("BIOS ERROR 0xBOOT_CYCLE\nACTION: SEE CONSOLE / TELEMETRY");
+            bool biosShown = BootstrapBiosErrorOverlay.Show("BIOS ERROR 0xBOOT_CYCLE\nACTION: SEE CONSOLE / TELEMETRY");
+            QuitForFatalBootstrapCycleInReleaseIfNeeded(biosShown);
             return false;
+        }
+
+        private static void QuitForFatalBootstrapCycleInReleaseIfNeeded(bool biosShown)
+        {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            if (!biosShown && Application.isPlaying)
+                Application.Quit(-1);
+#endif
         }
 
         private static string ResolveBootstrapDependencyNodeName(BootstrapDependencyNode node)
@@ -1616,6 +1841,10 @@ namespace Hecton8.Bootstrap
                     await Awaitable.NextFrameAsync(cancellationToken: ct);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             finally
             {
                 handle.Complete();
@@ -1735,6 +1964,20 @@ namespace Hecton8.Bootstrap
         {
         }
 
+        /// <summary>
+        /// Compatibility stub for legacy callers that still name one-shot playback.
+        /// </summary>
+        public void PlayOneShot(AudioClip clip)
+        {
+        }
+
+        /// <summary>
+        /// Compatibility stub for legacy callers that still name one-shot playback.
+        /// </summary>
+        public void PlayOneShot(AudioClip clip, float volume)
+        {
+        }
+
         /// <inheritdoc />
         public bool TryGetAcousticRadarPayload(out NativeArray<float> radialIntensityBins, out int radialResolution)
         {
@@ -1780,9 +2023,9 @@ namespace Hecton8.Bootstrap
 
     internal static class BootstrapBiosErrorOverlay
     {
-        internal static void Show(string message)
+        internal static bool Show(string message)
         {
-            HardwareErrorCanvas.Show(message);
+            return HardwareErrorCanvas.Show(message);
         }
 
         internal static void Hide()
@@ -1807,20 +2050,28 @@ namespace Hecton8.Bootstrap
             _instance = null;
         }
 
-        internal static void Show(string message)
+        internal static bool Show(string message)
         {
             if (GameBootstrapper.IsHeadlessBootMode || Application.isBatchMode)
             {
                 // One-time critical init failure; headless cannot render the BIOS canvas.
                 Debug.LogError(message);
-                return;
+                return false;
             }
 
-            HardwareErrorCanvas overlay = EnsureInstance();
-            if (overlay == null)
-                return;
+            try
+            {
+                HardwareErrorCanvas overlay = EnsureInstance();
+                if (overlay == null)
+                    return false;
 
-            overlay.ApplyMessage(message);
+                return overlay.ApplyMessage(message);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                return false;
+            }
         }
 
         internal static void Hide()
@@ -1866,15 +2117,16 @@ namespace Hecton8.Bootstrap
             BuildVisualTree();
         }
 
-        private void ApplyMessage(string message)
+        private bool ApplyMessage(string message)
         {
             if (_messageText == null)
                 BuildVisualTree();
 
             if (_messageText == null)
-                return;
+                return false;
 
             _messageText.text = message;
+            return true;
         }
 
         private void BuildVisualTree()

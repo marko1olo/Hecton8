@@ -708,7 +708,8 @@ Shader "NASAPunk/SuitVisor"
                 float hudOccluded = sceneDepthValid * step(linearSceneDepth + 0.002, linearFragDepth) * step(0.001, hudAlpha);
                 if (hudOccluded > 0.5)
                 {
-                    float bayer = Bayer4x4(screenUV * _ScaledScreenParams.xy);
+                    float2 screenPixel = floor(IN.positionCS.xy);
+                    float bayer = Bayer4x4(screenPixel);
                     clip((hudAlpha * 0.2) - bayer);
                 }
 

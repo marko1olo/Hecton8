@@ -1,3 +1,4 @@
+using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -8,6 +9,8 @@ using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.Visor;
 using Hecton8.World;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Hecton8.Scavenging
@@ -24,12 +27,15 @@ namespace Hecton8.Scavenging
         private const int DebrisPoolWarmupCount = 96;
         private const int MinimumImpactDebrisCount = 3;
         private const int MaximumImpactDebrisCount = 5;
-        private const float ImpactDebrisLifetimeSeconds = 5f;
+        private const float ImpactDebrisLifetimeSeconds = 4f;
         private const float ImpactDebrisSinkDurationSeconds = 1.15f;
         private const float ImpactDebrisSinkDepthMultiplier = 1.6f;
         private const float DefaultFirstYieldSampleSeconds = 0.12f;
         private const float MinimumYieldSampleSeconds = 0.016f;
         private const float MaximumYieldSampleSeconds = 0.35f;
+        private const int DepletionLockFree = 0;
+        private const int DepletionLockOwned = 1;
+        private static readonly int _SteamExplosionLayerMask = HectonLayerMasks.MountedSweepLayerMask;
         private static readonly Collider[] _steamExplosionOverlapBuffer = new Collider[16];
         private static readonly Rigidbody[] _steamExplosionBodyBuffer = new Rigidbody[16];
         private static GameObject s_runtimeDebrisPrefab;
@@ -128,8 +134,9 @@ namespace Hecton8.Scavenging
         private HectonVoxelEngine _cachedVoxelEngine;
         private float _lastYieldSampleTimeSeconds;
         private float _pressureMetamorphismProgressSeconds;
-        private float _fractionalYieldAccumulator;
+        private long _fractionalYieldRemainderGrams;
         private int _yieldDropCount;
+        private NativeArray<int> _depletionLock;
 
         /// <summary>Legacy scene-facing ID retained for compatibility systems.</summary>
         public string UniqueId => uniqueId;
@@ -192,6 +199,7 @@ namespace Hecton8.Scavenging
                 : (_meshRenderer != null ? _meshRenderer : ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(_cachedTransform));
 
             _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-node melt shader overrides — owner: ResourceNode
+            _depletionLock = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] — interlocked depletion gate for pooled resource tombstones — owner: ResourceNode
             ResetState();
         }
 
@@ -228,6 +236,12 @@ namespace Hecton8.Scavenging
             _persistentTombstoneId = 0UL;
             if (autoGenerateId)
                 uniqueId = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (_depletionLock.IsCreated)
+                _depletionLock.Dispose();
         }
 
         /// <summary>
@@ -530,7 +544,7 @@ namespace Hecton8.Scavenging
                 runtimeOrigin,
                 radius,
                 _steamExplosionOverlapBuffer,
-                ~0,
+                _SteamExplosionLayerMask,
                 QueryTriggerInteraction.Ignore);
             if (overlapCount <= 0)
                 return;
@@ -636,9 +650,34 @@ namespace Hecton8.Scavenging
             _lootSpawnBlockedLogged = false;
             _lastYieldSampleTimeSeconds = -1f;
             _pressureMetamorphismProgressSeconds = 0f;
-            _fractionalYieldAccumulator = 0f;
+            _fractionalYieldRemainderGrams = 0L;
             _yieldDropCount = 0;
+            ResetDepletionLock();
             ResetMeltProperties();
+        }
+
+        private unsafe bool TryAcquireDepletionLock()
+        {
+            if (!_depletionLock.IsCreated || _depletionLock.Length <= 0)
+                return !_isDepleted && !_despawnRequested;
+
+            int* lockPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_depletionLock);
+            return Interlocked.CompareExchange(ref lockPtr[0], DepletionLockOwned, DepletionLockFree) == DepletionLockFree;
+        }
+
+        private unsafe void ReleaseDepletionLock()
+        {
+            if (!_depletionLock.IsCreated || _depletionLock.Length <= 0)
+                return;
+
+            int* lockPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_depletionLock);
+            Interlocked.Exchange(ref lockPtr[0], DepletionLockFree);
+        }
+
+        private void ResetDepletionLock()
+        {
+            if (_depletionLock.IsCreated && _depletionLock.Length > 0)
+                _depletionLock[0] = DepletionLockFree;
         }
 
         private void TakeDamage(
@@ -661,6 +700,15 @@ namespace Hecton8.Scavenging
                 : 1f;
             float appliedDamage = Mathf.Max(0.01f, amount / hardness);
             float previousHealth = _currentHealth;
+            float nextHealth = previousHealth - appliedDamage;
+            bool depletionHit = nextHealth <= 0f;
+            bool depletionLockAcquired = false;
+            if (depletionHit)
+            {
+                depletionLockAcquired = TryAcquireDepletionLock();
+                if (!depletionLockAcquired)
+                    return;
+            }
 
             if (allowIncrementalYield)
                 TryEmitIncrementalYield(descriptor, Mathf.Max(toolPower, amount), elapsedSeconds, hitPoint, hitNormal);
@@ -668,13 +716,21 @@ namespace Hecton8.Scavenging
             if (allowImpactDebris)
                 SpawnImpactDebris(hitPoint, hitNormal, Mathf.Max(toolPower, amount));
 
-            _currentHealth -= appliedDamage;
+            _currentHealth = nextHealth;
             if (_currentHealth > 0f)
+            {
+                if (depletionLockAcquired)
+                    ReleaseDepletionLock();
+
                 return;
+            }
 
             if (!TrySpawnLoot())
             {
                 _currentHealth = previousHealth;
+                if (depletionLockAcquired)
+                    ReleaseDepletionLock();
+
                 return;
             }
 
@@ -698,18 +754,23 @@ namespace Hecton8.Scavenging
             if (primaryYieldItem == null)
                 return;
 
-            float yieldUnits = ResourceYieldMath.EvaluateYieldUnits(
+            float extractedMassKg = ResourceYieldMath.EvaluateExtractedMassKg(
                 Mathf.Max(0.01f, toolPower),
                 Mathf.Max(0.01f, descriptor.ToolResistance),
-                Mathf.Max(MinimumYieldSampleSeconds, elapsedSeconds),
-                Mathf.Max(0.05f, descriptor.HarvestDurationSeconds));
-            if (yieldUnits <= 0f)
+                Mathf.Max(MinimumYieldSampleSeconds, elapsedSeconds));
+            if (extractedMassKg <= 0f)
                 return;
 
-            _fractionalYieldAccumulator += yieldUnits;
-            int wholeUnits = Mathf.FloorToInt(_fractionalYieldAccumulator);
+            long extractedGrams = ResourceYieldMath.KilogramsToWholeGrams(extractedMassKg);
+            long unitItemMassGrams = Mathf.Max(1, ResourceYieldMath.KilogramsToWholeGrams(Mathf.Max(0.01f, resourceTemplate.UnitItemMassKg)));
+            long availableGrams = _fractionalYieldRemainderGrams + extractedGrams;
+            long wholeUnitsLong = unitItemMassGrams > 0L ? availableGrams / unitItemMassGrams : 0L;
+            int wholeUnits = wholeUnitsLong > int.MaxValue ? int.MaxValue : (int)wholeUnitsLong;
             if (wholeUnits <= 0)
+            {
+                _fractionalYieldRemainderGrams = availableGrams;
                 return;
+            }
 
             int emittedCount = 0;
             uint seed = unchecked((uint)_persistentTombstoneId) ^ ((uint)_yieldDropCount * 0x9E3779B9u);
@@ -723,7 +784,14 @@ namespace Hecton8.Scavenging
             }
 
             if (emittedCount > 0)
-                _fractionalYieldAccumulator -= emittedCount;
+            {
+                long remainingGrams = availableGrams - (emittedCount * unitItemMassGrams);
+                _fractionalYieldRemainderGrams = remainingGrams > 0L ? remainingGrams : 0L;
+            }
+            else
+            {
+                _fractionalYieldRemainderGrams = availableGrams;
+            }
         }
 
         private bool TryDropYieldItem(ItemData itemData, Vector3 hitPoint, Vector3 hitNormal, uint seed)

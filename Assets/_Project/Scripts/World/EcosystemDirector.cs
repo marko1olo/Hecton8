@@ -37,7 +37,7 @@ namespace Hecton8.World
         private const int MinimumSectorCapacity = 16;
         private const int MinimumPredationEventCapacity = 32;
         private const float DefaultHostilityPeakHoldSeconds = 18f;
-        private const float LogicalLodFullSimDistanceMeters = 50f;
+        private const float LogicalLodFullSimDistanceMeters = 40f;
         private const float LogicalLodDataOnlyDistanceMeters = 150f;
         private const float ThermalSpawnTemperatureThresholdCelsius = 40f;
         private const float ThermalSpawnDepthThresholdMeters = 2000f;
@@ -422,7 +422,7 @@ namespace Hecton8.World
             AbsoluteUniversePosition faunaAup = AbsoluteUniversePosition.FromRuntimePosition(faunaPosition);
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in faunaAup);
 
-            if (distanceSq <= (LogicalLodFullSimDistanceMeters * LogicalLodFullSimDistanceMeters))
+            if (distanceSq < (LogicalLodFullSimDistanceMeters * LogicalLodFullSimDistanceMeters))
                 return FaunaLogicalLodTier.FullSim;
 
             if (distanceSq <= (LogicalLodDataOnlyDistanceMeters * LogicalLodDataOnlyDistanceMeters))

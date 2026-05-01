@@ -5,6 +5,13 @@ Verification: `PENDING VERIFICATION`
 Owner: `Codex`
 Scope: `WorldProceduralScatterDirector` follow-up against `Docs/Scatter_Runtime/SCATTER_REFACTORING_MANIFESTO_V2.md`
 
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current runtime truth.
+- This is an execution plan for the scatter owner cleanup, not proof that scatter is profiler-clean, runtime-correct, or fully refactored.
+- Native memory teardown notes in older scatter docs must be rechecked against current `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`; do not blindly preserve local `.Complete()` barriers.
+- Source files and fresh Unity/profiler evidence win over this plan.
+
 ---
 
 ## Objective
@@ -17,7 +24,7 @@ Current truth:
 - `FastCandidateMap` exists
 - `ScatterWorkingMemory` exists
 - multi-floor placement keys exist
-- teardown order already calls `Complete()` before `Dispose()`
+- teardown order had already been reviewed as `Complete()` before `Dispose()` in the older path; current work must re-check this against the active deferred-disposal mandate instead of copying local barriers blindly
 
 Still missing or incomplete:
 

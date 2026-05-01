@@ -1,3 +1,6 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using System.Collections.Generic;
+#endif
 using UnityEngine;
 
 namespace Hecton8.World
@@ -55,6 +58,11 @@ namespace Hecton8.World
         [SerializeField, Min(1)]
         [Tooltip("Hard cap for macro-flora placements inside the density-clamp radius.")]
         private int floraDensityClampMacroCap = 50;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // COLD ALLOC: HashSet[256] - one-shot strict substrate missing logs per scatter chunk - owner: WorldProceduralScatterDirector
+        private readonly HashSet<long> _strictSubstrateMissingLoggedChunks = new HashSet<long>(256);
+#endif
 
         private bool PassesEnvironmentalEnvelope(
             in WorldProceduralFieldSampler.FieldSample fieldSample,
@@ -118,25 +126,36 @@ namespace Hecton8.World
             }
 
             if (!EnsureEnvironmentalVegetationBridgeResolved())
-                return true;
+            {
+                LogStrictSubstrateMissingOnce(absolutePosition);
+                return false;
+            }
 
             Vector3 runtimePosition = ToRuntimeScatterPosition(absolutePosition);
             if (!environmentalVegetationBridge.TrySampleFloraSubstrate(runtimePosition, out WorldProceduralPlacementRule.FloraSubstrateMask resolvedSubstrate))
-                return true;
+            {
+                LogStrictSubstrateMissingOnce(absolutePosition);
+                return false;
+            }
 
             return (runtimeRule.RequiredSubstrate & resolvedSubstrate) != 0;
         }
 
-        private static bool PassesClusterPatchEnvelope(
+        private bool PassesClusterPatchEnvelope(
             in ScatterRuntimeRuleEntry runtimeRule,
             in ScatterCandidatePreview candidatePreview)
         {
             if (runtimeRule.ClusterNoiseThreshold <= 0f)
                 return true;
 
+            float chunkSize = Mathf.Max(1f, _runtimeStreamingState.ChunkSize);
+            int chunkX = Mathf.FloorToInt(candidatePreview.Position.x / chunkSize);
+            int chunkZ = Mathf.FloorToInt(candidatePreview.Position.z / chunkSize);
             float patchMask = ScatterMath.EvaluateClusterPatchMask01(
                 candidatePreview.Position.x,
                 candidatePreview.Position.z,
+                chunkX,
+                chunkZ,
                 runtimeRule.ClusterNoiseScale,
                 runtimeRule.RuleIdHash,
                 runtimeRule.Family != null ? runtimeRule.Family.FamilyHash : 0);
@@ -167,6 +186,27 @@ namespace Hecton8.World
 
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref environmentalVegetationBridge);
             return environmentalVegetationBridge != null;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogStrictSubstrateMissingOnce(Vector3 absolutePosition)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float chunkSize = Mathf.Max(1f, _runtimeStreamingState.ChunkSize);
+            int chunkX = Mathf.FloorToInt(absolutePosition.x / chunkSize);
+            int chunkZ = Mathf.FloorToInt(absolutePosition.z / chunkSize);
+            long chunkKey = (((long)chunkX) << 32) ^ (uint)chunkZ;
+            if (!_strictSubstrateMissingLoggedChunks.Add(chunkKey))
+                return;
+
+            Debug.LogWarning(
+                "[WorldProceduralScatterDirector] Strict flora substrate unavailable; rejecting strict-envelope flora for chunk " +
+                chunkX +
+                "," +
+                chunkZ +
+                ".",
+                this);
+#endif
         }
 
         private static FloraBudgetClass ResolveFloraBudgetClass(WorldPrefabFamilyProfile family)

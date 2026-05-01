@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Ecosystem;
 using Hecton8.VFX;
 using UnityEngine;
@@ -108,5 +109,25 @@ namespace Hecton8.AI
 
         [Tooltip("Detection multiplier while the player is using a scooter.")]
         public float sensoryWeightScooter = 1.5f;
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            SanitizeAuthoringLayerMask(ref preyMask, nameof(preyMask));
+            SanitizeAuthoringLayerMask(ref predatorMask, nameof(predatorMask));
+        }
+
+        private void SanitizeAuthoringLayerMask(ref LayerMask mask, string fieldName)
+        {
+            int originalMask = mask.value;
+            if (!HectonLayerMasks.IsEverythingLayerMask(originalMask))
+                return;
+
+            mask = HectonLayerMasks.AllDefinedProjectLayersMask;
+            Debug.LogWarning(
+                "[FaunaSpeciesProfile] " + fieldName + " was Everything (-1). Replaced with HectonLayerMasks.AllDefinedProjectLayersMask.",
+                this);
+        }
+#endif
     }
 }

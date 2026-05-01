@@ -17,7 +17,7 @@ Mandates followed:
 - active `Docs/` items older than two days
 - excluded long-lived reference bundles and current-day materials
 - excluded `Docs/_Archive/` existing bundles
-- excluded `Docs/2026-04-20_Deepseek_Ideas_Reality_Audit/` because its last-write evidence is `2026-04-29`
+- later moved the Deepseek idea bundle to `Docs/DEPRECATED/External_And_Log_Bundles/2026-04-20_Deepseek_Ideas_Reality_Audit/`
 
 ## Moved Items
 

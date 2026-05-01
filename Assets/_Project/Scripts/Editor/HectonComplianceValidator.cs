@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -19,10 +20,13 @@ namespace Hecton8.Editor
         private const string CoreAsmdefPath = "Assets/_Project/Scripts/Hecton8.Core.asmdef";
         private const string EnforceEnvironmentVariable = "HECTON_COMPLIANCE_ENFORCE";
         private const int MaxReportedViolations = 128;
+        private const long DeferredValidationBudgetMilliseconds = 8L;
         private const string ComplianceFailureMessage =
             "[HectonComplianceValidator] Compliance gate failed. CI must reject this compilation until violations are removed.";
         private const string BurstContractMessage =
             "Burst job contract violation. All IJob structs require [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)].";
+        private const string UnsafeGuardPath = "Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs";
+        private const string UnsafeMemCpyNeedle = "UnsafeUtility." + "MemCpy";
         private static readonly string[] ForbiddenCoreReferences =
         {
             "UnityEngine.UI",
@@ -35,6 +39,8 @@ namespace Hecton8.Editor
             "GPUInstancer",
             "VolumetricLightBeam"
         };
+
+        private static DeferredValidationRun s_deferredRun;
 
         static HectonComplianceValidator()
         {
@@ -73,7 +79,13 @@ namespace Hecton8.Editor
             }
 
             bool enforce = ShouldEnforceAsBuildGate();
-            ValidateAllContracts(throwOnFailure: enforce, reportToConsole: enforce);
+            if (enforce)
+            {
+                ValidateAllContracts(throwOnFailure: true, reportToConsole: true);
+                return;
+            }
+
+            ScheduleDeferredValidation();
         }
 
         private static void ValidateAllContracts(bool throwOnFailure, bool reportToConsole)
@@ -82,8 +94,243 @@ namespace Hecton8.Editor
             ValidateBurstContracts(report);
             ValidateLayerMaskNameToLayerUsage(report);
             ValidateGameplayLinqUsage(report);
+            ValidateUnsafeMemCpyUsage(report);
             ValidateCoreAsmdefAcl(report);
             FailIfRequired(report, throwOnFailure, reportToConsole);
+        }
+
+        private static void ScheduleDeferredValidation()
+        {
+            s_deferredRun = new DeferredValidationRun();
+            EditorApplication.delayCall -= ContinueDeferredValidation;
+            EditorApplication.delayCall += ContinueDeferredValidation;
+        }
+
+        private static void ContinueDeferredValidation()
+        {
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall -= ContinueDeferredValidation;
+                EditorApplication.delayCall += ContinueDeferredValidation;
+                return;
+            }
+
+            DeferredValidationRun run = s_deferredRun;
+            if (run == null)
+                return;
+
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            while (stopwatch.ElapsedMilliseconds < DeferredValidationBudgetMilliseconds)
+            {
+                if (!StepDeferredValidation(run))
+                    break;
+            }
+
+            if (!run.IsComplete)
+            {
+                EditorApplication.delayCall -= ContinueDeferredValidation;
+                EditorApplication.delayCall += ContinueDeferredValidation;
+                return;
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.TotalViolations", run.Report.Count);
+            s_deferredRun = null;
+        }
+
+        private static bool StepDeferredValidation(DeferredValidationRun run)
+        {
+            switch (run.Phase)
+            {
+                case DeferredValidationPhase.BurstContracts:
+                    return StepBurstValidation(run);
+                case DeferredValidationPhase.LayerMask:
+                    return StepLayerMaskValidation(run);
+                case DeferredValidationPhase.GameplayLinq:
+                    return StepGameplayLinqValidation(run);
+                case DeferredValidationPhase.UnsafeMemCpy:
+                    return StepUnsafeMemCpyValidation(run);
+                case DeferredValidationPhase.CoreAsmdef:
+                    ValidateCoreAsmdefAcl(run.Report);
+                    run.Phase = DeferredValidationPhase.Complete;
+                    return true;
+                default:
+                    run.IsComplete = true;
+                    return false;
+            }
+        }
+
+        private static bool StepBurstValidation(DeferredValidationRun run)
+        {
+            if (run.Assemblies == null)
+                run.Assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            while (run.AssemblyIndex < run.Assemblies.Length)
+            {
+                if (run.CurrentTypes == null)
+                {
+                    Assembly assembly = run.Assemblies[run.AssemblyIndex];
+                    if (!ShouldScanAssembly(assembly))
+                    {
+                        run.AssemblyIndex++;
+                        continue;
+                    }
+
+                    run.CurrentTypes = GetTypesSafe(assembly);
+                    run.TypeIndex = 0;
+                }
+
+                if (run.TypeIndex >= run.CurrentTypes.Length)
+                {
+                    run.CurrentTypes = null;
+                    run.AssemblyIndex++;
+                    continue;
+                }
+
+                Type type = run.CurrentTypes[run.TypeIndex++];
+                if (type == null || !type.IsValueType || type.IsEnum || !ImplementsUnityJob(type))
+                    return true;
+
+                if (!HasRequiredBurstCompileContract(type))
+                {
+                    run.BurstViolationCount++;
+                    run.Report.Add("BURST001", type.FullName, 0, BurstContractMessage);
+                }
+
+                return true;
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.BurstContractViolations", run.BurstViolationCount);
+            run.Phase = DeferredValidationPhase.LayerMask;
+            return true;
+        }
+
+        private static bool StepLayerMaskValidation(DeferredValidationRun run)
+        {
+            if (run.RuntimeScriptPaths == null)
+                run.RuntimeScriptPaths = GetRuntimeScriptPaths();
+
+            while (run.PathIndex < run.RuntimeScriptPaths.Length)
+            {
+                if (run.CurrentLines == null)
+                {
+                    run.CurrentPath = run.RuntimeScriptPaths[run.PathIndex];
+                    run.CurrentLines = ReadAllLinesSafe(run.CurrentPath);
+                    run.LineIndex = 0;
+                }
+
+                if (run.LineIndex >= run.CurrentLines.Length)
+                {
+                    run.CurrentLines = null;
+                    run.PathIndex++;
+                    continue;
+                }
+
+                int lineIndex = run.LineIndex++;
+                string codeLine = StripLineComment(run.CurrentLines[lineIndex]);
+                if (codeLine.IndexOf("LayerMask.NameToLayer", StringComparison.Ordinal) < 0)
+                    return true;
+
+                string methodName = ResolveContainingMethodName(run.CurrentLines, lineIndex);
+                if (IsAllowedLayerInitializer(methodName))
+                    return true;
+
+                run.LayerMaskViolationCount++;
+                run.Report.Add(
+                    "LAYER001",
+                    run.CurrentPath,
+                    lineIndex + 1,
+                    "LayerMask.NameToLayer is only allowed in Awake or explicit initialization/cache methods.");
+                return true;
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.LayerMaskViolations", run.LayerMaskViolationCount);
+            run.PathIndex = 0;
+            run.CurrentLines = null;
+            run.Phase = DeferredValidationPhase.GameplayLinq;
+            return true;
+        }
+
+        private static bool StepGameplayLinqValidation(DeferredValidationRun run)
+        {
+            if (run.RuntimeScriptPaths == null)
+                run.RuntimeScriptPaths = GetRuntimeScriptPaths();
+
+            if (run.PathIndex >= run.RuntimeScriptPaths.Length)
+            {
+                SessionState.SetInt("HectonComplianceValidator.GameplayLinqViolations", run.GameplayLinqViolationCount);
+                run.PathIndex = 0;
+                run.CurrentLines = null;
+                run.Phase = DeferredValidationPhase.UnsafeMemCpy;
+                return true;
+            }
+
+            string path = run.RuntimeScriptPaths[run.PathIndex++];
+            string text = ReadAllTextSafe(path);
+            if (text.Length == 0 ||
+                text.IndexOf("namespace Hecton8.Gameplay", StringComparison.Ordinal) < 0)
+            {
+                return true;
+            }
+
+            int usingIndex = text.IndexOf("using System.Linq;", StringComparison.Ordinal);
+            if (usingIndex < 0)
+                return true;
+
+            run.GameplayLinqViolationCount++;
+            run.Report.Add(
+                "LINQ001",
+                path,
+                GetLineNumber(text, usingIndex),
+                "System.Linq is forbidden in Hecton8.Gameplay runtime code.");
+            return true;
+        }
+
+        private static bool StepUnsafeMemCpyValidation(DeferredValidationRun run)
+        {
+            if (run.RuntimeScriptPaths == null)
+                run.RuntimeScriptPaths = GetRuntimeScriptPaths();
+
+            while (run.PathIndex < run.RuntimeScriptPaths.Length)
+            {
+                if (run.CurrentLines == null)
+                {
+                    run.CurrentPath = run.RuntimeScriptPaths[run.PathIndex];
+                    if (IsUnsafeGuardPath(run.CurrentPath))
+                    {
+                        run.PathIndex++;
+                        continue;
+                    }
+
+                    run.CurrentLines = ReadAllLinesSafe(run.CurrentPath);
+                    run.LineIndex = 0;
+                }
+
+                if (run.LineIndex >= run.CurrentLines.Length)
+                {
+                    run.CurrentLines = null;
+                    run.PathIndex++;
+                    continue;
+                }
+
+                int lineIndex = run.LineIndex++;
+                string codeLine = StripLineComment(run.CurrentLines[lineIndex]);
+                if (codeLine.IndexOf(UnsafeMemCpyNeedle, StringComparison.Ordinal) < 0)
+                    return true;
+
+                run.UnsafeMemCpyViolationCount++;
+                run.Report.Add(
+                    "UNSAFE001",
+                    run.CurrentPath,
+                    lineIndex + 1,
+                    "Raw native memory copy is only allowed inside UnsafeMemoryCopyGuard.SafeCopy.");
+                return true;
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.UnsafeMemCpyViolations", run.UnsafeMemCpyViolationCount);
+            run.PathIndex = 0;
+            run.CurrentLines = null;
+            run.Phase = DeferredValidationPhase.CoreAsmdef;
+            return true;
         }
 
         private static void ValidateBurstContracts(ComplianceReport report)
@@ -171,6 +418,35 @@ namespace Hecton8.Editor
             }
 
             SessionState.SetInt("HectonComplianceValidator.GameplayLinqViolations", violationCount);
+        }
+
+        private static void ValidateUnsafeMemCpyUsage(ComplianceReport report)
+        {
+            int violationCount = 0;
+            string[] paths = GetRuntimeScriptPaths();
+            for (int pathIndex = 0; pathIndex < paths.Length; pathIndex++)
+            {
+                string path = paths[pathIndex];
+                if (IsUnsafeGuardPath(path))
+                    continue;
+
+                string[] lines = ReadAllLinesSafe(path);
+                for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
+                {
+                    string codeLine = StripLineComment(lines[lineIndex]);
+                    if (codeLine.IndexOf(UnsafeMemCpyNeedle, StringComparison.Ordinal) < 0)
+                        continue;
+
+                    violationCount++;
+                    report.Add(
+                        "UNSAFE001",
+                        path,
+                        lineIndex + 1,
+                        "Raw native memory copy is only allowed inside UnsafeMemoryCopyGuard.SafeCopy.");
+                }
+            }
+
+            SessionState.SetInt("HectonComplianceValidator.UnsafeMemCpyViolations", violationCount);
         }
 
         private static void ValidateCoreAsmdefAcl(ComplianceReport report)
@@ -271,6 +547,12 @@ namespace Hecton8.Editor
             string normalized = path.Replace('\\', '/');
             return normalized.StartsWith(SourceRoot + "/", StringComparison.Ordinal) &&
                    normalized.IndexOf("/Editor/", StringComparison.Ordinal) < 0;
+        }
+
+        private static bool IsUnsafeGuardPath(string path)
+        {
+            string normalized = path.Replace('\\', '/');
+            return string.Equals(normalized, UnsafeGuardPath, StringComparison.Ordinal);
         }
 
         private static string[] ReadAllLinesSafe(string path)
@@ -496,6 +778,36 @@ namespace Hecton8.Editor
 
                 return message.ToString();
             }
+        }
+
+        private enum DeferredValidationPhase
+        {
+            BurstContracts,
+            LayerMask,
+            GameplayLinq,
+            UnsafeMemCpy,
+            CoreAsmdef,
+            Complete
+        }
+
+        private sealed class DeferredValidationRun
+        {
+            public readonly ComplianceReport Report = new ComplianceReport();
+            public DeferredValidationPhase Phase;
+            public Assembly[] Assemblies;
+            public Type[] CurrentTypes;
+            public string[] RuntimeScriptPaths;
+            public string[] CurrentLines;
+            public string CurrentPath;
+            public int AssemblyIndex;
+            public int TypeIndex;
+            public int PathIndex;
+            public int LineIndex;
+            public int BurstViolationCount;
+            public int LayerMaskViolationCount;
+            public int GameplayLinqViolationCount;
+            public int UnsafeMemCpyViolationCount;
+            public bool IsComplete;
         }
     }
 }

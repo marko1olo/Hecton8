@@ -100,9 +100,13 @@ namespace Hecton8.Crafting
         private static readonly CraftingReferenceSlot[] _referenceSlots = new CraftingReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[128] - reference slot occupancy map prevents wrap overwrite before deferred flush - owner: CraftingEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        // COLD ALLOC: int[128] - reference slots released only after LateUpdate dispatch resolves listeners - owner: CraftingEvents
+        private static readonly int[] _referenceSlotsPendingRelease = new int[ReferenceSlotCapacity];
         private static NativeQueue<CraftingEventPayload> _pendingEvents;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
+
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -156,21 +160,34 @@ namespace Hecton8.Crafting
                 return;
             }
 
+            int releaseCount = 0;
             while (!_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                {
+                    ReleaseProcessedReferenceSlots(releaseCount);
                     return;
+                }
 
                 if (!_pendingEvents.TryDequeue(out CraftingEventPayload payload))
+                {
+                    ReleaseProcessedReferenceSlots(releaseCount);
                     return;
+                }
 
                 ICraftingEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnCraftingEvent(in payload);
 
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                if (IsValidReferenceSlot(payload.ReferenceSlot) && releaseCount < ReferenceSlotCapacity)
+                {
+                    _referenceSlotsPendingRelease[releaseCount] = payload.ReferenceSlot;
+                    releaseCount++;
+                }
             }
+
+            ReleaseProcessedReferenceSlots(releaseCount);
         }
 
         /// <summary>
@@ -397,6 +414,16 @@ namespace Hecton8.Crafting
                 _referencePendingCount--;
         }
 
+        private static void ReleaseProcessedReferenceSlots(int releaseCount)
+        {
+            for (int i = 0; i < releaseCount; i++)
+            {
+                int referenceSlot = _referenceSlotsPendingRelease[i];
+                _referenceSlotsPendingRelease[i] = -1;
+                ReleaseReferenceSlot(referenceSlot);
+            }
+        }
+
         private static bool IsValidReferenceSlot(int referenceSlot)
         {
             return (uint)referenceSlot < ReferenceSlotCapacity;
@@ -417,13 +444,14 @@ namespace Hecton8.Crafting
             {
                 _referenceSlots[i].Clear();
                 _referenceSlotOccupied[i] = false;
+                _referenceSlotsPendingRelease[i] = -1;
             }
         }
 
         private static uint ComputeFabricatorHash(Fabricator fabricator)
         {
             return fabricator != null
-                ? unchecked((uint)fabricator.GetInstanceID())
+                ? unchecked((uint)EntityId.ToULong(fabricator.GetEntityId()))
                 : 0u;
         }
 

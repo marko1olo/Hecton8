@@ -73,6 +73,7 @@ namespace Hecton8.World
         private BatchMaterialID _batchMaterialId;
         private Mesh _registeredMesh;
         private Material _registeredMaterial;
+        private GraphicsBuffer _registeredBatchBuffer;
 
         /// <summary>
         /// Gets whether an external landmark matrix buffer is currently bound.
@@ -131,7 +132,7 @@ namespace Hecton8.World
                 Shader.SetGlobalBuffer(LandmarkMatricesId, _uploadedMatrixBuffer);
                 if (_uploadedFadeBuffer != null)
                     Shader.SetGlobalBuffer(LandmarkFadeId, _uploadedFadeBuffer);
-                _batchRendererGroup.SetBatchBuffer(_batchId, _uploadedMatrixBuffer.bufferHandle);
+                SyncBatchBuffer(_uploadedMatrixBuffer);
             }
             else
             {
@@ -139,7 +140,7 @@ namespace Hecton8.World
                     return;
 
                 Shader.SetGlobalBuffer(LandmarkMatricesId, _externalMatrixBuffer);
-                _batchRendererGroup.SetBatchBuffer(_batchId, _externalMatrixBuffer.bufferHandle);
+                SyncBatchBuffer(_externalMatrixBuffer);
             }
 
             SyncBatchRegistration(activeMesh, activeMaterial);
@@ -371,6 +372,18 @@ namespace Hecton8.World
             }
         }
 
+        private void SyncBatchBuffer(GraphicsBuffer matrixBuffer)
+        {
+            if (_batchRendererGroup == null || _batchId.Equals(default) || matrixBuffer == null)
+                return;
+
+            if (ReferenceEquals(_registeredBatchBuffer, matrixBuffer))
+                return;
+
+            _batchRendererGroup.SetBatchBuffer(_batchId, matrixBuffer.bufferHandle);
+            _registeredBatchBuffer = matrixBuffer;
+        }
+
         private void EnsureOwnedMatrixUploadCapacity(int instanceCount)
         {
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
@@ -440,6 +453,7 @@ namespace Hecton8.World
                 _batchMaterialId = default;
                 _registeredMesh = null;
                 _registeredMaterial = null;
+                _registeredBatchBuffer = null;
             }
 
             if (_batchHandleBuffer != null)
@@ -455,6 +469,7 @@ namespace Hecton8.World
             {
                 _uploadedMatrixBuffer.Release();
                 _uploadedMatrixBuffer = null;
+                _registeredBatchBuffer = null;
             }
 
             if (_uploadedFadeBuffer != null)

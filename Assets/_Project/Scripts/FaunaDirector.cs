@@ -74,7 +74,7 @@ namespace Hecton8.AI
         private const string SmallPassiveProxyPrefabName = "SmallPassiveProxy";
         private const float PlayerResolveRetryInterval = 1f;
         private const float DirectorSlowTickIntervalSeconds = 0.5f;
-        private const float DehydrationDistanceMeters = 50f;
+        private const float DehydrationDistanceMeters = 40f;
         private const double DehydrationDistanceSq = DehydrationDistanceMeters * DehydrationDistanceMeters;
         private const float HibernationDistanceMeters = 150f;
         private const double HibernationDistanceSq = HibernationDistanceMeters * HibernationDistanceMeters;
@@ -951,7 +951,7 @@ namespace Hecton8.AI
                 }
 
                 AbsoluteUniversePosition creatureAup = AbsoluteUniversePosition.FromRuntimePosition(creature.transform.position);
-                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) <= DehydrationDistanceSq)
+                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) < DehydrationDistanceSq)
                     continue;
 
                 UpdateResidencyStateFromActiveCreature(in creature, in creatureAup, markDehydrated: true);
@@ -2350,7 +2350,7 @@ namespace Hecton8.AI
                 }
                 PoolSlotData slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
                 AbsoluteUniversePosition creatureAup = ReadPoolSlotPosition(in slotData);
-                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) > DehydrationDistanceSq)
+                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) >= DehydrationDistanceSq)
                     continue;
 
                 Vector3 runtimePosition = creatureAup.ToRuntimeFloat3();
@@ -4526,7 +4526,7 @@ namespace Hecton8.AI
 
             int total = 0;
             // ZERO GC: Dictionary<long,int>.Enumerator is a struct â€” GetEnumerator() returns by value, no heap alloc.
-            // foreach on Dictionary<K,V> is FORBIDDEN (boxes to IEnumerator). Explicit struct enumerator is ALLOWED.
+            // foreach on Dictionary<K,V> is FORBIDDEN (boxes enumerator state). Explicit struct enumerator is ALLOWED.
             Dictionary<long, int>.Enumerator enumerator = _largeThreatCountsPerMacroZone.GetEnumerator();
             while (enumerator.MoveNext())
             {

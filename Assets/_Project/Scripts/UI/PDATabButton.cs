@@ -6,6 +6,7 @@
 // ============================================================================
 
 using TMPro;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -123,8 +124,8 @@ namespace Hecton8.UI
 
         private void OnClick()
         {
-            if (_playerPDA != null)
-                _playerPDA.SetActiveTab(_tabIndex);
+            EntityCommand command = EntityCommand.CreateOpenPDATab(_tabIndex);
+            ThreadSafeCommandQueue.Enqueue(in command);
         }
     }
 }

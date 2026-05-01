@@ -22,9 +22,11 @@ namespace Hecton8.AI
         private const byte CaveSignedDistanceSolidThreshold = 128;
         private const float CaveVoxelDdaEpsilon = 0.000001f;
         private const int DeferredObstacleRayCount = 3;
+        private const int DeferredRaycastCommandCount = 4;
         private const int ForwardObstacleRayIndex = 0;
         private const int LeftObstacleRayIndex = 1;
         private const int RightObstacleRayIndex = 2;
+        private const int PlayerLightOcclusionRayIndex = 3;
         private const float SideObstacleRayYawDegrees = 45f;
 
         [Header("── Avoidance ──────────────────────────────────")]
@@ -101,9 +103,13 @@ namespace Hecton8.AI
         private RaycastHit _deferredForwardObstacleHit;
         private RaycastHit _deferredLeftObstacleHit;
         private RaycastHit _deferredRightObstacleHit;
+        private RaycastHit _deferredPlayerLightOcclusionHit;
         private bool _hasDeferredForwardObstacleHit;
         private bool _hasDeferredLeftObstacleHit;
         private bool _hasDeferredRightObstacleHit;
+        private bool _hasDeferredPlayerLightOcclusionHit;
+        private bool _hasQueuedPlayerLightOcclusionRay;
+        private float _queuedPlayerLightOcclusionDistance;
         private FoveatedTickRate _foveatedTickRate = FoveatedTickRate.Center60Hz;
         private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
         private float _foveatedImportanceScore = 1.0f;
@@ -144,9 +150,13 @@ namespace Hecton8.AI
             _deferredForwardObstacleHit = default;
             _deferredLeftObstacleHit = default;
             _deferredRightObstacleHit = default;
+            _deferredPlayerLightOcclusionHit = default;
             _hasDeferredForwardObstacleHit = false;
             _hasDeferredLeftObstacleHit = false;
             _hasDeferredRightObstacleHit = false;
+            _hasDeferredPlayerLightOcclusionHit = false;
+            _hasQueuedPlayerLightOcclusionRay = false;
+            _queuedPlayerLightOcclusionDistance = 0f;
             _foveatedTickRate = FoveatedTickRate.Center60Hz;
             _foveatedTickIntervalSeconds = 1.0f / 60.0f;
             _foveatedImportanceScore = 1.0f;
@@ -563,7 +573,7 @@ namespace Hecton8.AI
 
         internal int BuildDeferredRaycastCommands(RaycastCommand[] commands)
         {
-            if (commands == null || commands.Length < DeferredObstacleRayCount)
+            if (commands == null || commands.Length < DeferredRaycastCommandCount)
                 return 0;
 
             if (_selfTransform == null || lodDisabled || isSleeping)
@@ -611,7 +621,9 @@ namespace Hecton8.AI
                 rightDirection,
                 queryParameters,
                 distance);
-            return DeferredObstacleRayCount;
+
+            _hasQueuedPlayerLightOcclusionRay = TryBuildPlayerLightOcclusionCommand(commands, out int commandCount);
+            return commandCount;
         }
 
         internal void ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit)
@@ -629,6 +641,10 @@ namespace Hecton8.AI
                 case RightObstacleRayIndex:
                     _deferredRightObstacleHit = hit;
                     _hasDeferredRightObstacleHit = hit.collider != null;
+                    break;
+                case PlayerLightOcclusionRayIndex:
+                    _deferredPlayerLightOcclusionHit = hit;
+                    _hasDeferredPlayerLightOcclusionHit = hit.collider != null;
                     break;
             }
         }
@@ -656,6 +672,71 @@ namespace Hecton8.AI
         }
 
         public Transform GetPlayerTransform() => _playerTransform;
+
+        internal bool HasPlayerLightLineOfSight()
+        {
+            if (!_hasQueuedPlayerLightOcclusionRay)
+                return true;
+
+            if (!_hasDeferredPlayerLightOcclusionHit || _deferredPlayerLightOcclusionHit.collider == null)
+                return true;
+
+            float blockedDistance = Mathf.Max(0f, _deferredPlayerLightOcclusionHit.distance);
+            float targetDistance = Mathf.Max(0.01f, _queuedPlayerLightOcclusionDistance);
+            return blockedDistance >= targetDistance - 0.2f;
+        }
+
+        private bool TryBuildPlayerLightOcclusionCommand(RaycastCommand[] commands, out int commandCount)
+        {
+            commandCount = DeferredObstacleRayCount;
+            _deferredPlayerLightOcclusionHit = default;
+            _hasDeferredPlayerLightOcclusionHit = false;
+            _queuedPlayerLightOcclusionDistance = 0f;
+
+            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            if (_playerTransform == null && playerContext != null)
+                _playerTransform = playerContext.PlayerTransform;
+
+            bool flashlightActive = _hasReportedPlayerNoise && _lastReportedPlayerNoise.FlashlightOn;
+            if (!flashlightActive)
+            {
+                flashlightActive = playerContext != null &&
+                                   playerContext.Flashlight != null &&
+                                   playerContext.Flashlight.IsOn;
+            }
+
+            if (!reactToPlayerLight ||
+                !flashlightActive ||
+                _playerTransform == null)
+            {
+                return false;
+            }
+
+            Vector3 lightOrigin = _playerTransform.position;
+            Vector3 toCreature = _cachedSelfPosition - lightOrigin;
+            float distance = toCreature.magnitude;
+            if (distance <= 0.01f)
+                return false;
+
+            int occlusionMask =
+                HectonLayerMasks.TerrainLayerMask |
+                HectonLayerMasks.BaseModuleLayerMask |
+                HectonLayerMasks.VehicleLayerMask |
+                HectonLayerMasks.VoxelCaveLayerMask |
+                HectonLayerMasks.DebrisLayerMask;
+            if (occlusionMask == 0)
+                return false;
+
+            QueryParameters queryParameters = new QueryParameters(occlusionMask, false, QueryTriggerInteraction.Ignore);
+            _queuedPlayerLightOcclusionDistance = distance;
+            commands[PlayerLightOcclusionRayIndex] = new RaycastCommand(
+                lightOrigin,
+                toCreature / distance,
+                queryParameters,
+                distance);
+            commandCount = DeferredRaycastCommandCount;
+            return true;
+        }
 
         private bool TryResolveObstacleAvoidanceDirection(
             Vector3 fallbackForward,
@@ -725,9 +806,13 @@ namespace Hecton8.AI
             _deferredForwardObstacleHit = default;
             _deferredLeftObstacleHit = default;
             _deferredRightObstacleHit = default;
+            _deferredPlayerLightOcclusionHit = default;
             _hasDeferredForwardObstacleHit = false;
             _hasDeferredLeftObstacleHit = false;
             _hasDeferredRightObstacleHit = false;
+            _hasDeferredPlayerLightOcclusionHit = false;
+            _hasQueuedPlayerLightOcclusionRay = false;
+            _queuedPlayerLightOcclusionDistance = 0f;
         }
 
         private static bool HasPlayerLineOfSightThroughCaveSdf(Vector3 startPosition, Vector3 endPosition)

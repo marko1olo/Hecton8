@@ -860,7 +860,7 @@ namespace Hecton8.Crafting
             int normalizedQualityMilli = qualityMilli > 0 ? qualityMilli : 1000;
             bool isDegraded = (stateFlags & PlayerInventory.DegradedItemStateMask) != 0 ||
                               normalizedQualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
-            bool forceScrapYield = normalizedQualityMilli < 200;
+            bool forceScrapYield = normalizedQualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
             int reclaimPercent = isDegraded ? 30 : 80;
             if (!CraftingSystem.TryBuildDeconstructionYieldBuffer(
                     sourceRecipe,

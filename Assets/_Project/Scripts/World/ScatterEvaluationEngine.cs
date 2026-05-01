@@ -12,7 +12,7 @@ namespace Hecton8.World
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
         {
-            return ScatterMath.ResolveHeightLayerIndex(fieldSample, runtimeRule);
+            return ScatterCandidateEvaluator.ResolveHeightLayerIndex(fieldSample, runtimeRule);
         }
 
         public static int ResolveHeightLayerIndex(
@@ -20,36 +20,36 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile family,
             WorldPrefabFamilyProfile.StructureAccentRole structureAccentRole)
         {
-            return ScatterMath.ResolveHeightLayerIndex(caveProximity, family, structureAccentRole);
+            return ScatterCandidateEvaluator.ResolveHeightLayerIndex(caveProximity, family, structureAccentRole);
         }
 
         public static bool ShouldEvaluateScatterDomain(
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
         {
-            return ScatterMath.ShouldEvaluateScatterDomain(fieldSample, runtimeRule);
+            return ScatterCandidateEvaluator.ShouldEvaluateScatterDomain(fieldSample, runtimeRule);
         }
 
         public static float GetHorizontalDistanceSqr(Vector3 a, Vector3 b)
         {
-            return ScatterMath.GetHorizontalDistanceSqr(a, b);
+            return ScatterCandidateEvaluator.GetHorizontalDistanceSqr(a, b);
         }
 
         public static long ComposeScatterGridKey(int cellX, int cellZ)
         {
-            return ScatterMath.ComposeScatterGridKey(cellX, cellZ);
+            return ScatterCandidateEvaluator.ComposeScatterGridKey(cellX, cellZ);
         }
 
         public static float ResolveRequiredDistance(
             WorldProceduralScatterDirector.ScatterPlacement candidate,
             WorldProceduralScatterDirector.ScatterPlacement existing)
         {
-            return ScatterMath.ResolveRequiredDistance(candidate, existing);
+            return ScatterCandidateEvaluator.ResolveRequiredDistance(candidate, existing);
         }
 
         public static float GetEffectiveSpacing(WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
         {
-            return ScatterMath.GetEffectiveSpacing(family, rule);
+            return ScatterCandidateEvaluator.GetEffectiveSpacing(family, rule);
         }
     }
 }

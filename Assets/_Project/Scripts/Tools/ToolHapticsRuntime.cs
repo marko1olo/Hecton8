@@ -17,6 +17,7 @@ namespace Hecton8.Tools
         private const float DefaultDecayRate = 1.5f;
         private const float DefaultDurationSeconds = 0.18f;
         private const byte RightMotorMask = 0b0010;
+        private const float TwoPi = 6.28318530718f;
 
         private static ToolHapticsRuntime _instance;
 
@@ -38,6 +39,10 @@ namespace Hecton8.Tools
             public byte MotorMask;
             public byte BlendMode;
             public byte Reserved;
+            public float BaseLowFreqIntensity;
+            public float BaseHighFreqIntensity;
+            public float ElapsedSeconds;
+            public float FrequencyHz;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -75,7 +80,31 @@ namespace Hecton8.Tools
                 decayRate,
                 priority,
                 motorMask,
-                blendMode);
+                blendMode,
+                0f);
+        }
+
+        public static void EnqueueSinusoidalCommand(
+            float lowFreqIntensity,
+            float highFreqIntensity,
+            float durationSeconds,
+            float frequencyHz,
+            byte priority,
+            byte motorMask)
+        {
+            ToolHapticsRuntime runtime = EnsureRuntimeInstance();
+            if (runtime == null)
+                return;
+
+            runtime.EnqueueBackBufferCommand(
+                lowFreqIntensity,
+                highFreqIntensity,
+                durationSeconds,
+                0f,
+                priority,
+                motorMask,
+                1,
+                frequencyHz);
         }
 
         public static ToolHapticsRuntime EnsureRuntimeInstance()
@@ -105,10 +134,22 @@ namespace Hecton8.Tools
                 if (command.DurationRemaining <= 0f)
                     continue;
 
-                command.DurationRemaining = math.max(0f, command.DurationRemaining - deltaTime);
-                float decayFactor = math.exp(-math.max(0f, command.DecayRate) * math.max(0f, deltaTime));
-                command.LowFreqIntensity = math.saturate(command.LowFreqIntensity * decayFactor);
-                command.HighFreqIntensity = math.saturate(command.HighFreqIntensity * decayFactor);
+                float safeDeltaTime = math.max(0f, deltaTime);
+                command.DurationRemaining = math.max(0f, command.DurationRemaining - safeDeltaTime);
+                command.ElapsedSeconds = math.max(0f, command.ElapsedSeconds + safeDeltaTime);
+                if (command.BaseLowFreqIntensity <= 0f && command.LowFreqIntensity > 0f)
+                    command.BaseLowFreqIntensity = command.LowFreqIntensity;
+                if (command.BaseHighFreqIntensity <= 0f && command.HighFreqIntensity > 0f)
+                    command.BaseHighFreqIntensity = command.HighFreqIntensity;
+
+                float decayFactor = math.exp(-math.max(0f, command.DecayRate) * safeDeltaTime);
+                command.BaseLowFreqIntensity = math.saturate(command.BaseLowFreqIntensity * decayFactor);
+                command.BaseHighFreqIntensity = math.saturate(command.BaseHighFreqIntensity * decayFactor);
+                float wave = command.FrequencyHz > 0.001f
+                    ? 0.5f + (0.5f * math.sin(command.ElapsedSeconds * command.FrequencyHz * TwoPi))
+                    : 1f;
+                command.LowFreqIntensity = math.saturate(command.BaseLowFreqIntensity * wave);
+                command.HighFreqIntensity = math.saturate(command.BaseHighFreqIntensity * wave);
                 if (command.DurationRemaining <= 0f)
                     continue;
 
@@ -227,11 +268,14 @@ namespace Hecton8.Tools
             {
                 LowFreqIntensity = 0f,
                 HighFreqIntensity = normalizedPower,
+                BaseLowFreqIntensity = 0f,
+                BaseHighFreqIntensity = normalizedPower,
                 DurationRemaining = DefaultDurationSeconds,
                 DecayRate = DefaultDecayRate,
                 Priority = priority,
                 MotorMask = RightMotorMask,
-                BlendMode = 1
+                BlendMode = 1,
+                FrequencyHz = 0f
             };
         }
 
@@ -242,7 +286,8 @@ namespace Hecton8.Tools
             float decayRate,
             byte priority,
             byte motorMask,
-            byte blendMode)
+            byte blendMode,
+            float frequencyHz)
         {
             EnsureBuffers();
             TryRegisterUpdate();
@@ -269,11 +314,14 @@ namespace Hecton8.Tools
             {
                 LowFreqIntensity = resolvedLow,
                 HighFreqIntensity = resolvedHigh,
+                BaseLowFreqIntensity = resolvedLow,
+                BaseHighFreqIntensity = resolvedHigh,
                 DurationRemaining = resolvedDuration,
                 DecayRate = resolvedDecay,
                 Priority = priority,
                 MotorMask = motorMask,
-                BlendMode = (byte)math.clamp((int)blendMode, 0, 2)
+                BlendMode = (byte)math.clamp((int)blendMode, 0, 2),
+                FrequencyHz = math.isfinite(frequencyHz) ? math.max(0f, frequencyHz) : 0f
             };
         }
 

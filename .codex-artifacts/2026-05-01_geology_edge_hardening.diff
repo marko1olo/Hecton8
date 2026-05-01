@@ -1,0 +1,1238 @@
+﻿diff --git a/Assets/_Project/Scripts/Gameplay/DebrisManager.cs b/Assets/_Project/Scripts/Gameplay/DebrisManager.cs
+index 20e0249a..c3db2575 100644
+--- a/Assets/_Project/Scripts/Gameplay/DebrisManager.cs
++++ b/Assets/_Project/Scripts/Gameplay/DebrisManager.cs
+@@ -28,6 +28,9 @@ namespace Hecton8.Gameplay
+         private const float MinimumPower = 0.05f;
+         private const float WorldCullY = -5000f;
+         private const float MaximumChunkLifetime = 60f;
++        private const int DebrisPoolTelemetryId = unchecked((int)0x00DEB815u);
++        private const uint PendingBurstQueueFullReason = 0x44504251u;
++        private const uint ActiveSlotPoolExhaustedReason = 0x4450534Cu;
+ 
+         private static DebrisManager _instance;
+ 
+@@ -240,9 +243,15 @@ namespace Hecton8.Gameplay
+             float power01,
+             uint seed)
+         {
+-            if (definition == null || !definition.IsValid || _pendingBurstCount >= _pendingBursts.Length)
++            if (definition == null || !definition.IsValid)
+                 return false;
+ 
++            if (_pendingBurstCount >= _pendingBursts.Length)
++            {
++                PublishDebrisPoolExhausted(PendingBurstQueueFullReason);
++                return false;
++            }
++
+             _pendingBursts[_pendingBurstCount++] = new PendingBurstRequest
+             {
+                 Definition = definition,
+@@ -342,9 +351,15 @@ namespace Hecton8.Gameplay
+                     continue;
+ 
+                 int requiredSlots = CountValidChunks(request.Definition);
+-                if (requiredSlots <= 0 || CountFreeSlots() < requiredSlots)
++                if (requiredSlots <= 0)
+                     continue;
+ 
++                if (CountFreeSlots() < requiredSlots)
++                {
++                    PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
++                    continue;
++                }
++
+                 BurstRandom rng = new BurstRandom(request.Seed != 0u ? request.Seed : 1u);
+                 float power = math.max(MinimumPower, request.Power01);
+                 float3 hitNormal = math.normalizesafe(
+@@ -359,7 +374,10 @@ namespace Hecton8.Gameplay
+ 
+                     int slotIndex = FindFreeSlot();
+                     if (slotIndex < 0)
++                    {
++                        PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
+                         break;
++                    }
+ 
+                     Matrix4x4 worldMatrix = Matrix4x4.TRS(request.RuntimeOrigin, request.RuntimeRotation, Vector3.one) *
+                                             request.Definition.GetLocalMatrix(chunkIndex);
+@@ -589,6 +607,11 @@ namespace Hecton8.Gameplay
+             return -1;
+         }
+ 
++        private static void PublishDebrisPoolExhausted(uint reasonCode)
++        {
++            GlobalTelemetryBus.PublishPoolExhausted(DebrisPoolTelemetryId, reasonCode);
++        }
++
+         private void ResetActiveState()
+         {
+             if (_frontStates.IsCreated)
+diff --git a/Assets/_Project/Scripts/HectonVoxelVolume.cs b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+index e2813e08..c94cfa8c 100644
+--- a/Assets/_Project/Scripts/HectonVoxelVolume.cs
++++ b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+@@ -65,6 +65,10 @@ namespace Hecton8.Caves
+         private const byte DefaultDeltaMaterialId = 0;
+         private const byte SedimentDeltaMaterialId = 1;
+         private const byte MagmaDeltaMaterialId = 2;
++        private static readonly int _CollapseImpulseLayerMask = HectonLayerMasks.MountedSweepLayerMask;
++        private const float OrganicRootMoundMinimumOverlapMeters = 0.25f;
++        private const float OrganicRootMoundSeabedProbeStepMeters = 0.5f;
++        private const int OrganicRootMoundSeabedProbeSteps = 16;
+ 
+         private HectonVoxelEngine _engine;
+         private VoxelDeltaProcessor _deltaProcessor;
+@@ -903,7 +907,35 @@ namespace Hecton8.Caves
+ 
+             SetBakeState(VoxelBakeState.Pending);
+             Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(pos);
+-            _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, radius, strength, DefaultDeltaMaterialId);
++            float resolvedRadius = ResolveOrganicRootMoundWeldRadius(pos, radius);
++            _deltaProcessor.ApplyImmediateAbsoluteWeld(this, absolutePosition, resolvedRadius, strength, DefaultDeltaMaterialId);
++        }
++
++        private float ResolveOrganicRootMoundWeldRadius(Vector3 runtimePosition, float authoredRadius)
++        {
++            float safeRadius = Mathf.Max(0.01f, authoredRadius);
++            if (!TrySampleDensity(runtimePosition, out float densityAtRoot))
++                return safeRadius;
++
++            if (densityAtRoot >= 0f)
++                return safeRadius;
++
++            float distanceToSeabed = Mathf.Abs(densityAtRoot);
++            for (int i = 1; i <= OrganicRootMoundSeabedProbeSteps; i++)
++            {
++                float probeDistance = i * OrganicRootMoundSeabedProbeStepMeters;
++                Vector3 probePosition = runtimePosition + Vector3.down * probeDistance;
++                if (!TrySampleDensity(probePosition, out float probeDensity))
++                    continue;
++
++                if (probeDensity >= 0f)
++                {
++                    distanceToSeabed = Mathf.Min(distanceToSeabed, probeDistance);
++                    break;
++                }
++            }
++
++            return Mathf.Max(safeRadius, distanceToSeabed + OrganicRootMoundMinimumOverlapMeters);
+         }
+ 
+         /// <summary>
+@@ -1012,6 +1044,11 @@ namespace Hecton8.Caves
+             float safeBurnRadius = Mathf.Max(safeRadius, burnRadiusMeters);
+             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+             int acceptedSegments = 0;
++            if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localVolumeBounds))
++                return 0;
++
++            Bounds runtimeVolumeBounds = BuildRuntimeAabb(transform, localVolumeBounds);
++            runtimeVolumeBounds.Expand((safeRadius + _voxelSize) * 2f);
+             SetBakeState(VoxelBakeState.Pending);
+ 
+             for (int i = 1; i < safePointCount; i++)
+@@ -1026,6 +1063,10 @@ namespace Hecton8.Caves
+                 if (segmentLengthSq <= _voxelSize * _voxelSize * 0.01f)
+                     continue;
+ 
++                Bounds segmentBounds = BuildRuntimeSegmentAabb(start, end, safeRadius);
++                if (!segmentBounds.Intersects(runtimeVolumeBounds))
++                    continue;
++
+                 Vector3 absoluteStart = HectonFloatingOrigin.ToAbsoluteUniversePosition(start);
+                 Vector3 absoluteEnd = HectonFloatingOrigin.ToAbsoluteUniversePosition(end);
+                 _deltaProcessor.ApplyImmediateAbsoluteCapsuleWeld(
+@@ -1914,7 +1955,7 @@ namespace Hecton8.Caves
+                 halfExtents + Vector3.one * 2f,
+                 _collapseImpulseColliders,
+                 Quaternion.identity,
+-                ~0,
++                _CollapseImpulseLayerMask,
+                 QueryTriggerInteraction.Ignore);
+             if (hitCount <= 0)
+                 return;
+@@ -2008,6 +2049,31 @@ namespace Hecton8.Caves
+                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+         }
+ 
++        private static Bounds BuildRuntimeSegmentAabb(Vector3 start, Vector3 end, float radius)
++        {
++            Vector3 min = Vector3.Min(start, end);
++            Vector3 max = Vector3.Max(start, end);
++            float padding = Mathf.Max(0f, radius);
++            Bounds bounds = new Bounds((min + max) * 0.5f, max - min);
++            bounds.Expand(padding * 2f);
++            return bounds;
++        }
++
++        private static Bounds BuildRuntimeAabb(Transform cachedTransform, Bounds localBounds)
++        {
++            Vector3 min = localBounds.min;
++            Vector3 max = localBounds.max;
++            Bounds runtimeBounds = new Bounds(cachedTransform.TransformPoint(new Vector3(min.x, min.y, min.z)), Vector3.zero);
++            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, min.y, min.z)));
++            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(min.x, max.y, min.z)));
++            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, max.y, min.z)));
++            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(min.x, min.y, max.z)));
++            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, min.y, max.z)));
++            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(min.x, max.y, max.z)));
++            runtimeBounds.Encapsulate(cachedTransform.TransformPoint(new Vector3(max.x, max.y, max.z)));
++            return runtimeBounds;
++        }
++
+         private bool AppendCraterStamp(Vector3 absolutePosition, float radius, bool queueRebuild)
+         {
+             if (!_runtimeDataReady || radius <= 0f)
+diff --git a/Assets/_Project/Scripts/PhysicsApplySystem.cs b/Assets/_Project/Scripts/PhysicsApplySystem.cs
+index 38b51196..574f64cd 100644
+--- a/Assets/_Project/Scripts/PhysicsApplySystem.cs
++++ b/Assets/_Project/Scripts/PhysicsApplySystem.cs
+@@ -470,6 +470,11 @@ namespace Hecton8.Physics
+             GlobalPhysicsStateManager.FinalizeTrackedBodiesAfterOriginShift();
+         }
+ 
++        internal static void ResetTrackedBodiesForSafeTeleport()
++        {
++            GlobalPhysicsStateManager.ResetTrackedBodiesForSafeTeleport();
++        }
++
+         /// <inheritdoc />
+         public bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
+         {
+@@ -1567,6 +1572,8 @@ namespace Hecton8.Physics
+     /// </summary>
+     public static class PhysicsForceRouter
+     {
++        private const float MaxSafeAcceleration = 50f;
++
+         internal static bool ApplyKinematicWeldSnap(Rigidbody body, Vector3 targetPosition, Quaternion targetRotation)
+         {
+             if (body == null ||
+@@ -1604,11 +1611,12 @@ namespace Hecton8.Physics
+         /// <returns>True when the request was accepted.</returns>
+         public static bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
+         {
+-            if (TryRouteToPlayerMotor(body, force, mode))
++            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
++            if (TryRouteToPlayerMotor(body, safeForce, mode))
+                 return true;
+ 
+             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+-            return system.QueueForce(body, force, mode, wake);
++            return system.QueueForce(body, safeForce, mode, wake);
+         }
+ 
+         /// <summary>
+@@ -1622,11 +1630,12 @@ namespace Hecton8.Physics
+         /// <returns>True when the request was accepted.</returns>
+         public static bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
+         {
+-            if (TryRouteToPlayerMotorAtPosition(body, force, worldPosition))
++            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
++            if (TryRouteToPlayerMotorAtPosition(body, safeForce, worldPosition))
+                 return true;
+ 
+             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+-            return system.QueueForceAtPosition(body, force, worldPosition, mode, wake);
++            return system.QueueForceAtPosition(body, safeForce, worldPosition, mode, wake);
+         }
+ 
+         /// <summary>
+@@ -1726,6 +1735,14 @@ namespace Hecton8.Physics
+             return false;
+         }
+ 
++        private static Vector3 ClampUpwardAcceleration(Vector3 force, ForceMode mode)
++        {
++            if (mode == ForceMode.Acceleration && force.y > MaxSafeAcceleration)
++                force.y = MaxSafeAcceleration;
++
++            return force;
++        }
++
+         private static bool TryRouteToPlayerMotorAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition)
+         {
+             if (body == null || !body.TryGetComponent(out HectonPlayerMotor playerMotor))
+diff --git a/Assets/_Project/Scripts/ResourceNode.cs b/Assets/_Project/Scripts/ResourceNode.cs
+index 0e59ee4b..d6eb6825 100644
+--- a/Assets/_Project/Scripts/ResourceNode.cs
++++ b/Assets/_Project/Scripts/ResourceNode.cs
+@@ -1,3 +1,4 @@
++using System.Threading;
+ using Hecton8.Bootstrap;
+ using Hecton8.Caves;
+ using Hecton8.Core;
+@@ -8,6 +9,8 @@ using Hecton8.Physics;
+ using Hecton8.Tools;
+ using Hecton8.Visor;
+ using Hecton8.World;
++using Unity.Collections;
++using Unity.Collections.LowLevel.Unsafe;
+ using UnityEngine;
+ 
+ namespace Hecton8.Scavenging
+@@ -24,12 +27,15 @@ namespace Hecton8.Scavenging
+         private const int DebrisPoolWarmupCount = 96;
+         private const int MinimumImpactDebrisCount = 3;
+         private const int MaximumImpactDebrisCount = 5;
+-        private const float ImpactDebrisLifetimeSeconds = 5f;
++        private const float ImpactDebrisLifetimeSeconds = 4f;
+         private const float ImpactDebrisSinkDurationSeconds = 1.15f;
+         private const float ImpactDebrisSinkDepthMultiplier = 1.6f;
+         private const float DefaultFirstYieldSampleSeconds = 0.12f;
+         private const float MinimumYieldSampleSeconds = 0.016f;
+         private const float MaximumYieldSampleSeconds = 0.35f;
++        private const int DepletionLockFree = 0;
++        private const int DepletionLockOwned = 1;
++        private static readonly int _SteamExplosionLayerMask = HectonLayerMasks.MountedSweepLayerMask;
+         private static readonly Collider[] _steamExplosionOverlapBuffer = new Collider[16];
+         private static readonly Rigidbody[] _steamExplosionBodyBuffer = new Rigidbody[16];
+         private static GameObject s_runtimeDebrisPrefab;
+@@ -128,8 +134,9 @@ namespace Hecton8.Scavenging
+         private HectonVoxelEngine _cachedVoxelEngine;
+         private float _lastYieldSampleTimeSeconds;
+         private float _pressureMetamorphismProgressSeconds;
+-        private float _fractionalYieldAccumulator;
++        private long _fractionalYieldRemainderGrams;
+         private int _yieldDropCount;
++        private NativeArray<int> _depletionLock;
+ 
+         /// <summary>Legacy scene-facing ID retained for compatibility systems.</summary>
+         public string UniqueId => uniqueId;
+@@ -192,6 +199,7 @@ namespace Hecton8.Scavenging
+                 : (_meshRenderer != null ? _meshRenderer : ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(_cachedTransform));
+ 
+             _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-node melt shader overrides — owner: ResourceNode
++            _depletionLock = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] — interlocked depletion gate for pooled resource tombstones — owner: ResourceNode
+             ResetState();
+         }
+ 
+@@ -230,6 +238,12 @@ namespace Hecton8.Scavenging
+                 uniqueId = null;
+         }
+ 
++        private void OnDestroy()
++        {
++            if (_depletionLock.IsCreated)
++                _depletionLock.Dispose();
++        }
++
+         /// <summary>
+         /// Assigns a legacy compatibility ID explicitly.
+         /// </summary>
+@@ -530,7 +544,7 @@ namespace Hecton8.Scavenging
+                 runtimeOrigin,
+                 radius,
+                 _steamExplosionOverlapBuffer,
+-                ~0,
++                _SteamExplosionLayerMask,
+                 QueryTriggerInteraction.Ignore);
+             if (overlapCount <= 0)
+                 return;
+@@ -636,11 +650,36 @@ namespace Hecton8.Scavenging
+             _lootSpawnBlockedLogged = false;
+             _lastYieldSampleTimeSeconds = -1f;
+             _pressureMetamorphismProgressSeconds = 0f;
+-            _fractionalYieldAccumulator = 0f;
++            _fractionalYieldRemainderGrams = 0L;
+             _yieldDropCount = 0;
++            ResetDepletionLock();
+             ResetMeltProperties();
+         }
+ 
++        private unsafe bool TryAcquireDepletionLock()
++        {
++            if (!_depletionLock.IsCreated || _depletionLock.Length <= 0)
++                return !_isDepleted && !_despawnRequested;
++
++            int* lockPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_depletionLock);
++            return Interlocked.CompareExchange(ref lockPtr[0], DepletionLockOwned, DepletionLockFree) == DepletionLockFree;
++        }
++
++        private unsafe void ReleaseDepletionLock()
++        {
++            if (!_depletionLock.IsCreated || _depletionLock.Length <= 0)
++                return;
++
++            int* lockPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(_depletionLock);
++            Interlocked.Exchange(ref lockPtr[0], DepletionLockFree);
++        }
++
++        private void ResetDepletionLock()
++        {
++            if (_depletionLock.IsCreated && _depletionLock.Length > 0)
++                _depletionLock[0] = DepletionLockFree;
++        }
++
+         private void TakeDamage(
+             float amount,
+             float toolPower,
+@@ -661,6 +700,15 @@ namespace Hecton8.Scavenging
+                 : 1f;
+             float appliedDamage = Mathf.Max(0.01f, amount / hardness);
+             float previousHealth = _currentHealth;
++            float nextHealth = previousHealth - appliedDamage;
++            bool depletionHit = nextHealth <= 0f;
++            bool depletionLockAcquired = false;
++            if (depletionHit)
++            {
++                depletionLockAcquired = TryAcquireDepletionLock();
++                if (!depletionLockAcquired)
++                    return;
++            }
+ 
+             if (allowIncrementalYield)
+                 TryEmitIncrementalYield(descriptor, Mathf.Max(toolPower, amount), elapsedSeconds, hitPoint, hitNormal);
+@@ -668,13 +716,21 @@ namespace Hecton8.Scavenging
+             if (allowImpactDebris)
+                 SpawnImpactDebris(hitPoint, hitNormal, Mathf.Max(toolPower, amount));
+ 
+-            _currentHealth -= appliedDamage;
++            _currentHealth = nextHealth;
+             if (_currentHealth > 0f)
++            {
++                if (depletionLockAcquired)
++                    ReleaseDepletionLock();
++
+                 return;
++            }
+ 
+             if (!TrySpawnLoot())
+             {
+                 _currentHealth = previousHealth;
++                if (depletionLockAcquired)
++                    ReleaseDepletionLock();
++
+                 return;
+             }
+ 
+@@ -698,18 +754,23 @@ namespace Hecton8.Scavenging
+             if (primaryYieldItem == null)
+                 return;
+ 
+-            float yieldUnits = ResourceYieldMath.EvaluateYieldUnits(
++            float extractedMassKg = ResourceYieldMath.EvaluateExtractedMassKg(
+                 Mathf.Max(0.01f, toolPower),
+                 Mathf.Max(0.01f, descriptor.ToolResistance),
+-                Mathf.Max(MinimumYieldSampleSeconds, elapsedSeconds),
+-                Mathf.Max(0.05f, descriptor.HarvestDurationSeconds));
+-            if (yieldUnits <= 0f)
++                Mathf.Max(MinimumYieldSampleSeconds, elapsedSeconds));
++            if (extractedMassKg <= 0f)
+                 return;
+ 
+-            _fractionalYieldAccumulator += yieldUnits;
+-            int wholeUnits = Mathf.FloorToInt(_fractionalYieldAccumulator);
++            long extractedGrams = ResourceYieldMath.KilogramsToWholeGrams(extractedMassKg);
++            long unitItemMassGrams = Mathf.Max(1, ResourceYieldMath.KilogramsToWholeGrams(Mathf.Max(0.01f, resourceTemplate.UnitItemMassKg)));
++            long availableGrams = _fractionalYieldRemainderGrams + extractedGrams;
++            long wholeUnitsLong = unitItemMassGrams > 0L ? availableGrams / unitItemMassGrams : 0L;
++            int wholeUnits = wholeUnitsLong > int.MaxValue ? int.MaxValue : (int)wholeUnitsLong;
+             if (wholeUnits <= 0)
++            {
++                _fractionalYieldRemainderGrams = availableGrams;
+                 return;
++            }
+ 
+             int emittedCount = 0;
+             uint seed = unchecked((uint)_persistentTombstoneId) ^ ((uint)_yieldDropCount * 0x9E3779B9u);
+@@ -723,7 +784,14 @@ namespace Hecton8.Scavenging
+             }
+ 
+             if (emittedCount > 0)
+-                _fractionalYieldAccumulator -= emittedCount;
++            {
++                long remainingGrams = availableGrams - (emittedCount * unitItemMassGrams);
++                _fractionalYieldRemainderGrams = remainingGrams > 0L ? remainingGrams : 0L;
++            }
++            else
++            {
++                _fractionalYieldRemainderGrams = availableGrams;
++            }
+         }
+ 
+         private bool TryDropYieldItem(ItemData itemData, Vector3 hitPoint, Vector3 hitNormal, uint seed)
+diff --git a/Assets/_Project/Scripts/SaveBinaryStorage.cs b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+index e98bcb67..6b18e9cb 100644
+--- a/Assets/_Project/Scripts/SaveBinaryStorage.cs
++++ b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+@@ -3,6 +3,7 @@ using System.Collections.Generic;
+ using System.IO;
+ using System.IO.MemoryMappedFiles;
+ using System.Runtime.InteropServices;
++using Hecton8.Core;
+ using Hecton8.Quest;
+ using Hecton8.World;
+ using Unity.Burst;
+@@ -1028,8 +1029,9 @@ namespace Hecton8.SaveSystem
+             int sectorCount = sectorGroups.Count;
+             if (sectorCount > IndexedSectorDirectorySlotCount)
+             {
+-                error = $"Indexed sector count {sectorCount} exceeded directory capacity {IndexedSectorDirectorySlotCount}.";
+-                return false;
++                long overflowSectorHash = sectorGroups[IndexedSectorDirectorySlotCount].SectorHash;
++                ReportIndexedSectorDirectoryCapacityExceeded(overflowSectorHash, sectorCount);
++                sectorCount = IndexedSectorDirectorySlotCount;
+             }
+ 
+             int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+@@ -1056,7 +1058,7 @@ namespace Hecton8.SaveSystem
+             anyStaticDictionary |= (metadataBlockFlags & FlagStaticDictionary) != 0;
+ 
+             SectorEntry[] sectorEntries = new SectorEntry[IndexedSectorDirectorySlotCount];
+-            int totalEntityCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
++            int totalEntityCount = CountIndexedSectorRecords(sectorGroups, sectorCount);
+             NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
+             NativeList<int3> persistentWorldChunkTable = default;
+             NativeParallelHashMap<ulong, ushort> persistentWorldItemHashLookup = default;
+@@ -1419,6 +1421,7 @@ namespace Hecton8.SaveSystem
+             }
+ 
+             error = $"Indexed sector directory is full while assigning sector 0x{sectorHash:X16}.";
++            ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
+             return false;
+         }
+ 
+@@ -1512,9 +1515,47 @@ namespace Hecton8.SaveSystem
+             }
+ 
+             error = $"Indexed sector directory is full while resolving commit target for sector 0x{sectorHash:X16}.";
++            ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
+             return false;
+         }
+ 
++        private static bool IsMmfMoveRangeWithinFile(long offset, long length, long totalFileSize)
++        {
++            return offset >= 0L &&
++                   length >= 0L &&
++                   totalFileSize >= 0L &&
++                   offset <= totalFileSize &&
++                   length <= totalFileSize - offset;
++        }
++
++        private static int CountIndexedSectorRecords(List<IndexedSectorGroup> sectorGroups, int sectorCount)
++        {
++            if (sectorGroups == null || sectorCount <= 0)
++                return 0;
++
++            int safeCount = math.min(sectorCount, sectorGroups.Count);
++            int total = 0;
++            for (int i = 0; i < safeCount; i++)
++            {
++                IndexedSectorGroup group = sectorGroups[i];
++                if (group.Records != null)
++                    total = checked(total + group.Records.Count);
++            }
++
++            return total;
++        }
++
++        private static void ReportIndexedSectorDirectoryCapacityExceeded(long sectorHash, int attemptedSectorCount)
++        {
++            CrashTelemetryBuffer.ReportSaveSystemCriticalFault();
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            Debug.LogError(
++                $"[SaveBinaryStorage] Indexed sector directory capacity exceeded. " +
++                $"capacity={IndexedSectorDirectorySlotCount}, attempted={attemptedSectorCount}, sector=0x{sectorHash:X16}. " +
++                "Chunk save dropped to protect the fixed-size v8 directory.");
++#endif
++        }
++
+         private static bool TryReadIndexedCompressedBlock(
+             ref AsyncWriteManager.ReadOnlyMapping mapping,
+             long blockOffset,
+@@ -1883,17 +1924,24 @@ namespace Hecton8.SaveSystem
+ 
+                     using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                     if (!TryReadIndexedCompressedBlock(ref mapping, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, sectorRaw, out _, out error))
+-                        return false;
++                    {
++                        TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out _);
++                        continue;
++                    }
+ 
+                     byte* sectorRawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorRaw);
+                     if (ComputeIndexedSectorChecksum(sectorRawPtr, entry.DecompressedSize) != entry.Checksum)
+                     {
+                         error = $"Indexed persistent-world sector checksum mismatch for sector 0x{entry.SectorHash:X16}.";
+-                        return false;
++                        TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out _);
++                        continue;
+                     }
+ 
+                     if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
+-                        return false;
++                    {
++                        TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out _);
++                        continue;
++                    }
+ 
+                     if (sectorRecords != null && sectorRecords.Length > 0)
+                         aggregatedWorldDeltas.AddRange(sectorRecords);
+@@ -2086,14 +2134,18 @@ namespace Hecton8.SaveSystem
+                         continue;
+ 
+                     SectorEntry entry = sectorEntries[sectorEntryIndex];
+-                    if (!TryLoadIndexedPersistentWorldSectorRecordsCore(ref mapping, in entry, destination, out error))
++                    if (!TryLoadIndexedPersistentWorldSectorRecordsCore(ref mapping, in entry, destination, out string sectorError))
+                     {
+                         string backupPath = ResolveIndexedSaveBackupPath(absolutePath);
+-                        if (string.IsNullOrEmpty(backupPath) ||
+-                            !File.Exists(backupPath) ||
+-                            !TryLoadIndexedPersistentWorldSectorFromBackup(backupPath, desiredSectorHash, destination, out error))
++                        string backupError = "backup not attempted";
++                        bool backupRecovered = false;
++                        if (!string.IsNullOrEmpty(backupPath) && File.Exists(backupPath))
++                            backupRecovered = TryLoadIndexedPersistentWorldSectorFromBackup(backupPath, desiredSectorHash, destination, out backupError);
++
++                        if (!backupRecovered)
+                         {
+-                            return false;
++                            error = $"Indexed sector 0x{desiredSectorHash:X16} skipped after primary and backup recovery failed. Primary: {sectorError} Backup: {backupError}";
++                            continue;
+                         }
+                     }
+                 }
+@@ -2170,6 +2222,44 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
++        private static bool TryAppendIndexedPersistentWorldSectorFromBackup(
++            string primaryPath,
++            long desiredSectorHash,
++            List<PersistentWorldDeltaRecord> destination,
++            out string error)
++        {
++            error = string.Empty;
++            if (destination == null)
++            {
++                error = "Indexed sector backup append destination is null.";
++                return false;
++            }
++
++            string backupPath = ResolveIndexedSaveBackupPath(primaryPath);
++            if (string.IsNullOrEmpty(backupPath) || !File.Exists(backupPath))
++            {
++                error = $"Indexed sector 0x{desiredSectorHash:X16} backup is missing.";
++                return false;
++            }
++
++            NativeList<PersistentWorldDeltaRecord> backupRecords = new NativeList<PersistentWorldDeltaRecord>(16, Allocator.Temp);
++            try
++            {
++                if (!TryLoadIndexedPersistentWorldSectorFromBackup(backupPath, desiredSectorHash, backupRecords, out error))
++                    return false;
++
++                for (int i = 0; i < backupRecords.Length; i++)
++                    destination.Add(backupRecords[i]);
++
++                return true;
++            }
++            finally
++            {
++                if (backupRecords.IsCreated)
++                    backupRecords.Dispose();
++            }
++        }
++
+         internal static bool TryWriteIndexedPersistentWorldSectorOverride(
+             string absolutePath,
+             long sectorHash,
+@@ -2868,6 +2958,18 @@ namespace Hecton8.SaveSystem
+                     return true;
+                 }
+ 
++                long sourceOffset = trailingBlock.ByteOffset;
++                long destOffset = largestHoleOffset;
++                long moveLength = trailingBlock.CompressedSize;
++                if (!IsMmfMoveRangeWithinFile(sourceOffset, moveLength, originalLength) ||
++                    !IsMmfMoveRangeWithinFile(destOffset, moveLength, originalLength))
++                {
++                    error =
++                        $"Indexed sector defrag move is out of bounds. " +
++                        $"src={sourceOffset}, dst={destOffset}, len={moveLength}, file={originalLength}.";
++                    return false;
++                }
++
+                 FileStream fileStream = null;
+                 MemoryMappedFile fileMapping = null;
+                 MemoryMappedViewAccessor accessor = null;
+@@ -2883,11 +2985,11 @@ namespace Hecton8.SaveSystem
+                     accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref filePtr);
+                     byte* mappedFilePtr = filePtr + accessor.PointerOffset;
+ 
+-                    UnsafeUtility.MemMove(mappedFilePtr + largestHoleOffset, mappedFilePtr + trailingBlock.ByteOffset, trailingBlock.CompressedSize);
++                    UnsafeUtility.MemMove(mappedFilePtr + destOffset, mappedFilePtr + sourceOffset, moveLength);
+ 
+                     int directoryEntryOffset = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize + (trailingBlockIndex * UnsafeUtility.SizeOf<SectorEntry>());
+                     SectorEntry movedEntry = trailingBlock;
+-                    movedEntry.ByteOffset = largestHoleOffset;
++                    movedEntry.ByteOffset = destOffset;
+                     UnsafeUtility.CopyStructureToPtr(ref movedEntry, mappedFilePtr + directoryEntryOffset);
+ 
+                     SaveFileHeader updatedHeader = UnsafeUtility.ReadArrayElement<SaveFileHeader>(mappedFilePtr, 0);
+diff --git a/Assets/_Project/Scripts/VoxelDeltaProcessor.cs b/Assets/_Project/Scripts/VoxelDeltaProcessor.cs
+index 2b4b88bd..6f583c3d 100644
+--- a/Assets/_Project/Scripts/VoxelDeltaProcessor.cs
++++ b/Assets/_Project/Scripts/VoxelDeltaProcessor.cs
+@@ -948,37 +948,70 @@ namespace Hecton8.Caves
+                 Mathf.FloorToInt((boundsMax.x + boundsPadding) / voxelSize),
+                 Mathf.FloorToInt((boundsMax.y + boundsPadding) / voxelSize),
+                 Mathf.FloorToInt((boundsMax.z + boundsPadding) / voxelSize));
++            ResolveVolumeCellBounds(volume, out int3 volumeMinCell, out int3 volumeMaxCell, out _, out _);
++            if (!CellBoundsIntersect(minCell, maxCell, volumeMinCell, volumeMaxCell))
++                return;
++
++            minCell = math.max(minCell, volumeMinCell);
++            maxCell = math.min(maxCell, volumeMaxCell);
+ 
+             int3 span = (maxCell - minCell) + 1;
+             int candidateCount = math.max(0, span.x) * math.max(0, span.y) * math.max(0, span.z);
+             if (candidateCount <= 0)
+                 return;
+ 
+-            EnsureScheduledCarveWriteCapacity(candidateCount);
+-            _scheduledCarveRequest = request;
+-
+-            CarveSdfJob carveJob = new CarveSdfJob
++            bool scheduled = false;
++            try
+             {
+-                MinCell = minCell,
+-                Span = span,
+-                VoxelSize = voxelSize,
+-                Radius = radius,
+-                BlendRadius = blendRadius,
+-                BlendStrength = ResolveBlendStrength(in request, voxelSize),
+-                Center = segmentStart,
+-                SegmentEnd = segmentEnd,
+-                HalfExtents = halfExtents,
+-                MaterialId = request.MaterialId,
+-                DeltaFlags = request.DeltaFlags,
+-                Shape = shape,
+-                Writes = _scheduledCarveWrites
+-            };
++                EnsureScheduledCarveWriteCapacity(candidateCount);
++                _scheduledCarveRequest = request;
++
++                CarveSdfJob carveJob = new CarveSdfJob
++                {
++                    MinCell = minCell,
++                    Span = span,
++                    VoxelSize = voxelSize,
++                    Radius = radius,
++                    BlendRadius = blendRadius,
++                    BlendStrength = ResolveBlendStrength(in request, voxelSize),
++                    Center = segmentStart,
++                    SegmentEnd = segmentEnd,
++                    HalfExtents = halfExtents,
++                    MaterialId = request.MaterialId,
++                    DeltaFlags = request.DeltaFlags,
++                    Shape = shape,
++                    Writes = _scheduledCarveWrites
++                };
+ 
+-            using (_carveScheduleProfilerMarker.Auto())
++                using (_carveScheduleProfilerMarker.Auto())
++                {
++                    _scheduledCarveWriteCount = candidateCount;
++                    _scheduledCarveHandle = carveJob.Schedule(candidateCount, 64);
++                    _scheduledCarveRunning = true;
++                    scheduled = true;
++                }
++            }
++            catch (Exception exception)
+             {
+-                _scheduledCarveWriteCount = candidateCount;
+-                _scheduledCarveHandle = carveJob.Schedule(candidateCount, 64);
+-                _scheduledCarveRunning = true;
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                Debug.LogError("[VoxelDeltaProcessor] Failed to schedule voxel CSG carve: " + exception.Message, this);
++#endif
++            }
++            finally
++            {
++                if (!scheduled)
++                {
++                    _scheduledCarveHandle = default;
++                    _scheduledCarveRunning = false;
++                    _scheduledCarveWriteCount = 0;
++                    _scheduledCarveRequest = default;
++
++                    if (_scheduledCarveWrites.IsCreated)
++                    {
++                        _scheduledCarveWrites.Dispose();
++                        _scheduledCarveWrites = default;
++                    }
++                }
+             }
+         }
+ 
+@@ -1409,6 +1442,13 @@ namespace Hecton8.Caves
+             return new int3(FloorDiv(value.x, divisor), FloorDiv(value.y, divisor), FloorDiv(value.z, divisor));
+         }
+ 
++        private static bool CellBoundsIntersect(int3 minA, int3 maxA, int3 minB, int3 maxB)
++        {
++            return minA.x <= maxB.x && maxA.x >= minB.x &&
++                   minA.y <= maxB.y && maxA.y >= minB.y &&
++                   minA.z <= maxB.z && maxA.z >= minB.z;
++        }
++
+         private static int FloorDiv(int value, int divisor)
+         {
+             int quotient = value / divisor;
+diff --git a/Assets/_Project/Scripts/World/EntropyYieldJob.cs b/Assets/_Project/Scripts/World/EntropyYieldJob.cs
+index 47b1ef78..13dbf9fc 100644
+--- a/Assets/_Project/Scripts/World/EntropyYieldJob.cs
++++ b/Assets/_Project/Scripts/World/EntropyYieldJob.cs
+@@ -43,6 +43,86 @@ namespace Hecton8.World
+         public float QualityBias;
+     }
+ 
++    [StructLayout(LayoutKind.Sequential, Pack = 4)]
++    internal struct FractionalDrillingYieldSample
++    {
++        public float3 Position;
++        public float ToolPower;
++        public float NodeHardness;
++        public float DeltaSeconds;
++        public float UnitItemMassKg;
++        public float FractionalMassRemainderKg;
++        public int ItemHashId;
++        public uint SourceInstanceUid;
++    }
++
++    [StructLayout(LayoutKind.Sequential, Pack = 4)]
++    internal struct FractionalDrillingYieldResult
++    {
++        public float3 Position;
++        public float FractionalMassRemainderKg;
++        public int WholeItemCount;
++        public int ItemHashId;
++        public uint SourceInstanceUid;
++    }
++
++    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++    internal struct FractionalDrillingYieldJob : IJobParallelFor
++    {
++        private const int GramsPerKilogram = 1000;
++        private const float KilogramsPerGram = 0.001f;
++
++        [ReadOnly] public NativeArray<FractionalDrillingYieldSample> Samples;
++        public NativeArray<FractionalDrillingYieldResult> Results;
++        public int SampleCount;
++
++        public void Execute(int index)
++        {
++            if (index >= SampleCount || !Samples.IsCreated || !Results.IsCreated)
++                return;
++
++            FractionalDrillingYieldSample sample = Samples[index];
++            float unitItemMassKg = math.max(0.01f, sample.UnitItemMassKg);
++            float extractedMassKg = math.max(0f, sample.ToolPower) *
++                                    math.max(0.01f, sample.NodeHardness) *
++                                    math.max(0f, sample.DeltaSeconds);
++            long unitItemMassGrams = UnitKilogramsToGrams(unitItemMassKg);
++            long remainderGrams = KilogramsToGrams(sample.FractionalMassRemainderKg);
++            long extractedGrams = KilogramsToGrams(extractedMassKg);
++            long availableGrams = remainderGrams + extractedGrams;
++            long wholeItemCountLong = unitItemMassGrams > 0L ? availableGrams / unitItemMassGrams : 0L;
++            if (wholeItemCountLong > int.MaxValue)
++                wholeItemCountLong = int.MaxValue;
++
++            long consumedGrams = wholeItemCountLong * unitItemMassGrams;
++            long remainingGrams = availableGrams > consumedGrams ? availableGrams - consumedGrams : 0L;
++
++            Results[index] = new FractionalDrillingYieldResult
++            {
++                Position = sample.Position,
++                FractionalMassRemainderKg = remainingGrams * KilogramsPerGram,
++                WholeItemCount = (int)wholeItemCountLong,
++                ItemHashId = sample.ItemHashId,
++                SourceInstanceUid = sample.SourceInstanceUid
++            };
++        }
++
++        private static long KilogramsToGrams(float kilograms)
++        {
++            if (!math.isfinite(kilograms) || kilograms <= 0f)
++                return 0L;
++
++            long grams = (long)math.round(kilograms * GramsPerKilogram);
++            return grams > 0L ? grams : 0L;
++        }
++
++        private static long UnitKilogramsToGrams(float kilograms)
++        {
++            long grams = KilogramsToGrams(kilograms);
++            return grams > 0L ? grams : 1L;
++        }
++    }
++
+     /// <summary>
+     /// Burst deterministic flora yield generation. One stack-oriented drop record per destroyed instance.
+     /// </summary>
+diff --git a/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs b/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
+index c73f8c16..478c493a 100644
+--- a/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
++++ b/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
+@@ -25,10 +25,14 @@ namespace Hecton8.World
+         private const int DefaultMaxPendingSpawnRequests = 1024;
+         private const int DefaultPoolWarmupFloor = 64;
+         private const int InitialMetamorphismCapacity = 128;
++        private const int GhostProxySnapBatchCapacity = 32;
++        private const int GhostProxySnapMinCommandsPerJob = 4;
+         private const float GameSecondsPerDay = 86400f;
+         private const float DefaultSlopeSampleDistanceMeters = 4f;
+         private const float DefaultVoxelSolidThreshold = 0.08f;
+         private const float DefaultSectorMarginMeters = 2f;
++        private const float GhostProxySnapRayStartHeightMeters = 6f;
++        private const float GhostProxySnapRayExtraDepthMeters = 10f;
+         private const float DefaultBrinePoolRadiusMinMeters = 12f;
+         private const float DefaultBrinePoolRadiusMaxMeters = 28f;
+         private const float DefaultBrinePoolThicknessMinMeters = 4f;
+@@ -101,8 +105,10 @@ namespace Hecton8.World
+             public Vector3 RuntimePosition;
+             public Quaternion Rotation;
+             public float YawDegrees;
++            public float SurfaceOffsetMeters;
+             public uint StableSeed;
+             public ulong TombstoneId;
++            public byte RequiresGhostProxySnap;
+         }
+ 
+         private struct PressureMetamorphismInput
+@@ -329,6 +335,8 @@ namespace Hecton8.World
+         private Dictionary<long, SectorState> _residentSectors;
+         // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] — deterministic deferred resource spawn queue — owner: ResourceDistributionDirector
+         private Queue<SpawnRequest> _pendingSpawns;
++        // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] - meshless resource proxy raycast snap queue - owner: ResourceDistributionDirector
++        private Queue<SpawnRequest> _pendingGhostProxySnaps;
+         // COLD ALLOC: List<long>[32] — sector eviction scratch list — owner: ResourceDistributionDirector
+         private List<long> _sectorEvictionScratch;
+ 
+@@ -350,6 +358,12 @@ namespace Hecton8.World
+         private JobHandle _metamorphismJobHandle;
+         private bool _metamorphismJobActive;
+         private int _scheduledMetamorphismCount;
++        private NativeArray<RaycastCommand> _ghostProxySnapCommands;
++        private NativeArray<RaycastHit> _ghostProxySnapHits;
++        private JobHandle _ghostProxySnapHandle;
++        private SpawnRequest[] _ghostProxySnapRequests;
++        private bool _ghostProxySnapJobActive;
++        private int _scheduledGhostProxySnapCount;
+         // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
+         private List<ResourceNodeTombstoneRecord> _resourceTombstoneScratch;
+         // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism job node mapping — owner: ResourceDistributionDirector
+@@ -391,12 +405,24 @@ namespace Hecton8.World
+             _residentSectors = new Dictionary<long, SectorState>(32);
+             // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] — deterministic deferred resource spawn queue — owner: ResourceDistributionDirector
+             _pendingSpawns = new Queue<SpawnRequest>(DefaultMaxPendingSpawnRequests);
++            // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] - pending meshless proxy down-snap requests - owner: ResourceDistributionDirector
++            _pendingGhostProxySnaps = new Queue<SpawnRequest>(DefaultMaxPendingSpawnRequests);
+             // COLD ALLOC: List<long>[32] — sector eviction scratch list — owner: ResourceDistributionDirector
+             _sectorEvictionScratch = new List<long>(32);
+             // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
+             _resourceTombstoneScratch = new List<ResourceNodeTombstoneRecord>(64);
+             // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism node mapping for Burst result commit — owner: ResourceDistributionDirector
+             _metamorphismNodeScratch = new List<ResourceNode>(InitialMetamorphismCapacity);
++            // COLD ALLOC: SpawnRequest[GhostProxySnapBatchCapacity] - request/result bridge for deferred proxy raycasts - owner: ResourceDistributionDirector
++            _ghostProxySnapRequests = new SpawnRequest[GhostProxySnapBatchCapacity];
++            _ghostProxySnapCommands = new NativeArray<RaycastCommand>(
++                GhostProxySnapBatchCapacity,
++                Allocator.Persistent,
++                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[32] - meshless proxy down-snap batch - owner: ResourceDistributionDirector
++            _ghostProxySnapHits = new NativeArray<RaycastHit>(
++                GhostProxySnapBatchCapacity,
++                Allocator.Persistent,
++                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[32] - meshless proxy down-snap results - owner: ResourceDistributionDirector
+ 
+             EnsureRuntimePrefab();
+             UpdateDiagnostics(default);
+@@ -449,9 +475,11 @@ namespace Hecton8.World
+             }
+ 
+             CompleteMetamorphismJob();
++            CompleteGhostProxySnapJob();
+             DespawnAllResidentNodes();
+             _residentSectors?.Clear();
+             _pendingSpawns?.Clear();
++            _pendingGhostProxySnaps?.Clear();
+             _runtimePoolReady = false;
+             ActiveRuntimeInstance = ReferenceEquals(ActiveRuntimeInstance, this) ? null : ActiveRuntimeInstance;
+             UpdateDiagnostics(default);
+@@ -460,7 +488,9 @@ namespace Hecton8.World
+         private void OnDestroy()
+         {
+             CompleteMetamorphismJob();
++            CompleteGhostProxySnapJob();
+             DisposeMetamorphismBuffers();
++            DisposeGhostProxySnapBuffers();
+         }
+ 
+         /// <summary>
+@@ -478,6 +508,8 @@ namespace Hecton8.World
+             _debugPlayerSector = new Vector2Int(playerSector.x, playerSector.y);
+ 
+             RefreshResidentSectors(playerSector);
++            ProcessCompletedGhostProxySnaps();
++            ScheduleGhostProxySnapBatch();
+             ProcessPendingSpawns();
+             SchedulePressureMetamorphismJob();
+             TickMeteorImpacts(0.5f, in playerAup, playerSector);
+@@ -489,6 +521,8 @@ namespace Hecton8.World
+         /// </summary>
+         public void LateFrameTick()
+         {
++            ProcessCompletedGhostProxySnaps();
++
+             if (!_metamorphismJobActive || !_metamorphismJobHandle.IsCompleted)
+                 return;
+ 
+@@ -906,7 +940,7 @@ namespace Hecton8.World
+                         continue;
+                     }
+ 
+-                    _pendingSpawns.Enqueue(request);
++                    QueueSpawnRequest(in request);
+                     acceptedForTemplate++;
+                 }
+             }
+@@ -991,12 +1025,108 @@ namespace Hecton8.World
+                 RuntimePosition = runtimePosition,
+                 Rotation = rotation,
+                 YawDegrees = yawDegrees,
++                SurfaceOffsetMeters = template.SpawnOffsetMeters,
+                 StableSeed = seed,
+-                TombstoneId = tombstoneId
++                TombstoneId = tombstoneId,
++                RequiresGhostProxySnap = template.HasPresentationMesh ? (byte)0 : (byte)1
+             };
+             return true;
+         }
+ 
++        private void QueueSpawnRequest(in SpawnRequest request)
++        {
++            if (request.RequiresGhostProxySnap != 0)
++            {
++                _pendingGhostProxySnaps.Enqueue(request);
++                return;
++            }
++
++            _pendingSpawns.Enqueue(request);
++        }
++
++        private void ScheduleGhostProxySnapBatch()
++        {
++            if (_ghostProxySnapJobActive ||
++                _pendingGhostProxySnaps == null ||
++                _pendingGhostProxySnaps.Count == 0 ||
++                !_ghostProxySnapCommands.IsCreated ||
++                !_ghostProxySnapHits.IsCreated ||
++                _ghostProxySnapRequests == null)
++            {
++                return;
++            }
++
++            int scheduledCount = math.min(_pendingGhostProxySnaps.Count, GhostProxySnapBatchCapacity);
++            if (scheduledCount <= 0)
++                return;
++
++            for (int i = 0; i < GhostProxySnapBatchCapacity; i++)
++            {
++                SpawnRequest request = i < scheduledCount ? _pendingGhostProxySnaps.Dequeue() : default;
++                _ghostProxySnapRequests[i] = request;
++                _ghostProxySnapHits[i] = default;
++
++                int layerMask = HectonLayerMasks.DefaultRaycastLayerMask;
++                if (i < scheduledCount && (uint)request.TemplateIndex < (uint)resourceTemplates.Length)
++                {
++                    ResourceNodeTemplate template = resourceTemplates[request.TemplateIndex];
++                    if (template != null)
++                        layerMask = template.BuildRuntimeDescriptor().ValidLayerMask;
++                }
++
++                QueryParameters parameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
++                Vector3 origin = request.RuntimePosition + (Vector3.up * GhostProxySnapRayStartHeightMeters);
++                _ghostProxySnapCommands[i] = new RaycastCommand(
++                    origin,
++                    Vector3.down,
++                    parameters,
++                    GhostProxySnapRayStartHeightMeters + GhostProxySnapRayExtraDepthMeters);
++            }
++
++            _scheduledGhostProxySnapCount = scheduledCount;
++            _ghostProxySnapHandle = RaycastCommand.ScheduleBatch(
++                _ghostProxySnapCommands,
++                _ghostProxySnapHits,
++                GhostProxySnapMinCommandsPerJob,
++                default);
++            _ghostProxySnapJobActive = true;
++        }
++
++        private void ProcessCompletedGhostProxySnaps()
++        {
++            if (!_ghostProxySnapJobActive || !_ghostProxySnapHandle.IsCompleted)
++                return;
++
++            _ghostProxySnapHandle.Complete();
++            int scheduledCount = math.min(_scheduledGhostProxySnapCount, GhostProxySnapBatchCapacity);
++            for (int i = 0; i < scheduledCount; i++)
++            {
++                SpawnRequest request = _ghostProxySnapRequests[i];
++                _ghostProxySnapRequests[i] = default;
++                RaycastHit hit = _ghostProxySnapHits[i];
++                _ghostProxySnapHits[i] = default;
++
++                if (hit.collider != null)
++                {
++                    Vector3 normal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal.normalized : Vector3.up;
++                    request.RuntimePosition = hit.point + (normal * math.max(0f, request.SurfaceOffsetMeters));
++                    request.Rotation = ResolveSurfaceRotation(normal, request.YawDegrees);
++                    request.TombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(request.RuntimePosition);
++                }
++
++                request.RequiresGhostProxySnap = 0;
++                PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
++                if (registry != null && registry.IsResourceNodeTombstoned(request.TombstoneId))
++                    continue;
++
++                _pendingSpawns.Enqueue(request);
++            }
++
++            _scheduledGhostProxySnapCount = 0;
++            _ghostProxySnapJobActive = false;
++            _ghostProxySnapHandle = default;
++        }
++
+         private void ProcessPendingSpawns()
+         {
+             if (!_runtimePoolReady || _runtimePrefab == null || _pendingSpawns.Count == 0)
+@@ -1222,6 +1352,28 @@ namespace Hecton8.World
+                 _metamorphismResults.Dispose();
+         }
+ 
++        private void CompleteGhostProxySnapJob()
++        {
++            if (!_ghostProxySnapJobActive)
++                return;
++
++            _ghostProxySnapHandle.Complete();
++            _ghostProxySnapHandle = default;
++            _ghostProxySnapJobActive = false;
++            _scheduledGhostProxySnapCount = 0;
++            if (_ghostProxySnapRequests != null)
++                System.Array.Clear(_ghostProxySnapRequests, 0, _ghostProxySnapRequests.Length);
++        }
++
++        private void DisposeGhostProxySnapBuffers()
++        {
++            if (_ghostProxySnapCommands.IsCreated)
++                _ghostProxySnapCommands.Dispose();
++
++            if (_ghostProxySnapHits.IsCreated)
++                _ghostProxySnapHits.Dispose();
++        }
++
+         private ResourceNodeTemplate ResolveMetamorphosedTemplateOverride(ulong tombstoneId, ResourceNodeTemplate fallback)
+         {
+             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+@@ -1415,7 +1567,10 @@ namespace Hecton8.World
+             if ((rimMinHeight - bowlFloorHeight) < brinePoolMinimumLipMeters)
+                 return brinePool;
+ 
+-            float surfaceHeight = math.min(waterSurface - 0.25f, bowlFloorHeight + thicknessMeters);
++            float maximumContainedSurfaceHeight = rimMinHeight - math.max(0.1f, brinePoolMinimumLipMeters);
++            float surfaceHeight = math.min(
++                math.min(waterSurface - 0.25f, bowlFloorHeight + thicknessMeters),
++                maximumContainedSurfaceHeight);
+             if (surfaceHeight <= bowlFloorHeight + 0.1f)
+                 return brinePool;
+ 
+diff --git a/Assets/_Project/Scripts/World/ResourceYieldMath.cs b/Assets/_Project/Scripts/World/ResourceYieldMath.cs
+index 1d8814ef..5bdbc3aa 100644
+--- a/Assets/_Project/Scripts/World/ResourceYieldMath.cs
++++ b/Assets/_Project/Scripts/World/ResourceYieldMath.cs
+@@ -8,22 +8,50 @@ namespace Hecton8.World
+     /// </summary>
+     internal static class ResourceYieldMath
+     {
++        internal const int GramsPerKilogram = 1000;
++        internal const float KilogramsPerGram = 0.001f;
++
+         public delegate float EvaluateYieldUnitsDelegate(
+             float toolPower,
+             float nodeHardness,
+             float elapsedSeconds,
+-            float harvestDurationSeconds);
++            float unitItemMassKg);
+ 
+         private static readonly FunctionPointer<EvaluateYieldUnitsDelegate> _evaluateYieldUnits =
+             BurstCompiler.CompileFunctionPointer<EvaluateYieldUnitsDelegate>(EvaluateYieldUnitsBurst);
+ 
++        public delegate float EvaluateExtractedMassKgDelegate(
++            float toolPower,
++            float nodeHardness,
++            float elapsedSeconds);
++
++        private static readonly FunctionPointer<EvaluateExtractedMassKgDelegate> _evaluateExtractedMassKg =
++            BurstCompiler.CompileFunctionPointer<EvaluateExtractedMassKgDelegate>(EvaluateExtractedMassKgBurst);
++
+         public static float EvaluateYieldUnits(
+             float toolPower,
+             float nodeHardness,
+             float elapsedSeconds,
+-            float harvestDurationSeconds)
++            float unitItemMassKg)
++        {
++            return _evaluateYieldUnits.Invoke(toolPower, nodeHardness, elapsedSeconds, unitItemMassKg);
++        }
++
++        public static float EvaluateExtractedMassKg(
++            float toolPower,
++            float nodeHardness,
++            float elapsedSeconds)
+         {
+-            return _evaluateYieldUnits.Invoke(toolPower, nodeHardness, elapsedSeconds, harvestDurationSeconds);
++            return _evaluateExtractedMassKg.Invoke(toolPower, nodeHardness, elapsedSeconds);
++        }
++
++        internal static int KilogramsToWholeGrams(float kilograms)
++        {
++            if (!math.isfinite(kilograms) || kilograms <= 0f)
++                return 0;
++
++            float clampedGrams = math.min(int.MaxValue, math.round(kilograms * GramsPerKilogram));
++            return (int)clampedGrams;
+         }
+ 
+         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+@@ -31,13 +59,19 @@ namespace Hecton8.World
+             float toolPower,
+             float nodeHardness,
+             float elapsedSeconds,
+-            float harvestDurationSeconds)
++            float unitItemMassKg)
++        {
++            float extractedMassKg = EvaluateExtractedMassKgBurst(toolPower, nodeHardness, elapsedSeconds);
++            return extractedMassKg / math.max(0.01f, unitItemMassKg);
++        }
++
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++        private static float EvaluateExtractedMassKgBurst(
++            float toolPower,
++            float nodeHardness,
++            float elapsedSeconds)
+         {
+-            float resolvedHardness = math.max(0.01f, nodeHardness);
+-            float resolvedDuration = math.max(0.05f, harvestDurationSeconds);
+-            float resolvedToolPower = math.max(0f, toolPower);
+-            float resolvedTime = math.max(0f, elapsedSeconds);
+-            return (resolvedToolPower * resolvedTime) / (resolvedHardness * resolvedDuration);
++            return math.max(0f, toolPower) * math.max(0.01f, nodeHardness) * math.max(0f, elapsedSeconds);
+         }
+     }
+ }

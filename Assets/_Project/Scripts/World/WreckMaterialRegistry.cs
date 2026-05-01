@@ -49,6 +49,7 @@ namespace Hecton8.World
             private BatchMaterialID _batchMaterialId;
             private Mesh _registeredMesh;
             private Material _registeredMaterial;
+            private GraphicsBuffer _registeredBatchBuffer;
             private Material _runtimeMaterial;
             private Material _materialSource;
             private Material _runtimeMaterialSource;
@@ -126,7 +127,7 @@ namespace Hecton8.World
 
                 GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _matrices.AsArray(), _matrices.Length);
                 _runtimeMaterial.SetBuffer(_WreckMatricesId, _matrixBuffer);
-                _batchRendererGroup.SetBatchBuffer(_batchId, _matrixBuffer.bufferHandle);
+                SyncBatchBuffer(_matrixBuffer);
                 SyncBatchRegistration();
                 _batchRendererGroup.SetGlobalBounds(_drawBounds);
             }
@@ -200,6 +201,7 @@ namespace Hecton8.World
                 _batchMeshId = default;
                 _batchMaterialId = default;
                 _batchId = default;
+                _registeredBatchBuffer = null;
                 if (_matrices.IsCreated)
                     _matrices.Dispose();
             }
@@ -269,6 +271,7 @@ namespace Hecton8.World
                     _matrixBuffer.Release();
 
                 _matrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - wreck module matrix upload buffer - owner: WreckMaterialRegistry
+                _registeredBatchBuffer = null;
             }
 
             private void SyncBatchRegistration()
@@ -293,6 +296,18 @@ namespace Hecton8.World
                     _batchMaterialId = _batchRendererGroup.RegisterMaterial(_runtimeMaterial);
                     _registeredMaterial = _runtimeMaterial;
                 }
+            }
+
+            private void SyncBatchBuffer(GraphicsBuffer matrixBuffer)
+            {
+                if (_batchRendererGroup == null || _batchId.Equals(default) || matrixBuffer == null)
+                    return;
+
+                if (ReferenceEquals(_registeredBatchBuffer, matrixBuffer))
+                    return;
+
+                _batchRendererGroup.SetBatchBuffer(_batchId, matrixBuffer.bufferHandle);
+                _registeredBatchBuffer = matrixBuffer;
             }
 
             private JobHandle OnPerformCulling(

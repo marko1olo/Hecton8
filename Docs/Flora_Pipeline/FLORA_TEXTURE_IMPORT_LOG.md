@@ -1,5 +1,8 @@
 # Flora Texture Import Log
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
 ## 2026-04-09
 
 - `family.kelp.tall` imported from `Assets/TRANSFER HUB/family kelp tall` into `Assets/_Project/Art/Textures/WorldProceduralFlora/Imported/family.kelp.tall`.

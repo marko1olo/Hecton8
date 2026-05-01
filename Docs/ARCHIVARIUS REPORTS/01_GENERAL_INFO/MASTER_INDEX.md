@@ -1,14 +1,14 @@
 # HECTON-8 ARCHIVARIUS MASTER INDEX
 
-**Date:** 2026-04-30  
-**Status:** PENDING VERIFICATION  
+**Date:** 2026-05-01
+**Status:** PENDING VERIFICATION
 **Scope:** `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO` + `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS`
 
 ---
 
 ## Purpose
 
-This index lists the documents that physically exist in folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS` as of 2026-04-30.
+This index lists the documents that physically exist in folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS`.
 
 It replaces stale references to renamed, moved, or obsolete reports.
 
@@ -16,18 +16,20 @@ This index is path-accurate, not truth-uniform.
 
 - files dated `2026-04-28_*` inside `02_ACTUAL_REPORTS` still physically exist in the active folder
 - several of those dated bundles are now historical static snapshots, not the preferred current-state authority
-- for current-source corrections and current editor-state caveats, prefer `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md` first
+- for current project-state orientation outside this folder, read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` first
+- for the current blunt project-level verdict, read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+- for Archivarius-local current-source corrections and editor-state caveats, prefer `PROJECT_ATLAS.md` and `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
 
 ## Coverage Snapshot
 
 | Bucket | Count |
 |---|---:|
-| `01_GENERAL_INFO` markdown files | 22 |
+| `01_GENERAL_INFO` markdown files | 24 |
 | `02_ACTUAL_REPORTS` markdown files | 46 |
 | `02_ACTUAL_REPORTS` CSV datasets | 1 |
-| `02_ACTUAL_REPORTS` patch artifacts | 8 |
-| **Total indexed docs/datasets** | **69** |
-| **Total physical non-meta files in folders `01` and `02`** | **77** |
+| `02_ACTUAL_REPORTS` patch artifacts | 9 |
+| **Total indexed docs/datasets** | **71** |
+| **Total physical non-meta files in folders `01` and `02`** | **80** |
 
 Patch artifacts in `02_ACTUAL_REPORTS` physically exist but are not current narrative authority by themselves.
 Read the paired surgery log or audit note before treating a `.patch` file as implementation truth.
@@ -42,7 +44,9 @@ Read the paired surgery log or audit note before treating a `.patch` file as imp
 | `AUP_SURGERY_MAP.md` | AUP layout and migration planning |
 | `BUILD_DEPENDENCY_GRAPH.md` | Bootstrap dependency and cold-load audit |
 | `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` | Current construction, habitat, logistics, and power ownership map |
+| `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | Concept-level authority map for load-bearing, transitional, presentation, experimental, and historical systems |
 | `DEPENDENCY_GRAPH.md` | Runtime service and dependency overview |
+| `DOC_AUTHORITY_CLASSIFICATION.md` | Current importance sorting for active, reference, archive, and deprecated documents |
 | `DOCSET_COVERAGE_MATRIX.md` | Domain-by-domain authority map and coverage-gap ledger |
 | `EVENT_BUS_MAP.md` | Historical event-bus map with chronology caveat |
 | `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` | Broad owner ledger across major gameplay domains |

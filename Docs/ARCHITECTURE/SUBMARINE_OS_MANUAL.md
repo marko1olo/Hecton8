@@ -1,5 +1,14 @@
 # SUBMARINE OS MANUAL
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this manual as current runtime truth.
+- This document is a submarine diagnostic/display contract, not proof that power, atmosphere, audio alarms, brownout visuals, or UI terminals are fully scene-wired.
+- Re-open `HectonSubmarineOS`, display owners, power telemetry, and atmosphere owners before surgery.
+
 ## Scope
 
 `HectonSubmarineOS` is the submarine-wide diagnostic owner.

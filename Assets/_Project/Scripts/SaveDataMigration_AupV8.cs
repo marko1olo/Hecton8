@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
 
@@ -117,7 +118,16 @@ namespace Hecton8.SaveSystem
             }
 
             PayloadPrefixV7 legacyPrefix = default;
-            UnsafeUtility.MemCpy(UnsafeUtility.AddressOf(ref legacyPrefix), rawPtr, LegacyPayloadPrefixSizeBytes);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(
+                    UnsafeUtility.AddressOf(ref legacyPrefix),
+                    UnsafeUtility.SizeOf<PayloadPrefixV7>(),
+                    rawPtr,
+                    LegacyPayloadPrefixSizeBytes))
+            {
+                error = "Legacy v7 payload prefix copy failed bounds validation.";
+                return false;
+            }
+
             prefix = new PayloadPrefixInfo
             {
                 TimestampUnixMs = legacyPrefix.TimestampUnixMs,
@@ -155,7 +165,16 @@ namespace Hecton8.SaveSystem
             }
 
             PayloadPrefixV8 currentPrefix = default;
-            UnsafeUtility.MemCpy(UnsafeUtility.AddressOf(ref currentPrefix), rawPtr, CurrentPayloadPrefixSizeBytes);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(
+                    UnsafeUtility.AddressOf(ref currentPrefix),
+                    UnsafeUtility.SizeOf<PayloadPrefixV8>(),
+                    rawPtr,
+                    CurrentPayloadPrefixSizeBytes))
+            {
+                error = "AUP v8 payload prefix copy failed bounds validation.";
+                return false;
+            }
+
             prefix = new PayloadPrefixInfo
             {
                 TimestampUnixMs = currentPrefix.TimestampUnixMs,
@@ -203,7 +222,15 @@ namespace Hecton8.SaveSystem
             }
 
             PayloadPrefixV7 legacyPrefix = default;
-            UnsafeUtility.MemCpy(UnsafeUtility.AddressOf(ref legacyPrefix), rawPtr, LegacyPayloadPrefixSizeBytes);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(
+                    UnsafeUtility.AddressOf(ref legacyPrefix),
+                    UnsafeUtility.SizeOf<PayloadPrefixV7>(),
+                    rawPtr,
+                    LegacyPayloadPrefixSizeBytes))
+            {
+                error = "AUP v8 migration prefix copy failed bounds validation.";
+                return false;
+            }
 
             int trailingByteCount = rawLength - LegacyPayloadPrefixSizeBytes;
             if (trailingByteCount > 0)

@@ -5,14 +5,12 @@
 // ARCHITECTURE:
 //   • Standalone prop — implements ICuttable for knife interaction.
 //   • Sub-mesh based harvesting with regrowth.
-//   • MaterialPropertyBlock for harvest glow effect.
 //   • ITickable for regrowth timer.
 //
 // ZERO GC:
 //   • ICuttable.ApplyCutDamage — event-driven, no Update.
 //   • ITickable.Tick() — for regrowth timer only.
 //   • Cached Transform, Renderer.
-//   • MaterialPropertyBlock for VFX.
 //
 // USAGE:
 //   1. Place on plant GameObject with multiple sub-meshes (segments).
@@ -58,9 +56,6 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
         // ══════════════════════════════════════════════════════════
-
-        private static readonly int _HarvestGlowID = Shader.PropertyToID("_HarvestGlow");
-        private static readonly int _GlowIntensityID = Shader.PropertyToID("_GlowIntensity");
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SEGMENTS
@@ -134,12 +129,6 @@ namespace Hecton8.Gameplay
         private bool _isRegistered;
         private bool _poolMissingLogged;
 
-        /// <summary>
-        /// Cached MaterialPropertyBlock for harvest VFX.
-        /// Allocated once in Awake — zero GC in hot path.
-        /// </summary>
-        private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — harvest glow VFX — owner: HarvestablePlant
-
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
         // ══════════════════════════════════════════════════════════
@@ -168,9 +157,6 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-
-            // COLD ALLOC: MaterialPropertyBlock — harvest VFX
-            _mpb = new MaterialPropertyBlock();
 
             // Initialize regrow timers
             _regrowTimers = new float[segments.Length];

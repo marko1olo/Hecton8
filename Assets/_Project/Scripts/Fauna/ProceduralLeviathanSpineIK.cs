@@ -708,6 +708,8 @@ namespace Hecton8.AI
 
         private void DisposeRuntimeBuffers()
         {
+            CompletePendingJob();
+
             if (_vertebraAccessArray.isCreated)
                 _vertebraAccessArray.Dispose();
 

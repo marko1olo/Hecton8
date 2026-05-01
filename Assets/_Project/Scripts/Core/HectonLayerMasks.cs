@@ -10,6 +10,9 @@ namespace Hecton8.Core
     /// </remarks>
     public static class HectonLayerMasks
     {
+        /// <summary>Unity's serialized Everything LayerMask value. Forbidden in project-authored data.</summary>
+        public const int EverythingLayerMaskValue = -1;
+
         /// <summary>Compile-time strict authoring mask value for optional parameter defaults.</summary>
         public const int DataTemplateAuthoringMaskValue =
             (1 << 8) |
@@ -169,11 +172,13 @@ namespace Hecton8.Core
 
         /// <summary>World collision mask used by seam-probe ray batches.</summary>
         public static readonly int SeamProbeLayerMask =
-            TerrainLayerMask |
-            BaseModuleLayerMask |
-            VehicleLayerMask |
-            VoxelCaveLayerMask |
-            DebrisLayerMask;
+            (TerrainLayerMask |
+             BaseModuleLayerMask |
+             VehicleLayerMask |
+             VoxelCaveLayerMask |
+             DebrisLayerMask) &
+            ~UILayerMask &
+            ~IgnoreRaycastLayerMask;
 
         /// <summary>Mounted-player sweep mask for vehicle/structure obstruction probes.</summary>
         public static readonly int MountedSweepLayerMask =
@@ -212,7 +217,32 @@ namespace Hecton8.Core
         public static readonly int DefaultRaycastLayerMask =
             AllDefinedProjectLayersMask & ~IgnoreRaycastLayerMask;
 
+        /// <summary>Scene/render graph world layers, excluding UI and post-process presentation layers.</summary>
+        public static readonly int RenderGraphWorldLayerMask =
+            AllDefinedProjectLayersMask &
+            ~UILayerMask &
+            ~HudInternalLayerMask &
+            ~PostProcessLayerMask;
+
         /// <summary>Twenty-bit renderer-safe mask for all populated project rendering layers.</summary>
         public static readonly uint AllDefinedProjectRenderingLayerMask = AllDefinedProjectRenderingLayerMaskValue;
+
+        /// <summary>Returns true when a serialized Unity LayerMask represents Everything.</summary>
+        public static bool IsEverythingLayerMask(int layerMask)
+        {
+            return layerMask == EverythingLayerMaskValue;
+        }
+
+        /// <summary>Returns an authoring-safe mask, replacing Everything with the explicit project layer set.</summary>
+        public static int SanitizeAuthoringLayerMask(int layerMask)
+        {
+            return layerMask < 0 ? AllDefinedProjectLayersMask : layerMask;
+        }
+
+        /// <summary>Maps an int layer mask to the renderer-safe unsigned payload used by GPU draw APIs.</summary>
+        public static uint ToRenderingLayerMask(int layerMask)
+        {
+            return (uint)SanitizeAuthoringLayerMask(layerMask) & AllDefinedProjectRenderingLayerMaskValue;
+        }
     }
 }

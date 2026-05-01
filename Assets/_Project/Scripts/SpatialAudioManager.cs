@@ -12,7 +12,7 @@
 // ÐžÐŸÐ¢Ð˜ÐœÐ˜Ð—ÐÐ¦Ð˜Ð¯ (MX350 / CPU):
 //   â€¢ Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… AudioSource (default 16, max 32).
 //   â€¢ Linear Rolloff Ð´Ð»Ñ Ð¿Ñ€ÐµÐ´ÑÐºÐ°Ð·ÑƒÐµÐ¼Ð¾Ð³Ð¾ Ð·Ð°Ñ‚ÑƒÑ…Ð°Ð½Ð¸Ñ Ð±ÐµÐ· Ð»Ð¸ÑˆÐ½Ð¸Ñ… Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð¸Ð¹.
-//   â€¢ ÐÐµÑ‚ Update() â€” Ð²ÑÑ Ð»Ð¾Ð³Ð¸ÐºÐ° Ð² Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ðµ Ð²Ñ‹Ð·Ð¾Ð²Ð° Play.
+//   â€¢ ÐÐµÑ‚ per-frame loop â€” Ð²ÑÑ Ð»Ð¾Ð³Ð¸ÐºÐ° Ð² Ð¼Ð¾Ð¼ÐµÐ½Ñ‚Ðµ Ð²Ñ‹Ð·Ð¾Ð²Ð° Play.
 //   â€¢ ÐŸÑƒÐ» ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð² Awake, Ð´Ð°Ð»ÑŒÑˆÐµ â€” Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð¿ÐµÑ€ÐµÐ¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ðµ.
 //
 // API:
@@ -119,6 +119,7 @@ namespace Hecton8.Audio
         private const float ParasiteRoomAudioAttackSharpness = 8f;
         private const float ParasiteRoomAudioReleaseSharpness = 3f;
         private const int MaxDelayedAudioEvents = 16;
+        private const int MaxHarvestAudioEventsPerFrame = 10;
         private const float FatalPressureImplosionEventVolume = 0.96f;
         private const float FatalPressureImplosionEventPitch = 0.84f;
         private const float FatalPressureImplosionTraumaRangeMeters = 220f;
@@ -288,6 +289,8 @@ namespace Hecton8.Audio
         private float[] _arrivalTimes;
         private float[] _haasReleaseTimes;
         private float[] _nextTierUpdateTimes;
+        private int _harvestAudioFrame = -1;
+        private int _harvestAudioEventsThisFrame;
         private AudioLodTier[] _audioLodTiers;
         private AudioLowPassFilter[] _lowPassFilters;
         private Vector3[] _previousAbsolutePositions;
@@ -746,18 +749,40 @@ namespace Hecton8.Audio
             if (clip == null)
                 return;
 
+            if (!TryReserveHarvestAudioEvent())
+                return;
+
             float3 runtimePosition = positionAup.ToRuntimeFloat3();
-            PlayAtPoint(clip, new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z), volume, pitch, ResolvedDefaultWorldMixerGroup);
+            TryPlayAtPointWithoutEviction(
+                clip,
+                new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                volume,
+                pitch,
+                ResolvedDefaultWorldMixerGroup);
         }
 
-        internal void PlaySporeEmissionAtAup(in AbsoluteUniversePosition positionAup, AudioClip clip, float pulseFrequencyHz, float volume = 1f)
+        internal void PlaySporeEmissionAtAup(
+            in AbsoluteUniversePosition positionAup,
+            AudioClip clip,
+            float pulseFrequencyHz,
+            float simulationTimeSeconds,
+            float phaseOffset01,
+            float volume = 1f)
         {
             if (clip == null)
                 return;
 
             float3 runtimePosition = positionAup.ToRuntimeFloat3();
-            float pitch = math.clamp(pulseFrequencyHz, 0.1f, 3f);
-            PlayAtPoint(clip, new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z), volume, pitch, ResolvedThreatBusGroup);
+            float safePulseFrequency = math.max(0.01f, pulseFrequencyHz);
+            float shaderPhase01 = math.frac(simulationTimeSeconds * safePulseFrequency + phaseOffset01);
+            float peakSyncEnvelope = math.saturate(1f - math.abs(shaderPhase01 - 0.25f) * 4f);
+            float pitch = math.clamp(safePulseFrequency, 0.1f, 3f);
+            PlayAtPoint(
+                clip,
+                new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                volume * math.max(0.65f, peakSyncEnvelope),
+                pitch,
+                ResolvedThreatBusGroup);
         }
 
         /// <summary>
@@ -1161,6 +1186,83 @@ private int AcquireSourceIndex()
 #endif
 
             return oldestIndex;
+        }
+
+        private int AcquireSourceIndexNoEvict()
+        {
+            if (_pool == null || _activeWorldSlots == null || _poolSize <= 0)
+                return -1;
+
+            for (int i = 0; i < _poolSize; i++)
+            {
+                if (_activeWorldSlots[i] < 0)
+                    return i;
+
+                AudioSource source = _pool[i];
+                if (source == null || !source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
+                {
+                    ResetWorldSourceState(i, true);
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private bool TryReserveHarvestAudioEvent()
+        {
+            int frame = Time.frameCount;
+            if (_harvestAudioFrame != frame)
+            {
+                _harvestAudioFrame = frame;
+                _harvestAudioEventsThisFrame = 0;
+            }
+
+            if (_harvestAudioEventsThisFrame >= MaxHarvestAudioEventsPerFrame)
+                return false;
+
+            _harvestAudioEventsThisFrame++;
+            return true;
+        }
+
+        private bool TryPlayAtPointWithoutEviction(
+            AudioClip clip,
+            Vector3 position,
+            float volume,
+            float pitch,
+            AudioMixerGroup mixerGroup)
+        {
+            if (clip == null || _pool == null || _poolSize <= 0)
+                return false;
+
+            AudioLodTier lodTier = ResolveAudioLodTier(position);
+            if (lodTier == AudioLodTier.Tier2Culled)
+                return false;
+
+            int index = AcquireSourceIndexNoEvict();
+            if (index < 0)
+                return false;
+
+            AudioSource source = _pool[index];
+            ResetWorldSourceState(index, true);
+            source.enabled = true;
+            source.transform.position = position;
+            source.clip = clip;
+            source.volume = volume;
+            float clampedPitch = math.clamp(pitch, 0.1f, 3f);
+            source.pitch = clampedPitch;
+            _baseVolumes[index] = volume;
+            _basePitches[index] = clampedPitch;
+            source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
+            _audioLodTiers[index] = lodTier;
+            float now = Time.unscaledTime;
+            UpdateWorldSourceAudioLod(index, source, now, true);
+            ApplyHaasMask(index, position);
+            source.spatialBlend = ResolveTargetSpatialBlend(index, now);
+            source.Play();
+            _startTimes[index] = now;
+            MarkWorldSourceActive(index);
+            return true;
         }
 
         private void TryRegisterUpdatable()

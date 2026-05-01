@@ -3,7 +3,20 @@
 Date: 2026-04-30
 Status: PENDING VERIFICATION
 Scope: detailed source-backed map for narrative, discovery, directive, lore, scan-log, PDA knowledge, and progression runtime ownership
-Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Persistent_Object_Registry.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`
+Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Persistent_Object_Registry.txt`, `DATA_Save_Persistence_Binary_Delta_Checksum.txt`, `PROG_Quest_State_Graph_Logic.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`
+
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- This file maps ownership and event/save surfaces; it does not prove story pacing, quest progression correctness, or save/load recovery in Play Mode.
+- Current event topology remains mixed: queue-backed lanes exist, but direct/static buses and managed mod-bus recursion risks still need runtime validation.
+
+2026-05-01 lore lookup recheck:
+
+- `LoreDatabaseManager` still has 50 fixed industrial lore seeds and uses packed `NativeArray<uint>` unlock words plus one `long` save word.
+- Static hardcoded lore-hash scan found `NO_DUPLICATE_LORE_HASH_CONSTANTS` for the current 50 seeds.
+- Source hardening was applied to `BuildLookupIfNeeded()`: lookup completion no longer depends on `Dictionary.Count == s_records.Length`, so a future FNV duplicate cannot force repeated lookup rebuilds on PDA/UI/lore reads.
+- Collision handling remains a defect signal, not an auto-repair system. In Editor/Development it logs one duplicate-hash error; runtime proof is still absent.
 
 ## Purpose
 
@@ -117,8 +130,16 @@ Evidence:
 
 - lore acquisition event type declared in same file: `Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs:31`
 - manager declaration: `Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs:83`
+- packed unlock storage and hash lookup guard: `Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs:218-225`, `700-730`
 
 This makes it the content-state bank, not just a utility helper.
+
+Current hardening note:
+
+- the lookup table is now built once per instance using an explicit `_recordLookupBuilt` sentinel
+- current authored hashes have no duplicate constants by static scan
+- if a duplicate is introduced later, the system logs it once in Editor/Development and preserves previous last-wins dictionary behavior
+- this does not prove that every scene has a correctly wired lore manager instance
 
 ### `AudioLogSystem` Owns Discovery + Playback Of Audio Logs
 

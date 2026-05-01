@@ -52,6 +52,26 @@ Important boundary:
 - post-fix Unity MCP compile/console revalidation was not possible because the Unity session became unavailable
 - therefore this document still cannot claim that the console is now clean
 
+### 2026-05-01 Local Editor.log Delta
+
+A later local pass used `C:\Users\danat\AppData\Local\Unity\Editor\Editor.log` because MCP was unavailable.
+
+Fresh post-compile/import scan after the latest compile marker reported:
+
+- `error CS`: `0`
+- `warning CS`: `0`
+- `Exception`: `0`
+- `Resource ID out of range in SetResource`: `0`
+- `There are inconsistent line endings`: `0`
+- TMP `m_AtlasTextures` unassigned exception: `0`
+
+Evidence file:
+
+- `Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`
+
+This supersedes the stale statement above for the latest reachable local log only.
+It does not prove clean Play Mode, zero GC, frame-time stability, or memory retention.
+
 ## Findings
 
 | ID | File | Current issue | Severity | Evidence |
@@ -59,7 +79,7 @@ Important boundary:
 | ERF-01 | `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` + `Assets/_Project/Scripts/Editor/WorldProceduralScatterPreviewGizmoDrawer.cs` | live editor console is currently spammed by repeated `NullReferenceException` during scatter preview gizmo drawing | HIGH | MCP console stack traces point to `WorldProceduralScatterDirector.cs:482`, `:1829` and `WorldProceduralScatterPreviewGizmoDrawer.cs:19` |
 | ERF-02 | `Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs` | tick-driven UI surface still uses direct TMP string mutation via `.text =` on sonar/boot/caption paths | HIGH | file contains `ITickable` owners at `:157`, `:598`, `:901` and direct `.text =` writes at `:329`, `:335`, `:645`, `:947`, `:1034` |
 | ERF-03 | `Assets/_Project/Scripts/UI/DiegeticPDAController.cs` | tick-driven diegetic PDA path still uses `tabletRoot.SetActive(openState)` instead of pure CanvasGroup/presentation gating | MEDIUM | controller is `ITickable` at `:108`; `ApplyPresentationState(...)` is called from tick-open-state path and toggles `SetActive` at `:279-280` |
-| ERF-04 | verification / smoke stack across `SaveSystemRuntimeSmokeTester`, `ShellVerificationRuntimeSmokeTester`, `PauseSystemVerifier`, `SceneTransitionVerifier`, `StateRecoveryVerifier`, and other smoke testers | active verification infrastructure is still coroutine-driven rather than state-machine/tick driven | MEDIUM | repeated `StartCoroutine(...)` sites exist across bootstrap/player-attached smoke and verifier files |
+| ERF-04 | verification / smoke stack across `FieldToolRuntimeSmokeTester`, `ToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, `ShellVerificationRuntimeSmokeTester`, and `StateRecoveryVerifier` | source-level coroutine debt has been migrated to `Awaitable`; runtime proof is still absent | LOW | current strict grep finds `0` `StartCoroutine(...)`, `IEnumerator`, `yield return`, or `WaitForSecondsRealtime` hits under `Assets/_Project/Scripts` outside `Editor/**` |
 
 ## Finding Details
 
@@ -115,30 +135,29 @@ It is still architecture debt because the presentation path keeps a full object-
 
 ### ERF-04 — Coroutine-Heavy Verification Stack Still Wired
 
-The current verifier/smoke layer still uses `StartCoroutine(...)` across many files, including:
+2026-05-01 correction: the heading is historical; the current source state is source-migrated.
+The current verifier/smoke layer no longer uses strict coroutine primitives in first-party runtime scripts outside `Editor/**`:
 
-- `SaveSystemRuntimeSmokeTester`
-- `BarterRuntimeSmokeTester`
-- `BuilderRuntimeSmokeTester`
 - `FieldToolRuntimeSmokeTester`
-- `FabricationRuntimeSmokeTester`
-- `ScanRuntimeSmokeTester`
 - `ToolRuntimeSmokeTester`
 - `ToolTrialRangeRuntimeSmokeTester`
-- `UIRuntimeSmokeTester`
 - `ShellVerificationRuntimeSmokeTester`
-- `PauseSystemVerifier`
-- `SceneTransitionVerifier`
 - `StateRecoveryVerifier`
-- `WorldGenerativeGeologyRuntimeSmokeTester`
 
 This is not hidden dead code only.
-Part of this stack is still attached in authored YAML and already documented in `DEAD_CODE_GRAVEYARD.md`.
+Part of this stack is still attached in authored YAML and already documented in `DEAD_CODE_GRAVEYARD.md`, but its execution primitive is now `Awaitable`.
+
+Corrected 2026-05-01 state:
+
+- `SaveSystemRuntimeSmokeTester` exists, but current source uses `async Awaitable` and has no `StartCoroutine`, `IEnumerator`, or `yield` hits.
+- `BarterRuntimeSmokeTester`, `BuilderRuntimeSmokeTester`, `FabricationRuntimeSmokeTester`, `ScanRuntimeSmokeTester`, `PauseSystemVerifier`, `SceneTransitionVerifier`, `UIRuntimeSmokeTester`, and `WorldGenerativeGeologyRuntimeSmokeTester` were also migrated away from strict `StartCoroutine` usage in the recent Awaitable pass.
+- `StateRecoveryVerifier`, `ToolRuntimeSmokeTester`, `FieldToolRuntimeSmokeTester`, `ToolTrialRangeRuntimeSmokeTester`, and `Dev/ShellVerificationRuntimeSmokeTester` are now also source-migrated to `Awaitable`.
+- Strict current grep across `Assets/_Project/Scripts` outside `Editor/**` finds `0` `StartCoroutine(` sites and `0` `IEnumerator` / `yield return` / `WaitForSecondsRealtime` hits.
 
 The practical reading is narrower:
 
-- verification stack remains architecturally inconsistent with the tick/state-machine rules
-- this is currently verification debt, not proven gameplay hot-path debt
+- source-level coroutine debt is closed
+- verification stack remains runtime-unproven until a clean Unity compile/refresh and Play Mode smoke run exist
 
 ## Rechecked False Positives
 

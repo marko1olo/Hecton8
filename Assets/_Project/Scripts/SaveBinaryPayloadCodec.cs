@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections.LowLevel.Unsafe;
@@ -17,9 +19,15 @@ namespace Hecton8.SaveSystem
         private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
         private static readonly byte[] s_lz4CompressionDictionary = SaveCompressionDictionary.Bytes;
+        private static readonly GCHandle s_lz4CompressionDictionaryHandle = GCHandle.Alloc(s_lz4CompressionDictionary, GCHandleType.Pinned);
+        private static readonly IntPtr s_lz4CompressionDictionaryPtr = s_lz4CompressionDictionaryHandle.AddrOfPinnedObject();
 
         internal static int Lz4CompressionDictionaryLength => Lz4CompressionDictionarySizeBytes;
-        internal static bool HasLz4CompressionDictionary => true;
+        internal static bool HasLz4CompressionDictionary =>
+            s_lz4CompressionDictionary != null &&
+            s_lz4CompressionDictionary.Length >= Lz4CompressionDictionarySizeBytes &&
+            s_lz4CompressionDictionaryHandle.IsAllocated &&
+            s_lz4CompressionDictionaryPtr != IntPtr.Zero;
 
         [Unity.Burst.BurstDiscard]
         internal static void CopyLz4CompressionDictionary(byte* destinationPtr, int destinationCapacity)
@@ -27,9 +35,13 @@ namespace Hecton8.SaveSystem
             if (destinationPtr == null || destinationCapacity < Lz4CompressionDictionarySizeBytes)
                 return;
 
-            fixed (byte* sourcePtr = s_lz4CompressionDictionary)
+            if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                    destinationPtr,
+                    destinationCapacity,
+                    (void*)s_lz4CompressionDictionaryPtr,
+                    Lz4CompressionDictionarySizeBytes))
             {
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, Lz4CompressionDictionarySizeBytes);
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
             }
         }
 
@@ -203,7 +215,7 @@ namespace Hecton8.SaveSystem
                 || !ReadBeaconNetwork(ref reader, out data.beaconNetwork)
                 || !ReadExplorationMap(ref reader, data.version, out data.explorationMap)
                 || !ReadPdaLogbook(ref reader, data.version, out data.pdaLogbook)
-                || !ReadPdaMarkers(ref reader, out data.pdaMarkers)
+                || !ReadPdaMarkers(ref reader, data.version, out data.pdaMarkers)
                 || !reader.ReadStruct(out data.pdaAdvisories)
                 || !ReadProceduralLore(ref reader, out data.proceduralLore)
                 || !ReadAchievementRegistry(ref reader, out data.achievements)
@@ -749,6 +761,7 @@ namespace Hecton8.SaveSystem
                 && writer.WriteInt(value.chunkSizeMeters)
                 && writer.WriteInt(value.mortonMaskAxisBits)
                 && writer.WriteInt(value.mortonMaskOriginOffset)
+                && writer.WriteUInt(value.mortonBuildSalt != 0u ? value.mortonBuildSalt : SaveBinaryStorage.ExplorationMortonBuildSalt32)
                 && writer.WriteInt(value.exploredMortonByteCount)
                 && writer.WriteStructArraySlice(value.exploredMortonMaskBytes, value.exploredMortonByteCount);
         }
@@ -756,14 +769,27 @@ namespace Hecton8.SaveSystem
         private static bool ReadExplorationMap(ref BufferReader reader, int version, out ExplorationMapDTO value)
         {
             value = default;
-            if (version >= 52)
+            if (version >= 56)
             {
                 return reader.ReadInt(out value.exploredChunkCount)
                     && reader.ReadInt(out value.chunkSizeMeters)
                     && reader.ReadInt(out value.mortonMaskAxisBits)
                     && reader.ReadInt(out value.mortonMaskOriginOffset)
+                    && reader.ReadUInt(out value.mortonBuildSalt)
                     && reader.ReadInt(out value.exploredMortonByteCount)
                     && reader.ReadStructArray(out value.exploredMortonMaskBytes);
+            }
+
+            if (version >= 52)
+            {
+                bool read = reader.ReadInt(out value.exploredChunkCount)
+                    && reader.ReadInt(out value.chunkSizeMeters)
+                    && reader.ReadInt(out value.mortonMaskAxisBits)
+                    && reader.ReadInt(out value.mortonMaskOriginOffset)
+                    && reader.ReadInt(out value.exploredMortonByteCount)
+                    && reader.ReadStructArray(out value.exploredMortonMaskBytes);
+                value.mortonBuildSalt = SaveBinaryStorage.ExplorationMortonBuildSalt32;
+                return read;
             }
 
             if (!reader.ReadInt(out value.exploredChunkCount)
@@ -822,12 +848,12 @@ namespace Hecton8.SaveSystem
                 && WritePdaMarkerEntryArray(ref writer, value.entries);
         }
 
-        private static bool ReadPdaMarkers(ref BufferReader reader, out PDAMarkerRegistryDTO value)
+        private static bool ReadPdaMarkers(ref BufferReader reader, int version, out PDAMarkerRegistryDTO value)
         {
             value = default;
             return reader.ReadInt(out value.markerCount)
                 && reader.ReadInt(out value.nextSequence)
-                && ReadPdaMarkerEntryArray(ref reader, out value.entries);
+                && ReadPdaMarkerEntryArray(ref reader, version, out value.entries);
         }
 
         private static bool WriteProceduralLore(ref BufferWriter writer, ProceduralLoreStateDTO value)
@@ -1085,19 +1111,44 @@ namespace Hecton8.SaveSystem
                 && writer.WriteFloat(value.posX)
                 && writer.WriteFloat(value.posY)
                 && writer.WriteFloat(value.posZ)
-                && writer.WriteBool(value.visibleOnHud);
+                && writer.WriteBool(value.visibleOnHud)
+                && writer.WriteInt(value.positionEncodingVersion)
+                && writer.WriteLong(value.aupGridX)
+                && writer.WriteLong(value.aupGridY)
+                && writer.WriteLong(value.aupGridZ)
+                && writer.WriteFloat(value.aupLocalX)
+                && writer.WriteFloat(value.aupLocalY)
+                && writer.WriteFloat(value.aupLocalZ);
         }
 
-        private static bool ReadPdaMarkerEntry(ref BufferReader reader, out PDAMarkerEntryDTO value)
+        private static bool ReadPdaMarkerEntry(ref BufferReader reader, int version, out PDAMarkerEntryDTO value)
         {
             value = default;
-            return reader.ReadString(out value.markerId)
+            if (!(reader.ReadString(out value.markerId)
                 && reader.ReadString(out value.title)
                 && reader.ReadInt(out value.iconType)
                 && reader.ReadFloat(out value.posX)
                 && reader.ReadFloat(out value.posY)
                 && reader.ReadFloat(out value.posZ)
-                && reader.ReadBool(out value.visibleOnHud);
+                && reader.ReadBool(out value.visibleOnHud)))
+            {
+                return false;
+            }
+
+            if (version < 55)
+            {
+                AbsoluteUniversePosition legacyAup = AbsoluteUniversePosition.FromRuntimePosition(value.GetPosition());
+                value.SetAup(in legacyAup);
+                return true;
+            }
+
+            return reader.ReadInt(out value.positionEncodingVersion)
+                && reader.ReadLong(out value.aupGridX)
+                && reader.ReadLong(out value.aupGridY)
+                && reader.ReadLong(out value.aupGridZ)
+                && reader.ReadFloat(out value.aupLocalX)
+                && reader.ReadFloat(out value.aupLocalY)
+                && reader.ReadFloat(out value.aupLocalZ);
         }
 
         private static bool WriteProceduralLorePlacement(ref BufferWriter writer, in ProceduralLorePlacementDTO value)
@@ -1369,9 +1420,29 @@ namespace Hecton8.SaveSystem
             return WriteCustomArray(ref writer, values, WritePdaMarkerEntry);
         }
 
-        private static bool ReadPdaMarkerEntryArray(ref BufferReader reader, out PDAMarkerEntryDTO[] values)
+        private static bool ReadPdaMarkerEntryArray(ref BufferReader reader, int version, out PDAMarkerEntryDTO[] values)
         {
-            return ReadCustomArray(ref reader, out values, ReadPdaMarkerEntry);
+            values = null;
+            if (!reader.ReadInt(out int count))
+                return false;
+
+            if (count == NullCollectionCount)
+                return true;
+
+            if (count < 0)
+            {
+                reader.SetError("Collection length is negative.");
+                return false;
+            }
+
+            values = new PDAMarkerEntryDTO[count];
+            for (int i = 0; i < count; i++)
+            {
+                if (!ReadPdaMarkerEntry(ref reader, version, out values[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         private static bool WriteProceduralLorePlacementArray(ref BufferWriter writer, ProceduralLorePlacementDTO[] values)
@@ -1854,7 +1925,12 @@ namespace Hecton8.SaveSystem
 
                 fixed (T* sourcePtr = values)
                 {
-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
+                    {
+                        Error = "Struct array copy exceeded the raw buffer ceiling.";
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
+                        return false;
+                    }
                 }
 
                 _cursor += byteCount;
@@ -1886,7 +1962,12 @@ namespace Hecton8.SaveSystem
 
                 fixed (T* sourcePtr = values)
                 {
-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
+                    {
+                        Error = "Struct array slice copy exceeded the raw buffer ceiling.";
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
+                        return false;
+                    }
                 }
 
                 _cursor += byteCount;
@@ -1958,7 +2039,12 @@ namespace Hecton8.SaveSystem
 
                 fixed (char* sourcePtr = value)
                 {
-                    UnsafeUtility.MemCpy(_buffer + _cursor, sourcePtr, byteCount);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, byteCount))
+                    {
+                        Error = "String payload copy exceeded the raw buffer ceiling.";
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
+                        return false;
+                    }
                 }
 
                 _cursor += byteCount;
@@ -2048,7 +2134,12 @@ namespace Hecton8.SaveSystem
                 values = new T[count];
                 fixed (T* destinationPtr = values)
                 {
-                    UnsafeUtility.MemCpy(destinationPtr, _buffer + _cursor, byteCount);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, byteCount, _buffer + _cursor, byteCount))
+                    {
+                        SetError("Struct array read copy exceeded the destination byte range.");
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
+                        return false;
+                    }
                 }
 
                 _cursor += byteCount;

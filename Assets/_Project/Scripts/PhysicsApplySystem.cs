@@ -35,6 +35,16 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// Deferred force packet priority. Higher values survive contention guards first.
+    /// </summary>
+    public enum ForcePacketPriority : byte
+    {
+        Visual = 0,
+        Ambient = 1,
+        Critical = 2
+    }
+
+    /// <summary>
     /// Deferred main-thread force application payload.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = 48)]
@@ -55,7 +65,9 @@ namespace Hecton8.Physics
         /// <summary>Bitfield flags describing packet contents.</summary>
         public byte Flags;
 
-        private byte _padding0;
+        /// <summary>Priority class used by contention and entanglement guards.</summary>
+        public ForcePacketPriority Priority;
+
         private byte _padding1;
         private byte _padding2;
 
@@ -301,6 +313,7 @@ namespace Hecton8.Physics
         private const int MaxQueuedSubmarineImpactSignals = 32;
         private const int MaxActiveDepressurizationVortices = 8;
         private const int DepressurizationVortexContactCapacity = 32;
+        private const int ImplosionOverlapCapacity = 64;
         private const float MinMagnitudeSq = 0.000001f;
         private const float DepressurizationVortexDistanceFloorMeters = 0.5f;
         private const float HullYieldThresholdJoules = 225000f;
@@ -311,6 +324,8 @@ namespace Hecton8.Physics
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FixedTick");
         private static readonly ProfilerMarker _packetValidationProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.ValidatePackets");
         private static readonly ProfilerMarker _flushFrontBufferProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FlushFrontBuffer");
+        // COLD ALLOC: Collider[64] — static implosion overlap query buffer for zero-GC radius impulse dispatch — owner: PhysicsApplySystem
+        private static readonly Collider[] s_implosionOverlapBuffer = new Collider[ImplosionOverlapCapacity];
 
         private static PhysicsApplySystem _instance;
 
@@ -470,8 +485,18 @@ namespace Hecton8.Physics
             GlobalPhysicsStateManager.FinalizeTrackedBodiesAfterOriginShift();
         }
 
+        internal static void ResetTrackedBodiesForSafeTeleport()
+        {
+            GlobalPhysicsStateManager.ResetTrackedBodiesForSafeTeleport();
+        }
+
         /// <inheritdoc />
         public bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
+        {
+            return QueueForce(body, force, mode, ForcePacketPriority.Critical, wake);
+        }
+
+        internal bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, ForcePacketPriority priority, bool wake = true)
         {
             if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
                 sanitizedForce.sqrMagnitude <= MinMagnitudeSq ||
@@ -493,6 +518,7 @@ namespace Hecton8.Physics
                 PointOffset = Vector3.zero,
                 Mode = mode,
                 Flags = (byte)(ForcePacketFlags.HasForce | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Priority = priority,
                 RigidbodyIndex = rigidbodyIndex
             };
             return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Force packet queue saturated.");
@@ -500,6 +526,17 @@ namespace Hecton8.Physics
 
         /// <inheritdoc />
         public bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
+        {
+            return QueueForceAtPosition(body, force, worldPosition, mode, ForcePacketPriority.Critical, wake);
+        }
+
+        internal bool QueueForceAtPosition(
+            Rigidbody body,
+            Vector3 force,
+            Vector3 worldPosition,
+            ForceMode mode,
+            ForcePacketPriority priority,
+            bool wake = true)
         {
             if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
                 sanitizedForce.sqrMagnitude <= MinMagnitudeSq ||
@@ -529,6 +566,7 @@ namespace Hecton8.Physics
                 PointOffset = pointOffset,
                 Mode = mode,
                 Flags = (byte)(ForcePacketFlags.HasForce | ForcePacketFlags.ApplyAtPosition | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Priority = priority,
                 RigidbodyIndex = rigidbodyIndex
             };
             return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Point-force packet queue saturated.");
@@ -536,6 +574,11 @@ namespace Hecton8.Physics
 
         /// <inheritdoc />
         public bool QueueTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true)
+        {
+            return QueueTorque(body, torque, mode, ForcePacketPriority.Critical, wake);
+        }
+
+        internal bool QueueTorque(Rigidbody body, Vector3 torque, ForceMode mode, ForcePacketPriority priority, bool wake = true)
         {
             if (!TrySanitizeVector(torque, NonFiniteTorqueLog, out Vector3 sanitizedTorque) ||
                 sanitizedTorque.sqrMagnitude <= MinMagnitudeSq ||
@@ -557,6 +600,7 @@ namespace Hecton8.Physics
                 PointOffset = Vector3.zero,
                 Mode = mode,
                 Flags = (byte)(ForcePacketFlags.HasTorque | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Priority = priority,
                 RigidbodyIndex = rigidbodyIndex
             };
             return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Torque packet queue saturated.");
@@ -889,6 +933,9 @@ namespace Hecton8.Physics
                         continue;
 
                     ForcePacketFlags flags = (ForcePacketFlags)packet.Flags;
+                    if (ShouldDiscardAmbientPacketForEntanglement(body, in packet, flags))
+                        continue;
+
                     if ((flags & ForcePacketFlags.WakeBody) != 0 && body.IsSleeping())
                         body.WakeUp();
 
@@ -925,6 +972,19 @@ namespace Hecton8.Physics
                 _frontCount = 0;
                 _frontBufferValidationReady = false;
             }
+        }
+
+        private static bool ShouldDiscardAmbientPacketForEntanglement(Rigidbody body, in ForcePacket packet, ForcePacketFlags flags)
+        {
+            if (packet.Priority != ForcePacketPriority.Ambient ||
+                (flags & ForcePacketFlags.HasForce) == 0 ||
+                body == null)
+            {
+                return false;
+            }
+
+            return VehicleMotor.TryResolveForBody(body, out VehicleMotor vehicleMotor) &&
+                   vehicleMotor.WouldAmbientForceExtendEntanglement(packet.Force, packet.Mode, math.max(Time.fixedDeltaTime, 0.0001f));
         }
 
         private void ApplyDepressurizationVortices(float fixedDeltaTime)
@@ -1099,24 +1159,22 @@ namespace Hecton8.Physics
             float maximumImpulseNewtonSeconds,
             Rigidbody playerBody)
         {
-            SpatialTargetKind kindMask = SpatialTargetKind.Pickup |
-                                         SpatialTargetKind.Resource |
-                                         SpatialTargetKind.Scannable |
-                                         SpatialTargetKind.Bioform;
-            int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 roomCenter,
                 radiusMeters,
-                kindMask,
-                _depressurizationVortexContacts);
+                s_implosionOverlapBuffer,
+                HectonLayerMasks.DefaultRaycastLayerMask,
+                QueryTriggerInteraction.Ignore);
             int uniqueBodyCount = 0;
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
-                SpatialQueryHit hit = _depressurizationVortexContacts[hitIndex];
-                if (!TryResolveDynamicBody(hit.Owner, hit.Transform, out Rigidbody body) || body == null)
+                Collider hitCollider = s_implosionOverlapBuffer[hitIndex];
+                if (hitCollider == null)
                     continue;
 
-                if (ReferenceEquals(body, playerBody))
+                Rigidbody body = hitCollider.attachedRigidbody;
+                if (body == null || body.isKinematic || ReferenceEquals(body, playerBody))
                     continue;
 
                 bool duplicateBody = false;
@@ -1136,6 +1194,9 @@ namespace Hecton8.Physics
                 if (uniqueBodyCount >= _depressurizationVortexBodies.Length)
                     break;
             }
+
+            for (int hitIndex = 0; hitIndex < s_implosionOverlapBuffer.Length; hitIndex++)
+                s_implosionOverlapBuffer[hitIndex] = null;
 
             for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
             {
@@ -1567,6 +1628,8 @@ namespace Hecton8.Physics
     /// </summary>
     public static class PhysicsForceRouter
     {
+        private const float MaxSafeAcceleration = 50f;
+
         internal static bool ApplyKinematicWeldSnap(Rigidbody body, Vector3 targetPosition, Quaternion targetRotation)
         {
             if (body == null ||
@@ -1604,11 +1667,25 @@ namespace Hecton8.Physics
         /// <returns>True when the request was accepted.</returns>
         public static bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
-            if (TryRouteToPlayerMotor(body, force, mode))
+            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
+            if (TryRouteToPlayerMotor(body, safeForce, mode))
                 return true;
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system.QueueForce(body, force, mode, wake);
+            return system.QueueForce(body, safeForce, mode, wake);
+        }
+
+        /// <summary>
+        /// Routes an ambient environmental force into the deferred packet system.
+        /// </summary>
+        public static bool QueueAmbientForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
+        {
+            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
+            if (TryRouteToPlayerMotor(body, safeForce, mode))
+                return true;
+
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system.QueueForce(body, safeForce, mode, ForcePacketPriority.Ambient, wake);
         }
 
         /// <summary>
@@ -1622,11 +1699,25 @@ namespace Hecton8.Physics
         /// <returns>True when the request was accepted.</returns>
         public static bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
         {
-            if (TryRouteToPlayerMotorAtPosition(body, force, worldPosition))
+            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
+            if (TryRouteToPlayerMotorAtPosition(body, safeForce, worldPosition))
                 return true;
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system.QueueForceAtPosition(body, force, worldPosition, mode, wake);
+            return system.QueueForceAtPosition(body, safeForce, worldPosition, mode, wake);
+        }
+
+        /// <summary>
+        /// Routes an ambient environmental force-at-position into the deferred packet system.
+        /// </summary>
+        public static bool QueueAmbientForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
+        {
+            Vector3 safeForce = ClampUpwardAcceleration(force, mode);
+            if (TryRouteToPlayerMotorAtPosition(body, safeForce, worldPosition))
+                return true;
+
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system.QueueForceAtPosition(body, safeForce, worldPosition, mode, ForcePacketPriority.Ambient, wake);
         }
 
         /// <summary>
@@ -1668,6 +1759,15 @@ namespace Hecton8.Physics
         {
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
             return system.QueueTorque(body, torque, mode, wake);
+        }
+
+        /// <summary>
+        /// Routes ambient environmental torque into the deferred packet system.
+        /// </summary>
+        public static bool QueueAmbientTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true)
+        {
+            PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
+            return system.QueueTorque(body, torque, mode, ForcePacketPriority.Ambient, wake);
         }
 
         private static bool TryRouteToPlayerMotor(Rigidbody body, Vector3 force, ForceMode mode)
@@ -1724,6 +1824,14 @@ namespace Hecton8.Physics
             }
 
             return false;
+        }
+
+        private static Vector3 ClampUpwardAcceleration(Vector3 force, ForceMode mode)
+        {
+            if (mode == ForceMode.Acceleration && force.y > MaxSafeAcceleration)
+                force.y = MaxSafeAcceleration;
+
+            return force;
         }
 
         private static bool TryRouteToPlayerMotorAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition)

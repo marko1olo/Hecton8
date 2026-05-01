@@ -17,6 +17,7 @@ using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
@@ -1507,6 +1508,7 @@ namespace Hecton8.UI
             if (_runtimeHologramMaterial.HasProperty(GlitchAmountId))
                 _runtimeHologramMaterial.SetFloat(GlitchAmountId, InventoryHologramGlitchAmount);
 
+            bool hasFrustumGate = TryResolveInventoryHologramViewGate(out Vector3 viewPosition, out Vector3 viewForward, out float minViewDot);
             int visibleCount = 0;
             for (int i = 0; i < _activeBlockCount && i < _inventoryHologramEntries.Length; i++)
             {
@@ -1522,6 +1524,11 @@ namespace Hecton8.UI
                 Quaternion worldRotation = panelRotation * Quaternion.Euler(0f, yaw, 0f);
                 float footprintMeters = Mathf.Max(0.008f, entry.FootprintPixels * pixelScaleMeters * InventoryHologramFootprintScale);
                 Vector3 worldScale = new Vector3(footprintMeters, footprintMeters, Mathf.Max(InventoryHologramThicknessMeters, footprintMeters * 0.16f));
+                if (!IsFiniteHologramTransform(worldPosition, worldRotation, worldScale))
+                    continue;
+
+                if (hasFrustumGate && !PassesInventoryHologramFrustumGate(worldPosition, viewPosition, viewForward, minViewDot))
+                    continue;
 
                 _inventoryHologramMatrices[visibleCount] = Matrix4x4.TRS(worldPosition, worldRotation, worldScale);
                 _inventoryHologramMeshIndices[visibleCount] = entry.ProxyMeshIndex;
@@ -1562,9 +1569,55 @@ namespace Hecton8.UI
                     false,
                     0,
                     null,
-                    LightProbeUsage.Off,
-                    null);
+                   LightProbeUsage.Off,
+                   null);
             }
+        }
+
+        private static bool TryResolveInventoryHologramViewGate(out Vector3 viewPosition, out Vector3 viewForward, out float minViewDot)
+        {
+            viewPosition = default;
+            viewForward = Vector3.forward;
+            minViewDot = -1f;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (playerCamera == null)
+                return false;
+
+            Transform cameraTransform = playerCamera.transform;
+            viewPosition = cameraTransform.position;
+            viewForward = cameraTransform.forward;
+            float halfFovDegrees = Mathf.Clamp((playerCamera.fieldOfView * 0.5f) + 8f, 1f, 89f);
+            minViewDot = Mathf.Cos(halfFovDegrees * Mathf.Deg2Rad);
+            return true;
+        }
+
+        private static bool PassesInventoryHologramFrustumGate(Vector3 worldPosition, Vector3 viewPosition, Vector3 viewForward, float minViewDot)
+        {
+            Vector3 toHologram = worldPosition - viewPosition;
+            float sqrDistance = toHologram.sqrMagnitude;
+            if (sqrDistance <= 0.000001f)
+                return true;
+
+            float invDistance = 1f / Mathf.Sqrt(sqrDistance);
+            float viewDot = Vector3.Dot(viewForward, toHologram * invDistance);
+            return viewDot >= minViewDot;
+        }
+
+        private static bool IsFiniteHologramTransform(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            float3 pos = new float3(position.x, position.y, position.z);
+            bool positionFinite = math.all(math.isfinite(pos));
+#if UNITY_ASSERTIONS
+            Debug.Assert(positionFinite);
+#endif
+            return positionFinite &&
+                   math.all(math.isfinite(new float4(rotation.x, rotation.y, rotation.z, rotation.w))) &&
+                   math.all(math.isfinite(new float3(scale.x, scale.y, scale.z))) &&
+                   scale.x > 0f &&
+                   scale.y > 0f &&
+                   scale.z > 0f;
         }
 
         private void ValidateSelectionAgainstGrid(InventoryGrid grid)

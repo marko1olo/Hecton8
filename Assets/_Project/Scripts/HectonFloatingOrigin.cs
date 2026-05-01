@@ -99,6 +99,8 @@ namespace Hecton8.Core
         private float _anchorResolveTimer;
         private uint _shiftSequence;
         private int _driftCheckCount;
+        private int _lastShiftSceneReadyCount;
+        private int _lastShiftSceneTotal;
         private Vector3 _previousAnchorPosition;
         private Rigidbody _anchorRigidbody;
         private CriticalAupTracker _playerDriftTracker;
@@ -286,15 +288,21 @@ namespace Hecton8.Core
         public static async Awaitable<OriginShiftEventData> WaitForShiftStabilityAsync(CancellationToken cancellationToken = default)
         {
             int watchdog = 0;
-            while (_instance != null && (_instance._isShiftInProgress || _instance._physicsPauseActive))
+            while (_instance != null &&
+                   (_instance._isShiftInProgress ||
+                    _instance._physicsPauseActive ||
+                    HasPendingSceneRebaseBarrier(_instance)))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (watchdog++ > ShiftStabilityWatchdogFrames)
                 {
+                    int readyCount = Volatile.Read(ref _instance._lastShiftSceneReadyCount);
+                    int totalCount = Volatile.Read(ref _instance._lastShiftSceneTotal);
                     Debug.LogError(
                         $"[FloatingOrigin] WaitForShiftStabilityAsync timed out after {ShiftStabilityWatchdogFrames} frames. " +
-                        $"shiftInProgress={_instance._isShiftInProgress} physicsPause={_instance._physicsPauseActive}");
+                        $"shiftInProgress={_instance._isShiftInProgress} physicsPause={_instance._physicsPauseActive} " +
+                        $"sceneReady={readyCount}/{totalCount}");
                     break;
                 }
 
@@ -482,6 +490,7 @@ namespace Hecton8.Core
                     Time.frameCount,
                     fixedInterpolationAlpha);
 
+                CrashTelemetryBuffer.ReportOriginShift(shiftOffset, _shiftSequence);
                 PublishGlobalOffsets();
                 ResyncCriticalEntityTrackersAfterShift();
                 PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
@@ -492,10 +501,12 @@ namespace Hecton8.Core
             }
             catch (OperationCanceledException)
             {
+                CompleteSceneRebaseBarrier();
                 _physicsResumeFrame = Time.frameCount;
             }
             catch (Exception exception)
             {
+                CompleteSceneRebaseBarrier();
                 _physicsResumeFrame = Time.frameCount;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogException(exception);
@@ -528,6 +539,8 @@ namespace Hecton8.Core
             if (!origin._physicsPauseActive)
                 origin.PausePhysicsForShift();
 
+            PhysicsApplySystem.ResetTrackedBodiesForSafeTeleport();
+
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             playerContext?.PlayerMovement?.ResetKinematicTransientStateForTeleport();
 
@@ -550,6 +563,9 @@ namespace Hecton8.Core
         private void ResumePhysicsAfterShift()
         {
             if (!_physicsPauseActive)
+                return;
+
+            if (HasPendingSceneRebaseBarrier(this))
                 return;
 
             UnityEngine.Physics.simulationMode = _physicsSimulationModeBeforeShift;
@@ -593,7 +609,79 @@ namespace Hecton8.Core
 
         private async Awaitable BroadcastOriginShiftAsync(OriginShiftEventData shiftData, CancellationToken cancellationToken)
         {
-            SynchronizeLoadedSceneOriginShiftListeners();
+            int totalLoadedScenes = CountLoadedScenes();
+            Interlocked.Exchange(ref _lastShiftSceneReadyCount, 0);
+            Interlocked.Exchange(ref _lastShiftSceneTotal, totalLoadedScenes);
+
+            if (totalLoadedScenes > 0)
+            {
+                int sceneCount = SceneManager.sceneCount;
+                for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
+                {
+                    Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                    if (!scene.IsValid() || !scene.isLoaded)
+                        continue;
+
+                    await BroadcastOriginShiftForSceneAsync(scene, shiftData, cancellationToken);
+                    Interlocked.Increment(ref _lastShiftSceneReadyCount);
+                }
+            }
+
+            await BroadcastNonSceneOriginShiftListenersAsync(shiftData, cancellationToken);
+
+            int watchdog = 0;
+            while (HasPendingSceneRebaseBarrier(this))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (watchdog++ > ShiftStabilityWatchdogFrames)
+                    break;
+
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
+        }
+
+        private async Awaitable BroadcastOriginShiftForSceneAsync(Scene scene, OriginShiftEventData shiftData, CancellationToken cancellationToken)
+        {
+            _sceneRootObjects.Clear();
+            scene.GetRootGameObjects(_sceneRootObjects);
+            for (int rootIndex = 0; rootIndex < _sceneRootObjects.Count; rootIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                GameObject rootObject = _sceneRootObjects[rootIndex];
+                if (rootObject == null)
+                    continue;
+
+                _sceneComponentScratch.Clear();
+                rootObject.GetComponentsInChildren(true, _sceneComponentScratch);
+                for (int componentIndex = 0; componentIndex < _sceneComponentScratch.Count; componentIndex++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    IOriginShiftListener listener = _sceneComponentScratch[componentIndex] as IOriginShiftListener;
+                    if (listener == null)
+                        continue;
+
+                    RegisterListener(listener);
+                    await DispatchOriginShiftListenerAsync(listener, shiftData, cancellationToken);
+                }
+            }
+
+            _sceneComponentScratch.Clear();
+            _sceneRootObjects.Clear();
+        }
+
+        private static async Awaitable DispatchOriginShiftListenerAsync(
+            IOriginShiftListener listener,
+            OriginShiftEventData shiftData,
+            CancellationToken cancellationToken)
+        {
+            if (listener is IAwaitableOriginShiftListener awaitableListener)
+                await awaitableListener.OnOriginShiftAsync(shiftData, cancellationToken);
+            else
+                listener.OnOriginShift(in shiftData);
+        }
+
+        private async Awaitable BroadcastNonSceneOriginShiftListenersAsync(OriginShiftEventData shiftData, CancellationToken cancellationToken)
+        {
             for (int i = _originShiftListeners.Count - 1; i >= 0; i--)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -605,11 +693,50 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                if (listener is IAwaitableOriginShiftListener awaitableListener)
-                    await awaitableListener.OnOriginShiftAsync(shiftData, cancellationToken);
-                else
-                    listener.OnOriginShift(in shiftData);
+                if (IsSceneResidentOriginShiftListener(listener))
+                    continue;
+
+                await DispatchOriginShiftListenerAsync(listener, shiftData, cancellationToken);
             }
+        }
+
+        private static bool IsSceneResidentOriginShiftListener(IOriginShiftListener listener)
+        {
+            Component component = listener as Component;
+            if (component == null)
+                return false;
+
+            Scene scene = component.gameObject.scene;
+            return scene.IsValid() && scene.isLoaded;
+        }
+
+        private static int CountLoadedScenes()
+        {
+            int loadedSceneCount = 0;
+            int sceneCount = SceneManager.sceneCount;
+            for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (scene.IsValid() && scene.isLoaded)
+                    loadedSceneCount++;
+            }
+
+            return loadedSceneCount;
+        }
+
+        private static bool HasPendingSceneRebaseBarrier(HectonFloatingOrigin origin)
+        {
+            if (origin == null)
+                return false;
+
+            int totalCount = Volatile.Read(ref origin._lastShiftSceneTotal);
+            return totalCount > 0 && Volatile.Read(ref origin._lastShiftSceneReadyCount) < totalCount;
+        }
+
+        private void CompleteSceneRebaseBarrier()
+        {
+            int totalCount = Volatile.Read(ref _lastShiftSceneTotal);
+            Interlocked.Exchange(ref _lastShiftSceneReadyCount, totalCount);
         }
 
         private void SynchronizeLoadedSceneOriginShiftListeners()

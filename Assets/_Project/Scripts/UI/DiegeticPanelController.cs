@@ -1,5 +1,6 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -249,6 +250,22 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Layer assigned to the world-space canvas hierarchy when RT presentation is active.")]
         private int panelCanvasLayer = 5;
 
+        [Header("── Proxy Light ─────────────────────────")]
+        [SerializeField, Tooltip("Registers a lightweight diegetic proxy light while the panel is powered.")]
+        private bool enableProxyLight = true;
+
+        [SerializeField, Min(0.01f), Tooltip("Meters covered by the panel proxy light.")]
+        private float proxyLightRangeMeters = 1.35f;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Maximum normalized intensity written into the proxy light registry.")]
+        private float proxyLightIntensity = 0.22f;
+
+        [SerializeField, Tooltip("Linearized panel proxy light color. Use low values; this is a lighting hint, not a real Light component.")]
+        private Color proxyLightColor = new Color(0.58f, 0.92f, 1f, 1f);
+
+        [SerializeField, Range(0f, 0.3f), Tooltip("Small unscaled flicker amount synchronized with panel power.")]
+        private float proxyLightFlicker = 0.06f;
+
         // COLD ALLOC: RaycastHit[1] — bounded panel hit buffer — owner: DiegeticPanelController
         // COLD ALLOC: DiegeticPanelInputEvent[16] — fixed panel input ring buffer — owner: DiegeticPanelController
         private readonly DiegeticPanelInputEvent[] _inputEvents = new DiegeticPanelInputEvent[InputEventCapacity];
@@ -260,6 +277,7 @@ namespace Hecton8.UI
         private Transform _resolvedPanelTransform;
         private Camera _resolvedInteractionCamera;
         private GraphicRaycaster _cachedGraphicRaycaster;
+        private Canvas _cachedGraphicRaycasterCanvas;
         private IPanelInteractable _panelInteractable;
         private IPanelPowerSource _panelPowerSource;
         private IInteractionSignalService _interactionSignals;
@@ -288,6 +306,8 @@ namespace Hecton8.UI
         private int _inputEventTail;
         private int _inputEventCount;
         private int _appliedCanvasLayer = int.MinValue;
+        private int _proxyLightKey;
+        private bool _proxyLightRegistered;
         private ulong _raycastRequesterId;
         private float2 _clampedCanvasPosition;
         private float3 _smoothedCursorWorld;
@@ -306,7 +326,8 @@ namespace Hecton8.UI
         private void Awake()
         {
             _raycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
-            ResolveSerializedReferences();
+            _proxyLightKey = GetInstanceID();
+            ResolveSerializedReferences(resolveGraphicRaycaster: true);
             ResolveInterfaces();
             DetermineTargetHardwareTier();
             RefreshServices();
@@ -320,7 +341,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            ResolveSerializedReferences();
+            ResolveSerializedReferences(resolveGraphicRaycaster: true);
             RefreshServices();
             TryRegisterTick();
             RegisterRenderPipelineHook();
@@ -333,6 +354,7 @@ namespace Hecton8.UI
         {
             UnregisterTick();
             UnregisterRenderPipelineHook();
+            UnregisterProxyLight();
             _wasPressedLastFrame = false;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
@@ -344,6 +366,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             UnregisterRenderPipelineHook();
+            UnregisterProxyLight();
             ReleaseRenderTexture();
             ReleasePhosphorResources();
         }
@@ -357,6 +380,7 @@ namespace Hecton8.UI
             RefreshPanelData(forceRefresh: false);
             RefreshDistanceAndRenderTexture(deltaTime);
             ApplyPowerLevel();
+            UpdateProxyLightRegistration();
 
             if (!TryResolveRay(out float3 rayOriginWs, out float3 rayDirectionWs))
             {
@@ -560,7 +584,7 @@ namespace Hecton8.UI
             distanceRefreshInterval = Mathf.Max(0.1f, distanceRefreshInterval);
             depthFadeRange = Mathf.Max(0.001f, depthFadeRange);
 
-            ResolveSerializedReferences();
+            ResolveSerializedReferences(resolveGraphicRaycaster: true);
             ResolveInterfaces();
             DetermineTargetHardwareTier();
             ApplyCanvasWorldSpaceSettings();
@@ -568,7 +592,7 @@ namespace Hecton8.UI
         }
 #endif
 
-        private void ResolveSerializedReferences()
+        private void ResolveSerializedReferences(bool resolveGraphicRaycaster)
         {
             if (targetCanvas == null)
                 targetCanvas = GetComponent<Canvas>();
@@ -585,8 +609,13 @@ namespace Hecton8.UI
             _resolvedPanelRect = panelRect;
             _resolvedPanelTransform = _resolvedPanelRect != null ? _resolvedPanelRect.transform : transform;
 
-            if (targetCanvas != null)
+            if (resolveGraphicRaycaster &&
+                targetCanvas != null &&
+                !ReferenceEquals(_cachedGraphicRaycasterCanvas, targetCanvas))
+            {
                 targetCanvas.TryGetComponent(out _cachedGraphicRaycaster);
+                _cachedGraphicRaycasterCanvas = targetCanvas;
+            }
         }
 
         private void ResolveInterfaces()
@@ -615,7 +644,7 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return false;
 
-            ResolveSerializedReferences();
+            ResolveSerializedReferences(resolveGraphicRaycaster: false);
             ResolveInterfaces();
             RefreshServices();
             ApplyCanvasWorldSpaceSettings();
@@ -950,6 +979,59 @@ namespace Hecton8.UI
 
             if (panelOutputMaterial.HasProperty(_PanelPowerLevelId))
                 panelOutputMaterial.SetFloat(_PanelPowerLevelId, math.max(0f, _appliedPowerLevel));
+        }
+
+        private void UpdateProxyLightRegistration()
+        {
+            if (!enableProxyLight ||
+                (_panelData.StateFlags & PanelStateFlags.Powered) == 0 ||
+                _appliedPowerLevel <= 0.0001f)
+            {
+                UnregisterProxyLight();
+                return;
+            }
+
+            float3 panelNormal = math.normalizesafe(_panelData.LocalToWorld.c2.xyz, new float3(0f, 0f, 1f));
+            float3 runtimePosition = _panelData.LocalToWorld.c3.xyz + (panelNormal * 0.025f);
+            if (!math.all(math.isfinite(runtimePosition)) || !math.all(math.isfinite(panelNormal)))
+            {
+                UnregisterProxyLight();
+                return;
+            }
+
+            float now = Time.unscaledTime;
+            float flickerWave = 0.5f + (0.5f * math.sin((now * 23.0f) + (panelId * 0.37f)));
+            float flicker01 = math.saturate(1f - proxyLightFlicker + (flickerWave * proxyLightFlicker));
+            float intensity = math.saturate(proxyLightIntensity * _appliedPowerLevel * flicker01);
+            if (intensity <= 0.0001f)
+            {
+                UnregisterProxyLight();
+                return;
+            }
+
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)runtimePosition);
+            ProxyLightData lightData = ProxyLightData.CreateUiPanel(
+                in aup,
+                runtimePosition,
+                panelNormal,
+                proxyLightColor.linear,
+                proxyLightRangeMeters,
+                intensity,
+                flickerWave,
+                _appliedPowerLevel,
+                now);
+
+            if (ProxyLightRegistry.RegisterOrUpdate(_proxyLightKey, in lightData))
+                _proxyLightRegistered = true;
+        }
+
+        private void UnregisterProxyLight()
+        {
+            if (!_proxyLightRegistered)
+                return;
+
+            ProxyLightRegistry.Unregister(_proxyLightKey);
+            _proxyLightRegistered = false;
         }
 
         private bool TryResolveRay(out float3 rayOriginWs, out float3 rayDirectionWs)

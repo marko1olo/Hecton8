@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Optimization
@@ -18,6 +19,14 @@ namespace Hecton8.Optimization
         private const int Tier56Slots = 2;
         private const int Tier56WarningSlots = 0;
         private const int StarvationFrameThreshold = 60;
+        private const long BytesPerMegabyte = 1024L * 1024L;
+        private const long UiMipDowngradeThresholdBytes = 1700L * BytesPerMegabyte;
+        private const long UiMipRestoreThresholdBytes = 1400L * BytesPerMegabyte;
+        private const int LowVramDeviceThresholdMb = 2048;
+        private const uint UiMipGateHighHash = 0xB157A301u;
+        private const uint UiMipGateRestoreHash = 0xB157A302u;
+        private const uint UiTextureContextHash = 0x71C0A11Du;
+        private const int AddressableGroupMapCapacity = 512;
 
         private static AssetLoadDispatcher _instance;
 
@@ -39,8 +48,32 @@ namespace Hecton8.Optimization
         private readonly List<AssetDispatchRequest> _inflightRequests = new List<AssetDispatchRequest>(64);
         // COLD ALLOC: int[4] - tier-band inflight counters - owner: AssetLoadDispatcher
         private readonly int[] _inflightCounts = new int[4];
+        private int _baselineGlobalTextureMipLimit;
+        private int _activeGlobalTextureMipLimit;
+        private long _lastObservedVramBytes;
+        private NativeParallelHashMap<uint, byte> _addressableGroupMap;
+        private bool _mipGateInitialized;
+        private bool _uiMipBiasGateActive;
 
         internal static AssetLoadDispatcher Instance => _instance;
+
+        internal static bool IsUiMipBiasGateActive => _instance != null && _instance._uiMipBiasGateActive;
+
+        internal static long LastObservedVramBytes => _instance != null ? _instance._lastObservedVramBytes : 0L;
+
+        internal static void ForceEvaluateUiMipBiasGate()
+        {
+            if (_instance != null)
+                _instance.EvaluateUiMipBiasGate();
+        }
+
+        internal static void RegisterAddressableGroup(uint assetKey, AddressableAssetGroupKind group)
+        {
+            if (_instance == null || assetKey == 0u)
+                return;
+
+            _instance.RegisterAddressableGroupInternal(assetKey, group);
+        }
 
         private void Awake()
         {
@@ -51,6 +84,7 @@ namespace Hecton8.Optimization
             }
 
             _instance = this;
+            CaptureMipBiasBaseline();
         }
 
         private void OnEnable()
@@ -74,6 +108,8 @@ namespace Hecton8.Optimization
             _queuedRequests.Clear();
             _readyTickets.Clear();
             _inflightRequests.Clear();
+            if (_addressableGroupMap.IsCreated)
+                _addressableGroupMap.Dispose();
 
             for (int i = 0; i < _inflightCounts.Length; i++)
                 _inflightCounts[i] = 0;
@@ -85,6 +121,7 @@ namespace Hecton8.Optimization
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            EvaluateUiMipBiasGate();
             AgeQueuedRequests();
             DispatchWithinBudget();
         }
@@ -92,6 +129,8 @@ namespace Hecton8.Optimization
         internal bool Enqueue(uint assetKey, AssetPriorityTier priority, bool isDistantHlod, out int requestId)
         {
             requestId = 0;
+            if (IsUiIconGroup(assetKey))
+                EvaluateUiMipBiasGate();
 
             for (int i = 0; i < _queuedRequests.Count; i++)
             {
@@ -207,6 +246,96 @@ namespace Hecton8.Optimization
             AssetLifecycleGovernor governor = AssetLifecycleGovernor.Instance;
             if (governor != null)
                 governor.ForceDrainPendingReleaseQueue();
+        }
+
+        private void CaptureMipBiasBaseline()
+        {
+            if (_mipGateInitialized)
+                return;
+
+            _baselineGlobalTextureMipLimit = QualitySettings.globalTextureMipmapLimit;
+            _activeGlobalTextureMipLimit = _baselineGlobalTextureMipLimit;
+            EnsureAddressableGroupMap();
+            _mipGateInitialized = true;
+        }
+
+        private void EnsureAddressableGroupMap()
+        {
+            if (_addressableGroupMap.IsCreated)
+                return;
+
+            _addressableGroupMap = new NativeParallelHashMap<uint, byte>(AddressableGroupMapCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,byte>[512] - addressable asset group map for UI mip gate - owner: AssetLoadDispatcher
+        }
+
+        private void RegisterAddressableGroupInternal(uint assetKey, AddressableAssetGroupKind group)
+        {
+            EnsureAddressableGroupMap();
+            if (_addressableGroupMap.ContainsKey(assetKey))
+                _addressableGroupMap.Remove(assetKey);
+
+            _addressableGroupMap.TryAdd(assetKey, (byte)group);
+        }
+
+        private bool IsUiIconGroup(uint assetKey)
+        {
+            EnsureAddressableGroupMap();
+            return _addressableGroupMap.TryGetValue(assetKey, out byte group) &&
+                   group == (byte)AddressableAssetGroupKind.UIIcons;
+        }
+
+        private void EvaluateUiMipBiasGate()
+        {
+            CaptureMipBiasBaseline();
+
+            int graphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
+            if (graphicsMemoryMb == 0 || graphicsMemoryMb > LowVramDeviceThresholdMb)
+            {
+                if (_uiMipBiasGateActive)
+                    RestoreUiMipBiasGate();
+                return;
+            }
+
+            VRAMMonitor monitor = VRAMMonitor.Instance;
+            if (monitor == null)
+                return;
+
+            monitor.GetVRAMBreakdown(out _, out _, out long totalVramBytes);
+            _lastObservedVramBytes = totalVramBytes;
+
+            if (totalVramBytes >= UiMipDowngradeThresholdBytes)
+            {
+                ApplyUiMipBiasGate(totalVramBytes);
+                return;
+            }
+
+            if (_uiMipBiasGateActive && totalVramBytes <= UiMipRestoreThresholdBytes)
+                RestoreUiMipBiasGate();
+        }
+
+        private void ApplyUiMipBiasGate(long observedVramBytes)
+        {
+            int requestedLimit = Mathf.Max(_baselineGlobalTextureMipLimit, 1);
+            int currentLimit = QualitySettings.globalTextureMipmapLimit;
+            int targetLimit = Mathf.Max(currentLimit, requestedLimit);
+            if (currentLimit != targetLimit)
+                QualitySettings.globalTextureMipmapLimit = targetLimit;
+
+            _activeGlobalTextureMipLimit = targetLimit;
+            if (_uiMipBiasGateActive)
+                return;
+
+            _uiMipBiasGateActive = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateHighHash, UiTextureContextHash, observedVramBytes / (float)BytesPerMegabyte);
+        }
+
+        private void RestoreUiMipBiasGate()
+        {
+            if (QualitySettings.globalTextureMipmapLimit == _activeGlobalTextureMipLimit)
+                QualitySettings.globalTextureMipmapLimit = _baselineGlobalTextureMipLimit;
+
+            _uiMipBiasGateActive = false;
+            _activeGlobalTextureMipLimit = _baselineGlobalTextureMipLimit;
+            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateRestoreHash, UiTextureContextHash, _lastObservedVramBytes / (float)BytesPerMegabyte);
         }
 
         private void TryRegister()

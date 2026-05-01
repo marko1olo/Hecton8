@@ -38,13 +38,17 @@ Flush order visible in source:
 6. `SaveEvents.FlushPending()`
 7. `QuestEvents.FlushPending()`
 8. `AudioLogEvents.FlushPending()`
-9. `AtlasSignalEvents.FlushPending()`
-10. `NotificationEvents.FlushPending()`
-11. `PDAEvents.FlushPending()`
-12. `SceneBootstrap.FlushPendingEvents()`
-13. `ObjectPoolDiagnostics.FlushPending()`
-14. `Atlas6Events.FlushPending()`
-15. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
+9. `HectonSubmarineOsEvents.FlushPending()`
+10. `FlashlightEvents.FlushPending()`
+11. `WeatherEvents.FlushPending()`
+12. `AtlasSignalEvents.FlushPending()`
+13. `NotificationEvents.FlushPending()`
+14. `PDAEvents.FlushPending()`
+15. `SceneBootstrap.FlushPendingEvents()`
+16. `ObjectPoolDiagnostics.FlushPending()`
+17. `Atlas6Events.FlushPending()`
+18. `GlobalRegistry.FlushPendingServiceReboundEvents()`
+19. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
 
 `SystemDispatcher.TryConsumeLateFrameEventDispatch()` enforces the shared late-frame event budget. If the budget is exhausted, queues retain remaining events for a later frame instead of draining unbounded work.
 
@@ -58,7 +62,11 @@ Confirmed queue-backed deferred buses:
 | `QuestEvents` | `QuestEventPayload` | NativeQueue; quest hash + event type. |
 | `ScanEvents` | `ScanEventPayload` | NativeQueue; hash payload plus cold metadata table. |
 | `NarrativeEvents` | `NarrativeEventPayload` | NativeQueue for discovery/depth lane; POI callback lane remains separate. |
-| `AudioLogEvents` | `AudioLogEventPayload` | NativeQueue; audio-log listener registry. |
+| `AudioLogEvents` | `AudioLogEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for dispatch-time `AudioLogData` resolution. |
+| `HectonSubmarineOsEvents` | `SubmarineOsEventPayload` | NativeQueue; sequential payload with module hash, emergency level, and status bits. |
+| `FlashlightEvents` | `FlashlightEventPayload` | NativeQueue; flashlight state bits plus battery/heat scalar fields. |
+| `WeatherEvents` | `WeatherEventPayload` | NativeQueue; weather state mask, wind/current vectors, and current metadata. |
+| `GlobalRegistry` rebound lane | `RegistryEventPayload` | NativeQueue; service slot + object identity hashes; managed service refs stay in fixed sidecar slots. |
 | `InteractionEvents` | `InteractionEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
 | `CraftingEvents` | `CraftingEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
 | `AtlasSignalEvents` | `AtlasSignalEventPayload` | NativeQueue; hash payload plus cold decoded-message table. |
@@ -127,16 +135,30 @@ Confirmed listener registration pattern for the migrated lanes:
 
 Scene/prefab UnityEvent bindings are outside this source-only scan.
 
-## 8. Remaining Drift
+## 8. Registry And Environmental Lanes
+
+Definitions:
+- `Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs`
+- `Assets/_Project/Scripts/PlayerFlashlight.cs`
+- `Assets/_Project/Scripts/Environment/WeatherEvents.cs`
+- `Assets/_Project/Scripts/Core/GlobalRegistry.cs`
+
+Current shape:
+- direct static multicast delegates were removed from `HectonSubmarineOsEvents` and `FlashlightEvents`
+- weather snapshots are published through `WeatherEvents` only when state/vector/intensity crosses the director epsilon checks
+- `GlobalRegistry` service rebounds enqueue `RegistryEventPayload` and drain in `SystemDispatcher.LateUpdate()`
+- registry sidecar references are dispatch-scoped; the native payload remains unmanaged
+- `SystemDispatcher` records the active lane hash when the late-frame circuit breaker trips and publishes a `PerformanceWarning` telemetry event with the dominant offender hash
+
+## 9. Remaining Drift
 
 Known remaining direct/static event surfaces still need separate audits:
-- `HectonSubmarineOsEvents`
 - feature-local celestial/weather/direct callback surfaces
 - any UI-only UnityEvent inspector binding not visible in class scans
 
 This document does not certify those surfaces.
 
-## 9. Regression Model
+## 10. Regression Model
 
 CPU: event drains remain bounded by the dispatcher late-frame budget; sidecar occupancy scans are capped at 128 probes on publish only.
 
@@ -148,7 +170,7 @@ Cadence: event flush cadence remains `SystemDispatcher.LateUpdate()`.
 
 Correctness: stale claims that `InteractionEvents` and `CraftingEvents` are direct static `Action` buses were removed.
 
-## 10. Hot Path Impact
+## 11. Hot Path Impact
 
 No per-frame allocation is introduced.
 
@@ -156,14 +178,14 @@ The changed work is in event publish and late-frame drain paths:
 - publish: bounded native enqueue plus fixed sidecar reservation when a first-party reference is required
 - drain: reverse `for` over listener registry, then sidecar release
 
-## 11. Failure Modes
+## 12. Failure Modes
 
 - If more than 128 unresolved sidecar-backed interaction or crafting events are queued before flush, `TryReserveReferenceSlot` returns false and that sidecar-backed event is dropped.
 - If late-frame budget is exhausted, remaining queue entries stay pending for a later frame.
 - Hash fields expose stable payload data to mods, but first-party listeners that need Unity references still depend on dispatch-time sidecar resolution.
 - Runtime GC and listener leak proof still require MCP/Profiler validation.
 
-## 12. Why This Version Was Kept
+## 13. Why This Version Was Kept
 
 Kept because it matches current source after the interaction/crafting queue migration and sidecar hardening.
 

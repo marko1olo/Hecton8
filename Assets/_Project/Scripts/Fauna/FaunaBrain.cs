@@ -20,7 +20,7 @@ namespace Hecton8.AI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IPoolable, ISerializationCallbackReceiver, ICuttable
+    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IPoolable, ISerializationCallbackReceiver, ICuttable, IOriginShiftListener
     {
         /// <summary>
         /// Global state definition for all fauna.
@@ -116,6 +116,7 @@ namespace Hecton8.AI
         private const float DamageFearPheromoneBoost = 1.35f;
         private const float DamageFlinchVelocityFloor = 6f;
         private const float DamageFlinchVelocityCeiling = 18f;
+        private const float DamageFlinchVelocityMaxMetersPerSecond = 15f;
         private const float DamageMicroFaunaPanicRadiusMeters = 24f;
         private const float DamageMicroFaunaPanicDurationSeconds = 1.25f;
         private const float HerbivoreSatedDurationSeconds = 16f;
@@ -131,6 +132,8 @@ namespace Hecton8.AI
         private const float ParentalDefenseIntensityThreshold = 0.1f;
         private const float DefaultEmpAttackRadiusMeters = 18f;
         private const float DefaultDazzleLockDurationSeconds = 0.35f;
+        private const float MimicPingOcclusionRetrySeconds = 0.5f;
+        private const int MimicPingDeepOcclusionWallCount = 3;
         private const float FeedingObservationCooldownSeconds = 6f;
         private const float FeedingObservationRadiusMeters = 80f;
         private const float FeedingObservationRadiusMetersSqr = FeedingObservationRadiusMeters * FeedingObservationRadiusMeters;
@@ -163,6 +166,8 @@ namespace Hecton8.AI
         private static readonly SpatialQueryHit[] _parentalDefenseBuffer = new SpatialQueryHit[16];
         // COLD ALLOC: Vector3[16] - reusable 3D cave-voxel guidance route for predator steering - owner: FaunaBrain
         private readonly Vector3[] _voxelRouteWaypoints = new Vector3[MaxVoxelRouteWaypointCount];
+        // COLD ALLOC: AbsoluteUniversePosition[16] - origin-shift-stable route ownership for predator steering - owner: FaunaBrain
+        private readonly AbsoluteUniversePosition[] _voxelRouteWaypointAups = new AbsoluteUniversePosition[MaxVoxelRouteWaypointCount];
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -176,7 +181,9 @@ namespace Hecton8.AI
         private int _voxelRouteWaypointCount;
         private float _nextVoxelRouteRefreshTime;
         private Vector3 _voxelRouteTargetPosition;
+        private AbsoluteUniversePosition _voxelRouteTargetAup;
         private bool _hasVoxelRouteTarget;
+        private bool _originShiftListenerRegistered;
         private Transform _apexRivalTarget;
         private Transform _baitFeedingTarget;
         private Vector3 _forcedMigrationTarget;
@@ -188,6 +195,7 @@ namespace Hecton8.AI
         private float _mimicPingExpireTime;
         private bool _hasForcedMigrationTarget;
         private bool _mimicSignalActive;
+        private bool _mimicOcclusionRuntimeAcquired;
         private uint _cachedScanEntryHash;
 
         // ══════════════════════════════════════════════════════════
@@ -280,6 +288,8 @@ namespace Hecton8.AI
             if (!Application.isPlaying)
                 return;
 
+            RegisterOriginShiftListener();
+
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
@@ -292,6 +302,7 @@ namespace Hecton8.AI
             RegisterSpatialHandle();
             _utilityBrain.SetRuntimeActive(true);
             ResetDispatcherCadence();
+            RefreshMimicOcclusionRuntimeOwner();
         }
 
         private void OnDisable()
@@ -307,10 +318,12 @@ namespace Hecton8.AI
 
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
+            UnregisterOriginShiftListener();
             _utilityBrain.SetRuntimeActive(false);
             ResetDispatcherCadence();
             ClearVoxelPathGuidance();
             ClearEcholocationMimicSignal();
+            ReleaseMimicOcclusionRuntimeOwner();
         }
 
         private void OnDestroy()
@@ -323,9 +336,11 @@ namespace Hecton8.AI
 
             UnregisterSpatialHandle();
             ClearInfectionHazardRegistration();
+            UnregisterOriginShiftListener();
             _utilityBrain.Dispose();
             ClearVoxelPathGuidance();
             ClearEcholocationMimicSignal();
+            ReleaseMimicOcclusionRuntimeOwner();
         }
 
         public void OnSpawn()
@@ -343,8 +358,10 @@ namespace Hecton8.AI
             ConfigureFaunaScanMetadata();
             RefreshRuntimeEcosystemState();
             RegisterSpatialHandle();
+            RegisterOriginShiftListener();
             ResetDispatcherCadence();
             ClearProceduralStrikeIntent();
+            RefreshMimicOcclusionRuntimeOwner();
         }
 
         public void OnDespawn()
@@ -362,10 +379,12 @@ namespace Hecton8.AI
             _cognitionTimeSeconds = 0f;
             ClearInfectionHazardRegistration();
             UnregisterSpatialHandle();
+            UnregisterOriginShiftListener();
             ResetDispatcherCadence();
             ClearProceduralStrikeIntent();
             ClearVoxelPathGuidance();
             ClearEcholocationMimicSignal();
+            ReleaseMimicOcclusionRuntimeOwner();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -668,6 +687,9 @@ namespace Hecton8.AI
             if (dot < dotThreshold)
                 return 0f;
 
+            if (!_sensorSuite.HasPlayerLightLineOfSight())
+                return 0f;
+
             float cone01 = Mathf.InverseLerp(dotThreshold, 1f, dot);
             float distance01 = 1f - Mathf.Clamp01(distance / range);
             float authoredExposure01 = Mathf.Clamp01(cone01 * distance01);
@@ -727,6 +749,7 @@ namespace Hecton8.AI
                     _voxelRouteWaypointCount = waypointCount;
                     _voxelRouteTargetPosition = targetPosition;
                     _hasVoxelRouteTarget = waypointCount >= 2;
+                    CacheVoxelRouteAupState(waypointCount, targetPosition);
                     _nextVoxelRouteRefreshTime = _cognitionTimeSeconds + VoxelRouteRefreshIntervalSeconds;
                 }
                 else
@@ -781,6 +804,7 @@ namespace Hecton8.AI
             _voxelRouteWaypointCount = 3;
             _voxelRouteTargetPosition = breachWorldPosition;
             _hasVoxelRouteTarget = true;
+            CacheVoxelRouteAupState(_voxelRouteWaypointCount, breachWorldPosition);
             _nextVoxelRouteRefreshTime = _cognitionTimeSeconds + VoxelRouteRefreshIntervalSeconds;
 
             Vector3 guidePoint = (solidAnchorWorldPosition - (Vector3)selfPosition).sqrMagnitude > VoxelRouteWaypointReachDistanceSqr
@@ -826,24 +850,28 @@ namespace Hecton8.AI
                 !_faunaDataTemplate.CanDazzleHypnotize ||
                 !PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
                 runtimeContext == null ||
-                runtimeContext.PlayerMovement == null ||
-                runtimeContext.PlayerCamera == null)
+                runtimeContext.PlayerMovement == null)
             {
                 return;
             }
 
-            Vector3 toFauna = transform.position - runtimeContext.PlayerCamera.transform.position;
-            float maxRange = _faunaDataTemplate.DazzleRangeMeters;
-            if (toFauna.sqrMagnitude > maxRange * maxRange)
+            PlayerLookState lookState = runtimeContext.LookState;
+            if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
                 return;
 
-            Vector3 lookDirection = runtimeContext.PlayerCamera.transform.forward;
-            float gazeDot = Vector3.Dot(lookDirection.normalized, toFauna.normalized);
+            Vector3 faunaPosition = transform.position;
+            float3 toFauna3 = (float3)faunaPosition - lookState.EyePosition;
+            float maxRange = _faunaDataTemplate.DazzleRangeMeters;
+            if (math.lengthsq(toFauna3) > maxRange * maxRange)
+                return;
+
+            float3 lookDirection = math.normalizesafe(lookState.AimForward, runtimeContext.MovementState.Forward);
+            float gazeDot = math.dot(lookDirection, math.normalizesafe(toFauna3));
             if (gazeDot < _faunaDataTemplate.DazzleLookDotThreshold)
                 return;
 
             runtimeContext.PlayerMovement.ApplyFaunaHypnosisPull(
-                transform.position,
+                faunaPosition,
                 _faunaDataTemplate.DazzlePullAcceleration,
                 DefaultDazzleLockDurationSeconds);
         }
@@ -912,7 +940,16 @@ namespace Hecton8.AI
             if (playerDistanceSqr <= vanishDistanceSqr || playerDistanceSqr > pingRadius * pingRadius)
                 return;
 
-            EmitEcholocationMimicPing(selfPosition);
+            if (!TryResolveMimicPingTransmission(selfPosition, playerPosition, out float acousticTransmission01))
+                return;
+
+            if (acousticTransmission01 <= AcousticOcclusionUtility.DeepShadowTransmissionThreshold)
+            {
+                _nextMimicPingTime = _cognitionTimeSeconds + MimicPingOcclusionRetrySeconds;
+                return;
+            }
+
+            EmitEcholocationMimicPing(selfPosition, acousticTransmission01);
         }
 
         private bool ShouldUseEcholocationMimicry()
@@ -921,6 +958,31 @@ namespace Hecton8.AI
                 return false;
 
             return IsApexPredator() || _faunaDataTemplate.FoodChainTier == FaunaFoodChainTier.Leviathan;
+        }
+
+        private void RefreshMimicOcclusionRuntimeOwner()
+        {
+            bool shouldAcquire = ShouldUseEcholocationMimicry();
+            if (!shouldAcquire)
+            {
+                ReleaseMimicOcclusionRuntimeOwner();
+                return;
+            }
+
+            if (_mimicOcclusionRuntimeAcquired)
+                return;
+
+            AcousticOcclusionUtility.AcquireRuntime();
+            _mimicOcclusionRuntimeAcquired = true;
+        }
+
+        private void ReleaseMimicOcclusionRuntimeOwner()
+        {
+            if (!_mimicOcclusionRuntimeAcquired)
+                return;
+
+            AcousticOcclusionUtility.ReleaseRuntime();
+            _mimicOcclusionRuntimeAcquired = false;
         }
 
         private bool TryResolveMimicPlayerPosition(out Vector3 playerPosition)
@@ -939,22 +1001,57 @@ namespace Hecton8.AI
             return true;
         }
 
-        private void EmitEcholocationMimicPing(Vector3 selfPosition)
+        private void EmitEcholocationMimicPing(Vector3 selfPosition, float acousticTransmission01)
         {
             if (_faunaDataTemplate == null)
                 return;
 
+            float maskedTransmission01 = Mathf.Clamp01(acousticTransmission01);
             _mimicSignalActive = true;
             _mimicPingExpireTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingLifetimeSeconds;
             _nextMimicPingTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingCooldownSeconds;
 
             PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
                 selfPosition,
-                _faunaDataTemplate.MimicPingRadiusMeters,
-                _faunaDataTemplate.MimicPingIntensity01,
+                _faunaDataTemplate.MimicPingRadiusMeters * maskedTransmission01,
+                _faunaDataTemplate.MimicPingIntensity01 * maskedTransmission01,
                 _faunaDataTemplate.MimicPingLifetimeSeconds,
                 FieldTargetRole.DistressBeacon,
                 ComputeStableSpeciesId()));
+        }
+
+        private bool TryResolveMimicPingTransmission(Vector3 selfPosition, Vector3 playerPosition, out float acousticTransmission01)
+        {
+            acousticTransmission01 = 1f;
+            Transform playerRoot = _currentCullingPlayerTransform;
+            if (playerRoot == null)
+            {
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _currentCullingPlayerTransform);
+                playerRoot = _currentCullingPlayerTransform;
+            }
+
+            int sensoryMask = AcousticOcclusionUtility.BuildSensoryMask();
+            if (!AcousticOcclusionUtility.TryGetCachedOcclusionPath(
+                    selfPosition,
+                    playerPosition,
+                    sensoryMask,
+                    transform,
+                    playerRoot,
+                    out AcousticOcclusionResult occlusion))
+            {
+                AcousticOcclusionUtility.PrimeOcclusionPath(
+                    selfPosition,
+                    playerPosition,
+                    sensoryMask,
+                    transform,
+                    playerRoot);
+                return false;
+            }
+
+            acousticTransmission01 = occlusion.HitCount >= MimicPingDeepOcclusionWallCount
+                ? 0f
+                : Mathf.Clamp01(occlusion.Transmission01);
+            return true;
         }
 
         private void CommitEcholocationMimicAmbush(Vector3 playerPosition)
@@ -1360,6 +1457,55 @@ namespace Hecton8.AI
             _hasVoxelRouteTarget = false;
             _nextVoxelRouteRefreshTime = 0f;
             _voxelRouteTargetPosition = default;
+            _voxelRouteTargetAup = default;
+        }
+
+        /// <summary>
+        /// Rehydrates runtime route vectors from Absolute Universe Position storage after a floating-origin shift.
+        /// </summary>
+        /// <param name="shiftData">Committed shift payload.</param>
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            RefreshVoxelRouteRuntimeCacheFromAup();
+        }
+
+        private void RegisterOriginShiftListener()
+        {
+            if (_originShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _originShiftListenerRegistered = true;
+        }
+
+        private void UnregisterOriginShiftListener()
+        {
+            if (!_originShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _originShiftListenerRegistered = false;
+        }
+
+        private void CacheVoxelRouteAupState(int waypointCount, Vector3 targetPosition)
+        {
+            int clampedCount = math.clamp(waypointCount, 0, MaxVoxelRouteWaypointCount);
+            for (int waypointIndex = 0; waypointIndex < clampedCount; waypointIndex++)
+                _voxelRouteWaypointAups[waypointIndex] = AbsoluteUniversePosition.FromRuntimePosition(_voxelRouteWaypoints[waypointIndex]);
+
+            _voxelRouteTargetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);
+        }
+
+        private void RefreshVoxelRouteRuntimeCacheFromAup()
+        {
+            if (!_hasVoxelRouteTarget || _voxelRouteWaypointCount <= 0)
+                return;
+
+            int clampedCount = math.clamp(_voxelRouteWaypointCount, 0, MaxVoxelRouteWaypointCount);
+            for (int waypointIndex = 0; waypointIndex < clampedCount; waypointIndex++)
+                _voxelRouteWaypoints[waypointIndex] = _voxelRouteWaypointAups[waypointIndex].ToRuntimeFloat3();
+
+            _voxelRouteTargetPosition = _voxelRouteTargetAup.ToRuntimeFloat3();
         }
 
         public void FixedTick(float fdt)
@@ -2121,6 +2267,12 @@ namespace Hecton8.AI
             if (referenceVelocity.sqrMagnitude <= 0.0001f)
                 referenceVelocity = transform.forward;
 
+            if (obstacleNormal.sqrMagnitude < 0.1f)
+            {
+                slideDirection = ResolveDegenerateWallTurnaroundDirection(desiredDirection, referenceVelocity);
+                return slideDirection.sqrMagnitude > 0.0001f;
+            }
+
             float3 projectedVelocity = HectonContactJob.ProjectVelocityAlongSurface(referenceVelocity, obstacleNormal);
             if (math.lengthsq(projectedVelocity) <= 0.0001f)
                 return false;
@@ -2130,6 +2282,17 @@ namespace Hecton8.AI
             float blend = math.max(0.5f, math.saturate(obstaclePressure01));
             slideDirection = (Vector3)math.normalizesafe(math.lerp(incoming, slide, blend), slide);
             return slideDirection.sqrMagnitude > 0.0001f;
+        }
+
+        private Vector3 ResolveDegenerateWallTurnaroundDirection(Vector3 desiredDirection, Vector3 referenceVelocity)
+        {
+            Vector3 incoming = desiredDirection.sqrMagnitude > 0.0001f
+                ? desiredDirection
+                : referenceVelocity;
+            if (incoming.sqrMagnitude <= 0.0001f)
+                incoming = transform.forward;
+
+            return incoming.sqrMagnitude > 0.0001f ? -incoming.normalized : Vector3.back;
         }
 
         private void ApplyImmediateHitReaction(Vector3 damageSourcePosition, float normalizedDamage)
@@ -2154,6 +2317,7 @@ namespace Hecton8.AI
                 Mathf.Max(DamageFlinchVelocityFloor, _steeringEngine.maxSpeed),
                 Mathf.Max(DamageFlinchVelocityCeiling, _steeringEngine.maxSpeed * 2.25f),
                 Mathf.Clamp01(normalizedDamage));
+            targetFlinchVelocity = Mathf.Min(targetFlinchVelocity, DamageFlinchVelocityMaxMetersPerSecond);
             Vector3 targetVelocity = awayDirection * targetFlinchVelocity;
             Vector3 velocityChange = targetVelocity - _rb.linearVelocity;
             PhysicsForceRouter.QueueForce(_rb, velocityChange, ForceMode.VelocityChange);
@@ -2228,6 +2392,7 @@ namespace Hecton8.AI
             {
                 ApplyTemplateRuntimeTuning();
                 ConfigureFaunaScanMetadata();
+                RefreshMimicOcclusionRuntimeOwner();
                 return;
             }
 
@@ -2235,6 +2400,7 @@ namespace Hecton8.AI
             ApplyTemplateRuntimeTuning();
             _utilityBrain.BindProfile(_speciesProfile, _archetype, _faunaDataTemplate);
             ConfigureFaunaScanMetadata();
+            RefreshMimicOcclusionRuntimeOwner();
         }
 
         private void ApplyTemplateRuntimeTuning()

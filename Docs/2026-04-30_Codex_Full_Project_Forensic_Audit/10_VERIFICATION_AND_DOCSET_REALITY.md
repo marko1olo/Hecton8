@@ -26,12 +26,11 @@ Evidence in code:
 - `ToolTrialRangeRuntimeSmokeTester`
 - `UIRuntimeSmokeTester`
 - `WorldGenerativeGeologyRuntimeSmokeTester`
-- `PhysicalInteractionRuntimeVerifier`
-- `MantaAcousticRuntimeVerifier`
 
 Interpretation:
 - the project has built a bespoke runtime-verification culture
 - this is not a repo with zero self-checking
+- `PhysicalInteractionRuntimeVerifier`, `MantaAcousticRuntimeVerifier`, and `WeakToolsRuntimeSmokeTester` are historical/removed names in the current filesystem, not current evidence.
 
 ## But The Verification Mix Is Uneven
 

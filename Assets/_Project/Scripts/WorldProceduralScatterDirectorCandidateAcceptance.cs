@@ -11,6 +11,7 @@ namespace Hecton8.World
     public sealed partial class WorldProceduralScatterDirector
     {
         private const int FloraChunkInstanceHardCap = 4096;
+        private const int PoissonDiskMaxRejectionAttempts = 30;
 
         internal readonly struct ScatterPlacementSpatialMetadata
         {
@@ -381,6 +382,7 @@ namespace Hecton8.World
             public int FloraDensityClampMicroCap;
             public int FloraDensityClampMacroCap;
             public int FloraChunkHardCap;
+            public int MaxPoissonRejectionAttempts;
 
             public void Execute()
             {
@@ -403,6 +405,8 @@ namespace Hecton8.World
                 int spawnWindowCountSecondary = SpawnWindowCountSecondary;
                 int passiveSpawnCount = PassiveSpawnCount;
                 int predatorSpawnCount = PredatorSpawnCount;
+                int poissonRejectionAttempts = 0;
+                int maxPoissonRejectionAttempts = math.max(1, MaxPoissonRejectionAttempts);
 
                 for (int candidateIndex = 0; candidateIndex < Candidates.Length; candidateIndex++)
                 {
@@ -413,6 +417,9 @@ namespace Hecton8.World
                     if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
                         ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
                     {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
                     }
 
@@ -427,6 +434,9 @@ namespace Hecton8.World
                             StructureTargetMax,
                             SpawnTargetMax))
                     {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
                     }
 
@@ -455,6 +465,9 @@ namespace Hecton8.World
                             localSpawnCount,
                             currentWindowCount))
                     {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
                     }
 
@@ -477,6 +490,9 @@ namespace Hecton8.World
                             ClusterAccentRoleMaxRatios,
                             StructureAccentRoleMaxCounts))
                     {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
                     }
 
@@ -489,13 +505,22 @@ namespace Hecton8.World
                             FloraDensityClampMicroCap,
                             FloraDensityClampMacroCap))
                     {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
                     }
 
                     if (HasSpatialConflict(in candidate))
+                    {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
+                    }
 
                     Results[candidateIndex] = 1;
+                    poissonRejectionAttempts = 0;
                     RegisterAcceptedCandidate(
                         in candidate,
                         ref globalGroundCount,
@@ -515,6 +540,12 @@ namespace Hecton8.World
                         ref passiveSpawnCount,
                         ref predatorSpawnCount);
                 }
+            }
+
+            private static bool RegisterPoissonRejection(ref int rejectionAttempts, int maxRejectionAttempts)
+            {
+                rejectionAttempts++;
+                return rejectionAttempts >= maxRejectionAttempts;
             }
 
             private bool HasSpatialConflict(in ScatterCellCandidateAcceptanceInput candidate)
@@ -902,6 +933,7 @@ namespace Hecton8.World
             public int FloraDensityClampMicroCap;
             public int FloraDensityClampMacroCap;
             public int FloraChunkHardCap;
+            public int MaxPoissonRejectionAttempts;
 
             public void Execute()
             {
@@ -912,6 +944,8 @@ namespace Hecton8.World
                 int layerCount = CurrentLayerCount;
                 int passiveSpawnCount = PassiveSpawnCount;
                 int predatorSpawnCount = PredatorSpawnCount;
+                int poissonRejectionAttempts = 0;
+                int maxPoissonRejectionAttempts = math.max(1, MaxPoissonRejectionAttempts);
 
                 for (int candidateIndex = 0; candidateIndex < Candidates.Length; candidateIndex++)
                 {
@@ -920,19 +954,27 @@ namespace Hecton8.World
                         continue;
 
                     if (acceptedCount >= AcceptLimit)
-                        continue;
+                        break;
 
                     if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
                         ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
                     {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
                     }
 
                     if (LayerTargetMax > 0 && layerCount >= LayerTargetMax)
-                        continue;
+                        break;
 
                     if (!CanAcceptAccentBudget(in candidate, layerCount, passiveSpawnCount, predatorSpawnCount))
+                    {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
+                    }
 
                     if (FloraDensityClampEnabled != 0 &&
                         candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
@@ -943,17 +985,32 @@ namespace Hecton8.World
                             FloraDensityClampMicroCap,
                             FloraDensityClampMacroCap))
                     {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
                     }
 
                     if (HasSpatialConflict(in candidate))
+                    {
+                        if (RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
                         continue;
+                    }
 
                     Results[candidateIndex] = 1;
+                    poissonRejectionAttempts = 0;
                     acceptedCount++;
                     layerCount++;
                     RegisterAcceptedCandidate(in candidate, ref passiveSpawnCount, ref predatorSpawnCount);
                 }
+            }
+
+            private static bool RegisterPoissonRejection(ref int rejectionAttempts, int maxRejectionAttempts)
+            {
+                rejectionAttempts++;
+                return rejectionAttempts >= maxRejectionAttempts;
             }
 
             private bool CanAcceptAccentBudget(
@@ -1464,7 +1521,8 @@ namespace Hecton8.World
                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
                 FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
-                FloraChunkHardCap = FloraChunkInstanceHardCap
+                FloraChunkHardCap = FloraChunkInstanceHardCap,
+                MaxPoissonRejectionAttempts = PoissonDiskMaxRejectionAttempts
             };
 
             JobHandle handle = job.Schedule();
@@ -1623,7 +1681,8 @@ namespace Hecton8.World
                 FloraDensityClampSearchRadiusCells = Mathf.Max(1, Mathf.CeilToInt(floraDensityClampRadiusMeters / Mathf.Max(1f, _runtimeStreamingState.CellSize))),
                 FloraDensityClampMicroCap = Mathf.Max(0, floraDensityClampMicroCap),
                 FloraDensityClampMacroCap = Mathf.Max(0, floraDensityClampMacroCap),
-                FloraChunkHardCap = FloraChunkInstanceHardCap
+                FloraChunkHardCap = FloraChunkInstanceHardCap,
+                MaxPoissonRejectionAttempts = PoissonDiskMaxRejectionAttempts
             };
 
             JobHandle handle = job.Schedule();
@@ -1659,7 +1718,9 @@ namespace Hecton8.World
             ScatterCandidatePreview shadePreview = new ScatterCandidatePreview(
                 family.FamilyHash,
                 placement.Position,
-                placement.HeightLayerIndex);
+                placement.HeightLayerIndex,
+                placement.CellX,
+                placement.CellZ);
             input.ExternalBlock = IsPlacementRegistrationBlocked(placement, in registrationContext) ||
                                   ShouldRejectForMigratorySargassumShade(family, in shadePreview)
                 ? (byte)1

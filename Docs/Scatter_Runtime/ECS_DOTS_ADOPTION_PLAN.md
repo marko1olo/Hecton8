@@ -5,6 +5,15 @@ Verification: `PENDING VERIFICATION`
 
 This document defines where ECS / DOTS is worth introducing in HECTON-8, where it is not, and in what order the work should happen.
 
+2026-05-01 trust note:
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current project truth.
+- Current project truth: DOTS/Entities is an optional placeholder seam, not production architecture.
+- Current `Packages/manifest.json` does not declare `com.unity.entities`.
+- `Assets/_Project/Scripts/World/Dots` exists, but the asmdef is define-gated and the backend code is a fallback placeholder.
+- This document contains historical implementation notes and planning gates; source and profiler proof must be rechecked before any live ownership change.
+- Do not treat old compile-green notes as current console proof.
+
 ## Implementation Status
 
 The following first-party groundwork is already landed in code:
@@ -73,31 +82,32 @@ What this means:
   - `ScatterSimulationContracts.cs`
   - `ScatterSimulationBackendRegistry.cs`
   - core runtime and DOTS backend can now share scatter contracts without a direct compile-time cycle
-- DOTS prototype scaffolding now exists:
-  - `com.unity.entities` added to `Packages/manifest.json`
-  - `Hecton8.World.Dots.asmdef`
+- DOTS placeholder scaffolding now exists:
+  - `Hecton8.World.Dots.asmdef` exists under `Assets/_Project/Scripts/World/Dots`
+  - `com.unity.entities` is not declared in the current `Packages/manifest.json`
+  - the asmdef is gated by `HECTON8_ENABLE_ENTITIES_DOTS`, `HECTON8_HAS_ENTITIES_PACKAGE`, and `HECTON8_ENABLE_OPTIONAL_ASSEMBLIES`
   - `ScatterEntitiesSimulationBackend`
   - registration is provider-based, so the owner assembly still does not take a direct compile-time dependency on the DOTS assembly
-- current Entities backend is still shadow-safe prototype work, not approved live placement ownership
+- current Entities backend is placeholder/fallback work, not approved live placement ownership
 - narrow DOTS scope contract now exists for scatter data bookkeeping only:
   - `ScatterSimulationCellState`
   - `ScatterSimulationEligibilityFlags`
   - `ScatterSimulationQuotaState`
   - `ScatterSimulationSuppressionState`
   - `ScatterSimulationDirtyFlags`
-  - current Entities prototype now materializes cell-state / quota / suppression / dirty-flag data instead of only raw height samples
+  - current contracts can carry cell-state / quota / suppression / dirty-flag data, but the real implementation path is still classic Jobs
 
 Current package stance:
 
-- `com.unity.entities` is now declared in `Packages/manifest.json`
-- package restore / import is still `PENDING VERIFICATION`
+- `com.unity.entities` is not declared in `Packages/manifest.json`
+- the gated DOTS asmdef references `Unity.Entities`, but it is not active without the package/defines
 - rollout work still remains under the existing owner and shadow-only backend seam until profiler/runtime proof justifies live ownership changes
 
 Current blocker:
 
 - direct owner takeover of live placement reconciliation is still intentionally not finished
-- current Entities backend is a minimal prototype and does not yet prove parity with the classic evaluator
-- compile is currently green after asmdef baseline changes, but runtime/editor proof is still absent
+- current Entities backend is a placeholder and does not schedule real work
+- old batch compile notes exist in this document, but current Unity compile/runtime proof is absent in this pass
 - enabling the new backend for live placement ownership before parity/profiler proof would increase regression risk in the current runtime path
 - `SceneBootstrap` still remains a large owner and event source; only the read-model was extracted so far
 - current local batch Unity verification is blocked by editor licensing on this machine:
@@ -134,10 +144,10 @@ Do not introduce DOTS where it creates:
 
 ### Package State
 
-- `com.unity.entities` is declared in `Packages/manifest.json`.
+- `com.unity.entities` is not declared in `Packages/manifest.json`.
 - `com.unity.physics` is not installed.
-- `Hecton8.World.Dots` asmdef exists.
-- `ScatterEntitiesSimulationBackend` exists as minimal prototype code.
+- `Hecton8.World.Dots` asmdef exists, but is define-gated and `autoReferenced: false`.
+- `ScatterEntitiesSimulationBackend` exists as placeholder code and returns `false` from scheduling/completion.
 - first-party `Baker`, `SubScene`, `ISystem`, and `SystemBase` usage is still absent.
 - `com.unity.burst`, `com.unity.collections`, and `com.unity.mathematics` already exist.
 - package import / editor runtime proof is still `PENDING VERIFICATION`.
@@ -158,16 +168,17 @@ It already uses a hybrid data-oriented style:
 
 That matters because a large part of DOTS-style value is already partially present without Entities.
 
-### Measured Architectural Facts
+### Historical Architectural Facts
 
-Static repo facts from first-party scripts:
+The static repo facts below are historical orientation data from the earlier scatter/DOTS planning pass.
+Do not use these counts as current project metrics.
 
 - `419` first-party `.cs` files
 - `91` files with `ITickable`
 - `48` files with `ISlowTickable`
 - `7` files with `IFixedTickable`
 - `18` files using `Jobs/Burst/NativeArray`
-- first-party ECS/DOTS files now exist, but only as isolated scatter prototype scaffolding under `Assets/_Project/Scripts/World/Dots`
+- first-party ECS/DOTS files now exist, but only as isolated, define-gated scatter placeholder scaffolding under `Assets/_Project/Scripts/World/Dots`
 
 ### Existing Runtime Owners That Must Remain Owners
 

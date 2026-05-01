@@ -357,7 +357,8 @@ half HectonCoreLitEvaluateOrganicSssScalar(
     float3 normalizedView = HectonCoreLitSafeNormalize(viewDirWS);
     float3 normalizedLight = HectonCoreLitSafeNormalize(lightDirWS);
     float3 normalizedNormal = HectonCoreLitSafeNormalize(normalWS);
-    float distortedBacklight = saturate(dot(normalizedView, -(normalizedLight + normalizedNormal * distortion)));
+    float3 distortedLight = HectonCoreLitSafeNormalize(normalizedLight + normalizedNormal * distortion);
+    float distortedBacklight = saturate(dot(normalizedView, -distortedLight));
     return (half)(pow(distortedBacklight, max((float)power, 0.001)) * max((float)scale, 0.0));
 }
 

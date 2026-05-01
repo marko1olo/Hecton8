@@ -12,7 +12,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton Submarine OS Display")]
-    public sealed class HectonSubmarineOsDisplay : MonoBehaviour, IUpdatable
+    public sealed class HectonSubmarineOsDisplay : MonoBehaviour, IUpdatable, ISubmarineOsEventListener
     {
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
@@ -56,6 +56,7 @@ namespace Hecton8.UI
         private static readonly char[] s_logLevelEvacuate = "[CRIT] EMERGENCY LEVEL EVACUATE".ToCharArray();
         private static readonly char[] s_logStationKeepingArmed = "[OK] STATION KEEPING ARMED".ToCharArray();
         private static readonly char[] s_logStationKeepingReleased = "[OK] STATION KEEPING RELEASED".ToCharArray();
+        private static readonly char[] s_logHostileDroneDetected = "[CRIT] HOSTILE DRONE DETECTED".ToCharArray();
         private static readonly char[] s_logBusPower = "BUS POWER ".ToCharArray();
         private static readonly char[] s_logOxygen = "OXYGEN ".ToCharArray();
         private static readonly char[] s_logHullPressure = "HULL PRESSURE ".ToCharArray();
@@ -130,10 +131,8 @@ namespace Hecton8.UI
         {
             s_instance = this;
             EnsureUiBuilt();
-            HectonSubmarineOsEvents.OnSnapshotUpdated -= HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnSnapshotUpdated += HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnLogRequested -= HandleLogRequested;
-            HectonSubmarineOsEvents.OnLogRequested += HandleLogRequested;
+            HectonSubmarineOsEvents.Unregister(this);
+            HectonSubmarineOsEvents.Register(this);
             TryRegister();
             RefreshStatusLabels();
             RefreshMetricsLabel();
@@ -142,8 +141,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            HectonSubmarineOsEvents.OnSnapshotUpdated -= HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnLogRequested -= HandleLogRequested;
+            HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
             if (ReferenceEquals(s_instance, this))
                 s_instance = null;
@@ -151,11 +149,23 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            HectonSubmarineOsEvents.OnSnapshotUpdated -= HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnLogRequested -= HandleLogRequested;
+            HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
             if (ReferenceEquals(s_instance, this))
                 s_instance = null;
+        }
+
+        /// <inheritdoc />
+        public void OnSubmarineOsEvent(in SubmarineOsEventPayload payload)
+        {
+            if (HectonSubmarineOsEvents.TryBuildSnapshot(in payload, out HectonSubmarineOsSnapshot snapshot))
+            {
+                HandleSnapshotUpdated(in snapshot);
+                return;
+            }
+
+            if (HectonSubmarineOsEvents.TryBuildLogRequest(in payload, out HectonSubmarineOsLogRequest request))
+                HandleLogRequested(in request);
         }
 
         /// <inheritdoc />
@@ -541,6 +551,8 @@ namespace Hecton8.UI
                     return s_logStationKeepingArmed;
                 case HectonSubmarineOsLogCode.StationKeepingReleased:
                     return s_logStationKeepingReleased;
+                case HectonSubmarineOsLogCode.HostileDroneDetected:
+                    return s_logHostileDroneDetected;
                 default:
                     return s_logReactorStable;
             }

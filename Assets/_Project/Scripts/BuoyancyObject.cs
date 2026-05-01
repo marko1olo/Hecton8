@@ -364,13 +364,17 @@ namespace Hecton8.Physics
             float localFluidDensityKgPerM3,
             float angularDragMultiplier)
         {
-            float safeVolumeM3 = Mathf.Max(0.0001f, volumeM3);
-            float safeMassKg = Mathf.Max(0.01f, massKg);
+            float safeVolumeM3 = float.IsFinite(volumeM3)
+                ? Mathf.Max(0.0001f, volumeM3)
+                : 0.0001f;
+            float safeMassKg = float.IsFinite(massKg)
+                ? Mathf.Max(0.01f, massKg)
+                : 0.01f;
 
             volume = safeVolumeM3;
             density = safeMassKg / safeVolumeM3;
-            height = Mathf.Max(0.05f, heightMeters);
-            _runtimeLocalFluidDensityOverrideActive = localFluidDensityKgPerM3 > 0.01f;
+            height = float.IsFinite(heightMeters) ? Mathf.Max(0.05f, heightMeters) : 0.05f;
+            _runtimeLocalFluidDensityOverrideActive = float.IsFinite(localFluidDensityKgPerM3) && localFluidDensityKgPerM3 > 0.01f;
             _runtimeLocalFluidDensity = _runtimeLocalFluidDensityOverrideActive
                 ? Mathf.Max(0.01f, localFluidDensityKgPerM3)
                 : 0f;

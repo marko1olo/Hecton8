@@ -1,5 +1,14 @@
 # KINETIC ENTANGLEMENT
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this mechanic map as current runtime truth.
+- This document is a deterministic interaction contract, not proof that transport, flora death authority, voxel eviction, and current sampling are all wired in the current scene.
+- Re-open the listed owners before changing gameplay logic.
+
 ## Owner Map
 - Detection owner: `MountablePlayerTransport`
 - Tether kinematics owner: `VehicleMotor`
@@ -161,7 +170,7 @@ Engine damage:
 engineDamage += CavitationEngineDamagePerSecond * cavitation01 * dt
 ```
 
-Bubble and shockwave requests are fixed-capacity events queued to `HectonFluidEngine`. In `PostFixedTick`, the engine emits optional cavitation particles and uses `Physics.OverlapSphereNonAlloc` plus preallocated collider/rigidbody buffers. Small rigidbodies are deduplicated and pushed through `PhysicsForceRouter.QueueForce(..., ForceMode.Acceleration)`.
+Bubble and shockwave requests are fixed-capacity events queued to `HectonFluidEngine`. In `PostFixedTick`, the engine emits optional cavitation particles and uses `Physics.OverlapSphereNonAlloc` plus preallocated collider/rigidbody buffers. Small rigidbodies are deduplicated and pushed through `PhysicsForceRouter.QueueForce(..., ForceMode.VelocityChange)`.
 
 ## Release Rule
 The transport stores the exact entangling flora instance UIDs.

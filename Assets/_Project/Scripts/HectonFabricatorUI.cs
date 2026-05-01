@@ -26,7 +26,7 @@ namespace Hecton8.UI
         private const int MaxVisibleHologramInstances = 16;
         private const int MaxVisibleRecipeEntries = 8;
         private const int RecipeLabelBufferCapacity = 128;
-        private const int InflationLabelBufferCapacity = 24;
+        private const int FallbackBufferCapacity = 64;
         private const float RecipePointerDistanceMeters = 6f;
         private const float HologramBaseDistanceMeters = 1f;
         private const float HologramSpinDegreesPerSecond = 36f;
@@ -93,7 +93,8 @@ namespace Hecton8.UI
         private readonly Matrix4x4[] _selectedRecipeHologramBuffer = new Matrix4x4[1];
         private readonly RecipeListEntry[] _recipeEntries = new RecipeListEntry[MaxVisibleRecipeEntries];
         private readonly char[] _recipeLabelBuffer = new char[RecipeLabelBufferCapacity];
-        private readonly char[] _inflationLabelBuffer = new char[InflationLabelBufferCapacity];
+        // COLD ALLOC: char[64] - CharBufferPool failure fallback for scarcity inflation labels - owner: HectonFabricatorUI
+        private readonly char[] _fallbackBuffer = new char[FallbackBufferCapacity];
 
         private NativeArray<Matrix4x4> _hologramMatrices;
         private NativeArray<RaycastCommand> _recipePointerCommands;
@@ -962,7 +963,7 @@ namespace Hecton8.UI
             bool rented = CharBufferPool.TryAcquire(out CharBufferPool.Lease lease);
             char[] buffer = rented && lease.Buffer != null
                 ? lease.Buffer
-                : _inflationLabelBuffer;
+                : _fallbackBuffer;
 
             int cursor = 0;
             cursor = AppendLiteral('x', buffer, cursor);

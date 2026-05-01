@@ -33,7 +33,9 @@ namespace Hecton8.World
         None = 0u,
         AcousticImpulse = 1u << 0,
         ChemicalCloud = 1u << 1,
-        ThermalGradient = 1u << 2
+        ChemicalScent = ChemicalCloud,
+        ThermalGradient = 1u << 2,
+        DisturbanceEvent = 1u << 3
     }
 
     [System.Flags]
@@ -248,6 +250,8 @@ namespace Hecton8.World
         private static AbsoluteUniversePosition _lastFarUnloadPlayerAup;
         private static bool _hasLastFarUnloadPlayerAup;
         private static int _lastValidationFrame = -ValidationCadenceFrames;
+
+        internal static int ActiveEntityCount => _nativeHash != null ? _nativeHash.EntryCount : _entries.Count;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -778,7 +782,8 @@ namespace Hecton8.World
                     BuildAcousticDensityMap(frameCount);
                 }
 
-                _nativeHash.CompactIfOverCapacity(
+                _nativeHash.TrySwapCompletedCompaction();
+                _nativeHash.ScheduleCompactionIfOverCapacity(
                     SpatialHashCompactionCapacityThreshold,
                     SpatialHashCompactionTargetFloor,
                     Time.unscaledTimeAsDouble);
@@ -788,6 +793,7 @@ namespace Hecton8.World
         internal static void HandleOriginShift(in OriginShiftEventData shiftData)
         {
             EnsureInitialized();
+            ClearAcousticDensityMapForOriginShift();
             int count = _entries.Count;
             if (count <= 0)
                 return;
@@ -913,6 +919,17 @@ namespace Hecton8.World
                 AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
                 return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, interactionFilter, _queryHandles);
             }
+        }
+
+        private static void ClearAcousticDensityMapForOriginShift()
+        {
+            if (_acousticDensityMap.IsCreated)
+            {
+                for (int i = 0; i < _acousticDensityMap.Length; i++)
+                    _acousticDensityMap[i] = 0f;
+            }
+
+            _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
         }
 
         private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, uint interactionFilter)

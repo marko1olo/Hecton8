@@ -39,6 +39,12 @@ namespace Hecton8.Core
 
             _capacityBytes = Math.Max(1024, capacityBytes);
             _basePtr = (byte*)UnsafeUtility.MallocTracked(_capacityBytes, 16, Allocator.Persistent, 1);
+            NativeMemorySentinel.RegisterPointer(
+                _basePtr,
+                _capacityBytes,
+                nameof(NativeArenaAllocator),
+                nameof(_basePtr),
+                NativeAllocationLifetime.TransientArena);
             UnsafeUtility.MemClear(_basePtr, _capacityBytes);
             _cursorBytes = 0;
             RecreateSafetyHandle();
@@ -109,6 +115,7 @@ namespace Hecton8.Core
             }
 #endif
 
+            NativeMemorySentinel.UnregisterPointer(_basePtr);
             UnsafeUtility.FreeTracked(_basePtr, Allocator.Persistent);
             _basePtr = null;
             _capacityBytes = 0;

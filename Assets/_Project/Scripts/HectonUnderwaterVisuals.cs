@@ -834,7 +834,7 @@ namespace Hecton8.Environment
                 EnsureGameplayCameraStackEnabled();
                 MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
-                SoundscapeEvents.OnTierChanged += HandleSoundscapeTierChanged;
+                SoundscapeEvents.RegisterTierChanged(HandleSoundscapeTierChanged);
                 ResolveBiomeMatrixDirector();
                 ApplyCurrentMatrixVisualOverride();
                 TryRegisterTickManagers();
@@ -1112,7 +1112,7 @@ namespace Hecton8.Environment
                 UnregisterRenderDispatcher();
                 MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
                 BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
-                SoundscapeEvents.OnTierChanged -= HandleSoundscapeTierChanged;
+                SoundscapeEvents.UnregisterTierChanged(HandleSoundscapeTierChanged);
 
                 if (_registeredTick)
                 {

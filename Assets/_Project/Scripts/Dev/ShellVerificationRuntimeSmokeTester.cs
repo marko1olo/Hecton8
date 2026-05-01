@@ -5,7 +5,8 @@
 // load-from-shell, and world -> menu recovery using the real verifier owners.
 // ============================================================================
 
-using System.Collections;
+using System;
+using System.Threading;
 using Hecton.UI.MainMenu;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -121,7 +122,7 @@ namespace Hecton8.Dev
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunSmokePass());
+            _ = RunSmokePassAsync(destroyCancellationToken);
         }
 
         private void TryScheduleAutoStart()
@@ -148,36 +149,46 @@ namespace Hecton8.Dev
 
             _autoStartScheduled = true;
             LogVerbose("Auto-start scheduled");
-            StartCoroutine(DeferredAutoStartRoutine());
+            _ = DeferredAutoStartRoutineAsync(destroyCancellationToken);
         }
 
-        private IEnumerator DeferredAutoStartRoutine()
+        private async Awaitable DeferredAutoStartRoutineAsync(CancellationToken cancellationToken)
         {
             if (!IsAutoStartSupported())
             {
                 _autoStartScheduled = false;
-                yield break;
+                return;
             }
 
-            float deadline = Time.realtimeSinceStartup + AutoStartRetryWindow;
-            while (Time.realtimeSinceStartup < deadline)
+            try
             {
-                if (runOnStart && !_isRunning)
-                    break;
+                float deadline = Time.realtimeSinceStartup + AutoStartRetryWindow;
+                while (Time.realtimeSinceStartup < deadline)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (runOnStart && !_isRunning)
+                        break;
 
-                yield return null;
+                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                }
+
+                if (!runOnStart || _isRunning)
+                {
+                    LogVerbose("Auto-start skipped");
+                    return;
+                }
+
+                LogVerbose($"Auto-start launching in scene '{SceneManager.GetActiveScene().name}'");
+                _ = RunSmokePassAsync(destroyCancellationToken);
             }
-
-            _autoStartScheduled = false;
-
-            if (!runOnStart || _isRunning)
+            catch (OperationCanceledException)
             {
-                LogVerbose("Auto-start skipped");
-                yield break;
+                LogVerbose("Auto-start cancelled.");
             }
-
-            LogVerbose($"Auto-start launching in scene '{SceneManager.GetActiveScene().name}'");
-            StartCoroutine(RunSmokePass());
+            finally
+            {
+                _autoStartScheduled = false;
+            }
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -193,10 +204,10 @@ namespace Hecton8.Dev
             TryScheduleAutoStart();
         }
 
-        private IEnumerator RunSmokePass()
+        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
-                yield break;
+                return;
 
             _isRunning = true;
             try
@@ -210,11 +221,11 @@ namespace Hecton8.Dev
                 Debug.Log($"[ShellSmoke] Run start scene={SceneManager.GetActiveScene().name} run={_debugRunCount}");
 
                 if (startupDelay > 0f)
-                    yield return new WaitForSecondsRealtime(startupDelay);
+                    await DelayRealtimeAsync(startupDelay, cancellationToken);
 
-                yield return WaitForEditorStability();
+                await WaitForEditorStabilityAsync(cancellationToken);
                 if (string.Equals(_debugLastPhase, "Failed", System.StringComparison.Ordinal))
-                    yield break;
+                    return;
 
                 AutoResolve();
                 EnsureVerifiers();
@@ -224,8 +235,8 @@ namespace Hecton8.Dev
                 string resumeSaveSlot = LoadResumeSaveSlot();
                 if (CanResumeFromWorld(activeSceneName, resumePhase))
                 {
-                    yield return ResumeFromWorldPhase(resumePhase, resumeSaveSlot);
-                    yield break;
+                    await ResumeFromWorldPhaseAsync(resumePhase, resumeSaveSlot, cancellationToken);
+                    return;
                 }
 
                 if (string.Equals(activeSceneName, BootstrapSceneName, System.StringComparison.Ordinal))
@@ -233,7 +244,7 @@ namespace Hecton8.Dev
                     _debugLastPhase = "BootstrapToMenu";
                     SaveResumeState(ResumePhase.AwaitMenuShell);
                     Debug.Log("[ShellSmoke] Waiting for bootstrap-to-menu route.");
-                    yield return WaitUntil(IsMenuRouteReady, "Bootstrap-to-menu route");
+                    await WaitUntilAsync(IsMenuRouteReady, "Bootstrap-to-menu route", cancellationToken);
                     activeSceneName = SceneManager.GetActiveScene().name;
                     AutoResolve();
                     GameStartContext menuContext = GameStartContextHolder.Current;
@@ -246,13 +257,13 @@ namespace Hecton8.Dev
                 if (!string.Equals(activeSceneName, MainMenuSceneName, System.StringComparison.Ordinal))
                 {
                     Fail($"Expected active scene {MainMenuSceneName}, got {activeSceneName}.");
-                    yield break;
+                    return;
                 }
 
                 if (_mainMenuController == null)
                 {
                     Fail("MainMenuController not found in main menu scene.");
-                    yield break;
+                    return;
                 }
 
                 Debug.Log("[ShellSmoke] Starting shell verification smoke pass.");
@@ -261,61 +272,63 @@ namespace Hecton8.Dev
                 SaveResumeState(ResumePhase.AwaitWorldNewGame);
                 _mainMenuController.StartGame(string.Empty);
                 _sceneVerifier.VerifyNewGameTransition();
-                yield return WaitUntil(IsWorldNewGameReady, "New-game world handoff");
+                await WaitUntilAsync(IsWorldNewGameReady, "New-game world handoff", cancellationToken);
                 if (!IsWorldNewGameReady())
                 {
                     Fail("New-game handoff did not reach a valid world state.");
-                    yield break;
+                    return;
                 }
 
                 _debugLastPhase = "PauseRecovery";
                 SaveResumeState(ResumePhase.AwaitPauseRecovery);
-                yield return WaitUntil(HasPauseMenuInWorld, "Pause menu resolve in world");
+                await WaitUntilAsync(HasPauseMenuInWorld, "Pause menu resolve in world", cancellationToken);
                 if (!HasPauseMenuInWorld())
                 {
                     Fail("PauseMenuController not found after world load.");
-                    yield break;
+                    return;
                 }
 
                 (int pauseRunBefore, int pausePassBefore, int pauseFailBefore) = _pauseVerifier.GetStats();
                 _pauseVerifier.TestPauseMenuNavigation();
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => HasVerifierAdvanced(_pauseVerifier.GetStats(), pauseRunBefore, pausePassBefore, pauseFailBefore),
-                    "PauseSystemVerifier completion");
+                    "PauseSystemVerifier completion",
+                    cancellationToken);
 
                 (int pauseRunAfter, int pausePassAfter, int pauseFailAfter) = _pauseVerifier.GetStats();
                 if (!HasVerifierPassed(pauseRunBefore, pausePassBefore, pauseFailBefore, pauseRunAfter, pausePassAfter, pauseFailAfter))
                 {
                     Fail("PauseSystemVerifier did not report a passing result.");
-                    yield break;
+                    return;
                 }
 
                 _debugLastPhase = "InputRestoration";
                 SaveResumeState(ResumePhase.AwaitInputRestoration);
                 (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
                 _stateVerifier.VerifyInputRestoration();
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => HasVerifierAdvanced(_stateVerifier.GetStats(), stateRunBefore, statePassBefore, stateFailBefore),
-                    "StateRecoveryVerifier input completion");
+                    "StateRecoveryVerifier input completion",
+                    cancellationToken);
 
                 (int stateRunAfter, int statePassAfter, int stateFailAfter) = _stateVerifier.GetStats();
                 if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                 {
                     Fail("StateRecoveryVerifier input restoration failed.");
-                    yield break;
+                    return;
                 }
 
                 _debugLastPhase = "ReturnToMenu";
                 SaveResumeState(ResumePhase.AwaitReturnToMenu);
                 (stateRunBefore, statePassBefore, stateFailBefore) = _stateVerifier.GetStats();
                 _stateVerifier.VerifyReturnToMenuRecovery();
-                yield return WaitUntil(IsMenuRouteReady, "Return-to-menu route");
+                await WaitUntilAsync(IsMenuRouteReady, "Return-to-menu route", cancellationToken);
 
                 (stateRunAfter, statePassAfter, stateFailAfter) = _stateVerifier.GetStats();
                 if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                 {
                     Fail("StateRecoveryVerifier return-to-menu failed.");
-                    yield break;
+                    return;
                 }
 
                 ClearResumeState();
@@ -328,25 +341,25 @@ namespace Hecton8.Dev
                     {
                         (stateRunBefore, statePassBefore, stateFailBefore) = _stateVerifier.GetStats();
                         _stateVerifier.VerifyLoadSlotFromShellRecovery();
-                        yield return WaitUntil(() => IsWorldLoadReady(saveSlot), "Load-slot world handoff");
+                        await WaitUntilAsync(() => IsWorldLoadReady(saveSlot), "Load-slot world handoff", cancellationToken);
 
                         (stateRunAfter, statePassAfter, stateFailAfter) = _stateVerifier.GetStats();
                         if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                         {
                             Fail($"StateRecoveryVerifier load-slot recovery failed for {saveSlot}.");
-                            yield break;
+                            return;
                         }
 
                         _debugLastPhase = "ReturnToMenuAfterLoad";
                         (stateRunBefore, statePassBefore, stateFailBefore) = _stateVerifier.GetStats();
                         _stateVerifier.VerifyReturnToMenuRecovery();
-                        yield return WaitUntil(IsMenuRouteReady, "Return-to-menu after load");
+                        await WaitUntilAsync(IsMenuRouteReady, "Return-to-menu after load", cancellationToken);
 
                         (stateRunAfter, statePassAfter, stateFailAfter) = _stateVerifier.GetStats();
                         if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                         {
                             Fail("StateRecoveryVerifier return-to-menu after load failed.");
-                            yield break;
+                            return;
                         }
                     }
                     else
@@ -357,25 +370,36 @@ namespace Hecton8.Dev
 
                 CompleteRun();
             }
+            catch (OperationCanceledException)
+            {
+                _debugLastIssue = "Cancelled";
+                LogVerbose("Cancelled.");
+            }
+            catch (Exception ex)
+            {
+                Fail("Unhandled shell smoke exception.");
+                Debug.LogError($"[ShellSmoke] UNHANDLED EXCEPTION: {ex}");
+            }
             finally
             {
                 _isRunning = false;
             }
         }
 
-        private IEnumerator WaitUntil(System.Func<bool> predicate, string label)
+        private async Awaitable<bool> WaitUntilAsync(Func<bool> predicate, string label, CancellationToken cancellationToken)
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0.25f, actionTimeout);
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 AutoResolve();
                 if (predicate() || (string.Equals(label, "Bootstrap-to-menu route", System.StringComparison.Ordinal) && _menuRouteReadyOverride))
                 {
                     if (settleDelay > 0f)
-                        yield return new WaitForSecondsRealtime(settleDelay);
+                        await DelayRealtimeAsync(settleDelay, cancellationToken);
 
                     LogVerbose($"PASS {label}");
-                    yield break;
+                    return true;
                 }
 
                 if (string.Equals(label, "Bootstrap-to-menu route", System.StringComparison.Ordinal))
@@ -383,19 +407,21 @@ namespace Hecton8.Dev
                 else if (string.Equals(label, "Pause menu resolve in world", System.StringComparison.Ordinal))
                     TryLogPauseMenuDiagnostics(label);
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             Fail($"{label} timed out after {actionTimeout:0.00}s.");
+            return false;
         }
 
-        private IEnumerator WaitForEditorStability()
+        private async Awaitable<bool> WaitForEditorStabilityAsync(CancellationToken cancellationToken)
         {
 #if UNITY_EDITOR
             float deadline = Time.realtimeSinceStartup + Mathf.Max(1f, actionTimeout);
             float stableSince = -1f;
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 bool isCompiling = UnityEditor.EditorApplication.isCompiling;
                 bool isUpdating = UnityEditor.EditorApplication.isUpdating;
                 bool isChangingPlayMode = UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode;
@@ -405,20 +431,31 @@ namespace Hecton8.Dev
                         stableSince = Time.realtimeSinceStartup;
 
                     if ((Time.realtimeSinceStartup - stableSince) >= EditorStableWindowSeconds)
-                        yield break;
+                        return true;
                 }
                 else
                 {
                     stableSince = -1f;
                 }
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             Fail("Editor did not reach a stable non-compiling state before smoke start.");
+            return false;
 #else
-            yield break;
+            return true;
 #endif
+        }
+
+        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
         }
 
         private bool IsWorldNewGameReady()
@@ -547,38 +584,42 @@ namespace Hecton8.Dev
                 $"isWorld={isWorld} hasPauseMenu={hasPauseMenu}");
         }
 
-        private IEnumerator ResumeFromWorldPhase(ResumePhase resumePhase, string resumeSaveSlot)
+        private async Awaitable ResumeFromWorldPhaseAsync(
+            ResumePhase resumePhase,
+            string resumeSaveSlot,
+            CancellationToken cancellationToken)
         {
             Debug.Log($"[ShellSmoke] Resume start phase={resumePhase} scene={SceneManager.GetActiveScene().name} slot={resumeSaveSlot}");
 
             if (resumePhase == ResumePhase.AwaitWorldNewGame && !IsWorldNewGameReady())
             {
                 Fail("Resume requested in world, but new-game handoff state is invalid.");
-                yield break;
+                return;
             }
 
             if (resumePhase == ResumePhase.AwaitWorldNewGame || resumePhase == ResumePhase.AwaitPauseRecovery)
             {
                 _debugLastPhase = "PauseRecovery";
                 SaveResumeState(ResumePhase.AwaitPauseRecovery, resumeSaveSlot);
-                yield return WaitUntil(HasPauseMenuInWorld, "Pause menu resolve in world");
+                await WaitUntilAsync(HasPauseMenuInWorld, "Pause menu resolve in world", cancellationToken);
                 if (!HasPauseMenuInWorld())
                 {
                     Fail("PauseMenuController not found after world load.");
-                    yield break;
+                    return;
                 }
 
                 (int pauseRunBefore, int pausePassBefore, int pauseFailBefore) = _pauseVerifier.GetStats();
                 _pauseVerifier.TestPauseMenuNavigation();
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => HasVerifierAdvanced(_pauseVerifier.GetStats(), pauseRunBefore, pausePassBefore, pauseFailBefore),
-                    "PauseSystemVerifier completion");
+                    "PauseSystemVerifier completion",
+                    cancellationToken);
 
                 (int pauseRunAfter, int pausePassAfter, int pauseFailAfter) = _pauseVerifier.GetStats();
                 if (!HasVerifierPassed(pauseRunBefore, pausePassBefore, pauseFailBefore, pauseRunAfter, pausePassAfter, pauseFailAfter))
                 {
                     Fail("PauseSystemVerifier did not report a passing result.");
-                    yield break;
+                    return;
                 }
 
                 resumePhase = ResumePhase.AwaitInputRestoration;
@@ -590,15 +631,16 @@ namespace Hecton8.Dev
                 SaveResumeState(ResumePhase.AwaitInputRestoration, resumeSaveSlot);
                 (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
                 _stateVerifier.VerifyInputRestoration();
-                yield return WaitUntil(
+                await WaitUntilAsync(
                     () => HasVerifierAdvanced(_stateVerifier.GetStats(), stateRunBefore, statePassBefore, stateFailBefore),
-                    "StateRecoveryVerifier input completion");
+                    "StateRecoveryVerifier input completion",
+                    cancellationToken);
 
                 (int stateRunAfter, int statePassAfter, int stateFailAfter) = _stateVerifier.GetStats();
                 if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                 {
                     Fail("StateRecoveryVerifier input restoration failed.");
-                    yield break;
+                    return;
                 }
 
                 resumePhase = ResumePhase.AwaitReturnToMenu;
@@ -610,13 +652,13 @@ namespace Hecton8.Dev
                 SaveResumeState(ResumePhase.AwaitReturnToMenu, resumeSaveSlot);
                 (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
                 _stateVerifier.VerifyReturnToMenuRecovery();
-                yield return WaitUntil(IsMenuRouteReady, "Return-to-menu route");
+                await WaitUntilAsync(IsMenuRouteReady, "Return-to-menu route", cancellationToken);
 
                 (int stateRunAfter, int statePassAfter, int stateFailAfter) = _stateVerifier.GetStats();
                 if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                 {
                     Fail("StateRecoveryVerifier return-to-menu failed.");
-                    yield break;
+                    return;
                 }
             }
 
@@ -630,25 +672,25 @@ namespace Hecton8.Dev
                 {
                     (int stateRunBefore, int statePassBefore, int stateFailBefore) = _stateVerifier.GetStats();
                     _stateVerifier.VerifyLoadSlotFromShellRecovery();
-                    yield return WaitUntil(() => IsWorldLoadReady(saveSlot), "Load-slot world handoff");
+                    await WaitUntilAsync(() => IsWorldLoadReady(saveSlot), "Load-slot world handoff", cancellationToken);
 
                     (int stateRunAfter, int statePassAfter, int stateFailAfter) = _stateVerifier.GetStats();
                     if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                     {
                         Fail($"StateRecoveryVerifier load-slot recovery failed for {saveSlot}.");
-                        yield break;
+                        return;
                     }
 
                     _debugLastPhase = "ReturnToMenuAfterLoad";
                     (stateRunBefore, statePassBefore, stateFailBefore) = _stateVerifier.GetStats();
                     _stateVerifier.VerifyReturnToMenuRecovery();
-                    yield return WaitUntil(IsMenuRouteReady, "Return-to-menu after load");
+                    await WaitUntilAsync(IsMenuRouteReady, "Return-to-menu after load", cancellationToken);
 
                     (stateRunAfter, statePassAfter, stateFailAfter) = _stateVerifier.GetStats();
                     if (!HasVerifierPassed(stateRunBefore, statePassBefore, stateFailBefore, stateRunAfter, statePassAfter, stateFailAfter))
                     {
                         Fail("StateRecoveryVerifier return-to-menu after load failed.");
-                        yield break;
+                        return;
                     }
                 }
                 else

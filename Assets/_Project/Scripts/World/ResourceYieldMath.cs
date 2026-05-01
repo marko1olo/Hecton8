@@ -8,22 +8,50 @@ namespace Hecton8.World
     /// </summary>
     internal static class ResourceYieldMath
     {
+        internal const int GramsPerKilogram = 1000;
+        internal const float KilogramsPerGram = 0.001f;
+
         public delegate float EvaluateYieldUnitsDelegate(
             float toolPower,
             float nodeHardness,
             float elapsedSeconds,
-            float harvestDurationSeconds);
+            float unitItemMassKg);
 
         private static readonly FunctionPointer<EvaluateYieldUnitsDelegate> _evaluateYieldUnits =
             BurstCompiler.CompileFunctionPointer<EvaluateYieldUnitsDelegate>(EvaluateYieldUnitsBurst);
+
+        public delegate float EvaluateExtractedMassKgDelegate(
+            float toolPower,
+            float nodeHardness,
+            float elapsedSeconds);
+
+        private static readonly FunctionPointer<EvaluateExtractedMassKgDelegate> _evaluateExtractedMassKg =
+            BurstCompiler.CompileFunctionPointer<EvaluateExtractedMassKgDelegate>(EvaluateExtractedMassKgBurst);
 
         public static float EvaluateYieldUnits(
             float toolPower,
             float nodeHardness,
             float elapsedSeconds,
-            float harvestDurationSeconds)
+            float unitItemMassKg)
         {
-            return _evaluateYieldUnits.Invoke(toolPower, nodeHardness, elapsedSeconds, harvestDurationSeconds);
+            return _evaluateYieldUnits.Invoke(toolPower, nodeHardness, elapsedSeconds, unitItemMassKg);
+        }
+
+        public static float EvaluateExtractedMassKg(
+            float toolPower,
+            float nodeHardness,
+            float elapsedSeconds)
+        {
+            return _evaluateExtractedMassKg.Invoke(toolPower, nodeHardness, elapsedSeconds);
+        }
+
+        internal static int KilogramsToWholeGrams(float kilograms)
+        {
+            if (!math.isfinite(kilograms) || kilograms <= 0f)
+                return 0;
+
+            float clampedGrams = math.min(int.MaxValue, math.round(kilograms * GramsPerKilogram));
+            return (int)clampedGrams;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -31,13 +59,19 @@ namespace Hecton8.World
             float toolPower,
             float nodeHardness,
             float elapsedSeconds,
-            float harvestDurationSeconds)
+            float unitItemMassKg)
         {
-            float resolvedHardness = math.max(0.01f, nodeHardness);
-            float resolvedDuration = math.max(0.05f, harvestDurationSeconds);
-            float resolvedToolPower = math.max(0f, toolPower);
-            float resolvedTime = math.max(0f, elapsedSeconds);
-            return (resolvedToolPower * resolvedTime) / (resolvedHardness * resolvedDuration);
+            float extractedMassKg = EvaluateExtractedMassKgBurst(toolPower, nodeHardness, elapsedSeconds);
+            return extractedMassKg / math.max(0.01f, unitItemMassKg);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static float EvaluateExtractedMassKgBurst(
+            float toolPower,
+            float nodeHardness,
+            float elapsedSeconds)
+        {
+            return math.max(0f, toolPower) * math.max(0.01f, nodeHardness) * math.max(0f, elapsedSeconds);
         }
     }
 }

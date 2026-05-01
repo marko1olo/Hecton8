@@ -1,5 +1,14 @@
 # HECTON-8 Audio DSP Pipeline
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+2026-05-01 current-state boundary:
+
+- This is the first-party audio DSP architecture reference, not live mixer/profiler proof.
+- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- `SpatialAudioManager` and `PlayerCriticalProceduralAudioRenderer` are source-backed owners; runtime pool state, console health, audio-thread cost, and zero-GC transport still require fresh Unity/profiler verification.
+
 ## Scope
 This document records the first-party procedural audio path owned by:
 - `Assets/_Project/Scripts/SpatialAudioManager.cs`

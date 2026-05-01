@@ -1,5 +1,8 @@
 # MODULAR EQUIPMENT ENGINE SURGERY LOG
 
+Date: 2026-04-29
+Status: HISTORICAL SURGERY LOG / PENDING VERIFICATION
+
 ## Current-State Addendum
 
 This file remains useful as a surgery/change log.
@@ -128,7 +131,7 @@ Result: flashlight energy now has one runtime owner, `ToolState.CurrentBattery`.
 - `LaserCutter.cs` still trips an MCP validator warning path, but the touched modular scripts validate cleanly.
 
 ## Verification Status
-- MCP VERIFIED for:
+- Targeted MCP validation was recorded during that surgery session for:
   - targeted script validation on the touched modular-equipment runtime surface
   - repeated full-compile MCP attempts proving the remaining blocker is external to the modular-equipment changes
   - authored module assets present on disk and linked in metadata

@@ -8,7 +8,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after a save slot finished loading and the base game's save pipeline completed successfully.
     /// </summary>
-    public sealed class GameLoadedEvent : HectonEvent
+    internal sealed class GameLoadedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a new payload for the completed load operation.
@@ -28,13 +28,13 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after bootstrap has a live player object and the runtime world is ready for gameplay code.
     /// </summary>
-    public sealed class PlayerSpawnedEvent : HectonEvent
+    internal sealed class PlayerSpawnedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a new player-spawn payload.
         /// </summary>
         /// <param name="playerObject">Live player GameObject published by bootstrap.</param>
-        public PlayerSpawnedEvent(GameObject playerObject)
+        internal PlayerSpawnedEvent(GameObject playerObject)
         {
             PlayerObject = playerObject;
             PlayerTransform = playerObject != null ? playerObject.transform : null;
@@ -43,18 +43,18 @@ namespace Hecton8.Modding
         /// <summary>
         /// Live player GameObject published by bootstrap.
         /// </summary>
-        public GameObject PlayerObject { get; }
+        internal GameObject PlayerObject { get; }
 
         /// <summary>
         /// Cached player transform for systems that only need the transform contract.
         /// </summary>
-        public Transform PlayerTransform { get; }
+        internal Transform PlayerTransform { get; }
     }
 
     /// <summary>
     /// Fired after a crafting job completed and the resulting item entered the game's official crafting flow.
     /// </summary>
-    public sealed class ItemCraftedEvent : HectonEvent
+    internal sealed class ItemCraftedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a crafted-item payload.
@@ -74,7 +74,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the official pickup flow adds one or more world-collected items into player inventory.
     /// </summary>
-    public sealed class ItemCollectedEvent : HectonEvent
+    internal sealed class ItemCollectedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a collected-item payload.
@@ -82,7 +82,7 @@ namespace Hecton8.Modding
         /// <param name="item">Collected item asset.</param>
         /// <param name="quantity">Successfully added quantity.</param>
         /// <param name="interactor">Interactor responsible for the pickup flow.</param>
-        public ItemCollectedEvent(ItemData item, int quantity, Transform interactor)
+        internal ItemCollectedEvent(ItemData item, int quantity, Transform interactor)
             : this(
                 item,
                 item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
@@ -100,7 +100,7 @@ namespace Hecton8.Modding
         /// <param name="itemHashId">Logic-tier item hash identifier.</param>
         /// <param name="quantity">Successfully added quantity.</param>
         /// <param name="interactor">Interactor responsible for the pickup flow.</param>
-        public ItemCollectedEvent(ItemData item, int itemHashId, int quantity, Transform interactor)
+        internal ItemCollectedEvent(ItemData item, int itemHashId, int quantity, Transform interactor)
         {
             Item = item;
             ItemHashId = itemHashId;
@@ -126,13 +126,13 @@ namespace Hecton8.Modding
         /// <summary>
         /// Interactor that initiated the pickup flow.
         /// </summary>
-        public Transform Interactor { get; }
+        internal Transform Interactor { get; }
     }
 
     /// <summary>
     /// Fired after the official recycling owner dismantles one or more inventory items into resource outputs.
     /// </summary>
-    public sealed class ItemRecycledEvent : HectonEvent
+    internal sealed class ItemRecycledEvent : HectonEvent
     {
         /// <summary>
         /// Creates a recycled-item payload.
@@ -166,7 +166,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the player deliberately removes an inventory item through the supported discard flow.
     /// </summary>
-    public sealed class ItemDiscardedEvent : HectonEvent
+    internal sealed class ItemDiscardedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a discarded-item payload.
@@ -174,7 +174,7 @@ namespace Hecton8.Modding
         /// <param name="item">Discarded item asset.</param>
         /// <param name="quantity">Number of discarded units.</param>
         /// <param name="interactor">Player transform responsible for the discard flow when available.</param>
-        public ItemDiscardedEvent(ItemData item, int quantity, Transform interactor)
+        internal ItemDiscardedEvent(ItemData item, int quantity, Transform interactor)
         {
             Item = item;
             Quantity = quantity < 0 ? 0 : quantity;
@@ -194,13 +194,13 @@ namespace Hecton8.Modding
         /// <summary>
         /// Player transform responsible for the discard flow when available.
         /// </summary>
-        public Transform Interactor { get; }
+        internal Transform Interactor { get; }
     }
 
     /// <summary>
     /// Fired after the game's discovery owner confirms a first-time biome discovery.
     /// </summary>
-    public sealed class BiomeDiscoveredEvent : HectonEvent
+    internal sealed class BiomeDiscoveredEvent : HectonEvent
     {
         /// <summary>
         /// Creates a biome-discovery payload.
@@ -228,7 +228,7 @@ namespace Hecton8.Modding
     /// Fired before <see cref="HectonSurvivalSystem"/> applies suit integrity loss.
     /// Subscribers may cancel the event or reduce the requested damage amount.
     /// </summary>
-    public sealed class PlayerTakeDamageEvent : HectonCancellableEvent
+    internal sealed class PlayerTakeDamageEvent : HectonCancellableEvent
     {
         private float _damageAmount;
 
@@ -262,14 +262,14 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after a buildable module was spawned and registered by the construction pipeline.
     /// </summary>
-    public sealed class BaseModulePlacedEvent : HectonEvent
+    internal sealed class BaseModulePlacedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a placement payload for a newly placed base module.
         /// </summary>
         /// <param name="buildableData">Authoring asset that describes the placed module.</param>
         /// <param name="moduleObject">Live spawned GameObject that entered the construction registry.</param>
-        public BaseModulePlacedEvent(BuildableData buildableData, GameObject moduleObject)
+        internal BaseModulePlacedEvent(BuildableData buildableData, GameObject moduleObject)
         {
             BuildableData = buildableData;
             ModuleObject = moduleObject;
@@ -284,18 +284,18 @@ namespace Hecton8.Modding
         /// <summary>
         /// Live spawned GameObject registered by the construction owner.
         /// </summary>
-        public GameObject ModuleObject { get; }
+        internal GameObject ModuleObject { get; }
 
         /// <summary>
         /// Cached transform for placement-aware mods that only need spatial data.
         /// </summary>
-        public Transform ModuleTransform { get; }
+        internal Transform ModuleTransform { get; }
     }
 
     /// <summary>
     /// Fired after the survival owner resolves a fatal state and records the completed death telemetry.
     /// </summary>
-    public sealed class PlayerDiedEvent : HectonEvent
+    internal sealed class PlayerDiedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a death payload for the latest recorded loss.
@@ -329,7 +329,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the game's internal progression registry unlocks a persistent achievement.
     /// </summary>
-    public sealed class AchievementUnlockedEvent : HectonEvent
+    internal sealed class AchievementUnlockedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a new achievement-unlock payload.
@@ -356,7 +356,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Fired after the contextual advisory system pushes a non-repeatable suit/PDA recommendation.
     /// </summary>
-    public sealed class PlayerAdvisoryIssuedEvent : HectonEvent
+    internal sealed class PlayerAdvisoryIssuedEvent : HectonEvent
     {
         /// <summary>
         /// Creates a new advisory-issued payload.

@@ -27,7 +27,8 @@ namespace Hecton8.Construction
         private const ulong GeneOxygenProducing = (ulong)GeneticTraitProfile.GeneticTraitMask.OxygenProducing;
         private const ulong GeneToxic = (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
         private const ulong GeneRapidGrowth = (ulong)GeneticTraitProfile.GeneticTraitMask.FastGrowing;
-        private const ulong SpliceMutationGeneMask = GeneBioluminescent | GeneOxygenProducing | GeneToxic | GeneRapidGrowth;
+        private const ulong DefinedCultivationGeneMask = 0x000000000000000FUL;
+        private const ulong SpliceMutationGeneMask = (GeneBioluminescent | GeneOxygenProducing | GeneToxic | GeneRapidGrowth) & DefinedCultivationGeneMask;
 
         /// <summary>
         /// Fixed cultivation slot payload shared with atmosphere jobs without managed allocation.
@@ -107,6 +108,9 @@ namespace Hecton8.Construction
         [Tooltip("CO2/flood exposure amplifier applied when dead cultivated plants rot in saltwater.")]
         [SerializeField, Min(0f)] private float floodedRotCo2Amplifier = 1.4f;
 
+        [Tooltip("Scrubber load multiplier applied while flooded dead plants rot inside the module.")]
+        [SerializeField, Min(1f)] private float floodedRotScrubberLoadMultiplier = 3f;
+
         [Header("── Diagnostics ──────────────")]
         [SerializeField] private int _debugOccupiedSlotCount;
         [SerializeField] private int _debugMatureSlotCount;
@@ -119,6 +123,7 @@ namespace Hecton8.Construction
         private NativeArray<CultivationSlotState> _slots;
         private bool _registered;
         private uint _slowTickSequence;
+        private float _lastGrowthUnscaledTime;
         private int _hazardZoneId;
         private int _rotHazardZoneId;
 
@@ -163,6 +168,7 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            _lastGrowthUnscaledTime = Time.unscaledTime;
             TryRegister();
         }
 
@@ -212,7 +218,7 @@ namespace Hecton8.Construction
                 (unchecked((uint)seedItemHashIdB) * 0x9E3779B9u);
             XorShift32State mutationRng = new XorShift32State(seed);
             ulong mutationMask = ((ulong)mutationRng.NextUInt()) & SpliceMutationGeneMask;
-            resultMask = (geneticsMaskA | geneticsMaskB) ^ mutationMask;
+            resultMask = ((geneticsMaskA | geneticsMaskB) ^ mutationMask) & DefinedCultivationGeneMask;
 
             outputSeedItemHashId = ResolveHybridSeedItemHash(seedItemHashIdA, seedItemHashIdB, resultMask);
             if (outputSeedItemHashId == 0 || !inventory.TryAddItemWithGenetics(outputSeedItemHashId, resultMask))
@@ -286,7 +292,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = unchecked((uint)_slots[i].GeneticsMask);
-                growthValues[i] = _slots[i].Growth01;
+                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
             }
 
             return copyCount;
@@ -304,7 +310,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = _slots[i].GeneticsMask;
-                growthValues[i] = _slots[i].Growth01;
+                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
             }
 
             return copyCount;
@@ -322,7 +328,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = unchecked((uint)_slots[i].GeneticsMask);
-                growthValues[i] = _slots[i].Growth01;
+                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
                 qualityValues[i] = NormalizeQuality01(_slots[i].Quality01);
             }
 
@@ -341,7 +347,7 @@ namespace Hecton8.Construction
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = _slots[i].GeneticsMask;
-                growthValues[i] = _slots[i].Growth01;
+                growthValues[i] = NormalizeGrowth01(_slots[i].Growth01);
                 qualityValues[i] = NormalizeQuality01(_slots[i].Quality01);
             }
 
@@ -379,8 +385,8 @@ namespace Hecton8.Construction
                     continue;
 
                 seedIds[writeIndex] = item.PersistentId;
-                geneticsMasks[writeIndex] = slot.GeneticsMask;
-                growthValues[writeIndex] = Mathf.Clamp01(slot.Growth01);
+                geneticsMasks[writeIndex] = SanitizeGeneticsMask(slot.GeneticsMask);
+                growthValues[writeIndex] = NormalizeGrowth01(slot.Growth01);
                 qualityValues[writeIndex] = NormalizeQuality01(slot.Quality01);
                 writeIndex++;
             }
@@ -406,8 +412,6 @@ namespace Hecton8.Construction
 
             int safeCount = Mathf.Max(0, moduleDto.cultivationSlotCount);
             safeCount = Mathf.Min(safeCount, moduleDto.cultivationSeedItemIds != null ? moduleDto.cultivationSeedItemIds.Length : 0);
-            safeCount = Mathf.Min(safeCount, moduleDto.cultivationGeneticsMasks != null ? moduleDto.cultivationGeneticsMasks.Length : 0);
-            safeCount = Mathf.Min(safeCount, moduleDto.cultivationGrowth01 != null ? moduleDto.cultivationGrowth01.Length : 0);
             safeCount = Mathf.Min(safeCount, MaxCultivationSlots);
             for (int i = 0; i < safeCount; i++)
             {
@@ -425,8 +429,8 @@ namespace Hecton8.Construction
                 _slots[i] = new CultivationSlotState
                 {
                     SeedItemHashId = itemHashId,
-                    GeneticsMask = moduleDto.cultivationGeneticsMasks[i],
-                    Growth01 = Mathf.Clamp01(moduleDto.cultivationGrowth01[i]),
+                    GeneticsMask = ResolveSavedGeneticsMask(moduleDto, i, itemHashId),
+                    Growth01 = ResolveSavedGrowth01(moduleDto, i),
                     Quality01 = moduleDto.cultivationQuality01 != null && i < moduleDto.cultivationQuality01.Length
                         ? NormalizeQuality01(moduleDto.cultivationQuality01[i])
                         : 1f
@@ -455,6 +459,7 @@ namespace Hecton8.Construction
             int floodedRotDeathCount = 0;
             ulong combinedTraitMask = 0UL;
             bool moduleFlooded = targetModule != null && targetModule.IsFlooded;
+            float growthDeltaSeconds = ResolveGrowthDeltaSeconds();
 
             for (int i = 0; i < _slots.Length; i++)
             {
@@ -482,7 +487,7 @@ namespace Hecton8.Construction
                 }
 
                 float growthMultiplier = ResolveGrowthRateMultiplier(slot.GeneticsMask);
-                slot.Growth01 = Mathf.Clamp01(slot.Growth01 + (SlowTickDt / GrowthDurationSeconds) * growthMultiplier);
+                slot.Growth01 = NormalizeGrowth01(slot.Growth01 + (growthDeltaSeconds / GrowthDurationSeconds) * growthMultiplier);
                 _slots[i] = slot;
 
                 if (slot.Growth01 < MatureThreshold)
@@ -519,6 +524,12 @@ namespace Hecton8.Construction
                 targetModule.ApplyBotanyScrub(scrubAmount);
 
             float requiredScrubberLoadWatts = toxicScrubberPowerWatts * 2f;
+            if (floodedRotDeathCount > 0)
+            {
+                float rotBaseLoadWatts = Mathf.Max(requiredScrubberLoadWatts, fallbackToxicScrubberPowerWatts * floodedRotDeathCount);
+                requiredScrubberLoadWatts = rotBaseLoadWatts * Mathf.Max(1f, floodedRotScrubberLoadMultiplier);
+            }
+
             targetModule.SetCultivationScrubberLoad(requiredScrubberLoadWatts);
             targetModule.SetCultivationLightingPowerCredit(lightingPowerCreditWatts);
             _debugScrubberLoadWatts = requiredScrubberLoadWatts;
@@ -690,7 +701,8 @@ namespace Hecton8.Construction
 
         private ulong ResolveEffectiveGeneticsMask(int seedItemHashId, ulong geneticsMask)
         {
-            return geneticsMask != 0UL ? geneticsMask : ResolveDefaultGeneticsMask(seedItemHashId);
+            ulong resolvedMask = geneticsMask != 0UL ? geneticsMask : ResolveDefaultGeneticsMask(seedItemHashId);
+            return SanitizeGeneticsMask(resolvedMask);
         }
 
         private ulong ResolveDefaultGeneticsMask(int seedItemHashId)
@@ -704,10 +716,62 @@ namespace Hecton8.Construction
                 if (template == null || template.CultivationSeedHashId != seedItemHashId)
                     continue;
 
-                return template.GeneticsMask;
+                return SanitizeGeneticsMask(template.GeneticsMask);
             }
 
             return 0UL;
+        }
+
+        private ulong ResolveSavedGeneticsMask(ModuleDTO moduleDto, int slotIndex, int seedItemHashId)
+        {
+            ulong savedMask = 0UL;
+            if (moduleDto.cultivationGeneticsMasks != null &&
+                slotIndex >= 0 &&
+                slotIndex < moduleDto.cultivationGeneticsMasks.Length)
+            {
+                savedMask = moduleDto.cultivationGeneticsMasks[slotIndex];
+            }
+
+            return ResolveEffectiveGeneticsMask(seedItemHashId, savedMask);
+        }
+
+        private static ulong SanitizeGeneticsMask(ulong geneticsMask)
+        {
+            return geneticsMask & DefinedCultivationGeneMask;
+        }
+
+        private static float ResolveSavedGrowth01(ModuleDTO moduleDto, int slotIndex)
+        {
+            if (moduleDto.cultivationGrowth01 == null ||
+                slotIndex < 0 ||
+                slotIndex >= moduleDto.cultivationGrowth01.Length)
+            {
+                return 0f;
+            }
+
+            return NormalizeGrowth01(moduleDto.cultivationGrowth01[slotIndex]);
+        }
+
+        private static float NormalizeGrowth01(float growth01)
+        {
+            return !float.IsNaN(growth01) && !float.IsInfinity(growth01)
+                ? Mathf.Clamp01(growth01)
+                : 0f;
+        }
+
+        private float ResolveGrowthDeltaSeconds()
+        {
+            if (!Application.isPlaying)
+                return SlowTickDt;
+
+            float now = Time.unscaledTime;
+            float deltaSeconds = _lastGrowthUnscaledTime > 0f ? now - _lastGrowthUnscaledTime : SlowTickDt;
+            _lastGrowthUnscaledTime = now;
+
+            if (float.IsNaN(deltaSeconds) || float.IsInfinity(deltaSeconds) || deltaSeconds <= 0f)
+                return SlowTickDt;
+
+            return Mathf.Min(deltaSeconds, SlowTickDt * 4f);
         }
 
         private int ResolveHybridSeedItemHash(int primarySeedHashId, int secondarySeedHashId, ulong resultMask)
@@ -723,7 +787,7 @@ namespace Hecton8.Construction
                     if (template == null || template.CultivationSeedHashId == 0)
                         continue;
 
-                    int score = CountBits(template.GeneticsMask & resultMask) * 4;
+                    int score = CountBits(SanitizeGeneticsMask(template.GeneticsMask) & resultMask) * 4;
                     if (template.CultivationSeedHashId == primarySeedHashId || template.CultivationSeedHashId == secondarySeedHashId)
                         score += 3;
 
@@ -818,7 +882,9 @@ namespace Hecton8.Construction
 
         private static float NormalizeQuality01(float quality01)
         {
-            return float.IsFinite(quality01) ? Mathf.Clamp01(quality01) : 0f;
+            return !float.IsNaN(quality01) && !float.IsInfinity(quality01)
+                ? Mathf.Clamp01(quality01)
+                : 0f;
         }
 
         private static int CountBits(ulong value)

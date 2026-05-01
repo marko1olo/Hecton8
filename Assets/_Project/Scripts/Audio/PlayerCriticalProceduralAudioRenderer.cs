@@ -799,6 +799,7 @@ namespace Hecton8.Audio
             AcousticOcclusionUtility.AcquireRuntime();
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
             PhysicsEvents.OnImpact += HandlePhysicsImpact;
+            ProceduralAudioEvents.OnStructuralStressTriggered += HandleStructuralStressTriggered;
             SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
             SpectrumEvents.OnAcousticEchoReturned += HandleAcousticEchoReturned;
             LaserCutter.OnHeatChanged += HandleCutterHeatChanged;
@@ -816,6 +817,7 @@ namespace Hecton8.Audio
             LaserCutter.OnHeatChanged -= HandleCutterHeatChanged;
             SpectrumEvents.OnAcousticEchoReturned -= HandleAcousticEchoReturned;
             SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            ProceduralAudioEvents.OnStructuralStressTriggered -= HandleStructuralStressTriggered;
             PhysicsEvents.OnImpact -= HandlePhysicsImpact;
             AudioSettings.OnAudioConfigurationChanged -= HandleAudioConfigurationChanged;
             UnsubscribeTransportCoordinator();
@@ -1920,6 +1922,36 @@ namespace Hecton8.Audio
                 echoLowPassCutoffHz,
                 1f);
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
+        }
+
+        private void HandleStructuralStressTriggered(StructuralStressAudioInfo stressInfo)
+        {
+            if (_boundPlayerTransform == null)
+                return;
+
+            float maxDistance = PhysicsImpactStressRadiusMeters;
+            float distance = Vector3.Distance(_boundPlayerTransform.position, stressInfo.WorldPosition);
+            if (distance > maxDistance)
+                return;
+
+            float proximity = 1f - math.saturate(distance / maxDistance);
+            float stress = math.saturate(stressInfo.Stress01 * math.max(0.25f, proximity));
+            if (stress <= 0f)
+                return;
+
+            float metallic = math.saturate(stress * 0.95f);
+            float clangExcitation = math.saturate(stress * 0.35f);
+            float echoExcitation = math.saturate(stress * 0.45f);
+            TryEnqueueImpactAudioEvent(
+                stress,
+                metallic,
+                clangExcitation,
+                echoExcitation,
+                0f,
+                0f,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz,
+                stressInfo.PitchScale);
+            _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, stress);
         }
 
         private static byte ResolveDominantImpactMaterialId(byte primaryMaterialId, byte secondaryMaterialId)

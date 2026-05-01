@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton8.AI;
 using Hecton8.Bootstrap;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
 using Hecton8.Quest;
@@ -30,10 +31,15 @@ namespace Hecton8.Core
         private const float FixedStepSeconds = 0.02f;
         private const int MaxFixedSubstepsPerFrame = 3;
         private const int MaxLateFrameEventsPerFrame = 1000;
+        private const int MaxPdaEventsPerFrame = 30;
+        private const int PdaCongestionWarningFrameThreshold = 5;
+        private const int LateFrameCircuitBreakerLaneCapacity = 32;
         private const float CircuitBreakerLogIntervalSeconds = 5f;
+        private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const string SlowDispatcherPhaseWarningMessage = "[SystemDispatcher] Dispatcher phase exceeded slow threshold.";
         private const string FoveatedFrameCompleteWarningMessage = "[SystemDispatcher] Foveated frame completion exceeded slow threshold.";
         private const string JobHandleCompleteWarningMessage = "[SystemDispatcher] Job handle completion exceeded slow threshold.";
+        private const string AupNanInquisitorWarningMessage = "[SystemDispatcher] AUP NaN-Inquisitor detected invalid camera-relative results.";
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
@@ -43,6 +49,29 @@ namespace Hecton8.Core
         private static readonly ProfilerMarker _foveatedCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Foveated.Complete");
         private static readonly ProfilerMarker _dispatcherRaycastScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Schedule");
         private static readonly ProfilerMarker _dispatcherRaycastCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Complete");
+        private static readonly uint _ThreadSafeCommandQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ThreadSafeCommandQueue"));
+        private static readonly uint _NarrativeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("NarrativeEvents"));
+        private static readonly uint _InteractionEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("InteractionEvents"));
+        private static readonly uint _CraftingEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CraftingEvents"));
+        private static readonly uint _ScanEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ScanEvents"));
+        private static readonly uint _SaveEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SaveEvents"));
+        private static readonly uint _QuestEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("QuestEvents"));
+        private static readonly uint _AudioLogEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AudioLogEvents"));
+        private static readonly uint _SubmarineOsEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SubmarineOsEvents"));
+        private static readonly uint _FlashlightEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("FlashlightEvents"));
+        private static readonly uint _WeatherEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("WeatherEvents"));
+        private static readonly uint _DepthZoneEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DepthZoneEvents"));
+        private static readonly uint _SoundscapeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SoundscapeEvents"));
+        private static readonly uint _EmergencyRelayEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EmergencyRelayEvents"));
+        private static readonly uint _SargassumEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SargassumEvents"));
+        private static readonly uint _AtlasSignalEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AtlasSignalEvents"));
+        private static readonly uint _NotificationEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("NotificationEvents"));
+        private static readonly uint _PdaEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PDAEvents"));
+        private static readonly uint _SceneBootstrapEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SceneBootstrapEvents"));
+        private static readonly uint _ObjectPoolDiagnosticsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ObjectPoolDiagnostics"));
+        private static readonly uint _Atlas6EventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Atlas6Events"));
+        private static readonly uint _RegistryEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("RegistryEvents"));
+        private static readonly uint _LateFrameBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.LateFrameEventBudget"));
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
         {
             new ProfilerMarker("H8.Dispatcher.Update.Core"),
@@ -111,13 +140,24 @@ namespace Hecton8.Core
         private static readonly IDispatcherRaycastReceiver[] _scheduledDispatcherRaycastReceivers = new IDispatcherRaycastReceiver[MaxQueuedDispatcherRaycasts];
         // COLD ALLOC: int[256] — dispatcher-owned scheduled raycast request ids — owner: SystemDispatcher
         private static readonly int[] _scheduledDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
+        // COLD ALLOC: uint[32] - late-frame circuit-breaker lane hash counters - owner: SystemDispatcher
+        private static readonly uint[] _lateFrameCircuitBreakerLaneHashes = new uint[LateFrameCircuitBreakerLaneCapacity];
+        // COLD ALLOC: ushort[32] - late-frame circuit-breaker lane hit counters - owner: SystemDispatcher
+        private static readonly ushort[] _lateFrameCircuitBreakerLaneCounts = new ushort[LateFrameCircuitBreakerLaneCapacity];
         private float _slowTickAccumulator;
         private float _fixedStepAccumulator;
         private bool _serviceRegistered;
         private static int _lateFrameEventDispatchBudget;
         private static bool _lateFrameEventBudgetActive;
         private static bool _lateFrameCircuitBreakerTripped;
+        private static uint _activeLateFrameEventLaneHash;
+        private static uint _dominantLateFrameCircuitBreakerLaneHash;
+        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
         private static float _nextCircuitBreakerLogTime;
+        private static float _nextAupNanInquisitorLogTime;
+        private static bool _temporalCompressionActive;
+        private static int _temporalCompressionFrameCount;
+        private static int _pdaOverBudgetConsecutiveFrames;
         private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
         private static NativeList<RaycastCommand> _scheduledDispatcherRaycastCommands;
         private static NativeArray<RaycastHit> _scheduledDispatcherRaycastHits;
@@ -125,6 +165,16 @@ namespace Hecton8.Core
         private static bool _dispatcherRaycastsScheduled;
         private static int _pendingDispatcherRaycastCount;
         private static int _scheduledDispatcherRaycastCount;
+
+        /// <summary>
+        /// True when this frame dropped excess fixed-step catch-up time instead of exceeding the substep cap.
+        /// </summary>
+        public static bool IsTemporalCompressionActive => _temporalCompressionActive;
+
+        /// <summary>
+        /// Total frame count where temporal compression was entered since subsystem reset.
+        /// </summary>
+        public static int TemporalCompressionFrameCount => _temporalCompressionFrameCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -137,7 +187,16 @@ namespace Hecton8.Core
             _lateFrameEventDispatchBudget = 0;
             _lateFrameEventBudgetActive = false;
             _lateFrameCircuitBreakerTripped = false;
+            _activeLateFrameEventLaneHash = 0u;
+            _dominantLateFrameCircuitBreakerLaneHash = 0u;
+            _dominantLateFrameCircuitBreakerLaneCount = 0;
+            System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
+            System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
             _nextCircuitBreakerLogTime = 0f;
+            _nextAupNanInquisitorLogTime = 0f;
+            _temporalCompressionActive = false;
+            _temporalCompressionFrameCount = 0;
+            _pdaOverBudgetConsecutiveFrames = 0;
         }
 
         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
@@ -390,6 +449,7 @@ namespace Hecton8.Core
                 return;
 
             ThreadSafeCommandQueue.Initialize();
+            UIStateStore.EnsureInitialized();
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = true;
         }
@@ -469,22 +529,78 @@ namespace Hecton8.Core
             BeginLateFrameEventBudget();
             using (_lateFrameCommandQueueDrainProfilerMarker.Auto())
             {
+                SetActiveLateFrameEventLane(_ThreadSafeCommandQueueHash);
+                ReportLateFrameQueueDepth(_ThreadSafeCommandQueueHash, ThreadSafeCommandQueue.PendingCount);
                 if (!ThreadSafeCommandQueue.DrainMainThread())
                     MarkLateFrameEventDispatchDeferred();
             }
+            Hecton8.Modding.ModCommandDispatcher.DrainLateFrame();
+            SetActiveLateFrameEventLane(_NarrativeEventsQueueHash);
+            ReportLateFrameQueueDepth(_NarrativeEventsQueueHash, NarrativeEvents.PendingCount);
             NarrativeEvents.FlushPending();
+            SetActiveLateFrameEventLane(_InteractionEventsQueueHash);
+            ReportLateFrameQueueDepth(_InteractionEventsQueueHash, Hecton8.Interaction.InteractionEvents.PendingCount);
             Hecton8.Interaction.InteractionEvents.FlushPending();
+            SetActiveLateFrameEventLane(_CraftingEventsQueueHash);
+            ReportLateFrameQueueDepth(_CraftingEventsQueueHash, Hecton8.Crafting.CraftingEvents.PendingCount);
             Hecton8.Crafting.CraftingEvents.FlushPending();
+            SetActiveLateFrameEventLane(_ScanEventsQueueHash);
+            ReportLateFrameQueueDepth(_ScanEventsQueueHash, ScanEvents.PendingCount);
             ScanEvents.FlushPending();
+            SetActiveLateFrameEventLane(_SaveEventsQueueHash);
+            ReportLateFrameQueueDepth(_SaveEventsQueueHash, SaveEvents.PendingCount);
             SaveEvents.FlushPending();
+            SetActiveLateFrameEventLane(_QuestEventsQueueHash);
+            ReportLateFrameQueueDepth(_QuestEventsQueueHash, QuestEvents.PendingCount);
             QuestEvents.FlushPending();
+            SetActiveLateFrameEventLane(_AudioLogEventsQueueHash);
+            ReportLateFrameQueueDepth(_AudioLogEventsQueueHash, AudioLogEvents.PendingCount);
             AudioLogEvents.FlushPending();
+            SetActiveLateFrameEventLane(_SubmarineOsEventsQueueHash);
+            ReportLateFrameQueueDepth(_SubmarineOsEventsQueueHash, HectonSubmarineOsEvents.PendingCount);
+            HectonSubmarineOsEvents.FlushPending();
+            SetActiveLateFrameEventLane(_FlashlightEventsQueueHash);
+            ReportLateFrameQueueDepth(_FlashlightEventsQueueHash, FlashlightEvents.PendingCount);
+            FlashlightEvents.FlushPending();
+            SetActiveLateFrameEventLane(_WeatherEventsQueueHash);
+            ReportLateFrameQueueDepth(_WeatherEventsQueueHash, WeatherEvents.PendingCount);
+            WeatherEvents.FlushPending();
+            SetActiveLateFrameEventLane(_DepthZoneEventsQueueHash);
+            ReportLateFrameQueueDepth(_DepthZoneEventsQueueHash, DepthZoneEvents.PendingCount);
+            DepthZoneEvents.FlushPending();
+            SetActiveLateFrameEventLane(_SoundscapeEventsQueueHash);
+            ReportLateFrameQueueDepth(_SoundscapeEventsQueueHash, SoundscapeEvents.PendingCount);
+            SoundscapeEvents.FlushPending();
+            SetActiveLateFrameEventLane(_EmergencyRelayEventsQueueHash);
+            ReportLateFrameQueueDepth(_EmergencyRelayEventsQueueHash, EmergencyServiceRelayEvents.PendingCount);
+            EmergencyServiceRelayEvents.FlushPending();
+            SetActiveLateFrameEventLane(_SargassumEventsQueueHash);
+            ReportLateFrameQueueDepth(_SargassumEventsQueueHash, SargassumGlobalDragManager.PendingEventCount);
+            SargassumGlobalDragManager.FlushPendingEvents();
+            SetActiveLateFrameEventLane(_AtlasSignalEventsQueueHash);
+            ReportLateFrameQueueDepth(_AtlasSignalEventsQueueHash, Hecton8.AtlasSignal.AtlasSignalEvents.PendingCount);
             Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
+            SetActiveLateFrameEventLane(_NotificationEventsQueueHash);
+            ReportLateFrameQueueDepth(_NotificationEventsQueueHash, Hecton8.UI.NotificationEvents.PendingCount);
             Hecton8.UI.NotificationEvents.FlushPending();
-            Hecton8.UI.PDAEvents.FlushPending();
+            SetActiveLateFrameEventLane(_PdaEventsQueueHash);
+            int pdaPendingBeforeFlush = Hecton8.UI.PDAEvents.PendingCount;
+            ReportLateFrameQueueDepth(_PdaEventsQueueHash, pdaPendingBeforeFlush);
+            Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame);
+            TrackPdaBusCongestion(pdaPendingBeforeFlush, Hecton8.UI.PDAEvents.PendingCount);
+            SetActiveLateFrameEventLane(_SceneBootstrapEventsQueueHash);
+            ReportLateFrameQueueDepth(_SceneBootstrapEventsQueueHash, Hecton8.Bootstrap.SceneBootstrap.PendingEventCount);
             Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
+            SetActiveLateFrameEventLane(_ObjectPoolDiagnosticsQueueHash);
+            ReportLateFrameQueueDepth(_ObjectPoolDiagnosticsQueueHash, ObjectPoolDiagnostics.PendingCount);
             ObjectPoolDiagnostics.FlushPending();
+            SetActiveLateFrameEventLane(_Atlas6EventsQueueHash);
+            ReportLateFrameQueueDepth(_Atlas6EventsQueueHash, Hecton8.AtlasSignal.Atlas6Events.PendingCount);
             Hecton8.AtlasSignal.Atlas6Events.FlushPending();
+            SetActiveLateFrameEventLane(_RegistryEventsQueueHash);
+            ReportLateFrameQueueDepth(_RegistryEventsQueueHash, GlobalRegistry.PendingServiceReboundCount);
+            GlobalRegistry.FlushPendingServiceReboundEvents();
+            ClearActiveLateFrameEventLane();
             EndLateFrameEventBudget();
             GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
             WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
@@ -496,7 +612,7 @@ namespace Hecton8.Core
         /// Consumes one deferred event dispatch slot from the current LateUpdate budget.
         /// </summary>
         /// <returns>True when an event queue may dispatch one payload this frame.</returns>
-        internal static bool TryConsumeLateFrameEventDispatch()
+        public static bool TryConsumeLateFrameEventDispatch()
         {
             if (!_lateFrameEventBudgetActive)
                 return true;
@@ -508,13 +624,50 @@ namespace Hecton8.Core
             }
 
             _lateFrameCircuitBreakerTripped = true;
+            RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
             return false;
         }
 
         internal static void MarkLateFrameEventDispatchDeferred()
         {
             if (_lateFrameEventBudgetActive)
+            {
                 _lateFrameCircuitBreakerTripped = true;
+                RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
+            }
+        }
+
+        private static void SetActiveLateFrameEventLane(uint queueHash)
+        {
+            _activeLateFrameEventLaneHash = queueHash;
+        }
+
+        private static void ClearActiveLateFrameEventLane()
+        {
+            _activeLateFrameEventLaneHash = 0u;
+        }
+
+        private static void ReportLateFrameQueueDepth(uint queueHash, int pendingCount)
+        {
+            ObjectPoolDiagnostics.PublishDataBusDepth(queueHash, pendingCount);
+        }
+
+        private static void TrackPdaBusCongestion(int pendingBeforeFlush, int pendingAfterFlush)
+        {
+            if (pendingBeforeFlush <= MaxPdaEventsPerFrame && pendingAfterFlush <= 0)
+            {
+                _pdaOverBudgetConsecutiveFrames = 0;
+                return;
+            }
+
+            _pdaOverBudgetConsecutiveFrames++;
+            if (_pdaOverBudgetConsecutiveFrames != PdaCongestionWarningFrameThreshold)
+                return;
+
+            CrashTelemetryBuffer.ReportBusCongestionWarning(
+                _PdaEventsQueueHash,
+                Mathf.Max(pendingBeforeFlush, pendingAfterFlush),
+                WorldSpatialHashGrid.ActiveEntityCount);
         }
 
         private static void BeginLateFrameEventBudget()
@@ -522,6 +675,7 @@ namespace Hecton8.Core
             _lateFrameEventDispatchBudget = MaxLateFrameEventsPerFrame;
             _lateFrameCircuitBreakerTripped = false;
             _lateFrameEventBudgetActive = true;
+            _activeLateFrameEventLaneHash = 0u;
         }
 
         private static void EndLateFrameEventBudget()
@@ -530,6 +684,15 @@ namespace Hecton8.Core
             _lateFrameEventBudgetActive = false;
             _lateFrameEventDispatchBudget = 0;
             _lateFrameCircuitBreakerTripped = false;
+
+            if (circuitBreakerTripped)
+            {
+                CrashTelemetryBuffer.ReportEventCascadeWarning();
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _LateFrameBudgetWarningHash,
+                    _dominantLateFrameCircuitBreakerLaneHash,
+                    _dominantLateFrameCircuitBreakerLaneCount);
+            }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             float now = Time.unscaledTime;
@@ -541,6 +704,44 @@ namespace Hecton8.Core
 #endif
         }
 
+        private static void RecordLateFrameCircuitBreakerLane(uint queueHash)
+        {
+            if (queueHash == 0u)
+                return;
+
+            for (int i = 0; i < LateFrameCircuitBreakerLaneCapacity; i++)
+            {
+                uint recordedHash = _lateFrameCircuitBreakerLaneHashes[i];
+                if (recordedHash == queueHash)
+                {
+                    ushort nextCount = _lateFrameCircuitBreakerLaneCounts[i] == ushort.MaxValue
+                        ? ushort.MaxValue
+                        : (ushort)(_lateFrameCircuitBreakerLaneCounts[i] + 1);
+                    _lateFrameCircuitBreakerLaneCounts[i] = nextCount;
+                    if (nextCount >= _dominantLateFrameCircuitBreakerLaneCount)
+                    {
+                        _dominantLateFrameCircuitBreakerLaneHash = queueHash;
+                        _dominantLateFrameCircuitBreakerLaneCount = nextCount;
+                    }
+
+                    return;
+                }
+
+                if (recordedHash != 0u)
+                    continue;
+
+                _lateFrameCircuitBreakerLaneHashes[i] = queueHash;
+                _lateFrameCircuitBreakerLaneCounts[i] = 1;
+                if (_dominantLateFrameCircuitBreakerLaneCount == 0)
+                {
+                    _dominantLateFrameCircuitBreakerLaneHash = queueHash;
+                    _dominantLateFrameCircuitBreakerLaneCount = 1;
+                }
+
+                return;
+            }
+        }
+
         private void FixedUpdate()
         {
         }
@@ -548,10 +749,22 @@ namespace Hecton8.Core
         private void RunFixedStepAccumulator(float unscaledDeltaTime, bool blockGameplayLanes)
         {
             if (unscaledDeltaTime <= 0f)
+            {
+                _temporalCompressionActive = false;
                 return;
+            }
 
             float maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
-            _fixedStepAccumulator = Mathf.Min(_fixedStepAccumulator + unscaledDeltaTime, maxAccumulatedTime);
+            float requestedAccumulatedTime = _fixedStepAccumulator + unscaledDeltaTime;
+            bool compressionActive = requestedAccumulatedTime > maxAccumulatedTime;
+            _temporalCompressionActive = compressionActive;
+            if (compressionActive)
+            {
+                _temporalCompressionFrameCount++;
+                CrashTelemetryBuffer.ReportTemporalCompression();
+            }
+
+            _fixedStepAccumulator = Mathf.Min(requestedAccumulatedTime, maxAccumulatedTime);
 
             int substepCount = 0;
             while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
@@ -605,7 +818,27 @@ namespace Hecton8.Core
                             rawArray[itemIndex].PostFixedTick(fixedDeltaTime);
                     }
                 }
+
+                DrainAupNanInquisitor();
             }
+        }
+
+        private static void DrainAupNanInquisitor()
+        {
+            int invalidResultCount = AUPMath.ConsumeInvalidResultCount();
+            if (invalidResultCount <= 0)
+                return;
+
+            CrashTelemetryBuffer.ReportNanPhysicsRecovery();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float now = Time.unscaledTime;
+            if (now < _nextAupNanInquisitorLogTime)
+                return;
+
+            _nextAupNanInquisitorLogTime = now + AupNanInquisitorLogIntervalSeconds;
+            Debug.LogError(AupNanInquisitorWarningMessage);
+#endif
         }
 
         private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
@@ -649,16 +882,32 @@ namespace Hecton8.Core
             if (!_pendingDispatcherRaycastCommands.IsCreated)
             {
                 _pendingDispatcherRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[256] — dispatcher-owned global deferred physics request lane — owner: SystemDispatcher
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingDispatcherRaycastCommands,
+                    MaxQueuedDispatcherRaycasts,
+                    nameof(SystemDispatcher),
+                    nameof(_pendingDispatcherRaycastCommands),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_scheduledDispatcherRaycastCommands.IsCreated)
             {
                 _scheduledDispatcherRaycastCommands = new NativeList<RaycastCommand>(MaxQueuedDispatcherRaycasts, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] — dispatcher-owned scheduled deferred raycast commands — owner: SystemDispatcher
+                NativeMemorySentinel.RegisterNativeList(
+                    _scheduledDispatcherRaycastCommands,
+                    nameof(SystemDispatcher),
+                    nameof(_scheduledDispatcherRaycastCommands),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_scheduledDispatcherRaycastHits.IsCreated)
             {
                 _scheduledDispatcherRaycastHits = new NativeArray<RaycastHit>(MaxQueuedDispatcherRaycasts, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[256] — dispatcher-owned deferred raycast hit lane — owner: SystemDispatcher
+                NativeMemorySentinel.RegisterNativeArray(
+                    _scheduledDispatcherRaycastHits,
+                    nameof(SystemDispatcher),
+                    nameof(_scheduledDispatcherRaycastHits),
+                    NativeAllocationLifetime.Session);
             }
         }
 
@@ -737,18 +986,21 @@ namespace Hecton8.Core
 
             if (_pendingDispatcherRaycastCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SystemDispatcher), nameof(_pendingDispatcherRaycastCommands));
                 _pendingDispatcherRaycastCommands.Dispose();
                 _pendingDispatcherRaycastCommands = default;
             }
 
             if (_scheduledDispatcherRaycastCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeList(nameof(SystemDispatcher), nameof(_scheduledDispatcherRaycastCommands));
                 _scheduledDispatcherRaycastCommands.Dispose();
                 _scheduledDispatcherRaycastCommands = default;
             }
 
             if (_scheduledDispatcherRaycastHits.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
                 _scheduledDispatcherRaycastHits.Dispose();
                 _scheduledDispatcherRaycastHits = default;
             }
@@ -1112,7 +1364,10 @@ namespace Hecton8.Core
             {
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
+                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
             }
 
             destination.UnlockBufferAfterWrite<T>(safeCount);
@@ -1131,7 +1386,10 @@ namespace Hecton8.Core
             fixed (T* sourcePtr = source)
             {
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
+                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
             }
 
             destination.UnlockBufferAfterWrite<T>(safeCount);

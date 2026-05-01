@@ -13,36 +13,41 @@ Status: PENDING VERIFICATION
 
 ## Project Surface Counts
 
-- First-party C# files under `Assets/_Project/`: 1038
-- `GlobalRegistry.` usage count: 1496
-- Jobs/native collection matches: 3214+
-- `BurstCompile` matches: 20
-- `Update` / `LateUpdate` / `FixedUpdate` matches in first-party scripts: 45
-- `StartCoroutine` / `yield return` matches: 244
-- `.Complete()` / `JobHandle.Complete()` matches: 137
-- Scene-search / `Resources.Load` style matches: 104
-- Addressables load/release matches: 4
-- Static `Instance`-style occurrences: 181
-- `DontDestroyOnLoad` occurrences: 67
+- First-party C# files under `Assets/_Project/`: 1060
+- First-party C# files under `Assets/_Project/Scripts`: 1020
+- First-party C# LOC under `Assets/_Project/Scripts`: 544728
+- `GlobalRegistry.` usage count: 1770
+- Jobs/native collection broad matches: 4878
+- `BurstCompile` attribute matches: 163
+- `Update` / `LateUpdate` / `FixedUpdate` method-name matches in first-party scripts: 30
+- `StartCoroutine` / `yield return` broad matches: 149
+- strict `StartCoroutine(` call sites: 15
+- `.Complete()` / `JobHandle.Complete()` matches: 150
+- Scene-search / `Resources.Load` style matches: 159
+- Addressables load/release matches: 1
+- Static `Instance`-style broad occurrences: 514
+- `DontDestroyOnLoad` occurrences: 64
 
 ## Script Area Density
 
 Top script folders by file count:
-- `World`: 108
-- `Gameplay`: 104
-- `UI`: 78
-- `Core`: 33
-- `Construction`: 23
+- `Editor`: 129
+- `World`: 115
+- `Gameplay`: 106
+- `UI`: 79
+- `Core`: 35
+- `Construction`: 25
 - `Optimization`: 22
 - `Visor`: 19
+- `Fauna`: 17
 - `ModdingAPI`: 16
-- `Fauna`: 15
 - `Tools`: 15
 - `Audio`: 13
 
 Interpretation:
 - The project is system-heavy, world-heavy, and UI-heavy.
 - Runtime complexity is not concentrated in one clean vertical slice.
+- The `Editor` folder is now the largest file-count area; editor tooling has become a major maintenance surface, not a side note.
 
 ## Largest First-Party Owners
 

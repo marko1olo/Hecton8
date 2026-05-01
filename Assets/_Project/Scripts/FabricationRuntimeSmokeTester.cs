@@ -42,7 +42,7 @@ namespace Hecton8.Debugging
         {
             try
             {
-                await Awaitable.WaitForSecondsAsync(startupDelay, cancellationToken: cancellationToken);
+                await DelayRealtimeAsync(startupDelay, cancellationToken);
 
                 if (cancellationToken.IsCancellationRequested || this == null)
                     return;
@@ -88,7 +88,7 @@ namespace Hecton8.Debugging
                 }
 
                 float waitTime = Mathf.Max(0.1f, recipe.craftTime + completionPadding);
-                await Awaitable.WaitForSecondsAsync(waitTime, cancellationToken: cancellationToken);
+                await DelayRealtimeAsync(waitTime, cancellationToken);
 
                 if (cancellationToken.IsCancellationRequested || this == null)
                     return;
@@ -116,6 +116,13 @@ namespace Hecton8.Debugging
             {
                 Debug.LogException(exception);
             }
+        }
+
+        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (!cancellationToken.IsCancellationRequested && Time.realtimeSinceStartup < deadline)
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
         }
 
         private Fabricator FindTargetFabricator()

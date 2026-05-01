@@ -157,6 +157,14 @@ namespace Hecton8.Scavenging
         [Tooltip("Node integrity applied to runtime ResourceNode instances built from this template.")]
         private float maxIntegrity = 100f;
 
+        [SerializeField, Min(0f)]
+        [Tooltip("Authored recoverable node mass in kg. Zero derives from max integrity for legacy assets.")]
+        private float massKg;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Mass in kg required before one yield item is emitted. Zero derives from the primary yield item mass.")]
+        private float unitItemMassKg;
+
         [SerializeField, Min(0)]
         [Tooltip("Default number of pickup pieces emitted when the runtime node resolves into pooled loot.")]
         private int defaultLootCount = 1;
@@ -361,6 +369,28 @@ namespace Hecton8.Scavenging
 
         /// <summary>Maximum node integrity seeded into pooled runtime nodes.</summary>
         public float MaxIntegrity => math.max(1f, maxIntegrity);
+
+        /// <summary>Hardness scalar consumed by damage and fractional drilling yield math.</summary>
+        public float Hardness => math.max(0.01f, toolResistance);
+
+        /// <summary>Recoverable authored node mass in kilograms.</summary>
+        public float MassKg => massKg > 0f ? math.max(0.01f, massKg) : math.max(0.01f, maxIntegrity * 0.05f);
+
+        /// <summary>Mass required before one item unit is emitted by incremental drilling.</summary>
+        public float UnitItemMassKg
+        {
+            get
+            {
+                if (unitItemMassKg > 0f)
+                    return math.max(0.01f, unitItemMassKg);
+
+                ItemData item = ExtractorYieldItem;
+                return item != null ? math.max(0.01f, item.MassKg) : 1f;
+            }
+        }
+
+        /// <summary>Hash-stable primary yield item id used by scanner, drilling, and logistics lanes.</summary>
+        public int YieldItemHashID => ExtractorYieldItemHashId;
 
         /// <summary>Default pooled pickup count emitted by runtime nodes.</summary>
         public int DefaultLootCount => math.max(0, defaultLootCount);
@@ -650,6 +680,8 @@ namespace Hecton8.Scavenging
             toolResistance = math.max(0.01f, toolResistance);
             harvestDurationSeconds = math.max(0f, harvestDurationSeconds);
             maxIntegrity = math.max(1f, maxIntegrity);
+            massKg = math.max(0f, massKg);
+            unitItemMassKg = math.max(0f, unitItemMassKg);
             defaultLootCount = math.max(0, defaultLootCount);
             minimumDepthMeters = math.max(0f, minimumDepthMeters);
             maximumDepthMeters = math.max(minimumDepthMeters, maximumDepthMeters);
@@ -672,13 +704,20 @@ namespace Hecton8.Scavenging
             physicalSize.x = math.max(0.1f, physicalSize.x);
             physicalSize.y = math.max(0.1f, physicalSize.y);
             physicalSize.z = math.max(0.1f, physicalSize.z);
-            validLayers = SanitizeValidLayerMask(validLayers.value);
+            int originalValidLayerMask = validLayers.value;
+            validLayers = SanitizeValidLayerMask(originalValidLayerMask);
+            if (HectonLayerMasks.IsEverythingLayerMask(originalValidLayerMask))
+            {
+                Debug.LogWarning(
+                    "[ResourceNodeTemplate] validLayers was Everything (-1). Replaced with HectonLayerMasks.AllDefinedProjectLayersMask.",
+                    this);
+            }
         }
 #endif
 
         private static int SanitizeValidLayerMask(int layerMask)
         {
-            return layerMask < 0 ? DefaultValidLayerMask : layerMask;
+            return HectonLayerMasks.SanitizeAuthoringLayerMask(layerMask);
         }
     }
 }

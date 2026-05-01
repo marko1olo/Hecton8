@@ -14,7 +14,7 @@ namespace Hecton8.Modding
         // COLD ALLOC: List<PendingLanguageTable>[32] — pending mod language injections — owner: ModLocalizationBridge
         private static readonly List<PendingLanguageTable> _pendingTables = new List<PendingLanguageTable>(32);
         // COLD ALLOC: HashSet<string>[64] — injected table guards by mod/language/path — owner: ModLocalizationBridge
-        private static readonly HashSet<string> _injectedTableKeys = new HashSet<string>();
+        private static readonly HashSet<uint> _injectedTableKeys = new HashSet<uint>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -40,7 +40,7 @@ namespace Hecton8.Modding
                 if (!TryResolveLanguageFromFileName(Path.GetFileNameWithoutExtension(filePath), out GameLanguage language))
                     continue;
 
-                string injectionKey = modId + "|" + language + "|" + filePath;
+                uint injectionKey = ComputeInjectionHash(modId, language, filePath);
                 if (_injectedTableKeys.Contains(injectionKey))
                     continue;
 
@@ -184,7 +184,7 @@ namespace Hecton8.Modding
                     return true;
             }
 
-            return Enum.TryParse(fileNameWithoutExtension, true, out language);
+            return false;
         }
 
         private struct PendingLanguageTable
@@ -192,7 +192,18 @@ namespace Hecton8.Modding
             public string ModId;
             public GameLanguage Language;
             public string FilePath;
-            public string InjectionKey;
+            public uint InjectionKey;
+        }
+
+        private static uint ComputeInjectionHash(string modId, GameLanguage language, string filePath)
+        {
+            unchecked
+            {
+                uint hash = ModCommandDispatcher.ComputeModHash(modId);
+                hash ^= ((uint)language + 0x9E3779B9u + (hash << 6) + (hash >> 2));
+                hash ^= ModCommandDispatcher.ComputeModHash(filePath) + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                return hash;
+            }
         }
     }
 }

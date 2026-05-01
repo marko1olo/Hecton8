@@ -55,6 +55,7 @@ using Unity.Collections;
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.Bootstrap
 {
@@ -86,6 +87,11 @@ namespace Hecton8.Bootstrap
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: SceneBootstrap
         private static readonly Dictionary<uint, string> _failureReasonsByHash = new Dictionary<uint, string>(8);
         private static NativeQueue<SceneBootstrapEventPayload> _pendingEvents;
+
+        public static int PendingEventCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+#if UNITY_EDITOR
+        private static readonly List<GameObject> _dontDestroyRootScratch = new List<GameObject>(32); // COLD ALLOC: List<GameObject>[32] - editor-only DDOL residue scan scratch - owner: SceneBootstrap
+#endif
 
         // ══════════════════════════════════════════════════════════
         //  STATIC EVENTS
@@ -405,6 +411,9 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
+#if UNITY_EDITOR
+            VerifyDontDestroyOnLoadResidueEditorOnly();
+#endif
             if (!BootstrapRouteEnforcer.EnsureBootstrapRuntimeRoute(
                     gameObject.scene.name,
                     nameof(SceneBootstrap)))
@@ -421,6 +430,54 @@ namespace Hecton8.Bootstrap
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE — единственная точка входа
         // ══════════════════════════════════════════════════════════
+
+#if UNITY_EDITOR
+        private static void VerifyDontDestroyOnLoadResidueEditorOnly()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            Scene dontDestroyScene = SceneManager.GetSceneByName("DontDestroyOnLoad");
+            if (dontDestroyScene.IsValid() && dontDestroyScene.isLoaded)
+                dontDestroyScene.GetRootGameObjects(_dontDestroyRootScratch);
+
+            if (_dontDestroyRootScratch.Count == 0)
+                CollectDontDestroyRootsFallbackEditorOnly();
+
+            for (int i = 0; i < _dontDestroyRootScratch.Count; i++)
+            {
+                GameObject root = _dontDestroyRootScratch[i];
+                if (root == null || IsAllowedDontDestroyRoot(root))
+                    continue;
+
+                Debug.LogError(
+                    $"[SceneBootstrap] CRITICAL DDOL residue detected: '{root.name}'. Only CrashTelemetryBuffer and GameBootstrapper may own DontDestroyOnLoad roots.");
+            }
+
+            _dontDestroyRootScratch.Clear();
+        }
+
+        private static void CollectDontDestroyRootsFallbackEditorOnly()
+        {
+            GameObject[] allObjects = Resources.FindObjectsOfTypeAll<GameObject>(); // COLD ALLOC: GameObject[] - editor-only DDOL hidden-scene fallback scan - owner: SceneBootstrap
+            for (int i = 0; i < allObjects.Length; i++)
+            {
+                GameObject root = allObjects[i];
+                if (root == null || root.transform.parent != null)
+                    continue;
+
+                Scene scene = root.scene;
+                if (scene.IsValid() && string.Equals(scene.name, "DontDestroyOnLoad", StringComparison.Ordinal))
+                    _dontDestroyRootScratch.Add(root);
+            }
+        }
+
+        private static bool IsAllowedDontDestroyRoot(GameObject root)
+        {
+            return root.TryGetComponent(out CrashTelemetryBuffer _) ||
+                   root.TryGetComponent(out GameBootstrapper _);
+        }
+#endif
 
         /// <summary>
         /// Start delegates scene activation to the unified GameBootstrapper state machine.

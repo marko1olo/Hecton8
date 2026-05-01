@@ -104,21 +104,15 @@ namespace Hecton8.World
 
         public double3 ToAbsoluteDouble3()
         {
-            double cellSize = CellSizeMeters;
-            return new double3(
-                (GridX * cellSize) + LocalX,
-                (GridY * cellSize) + LocalY,
-                (GridZ * cellSize) + LocalZ);
+            return AUPMath.ToAbsoluteDouble3(in this);
         }
 
         public float3 ToRuntimeFloat3()
         {
             Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            double cellSize = CellSizeMeters;
-            double runtimeX = ((GridX * cellSize) + LocalX) - committedOffset.x;
-            double runtimeY = ((GridY * cellSize) + LocalY) - committedOffset.y;
-            double runtimeZ = ((GridZ * cellSize) + LocalZ) - committedOffset.z;
-            return new float3((float)runtimeX, (float)runtimeY, (float)runtimeZ);
+            return AUPMath.ToRuntimeFloat3(
+                in this,
+                new float3(committedOffset.x, committedOffset.y, committedOffset.z));
         }
 
         /// <summary>
@@ -130,14 +124,7 @@ namespace Hecton8.World
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public static float3 ToCameraRelativeFloat3(in AbsoluteUniversePosition position, in AbsoluteUniversePosition cameraPosition)
         {
-            const double cellSize = CellSizeMeters;
-            long gridDeltaX = position.GridX - cameraPosition.GridX;
-            long gridDeltaY = position.GridY - cameraPosition.GridY;
-            long gridDeltaZ = position.GridZ - cameraPosition.GridZ;
-            double deltaX = (gridDeltaX * cellSize) + ((double)position.LocalX - cameraPosition.LocalX);
-            double deltaY = (gridDeltaY * cellSize) + ((double)position.LocalY - cameraPosition.LocalY);
-            double deltaZ = (gridDeltaZ * cellSize) + ((double)position.LocalZ - cameraPosition.LocalZ);
-            return new float3((float)deltaX, (float)deltaY, (float)deltaZ);
+            return AUPMath.ResolveCameraRelative(in position, in cameraPosition);
         }
 
         public static int3 ResolveChunkId(in AbsoluteUniversePosition position, int chunkSizeMeters)
@@ -152,14 +139,7 @@ namespace Hecton8.World
 
         public static double DistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            const double cellSize = CellSizeMeters;
-            long gridDeltaX = a.GridX - b.GridX;
-            long gridDeltaY = a.GridY - b.GridY;
-            long gridDeltaZ = a.GridZ - b.GridZ;
-            double deltaX = (gridDeltaX * cellSize) + ((double)a.LocalX - b.LocalX);
-            double deltaY = (gridDeltaY * cellSize) + ((double)a.LocalY - b.LocalY);
-            double deltaZ = (gridDeltaZ * cellSize) + ((double)a.LocalZ - b.LocalZ);
-            return (deltaX * deltaX) + (deltaY * deltaY) + (deltaZ * deltaZ);
+            return AUPMath.AUPDistanceSq(in a, in b);
         }
     }
 
@@ -1000,14 +980,7 @@ namespace Hecton8.World
             RegisterOrUpdatePoolSlot(recordIndex, in record);
             RegisterOrUpdateEntityState(in record, CreateEntityStateFromRecord(in record, geneticsMask, qualityMilli));
             RegisterSpawnImpulse(record.InstanceUid, initialImpulse);
-            Vector3 resolvedInheritedVelocityChange = inheritedVelocityChange;
-            if (!IsFiniteNonZero(resolvedInheritedVelocityChange) &&
-                TryResolvePlatformInheritedVelocity(scatteredRuntimePosition, out Vector3 platformVelocity))
-            {
-                resolvedInheritedVelocityChange = platformVelocity;
-            }
-
-            RegisterSpawnVelocityChange(record.InstanceUid, resolvedInheritedVelocityChange);
+            RegisterSpawnVelocityChange(record.InstanceUid, inheritedVelocityChange);
             UpsertDeltaRecord(in record);
 
             if (_hasLastHydrationScanAup && ShouldHydrateDehydratedRecord(in record, in _lastHydrationScanAup))
@@ -1744,6 +1717,40 @@ namespace Hecton8.World
             UpdateDiagnostics();
         }
 
+        internal void PreloadTombstonesFromLoadedRecords(PersistentWorldDeltaRecord[] loadedRecords)
+        {
+            if (!_deletedInstanceUids.IsCreated)
+                return;
+
+            _deletedInstanceUids.Clear();
+            if (_resourceNodeTombstoneIds.IsCreated)
+                _resourceNodeTombstoneIds.Clear();
+            if (_resourceNodeMetamorphosedIds.IsCreated)
+                _resourceNodeMetamorphosedIds.Clear();
+
+            if (loadedRecords == null || loadedRecords.Length <= 0)
+                return;
+
+            int restoreCount = math.min(loadedRecords.Length, maxTrackedItems);
+            for (int i = 0; i < restoreCount; i++)
+            {
+                PersistentWorldDeltaRecord deltaRecord = loadedRecords[i];
+                if (!deltaRecord.IsValid)
+                    continue;
+
+                if (deltaRecord.IsDeleted)
+                {
+                    RegisterDeletedInstanceUid(deltaRecord.InstanceUid);
+                    if (deltaRecord.IsResourceNodeDestroyed)
+                        RegisterResourceNodeTombstone(ComputeResourceNodeTombstoneId(deltaRecord.UnpackPosition(chunkSizeMeters)));
+                }
+                else if (deltaRecord.IsResourceNodeMetamorphosed)
+                {
+                    RegisterResourceNodeMetamorphosis(deltaRecord.ItemPersistentIdHash);
+                }
+            }
+        }
+
         internal void RestoreFromIndexedSave(string absolutePath)
         {
             if (string.IsNullOrEmpty(absolutePath))
@@ -2126,13 +2133,22 @@ namespace Hecton8.World
                 pooledRigidbody.linearVelocity = Vector3.zero;
                 pooledRigidbody.angularVelocity = Vector3.zero;
                 _poolSlotRigidbodies[poolIndex] = pooledRigidbody;
+                Vector3 resolvedSpawnVelocity = Vector3.zero;
+                bool hasResolvedSpawnVelocity = false;
                 if (TryConsumeSpawnVelocityChange(record.InstanceUid, out float3 spawnVelocityChange))
                 {
-                    PhysicsForceRouter.QueueForce(
-                        pooledRigidbody,
-                        new Vector3(spawnVelocityChange.x, spawnVelocityChange.y, spawnVelocityChange.z),
-                        ForceMode.VelocityChange);
+                    resolvedSpawnVelocity = new Vector3(spawnVelocityChange.x, spawnVelocityChange.y, spawnVelocityChange.z);
+                    hasResolvedSpawnVelocity = IsFiniteNonZero(resolvedSpawnVelocity);
                 }
+
+                if (TryResolvePlatformInheritedVelocity(pooledRigidbody.position, out Vector3 platformVelocity))
+                {
+                    resolvedSpawnVelocity = platformVelocity;
+                    hasResolvedSpawnVelocity = true;
+                }
+
+                if (hasResolvedSpawnVelocity)
+                    pooledRigidbody.linearVelocity = resolvedSpawnVelocity;
 
                 if (TryConsumeSpawnImpulse(record.InstanceUid, out float3 spawnImpulse))
                     PhysicsForceRouter.QueueForce(pooledRigidbody, new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z), ForceMode.Impulse);
@@ -2589,23 +2605,13 @@ namespace Hecton8.World
             }
             catch (OperationCanceledException)
             {
-                for (int i = 0; i < entityStateWriteWork.Count; i++)
-                {
-                    SectorEntityStateWriteWork work = entityStateWriteWork[i];
-                    SaveBinaryStorage.DisposeIndexedSectorEntityStateOverrideWrite(ref work.WriteHandle);
-                }
-
+                DisposeEntityStateWriteWorkDeferred(entityStateWriteWork);
                 return false;
             }
 
             if (!string.IsNullOrEmpty(failureMessage))
             {
-                for (int i = 0; i < entityStateWriteWork.Count; i++)
-                {
-                    SectorEntityStateWriteWork work = entityStateWriteWork[i];
-                    if (!work.IsCompleted)
-                        SaveBinaryStorage.DisposeIndexedSectorEntityStateOverrideWrite(ref work.WriteHandle);
-                }
+                DisposeEntityStateWriteWorkDeferred(entityStateWriteWork);
 
                 Debug.LogError(failureMessage);
                 return false;
@@ -3674,6 +3680,24 @@ namespace Hecton8.World
             }
 
             _pendingEntityStateTempWrites.Clear();
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private static void DisposeEntityStateWriteWorkDeferred(List<SectorEntityStateWriteWork> writeWork)
+        {
+            if (writeWork == null || writeWork.Count <= 0)
+                return;
+
+            JobHandle disposeHandle = default;
+            for (int i = 0; i < writeWork.Count; i++)
+            {
+                SectorEntityStateWriteWork work = writeWork[i];
+                if (work == null || work.IsCompleted)
+                    continue;
+
+                disposeHandle = SaveBinaryStorage.DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref work.WriteHandle, disposeHandle);
+            }
+
             JobHandle.ScheduleBatchedJobs();
         }
 

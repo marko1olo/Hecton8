@@ -20,6 +20,7 @@ namespace Hecton8.Core
         CommitStorageReservation = 6,
         OpenPDATab = 7,
         ClosePDA = 8,
+        UndoPDAState = 9,
     }
 
     /// <summary>
@@ -101,11 +102,23 @@ namespace Hecton8.Core
 
         public static EntityCommand CreateCommitStorageReservation(int crateToken, int reservationId)
         {
+            return CreateCommitStorageReservation(crateToken, reservationId, 0);
+        }
+
+        /// <summary>
+        /// Creates a storage reservation commit command with an optional requester id for transaction acknowledgement.
+        /// </summary>
+        /// <param name="crateToken">Registered storage crate target token.</param>
+        /// <param name="reservationId">Prepared storage reservation id.</param>
+        /// <param name="requesterId">Optional producer id receiving commit success/failure notification.</param>
+        /// <returns>Blittable command payload for the structural command queue.</returns>
+        public static EntityCommand CreateCommitStorageReservation(int crateToken, int reservationId, int requesterId)
+        {
             return new EntityCommand
             {
                 CommandType = EntityCommandType.CommitStorageReservation,
                 TargetToken = crateToken,
-                SecondaryToken = 0,
+                SecondaryToken = requesterId,
                 IntValue = reservationId,
                 FloatValue = 0f,
                 VectorValue = default
@@ -137,6 +150,19 @@ namespace Hecton8.Core
                 VectorValue = default
             };
         }
+
+        public static EntityCommand CreateUndoPDAState(int framesBack = 1)
+        {
+            return new EntityCommand
+            {
+                CommandType = EntityCommandType.UndoPDAState,
+                TargetToken = 0,
+                SecondaryToken = 0,
+                IntValue = Mathf.Max(1, framesBack),
+                FloatValue = 0f,
+                VectorValue = default
+            };
+        }
     }
 
     /// <summary>
@@ -146,6 +172,19 @@ namespace Hecton8.Core
     public static class ThreadSafeCommandQueue
     {
         private const int MaxMainThreadCommandsPerDrain = 256;
+
+        /// <summary>
+        /// Callback emitted after a storage reservation commit command has been applied or rejected on the main thread.
+        /// </summary>
+        /// <param name="requesterId">Optional requester id supplied by the producer.</param>
+        /// <param name="reservationId">Storage reservation token.</param>
+        /// <param name="committed">True only when at least one reserved item was physically removed.</param>
+        public delegate void StorageReservationCommitResolvedHandler(int requesterId, int reservationId, bool committed);
+
+        /// <summary>
+        /// Raised once per CommitStorageReservation command that carries a requester id.
+        /// </summary>
+        public static event StorageReservationCommitResolvedHandler OnStorageReservationCommitResolved;
 
         // COLD ALLOC: Dictionary<int, GameObject>[256] - structural command target registry keyed by queue token - owner: ThreadSafeCommandQueue
         private static readonly Dictionary<int, GameObject> _targetsByToken = new Dictionary<int, GameObject>(256);
@@ -162,10 +201,13 @@ namespace Hecton8.Core
         /// </summary>
         public static bool IsReady => _pendingCommands.IsCreated;
 
+        public static int PendingCount => _pendingCommands.IsCreated ? _pendingCommands.Count : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             Shutdown();
+            OnStorageReservationCommitResolved = null;
         }
 
         public static void Initialize()
@@ -174,6 +216,12 @@ namespace Hecton8.Core
                 return;
 
             _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingCommands,
+                MaxMainThreadCommandsPerDrain,
+                nameof(ThreadSafeCommandQueue),
+                nameof(_pendingCommands),
+                NativeAllocationLifetime.Session);
         }
 
         public static NativeQueue<EntityCommand>.ParallelWriter AsParallelWriter()
@@ -267,8 +315,14 @@ namespace Hecton8.Core
                 return true;
 
             int remainingBudget = MaxMainThreadCommandsPerDrain;
-            while (remainingBudget > 0 && _pendingCommands.TryDequeue(out EntityCommand command))
+            while (remainingBudget > 0 && !_pendingCommands.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingCommands.TryDequeue(out EntityCommand command))
+                    break;
+
                 ExecuteCommand(in command);
                 remainingBudget--;
             }
@@ -280,6 +334,7 @@ namespace Hecton8.Core
         {
             if (_pendingCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ThreadSafeCommandQueue), nameof(_pendingCommands));
                 _pendingCommands.Dispose();
                 _pendingCommands = default;
             }
@@ -315,10 +370,19 @@ namespace Hecton8.Core
                 case EntityCommandType.ClosePDA:
                     UIStateStore.SetPDAOpenState(false, 0, 0f);
                     return;
+
+                case EntityCommandType.UndoPDAState:
+                    Hecton8.UI.PDAEvents.RaiseUndoRequest(command.IntValue);
+                    return;
             }
 
             if (!TryResolveTarget(command.TargetToken, out GameObject instance))
+            {
+                if (command.CommandType == EntityCommandType.CommitStorageReservation)
+                    RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, false);
+
                 return;
+            }
 
             switch (command.CommandType)
             {
@@ -372,12 +436,24 @@ namespace Hecton8.Core
                 case EntityCommandType.CommitStorageReservation:
                 {
                     if (command.IntValue <= 0 || !instance.TryGetComponent(out StorageCrate crate))
+                    {
+                        RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, false);
                         break;
+                    }
 
-                    crate.CommitReservation(command.IntValue);
+                    bool committed = crate.TryCommitReservation(command.IntValue);
+                    RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, committed);
                     break;
                 }
             }
+        }
+
+        private static void RaiseStorageReservationCommitResolved(int requesterId, int reservationId, bool committed)
+        {
+            if (requesterId <= 0)
+                return;
+
+            OnStorageReservationCommitResolved?.Invoke(requesterId, reservationId, committed);
         }
 
         private static bool RequiresGameObjectTarget(EntityCommandType commandType)
@@ -386,6 +462,7 @@ namespace Hecton8.Core
             {
                 case EntityCommandType.OpenPDATab:
                 case EntityCommandType.ClosePDA:
+                case EntityCommandType.UndoPDAState:
                     return false;
 
                 default:

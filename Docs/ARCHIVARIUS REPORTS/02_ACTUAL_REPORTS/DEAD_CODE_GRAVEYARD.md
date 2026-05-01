@@ -36,7 +36,7 @@ They have `0` external runtime code refs and `0` prefab/scene/data YAML refs.
 
 | Class | File | External code refs | YAML refs | Internal bootstrap/service mentions | Current reading |
 |---|---|---:|---:|---:|---|
-| `SaveSystemRuntimeSmokeTester` | `Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs` | 0 | 0 | 0 | REMOVED 2026-04-30; file and `.meta` deleted |
+| `SaveSystemRuntimeSmokeTester` | `Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs` | 0 | 0 | 0 | RETAINED / RESTORED by 2026-05-01; file and `.meta` exist, no YAML refs found, current source uses `async Awaitable` not `StartCoroutine` |
 | `WorldGenerativeGeologyRuntimeSmokeTester` | `Assets/_Project/Scripts/WorldGenerativeGeologyRuntimeSmokeTester.cs` | 0 in prior scan; current editor refs found | 0 | 0 | retained; `Assets/_Project/Editor/HectonDevToolsMenu.cs` currently references/adds it |
 | `WeakToolsRuntimeSmokeTester` | `Assets/_Project/Scripts/Dev/WeakToolsRuntimeSmokeTester.cs` | 0 | 0 | 2 | REMOVED 2026-04-30; file and `.meta` deleted |
 | `MantaAcousticRuntimeVerifier` | `Assets/_Project/Scripts/Dev/MantaAcousticRuntimeVerifier.cs` | 0 | 0 | 3 | REMOVED 2026-04-30; file and `.meta` deleted |
@@ -103,9 +103,28 @@ The older graveyard report overstated confidence and mixed live verification hoo
 
 Current evidence-backed state:
 
-- `4` prior strong orphan candidates removed in this pass
+- `3` prior strong orphan candidates remain removed in this worktree: `WeakToolsRuntimeSmokeTester`, `MantaAcousticRuntimeVerifier`, `PhysicalInteractionRuntimeVerifier`
+- `1` prior candidate is alive again or was not deleted in the current worktree: `SaveSystemRuntimeSmokeTester`
 - `1` prior candidate retained because a current editor owner was found
 - `10` embedded or wired diagnostics explicitly retained
 - no deletion-safe proof yet
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-01 Graveyard Delta
+
+Current filesystem truth contradicts the earlier "removed" status for `SaveSystemRuntimeSmokeTester`.
+
+Evidence:
+
+- `Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs` exists.
+- `Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs.meta` exists.
+- Script GUID `82e0caac595fb7147bbeeb6fbcb440b8` had no matches under `Assets/_Project/Prefabs`, `Assets/_Project/Scenes`, or `Assets/_Project/Data` in this pass.
+- Current source contains `async Awaitable` methods and `Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken)` calls.
+- Current source scan found no `StartCoroutine`, `IEnumerator`, or `yield` tokens in that file.
+
+Current reading:
+
+`SaveSystemRuntimeSmokeTester` is not a scene/prefab/data-attached runtime component by YAML evidence, but it is also not deleted. Treat it as a retained orphan/verification harness candidate, not as completed dead-code removal.
 
 STATUS: PENDING VERIFICATION

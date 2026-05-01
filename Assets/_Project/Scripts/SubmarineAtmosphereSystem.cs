@@ -841,11 +841,26 @@ namespace Hecton8.Atmosphere
 
         public void InjectOxygenUnits(int roomIndex, float oxygenUnits)
         {
-            if (oxygenUnits <= 0f || !_o2Front.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (oxygenUnits <= 0f ||
+                !_o2Front.IsCreated ||
+                !_co2Front.IsCreated ||
+                !_inertFront.IsCreated ||
+                !_pressureFront.IsCreated ||
+                !_gasVolumeFront.IsCreated ||
+                roomIndex < 0 ||
+                roomIndex >= RoomCount)
+            {
                 return;
+            }
 
             CompleteAtmosphereJobForAuthoritativeWrite();
-            _o2Front[roomIndex] += oxygenUnits;
+            float currentOxygenUnits = math.max(0f, _o2Front[roomIndex]);
+            float maximumOxygenUnits = ResolveRoomMaxOxygenCapacityUnits(roomIndex);
+            float clampedOxygenDelta = math.min(oxygenUnits, math.max(0f, maximumOxygenUnits - currentOxygenUnits));
+            if (clampedOxygenDelta <= 0f)
+                return;
+
+            _o2Front[roomIndex] = currentOxygenUnits + clampedOxygenDelta;
             _pressureFront[roomIndex] = ResolveInstantPressure(
                 _o2Front[roomIndex] + _co2Front[roomIndex] + _inertFront[roomIndex] + (_steamFront.IsCreated ? _steamFront[roomIndex] : 0f),
                 _gasVolumeFront[roomIndex]);
@@ -1412,6 +1427,16 @@ namespace Hecton8.Atmosphere
                 math.max(1f, referencePressureKPa) * math.max(totalGasUnits, 0f) / safeGasVolume * (temperatureKelvin / referenceKelvin),
                 0f,
                 math.max(referencePressureKPa, maximumPressureKPa));
+        }
+
+        private float ResolveRoomMaxOxygenCapacityUnits(int roomIndex)
+        {
+            if (!_gasVolumeFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+                return 0f;
+
+            float gasVolumeCubicMeters = math.max(minimumGasVolumeCubicMeters, _gasVolumeFront[roomIndex]);
+            float pressureCap = math.max(referencePressureKPa, maximumPressureKPa);
+            return gasVolumeCubicMeters * (pressureCap / math.max(1f, referencePressureKPa));
         }
 
         private float ResolveEmergencyVentThresholdPressureKPa()

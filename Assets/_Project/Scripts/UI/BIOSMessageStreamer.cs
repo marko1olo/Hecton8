@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Submarine/BIOS Message Streamer")]
-    public sealed class BIOSMessageStreamer : MonoBehaviour, IUpdatable
+    public sealed class BIOSMessageStreamer : MonoBehaviour, IUpdatable, ISubmarineOsEventListener
     {
         private const int HistoryLineCount = 16;
         private const int HistoryLineCapacity = 64;
@@ -36,6 +36,7 @@ namespace Hecton8.UI
         private static readonly char[] s_emergencyEvacuate = "EMERGENCY LEVEL EVACUATE".ToCharArray();
         private static readonly char[] s_stationKeepingArmed = "STATION KEEPING ARMED".ToCharArray();
         private static readonly char[] s_stationKeepingReleased = "STATION KEEPING RELEASED".ToCharArray();
+        private static readonly char[] s_hostileDroneDetected = "HOSTILE DRONE DETECTED".ToCharArray();
         private struct PendingEntry
         {
             public HectonSubmarineOsLogCode Code;
@@ -126,25 +127,20 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            HectonSubmarineOsEvents.OnSnapshotUpdated -= HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnSnapshotUpdated += HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnLogRequested -= HandleLogRequested;
-            HectonSubmarineOsEvents.OnLogRequested += HandleLogRequested;
+            HectonSubmarineOsEvents.Register(this);
             TryRegister();
             RefreshTerminal();
         }
 
         private void OnDisable()
         {
-            HectonSubmarineOsEvents.OnSnapshotUpdated -= HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnLogRequested -= HandleLogRequested;
+            HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
         }
 
         private void OnDestroy()
         {
-            HectonSubmarineOsEvents.OnSnapshotUpdated -= HandleSnapshotUpdated;
-            HectonSubmarineOsEvents.OnLogRequested -= HandleLogRequested;
+            HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
         }
 
@@ -179,6 +175,22 @@ namespace Hecton8.UI
             InsertPendingEntry(request.Code, request.Priority);
             if (!_typingActive)
                 TryStartNextEntry();
+        }
+
+        public void OnSubmarineOsEvent(in SubmarineOsEventPayload payload)
+        {
+            switch ((SubmarineOsEventType)payload.EventType)
+            {
+                case SubmarineOsEventType.SnapshotUpdated:
+                    if (HectonSubmarineOsEvents.TryBuildSnapshot(in payload, out HectonSubmarineOsSnapshot snapshot))
+                        HandleSnapshotUpdated(in snapshot);
+                    return;
+
+                case SubmarineOsEventType.LogRequested:
+                    if (HectonSubmarineOsEvents.TryBuildLogRequest(in payload, out HectonSubmarineOsLogRequest request))
+                        HandleLogRequested(in request);
+                    return;
+            }
         }
 
         private void InsertPendingEntry(HectonSubmarineOsLogCode code, byte priority)
@@ -291,6 +303,10 @@ namespace Hecton8.UI
                 case HectonSubmarineOsLogCode.StationKeepingReleased:
                     cursor = AppendRange(destination, cursor, s_okPrefix);
                     return AppendRange(destination, cursor, s_stationKeepingReleased);
+
+                case HectonSubmarineOsLogCode.HostileDroneDetected:
+                    cursor = AppendRange(destination, cursor, s_failPrefix);
+                    return AppendRange(destination, cursor, s_hostileDroneDetected);
 
                 case HectonSubmarineOsLogCode.EmergencyLevelNominal:
                     cursor = AppendRange(destination, cursor, s_okPrefix);

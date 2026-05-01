@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
@@ -32,12 +33,17 @@ namespace Hecton8.World
         private static readonly int _PeripheralDistanceId = Shader.PropertyToID("_HectonScatterPeripheralDistance");
         private static readonly int _PeripheralDotId = Shader.PropertyToID("_HectonScatterPeripheralDot");
         private static readonly int _FrustumPlanesId = Shader.PropertyToID("_HectonScatterFrustumPlanes");
+        private static readonly int _ModInstanceMatricesId = Shader.PropertyToID("_HectonModInstanceMatrices");
+        private static readonly int _ModInstanceCountId = Shader.PropertyToID("_HectonModInstanceCount");
+        private const int MaxModInstancesPerFrame = 1024;
 
         private struct ScatterInstanceGpuData
         {
             public Vector4 PositionScale;
             public Vector4 NormalRotation;
         }
+
+        private static GPUScatterDirector _activeInstance;
 
         [Header("References")]
         [SerializeField]
@@ -126,32 +132,45 @@ namespace Hecton8.World
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _visibleIndicesBuffer;
         private GraphicsBuffer _argsBuffer;
+        private GraphicsBuffer _modInstanceMatrixBuffer;
+        private NativeArray<float4x4> _modInstanceMatrices;
         private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _argsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] — indirect indexed args upload cache for GPU scatter — owner: GPUScatterDirector
         private readonly Plane[] _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] — reusable frustum plane cache for GPU scatter dispatch — owner: GPUScatterDirector
         private readonly Vector4[] _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] — reusable GPU frustum plane upload payload for GPU scatter dispatch — owner: GPUScatterDirector
+        private int _modInstanceCount;
 
         private void Awake()
         {
+            _activeInstance = this;
             ResolveDependencies();
             EnsureResources();
+            EnsureModInstanceResources();
             TryRegister();
         }
 
         private void OnEnable()
         {
+            _activeInstance = this;
             ResolveDependencies();
             EnsureResources();
+            EnsureModInstanceResources();
             TryRegister();
         }
 
         private void OnDisable()
         {
+            if (_activeInstance == this)
+                _activeInstance = null;
+
             TryUnregister();
             ReleaseResources();
         }
 
         private void OnDestroy()
         {
+            if (_activeInstance == this)
+                _activeInstance = null;
+
             TryUnregister();
             ReleaseResources();
         }
@@ -166,6 +185,8 @@ namespace Hecton8.World
 
             ResolveDependencies();
             EnsureResources();
+            EnsureModInstanceResources();
+            FlushModInstanceLayer();
             if (scatterCompute == null ||
                 _generateKernel < 0 ||
                 scatterMesh == null ||
@@ -241,6 +262,18 @@ namespace Hecton8.World
             _debugDrawBounds = drawBounds;
         }
 
+        /// <summary>
+        /// Adds one mod-authored matrix to the reserved GPU instancing layer.
+        /// </summary>
+        public static bool SubmitModInstanceMatrix(uint modHash, uint resourceHash, in float4x4 matrix)
+        {
+            GPUScatterDirector instance = _activeInstance;
+            if (instance == null || modHash == 0u || resourceHash == 0u)
+                return false;
+
+            return instance.TrySubmitModInstanceMatrix(in matrix);
+        }
+
         private void ResolveDependencies()
         {
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
@@ -270,6 +303,41 @@ namespace Hecton8.World
             EnsureInstanceBufferCapacity(resolvedCapacity);
             EnsureVisibleIndexBufferCapacity(resolvedCapacity);
             EnsureIndirectArgsBuffer();
+        }
+
+        private void EnsureModInstanceResources()
+        {
+            if (!_modInstanceMatrices.IsCreated)
+                _modInstanceMatrices = new NativeArray<float4x4>(MaxModInstancesPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[1024] - mod instancing matrix upload staging - owner: GPUScatterDirector
+
+            if (_modInstanceMatrixBuffer == null)
+                _modInstanceMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer - owner: GPUScatterDirector
+        }
+
+        private bool TrySubmitModInstanceMatrix(in float4x4 matrix)
+        {
+            EnsureModInstanceResources();
+            if (!_modInstanceMatrices.IsCreated || _modInstanceCount >= MaxModInstancesPerFrame)
+                return false;
+
+            _modInstanceMatrices[_modInstanceCount] = matrix;
+            _modInstanceCount++;
+            return true;
+        }
+
+        private void FlushModInstanceLayer()
+        {
+            if (_modInstanceMatrixBuffer == null || !_modInstanceMatrices.IsCreated)
+                return;
+
+            if (_modInstanceCount > 0)
+            {
+                _modInstanceMatrixBuffer.SetData(_modInstanceMatrices, 0, 0, _modInstanceCount);
+                Shader.SetGlobalBuffer(_ModInstanceMatricesId, _modInstanceMatrixBuffer);
+            }
+
+            Shader.SetGlobalInt(_ModInstanceCountId, _modInstanceCount);
+            _modInstanceCount = 0;
         }
 
         private void EnsureInstanceBufferCapacity(int requiredCapacity)
@@ -336,6 +404,14 @@ namespace Hecton8.World
             ReleaseBuffer(ref _instanceBuffer);
             ReleaseBuffer(ref _visibleIndicesBuffer);
             ReleaseBuffer(ref _argsBuffer);
+            ReleaseBuffer(ref _modInstanceMatrixBuffer);
+            if (_modInstanceMatrices.IsCreated)
+            {
+                _modInstanceMatrices.Dispose();
+                _modInstanceMatrices = default;
+            }
+
+            _modInstanceCount = 0;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

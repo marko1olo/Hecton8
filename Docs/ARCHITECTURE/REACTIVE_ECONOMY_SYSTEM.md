@@ -1,5 +1,14 @@
 # Reactive Economy System
 
+Status: REFERENCE
+Verification: PENDING VERIFICATION
+
+## 2026-05-01 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this economy map as current runtime truth.
+- This document is an economy/fabrication/system contract, not proof that scarcity, pressure degradation, deconstruction, or thermodynamics are runtime-verified.
+- Re-open inventory, fabrication, power, weather, and physics owners before surgery.
+
 ## Scope
 
 This document covers the SOA inventory chemistry layer, market scarcity inflation, pressure degradation, deconstruction yield resolution, item-physics hooks, and Fabricator thermodynamics.

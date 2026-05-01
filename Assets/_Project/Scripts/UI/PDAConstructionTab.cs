@@ -73,6 +73,7 @@ namespace Hecton8.UI
         private bool[] _cardVisibility;
         private readonly StringBuilder _sb = new StringBuilder(512);
         private bool _tickRegistered;
+        private bool _pdaEventsRegistered;
         private bool _summaryDirty;
         private bool _catalogDirty;
         private bool _layoutDirty;
@@ -211,7 +212,7 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             RefreshSubscriptions();
-            PDAEvents.Register(this);
+            TryRegisterPDAEvents();
         }
 
         private void Unsubscribe()
@@ -229,13 +230,31 @@ namespace Hecton8.UI
                 _subscribedToolManager = null;
             }
 
-            PDAEvents.Unregister(this);
+            UnregisterPDAEvents();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
             PDAEvents.AssertUnregistered(this, nameof(PDAConstructionTab));
+        }
+
+        private void TryRegisterPDAEvents()
+        {
+            if (_pdaEventsRegistered)
+                return;
+
+            PDAEvents.Register(this);
+            _pdaEventsRegistered = true;
+        }
+
+        private void UnregisterPDAEvents()
+        {
+            if (!_pdaEventsRegistered)
+                return;
+
+            PDAEvents.Unregister(this);
+            _pdaEventsRegistered = false;
         }
 
         private void RefreshSubscriptions()
@@ -886,7 +905,7 @@ namespace Hecton8.UI
                     return;
                 }
 
-                playerPDA?.Close();
+                QueueClosePDACommand();
                 hudNotification?.ShowInfo("CONSTRUCTION MATRIX - FIELD PREVIEW ACTIVE");
                 return;
             }
@@ -916,8 +935,14 @@ namespace Hecton8.UI
             }
 
             toolManager.SwitchToSlot(builderSlot);
-            playerPDA?.Close();
+            QueueClosePDACommand();
             hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - FIELD PREVIEW [S{builderSlot + 1}]");
+        }
+
+        private static void QueueClosePDACommand()
+        {
+            EntityCommand command = EntityCommand.CreateClosePDA();
+            ThreadSafeCommandQueue.Enqueue(in command);
         }
 
         internal void InvokeDeployAction()

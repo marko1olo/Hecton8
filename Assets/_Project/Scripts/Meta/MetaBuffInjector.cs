@@ -106,10 +106,10 @@ namespace Hecton8.Meta
 
         private static bool TryResolveProfile(out GlobalProfileData profile)
         {
-            GlobalProfileManager manager = GlobalProfileManager.Instance;
-            if (manager != null)
+            IProfileService profileService = GlobalRegistry.Profile;
+            if (profileService != null)
             {
-                profile = manager.GetSnapshot();
+                profile = profileService.GetSnapshot();
                 return true;
             }
 

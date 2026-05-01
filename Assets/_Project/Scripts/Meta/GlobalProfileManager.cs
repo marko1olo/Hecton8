@@ -18,7 +18,7 @@ namespace Hecton8.Meta
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6500)]
     [AddComponentMenu("Hecton8/Meta/Global Profile Manager")]
-    public sealed class GlobalProfileManager : MonoBehaviour, ISlowTickable
+    public sealed class GlobalProfileManager : MonoBehaviour, ISlowTickable, IProfileService
     {
         private enum MarathonMetric : byte
         {
@@ -105,8 +105,6 @@ namespace Hecton8.Meta
                 175),
         };
 
-        private static GlobalProfileManager _instance;
-
         // COLD ALLOC: HashSet<string>[32] - global unlocked achievement lookup - owner: GlobalProfileManager
         private readonly HashSet<string> _globalUnlockedAchievements = new HashSet<string>(StringComparer.Ordinal);
         private HectonSurvivalSystem _survivalSystem;
@@ -119,6 +117,7 @@ namespace Hecton8.Meta
         private HectonEventSubscription _itemCraftedSubscription;
         private HectonEventSubscription _itemRecycledSubscription;
         private bool _registeredToTick;
+        private bool _registeredProfileService;
         private bool _dirty;
         private float _flushTimer;
         private float _nextLongestLifeRecordThreshold = LongestLifeRecordStepSeconds;
@@ -128,11 +127,6 @@ namespace Hecton8.Meta
         /// Raised after the global profile data changes.
         /// </summary>
         public event Action ProfileChanged;
-
-        /// <summary>
-        /// Active runtime instance while the gameplay scene is loaded.
-        /// </summary>
-        public static GlobalProfileManager Instance => _instance;
 
         /// <summary>
         /// Current meta currency balance.
@@ -228,18 +222,20 @@ namespace Hecton8.Meta
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            IProfileService registered = GlobalRegistry.Profile;
+            if (registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            TryRegisterProfileService();
             LoadProfile();
         }
 
         private void OnEnable()
         {
+            TryRegisterProfileService();
             TryRegisterWithTickManager();
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
@@ -258,6 +254,7 @@ namespace Hecton8.Meta
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
+            TryUnregisterProfileService();
         }
 
         private void OnDestroy()
@@ -267,9 +264,7 @@ namespace Hecton8.Meta
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
-
-            if (_instance == this)
-                _instance = null;
+            TryUnregisterProfileService();
         }
 
         private void OnApplicationQuit()
@@ -886,6 +881,26 @@ namespace Hecton8.Meta
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
 
             _registeredToTick = false;
+        }
+
+        private void TryRegisterProfileService()
+        {
+            if (_registeredProfileService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterProfileService(this);
+            _registeredProfileService = true;
+        }
+
+        private void TryUnregisterProfileService()
+        {
+            if (!_registeredProfileService)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.Profile, this))
+                GlobalRegistry.UnregisterProfileService(this);
+
+            _registeredProfileService = false;
         }
     }
 }

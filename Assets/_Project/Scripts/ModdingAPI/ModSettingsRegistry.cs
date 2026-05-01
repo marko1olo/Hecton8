@@ -83,10 +83,13 @@ namespace Hecton8.Modding
     /// </summary>
     internal static class ModSettingsRegistry
     {
+        private const uint FnvOffsetBasis = 2166136261u;
+        private const uint FnvPrime = 16777619u;
+
         // COLD ALLOC: List<SettingEntry>[32] — registered mod setting entries — owner: ModSettingsRegistry
         private static readonly List<SettingEntry> _entries = new List<SettingEntry>(32);
         // COLD ALLOC: Dictionary<string,int>[32] — compound key to setting index lookup — owner: ModSettingsRegistry
-        private static readonly Dictionary<string, int> _entryIndexByKey = new Dictionary<string, int>(32);
+        private static readonly Dictionary<uint, int> _entryIndexByHash = new Dictionary<uint, int>(32);
 
         internal static event Action RegistryChanged;
 
@@ -94,36 +97,37 @@ namespace Hecton8.Modding
         private static void ResetStaticState()
         {
             _entries.Clear();
-            _entryIndexByKey.Clear();
+            _entryIndexByHash.Clear();
             RegistryChanged = null;
         }
 
         internal static void RegisterToggle(string modId, string settingName, bool defaultValue, Action<bool> onValueChanged)
         {
-            if (!TryGetCompoundKey(modId, settingName, out string compoundKey))
+            if (!TryGetCompoundHash(modId, settingName, out uint compoundHash))
                 return;
 
             UserOptionsPersistence options = UserOptionsPersistence.Instance;
-            bool value = options != null ? options.GetBool(BuildStorageKey(compoundKey), defaultValue) : defaultValue;
+            bool value = options != null ? options.GetBool(BuildStorageKey(compoundHash), defaultValue) : defaultValue;
 
             SettingEntry entry = new SettingEntry
             {
                 ModId = modId,
                 SettingName = settingName,
                 DisplayName = settingName,
+                KeyHash = compoundHash,
                 Kind = ModSettingKind.Toggle,
                 BoolValue = value,
                 DefaultBoolValue = defaultValue,
                 BoolChanged = onValueChanged
             };
 
-            AddOrUpdateEntry(compoundKey, entry);
+            AddOrUpdateEntry(compoundHash, entry);
             InvokeToggleCallback(entry.ModId, entry.BoolChanged, entry.BoolValue);
         }
 
         internal static void RegisterSlider(string modId, string settingName, float defaultValue, float minValue, float maxValue, Action<float> onValueChanged)
         {
-            if (!TryGetCompoundKey(modId, settingName, out string compoundKey))
+            if (!TryGetCompoundHash(modId, settingName, out uint compoundHash))
                 return;
 
             float safeMin = Mathf.Min(minValue, maxValue);
@@ -132,7 +136,7 @@ namespace Hecton8.Modding
 
             UserOptionsPersistence options = UserOptionsPersistence.Instance;
             float value = options != null
-                ? Mathf.Clamp(options.GetFloat(BuildStorageKey(compoundKey), safeDefault), safeMin, safeMax)
+                ? Mathf.Clamp(options.GetFloat(BuildStorageKey(compoundHash), safeDefault), safeMin, safeMax)
                 : safeDefault;
 
             SettingEntry entry = new SettingEntry
@@ -140,6 +144,7 @@ namespace Hecton8.Modding
                 ModId = modId,
                 SettingName = settingName,
                 DisplayName = settingName,
+                KeyHash = compoundHash,
                 Kind = ModSettingKind.Slider,
                 FloatValue = value,
                 MinValue = safeMin,
@@ -148,7 +153,7 @@ namespace Hecton8.Modding
                 FloatChanged = onValueChanged
             };
 
-            AddOrUpdateEntry(compoundKey, entry);
+            AddOrUpdateEntry(compoundHash, entry);
             InvokeSliderCallback(entry.ModId, entry.FloatChanged, entry.FloatValue);
         }
 
@@ -195,7 +200,7 @@ namespace Hecton8.Modding
             UserOptionsPersistence options = UserOptionsPersistence.Instance;
             if (options != null)
             {
-                options.SetBool(BuildStorageKey(BuildCompoundKey(modId, settingName)), value);
+                options.SetBool(BuildStorageKey(entry.KeyHash), value);
                 options.Save();
             }
 
@@ -223,7 +228,7 @@ namespace Hecton8.Modding
             UserOptionsPersistence options = UserOptionsPersistence.Instance;
             if (options != null)
             {
-                options.SetFloat(BuildStorageKey(BuildCompoundKey(modId, settingName)), clamped);
+                options.SetFloat(BuildStorageKey(entry.KeyHash), clamped);
                 options.Save();
             }
 
@@ -232,46 +237,71 @@ namespace Hecton8.Modding
             return true;
         }
 
-        private static void AddOrUpdateEntry(string compoundKey, SettingEntry entry)
+        private static void AddOrUpdateEntry(uint compoundHash, SettingEntry entry)
         {
-            if (_entryIndexByKey.TryGetValue(compoundKey, out int index))
+            if (_entryIndexByHash.TryGetValue(compoundHash, out int index))
             {
                 _entries[index] = entry;
                 RegistryChanged?.Invoke();
                 return;
             }
 
-            _entryIndexByKey.Add(compoundKey, _entries.Count);
+            _entryIndexByHash.Add(compoundHash, _entries.Count);
             _entries.Add(entry);
             RegistryChanged?.Invoke();
         }
 
         private static bool TryGetEntry(string modId, string settingName, out int index)
         {
-            return _entryIndexByKey.TryGetValue(BuildCompoundKey(modId, settingName), out index);
+            index = -1;
+            return TryGetCompoundHash(modId, settingName, out uint compoundHash) &&
+                   _entryIndexByHash.TryGetValue(compoundHash, out index);
         }
 
-        private static bool TryGetCompoundKey(string modId, string settingName, out string compoundKey)
+        private static bool TryGetCompoundHash(string modId, string settingName, out uint compoundHash)
         {
-            compoundKey = string.Empty;
+            compoundHash = 0u;
             if (string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(settingName))
             {
                 Debug.LogWarning("[ModSettingsRegistry] Refused to register a setting with an empty modId or settingName.");
                 return false;
             }
 
-            compoundKey = BuildCompoundKey(modId, settingName);
+            compoundHash = ComputeCompoundHash(modId, settingName);
             return true;
         }
 
-        private static string BuildCompoundKey(string modId, string settingName)
+        private static uint ComputeCompoundHash(string modId, string settingName)
         {
-            return modId + "|" + settingName;
+            uint hash = FnvOffsetBasis;
+            hash = AccumulateFnv(hash, modId);
+            hash = AccumulateFnv(hash, '|');
+            return AccumulateFnv(hash, settingName);
         }
 
-        private static string BuildStorageKey(string compoundKey)
+        private static uint AccumulateFnv(uint hash, string value)
         {
-            return "Hecton_ModSetting_" + compoundKey;
+            for (int i = 0; i < value.Length; i++)
+                hash = AccumulateFnv(hash, value[i]);
+
+            return hash;
+        }
+
+        private static uint AccumulateFnv(uint hash, char value)
+        {
+            unchecked
+            {
+                hash ^= (byte)(value & 0xFF);
+                hash *= FnvPrime;
+                hash ^= (byte)(value >> 8);
+                hash *= FnvPrime;
+                return hash;
+            }
+        }
+
+        private static string BuildStorageKey(uint compoundHash)
+        {
+            return "Hecton_ModSetting_" + compoundHash.ToString("X8");
         }
 
         private static void InvokeToggleCallback(string modId, Action<bool> callback, bool value)
@@ -315,6 +345,7 @@ namespace Hecton8.Modding
             public string ModId;
             public string SettingName;
             public string DisplayName;
+            public uint KeyHash;
             public ModSettingKind Kind;
             public bool BoolValue;
             public float FloatValue;

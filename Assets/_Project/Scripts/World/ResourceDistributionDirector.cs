@@ -25,10 +25,14 @@ namespace Hecton8.World
         private const int DefaultMaxPendingSpawnRequests = 1024;
         private const int DefaultPoolWarmupFloor = 64;
         private const int InitialMetamorphismCapacity = 128;
+        private const int GhostProxySnapBatchCapacity = 32;
+        private const int GhostProxySnapMinCommandsPerJob = 4;
         private const float GameSecondsPerDay = 86400f;
         private const float DefaultSlopeSampleDistanceMeters = 4f;
         private const float DefaultVoxelSolidThreshold = 0.08f;
         private const float DefaultSectorMarginMeters = 2f;
+        private const float GhostProxySnapRayStartHeightMeters = 6f;
+        private const float GhostProxySnapRayExtraDepthMeters = 10f;
         private const float DefaultBrinePoolRadiusMinMeters = 12f;
         private const float DefaultBrinePoolRadiusMaxMeters = 28f;
         private const float DefaultBrinePoolThicknessMinMeters = 4f;
@@ -101,8 +105,10 @@ namespace Hecton8.World
             public Vector3 RuntimePosition;
             public Quaternion Rotation;
             public float YawDegrees;
+            public float SurfaceOffsetMeters;
             public uint StableSeed;
             public ulong TombstoneId;
+            public byte RequiresGhostProxySnap;
         }
 
         private struct PressureMetamorphismInput
@@ -329,6 +335,8 @@ namespace Hecton8.World
         private Dictionary<long, SectorState> _residentSectors;
         // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] — deterministic deferred resource spawn queue — owner: ResourceDistributionDirector
         private Queue<SpawnRequest> _pendingSpawns;
+        // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] - meshless resource proxy raycast snap queue - owner: ResourceDistributionDirector
+        private Queue<SpawnRequest> _pendingGhostProxySnaps;
         // COLD ALLOC: List<long>[32] — sector eviction scratch list — owner: ResourceDistributionDirector
         private List<long> _sectorEvictionScratch;
 
@@ -350,6 +358,12 @@ namespace Hecton8.World
         private JobHandle _metamorphismJobHandle;
         private bool _metamorphismJobActive;
         private int _scheduledMetamorphismCount;
+        private NativeArray<RaycastCommand> _ghostProxySnapCommands;
+        private NativeArray<RaycastHit> _ghostProxySnapHits;
+        private JobHandle _ghostProxySnapHandle;
+        private SpawnRequest[] _ghostProxySnapRequests;
+        private bool _ghostProxySnapJobActive;
+        private int _scheduledGhostProxySnapCount;
         // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
         private List<ResourceNodeTombstoneRecord> _resourceTombstoneScratch;
         // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism job node mapping — owner: ResourceDistributionDirector
@@ -391,12 +405,24 @@ namespace Hecton8.World
             _residentSectors = new Dictionary<long, SectorState>(32);
             // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] — deterministic deferred resource spawn queue — owner: ResourceDistributionDirector
             _pendingSpawns = new Queue<SpawnRequest>(DefaultMaxPendingSpawnRequests);
+            // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] - pending meshless proxy down-snap requests - owner: ResourceDistributionDirector
+            _pendingGhostProxySnaps = new Queue<SpawnRequest>(DefaultMaxPendingSpawnRequests);
             // COLD ALLOC: List<long>[32] — sector eviction scratch list — owner: ResourceDistributionDirector
             _sectorEvictionScratch = new List<long>(32);
             // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
             _resourceTombstoneScratch = new List<ResourceNodeTombstoneRecord>(64);
             // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism node mapping for Burst result commit — owner: ResourceDistributionDirector
             _metamorphismNodeScratch = new List<ResourceNode>(InitialMetamorphismCapacity);
+            // COLD ALLOC: SpawnRequest[GhostProxySnapBatchCapacity] - request/result bridge for deferred proxy raycasts - owner: ResourceDistributionDirector
+            _ghostProxySnapRequests = new SpawnRequest[GhostProxySnapBatchCapacity];
+            _ghostProxySnapCommands = new NativeArray<RaycastCommand>(
+                GhostProxySnapBatchCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[32] - meshless proxy down-snap batch - owner: ResourceDistributionDirector
+            _ghostProxySnapHits = new NativeArray<RaycastHit>(
+                GhostProxySnapBatchCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[32] - meshless proxy down-snap results - owner: ResourceDistributionDirector
 
             EnsureRuntimePrefab();
             UpdateDiagnostics(default);
@@ -449,9 +475,11 @@ namespace Hecton8.World
             }
 
             CompleteMetamorphismJob();
+            CompleteGhostProxySnapJob();
             DespawnAllResidentNodes();
             _residentSectors?.Clear();
             _pendingSpawns?.Clear();
+            _pendingGhostProxySnaps?.Clear();
             _runtimePoolReady = false;
             ActiveRuntimeInstance = ReferenceEquals(ActiveRuntimeInstance, this) ? null : ActiveRuntimeInstance;
             UpdateDiagnostics(default);
@@ -460,7 +488,9 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             CompleteMetamorphismJob();
+            CompleteGhostProxySnapJob();
             DisposeMetamorphismBuffers();
+            DisposeGhostProxySnapBuffers();
         }
 
         /// <summary>
@@ -478,6 +508,8 @@ namespace Hecton8.World
             _debugPlayerSector = new Vector2Int(playerSector.x, playerSector.y);
 
             RefreshResidentSectors(playerSector);
+            ProcessCompletedGhostProxySnaps();
+            ScheduleGhostProxySnapBatch();
             ProcessPendingSpawns();
             SchedulePressureMetamorphismJob();
             TickMeteorImpacts(0.5f, in playerAup, playerSector);
@@ -489,6 +521,8 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
+            ProcessCompletedGhostProxySnaps();
+
             if (!_metamorphismJobActive || !_metamorphismJobHandle.IsCompleted)
                 return;
 
@@ -906,7 +940,7 @@ namespace Hecton8.World
                         continue;
                     }
 
-                    _pendingSpawns.Enqueue(request);
+                    QueueSpawnRequest(in request);
                     acceptedForTemplate++;
                 }
             }
@@ -991,10 +1025,106 @@ namespace Hecton8.World
                 RuntimePosition = runtimePosition,
                 Rotation = rotation,
                 YawDegrees = yawDegrees,
+                SurfaceOffsetMeters = template.SpawnOffsetMeters,
                 StableSeed = seed,
-                TombstoneId = tombstoneId
+                TombstoneId = tombstoneId,
+                RequiresGhostProxySnap = template.HasPresentationMesh ? (byte)0 : (byte)1
             };
             return true;
+        }
+
+        private void QueueSpawnRequest(in SpawnRequest request)
+        {
+            if (request.RequiresGhostProxySnap != 0)
+            {
+                _pendingGhostProxySnaps.Enqueue(request);
+                return;
+            }
+
+            _pendingSpawns.Enqueue(request);
+        }
+
+        private void ScheduleGhostProxySnapBatch()
+        {
+            if (_ghostProxySnapJobActive ||
+                _pendingGhostProxySnaps == null ||
+                _pendingGhostProxySnaps.Count == 0 ||
+                !_ghostProxySnapCommands.IsCreated ||
+                !_ghostProxySnapHits.IsCreated ||
+                _ghostProxySnapRequests == null)
+            {
+                return;
+            }
+
+            int scheduledCount = math.min(_pendingGhostProxySnaps.Count, GhostProxySnapBatchCapacity);
+            if (scheduledCount <= 0)
+                return;
+
+            for (int i = 0; i < GhostProxySnapBatchCapacity; i++)
+            {
+                SpawnRequest request = i < scheduledCount ? _pendingGhostProxySnaps.Dequeue() : default;
+                _ghostProxySnapRequests[i] = request;
+                _ghostProxySnapHits[i] = default;
+
+                int layerMask = HectonLayerMasks.DefaultRaycastLayerMask;
+                if (i < scheduledCount && (uint)request.TemplateIndex < (uint)resourceTemplates.Length)
+                {
+                    ResourceNodeTemplate template = resourceTemplates[request.TemplateIndex];
+                    if (template != null)
+                        layerMask = template.BuildRuntimeDescriptor().ValidLayerMask;
+                }
+
+                QueryParameters parameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
+                Vector3 origin = request.RuntimePosition + (Vector3.up * GhostProxySnapRayStartHeightMeters);
+                _ghostProxySnapCommands[i] = new RaycastCommand(
+                    origin,
+                    Vector3.down,
+                    parameters,
+                    GhostProxySnapRayStartHeightMeters + GhostProxySnapRayExtraDepthMeters);
+            }
+
+            _scheduledGhostProxySnapCount = scheduledCount;
+            _ghostProxySnapHandle = RaycastCommand.ScheduleBatch(
+                _ghostProxySnapCommands,
+                _ghostProxySnapHits,
+                GhostProxySnapMinCommandsPerJob,
+                default);
+            _ghostProxySnapJobActive = true;
+        }
+
+        private void ProcessCompletedGhostProxySnaps()
+        {
+            if (!_ghostProxySnapJobActive || !_ghostProxySnapHandle.IsCompleted)
+                return;
+
+            _ghostProxySnapHandle.Complete();
+            int scheduledCount = math.min(_scheduledGhostProxySnapCount, GhostProxySnapBatchCapacity);
+            for (int i = 0; i < scheduledCount; i++)
+            {
+                SpawnRequest request = _ghostProxySnapRequests[i];
+                _ghostProxySnapRequests[i] = default;
+                RaycastHit hit = _ghostProxySnapHits[i];
+                _ghostProxySnapHits[i] = default;
+
+                if (hit.collider != null)
+                {
+                    Vector3 normal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal.normalized : Vector3.up;
+                    request.RuntimePosition = hit.point + (normal * math.max(0f, request.SurfaceOffsetMeters));
+                    request.Rotation = ResolveSurfaceRotation(normal, request.YawDegrees);
+                    request.TombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(request.RuntimePosition);
+                }
+
+                request.RequiresGhostProxySnap = 0;
+                PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+                if (registry != null && registry.IsResourceNodeTombstoned(request.TombstoneId))
+                    continue;
+
+                _pendingSpawns.Enqueue(request);
+            }
+
+            _scheduledGhostProxySnapCount = 0;
+            _ghostProxySnapJobActive = false;
+            _ghostProxySnapHandle = default;
         }
 
         private void ProcessPendingSpawns()
@@ -1222,6 +1352,28 @@ namespace Hecton8.World
                 _metamorphismResults.Dispose();
         }
 
+        private void CompleteGhostProxySnapJob()
+        {
+            if (!_ghostProxySnapJobActive)
+                return;
+
+            _ghostProxySnapHandle.Complete();
+            _ghostProxySnapHandle = default;
+            _ghostProxySnapJobActive = false;
+            _scheduledGhostProxySnapCount = 0;
+            if (_ghostProxySnapRequests != null)
+                System.Array.Clear(_ghostProxySnapRequests, 0, _ghostProxySnapRequests.Length);
+        }
+
+        private void DisposeGhostProxySnapBuffers()
+        {
+            if (_ghostProxySnapCommands.IsCreated)
+                _ghostProxySnapCommands.Dispose();
+
+            if (_ghostProxySnapHits.IsCreated)
+                _ghostProxySnapHits.Dispose();
+        }
+
         private ResourceNodeTemplate ResolveMetamorphosedTemplateOverride(ulong tombstoneId, ResourceNodeTemplate fallback)
         {
             PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
@@ -1415,7 +1567,10 @@ namespace Hecton8.World
             if ((rimMinHeight - bowlFloorHeight) < brinePoolMinimumLipMeters)
                 return brinePool;
 
-            float surfaceHeight = math.min(waterSurface - 0.25f, bowlFloorHeight + thicknessMeters);
+            float maximumContainedSurfaceHeight = rimMinHeight - math.max(0.1f, brinePoolMinimumLipMeters);
+            float surfaceHeight = math.min(
+                math.min(waterSurface - 0.25f, bowlFloorHeight + thicknessMeters),
+                maximumContainedSurfaceHeight);
             if (surfaceHeight <= bowlFloorHeight + 0.1f)
                 return brinePool;
 

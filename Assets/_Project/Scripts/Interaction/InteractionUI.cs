@@ -8,6 +8,7 @@ namespace Hecton8.Interaction
 {
     using System;
     using Hecton.Localization;
+    using Hecton8.Core;
     using Hecton8.Input;
     using Hecton8.UI;
     using TMPro;
@@ -46,7 +47,7 @@ namespace Hecton8.Interaction
         {
             InteractionEvents.Register(this);
 
-            RebindingManager rebindingManager = RebindingManager.Instance;
+            IInputBindingService rebindingManager = GlobalRegistry.InputBinding;
             if (rebindingManager != null)
             {
                 rebindingManager.OnRebindCompleted += HandleBindingChanged;
@@ -70,7 +71,7 @@ namespace Hecton8.Interaction
         {
             InteractionEvents.Unregister(this);
 
-            RebindingManager rebindingManager = RebindingManager.Instance;
+            IInputBindingService rebindingManager = GlobalRegistry.InputBinding;
             if (rebindingManager != null)
             {
                 rebindingManager.OnRebindCompleted -= HandleBindingChanged;

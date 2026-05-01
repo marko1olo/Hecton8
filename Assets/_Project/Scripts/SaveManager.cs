@@ -33,7 +33,8 @@ namespace Hecton8.SaveSystem
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
-        private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
+        private const double LoadApplyFrameBudgetMilliseconds = 4.0d;
+        private static readonly double StopwatchTickToMilliseconds = 1000.0d / Stopwatch.Frequency;
         private const float IntegrityScanIntervalSeconds = 10f;
         private const float IndexedDefragCheckIntervalSeconds = 5f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
@@ -357,7 +358,8 @@ namespace Hecton8.SaveSystem
             EnsureIntegrityMirrorCapacity(payloadLength);
             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloadBytes);
             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_integrityPayloadMirror);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, payloadLength);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, _integrityPayloadMirror.Length, sourcePtr, payloadLength))
+                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveManager));
             _integrityPayloadLength = payloadLength;
             _expectedIntegrityPayloadHash64 = expectedHash64;
             _integritySlotName = slotName ?? string.Empty;
@@ -815,14 +817,17 @@ namespace Hecton8.SaveSystem
 
                 _totalPlayTime = data.totalPlayTime;
                 _sessionStartTime = Time.realtimeSinceStartupAsDouble;
+                PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;
+                persistentWorldRegistryForLoad?.PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);
                 ModSaveStateStore.LoadFromSaveData(data);
+                ModSaveStateStore.TryLoadMmfPayloads(GetPersistentAbsolutePath(loadedCandidate.SavePath), out _);
                 QuestManager.StageLoadedPackedState(loadedQuestHeader, loadedQuestStateWords);
                 
                 _registryDirty = true;
                 SortRegistryIfDirty(LoadPriorityCompare);
 
                 VoxelDeltaProcessor voxelDeltaProcessor = null;
-                long loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
+                long loadApplyStartTicks = Stopwatch.GetTimestamp();
                 for (int i = 0; i < _saveables.Count; i++)
                 {
                     if (!IsAlive(_saveables[i]))
@@ -835,17 +840,17 @@ namespace Hecton8.SaveSystem
                     }
 
                     _saveables[i].LoadFromSaveData(data);
-                    if (i + 1 < _saveables.Count && Stopwatch.GetTimestamp() >= loadApplyDeadlineTicks)
+                    double elapsedMs = (Stopwatch.GetTimestamp() - loadApplyStartTicks) * StopwatchTickToMilliseconds;
+                    if (i + 1 < _saveables.Count && elapsedMs >= LoadApplyFrameBudgetMilliseconds)
                     {
                         await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
-                        loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
+                        loadApplyStartTicks = Stopwatch.GetTimestamp();
                     }
                 }
 
                 if (voxelDeltaProcessor != null && !voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
                     throw new Exception(voxelLoadError);
 
-                PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;
                 if (persistentWorldRegistryForLoad != null)
                 {
                     string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);
@@ -1214,6 +1219,8 @@ namespace Hecton8.SaveSystem
             // Step 4: the writer already re-reads metadata internally, but the pipeline still requires the temp artifact to exist here.
             if (!FileExists(tempPath))
                 throw new FileNotFoundException("Verified temp save was not created by the binary writer.", absoluteTempPath);
+
+            ModSaveStateStore.TryCommitMmfPayloads(absoluteTempPath, out _);
 
             CommitTempSaveToPrimary(slotName, tempPath, finalPath);
         }

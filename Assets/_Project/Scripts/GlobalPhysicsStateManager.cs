@@ -31,6 +31,14 @@ namespace Hecton8.Physics
         Heavy = 2
     }
 
+    [Flags]
+    internal enum PhysicsStateMask : byte
+    {
+        None = 0,
+        WasAsleep = 1 << 4,
+        NanDetected = 1 << 6
+    }
+
     /// <summary>
     /// Optional rigidbody-side metadata provider for procedural impact material synthesis.
     /// </summary>
@@ -40,6 +48,18 @@ namespace Hecton8.Physics
         /// Compact authored impact-audio material family.
         /// </summary>
         byte ImpactAudioMaterialId { get; }
+    }
+
+    /// <summary>
+    /// Runtime-owned collider LOD participant controlled by the global physics hysteresis gate.
+    /// </summary>
+    public interface IPhysicsColliderLodHysteresisSink
+    {
+        /// <summary>
+        /// Enables or disables simplified collider LOD based on distance hysteresis.
+        /// </summary>
+        /// <param name="allowSimplifiedColliderLod">True after the body stays outside the LOD0 radius long enough.</param>
+        void SetColliderLodDistanceGate(bool allowSimplifiedColliderLod);
     }
 
     /// <summary>
@@ -138,6 +158,7 @@ namespace Hecton8.Physics
         private struct RigidbodyState
         {
             public ulong EntityId;
+            public PhysicsStateMask StateMask;
             public int CompensationRefCount;
             public float MaxAngularVelocityClamp;
             public bool AllowDistanceKinematicSleep;
@@ -148,19 +169,25 @@ namespace Hecton8.Physics
             public bool WasSleepingBeforeOriginShift;
             public bool WasSleepingBeforeDistanceSleep;
             public bool InterpolationSuspendedForOriginShift;
+            public bool CollisionDetectionOverriddenForOriginShift;
             public bool KinematicModeBeforeDistanceSleep;
             public bool DetectCollisionsBeforeDistanceSleep;
             public RigidbodyInterpolation InterpolationModeBeforeOriginShift;
+            public CollisionDetectionMode CollisionDetectionModeBeforeOriginShift;
             public Vector3 SnapshotPositionBeforeOriginShift;
             public Quaternion SnapshotRotationBeforeOriginShift;
             public Vector3 LastValidLinearVelocity;
             public Vector3 LastValidAngularVelocity;
             public AbsoluteUniversePosition LastValidAup;
+            public IPhysicsColliderLodHysteresisSink ColliderLodSink;
             public Vector3 BaseInertiaTensor;
             public Quaternion BaseInertiaTensorRotation;
             public float BaseAngularDamping;
             public float HydrodynamicSubmersionFactor;
             public float FixedInterpolationAlphaBeforeOriginShift;
+            public float ColliderLodOutOfRangeSeconds;
+            public bool HasColliderLodSink;
+            public bool ColliderLodDistanceGateOpen;
             public bool HasAddedMassBaseline;
             public bool AddedMassTensorApplied;
         }
@@ -199,9 +226,16 @@ namespace Hecton8.Physics
         private const float HeavyImpactIntensity = 0.95f;
         private const float MediumImpactIntensity = 0.45f;
         private const float FarKinematicSleepDistanceMeters = 500f;
-        private const float AddedMassAngularDampingScale = 0.3f;
-        private const float AddedMassInertiaTensorScale = 0.3f;
+        private const float ColliderLodCompoundToSimpleDistanceMeters = 80f;
+        private const float ColliderLodSimpleToCompoundDistanceMeters = 72f;
+        private const float ColliderLodSimplifyHysteresisSeconds = 5f;
+        private const float AddedMassAngularDampingScale = 0.35f;
+        private const float AddedMassInertiaTensorScale = 0.35f;
+        private const float OriginShiftContinuousCcdSpeedMetersPerSecond = 20f;
+        private const float KineticAnomalyAccelerationMetersPerSecondSq = 100f;
         private const double FarKinematicSleepDistanceSq = FarKinematicSleepDistanceMeters * FarKinematicSleepDistanceMeters;
+        private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
+        private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
 
         // COLD ALLOC: Rigidbody[512 initial] â€” authoritative tracked rigidbody registry â€” owner: GlobalPhysicsStateManager
         private Rigidbody[] _trackedBodies = new Rigidbody[MaxTrackedBodies];
@@ -223,6 +257,7 @@ namespace Hecton8.Physics
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShift;
         private bool _sceneEventsSubscribed;
+        private int _lastKineticAnomalyFrame = -1;
         private Transform _playerTransform;
 
         internal static void RegisterTrackedBody(Rigidbody body)
@@ -255,6 +290,14 @@ namespace Hecton8.Physics
                 return;
 
             manager.FinalizeTrackedBodiesAfterOriginShiftInternal();
+        }
+
+        internal static void ResetTrackedBodiesForSafeTeleport()
+        {
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.ResetTrackedBodiesForSafeTeleportInternal();
         }
 
         internal static void UnregisterTrackedBody(Rigidbody body)
@@ -455,10 +498,11 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void FixedTick(float fixedDeltaTime)
         {
-            RefreshTrackedBodies();
+            RefreshTrackedBodies(fixedDeltaTime);
             SweepNaNPhysicsState();
             EvaluateConnections();
             ApplyDistanceKinematicSleepInternal();
+            ApplyColliderLodHysteresisInternal(fixedDeltaTime);
             ApplyAddedMassTensorState();
         }
 
@@ -569,6 +613,14 @@ namespace Hecton8.Physics
                 bodyState.InterpolationSuspendedForOriginShift = body.interpolation != RigidbodyInterpolation.None;
                 if (bodyState.InterpolationSuspendedForOriginShift)
                     body.interpolation = RigidbodyInterpolation.None;
+                bodyState.CollisionDetectionModeBeforeOriginShift = body.collisionDetectionMode;
+                float speedSq = bodyState.LastValidLinearVelocity.sqrMagnitude;
+                bodyState.CollisionDetectionOverriddenForOriginShift =
+                    speedSq > OriginShiftContinuousCcdSpeedMetersPerSecond * OriginShiftContinuousCcdSpeedMetersPerSecond &&
+                    body.collisionDetectionMode != CollisionDetectionMode.Continuous &&
+                    body.collisionDetectionMode != CollisionDetectionMode.ContinuousDynamic;
+                if (bodyState.CollisionDetectionOverriddenForOriginShift)
+                    body.collisionDetectionMode = CollisionDetectionMode.Continuous;
                 body.PublishTransform();
                 _bodyStates[i] = bodyState;
             }
@@ -647,10 +699,87 @@ namespace Hecton8.Physics
 
                 RigidbodyState bodyState = _bodyStates[i];
                 if (!bodyState.InterpolationSuspendedForOriginShift)
+                {
+                    if (bodyState.CollisionDetectionOverriddenForOriginShift)
+                    {
+                        body.collisionDetectionMode = bodyState.CollisionDetectionModeBeforeOriginShift;
+                        bodyState.CollisionDetectionOverriddenForOriginShift = false;
+                        _bodyStates[i] = bodyState;
+                    }
+
                     continue;
+                }
 
                 body.interpolation = bodyState.InterpolationModeBeforeOriginShift;
                 bodyState.InterpolationSuspendedForOriginShift = false;
+                if (bodyState.CollisionDetectionOverriddenForOriginShift)
+                {
+                    body.collisionDetectionMode = bodyState.CollisionDetectionModeBeforeOriginShift;
+                    bodyState.CollisionDetectionOverriddenForOriginShift = false;
+                }
+
+                _bodyStates[i] = bodyState;
+            }
+        }
+
+        private void ResetTrackedBodiesForSafeTeleportInternal()
+        {
+            RegisterActiveRigidbodiesForOriginShift();
+
+            for (int i = _trackedBodyCount - 1; i >= 0; i--)
+            {
+                Rigidbody body = _trackedBodies[i];
+                if (body == null)
+                {
+                    RemoveTrackedBodyAt(i);
+                    continue;
+                }
+
+                RigidbodyState bodyState = _bodyStates[i];
+                bool wasKinematic = body.isKinematic;
+                bool wasDetectingCollisions = body.detectCollisions;
+                bool wasSleeping = body.IsSleeping();
+                Vector3 linearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
+                Vector3 angularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero;
+                Vector3 position = IsFinite(body.position) ? body.position : Vector3.zero;
+
+                body.ResetCenterOfMass();
+                body.detectCollisions = false;
+                body.isKinematic = true;
+                body.PublishTransform();
+                body.isKinematic = false;
+                body.isKinematic = wasKinematic;
+                body.detectCollisions = wasDetectingCollisions;
+
+                if (!wasKinematic)
+                {
+                    body.linearVelocity = linearVelocity;
+                    body.angularVelocity = angularVelocity;
+                    if (wasSleeping)
+                        body.Sleep();
+                    else
+                        body.WakeUp();
+                }
+                else if (wasSleeping)
+                {
+                    body.Sleep();
+                }
+
+                if (IsFinite(position))
+                {
+                    _lastValidPositions[i] = new float3(position.x, position.y, position.z);
+                    bodyState.LastValidAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+                    bodyState.HasLastValidPosition = true;
+                    bodyState.HasLastValidAup = true;
+                }
+
+                bodyState.LastValidLinearVelocity = linearVelocity;
+                bodyState.LastValidAngularVelocity = angularVelocity;
+                if (wasSleeping)
+                    bodyState.StateMask |= PhysicsStateMask.WasAsleep;
+                else
+                    bodyState.StateMask &= ~PhysicsStateMask.WasAsleep;
+
                 _bodyStates[i] = bodyState;
             }
         }
@@ -667,12 +796,14 @@ namespace Hecton8.Physics
             EnsureTrackedBodyCapacity(_trackedBodyCount + 1);
 
             EnsureReporter(body);
+            IPhysicsColliderLodHysteresisSink colliderLodSink = ResolveColliderLodSink(body);
 
             int bodyIndex = _trackedBodyCount++;
             _trackedBodies[bodyIndex] = body;
             _bodyStates[bodyIndex] = new RigidbodyState
             {
                 EntityId = bodyEntityId,
+                StateMask = PhysicsStateMask.None,
                 CompensationRefCount = 0,
                 MaxAngularVelocityClamp = ResolveMaxAngularVelocityClamp(body),
                 AllowDistanceKinematicSleep = ShouldAllowDistanceKinematicSleep(body),
@@ -684,6 +815,10 @@ namespace Hecton8.Physics
                 DetectCollisionsBeforeDistanceSleep = body.detectCollisions,
                 LastValidLinearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero,
                 LastValidAngularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero,
+                ColliderLodSink = colliderLodSink,
+                HasColliderLodSink = IsColliderLodSinkAlive(colliderLodSink),
+                ColliderLodDistanceGateOpen = false,
+                ColliderLodOutOfRangeSeconds = 0f,
                 BaseInertiaTensor = IsFinite(body.inertiaTensor) ? body.inertiaTensor : Vector3.one,
                 BaseInertiaTensorRotation = IsFinite(body.inertiaTensorRotation) ? body.inertiaTensorRotation : Quaternion.identity,
                 BaseAngularDamping = math.max(0f, body.angularDamping),
@@ -977,8 +1112,9 @@ namespace Hecton8.Physics
             _connections[connectionIndex] = connection;
         }
 
-        private void RefreshTrackedBodies()
+        private void RefreshTrackedBodies(float fixedDeltaTime)
         {
+            float safeDeltaTime = math.max(fixedDeltaTime, 0.0001f);
             for (int i = _trackedBodyCount - 1; i >= 0; i--)
             {
                 Rigidbody body = _trackedBodies[i];
@@ -994,14 +1130,33 @@ namespace Hecton8.Physics
 
                 RigidbodyState bodyState = _bodyStates[i];
                 ApplyTrackedBodyAngularVelocityClamp(body, bodyState.MaxAngularVelocityClamp);
+                Vector3 currentLinearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
+                if (!HectonFloatingOrigin.IsShiftInProgress && IsFinite(bodyState.LastValidLinearVelocity))
+                {
+                    Vector3 deltaVelocity = currentLinearVelocity - bodyState.LastValidLinearVelocity;
+                    float acceleration = deltaVelocity.magnitude / safeDeltaTime;
+                    if (acceleration > KineticAnomalyAccelerationMetersPerSecondSq)
+                        ReportKineticAnomalyOncePerFrame(bodyPosition, deltaVelocity, acceleration);
+                }
+
                 bodyState.HasLastValidPosition = true;
                 bodyState.LastValidAup = AbsoluteUniversePosition.FromRuntimePosition(bodyPosition);
                 bodyState.HasLastValidAup = true;
-                bodyState.LastValidLinearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
+                bodyState.LastValidLinearVelocity = currentLinearVelocity;
                 bodyState.LastValidAngularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero;
                 _bodyStates[i] = bodyState;
                 _lastValidPositions[i] = new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z);
             }
+        }
+
+        private void ReportKineticAnomalyOncePerFrame(Vector3 bodyPosition, Vector3 deltaVelocity, float acceleration)
+        {
+            int frame = Time.frameCount;
+            if (_lastKineticAnomalyFrame == frame)
+                return;
+
+            _lastKineticAnomalyFrame = frame;
+            CrashTelemetryBuffer.ReportKineticAnomaly(bodyPosition, deltaVelocity, acceleration);
         }
 
         private void SweepNaNPhysicsState()
@@ -1085,6 +1240,61 @@ namespace Hecton8.Physics
             }
         }
 
+        private void ApplyColliderLodHysteresisInternal(float fixedDeltaTime)
+        {
+            ResolvePlayerTransform();
+            if (_playerTransform == null)
+                return;
+
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            float safeDeltaTime = Mathf.Max(0f, fixedDeltaTime);
+            for (int i = _trackedBodyCount - 1; i >= 0; i--)
+            {
+                Rigidbody body = _trackedBodies[i];
+                if (body == null)
+                {
+                    RemoveTrackedBodyAt(i);
+                    continue;
+                }
+
+                RigidbodyState bodyState = _bodyStates[i];
+                if (!bodyState.HasColliderLodSink || !IsColliderLodSinkAlive(bodyState.ColliderLodSink))
+                {
+                    bodyState.ColliderLodOutOfRangeSeconds = 0f;
+                    bodyState.ColliderLodDistanceGateOpen = false;
+                    _bodyStates[i] = bodyState;
+                    continue;
+                }
+
+                AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(body.position);
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in bodyAup, in playerAup);
+                if (bodyState.ColliderLodDistanceGateOpen)
+                {
+                    if (distanceSq <= ColliderLodSimpleToCompoundDistanceSq)
+                    {
+                        bodyState.ColliderLodDistanceGateOpen = false;
+                        bodyState.ColliderLodOutOfRangeSeconds = 0f;
+                        bodyState.ColliderLodSink.SetColliderLodDistanceGate(false);
+                    }
+                }
+                else if (distanceSq > ColliderLodCompoundToSimpleDistanceSq)
+                {
+                    bodyState.ColliderLodOutOfRangeSeconds += safeDeltaTime;
+                    if (bodyState.ColliderLodOutOfRangeSeconds >= ColliderLodSimplifyHysteresisSeconds)
+                    {
+                        bodyState.ColliderLodDistanceGateOpen = true;
+                        bodyState.ColliderLodSink.SetColliderLodDistanceGate(true);
+                    }
+                }
+                else
+                {
+                    bodyState.ColliderLodOutOfRangeSeconds = 0f;
+                }
+
+                _bodyStates[i] = bodyState;
+            }
+        }
+
         private void ApplyDistanceKinematicSleep(Rigidbody body, ref RigidbodyState bodyState)
         {
             if (bodyState.DistanceKinematicSleepActive)
@@ -1093,6 +1303,11 @@ namespace Hecton8.Physics
             bodyState.KinematicModeBeforeDistanceSleep = body.isKinematic;
             bodyState.DetectCollisionsBeforeDistanceSleep = body.detectCollisions;
             bodyState.WasSleepingBeforeDistanceSleep = body.IsSleeping();
+            if (bodyState.WasSleepingBeforeDistanceSleep)
+                bodyState.StateMask |= PhysicsStateMask.WasAsleep;
+            else
+                bodyState.StateMask &= ~PhysicsStateMask.WasAsleep;
+
             body.isKinematic = true;
             body.detectCollisions = false;
             body.Sleep();
@@ -1106,12 +1321,15 @@ namespace Hecton8.Physics
 
             body.isKinematic = bodyState.KinematicModeBeforeDistanceSleep;
             body.detectCollisions = bodyState.DetectCollisionsBeforeDistanceSleep;
-            if (!body.isKinematic && !bodyState.WasSleepingBeforeDistanceSleep)
+            bool wasAsleepBeforeEviction = bodyState.WasSleepingBeforeDistanceSleep ||
+                                           (bodyState.StateMask & PhysicsStateMask.WasAsleep) != 0;
+            if (!body.isKinematic && !wasAsleepBeforeEviction)
                 body.WakeUp();
             else if (!body.isKinematic)
                 body.Sleep();
 
             bodyState.WasSleepingBeforeDistanceSleep = false;
+            bodyState.StateMask &= ~PhysicsStateMask.WasAsleep;
             bodyState.DistanceKinematicSleepActive = false;
         }
 
@@ -1182,6 +1400,7 @@ namespace Hecton8.Physics
             if (removedBody != null)
             {
                 RigidbodyState removedState = _bodyStates[bodyIndex];
+                RestoreColliderLodGate(ref removedState);
                 if (removedState.AddedMassTensorApplied)
                     RestoreAddedMassBaseline(removedBody, ref removedState);
                 _trackedBodyIndexByEntityId.Remove(EntityId.ToULong(removedBody.GetEntityId()));
@@ -1235,6 +1454,34 @@ namespace Hecton8.Physics
             }
 
             return true;
+        }
+
+        private static IPhysicsColliderLodHysteresisSink ResolveColliderLodSink(Rigidbody body)
+        {
+            if (body != null && body.TryGetComponent(out IPhysicsColliderLodHysteresisSink sink))
+                return sink;
+
+            return null;
+        }
+
+        private static bool IsColliderLodSinkAlive(IPhysicsColliderLodHysteresisSink sink)
+        {
+            if (sink == null)
+                return false;
+
+            return !(sink is UnityEngine.Object unityObject) || unityObject != null;
+        }
+
+        private static void RestoreColliderLodGate(ref RigidbodyState bodyState)
+        {
+            if (!bodyState.ColliderLodDistanceGateOpen)
+                return;
+
+            if (IsColliderLodSinkAlive(bodyState.ColliderLodSink))
+                bodyState.ColliderLodSink.SetColliderLodDistanceGate(false);
+
+            bodyState.ColliderLodDistanceGateOpen = false;
+            bodyState.ColliderLodOutOfRangeSeconds = 0f;
         }
 
         private static float ResolveMaxAngularVelocityClamp(Rigidbody body)
@@ -1389,6 +1636,7 @@ namespace Hecton8.Physics
                     continue;
 
                 RigidbodyState bodyState = _bodyStates[i];
+                RestoreColliderLodGate(ref bodyState);
                 if (bodyState.AddedMassTensorApplied)
                     RestoreAddedMassBaseline(body, ref bodyState);
             }

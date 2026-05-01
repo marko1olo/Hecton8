@@ -1,4 +1,5 @@
-using System.Collections;
+using System;
+using System.Threading;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -31,7 +32,7 @@ namespace Hecton8.Gameplay
             if (!runOnStart || _isRunning)
                 return;
 
-            StartCoroutine(RunFullSuite());
+            _ = RunFullSuiteAsync(destroyCancellationToken);
         }
 
 #if UNITY_EDITOR
@@ -52,77 +53,80 @@ namespace Hecton8.Gameplay
             if (_isRunning)
                 return;
 
-            StartCoroutine(RunFullSuite());
+            _ = RunFullSuiteAsync(destroyCancellationToken);
         }
 
-        private IEnumerator RunFullSuite()
+        private async Awaitable RunFullSuiteAsync(CancellationToken cancellationToken)
         {
             if (_isRunning)
-                yield break;
+                return;
 
             AutoResolve();
             if (toolManager == null || playerRoot == null)
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Missing references tools={(toolManager != null ? "Y" : "N")} player={(playerRoot != null ? "Y" : "N")}");
-                yield break;
+                return;
             }
 
             Transform rangeRoot = FindSceneTransform("Tool_TrialRange");
             if (rangeRoot == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Tool_TrialRange root not found.");
-                yield break;
+                return;
             }
 
             _isRunning = true;
-            if (startupDelay > 0f)
-                yield return new WaitForSecondsRealtime(startupDelay);
+            try
+            {
+                if (startupDelay > 0f)
+                    await DelayRealtimeAsync(startupDelay, cancellationToken);
 
-            Vector3 originalPosition = playerRoot.position;
-            Quaternion originalRotation = playerRoot.rotation;
-            GameObject[] originalAssignments = SnapshotAssignments();
-            int originalSlot = toolManager.CurrentSlotIndex;
+                Vector3 originalPosition = playerRoot.position;
+                Quaternion originalRotation = playerRoot.rotation;
+                GameObject[] originalAssignments = SnapshotAssignments();
+                int originalSlot = toolManager.CurrentSlotIndex;
 
-            bool logisticsPass = false;
-            bool reconPass = false;
-            bool recoveryPass = false;
-            bool servicePass = false;
-            bool powerPass = false;
-            bool combatPass = false;
-            bool constructionPass = false;
-            bool endgamePass = false;
+                bool logisticsPass = await RunLogisticsPassAsync(rangeRoot, cancellationToken);
+                ReportPass("logistics", logisticsPass);
+                bool reconPass = await RunReconPassAsync(rangeRoot, cancellationToken);
+                ReportPass("recon", reconPass);
+                bool recoveryPass = await RunRecoveryPassAsync(rangeRoot, cancellationToken);
+                ReportPass("recovery", recoveryPass);
+                bool servicePass = await RunServicePassAsync(rangeRoot, cancellationToken);
+                ReportPass("service", servicePass);
+                bool powerPass = await RunPowerPassAsync(rangeRoot, cancellationToken);
+                ReportPass("power", powerPass);
+                bool combatPass = await RunCombatPassAsync(rangeRoot, cancellationToken);
+                ReportPass("combat", combatPass);
+                bool constructionPass = await RunConstructionPassAsync(rangeRoot, cancellationToken);
+                ReportPass("construction", constructionPass);
+                bool endgamePass = await RunEndgameFlowPassAsync(rangeRoot, cancellationToken);
+                ReportPass("endgame", endgamePass);
 
-            yield return RunLogisticsPass(rangeRoot, result => logisticsPass = result);
-            ReportPass("logistics", logisticsPass);
-            yield return RunReconPass(rangeRoot, result => reconPass = result);
-            ReportPass("recon", reconPass);
-            yield return RunRecoveryPass(rangeRoot, result => recoveryPass = result);
-            ReportPass("recovery", recoveryPass);
-            yield return RunServicePass(rangeRoot, result => servicePass = result);
-            ReportPass("service", servicePass);
-            yield return RunPowerPass(rangeRoot, result => powerPass = result);
-            ReportPass("power", powerPass);
-            yield return RunCombatPass(rangeRoot, result => combatPass = result);
-            ReportPass("combat", combatPass);
-            yield return RunConstructionPass(rangeRoot, result => constructionPass = result);
-            ReportPass("construction", constructionPass);
-            yield return RunEndgameFlowPass(rangeRoot, result => endgamePass = result);
-            ReportPass("endgame", endgamePass);
+                await RestoreLoadoutAsync(originalAssignments, originalSlot, cancellationToken);
+                playerRoot.SetPositionAndRotation(originalPosition, originalRotation);
 
-            yield return RestoreLoadout(originalAssignments, originalSlot);
-            playerRoot.SetPositionAndRotation(originalPosition, originalRotation);
-            _isRunning = false;
-
-            if (logisticsPass && reconPass && recoveryPass && servicePass && powerPass && combatPass && constructionPass && endgamePass)
-                Debug.Log("[TrialRangeSmoke] PASS logistics=True recon=True recovery=True service=True power=True combat=True construction=True endgame=True");
-            else
-                Debug.LogWarning($"[TrialRangeSmoke] FAIL logistics={logisticsPass} recon={reconPass} recovery={recoveryPass} service={servicePass} power={powerPass} combat={combatPass} construction={constructionPass} endgame={endgamePass}");
+                if (logisticsPass && reconPass && recoveryPass && servicePass && powerPass && combatPass && constructionPass && endgamePass)
+                    Debug.Log("[TrialRangeSmoke] PASS logistics=True recon=True recovery=True service=True power=True combat=True construction=True endgame=True");
+                else
+                    Debug.LogWarning($"[TrialRangeSmoke] FAIL logistics={logisticsPass} recon={reconPass} recovery={recoveryPass} service={servicePass} power={powerPass} combat={combatPass} construction={constructionPass} endgame={endgamePass}");
+            }
+            catch (OperationCanceledException)
+            {
+                LogVerbose("Cancelled.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[TrialRangeSmoke] UNHANDLED EXCEPTION: {ex}");
+            }
+            finally
+            {
+                _isRunning = false;
+            }
         }
 
-        private IEnumerator RunLogisticsPass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunLogisticsPassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform cargoWork = FindRelative(rangeRoot, "Lane_Cargo/Cargo_Work");
             Transform cargoHeavy = FindRelative(rangeRoot, "Lane_Cargo/Cargo_Heavy");
             Transform routeAnchor = FindRelative(rangeRoot, "Lane_BeaconRoute/Route_Anchor");
@@ -130,74 +134,69 @@ namespace Hecton8.Gameplay
             if (cargoWork == null || cargoHeavy == null || routeAnchor == null || routeRelay == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Logistics lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
-            bool equipOk = false;
-            yield return EquipTool<PropulsionTool>(0, result => equipOk = result);
+            bool equipOk = await EquipToolAsync<PropulsionTool>(0, cancellationToken);
             if (!equipOk)
-                yield break;
+                return false;
 
             if (!(toolManager.CurrentTool is PropulsionTool propulsion))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(cargoWork, 4.5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAll(propulsion.GetOperationalSummary(), "WORK", "CARGO"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Propulsion summary did not resolve work cargo. Summary={propulsion.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<HarpoonLauncherTool>(1, result => equipOk = result);
+            equipOk = await EquipToolAsync<HarpoonLauncherTool>(1, cancellationToken);
             if (!equipOk)
-                yield break;
+                return false;
 
             if (!(toolManager.CurrentTool is HarpoonLauncherTool harpoon))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(cargoHeavy, 6f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(harpoon.GetOperationalSummary(), "HEAVY", "CARGO"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Harpoon summary did not resolve heavy cargo. Summary={harpoon.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<BeaconDeployerTool>(2, result => equipOk = result);
+            equipOk = await EquipToolAsync<BeaconDeployerTool>(2, cancellationToken);
             if (!equipOk)
-                yield break;
+                return false;
 
             if (!(toolManager.CurrentTool is BeaconDeployerTool beaconTool))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(routeAnchor, 2.5f);
             beaconTool.UsePrimary(0f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (beaconNetwork == null || beaconNetwork.ActiveCount <= 0 || !ContainsAny(beaconTool.GetOperationalSummary(), "ANCHOR", "BEACON"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Beacon tool did not establish anchor semantics. Summary={beaconTool.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
             PositionPlayerForTarget(routeRelay, 2.5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(beaconTool.GetOperationalDirective(), "relay", "route", "readable"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Beacon directive did not resolve relay guidance. Directive={beaconTool.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            complete(true);
             LogVerbose("Logistics pass complete.");
+            return true;
         }
 
-        private IEnumerator RunReconPass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunReconPassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform darkHazard = FindRelative(rangeRoot, "Lane_DarkRoute/DarkRoute_HazardProbe");
             Transform darkPickup = FindRelative(rangeRoot, "Lane_DarkRoute/DarkRoute_Salvage_Close");
             Transform expeditionProbe = FindRelative(rangeRoot, "Lane_ScanCorridor/Scan_Poi_ExpeditionContact");
@@ -205,74 +204,69 @@ namespace Hecton8.Gameplay
             if (darkHazard == null || darkPickup == null || expeditionProbe == null || resourceProbe == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Recon lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
-            bool equipOk = false;
-            yield return EquipTool<FlashlightTool>(0, result => equipOk = result);
+            bool equipOk = await EquipToolAsync<FlashlightTool>(0, cancellationToken);
             if (!equipOk)
-                yield break;
+                return false;
 
             if (!(toolManager.CurrentTool is FlashlightTool flashlight))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(darkHazard, 10f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(flashlight.GetOperationalDirective(), "FOCUS", "frontier", "route"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Flashlight directive did not resolve hazard/frontier guidance. Directive={flashlight.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
             PositionPlayerForTarget(darkPickup, 3.5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(flashlight.GetOperationalDirective(), "FLOOD", "pickup", "salvage"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Flashlight directive did not resolve close salvage guidance. Directive={flashlight.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<EnvironmentalAnalyzerTool>(1, result => equipOk = result);
+            equipOk = await EquipToolAsync<EnvironmentalAnalyzerTool>(1, cancellationToken);
             if (!equipOk)
-                yield break;
+                return false;
 
             if (!(toolManager.CurrentTool is EnvironmentalAnalyzerTool analyzer))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(resourceProbe, 4.5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(analyzer.GetOperationalSummary(), "RESOURCE", "CACHE"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Analyzer summary did not resolve resource semantics. Summary={analyzer.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<ScannerTool>(2, result => equipOk = result);
+            equipOk = await EquipToolAsync<ScannerTool>(2, cancellationToken);
             if (!equipOk)
-                yield break;
+                return false;
 
             if (!(toolManager.CurrentTool is ScannerTool scanner))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(expeditionProbe, 5f);
             scanner.UsePrimary(0f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(scanner.GetOperationalDirective(), "checkpoint", "contact", "deeper", "cargo"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Scanner directive did not resolve authored sweep semantics. Directive={scanner.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            complete(true);
             LogVerbose("Recon pass complete.");
+            return true;
         }
 
-        private IEnumerator RunCombatPass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunCombatPassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform dormant = FindRelative(rangeRoot, "Lane_CombatContacts/Combat_Dormant");
             Transform aggressive = FindRelative(rangeRoot, "Lane_CombatContacts/Combat_Aggressive");
             Transform fractured = FindRelative(rangeRoot, "Lane_CombatContacts/Combat_Fractured");
@@ -280,197 +274,181 @@ namespace Hecton8.Gameplay
             if (dormant == null || aggressive == null || fractured == null || down == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Combat lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
-            bool equipOk = false;
-            yield return EquipTool<EnvironmentalAnalyzerTool>(0, result => equipOk = result);
+            bool equipOk = await EquipToolAsync<EnvironmentalAnalyzerTool>(0, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is EnvironmentalAnalyzerTool analyzer))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(aggressive, 4.5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(analyzer.GetOperationalSummary(), "AGGRESSIVE", "BIOFORM"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Analyzer combat summary mismatch. Summary={analyzer.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<StunPistolTool>(1, result => equipOk = result);
+            equipOk = await EquipToolAsync<StunPistolTool>(1, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is StunPistolTool stun))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(dormant, 5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(stun.GetOperationalDirective(), "wake", "quiet", "shot"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Stun directive mismatch on dormant target. Directive={stun.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<KnifeTool>(2, result => equipOk = result);
+            equipOk = await EquipToolAsync<KnifeTool>(2, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is KnifeTool knife))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(fractured, 2.8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(knife.GetOperationalDirective(), "precision", "finish", "window"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Knife directive mismatch on fractured target. Directive={knife.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<HarpoonLauncherTool>(3, result => equipOk = result);
+            equipOk = await EquipToolAsync<HarpoonLauncherTool>(3, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is HarpoonLauncherTool harpoon))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(aggressive, 5.5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(harpoon.GetOperationalDirective(), "control", "spacing", "disengage"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Harpoon directive mismatch on aggressive target. Directive={harpoon.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            complete(true);
             LogVerbose("Combat pass complete.");
+            return true;
         }
 
-        private IEnumerator RunRecoveryPass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunRecoveryPassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform salvagePickup = FindRelative(rangeRoot, "Lane_Salvage/Trial_Salvage_A");
             Transform activeNode = FindRelative(rangeRoot, "Lane_Salvage/Trial_Node_Active");
             Transform depletedNode = FindRelative(rangeRoot, "Lane_Salvage/Trial_Node_Depleted");
             if (salvagePickup == null || activeNode == null || depletedNode == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Recovery lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
-            bool equipOk = false;
-            yield return EquipTool<SalvageSamplerTool>(0, result => equipOk = result);
+            bool equipOk = await EquipToolAsync<SalvageSamplerTool>(0, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is SalvageSamplerTool sampler))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(salvagePickup, 2.8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(sampler.GetOperationalSummary(), "RECOVERY READY", "PACKAGE", "RECOVERY"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Sampler summary did not resolve salvage pickup. Summary={sampler.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
             PositionPlayerForTarget(depletedNode, 3.4f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(sampler.GetOperationalSummary(), "DEPLETED", "NODE"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Sampler summary did not resolve depleted node. Summary={sampler.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<LaserCutter>(1, result => equipOk = result);
+            equipOk = await EquipToolAsync<LaserCutter>(1, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is LaserCutter cutter))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(activeNode, 3.6f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(cutter.GetOperationalSummary(), "RESOURCE", "CONTACT", "NODE"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Cutter summary did not resolve active node. Summary={cutter.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<KnifeTool>(2, result => equipOk = result);
+            equipOk = await EquipToolAsync<KnifeTool>(2, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is KnifeTool knife))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(depletedNode, 2.8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(knife.GetOperationalSummary(), "NODE", "DEPLETED"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Knife summary did not resolve depleted node. Summary={knife.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            complete(true);
             LogVerbose("Recovery pass complete.");
+            return true;
         }
 
-        private IEnumerator RunServicePass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunServicePassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform damaged = FindRelative(rangeRoot, "Lane_ServiceModules/Trial_Module_Foundation_Damaged");
             Transform flooded = FindRelative(rangeRoot, "Lane_ServiceModules/Trial_Module_Corridor_Flooded");
             Transform control = FindRelative(rangeRoot, "Lane_ServiceModules/Trial_Module_Foundation_Control");
             if (damaged == null || flooded == null || control == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Service lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
-            bool equipOk = false;
-            yield return EquipTool<RepairTool>(0, result => equipOk = result);
+            bool equipOk = await EquipToolAsync<RepairTool>(0, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is RepairTool repair))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(damaged, 4.5f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(repair.GetOperationalSummary(), "SERVICE", "RESPONSE", "IMMEDIATE", "CRITICAL", "ACTIVE"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Repair summary did not resolve damaged module. Summary={repair.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
             PositionPlayerForTarget(flooded, 4.8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(repair.GetOperationalDirective(), "drain", "wait", "service", "power"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Repair directive did not resolve flooded module guidance. Directive={repair.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<LaserCutter>(1, result => equipOk = result);
+            equipOk = await EquipToolAsync<LaserCutter>(1, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is LaserCutter cutter))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(control, 4.8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(cutter.GetOperationalSummary(), "MODULE", "LOCKED", "RECOVERY", "CONTACT"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Cutter summary did not resolve service module. Summary={cutter.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<EnvironmentalAnalyzerTool>(2, result => equipOk = result);
+            equipOk = await EquipToolAsync<EnvironmentalAnalyzerTool>(2, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is EnvironmentalAnalyzerTool analyzer))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(flooded, 4.8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(analyzer.GetOperationalSummary(), "FLOODED", "SERVICE", "MODULE"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Analyzer summary did not resolve flooded service semantics. Summary={analyzer.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            complete(true);
             LogVerbose("Service pass complete.");
+            return true;
         }
 
-        private IEnumerator RunPowerPass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunPowerPassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform turbine = FindRelative(rangeRoot, "Lane_PowerOps/Power_CurrentTurbine");
             Transform relay = FindRelative(rangeRoot, "Lane_PowerOps/Power_RelayPylon");
             Transform pump = FindRelative(rangeRoot, "Lane_PowerOps/Power_ServicePump");
@@ -478,107 +456,100 @@ namespace Hecton8.Gameplay
             if (turbine == null || relay == null || pump == null || route == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Power lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
             if (!VerifyRecommendedPreset(turbine, 5f, "CONSTRUCTION"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(relay, 5f, "CONSTRUCTION"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(pump, 5f, "CONSTRUCTION"))
-                yield break;
+                return false;
 
-            bool equipOk = false;
-            yield return EquipTool<EnvironmentalAnalyzerTool>(0, result => equipOk = result);
+            bool equipOk = await EquipToolAsync<EnvironmentalAnalyzerTool>(0, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is EnvironmentalAnalyzerTool analyzer))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(turbine, 4.8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(analyzer.GetOperationalSummary(), "POWER", "GENERATION", "CURRENT"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Analyzer summary did not resolve power generation semantics. Summary={analyzer.GetOperationalSummary()}");
-                yield break;
+                return false;
             }
 
-            equipOk = false;
-            yield return EquipTool<FlashlightTool>(1, result => equipOk = result);
+            equipOk = await EquipToolAsync<FlashlightTool>(1, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is FlashlightTool flashlight))
-                yield break;
+                return false;
 
             PositionPlayerForTarget(route, 8f);
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
             if (!ContainsAny(flashlight.GetOperationalDirective(), "FOCUS", "service", "power", "generator"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Flashlight directive did not resolve power/service guidance. Directive={flashlight.GetOperationalDirective()}");
-                yield break;
+                return false;
             }
 
-            complete(true);
             LogVerbose("Power pass complete.");
+            return true;
         }
 
-        private IEnumerator RunConstructionPass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunConstructionPassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform clearLane = FindRelative(rangeRoot, "Lane_ConstructionOps/Construct_ClearLane");
             Transform blockedLane = FindRelative(rangeRoot, "Lane_ConstructionOps/Construct_Blocker");
             Transform socketGuide = FindRelative(rangeRoot, "Lane_ConstructionOps/Construct_SocketGuide");
             if (clearLane == null || blockedLane == null || socketGuide == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Construction lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
             if (!VerifyRecommendedPreset(clearLane, 5f, "CONSTRUCTION"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(blockedLane, 6f, "CONSTRUCTION"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(socketGuide, 4f, "CONSTRUCTION"))
-                yield break;
+                return false;
 
-            bool equipOk = false;
-            yield return EquipTool<BuilderTool>(3, result => equipOk = result);
+            bool equipOk = await EquipToolAsync<BuilderTool>(3, cancellationToken);
             if (!equipOk || !(toolManager.CurrentTool is BuilderTool builder))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             string summary = builder.GetOperationalSummary();
             string directive = builder.GetOperationalDirective();
             if (!ContainsAny(summary, "READY", "BLOCKED", "MISSING", "MODULE", "SNAPPED", "NO MODULE"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Builder summary did not resolve an operational state. Summary={summary}");
-                yield break;
+                return false;
             }
 
             if (!ContainsAny(directive, "build", "place", "module", "resources", "snap", "deployment"))
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Builder directive did not resolve field guidance. Directive={directive}");
-                yield break;
+                return false;
             }
 
-            complete(true);
             LogVerbose("Construction pass complete.");
+            return true;
         }
 
-        private IEnumerator RunEndgameFlowPass(Transform rangeRoot, System.Action<bool> complete)
+        private async Awaitable<bool> RunEndgameFlowPassAsync(Transform rangeRoot, CancellationToken cancellationToken)
         {
-            complete(false);
-
             Transform cargo = FindRelative(rangeRoot, "Lane_EndgameOps/Ops_Cargo_Work");
             Transform salvage = FindRelative(rangeRoot, "Lane_EndgameOps/Ops_Salvage");
             Transform service = FindRelative(rangeRoot, "Lane_EndgameOps/Ops_Service_Flooded");
@@ -588,74 +559,85 @@ namespace Hecton8.Gameplay
             if (cargo == null || salvage == null || service == null || hazard == null || combat == null || frontier == null)
             {
                 Debug.LogWarning("[TrialRangeSmoke] Endgame lane is missing key authored targets.");
-                yield break;
+                return false;
             }
 
             if (!VerifyRecommendedPreset(cargo, 5f, "FIELD RECOVERY"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(salvage, 3f, "FIELD RECOVERY"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(service, 5f, "CONSTRUCTION"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(hazard, 6f, "EXPLORATION"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(combat, 5f, "DEFENSE"))
-                yield break;
+                return false;
 
-            yield return new WaitForSecondsRealtime(settleDelay);
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
 
             if (!VerifyRecommendedPreset(frontier, 4f, "EXPLORATION"))
-                yield break;
+                return false;
 
-            complete(true);
             LogVerbose("Endgame flow pass complete.");
+            return true;
         }
 
-        private IEnumerator EquipTool<TTool>(int slotIndex, System.Action<bool> complete) where TTool : PlayerTool
+        private async Awaitable<bool> EquipToolAsync<TTool>(int slotIndex, CancellationToken cancellationToken) where TTool : PlayerTool
         {
-            complete(false);
             GameObject prefab = toolManager.GetKnownToolPrefabForToolType<TTool>();
             if (prefab == null)
             {
                 Debug.LogWarning($"[TrialRangeSmoke] Missing prefab registration for {typeof(TTool).Name}.");
-                yield break;
+                return false;
             }
 
             if (!IsToolManagerHolstered())
             {
                 toolManager.Holster();
-                yield return WaitUntil(() => IsToolManagerHolstered(), equipTimeout, $"Holster before {typeof(TTool).Name}");
+                await WaitUntilAsync(
+                    () => IsToolManagerHolstered(),
+                    equipTimeout,
+                    $"Holster before {typeof(TTool).Name}",
+                    cancellationToken);
             }
 
             toolManager.SetAssignedToolPrefab(slotIndex, prefab, holsterIfCurrentInvalid: false);
             toolManager.SwitchToSlot(slotIndex);
-            yield return WaitUntil(
+            await WaitUntilAsync(
                 () => !toolManager.IsSwapping && toolManager.CurrentTool is TTool,
                 equipTimeout,
-                $"Equip {typeof(TTool).Name}");
+                $"Equip {typeof(TTool).Name}",
+                cancellationToken);
 
-            complete(toolManager != null && !toolManager.IsSwapping && toolManager.CurrentTool is TTool);
+            return toolManager != null && !toolManager.IsSwapping && toolManager.CurrentTool is TTool;
         }
 
-        private IEnumerator RestoreLoadout(GameObject[] originalAssignments, int originalSlot)
+        private async Awaitable RestoreLoadoutAsync(
+            GameObject[] originalAssignments,
+            int originalSlot,
+            CancellationToken cancellationToken)
         {
             if (toolManager == null)
-                yield break;
+                return;
 
             toolManager.Holster();
-            yield return WaitUntil(() => IsToolManagerHolstered(), equipTimeout, "Holster restore");
+            await WaitUntilAsync(
+                () => IsToolManagerHolstered(),
+                equipTimeout,
+                "Holster restore",
+                cancellationToken);
 
             if (originalAssignments != null)
             {
@@ -736,29 +718,45 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private IEnumerator WaitUntil(System.Func<bool> predicate, float timeout, string label)
+        private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
+        }
+
+        private static async Awaitable<bool> WaitUntilAsync(
+            Func<bool> predicate,
+            float timeout,
+            string label,
+            CancellationToken cancellationToken)
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0.05f, timeout);
             while (Time.realtimeSinceStartup < deadline)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 bool success = false;
                 try
                 {
                     success = predicate();
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogError($"[TrialRangeSmoke] EXCEPTION {label}: {ex}");
-                    yield break;
+                    return false;
                 }
 
                 if (success)
-                    yield break;
+                    return true;
 
-                yield return null;
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             Debug.LogWarning($"[TrialRangeSmoke] TIMEOUT {label} after {timeout:0.00}s");
+            return false;
         }
 
         private bool IsToolManagerHolstered()
@@ -805,7 +803,7 @@ namespace Hecton8.Gameplay
                 Debug.LogWarning($"[TrialRangeSmoke] FAIL {label}=False");
         }
 
-        private static T FindSceneObjectIncludingInactive<T>() where T : Object
+        private static T FindSceneObjectIncludingInactive<T>() where T : UnityEngine.Object
         {
             T[] candidates = Resources.FindObjectsOfTypeAll<T>();
             for (int i = 0; i < candidates.Length; i++)

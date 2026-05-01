@@ -7,6 +7,7 @@
 using UnityEngine;
 using Hecton8.Caves;
 using Hecton8.Core;
+using System.Collections.Generic;
 
 namespace Hecton8.Biolum
 {
@@ -65,6 +66,10 @@ namespace Hecton8.Biolum
     [DisallowMultipleComponent, RequireComponent(typeof(Transform))]
     public abstract class HectonBiolumZone : MonoBehaviour, ITickable, IUpdatable
     {
+        private const int MaxTrackedActiveZones = 512;
+        // COLD ALLOC: List<HectonBiolumZone>[512] - active zone registry replacing scene-wide FindObjectsByType fallback - owner: HectonBiolumZone
+        private static readonly List<HectonBiolumZone> s_ActiveZones = new List<HectonBiolumZone>(MaxTrackedActiveZones);
+
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // INSPECTOR SETTINGS (Compact)
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -88,6 +93,8 @@ namespace Hecton8.Biolum
         protected int _activeLightCount = 0;
         protected bool _isRegistered = false;
         protected int _lastUpdateFrame = -1;
+
+        internal static List<HectonBiolumZone> ActiveZones => s_ActiveZones;
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // DIRTY-FLAG CACHING (Avoid redundant property updates)
@@ -114,6 +121,8 @@ namespace Hecton8.Biolum
 
         protected virtual void OnEnable()
         {
+            RegisterActiveZone(this);
+
             if (!_isRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
@@ -132,7 +141,36 @@ namespace Hecton8.Biolum
             }
             if (HectonBiolumManager.Instance != null)
                 HectonBiolumManager.Instance.UnregisterZone(this);
+            UnregisterActiveZone(this);
             CleanupLights();
+        }
+
+        private static void RegisterActiveZone(HectonBiolumZone zone)
+        {
+            if (zone == null)
+                return;
+
+            int count = s_ActiveZones.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(s_ActiveZones[i], zone))
+                    return;
+            }
+
+            if (count < MaxTrackedActiveZones)
+                s_ActiveZones.Add(zone);
+        }
+
+        private static void UnregisterActiveZone(HectonBiolumZone zone)
+        {
+            if (zone == null)
+                return;
+
+            for (int i = s_ActiveZones.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(s_ActiveZones[i], zone))
+                    s_ActiveZones.RemoveAt(i);
+            }
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

@@ -1,12 +1,18 @@
 # Flora Next Dialog Prompt
 
-Read only these files first and use them as the source of truth for flora work:
+Status: WORKING PROMPT
+Verification: PENDING VERIFICATION
+
+Read only these files first and use them as the authoritative navigation set for flora work:
 
 1. /AGENTS.md
-2. /Docs/PROCEDURAL_ASSET_PIPELINE.md
-3. /Docs/Flora_Pipeline/AI_FLORA_EXECUTION_BRIEF.md
-4. /Docs/Flora_Pipeline/FLORA_SYSTEM_PLAN.md
-5. /Assets/_Project/Prefabs/Nature/Flora/Baked/README.md
+2. /Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md
+3. /Docs/PROCEDURAL_ASSET_PIPELINE.md
+4. /Docs/Flora_Pipeline/AI_FLORA_EXECUTION_BRIEF.md
+5. /Docs/Flora_Pipeline/FLORA_SYSTEM_PLAN.md
+6. /Assets/_Project/Prefabs/Nature/Flora/Baked/README.md
+
+This prompt is a working handoff, not proof that flora assets, materials, validators, GPUI, or runtime scatter are finished.
 
 Do not start by reading legacy flora docs in the repo root unless you need concept recovery after the main docs.
 Treat root legacy files like `Vodorosli.md`, `Coralli.md`, the old Russian work notes, and the old transfer ledgers as reference-only, not primary instructions.
@@ -22,7 +28,7 @@ Task:
 - keep status as PENDING VERIFICATION until validator/log/profiler evidence exists
 
 Primary implementation priorities:
-1. keep /Docs as the clean source of truth
+1. keep /Docs current, with `2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point
 2. align flora texture/material/shader contract with PROCEDURAL_ASSET_PIPELINE.md
 3. keep LOD thresholds at 0.6 / 0.15 / 0.04 / 0
 4. keep flora culling in the 60-120m contract through Unity/GPUI visibility rules

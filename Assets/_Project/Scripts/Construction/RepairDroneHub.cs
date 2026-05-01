@@ -106,7 +106,7 @@ namespace Hecton8.Construction
         private int _launchCountTotal;
 
         /// <summary>Hub power draw scales with the number of active sorties.</summary>
-        public float PowerRating => -(standbyPowerDraw + CountActiveDronesInternal() * activeDronePowerDraw);
+        public float PowerRating => -(standbyPowerDraw + ActiveDroneCountInternal * activeDronePowerDraw);
 
         /// <summary>Priority used during power shedding.</summary>
         public int PowerPriority => powerPriority;
@@ -115,10 +115,10 @@ namespace Hecton8.Construction
         public bool HasPower => _hasPower;
 
         internal static List<RepairDroneHub> ActiveHubs => s_ActiveHubs;
-        internal int ActiveDroneCount => CountActiveDronesInternal();
+        internal int ActiveDroneCount => ActiveDroneCountInternal;
         internal int TotalLaunchCount => _launchCountTotal;
-        internal Vector3 DockPosition => ResolveDockSocketPositionInternal();
-        internal Quaternion DockRotation => ResolveDockSocketRotationInternal();
+        internal Vector3 DockPosition => ResolvedDockSocketPosition;
+        internal Quaternion DockRotation => ResolvedDockSocketRotation;
         internal PowerGrid CurrentGrid => _powerNode != null ? _powerNode.Grid : null;
         internal int ActiveSlotCapacity => _activeDroneIds != null ? _activeDroneIds.Length : Mathf.Max(1, maxConcurrentDrones);
         internal bool HasOperationalPower => _hasPower && _powerNode != null && _powerNode.Grid != null;
@@ -333,7 +333,7 @@ namespace Hecton8.Construction
             if (!HasRepairSupplyAvailable(requiredSupplyUnits))
                 return;
 
-            Vector3 launchPosition = ResolveDockSocketPositionInternal();
+            Vector3 launchPosition = ResolvedDockSocketPosition;
             if (!DroneFleetManager.TryLaunchHeadlessDrone(
                 this,
                 in task,
@@ -413,6 +413,33 @@ namespace Hecton8.Construction
             return true;
         }
 
+        internal bool TryQueueDroneResupplyCommit(int requestedUnits, int droneId, out bool committedImmediately)
+        {
+            committedImmediately = false;
+            if (droneId <= 0)
+                return false;
+
+            int safeRequestedUnits = Mathf.Max(1, requestedUnits);
+            return TryConsumeRepairSupplyInternal(safeRequestedUnits, commitViaCommandQueue: true, requesterId: droneId, out committedImmediately);
+        }
+
+        internal bool TryAttachOrphanedDrone(int droneId)
+        {
+            if (_activeDroneIds == null || droneId <= 0)
+                return false;
+
+            if (FindDroneSlot(droneId) >= 0)
+                return true;
+
+            int slot = FindFreeDroneSlot();
+            if (slot < 0)
+                return false;
+
+            _activeDroneIds[slot] = droneId;
+            _activeTargetIds[slot] = 0;
+            return true;
+        }
+
         internal bool TryResolveNearestSupplyEndpoint(Vector3 requesterPosition, out Vector3 endpointPosition)
         {
             endpointPosition = DockPosition;
@@ -431,6 +458,12 @@ namespace Hecton8.Construction
 
         private bool TryConsumeRepairSupplyInternal(int requiredUnits, bool commitViaCommandQueue)
         {
+            return TryConsumeRepairSupplyInternal(requiredUnits, commitViaCommandQueue, 0, out _);
+        }
+
+        private bool TryConsumeRepairSupplyInternal(int requiredUnits, bool commitViaCommandQueue, int requesterId, out bool committedImmediately)
+        {
+            committedImmediately = false;
             if (requiredUnits <= 0)
                 return false;
 
@@ -444,16 +477,23 @@ namespace Hecton8.Construction
                     return false;
 
                 if (commitViaCommandQueue)
-                    BaseLogisticsNetwork.CommitReservedViaCommandQueue(reservation);
+                    BaseLogisticsNetwork.CommitReservedViaCommandQueue(reservation, requesterId);
                 else
+                {
                     BaseLogisticsNetwork.CommitReserved(reservation);
+                    committedImmediately = true;
+                }
                 return true;
             }
 
             if (repairSupplyItem == null)
                 return false;
 
-            return TryResolveRepairSupplySlot(requiredUnits, consume: true);
+            if (!TryResolveRepairSupplySlot(requiredUnits, consume: true))
+                return false;
+
+            committedImmediately = true;
+            return true;
         }
 
         private bool TryResolveNearestSupplyEndpoint(StorageCrate[] crates, int count, Vector3 requesterPosition, ref Vector3 endpointPosition)
@@ -622,19 +662,13 @@ namespace Hecton8.Construction
                 : unchecked((int)EntityId.ToULong(module.GetEntityId()));
         }
 
-        private Vector3 ResolveDockSocketPositionInternal()
-        {
-            return launchPoint != null ? launchPoint.position : _cachedTransform.position;
-        }
+        private Vector3 ResolvedDockSocketPosition => launchPoint != null ? launchPoint.position : _cachedTransform.position;
 
-        private Quaternion ResolveDockSocketRotationInternal()
-        {
-            return launchPoint != null ? launchPoint.rotation : _cachedTransform.rotation;
-        }
+        private Quaternion ResolvedDockSocketRotation => launchPoint != null ? launchPoint.rotation : _cachedTransform.rotation;
 
         private void RefreshDiagnostics()
         {
-            _debugActiveDroneCount = CountActiveDronesInternal();
+            _debugActiveDroneCount = ActiveDroneCountInternal;
             if (_debugActiveDroneCount <= 0)
                 _debugCurrentTargetName = string.Empty;
 
@@ -643,7 +677,7 @@ namespace Hecton8.Construction
 
         internal int ResolveDockedStasisSlotCount()
         {
-            int availableDockSlots = Mathf.Max(0, ActiveSlotCapacity - CountActiveDronesInternal());
+            int availableDockSlots = Mathf.Max(0, ActiveSlotCapacity - ActiveDroneCountInternal);
             if (availableDockSlots <= 0)
                 return 0;
 
@@ -652,21 +686,24 @@ namespace Hecton8.Construction
                 : 0;
         }
 
-        private int CountActiveDronesInternal()
+        private int ActiveDroneCountInternal
         {
-            if (_activeDroneIds == null)
-                return 0;
-
-            int activeCount = 0;
-            int slotCount = _activeDroneIds.Length;
-            for (int i = 0; i < slotCount; i++)
+            get
             {
-                int droneId = _activeDroneIds[i];
-                if (droneId > 0 && DroneFleetManager.IsHeadlessDroneActive(droneId))
-                    activeCount++;
-            }
+                if (_activeDroneIds == null)
+                    return 0;
 
-            return activeCount;
+                int activeCount = 0;
+                int slotCount = _activeDroneIds.Length;
+                for (int i = 0; i < slotCount; i++)
+                {
+                    int droneId = _activeDroneIds[i];
+                    if (droneId > 0 && DroneFleetManager.IsHeadlessDroneActive(droneId))
+                        activeCount++;
+                }
+
+                return activeCount;
+            }
         }
 
         private int ResolveMissionSupplyUnits(in DroneFleetTask task)

@@ -45,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 54; // v54: PDA logbook stores event/localization hashes, not persistent strings
+        public const int CurrentVersion = 56; // v56: PDA Morton exploration mask persists 64-byte alignment metadata and deterministic build salt.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -750,6 +750,7 @@ namespace Hecton8.SaveSystem
         public int chunkSizeMeters;
         public int mortonMaskAxisBits;
         public int mortonMaskOriginOffset;
+        public uint mortonBuildSalt;
         public int exploredMortonWordCount;
         public long[] exploredMortonMaskWords;
         public int exploredMortonByteCount;
@@ -786,6 +787,7 @@ namespace Hecton8.SaveSystem
             chunkSizeMeters = DenseChunkSizeMeters;
             mortonMaskAxisBits = MortonMaskAxisBits;
             mortonMaskOriginOffset = MortonMaskOriginOffset;
+            mortonBuildSalt = SaveBinaryStorage.ExplorationMortonBuildSalt32;
             if (exploredMortonWordCount < 0 || exploredMortonWordCount > MortonMaskWordCount)
                 exploredMortonWordCount = 0;
 
@@ -842,6 +844,8 @@ namespace Hecton8.SaveSystem
     [Serializable]
     public struct PDAMarkerEntryDTO
     {
+        public const int AupPositionEncodingVersion = 1;
+
         public string markerId;
         public string title;
         public int iconType;
@@ -849,6 +853,15 @@ namespace Hecton8.SaveSystem
         public float posY;
         public float posZ;
         public bool visibleOnHud;
+        public int positionEncodingVersion;
+        public long aupGridX;
+        public long aupGridY;
+        public long aupGridZ;
+        public float aupLocalX;
+        public float aupLocalY;
+        public float aupLocalZ;
+
+        internal bool HasAupPosition => positionEncodingVersion == AupPositionEncodingVersion;
 
         public Vector3 GetPosition() => new Vector3(posX, posY, posZ);
 
@@ -857,6 +870,30 @@ namespace Hecton8.SaveSystem
             posX = position.x;
             posY = position.y;
             posZ = position.z;
+        }
+
+        internal AbsoluteUniversePosition GetAup()
+        {
+            return new AbsoluteUniversePosition
+            {
+                GridX = aupGridX,
+                GridY = aupGridY,
+                GridZ = aupGridZ,
+                LocalX = aupLocalX,
+                LocalY = aupLocalY,
+                LocalZ = aupLocalZ
+            };
+        }
+
+        internal void SetAup(in AbsoluteUniversePosition position)
+        {
+            positionEncodingVersion = AupPositionEncodingVersion;
+            aupGridX = position.GridX;
+            aupGridY = position.GridY;
+            aupGridZ = position.GridZ;
+            aupLocalX = position.LocalX;
+            aupLocalY = position.LocalY;
+            aupLocalZ = position.LocalZ;
         }
     }
 

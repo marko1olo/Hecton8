@@ -26,7 +26,12 @@ No Play Mode was launched.
 | Dead code excavation | Removed four orphan candidates with no current `Assets/` code refs and no YAML refs: `SaveSystemRuntimeSmokeTester`, `WeakToolsRuntimeSmokeTester`, `MantaAcousticRuntimeVerifier`, `PhysicalInteractionRuntimeVerifier`, plus `.meta` files. |
 | Awaitable migration batch 1 | `FabricationRuntimeSmokeTester`, `ScanRuntimeSmokeTester`, `BarterRuntimeSmokeTester`, and `BuilderRuntimeSmokeTester` no longer use `StartCoroutine`, `IEnumerator`, or `yield return`. They now run through `async Awaitable` methods using `destroyCancellationToken`. |
 | Awaitable migration batch 2 | `PauseSystemVerifier`, `SceneTransitionVerifier`, `UIRuntimeSmokeTester`, and `WorldGenerativeGeologyRuntimeSmokeTester` no longer use `StartCoroutine`, `IEnumerator`, or `yield return`. Public verifier entry points were preserved; waits now use `Awaitable.NextFrameAsync` plus realtime deadline checks. |
-| Coroutine grep hygiene | Removed a false-positive literal coroutine token from `InteractionHighlighter` comments; no runtime code changed there. |
+| Awaitable migration batch 3 | `StateRecoveryVerifier` no longer uses `StartCoroutine`, `IEnumerator`, `yield return`, or `WaitForSecondsRealtime`. Public verifier entry points are preserved; waits now use `Awaitable.NextFrameAsync` with `destroyCancellationToken`. |
+| Awaitable migration batch 4 | `ToolRuntimeSmokeTester` no longer uses `StartCoroutine`, `IEnumerator`, `yield return`, or `WaitForSecondsRealtime`. Manual/context-menu smoke entry points are preserved; waits now use `Awaitable.NextFrameAsync` with `destroyCancellationToken`. |
+| Awaitable migration batch 5 | `FieldToolRuntimeSmokeTester` no longer uses `StartCoroutine`, `IEnumerator`, `yield return`, or `WaitForSecondsRealtime`. Salvage/cutter smoke phases now return `Awaitable<bool>` results and keep probe cleanup in `finally`. |
+| Awaitable migration batch 6 | `ToolTrialRangeRuntimeSmokeTester` no longer uses `StartCoroutine`, `IEnumerator`, `yield return`, or `WaitForSecondsRealtime`. Authored lane passes now return `Awaitable<bool>` results and preserve loadout/player-pose restore. |
+| Awaitable migration batch 7 | `Dev/ShellVerificationRuntimeSmokeTester` no longer uses `StartCoroutine`, `IEnumerator`, `yield return`, or `WaitForSecondsRealtime`. Auto-start, resume, editor-stability, menu/world, pause, input, and load-slot waits now use `Awaitable` with `destroyCancellationToken`. |
+| Coroutine grep hygiene | Removed false-positive or disabled coroutine tokens from `InteractionHighlighter`, `FaunaDirector`, and the dead `#if false` slow-tick stub in `GameTickManager`; no runtime slow-tick logic changed. |
 | Compile hygiene | Fixed a stale editor compile error in `HectonComplianceValidator` by fully qualifying `global::System.Environment.GetEnvironmentVariable`. |
 | Graveyard sync | Updated `DEAD_CODE_GRAVEYARD.md` with actual removal state and retained `WorldGenerativeGeologyRuntimeSmokeTester` because current editor code references it. |
 | Crash telemetry MMF/cache check | `CrashTelemetryBuffer` already uses `NativeArray<byte>` export scratch, `UnsafeUtility.MemCpy`, and `AsyncWriteManager.WriteAll` over a native pointer. No managed `byte[]` export buffer was introduced. |
@@ -35,19 +40,11 @@ No Play Mode was launched.
 
 | Metric | Before this pass | After this pass |
 |---|---:|---:|
-| `StartCoroutine(` live call sites outside `Editor/**` | 37 baseline legacy sites | 15 remaining |
-| `StartCoroutine(` strict lexical hits across `Assets/_Project/Scripts` | 37 baseline legacy sites | 15 current hits |
-| `IEnumerator` / `yield` lexical hits | Previous rough grep was not comparable | 354 current broad lexical hits outside `Editor/**` |
+| `StartCoroutine(` live call sites outside `Editor/**` | 37 baseline legacy sites | 0 remaining |
+| `StartCoroutine(` strict lexical hits across `Assets/_Project/Scripts` | 37 baseline legacy sites | 0 current hits |
+| `IEnumerator` / `yield return` lexical hits | Previous rough grep was not comparable | 0 current broad lexical hits outside `Editor/**` |
 
-Remaining coroutine sites are concentrated in runtime smoke/verifier infrastructure:
-
-- `FieldToolRuntimeSmokeTester`
-- `ToolRuntimeSmokeTester`
-- `ToolTrialRangeRuntimeSmokeTester`
-- `Dev/ShellVerificationRuntimeSmokeTester`
-- `Tools/StateRecoveryVerifier`
-
-These were not migrated in this pass because they are verification harnesses with nested callback/coroutine chains. Mechanical conversion to `async Awaitable` would be broad behavioral surgery and must be done one harness at a time with compile verification.
+Remaining strict coroutine sites outside `Editor/**`: none by grep. Compile and Play Mode proof are still absent in the current session.
 
 ## Rejected / Blocked
 
@@ -80,7 +77,7 @@ Facts:
 | `CrashTelemetryBuffer` export path | PASS by code inspection: `NativeArray<byte>` + `UnsafeUtility.MemCpy` + native pointer write. |
 | Runtime `Spawn` expansion | PASS by code inspection: spawn path returns `null`; `InstantiatePooled` is only used from `Warmup`. |
 | Migrated harness coroutine scan | PASS: migrated files have no `StartCoroutine`, `IEnumerator`, or `yield return` hits. |
-| Unity MCP refresh/console | PASS: after a forced script compile/domain reload, `read_console(types=["error"])` returned 0 entries. |
-| Editor log tail fallback | Prior `HectonComplianceValidator` and transient `ConstructionManager` compile errors were stale after the latest domain reload; final MCP console read reported 0 errors. |
+| Unity MCP refresh/console | PASS for that surgery session only: after a forced script compile/domain reload, `read_console(types=["error"])` returned 0 entries. |
+| Editor log tail fallback | Prior `HectonComplianceValidator` and transient `ConstructionManager` compile errors were stale after that domain reload; final MCP console read in that session reported 0 errors. |
 
-STATUS: MCP CONSOLE VERIFIED; PLAY MODE / GC PROFILER VERIFICATION NOT RUN
+STATUS: PENDING VERIFICATION - historical MCP console pass recorded; current session not rechecked; Play Mode / GC Profiler verification not run

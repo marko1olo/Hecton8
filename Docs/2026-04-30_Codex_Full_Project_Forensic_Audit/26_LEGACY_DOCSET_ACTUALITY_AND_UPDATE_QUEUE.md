@@ -17,30 +17,32 @@ Scope:
 
 ## 1. Current Doc Inventory
 
-Snapshot date: 2026-04-30.
+Snapshot date: 2026-05-01.
 
 | Surface | Count |
 |---|---:|
-| all non-meta files under `Docs` after this report | 529 |
-| markdown files | 350 |
-| text files | 61 |
-| patch files | 8 |
+| all non-meta files under `Docs` after this report | 584 |
+| markdown files | 375 |
+| text files | 64 |
+| patch files | 13 |
 | csv files | 1 |
-| other non-meta files | 104 |
+| diff files | 13 |
+| log files | 92 |
+| other non-meta files | 1 |
 
 Archivarius active folder inventory:
 
 | Folder | Current count |
 |---|---:|
-| `01_GENERAL_INFO` physical files | 22 |
-| `01_GENERAL_INFO` markdown files | 22 |
-| `02_ACTUAL_REPORTS` physical files | 55 |
+| `01_GENERAL_INFO` physical files | 24 |
+| `01_GENERAL_INFO` markdown files | 24 |
+| `02_ACTUAL_REPORTS` physical files | 56 |
 | `02_ACTUAL_REPORTS` markdown files | 46 |
-| `02_ACTUAL_REPORTS` patch artifacts | 8 |
+| `02_ACTUAL_REPORTS` patch artifacts | 9 |
 | `02_ACTUAL_REPORTS` csv datasets | 1 |
 
 Interpretation:
-- `MASTER_INDEX.md` is correct for indexed docs/datasets at `69`.
+- `MASTER_INDEX.md` is correct for indexed docs/datasets at `71`.
 - It previously under-communicated that patch artifacts physically live in `02_ACTUAL_REPORTS`.
 - Patch files are evidence artifacts, not standalone current-state authority.
 
@@ -51,12 +53,12 @@ Updated active anchors:
 | File | Change |
 |---|---|
 | `Docs/README.md` | date moved to 2026-04-30; current forensic bundle added to active audit outputs |
-| `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` | refreshed `1038/998` script counts, script lines, average, root-script count, and largest-owner line counts |
+| `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` | refreshed `1060/1020` script counts, script lines, average, root-script count, and interface delta |
 | `Docs/SYSTEMS_CONTRACTS.md` | added explicit `Status: PENDING VERIFICATION` metadata |
 | `Docs/QUALITY_GATES.md` | split `Status: SECONDARY` from `Verification: PENDING VERIFICATION` |
 | `Docs/PROCEDURAL_ASSET_PIPELINE.md` | added explicit status/verification metadata |
-| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | refreshed script counts and clarified patch artifacts in `02_ACTUAL_REPORTS` |
-| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/MASTER_INDEX.md` | clarified `69` indexed docs/datasets versus `75` physical files |
+| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | refreshed script counts, added May 1 deltas, and clarified patch artifacts in `02_ACTUAL_REPORTS` |
+| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/MASTER_INDEX.md` | clarified `71` indexed docs/datasets versus `80` physical files |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/README.md` | added this report to bundle contents |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md` | refreshed Docs count and active bundle count |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md` | refreshed bundle count after adding this report |
@@ -72,9 +74,14 @@ They are dated audit snapshots, so rewriting them as current truth would destroy
 
 | File or group | Current handling |
 |---|---|
-| `Docs/2026-04-29_Codex_Project_Wide_Audit/*` | keep as historical 2026-04-29 snapshot |
-| `Docs/2026-04-29_Codex_Codebase_Reality_Audit/*` | keep as historical 2026-04-29 snapshot |
-| `Docs/2026-04-29_CODEX_MANDATE_AUDIT/2026-04-29_CODEX_MANDATE_COMPLIANCE_AUDIT.md` | keep as historical mandate scan |
+| `Docs/DEPRECATED/2026-04-29_Audit_Bundles/2026-04-29_Codex_Autonomous_Audit/*` | moved to deprecated as historical 2026-04-29 snapshot |
+| `Docs/DEPRECATED/2026-04-29_Audit_Bundles/2026-04-29_Codex_Project_Wide_Audit/*` | moved to deprecated as historical 2026-04-29 snapshot |
+| `Docs/DEPRECATED/2026-04-29_Audit_Bundles/2026-04-29_Codex_Codebase_Reality_Audit/*` | moved to deprecated as historical 2026-04-29 snapshot |
+| `Docs/DEPRECATED/2026-04-29_Audit_Bundles/2026-04-29_CODEX_MANDATE_AUDIT/2026-04-29_CODEX_MANDATE_COMPLIANCE_AUDIT.md` | moved to deprecated as historical mandate scan |
+| `Docs/DEPRECATED/External_And_Log_Bundles/*` | moved to deprecated as external prompt/log/source-material bundles; not current-state authority |
+| `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/*` | moved to deprecated as old flat redirect stubs; canonical Flora/Scatter bundle paths remain active |
+| `Docs/DEPRECATED/Encoding_Damaged_2026-05-01/*` | moved to deprecated because active-surface text was encoding-damaged and not reliable current documentation |
+| `Docs/DEPRECATED/Root_Legacy_And_Scan_Artifacts_2026-05-01/*` | moved to deprecated as old repository-root docs and scan artifacts |
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_DEEP_FORENSIC_AUDIT.md` | keep as historical; superseded by later rechecks for counts |
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_SUPREME_AUDITOR_REPORT.md` | keep as historical; superseded by later rechecks for counts |
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | keep as dated recheck; superseded by `2026-04-30` layers for counts |
@@ -84,10 +91,10 @@ Current scale truth:
 
 | Counter | Current value |
 |---|---:|
-| first-party C# under `Assets/_Project` | 1038 |
-| C# under `Assets/_Project/Scripts` | 998 |
-| script lines under `Assets/_Project/Scripts` | 444135 |
-| scripts directly in `Assets/_Project/Scripts` root | 314 |
+| first-party C# under `Assets/_Project` | 1060 |
+| C# under `Assets/_Project/Scripts` | 1020 |
+| script lines under `Assets/_Project/Scripts` | 544728 |
+| scripts directly in `Assets/_Project/Scripts` root | 316 |
 
 ## 4. Status Metadata Findings
 
@@ -97,32 +104,41 @@ Fixed now:
 - `Docs/SYSTEMS_CONTRACTS.md`
 - `Docs/PROCEDURAL_ASSET_PIPELINE.md`
 - `Docs/QUALITY_GATES.md`
+- `Docs/ARCHITECTURE/*.md` reference files that lacked explicit `Status:`
+- `Docs/AI_Fauna/*.md` reference files that lacked explicit `Status:`
+- `Docs/Flora_Pipeline/FLORA_NEXT_DIALOG_PROMPT.md`
+- `Docs/Flora_Pipeline/FLORA_TEXTURE_IMPORT_LOG.md`
+- `Docs/Scatter_Runtime/SCATTER_REFACTORING_MANIFESTO_V2.md`
+- `Docs/Legacy_World_Reference/TERRAIN_108_BIOMES_VISION.md`
+- `Docs/Legacy_Backlog/*.md` legacy reference files that lacked explicit `Status:`
 
 Still requires later policy decision:
 - Some `ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS` files use statuses like `ETA SANITIZED`, `ETA LEAK_MAPPED`, `ETA SURGERY_PREPPED`, `POPULATED`, or historical check marks.
 - These are not uniformly wrong, but they are not equivalent to runtime verification.
 - Recommended next cleanup: normalize status vocabulary across active reports to `PENDING VERIFICATION`, `HISTORICAL`, `ARTIFACT`, `REFERENCE`, or `ARCHIVE`.
 
-Additional long-lived bundle scan:
+Additional long-lived bundle scan from the earlier pass:
 
 | Area | Finding |
 |---|---|
-| `Docs/ARCHITECTURE` | 16 markdown files lack explicit `Status:` metadata |
-| `Docs/Scatter_Runtime` | `SCATTER_REFACTORING_MANIFESTO_V2.md` lacks explicit status metadata |
-| `Docs/Flora_Pipeline` | `FLORA_TEXTURE_IMPORT_LOG.md` lacks `PENDING VERIFICATION`; `FLORA_NEXT_DIALOG_PROMPT.md` contains pending language but no `Status:` key |
-| `Docs/AI_Fauna` | two reference files lack explicit status metadata |
-| `Docs/Legacy_World_Reference` | `TERRAIN_108_BIOMES_VISION.md` lacks explicit status metadata |
-| `Docs/Legacy_Backlog` | two large legacy backlog files lack explicit status metadata |
+| `Docs/ARCHITECTURE` | fixed: missing long-lived reference statuses added |
+| `Docs/Scatter_Runtime` | fixed: `SCATTER_REFACTORING_MANIFESTO_V2.md` marked `REFERENCE` |
+| `Docs/Flora_Pipeline` | fixed: prompt/log files marked with explicit status and pending verification |
+| `Docs/AI_Fauna` | fixed: two reference files marked `REFERENCE` |
+| `Docs/Legacy_World_Reference` | fixed: `TERRAIN_108_BIOMES_VISION.md` marked `LEGACY REFERENCE` |
+| `Docs/Legacy_Backlog` | fixed: two large legacy backlog files marked `LEGACY REFERENCE` |
 
-Do not blindly patch all of these.
-Some are reference/spec documents, not reports.
-They need a separate metadata-normalization pass that preserves intended authority: `ACTIVE`, `REFERENCE`, `HISTORICAL`, `LEGACY`, or `PENDING VERIFICATION`.
+Current active-bundle metadata scan:
+- root `Docs/*.md`: no missing `Status:` rows found
+- `Docs/ARCHITECTURE/*.md`: no missing `Status:` rows found
+- `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`: no missing `Status:` rows found
 
 ## 5. Redirect Stub Findings
 
-Root `Docs` contains redirect stubs for moved flora/scatter files.
+Root `Docs` previously contained redirect stubs for moved flora/scatter files.
+They were moved to `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/`.
 
-Observed stubs:
+Moved stubs:
 - `AI_FLORA_EXECUTION_BRIEF.md`
 - `ECS_DOTS_ADOPTION_PLAN.md`
 - `FLORA_NEXT_DIALOG_PROMPT.md`
@@ -131,19 +147,19 @@ Observed stubs:
 - `SCATTER_DOTS_NARROW_SCOPE_SPEC.md`
 - `SCATTER_PHASE1_BASELINE_CHECKLIST.md`
 - `SCATTER_REFACTOR_EXECUTION_PLAN.md`
-- `ПРАВИЛЬНОЕ ПРЕДЛОЖЕНИЕ.txt`
+- Cyrillic `.txt` redirect stub for the scatter manifesto
 
 Verdict:
-- Keep temporarily if external links still target them.
 - They are compatibility mirrors, not authority.
-- If no external link surface exists, archive or delete them in a dedicated cleanup pass.
+- They no longer live in active root `Docs`.
+- Current canonical bundle entry points remain `Docs/Flora_Pipeline/README.md` and `Docs/Scatter_Runtime/README.md`.
 
 ## 6. Root And Legacy Noise
 
 Observed:
-- root repository markdown still contains large active anchors: `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`, `AGENTS.md`, plus smaller root notes.
-- `Docs/ROOT_DOCS_REFERENCE.md` contains mojibake path names inherited from earlier relocation.
-- `Docs/какие то логи` contains 90 files and is high-noise unless a specific log is cited.
+- root repository markdown still contains large active anchors: `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`, `AGENTS.md`, plus smaller root notes and scan artifacts.
+- `Docs/ROOT_DOCS_REFERENCE.md` was cleaned on 2026-05-01 and now lists current root text files without mojibake relocation rows.
+- the deprecated external/log bundle contains 90 raw log files and is high-noise unless a specific log is cited.
 - `Docs/_Archive` is large and should remain historical unless a path is explicitly pulled forward.
 
 Decision:
@@ -156,8 +172,8 @@ Decision:
 P0 documentation updates:
 - Normalize active report status vocabulary.
 - Add a top-level "latest truth order" note to `Docs/README.md` once the forensic bundle stabilizes.
-- Decide whether `Docs/ROOT_DOCS_REFERENCE.md` should be cleaned for mojibake paths or left as historical relocation evidence.
-- Normalize missing status metadata in long-lived bundles without flattening all specs into the same authority class.
+- Decide whether remaining non-anchor root text docs should stay in root, move to `Docs/Reports`, or move to `Docs/DEPRECATED`.
+- Keep active-bundle status metadata synced when new docs are added.
 
 P1 documentation updates:
 - Add per-folder `README.md` authority notes to high-noise idea folders.
@@ -165,7 +181,7 @@ P1 documentation updates:
 - Add a small `Docs/Reports` index entry for current forensic bundle or move future one-shot audit outputs under `Docs/Reports`.
 
 P2 documentation updates:
-- Decide whether redirect stubs can be removed.
+- Decide whether the deprecated redirect-stub bundle can be deleted after any external link surface is checked.
 - Generate a machine-readable doc authority manifest if this audit style continues.
 
 ## 8. Regression Model
